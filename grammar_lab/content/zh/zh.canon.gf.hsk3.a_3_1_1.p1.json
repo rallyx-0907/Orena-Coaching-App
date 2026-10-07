@@ -1,0 +1,189 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_1_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.youdian_yidian"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.001"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 第-、老-、小-", "en": "Chinese grammar: 第-、老-、小-"},
+    "native_title": "第-、老-、小-",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Điểm ngữ pháp này giới thiệu ba tiền tố tiếng Trung thông dụng: 第- dùng để tạo số thứ tự, 老- dùng trước họ hoặc danh từ chỉ người để tạo cách gọi thân mật, và 小- dùng trước họ hoặc danh từ để chỉ người trẻ tuổi hoặc tạo cách gọi thân mật.",
+      "en": "This grammar point introduces three common Chinese prefixes: 第- for forming ordinal numbers, 老- before surnames or nouns for familiar address, and 小- before surnames or nouns for younger people or familiar address."
+    },
+    "sub": {"vi": "tiền tố thông dụng", "en": "common prefixes"},
+    "native_title_pinyin": ["dì", "", "", "lǎo", "", "", "xiǎo", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói thứ tự, ví dụ 'người thứ nhất', 'lần thứ ba'.",
+      "en": "When you want to express order or rank, e.g. 'the first person', 'the third time'."
+    },
+    {
+      "vi": "Khi bạn muốn gọi một người lớn tuổi hoặc người quen bằng họ kèm 老-, ví dụ 老王.",
+      "en": "When you want to address an older person or acquaintance with their surname plus 老-, e.g. 老王."
+    },
+    {
+      "vi": "Khi bạn muốn gọi một người trẻ hơn hoặc bạn bè thân mật bằng họ kèm 小-, ví dụ 小李.",
+      "en": "When you want to address a younger person or a close friend with their surname plus 小-, e.g. 小李."
+    },
+    {
+      "vi": "Khi bạn muốn nói về một người hoặc vật nhỏ bé, ví dụ 小猫, 小房子.",
+      "en": "When you want to talk about a small person or thing, e.g. 小猫, 小房子."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "第",
+        "role": "marker",
+        "label": {"vi": "tiền tố thứ tự", "en": "ordinal prefix"},
+        "pinyin": ["dì"]
+      },
+      {"text": "số", "role": "other", "label": {"vi": "số đếm", "en": "number"}, "pinyin": ["", ""]},
+      {
+        "text": "danh từ",
+        "role": "object",
+        "label": {"vi": "danh từ", "en": "noun"},
+        "pinyin": ["", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他是第一个到的人。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "第- kết hợp với số từ tạo thành số thứ tự.",
+        "en": "第- combines with a number to form an ordinal number."
+      },
+      "translation": {"vi": "Anh ấy là người đầu tiên đến.", "en": "He is the first person to arrive."},
+      "pinyin": ["tā", "shì", "dì", "yí", "gè", "dào", "de", "rén", ""]
+    },
+    {
+      "text": "老王是我的邻居。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 3, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "老- đặt trước họ để gọi thân mật người lớn tuổi.",
+        "en": "老- before a surname creates a familiar address for an older person."
+      },
+      "translation": {"vi": "Ông Vương là hàng xóm của tôi.", "en": "Old Wang is my neighbor."},
+      "pinyin": ["lǎo", "wáng", "shì", "wǒ", "de", "lín", "jū", ""]
+    },
+    {
+      "text": "小李喜欢小猫。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "小- đặt trước họ hoặc danh từ để chỉ người trẻ hoặc vật nhỏ.",
+        "en": "小- before a surname or noun indicates a younger person or a small thing."
+      },
+      "translation": {"vi": "Tiểu Lý thích mèo con.", "en": "Xiao Li likes kittens."},
+      "pinyin": ["xiǎo", "lǐ", "xǐ", "huān", "xiǎo", "māo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi 第- tạo số thứ tự, sau số đếm thường cần lượng từ như 个 trước danh từ. Thiếu lượng từ là lỗi phổ biến.",
+        "en": "When 第- forms an ordinal, a measure word like 个 is usually needed after the number before the noun. Missing it is a common error."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "他是第一到的人。",
+      "right": "他是第一个到的人。",
+      "wrong_pinyin": ["tā", "shì", "dì", "yī", "dào", "de", "rén", ""],
+      "right_pinyin": ["tā", "shì", "dì", "yí", "gè", "dào", "de", "rén", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他是___个到的人。",
+      "options": [
+        {"text": "第一", "error_tag": null, "pinyin": ["dì", "yī"]},
+        {"text": "一第", "error_tag": "word_order", "pinyin": ["yī", "dì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "第- phải đứng trước số đếm để tạo số thứ tự.",
+        "en": "第- must come before the number to form an ordinal."
+      },
+      "q_pinyin": ["tā", "shì", "", "", "", "gè", "dào", "de", "rén", ""]
+    },
+    {
+      "q": "___王是我的邻居。",
+      "options": [
+        {"text": "老", "error_tag": null, "pinyin": ["lǎo"]},
+        {"text": "小", "error_tag": "word_choice", "pinyin": ["xiǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "老- dùng trước họ để gọi người lớn tuổi thân mật; 小- dùng cho người trẻ hơn.",
+        "en": "老- is used before a surname for an older person; 小- is for a younger person."
+      },
+      "q_pinyin": ["", "", "", "wáng", "shì", "wǒ", "de", "lín", "jū", ""]
+    },
+    {
+      "q": "小李喜欢___。",
+      "options": [
+        {"text": "小猫", "error_tag": null, "pinyin": ["xiǎo", "māo"]},
+        {"text": "猫小", "error_tag": "word_order", "pinyin": ["māo", "xiǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "小- đứng trước danh từ để chỉ vật nhỏ.",
+        "en": "小- comes before a noun to indicate a small thing."
+      },
+      "q_pinyin": ["xiǎo", "lǐ", "xǐ", "huān", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giới thiệu một người bạn hoặc người thân bằng cách dùng 老- hoặc 小- trước họ của họ.",
+      "en": "Write a sentence introducing a friend or relative using 老- or 小- before their surname."
+    },
+    "placeholder": "我认识……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["老", "小"], "role": "marker"}, {"regex": "[\\u4e00-\\u9fff]", "role": "other"}]
+    },
+    "sample": {"text": "我认识老王。", "pinyin": ["wǒ", "rèn", "shí", "lǎo", "wáng", ""]},
+    "placeholder_pinyin": ["wǒ", "rèn", "shí", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338230",
+    "generated_at": "2026-10-07T01:57:10Z"
+  },
+  "review": null
+}

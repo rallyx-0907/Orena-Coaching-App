@@ -1,0 +1,239 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_5_patterns",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reference",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.r5.hsk6_4_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk6-5-patterns"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk6-5-patterns"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 之 patterns", "en": "Chinese grammar: 之 patterns"},
+    "native_title": "“之”字结构",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "之 là một trợ từ văn viết, dùng để nối hai danh từ theo kiểu trang trọng hoặc tạo các khuôn cố định như 之一, 之后, 之所以.",
+      "en": "之 is a literary particle that links nouns in a formal way or forms fixed patterns such as 之一, 之后, and 之所以."
+    },
+    "sub": {"vi": "trợ từ văn viết", "en": "literary particle"},
+    "native_title_pinyin": ["", "zhī", "", "zì", "jié", "gòu"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi viết văn bản trang trọng, muốn nói 'của' hoặc quan hệ giữa hai danh từ mà không dùng 的.",
+      "en": "In formal writing, to express 'of' or a relation between two nouns without using 的."
+    },
+    {
+      "vi": "Khi dùng các khuôn cố định như 之一 (một trong những), 之后 (sau khi), 之前 (trước khi), 之所以...是因为... (sở dĩ... là vì...).",
+      "en": "In fixed patterns such as 之一 (one of), 之后 (after), 之前 (before), and 之所以...是因为... (the reason why... is because...)."
+    },
+    {
+      "vi": "Khi cần diễn đạt sắc thái cổ điển, ít dùng trong khẩu ngữ hàng ngày.",
+      "en": "When a classical or formal tone is needed; it is rarely used in everyday spoken Chinese."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "N1",
+        "role": "subject",
+        "label": {"vi": "danh từ / cụm danh từ thứ nhất", "en": "first noun / noun phrase"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "之",
+        "role": "particle",
+        "label": {"vi": "trợ từ văn viết", "en": "literary particle"},
+        "pinyin": ["zhī"]
+      },
+      {
+        "text": "N2",
+        "role": "object",
+        "label": {"vi": "danh từ / cụm danh từ thứ hai", "en": "second noun / noun phrase"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "坚持是成功之道之一。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 5, "role": "subject"},
+        {"start": 5, "end": 6, "role": "particle"},
+        {"start": 6, "end": 9, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "之 nối 成功 với 道, tạo cụm trang trọng 'con đường thành công'; 之一 nghĩa là 'một trong những'.",
+        "en": "之 links 成功 to 道, forming the formal phrase 'the way of success'; 之一 means 'one of'."
+      },
+      "translation": {
+        "vi": "Kiên trì là một trong những con đường dẫn đến thành công.",
+        "en": "Persistence is one of the paths to success."
+      },
+      "pinyin": ["jiān", "chí", "shì", "chéng", "gōng", "zhī", "dào", "zhī", "yī", ""]
+    },
+    {
+      "text": "这正是问题之所在。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 5, "role": "subject"},
+        {"start": 5, "end": 6, "role": "particle"},
+        {"start": 6, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "问题之所在 là cấu trúc trang trọng, dùng 之 thay cho 的 để nối quan hệ định ngữ.",
+        "en": "问题之所在 is a formal construction using 之 in place of 的 for an attributive relation."
+      },
+      "translation": {
+        "vi": "Đây chính là chỗ cốt lõi của vấn đề.",
+        "en": "This is exactly where the problem lies."
+      },
+      "pinyin": ["zhè", "zhèng", "shì", "wèn", "tí", "zhī", "suǒ", "zài", ""]
+    },
+    {
+      "text": "会议结束之后，我们再做决定。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "之后 là khuôn cố định nghĩa 'sau khi', nối sự kiện 'họp kết thúc' với mốc thời gian phía sau.",
+        "en": "之后 is a fixed pattern meaning 'after', linking the event 'the meeting ends' to the following time point."
+      },
+      "translation": {
+        "vi": "Sau khi cuộc họp kết thúc, chúng ta sẽ quyết định.",
+        "en": "After the meeting ends, we will make a decision."
+      },
+      "pinyin": ["huì", "yì", "jié", "shù", "zhī", "hòu", "", "wǒ", "men", "zài", "zuò", "jué", "dìng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "之 không thay thế 的 trong quan hệ sở hữu thông thường; 之 chỉ dùng trong các kết hợp văn viết hoặc khuôn cố định.",
+        "en": "之 does not replace 的 in ordinary possessive relations; it is used only in literary collocations or fixed patterns."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我的之书。",
+      "right": "我的书。",
+      "wrong_pinyin": ["wǒ", "de", "zhī", "shū", ""],
+      "right_pinyin": ["wǒ", "de", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他是公司成功___一。",
+      "options": [
+        {"text": "之", "error_tag": null, "pinyin": ["zhī"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "之一 là khuôn cố định nghĩa 'một trong những'; không dùng 的 ở đây.",
+        "en": "之一 is a fixed pattern meaning 'one of'; 的 is not used here."
+      },
+      "q_pinyin": ["tā", "shì", "gōng", "sī", "chéng", "gōng", "", "", "", "yī", ""]
+    },
+    {
+      "q": "毕业___后，他去了北京。",
+      "options": [
+        {"text": "之", "error_tag": null, "pinyin": ["zhī"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "之后 là khuôn cố định nghĩa 'sau khi'; không dùng 的 trong khuôn này.",
+        "en": "之后 is a fixed pattern meaning 'after'; 的 is not used in this pattern."
+      },
+      "q_pinyin": ["bì", "yè", "", "", "", "hòu", "", "tā", "qù", "le", "běi", "jīng", ""]
+    },
+    {
+      "q": "他___所以成功，是因为准备充分。",
+      "options": [
+        {"text": "之", "error_tag": null, "pinyin": ["zhī"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "之所以...是因为... là khuôn cố định nghĩa 'sở dĩ... là vì...'; không dùng 的.",
+        "en": "之所以...是因为... is a fixed pattern meaning 'the reason why... is because...'; 的 is not used."
+      },
+      "q_pinyin": [
+        "tā",
+        "",
+        "",
+        "",
+        "suǒ",
+        "yǐ",
+        "chéng",
+        "gōng",
+        "",
+        "shì",
+        "yīn",
+        "wèi",
+        "zhǔn",
+        "bèi",
+        "chōng",
+        "fèn",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng dùng 之 để nói về một trong những yếu tố dẫn đến thành công của bạn.",
+      "en": "Write a formal sentence using 之 to talk about one of the factors leading to your success."
+    },
+    "placeholder": "……是……之一。",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["之"], "role": "particle"}]},
+    "sample": {
+      "text": "努力是成功之道之一。",
+      "pinyin": ["nǔ", "lì", "shì", "chéng", "gōng", "zhī", "dào", "zhī", "yī", ""]
+    },
+    "placeholder_pinyin": ["", "", "shì", "", "", "zhī", "yī", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351893",
+    "generated_at": "2026-10-07T05:44:53Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-5-patterns"],
+      "content_version": 2,
+      "content_hash": "83a6cc2b740dd749cb190b6c03826aa0f15cd8863283c4b50e4b2b0bbec52316",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-5-patterns",
+          "issue": "R5 ghi 'N/phrase + 之 + N: 成功之道、问题之一; fixed: 之后、之前、之所以.' nhưng không phân biệt rõ 之 là trợ từ nối danh từ hay là một phần của khuôn cố định.",
+          "fix": "Tách rõ hai chức năng: 之 nối N1 và N2 trong quan hệ trang trọng, và 之 trong các khuôn cố định như 之一, 之后, 之所以."
+        },
+        {
+          "r5_id": "zh-hsk6-5-patterns",
+          "issue": "R5 đưa ví dụ '他之所以成功，是因为准备得很充分。' nhưng không giải thích 之所以...是因为... là khuôn cố định.",
+          "fix": "Thêm giải thích 之所以...是因为... là khuôn cố định nghĩa 'sở dĩ... là vì...' và đưa vào when_to_use."
+        },
+        {
+          "r5_id": "zh-hsk6-5-patterns",
+          "issue": "R5 liệt kê lỗi '所有的普通修饰都改成之' nhưng không đưa ra ví dụ sai cụ thể.",
+          "fix": "Đưa lỗi cụ thể '我的之书' và sửa thành '我的书', kèm giải thích 之 không thay thế 的 trong sở hữu thông thường."
+        }
+      ]
+    }
+  },
+  "review": null
+}

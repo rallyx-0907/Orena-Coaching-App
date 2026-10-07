@@ -1,0 +1,270 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_6_rhetorical_questions",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.duo_adjective_question"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk6-6-rhetorical-questions", "zh-hsk79-15-rhetorical-questions-and-negation"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk6-6-rhetorical-questions", "zh-hsk79-15-rhetorical-questions-and-negation"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: 难道/岂/何尝 rhetorical questions",
+      "en": "Chinese grammar: 难道/岂/何尝 rhetorical questions"
+    },
+    "native_title": "“难道/岂/何尝”反问句",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Câu hỏi tu từ với 难道、岂、何尝 dùng hình thức nghi vấn để khẳng định hoặc phủ định mạnh mẽ, không nhằm hỏi thông tin.",
+      "en": "Rhetorical questions with 难道, 岂 and 何尝 use question form to make a strong assertion or denial, not to ask for information."
+    },
+    "sub": {"vi": "câu hỏi tu từ", "en": "rhetorical questions"},
+    "native_title_pinyin": ["", "nán", "dào", "", "qǐ", "", "hé", "cháng", "", "fǎn", "wèn", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn phản bác một giả định hoặc nhấn mạnh rằng điều gì đó là hiển nhiên, dùng 难道…吗？",
+      "en": "Use 难道…吗？ to challenge an assumption or stress that something is obvious."
+    },
+    {
+      "vi": "Khi muốn nói 'sao có thể / không thể nào' với sắc thái trang trọng hoặc văn viết, dùng 岂能 / 岂可.",
+      "en": "Use 岂能 / 岂可 for a formal or literary 'how could one possibly / one cannot'."
+    },
+    {
+      "vi": "Khi muốn khẳng định mạnh mẽ 'đâu phải là không…', dùng 何尝不 + động từ / tính từ.",
+      "en": "Use 何尝不 + verb/adjective to strongly affirm 'it is not that I do not…'."
+    },
+    {
+      "vi": "Khi cần thể hiện thái độ hoài nghi, trách móc hoặc bất bình trong giao tiếp trang trọng.",
+      "en": "Use these forms to express doubt, reproach or indignation in formal contexts."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语1",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ trước từ phản vấn", "en": "pre-marker subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ", ""]
+      },
+      {
+        "text": "难道/岂/何尝",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu phản vấn", "en": "rhetorical marker"},
+        "options": [
+          {"text": "难道", "pinyin": ["nán", "dào"]},
+          {"text": "岂", "pinyin": ["qǐ"]},
+          {"text": "何尝", "pinyin": ["hé", "cháng"]}
+        ],
+        "pinyin": ["nán", "dào", "", "qǐ", "", "hé", "cháng"]
+      },
+      {
+        "text": "主语2",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ sau từ phản vấn", "en": "post-marker subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ", ""]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "吗",
+        "role": "particle",
+        "label": {"vi": "trợ từ 吗", "en": "particle 吗"},
+        "optional": true,
+        "pinyin": ["ma"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "难道你没看见这个问题吗？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 6, "end": 10, "role": "object"},
+        {"start": 10, "end": 11, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "难道…吗 dùng hình thức câu hỏi để nhấn mạnh một phán đoán ngược lại.",
+        "en": "难道…吗 uses a question form to strongly imply the opposite judgment."
+      },
+      "translation": {"vi": "Chẳng lẽ bạn không nhìn thấy vấn đề này sao?", "en": "Didn't you see this problem?"},
+      "pinyin": ["nán", "dào", "nǐ", "méi", "kàn", "jiàn", "zhè", "ge", "wèn", "tí", "ma", ""]
+    },
+    {
+      "text": "这么重要的事情岂能忽视？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 7, "end": 8, "role": "marker"},
+        {"start": 8, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "岂 là dấu hiệu phản vấn trang trọng, thường không cần 吗.",
+        "en": "岂 is a formal rhetorical marker and normally does not need 吗."
+      },
+      "translation": {
+        "vi": "Chuyện quan trọng như vậy sao có thể xem nhẹ?",
+        "en": "How could such an important matter be ignored?"
+      },
+      "pinyin": ["zhè", "me", "zhòng", "yào", "de", "shì", "qíng", "qǐ", "néng", "hū", "shì", ""]
+    },
+    {
+      "text": "我何尝不想早点解决这个问题？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 9, "role": "verb"},
+        {"start": 9, "end": 13, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "何尝… thường ngụ ý người nói thực ra có mong muốn hoặc quan điểm ngược lại.",
+        "en": "何尝… often implies that the speaker actually holds the opposite wish or view."
+      },
+      "translation": {
+        "vi": "Đâu phải tôi không muốn giải quyết vấn đề này sớm?",
+        "en": "It's not that I don't want to solve this problem sooner."
+      },
+      "pinyin": [
+        "wǒ",
+        "hé",
+        "cháng",
+        "bù",
+        "xiǎng",
+        "zǎo",
+        "diǎn",
+        "jiě",
+        "jué",
+        "zhè",
+        "ge",
+        "wèn",
+        "tí",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "何尝不… là mẫu phản vấn cố định thường mang nghĩa khẳng định mạnh; bỏ 不 làm đổi cấu trúc và ý nghĩa.",
+        "en": "何尝不… is a fixed rhetorical pattern that usually conveys strong affirmation; removing 不 changes the construction and meaning."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我何尝想去？",
+      "right": "我何尝不想去？",
+      "wrong_pinyin": ["wǒ", "hé", "cháng", "xiǎng", "qù", ""],
+      "right_pinyin": ["wǒ", "hé", "cháng", "bù", "xiǎng", "qù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "难道你___这个问题吗？",
+      "options": [
+        {"text": "没看见", "error_tag": null, "pinyin": ["méi", "kàn", "jiàn"]},
+        {"text": "不看见", "error_tag": "aspect", "pinyin": ["bù", "kàn", "jiàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với 看见, phủ định quá khứ dùng 没, không dùng 不.",
+        "en": "With 看见, past negation uses 没, not 不."
+      },
+      "q_pinyin": ["nán", "dào", "nǐ", "", "", "", "zhè", "ge", "wèn", "tí", "ma", ""]
+    },
+    {
+      "q": "这么重要的事情___忽视？",
+      "options": [
+        {"text": "岂能", "error_tag": null, "pinyin": ["qǐ", "néng"]},
+        {"text": "难道", "error_tag": "word_choice", "pinyin": ["nán", "dào"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "岂能 là cách nói trang trọng 'sao có thể', phù hợp với câu hỏi tu từ.",
+        "en": "岂能 is the formal 'how could one possibly', fitting the rhetorical question."
+      },
+      "q_pinyin": ["zhè", "me", "zhòng", "yào", "de", "shì", "qíng", "", "", "", "hū", "shì", ""]
+    },
+    {
+      "q": "我何尝___早点解决这个问题？",
+      "options": [
+        {"text": "不想", "error_tag": null, "pinyin": ["bù", "xiǎng"]},
+        {"text": "想", "error_tag": "other", "pinyin": ["xiǎng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "何尝不…？ là cấu trúc cố định, phải có 不 trước động từ.",
+        "en": "何尝不…？ is a fixed pattern; 不 must precede the verb."
+      },
+      "q_pinyin": ["wǒ", "hé", "cháng", "", "", "", "zǎo", "diǎn", "jiě", "jué", "zhè", "ge", "wèn", "tí", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi tu từ dùng 难道…吗？ để phản bác một giả định.",
+      "en": "Write a rhetorical question with 难道…吗？ to challenge an assumption."
+    },
+    "placeholder": "难道……吗？",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["难道", "岂", "何尝"], "role": "marker"}]},
+    "sample": {
+      "text": "难道你不知道这件事吗？",
+      "pinyin": ["nán", "dào", "nǐ", "bù", "zhī", "dào", "zhè", "jiàn", "shì", "ma", ""]
+    },
+    "placeholder_pinyin": ["nán", "dào", "", "", "ma", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351894",
+    "generated_at": "2026-10-07T05:44:54Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-6-rhetorical-questions", "zh-hsk79-15-rhetorical-questions-and-negation"],
+      "content_version": 2,
+      "content_hash": "45828bf5e95e37b41e816fbac68b9c03d19a28ae3159eb1a3de0a08aa55e45a1",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-6-rhetorical-questions",
+          "issue": "R5 gộp 难道/岂/何尝 vào một công thức duy nhất, nhưng mỗi từ có vị trí và cấu trúc riêng.",
+          "fix": "Tách thành ba công thức riêng: 难道…吗？, 岂能/岂可…？, 何尝不…？."
+        },
+        {
+          "r5_id": "zh-hsk6-6-rhetorical-questions",
+          "issue": "R5 đưa ví dụ 我何尝不想早点解决这个问题？ nhưng không giải thích 何尝不…？ là cấu trúc cố định.",
+          "fix": "Thêm giải thích 何尝不…？ là cấu trúc cố định, nghĩa 'đâu phải là không…'."
+        },
+        {
+          "r5_id": "zh-hsk79-15-rhetorical-questions-and-negation",
+          "issue": "R5 dùng 岂能 trong câu hỏi tu từ nhưng không nêu rõ đây là văn phong trang trọng, ít dùng trong khẩu ngữ.",
+          "fix": "Ghi chú 岂能/岂可 mang tính văn viết/trang trọng, không dùng trong giao tiếp thân mật."
+        }
+      ]
+    }
+  },
+  "review": null
+}

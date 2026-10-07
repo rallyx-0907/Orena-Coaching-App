@@ -1,0 +1,404 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_18_academic_definition_and_classification",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_17_ellipsis_and_recoverability"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-18-academic-definition-and-classification"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk79-18-academic-definition-and-classification"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Academic definition and classification",
+      "en": "Chinese grammar: Academic definition and classification"
+    },
+    "native_title": "学术定义与分类",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Cấu trúc dùng để định nghĩa một khái niệm học thuật (nêu phạm trù và đặc điểm phân biệt) hoặc phân loại một tập hợp theo một tiêu chí rõ ràng.",
+      "en": "Structures for defining an academic concept (category plus distinguishing property) or classifying a set according to an explicit criterion."
+    },
+    "sub": {"vi": "định nghĩa và phân loại", "en": "definition and classification"},
+    "native_title_pinyin": ["xué", "shù", "dìng", "yì", "yǔ", "fēn", "lèi"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi cần giải thích một thuật ngữ mới cho người đọc, thường mở đầu bằng 所谓 hoặc đặt thuật ngữ làm chủ ngữ rồi dùng 是指 / 指的是.",
+      "en": "When you need to explain a new term for the reader, usually opening with 所谓 or placing the term as subject followed by 是指 / 指的是."
+    },
+    {
+      "vi": "Khi cần chia một nhóm thành các loại nhỏ theo một tiêu chí, dùng 按照 + tiêu chí + 可分为 / 分为.",
+      "en": "When you need to divide a group into subcategories by a criterion, use 按照 + criterion + 可分为 / 分为."
+    },
+    {
+      "vi": "Khi chỉ cần nói một đối tượng thuộc phạm trù nào mà không phân chia tiếp, dùng 属于.",
+      "en": "When you only need to state which category an item belongs to without further division, use 属于."
+    },
+    {
+      "vi": "Khi trình bày kết quả nghiên cứu và muốn nêu rõ số nhóm, thêm số lượng sau 分为 (ví dụ 分为……两组).",
+      "en": "When presenting research results and wanting to state the number of groups, add a quantity after 分为 (e.g. 分为……两组)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "定义/分类标记",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu định nghĩa/phân loại", "en": "definition/classification marker"},
+        "optional": true,
+        "options": [
+          {"text": "所谓", "pinyin": ["suǒ", "wèi"]},
+          {"text": "按照影响范围", "pinyin": ["àn", "zhào", "yǐng", "xiǎng", "fàn", "wéi"]}
+        ],
+        "pinyin": ["dìng", "yì", "", "fēn", "lèi", "biāo", "jì"]
+      },
+      {"text": "X", "role": "subject", "label": {"vi": "đối tượng X", "en": "X"}, "pinyin": [""]},
+      {
+        "text": "是指/可分为/属于",
+        "role": "verb",
+        "label": {"vi": "quan hệ định nghĩa/phân loại", "en": "definition/classification relation"},
+        "options": [
+          {"text": "是指", "pinyin": ["shì", "zhǐ"]},
+          {"text": "指的是", "pinyin": ["zhǐ", "de", "shì"]},
+          {"text": "可分为", "pinyin": ["kě", "fēn", "wéi"]},
+          {"text": "属于", "pinyin": ["shǔ", "yú"]}
+        ],
+        "pinyin": ["shì", "zhǐ", "", "kě", "fēn", "wéi", "", "shǔ", "yú"]
+      },
+      {"text": "Y", "role": "complement", "label": {"vi": "nội dung Y", "en": "Y"}, "pinyin": [""]}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "所谓‘系统可用性’，是指系统在规定时间内保持可访问状态的能力。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 9, "role": "subject"},
+        {"start": 10, "end": 12, "role": "verb"},
+        {"start": 12, "end": 30, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Định nghĩa thuật ngữ: nêu phạm trù (能力) và đặc điểm phân biệt (在规定时间内保持可访问状态).",
+        "en": "Term definition: gives the category (能力) and the distinguishing property (在规定时间内保持可访问状态)."
+      },
+      "translation": {
+        "vi": "'Tính sẵn sàng hệ thống' là khả năng hệ thống duy trì trạng thái có thể truy cập trong thời gian quy định.",
+        "en": "'System availability' refers to the ability of a system to remain accessible within a specified time."
+      },
+      "pinyin": [
+        "suǒ",
+        "wèi",
+        "",
+        "xì",
+        "tǒng",
+        "kě",
+        "yòng",
+        "xìng",
+        "",
+        "",
+        "shì",
+        "zhǐ",
+        "xì",
+        "tǒng",
+        "zài",
+        "guī",
+        "dìng",
+        "shí",
+        "jiān",
+        "nèi",
+        "bǎo",
+        "chí",
+        "kě",
+        "fǎng",
+        "wèn",
+        "zhuàng",
+        "tài",
+        "de",
+        "néng",
+        "lì",
+        ""
+      ]
+    },
+    {
+      "text": "按照影响范围，故障可分为局部故障和系统故障。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "marker"},
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 12, "role": "verb"},
+        {"start": 12, "end": 21, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Phân loại: tiêu chí (影响范围) đứng trước, kết quả chia (局部故障和系统故障) đứng sau.",
+        "en": "Classification: the criterion (影响范围) comes first, the resulting categories (局部故障和系统故障) follow."
+      },
+      "translation": {
+        "vi": "Theo phạm vi ảnh hưởng, lỗi có thể chia thành lỗi cục bộ và lỗi hệ thống.",
+        "en": "According to the scope of impact, faults can be divided into local faults and system faults."
+      },
+      "pinyin": [
+        "àn",
+        "zhào",
+        "yǐng",
+        "xiǎng",
+        "fàn",
+        "wéi",
+        "",
+        "gù",
+        "zhàng",
+        "kě",
+        "fēn",
+        "wéi",
+        "jú",
+        "bù",
+        "gù",
+        "zhàng",
+        "hé",
+        "xì",
+        "tǒng",
+        "gù",
+        "zhàng",
+        ""
+      ]
+    },
+    {
+      "text": "这类结构属于条件复句。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 6, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nêu quan hệ thành viên: đối tượng thuộc một phạm trù đã biết, không phân chia tiếp.",
+        "en": "States class membership: the item belongs to a known category, without further division."
+      },
+      "translation": {
+        "vi": "Loại cấu trúc này thuộc câu phức điều kiện.",
+        "en": "This type of structure belongs to conditional complex sentences."
+      },
+      "pinyin": ["zhè", "lèi", "jié", "gòu", "shǔ", "yú", "tiáo", "jiàn", "fù", "jù", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Định nghĩa vòng vo: vế sau lặp lại chính từ được định nghĩa mà không nêu phạm trù hay đặc điểm phân biệt.",
+        "en": "Circular definition: the second clause repeats the term being defined without giving a category or distinguishing property."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "所谓分类，就是把东西分类。",
+      "right": "所谓分类，是指按照明确标准将对象划分为不同类别。",
+      "wrong_pinyin": ["suǒ", "wèi", "fēn", "lèi", "", "jiù", "shì", "bǎ", "dōng", "xī", "fēn", "lèi", ""],
+      "right_pinyin": [
+        "suǒ",
+        "wèi",
+        "fēn",
+        "lèi",
+        "",
+        "shì",
+        "zhǐ",
+        "àn",
+        "zhào",
+        "míng",
+        "què",
+        "biāo",
+        "zhǔn",
+        "jiàng",
+        "duì",
+        "xiàng",
+        "huà",
+        "fēn",
+        "wèi",
+        "bù",
+        "tóng",
+        "lèi",
+        "bié",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "所谓‘风险暴露’，___指金融机构因市场波动而可能遭受损失的程度。",
+      "options": [
+        {"text": "是", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc định nghĩa là 所谓X，是指……; 是 đứng trước 指 để tạo thành 是指.",
+        "en": "The definition pattern is 所谓X，是指……; 是 precedes 指 to form 是指."
+      },
+      "q_pinyin": [
+        "suǒ",
+        "wèi",
+        "",
+        "fēng",
+        "xiǎn",
+        "bào",
+        "lù",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "zhǐ",
+        "jīn",
+        "róng",
+        "jī",
+        "gòu",
+        "yīn",
+        "shì",
+        "chǎng",
+        "bō",
+        "dòng",
+        "ér",
+        "kě",
+        "néng",
+        "zāo",
+        "shòu",
+        "sǔn",
+        "shī",
+        "de",
+        "chéng",
+        "dù",
+        ""
+      ]
+    },
+    {
+      "q": "按照影响范围，故障可___为局部故障和系统故障。",
+      "options": [
+        {"text": "分", "error_tag": null, "pinyin": ["fēn"]},
+        {"text": "分成", "error_tag": "collocation", "pinyin": ["fēn", "chéng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc phân loại dùng 可分为, không dùng 可分成 trong mẫu này.",
+        "en": "The classification pattern uses 可分为, not 可分成 in this frame."
+      },
+      "q_pinyin": [
+        "àn",
+        "zhào",
+        "yǐng",
+        "xiǎng",
+        "fàn",
+        "wéi",
+        "",
+        "gù",
+        "zhàng",
+        "kě",
+        "",
+        "",
+        "",
+        "wèi",
+        "jú",
+        "bù",
+        "gù",
+        "zhàng",
+        "hé",
+        "xì",
+        "tǒng",
+        "gù",
+        "zhàng",
+        ""
+      ]
+    },
+    {
+      "q": "这类结构___条件复句。",
+      "options": [
+        {"text": "属于", "error_tag": null, "pinyin": ["shǔ", "yú"]},
+        {"text": "是属", "error_tag": "word_order", "pinyin": ["shì", "shǔ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Để nêu quan hệ thành viên, dùng 属于; 是属 sai trật tự từ.",
+        "en": "To state class membership, use 属于; 是属 has wrong word order."
+      },
+      "q_pinyin": ["zhè", "lèi", "jié", "gòu", "", "", "", "tiáo", "jiàn", "fù", "jù", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu định nghĩa một thuật ngữ trong lĩnh vực của bạn, dùng cấu trúc 所谓……，是指…….",
+      "en": "Write one sentence defining a term in your field, using the pattern 所谓……，是指……."
+    },
+    "placeholder": "所谓……，是指……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["是指", "可分为", "属于"], "role": "verb"}]},
+    "sample": {
+      "text": "所谓‘数据冗余’，是指同一数据在系统中重复存储的现象。",
+      "pinyin": [
+        "suǒ",
+        "wèi",
+        "",
+        "shù",
+        "jù",
+        "rǒng",
+        "yú",
+        "",
+        "",
+        "shì",
+        "zhǐ",
+        "tóng",
+        "yī",
+        "shù",
+        "jù",
+        "zài",
+        "xì",
+        "tǒng",
+        "zhōng",
+        "chóng",
+        "fù",
+        "cún",
+        "chǔ",
+        "de",
+        "xiàn",
+        "xiàng",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["suǒ", "wèi", "", "", "", "shì", "zhǐ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351896",
+    "generated_at": "2026-10-07T05:44:56Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-18-academic-definition-and-classification"],
+      "content_version": 2,
+      "content_hash": "862cdd52629770ae7f655773e85640ceb60657bbe03fc33a8198e1c02fba94e2",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-18-academic-definition-and-classification",
+          "issue": "R5 gộp cả định nghĩa và phân loại vào một công thức duy nhất, không tách rõ hai tuyến cấu trúc khác nhau.",
+          "fix": "Tách thành hai công thức riêng: định nghĩa (所谓X，是指Y) và phân loại (按照Z，X可分为Y)."
+        },
+        {
+          "r5_id": "zh-hsk79-18-academic-definition-and-classification",
+          "issue": "R5 đưa ví dụ 本研究将用户分为新用户和长期用户两组 nhưng không nêu tiêu chí phân loại, thiếu tính học thuật.",
+          "fix": "Thay bằng ví dụ có tiêu chí rõ ràng: 按照影响范围，故障可分为局部故障和系统故障。"
+        },
+        {
+          "r5_id": "zh-hsk79-18-academic-definition-and-classification",
+          "issue": "R5 liệt kê lỗi 按年龄分类却给出按职业分组 nhưng không sửa thành câu đúng hoàn chỉnh.",
+          "fix": "Đưa ra câu đúng: 按照年龄，可分为三个年龄组。"
+        }
+      ]
+    }
+  },
+  "review": null
+}

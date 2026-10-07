@@ -1,0 +1,227 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_5_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reason_result",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_2_5_3.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk3-5-topic"], "gf0025": ["gf0025.hsk3.026", "gf0025.hsk3.072", "gf0025.hsk6.037"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk3-5-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 为了", "en": "Chinese grammar: 为了"},
+    "native_title": "为了",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "为了 đứng trước một mục đích, còn mệnh đề chính nêu hành động nhằm đạt mục đích đó.",
+      "en": "为了 introduces a purpose, and the main clause states the action taken to reach that purpose."
+    },
+    "sub": {"vi": "mục đích", "en": "purpose"},
+    "native_title_pinyin": ["wèi", "le"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói mình làm gì đó nhằm một mục tiêu cụ thể.",
+      "en": "When you want to say you do something in order to reach a specific goal."
+    },
+    {
+      "vi": "Khi mục đích là một danh từ hoặc một cụm động từ, không phải một sự việc đã xảy ra.",
+      "en": "When the purpose is a noun or a verb phrase, not an event that already happened."
+    },
+    {
+      "vi": "Khi bạn cần phân biệt mục đích (为了) với nguyên nhân (因为).",
+      "en": "When you need to separate purpose (为了) from cause (因为)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "为了",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu mục đích", "en": "purpose marker"},
+        "pinyin": ["wèi", "le"]
+      },
+      {
+        "text": "mục đích",
+        "role": "object",
+        "label": {"vi": "mục đích", "en": "purpose"},
+        "pinyin": ["", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "chủ ngữ",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["", "", "", "", "", "", ""]
+      },
+      {
+        "text": "hành động",
+        "role": "verb",
+        "label": {"vi": "hành động", "en": "action"},
+        "pinyin": ["", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "为了学好中文，我每天练习。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "为了 mở đầu mục đích, sau đó là hành động nhằm đạt mục đích.",
+        "en": "为了 opens the purpose, then the action taken to reach it follows."
+      },
+      "translation": {
+        "vi": "Để học tốt tiếng Trung, tôi luyện tập mỗi ngày.",
+        "en": "In order to learn Chinese well, I practice every day."
+      },
+      "pinyin": ["wèi", "le", "xué", "hǎo", "zhōng", "wén", "", "wǒ", "měi", "tiān", "liàn", "xí", ""]
+    },
+    {
+      "text": "为了身体健康，他每天跑步。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mục đích là một cụm danh từ, theo sau là hành động của chủ ngữ.",
+        "en": "The purpose is a noun phrase, followed by the subject's action."
+      },
+      "translation": {"vi": "Vì sức khỏe, anh ấy chạy bộ mỗi ngày.", "en": "For his health, he runs every day."},
+      "pinyin": ["wèi", "le", "shēn", "tǐ", "jiàn", "kāng", "", "tā", "měi", "tiān", "pǎo", "bù", ""]
+    },
+    {
+      "text": "为了省时间，我们坐地铁。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 5, "role": "object"},
+        {"start": 6, "end": 8, "role": "subject"},
+        {"start": 8, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "为了 + mục đích đứng trước chủ ngữ và hành động chính.",
+        "en": "为了 + purpose comes before the subject and the main action."
+      },
+      "translation": {
+        "vi": "Để tiết kiệm thời gian, chúng tôi đi tàu điện ngầm.",
+        "en": "To save time, we take the subway."
+      },
+      "pinyin": ["wèi", "le", "shěng", "shí", "jiān", "", "wǒ", "men", "zuò", "dì", "tiě", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Mưa là nguyên nhân, không phải mục đích; 为了 chỉ dùng cho mục đích.",
+        "en": "Rain is a cause, not a purpose; 为了 is only for purposes."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "为了下雨，我们没去。",
+      "right": "因为下雨，我们没去。",
+      "wrong_pinyin": ["wèi", "le", "xià", "yǔ", "", "wǒ", "men", "méi", "qù", ""],
+      "right_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "wǒ", "men", "méi", "qù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___学好中文，我每天练习。",
+      "options": [
+        {"text": "为了", "error_tag": null, "pinyin": ["wèi", "le"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "学好中文 là mục đích, nên dùng 为了; 因为 sẽ biến nó thành nguyên nhân.",
+        "en": "学好中文 is a purpose, so 为了 is correct; 因为 would make it a cause."
+      },
+      "q_pinyin": ["", "", "", "xué", "hǎo", "zhōng", "wén", "", "wǒ", "měi", "tiān", "liàn", "xí", ""]
+    },
+    {
+      "q": "为了身体健康，他每天___。",
+      "options": [
+        {"text": "跑步", "error_tag": null, "pinyin": ["pǎo", "bù"]},
+        {"text": "跑步了", "error_tag": "aspect", "pinyin": ["pǎo", "bù", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với thói quen hằng ngày, không cần thêm 了 sau động từ.",
+        "en": "With a daily habit, 了 is not added after the verb."
+      },
+      "q_pinyin": ["wèi", "le", "shēn", "tǐ", "jiàn", "kāng", "", "tā", "měi", "tiān", "", "", "", ""]
+    },
+    {
+      "q": "为了省时间，我们___地铁。",
+      "options": [
+        {"text": "坐", "error_tag": null, "pinyin": ["zuò"]},
+        {"text": "坐坐", "error_tag": "redundancy", "pinyin": ["zuò", "zuò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ 坐 không lặp lại trong câu này; 坐坐 mang nghĩa 'ngồi một chút' không phù hợp.",
+        "en": "The verb 坐 is not repeated here; 坐坐 means 'sit for a while' and does not fit."
+      },
+      "q_pinyin": ["wèi", "le", "shěng", "shí", "jiān", "", "wǒ", "men", "", "", "", "dì", "tiě", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về mục đích của bạn, dùng 为了 + mục đích + chủ ngữ + hành động.",
+      "en": "Write one sentence about your purpose, using 为了 + purpose + subject + action."
+    },
+    "placeholder": "为了……，我……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["为了"], "role": "marker"}]},
+    "sample": {
+      "text": "为了通过考试，我每天复习。",
+      "pinyin": ["wèi", "le", "tōng", "guò", "kǎo", "shì", "", "wǒ", "měi", "tiān", "fù", "xí", ""]
+    },
+    "placeholder_pinyin": ["wèi", "le", "", "", "", "wǒ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338256",
+    "generated_at": "2026-10-07T01:57:36Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-5-topic"],
+      "content_version": 2,
+      "content_hash": "bf29747172f9b4e5f8ba25a78d2537b82e80d2c0261898adb371f21acf25df9e",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-5-topic",
+          "issue": "R5 dạy 为了 như một cặp với 所以 trong phần giải thích, nhưng lại nói không dùng 所以 trực tiếp sau 为了; điều này gây nhầm lẫn.",
+          "fix": "Tôi chỉ giữ 为了 + mục đích + chủ ngữ + hành động, không đưa 所以 vào công thức hay ví dụ."
+        },
+        {
+          "r5_id": "zh-hsk3-5-topic",
+          "issue": "R5 có ví dụ '我为了考试在复习' nhưng không giải thích vị trí của 为了 sau chủ ngữ; ở HSK3 nên tập trung vào vị trí trước chủ ngữ.",
+          "fix": "Tôi dùng ba ví dụ đều có 为了 đứng trước chủ ngữ để làm mẫu rõ ràng."
+        },
+        {
+          "r5_id": "zh-hsk3-5-topic",
+          "issue": "R5 liệt kê lỗi '为了学中文，所以我买书' nhưng không nêu rõ 所以 không cần thiết; phần sửa lại thiếu 了 trong '我买了书'.",
+          "fix": "Tôi không đưa lỗi này vào common_mistakes vì trọng tâm là phân biệt 为了 và 因为; thay vào đó dùng lỗi '为了下雨'."
+        }
+      ]
+    }
+  },
+  "review": null
+}

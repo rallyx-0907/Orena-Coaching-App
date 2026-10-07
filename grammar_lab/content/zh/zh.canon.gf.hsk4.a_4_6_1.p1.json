@@ -1,0 +1,297 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_6_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_6_topic"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.062"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách biểu đạt số: 小数、分数、百分数、倍数的表示法", "en": "Expressing numbers: 小数、分数、百分数、倍数的表示法"},
+    "native_title": "小数、分数、百分数、倍数的表示法",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Cách dùng tiếng Trung để đọc và viết số thập phân, phân số, phần trăm và bội số.",
+      "en": "How Chinese expresses decimals, fractions, percentages and multiples."
+    },
+    "sub": {"vi": "số và tỉ lệ", "en": "numbers and ratios"},
+    "native_title_pinyin": [
+      "xiǎo",
+      "shù",
+      "",
+      "fēn",
+      "shù",
+      "",
+      "bǎi",
+      "fēn",
+      "shù",
+      "",
+      "bèi",
+      "shù",
+      "de",
+      "biǎo",
+      "shì",
+      "fǎ"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi cần nói một con số không nguyên, ví dụ 3,5 hay 0,25.",
+      "en": "When you need a non-whole number, such as 3.5 or 0.25."
+    },
+    {
+      "vi": "Khi so sánh một phần với tổng thể bằng phân số, ví dụ 三分之一.",
+      "en": "When comparing a part with a whole using a fraction, such as 三分之一."
+    },
+    {
+      "vi": "Khi nói tỉ lệ phần trăm trong báo cáo, mua sắm hay thống kê.",
+      "en": "When stating a percentage in reports, shopping or statistics."
+    },
+    {
+      "vi": "Khi nói một đại lượng tăng gấp bao nhiêu lần.",
+      "en": "When saying how many times larger a quantity is."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "số đếm", "en": "number"},
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "点",
+        "role": "marker",
+        "label": {"vi": "dấu thập phân", "en": "decimal marker"},
+        "optional": true,
+        "pinyin": ["diǎn"]
+      },
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "phần thập phân", "en": "decimal digits"},
+        "optional": true,
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "分之",
+        "role": "marker",
+        "label": {"vi": "dấu phân số", "en": "fraction marker"},
+        "optional": true,
+        "pinyin": ["fēn", "zhī"]
+      },
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "tử số", "en": "numerator"},
+        "optional": true,
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "百分之",
+        "role": "marker",
+        "label": {"vi": "dấu phần trăm", "en": "percent marker"},
+        "optional": true,
+        "pinyin": ["bǎi", "fēn", "zhī"]
+      },
+      {
+        "text": "倍",
+        "role": "classifier",
+        "label": {"vi": "lần, bội số", "en": "multiple"},
+        "optional": true,
+        "pinyin": ["bèi"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个西瓜重三点五公斤。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 8, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Số thập phân đọc là 三 点 五, không dùng dấu phẩy.",
+        "en": "A decimal is read as 三 点 五; no comma is used."
+      },
+      "translation": {"vi": "Quả dưa hấu này nặng 3,5 ki-lô-gam.", "en": "This watermelon weighs 3.5 kilograms."},
+      "pinyin": ["zhè", "ge", "xī", "guā", "zhòng", "sān", "diǎn", "wǔ", "gōng", "jīn", ""]
+    },
+    {
+      "text": "我们班三分之一的学生喜欢打篮球。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 6, "role": "marker"},
+        {"start": 6, "end": 7, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Phân số có mẫu số đứng trước 分之, tử số đứng sau.",
+        "en": "In a fraction the denominator comes before 分之 and the numerator after it."
+      },
+      "translation": {
+        "vi": "Một phần ba học sinh lớp tôi thích chơi bóng rổ.",
+        "en": "One third of the students in my class like playing basketball."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "bān",
+        "sān",
+        "fēn",
+        "zhī",
+        "yī",
+        "de",
+        "xué",
+        "shēng",
+        "xǐ",
+        "huān",
+        "dǎ",
+        "lán",
+        "qiú",
+        ""
+      ]
+    },
+    {
+      "text": "今年的产量是去年的两倍。",
+      "form": "affirmative",
+      "spans": [{"start": 9, "end": 10, "role": "other"}, {"start": 10, "end": 11, "role": "classifier"}],
+      "annotation": {
+        "vi": "倍 đứng sau số đếm để biểu thị bội số.",
+        "en": "倍 follows the number to express a multiple."
+      },
+      "translation": {
+        "vi": "Sản lượng năm nay gấp đôi năm ngoái.",
+        "en": "This year's output is twice last year's."
+      },
+      "pinyin": ["jīn", "nián", "de", "chǎn", "liàng", "shì", "qù", "nián", "de", "liǎng", "bèi", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu chỉ trọng lượng không dùng 了; 了 không phải trợ từ kết thúc cho mọi câu.",
+        "en": "A sentence stating a weight does not take 了; 了 is not a general sentence-final particle."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "这个西瓜重三点五公斤了。",
+      "right": "这个西瓜重三点五公斤。",
+      "wrong_pinyin": ["zhè", "ge", "xī", "guā", "zhòng", "sān", "diǎn", "wǔ", "gōng", "jīn", "le", ""],
+      "right_pinyin": ["zhè", "ge", "xī", "guā", "zhòng", "sān", "diǎn", "wǔ", "gōng", "jīn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这件衣服打八___，很便宜。",
+      "options": [
+        {"text": "折", "error_tag": null, "pinyin": ["zhé"]},
+        {"text": "倍", "error_tag": "word_choice", "pinyin": ["bèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "八折 nghĩa là giảm còn 80% giá, dùng 折 chứ không dùng 倍.",
+        "en": "八折 means 80% of the price; use 折, not 倍."
+      },
+      "q_pinyin": ["zhè", "jiàn", "yī", "fú", "dǎ", "bā", "", "", "", "", "hěn", "pián", "yi", ""]
+    },
+    {
+      "q": "我们学校有百分之六十___学生是女生。",
+      "options": [
+        {"text": "的", "error_tag": null, "pinyin": ["de"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau phần trăm cần 的 để nối với danh từ theo sau.",
+        "en": "After a percentage, 的 links it to the following noun."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "xué",
+        "xiào",
+        "yǒu",
+        "bǎi",
+        "fēn",
+        "zhī",
+        "liù",
+        "shí",
+        "",
+        "",
+        "",
+        "xué",
+        "shēng",
+        "shì",
+        "nǚ",
+        "shēng",
+        ""
+      ]
+    },
+    {
+      "q": "他的工资是我的三___。",
+      "options": [
+        {"text": "倍", "error_tag": null, "pinyin": ["bèi"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Biểu thị bội số dùng 倍, không dùng lượng từ 个.",
+        "en": "Multiples use 倍, not the measure word 个."
+      },
+      "q_pinyin": ["tā", "de", "gōng", "zī", "shì", "wǒ", "de", "sān", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một con số thập phân, phân số, phần trăm hoặc bội số trong đời sống của bạn.",
+      "en": "Write one sentence about a decimal, fraction, percentage or multiple in your own life."
+    },
+    "placeholder": "我们班有百分之……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "marker", "any_of": ["分之"]}]},
+    "sample": {
+      "text": "我们班有百分之五十的学生是女生。",
+      "pinyin": [
+        "wǒ",
+        "men",
+        "bān",
+        "yǒu",
+        "bǎi",
+        "fēn",
+        "zhī",
+        "wǔ",
+        "shí",
+        "de",
+        "xué",
+        "shēng",
+        "shì",
+        "nǚ",
+        "shēng",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "men", "bān", "yǒu", "bǎi", "fēn", "zhī", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338483",
+    "generated_at": "2026-10-07T02:01:23Z"
+  },
+  "review": null
+}

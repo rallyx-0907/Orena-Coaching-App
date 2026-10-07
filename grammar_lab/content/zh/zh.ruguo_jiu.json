@@ -1,0 +1,277 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.ruguo_jiu",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.condition_real",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["zh.zhiyao_jiu"],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk2-3-topic"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk2-3-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "如果 ... 就 ...", "en": "如果 ... 就 ..."},
+    "native_title": "“如果……就……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "如果...就... dùng để nêu một điều kiện và kết quả sẽ xảy ra nếu điều kiện đó được thỏa mãn.",
+      "en": "如果...就... expresses a real condition and the result that follows if that condition is met."
+    },
+    "sub": {"vi": "điều kiện thật", "en": "real condition"},
+    "native_title_pinyin": ["", "rú", "guǒ", "", "", "jiù", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói 'nếu A thì B' với một tình huống có thể xảy ra trong thực tế.",
+      "en": "When you want to say 'if A then B' about a situation that can realistically happen."
+    },
+    {
+      "vi": "Khi kết quả chỉ xảy ra sau khi điều kiện được thỏa mãn, không phải một nguyên nhân đã biết chắc chắn.",
+      "en": "When the result depends on the condition being met, not on a cause that is already certain."
+    },
+    {
+      "vi": "Khi bạn đưa ra lời khuyên, lời hứa hoặc quyết định có điều kiện.",
+      "en": "When you give advice, make a promise, or state a decision that depends on a condition."
+    },
+    {
+      "vi": "Khi chủ ngữ của mệnh đề kết quả xuất hiện, nó thường đứng trước 就.",
+      "en": "When the result clause has its own subject, that subject normally comes before 就."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "如果",
+        "role": "connector",
+        "label": {"vi": "nếu", "en": "if"},
+        "pinyin": ["rú", "guǒ"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "mệnh đề điều kiện", "en": "condition clause"},
+        "pinyin": [""]
+      },
+      {"text": "就", "role": "connector", "label": {"vi": "thì", "en": "then"}, "pinyin": ["jiù"]},
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "mệnh đề kết quả", "en": "result clause"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "如果下雨，我们就不去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 10, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "如果 mở điều kiện, 就 đứng trước kết quả phủ định.",
+        "en": "如果 opens the condition; 就 comes before the negative result."
+      },
+      "translation": {"vi": "Nếu trời mưa, chúng tôi sẽ không đi.", "en": "If it rains, we won't go."},
+      "pinyin": ["rú", "guǒ", "xià", "yǔ", "", "wǒ", "men", "jiù", "bù", "qù", ""]
+    },
+    {
+      "text": "如果你有时间，就给我打电话。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ của mệnh đề kết quả ẩn, 就 đứng ngay trước động từ.",
+        "en": "The result clause subject is omitted; 就 comes right before the verb."
+      },
+      "translation": {"vi": "Nếu bạn có thời gian, hãy gọi cho tôi.", "en": "If you have time, give me a call."},
+      "pinyin": ["rú", "guǒ", "nǐ", "yǒu", "shí", "jiān", "", "jiù", "gěi", "wǒ", "dǎ", "diàn", "huà", ""]
+    },
+    {
+      "text": "如果太贵，我就不买。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 9, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện là tính từ 太贵; 就 đứng trước kết quả 不买.",
+        "en": "The condition is the adjective phrase 太贵; 就 precedes the result 不买."
+      },
+      "translation": {"vi": "Nếu quá đắt, tôi sẽ không mua.", "en": "If it's too expensive, I won't buy it."},
+      "pinyin": ["rú", "guǒ", "tài", "guì", "", "wǒ", "jiù", "bù", "mǎi", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.zhiyao_jiu",
+      "this_example": "如果下雨，我们就不去。",
+      "other_example": "只要下雨，我们就不去。",
+      "this_meaning": {
+        "vi": "如果...就... nêu một điều kiện có thể xảy ra hoặc không; kết quả chỉ đến khi điều kiện được thỏa mãn.",
+        "en": "如果...就... states a condition that may or may not happen; the result follows only if it is met."
+      },
+      "other_meaning": {
+        "vi": "只要...就... nêu điều kiện đủ tối thiểu: chỉ cần điều kiện đó là kết quả chắc chắn xảy ra.",
+        "en": "只要...就... states a sufficient minimum condition: as long as that condition holds, the result definitely follows."
+      },
+      "this_example_pinyin": ["rú", "guǒ", "xià", "yǔ", "", "wǒ", "men", "jiù", "bù", "qù", ""],
+      "other_example_pinyin": ["zhǐ", "yào", "xià", "yǔ", "", "wǒ", "men", "jiù", "bù", "qù", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dịch 'nên' từ tiếng Việt thành 所以, nhưng 所以 dùng cho nguyên nhân-kết quả đã biết, không dùng cho điều kiện. Trong câu điều kiện, kết quả dùng 就.",
+        "en": "Learners translate Vietnamese 'nên' as 所以, but 所以 marks a known cause-result relation, not a condition. In a conditional sentence the result uses 就."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "如果下雨，所以我们不去。",
+      "right": "如果下雨，我们就不去。",
+      "wrong_pinyin": ["rú", "guǒ", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "men", "bù", "qù", ""],
+      "right_pinyin": ["rú", "guǒ", "xià", "yǔ", "", "wǒ", "men", "jiù", "bù", "qù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "如果明天天气好，我们___去公园。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 nối điều kiện với kết quả; 所以 không dùng trong câu điều kiện.",
+        "en": "就 links the condition to the result; 所以 is not used in a conditional sentence."
+      },
+      "q_pinyin": [
+        "rú",
+        "guǒ",
+        "míng",
+        "tiān",
+        "tiān",
+        "qì",
+        "hǎo",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "qù",
+        "gōng",
+        "yuán",
+        ""
+      ]
+    },
+    {
+      "q": "如果你不舒服，___休息吧。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Mệnh đề kết quả dùng 就, không dùng 所以.", "en": "The result clause uses 就, not 所以."},
+      "q_pinyin": ["rú", "guǒ", "nǐ", "bù", "shū", "fú", "", "", "", "", "xiū", "xī", "ba", ""]
+    },
+    {
+      "q": "如果我有时间，我___给你打电话。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 đứng trước động từ trong mệnh đề kết quả.",
+        "en": "就 comes before the verb in the result clause."
+      },
+      "q_pinyin": [
+        "rú",
+        "guǒ",
+        "wǒ",
+        "yǒu",
+        "shí",
+        "jiān",
+        "",
+        "wǒ",
+        "",
+        "",
+        "",
+        "gěi",
+        "nǐ",
+        "dǎ",
+        "diàn",
+        "huà",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 如果...就... để nói một điều kiện và kết quả.",
+      "en": "Write one sentence about yourself using 如果...就... to state a condition and a result."
+    },
+    "placeholder": "如果我有时间，我就……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["如果"], "role": "connector"}, {"any_of": ["就"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "如果我有时间，我就去图书馆。",
+      "pinyin": ["rú", "guǒ", "wǒ", "yǒu", "shí", "jiān", "", "wǒ", "jiù", "qù", "tú", "shū", "guǎn", ""]
+    },
+    "placeholder_pinyin": ["rú", "guǒ", "wǒ", "yǒu", "shí", "jiān", "", "wǒ", "jiù", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338182",
+    "generated_at": "2026-10-07T01:56:22Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-3-topic"],
+      "content_version": 2,
+      "content_hash": "5ba82cba72c758f86441edae947f98656137b8965e63c07c12220740828b8022",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-3-topic",
+          "issue": "R5 dạy 如果...就... nhưng không cung cấp công thức trừu tượng với các slot và không có bindings cho ví dụ.",
+          "fix": "Đã thêm formula với các slot 如果 / A / 就 / B và bindings cho từng ví dụ."
+        },
+        {
+          "r5_id": "zh-hsk2-3-topic",
+          "issue": "R5 có lỗi sai '如果我就有时间，我去。' với giải thích chưa rõ; lỗi này không phải lỗi điển hình của người Việt và có thể gây nhầm lẫn.",
+          "fix": "Đã thay bằng lỗi điển hình của người Việt: dùng 所以 thay vì 就 trong mệnh đề kết quả."
+        },
+        {
+          "r5_id": "zh-hsk2-3-topic",
+          "issue": "R5 thiếu phần so sánh với 只要...就... dù scope yêu cầu contrast target này.",
+          "fix": "Đã thêm mục compare với zh.zhiyao_jiu, nêu rõ sự khác biệt giữa điều kiện có thể xảy ra và điều kiện đủ tối thiểu."
+        },
+        {
+          "r5_id": "zh-hsk2-3-topic",
+          "issue": "R5 thiếu quick practice và personal production theo schema.",
+          "fix": "Đã thêm 3 câu quick practice và một personal production card với pattern_rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

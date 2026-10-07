@@ -1,0 +1,267 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.xian_zai",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sequence",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.yi_jiu"],
+  "contrasts": ["zh.yi_jiu"],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk2-7-topic-48"]},
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": ["zh-hsk2-7-topic-48"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "先 ... 再 / 然后 ...", "en": "先 ... 再 ..."},
+    "native_title": "“先……再……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Cấu trúc 先……再/然后…… dùng để nói hai hành động theo thứ tự: hành động thứ nhất xảy ra trước, hành động thứ hai tiếp theo sau.",
+      "en": "The pattern 先……再/然后…… expresses two actions in order: the first action happens first, and the second action follows."
+    },
+    "sub": {"vi": "trình tự hành động", "en": "action sequence"},
+    "native_title_pinyin": ["", "xiān", "", "", "zài", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn kể hai việc sẽ làm lần lượt, việc này xong rồi mới đến việc kia.",
+      "en": "When you want to describe two things you will do one after another, the first finished before the second."
+    },
+    {
+      "vi": "Khi bạn muốn nói rõ bước nào làm trước, bước nào làm sau trong một kế hoạch hoặc thói quen.",
+      "en": "When you want to make clear which step comes first and which comes next in a plan or routine."
+    },
+    {
+      "vi": "Khi cả hai vế có cùng một chủ ngữ, bạn chỉ cần nói chủ ngữ một lần ở đầu câu.",
+      "en": "When both parts share the same subject, you only need to state the subject once at the beginning."
+    },
+    {
+      "vi": "Khi bạn muốn dùng 然后 thay cho 再 để nhấn mạnh 'sau đó' như một bước kế tiếp rõ ràng.",
+      "en": "When you want to use 然后 instead of 再 to emphasize 'after that' as a clear next step."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "先",
+        "role": "marker",
+        "label": {"vi": "trước tiên", "en": "first"},
+        "pinyin": ["xiān"]
+      },
+      {
+        "text": "VP1",
+        "role": "verb",
+        "label": {"vi": "hành động 1", "en": "action 1"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "再/然后",
+        "role": "connector",
+        "label": {"vi": "rồi / sau đó", "en": "then / after that"},
+        "options": [{"text": "再", "pinyin": ["zài"]}, {"text": "然后", "pinyin": ["rán", "hòu"]}],
+        "pinyin": ["zài", "", "rán", "hòu"]
+      },
+      {
+        "text": "VP2",
+        "role": "verb",
+        "label": {"vi": "hành động 2", "en": "action 2"},
+        "pinyin": ["", "", ""]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我先吃饭，再学习。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "先 đánh dấu hành động 1, 再 nối hành động 2 xảy ra sau.",
+        "en": "先 marks action 1, 再 links action 2 that follows."
+      },
+      "translation": {"vi": "Tôi ăn cơm trước rồi học.", "en": "I eat first, then study."},
+      "pinyin": ["wǒ", "xiān", "chī", "fàn", "", "zài", "xué", "xí", ""]
+    },
+    {
+      "text": "你先休息，然后再工作。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "然后 là 'sau đó', 再 nhấn bước kế tiếp; cả hai cùng chỉ trình tự.",
+        "en": "然后 means 'after that', 再 stresses the next step; both mark sequence."
+      },
+      "translation": {"vi": "Bạn nghỉ ngơi trước, sau đó rồi làm việc.", "en": "You rest first, and then work."},
+      "pinyin": ["nǐ", "xiān", "xiū", "xī", "", "rán", "hòu", "zài", "gōng", "zuò", ""]
+    },
+    {
+      "text": "我们先买票，再进去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cùng một chủ ngữ 我们, hai hành động theo thứ tự mua vé rồi vào.",
+        "en": "One subject 我们, two actions in order: buy tickets then go in."
+      },
+      "translation": {"vi": "Chúng ta mua vé trước rồi vào.", "en": "We buy tickets first, then go in."},
+      "pinyin": ["wǒ", "men", "xiān", "mǎi", "piào", "", "zài", "jìn", "qù", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.yi_jiu",
+      "this_example": "我先吃饭，再学习。",
+      "other_example": "我一回家就吃饭。",
+      "this_meaning": {
+        "vi": "先……再/然后…… nói hai hành động theo thứ tự trước–sau, không nhấn mạnh khoảng cách thời gian.",
+        "en": "先……再/然后…… presents two actions in a before–after order, without focusing on how much time passes."
+      },
+      "other_meaning": {
+        "vi": "一……就…… nói hành động thứ hai xảy ra ngay sau hành động thứ nhất, gần như tức thì.",
+        "en": "一……就…… says the second action happens immediately after the first, almost at once."
+      },
+      "this_example_pinyin": ["wǒ", "xiān", "chī", "fàn", "", "zài", "xué", "xí", ""],
+      "other_example_pinyin": ["wǒ", "yī", "huí", "jiā", "jiù", "chī", "fàn", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "先 phải đứng trước hành động thứ nhất; 再 đứng trước hành động thứ hai. Đảo ngược lại làm sai trình tự.",
+        "en": "先 must come before the first action; 再 comes before the second. Reversing them breaks the sequence."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "我再吃饭，先学习。",
+      "right": "我先吃饭，再学习。",
+      "wrong_pinyin": ["wǒ", "zài", "chī", "fàn", "", "xiān", "xué", "xí", ""],
+      "right_pinyin": ["wǒ", "xiān", "chī", "fàn", "", "zài", "xué", "xí", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我先洗手，___吃饭。",
+      "options": [
+        {"text": "再", "error_tag": null, "pinyin": ["zài"]},
+        {"text": "又", "error_tag": "conjunction", "pinyin": ["yòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "再 nối bước kế tiếp trong trình tự; 又 không dùng cho bước tương lai kế tiếp ở đây.",
+        "en": "再 links the next step in a sequence; 又 is not used for a future next step here."
+      },
+      "q_pinyin": ["wǒ", "xiān", "xǐ", "shǒu", "", "", "", "", "chī", "fàn", ""]
+    },
+    {
+      "q": "你先休息，___工作。",
+      "options": [
+        {"text": "然后", "error_tag": null, "pinyin": ["rán", "hòu"]},
+        {"text": "先", "error_tag": "conjunction", "pinyin": ["xiān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "然后 giới thiệu hành động thứ hai; 先 chỉ dùng cho hành động thứ nhất.",
+        "en": "然后 introduces the second action; 先 is only for the first action."
+      },
+      "q_pinyin": ["nǐ", "xiān", "xiū", "xī", "", "", "", "", "gōng", "zuò", ""]
+    },
+    {
+      "q": "我们先买票，___进去。",
+      "options": [
+        {"text": "再", "error_tag": null, "pinyin": ["zài"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "再 là connector chuẩn cho bước tiếp theo trong mẫu 先……再……; 就 không thay thế được ở đây.",
+        "en": "再 is the standard connector for the next step in 先……再……; 就 cannot replace it here."
+      },
+      "q_pinyin": ["wǒ", "men", "xiān", "mǎi", "piào", "", "", "", "", "jìn", "qù", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể hai việc bạn làm theo thứ tự, dùng 先……再…….",
+      "en": "Write one sentence about two things you do in order, using 先……再……."
+    },
+    "placeholder": "我先……再……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["先"], "role": "marker"}, {"any_of": ["再", "然后"], "role": "connector"}]
+    },
+    "sample": {"text": "我先吃饭，再学习。", "pinyin": ["wǒ", "xiān", "chī", "fàn", "", "zài", "xué", "xí", ""]},
+    "placeholder_pinyin": ["wǒ", "xiān", "", "", "zài", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338208",
+    "generated_at": "2026-10-07T01:56:48Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-7-topic-48"],
+      "content_version": 2,
+      "content_hash": "d86ed4def3309849b0d4b2e3f8024ff3f4c82087bda30da36c01276c9614ea81",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-7-topic-48",
+          "issue": "R5 dạy 先...再/然后... nhưng không cung cấp công thức trừu tượng với các slot và nhãn vai trò.",
+          "fix": "Đã thêm formula với các slot S (tùy chọn), 先, VP1, 再/然后, VP2 và gán nhãn vai trò tương ứng."
+        },
+        {
+          "r5_id": "zh-hsk2-7-topic-48",
+          "issue": "R5 có ví dụ 你先休息，然后再工作。 nhưng không phân tích rõ 然后 và 再 cùng xuất hiện trong một câu.",
+          "fix": "Đã giữ ví dụ và thêm annotation giải thích 然后 là 'sau đó', 再 nhấn bước kế tiếp."
+        },
+        {
+          "r5_id": "zh-hsk2-7-topic-48",
+          "issue": "R5 liệt kê lỗi 我再吃饭，先学习。 nhưng không gắn thẻ lỗi theo hệ thống evaluator.",
+          "fix": "Đã thêm common_mistakes với error_tag 'conjunction' và l1 'vi'."
+        },
+        {
+          "r5_id": "zh-hsk2-7-topic-48",
+          "issue": "R5 không có phần so sánh với 一...就... dù scope yêu cầu contrast target này.",
+          "fix": "Đã thêm mục compare với zh.yi_jiu, giải thích sự khác biệt về tính tức thời."
+        },
+        {
+          "r5_id": "zh-hsk2-7-topic-48",
+          "issue": "R5 không có quick_practice dạng cloze với các lựa chọn sai là lỗi thật của người học.",
+          "fix": "Đã thêm 3 câu quick_practice, mỗi câu có một đáp án đúng và một lựa chọn sai được gắn error_tag 'conjunction'."
+        },
+        {
+          "r5_id": "zh-hsk2-7-topic-48",
+          "issue": "R5 không có personal_production với pattern_rule để kiểm tra tự động.",
+          "fix": "Đã thêm personal_production với prompt, placeholder, sample và pattern_rule kiểm tra sự xuất hiện của 先 và 再/然后 theo thứ tự."
+        }
+      ]
+    }
+  },
+  "review": null
+}

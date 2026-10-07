@@ -1,0 +1,176 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_7.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_7.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.069", "gf0025.hsk4.070", "gf0025.hsk4.071", "gf0025.hsk4.072"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách nhấn mạnh: （没）有什么（好）X的", "en": "Ways of emphasis: （没）有什么（好）X的"},
+    "native_title": "（没）有什么（好）X的",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Mẫu （没）有什么（好）X的 dùng để nói rằng một việc gì đó không có gì đáng làm, đáng lo hay đáng nói.",
+      "en": "The pattern （没）有什么（好）X的 says that something is not worth doing, worrying about, or talking about."
+    },
+    "sub": {"vi": "nhấn mạnh phủ định", "en": "emphasis in negation"},
+    "native_title_pinyin": ["", "méi", "", "yǒu", "shén", "me", "", "hǎo", "", "", "de"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một hành động không có gì đáng làm, thường là để trấn an hoặc từ chối.",
+      "en": "When you want to say an action is not worth doing, often to reassure someone or refuse."
+    },
+    {
+      "vi": "Khi muốn nói một chuyện không có gì đáng lo, đáng sợ hay đáng ngạc nhiên.",
+      "en": "When you want to say something is nothing to worry about, fear, or be surprised at."
+    },
+    {
+      "vi": "Khi muốn phản bác nhẹ rằng chuyện được nhắc đến không quan trọng.",
+      "en": "When you want to mildly dismiss the thing being mentioned as unimportant."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "有什么好X的",
+        "role": "marker",
+        "label": {"vi": "mẫu nhấn mạnh: không có gì đáng X", "en": "emphasis pattern: nothing worth X-ing"},
+        "pinyin": ["yǒu", "shén", "me", "hǎo", "", "de"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "没什么好X的",
+          "role": "marker",
+          "label": {"vi": "mẫu phủ định: không có gì đáng X", "en": "negative pattern: nothing worth X-ing"},
+          "pinyin": ["méi", "shén", "me", "hǎo", "", "de"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这件事没什么好担心的。",
+      "form": "negative",
+      "spans": [{"start": 3, "end": 10, "role": "marker"}],
+      "annotation": {
+        "vi": "没什么好X的 nói rằng việc này không đáng lo.",
+        "en": "没什么好X的 says this matter is not worth worrying about."
+      },
+      "translation": {
+        "vi": "Chuyện này không có gì đáng lo cả.",
+        "en": "There is nothing to worry about in this matter."
+      },
+      "pinyin": ["zhè", "jiàn", "shì", "méi", "shén", "me", "hǎo", "dān", "xīn", "de", ""]
+    },
+    {
+      "text": "你有什么好生气的？",
+      "form": "affirmative",
+      "spans": [{"start": 1, "end": 8, "role": "marker"}],
+      "annotation": {
+        "vi": "有什么好X的 dùng trong câu hỏi để nói việc X là không cần thiết.",
+        "en": "有什么好X的 in a question says X-ing is unnecessary."
+      },
+      "translation": {"vi": "Cậu có gì mà phải tức giận chứ?", "en": "What is there for you to be angry about?"},
+      "pinyin": ["nǐ", "yǒu", "shén", "me", "hǎo", "shēng", "qì", "de", ""]
+    },
+    {
+      "text": "这没什么好说的。",
+      "form": "negative",
+      "spans": [{"start": 1, "end": 7, "role": "marker"}],
+      "annotation": {
+        "vi": "没什么好X的 nói rằng việc này không đáng để nói ra.",
+        "en": "没什么好X的 says this is not worth talking about."
+      },
+      "translation": {"vi": "Chuyện này không có gì đáng nói cả.", "en": "There is nothing to say about this."},
+      "pinyin": ["zhè", "méi", "shén", "me", "hǎo", "shuō", "de", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Mẫu này luôn kết thúc bằng 的; thiếu 的 thì câu nghe như chưa nói hết.",
+        "en": "This pattern always ends with 的; without it the sentence sounds unfinished."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "这件事没什么好担心。",
+      "right": "这件事没什么好担心的。",
+      "wrong_pinyin": ["zhè", "jiàn", "shì", "méi", "shén", "me", "hǎo", "dān", "xīn", ""],
+      "right_pinyin": ["zhè", "jiàn", "shì", "méi", "shén", "me", "hǎo", "dān", "xīn", "de", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这件事没什么好___的。",
+      "options": [
+        {"text": "担心", "error_tag": null, "pinyin": ["dān", "xīn"]},
+        {"text": "担心了", "error_tag": "aspect", "pinyin": ["dān", "xīn", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 好 ta dùng động từ nguyên dạng, không thêm 了.",
+        "en": "After 好 use the plain verb; do not add 了."
+      },
+      "q_pinyin": ["zhè", "jiàn", "shì", "méi", "shén", "me", "hǎo", "", "", "", "de", ""]
+    },
+    {
+      "q": "这有什么好___？",
+      "options": [
+        {"text": "生气的", "error_tag": null, "pinyin": ["shēng", "qì", "de"]},
+        {"text": "生气", "error_tag": "particle", "pinyin": ["shēng", "qì"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Mẫu 有什么好X的 phải có 的 ở cuối.", "en": "The pattern 有什么好X的 needs 的 at the end."},
+      "q_pinyin": ["zhè", "yǒu", "shén", "me", "hǎo", "", "", "", ""]
+    },
+    {
+      "q": "你没什么好___的。",
+      "options": [
+        {"text": "害怕", "error_tag": null, "pinyin": ["hài", "pà"]},
+        {"text": "害怕吗", "error_tag": "particle", "pinyin": ["hài", "pà", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là câu khẳng định phủ định, không thêm 吗.",
+        "en": "This is a negative statement, so do not add 吗."
+      },
+      "q_pinyin": ["nǐ", "méi", "shén", "me", "hǎo", "", "", "", "de", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 没什么好……的 để nói một việc bạn thấy không đáng làm hoặc không đáng lo.",
+      "en": "Write one sentence with 没什么好……的 about something you think is not worth doing or worrying about."
+    },
+    "placeholder": "我觉得……没什么好",
+    "target_form": "negative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["没什么好"], "role": "marker"}]},
+    "sample": {
+      "text": "这件事没什么好担心的。",
+      "pinyin": ["zhè", "jiàn", "shì", "méi", "shén", "me", "hǎo", "dān", "xīn", "de", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "jué", "de", "", "", "méi", "shén", "me", "hǎo"]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338481",
+    "generated_at": "2026-10-07T02:01:21Z"
+  },
+  "review": null
+}

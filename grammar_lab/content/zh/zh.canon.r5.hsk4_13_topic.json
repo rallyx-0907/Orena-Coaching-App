@@ -1,0 +1,264 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_13_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_1_4.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {
+    "r5": ["zh-hsk4-13-topic", "zh-hsk5-9-topic-147", "zh-hsk6-8-contrast"],
+    "gf0025": ["gf0025.hsk4.014", "gf0025.hsk4.015"]
+  },
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["zh-hsk4-13-topic", "zh-hsk5-9-topic-147", "zh-hsk6-8-contrast"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 对于", "en": "Chinese grammar: 对于"},
+    "native_title": "对于",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "对于 đứng trước một đối tượng để nêu thái độ, đánh giá hoặc cách xử lý của người nói đối với đối tượng đó.",
+      "en": "对于 introduces the target of someone's attitude, evaluation, or way of handling something."
+    },
+    "sub": {"vi": "thái độ với đối tượng", "en": "attitude toward a target"},
+    "native_title_pinyin": ["duì", "yú"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nêu thái độ hoặc ý kiến của ai đó về một vấn đề, sự việc hay con người.",
+      "en": "When you want to state someone's attitude or opinion about an issue, event, or person."
+    },
+    {
+      "vi": "Khi muốn nói cách xử lý, đối xử hoặc phản ứng đối với một đối tượng cụ thể.",
+      "en": "When you want to describe how someone handles, treats, or reacts to a specific target."
+    },
+    {
+      "vi": "Khi đối tượng được đưa lên đầu câu để nhấn mạnh, sau đó là phần nhận xét hoặc đánh giá.",
+      "en": "When the target is fronted for emphasis, followed by a comment or evaluation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ trước", "en": "preposed subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "对于",
+        "role": "marker",
+        "label": {"vi": "đối với", "en": "regarding"},
+        "pinyin": ["duì", "yú"]
+      },
+      {
+        "text": "对象",
+        "role": "object",
+        "label": {"vi": "đối tượng/chủ đề", "en": "topic/object"},
+        "pinyin": ["duì", "xiàng"]
+      },
+      {
+        "text": "主语2",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ phần nhận xét", "en": "comment subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ", ""]
+      },
+      {
+        "text": "评论",
+        "role": "complement",
+        "label": {"vi": "nhận xét", "en": "comment"},
+        "pinyin": ["píng", "lùn"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "对于这个问题，我有不同的看法。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 14, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "对于 đưa chủ đề ra trước; vế sau nêu thái độ hoặc nhận xét.",
+        "en": "对于 introduces the topic; the following clause gives an attitude or comment."
+      },
+      "translation": {
+        "vi": "Đối với vấn đề này, tôi có cách nhìn khác.",
+        "en": "Regarding this issue, I have a different view."
+      },
+      "pinyin": ["duì", "yú", "zhè", "ge", "wèn", "tí", "", "wǒ", "yǒu", "bù", "tóng", "de", "kàn", "fǎ", ""]
+    },
+    {
+      "text": "大家对于这个决定都很满意。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 8, "role": "object"},
+        {"start": 8, "end": 12, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ cũng có thể đứng trước cụm 对于.",
+        "en": "The subject may also precede the 对于 phrase."
+      },
+      "translation": {
+        "vi": "Mọi người đều rất hài lòng với quyết định này.",
+        "en": "Everyone is very satisfied with this decision."
+      },
+      "pinyin": ["dà", "jiā", "duì", "yú", "zhè", "ge", "jué", "dìng", "dū", "hěn", "mǎn", "yì", ""]
+    },
+    {
+      "text": "对于他的表现，老师不太满意。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 13, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Cụm 对于 có thể đứng đầu câu làm khung chủ đề.",
+        "en": "A 对于 phrase can appear sentence-initially as a topic frame."
+      },
+      "translation": {
+        "vi": "Đối với biểu hiện của anh ấy, giáo viên không hài lòng lắm.",
+        "en": "Regarding his performance, the teacher is not very satisfied."
+      },
+      "pinyin": ["duì", "yú", "tā", "de", "biǎo", "xiàn", "", "lǎo", "shī", "bù", "tài", "mǎn", "yì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi nói thái độ đối với một người, phải dùng 对于 (hoặc 对), không dùng 关于 vì 关于 chỉ nêu chủ đề.",
+        "en": "When expressing an attitude toward a person, use 对于 (or 对), not 关于, which only introduces a topic."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "关于他，我很友好。",
+      "right": "对于他，我很友好。",
+      "wrong_pinyin": ["guān", "yú", "tā", "", "wǒ", "hěn", "yǒu", "hǎo", ""],
+      "right_pinyin": ["duì", "yú", "tā", "", "wǒ", "hěn", "yǒu", "hǎo", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___这个问题，大家的看法不一样。",
+      "options": [
+        {"text": "对于", "error_tag": null, "pinyin": ["duì", "yú"]},
+        {"text": "关于", "error_tag": "word_choice", "pinyin": ["guān", "yú"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu nêu thái độ/đánh giá đối với 'vấn đề này', nên dùng 对于; 关于 chỉ nêu chủ đề, không hợp ở đây.",
+        "en": "The sentence states an attitude/evaluation toward 'this issue', so 对于 is correct; 关于 only introduces a topic and does not fit here."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "zhè",
+        "ge",
+        "wèn",
+        "tí",
+        "",
+        "dà",
+        "jiā",
+        "de",
+        "kàn",
+        "fǎ",
+        "bù",
+        "yí",
+        "yàng",
+        ""
+      ]
+    },
+    {
+      "q": "对于这个决定，我___同意。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bù"]},
+        {"text": "没", "error_tag": "aspect", "pinyin": ["méi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với tính từ/tâm lý như 同意, phủ định bằng 不; 没 thường dùng cho hành động đã xảy ra.",
+        "en": "With adjectives/mental states like 同意, negate with 不; 没 is typically for completed actions."
+      },
+      "q_pinyin": ["duì", "yú", "zhè", "ge", "jué", "dìng", "", "wǒ", "", "", "", "tóng", "yì", ""]
+    },
+    {
+      "q": "对于___，我们要认真处理。",
+      "options": [
+        {"text": "这个问题", "error_tag": null, "pinyin": ["zhè", "ge", "wèn", "tí"]},
+        {"text": "这个问题吗", "error_tag": "particle", "pinyin": ["zhè", "ge", "wèn", "tí", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 对于 là một cụm danh từ, không thêm trợ từ nghi vấn 吗 vào giữa câu.",
+        "en": "After 对于 comes a noun phrase; do not insert the question particle 吗 mid-sentence."
+      },
+      "q_pinyin": ["duì", "yú", "", "", "", "", "wǒ", "men", "yào", "rèn", "zhēn", "chǔ", "lǐ", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 对于 để nói thái độ hoặc ý kiến của bạn về một vấn đề quen thuộc.",
+      "en": "Write one sentence using 对于 to state your attitude or opinion about a familiar issue."
+    },
+    "placeholder": "对于……，我……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["对于"], "role": "marker"}]},
+    "sample": {
+      "text": "对于这个问题，我有自己的想法。",
+      "pinyin": ["duì", "yú", "zhè", "ge", "wèn", "tí", "", "wǒ", "yǒu", "zì", "jǐ", "de", "xiǎng", "fǎ", ""]
+    },
+    "placeholder_pinyin": ["duì", "yú", "", "", "", "wǒ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351877",
+    "generated_at": "2026-10-07T05:44:37Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-13-topic", "zh-hsk5-9-topic-147", "zh-hsk6-8-contrast"],
+      "content_version": 2,
+      "content_hash": "3ffa0f5176599d1ecc1225bee1f15b867fd3194285be86e3b71a91459e3bb4c4",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-13-topic",
+          "issue": "R5 gộp 对于 và 关于 thành một điểm, nhưng điểm hiện tại chỉ là 对于; các ví dụ và lỗi của 关于 không thuộc phạm vi này.",
+          "fix": "Chỉ giữ 对于 trong công thức, ví dụ và lỗi; chuyển các nội dung về 关于 sang điểm khác."
+        },
+        {
+          "r5_id": "zh-hsk4-13-topic",
+          "issue": "Câu sai '关于他，我很友好。' không phải lỗi của 对于 mà là lỗi chọn 关于 thay vì 对于/对.",
+          "fix": "Đổi thành '对于他，我很友好。' để minh họa đúng lỗi dùng 关于 khi nói thái độ với người."
+        },
+        {
+          "r5_id": "zh-hsk5-9-topic-147",
+          "issue": "Bài HSK5 trộn 关于/对于/随着, vượt phạm vi điểm HSK4 này.",
+          "fix": "Không đưa 随着 hay các ví dụ HSK5 vào; chỉ dùng làm tham khảo nội bộ."
+        },
+        {
+          "r5_id": "zh-hsk6-8-contrast",
+          "issue": "Bài HSK6 bàn 至于/关于/对于, không thuộc điểm HSK4 này.",
+          "fix": "Không đưa 至于 vào; giữ phạm vi chỉ 对于."
+        }
+      ]
+    }
+  },
+  "review": null
+}

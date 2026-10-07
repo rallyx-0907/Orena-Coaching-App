@@ -1,0 +1,278 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.zai_location",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.you_sentence"],
+  "contrasts": ["zh.you_sentence"],
+  "error_tags": ["word_order", "particle"],
+  "source_refs": {"r5": ["zh-hsk1-4-v-tr"], "gf0025": ["gf0025.hsk1.016"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk1-4-v-tr"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "在: nói vị trí", "en": "在: saying where something is"},
+    "native_title": "“在”表示位置",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "在 dùng để nói người hoặc vật ở đâu, đứng ngay trước cụm vị trí.",
+      "en": "在 says where a person or thing is, standing directly before the place phrase."
+    },
+    "sub": {"vi": "vị trí ở đâu", "en": "location"},
+    "native_title_pinyin": ["", "zài", "", "biǎo", "shì", "wèi", "zhì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói ai hoặc cái gì đang ở một nơi nào đó.",
+      "en": "When you want to say where a person or thing is."
+    },
+    {
+      "vi": "Khi chủ ngữ là người hay vật đã biết, và vị trí là thông tin mới cần nói.",
+      "en": "When the subject is a known person or thing and the location is the new information."
+    },
+    {
+      "vi": "Khi câu trả lời cho câu hỏi 在哪儿 (ở đâu).",
+      "en": "When answering a question with 在哪儿 (where)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "在",
+        "role": "marker",
+        "label": {"vi": "在 (đánh dấu vị trí)", "en": "在 (location marker)"},
+        "pinyin": ["zài"]
+      },
+      {
+        "text": "place",
+        "role": "place",
+        "label": {"vi": "cụm vị trí", "en": "place phrase"},
+        "pinyin": ["", "", "", "", ""]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": [""]
+        },
+        {
+          "text": "不",
+          "role": "particle",
+          "label": {"vi": "phủ định", "en": "negation"},
+          "pinyin": ["bù"]
+        },
+        {
+          "text": "在",
+          "role": "marker",
+          "label": {"vi": "在 (đánh dấu vị trí)", "en": "在 (location marker)"},
+          "pinyin": ["zài"]
+        },
+        {
+          "text": "place",
+          "role": "place",
+          "label": {"vi": "cụm vị trí", "en": "place phrase"},
+          "pinyin": ["", "", "", "", ""]
+        }
+      ],
+      "question": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": [""]
+        },
+        {
+          "text": "在",
+          "role": "marker",
+          "label": {"vi": "在 (đánh dấu vị trí)", "en": "在 (location marker)"},
+          "pinyin": ["zài"]
+        },
+        {
+          "text": "place",
+          "role": "place",
+          "label": {"vi": "cụm vị trí", "en": "place phrase"},
+          "pinyin": ["", "", "", "", ""]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我在学校。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "place"}
+      ],
+      "annotation": {"vi": "在 + 学校 nói vị trí của người nói.", "en": "在 + 学校 states the speaker's location."},
+      "translation": {"vi": "Tôi ở trường.", "en": "I am at school."},
+      "pinyin": ["wǒ", "zài", "xué", "xiào", ""]
+    },
+    {
+      "text": "手机在桌子上。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 6, "role": "place"}
+      ],
+      "annotation": {
+        "vi": "在 + 桌子上 nói vị trí của vật đã biết.",
+        "en": "在 + 桌子上 states the location of a known object."
+      },
+      "translation": {"vi": "Điện thoại ở trên bàn.", "en": "The phone is on the table."},
+      "pinyin": ["shǒu", "jī", "zài", "zhuō", "zi", "shàng", ""]
+    },
+    {
+      "text": "他们不在家。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "place"}
+      ],
+      "annotation": {"vi": "不 đứng trước 在 để phủ định vị trí.", "en": "不 comes before 在 to negate the location."},
+      "translation": {"vi": "Họ không ở nhà.", "en": "They are not at home."},
+      "pinyin": ["tā", "men", "bù", "zài", "jiā", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.you_sentence",
+      "this_example": "书在桌子上。",
+      "other_example": "桌子上有一本书。",
+      "this_meaning": {
+        "vi": "在 nói vị trí của người/vật đã biết.",
+        "en": "在 states the location of a known person or thing."
+      },
+      "other_meaning": {
+        "vi": "有 giới thiệu sự tồn tại của một vật ở một nơi.",
+        "en": "有 introduces the existence of something in a place."
+      },
+      "this_example_pinyin": ["shū", "zài", "zhuō", "zi", "shàng", ""],
+      "other_example_pinyin": ["zhuō", "zi", "shàng", "yǒu", "yī", "běn", "shū", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu vị trí cơ bản dùng 在 trực tiếp, không thêm 是.",
+        "en": "A basic location sentence uses 在 directly; 是 is not added."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "我是在学校。",
+      "right": "我在学校。",
+      "wrong_pinyin": ["wǒ", "shì", "zài", "xué", "xiào", ""],
+      "right_pinyin": ["wǒ", "zài", "xué", "xiào", ""]
+    },
+    {
+      "reason": {
+        "vi": "Người/vật đã biết làm chủ ngữ đứng trước 在; đảo ngược sẽ sai trật tự.",
+        "en": "The known item is the subject before 在; reversing the order is wrong."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "桌子上在书。",
+      "right": "书在桌子上。",
+      "wrong_pinyin": ["zhuō", "zi", "shàng", "zài", "shū", ""],
+      "right_pinyin": ["shū", "zài", "zhuō", "zi", "shàng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___学校。",
+      "options": [
+        {"text": "在", "error_tag": null, "pinyin": ["zài"]},
+        {"text": "是", "error_tag": "particle", "pinyin": ["shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "在 đứng trước vị trí; 是 không dùng cho vị trí.",
+        "en": "在 comes before the place; 是 is not used for location."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "xué", "xiào", ""]
+    },
+    {
+      "q": "书___桌子上。",
+      "options": [
+        {"text": "在", "error_tag": null, "pinyin": ["zài"]},
+        {"text": "有", "error_tag": "word_choice", "pinyin": ["yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu nói vị trí của quyển sách dùng 在, không dùng 有.",
+        "en": "A sentence about the book's location uses 在, not 有."
+      },
+      "q_pinyin": ["shū", "", "", "", "zhuō", "zi", "shàng", ""]
+    },
+    {
+      "q": "他们___在家。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bù"]},
+        {"text": "没", "error_tag": "particle", "pinyin": ["méi"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Phủ định 在 dùng 不, không dùng 没.", "en": "Negating 在 uses 不, not 没."},
+      "q_pinyin": ["tā", "men", "", "", "", "zài", "jiā", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói bạn đang ở đâu, dùng 在 + nơi chốn.",
+      "en": "Write one sentence saying where you are, using 在 + place."
+    },
+    "placeholder": "我在……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["在"], "role": "marker"}]},
+    "sample": {"text": "我在家。", "pinyin": ["wǒ", "zài", "jiā", ""]},
+    "placeholder_pinyin": ["wǒ", "zài", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791297672",
+    "generated_at": "2026-10-06T14:41:12Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-4-v-tr"],
+      "content_version": 2,
+      "content_hash": "e426ac982b3a9df92f94f6c85b2d8f4c2963293c617dbcca8a25f459a57db083",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-4-v-tr",
+          "issue": "R5 ghi 'Không dùng 是 + place để diễn tả ở đâu' nhưng không nêu rõ 是 không được thêm vào câu vị trí cơ bản.",
+          "fix": "Thêm lỗi thường gặp '我是在学校' → '我在学校' với giải thích 在 dùng trực tiếp."
+        },
+        {
+          "r5_id": "zh-hsk1-4-v-tr",
+          "issue": "R5 có câu sai '桌子上在书' nhưng không giải thích rõ lỗi trật tự từ.",
+          "fix": "Đưa vào common_mistakes với error_tag word_order và giải thích chủ ngữ đã biết đứng trước 在."
+        },
+        {
+          "r5_id": "zh-hsk1-4-v-tr",
+          "issue": "R5 thiếu dạng câu hỏi với 吗 cho điểm này.",
+          "fix": "Bổ sung formula question S + 在 + place + 吗."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,410 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_11_cause_vs_evidence_distinction",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reason_result",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_8_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-11-cause-vs-evidence-distinction"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk79-11-cause-vs-evidence-distinction"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Cause vs evidence distinction",
+      "en": "Chinese grammar: Cause vs evidence distinction"
+    },
+    "native_title": "原因与证据的区分",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Phân biệt cách diễn đạt nguyên nhân trực tiếp (因为/由于) với cách diễn đạt căn cứ bằng chứng (根据/从……来看/数据显示), để không biến tương quan thành quan hệ nhân quả.",
+      "en": "Distinguish direct cause marking (因为/由于) from evidence marking (根据/从……来看/数据显示), so that correlation is not stated as causation."
+    },
+    "sub": {"vi": "nguyên nhân và bằng chứng", "en": "cause vs evidence"},
+    "native_title_pinyin": ["yuán", "yīn", "yǔ", "zhèng", "jù", "de", "qū", "fēn"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một sự việc trực tiếp gây ra kết quả, dùng 因为/由于 ở đầu mệnh đề nguyên nhân.",
+      "en": "When you want to say one event directly produces a result, use 因为/由于 at the start of the cause clause."
+    },
+    {
+      "vi": "Khi bạn chỉ có nguồn tin hoặc dữ liệu làm căn cứ để suy luận, dùng 根据/从……来看/数据显示 ở đầu câu.",
+      "en": "When you only have a source or data as the basis for an inference, use 根据/从……来看/数据显示 at the start of the sentence."
+    },
+    {
+      "vi": "Khi bằng chứng chỉ cho thấy hai việc liên quan, không dùng 导致/致使; hãy dùng 与……有关 hoặc 存在相关性.",
+      "en": "When evidence only shows two things are related, do not use 导致/致使; use 与……有关 or 存在相关性."
+    },
+    {
+      "vi": "Khi cần kết luận thận trọng, thêm 可能 hoặc 尚不足以证明因果关系 sau mệnh đề bằng chứng.",
+      "en": "When you need a cautious conclusion, add 可能 or 尚不足以证明因果关系 after the evidence clause."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "根据/从……来看/数据显示",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu căn cứ", "en": "evidence marker"},
+        "options": [
+          {"text": "根据", "pinyin": ["gēn", "jù"]},
+          {"text": "从……来看", "pinyin": ["cóng", "", "", "lái", "kàn"]},
+          {"text": "数据显示", "pinyin": ["shù", "jù", "xiǎn", "shì"]}
+        ],
+        "pinyin": ["gēn", "jù", "", "cóng", "", "", "lái", "kàn", "", "shù", "jù", "xiǎn", "shì"]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "可能",
+        "role": "aux",
+        "label": {"vi": "phỏng đoán", "en": "possibility"},
+        "optional": true,
+        "pinyin": ["kě", "néng"]
+      },
+      {
+        "text": "与……有关/存在相关性",
+        "role": "verb",
+        "label": {"vi": "quan hệ được suy ra", "en": "inferred relation"},
+        "options": [
+          {"text": "与……有关", "pinyin": ["yǔ", "", "", "yǒu", "guān"]},
+          {"text": "存在相关性", "pinyin": ["cún", "zài", "xiāng", "guān", "xìng"]}
+        ],
+        "pinyin": ["yǔ", "", "", "yǒu", "guān", "", "cún", "zài", "xiāng", "guān", "xìng"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "根据日志记录，停机可能与温度异常有关。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "marker"},
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 11, "role": "aux"},
+        {"start": 11, "end": 18, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "根据 đánh dấu nguồn bằng chứng; 可能 giữ kết luận ở mức phỏng đoán.",
+        "en": "根据 marks the evidence source; 可能 keeps the conclusion at the level of a hypothesis."
+      },
+      "translation": {
+        "vi": "Theo nhật ký, việc dừng máy có thể liên quan đến nhiệt độ bất thường.",
+        "en": "According to the logs, the shutdown may be related to the temperature anomaly."
+      },
+      "pinyin": [
+        "gēn",
+        "jù",
+        "rì",
+        "zhì",
+        "jì",
+        "lù",
+        "",
+        "tíng",
+        "jī",
+        "kě",
+        "néng",
+        "yǔ",
+        "wēn",
+        "dù",
+        "yì",
+        "cháng",
+        "yǒu",
+        "guān",
+        ""
+      ]
+    },
+    {
+      "text": "从现有数据来看，两种现象之间存在明显相关性。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "marker"},
+        {"start": 8, "end": 14, "role": "subject"},
+        {"start": 14, "end": 21, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "从……来看 giới hạn phạm vi bằng chứng; 存在相关性 chỉ nêu quan hệ, không khẳng định nhân quả.",
+        "en": "从……来看 limits the evidence scope; 存在相关性 states a relation without asserting causation."
+      },
+      "translation": {
+        "vi": "Từ dữ liệu hiện có, giữa hai hiện tượng tồn tại mối tương quan rõ rệt.",
+        "en": "From the available data, there is a clear correlation between the two phenomena."
+      },
+      "pinyin": [
+        "cóng",
+        "xiàn",
+        "yǒu",
+        "shù",
+        "jù",
+        "lái",
+        "kàn",
+        "",
+        "liǎng",
+        "zhǒng",
+        "xiàn",
+        "xiàng",
+        "zhī",
+        "jiān",
+        "cún",
+        "zài",
+        "míng",
+        "xiǎn",
+        "xiāng",
+        "guān",
+        "xìng",
+        ""
+      ]
+    },
+    {
+      "text": "数据显示，设备故障与温度升高有关。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 5, "end": 9, "role": "subject"},
+        {"start": 9, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "数据显示 mở đầu bằng chứng; 与……有关 nêu quan hệ được dữ liệu hỗ trợ, không phải nguyên nhân trực tiếp.",
+        "en": "数据显示 introduces the evidence; 与……有关 states a data-supported relation, not a direct cause."
+      },
+      "translation": {
+        "vi": "Dữ liệu cho thấy sự cố thiết bị có liên quan đến việc nhiệt độ tăng cao.",
+        "en": "The data show that the equipment failure is related to the temperature rise."
+      },
+      "pinyin": [
+        "shù",
+        "jù",
+        "xiǎn",
+        "shì",
+        "",
+        "shè",
+        "bèi",
+        "gù",
+        "zhàng",
+        "yǔ",
+        "wēn",
+        "dù",
+        "shēng",
+        "gāo",
+        "yǒu",
+        "guān",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thấy 相关 rồi dùng 因此/导致 để kết luận nhân quả, nhưng tương quan không tự động cho phép cấu trúc nhân quả.",
+        "en": "Learners see 相关 and then use 因此/导致 to conclude causation, but correlation does not automatically license causal grammar."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "两项指标相关，因此A导致B。",
+      "right": "两项指标相关，但尚不能据此判断因果关系。",
+      "wrong_pinyin": ["liǎng", "xiàng", "zhǐ", "biāo", "xiāng", "guān", "", "yīn", "cǐ", "", "dǎo", "zhì", "", ""],
+      "right_pinyin": [
+        "liǎng",
+        "xiàng",
+        "zhǐ",
+        "biāo",
+        "xiāng",
+        "guān",
+        "",
+        "dàn",
+        "shàng",
+        "bù",
+        "néng",
+        "jù",
+        "cǐ",
+        "pàn",
+        "duàn",
+        "yīn",
+        "guǒ",
+        "guān",
+        "xì",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___日志记录，停机可能与温度异常有关。",
+      "options": [
+        {"text": "根据", "error_tag": null, "pinyin": ["gēn", "jù"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "根据 đánh dấu nguồn bằng chứng; 因为 đánh dấu nguyên nhân trực tiếp, không hợp với 日志记录.",
+        "en": "根据 marks an evidence source; 因为 marks a direct cause and does not fit 日志记录."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "rì",
+        "zhì",
+        "jì",
+        "lù",
+        "",
+        "tíng",
+        "jī",
+        "kě",
+        "néng",
+        "yǔ",
+        "wēn",
+        "dù",
+        "yì",
+        "cháng",
+        "yǒu",
+        "guān",
+        ""
+      ]
+    },
+    {
+      "q": "从现有数据___，两种现象之间存在明显相关性。",
+      "options": [
+        {"text": "来看", "error_tag": null, "pinyin": ["lái", "kàn"]},
+        {"text": "来说", "error_tag": "collocation", "pinyin": ["lái", "shuō"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khung cố định là 从……来看; 从……来说 không dùng để dẫn nguồn bằng chứng.",
+        "en": "The fixed frame is 从……来看; 从……来说 is not used to introduce an evidence source."
+      },
+      "q_pinyin": [
+        "cóng",
+        "xiàn",
+        "yǒu",
+        "shù",
+        "jù",
+        "",
+        "",
+        "",
+        "",
+        "liǎng",
+        "zhǒng",
+        "xiàn",
+        "xiàng",
+        "zhī",
+        "jiān",
+        "cún",
+        "zài",
+        "míng",
+        "xiǎn",
+        "xiāng",
+        "guān",
+        "xìng",
+        ""
+      ]
+    },
+    {
+      "q": "数据显示，设备故障与温度升高___。",
+      "options": [
+        {"text": "有关", "error_tag": null, "pinyin": ["yǒu", "guān"]},
+        {"text": "导致", "error_tag": "word_choice", "pinyin": ["dǎo", "zhì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "与……有关 nêu quan hệ mà dữ liệu hỗ trợ; 导致 khẳng định nhân quả trực tiếp, vượt quá bằng chứng.",
+        "en": "与……有关 states a data-supported relation; 导致 asserts direct causation, which exceeds the evidence."
+      },
+      "q_pinyin": [
+        "shù",
+        "jù",
+        "xiǎn",
+        "shì",
+        "",
+        "shè",
+        "bèi",
+        "gù",
+        "zhàng",
+        "yǔ",
+        "wēn",
+        "dù",
+        "shēng",
+        "gāo",
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 根据 hoặc 从……来看 để nêu căn cứ, rồi nói một quan hệ có thể có với 与……有关.",
+      "en": "Write one sentence using 根据 or 从……来看 to give evidence, then state a possible relation with 与……有关."
+    },
+    "placeholder": "根据……，……可能与……有关。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["根据", "从", "数据显示"], "role": "marker"}, {"any_of": ["与", "存在"], "role": "verb"}]
+    },
+    "sample": {
+      "text": "根据天气预报，明天的航班可能与大风有关。",
+      "pinyin": [
+        "gēn",
+        "jù",
+        "tiān",
+        "qì",
+        "yù",
+        "bào",
+        "",
+        "míng",
+        "tiān",
+        "de",
+        "háng",
+        "bān",
+        "kě",
+        "néng",
+        "yǔ",
+        "dà",
+        "fēng",
+        "yǒu",
+        "guān",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["gēn", "jù", "", "", "", "", "", "kě", "néng", "yǔ", "", "", "yǒu", "guān", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348772",
+    "generated_at": "2026-10-07T04:52:52Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-11-cause-vs-evidence-distinction"],
+      "content_version": 2,
+      "content_hash": "1c333a8c1189fdd010949b3eec31a302d7b318c9ef8cf6025add06a6b5f42e37",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-11-cause-vs-evidence-distinction",
+          "issue": "R5 gộp cả cause (因为/由于/导致) và evidence (根据/从……来看/数据显示) vào một điểm nhưng không tách công thức, khiến người học không thấy hai tuyến cấu trúc khác nhau.",
+          "fix": "Tách thành formula riêng cho tuyến evidence (根据/从……来看/数据显示 + S + 可能 + 与……有关/存在相关性) và nêu rõ trong when_to_use rằng 因为/由于 thuộc tuyến nguyên nhân trực tiếp, không dùng với nguồn bằng chứng."
+        },
+        {
+          "r5_id": "zh-hsk79-11-cause-vs-evidence-distinction",
+          "issue": "Ví dụ '现有数据支持这一解释，但尚不足以证明因果关系。' dùng 支持……结论 như một cấu trúc cố định, nhưng 支持 ở đây là động từ thường, không phải mẫu câu đặc trưng của điểm này.",
+          "fix": "Thay bằng ví dụ '数据显示，设备故障与温度升高有关。' để minh họa trực tiếp mẫu 数据显示 + S + 与……有关."
+        },
+        {
+          "r5_id": "zh-hsk79-11-cause-vs-evidence-distinction",
+          "issue": "Lỗi '根据下雨，所以比赛取消。' bị xếp chung là lỗi evidence, nhưng vấn đề chính là dùng 根据 với một sự kiện vật lý thay vì nguồn tin.",
+          "fix": "Giữ lỗi này trong common_mistakes với giải thích rõ: 根据 đánh dấu nguồn bằng chứng, không đánh dấu nguyên nhân vật lý; câu đúng là 因为下雨，所以比赛取消。"
+        }
+      ]
+    }
+  },
+  "review": null
+}

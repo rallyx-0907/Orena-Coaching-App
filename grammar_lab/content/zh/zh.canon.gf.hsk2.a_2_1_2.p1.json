@@ -1,0 +1,231 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_1_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk1.a_1_3_3.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.006"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Đại từ: 人称代词：别人、大家、它、它们、咱、咱们、自己", "en": "Pronouns: 人称代词：别人、大家、它、它们、咱、咱们、自己"},
+    "native_title": "人称代词：别人、大家、它、它们、咱、咱们、自己",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Điểm ngữ pháp này giới thiệu các đại từ nhân xưng tiếng Trung dùng để chỉ người khác, tập thể, đồ vật và chính mình: 别人, 大家, 它, 它们, 咱, 咱们, 自己.",
+      "en": "This point introduces Chinese personal pronouns used to refer to other people, a group, things, and oneself: 别人, 大家, 它, 它们, 咱, 咱们, 自己."
+    },
+    "sub": {"vi": "đại từ nhân xưng", "en": "personal pronouns"},
+    "native_title_pinyin": [
+      "rén",
+      "chēng",
+      "dài",
+      "cí",
+      "",
+      "bié",
+      "rén",
+      "",
+      "dà",
+      "jiā",
+      "",
+      "tā",
+      "",
+      "tā",
+      "men",
+      "",
+      "zán",
+      "",
+      "zán",
+      "men",
+      "",
+      "zì",
+      "jǐ"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng 别人 để nói về người khác nói chung, không chỉ một người cụ thể.",
+      "en": "Use 别人 to refer to other people in general, not one specific person."
+    },
+    {
+      "vi": "Dùng 大家 khi nói với hoặc về một nhóm người mà mọi người đều được bao gồm.",
+      "en": "Use 大家 when speaking to or about a group that includes everyone."
+    },
+    {
+      "vi": "Dùng 它 hoặc 它们 để chỉ một hoặc nhiều đồ vật, con vật, sự việc.",
+      "en": "Use 它 or 它们 for one or more things, animals, or matters."
+    },
+    {
+      "vi": "Dùng 咱/咱们 để gộp người nói với người nghe, và 自己 để nhấn mạnh chính bản thân.",
+      "en": "Use 咱/咱们 to include the speaker with the listener, and 自己 to emphasize the self."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "代词",
+        "role": "subject",
+        "label": {"vi": "đại từ", "en": "pronoun"},
+        "options": [
+          {"text": "别人", "pinyin": ["bié", "rén"]},
+          {"text": "大家", "pinyin": ["dà", "jiā"]},
+          {"text": "它", "pinyin": ["tā"]},
+          {"text": "它们", "pinyin": ["tā", "men"]},
+          {"text": "咱", "pinyin": ["zán"]},
+          {"text": "咱们", "pinyin": ["zán", "men"]},
+          {"text": "自己", "pinyin": ["zì", "jǐ"]}
+        ],
+        "pinyin": ["dài", "cí"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "别人都去公园了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "别人 làm chủ ngữ chỉ người khác nói chung.",
+        "en": "别人 is the subject referring to other people in general."
+      },
+      "translation": {"vi": "Người khác đều đi công viên rồi.", "en": "The others have all gone to the park."},
+      "pinyin": ["bié", "rén", "dōu", "qù", "gōng", "yuán", "le", ""]
+    },
+    {
+      "text": "咱们一起吃饭吧。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "咱们 gộp cả người nói và người nghe vào cùng một nhóm.",
+        "en": "咱们 includes both the speaker and the listener in one group."
+      },
+      "translation": {"vi": "Chúng ta cùng ăn cơm nhé.", "en": "Let's eat together."},
+      "pinyin": ["zán", "men", "yì", "qǐ", "chī", "fàn", "ba", ""]
+    },
+    {
+      "text": "它们是我的书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "它们 chỉ nhiều đồ vật, ở đây là sách.",
+        "en": "它们 refers to multiple things, here books."
+      },
+      "translation": {"vi": "Chúng là sách của tôi.", "en": "They are my books."},
+      "pinyin": ["tā", "men", "shì", "wǒ", "de", "shū", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "它 dùng cho đồ vật hoặc con vật, không dùng cho người; với người phải dùng 他/她.",
+        "en": "它 is for things or animals, not people; for a person use 他/她."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "它是我朋友。",
+      "right": "他是我朋友。",
+      "wrong_pinyin": ["tā", "shì", "wǒ", "péng", "yǒu", ""],
+      "right_pinyin": ["tā", "shì", "wǒ", "péng", "yǒu", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___都来了吗？",
+      "options": [
+        {"text": "大家", "error_tag": null, "pinyin": ["dà", "jiā"]},
+        {"text": "它", "error_tag": "word_choice", "pinyin": ["tā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "大家 chỉ một nhóm người, phù hợp với câu hỏi mọi người đã đến chưa.",
+        "en": "大家 refers to a group of people, fitting the question of whether everyone has arrived."
+      },
+      "q_pinyin": ["", "", "", "dōu", "lái", "le", "ma", ""]
+    },
+    {
+      "q": "这些花是___的。",
+      "options": [
+        {"text": "它们", "error_tag": null, "pinyin": ["tā", "men"]},
+        {"text": "它", "error_tag": "other", "pinyin": ["tā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "这些花 là số nhiều nên dùng 它们, không dùng 它 số ít.",
+        "en": "这些花 is plural, so use 它们, not singular 它."
+      },
+      "q_pinyin": ["zhè", "xiē", "huā", "shì", "", "", "", "de", ""]
+    },
+    {
+      "q": "你应自己___这件事。",
+      "options": [
+        {"text": "做", "error_tag": null, "pinyin": ["zuò"]},
+        {"text": "做做", "error_tag": "other", "pinyin": ["zuò", "zuò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "自己 là đại từ, sau nó là động từ 做; lặp 做做 không đúng ngữ pháp ở đây.",
+        "en": "自己 is a pronoun, followed by the verb 做; repeating 做做 is not grammatical here."
+      },
+      "q_pinyin": ["nǐ", "yīng", "zì", "jǐ", "", "", "", "zhè", "jiàn", "shì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn và người khác cùng làm gì đó, dùng 咱们 hoặc 大家.",
+      "en": "Write one sentence about you and others doing something together, using 咱们 or 大家."
+    },
+    "placeholder": "咱们……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["咱们", "别人", "它", "它们", "咱"], "role": "subject"},
+        {"regex": "[\\u4e00-\\u9fff]", "role": "verb"}
+      ]
+    },
+    "sample": {"text": "咱们一起学习吧。", "pinyin": ["zán", "men", "yì", "qǐ", "xué", "xí", "ba", ""]},
+    "placeholder_pinyin": ["zán", "men", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348460",
+    "generated_at": "2026-10-07T04:47:40Z"
+  },
+  "review": null
+}

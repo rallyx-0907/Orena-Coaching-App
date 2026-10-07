@@ -1,0 +1,217 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_6.p3",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_6.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.068", "gf0025.hsk5.069"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách nhấn mạnh: X什么X", "en": "Ways of emphasis: X什么X"},
+    "native_title": "X什么X",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Mẫu X什么X dùng để phủ định mạnh hoặc bác bỏ một cách khó chịu, nhấn mạnh rằng điều được nói là không đúng hoặc không quan trọng.",
+      "en": "The X什么X pattern is used for strong, dismissive negation, stressing that what was said is not true or does not matter."
+    },
+    "sub": {"vi": "phủ định nhấn mạnh", "en": "emphatic negation"},
+    "native_title_pinyin": ["", "shén", "me", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn bác bỏ mạnh mẽ điều người khác vừa nói, thường kèm thái độ khó chịu hoặc không kiên nhẫn.",
+      "en": "When you want to strongly reject what someone just said, often with annoyance or impatience."
+    },
+    {
+      "vi": "Khi bạn cho rằng hành động hoặc trạng thái được nhắc đến là không cần thiết hoặc vô nghĩa.",
+      "en": "When you think the action or state mentioned is unnecessary or meaningless."
+    },
+    {
+      "vi": "Trong khẩu ngữ thân mật, khi bạn muốn phản đối nhanh mà không cần giải thích dài dòng.",
+      "en": "In casual speech, when you want to object quickly without a long explanation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "X",
+        "role": "other",
+        "label": {"vi": "từ hoặc cụm bị lặp", "en": "repeated word or phrase"},
+        "pinyin": [""]
+      },
+      {
+        "text": "什么",
+        "role": "particle",
+        "label": {"vi": "什么 (phủ định nhấn mạnh)", "en": "什么 (emphatic negator)"},
+        "pinyin": ["shén", "me"]
+      },
+      {
+        "text": "X",
+        "role": "other",
+        "label": {"vi": "từ hoặc cụm bị lặp lại", "en": "repeated word or phrase"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "你忙什么忙，先吃饭吧。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 4, "role": "particle"},
+        {"start": 4, "end": 5, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Lặp 忙 quanh 什么 để bác bỏ chuyện bận rộn, ý là đừng viện cớ bận nữa.",
+        "en": "忙 is repeated around 什么 to dismiss the claim of being busy, meaning don't use busyness as an excuse."
+      },
+      "translation": {"vi": "Bận gì mà bận, ăn cơm trước đã.", "en": "What do you mean busy? Eat first."},
+      "pinyin": ["nǐ", "máng", "shén", "me", "máng", "", "xiān", "chī", "fàn", "ba", ""]
+    },
+    {
+      "text": "这个电影好什么好，我看了十分钟就睡着了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 7, "role": "particle"},
+        {"start": 7, "end": 8, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Lặp 好 quanh 什么 để phủ nhận mạnh rằng bộ phim không hay chút nào.",
+        "en": "好 is repeated around 什么 to strongly deny that the movie is any good."
+      },
+      "translation": {
+        "vi": "Phim hay gì mà hay, tôi xem mười phút là ngủ mất.",
+        "en": "What do you mean the movie is good? I fell asleep after ten minutes."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "diàn",
+        "yǐng",
+        "hǎo",
+        "shén",
+        "me",
+        "hǎo",
+        "",
+        "wǒ",
+        "kàn",
+        "le",
+        "shí",
+        "fēn",
+        "zhōng",
+        "jiù",
+        "shuì",
+        "zháo",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "你急什么急，还有半个小时呢。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 4, "role": "particle"},
+        {"start": 4, "end": 5, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Lặp 急 quanh 什么 để trấn an rằng không có gì phải gấp.",
+        "en": "急 is repeated around 什么 to reassure that there is nothing to rush about."
+      },
+      "translation": {
+        "vi": "Gấp gì mà gấp, còn nửa tiếng nữa cơ mà.",
+        "en": "What's the rush? There's still half an hour left."
+      },
+      "pinyin": ["nǐ", "jí", "shén", "me", "jí", "", "hái", "yǒu", "bàn", "gè", "xiǎo", "shí", "ne", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Mẫu này cần lặp lại cùng một từ hoặc cụm từ ở cả hai bên 什么; nếu chỉ nói 忙什么 thì câu thành câu hỏi thông thường, không còn là phủ định nhấn mạnh.",
+        "en": "This pattern requires repeating the same word or phrase on both sides of 什么; saying only 忙什么 turns it into an ordinary question, not emphatic negation."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "你忙什么，先吃饭吧。",
+      "right": "你忙什么忙，先吃饭吧。",
+      "wrong_pinyin": ["nǐ", "máng", "shén", "me", "", "xiān", "chī", "fàn", "ba", ""],
+      "right_pinyin": ["nǐ", "máng", "shén", "me", "máng", "", "xiān", "chī", "fàn", "ba", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个菜辣___辣，我根本吃不了。",
+      "options": [
+        {"text": "什么", "error_tag": null, "pinyin": ["shén", "me"]},
+        {"text": "怎么", "error_tag": "particle", "pinyin": ["zěn", "me"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu X什么X cần 什么 ở giữa hai lần lặp của cùng một từ; 怎么 không tạo thành mẫu phủ định nhấn mạnh này.",
+        "en": "The X什么X pattern needs 什么 between two repetitions of the same word; 怎么 does not form this emphatic negation."
+      },
+      "q_pinyin": ["zhè", "ge", "cài", "là", "", "", "", "là", "", "wǒ", "gēn", "běn", "chī", "bù", "liǎo", ""]
+    },
+    {
+      "q": "你___什么急，车还没来呢。",
+      "options": [
+        {"text": "急", "error_tag": null, "pinyin": ["jí"]},
+        {"text": "着急", "error_tag": "word_choice", "pinyin": ["zháo", "jí"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong mẫu X什么X, từ trước và sau 什么 phải giống hệt nhau; 着急 không lặp lại đúng từ 急.",
+        "en": "In the X什么X pattern, the word before and after 什么 must be identical; 着急 does not repeat the exact word 急."
+      },
+      "q_pinyin": ["nǐ", "", "", "", "shén", "me", "jí", "", "chē", "hái", "méi", "lái", "ne", ""]
+    },
+    {
+      "q": "他___什么忙，明明在打游戏。",
+      "options": [
+        {"text": "忙", "error_tag": null, "pinyin": ["máng"]},
+        {"text": "帮忙", "error_tag": "word_choice", "pinyin": ["bāng", "máng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu X什么X yêu cầu lặp lại cùng một từ; 帮忙 không lặp lại đúng từ 忙 đã dùng ở đầu câu.",
+        "en": "The X什么X pattern requires repeating the same word; 帮忙 does not repeat the exact word 忙 used at the start."
+      },
+      "q_pinyin": ["tā", "", "", "", "shén", "me", "máng", "", "míng", "míng", "zài", "dǎ", "yóu", "xì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng mẫu X什么X để bác bỏ mạnh một điều ai đó vừa nói, ví dụ về sự bận rộn, lo lắng hoặc chất lượng.",
+      "en": "Write a sentence using the X什么X pattern to strongly reject something someone just said, for example about being busy, worried, or quality."
+    },
+    "placeholder": "你忙什么忙，……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["什么"], "role": "particle"}]},
+    "sample": {
+      "text": "你忙什么忙，先吃饭吧。",
+      "pinyin": ["nǐ", "máng", "shén", "me", "máng", "", "xiān", "chī", "fàn", "ba", ""]
+    },
+    "placeholder_pinyin": ["nǐ", "máng", "shén", "me", "máng", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338618",
+    "generated_at": "2026-10-07T02:03:38Z"
+  },
+  "review": null
+}

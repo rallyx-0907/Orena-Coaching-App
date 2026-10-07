@@ -1,0 +1,443 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_12_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.information_structure",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_10_topic_148"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {
+    "r5": [
+      "zh-hsk5-12-topic",
+      "zh-hsk6-18-topic-comment-in-formal-writing",
+      "zh-hsk79-7-complex-topic-chains"
+    ]
+  },
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [
+    "zh-hsk5-12-topic",
+    "zh-hsk6-18-topic-comment-in-formal-writing",
+    "zh-hsk79-7-complex-topic-chains"
+  ],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 话题链与省略", "en": "Chinese grammar: 话题链与省略"},
+    "native_title": "话题链与省略",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Chủ đề được nêu một lần ở đầu, các mệnh đề sau có thể lược bỏ chủ ngữ hoặc tân ngữ đã rõ, tạo mạch văn liền lạc.",
+      "en": "A topic is introduced once, and later clauses may omit a subject or object that is already clear, creating a cohesive chain."
+    },
+    "sub": {"vi": "mạch chủ đề", "en": "topic chain"},
+    "native_title_pinyin": ["huà", "tí", "liàn", "yǔ", "shěng", "lüè"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nhiều mệnh đề liên tiếp nói về cùng một chủ thể và người đọc vẫn xác định được chủ thể đó.",
+      "en": "When several clauses in a row are about the same entity and the reader can still identify it."
+    },
+    {
+      "vi": "Khi muốn tránh lặp lại chủ ngữ hoặc tân ngữ ở mỗi mệnh đề, làm câu nặng và thiếu tự nhiên.",
+      "en": "When repeating the subject or object in every clause would make the sentence heavy and unnatural."
+    },
+    {
+      "vi": "Khi cần chuyển sang chủ đề khác, phải nêu rõ chủ đề mới thay vì tiếp tục lược bỏ.",
+      "en": "When the topic changes, you must state the new topic instead of continuing to omit."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "话题",
+        "role": "subject",
+        "label": {"vi": "chủ đề", "en": "topic"},
+        "pinyin": ["huà", "tí"]
+      },
+      {
+        "text": "，",
+        "role": "other",
+        "label": {"vi": "dấu phẩy sau chủ đề", "en": "topic comma"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "谓语1",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 1", "en": "predicate 1"},
+        "pinyin": ["wèi", "yǔ", ""]
+      },
+      {"text": "，", "role": "other", "label": {"vi": "dấu phẩy 1", "en": "comma 1"}, "pinyin": [""]},
+      {
+        "text": "谓语2",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 2", "en": "predicate 2"},
+        "pinyin": ["wèi", "yǔ", ""]
+      },
+      {"text": "，", "role": "other", "label": {"vi": "dấu phẩy 2", "en": "comma 2"}, "pinyin": [""]},
+      {
+        "text": "谓语3",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 3", "en": "predicate 3"},
+        "pinyin": ["wèi", "yǔ", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个方案，我们讨论过，也修改过，现在可以实施了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 10, "role": "verb"},
+        {"start": 10, "end": 11, "role": "other"},
+        {"start": 11, "end": 15, "role": "verb"},
+        {"start": 15, "end": 16, "role": "other"},
+        {"start": 16, "end": 23, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Chủ đề được giữ xuyên suốt ba vị ngữ; các chủ ngữ lặp lại được lược bỏ khi đã rõ.",
+        "en": "The topic is maintained across three predicates, with repeated subjects omitted when clear."
+      },
+      "translation": {
+        "vi": "Phương án này, chúng tôi đã thảo luận, cũng đã sửa, giờ có thể triển khai.",
+        "en": "This plan: we discussed it, revised it, and now it can be implemented."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "",
+        "wǒ",
+        "men",
+        "tǎo",
+        "lùn",
+        "guò",
+        "",
+        "yě",
+        "xiū",
+        "gǎi",
+        "guò",
+        "",
+        "xiàn",
+        "zài",
+        "kě",
+        "yǐ",
+        "shí",
+        "shī",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "小王到了办公室，打开电脑，开始工作。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "other"},
+        {"start": 8, "end": 12, "role": "verb"},
+        {"start": 12, "end": 13, "role": "other"},
+        {"start": 13, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cùng một chủ ngữ 小王 được lược bỏ ở hai hành động sau.",
+        "en": "The shared subject 小王 is omitted in the following two actions."
+      },
+      "translation": {
+        "vi": "Tiểu Vương đến văn phòng, mở máy tính rồi bắt đầu làm việc.",
+        "en": "Xiao Wang arrived at the office, opened the computer, and started work."
+      },
+      "pinyin": [
+        "xiǎo",
+        "wáng",
+        "dào",
+        "le",
+        "bàn",
+        "gōng",
+        "shì",
+        "",
+        "dǎ",
+        "kāi",
+        "diàn",
+        "nǎo",
+        "",
+        "kāi",
+        "shǐ",
+        "gōng",
+        "zuò",
+        ""
+      ]
+    },
+    {
+      "text": "这本书我看过，觉得很有意思，想再读一遍。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 13, "role": "verb"},
+        {"start": 13, "end": 14, "role": "other"},
+        {"start": 14, "end": 19, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "话题 这本书 đặt đầu câu; sau đó chủ ngữ và tân ngữ có thể được lược bỏ khi đã rõ.",
+        "en": "The topic 这本书 is fronted; later subjects and objects can be omitted when recoverable."
+      },
+      "translation": {
+        "vi": "Cuốn sách này tôi đã đọc, thấy rất thú vị và muốn đọc lại một lần nữa.",
+        "en": "I have read this book, found it interesting, and want to read it again."
+      },
+      "pinyin": [
+        "zhè",
+        "běn",
+        "shū",
+        "wǒ",
+        "kàn",
+        "guò",
+        "",
+        "jué",
+        "de",
+        "hěn",
+        "yǒu",
+        "yì",
+        "si",
+        "",
+        "xiǎng",
+        "zài",
+        "dú",
+        "yī",
+        "biàn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi có hai người nam, đại từ '他' có thể gây nhập nhằng; cần nêu rõ chủ đề hoặc lược bỏ khi chủ thể duy nhất.",
+        "en": "With two male referents, the pronoun '他' can be ambiguous; state the topic clearly or omit when the subject is unique."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "小王告诉小李他到了办公室，打开电脑，开始工作。",
+      "right": "小王到了办公室，打开电脑，开始工作。",
+      "wrong_pinyin": [
+        "xiǎo",
+        "wáng",
+        "gào",
+        "sù",
+        "xiǎo",
+        "lǐ",
+        "tā",
+        "dào",
+        "le",
+        "bàn",
+        "gōng",
+        "shì",
+        "",
+        "dǎ",
+        "kāi",
+        "diàn",
+        "nǎo",
+        "",
+        "kāi",
+        "shǐ",
+        "gōng",
+        "zuò",
+        ""
+      ],
+      "right_pinyin": [
+        "xiǎo",
+        "wáng",
+        "dào",
+        "le",
+        "bàn",
+        "gōng",
+        "shì",
+        "",
+        "dǎ",
+        "kāi",
+        "diàn",
+        "nǎo",
+        "",
+        "kāi",
+        "shǐ",
+        "gōng",
+        "zuò",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个方案，我们讨论过，也修改过，现在可以___了。",
+      "options": [
+        {"text": "实施", "error_tag": null, "pinyin": ["shí", "shī"]},
+        {"text": "实施它", "error_tag": "redundancy", "pinyin": ["shí", "shī", "tā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ đề '这个方案' đã rõ, không cần thêm tân ngữ '它'.",
+        "en": "The topic '这个方案' is already clear, so the object '它' is not needed."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "",
+        "wǒ",
+        "men",
+        "tǎo",
+        "lùn",
+        "guò",
+        "",
+        "yě",
+        "xiū",
+        "gǎi",
+        "guò",
+        "",
+        "xiàn",
+        "zài",
+        "kě",
+        "yǐ",
+        "",
+        "",
+        "",
+        "le",
+        ""
+      ]
+    },
+    {
+      "q": "小王到了办公室，___，开始工作。",
+      "options": [
+        {"text": "打开电脑", "error_tag": null, "pinyin": ["dǎ", "kāi", "diàn", "nǎo"]},
+        {"text": "他打开电脑", "error_tag": "redundancy", "pinyin": ["tā", "dǎ", "kāi", "diàn", "nǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cùng chủ thể '小王', nên lược bỏ chủ ngữ ở mệnh đề sau.",
+        "en": "The subject is the same '小王', so it should be omitted in the following clause."
+      },
+      "q_pinyin": [
+        "xiǎo",
+        "wáng",
+        "dào",
+        "le",
+        "bàn",
+        "gōng",
+        "shì",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "kāi",
+        "shǐ",
+        "gōng",
+        "zuò",
+        ""
+      ]
+    },
+    {
+      "q": "这本书我看过，觉得很有意思，___。",
+      "options": [
+        {"text": "想再读一遍", "error_tag": null, "pinyin": ["xiǎng", "zài", "dú", "yī", "biàn"]},
+        {
+          "text": "我想再读一遍",
+          "error_tag": "redundancy",
+          "pinyin": ["wǒ", "xiǎng", "zài", "dú", "yī", "biàn"]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ '我' đã rõ từ mệnh đề trước, không cần lặp lại.",
+        "en": "The subject '我' is clear from the previous clause, so it does not need to be repeated."
+      },
+      "q_pinyin": [
+        "zhè",
+        "běn",
+        "shū",
+        "wǒ",
+        "kàn",
+        "guò",
+        "",
+        "jué",
+        "de",
+        "hěn",
+        "yǒu",
+        "yì",
+        "si",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn đã làm, dùng mạch chủ đề: nêu chủ đề một lần rồi lược bỏ chủ ngữ ở các mệnh đề sau.",
+      "en": "Write a sentence about something you did, using a topic chain: state the topic once and omit the subject in later clauses."
+    },
+    "placeholder": "我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["，"], "role": "other"}, {"any_of": ["，"], "role": "other"}]
+    },
+    "sample": {
+      "text": "我到了学校，打开书，开始学习。",
+      "pinyin": ["wǒ", "dào", "le", "xué", "xiào", "", "dǎ", "kāi", "shū", "", "kāi", "shǐ", "xué", "xí", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351880",
+    "generated_at": "2026-10-07T05:44:40Z",
+    "r5_source": {
+      "ids": [
+        "zh-hsk5-12-topic",
+        "zh-hsk6-18-topic-comment-in-formal-writing",
+        "zh-hsk79-7-complex-topic-chains"
+      ],
+      "content_version": 2,
+      "content_hash": "052945b28c72894aafa622e18015a89b852521823a31c8a9bc9b3e9a64adb8b7",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-12-topic",
+          "issue": "R5 dùng dấu phẩy như một slot trong công thức, nhưng quy tắc mới cấm dấu câu là slot.",
+          "fix": "Đã loại bỏ dấu phẩy khỏi công thức; chỉ giữ các slot ngữ pháp."
+        },
+        {
+          "r5_id": "zh-hsk5-12-topic",
+          "issue": "R5 không cung cấp công thức trừu tượng cho mạch chủ đề.",
+          "fix": "Đã thêm công thức với các slot: 话题, 谓语1, (主语), 谓语2, (主语), 谓语3."
+        },
+        {
+          "r5_id": "zh-hsk5-12-topic",
+          "issue": "R5 có ví dụ '项目已经开始，目前进展顺利，预计下月完成。' nhưng không có chủ ngữ rõ ràng ở mệnh đề đầu, gây khó hiểu về chủ đề.",
+          "fix": "Đã thay bằng ví dụ '这个方案，我们讨论过，也修改过，现在可以实施了。' để minh họa rõ chủ đề được nêu một lần."
+        },
+        {
+          "r5_id": "zh-hsk5-12-topic",
+          "issue": "R5 liệt kê lỗi '小王告诉小李他到了办公室，打开电脑...' nhưng không giải thích rõ cơ chế nhập nhằng.",
+          "fix": "Đã viết lại lỗi thành '小王告诉小李他到了办公室，打开电脑，开始工作。' và giải thích do hai người nam gây nhập nhằng đại từ."
+        }
+      ]
+    }
+  },
+  "review": null
+}

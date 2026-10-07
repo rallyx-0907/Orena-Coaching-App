@@ -1,0 +1,238 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_9_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_7_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk3-9-topic"], "gf0025": ["gf0025.hsk3.040"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk3-9-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 对⋯⋯来说", "en": "Chinese grammar: 对⋯⋯来说"},
+    "native_title": "对⋯⋯来说",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "对⋯⋯来说 giới hạn một nhận xét theo góc nhìn của ai đó hoặc cái gì đó: 'đối với X mà nói thì...'.",
+      "en": "对⋯⋯来说 frames an evaluation from someone's or something's perspective: 'as far as X is concerned...'."
+    },
+    "sub": {"vi": "góc nhìn", "en": "viewpoint frame"},
+    "native_title_pinyin": ["duì", "", "", "lái", "shuō"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một nhận xét chỉ đúng theo góc nhìn của một người hay một nhóm người.",
+      "en": "When an evaluation is true only from one person's or group's perspective."
+    },
+    {
+      "vi": "Khi so sánh mức độ khó, quan trọng, phù hợp của việc gì đó đối với từng đối tượng.",
+      "en": "When comparing how difficult, important, or suitable something is for different people."
+    },
+    {
+      "vi": "Khi đưa ra ý kiến cá nhân một cách rõ ràng, thường mở đầu bằng 对我来说.",
+      "en": "When stating a personal opinion clearly, often opening with 对我来说."
+    },
+    {
+      "vi": "Khi chủ ngữ của câu đã rõ và cụm 对⋯⋯来说 đứng sau chủ ngữ đó, trước phần nhận xét.",
+      "en": "When the sentence topic is already clear and the 对⋯⋯来说 phrase follows it, before the evaluation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "对",
+        "role": "marker",
+        "label": {"vi": "giới từ 对", "en": "preposition 对"},
+        "pinyin": ["duì"]
+      },
+      {
+        "text": "NP",
+        "role": "object",
+        "label": {"vi": "người / nhóm được quy chiếu", "en": "person or group framed"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "来说",
+        "role": "particle",
+        "label": {"vi": "来说 đóng khung góc nhìn", "en": "来说 closes the viewpoint frame"},
+        "pinyin": ["lái", "shuō"]
+      },
+      {
+        "text": "evaluation",
+        "role": "complement",
+        "label": {"vi": "nhận xét / đánh giá", "en": "evaluation"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "对我来说，中文很有意思。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 2, "role": "object"},
+        {"start": 2, "end": 4, "role": "particle"},
+        {"start": 5, "end": 11, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "对⋯⋯来说 mở đầu câu, đặt góc nhìn của người nói trước nhận xét.",
+        "en": "对⋯⋯来说 opens the sentence, placing the speaker's viewpoint before the evaluation."
+      },
+      "translation": {"vi": "Đối với tôi, tiếng Trung rất thú vị.", "en": "To me, Chinese is very interesting."},
+      "pinyin": ["duì", "wǒ", "lái", "shuō", "", "zhōng", "wén", "hěn", "yǒu", "yì", "si", ""]
+    },
+    {
+      "text": "对孩子来说，这个问题太难了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 3, "role": "object"},
+        {"start": 3, "end": 5, "role": "particle"},
+        {"start": 6, "end": 13, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nhận xét 'quá khó' chỉ đúng theo góc nhìn của trẻ em.",
+        "en": "The evaluation 'too difficult' holds only from the children's perspective."
+      },
+      "translation": {
+        "vi": "Đối với trẻ em, vấn đề này quá khó.",
+        "en": "For children, this problem is too difficult."
+      },
+      "pinyin": ["duì", "hái", "zi", "lái", "shuō", "", "zhè", "ge", "wèn", "tí", "tài", "nán", "le", ""]
+    },
+    {
+      "text": "这份工作对他来说很重要。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "object"},
+        {"start": 6, "end": 8, "role": "particle"},
+        {"start": 8, "end": 11, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Cụm 对⋯⋯来说 đứng sau chủ ngữ 这份工作, trước phần đánh giá.",
+        "en": "The 对⋯⋯来说 phrase follows the subject 这份工作, before the evaluation."
+      },
+      "translation": {
+        "vi": "Công việc này rất quan trọng đối với anh ấy.",
+        "en": "This job is very important to him."
+      },
+      "pinyin": ["zhè", "fèn", "gōng", "zuò", "duì", "tā", "lái", "shuō", "hěn", "zhòng", "yào", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "来说 phải đứng ngay sau NP để đóng cụm góc nhìn; người học đặt nó sau cả mệnh đề nhận xét.",
+        "en": "来说 must directly follow the NP to close the viewpoint phrase; the learner placed it after the whole evaluation clause."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "对我中文很有意思来说。",
+      "right": "对我来说，中文很有意思。",
+      "wrong_pinyin": ["duì", "wǒ", "zhōng", "wén", "hěn", "yǒu", "yì", "si", "lái", "shuō", ""],
+      "right_pinyin": ["duì", "wǒ", "lái", "shuō", "", "zhōng", "wén", "hěn", "yǒu", "yì", "si", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___，这本书很合适。",
+      "options": [
+        {"text": "对初学者来说", "error_tag": null, "pinyin": ["duì", "chū", "xué", "zhě", "lái", "shuō"]},
+        {"text": "对初学者", "error_tag": "other", "pinyin": ["duì", "chū", "xué", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần 来说 để đóng cụm góc nhìn; 对初学者 một mình chỉ nghĩa 'đối với người mới học' chứ chưa tạo khung góc nhìn.",
+        "en": "来说 is needed to close the viewpoint frame; 对初学者 alone means 'toward beginners' and does not create the frame."
+      },
+      "q_pinyin": ["", "", "", "", "zhè", "běn", "shū", "hěn", "hé", "shì", ""]
+    },
+    {
+      "q": "对他来说，这个决定___。",
+      "options": [
+        {"text": "很重要", "error_tag": null, "pinyin": ["hěn", "zhòng", "yào"]},
+        {
+          "text": "很重要来说",
+          "error_tag": "word_order",
+          "pinyin": ["hěn", "zhòng", "yào", "lái", "shuō"]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "来说 thuộc cụm 对⋯⋯来说, không đứng sau vị ngữ.",
+        "en": "来说 belongs to the 对⋯⋯来说 phrase and cannot follow the predicate."
+      },
+      "q_pinyin": ["duì", "tā", "lái", "shuō", "", "zhè", "ge", "jué", "dìng", "", "", "", ""]
+    },
+    {
+      "q": "___，汉语不太难。",
+      "options": [
+        {"text": "对我来说", "error_tag": null, "pinyin": ["duì", "wǒ", "lái", "shuō"]},
+        {"text": "我说对", "error_tag": "word_order", "pinyin": ["wǒ", "shuō", "duì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trật tự đúng là 对 + NP + 来说; 我说对 đảo ngược và không tạo thành cụm góc nhìn.",
+        "en": "The correct order is 对 + NP + 来说; 我说对 reverses it and does not form a viewpoint phrase."
+      },
+      "q_pinyin": ["", "", "", "", "hàn", "yǔ", "bù", "tài", "nán", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói điều gì đó đúng theo góc nhìn của bạn, dùng 对我来说.",
+      "en": "Write one sentence about something that is true from your perspective, using 对我来说."
+    },
+    "placeholder": "对我来说，……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["对"], "role": "marker"}, {"any_of": ["来说"], "role": "particle"}]
+    },
+    "sample": {
+      "text": "对我来说，早起不太难。",
+      "pinyin": ["duì", "wǒ", "lái", "shuō", "", "zǎo", "qǐ", "bù", "tài", "nán", ""]
+    },
+    "placeholder_pinyin": ["duì", "wǒ", "lái", "shuō", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338257",
+    "generated_at": "2026-10-07T01:57:37Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-9-topic"],
+      "content_version": 2,
+      "content_hash": "9aae9080ff3684a5b65a051823259d6c2ff1478c4dfedf3c24bc0219f54cabe2",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-9-topic",
+          "issue": "R5's mistake example '他对我来说很好 nếu intended ...' mixes Vietnamese into the wrong sentence and is not a clean Chinese error.",
+          "fix": "Replaced it with a clean word-order mistake: '对我中文很有意思来说。' → '对我来说，中文很有意思。'"
+        },
+        {
+          "r5_id": "zh-hsk3-9-topic",
+          "issue": "R5's guided practice includes a contrast prompt that is not a real exercise and a production prompt with no concrete pattern.",
+          "fix": "Replaced guided practice with three cloze quick-practice items that test the 对⋯⋯来说 frame and its word order."
+        },
+        {
+          "r5_id": "zh-hsk3-9-topic",
+          "issue": "R5 lists contrast targets 自从...以来 and 跟/和...一样, but the schema for this point requires no compare entries.",
+          "fix": "Left compare empty as required by the point's compare list."
+        }
+      ]
+    }
+  },
+  "review": null
+}

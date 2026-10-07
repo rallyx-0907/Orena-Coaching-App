@@ -1,0 +1,377 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_4.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_3_2_2.p2"],
+  "contrasts": [],
+  "error_tags": ["collocation"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.036"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cấu trúc cố định: 东一A，西一A", "en": "Fixed patterns: 东一A，西一A"},
+    "native_title": "东一A，西一A",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Mẫu cố định 东一A，西一A dùng để nói rằng một sự vật xuất hiện rải rác khắp nơi, mỗi chỗ một kiểu.",
+      "en": "The fixed pattern 东一A，西一A says that something appears scattered all over, one kind here and another kind there."
+    },
+    "sub": {"vi": "rải rác khắp nơi", "en": "scattered everywhere"},
+    "native_title_pinyin": ["dōng", "yī", "", "", "xī", "yī", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một thứ xuất hiện ở nhiều chỗ khác nhau, không tập trung.",
+      "en": "When you want to say something appears in many different places, not in one spot."
+    },
+    {
+      "vi": "Khi hai vế dùng cùng một tính từ hoặc cùng một động từ để tạo nhịp đối xứng.",
+      "en": "When both halves use the same adjective or the same verb to create a balanced rhythm."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh sự lộn xộn, thiếu quy củ của sự vật được nói tới.",
+      "en": "When you want to stress that the things being described are messy or not organised."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "东",
+        "role": "place",
+        "label": {"vi": "phương đông, một phía", "en": "east, one side"},
+        "pinyin": ["dōng"]
+      },
+      {
+        "text": "一",
+        "role": "other",
+        "label": {"vi": "một (lượng không xác định)", "en": "one (an unspecified amount)"},
+        "pinyin": ["yī"]
+      },
+      {
+        "text": "A",
+        "role": "complement",
+        "label": {"vi": "tính từ / động từ miêu tả", "en": "describing adjective / verb"},
+        "pinyin": [""]
+      },
+      {
+        "text": "西",
+        "role": "place",
+        "label": {"vi": "phương tây, phía còn lại", "en": "west, the other side"},
+        "pinyin": ["xī"]
+      },
+      {
+        "text": "一",
+        "role": "other",
+        "label": {"vi": "một (lượng không xác định)", "en": "one (an unspecified amount)"},
+        "pinyin": ["yī"]
+      },
+      {
+        "text": "A",
+        "role": "complement",
+        "label": {"vi": "tính từ / động từ miêu tả", "en": "describing adjective / verb"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "教室里东一堆，西一堆，全是书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "place"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "complement"},
+        {"start": 7, "end": 8, "role": "place"},
+        {"start": 8, "end": 9, "role": "other"},
+        {"start": 9, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Đông một đống, tây một đống: sách vở rải rác khắp lớp.",
+        "en": "One pile here, one pile there: the books are scattered all over the classroom."
+      },
+      "translation": {
+        "vi": "Trong lớp, chỗ này một đống, chỗ kia một đống, toàn là sách.",
+        "en": "In the classroom there are piles here and piles there, all of them books."
+      },
+      "pinyin": [
+        "jiào",
+        "shì",
+        "lǐ",
+        "dōng",
+        "yī",
+        "duī",
+        "",
+        "xī",
+        "yī",
+        "duī",
+        "",
+        "quán",
+        "shì",
+        "shū",
+        ""
+      ]
+    },
+    {
+      "text": "这些花东一朵，西一朵，开得不成片。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "place"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "complement"},
+        {"start": 7, "end": 8, "role": "place"},
+        {"start": 8, "end": 9, "role": "other"},
+        {"start": 9, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Đông một bông, tây một bông: hoa mọc rải rác, không thành cụm.",
+        "en": "One blossom here, one blossom there: the flowers grow scattered, not in a cluster."
+      },
+      "translation": {
+        "vi": "Những bông hoa này chỗ này một bông, chỗ kia một bông, nở không thành từng cụm.",
+        "en": "These flowers bloom one here and one there, not in a patch."
+      },
+      "pinyin": [
+        "zhè",
+        "xiē",
+        "huā",
+        "dōng",
+        "yī",
+        "duǒ",
+        "",
+        "xī",
+        "yī",
+        "duǒ",
+        "",
+        "kāi",
+        "dé",
+        "bù",
+        "chéng",
+        "piàn",
+        ""
+      ]
+    },
+    {
+      "text": "他的朋友东一个，西一个，住得很远。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "place"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "complement"},
+        {"start": 8, "end": 9, "role": "place"},
+        {"start": 9, "end": 10, "role": "other"},
+        {"start": 10, "end": 11, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Đông một người, tây một người: bạn bè ở rải rác nhiều nơi, cách xa nhau.",
+        "en": "One friend here, one friend there: his friends live scattered in many places, far apart."
+      },
+      "translation": {
+        "vi": "Bạn của anh ấy chỗ này một người, chỗ kia một người, sống rất xa nhau.",
+        "en": "His friends live one here and one there, very far apart."
+      },
+      "pinyin": [
+        "tā",
+        "de",
+        "péng",
+        "yǒu",
+        "dōng",
+        "yí",
+        "gè",
+        "",
+        "xī",
+        "yí",
+        "gè",
+        "",
+        "zhù",
+        "dé",
+        "hěn",
+        "yuǎn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Lỗi kết hợp từ: 书本子 không phải là một từ tiếng Trung; 书本 đã là 'sách', thêm 子 tạo thành cụm sai. Chỉ cần dùng 书.",
+        "en": "Collocation error: 书本子 is not a Chinese word; 书本 already means 'books', and adding 子 makes an impossible compound. Use 书 alone."
+      },
+      "error_tag": "collocation",
+      "l1": ["vi"],
+      "wrong": "教室里东一堆，西一堆，全是书本子。",
+      "right": "教室里东一堆，西一堆，全是书。",
+      "wrong_pinyin": [
+        "jiào",
+        "shì",
+        "lǐ",
+        "dōng",
+        "yī",
+        "duī",
+        "",
+        "xī",
+        "yī",
+        "duī",
+        "",
+        "quán",
+        "shì",
+        "shū",
+        "běn",
+        "zi",
+        ""
+      ],
+      "right_pinyin": [
+        "jiào",
+        "shì",
+        "lǐ",
+        "dōng",
+        "yī",
+        "duī",
+        "",
+        "xī",
+        "yī",
+        "duī",
+        "",
+        "quán",
+        "shì",
+        "shū",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "操场上___一个，西一个，都是学生。",
+      "options": [
+        {"text": "东", "error_tag": null, "pinyin": ["dōng"]},
+        {"text": "南", "error_tag": "collocation", "pinyin": ["nán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu cố định là 东一A，西一A, nên vế đầu phải là 东, không dùng 南.",
+        "en": "The fixed pattern is 东一A，西一A, so the first half must be 东, not 南."
+      },
+      "q_pinyin": [
+        "cāo",
+        "chǎng",
+        "shàng",
+        "",
+        "",
+        "",
+        "yí",
+        "gè",
+        "",
+        "xī",
+        "yí",
+        "gè",
+        "",
+        "dōu",
+        "shì",
+        "xué",
+        "shēng",
+        ""
+      ]
+    },
+    {
+      "q": "这些苹果东一个，___一个，滚得到处都是。",
+      "options": [
+        {"text": "西", "error_tag": null, "pinyin": ["xī"]},
+        {"text": "东", "error_tag": "word_order", "pinyin": ["dōng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau vế 东一A phải là 西一A; lặp lại 东 làm mất cấu trúc đối xứng.",
+        "en": "After the 东一A half must come 西一A; repeating 东 breaks the balanced structure."
+      },
+      "q_pinyin": [
+        "zhè",
+        "xiē",
+        "píng",
+        "guǒ",
+        "dōng",
+        "yí",
+        "gè",
+        "",
+        "",
+        "",
+        "",
+        "yí",
+        "gè",
+        "",
+        "gǔn",
+        "dé",
+        "dào",
+        "chù",
+        "dōu",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "q": "他的书东一本，西一本，___。",
+      "options": [
+        {"text": "放得很乱", "error_tag": null, "pinyin": ["fàng", "dé", "hěn", "luàn"]},
+        {"text": "放得很乱书", "error_tag": "word_order", "pinyin": ["fàng", "dé", "hěn", "luàn", "shū"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau vế 西一本 cần một vị ngữ miêu tả kết quả; 放得很乱书 đặt 书 sai vị trí, không phải câu đúng.",
+        "en": "After the 西一本 half you need a result description; 放得很乱书 puts 书 in the wrong place and is not a correct sentence."
+      },
+      "q_pinyin": ["tā", "de", "shū", "dōng", "yī", "běn", "", "xī", "yī", "běn", "", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng mẫu 东一A，西一A để nói về đồ vật trong phòng bạn bị rải rác khắp nơi.",
+      "en": "Write one sentence with 东一A，西一A about things in your room being scattered all over."
+    },
+    "placeholder": "我的房间里东一……，西一……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["东"], "role": "place"}, {"any_of": ["西"], "role": "place"}]
+    },
+    "sample": {
+      "text": "我的房间里东一件，西一件，衣服到处都是。",
+      "pinyin": [
+        "wǒ",
+        "de",
+        "fáng",
+        "jiān",
+        "lǐ",
+        "dōng",
+        "yī",
+        "jiàn",
+        "",
+        "xī",
+        "yī",
+        "jiàn",
+        "",
+        "yī",
+        "fú",
+        "dào",
+        "chù",
+        "dōu",
+        "shì",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "fáng", "jiān", "lǐ", "dōng", "yī", "", "", "", "xī", "yī", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338751",
+    "generated_at": "2026-10-07T02:05:51Z"
+  },
+  "review": null
+}

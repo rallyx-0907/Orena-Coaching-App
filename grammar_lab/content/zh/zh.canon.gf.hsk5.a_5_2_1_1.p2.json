@@ -1,0 +1,198 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_2_1_1.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_1_6.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.021"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 有A有B", "en": "Chinese grammar: 有A有B"},
+    "native_title": "有A有B",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Mẫu 有A有B dùng để nói một sự vật hay người vừa có đặc điểm A vừa có đặc điểm B.",
+      "en": "The 有A有B pattern says that something or someone has both quality A and quality B."
+    },
+    "sub": {"vi": "vừa A vừa B", "en": "both A and B"},
+    "native_title_pinyin": ["yǒu", "", "yǒu", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một người hay vật có hai đặc điểm cùng lúc, không cần nhấn mạnh cái nào hơn.",
+      "en": "Use it when a person or thing has two qualities at the same time, with no need to stress one over the other."
+    },
+    {
+      "vi": "Khi hai đặc điểm đều là tính từ đơn giản, thường là tính từ một hoặc hai âm tiết.",
+      "en": "Use it when both qualities are simple adjectives, usually one- or two-syllable ones."
+    },
+    {
+      "vi": "Khi muốn mô tả một sự việc có cả mặt tốt lẫn mặt hạn chế, ví dụ vừa xa vừa đắt.",
+      "en": "Use it to describe something with both a good side and a drawback, for example both far and expensive."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {"text": "有", "role": "verb", "label": {"vi": "có", "en": "have"}, "pinyin": ["yǒu"]},
+      {
+        "text": "A",
+        "role": "complement",
+        "label": {"vi": "đặc điểm A", "en": "quality A"},
+        "pinyin": [""]
+      },
+      {"text": "有", "role": "verb", "label": {"vi": "có", "en": "have"}, "pinyin": ["yǒu"]},
+      {
+        "text": "B",
+        "role": "complement",
+        "label": {"vi": "đặc điểm B", "en": "quality B"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个房间有大有亮。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "complement"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Phòng này vừa rộng vừa sáng; hai tính từ cùng làm vị ngữ sau 有.",
+        "en": "The room is both big and bright; the two adjectives follow 有 as the predicate."
+      },
+      "translation": {"vi": "Căn phòng này vừa rộng vừa sáng.", "en": "This room is both big and bright."},
+      "pinyin": ["zhè", "ge", "fáng", "jiān", "yǒu", "dà", "yǒu", "liàng", ""]
+    },
+    {
+      "text": "那家饭馆有贵有远。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "complement"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nhà hàng đó vừa đắt vừa xa; hai nhược điểm được nêu song song.",
+        "en": "That restaurant is both expensive and far; two drawbacks are listed in parallel."
+      },
+      "translation": {"vi": "Nhà hàng đó vừa đắt vừa xa.", "en": "That restaurant is both expensive and far."},
+      "pinyin": ["nà", "jiā", "fàn", "guǎn", "yǒu", "guì", "yǒu", "yuǎn", ""]
+    },
+    {
+      "text": "这个孩子有高有瘦。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "complement"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Đứa trẻ này vừa cao vừa gầy; mẫu 有A有B mô tả hai đặc điểm ngoại hình.",
+        "en": "This child is both tall and thin; 有A有B describes two appearance qualities."
+      },
+      "translation": {"vi": "Đứa trẻ này vừa cao vừa gầy.", "en": "This child is both tall and thin."},
+      "pinyin": ["zhè", "ge", "hái", "zi", "yǒu", "gāo", "yǒu", "shòu", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học bỏ hai chữ 有 vì nghĩ tính từ có thể đứng liền nhau như trong tiếng Việt. Trong mẫu này, mỗi đặc điểm phải có 有 đứng trước.",
+        "en": "Learners drop both 有 because they think adjectives can simply stand together as in Vietnamese. In this pattern each quality needs 有 in front of it."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这个房间大亮。",
+      "right": "这个房间有大有亮。",
+      "wrong_pinyin": ["zhè", "ge", "fáng", "jiān", "dà", "liàng", ""],
+      "right_pinyin": ["zhè", "ge", "fáng", "jiān", "yǒu", "dà", "yǒu", "liàng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个公园有___有安静。",
+      "options": [
+        {"text": "大", "error_tag": null, "pinyin": ["dà"]},
+        {"text": "很大", "error_tag": "other", "pinyin": ["hěn", "dà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 有 chỉ cần tính từ đơn, không thêm 很; mẫu là 有A有B.",
+        "en": "After 有 only the plain adjective is needed, without 很; the pattern is 有A有B."
+      },
+      "q_pinyin": ["zhè", "ge", "gōng", "yuán", "yǒu", "", "", "", "yǒu", "ān", "jìng", ""]
+    },
+    {
+      "q": "那件衣服有贵有___。",
+      "options": [
+        {"text": "旧", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "很旧", "error_tag": "other", "pinyin": ["hěn", "jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế thứ hai cũng dùng tính từ trần, không dùng 很.",
+        "en": "The second half also uses a bare adjective, not 很."
+      },
+      "q_pinyin": ["nà", "jiàn", "yī", "fú", "yǒu", "guì", "yǒu", "", "", "", ""]
+    },
+    {
+      "q": "这个孩子有___有瘦。",
+      "options": [
+        {"text": "高", "error_tag": null, "pinyin": ["gāo"]},
+        {"text": "很高", "error_tag": "other", "pinyin": ["hěn", "gāo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong 有A有B, A và B là tính từ không có 很.",
+        "en": "In 有A有B, A and B are adjectives without 很."
+      },
+      "q_pinyin": ["zhè", "ge", "hái", "zi", "yǒu", "", "", "", "yǒu", "shòu", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 有A有B để miêu tả một người hoặc một vật có hai đặc điểm.",
+      "en": "Write one sentence with 有A有B describing a person or thing that has two qualities."
+    },
+    "placeholder": "我的房间有……有……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["有"], "role": "verb"}, {"any_of": ["有"], "role": "verb"}]
+    },
+    "sample": {"text": "我的房间有大有亮。", "pinyin": ["wǒ", "de", "fáng", "jiān", "yǒu", "dà", "yǒu", "liàng", ""]},
+    "placeholder_pinyin": ["wǒ", "de", "fáng", "jiān", "yǒu", "", "", "yǒu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348585",
+    "generated_at": "2026-10-07T04:49:45Z"
+  },
+  "review": null
+}

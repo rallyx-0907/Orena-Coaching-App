@@ -1,0 +1,297 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_5_in_modern_formal_prose",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.register_style",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_3_negative_raising_and_scope"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-5-in-modern-formal-prose"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["zh-hsk79-5-in-modern-formal-prose"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: 于/以/为/所/者/之 in modern formal prose",
+      "en": "Chinese grammar: 于/以/为/所/者/之 in modern formal prose"
+    },
+    "native_title": "“于/以/为/所/者/之”的现代正式书面语用法",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Nhóm 于/以/为/所/者/之 vẫn được dùng trong văn viết trang trọng hiện đại, nhưng mỗi từ chỉ đảm nhiệm một số chức năng ngữ pháp hạn chế.",
+      "en": "The set 于/以/为/所/者/之 remains in use in modern formal writing, but each item has a restricted set of grammatical functions."
+    },
+    "sub": {"vi": "văn viết trang trọng", "en": "formal written register"},
+    "native_title_pinyin": [
+      "",
+      "yú",
+      "",
+      "yǐ",
+      "",
+      "wèi",
+      "",
+      "suǒ",
+      "",
+      "zhě",
+      "",
+      "zhī",
+      "",
+      "de",
+      "xiàn",
+      "dài",
+      "zhèng",
+      "shì",
+      "shū",
+      "miàn",
+      "yǔ",
+      "yòng",
+      "fǎ"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi viết văn bản trang trọng như báo cáo, thông báo, luận văn, hợp đồng hoặc tin chính thức.",
+      "en": "When writing formal texts such as reports, notices, academic papers, contracts or official news."
+    },
+    {
+      "vi": "Khi cần diễn đạt quan hệ so sánh, căn cứ, bị động hoặc định danh bằng một cấu trúc cố định mang sắc thái trang trọng.",
+      "en": "When expressing comparison, basis, passive-like meaning or nominalisation with a fixed formal pattern."
+    },
+    {
+      "vi": "Khi muốn câu văn gọn, chặt và có tính khái quát cao hơn cách nói trung tính.",
+      "en": "When you want a sentence that is more compact, tightly structured and general than its neutral equivalent."
+    },
+    {
+      "vi": "Không dùng trong hội thoại thường ngày hoặc văn bản thân mật, vì sẽ tạo cảm giác cứng và xa cách.",
+      "en": "Not in everyday conversation or informal personal writing, where it would sound stiff and distant."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ thể", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "正式结构",
+        "role": "verb",
+        "label": {"vi": "cấu trúc trang trọng", "en": "formal construction"},
+        "options": [
+          {"text": "优于", "pinyin": ["yōu", "yú"]},
+          {"text": "应以事实为", "pinyin": ["yīng", "yǐ", "shì", "shí", "wèi"]},
+          {"text": "以事实为", "pinyin": ["yǐ", "shì", "shí", "wèi"]},
+          {"text": "早已为人所知", "pinyin": ["zǎo", "yǐ", "wéi", "rén", "suǒ", "zhī"]}
+        ],
+        "pinyin": ["zhèng", "shì", "jié", "gòu"]
+      },
+      {
+        "text": "补足语",
+        "role": "complement",
+        "label": {"vi": "thành phần bổ sung", "en": "complement"},
+        "optional": true,
+        "pinyin": ["bǔ", "zú", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "该方法优于传统方法。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 5, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "优于 là cách so sánh cô đọng, thường gặp trong văn viết trang trọng.",
+        "en": "优于 is a concise comparison common in formal writing."
+      },
+      "translation": {
+        "vi": "Phương pháp này ưu việt hơn phương pháp truyền thống.",
+        "en": "This method is superior to the traditional method."
+      },
+      "pinyin": ["gāi", "fāng", "fǎ", "yōu", "yú", "chuán", "tǒng", "fāng", "fǎ", ""]
+    },
+    {
+      "text": "判断应以事实为依据。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 7, "role": "verb"},
+        {"start": 7, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "以…为… là cấu trúc viết trang trọng dùng để nêu cơ sở hoặc tiêu chuẩn.",
+        "en": "以…为… is a formal written pattern for stating a basis or standard."
+      },
+      "translation": {"vi": "Phán đoán nên lấy sự thật làm căn cứ.", "en": "Judgment should be based on facts."},
+      "pinyin": ["pàn", "duàn", "yīng", "yǐ", "shì", "shí", "wèi", "yī", "jù", ""]
+    },
+    {
+      "text": "这一现象早已为人所知。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 4, "role": "subject"}, {"start": 4, "end": 10, "role": "verb"}],
+      "annotation": {
+        "vi": "为…所… là cấu trúc bị động trang trọng.",
+        "en": "为…所… is a formal passive construction."
+      },
+      "translation": {
+        "vi": "Hiện tượng này từ lâu đã được mọi người biết đến.",
+        "en": "This phenomenon has long been known to people."
+      },
+      "pinyin": ["zhè", "yī", "xiàn", "xiàng", "zǎo", "yǐ", "wéi", "rén", "suǒ", "zhī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "之 không thay thế 的 trong quan hệ sở hữu thông thường; dùng 之 ở đây là lối cổ, không tự nhiên trong văn hiện đại.",
+        "en": "之 does not replace 的 in ordinary possession; using it here is a classical imitation and unnatural in modern prose."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我的之报告已经提交了。",
+      "right": "我的报告已经提交了。",
+      "wrong_pinyin": ["wǒ", "de", "zhī", "bào", "gào", "yǐ", "jīng", "tí", "jiāo", "le", ""],
+      "right_pinyin": ["wǒ", "de", "bào", "gào", "yǐ", "jīng", "tí", "jiāo", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这项新技术___传统技术具有明显优势。",
+      "options": [
+        {"text": "于", "error_tag": null, "pinyin": ["yú"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "于 đánh dấu đối tượng so sánh trong văn viết trang trọng; 在 và 的 không làm được chức năng này.",
+        "en": "于 marks the standard of comparison in formal writing; 在 and 的 cannot serve this function."
+      },
+      "q_pinyin": [
+        "zhè",
+        "xiàng",
+        "xīn",
+        "jì",
+        "shù",
+        "",
+        "",
+        "",
+        "chuán",
+        "tǒng",
+        "jì",
+        "shù",
+        "jù",
+        "yǒu",
+        "míng",
+        "xiǎn",
+        "yōu",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "q": "所有申请___均须在规定期限内提交材料。",
+      "options": [
+        {"text": "者", "error_tag": null, "pinyin": ["zhě"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "者 danh hóa động từ 申请 thành 'người ứng tuyển' trong văn trang trọng; 的 không tạo được danh từ chỉ người như vậy.",
+        "en": "者 nominalises the verb 申请 into 'applicant' in formal prose; 的 cannot form a person noun this way."
+      },
+      "q_pinyin": [
+        "suǒ",
+        "yǒu",
+        "shēn",
+        "qǐng",
+        "",
+        "",
+        "",
+        "jūn",
+        "xū",
+        "zài",
+        "guī",
+        "dìng",
+        "qī",
+        "xiàn",
+        "nèi",
+        "tí",
+        "jiāo",
+        "cái",
+        "liào",
+        ""
+      ]
+    },
+    {
+      "q": "这一发现早已___人所知。",
+      "options": [
+        {"text": "为", "error_tag": null, "pinyin": ["wèi"]},
+        {"text": "以", "error_tag": "word_choice", "pinyin": ["yǐ"]},
+        {"text": "于", "error_tag": "word_choice", "pinyin": ["yú"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "为...所... là khuôn bị động trang trọng; 以 và 于 không tạo được cấu trúc bị động này.",
+        "en": "为...所... is the formal passive pattern; 以 and 于 do not form this passive structure."
+      },
+      "q_pinyin": ["zhè", "yī", "fā", "xiàn", "zǎo", "yǐ", "", "", "", "rén", "suǒ", "zhī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng dùng 以...为... để nêu căn cứ hoặc tiêu chuẩn cho một việc gì đó.",
+      "en": "Write one formal sentence using 以...为... to state the basis or standard for something."
+    },
+    "placeholder": "我们以……为……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["优于", "应以事实为", "以事实为", "早已为人所知"], "role": "verb"}]},
+    "sample": {"text": "我们以事实为依据。", "pinyin": ["wǒ", "men", "yǐ", "shì", "shí", "wèi", "yī", "jù", ""]},
+    "placeholder_pinyin": ["wǒ", "men", "yǐ", "", "", "wèi", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351898",
+    "generated_at": "2026-10-07T05:44:58Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-5-in-modern-formal-prose"],
+      "content_version": 2,
+      "content_hash": "619034cf655555f87c9f2c13571a32dabc34442ce6f6945a2f8218dc0984052d",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-5-in-modern-formal-prose",
+          "issue": "R5 gộp sáu từ 于/以/为/所/者/之 vào một điểm nhưng không đưa ra công thức cấu trúc, khiến người học không biết vị trí và chức năng cụ thể của từng từ.",
+          "fix": "Đã thêm formula với các slot trừu tượng và ví dụ có binding cho từng chức năng: 于 so sánh, 以...为... nêu căn cứ, 为...所... bị động, 者 danh hóa."
+        },
+        {
+          "r5_id": "zh-hsk79-5-in-modern-formal-prose",
+          "issue": "R5 xếp 所/者/之 như những từ cùng cấp có thể thay thế 的/人, dễ khiến người học dùng sai.",
+          "fix": "Đã nêu rõ 之 không thay 的 trong sở hữu thông thường, 者 chỉ danh hóa trong khuôn cố định, 所 chỉ xuất hiện trong khuôn bị động hoặc cấu trúc cố định."
+        },
+        {
+          "r5_id": "zh-hsk79-5-in-modern-formal-prose",
+          "issue": "R5 có lỗi minh họa '我于家吃饭' không phải câu sai ngữ pháp mà chỉ sai phong cách, nhưng lại được đặt trong mục mistakes như lỗi ngữ pháp.",
+          "fix": "Đã chuyển thành lỗi register trong common_mistakes với giải thích rõ: câu đúng ngữ pháp nhưng không tự nhiên trong hội thoại."
+        },
+        {
+          "r5_id": "zh-hsk79-5-in-modern-formal-prose",
+          "issue": "R5 thiếu bài kiểm tra nhanh và phần tự sản xuất câu.",
+          "fix": "Đã thêm quick_practice với ba câu cloze và personal_production với prompt, placeholder, sample và pattern_rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

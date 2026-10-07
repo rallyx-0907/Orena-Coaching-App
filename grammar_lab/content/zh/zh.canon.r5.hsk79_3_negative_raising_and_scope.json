@@ -1,0 +1,321 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_3_negative_raising_and_scope",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_29_metadiscourse_grammar"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-3-negative-raising-and-scope"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["zh-hsk79-3-negative-raising-and-scope"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Negative raising and scope",
+      "en": "Chinese grammar: Negative raising and scope"
+    },
+    "native_title": "否定提升与否定范围",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Phủ định có thể đặt ở mệnh đề chính (tôi không nghĩ rằng...) nhưng được hiểu là phủ định nội dung mệnh đề phụ; ngoài ra vị trí 不 với 都 quyết định phạm vi phủ định.",
+      "en": "Negation can sit in the main clause (I don't think that...) while being understood as negating the embedded proposition; separately, the position of 不 relative to 都 decides the scope of negation."
+    },
+    "sub": {"vi": "phủ định và phạm vi", "en": "negation and scope"},
+    "native_title_pinyin": ["fǒu", "dìng", "tí", "shēng", "yǔ", "fǒu", "dìng", "fàn", "wéi"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nêu ý phủ định một cách nhẹ nhàng, ít đối đầu: đặt 不 ở mệnh đề chính với 认为/觉得/相信.",
+      "en": "When you want a softer, less confrontational negative: put 不 in the main clause with 认为/觉得/相信."
+    },
+    {
+      "vi": "Khi cần phân biệt 'không phải tất cả' với 'tất cả đều không' bằng vị trí của 不 và 都.",
+      "en": "When you need to distinguish 'not all' from 'none at all' by the position of 不 and 都."
+    },
+    {
+      "vi": "Khi viết trang trọng, muốn phạm vi phủ định rõ ràng thì dùng 并非所有...都... thay vì câu phủ định mệnh đề chính.",
+      "en": "In formal writing, when the scope must be explicit, use 并非所有...都... instead of main-clause negation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "不",
+        "role": "marker",
+        "label": {"vi": "phủ định mệnh đề chính", "en": "main-clause negation"},
+        "pinyin": ["bù"]
+      },
+      {
+        "text": "认为/觉得/相信",
+        "role": "verb",
+        "label": {"vi": "động từ lập trường", "en": "stance verb"},
+        "options": [
+          {"text": "认为", "pinyin": ["rèn", "wéi"]},
+          {"text": "觉得", "pinyin": ["jué", "de"]},
+          {"text": "相信", "pinyin": ["xiāng", "xìn"]}
+        ],
+        "pinyin": ["rèn", "wéi", "", "jué", "de", "", "xiāng", "xìn"]
+      },
+      {
+        "text": "从句",
+        "role": "object",
+        "label": {"vi": "mệnh đề phụ", "en": "embedded clause"},
+        "pinyin": ["cóng", "jù"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "并非所有",
+          "role": "marker",
+          "label": {"vi": "phủ định toàn bộ (không phải tất cả)", "en": "not-all negation"},
+          "pinyin": ["bìng", "fēi", "suǒ", "yǒu"]
+        },
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ số nhiều", "en": "plural subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "都",
+          "role": "marker",
+          "label": {"vi": "lượng hóa toàn bộ", "en": "universal quantifier"},
+          "pinyin": ["dōu"]
+        },
+        {
+          "text": "谓语",
+          "role": "verb",
+          "label": {"vi": "vị ngữ", "en": "predicate"},
+          "pinyin": ["wèi", "yǔ"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我不认为现有证据足以支持这一结论。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 16, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "不 phủ định 认为 ở mệnh đề chính, nhưng nghĩa thực tế là phủ định nội dung mệnh đề phụ.",
+        "en": "不 negates 认为 in the main clause, but the actual meaning negates the embedded proposition."
+      },
+      "translation": {
+        "vi": "Tôi không cho rằng bằng chứng hiện có đủ để hỗ trợ kết luận này.",
+        "en": "I don't think the existing evidence is enough to support this conclusion."
+      },
+      "pinyin": [
+        "wǒ",
+        "bù",
+        "rèn",
+        "wéi",
+        "xiàn",
+        "yǒu",
+        "zhèng",
+        "jù",
+        "zú",
+        "yǐ",
+        "zhī",
+        "chí",
+        "zhè",
+        "yī",
+        "jié",
+        "lùn",
+        ""
+      ]
+    },
+    {
+      "text": "并非所有参加者都完成了第二次测试。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 7, "end": 8, "role": "marker"},
+        {"start": 8, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "并非所有...都... phủ định 都, nghĩa là 'không phải tất cả', không phải 'tất cả đều không'.",
+        "en": "并非所有...都... negates 都, meaning 'not all', not 'none'."
+      },
+      "translation": {
+        "vi": "Không phải tất cả người tham gia đều đã hoàn thành bài kiểm tra thứ hai.",
+        "en": "Not all participants completed the second test."
+      },
+      "pinyin": [
+        "bìng",
+        "fēi",
+        "suǒ",
+        "yǒu",
+        "cān",
+        "jiā",
+        "zhě",
+        "dōu",
+        "wán",
+        "chéng",
+        "le",
+        "dì",
+        "èr",
+        "cì",
+        "cè",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "text": "这些方案都不符合要求。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "subject"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "都 đứng trước 不, phủ định toàn bộ: tất cả đều không đáp ứng.",
+        "en": "都 precedes 不, negating the whole set: none of them meets the requirement."
+      },
+      "translation": {
+        "vi": "Các phương án này đều không đáp ứng yêu cầu.",
+        "en": "None of these proposals meets the requirements."
+      },
+      "pinyin": ["zhè", "xiē", "fāng", "àn", "dōu", "bù", "fú", "hé", "yāo", "qiú", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Phủ định bị đặt sai phạm vi: 并非所有...都... phủ định 都, nên chỉ cần 同意, không thêm 不 vào vị ngữ.",
+        "en": "The negation is placed in the wrong scope: 并非所有...都... negates 都, so the predicate should be 同意 without an extra 不."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "并非所有人都不同意。",
+      "right": "并非所有人都同意。",
+      "wrong_pinyin": ["bìng", "fēi", "suǒ", "yǒu", "rén", "dōu", "bù", "tóng", "yì", ""],
+      "right_pinyin": ["bìng", "fēi", "suǒ", "yǒu", "rén", "dōu", "tóng", "yì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___认为他会来。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bù"]},
+        {"text": "没", "error_tag": "aspect", "pinyin": ["méi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với động từ lập trường như 认为, phủ định mệnh đề chính dùng 不, không dùng 没.",
+        "en": "With stance verbs like 认为, main-clause negation uses 不, not 没."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "rèn", "wéi", "tā", "huì", "lái", ""]
+    },
+    {
+      "q": "并非所有学生___通过了考试。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "也", "error_tag": "word_choice", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "并非所有...都... là khuôn cố định; 也 không mang nghĩa lượng hóa toàn bộ.",
+        "en": "并非所有...都... is a fixed frame; 也 does not carry universal quantification."
+      },
+      "q_pinyin": [
+        "bìng",
+        "fēi",
+        "suǒ",
+        "yǒu",
+        "xué",
+        "shēng",
+        "",
+        "",
+        "",
+        "tōng",
+        "guò",
+        "le",
+        "kǎo",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "q": "这些方案___符合要求。",
+      "options": [
+        {"text": "都不", "error_tag": null, "pinyin": ["dōu", "bù"]},
+        {"text": "不都", "error_tag": "word_order", "pinyin": ["bù", "dōu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "都 đứng trước 不 nghĩa là 'tất cả đều không'; đảo thành 不都 sẽ đổi thành 'không phải tất cả'.",
+        "en": "都 before 不 means 'none at all'; reversing to 不都 changes it to 'not all'."
+      },
+      "q_pinyin": ["zhè", "xiē", "fāng", "àn", "", "", "", "fú", "hé", "yāo", "qiú", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 我不认为 + mệnh đề để phủ định nhẹ nhàng một nhận định.",
+      "en": "Write one sentence using 我不认为 + clause to softly negate a claim."
+    },
+    "placeholder": "我不认为……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["不"], "role": "marker"}, {"any_of": ["认为"], "role": "verb"}]
+    },
+    "sample": {
+      "text": "我不认为这个计划能按时完成。",
+      "pinyin": ["wǒ", "bù", "rèn", "wéi", "zhè", "ge", "jì", "huà", "néng", "àn", "shí", "wán", "chéng", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "bù", "rèn", "wéi", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791345038",
+    "generated_at": "2026-10-07T03:50:38Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-3-negative-raising-and-scope"],
+      "content_version": 2,
+      "content_hash": "ad615cd00b593f605014f7ebb552ffcdc50fa11b446084df33c5600a8e483a93",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-3-negative-raising-and-scope",
+          "issue": "R5 ghi '并非所有人都不同意 = intended not all agree' là câu sai, nhưng bản sửa '并非所有人都同意' lại bỏ mất 不 vốn là trọng tâm của lỗi phạm vi.",
+          "fix": "Giữ cặp sai/đúng là 并非所有人都不同意 → 并非所有人都同意 và giải thích rõ 并非所有...都... phủ định 都, không thêm 不 vào vị ngữ."
+        },
+        {
+          "r5_id": "zh-hsk79-3-negative-raising-and-scope",
+          "issue": "R5 nêu '我不认为P nhất định bằng 我认为不P' như một câu đúng, nhưng đó là nhận định về logic chứ không phải câu tiếng Trung dùng được.",
+          "fix": "Chuyển nhận định này thành lời giải thích trong when_to_use và common_mistakes, không đưa vào ví dụ."
+        },
+        {
+          "r5_id": "zh-hsk79-3-negative-raising-and-scope",
+          "issue": "R5 thiếu công thức và cách gắn nhãn phạm vi cho các ví dụ.",
+          "fix": "Bổ sung formula cho 我不认为 + mệnh đề và negative cho 并非所有...都..., kèm bindings cho từng ví dụ."
+        }
+      ]
+    }
+  },
+  "review": null
+}

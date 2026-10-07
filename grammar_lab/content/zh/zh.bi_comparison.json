@@ -1,0 +1,277 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.bi_comparison",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.comparison",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["zh.meiyou_comparison"],
+  "error_tags": ["word_order"],
+  "source_refs": {"r5": ["zh-hsk2-4-so-s-nh"], "gf0025": ["gf0025.hsk1.038", "gf0025.hsk3.054"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk2-4-so-s-nh"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "So sánh với 比", "en": "Comparison with 比"},
+    "native_title": "“比”字句",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Cấu trúc 比 dùng để so sánh hai đối tượng, trong đó A 比 B + tính từ cho biết A hơn B ở một đặc điểm nào đó.",
+      "en": "The 比 structure compares two things: A 比 B + adjective says A is more (adjective) than B."
+    },
+    "sub": {"vi": "so sánh hơn", "en": "comparison"},
+    "native_title_pinyin": ["", "bǐ", "", "zì", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói A hơn B về một đặc điểm như cao, đắt, bận, lạnh.",
+      "en": "Use it to say A is more (adjective) than B, e.g. taller, more expensive, busier, colder."
+    },
+    {
+      "vi": "Khi cả hai đối tượng đã rõ và bạn chỉ cần nêu đặc điểm so sánh.",
+      "en": "Use it when both things being compared are already clear and you only need to state the quality."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh mức độ hơn nữa, có thể thêm 更 hoặc 还 trước tính từ.",
+      "en": "Use 更 or 还 before the adjective when you want to emphasize a greater degree."
+    },
+    {
+      "vi": "Không dùng 很 ngay sau tính từ trong câu so sánh cơ bản với 比.",
+      "en": "Do not use 很 immediately after the adjective in a basic 比 comparison."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "subject",
+        "label": {"vi": "đối tượng được so sánh", "en": "thing being compared"},
+        "pinyin": [""]
+      },
+      {
+        "text": "比",
+        "role": "marker",
+        "label": {"vi": "từ so sánh", "en": "comparison marker"},
+        "pinyin": ["bǐ"]
+      },
+      {
+        "text": "B",
+        "role": "object",
+        "label": {"vi": "đối tượng so sánh", "en": "thing compared against"},
+        "pinyin": [""]
+      },
+      {
+        "text": "更/还",
+        "role": "other",
+        "label": {"vi": "từ nhấn mạnh mức độ", "en": "degree intensifier"},
+        "optional": true,
+        "options": [{"text": "更", "pinyin": ["gèng"]}, {"text": "还", "pinyin": ["hái"]}],
+        "pinyin": ["gèng", "", "hái"]
+      },
+      {
+        "text": "Adj",
+        "role": "complement",
+        "label": {"vi": "tính từ so sánh", "en": "adjective"},
+        "pinyin": ["", "", ""]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "A",
+          "role": "subject",
+          "label": {"vi": "đối tượng được so sánh", "en": "thing being compared"},
+          "pinyin": [""]
+        },
+        {
+          "text": "没有",
+          "role": "marker",
+          "label": {"vi": "phủ định so sánh", "en": "negative comparison marker"},
+          "pinyin": ["méi", "yǒu"]
+        },
+        {
+          "text": "B",
+          "role": "object",
+          "label": {"vi": "đối tượng so sánh", "en": "thing compared against"},
+          "pinyin": [""]
+        },
+        {
+          "text": "Adj",
+          "role": "complement",
+          "label": {"vi": "tính từ so sánh", "en": "adjective"},
+          "pinyin": ["", "", ""]
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我比他高。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 4, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "A 比 B + tính từ: tôi cao hơn anh ấy.",
+        "en": "A 比 B + adjective: I am taller than him."
+      },
+      "translation": {"vi": "Tôi cao hơn anh ấy.", "en": "I am taller than him."},
+      "pinyin": ["wǒ", "bǐ", "tā", "gāo", ""]
+    },
+    {
+      "text": "今天比昨天冷。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "So sánh hai mốc thời gian: hôm nay lạnh hơn hôm qua.",
+        "en": "Comparing two times: today is colder than yesterday."
+      },
+      "translation": {"vi": "Hôm nay lạnh hơn hôm qua.", "en": "Today is colder than yesterday."},
+      "pinyin": ["jīn", "tiān", "bǐ", "zuó", "tiān", "lěng", ""]
+    },
+    {
+      "text": "这本书比那本书贵。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "So sánh hai vật: quyển này đắt hơn quyển kia.",
+        "en": "Comparing two objects: this book is more expensive than that one."
+      },
+      "translation": {
+        "vi": "Quyển sách này đắt hơn quyển sách kia.",
+        "en": "This book is more expensive than that book."
+      },
+      "pinyin": ["zhè", "běn", "shū", "bǐ", "nà", "běn", "shū", "guì", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.meiyou_comparison",
+      "this_example": "我比他高。",
+      "other_example": "我没有他高。",
+      "this_meaning": {"vi": "A 比 B + tính từ: A hơn B.", "en": "A 比 B + adjective: A is more (adjective) than B."},
+      "other_meaning": {
+        "vi": "A 没有 B + tính từ: A không bằng B, B hơn A.",
+        "en": "A 没有 B + adjective: A is not as (adjective) as B; B is more (adjective)."
+      },
+      "this_example_pinyin": ["wǒ", "bǐ", "tā", "gāo", ""],
+      "other_example_pinyin": ["wǒ", "méi", "yǒu", "tā", "gāo", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Cụm 比 + B phải đứng trước tính từ, không đứng sau. Người Việt thường đặt tính từ trước vì dịch theo trật tự tiếng Việt.",
+        "en": "The 比 + B phrase must come before the adjective, not after it. Vietnamese learners often put the adjective first because they follow Vietnamese word order."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "我高比他。",
+      "right": "我比他高。",
+      "wrong_pinyin": ["wǒ", "gāo", "bǐ", "tā", ""],
+      "right_pinyin": ["wǒ", "bǐ", "tā", "gāo", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___他高。",
+      "options": [
+        {"text": "比", "error_tag": null, "pinyin": ["bǐ"]},
+        {"text": "没有", "error_tag": "word_order", "pinyin": ["méi", "yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định so sánh hơn dùng 比: 我比他高.",
+        "en": "An affirmative comparison uses 比: 我比他高."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "tā", "gāo", ""]
+    },
+    {
+      "q": "今天比昨天___。",
+      "options": [
+        {"text": "冷", "error_tag": null, "pinyin": ["lěng"]},
+        {"text": "很冷", "error_tag": "other", "pinyin": ["hěn", "lěng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong câu so sánh cơ bản với 比, không dùng 很 trước tính từ.",
+        "en": "In a basic 比 comparison, do not use 很 before the adjective."
+      },
+      "q_pinyin": ["jīn", "tiān", "bǐ", "zuó", "tiān", "", "", "", ""]
+    },
+    {
+      "q": "这本书比那本书___。",
+      "options": [
+        {"text": "贵", "error_tag": null, "pinyin": ["guì"]},
+        {"text": "贵了", "error_tag": "aspect", "pinyin": ["guì", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "So sánh với 比 chỉ cần tính từ, không thêm 了.",
+        "en": "A 比 comparison needs only the adjective; do not add 了."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "bǐ", "nà", "běn", "shū", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh bạn với một người bạn hoặc thành viên gia đình, dùng 比.",
+      "en": "Write one sentence comparing yourself with a friend or family member, using 比."
+    },
+    "placeholder": "我比他……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["比"], "role": "marker"}, {"regex": "[高矮胖瘦快慢贵便宜忙冷热]", "role": "complement"}]
+    },
+    "sample": {"text": "我比他高。", "pinyin": ["wǒ", "bǐ", "tā", "gāo", ""]},
+    "placeholder_pinyin": ["wǒ", "bǐ", "tā", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338011",
+    "generated_at": "2026-10-07T01:53:31Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-4-so-s-nh"],
+      "content_version": 2,
+      "content_hash": "de6c924c88f5ca5a87548734d47424b42dd85080b0782fb194e4152d56cfbd90",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-4-so-s-nh",
+          "issue": "R5 dạy thêm 更/还 như một phần bắt buộc của cấu trúc cơ bản, trong khi 更/还 chỉ là tùy chọn để nhấn mạnh.",
+          "fix": "Đưa 更/还 thành slot tùy chọn (optional) trong công thức, không bắt buộc trong câu so sánh cơ bản."
+        },
+        {
+          "r5_id": "zh-hsk2-4-so-s-nh",
+          "issue": "R5 không cung cấp dạng phủ định 没有 cho điểm so sánh này, dù scope yêu cầu đối chiếu với 没有: so sánh phủ định.",
+          "fix": "Thêm mảng negative với công thức A 没有 B + Adj và mục compare với zh.meiyou_comparison."
+        },
+        {
+          "r5_id": "zh-hsk2-4-so-s-nh",
+          "issue": "R5 liệt kê lỗi '我比他很高' nhưng không gắn nhãn lỗi cụ thể; lỗi này là dùng sai từ nhấn mạnh, không phải word order.",
+          "fix": "Giữ lỗi này trong quick_practice với error_tag 'other', và dành common_mistakes cho lỗi word_order đúng như yêu cầu."
+        }
+      ]
+    }
+  },
+  "review": null
+}

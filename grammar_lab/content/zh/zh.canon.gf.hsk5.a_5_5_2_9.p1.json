@@ -1,0 +1,336 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_5_2_9.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_1_2.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.056"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 二重复句1：单句+复句；复句+单句", "en": "Complex sentences: 二重复句1：单句+复句；复句+单句"},
+    "native_title": "二重复句1：单句+复句；复句+单句",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Câu phức hai tầng trong tiếng Trung được tạo bằng cách ghép một câu đơn với một câu phức, hoặc một câu phức với một câu đơn, dùng liên từ để nối các tầng ý.",
+      "en": "A two-level Chinese complex sentence is built by joining a simple sentence with a complex sentence, or a complex sentence with a simple sentence, using conjunctions to link the layers of meaning."
+    },
+    "sub": {"vi": "câu phức hai tầng", "en": "two-level complex sentence"},
+    "native_title_pinyin": [
+      "èr",
+      "chóng",
+      "fù",
+      "jù",
+      "",
+      "",
+      "dān",
+      "jù",
+      "",
+      "fù",
+      "jù",
+      "",
+      "fù",
+      "jù",
+      "",
+      "dān",
+      "jù"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một ý đơn giản kèm theo một ý đã có quan hệ nhân quả, điều kiện hoặc nhượng bộ bên trong.",
+      "en": "When you want to state a simple idea together with an idea that already contains a cause, condition, or concession inside it."
+    },
+    {
+      "vi": "Khi câu có hai tầng quan hệ: tầng trong nối hai mệnh đề nhỏ, tầng ngoài nối cả câu phức đó với một câu đơn.",
+      "en": "When a sentence has two layers of relation: an inner layer joining two small clauses, and an outer layer joining that complex sentence with a simple sentence."
+    },
+    {
+      "vi": "Khi bạn cần dùng hai liên từ khác nhau trong cùng một câu, mỗi liên từ đánh dấu một tầng quan hệ.",
+      "en": "When you need two different conjunctions in one sentence, each marking one layer of relation."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh kết quả hoặc kết luận ở tầng ngoài, còn nguyên nhân hoặc điều kiện nằm ở tầng trong.",
+      "en": "When you want to highlight the result or conclusion at the outer layer, while the cause or condition sits at the inner layer."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "因为/虽然/如果",
+        "role": "connector",
+        "label": {"vi": "liên từ vế 1", "en": "first connector"},
+        "options": [
+          {"text": "因为", "pinyin": ["yīn", "wèi"]},
+          {"text": "虽然", "pinyin": ["suī", "rán"]},
+          {"text": "如果", "pinyin": ["rú", "guǒ"]}
+        ],
+        "pinyin": ["yīn", "wèi", "", "suī", "rán", "", "rú", "guǒ"]
+      },
+      {
+        "text": "分句1",
+        "role": "other",
+        "label": {"vi": "mệnh đề 1", "en": "clause 1"},
+        "pinyin": ["fēn", "jù", ""]
+      },
+      {
+        "text": "所以/但是/就",
+        "role": "connector",
+        "label": {"vi": "liên từ vế 2", "en": "second connector"},
+        "options": [
+          {"text": "所以", "pinyin": ["suǒ", "yǐ"]},
+          {"text": "但是", "pinyin": ["dàn", "shì"]},
+          {"text": "就", "pinyin": ["jiù"]}
+        ],
+        "pinyin": ["suǒ", "yǐ", "", "dàn", "shì", "", "jiù"]
+      },
+      {
+        "text": "分句2",
+        "role": "other",
+        "label": {"vi": "mệnh đề 2", "en": "clause 2"},
+        "pinyin": ["fēn", "jù", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "因为下雨，所以我们不去公园。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Tầng trong nêu nguyên nhân, tầng ngoài nêu kết quả.",
+        "en": "The inner layer gives the cause, the outer layer gives the result."
+      },
+      "translation": {
+        "vi": "Vì trời mưa, nên chúng tôi không đi công viên.",
+        "en": "Because it rained, we did not go to the park."
+      },
+      "pinyin": ["yīn", "wèi", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "men", "bù", "qù", "gōng", "yuán", ""]
+    },
+    {
+      "text": "虽然他很累，但是他还是完成了工作。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Tầng trong nhượng bộ, tầng ngoài nêu kết quả trái ngược.",
+        "en": "The inner layer concedes, the outer layer states the contrasting result."
+      },
+      "translation": {
+        "vi": "Dù anh ấy rất mệt, nhưng anh ấy vẫn hoàn thành công việc.",
+        "en": "Although he was very tired, he still finished the work."
+      },
+      "pinyin": [
+        "suī",
+        "rán",
+        "tā",
+        "hěn",
+        "lèi",
+        "",
+        "dàn",
+        "shì",
+        "tā",
+        "hái",
+        "shì",
+        "wán",
+        "chéng",
+        "le",
+        "gōng",
+        "zuò",
+        ""
+      ]
+    },
+    {
+      "text": "如果明天天气好，我们就去爬山。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 10, "end": 11, "role": "connector"},
+        {"start": 11, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Tầng trong nêu điều kiện, tầng ngoài nêu hành động khi điều kiện được thỏa.",
+        "en": "The inner layer states a condition, the outer layer states the action if it is met."
+      },
+      "translation": {
+        "vi": "Nếu ngày mai thời tiết tốt, chúng tôi sẽ đi leo núi.",
+        "en": "If the weather is good tomorrow, we will go hiking."
+      },
+      "pinyin": [
+        "rú",
+        "guǒ",
+        "míng",
+        "tiān",
+        "tiān",
+        "qì",
+        "hǎo",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "qù",
+        "pá",
+        "shān",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học chỉ dùng liên từ tầng trong mà bỏ liên từ tầng ngoài, nên câu mất tầng quan hệ thứ hai và nghe như câu đơn có trạng ngữ.",
+        "en": "The learner uses only the inner conjunction and drops the outer one, so the sentence loses its second layer and sounds like a simple sentence with an adverbial."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "因为下雨，我们不去公园。",
+      "right": "因为下雨，所以我们不去公园。",
+      "wrong_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "wǒ", "men", "bù", "qù", "gōng", "yuán", ""],
+      "right_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "men", "bù", "qù", "gōng", "yuán", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___他生病了，所以没来上课。",
+      "options": [
+        {"text": "因为", "error_tag": null, "pinyin": ["yīn", "wèi"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]},
+        {"text": "如果", "error_tag": "conjunction", "pinyin": ["rú", "guǒ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tầng trong nêu nguyên nhân nên dùng 因为; 但是 chỉ sự tương phản, 如果 chỉ điều kiện.",
+        "en": "The inner layer gives a cause, so 因为 is correct; 但是 marks contrast and 如果 marks a condition."
+      },
+      "q_pinyin": ["", "", "", "tā", "shēng", "bìng", "le", "", "suǒ", "yǐ", "méi", "lái", "shàng", "kè", ""]
+    },
+    {
+      "q": "虽然这道题很难，___我还是做完了。",
+      "options": [
+        {"text": "但是", "error_tag": null, "pinyin": ["dàn", "shì"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tầng trong nhượng bộ với 虽然 cần tầng ngoài tương phản với 但是; 因为 và 所以 chỉ nguyên nhân – kết quả.",
+        "en": "The inner concession with 虽然 needs the contrasting outer conjunction 但是; 因为 and 所以 mark cause and result."
+      },
+      "q_pinyin": [
+        "suī",
+        "rán",
+        "zhè",
+        "dào",
+        "tí",
+        "hěn",
+        "nán",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "hái",
+        "shì",
+        "zuò",
+        "wán",
+        "le",
+        ""
+      ]
+    },
+    {
+      "q": "如果明天不下雨，我们___去海边。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tầng trong nêu điều kiện với 如果, tầng ngoài dùng 就 để nêu kết quả tất yếu; 所以 và 但是 không phù hợp.",
+        "en": "The inner layer states a condition with 如果, and the outer layer uses 就 for the expected result; 所以 and 但是 do not fit."
+      },
+      "q_pinyin": [
+        "rú",
+        "guǒ",
+        "míng",
+        "tiān",
+        "bù",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "qù",
+        "hǎi",
+        "biān",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu phức hai tầng về bản thân: nêu một nguyên nhân hoặc điều kiện ở tầng trong, rồi nêu kết quả ở tầng ngoài.",
+      "en": "Write a two-level complex sentence about yourself: give a cause or condition in the inner layer, then a result in the outer layer."
+    },
+    "placeholder": "因为……，所以……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["因为", "虽然", "如果"], "role": "connector"},
+        {"any_of": ["所以", "但是", "就"], "role": "connector"}
+      ]
+    },
+    "sample": {
+      "text": "因为今天很忙，所以我没去运动。",
+      "pinyin": [
+        "yīn",
+        "wèi",
+        "jīn",
+        "tiān",
+        "hěn",
+        "máng",
+        "",
+        "suǒ",
+        "yǐ",
+        "wǒ",
+        "méi",
+        "qù",
+        "yùn",
+        "dòng",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["yīn", "wèi", "", "", "", "suǒ", "yǐ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351857",
+    "generated_at": "2026-10-07T05:44:17Z"
+  },
+  "review": null
+}

@@ -1,0 +1,271 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_1_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_1_2.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.001"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Đại từ: 指示代词：彼此、如此", "en": "Pronouns: 指示代词：彼此、如此"},
+    "native_title": "指示代词：彼此、如此",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Điểm ngữ pháp này giới thiệu hai đại từ chỉ định 彼此 và 如此, dùng để thay thế cho một cụm danh từ hoặc một tình huống đã được nhắc đến trước đó.",
+      "en": "This point introduces the demonstrative pronouns 彼此 and 如此, which stand in for a previously mentioned noun phrase or situation."
+    },
+    "sub": {"vi": "đại từ chỉ định", "en": "demonstrative pronouns"},
+    "native_title_pinyin": ["zhǐ", "shì", "dài", "cí", "", "bǐ", "cǐ", "", "rú", "cǐ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng 彼此 khi muốn nói 'lẫn nhau, nhau' giữa hai hay nhiều đối tượng đã được nhắc đến.",
+      "en": "Use 彼此 to mean 'each other' between two or more already-mentioned parties."
+    },
+    {
+      "vi": "Dùng 如此 khi muốn thay thế cho một tình huống, một cách làm hay một mức độ vừa được nói ra.",
+      "en": "Use 如此 to substitute for a situation, a way of doing something, or a degree just mentioned."
+    },
+    {
+      "vi": "Cả hai thường xuất hiện trong văn viết hoặc lời nói trang trọng, ít dùng trong khẩu ngữ thân mật hằng ngày.",
+      "en": "Both appear mostly in written or formal speech, less in casual everyday conversation."
+    },
+    {
+      "vi": "彼此 thường làm tân ngữ hoặc định ngữ, còn 如此 thường làm trạng ngữ hoặc vị ngữ.",
+      "en": "彼此 usually works as an object or modifier, while 如此 usually works as an adverbial or predicate."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "彼此",
+        "role": "object",
+        "label": {"vi": "đại từ chỉ định (lẫn nhau)", "en": "demonstrative pronoun (each other)"},
+        "optional": true,
+        "pinyin": ["bǐ", "cǐ"]
+      },
+      {
+        "text": "如此",
+        "role": "complement",
+        "label": {"vi": "đại từ chỉ định (như vậy)", "en": "demonstrative pronoun (so, such)"},
+        "optional": true,
+        "pinyin": ["rú", "cǐ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他们互相帮助，彼此信任。",
+      "form": "affirmative",
+      "spans": [{"start": 7, "end": 9, "role": "object"}],
+      "annotation": {
+        "vi": "彼此 làm tân ngữ cho 信任, nghĩa là tin tưởng lẫn nhau.",
+        "en": "彼此 is the object of 信任, meaning trust each other."
+      },
+      "translation": {
+        "vi": "Họ giúp đỡ lẫn nhau và tin tưởng nhau.",
+        "en": "They help each other and trust each other."
+      },
+      "pinyin": ["tā", "men", "hù", "xiāng", "bāng", "zhù", "", "bǐ", "cǐ", "xìn", "rèn", ""]
+    },
+    {
+      "text": "事情如此复杂，我们需要更多时间。",
+      "form": "affirmative",
+      "spans": [{"start": 2, "end": 4, "role": "complement"}],
+      "annotation": {
+        "vi": "如此 bổ nghĩa cho 复杂, nghĩa là phức tạp đến như vậy.",
+        "en": "如此 modifies 复杂, meaning complicated to such a degree."
+      },
+      "translation": {
+        "vi": "Sự việc phức tạp như vậy, chúng tôi cần thêm thời gian.",
+        "en": "The matter is so complicated that we need more time."
+      },
+      "pinyin": [
+        "shì",
+        "qíng",
+        "rú",
+        "cǐ",
+        "fù",
+        "zá",
+        "",
+        "wǒ",
+        "men",
+        "xū",
+        "yào",
+        "gèng",
+        "duō",
+        "shí",
+        "jiān",
+        ""
+      ]
+    },
+    {
+      "text": "他们彼此了解，所以合作很顺利。",
+      "form": "affirmative",
+      "spans": [{"start": 2, "end": 4, "role": "object"}],
+      "annotation": {
+        "vi": "彼此 làm trạng ngữ cho 了解, nghĩa là hiểu nhau.",
+        "en": "彼此 is the adverbial for 了解, meaning understand each other."
+      },
+      "translation": {
+        "vi": "Họ hiểu nhau nên hợp tác rất thuận lợi.",
+        "en": "They understand each other, so their cooperation goes smoothly."
+      },
+      "pinyin": [
+        "tā",
+        "men",
+        "bǐ",
+        "cǐ",
+        "liǎo",
+        "jiě",
+        "",
+        "suǒ",
+        "yǐ",
+        "hé",
+        "zuò",
+        "hěn",
+        "shùn",
+        "lì",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "彼此 đã bao hàm nghĩa 'lẫn nhau', thêm 对方 ở cuối là thừa và sai ngữ pháp.",
+        "en": "彼此 already contains the meaning 'each other'; adding 对方 at the end is redundant and ungrammatical."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "他们互相帮助，彼此信任对方。",
+      "right": "他们互相帮助，彼此信任。",
+      "wrong_pinyin": ["tā", "men", "hù", "xiāng", "bāng", "zhù", "", "bǐ", "cǐ", "xìn", "rèn", "duì", "fāng", ""],
+      "right_pinyin": ["tā", "men", "hù", "xiāng", "bāng", "zhù", "", "bǐ", "cǐ", "xìn", "rèn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他们互相帮助，___信任。",
+      "options": [
+        {"text": "彼此", "error_tag": null, "pinyin": ["bǐ", "cǐ"]},
+        {"text": "对方", "error_tag": "other", "pinyin": ["duì", "fāng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "彼此 là đại từ chỉ định 'lẫn nhau', phù hợp với ngữ cảnh hai người tin tưởng nhau.",
+        "en": "彼此 is the demonstrative pronoun 'each other', fitting the context of two people trusting each other."
+      },
+      "q_pinyin": ["tā", "men", "hù", "xiāng", "bāng", "zhù", "", "", "", "", "xìn", "rèn", ""]
+    },
+    {
+      "q": "事情___复杂，我们需要更多时间。",
+      "options": [
+        {"text": "如此", "error_tag": null, "pinyin": ["rú", "cǐ"]},
+        {"text": "这样", "error_tag": "word_choice", "pinyin": ["zhè", "yàng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "如此 là đại từ chỉ định trang trọng, thay thế cho mức độ 'như vậy' trước tính từ 复杂.",
+        "en": "如此 is the formal demonstrative pronoun substituting for the degree 'so' before the adjective 复杂."
+      },
+      "q_pinyin": [
+        "shì",
+        "qíng",
+        "",
+        "",
+        "",
+        "fù",
+        "zá",
+        "",
+        "wǒ",
+        "men",
+        "xū",
+        "yào",
+        "gèng",
+        "duō",
+        "shí",
+        "jiān",
+        ""
+      ]
+    },
+    {
+      "q": "他们___了解，所以合作很顺利。",
+      "options": [
+        {"text": "彼此", "error_tag": null, "pinyin": ["bǐ", "cǐ"]},
+        {"text": "互相", "error_tag": "word_choice", "pinyin": ["hù", "xiāng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "彼此 làm trạng ngữ cho 了解, nghĩa là hiểu nhau; 互相 cũng đúng nhưng không phải đại từ chỉ định của bài này.",
+        "en": "彼此 is the adverbial for 了解, meaning understand each other; 互相 is also correct but is not the demonstrative pronoun taught here."
+      },
+      "q_pinyin": [
+        "tā",
+        "men",
+        "",
+        "",
+        "",
+        "liǎo",
+        "jiě",
+        "",
+        "suǒ",
+        "yǐ",
+        "hé",
+        "zuò",
+        "hěn",
+        "shùn",
+        "lì",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về hai người bạn hoặc hai thành viên trong gia đình bạn, dùng 彼此 để nói họ hiểu hoặc giúp đỡ nhau.",
+      "en": "Write one sentence about two friends or family members, using 彼此 to say they understand or help each other."
+    },
+    "placeholder": "我和他……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["彼此"], "role": "object"}]},
+    "sample": {
+      "text": "我和他彼此了解，所以很少吵架。",
+      "pinyin": [
+        "wǒ",
+        "hé",
+        "tā",
+        "bǐ",
+        "cǐ",
+        "liǎo",
+        "jiě",
+        "",
+        "suǒ",
+        "yǐ",
+        "hěn",
+        "shǎo",
+        "chǎo",
+        "jià",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "hé", "tā", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791344879",
+    "generated_at": "2026-10-07T03:47:59Z"
+  },
+  "review": null
+}

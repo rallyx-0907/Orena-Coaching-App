@@ -1,0 +1,217 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.ne_question",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.ma_question"],
+  "contrasts": ["zh.ma_question"],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk1-11-v"], "gf0025": ["gf0025.hsk1.022"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu hỏi rút gọn với 呢", "en": "Follow-up questions with 呢"},
+    "native_title": "“呢”疑问句",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Câu hỏi rút gọn với 呢 dùng để hỏi lại hoặc tiếp nối một chủ đề đã được nhắc đến, thay vì lặp lại cả câu hỏi.",
+      "en": "The shortened question with 呢 asks back or continues a topic that was already mentioned, instead of repeating the whole question."
+    },
+    "sub": {"vi": "hỏi lại, tiếp nối", "en": "asking back"},
+    "native_title_pinyin": ["", "ne", "", "yí", "wèn", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi người khác vừa nói về họ và bạn muốn hỏi điều tương tự về người khác: 我很好，你呢？",
+      "en": "When someone has just said something about themselves and you want to ask the same about another person: 我很好，你呢？"
+    },
+    {
+      "vi": "Khi chủ đề đã rõ trong ngữ cảnh nên không cần lặp lại động từ hay tính từ: 他在家，你呢？",
+      "en": "When the topic is already clear from context, so the verb or adjective does not need repeating: 他在家，你呢？"
+    },
+    {
+      "vi": "Khi hỏi về một vật hoặc một người đã được nhắc trước đó: 我的书呢？",
+      "en": "When asking about a thing or person already mentioned earlier: 我的书呢？"
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "N/Đại từ",
+        "role": "subject",
+        "label": {"vi": "danh từ hoặc đại từ", "en": "noun or pronoun"},
+        "pinyin": ["", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "呢",
+        "role": "particle",
+        "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+        "pinyin": ["ne"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我很好，你呢？",
+      "form": "affirmative",
+      "spans": [{"start": 4, "end": 5, "role": "subject"}, {"start": 5, "end": 6, "role": "particle"}],
+      "annotation": {
+        "vi": "Hỏi lại điều vừa nói về người đối diện, không lặp lại 很好.",
+        "en": "Asks the same thing back about the listener, without repeating 很好."
+      },
+      "translation": {"vi": "Tôi khỏe, còn bạn?", "en": "I'm fine, and you?"},
+      "pinyin": ["wǒ", "hěn", "hǎo", "", "nǐ", "ne", ""]
+    },
+    {
+      "text": "他在家，你呢？",
+      "form": "affirmative",
+      "spans": [{"start": 4, "end": 5, "role": "subject"}, {"start": 5, "end": 6, "role": "particle"}],
+      "annotation": {
+        "vi": "Chủ đề 在家 đã rõ, 你呢？ hỏi lại về bạn.",
+        "en": "The topic 在家 is already clear; 你呢？ asks the same about you."
+      },
+      "translation": {"vi": "Anh ấy ở nhà, còn bạn?", "en": "He is at home, and you?"},
+      "pinyin": ["tā", "zài", "jiā", "", "nǐ", "ne", ""]
+    },
+    {
+      "text": "我的书呢？",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "subject"}, {"start": 3, "end": 4, "role": "particle"}],
+      "annotation": {
+        "vi": "Hỏi về một vật đã được nhắc trước đó: sách của tôi đâu?",
+        "en": "Asks about a thing already mentioned: where is my book?"
+      },
+      "translation": {"vi": "Sách của tôi đâu?", "en": "Where is my book?"},
+      "pinyin": ["wǒ", "de", "shū", "ne", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.ma_question",
+      "this_example": "我很好，你呢？",
+      "other_example": "你是学生吗？",
+      "this_meaning": {
+        "vi": "呢 hỏi lại hoặc tiếp nối một chủ đề đã có trong ngữ cảnh; câu thường ngắn và không lặp lại động từ.",
+        "en": "呢 asks back or continues a topic already present in context; the question is short and does not repeat the verb."
+      },
+      "other_meaning": {
+        "vi": "吗 biến một câu trần thuật đầy đủ thành câu hỏi có/không, và luôn đứng cuối câu.",
+        "en": "吗 turns a full statement into a yes/no question and always stands at the end of the sentence."
+      },
+      "this_example_pinyin": ["wǒ", "hěn", "hǎo", "", "nǐ", "ne", ""],
+      "other_example_pinyin": ["nǐ", "shì", "xué", "shēng", "ma", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi hỏi lại một chủ đề đã nhắc đến, tiếng Trung dùng 呢, không dùng 吗. 吗 dùng cho câu hỏi có/không đầy đủ, còn 呢 thay cho cả câu hỏi đã nói trước đó.",
+        "en": "When asking back about a topic already mentioned, Chinese uses 呢, not 吗. 吗 marks a full yes/no question, while 呢 substitutes for the whole previous question."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "你吗？",
+      "right": "你呢？",
+      "wrong_pinyin": ["nǐ", "ma", ""],
+      "right_pinyin": ["nǐ", "ne", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我很好，___？",
+      "options": [
+        {"text": "你呢", "error_tag": null, "pinyin": ["nǐ", "ne"]},
+        {"text": "你吗", "error_tag": "particle", "pinyin": ["nǐ", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hỏi lại một chủ đề đã nhắc đến thì dùng 呢, không dùng 吗.",
+        "en": "To ask back about a topic already mentioned, use 呢, not 吗."
+      },
+      "q_pinyin": ["wǒ", "hěn", "hǎo", "", "", "", "", ""]
+    },
+    {
+      "q": "他在家，___？",
+      "options": [
+        {"text": "你呢", "error_tag": null, "pinyin": ["nǐ", "ne"]},
+        {"text": "你吗", "error_tag": "particle", "pinyin": ["nǐ", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ đề 在家 đã rõ, 你呢？ hỏi lại điều tương tự về bạn.",
+        "en": "The topic 在家 is clear; 你呢？ asks the same about you."
+      },
+      "q_pinyin": ["tā", "zài", "jiā", "", "", "", "", ""]
+    },
+    {
+      "q": "我的书___？",
+      "options": [
+        {"text": "呢", "error_tag": null, "pinyin": ["ne"]},
+        {"text": "吗", "error_tag": "particle", "pinyin": ["ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hỏi về một vật đã được nhắc trước đó thì dùng 呢.",
+        "en": "To ask about a thing already mentioned, use 呢."
+      },
+      "q_pinyin": ["wǒ", "de", "shū", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi lại ngắn với 呢 về một người hoặc một vật đã được nhắc đến.",
+      "en": "Write a short question back with 呢 about a person or thing already mentioned."
+    },
+    "placeholder": "我很好，",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["呢"], "role": "particle"}]},
+    "sample": {"text": "我很好，你呢？", "pinyin": ["wǒ", "hěn", "hǎo", "", "nǐ", "ne", ""]},
+    "placeholder_pinyin": ["wǒ", "hěn", "hǎo", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791299442",
+    "generated_at": "2026-10-06T15:10:42Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-11-v"],
+      "content_version": 2,
+      "content_hash": "e7bf00f80d1995e6f14a5b85017deea9398d2cc69f9d6c7a63dc258b98a14f7c",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-11-v",
+          "issue": "R5 gộp 吗 và 呢 trong một bài, nhưng điểm này chỉ dạy 呢.",
+          "fix": "Tách riêng 呢; 吗 chỉ xuất hiện trong phần so sánh với zh.ma_question."
+        },
+        {
+          "r5_id": "zh-hsk1-11-v",
+          "issue": "R5 nêu 呢 dùng trong 'một số câu đang diễn ra' nhưng không có ví dụ hay quy tắc rõ ràng.",
+          "fix": "Bỏ nhận định mơ hồ đó; chỉ giữ hai dùng rõ: hỏi lại/tiếp nối chủ đề và hỏi về vật đã nhắc."
+        },
+        {
+          "r5_id": "zh-hsk1-11-v",
+          "issue": "R5 không có công thức trừu tượng cho 呢.",
+          "fix": "Thêm công thức N/Đại từ + 呢."
+        },
+        {
+          "r5_id": "zh-hsk1-11-v",
+          "issue": "R5 không có lỗi điển hình của người Việt với 呢.",
+          "fix": "Thêm lỗi dùng 吗 thay 呢 khi hỏi lại: 你吗？ → 你呢？"
+        },
+        {
+          "r5_id": "zh-hsk1-11-v",
+          "issue": "R5 không có phần luyện tập nhanh hay sản xuất cá nhân cho 呢.",
+          "fix": "Thêm 3 câu cloze và thẻ Try it yourself với quy tắc nhận diện 呢."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,244 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.chule_yiwai",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.exclusion",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk2-10-topic"], "gf0025": ["gf0025.hsk3.028", "gf0025.hsk3.038"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk2-10-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "除了 ... 以外 ...", "en": "除了 ... 以外 ..."},
+    "native_title": "“除了……以外……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Cấu trúc 除了……以外…… dùng để nêu một thành phần được tách ra khỏi phần còn lại, với nghĩa 'ngoài…… ra còn……' hoặc 'trừ…… ra……' tùy theo mệnh đề chính.",
+      "en": "The 除了……以外…… structure sets one item apart from the rest, meaning 'besides……' or 'except……' depending on the main clause."
+    },
+    "sub": {"vi": "ngoại trừ / bổ sung", "en": "exclusion / addition"},
+    "native_title_pinyin": ["", "chú", "le", "", "", "yǐ", "wài", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói thêm một thứ nữa ngoài thứ đã nêu: 除了 A 以外，还/也 B.",
+      "en": "When adding one more item besides the one already mentioned: 除了 A 以外，还/也 B."
+    },
+    {
+      "vi": "Khi muốn nói trừ một thứ ra, còn lại đều như vậy: 除了 A 以外，其他/都…….",
+      "en": "When saying that except for one item, all the rest are the same: 除了 A 以外，其他/都……."
+    },
+    {
+      "vi": "Khi A là một từ/cụm từ đơn giản (người, vật, thời gian) và mệnh đề chính nêu rõ phần còn lại.",
+      "en": "When A is a simple word or phrase (person, thing, time) and the main clause states the remaining part."
+    },
+    {
+      "vi": "Khi cần nhấn mạnh sự tách biệt giữa A và phần còn lại trong câu.",
+      "en": "When you need to highlight the separation between A and the rest of the sentence."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "除了",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu mở đầu", "en": "opening marker"},
+        "pinyin": ["chú", "le"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "thành phần được tách ra", "en": "item set apart"},
+        "pinyin": [""]
+      },
+      {
+        "text": "以外",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu kết thúc", "en": "closing marker"},
+        "pinyin": ["yǐ", "wài"]
+      },
+      {
+        "text": "还/也/都/其他",
+        "role": "connector",
+        "label": {"vi": "từ nối mệnh đề chính", "en": "main-clause connector"},
+        "options": [
+          {"text": "还", "pinyin": ["hái"]},
+          {"text": "也", "pinyin": ["yě"]},
+          {"text": "都", "pinyin": ["dōu"]},
+          {"text": "其他", "pinyin": ["qí", "tā"]}
+        ],
+        "pinyin": ["hái", "", "yě", "", "dōu", "", "qí", "tā"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "phần còn lại", "en": "remaining part"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "除了中文以外，我还学英语。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 4, "end": 6, "role": "marker"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Ngoài tiếng Trung ra, tôi còn học tiếng Anh.",
+        "en": "Besides Chinese, I also study English."
+      },
+      "translation": {
+        "vi": "Ngoài tiếng Trung ra, tôi còn học tiếng Anh.",
+        "en": "Besides Chinese, I also study English."
+      },
+      "pinyin": ["chú", "le", "zhōng", "wén", "yǐ", "wài", "", "wǒ", "hái", "xué", "yīng", "yǔ", ""]
+    },
+    {
+      "text": "除了他以外，大家都来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 5, "role": "marker"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 11, "role": "other"}
+      ],
+      "annotation": {"vi": "Trừ anh ấy ra, mọi người đều đến.", "en": "Except for him, everyone came."},
+      "translation": {"vi": "Trừ anh ấy ra, mọi người đều đến.", "en": "Except for him, everyone came."},
+      "pinyin": ["chú", "le", "tā", "yǐ", "wài", "", "dà", "jiā", "dōu", "lái", "le", ""]
+    },
+    {
+      "text": "除了咖啡以外，我也喜欢茶。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 4, "end": 6, "role": "marker"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "other"}
+      ],
+      "annotation": {"vi": "Ngoài cà phê ra, tôi cũng thích trà.", "en": "Besides coffee, I also like tea."},
+      "translation": {"vi": "Ngoài cà phê ra, tôi cũng thích trà.", "en": "Besides coffee, I also like tea."},
+      "pinyin": ["chú", "le", "kā", "fēi", "yǐ", "wài", "", "wǒ", "yě", "xǐ", "huān", "chá", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi nghĩa là 'trừ anh ấy ra, tất cả đều đến', phải dùng 都 để chỉ toàn bộ phần còn lại, không dùng 还.",
+        "en": "When the meaning is 'except for him, everyone came', use 都 for the whole remaining set, not 还."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "除了他以外，大家还来了。",
+      "right": "除了他以外，大家都来了。",
+      "wrong_pinyin": ["chú", "le", "tā", "yǐ", "wài", "", "dà", "jiā", "hái", "lái", "le", ""],
+      "right_pinyin": ["chú", "le", "tā", "yǐ", "wài", "", "dà", "jiā", "dōu", "lái", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "除了中文以外，我___学英语。",
+      "options": [
+        {"text": "还", "error_tag": null, "pinyin": ["hái"]},
+        {"text": "都", "error_tag": "conjunction", "pinyin": ["dōu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Nghĩa 'ngoài tiếng Trung ra còn học tiếng Anh' cần 还, không dùng 都.",
+        "en": "The meaning 'besides Chinese, also study English' needs 还, not 都."
+      },
+      "q_pinyin": ["chú", "le", "zhōng", "wén", "yǐ", "wài", "", "wǒ", "", "", "", "xué", "yīng", "yǔ", ""]
+    },
+    {
+      "q": "除了他以外，大家___来了。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "还", "error_tag": "conjunction", "pinyin": ["hái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Nghĩa 'trừ anh ấy ra, mọi người đều đến' cần 都, không dùng 还.",
+        "en": "The meaning 'except for him, everyone came' needs 都, not 还."
+      },
+      "q_pinyin": ["chú", "le", "tā", "yǐ", "wài", "", "dà", "jiā", "", "", "", "lái", "le", ""]
+    },
+    {
+      "q": "除了咖啡以外，我___喜欢茶。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "都", "error_tag": "conjunction", "pinyin": ["dōu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Nghĩa 'ngoài cà phê ra tôi cũng thích trà' cần 也, không dùng 都.",
+        "en": "The meaning 'besides coffee, I also like tea' needs 也, not 都."
+      },
+      "q_pinyin": ["chú", "le", "kā", "fēi", "yǐ", "wài", "", "wǒ", "", "", "", "xǐ", "huān", "chá", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng cấu trúc 除了……以外…… để nói thêm một thứ nữa.",
+      "en": "Write one sentence about yourself using 除了……以外…… to add one more item."
+    },
+    "placeholder": "除了……以外，我还……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["除了"], "role": "marker"},
+        {"any_of": ["以外"], "role": "marker"},
+        {"any_of": ["还", "也"], "role": "connector"}
+      ]
+    },
+    "sample": {
+      "text": "除了中文以外，我还学英语。",
+      "pinyin": ["chú", "le", "zhōng", "wén", "yǐ", "wài", "", "wǒ", "hái", "xué", "yīng", "yǔ", ""]
+    },
+    "placeholder_pinyin": ["chú", "le", "", "", "yǐ", "wài", "", "wǒ", "hái", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338122",
+    "generated_at": "2026-10-07T01:55:22Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-10-topic"],
+      "content_version": 2,
+      "content_hash": "24fd0117116a05b4c2e89e946a8a25318f08a8a7c187e091118ee449f941f7fe",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-10-topic",
+          "issue": "R5 ghi '除了 A 以外，其他/都... = except A, the rest/all...' nhưng không nêu rõ 其他 đứng trước danh từ còn 都 đứng trước động từ.",
+          "fix": "Đã viết lại thành hai trường hợp riêng: 除了 A 以外，其他 + N + 都…… và 除了 A 以外，都……, kèm ví dụ minh họa."
+        },
+        {
+          "r5_id": "zh-hsk2-10-topic",
+          "issue": "R5 dùng ví dụ '除了咖啡以外，我也喜欢茶' nhưng không giải thích 也 ở đây biểu thị bổ sung, không phải tương phản.",
+          "fix": "Đã thêm giải thích trong when_to_use và giữ ví dụ, ghi rõ 也 = 'cũng' trong nghĩa bổ sung."
+        },
+        {
+          "r5_id": "zh-hsk2-10-topic",
+          "issue": "R5 xếp '除了他以外，大家还来了' vào mistakes nhưng không nói rõ lỗi là dùng sai từ nối 还 thay vì 都.",
+          "fix": "Đã sửa thành common_mistakes với error_tag conjunction, giải thích rõ 都 chỉ toàn bộ phần còn lại, 还 chỉ bổ sung thêm."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,546 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_6_2_10.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_5_2_9.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.054"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 二重复句2：复句+复句", "en": "Complex sentences: 二重复句2：复句+复句"},
+    "native_title": "二重复句2：复句+复句",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Câu phức hai tầng gồm hai câu phức ghép lại, mỗi tầng dùng một cặp liên từ riêng.",
+      "en": "A two-level complex sentence made of two complex sentences, each level using its own pair of conjunctions."
+    },
+    "sub": {"vi": "câu phức hai tầng", "en": "two-level complex sentence"},
+    "native_title_pinyin": ["èr", "chóng", "fù", "jù", "", "", "fù", "jù", "", "fù", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi một ý đã có quan hệ nhân quả hoặc nhượng bộ, nhưng cả ý đó lại nằm trong một quan hệ lớn hơn như điều kiện hay tương phản.",
+      "en": "When one idea already has a cause or concession relation, but that whole idea sits inside a larger relation such as condition or contrast."
+    },
+    {
+      "vi": "Khi cần diễn đạt hai lớp lý do hoặc hai lớp điều kiện trong cùng một câu, không tách thành hai câu riêng.",
+      "en": "When you need two layers of reason or two layers of condition in one sentence instead of splitting them into two sentences."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh rằng kết quả cuối cùng phụ thuộc vào một điều kiện, mà điều kiện đó lại phụ thuộc vào một điều kiện khác.",
+      "en": "When you want to stress that the final result depends on a condition, and that condition itself depends on another condition."
+    },
+    {
+      "vi": "Trong văn viết trang trọng, báo cáo hoặc lập luận, khi cần câu nhiều tầng nhưng vẫn rõ quan hệ giữa các mệnh đề.",
+      "en": "In formal writing, reports or arguments, when you need a multi-level sentence while keeping the relations between clauses clear."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "虽然",
+        "role": "connector",
+        "label": {"vi": "liên từ nhượng bộ tầng một", "en": "level-one concessive conjunction"},
+        "pinyin": ["suī", "rán"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "mệnh đề nhượng bộ", "en": "concessive clause"},
+        "pinyin": [""]
+      },
+      {
+        "text": "但是",
+        "role": "connector",
+        "label": {"vi": "liên từ tương phản tầng một", "en": "level-one contrast conjunction"},
+        "pinyin": ["dàn", "shì"]
+      },
+      {
+        "text": "因为",
+        "role": "connector",
+        "label": {"vi": "liên từ nguyên nhân tầng hai", "en": "level-two cause conjunction"},
+        "pinyin": ["yīn", "wèi"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "mệnh đề nguyên nhân", "en": "cause clause"},
+        "pinyin": [""]
+      },
+      {
+        "text": "所以",
+        "role": "connector",
+        "label": {"vi": "liên từ kết quả tầng hai", "en": "level-two result conjunction"},
+        "pinyin": ["suǒ", "yǐ"]
+      },
+      {
+        "text": "C",
+        "role": "other",
+        "label": {"vi": "mệnh đề kết quả", "en": "result clause"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "虽然他不喜欢运动，但是因为医生建议他多走路，所以他每天散步。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 8, "role": "other"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 13, "role": "connector"},
+        {"start": 13, "end": 21, "role": "other"},
+        {"start": 22, "end": 24, "role": "connector"},
+        {"start": 24, "end": 29, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Tầng một là nhượng bộ 虽然…但是, tầng hai là nhân quả 因为…所以 nằm trong vế 但是.",
+        "en": "Level one is the concession 虽然…但是; level two is the cause-result 因为…所以 inside the 但是 clause."
+      },
+      "translation": {
+        "vi": "Dù anh ấy không thích vận động, nhưng vì bác sĩ khuyên anh ấy đi bộ nhiều nên ngày nào anh ấy cũng đi dạo.",
+        "en": "Although he does not like exercise, because the doctor advised him to walk more, he takes a walk every day."
+      },
+      "pinyin": [
+        "suī",
+        "rán",
+        "tā",
+        "bù",
+        "xǐ",
+        "huān",
+        "yùn",
+        "dòng",
+        "",
+        "dàn",
+        "shì",
+        "yīn",
+        "wèi",
+        "yī",
+        "shēng",
+        "jiàn",
+        "yì",
+        "tā",
+        "duō",
+        "zǒu",
+        "lù",
+        "",
+        "suǒ",
+        "yǐ",
+        "tā",
+        "měi",
+        "tiān",
+        "sàn",
+        "bù",
+        ""
+      ]
+    },
+    {
+      "text": "即使明天下雨，我们也去，因为票已经买了，所以不能退。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 12, "end": 14, "role": "connector"},
+        {"start": 14, "end": 19, "role": "other"},
+        {"start": 20, "end": 22, "role": "connector"},
+        {"start": 22, "end": 25, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Tầng một là nhượng bộ 即使…也, tầng hai là nhân quả 因为…所以 giải thích cho quyết định đi.",
+        "en": "Level one is the concession 即使…也; level two is the cause-result 因为…所以 explaining the decision to go."
+      },
+      "translation": {
+        "vi": "Kể cả ngày mai trời mưa, chúng tôi vẫn đi, vì vé đã mua rồi nên không thể hoàn.",
+        "en": "Even if it rains tomorrow, we will still go, because the tickets are already bought, so they cannot be refunded."
+      },
+      "pinyin": [
+        "jí",
+        "shǐ",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "yě",
+        "qù",
+        "",
+        "yīn",
+        "wèi",
+        "piào",
+        "yǐ",
+        "jīng",
+        "mǎi",
+        "le",
+        "",
+        "suǒ",
+        "yǐ",
+        "bù",
+        "néng",
+        "tuì",
+        ""
+      ]
+    },
+    {
+      "text": "尽管工作很忙，他还是坚持学习，因为他想换工作，所以每天学到很晚。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 15, "end": 17, "role": "connector"},
+        {"start": 17, "end": 22, "role": "other"},
+        {"start": 23, "end": 25, "role": "connector"},
+        {"start": 25, "end": 31, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Tầng một là nhượng bộ 尽管…还是, tầng hai là nhân quả 因为…所以 nêu lý do kiên trì.",
+        "en": "Level one is the concession 尽管…还是; level two is the cause-result 因为…所以 giving the reason for persisting."
+      },
+      "translation": {
+        "vi": "Dù công việc rất bận, anh ấy vẫn kiên trì học, vì anh ấy muốn đổi việc nên ngày nào cũng học đến khuya.",
+        "en": "Although work is very busy, he still keeps studying, because he wants to change jobs, so he studies until late every day."
+      },
+      "pinyin": [
+        "jǐn",
+        "guǎn",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "tā",
+        "hái",
+        "shì",
+        "jiān",
+        "chí",
+        "xué",
+        "xí",
+        "",
+        "yīn",
+        "wèi",
+        "tā",
+        "xiǎng",
+        "huàn",
+        "gōng",
+        "zuò",
+        "",
+        "suǒ",
+        "yǐ",
+        "měi",
+        "tiān",
+        "xué",
+        "dào",
+        "hěn",
+        "wǎn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học bỏ mất cặp liên từ tầng một 虽然…但是, chỉ giữ lại 因为…所以, nên câu mất lớp nhượng bộ và quan hệ hai tầng không còn rõ.",
+        "en": "The learner drops the level-one pair 虽然…但是 and keeps only 因为…所以, so the sentence loses its concessive layer and the two-level relation disappears."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "虽然他不喜欢运动，因为医生建议他多走路，所以他每天散步。",
+      "right": "虽然他不喜欢运动，但是因为医生建议他多走路，所以他每天散步。",
+      "wrong_pinyin": [
+        "suī",
+        "rán",
+        "tā",
+        "bù",
+        "xǐ",
+        "huān",
+        "yùn",
+        "dòng",
+        "",
+        "yīn",
+        "wèi",
+        "yī",
+        "shēng",
+        "jiàn",
+        "yì",
+        "tā",
+        "duō",
+        "zǒu",
+        "lù",
+        "",
+        "suǒ",
+        "yǐ",
+        "tā",
+        "měi",
+        "tiān",
+        "sàn",
+        "bù",
+        ""
+      ],
+      "right_pinyin": [
+        "suī",
+        "rán",
+        "tā",
+        "bù",
+        "xǐ",
+        "huān",
+        "yùn",
+        "dòng",
+        "",
+        "dàn",
+        "shì",
+        "yīn",
+        "wèi",
+        "yī",
+        "shēng",
+        "jiàn",
+        "yì",
+        "tā",
+        "duō",
+        "zǒu",
+        "lù",
+        "",
+        "suǒ",
+        "yǐ",
+        "tā",
+        "měi",
+        "tiān",
+        "sàn",
+        "bù",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___他工作很忙，他还是每天学汉语，因为他想在中国工作，所以很努力。",
+      "options": [
+        {"text": "尽管", "error_tag": null, "pinyin": ["jǐn", "guǎn"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế đầu là nhượng bộ, cần 尽管…还是; 因为 và 所以 đã dùng ở tầng hai nên không thể mở đầu tầng một.",
+        "en": "The first clause is concessive, so it needs 尽管…还是; 因为 and 所以 already belong to level two and cannot open level one."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "tā",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "tā",
+        "hái",
+        "shì",
+        "měi",
+        "tiān",
+        "xué",
+        "hàn",
+        "yǔ",
+        "",
+        "yīn",
+        "wèi",
+        "tā",
+        "xiǎng",
+        "zài",
+        "zhōng",
+        "guó",
+        "gōng",
+        "zuò",
+        "",
+        "suǒ",
+        "yǐ",
+        "hěn",
+        "nǔ",
+        "lì",
+        ""
+      ]
+    },
+    {
+      "q": "即使明天下雨，我们___去，因为票已经买了，所以不能退。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cặp 即使…也 cần 也 ở vế sau; 但是 và 所以 không thuộc cặp nhượng bộ này.",
+        "en": "The pair 即使…也 needs 也 in the second clause; 但是 and 所以 do not belong to this concessive pair."
+      },
+      "q_pinyin": [
+        "jí",
+        "shǐ",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "qù",
+        "",
+        "yīn",
+        "wèi",
+        "piào",
+        "yǐ",
+        "jīng",
+        "mǎi",
+        "le",
+        "",
+        "suǒ",
+        "yǐ",
+        "bù",
+        "néng",
+        "tuì",
+        ""
+      ]
+    },
+    {
+      "q": "虽然他不喜欢运动，但是___医生建议他多走路，所以他每天散步。",
+      "options": [
+        {"text": "因为", "error_tag": null, "pinyin": ["yīn", "wèi"]},
+        {"text": "虽然", "error_tag": "conjunction", "pinyin": ["suī", "rán"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tầng hai là nhân quả, cần 因为…所以; 虽然 và 但是 đã dùng cho tầng một nên không lặp lại ở đây.",
+        "en": "Level two is cause-result, so it needs 因为…所以; 虽然 and 但是 already serve level one and cannot repeat here."
+      },
+      "q_pinyin": [
+        "suī",
+        "rán",
+        "tā",
+        "bù",
+        "xǐ",
+        "huān",
+        "yùn",
+        "dòng",
+        "",
+        "dàn",
+        "shì",
+        "",
+        "",
+        "",
+        "yī",
+        "shēng",
+        "jiàn",
+        "yì",
+        "tā",
+        "duō",
+        "zǒu",
+        "lù",
+        "",
+        "suǒ",
+        "yǐ",
+        "tā",
+        "měi",
+        "tiān",
+        "sàn",
+        "bù",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu phức hai tầng về việc học hoặc công việc của bạn: tầng một dùng 虽然…但是, tầng hai dùng 因为…所以.",
+      "en": "Write a two-level complex sentence about your study or work: level one uses 虽然…但是, level two uses 因为…所以."
+    },
+    "placeholder": "虽然我……，但是因为……，所以我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["虽然", "尽管", "即使"], "role": "connector"},
+        {"any_of": ["但是", "还是", "也"], "role": "connector"},
+        {"any_of": ["因为"], "role": "connector"},
+        {"any_of": ["所以"], "role": "connector"}
+      ]
+    },
+    "sample": {
+      "text": "虽然我工作很忙，但是因为我想去中国留学，所以我每天学汉语。",
+      "pinyin": [
+        "suī",
+        "rán",
+        "wǒ",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "dàn",
+        "shì",
+        "yīn",
+        "wèi",
+        "wǒ",
+        "xiǎng",
+        "qù",
+        "zhōng",
+        "guó",
+        "liú",
+        "xué",
+        "",
+        "suǒ",
+        "yǐ",
+        "wǒ",
+        "měi",
+        "tiān",
+        "xué",
+        "hàn",
+        "yǔ",
+        ""
+      ]
+    },
+    "placeholder_pinyin": [
+      "suī",
+      "rán",
+      "wǒ",
+      "",
+      "",
+      "",
+      "dàn",
+      "shì",
+      "yīn",
+      "wèi",
+      "",
+      "",
+      "",
+      "suǒ",
+      "yǐ",
+      "wǒ",
+      "",
+      ""
+    ]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338779",
+    "generated_at": "2026-10-07T02:06:19Z"
+  },
+  "review": null
+}

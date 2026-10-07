@@ -1,0 +1,434 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_12_parallel_structure_in_formal_prose",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_7.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk6-12-parallel-structure-in-formal-prose", "zh-hsk79-27-parallelism-and-cadence"]},
+  "point_type": "other",
+  "sequence": 12,
+  "aliases": ["zh-hsk6-12-parallel-structure-in-formal-prose", "zh-hsk79-27-parallelism-and-cadence"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Parallel structure in formal prose",
+      "en": "Chinese grammar: Parallel structure in formal prose"
+    },
+    "native_title": "正式语体中的平行结构",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Trong văn viết trang trọng, các thành phần được liệt kê hoặc đối chiếu phải cùng một loại cấu trúc ngữ pháp để câu vừa rõ nghĩa vừa cân đối.",
+      "en": "In formal prose, items that are listed or contrasted must share the same grammatical shape so the sentence reads clearly and stays balanced."
+    },
+    "sub": {"vi": "cấu trúc song song", "en": "parallel structure"},
+    "native_title_pinyin": ["zhèng", "shì", "yǔ", "tǐ", "zhōng", "de", "píng", "xíng", "jié", "gòu"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi liệt kê từ hai hành động, đặc điểm hoặc mục tiêu trở lên trong một câu văn viết.",
+      "en": "When listing two or more actions, qualities, or goals in one written sentence."
+    },
+    {
+      "vi": "Khi dùng cặp liên từ như 既……又……, 不仅……而且……, 要……也要…… để đối chiếu hai vế.",
+      "en": "When using correlative pairs such as 既……又……, 不仅……而且……, 要……也要…… to balance two clauses."
+    },
+    {
+      "vi": "Khi viết báo cáo, đề xuất, nhận xét hoặc văn bản hành chính cần giọng trang trọng, khách quan.",
+      "en": "When writing reports, proposals, evaluations, or administrative texts that need a formal, objective tone."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh một loạt ý bằng nhịp điệu đều đặn thay vì câu dài lộn xộn.",
+      "en": "When you want to emphasize a series of ideas with steady rhythm instead of a long, tangled sentence."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "VP1",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 1", "en": "verb phrase 1"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "、",
+        "role": "other",
+        "label": {"vi": "dấu ngăn cách", "en": "separator"},
+        "pinyin": [""]
+      },
+      {
+        "text": "VP2",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 2", "en": "verb phrase 2"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "并",
+        "role": "connector",
+        "label": {"vi": "và (nối song song)", "en": "and (parallel connector)"},
+        "optional": true,
+        "pinyin": ["bìng"]
+      },
+      {
+        "text": "VP3",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 3", "en": "verb phrase 3"},
+        "optional": true,
+        "pinyin": ["", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "该方案有助于降低成本、提高效率并改善用户体验。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 6, "end": 10, "role": "verb"},
+        {"start": 10, "end": 11, "role": "other"},
+        {"start": 11, "end": 15, "role": "verb"},
+        {"start": 15, "end": 16, "role": "connector"},
+        {"start": 16, "end": 22, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Ba cụm động từ cùng dạng được nối bằng 、 và 并.",
+        "en": "Three same-shaped verb phrases are joined by 、 and 并."
+      },
+      "translation": {
+        "vi": "Phương án này giúp giảm chi phí, tăng hiệu suất và cải thiện trải nghiệm người dùng.",
+        "en": "This plan helps reduce costs, raise efficiency, and improve user experience."
+      },
+      "pinyin": [
+        "gāi",
+        "fāng",
+        "àn",
+        "yǒu",
+        "zhù",
+        "yú",
+        "jiàng",
+        "dī",
+        "chéng",
+        "běn",
+        "",
+        "tí",
+        "gāo",
+        "xiào",
+        "lǜ",
+        "bìng",
+        "gǎi",
+        "shàn",
+        "yòng",
+        "hù",
+        "tǐ",
+        "yàn",
+        ""
+      ]
+    },
+    {
+      "text": "我们既要保证质量，又要控制成本。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 8, "role": "verb"},
+        {"start": 8, "end": 9, "role": "other"},
+        {"start": 9, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cặp 既要……又要…… giữ hai vế cùng dạng động từ.",
+        "en": "The pair 既要……又要…… keeps both clauses in the same verb form."
+      },
+      "translation": {
+        "vi": "Chúng ta vừa phải đảm bảo chất lượng vừa phải kiểm soát chi phí.",
+        "en": "We must both ensure quality and control costs."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "jì",
+        "yào",
+        "bǎo",
+        "zhèng",
+        "zhì",
+        "liàng",
+        "",
+        "yòu",
+        "yào",
+        "kòng",
+        "zhì",
+        "chéng",
+        "běn",
+        ""
+      ]
+    },
+    {
+      "text": "不仅要发现问题，还要解释原因并提出方案。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 8, "end": 14, "role": "verb"},
+        {"start": 14, "end": 15, "role": "other"},
+        {"start": 15, "end": 19, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cặp 不仅……还…… và 并 nối ba cụm động từ song song.",
+        "en": "The pair 不仅……还…… and 并 link three parallel verb phrases."
+      },
+      "translation": {
+        "vi": "Không chỉ phát hiện vấn đề mà còn phải giải thích nguyên nhân và đề xuất phương án.",
+        "en": "Not only identify the problem, but also explain the cause and propose a solution."
+      },
+      "pinyin": [
+        "bù",
+        "jǐn",
+        "yào",
+        "fā",
+        "xiàn",
+        "wèn",
+        "tí",
+        "",
+        "hái",
+        "yào",
+        "jiě",
+        "shì",
+        "yuán",
+        "yīn",
+        "bìng",
+        "tí",
+        "chū",
+        "fāng",
+        "àn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Ba thành phần không cùng loại cấu trúc: một cụm động từ, một mệnh đề, một cụm danh từ. Cần đưa cả ba về cùng dạng cụm động từ.",
+        "en": "The three items are not the same grammatical shape: a verb phrase, a clause, and a noun phrase. All three need to be verb phrases."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "目标是降低成本、效率提高、体验的改善。",
+      "right": "目标是降低成本、提高效率、改善体验。",
+      "wrong_pinyin": [
+        "mù",
+        "biāo",
+        "shì",
+        "jiàng",
+        "dī",
+        "chéng",
+        "běn",
+        "",
+        "xiào",
+        "lǜ",
+        "tí",
+        "gāo",
+        "",
+        "tǐ",
+        "yàn",
+        "de",
+        "gǎi",
+        "shàn",
+        ""
+      ],
+      "right_pinyin": [
+        "mù",
+        "biāo",
+        "shì",
+        "jiàng",
+        "dī",
+        "chéng",
+        "běn",
+        "",
+        "tí",
+        "gāo",
+        "xiào",
+        "lǜ",
+        "",
+        "gǎi",
+        "shàn",
+        "tǐ",
+        "yàn",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "该方案有助于降低成本、___并改善用户体验。",
+      "options": [
+        {"text": "提高效率", "error_tag": null, "pinyin": ["tí", "gāo", "xiào", "lǜ"]},
+        {"text": "效率提高", "error_tag": "word_order", "pinyin": ["xiào", "lǜ", "tí", "gāo"]},
+        {"text": "效率的提高", "error_tag": "other", "pinyin": ["xiào", "lǜ", "de", "tí", "gāo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần cụm động từ 提高效率 để song song với 降低成本 và 改善用户体验.",
+        "en": "The verb phrase 提高效率 is needed to parallel 降低成本 and 改善用户体验."
+      },
+      "q_pinyin": [
+        "gāi",
+        "fāng",
+        "àn",
+        "yǒu",
+        "zhù",
+        "yú",
+        "jiàng",
+        "dī",
+        "chéng",
+        "běn",
+        "",
+        "",
+        "",
+        "",
+        "bìng",
+        "gǎi",
+        "shàn",
+        "yòng",
+        "hù",
+        "tǐ",
+        "yàn",
+        ""
+      ]
+    },
+    {
+      "q": "我们既要保证质量，___控制成本。",
+      "options": [
+        {"text": "又要", "error_tag": null, "pinyin": ["yòu", "yào"]},
+        {"text": "而且", "error_tag": "conjunction", "pinyin": ["ér", "qiě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cặp 既要……又要…… giữ hai vế cùng dạng động từ; 而且 không tạo được cặp cân đối này.",
+        "en": "The pair 既要……又要…… keeps both clauses in the same verb form; 而且 does not form this balanced pair."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "jì",
+        "yào",
+        "bǎo",
+        "zhèng",
+        "zhì",
+        "liàng",
+        "",
+        "",
+        "",
+        "",
+        "kòng",
+        "zhì",
+        "chéng",
+        "běn",
+        ""
+      ]
+    },
+    {
+      "q": "不仅要发现问题，还要解释原因___提出方案。",
+      "options": [
+        {"text": "并", "error_tag": null, "pinyin": ["bìng"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "并 nối hai cụm động từ song song; 但是 và 因为 không phù hợp quan hệ liệt kê.",
+        "en": "并 links two parallel verb phrases; 但是 and 因为 do not fit the listing relation."
+      },
+      "q_pinyin": [
+        "bù",
+        "jǐn",
+        "yào",
+        "fā",
+        "xiàn",
+        "wèn",
+        "tí",
+        "",
+        "hái",
+        "yào",
+        "jiě",
+        "shì",
+        "yuán",
+        "yīn",
+        "",
+        "",
+        "",
+        "tí",
+        "chū",
+        "fāng",
+        "àn",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng nêu hai hoặc ba việc cần làm, dùng cùng dạng cụm động từ và nối bằng 、 hoặc 并.",
+      "en": "Write one formal sentence listing two or three things to do, using the same verb-phrase shape and joining with 、 or 并."
+    },
+    "placeholder": "我们要……、……并……。",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "connector", "any_of": ["并"]}]},
+    "sample": {
+      "text": "我们要提高效率、保证质量并控制成本。",
+      "pinyin": [
+        "wǒ",
+        "men",
+        "yào",
+        "tí",
+        "gāo",
+        "xiào",
+        "lǜ",
+        "",
+        "bǎo",
+        "zhèng",
+        "zhì",
+        "liàng",
+        "bìng",
+        "kòng",
+        "zhì",
+        "chéng",
+        "běn",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "men", "yào", "", "", "", "", "", "bìng", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348660",
+    "generated_at": "2026-10-07T04:51:00Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-12-parallel-structure-in-formal-prose", "zh-hsk79-27-parallelism-and-cadence"],
+      "content_version": 2,
+      "content_hash": "520f149816fd91de693bfe286c238c89810a76d41ad1a508f419de03ffe6e921",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-12-parallel-structure-in-formal-prose",
+          "issue": "R5 dùng dấu 、 trong công thức và ví dụ như một thành phần câu, nhưng dấu câu không phải là một slot ngữ pháp.",
+          "fix": "Tách dấu 、 ra khỏi công thức; chỉ giữ các cụm động từ song song và từ nối 并."
+        },
+        {
+          "r5_id": "zh-hsk6-12-parallel-structure-in-formal-prose",
+          "issue": "R5 đưa ví dụ 政策应当明确、稳定并具有可执行性 nhưng không giải thích rõ đây là song song tính từ, khác với song song cụm động từ.",
+          "fix": "Thay bằng ví dụ 不仅要发现问题，还要解释原因并提出方案 để minh họa song song cụm động từ rõ hơn."
+        },
+        {
+          "r5_id": "zh-hsk79-27-parallelism-and-cadence",
+          "issue": "R5 dùng ví dụ 不是因为缺少数据，不是因为缺少方法，而是因为缺少明确的问题 nhưng cấu trúc này thuộc HSK7-9, vượt phạm vi HSK6.",
+          "fix": "Không đưa ví dụ này vào bài HSK6; giữ các ví dụ trong phạm vi HSK6."
+        }
+      ]
+    }
+  },
+  "review": null
+}

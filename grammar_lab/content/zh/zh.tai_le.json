@@ -1,0 +1,199 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.tai_le",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.serial_verbs.qu_lai"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: tai_le", "en": "Chinese grammar: tai_le"},
+    "native_title": "“太……了”",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Cấu trúc 太……了 dùng để diễn tả mức độ quá cao hoặc quá mức, thường mang sắc thái phàn nàn hoặc cảm thán.",
+      "en": "The 太……了 pattern expresses an excessive or very high degree, often with a tone of complaint or exclamation."
+    },
+    "sub": {"vi": "mức độ quá", "en": "excessive degree"},
+    "native_title_pinyin": ["", "tài", "", "", "le", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một tính chất nào đó vượt quá mức bình thường hoặc gây khó chịu.",
+      "en": "When you want to say a quality is beyond the normal level or causes a problem."
+    },
+    {
+      "vi": "Khi phàn nàn về giá cả, thời tiết, kích cỡ, tốc độ hoặc mức độ khó.",
+      "en": "When complaining about price, weather, size, speed, or difficulty."
+    },
+    {
+      "vi": "Khi nhấn mạnh cảm xúc mạnh như ngạc nhiên, thích thú hoặc bực bội.",
+      "en": "When emphasizing a strong feeling such as surprise, delight, or annoyance."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "太",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu mức độ", "en": "degree marker"},
+        "pinyin": ["tài"]
+      },
+      {
+        "text": "形容词",
+        "role": "complement",
+        "label": {"vi": "tính từ", "en": "adjective"},
+        "pinyin": ["xíng", "róng", "cí"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ ngữ khí", "en": "modal particle"},
+        "pinyin": ["le"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个太贵了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "complement"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "太 đứng trước tính từ, 了 đứng cuối câu để nhấn mạnh mức độ quá cao.",
+        "en": "太 comes before the adjective, and 了 at the end emphasizes the excessive degree."
+      },
+      "translation": {"vi": "Cái này đắt quá.", "en": "This is too expensive."},
+      "pinyin": ["zhè", "ge", "tài", "guì", "le", ""]
+    },
+    {
+      "text": "今天太热了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "complement"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Dùng để phàn nàn về thời tiết quá nóng.",
+        "en": "Used to complain that the weather is too hot."
+      },
+      "translation": {"vi": "Hôm nay nóng quá.", "en": "It is too hot today."},
+      "pinyin": ["jīn", "tiān", "tài", "rè", "le", ""]
+    },
+    {
+      "text": "这个箱子太重了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "complement"},
+        {"start": 6, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "太……了 nhấn mạnh mức độ nặng vượt quá sức.",
+        "en": "太……了 emphasizes that the weight is beyond what is manageable."
+      },
+      "translation": {"vi": "Cái hộp này nặng quá.", "en": "This box is too heavy."},
+      "pinyin": ["zhè", "ge", "xiāng", "zi", "tài", "zhòng", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thường bỏ 了 ở cuối câu, nhưng 太……了 là một cấu trúc cố định, thiếu 了 thì câu không tự nhiên.",
+        "en": "Learners often drop the final 了, but 太……了 is a fixed pattern; without 了 the sentence sounds incomplete."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这个太贵。",
+      "right": "这个太贵了。",
+      "wrong_pinyin": ["zhè", "ge", "tài", "guì", ""],
+      "right_pinyin": ["zhè", "ge", "tài", "guì", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个西瓜___大了。",
+      "options": [
+        {"text": "太", "error_tag": null, "pinyin": ["tài"]},
+        {"text": "很", "error_tag": "word_choice", "pinyin": ["hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc 太……了 cần 太 trước tính từ, không dùng 很 trong mẫu này.",
+        "en": "The 太……了 pattern requires 太 before the adjective; 很 does not fit this pattern."
+      },
+      "q_pinyin": ["zhè", "ge", "xī", "guā", "", "", "", "dà", "le", ""]
+    },
+    {
+      "q": "今天太冷___。",
+      "options": [
+        {"text": "了", "error_tag": null, "pinyin": ["le"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cuối câu 太……了 phải dùng 了, không dùng 的.",
+        "en": "The 太……了 pattern ends with 了, not 的."
+      },
+      "q_pinyin": ["jīn", "tiān", "tài", "lěng", "", "", "", ""]
+    },
+    {
+      "q": "他跑得太快___。",
+      "options": [
+        {"text": "了", "error_tag": null, "pinyin": ["le"]},
+        {"text": "吗", "error_tag": "particle", "pinyin": ["ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu cảm thán với 太 kết thúc bằng 了, không dùng 吗.",
+        "en": "An exclamatory 太 sentence ends with 了, not 吗."
+      },
+      "q_pinyin": ["tā", "pǎo", "dé", "tài", "kuài", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 太……了 để nói về một điều quá mức trong cuộc sống của bạn.",
+      "en": "Write one sentence with 太……了 about something excessive in your life."
+    },
+    "placeholder": "这个……太……了。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["太"], "role": "marker"}, {"any_of": ["了"], "role": "particle"}]
+    },
+    "sample": {"text": "这个手机太贵了。", "pinyin": ["zhè", "ge", "shǒu", "jī", "tài", "guì", "le", ""]},
+    "placeholder_pinyin": ["zhè", "ge", "", "", "tài", "", "", "le", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791337991",
+    "generated_at": "2026-10-07T01:53:11Z"
+  },
+  "review": null
+}

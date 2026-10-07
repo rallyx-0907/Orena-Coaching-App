@@ -1,0 +1,287 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_4_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.r5.hsk6_4_patterns"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk6-4-topic"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk6-4-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 为...所...", "en": "Chinese grammar: 为...所..."},
+    "native_title": "为...所...",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "为...所... là cấu trúc bị động trang trọng, đặt chủ thể chịu tác động lên trước, rồi đến 为 + tác nhân + 所 + động từ.",
+      "en": "为...所... is a formal passive pattern that puts the affected subject first, followed by 为 + agent + 所 + verb."
+    },
+    "sub": {"vi": "bị động trang trọng", "en": "formal passive"},
+    "native_title_pinyin": ["wèi", "", "", "", "suǒ", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng trong văn viết trang trọng, báo chí, học thuật hoặc diễn ngôn chính thức, khi muốn nêu chủ thể chịu tác động trước tác nhân.",
+      "en": "Use it in formal writing, journalism, academic prose, or official discourse when you want to present the affected subject before the agent."
+    },
+    {
+      "vi": "Dùng khi tác nhân là một nhóm chung hoặc không xác định cụ thể, như 人、世人、多数人、研究者.",
+      "en": "Use it when the agent is a general or unspecified group, such as 人, 世人, 多数人, or 研究者."
+    },
+    {
+      "vi": "Dùng khi động từ diễn tả thái độ, đánh giá, chấp nhận, biết đến, quan tâm, sử dụng — những động từ phù hợp với văn phong trang trọng.",
+      "en": "Use it with verbs of attitude, evaluation, acceptance, recognition, concern, or adoption — verbs that suit a formal register."
+    },
+    {
+      "vi": "Không dùng trong khẩu ngữ thường ngày; khi nói bình thường, 被 thường tự nhiên hơn.",
+      "en": "Do not use it in everyday conversation; in ordinary speech, 被 is usually more natural."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ thể chịu tác động", "en": "affected subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "为",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu bị động", "en": "passive marker"},
+        "pinyin": ["wèi"]
+      },
+      {
+        "text": "施事",
+        "role": "object",
+        "label": {"vi": "tác nhân", "en": "agent"},
+        "pinyin": ["shī", "shì"]
+      },
+      {
+        "text": "所",
+        "role": "particle",
+        "label": {"vi": "trợ từ nối", "en": "linking particle"},
+        "pinyin": ["suǒ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ chính", "en": "main verb"},
+        "pinyin": ["dòng", "cí"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ thể chịu tác động", "en": "affected subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "不",
+          "role": "aux",
+          "label": {"vi": "phủ định", "en": "negation"},
+          "pinyin": ["bù"]
+        },
+        {
+          "text": "为",
+          "role": "marker",
+          "label": {"vi": "dấu hiệu bị động", "en": "passive marker"},
+          "pinyin": ["wèi"]
+        },
+        {
+          "text": "施事",
+          "role": "object",
+          "label": {"vi": "tác nhân", "en": "agent"},
+          "pinyin": ["shī", "shì"]
+        },
+        {
+          "text": "所",
+          "role": "particle",
+          "label": {"vi": "trợ từ nối", "en": "linking particle"},
+          "pinyin": ["suǒ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "pinyin": ["dòng", "cí"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个事实早已为人所知。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "particle"},
+        {"start": 9, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Chủ thể chịu tác động đứng trước, tác nhân chung 人, động từ 知.",
+        "en": "The affected subject comes first, the generic agent 人 follows, then the verb 知."
+      },
+      "translation": {
+        "vi": "Sự thật này từ lâu đã được mọi người biết đến.",
+        "en": "This fact has long been known to people."
+      },
+      "pinyin": ["zhè", "ge", "shì", "shí", "zǎo", "yǐ", "wéi", "rén", "suǒ", "zhī", ""]
+    },
+    {
+      "text": "他的观点不为多数人所接受。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "aux"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 9, "role": "object"},
+        {"start": 9, "end": 10, "role": "particle"},
+        {"start": 10, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định 不 đặt trước 为, tác nhân là 多数人, động từ 接受.",
+        "en": "The negation 不 comes before 为, the agent is 多数人, and the verb is 接受."
+      },
+      "translation": {
+        "vi": "Quan điểm của anh ấy không được đa số người chấp nhận.",
+        "en": "His view is not accepted by the majority."
+      },
+      "pinyin": ["tā", "de", "guān", "diǎn", "bù", "wèi", "duō", "shù", "rén", "suǒ", "jiē", "shòu", ""]
+    },
+    {
+      "text": "这一现象为研究者所关注。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 8, "role": "object"},
+        {"start": 8, "end": 9, "role": "particle"},
+        {"start": 9, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Tác nhân là 研究者, động từ 关注, cấu trúc bị động trang trọng.",
+        "en": "The agent is 研究者, the verb is 关注, in a formal passive structure."
+      },
+      "translation": {
+        "vi": "Hiện tượng này được các nhà nghiên cứu quan tâm.",
+        "en": "This phenomenon is of concern to researchers."
+      },
+      "pinyin": ["zhè", "yī", "xiàn", "xiàng", "wèi", "yán", "jiū", "zhě", "suǒ", "guān", "zhù", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Cấu trúc 为...所... bắt buộc có 所 trước động từ; thiếu 所 làm câu sai ngữ pháp.",
+        "en": "The 为...所... pattern requires 所 before the verb; omitting 所 makes the sentence ungrammatical."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这个事实为大家知道。",
+      "right": "这个事实为大家所知。",
+      "wrong_pinyin": ["zhè", "ge", "shì", "shí", "wèi", "dà", "jiā", "zhī", "dào", ""],
+      "right_pinyin": ["zhè", "ge", "shì", "shí", "wèi", "dà", "jiā", "suǒ", "zhī", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个事实早已___人所知。",
+      "options": [
+        {"text": "为", "error_tag": null, "pinyin": ["wèi"]},
+        {"text": "被", "error_tag": "other", "pinyin": ["bèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "为...所... là cấu trúc cố định; 被 không đi với 所 trong mẫu này.",
+        "en": "为...所... is a fixed pattern; 被 does not combine with 所 in this structure."
+      },
+      "q_pinyin": ["zhè", "ge", "shì", "shí", "zǎo", "yǐ", "", "", "", "rén", "suǒ", "zhī", ""]
+    },
+    {
+      "q": "他的观点不___多数人所接受。",
+      "options": [
+        {"text": "为", "error_tag": null, "pinyin": ["wèi"]},
+        {"text": "是", "error_tag": "other", "pinyin": ["shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định của 为...所... là 不为...所..., không dùng 是.",
+        "en": "The negative form of 为...所... is 不为...所..., not 是."
+      },
+      "q_pinyin": ["tā", "de", "guān", "diǎn", "bù", "", "", "", "duō", "shù", "rén", "suǒ", "jiē", "shòu", ""]
+    },
+    {
+      "q": "这一现象为研究者___关注。",
+      "options": [
+        {"text": "所", "error_tag": null, "pinyin": ["suǒ"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "所 là trợ từ bắt buộc trong mẫu 为...所...; 的 không thay thế được.",
+        "en": "所 is the required particle in the 为...所... pattern; 的 cannot replace it."
+      },
+      "q_pinyin": ["zhè", "yī", "xiàn", "xiàng", "wèi", "yán", "jiū", "zhě", "", "", "", "guān", "zhù", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng nói rằng một sự việc, quan điểm hoặc hiện tượng được một nhóm người biết đến, chấp nhận hoặc quan tâm, dùng 为...所....",
+      "en": "Write a formal sentence saying that a fact, view, or phenomenon is known, accepted, or of concern to a group, using 为...所...."
+    },
+    "placeholder": "这个现象为……所……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["为"], "role": "marker"}, {"any_of": ["所"], "role": "particle"}]
+    },
+    "sample": {
+      "text": "这个现象为研究者所关注。",
+      "pinyin": ["zhè", "ge", "xiàn", "xiàng", "wèi", "yán", "jiū", "zhě", "suǒ", "guān", "zhù", ""]
+    },
+    "placeholder_pinyin": ["zhè", "ge", "xiàn", "xiàng", "wèi", "", "", "suǒ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338828",
+    "generated_at": "2026-10-07T02:07:08Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-4-topic"],
+      "content_version": 2,
+      "content_hash": "0b5b398f5c6dd3841b18cef3fa7d0d2ed72eb46e46c1dc7bdadae7920647b531",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-4-topic",
+          "issue": "R5 ghi '这个事实为大家知道' là sai vì thiếu 所, nhưng không cung cấp dạng phủ định 不为...所... trong bảng cấu trúc.",
+          "fix": "Đã thêm dạng phủ định 不为...所... vào trường negative của formula và dùng nó trong ví dụ thứ hai."
+        },
+        {
+          "r5_id": "zh-hsk6-4-topic",
+          "issue": "R5 liệt kê '我为工作所去公司' là lỗi nhưng không giải thích rõ động từ không phù hợp với ngữ nghĩa bị động trang trọng.",
+          "fix": "Đã thay bằng lỗi thiếu 所, là lỗi điển hình và có cơ chế rõ ràng hơn cho người học."
+        },
+        {
+          "r5_id": "zh-hsk6-4-topic",
+          "issue": "R5 không cung cấp bindings cho ví dụ theo slot của formula.",
+          "fix": "Đã thêm bindings cho từng ví dụ, ánh xạ chính xác các thành phần câu vào slot."
+        }
+      ]
+    }
+  },
+  "review": null
+}

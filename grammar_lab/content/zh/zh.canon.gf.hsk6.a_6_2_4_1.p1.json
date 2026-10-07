@@ -1,0 +1,217 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_4_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_1_5_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.013"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 于", "en": "Chinese grammar: 于"},
+    "native_title": "于",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Giới từ 于 dùng để nói vị trí hoặc nơi chốn theo văn phong trang trọng, thường đứng trước động từ.",
+      "en": "The preposition 于 states location or place in a formal register, usually placed before the verb."
+    },
+    "sub": {"vi": "vị trí trang trọng", "en": "formal location"},
+    "native_title_pinyin": ["yú"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng trong văn viết trang trọng, bảng hiệu, thông báo hoặc câu văn mang tính nghi thức.",
+      "en": "Use it in formal writing, signs, notices, or ceremonial sentences."
+    },
+    {
+      "vi": "Dùng khi muốn nói sự vật, sự việc tồn tại hoặc diễn ra ở đâu đó, thay cho 在 trong văn phong trang trọng.",
+      "en": "Use it to say that something exists or happens in a place, replacing 在 in a formal register."
+    },
+    {
+      "vi": "Cấu trúc thường gặp là 于 + địa điểm + động từ, ví dụ 位于, 在于, 生于.",
+      "en": "The common structure is 于 + place + verb, for example 位于, 在于, 生于."
+    },
+    {
+      "vi": "Không dùng 于 trong khẩu ngữ thường ngày; khi nói chuyện nên dùng 在.",
+      "en": "Do not use 于 in everyday speech; use 在 in conversation."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "于",
+        "role": "marker",
+        "label": {"vi": "giới từ vị trí", "en": "location preposition"},
+        "pinyin": ["yú"]
+      },
+      {
+        "text": "地点",
+        "role": "place",
+        "label": {"vi": "địa điểm", "en": "place"},
+        "pinyin": ["dì", "diǎn"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这座古城位于中国西部。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 10, "role": "place"}
+      ],
+      "annotation": {
+        "vi": "于 đứng trước địa điểm, sau đó là động từ 位于.",
+        "en": "于 comes before the place, followed by the verb 位于."
+      },
+      "translation": {
+        "vi": "Thành cổ này nằm ở miền tây Trung Quốc.",
+        "en": "This ancient city is located in western China."
+      },
+      "pinyin": ["zhè", "zuò", "gǔ", "chéng", "wèi", "yú", "zhōng", "guó", "xī", "bù", ""]
+    },
+    {
+      "text": "他出生于一个普通的农民家庭。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 13, "role": "place"}
+      ],
+      "annotation": {
+        "vi": "于 nối chủ ngữ với nơi chốn trong cụm 出生于.",
+        "en": "于 links the subject to the place in the phrase 出生于."
+      },
+      "translation": {
+        "vi": "Anh ấy sinh ra trong một gia đình nông dân bình thường.",
+        "en": "He was born into an ordinary farming family."
+      },
+      "pinyin": ["tā", "chū", "shēng", "yú", "yí", "gè", "pǔ", "tōng", "de", "nóng", "mín", "jiā", "tíng", ""]
+    },
+    {
+      "text": "问题的关键就在于这里。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 5, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "marker"},
+        {"start": 8, "end": 10, "role": "place"}
+      ],
+      "annotation": {
+        "vi": "于 chỉ nơi chốn trừu tượng, ở đây là 这里.",
+        "en": "于 marks an abstract location, here 这里."
+      },
+      "translation": {
+        "vi": "Mấu chốt của vấn đề nằm chính ở đây.",
+        "en": "The key to the problem lies right here."
+      },
+      "pinyin": ["wèn", "tí", "de", "guān", "jiàn", "jiù", "zài", "yú", "zhè", "lǐ", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "于 trong văn nói hiện đại ít dùng; người học hay đặt 于 rồi lại thêm 在, tạo hai giới từ chồng nhau. Câu thường ngày nên dùng 在 + địa điểm + động từ.",
+        "en": "于 is rare in modern speech; learners often add 于 and then 在, creating two prepositions. In everyday sentences use 在 + place + verb."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "他工作于北京在一家公司。",
+      "right": "他在北京的一家公司工作。",
+      "wrong_pinyin": ["tā", "gōng", "zuò", "yú", "běi", "jīng", "zài", "yī", "jiā", "gōng", "sī", ""],
+      "right_pinyin": ["tā", "zài", "běi", "jīng", "de", "yī", "jiā", "gōng", "sī", "gōng", "zuò", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这家公司___上海。",
+      "options": [
+        {"text": "位于", "error_tag": null, "pinyin": ["wèi", "yú"]},
+        {"text": "位于在", "error_tag": "redundancy", "pinyin": ["wèi", "yú", "zài"]},
+        {"text": "在位于", "error_tag": "word_order", "pinyin": ["zài", "wèi", "yú"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "位于 đã bao gồm 于, không cần thêm 在; trật tự đúng là 位于 + địa điểm.",
+        "en": "位于 already contains 于, so 在 is not needed; the correct order is 位于 + place."
+      },
+      "q_pinyin": ["zhè", "jiā", "gōng", "sī", "", "", "", "shàng", "hǎi", ""]
+    },
+    {
+      "q": "他___一个音乐世家。",
+      "options": [
+        {"text": "出生于", "error_tag": null, "pinyin": ["chū", "shēng", "yú"]},
+        {"text": "出生在", "error_tag": "register", "pinyin": ["chū", "shēng", "zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "出生于 là cách nói trang trọng, phù hợp với văn viết; 出生在 đúng ngữ pháp nhưng mang phong cách khẩu ngữ.",
+        "en": "出生于 is the formal written choice; 出生在 is grammatical but conversational in register."
+      },
+      "q_pinyin": ["tā", "", "", "", "yí", "gè", "yīn", "yuè", "shì", "jiā", ""]
+    },
+    {
+      "q": "这座桥___长江之上。",
+      "options": [
+        {"text": "横跨于", "error_tag": null, "pinyin": ["héng", "kuà", "yú"]},
+        {"text": "横跨在", "error_tag": "register", "pinyin": ["héng", "kuà", "zài"]},
+        {"text": "于横跨", "error_tag": "word_order", "pinyin": ["yú", "héng", "kuà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "于 phải đứng sau động từ 横跨 và trước địa điểm 长江之上; 横跨于 là lựa chọn trang trọng.",
+        "en": "于 must follow the verb 横跨 and precede the place 长江之上; 横跨于 is the formal choice."
+      },
+      "q_pinyin": ["zhè", "zuò", "qiáo", "", "", "", "cháng", "jiāng", "zhī", "shàng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng nói quê hương hoặc nơi bạn sinh ra ở đâu, dùng 于.",
+      "en": "Write one formal sentence saying where your hometown or birthplace is, using 于."
+    },
+    "placeholder": "我的家乡位于……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["位", "出生", "就在"], "role": "verb"}, {"any_of": ["于"], "role": "marker"}]
+    },
+    "sample": {
+      "text": "我的家乡位于越南中部。",
+      "pinyin": ["wǒ", "de", "jiā", "xiāng", "wèi", "yú", "yuè", "nán", "zhōng", "bù", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "jiā", "xiāng", "wèi", "yú", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348645",
+    "generated_at": "2026-10-07T04:50:45Z"
+  },
+  "review": null
+}

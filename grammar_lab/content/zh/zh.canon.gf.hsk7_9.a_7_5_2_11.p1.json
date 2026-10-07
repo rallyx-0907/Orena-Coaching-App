@@ -1,0 +1,386 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_11.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_5_2_10.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.125"]},
+  "point_type": "other",
+  "sequence": 8,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: ⋯⋯，也就是说⋯⋯", "en": "Complex sentences: ⋯⋯，也就是说⋯⋯"},
+    "native_title": "⋯⋯，也就是说⋯⋯",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Dùng 也就是说 để diễn giải lại điều vừa nói bằng một cách nói khác, rõ hơn hoặc cụ thể hơn.",
+      "en": "Use 也就是说 to restate what was just said in another, clearer or more specific way."
+    },
+    "sub": {"vi": "nói lại, diễn giải", "en": "restating, clarifying"},
+    "native_title_pinyin": ["", "", "", "yě", "jiù", "shì", "shuō", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn vừa nói một điều hơi trừu tượng và muốn nói lại bằng lời dễ hiểu hơn.",
+      "en": "When you have just said something abstract and want to say it again in plainer words."
+    },
+    {
+      "vi": "Khi bạn muốn đưa ra cách hiểu cụ thể hơn cho điều vừa nói, không phải thêm ý mới.",
+      "en": "When you want to give a more concrete reading of what you just said, not add a new idea."
+    },
+    {
+      "vi": "Khi bạn muốn giải thích một từ hoặc một khái niệm ngay sau khi dùng nó.",
+      "en": "When you want to explain a word or concept right after using it."
+    },
+    {
+      "vi": "Khi bạn muốn chốt lại ý chính bằng một câu ngắn, rõ, đứng sau dấu phẩy.",
+      "en": "When you want to sum up the main point in one short, clear sentence after a comma."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "句子",
+        "role": "other",
+        "label": {"vi": "câu thứ nhất", "en": "first clause"},
+        "pinyin": ["jù", "zi"]
+      },
+      {
+        "text": "也就是说",
+        "role": "connector",
+        "label": {"vi": "nói cách khác", "en": "that is to say"},
+        "pinyin": ["yě", "jiù", "shì", "shuō"]
+      },
+      {
+        "text": "句子",
+        "role": "other",
+        "label": {"vi": "câu diễn giải", "en": "restating clause"},
+        "pinyin": ["jù", "zi"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他明天不来，也就是说，会议要改时间。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 10, "role": "connector"},
+        {"start": 11, "end": 17, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Câu sau nói lại hệ quả cụ thể của việc anh ấy không đến.",
+        "en": "The second clause restates the concrete consequence of his not coming."
+      },
+      "translation": {
+        "vi": "Mai anh ấy không đến, nói cách khác, cuộc họp phải đổi thời gian.",
+        "en": "He isn't coming tomorrow; that is to say, the meeting has to be rescheduled."
+      },
+      "pinyin": [
+        "tā",
+        "míng",
+        "tiān",
+        "bù",
+        "lái",
+        "",
+        "yě",
+        "jiù",
+        "shì",
+        "shuō",
+        "",
+        "huì",
+        "yì",
+        "yào",
+        "gǎi",
+        "shí",
+        "jiān",
+        ""
+      ]
+    },
+    {
+      "text": "这个办法成本太高，也就是说，我们做不了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "other"},
+        {"start": 9, "end": 13, "role": "connector"},
+        {"start": 14, "end": 19, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Câu sau diễn giải '成本太高' thành một kết luận dễ hiểu hơn.",
+        "en": "The second clause turns 'the cost is too high' into a plainer conclusion."
+      },
+      "translation": {
+        "vi": "Cách này chi phí quá cao, nói cách khác, chúng ta không làm được.",
+        "en": "This approach costs too much; that is to say, we can't do it."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "bàn",
+        "fǎ",
+        "chéng",
+        "běn",
+        "tài",
+        "gāo",
+        "",
+        "yě",
+        "jiù",
+        "shì",
+        "shuō",
+        "",
+        "wǒ",
+        "men",
+        "zuò",
+        "bù",
+        "liǎo",
+        ""
+      ]
+    },
+    {
+      "text": "他是我的表哥，也就是说，他是我姑姑的儿子。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 7, "end": 11, "role": "connector"},
+        {"start": 12, "end": 20, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Câu sau giải thích quan hệ '表哥' bằng một cách nói cụ thể hơn.",
+        "en": "The second clause explains the relationship 'cousin' in more specific terms."
+      },
+      "translation": {
+        "vi": "Anh ấy là anh họ của tôi, nói cách khác, anh ấy là con trai của cô tôi.",
+        "en": "He is my older male cousin; that is to say, he is my aunt's son."
+      },
+      "pinyin": [
+        "tā",
+        "shì",
+        "wǒ",
+        "de",
+        "biǎo",
+        "gē",
+        "",
+        "yě",
+        "jiù",
+        "shì",
+        "shuō",
+        "",
+        "tā",
+        "shì",
+        "wǒ",
+        "gū",
+        "gū",
+        "de",
+        "ér",
+        "zi",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học viết liền 也就是说 với câu sau, khiến nó dính vào chủ ngữ và mất vai trò nối. Cần dấu phẩy sau 也就是说 để tách hai phần.",
+        "en": "Learners write 也就是说 directly against the following clause, so it sticks to the subject and loses its linking role. A comma after 也就是说 separates the two parts."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "他明天不来，也就是说明天会议要改时间。",
+      "right": "他明天不来，也就是说，明天会议要改时间。",
+      "wrong_pinyin": [
+        "tā",
+        "míng",
+        "tiān",
+        "bù",
+        "lái",
+        "",
+        "yě",
+        "jiù",
+        "shì",
+        "shuō",
+        "míng",
+        "tiān",
+        "huì",
+        "yì",
+        "yào",
+        "gǎi",
+        "shí",
+        "jiān",
+        ""
+      ],
+      "right_pinyin": [
+        "tā",
+        "míng",
+        "tiān",
+        "bù",
+        "lái",
+        "",
+        "yě",
+        "jiù",
+        "shì",
+        "shuō",
+        "",
+        "míng",
+        "tiān",
+        "huì",
+        "yì",
+        "yào",
+        "gǎi",
+        "shí",
+        "jiān",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他明天不来，___，会议要改时间。",
+      "options": [
+        {"text": "也就是说", "error_tag": null, "pinyin": ["yě", "jiù", "shì", "shuō"]},
+        {"text": "也就是", "error_tag": "conjunction", "pinyin": ["yě", "jiù", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần cụm nối đầy đủ 也就是说 để mở đầu câu diễn giải; 也就是 không đủ và không đứng riêng ở vị trí này.",
+        "en": "The full connector 也就是说 is needed to open the restating clause; 也就是 is incomplete and does not stand alone here."
+      },
+      "q_pinyin": [
+        "tā",
+        "míng",
+        "tiān",
+        "bù",
+        "lái",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "huì",
+        "yì",
+        "yào",
+        "gǎi",
+        "shí",
+        "jiān",
+        ""
+      ]
+    },
+    {
+      "q": "这个办法成本太高，也就是说，我们___。",
+      "options": [
+        {"text": "做不了", "error_tag": null, "pinyin": ["zuò", "bù", "liǎo"]},
+        {"text": "做不来", "error_tag": "complement", "pinyin": ["zuò", "bù", "lái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "做不了 diễn tả đúng ý 'không thể làm' sau khi đã nêu lý do; 做不来 mang nghĩa 'không làm nổi' và không khớp với kết luận này.",
+        "en": "做不了 correctly expresses 'cannot do it' after the reason; 做不来 means 'not up to doing it' and does not fit this conclusion."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "bàn",
+        "fǎ",
+        "chéng",
+        "běn",
+        "tài",
+        "gāo",
+        "",
+        "yě",
+        "jiù",
+        "shì",
+        "shuō",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "q": "他是我的表哥，也就是说，他是我姑姑的___。",
+      "options": [
+        {"text": "儿子", "error_tag": null, "pinyin": ["ér", "zi"]},
+        {"text": "孩子", "error_tag": "word_choice", "pinyin": ["hái", "zi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "儿子 chỉ đúng quan hệ con trai, phù hợp với 表哥; 孩子 quá chung và không nói rõ giới tính trong quan hệ này.",
+        "en": "儿子 names the son relationship exactly, matching 表哥; 孩子 is too general and does not specify gender in this relationship."
+      },
+      "q_pinyin": [
+        "tā",
+        "shì",
+        "wǒ",
+        "de",
+        "biǎo",
+        "gē",
+        "",
+        "yě",
+        "jiù",
+        "shì",
+        "shuō",
+        "",
+        "tā",
+        "shì",
+        "wǒ",
+        "gū",
+        "gū",
+        "de",
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nêu một sự việc, rồi dùng 也就是说 để nói lại ý đó theo cách rõ hơn.",
+      "en": "Write one sentence stating a fact, then use 也就是说 to restate it more clearly."
+    },
+    "placeholder": "我明天有事，也就是说……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["也就是说"], "role": "connector"}]},
+    "sample": {
+      "text": "我明天有事，也就是说，我不能参加。",
+      "pinyin": [
+        "wǒ",
+        "míng",
+        "tiān",
+        "yǒu",
+        "shì",
+        "",
+        "yě",
+        "jiù",
+        "shì",
+        "shuō",
+        "",
+        "wǒ",
+        "bù",
+        "néng",
+        "cān",
+        "jiā",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "míng", "tiān", "yǒu", "shì", "", "yě", "jiù", "shì", "shuō", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338925",
+    "generated_at": "2026-10-07T02:08:45Z"
+  },
+  "review": null
+}

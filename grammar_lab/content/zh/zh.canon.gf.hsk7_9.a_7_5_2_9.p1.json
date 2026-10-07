@@ -1,0 +1,331 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_9.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_5_2_6.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.118", "gf0025.hsk7_9.120", "gf0025.hsk7_9.122"]},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 固然⋯⋯ ，也⋯⋯", "en": "Complex sentences: 固然⋯⋯ ，也⋯⋯"},
+    "native_title": "固然⋯⋯ ，也⋯⋯",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Mẫu câu 固然⋯⋯，也⋯⋯ dùng để thừa nhận một sự thật rồi bổ sung một kết luận trái chiều hoặc bổ sung thêm.",
+      "en": "The pattern 固然⋯⋯，也⋯⋯ concedes a fact and then adds a contrasting or additional point."
+    },
+    "sub": {"vi": "nhượng bộ rồi bổ sung", "en": "concede then add"},
+    "native_title_pinyin": ["gù", "rán", "", "", "", "", "yě", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn thừa nhận điều gì đó là đúng trước khi nêu ý ngược lại.",
+      "en": "When you want to admit something is true before giving a contrasting point."
+    },
+    {
+      "vi": "Khi vế sau dùng 也 để nói thêm một khía cạnh khác cũng đúng.",
+      "en": "When the second clause uses 也 to add another aspect that is also true."
+    },
+    {
+      "vi": "Khi bạn muốn giọng điệu mềm hơn 虽然⋯⋯但是⋯⋯, không gay gắt.",
+      "en": "When you want a softer tone than 虽然⋯⋯但是⋯⋯, without sounding harsh."
+    },
+    {
+      "vi": "Khi cả hai vế đều là nhận xét, không phải câu hỏi hay mệnh lệnh.",
+      "en": "When both clauses are statements, not questions or commands."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "固然",
+        "role": "connector",
+        "label": {"vi": "liên từ nhượng bộ", "en": "concessive connector"},
+        "pinyin": ["gù", "rán"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "vế thừa nhận", "en": "conceded clause"},
+        "pinyin": [""]
+      },
+      {
+        "text": "也",
+        "role": "connector",
+        "label": {"vi": "liên từ bổ sung", "en": "additive connector"},
+        "pinyin": ["yě"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "vế bổ sung", "en": "added clause"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "固然这个工作很累，也很有意义。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 8, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Thừa nhận công việc mệt, rồi nói thêm nó cũng có ý nghĩa.",
+        "en": "Concedes the work is tiring, then adds that it is also meaningful."
+      },
+      "translation": {
+        "vi": "Công việc này mệt thật, nhưng cũng rất có ý nghĩa.",
+        "en": "It is true that this job is tiring, but it is also meaningful."
+      },
+      "pinyin": [
+        "gù",
+        "rán",
+        "zhè",
+        "ge",
+        "gōng",
+        "zuò",
+        "hěn",
+        "lèi",
+        "",
+        "yě",
+        "hěn",
+        "yǒu",
+        "yì",
+        "yì",
+        ""
+      ]
+    },
+    {
+      "text": "固然价格贵，也确实物有所值。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "固然 thừa nhận một điểm trước, 也 bổ sung đánh giá vẫn đúng ở vế sau.",
+        "en": "固然 concedes one point, while 也 adds an assessment that still holds."
+      },
+      "translation": {
+        "vi": "Đúng là giá đắt, nhưng quả thật cũng đáng tiền.",
+        "en": "The price is admittedly high, but it is indeed worth the money."
+      },
+      "pinyin": ["gù", "rán", "jià", "gé", "guì", "", "yě", "què", "shí", "wù", "yǒu", "suǒ", "zhí", ""]
+    },
+    {
+      "text": "固然他经验少，也愿意认真学习。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Thừa nhận anh ấy ít kinh nghiệm, rồi nói thêm anh ấy cũng chịu học.",
+        "en": "Concedes he has little experience, then adds that he is also willing to learn."
+      },
+      "translation": {
+        "vi": "Anh ấy ít kinh nghiệm thật, nhưng cũng chịu khó học.",
+        "en": "It is true that he has little experience, but he is also willing to study seriously."
+      },
+      "pinyin": [
+        "gù",
+        "rán",
+        "tā",
+        "jīng",
+        "yàn",
+        "shǎo",
+        "",
+        "yě",
+        "yuàn",
+        "yì",
+        "rèn",
+        "zhēn",
+        "xué",
+        "xí",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học quen dùng 但是 sau vế nhượng bộ, nhưng 固然 phải đi với 也 ở vế sau.",
+        "en": "Learners reuse 但是 after a concessive clause, but 固然 must pair with 也 in the second clause."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "固然这个工作很累，但是很有意义。",
+      "right": "固然这个工作很累，也很有意义。",
+      "wrong_pinyin": [
+        "gù",
+        "rán",
+        "zhè",
+        "ge",
+        "gōng",
+        "zuò",
+        "hěn",
+        "lèi",
+        "",
+        "dàn",
+        "shì",
+        "hěn",
+        "yǒu",
+        "yì",
+        "yì",
+        ""
+      ],
+      "right_pinyin": [
+        "gù",
+        "rán",
+        "zhè",
+        "ge",
+        "gōng",
+        "zuò",
+        "hěn",
+        "lèi",
+        "",
+        "yě",
+        "hěn",
+        "yǒu",
+        "yì",
+        "yì",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "固然这个工作很累，___很有意义。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "固然 phải đi với 也 ở vế sau, không dùng 但是.",
+        "en": "固然 pairs with 也 in the second clause, not 但是."
+      },
+      "q_pinyin": [
+        "gù",
+        "rán",
+        "zhè",
+        "ge",
+        "gōng",
+        "zuò",
+        "hěn",
+        "lèi",
+        "",
+        "",
+        "",
+        "",
+        "hěn",
+        "yǒu",
+        "yì",
+        "yì",
+        ""
+      ]
+    },
+    {
+      "q": "固然价格贵，质量___确实好。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế sau của 固然 cần 也 để bổ sung ý tương phản nhẹ.",
+        "en": "The second clause of 固然 needs 也 to add the mild contrast."
+      },
+      "q_pinyin": ["gù", "rán", "jià", "gé", "guì", "", "zhì", "liàng", "", "", "", "què", "shí", "hǎo", ""]
+    },
+    {
+      "q": "___他经验少，也愿意认真学习。",
+      "options": [
+        {"text": "固然", "error_tag": null, "pinyin": ["gù", "rán"]},
+        {"text": "虽然", "error_tag": "conjunction", "pinyin": ["suī", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "虽然 thường đi với 但是, còn 固然 đi với 也.",
+        "en": "虽然 usually pairs with 但是, while 固然 pairs with 也."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "tā",
+        "jīng",
+        "yàn",
+        "shǎo",
+        "",
+        "yě",
+        "yuàn",
+        "yì",
+        "rèn",
+        "zhēn",
+        "xué",
+        "xí",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 固然⋯⋯，也⋯⋯ để thừa nhận một điều về bản thân rồi nói thêm một điểm khác.",
+      "en": "Write one sentence with 固然⋯⋯，也⋯⋯ to admit something about yourself and add another point."
+    },
+    "placeholder": "固然……，也……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["固然"], "role": "connector"}, {"any_of": ["也"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "固然我经验少，也愿意认真学习。",
+      "pinyin": [
+        "gù",
+        "rán",
+        "wǒ",
+        "jīng",
+        "yàn",
+        "shǎo",
+        "",
+        "yě",
+        "yuàn",
+        "yì",
+        "rèn",
+        "zhēn",
+        "xué",
+        "xí",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["gù", "rán", "", "", "", "yě", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351866",
+    "generated_at": "2026-10-07T05:44:26Z"
+  },
+  "review": null
+}

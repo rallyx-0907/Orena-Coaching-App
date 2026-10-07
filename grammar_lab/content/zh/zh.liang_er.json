@@ -1,0 +1,218 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.liang_er",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.measure_words.basic"],
+  "contrasts": ["zh.measure_words.basic"],
+  "error_tags": ["word_choice"],
+  "source_refs": {"r5": ["zh-hsk1-9-vs"], "gf0025": ["gf0025.hsk1.007"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk1-9-vs"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "两 và 二", "en": "两 and 二"},
+    "native_title": "“两”和“二”",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Phân biệt 两 và 二 khi nói 'hai': 两 dùng trước lượng từ, 二 dùng trong số đếm, số thứ tự và số ghép.",
+      "en": "Distinguish 两 and 二 for 'two': 两 comes before a measure word, 二 is used in counting, ordinals and compound numbers."
+    },
+    "sub": {"vi": "hai + lượng từ", "en": "two + measure word"},
+    "native_title_pinyin": ["", "liǎng", "", "hé", "", "èr", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi đếm hai người hoặc hai vật cụ thể, dùng 两 trước lượng từ: 两个人, 两本书.",
+      "en": "When counting two specific people or things, use 两 before a measure word: 两个人, 两本书."
+    },
+    {
+      "vi": "Khi đọc số, số điện thoại, số nhà hoặc làm phép tính, dùng 二: 十二, 二十, 二十二.",
+      "en": "When reading numbers, phone numbers, house numbers or doing arithmetic, use 二: 十二, 二十, 二十二."
+    },
+    {
+      "vi": "Khi nói thứ tự với 第, dùng 二: 第二, 二楼.",
+      "en": "When expressing order with 第, use 二: 第二, 二楼."
+    },
+    {
+      "vi": "Khi số hai đứng một mình hoặc ở vị trí cuối trong số ghép, dùng 二: 二, 十二, 二十二.",
+      "en": "When 'two' stands alone or is the final digit in a compound number, use 二: 二, 十二, 二十二."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "两",
+        "role": "other",
+        "label": {"vi": "hai (trước lượng từ)", "en": "two (before measure word)"},
+        "pinyin": ["liǎng"]
+      },
+      {
+        "text": "CL",
+        "role": "classifier",
+        "label": {"vi": "lượng từ", "en": "measure word"},
+        "pinyin": ["", ""]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "pinyin": [""]}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我有两本书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "classifier"},
+        {"start": 4, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "两 đứng trước lượng từ 本 để đếm hai quyển sách.",
+        "en": "两 comes before the measure word 本 to count two books."
+      },
+      "translation": {"vi": "Tôi có hai quyển sách.", "en": "I have two books."},
+      "pinyin": ["wǒ", "yǒu", "liǎng", "běn", "shū", ""]
+    },
+    {
+      "text": "这里有两个人。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "classifier"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "两 + 个 + 人: dùng 两 vì có lượng từ 个.",
+        "en": "两 + 个 + 人: use 两 because the measure word 个 follows."
+      },
+      "translation": {"vi": "Ở đây có hai người.", "en": "There are two people here."},
+      "pinyin": ["zhè", "lǐ", "yǒu", "liǎng", "gè", "rén", ""]
+    },
+    {
+      "text": "今天是二十二号。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "classifier"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Trong số 22, dùng 二 cho cả hàng chục và hàng đơn vị.",
+        "en": "In the number 22, use 二 for both the tens and the units."
+      },
+      "translation": {"vi": "Hôm nay là ngày hai mươi hai.", "en": "Today is the twenty-second."},
+      "pinyin": ["jīn", "tiān", "shì", "èr", "shí", "èr", "hào", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.measure_words.basic",
+      "this_example": "我有两本书。",
+      "other_example": "我有一本书。",
+      "this_meaning": {
+        "vi": "两 thay thế 二 khi đứng ngay trước lượng từ để đếm hai đơn vị.",
+        "en": "两 replaces 二 when it comes directly before a measure word to count two units."
+      },
+      "other_meaning": {
+        "vi": "Lượng từ cơ bản như 本, 个, 只 đứng sau số đếm để tạo cụm danh từ đếm được.",
+        "en": "Basic measure words like 本, 个, 只 follow a number to form a countable noun phrase."
+      },
+      "this_example_pinyin": ["wǒ", "yǒu", "liǎng", "běn", "shū", ""],
+      "other_example_pinyin": ["wǒ", "yǒu", "yī", "běn", "shū", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dịch 'hai' thành 二, nhưng trước lượng từ 本 phải dùng 两.",
+        "en": "Learners translate 'two' as 二, but before the measure word 本 the correct form is 两."
+      },
+      "error_tag": "word_choice",
+      "l1": ["vi"],
+      "wrong": "我有二本书。",
+      "right": "我有两本书。",
+      "wrong_pinyin": ["wǒ", "yǒu", "èr", "běn", "shū", ""],
+      "right_pinyin": ["wǒ", "yǒu", "liǎng", "běn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我有___本书。",
+      "options": [
+        {"text": "两", "error_tag": null, "pinyin": ["liǎng"]},
+        {"text": "二", "error_tag": "word_choice", "pinyin": ["èr"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Trước lượng từ 本, dùng 两: 两本书.", "en": "Before the measure word 本, use 两: 两本书."},
+      "q_pinyin": ["wǒ", "yǒu", "", "", "", "běn", "shū", ""]
+    },
+    {
+      "q": "今天是___十号。",
+      "options": [
+        {"text": "二", "error_tag": null, "pinyin": ["èr"]},
+        {"text": "两", "error_tag": "word_choice", "pinyin": ["liǎng"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Trong số 20, dùng 二: 二十号.", "en": "In the number 20, use 二: 二十号."},
+      "q_pinyin": ["jīn", "tiān", "shì", "", "", "", "shí", "hào", ""]
+    },
+    {
+      "q": "他住在___楼。",
+      "options": [
+        {"text": "二", "error_tag": null, "pinyin": ["èr"]},
+        {"text": "两", "error_tag": "word_choice", "pinyin": ["liǎng"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Số tầng dùng 二: 二楼.", "en": "Floor numbers use 二: 二楼."},
+      "q_pinyin": ["tā", "zhù", "zài", "", "", "", "lóu", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về hai đồ vật bạn có, dùng 两 + lượng từ + danh từ.",
+      "en": "Write a sentence about two things you have, using 两 + measure word + noun."
+    },
+    "placeholder": "我有两……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["两"], "role": "other"}, {"any_of": ["个", "本"], "role": "classifier"}]
+    },
+    "sample": {"text": "我有两本书。", "pinyin": ["wǒ", "yǒu", "liǎng", "běn", "shū", ""]},
+    "placeholder_pinyin": ["wǒ", "yǒu", "liǎng", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791282217",
+    "generated_at": "2026-10-06T10:23:37Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-9-vs"],
+      "content_version": 2,
+      "content_hash": "0b0675255fc619019ed9416ac509ccbbf0ed6f827f393f4daf3eb6b1ea118da1",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-9-vs",
+          "issue": "R5 dạy 二 trong 二楼 nhưng không nêu rõ đây là số tầng/thứ tự, dễ khiến người học nhầm với 两.",
+          "fix": "Thêm điều kiện dùng 二 cho số tầng và số thứ tự với 第 trong when_to_use."
+        },
+        {
+          "r5_id": "zh-hsk1-9-vs",
+          "issue": "R5 có ví dụ 今天是二十二号 nhưng không giải thích vì sao dùng 二 mà không dùng 两.",
+          "fix": "Thêm annotation cho ví dụ: trong số 22, dùng 二 cho cả hàng chục và hàng đơn vị."
+        },
+        {
+          "r5_id": "zh-hsk1-9-vs",
+          "issue": "R5 liệt kê lỗi 今天是两十二号 nhưng không đưa vào common_mistakes theo schema.",
+          "fix": "Giữ lỗi 我有二本书 làm common_mistakes chính; lỗi số 22 được xử lý trong quick_practice với 二十号."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,192 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_4_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_8.p3"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.023", "gf0025.hsk7_9.024"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 未", "en": "Adverbs: 未"},
+    "native_title": "未",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Phó từ 未 dùng để phủ định hành động hoặc trạng thái, thường mang sắc thái trang trọng và hay xuất hiện trong văn viết.",
+      "en": "The adverb 未 negates an action or state, usually with a formal tone and mostly in written Chinese."
+    },
+    "sub": {"vi": "phủ định trang trọng", "en": "formal negation"},
+    "native_title_pinyin": ["wèi"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một việc chưa xảy ra hoặc một trạng thái chưa đạt tới, trong văn viết hoặc tình huống trang trọng.",
+      "en": "When saying that something has not yet happened or a state has not yet been reached, in writing or formal situations."
+    },
+    {
+      "vi": "Khi câu mang tính khách quan, thông báo hoặc văn bản quy phạm, không dùng trong khẩu ngữ thân mật.",
+      "en": "When the sentence is objective, a notice, or formal text; it is not used in casual conversation."
+    },
+    {
+      "vi": "Khi muốn phủ định một cách ngắn gọn, không nhấn mạnh vào thời gian như 还没有.",
+      "en": "When you want a concise negation without the time emphasis of 还没有."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "未",
+        "role": "aux",
+        "label": {"vi": "phó từ phủ định", "en": "negative adverb"},
+        "pinyin": ["wèi"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他未参加昨天的会议。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "未 phủ định hành động 参加, nghĩa là anh ấy đã không tham gia.",
+        "en": "未 negates the action 参加, meaning he did not attend."
+      },
+      "translation": {
+        "vi": "Anh ấy đã không tham dự cuộc họp hôm qua.",
+        "en": "He did not attend yesterday's meeting."
+      },
+      "pinyin": ["tā", "wèi", "cān", "jiā", "zuó", "tiān", "de", "huì", "yì", ""]
+    },
+    {
+      "text": "问题未解决。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "未 phủ định trạng thái 解决, nghĩa là vấn đề chưa được giải quyết.",
+        "en": "未 negates the state 解决, meaning the problem has not been solved."
+      },
+      "translation": {"vi": "Vấn đề chưa được giải quyết.", "en": "The problem has not been solved."},
+      "pinyin": ["wèn", "tí", "wèi", "jiě", "jué", ""]
+    },
+    {
+      "text": "我们未收到任何通知。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "未 phủ định hành động 收到, nghĩa là chúng tôi chưa nhận được thông báo nào.",
+        "en": "未 negates the action 收到, meaning we have not received any notice."
+      },
+      "translation": {"vi": "Chúng tôi chưa nhận được thông báo nào.", "en": "We have not received any notice."},
+      "pinyin": ["wǒ", "men", "wèi", "shōu", "dào", "rèn", "hé", "tōng", "zhī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "未 đã mang nghĩa phủ định hoàn thành, không đi kèm 了; thêm 了 là thừa và sai ngữ pháp.",
+        "en": "未 already carries the perfect negative meaning, so it does not take 了; adding 了 is redundant and ungrammatical."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "他未参加了昨天的会议。",
+      "right": "他未参加昨天的会议。",
+      "wrong_pinyin": ["tā", "wèi", "cān", "jiā", "le", "zuó", "tiān", "de", "huì", "yì", ""],
+      "right_pinyin": ["tā", "wèi", "cān", "jiā", "zuó", "tiān", "de", "huì", "yì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___参加昨天的会议。",
+      "options": [
+        {"text": "未", "error_tag": null, "pinyin": ["wèi"]},
+        {"text": "没", "error_tag": "other", "pinyin": ["méi"]},
+        {"text": "不", "error_tag": "other", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "未 phù hợp văn viết trang trọng; 没 và 不 không sai hoàn toàn nhưng không đúng phong cách của câu này.",
+        "en": "未 fits the formal written style; 没 and 不 are not entirely wrong but do not match this sentence's register."
+      },
+      "q_pinyin": ["tā", "", "", "", "cān", "jiā", "zuó", "tiān", "de", "huì", "yì", ""]
+    },
+    {
+      "q": "问题___解决。",
+      "options": [
+        {"text": "未", "error_tag": null, "pinyin": ["wèi"]},
+        {"text": "没", "error_tag": "other", "pinyin": ["méi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "未 đứng trước động từ 解决 để phủ định trạng thái chưa đạt tới; 没 không tự nhiên trong câu văn viết này.",
+        "en": "未 stands before the verb 解决 to negate an unreached state; 没 is not natural in this written sentence."
+      },
+      "q_pinyin": ["wèn", "tí", "", "", "", "jiě", "jué", ""]
+    },
+    {
+      "q": "我们___收到任何通知。",
+      "options": [
+        {"text": "未", "error_tag": null, "pinyin": ["wèi"]},
+        {"text": "没", "error_tag": "other", "pinyin": ["méi"]},
+        {"text": "不", "error_tag": "other", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "未 phủ định hành động 收到 trong văn viết trang trọng; 没 và 不 không phù hợp ngữ cảnh này.",
+        "en": "未 negates the action 收到 in formal writing; 没 and 不 do not fit this context."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "shōu", "dào", "rèn", "hé", "tōng", "zhī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng dùng 未 để nói một việc bạn chưa làm hoặc chưa xảy ra.",
+      "en": "Write a formal sentence using 未 to say something you have not done or that has not happened."
+    },
+    "placeholder": "我未……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["未"], "role": "aux"}]},
+    "sample": {"text": "我未收到他的回复。", "pinyin": ["wǒ", "wèi", "shōu", "dào", "tā", "de", "huí", "fù", ""]},
+    "placeholder_pinyin": ["wǒ", "wèi", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338847",
+    "generated_at": "2026-10-07T02:07:27Z"
+  },
+  "review": null
+}

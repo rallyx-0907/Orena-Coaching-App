@@ -1,0 +1,265 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.gang_gangcai",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.de_di_de"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: gang_gangcai", "en": "Chinese grammar: gang_gangcai"},
+    "native_title": "刚/刚才",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Phân biệt 刚 và 刚才 khi nói về một việc vừa mới xảy ra.",
+      "en": "Distinguish 刚 and 刚才 when talking about something that just happened."
+    },
+    "sub": {"vi": "vừa mới / vừa nãy", "en": "just / just now"},
+    "native_title_pinyin": ["gāng", "", "gāng", "cái"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng 刚 trước động từ để nhấn mạnh việc xảy ra rất gần đây, thường đi với 就 hoặc 才.",
+      "en": "Use 刚 before a verb to stress that something happened a very short time ago, often with 就 or 才."
+    },
+    {
+      "vi": "Dùng 刚才 như một mốc thời gian đứng đầu câu hoặc trước động từ, chỉ khoảng thời gian vừa qua.",
+      "en": "Use 刚才 as a time expression at the start of a sentence or before the verb, referring to the recent past."
+    },
+    {
+      "vi": "Không dùng 刚 với phủ định 不; muốn nói 'vừa mới không' thì dùng 刚才.",
+      "en": "Do not use 刚 with the negative 不; to say something did not just happen, use 刚才."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "刚",
+        "role": "marker",
+        "label": {"vi": "vừa mới (nhấn mạnh)", "en": "just (emphatic)"},
+        "pinyin": ["gāng"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "刚才",
+          "role": "time",
+          "label": {"vi": "vừa nãy", "en": "just now"},
+          "pinyin": ["gāng", "cái"]
+        },
+        {
+          "text": "没",
+          "role": "aux",
+          "label": {"vi": "không (phủ định)", "en": "not (negative)"},
+          "pinyin": ["méi"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "刚才",
+          "role": "time",
+          "label": {"vi": "vừa nãy", "en": "just now"},
+          "pinyin": ["gāng", "cái"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "什么",
+          "role": "object",
+          "label": {"vi": "cái gì", "en": "what"},
+          "pinyin": ["shén", "me"]
+        },
+        {
+          "text": "了",
+          "role": "particle",
+          "label": {"vi": "trợ từ hoàn thành", "en": "completion particle"},
+          "pinyin": ["le"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他刚走。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "刚 đứng ngay trước động từ, nhấn mạnh hành động vừa xảy ra.",
+        "en": "刚 stands right before the verb, stressing the action happened just now."
+      },
+      "translation": {"vi": "Anh ấy vừa mới đi.", "en": "He just left."},
+      "pinyin": ["tā", "gāng", "zǒu", ""]
+    },
+    {
+      "text": "我刚才没看见他。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "time"},
+        {"start": 3, "end": 4, "role": "aux"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "刚才 là mốc thời gian, có thể dùng với phủ định 没.",
+        "en": "刚才 is a time expression and can be used with the negative 没."
+      },
+      "translation": {"vi": "Vừa nãy tôi không nhìn thấy anh ấy.", "en": "I didn't see him just now."},
+      "pinyin": ["wǒ", "gāng", "cái", "méi", "kàn", "jiàn", "tā", ""]
+    },
+    {
+      "text": "你刚才做什么了？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "time"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 6, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "刚才 đứng đầu câu hỏi, hỏi về việc vừa xảy ra.",
+        "en": "刚才 starts the question, asking about what just happened."
+      },
+      "translation": {"vi": "Vừa nãy bạn làm gì?", "en": "What did you do just now?"},
+      "pinyin": ["nǐ", "gāng", "cái", "zuò", "shén", "me", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "刚 không đi với phủ định 没; muốn nói 'vừa nãy không' phải dùng 刚才.",
+        "en": "刚 does not go with the negative 没; to say 'did not just now', use 刚才."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "他刚没来。",
+      "right": "他刚才没来。",
+      "wrong_pinyin": ["tā", "gāng", "méi", "lái", ""],
+      "right_pinyin": ["tā", "gāng", "cái", "méi", "lái", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___走，现在不在。",
+      "options": [
+        {"text": "刚", "error_tag": null, "pinyin": ["gāng"]},
+        {"text": "刚才", "error_tag": "word_choice", "pinyin": ["gāng", "cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "刚 đứng trước động từ 走 để nhấn mạnh vừa mới đi.",
+        "en": "刚 goes before the verb 走 to stress that he just left."
+      },
+      "q_pinyin": ["tā", "", "", "", "zǒu", "", "xiàn", "zài", "bù", "zài", ""]
+    },
+    {
+      "q": "我___没看见他。",
+      "options": [
+        {"text": "刚才", "error_tag": null, "pinyin": ["gāng", "cái"]},
+        {"text": "刚", "error_tag": "word_choice", "pinyin": ["gāng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với phủ định 没 phải dùng 刚才, không dùng 刚.",
+        "en": "With the negative 没, use 刚才, not 刚."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "méi", "kàn", "jiàn", "tā", ""]
+    },
+    {
+      "q": "你___做什么了？",
+      "options": [
+        {"text": "刚才", "error_tag": null, "pinyin": ["gāng", "cái"]},
+        {"text": "刚", "error_tag": "word_choice", "pinyin": ["gāng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "刚才 đứng đầu câu hỏi về việc vừa xảy ra.",
+        "en": "刚才 starts a question about what just happened."
+      },
+      "q_pinyin": ["nǐ", "", "", "", "zuò", "shén", "me", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể việc bạn vừa mới làm, dùng 刚 trước động từ.",
+      "en": "Write a sentence about something you just did, using 刚 before the verb."
+    },
+    "placeholder": "我刚……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["刚"], "role": "marker"}]},
+    "sample": {"text": "我刚吃完饭。", "pinyin": ["wǒ", "gāng", "chī", "wán", "fàn", ""]},
+    "placeholder_pinyin": ["wǒ", "gāng", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338358",
+    "generated_at": "2026-10-07T01:59:18Z"
+  },
+  "review": null
+}

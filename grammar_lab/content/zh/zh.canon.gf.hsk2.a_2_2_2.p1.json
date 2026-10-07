@@ -1,0 +1,192 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_2_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_1_10.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.039", "gf0025.hsk2.040"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Kiểu chức năng: 名词性短语", "en": "Functional patterns: 名词性短语"},
+    "native_title": "名词性短语",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Điểm ngữ pháp này giới thiệu cụm danh từ tiếng Trung: danh từ trung tâm có thể đứng một mình hoặc được mở rộng bằng định ngữ đứng trước, và có thể kèm lượng từ.",
+      "en": "This point introduces Chinese noun phrases: a head noun can stand alone or be expanded by a modifier placed before it, and it may take a measure word."
+    },
+    "sub": {"vi": "cụm danh từ", "en": "noun phrases"},
+    "native_title_pinyin": ["míng", "cí", "xìng", "duǎn", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn gọi tên một người, một vật hoặc một ý niệm trong câu.",
+      "en": "When you want to name a person, thing, or idea in a sentence."
+    },
+    {
+      "vi": "Khi bạn cần thêm thông tin về danh từ đó, chẳng hạn người đó là ai, vật đó thế nào.",
+      "en": "When you need to add information about that noun, such as who the person is or what the thing is like."
+    },
+    {
+      "vi": "Khi bạn muốn nói số lượng hoặc đếm danh từ, bạn dùng lượng từ trước danh từ.",
+      "en": "When you want to give a quantity or count a noun, you use a measure word before the noun."
+    },
+    {
+      "vi": "Khi bạn muốn dùng cụm danh từ làm chủ ngữ hoặc tân ngữ trong câu.",
+      "en": "When you want to use the noun phrase as the subject or object of a sentence."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "定语",
+        "role": "other",
+        "label": {"vi": "định ngữ", "en": "modifier"},
+        "optional": true,
+        "pinyin": ["dìng", "yǔ"]
+      },
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "số từ", "en": "number"},
+        "optional": true,
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "量词",
+        "role": "classifier",
+        "label": {"vi": "lượng từ", "en": "measure word"},
+        "optional": true,
+        "pinyin": ["liàng", "cí"]
+      },
+      {
+        "text": "名词",
+        "role": "other",
+        "label": {"vi": "danh từ trung tâm", "en": "head noun"},
+        "pinyin": ["míng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我喜欢那本中文书。",
+      "form": "affirmative",
+      "spans": [{"start": 3, "end": 7, "role": "other"}, {"start": 7, "end": 8, "role": "other"}],
+      "annotation": {
+        "vi": "Định ngữ 那本中文 đứng trước danh từ trung tâm 书, cho biết đó là quyển sách tiếng Trung kia.",
+        "en": "The modifier 那本中文 comes before the head noun 书, telling us it is that Chinese book."
+      },
+      "translation": {"vi": "Tôi thích quyển sách tiếng Trung kia.", "en": "I like that Chinese book."},
+      "pinyin": ["wǒ", "xǐ", "huān", "nà", "běn", "zhōng", "wén", "shū", ""]
+    },
+    {
+      "text": "她买了三件衣服。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "classifier"},
+        {"start": 5, "end": 7, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Số từ 三 và lượng từ 件 đứng trước danh từ 衣服 để đếm số lượng áo quần.",
+        "en": "The number 三 and the measure word 件 come before the noun 衣服 to count items of clothing."
+      },
+      "translation": {"vi": "Cô ấy đã mua ba bộ quần áo.", "en": "She bought three pieces of clothing."},
+      "pinyin": ["tā", "mǎi", "le", "sān", "jiàn", "yī", "fú", ""]
+    },
+    {
+      "text": "那个新老师很好。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "other"}, {"start": 3, "end": 5, "role": "other"}],
+      "annotation": {
+        "vi": "Định ngữ 那个新 đứng trước danh từ 老师, chỉ người giáo viên mới đó.",
+        "en": "The modifier 那个新 comes before the noun 老师, referring to that new teacher."
+      },
+      "translation": {"vi": "Người giáo viên mới đó rất tốt.", "en": "That new teacher is very good."},
+      "pinyin": ["nà", "ge", "xīn", "lǎo", "shī", "hěn", "hǎo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong tiếng Trung, số từ và lượng từ phải đứng trước danh từ, không đứng sau như một số cách nói trong tiếng Việt.",
+        "en": "In Chinese, the number and measure word must come before the noun, not after it as in some Vietnamese word orders."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我买了书三本。",
+      "right": "我买了三本书。",
+      "wrong_pinyin": ["wǒ", "mǎi", "le", "shū", "sān", "běn", ""],
+      "right_pinyin": ["wǒ", "mǎi", "le", "sān", "běn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我买了三___书。",
+      "options": [
+        {"text": "本", "error_tag": null, "pinyin": ["běn"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Danh từ 书 đi với lượng từ 本, không dùng 个.",
+        "en": "The noun 书 takes the measure word 本, not 个."
+      },
+      "q_pinyin": ["wǒ", "mǎi", "le", "sān", "", "", "", "shū", ""]
+    },
+    {
+      "q": "她是一个___老师。",
+      "options": [
+        {"text": "好", "error_tag": null, "pinyin": ["hǎo"]},
+        {"text": "很好", "error_tag": "other", "pinyin": ["hěn", "hǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Định ngữ đứng trước danh từ thường là tính từ đơn giản, không cần 很.",
+        "en": "A modifier before a noun is usually a simple adjective; 很 is not needed there."
+      },
+      "q_pinyin": ["tā", "shì", "yí", "gè", "", "", "", "lǎo", "shī", ""]
+    },
+    {
+      "q": "那___书很有意思。",
+      "options": [
+        {"text": "本", "error_tag": null, "pinyin": ["běn"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "书 là danh từ đếm được bằng lượng từ 本.",
+        "en": "书 is counted with the measure word 本."
+      },
+      "q_pinyin": ["nà", "", "", "", "shū", "hěn", "yǒu", "yì", "si", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một đồ vật bạn thích, dùng cụm danh từ có định ngữ hoặc lượng từ.",
+      "en": "Write one sentence about something you like, using a noun phrase with a modifier or a measure word."
+    },
+    "placeholder": "我喜欢……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"regex": ".", "role": "other"}, {"regex": ".", "role": "other"}]},
+    "sample": {"text": "我喜欢那本中文书。", "pinyin": ["wǒ", "xǐ", "huān", "nà", "běn", "zhōng", "wén", "shū", ""]},
+    "placeholder_pinyin": ["wǒ", "xǐ", "huān", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338068",
+    "generated_at": "2026-10-07T01:54:28Z"
+  },
+  "review": null
+}

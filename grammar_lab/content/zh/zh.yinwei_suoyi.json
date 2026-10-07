@@ -1,0 +1,282 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.yinwei_suoyi",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reason_result",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["zh.suiran_danshi"],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk2-1-topic"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk2-1-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "因为 ... 所以 ...", "en": "因为 ... 所以 ..."},
+    "native_title": "“因为……所以……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "因为...所以... dùng để nối nguyên nhân với kết quả trong một câu.",
+      "en": "因为...所以... connects a cause with its result in one sentence."
+    },
+    "sub": {"vi": "nguyên nhân – kết quả", "en": "cause and result"},
+    "native_title_pinyin": ["", "yīn", "wèi", "", "", "suǒ", "yǐ", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu lý do trước rồi nói kết quả xảy ra sau đó.",
+      "en": "When you want to state the reason first and then the result that follows."
+    },
+    {
+      "vi": "Khi cả nguyên nhân và kết quả đều là sự thật hoặc tình huống có thật, không phải giả định.",
+      "en": "When both the cause and the result are facts or real situations, not hypothetical conditions."
+    },
+    {
+      "vi": "Khi bạn viết hoặc nói ở mức HSK2 và cần một cặp liên từ rõ ràng, đầy đủ.",
+      "en": "When you are writing or speaking at HSK2 level and need a clear, full pair of connectors."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "因为",
+        "role": "connector",
+        "label": {"vi": "liên từ nguyên nhân", "en": "cause connector"},
+        "pinyin": ["yīn", "wèi"]
+      },
+      {
+        "text": "原因",
+        "role": "other",
+        "label": {"vi": "nguyên nhân", "en": "cause"},
+        "pinyin": ["yuán", "yīn"]
+      },
+      {
+        "text": "所以",
+        "role": "connector",
+        "label": {"vi": "liên từ kết quả", "en": "result connector"},
+        "pinyin": ["suǒ", "yǐ"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "kết quả", "en": "result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "因为下雨，所以我们没去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "因为 mở đầu nguyên nhân, 所以 mở đầu kết quả.",
+        "en": "因为 introduces the cause, 所以 introduces the result."
+      },
+      "translation": {"vi": "Vì trời mưa nên chúng tôi không đi.", "en": "Because it rained, we didn't go."},
+      "pinyin": ["yīn", "wèi", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "men", "méi", "qù", ""]
+    },
+    {
+      "text": "因为我很累，所以想早点睡。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ của hai vế có thể khác nhau; 因为 đứng trước chủ ngữ.",
+        "en": "The two clauses can have different subjects; 因为 comes before the subject."
+      },
+      "translation": {
+        "vi": "Vì tôi rất mệt nên muốn ngủ sớm.",
+        "en": "Because I was very tired, I wanted to go to bed early."
+      },
+      "pinyin": ["yīn", "wèi", "wǒ", "hěn", "lèi", "", "suǒ", "yǐ", "xiǎng", "zǎo", "diǎn", "shuì", ""]
+    },
+    {
+      "text": "因为路上很堵，所以他迟到了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "所以 đứng trước chủ ngữ của vế kết quả.",
+        "en": "所以 comes before the subject of the result clause."
+      },
+      "translation": {
+        "vi": "Vì đường rất tắc nên anh ấy đến muộn.",
+        "en": "Because the road was very congested, he was late."
+      },
+      "pinyin": ["yīn", "wèi", "lù", "shàng", "hěn", "dǔ", "", "suǒ", "yǐ", "tā", "chí", "dào", "le", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.suiran_danshi",
+      "this_example": "因为下雨，所以我们没去。",
+      "other_example": "虽然下雨，但是我们去了。",
+      "this_meaning": {
+        "vi": "因为...所以... nối nguyên nhân với kết quả tất yếu.",
+        "en": "因为...所以... links a cause to its necessary result."
+      },
+      "other_meaning": {
+        "vi": "虽然...但是... nối một sự thật với điều trái ngược hoặc bất ngờ.",
+        "en": "虽然...但是... links a fact with a contrasting or unexpected point."
+      },
+      "this_example_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "men", "méi", "qù", ""],
+      "other_example_pinyin": ["suī", "rán", "xià", "yǔ", "", "dàn", "shì", "wǒ", "men", "qù", "le", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "但是 đánh dấu sự tương phản, không phải kết quả. Khi nói nguyên nhân – kết quả phải dùng 所以.",
+        "en": "但是 marks contrast, not result. For cause–result you need 所以."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "因为下雨，但是我们没去。",
+      "right": "因为下雨，所以我们没去。",
+      "wrong_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "dàn", "shì", "wǒ", "men", "méi", "qù", ""],
+      "right_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "men", "méi", "qù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "因为今天很冷，___我穿了外套。",
+      "options": [
+        {"text": "所以", "error_tag": null, "pinyin": ["suǒ", "yǐ"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế sau là kết quả của việc trời lạnh, nên dùng 所以.",
+        "en": "The second clause is the result of the cold, so 所以 is correct."
+      },
+      "q_pinyin": [
+        "yīn",
+        "wèi",
+        "jīn",
+        "tiān",
+        "hěn",
+        "lěng",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "chuān",
+        "le",
+        "wài",
+        "tào",
+        ""
+      ]
+    },
+    {
+      "q": "___我生病了，所以没去上课。",
+      "options": [
+        {"text": "因为", "error_tag": null, "pinyin": ["yīn", "wèi"]},
+        {"text": "虽然", "error_tag": "conjunction", "pinyin": ["suī", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế đầu nêu nguyên nhân, nên dùng 因为.",
+        "en": "The first clause gives the cause, so 因为 is correct."
+      },
+      "q_pinyin": ["", "", "", "wǒ", "shēng", "bìng", "le", "", "suǒ", "yǐ", "méi", "qù", "shàng", "kè", ""]
+    },
+    {
+      "q": "因为路上堵车，___他迟到了。",
+      "options": [
+        {"text": "所以", "error_tag": null, "pinyin": ["suǒ", "yǐ"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đến muộn là kết quả của tắc đường, nên dùng 所以.",
+        "en": "Being late is the result of the traffic jam, so 所以 is correct."
+      },
+      "q_pinyin": ["yīn", "wèi", "lù", "shàng", "dǔ", "chē", "", "", "", "", "tā", "chí", "dào", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 因为...所以... để nói lý do và kết quả.",
+      "en": "Write one sentence about yourself using 因为...所以... to give a reason and a result."
+    },
+    "placeholder": "因为我……，所以我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["因为"], "role": "connector"}, {"any_of": ["所以"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "因为我很喜欢中文，所以我每天都学习。",
+      "pinyin": [
+        "yīn",
+        "wèi",
+        "wǒ",
+        "hěn",
+        "xǐ",
+        "huān",
+        "zhōng",
+        "wén",
+        "",
+        "suǒ",
+        "yǐ",
+        "wǒ",
+        "měi",
+        "tiān",
+        "dōu",
+        "xué",
+        "xí",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["yīn", "wèi", "wǒ", "", "", "", "suǒ", "yǐ", "wǒ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338205",
+    "generated_at": "2026-10-07T01:56:45Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-1-topic"],
+      "content_version": 2,
+      "content_hash": "b0d71b58332a4dff7e23d155b78fa93b755869de4b7db64a711664942644f0a6",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-1-topic",
+          "issue": "R5 dùng cặp 因为...但是... trong phần lỗi thường gặp, nhưng lại không giải thích rõ rằng 但是 là liên từ tương phản, không phải kết quả.",
+          "fix": "Đã sửa thành 因为下雨，所以我们没去 và thêm lý do: 但是 đánh dấu tương phản, không phải kết quả."
+        },
+        {
+          "r5_id": "zh-hsk2-1-topic",
+          "issue": "R5 có câu sai '所以我累，因为我睡觉' nhưng cách sửa chưa làm rõ trật tự nguyên nhân – kết quả.",
+          "fix": "Đã thay bằng cặp đúng 因为我没睡好，所以很累 và giải thích nguyên nhân phải đứng trước kết quả."
+        },
+        {
+          "r5_id": "zh-hsk2-1-topic",
+          "issue": "R5 chưa cung cấp công thức trừu tượng và các slot cho ví dụ.",
+          "fix": "Đã thêm formula với các slot 因为 + 原因 + 所以 + 结果 và bindings cho từng ví dụ."
+        }
+      ]
+    }
+  },
+  "review": null
+}

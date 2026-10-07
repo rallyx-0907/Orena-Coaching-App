@@ -1,0 +1,200 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_4_9.p3",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reason_result",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_4_9.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.038", "gf0025.hsk7_9.039", "gf0025.hsk7_9.040", "gf0025.hsk7_9.041"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 乃", "en": "Adverbs: 乃"},
+    "native_title": "乃",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Phó từ 乃 dùng trong văn viết trang trọng để nêu nguyên nhân hoặc điều kiện dẫn đến kết quả, tương đương \"bởi vậy, cho nên\".",
+      "en": "The adverb 乃 is used in formal written Chinese to introduce a cause or condition that leads to a result, roughly meaning \"thus\" or \"therefore\"."
+    },
+    "sub": {"vi": "nguyên nhân – kết quả", "en": "cause and result"},
+    "native_title_pinyin": ["nǎi"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng trong văn viết trang trọng, câu văn mang tính văn chương hoặc cổ điển.",
+      "en": "Use it in formal written Chinese, in literary or classical-sounding sentences."
+    },
+    {
+      "vi": "Dùng khi vế trước nêu nguyên nhân hoặc điều kiện, vế sau nêu kết quả tất yếu.",
+      "en": "Use it when the first clause gives a cause or condition and the second gives the resulting outcome."
+    },
+    {
+      "vi": "Thường đứng trước động từ hoặc tính từ làm vị ngữ của vế kết quả.",
+      "en": "It normally comes before the verb or adjective that forms the predicate of the result clause."
+    },
+    {
+      "vi": "Không dùng trong khẩu ngữ thường ngày; khi nói nên thay bằng 就, 于是 hoặc 因此.",
+      "en": "Do not use it in everyday speech; in conversation use 就, 于是 or 因此 instead."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "原因",
+        "role": "other",
+        "label": {"vi": "nguyên nhân / điều kiện", "en": "cause / condition"},
+        "pinyin": ["yuán", "yīn"]
+      },
+      {
+        "text": "乃",
+        "role": "connector",
+        "label": {"vi": "phó từ nối 乃", "en": "connective adverb 乃"},
+        "pinyin": ["nǎi"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "kết quả", "en": "result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "学而不思，乃无所得。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 9, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Vế trước nêu điều kiện, 乃 dẫn ra kết quả tất yếu ở vế sau.",
+        "en": "The first clause states a condition, and 乃 introduces the necessary result in the second clause."
+      },
+      "translation": {
+        "vi": "Học mà không suy nghĩ thì sẽ không thu được gì.",
+        "en": "To learn without thinking is to gain nothing."
+      },
+      "pinyin": ["xué", "ér", "bù", "sī", "", "nǎi", "wú", "suǒ", "de", ""]
+    },
+    {
+      "text": "事出有因，乃众人之过。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 10, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "乃 đứng trước danh ngữ vị ngữ, nêu kết luận rút ra từ nguyên nhân đã nói.",
+        "en": "乃 stands before a nominal predicate, presenting the conclusion drawn from the stated cause."
+      },
+      "translation": {
+        "vi": "Việc xảy ra đều có nguyên do, đó là lỗi của mọi người.",
+        "en": "Everything happens for a reason; this is the fault of everyone."
+      },
+      "pinyin": ["shì", "chū", "yǒu", "yīn", "", "nǎi", "zhòng", "rén", "zhī", "guò", ""]
+    },
+    {
+      "text": "知错能改，乃善莫大焉。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 10, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "乃 nối điều kiện với kết quả đánh giá ở vế sau.",
+        "en": "乃 links the condition to the evaluative result in the second clause."
+      },
+      "translation": {
+        "vi": "Biết sai mà sửa được thì không có điều thiện nào lớn hơn.",
+        "en": "To know one's mistake and correct it is the greatest good."
+      },
+      "pinyin": ["zhī", "cuò", "néng", "gǎi", "", "nǎi", "shàn", "mò", "dà", "yān", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "乃 là phó từ, phải đứng sau chủ ngữ và trước động từ; người học thường đặt nó ngay sau liên từ 因为 như một liên từ.",
+        "en": "乃 is an adverb, so it must follow the subject and precede the verb; learners often place it right after the conjunction 因为 as if it were a conjunction."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "因为下雨，乃我们不去。",
+      "right": "因为下雨，我们乃不去。",
+      "wrong_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "nǎi", "wǒ", "men", "bù", "qù", ""],
+      "right_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "wǒ", "men", "nǎi", "bù", "qù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "学而不思，___无所得。",
+      "options": [
+        {"text": "乃", "error_tag": null, "pinyin": ["nǎi"]},
+        {"text": "就", "error_tag": "register", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu văn viết trang trọng dùng 乃 để nối nguyên nhân với kết quả; 就 thuộc khẩu ngữ, không hợp văn phong.",
+        "en": "This formal written sentence uses 乃 to link cause and result; 就 is colloquial and does not fit the register."
+      },
+      "q_pinyin": ["xué", "ér", "bù", "sī", "", "", "", "", "wú", "suǒ", "de", ""]
+    },
+    {
+      "q": "事出有因，___众人之过。",
+      "options": [
+        {"text": "乃", "error_tag": null, "pinyin": ["nǎi"]},
+        {"text": "乃是", "error_tag": "redundancy", "pinyin": ["nǎi", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "乃 tự nó đã đủ để nêu kết luận, thêm 是 thành thừa và sai văn phong.",
+        "en": "乃 alone already introduces the conclusion; adding 是 is redundant and wrong in this register."
+      },
+      "q_pinyin": ["shì", "chū", "yǒu", "yīn", "", "", "", "", "zhòng", "rén", "zhī", "guò", ""]
+    },
+    {
+      "q": "知错能改，___善莫大焉。",
+      "options": [
+        {"text": "乃", "error_tag": null, "pinyin": ["nǎi"]},
+        {"text": "乃的", "error_tag": "particle", "pinyin": ["nǎi", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "乃 là phó từ nối, không đi với trợ từ 的; 乃的 là lỗi dùng sai trợ từ.",
+        "en": "乃 is a connective adverb and does not take the particle 的; 乃的 is a particle error."
+      },
+      "q_pinyin": ["zhī", "cuò", "néng", "gǎi", "", "", "", "", "shàn", "mò", "dà", "yān", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng nêu nguyên nhân hoặc điều kiện ở vế đầu và dùng 乃 để dẫn ra kết quả ở vế sau.",
+      "en": "Write one formal sentence that states a cause or condition in the first clause and uses 乃 to introduce the result in the second clause."
+    },
+    "placeholder": "学而不思，乃……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["乃"], "role": "connector"}]},
+    "sample": {"text": "学而不思，乃无所得。", "pinyin": ["xué", "ér", "bù", "sī", "", "nǎi", "wú", "suǒ", "de", ""]},
+    "placeholder_pinyin": ["xué", "ér", "bù", "sī", "", "nǎi", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338849",
+    "generated_at": "2026-10-07T02:07:29Z"
+  },
+  "review": null
+}

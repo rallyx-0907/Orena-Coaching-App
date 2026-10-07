@@ -1,0 +1,226 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_6.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.condition_real",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_7_topic"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.064", "gf0025.hsk5.065", "gf0025.hsk5.066", "gf0025.hsk5.067"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách nhấn mạnh: X归X，Y归Y", "en": "Ways of emphasis: X归X，Y归Y"},
+    "native_title": "X归X，Y归Y",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Mẫu câu X归X，Y归Y dùng để tách bạch hai việc, hai phạm vi hoặc hai trách nhiệm, mỗi thứ thuộc về đúng chỗ của nó.",
+      "en": "The pattern X归X，Y归Y separates two matters, areas or responsibilities, putting each one in its proper place."
+    },
+    "sub": {"vi": "tách bạch phạm vi", "en": "keeping things separate"},
+    "native_title_pinyin": ["", "guī", "", "", "", "guī", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói rõ việc này thuộc về người này hoặc lĩnh vực này, việc kia thuộc về người khác hoặc lĩnh vực khác.",
+      "en": "When you want to make clear that one thing belongs to one person or area and another thing belongs to a different one."
+    },
+    {
+      "vi": "Khi cần phân chia trách nhiệm trong công việc hoặc trong gia đình, không để lẫn lộn.",
+      "en": "When you need to divide responsibilities at work or at home without mixing them up."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh rằng mỗi chuyện nên được xử lý riêng, không gộp chung.",
+      "en": "When you want to stress that each matter should be handled separately, not lumped together."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "X",
+        "role": "other",
+        "label": {"vi": "phạm vi thứ nhất", "en": "first area"},
+        "pinyin": [""]
+      },
+      {
+        "text": "归",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu quy về", "en": "belonging marker"},
+        "pinyin": ["guī"]
+      },
+      {
+        "text": "X",
+        "role": "other",
+        "label": {"vi": "phạm vi thứ nhất lặp lại", "en": "first area repeated"},
+        "pinyin": [""]
+      },
+      {
+        "text": "Y",
+        "role": "other",
+        "label": {"vi": "phạm vi thứ hai", "en": "second area"},
+        "pinyin": [""]
+      },
+      {
+        "text": "归",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu quy về", "en": "belonging marker"},
+        "pinyin": ["guī"]
+      },
+      {
+        "text": "Y",
+        "role": "other",
+        "label": {"vi": "phạm vi thứ hai lặp lại", "en": "second area repeated"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "工作归工作，休息归休息。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "other"},
+        {"start": 8, "end": 9, "role": "marker"},
+        {"start": 9, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Tách rõ công việc và nghỉ ngơi, mỗi thứ thuộc đúng phạm vi của nó.",
+        "en": "Work and rest are kept clearly separate, each in its own place."
+      },
+      "translation": {
+        "vi": "Công việc ra công việc, nghỉ ngơi ra nghỉ ngơi.",
+        "en": "Work is work, and rest is rest."
+      },
+      "pinyin": ["gōng", "zuò", "guī", "gōng", "zuò", "", "xiū", "xī", "guī", "xiū", "xī", ""]
+    },
+    {
+      "text": "钱归钱，感情归感情。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 9, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Không trộn lẫn chuyện tiền bạc với chuyện tình cảm.",
+        "en": "Money matters and feelings are not mixed together."
+      },
+      "translation": {
+        "vi": "Tiền là tiền, tình cảm là tình cảm.",
+        "en": "Money is money, and feelings are feelings."
+      },
+      "pinyin": ["qián", "guī", "qián", "", "gǎn", "qíng", "guī", "gǎn", "qíng", ""]
+    },
+    {
+      "text": "学习归学习，玩归玩。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "marker"},
+        {"start": 8, "end": 9, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Học ra học, chơi ra chơi, không để lẫn nhau.",
+        "en": "Study is study, and play is play; the two are kept apart."
+      },
+      "translation": {"vi": "Học là học, chơi là chơi.", "en": "Study is study, and play is play."},
+      "pinyin": ["xué", "xí", "guī", "xué", "xí", "", "wán", "guī", "wán", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thường lược bỏ chữ 归 ở vế thứ hai, nhưng mẫu câu này bắt buộc phải lặp lại 归 trước mỗi phạm vi.",
+        "en": "Learners often drop the second 归, but this pattern requires 归 before each area."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "工作归工作，休息休息。",
+      "right": "工作归工作，休息归休息。",
+      "wrong_pinyin": ["gōng", "zuò", "guī", "gōng", "zuò", "", "xiū", "xī", "xiū", "xī", ""],
+      "right_pinyin": ["gōng", "zuò", "guī", "gōng", "zuò", "", "xiū", "xī", "guī", "xiū", "xī", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "工作___工作，休息归休息。",
+      "options": [
+        {"text": "归", "error_tag": null, "pinyin": ["guī"]},
+        {"text": "是", "error_tag": "particle", "pinyin": ["shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu X归X，Y归Y cần 归 ở cả hai vế, không dùng 是.",
+        "en": "The pattern X归X，Y归Y needs 归 in both halves, not 是."
+      },
+      "q_pinyin": ["gōng", "zuò", "", "", "", "gōng", "zuò", "", "xiū", "xī", "guī", "xiū", "xī", ""]
+    },
+    {
+      "q": "钱归钱，感情___感情。",
+      "options": [
+        {"text": "归", "error_tag": null, "pinyin": ["guī"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế thứ hai cũng phải có 归 để tách bạch hai phạm vi.",
+        "en": "The second half also needs 归 to keep the two areas separate."
+      },
+      "q_pinyin": ["qián", "guī", "qián", "", "gǎn", "qíng", "", "", "", "gǎn", "qíng", ""]
+    },
+    {
+      "q": "学习归学习，___归玩。",
+      "options": [
+        {"text": "玩", "error_tag": null, "pinyin": ["wán"]},
+        {"text": "玩了", "error_tag": "aspect", "pinyin": ["wán", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong mẫu này, X và Y phải giống nhau ở hai vế; thêm 了 sẽ phá vỡ cấu trúc.",
+        "en": "In this pattern X and Y must match in both halves; adding 了 breaks the structure."
+      },
+      "q_pinyin": ["xué", "xí", "guī", "xué", "xí", "", "", "", "", "guī", "wán", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng mẫu X归X，Y归Y để tách bạch hai việc trong cuộc sống của bạn.",
+      "en": "Write one sentence using X归X，Y归Y to keep two things in your life separate."
+    },
+    "placeholder": "工作归工作，……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["归"], "role": "marker"}, {"any_of": ["归"], "role": "marker"}]
+    },
+    "sample": {
+      "text": "工作归工作，生活归生活。",
+      "pinyin": ["gōng", "zuò", "guī", "gōng", "zuò", "", "shēng", "huó", "guī", "shēng", "huó", ""]
+    },
+    "placeholder_pinyin": ["gōng", "zuò", "guī", "gōng", "zuò", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338617",
+    "generated_at": "2026-10-07T02:03:37Z"
+  },
+  "review": null
+}

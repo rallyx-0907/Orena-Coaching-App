@@ -1,0 +1,195 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.haishi_huozhe",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.gei_dui"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: haishi_huozhe", "en": "Chinese grammar: haishi_huozhe"},
+    "native_title": "“还是/或者”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Phân biệt 还是 dùng cho câu hỏi lựa chọn và 或者 dùng cho câu trần thuật khi nêu lựa chọn.",
+      "en": "Distinguish 还是 for choice questions and 或者 for statements that offer alternatives."
+    },
+    "sub": {"vi": "lựa chọn", "en": "choices"},
+    "native_title_pinyin": ["", "hái", "shì", "", "huò", "zhě", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hỏi người nghe chọn một trong hai hay nhiều khả năng, dùng 还是 giữa các lựa chọn.",
+      "en": "When asking the listener to choose between two or more possibilities, use 还是 between the options."
+    },
+    {
+      "vi": "Khi kể lại hoặc đề nghị một lựa chọn trong câu trần thuật, dùng 或者 giữa các lựa chọn.",
+      "en": "When stating or suggesting an alternative in a statement, use 或者 between the options."
+    },
+    {
+      "vi": "Cả hai từ đều nối các thành phần cùng loại: danh từ với danh từ, động từ với động từ, mệnh đề với mệnh đề.",
+      "en": "Both words link items of the same type: nouns with nouns, verbs with verbs, clauses with clauses."
+    },
+    {
+      "vi": "Không dùng 或者 trong câu hỏi lựa chọn trực tiếp, và không dùng 还是 trong câu trần thuật.",
+      "en": "Do not use 或者 in a direct choice question, and do not use 还是 in a statement."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "lựa chọn thứ nhất", "en": "first option"},
+        "pinyin": [""]
+      },
+      {
+        "text": "还是/或者",
+        "role": "connector",
+        "label": {"vi": "từ nối lựa chọn", "en": "choice connector"},
+        "options": [{"text": "还是", "pinyin": ["hái", "shì"]}, {"text": "或者", "pinyin": ["huò", "zhě"]}],
+        "pinyin": ["hái", "shì", "", "huò", "zhě"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "lựa chọn thứ hai", "en": "second option"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "你喝茶还是咖啡？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 5, "role": "connector"},
+        {"start": 5, "end": 7, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "还是 nối hai lựa chọn trong câu hỏi lựa chọn.",
+        "en": "还是 links two options in a choice question."
+      },
+      "translation": {"vi": "Bạn uống trà hay cà phê?", "en": "Do you drink tea or coffee?"},
+      "pinyin": ["nǐ", "hē", "chá", "hái", "shì", "kā", "fēi", ""]
+    },
+    {
+      "text": "我明天或者后天去北京。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 3, "role": "other"},
+        {"start": 3, "end": 5, "role": "connector"},
+        {"start": 5, "end": 7, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "或者 nối hai thời điểm trong câu trần thuật.",
+        "en": "或者 links two times in a statement."
+      },
+      "translation": {
+        "vi": "Mai hoặc ngày kia tôi đi Bắc Kinh.",
+        "en": "I will go to Beijing tomorrow or the day after tomorrow."
+      },
+      "pinyin": ["wǒ", "míng", "tiān", "huò", "zhě", "hòu", "tiān", "qù", "běi", "jīng", ""]
+    },
+    {
+      "text": "周末我们看电影或者去公园。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 7, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "或者 nối hai hoạt động trong câu trần thuật.",
+        "en": "或者 links two activities in a statement."
+      },
+      "translation": {
+        "vi": "Cuối tuần chúng tôi xem phim hoặc đi công viên.",
+        "en": "On the weekend we watch a movie or go to the park."
+      },
+      "pinyin": ["zhōu", "mò", "wǒ", "men", "kàn", "diàn", "yǐng", "huò", "zhě", "qù", "gōng", "yuán", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu hỏi lựa chọn trực tiếp phải dùng 还是, không dùng 或者.",
+        "en": "A direct choice question requires 还是, not 或者."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "你喝茶或者咖啡？",
+      "right": "你喝茶还是咖啡？",
+      "wrong_pinyin": ["nǐ", "hē", "chá", "huò", "zhě", "kā", "fēi", ""],
+      "right_pinyin": ["nǐ", "hē", "chá", "hái", "shì", "kā", "fēi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你想吃米饭___面条？",
+      "options": [
+        {"text": "还是", "error_tag": null, "pinyin": ["hái", "shì"]},
+        {"text": "或者", "error_tag": "conjunction", "pinyin": ["huò", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Đây là câu hỏi lựa chọn nên dùng 还是.", "en": "This is a choice question, so use 还是."},
+      "q_pinyin": ["nǐ", "xiǎng", "chī", "mǐ", "fàn", "", "", "", "miàn", "tiáo", ""]
+    },
+    {
+      "q": "我下午___晚上给你打电话。",
+      "options": [
+        {"text": "或者", "error_tag": null, "pinyin": ["huò", "zhě"]},
+        {"text": "还是", "error_tag": "conjunction", "pinyin": ["hái", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Đây là câu trần thuật nên dùng 或者.", "en": "This is a statement, so use 或者."},
+      "q_pinyin": ["wǒ", "xià", "wǔ", "", "", "", "wǎn", "shàng", "gěi", "nǐ", "dǎ", "diàn", "huà", ""]
+    },
+    {
+      "q": "你坐地铁___坐公交车去学校？",
+      "options": [
+        {"text": "还是", "error_tag": null, "pinyin": ["hái", "shì"]},
+        {"text": "或者", "error_tag": "conjunction", "pinyin": ["huò", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi lựa chọn dùng 还是 để hỏi người nghe chọn cách nào.",
+        "en": "A choice question uses 还是 to ask which option the listener chooses."
+      },
+      "q_pinyin": ["nǐ", "zuò", "dì", "tiě", "", "", "", "zuò", "gōng", "jiāo", "chē", "qù", "xué", "xiào", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói bạn muốn ăn cơm hay ăn mì vào bữa tối.",
+      "en": "Write a sentence saying whether you want rice or noodles for dinner."
+    },
+    "placeholder": "我晚饭想吃……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["还是", "或者"], "role": "connector"}]},
+    "sample": {
+      "text": "我晚饭想吃米饭或者面条。",
+      "pinyin": ["wǒ", "wǎn", "fàn", "xiǎng", "chī", "mǐ", "fàn", "huò", "zhě", "miàn", "tiáo", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "wǎn", "fàn", "xiǎng", "chī", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338179",
+    "generated_at": "2026-10-07T01:56:19Z"
+  },
+  "review": null
+}

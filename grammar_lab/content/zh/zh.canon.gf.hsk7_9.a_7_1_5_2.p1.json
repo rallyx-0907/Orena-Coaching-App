@@ -1,0 +1,273 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_5_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_5_1.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.049", "gf0025.hsk7_9.050"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 当着", "en": "Chinese grammar: 当着"},
+    "native_title": "当着",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Giới từ 当着 dùng để nói rằng một hành động hay tình huống diễn ra ngay trước mặt hoặc trước sự chứng kiến của một người nào đó.",
+      "en": "The preposition 当着 is used to say that an action or situation happens in front of, or in the presence of, a particular person."
+    },
+    "sub": {"vi": "trước mặt ai", "en": "in front of someone"},
+    "native_title_pinyin": ["dāng", "zhe"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một việc xảy ra ngay trước mặt một người cụ thể, thường là người có liên quan.",
+      "en": "Use it when something happens right in front of a specific person, usually someone involved in the situation."
+    },
+    {
+      "vi": "Khi nhấn mạnh rằng hành động không được giấu giếm mà có người chứng kiến.",
+      "en": "Use it to stress that the action was not hidden and had a witness."
+    },
+    {
+      "vi": "Khi đối tượng đứng sau 当着 là một người hoặc một nhóm người, không phải đồ vật.",
+      "en": "Use it when the phrase after 当着 is a person or a group of people, not a thing."
+    },
+    {
+      "vi": "Cấu trúc này thường đứng trước động từ chính, mở đầu cho phần nội dung được chứng kiến.",
+      "en": "The phrase normally comes before the main verb and introduces what was witnessed."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "当着",
+        "role": "marker",
+        "label": {"vi": "giới từ", "en": "preposition"},
+        "pinyin": ["dāng", "zhe"]
+      },
+      {
+        "text": "人的名词",
+        "role": "object",
+        "label": {"vi": "người chứng kiến", "en": "person present"},
+        "pinyin": ["rén", "de", "míng", "cí"]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ", "en": "particle"},
+        "optional": true,
+        "pinyin": ["de"]
+      },
+      {
+        "text": "面",
+        "role": "other",
+        "label": {"vi": "mặt", "en": "face"},
+        "optional": true,
+        "pinyin": ["miàn"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "hành động", "en": "action"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他当着大家的面承认了错误。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "particle"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "当着大家的面 = ngay trước mặt mọi người; hành động 承认错误 diễn ra công khai.",
+        "en": "当着大家的面 = in front of everyone; the action 承认错误 happens openly."
+      },
+      "translation": {
+        "vi": "Anh ấy đã nhận lỗi trước mặt mọi người.",
+        "en": "He admitted his mistake in front of everyone."
+      },
+      "pinyin": ["tā", "dāng", "zhe", "dà", "jiā", "de", "miàn", "chéng", "rèn", "le", "cuò", "wù", ""]
+    },
+    {
+      "text": "她当着老师的面把作业交了上去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "particle"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "当着老师的面 = ngay trước mặt giáo viên; nhấn mạnh việc nộp bài được giáo viên chứng kiến.",
+        "en": "当着老师的面 = in front of the teacher; it stresses that the teacher witnessed the submission."
+      },
+      "translation": {
+        "vi": "Cô ấy đã nộp bài ngay trước mặt giáo viên.",
+        "en": "She handed in the homework in front of the teacher."
+      },
+      "pinyin": [
+        "tā",
+        "dāng",
+        "zhe",
+        "lǎo",
+        "shī",
+        "de",
+        "miàn",
+        "bǎ",
+        "zuò",
+        "yè",
+        "jiāo",
+        "le",
+        "shàng",
+        "qù",
+        ""
+      ]
+    },
+    {
+      "text": "孩子当着客人的面说了实话。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 8, "role": "other"},
+        {"start": 8, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "当着客人的面 = ngay trước mặt khách; hành động 说实话 diễn ra khi có khách ở đó.",
+        "en": "当着客人的面 = in front of the guests; the action 说实话 happens while the guests are there."
+      },
+      "translation": {
+        "vi": "Đứa trẻ đã nói thật trước mặt khách.",
+        "en": "The child told the truth in front of the guests."
+      },
+      "pinyin": ["hái", "zi", "dāng", "zhe", "kè", "rén", "de", "miàn", "shuō", "le", "shí", "huà", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "当着 thường đi với 面 thành cụm 当着……的面; thiếu 的 và 面 làm câu nghe như chưa hoàn chỉnh.",
+        "en": "当着 normally forms the frame 当着……的面; omitting 的 and 面 leaves the phrase incomplete."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "他当着大家承认了错误。",
+      "right": "他当着大家的面承认了错误。",
+      "wrong_pinyin": ["tā", "dāng", "zhe", "dà", "jiā", "chéng", "rèn", "le", "cuò", "wù", ""],
+      "right_pinyin": ["tā", "dāng", "zhe", "dà", "jiā", "de", "miàn", "chéng", "rèn", "le", "cuò", "wù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___大家的面承认了错误。",
+      "options": [
+        {"text": "当着", "error_tag": null, "pinyin": ["dāng", "zhe"]},
+        {"text": "当", "error_tag": "particle", "pinyin": ["dāng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm cố định là 当着……的面, nên phải dùng 当着, không dùng 当 một mình.",
+        "en": "The fixed frame is 当着……的面, so 当着 is required; 当 alone is not enough."
+      },
+      "q_pinyin": ["tā", "", "", "", "dà", "jiā", "de", "miàn", "chéng", "rèn", "le", "cuò", "wù", ""]
+    },
+    {
+      "q": "她当着老师___面把作业交了上去。",
+      "options": [
+        {"text": "的", "error_tag": null, "pinyin": ["de"]},
+        {"text": "得", "error_tag": "particle", "pinyin": ["dé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong kết cấu 当着……的面 phải dùng trợ từ 的, không dùng 得.",
+        "en": "In the frame 当着……的面 the particle must be 的, not 得."
+      },
+      "q_pinyin": [
+        "tā",
+        "dāng",
+        "zhe",
+        "lǎo",
+        "shī",
+        "",
+        "",
+        "",
+        "miàn",
+        "bǎ",
+        "zuò",
+        "yè",
+        "jiāo",
+        "le",
+        "shàng",
+        "qù",
+        ""
+      ]
+    },
+    {
+      "q": "孩子当着客人___说了实话。",
+      "options": [
+        {"text": "的面", "error_tag": null, "pinyin": ["de", "miàn"]},
+        {"text": "面", "error_tag": "particle", "pinyin": ["miàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "当着 phải đi với 的面, thiếu 的 là sai kết cấu cố định.",
+        "en": "当着 must go with 的面; missing 的 breaks the fixed frame."
+      },
+      "q_pinyin": ["hái", "zi", "dāng", "zhe", "kè", "rén", "", "", "", "shuō", "le", "shí", "huà", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc bạn đã làm ngay trước mặt một người cụ thể, dùng 当着……的面.",
+      "en": "Write one sentence about something you did in front of a specific person, using 当着……的面."
+    },
+    "placeholder": "我当着……的面……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["当着"], "role": "marker"},
+        {"any_of": ["的"], "role": "particle"},
+        {"any_of": ["面"], "role": "other"}
+      ]
+    },
+    "sample": {
+      "text": "我当着朋友的面唱了一首歌。",
+      "pinyin": ["wǒ", "dāng", "zhe", "péng", "yǒu", "de", "miàn", "chàng", "le", "yī", "shǒu", "gē", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "dāng", "zhe", "", "", "de", "miàn", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338848",
+    "generated_at": "2026-10-07T02:07:28Z"
+  },
+  "review": null
+}

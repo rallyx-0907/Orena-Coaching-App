@@ -1,0 +1,184 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_4_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_6_2.p1"],
+  "contrasts": [],
+  "error_tags": ["word_order"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.034", "gf0025.hsk4.035"]},
+  "point_type": "word_order",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Chủ ngữ: 主谓短语作主语", "en": "Subjects: 主谓短语作主语"},
+    "native_title": "主谓短语作主语",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng một cụm chủ vị (cụm có chủ ngữ và vị ngữ riêng) làm chủ ngữ của cả câu.",
+      "en": "This point teaches how to use a subject-predicate phrase (a phrase with its own subject and predicate) as the subject of a whole sentence."
+    },
+    "sub": {"vi": "cụm chủ vị làm chủ ngữ", "en": "subject-predicate as subject"},
+    "native_title_pinyin": ["zhǔ", "wèi", "duǎn", "yǔ", "zuò", "zhǔ", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói về một sự việc hoặc hành động như một chủ đề, chứ không phải một người hay vật cụ thể.",
+      "en": "When you want to talk about an event or action as a topic, rather than a specific person or thing."
+    },
+    {
+      "vi": "Khi chủ ngữ của câu là cả một mệnh đề nhỏ, ví dụ 'anh ấy đến muộn' hoặc 'trời mưa'.",
+      "en": "When the subject of the sentence is a whole mini-clause, for example 'he arrives late' or 'it rains'."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh rằng một tình huống nào đó gây ra một kết quả hoặc có một đặc điểm nào đó.",
+      "en": "When you want to emphasize that a certain situation causes a result or has a certain quality."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主谓短语",
+        "role": "subject",
+        "label": {"vi": "cụm chủ vị", "en": "subject-predicate phrase"},
+        "pinyin": ["zhǔ", "wèi", "duǎn", "yǔ"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "他不来让我很担心。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "subject"}, {"start": 3, "end": 8, "role": "verb"}],
+      "annotation": {
+        "vi": "Cụm '他不来' là chủ ngữ, '让我很担心' là vị ngữ.",
+        "en": "'他不来' is the subject, '让我很担心' is the predicate."
+      },
+      "translation": {
+        "vi": "Việc anh ấy không đến khiến tôi rất lo lắng.",
+        "en": "That he is not coming makes me very worried."
+      },
+      "pinyin": ["tā", "bù", "lái", "ràng", "wǒ", "hěn", "dān", "xīn", ""]
+    },
+    {
+      "text": "天气冷得大家都穿上了外套。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "subject"}, {"start": 3, "end": 12, "role": "verb"}],
+      "annotation": {
+        "vi": "Cụm '天气冷' làm chủ ngữ, phần sau nói kết quả.",
+        "en": "'天气冷' serves as the subject, and the rest describes the result."
+      },
+      "translation": {
+        "vi": "Trời lạnh đến mức mọi người đều mặc áo khoác vào.",
+        "en": "The weather is so cold that everyone put on a coat."
+      },
+      "pinyin": ["tiān", "qì", "lěng", "dé", "dà", "jiā", "dōu", "chuān", "shàng", "le", "wài", "tào", ""]
+    },
+    {
+      "text": "他每天跑步对身体很好。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 5, "role": "subject"}, {"start": 5, "end": 10, "role": "verb"}],
+      "annotation": {
+        "vi": "Cụm '他每天跑步' là chủ ngữ, '对身体很好' là vị ngữ.",
+        "en": "'他每天跑步' is the subject, '对身体很好' is the predicate."
+      },
+      "translation": {
+        "vi": "Việc anh ấy chạy bộ mỗi ngày rất tốt cho sức khỏe.",
+        "en": "That he runs every day is very good for his health."
+      },
+      "pinyin": ["tā", "měi", "tiān", "pǎo", "bù", "duì", "shēn", "tǐ", "hěn", "hǎo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Lỗi thường gặp là đặt sai trật tự: đưa vị ngữ '很担心' lên trước cụm chủ vị làm chủ ngữ. Trong câu này, cụm chủ vị '他不来' phải đứng đầu làm chủ ngữ, rồi mới đến vị ngữ '让我很担心'.",
+        "en": "A common mistake is wrong word order: putting the predicate '很担心' before the subject-predicate phrase. In this sentence, the subject-predicate phrase '他不来' must come first as the subject, followed by the predicate '让我很担心'."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "很担心他不来让我。",
+      "right": "他不来让我很担心。",
+      "wrong_pinyin": ["hěn", "dān", "xīn", "tā", "bù", "lái", "ràng", "wǒ", ""],
+      "right_pinyin": ["tā", "bù", "lái", "ràng", "wǒ", "hěn", "dān", "xīn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___让我很开心。",
+      "options": [
+        {"text": "他来了", "error_tag": null, "pinyin": ["tā", "lái", "le"]},
+        {"text": "来了他", "error_tag": "word_order", "pinyin": ["lái", "le", "tā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ là cụm chủ vị '他来了', phải đặt chủ ngữ trước vị ngữ.",
+        "en": "The subject is the subject-predicate phrase '他来了'; the subject must come before the predicate."
+      },
+      "q_pinyin": ["", "", "", "ràng", "wǒ", "hěn", "kāi", "xīn", ""]
+    },
+    {
+      "q": "___对身体很好。",
+      "options": [
+        {"text": "每天跑步", "error_tag": null, "pinyin": ["měi", "tiān", "pǎo", "bù"]},
+        {"text": "跑步每天", "error_tag": "word_order", "pinyin": ["pǎo", "bù", "měi", "tiān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong cụm chủ vị làm chủ ngữ, từ chỉ thời gian đứng trước động từ.",
+        "en": "In a subject-predicate phrase used as subject, the time word comes before the verb."
+      },
+      "q_pinyin": ["", "", "", "duì", "shēn", "tǐ", "hěn", "hǎo", ""]
+    },
+    {
+      "q": "___让我很担心。",
+      "options": [
+        {"text": "他不来", "error_tag": null, "pinyin": ["tā", "bù", "lái"]},
+        {"text": "不来他", "error_tag": "word_order", "pinyin": ["bù", "lái", "tā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm chủ vị '他不来' giữ nguyên trật tự chủ ngữ - vị ngữ.",
+        "en": "The subject-predicate phrase '他不来' keeps the subject-verb order."
+      },
+      "q_pinyin": ["", "", "", "ràng", "wǒ", "hěn", "dān", "xīn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng cụm chủ vị làm chủ ngữ, ví dụ nói về một thói quen của bạn.",
+      "en": "Write a sentence using a subject-predicate phrase as the subject, for example about one of your habits."
+    },
+    "placeholder": "我每天……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"regex": "我.*", "role": "subject"}, {"regex": ".*", "role": "verb"}]
+    },
+    "sample": {
+      "text": "我每天跑步对身体很好。",
+      "pinyin": ["wǒ", "měi", "tiān", "pǎo", "bù", "duì", "shēn", "tǐ", "hěn", "hǎo", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "měi", "tiān", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791347354",
+    "generated_at": "2026-10-07T04:29:14Z"
+  },
+  "review": null
+}

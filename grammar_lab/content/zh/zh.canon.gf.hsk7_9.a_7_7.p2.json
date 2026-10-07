@@ -1,0 +1,267 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_7.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_3.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "register"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.135", "gf0025.hsk7_9.136", "gf0025.hsk7_9.138", "gf0025.hsk7_9.139"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 别提（有）多X了", "en": "Chinese grammar: 别提（有）多X了"},
+    "native_title": "别提（有）多X了",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Mẫu câu 别提（有）多X了 dùng để nhấn mạnh mức độ rất cao của một trạng thái hay cảm xúc, thường với sắc thái phóng đại hoặc than phiền.",
+      "en": "The pattern 别提（有）多X了 emphasises an extremely high degree of a state or feeling, often with an exaggerated or complaining tone."
+    },
+    "sub": {"vi": "nhấn mạnh mức độ", "en": "emphatic degree"},
+    "native_title_pinyin": ["bié", "tí", "", "yǒu", "", "duō", "", "le"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một trạng thái, cảm xúc hay tình huống đạt mức độ rất cao, vượt xa bình thường.",
+      "en": "When you want to say a state, feeling or situation reaches a very high degree, far beyond normal."
+    },
+    {
+      "vi": "Khi người nói muốn phóng đại hoặc than phiền, thường đi kèm ngữ khí cảm thán.",
+      "en": "When the speaker wants to exaggerate or complain, usually with an exclamatory tone."
+    },
+    {
+      "vi": "Trong khẩu ngữ thân mật, khi kể lại một trải nghiệm khiến mình ấn tượng mạnh.",
+      "en": "In informal speech, when recounting an experience that strongly impressed you."
+    },
+    {
+      "vi": "Sau 别提 có thể có 有 hoặc không, nghĩa không đổi: 别提多X了 và 别提有多X了.",
+      "en": "After 别提, 有 may be present or absent with no change in meaning: 别提多X了 and 别提有多X了."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "别提",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu nhấn mạnh", "en": "emphasis marker"},
+        "pinyin": ["bié", "tí"]
+      },
+      {
+        "text": "有",
+        "role": "aux",
+        "label": {"vi": "có (có thể lược bỏ)", "en": "optional 有"},
+        "optional": true,
+        "pinyin": ["yǒu"]
+      },
+      {
+        "text": "多",
+        "role": "other",
+        "label": {"vi": "đến mức nào", "en": "degree word"},
+        "pinyin": ["duō"]
+      },
+      {
+        "text": "X",
+        "role": "complement",
+        "label": {"vi": "tính từ / động từ trạng thái", "en": "adjective / stative verb"},
+        "pinyin": [""]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ ngữ khí", "en": "modal particle"},
+        "pinyin": ["le"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "今天别提有多热了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "aux"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "complement"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh trời nóng đến mức khó chịu, có sắc thái than phiền.",
+        "en": "Emphasises that it is unbearably hot, with a complaining tone."
+      },
+      "translation": {"vi": "Hôm nay nóng không thể tả được.", "en": "It's incredibly hot today."},
+      "pinyin": ["jīn", "tiān", "bié", "tí", "yǒu", "duō", "rè", "le", ""]
+    },
+    {
+      "text": "他听到这个消息，别提多高兴了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 8, "end": 10, "role": "marker"},
+        {"start": 10, "end": 11, "role": "other"},
+        {"start": 11, "end": 13, "role": "complement"},
+        {"start": 13, "end": 14, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Ở đây lược bỏ 有; nghĩa vẫn là vui đến cực độ.",
+        "en": "Here 有 is omitted; the meaning is still extremely happy."
+      },
+      "translation": {
+        "vi": "Anh ấy nghe tin đó thì vui không thể tả.",
+        "en": "When he heard the news, he was overjoyed."
+      },
+      "pinyin": [
+        "tā",
+        "tīng",
+        "dào",
+        "zhè",
+        "ge",
+        "xiāo",
+        "xī",
+        "",
+        "bié",
+        "tí",
+        "duō",
+        "gāo",
+        "xìng",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "这道菜别提有多好吃了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "aux"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 9, "role": "complement"},
+        {"start": 9, "end": 10, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Khen món ăn ngon đến mức khó diễn tả.",
+        "en": "Praises the dish as unbelievably delicious."
+      },
+      "translation": {"vi": "Món này ngon không thể tả được.", "en": "This dish is incredibly delicious."},
+      "pinyin": ["zhè", "dào", "cài", "bié", "tí", "yǒu", "duō", "hǎo", "chī", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Mẫu câu này bắt buộc kết thúc bằng 了 để trọn vẹn ngữ khí cảm thán; thiếu 了 câu nghe lửng lơ, không tự nhiên.",
+        "en": "This pattern must end with 了 to complete the exclamatory tone; without 了 the sentence sounds incomplete and unnatural."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "今天别提多热。",
+      "right": "今天别提多热了。",
+      "wrong_pinyin": ["jīn", "tiān", "bié", "tí", "duō", "rè", ""],
+      "right_pinyin": ["jīn", "tiān", "bié", "tí", "duō", "rè", "le", ""]
+    },
+    {
+      "reason": {
+        "vi": "别提（有）多X了 là một khung câu cố định, chủ ngữ và trạng ngữ phải đứng trước 别提; đảo ra sau nghe như khẩu ngữ vụng về, sai trật tự chuẩn.",
+        "en": "别提（有）多X了 is a fixed frame; the subject and time phrase must come before 别提. Placing them after sounds clumsy and breaks the standard order."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong": "别提多热了，今天。",
+      "right": "今天别提多热了。",
+      "wrong_pinyin": ["bié", "tí", "duō", "rè", "le", "", "jīn", "tiān", ""],
+      "right_pinyin": ["jīn", "tiān", "bié", "tí", "duō", "rè", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "昨天爬山，我别提有多累___。",
+      "options": [
+        {"text": "了", "error_tag": null, "pinyin": ["le"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu câu 别提有多X了 luôn kết thúc bằng 了, không dùng 的.",
+        "en": "The pattern 别提有多X了 always ends with 了, not 的."
+      },
+      "q_pinyin": ["zuó", "tiān", "pá", "shān", "", "wǒ", "bié", "tí", "yǒu", "duō", "lèi", "", "", "", ""]
+    },
+    {
+      "q": "这个孩子别提___聪明了。",
+      "options": [
+        {"text": "多", "error_tag": null, "pinyin": ["duō"]},
+        {"text": "都", "error_tag": "word_choice", "pinyin": ["dōu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 别提 phải là 多 để hỏi mức độ, không dùng 都.",
+        "en": "After 别提 you need 多 to express degree, not 都."
+      },
+      "q_pinyin": ["zhè", "ge", "hái", "zi", "bié", "tí", "", "", "", "cōng", "míng", "liǎo", ""]
+    },
+    {
+      "q": "他别提有多开心___。",
+      "options": [
+        {"text": "了", "error_tag": null, "pinyin": ["le"]},
+        {"text": "吗", "error_tag": "particle", "pinyin": ["ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là câu cảm thán khẳng định, kết thúc bằng 了; 吗 dùng cho câu hỏi nên sai.",
+        "en": "This is an affirmative exclamation ending in 了; 吗 is for questions and is wrong here."
+      },
+      "q_pinyin": ["tā", "bié", "tí", "yǒu", "duō", "kāi", "xīn", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một trải nghiệm khiến bạn có cảm xúc rất mạnh, dùng 别提（有）多……了.",
+      "en": "Write one sentence about an experience that gave you a very strong feeling, using 别提（有）多……了."
+    },
+    "placeholder": "昨天……，我别提有多……了。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["别提"], "role": "marker"},
+        {"any_of": ["多"], "role": "other"},
+        {"any_of": ["了"], "role": "particle"}
+      ]
+    },
+    "sample": {
+      "text": "昨天收到礼物，我别提有多高兴了。",
+      "pinyin": [
+        "zuó",
+        "tiān",
+        "shōu",
+        "dào",
+        "lǐ",
+        "wù",
+        "",
+        "wǒ",
+        "bié",
+        "tí",
+        "yǒu",
+        "duō",
+        "gāo",
+        "xìng",
+        "le",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zuó", "tiān", "", "", "", "wǒ", "bié", "tí", "yǒu", "duō", "", "", "le", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338950",
+    "generated_at": "2026-10-07T02:09:10Z"
+  },
+  "review": null
+}

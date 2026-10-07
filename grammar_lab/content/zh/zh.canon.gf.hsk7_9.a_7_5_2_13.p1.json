@@ -1,0 +1,539 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_13.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_5_2_12.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.128"]},
+  "point_type": "other",
+  "sequence": 10,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 三重或三重以上的复句", "en": "Complex sentences: 三重或三重以上的复句"},
+    "native_title": "三重或三重以上的复句",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Câu phức ba tầng trở lên là câu có ít nhất hai tầng quan hệ logic lồng nhau, thường dùng các cặp liên từ như 因为……所以……, 虽然……但是……, 不但……而且…… để nối các mệnh đề.",
+      "en": "A three-level or deeper complex sentence nests at least two layers of logical relations, usually linked by paired connectors such as 因为……所以……, 虽然……但是……, 不但……而且……."
+    },
+    "sub": {"vi": "câu phức nhiều tầng", "en": "multi-level complex sentences"},
+    "native_title_pinyin": ["sān", "chóng", "huò", "sān", "chóng", "yǐ", "shàng", "de", "fù", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi cần diễn đạt một ý có nguyên nhân, điều kiện hoặc nhượng bộ lồng trong một ý khác, ví dụ vừa nêu lý do vừa nêu kết quả kèm thêm một tầng nhượng bộ.",
+      "en": "When one idea contains a cause, condition, or concession nested inside another, for example giving a reason and a result while adding a concessive layer."
+    },
+    {
+      "vi": "Khi viết hoặc nói về một chuỗi sự việc có quan hệ nhân quả hoặc tương phản kéo dài, cần nhiều hơn một cặp liên từ để giữ mạch rõ ràng.",
+      "en": "When writing or speaking about a longer chain of events with causal or contrastive relations, where one pair of connectors is not enough to keep the logic clear."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh một kết luận bằng cách đặt điều kiện hoặc lý do ở tầng trong, rồi mới dẫn đến kết quả ở tầng ngoài.",
+      "en": "When you want to emphasise a conclusion by placing the condition or reason in an inner layer and leading to the result in the outer layer."
+    },
+    {
+      "vi": "Khi cần trình bày lập luận trong bài viết học thuật hoặc báo cáo, nơi các tầng quan hệ phải rõ ràng và có thứ tự.",
+      "en": "When presenting an argument in academic writing or a report, where the layers of relation must be clear and ordered."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "因为",
+        "role": "connector",
+        "label": {"vi": "vì", "en": "because"},
+        "pinyin": ["yīn", "wèi"]
+      },
+      {"text": "A", "role": "other", "label": {"vi": "mệnh đề A", "en": "clause A"}, "pinyin": [""]},
+      {
+        "text": "所以",
+        "role": "connector",
+        "label": {"vi": "nên", "en": "therefore"},
+        "pinyin": ["suǒ", "yǐ"]
+      },
+      {"text": "B", "role": "other", "label": {"vi": "mệnh đề B", "en": "clause B"}, "pinyin": [""]},
+      {
+        "text": "虽然",
+        "role": "connector",
+        "label": {"vi": "mặc dù", "en": "although"},
+        "pinyin": ["suī", "rán"]
+      },
+      {"text": "C", "role": "other", "label": {"vi": "mệnh đề C", "en": "clause C"}, "pinyin": [""]},
+      {
+        "text": "但是",
+        "role": "connector",
+        "label": {"vi": "nhưng", "en": "but"},
+        "pinyin": ["dàn", "shì"]
+      },
+      {"text": "D", "role": "other", "label": {"vi": "mệnh đề D", "en": "clause D"}, "pinyin": [""]}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "因为天气不好，所以我们取消了比赛，虽然大家都很期待，但是我们不得不这样做。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 16, "role": "other"},
+        {"start": 17, "end": 19, "role": "connector"},
+        {"start": 19, "end": 25, "role": "other"},
+        {"start": 26, "end": 28, "role": "connector"},
+        {"start": 28, "end": 36, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Câu ghép nhiều tầng kết hợp quan hệ nguyên nhân–kết quả và nhượng bộ–đối lập.",
+        "en": "The multi-layer sentence combines cause-result and concession-contrast."
+      },
+      "translation": {
+        "vi": "Vì thời tiết xấu nên chúng tôi hủy trận đấu; dù mọi người rất mong đợi nhưng chúng tôi buộc phải làm vậy.",
+        "en": "Because the weather was bad, we canceled the match; although everyone looked forward to it, we had to do so."
+      },
+      "pinyin": [
+        "yīn",
+        "wèi",
+        "tiān",
+        "qì",
+        "bù",
+        "hǎo",
+        "",
+        "suǒ",
+        "yǐ",
+        "wǒ",
+        "men",
+        "qǔ",
+        "xiāo",
+        "le",
+        "bǐ",
+        "sài",
+        "",
+        "suī",
+        "rán",
+        "dà",
+        "jiā",
+        "dōu",
+        "hěn",
+        "qī",
+        "dài",
+        "",
+        "dàn",
+        "shì",
+        "wǒ",
+        "men",
+        "bù",
+        "dé",
+        "bù",
+        "zhè",
+        "yàng",
+        "zuò",
+        ""
+      ]
+    },
+    {
+      "text": "因为他想通过考试，所以他每天坚持学习，虽然工作很忙，但是他从不缺课。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 8, "role": "other"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 18, "role": "other"},
+        {"start": 19, "end": 21, "role": "connector"},
+        {"start": 21, "end": 25, "role": "other"},
+        {"start": 26, "end": 28, "role": "connector"},
+        {"start": 28, "end": 33, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai cặp liên từ tổ chức bốn mệnh đề theo hai quan hệ logic khác nhau.",
+        "en": "Two connector pairs organize four clauses into two distinct logical relations."
+      },
+      "translation": {
+        "vi": "Vì muốn thi đỗ nên ngày nào anh ấy cũng học; dù công việc bận nhưng anh ấy không bao giờ nghỉ học.",
+        "en": "Because he wants to pass the exam, he studies every day; although work is busy, he never misses class."
+      },
+      "pinyin": [
+        "yīn",
+        "wèi",
+        "tā",
+        "xiǎng",
+        "tōng",
+        "guò",
+        "kǎo",
+        "shì",
+        "",
+        "suǒ",
+        "yǐ",
+        "tā",
+        "měi",
+        "tiān",
+        "jiān",
+        "chí",
+        "xué",
+        "xí",
+        "",
+        "suī",
+        "rán",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "dàn",
+        "shì",
+        "tā",
+        "cóng",
+        "bù",
+        "quē",
+        "kè",
+        ""
+      ]
+    },
+    {
+      "text": "因为价格便宜，所以很多人都来买，虽然商店备货很多，但是还是常常供不应求。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 15, "role": "other"},
+        {"start": 16, "end": 18, "role": "connector"},
+        {"start": 18, "end": 24, "role": "other"},
+        {"start": 25, "end": 27, "role": "connector"},
+        {"start": 27, "end": 35, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Cấu trúc nhiều tầng giúp nối chuỗi nguyên nhân, kết quả và nhượng bộ một cách rõ ràng.",
+        "en": "A multi-layer structure links cause, result, and concession clearly."
+      },
+      "translation": {
+        "vi": "Vì giá rẻ nên nhiều người đến mua; dù cửa hàng dự trữ nhiều hàng nhưng vẫn thường không đủ cung.",
+        "en": "Because the price is low, many people buy it; although the store stocks plenty, supply still often falls short."
+      },
+      "pinyin": [
+        "yīn",
+        "wèi",
+        "jià",
+        "gé",
+        "pián",
+        "yi",
+        "",
+        "suǒ",
+        "yǐ",
+        "hěn",
+        "duō",
+        "rén",
+        "dōu",
+        "lái",
+        "mǎi",
+        "",
+        "suī",
+        "rán",
+        "shāng",
+        "diàn",
+        "bèi",
+        "huò",
+        "hěn",
+        "duō",
+        "",
+        "dàn",
+        "shì",
+        "hái",
+        "shì",
+        "cháng",
+        "cháng",
+        "gōng",
+        "bù",
+        "yìng",
+        "qiú",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thường bỏ 所以 ở tầng trong vì nghĩ rằng 因为 đã đủ; nhưng trong câu phức nhiều tầng, cặp liên từ phải xuất hiện đầy đủ để tầng quan hệ rõ ràng.",
+        "en": "Learners often drop 所以 in the inner layer because they think 因为 alone is enough; in a multi-level complex sentence, the paired connector must appear fully to keep the layer clear."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "因为天气不好，我们取消了比赛，虽然大家都很期待。",
+      "right": "因为天气不好，所以我们取消了比赛，虽然大家都很期待。",
+      "wrong_pinyin": [
+        "yīn",
+        "wèi",
+        "tiān",
+        "qì",
+        "bù",
+        "hǎo",
+        "",
+        "wǒ",
+        "men",
+        "qǔ",
+        "xiāo",
+        "le",
+        "bǐ",
+        "sài",
+        "",
+        "suī",
+        "rán",
+        "dà",
+        "jiā",
+        "dōu",
+        "hěn",
+        "qī",
+        "dài",
+        ""
+      ],
+      "right_pinyin": [
+        "yīn",
+        "wèi",
+        "tiān",
+        "qì",
+        "bù",
+        "hǎo",
+        "",
+        "suǒ",
+        "yǐ",
+        "wǒ",
+        "men",
+        "qǔ",
+        "xiāo",
+        "le",
+        "bǐ",
+        "sài",
+        "",
+        "suī",
+        "rán",
+        "dà",
+        "jiā",
+        "dōu",
+        "hěn",
+        "qī",
+        "dài",
+        ""
+      ]
+    },
+    {
+      "reason": {
+        "vi": "虽然 phải đi với một vế nhượng bộ/đối lập như 但是; 所以 làm sai quan hệ logic.",
+        "en": "虽然 should pair with a concessive/contrastive clause such as 但是; 所以 gives the wrong logical relation."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "虽然工作很忙，所以他每天坚持学习，因为他想通过考试。",
+      "right": "虽然工作很忙，但是他每天坚持学习，因为他想通过考试。",
+      "wrong_pinyin": [
+        "suī",
+        "rán",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "suǒ",
+        "yǐ",
+        "tā",
+        "měi",
+        "tiān",
+        "jiān",
+        "chí",
+        "xué",
+        "xí",
+        "",
+        "yīn",
+        "wèi",
+        "tā",
+        "xiǎng",
+        "tōng",
+        "guò",
+        "kǎo",
+        "shì",
+        ""
+      ],
+      "right_pinyin": [
+        "suī",
+        "rán",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "dàn",
+        "shì",
+        "tā",
+        "měi",
+        "tiān",
+        "jiān",
+        "chí",
+        "xué",
+        "xí",
+        "",
+        "yīn",
+        "wèi",
+        "tā",
+        "xiǎng",
+        "tōng",
+        "guò",
+        "kǎo",
+        "shì",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___天气不好，所以我们取消了比赛。",
+      "options": [
+        {"text": "因为", "error_tag": null, "pinyin": ["yīn", "wèi"]},
+        {"text": "虽然", "error_tag": "conjunction", "pinyin": ["suī", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Tầng trong chỉ nguyên nhân nên dùng 因为, không dùng 虽然 vì 虽然 đi với 但是.",
+        "en": "The inner layer expresses cause, so 因为 is used; 虽然 is wrong because it pairs with 但是."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "tiān",
+        "qì",
+        "bù",
+        "hǎo",
+        "",
+        "suǒ",
+        "yǐ",
+        "wǒ",
+        "men",
+        "qǔ",
+        "xiāo",
+        "le",
+        "bǐ",
+        "sài",
+        ""
+      ]
+    },
+    {
+      "q": "虽然工作很忙，___他每天坚持学习。",
+      "options": [
+        {"text": "但是", "error_tag": null, "pinyin": ["dàn", "shì"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "虽然 phải đi với 但是 để tạo tầng nhượng bộ – tương phản; 所以 dùng cho quan hệ nguyên nhân – kết quả.",
+        "en": "虽然 must pair with 但是 to form the concessive–contrast layer; 所以 is for cause–result."
+      },
+      "q_pinyin": [
+        "suī",
+        "rán",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "",
+        "",
+        "",
+        "tā",
+        "měi",
+        "tiān",
+        "jiān",
+        "chí",
+        "xué",
+        "xí",
+        ""
+      ]
+    },
+    {
+      "q": "他不但学习好，___体育也很棒。",
+      "options": [
+        {"text": "而且", "error_tag": null, "pinyin": ["ér", "qiě"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不但 đi với 而且 để tạo tầng tăng tiến; 但是 dùng cho tương phản, không phù hợp ở đây.",
+        "en": "不但 pairs with 而且 for the additive layer; 但是 is for contrast and does not fit here."
+      },
+      "q_pinyin": ["tā", "bù", "dàn", "xué", "xí", "hǎo", "", "", "", "", "tǐ", "yù", "yě", "hěn", "bàng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu phức ba tầng về việc học của bạn, dùng 因为……所以…… và 虽然……但是…….",
+      "en": "Write a three-level complex sentence about your studies, using 因为……所以…… and 虽然……但是……."
+    },
+    "placeholder": "因为……所以……，虽然……但是……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["因为"], "role": "connector"},
+        {"any_of": ["所以"], "role": "connector"},
+        {"any_of": ["虽然"], "role": "connector"},
+        {"any_of": ["但是"], "role": "connector"}
+      ]
+    },
+    "sample": {
+      "text": "因为我想提高汉语水平，所以我每天练习口语，虽然工作很忙，但是我从不放弃。",
+      "pinyin": [
+        "yīn",
+        "wèi",
+        "wǒ",
+        "xiǎng",
+        "tí",
+        "gāo",
+        "hàn",
+        "yǔ",
+        "shuǐ",
+        "píng",
+        "",
+        "suǒ",
+        "yǐ",
+        "wǒ",
+        "měi",
+        "tiān",
+        "liàn",
+        "xí",
+        "kǒu",
+        "yǔ",
+        "",
+        "suī",
+        "rán",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "dàn",
+        "shì",
+        "wǒ",
+        "cóng",
+        "bù",
+        "fàng",
+        "qì",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["yīn", "wèi", "", "", "suǒ", "yǐ", "", "", "", "suī", "rán", "", "", "dàn", "shì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351859",
+    "generated_at": "2026-10-07T05:44:19Z"
+  },
+  "review": null
+}

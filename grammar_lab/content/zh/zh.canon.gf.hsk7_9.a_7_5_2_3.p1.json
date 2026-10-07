@@ -1,0 +1,398 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_5_2_2.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.095", "gf0025.hsk7_9.097", "gf0025.hsk7_9.098", "gf0025.hsk7_9.099"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: ⋯⋯，何况⋯⋯", "en": "Complex sentences: ⋯⋯，何况⋯⋯"},
+    "native_title": "⋯⋯，何况⋯⋯",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Dùng ⋯⋯，何况⋯⋯ để nêu một lý do đã đủ mạnh, rồi nhấn mạnh rằng lý do thứ hai còn mạnh hơn, khiến kết luận trở nên hiển nhiên.",
+      "en": "Use ⋯⋯，何况⋯⋯ to give one reason that is already strong, then add a second, even stronger reason that makes the conclusion obvious."
+    },
+    "sub": {"vi": "huống chi là", "en": "let alone"},
+    "native_title_pinyin": ["", "", "", "hé", "kuàng", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn đã nêu một tình huống khó hoặc một lý do nặng, và muốn nói thêm một lý do còn nặng hơn.",
+      "en": "When you have already stated a difficult situation or a strong reason, and want to add an even stronger one."
+    },
+    {
+      "vi": "Khi muốn người nghe tự rút ra kết luận: chuyện thứ nhất đã vậy, chuyện thứ hai càng không thể khác.",
+      "en": "When you want the listener to draw the conclusion themselves: if the first case is already so, the second cannot be otherwise."
+    },
+    {
+      "vi": "Khi lý do thứ hai thường là một câu hỏi tu từ, không cần trả lời.",
+      "en": "When the second reason is usually a rhetorical question that needs no answer."
+    },
+    {
+      "vi": "Dùng trong văn nói và văn viết trang trọng vừa phải, khi muốn lập luận chặt.",
+      "en": "Use it in speech and moderately formal writing when you want a tight argument."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S1",
+        "role": "subject",
+        "label": {"vi": "mệnh đề thứ nhất", "en": "first clause"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "何况",
+        "role": "connector",
+        "label": {"vi": "huống chi", "en": "let alone"},
+        "pinyin": ["hé", "kuàng"]
+      },
+      {
+        "text": "S2",
+        "role": "subject",
+        "label": {"vi": "mệnh đề thứ hai (mạnh hơn)", "en": "second, stronger clause"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "呢",
+        "role": "particle",
+        "label": {"vi": "trợ từ cuối câu", "en": "sentence-final particle"},
+        "optional": true,
+        "pinyin": ["ne"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这么难的题连老师都做不出来，何况学生呢？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "subject"},
+        {"start": 14, "end": 16, "role": "connector"},
+        {"start": 16, "end": 18, "role": "subject"},
+        {"start": 18, "end": 19, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Việc thứ nhất đã khó đến mức giáo viên cũng không làm được, nên việc thứ hai càng vô vọng.",
+        "en": "The first case is already so hard that even the teacher cannot do it, so the second is even more hopeless."
+      },
+      "translation": {
+        "vi": "Bài khó đến mức giáo viên còn không làm được, huống chi là học sinh?",
+        "en": "The problem is so hard that even the teacher cannot solve it, let alone the students."
+      },
+      "pinyin": [
+        "zhè",
+        "me",
+        "nán",
+        "de",
+        "tí",
+        "lián",
+        "lǎo",
+        "shī",
+        "dōu",
+        "zuò",
+        "bù",
+        "chū",
+        "lái",
+        "",
+        "hé",
+        "kuàng",
+        "xué",
+        "shēng",
+        "ne",
+        ""
+      ]
+    },
+    {
+      "text": "他连周末都在加班，何况今天是工作日呢。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 17, "role": "subject"},
+        {"start": 17, "end": 18, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Ngay cả cuối tuần cũng tăng ca, nên ngày thường lại càng phải làm.",
+        "en": "He works overtime even on weekends, so on a weekday it is even more certain."
+      },
+      "translation": {
+        "vi": "Anh ấy cuối tuần còn tăng ca, huống chi hôm nay là ngày làm việc.",
+        "en": "He even works overtime on weekends, let alone on a weekday."
+      },
+      "pinyin": [
+        "tā",
+        "lián",
+        "zhōu",
+        "mò",
+        "dōu",
+        "zài",
+        "jiā",
+        "bān",
+        "",
+        "hé",
+        "kuàng",
+        "jīn",
+        "tiān",
+        "shì",
+        "gōng",
+        "zuò",
+        "rì",
+        "ne",
+        ""
+      ]
+    },
+    {
+      "text": "这个字连中国人都常写错，何况我们外国人呢？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "subject"},
+        {"start": 12, "end": 14, "role": "connector"},
+        {"start": 14, "end": 19, "role": "subject"},
+        {"start": 19, "end": 20, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Người bản ngữ còn hay viết sai, nên người nước ngoài càng dễ sai hơn.",
+        "en": "Even native speakers often write it wrong, so foreigners are even more likely to."
+      },
+      "translation": {
+        "vi": "Chữ này ngay cả người Trung Quốc cũng thường viết sai, huống chi chúng tôi là người nước ngoài?",
+        "en": "Even Chinese people often write this character wrong, let alone us foreigners."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "zì",
+        "lián",
+        "zhōng",
+        "guó",
+        "rén",
+        "dōu",
+        "cháng",
+        "xiě",
+        "cuò",
+        "",
+        "hé",
+        "kuàng",
+        "wǒ",
+        "men",
+        "wài",
+        "guó",
+        "rén",
+        "ne",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng 而且 như một từ nối thông thường, nhưng 而且 chỉ thêm thông tin ngang hàng, không diễn tả được ý 'cái trước đã vậy, cái sau càng vậy'.",
+        "en": "Learners use 而且 as a general connector, but 而且 only adds parallel information; it cannot express 'the first is already so, the second even more so'."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "这么难的题连老师都做不出来，而且学生呢？",
+      "right": "这么难的题连老师都做不出来，何况学生呢？",
+      "wrong_pinyin": [
+        "zhè",
+        "me",
+        "nán",
+        "de",
+        "tí",
+        "lián",
+        "lǎo",
+        "shī",
+        "dōu",
+        "zuò",
+        "bù",
+        "chū",
+        "lái",
+        "",
+        "ér",
+        "qiě",
+        "xué",
+        "shēng",
+        "ne",
+        ""
+      ],
+      "right_pinyin": [
+        "zhè",
+        "me",
+        "nán",
+        "de",
+        "tí",
+        "lián",
+        "lǎo",
+        "shī",
+        "dōu",
+        "zuò",
+        "bù",
+        "chū",
+        "lái",
+        "",
+        "hé",
+        "kuàng",
+        "xué",
+        "shēng",
+        "ne",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这道题连大学生都不会做，___中学生呢？",
+      "options": [
+        {"text": "何况", "error_tag": null, "pinyin": ["hé", "kuàng"]},
+        {"text": "而且", "error_tag": "conjunction", "pinyin": ["ér", "qiě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế trước đã nêu mức độ nặng, vế sau nêu mức độ còn nặng hơn, nên phải dùng 何况.",
+        "en": "The first clause already gives a strong case and the second gives a stronger one, so 何况 is required."
+      },
+      "q_pinyin": [
+        "zhè",
+        "dào",
+        "tí",
+        "lián",
+        "dà",
+        "xué",
+        "shēng",
+        "dōu",
+        "bú",
+        "huì",
+        "zuò",
+        "",
+        "",
+        "",
+        "",
+        "zhōng",
+        "xué",
+        "shēng",
+        "ne",
+        ""
+      ]
+    },
+    {
+      "q": "他连早饭都没吃，___干这么重的活呢？",
+      "options": [
+        {"text": "何况", "error_tag": null, "pinyin": ["hé", "kuàng"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "因为 chỉ nêu nguyên nhân, không diễn tả được ý 'huống chi' khi lý do sau mạnh hơn lý do trước.",
+        "en": "因为 only states a cause; it cannot express 'let alone' when the second reason is stronger than the first."
+      },
+      "q_pinyin": [
+        "tā",
+        "lián",
+        "zǎo",
+        "fàn",
+        "dōu",
+        "méi",
+        "chī",
+        "",
+        "",
+        "",
+        "",
+        "gàn",
+        "zhè",
+        "me",
+        "zhòng",
+        "de",
+        "huó",
+        "ne",
+        ""
+      ]
+    },
+    {
+      "q": "这个箱子连大人都搬不动，___孩子呢？",
+      "options": [
+        {"text": "何况", "error_tag": null, "pinyin": ["hé", "kuàng"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "所以 dùng để nêu kết quả, còn ở đây cần một từ nối nêu lý do còn mạnh hơn, tức là 何况.",
+        "en": "所以 introduces a result, but here we need a connector that adds a stronger reason, which is 何况."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "xiāng",
+        "zi",
+        "lián",
+        "dà",
+        "rén",
+        "dōu",
+        "bān",
+        "bù",
+        "dòng",
+        "",
+        "",
+        "",
+        "",
+        "hái",
+        "zi",
+        "ne",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng ⋯⋯，何况⋯⋯ để nói việc gì đó khó với bạn, rồi thêm một việc còn khó hơn.",
+      "en": "Write one sentence with ⋯⋯，何况⋯⋯ about something hard for you, then add something even harder."
+    },
+    "placeholder": "这件事连我都做不好，何况……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["何况"], "role": "connector"}, {"any_of": ["呢"], "role": "particle"}]
+    },
+    "sample": {
+      "text": "这件事连我都做不好，何况他呢？",
+      "pinyin": [
+        "zhè",
+        "jiàn",
+        "shì",
+        "lián",
+        "wǒ",
+        "dōu",
+        "zuò",
+        "bù",
+        "hǎo",
+        "",
+        "hé",
+        "kuàng",
+        "tā",
+        "ne",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zhè", "jiàn", "shì", "lián", "wǒ", "dōu", "zuò", "bù", "hǎo", "", "hé", "kuàng", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338900",
+    "generated_at": "2026-10-07T02:08:20Z"
+  },
+  "review": null
+}

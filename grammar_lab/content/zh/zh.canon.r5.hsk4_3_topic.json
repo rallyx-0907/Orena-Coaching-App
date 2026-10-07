@@ -1,0 +1,293 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_3_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_6_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-3-topic"], "gf0025": ["gf0025.hsk4.066"]},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": ["zh-hsk4-3-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: 用 \\\\\"连⋯⋯也/都⋯⋯”表示强调",
+      "en": "Chinese grammar: 用 \\\\\"连⋯⋯也/都⋯⋯”表示强调"
+    },
+    "native_title": "用\\\\\"连⋯⋯也/都⋯⋯”表示强调",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc 连……都/也…… đưa một thành phần vào tiêu điểm cực đoan, nghĩa là 'ngay cả…… cũng……'.",
+      "en": "The 连……都/也…… pattern puts one element in extreme focus, meaning 'even……'."
+    },
+    "sub": {"vi": "nhấn mạnh cực đoan", "en": "extreme focus"},
+    "native_title_pinyin": [
+      "yòng",
+      "",
+      "",
+      "",
+      "lián",
+      "",
+      "",
+      "yě",
+      "",
+      "dōu",
+      "",
+      "",
+      "",
+      "biǎo",
+      "shì",
+      "qiáng",
+      "diào"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói 'ngay cả' một người, vật, thời gian hay số lượng cũng nằm trong phạm vi nào đó.",
+      "en": "When you want to say 'even' a person, thing, time or quantity falls inside a certain scope."
+    },
+    {
+      "vi": "Khi có một thang bậc hay kỳ vọng ngầm: điều được nêu là trường hợp cực đoan nhất.",
+      "en": "When there is an implied scale or expectation: the element named is the most extreme case."
+    },
+    {
+      "vi": "Khi muốn phủ định mạnh: ngay cả mức tối thiểu cũng không xảy ra.",
+      "en": "When you want a strong negation: even the minimum does not happen."
+    },
+    {
+      "vi": "Khi thành phần được nhấn mạnh đứng ngay sau 连, còn 都/也 đứng trước vị ngữ.",
+      "en": "When the focused element comes right after 连, and 都/也 comes before the predicate."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "连",
+        "role": "marker",
+        "label": {"vi": "trợ từ nhấn mạnh", "en": "focus marker"},
+        "pinyin": ["lián"]
+      },
+      {
+        "text": "tiêu điểm",
+        "role": "other",
+        "label": {"vi": "thành phần được nhấn mạnh", "en": "focused element"},
+        "pinyin": ["", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "都/也",
+        "role": "marker",
+        "label": {"vi": "phó từ nhấn mạnh", "en": "focus adverb"},
+        "options": [{"text": "都", "pinyin": ["dōu"]}, {"text": "也", "pinyin": ["yě"]}],
+        "pinyin": ["dōu", "", "yě"]
+      },
+      {
+        "text": "vị ngữ",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["", "", "", "", "", ""]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "连",
+          "role": "marker",
+          "label": {"vi": "trợ từ nhấn mạnh", "en": "focus marker"},
+          "pinyin": ["lián"]
+        },
+        {
+          "text": "tiêu điểm",
+          "role": "other",
+          "label": {"vi": "thành phần được nhấn mạnh", "en": "focused element"},
+          "pinyin": ["", "", "", "", "", "", "", "", ""]
+        },
+        {
+          "text": "都/也",
+          "role": "marker",
+          "label": {"vi": "phó từ nhấn mạnh", "en": "focus adverb"},
+          "options": [{"text": "都", "pinyin": ["dōu"]}, {"text": "也", "pinyin": ["yě"]}],
+          "pinyin": ["dōu", "", "yě"]
+        },
+        {
+          "text": "不/没",
+          "role": "aux",
+          "label": {"vi": "phủ định", "en": "negation"},
+          "options": [{"text": "不", "pinyin": ["bù"]}, {"text": "没", "pinyin": ["méi"]}],
+          "pinyin": ["bù", "", "méi"]
+        },
+        {
+          "text": "vị ngữ",
+          "role": "verb",
+          "label": {"vi": "vị ngữ", "en": "predicate"},
+          "pinyin": ["", "", "", "", "", ""]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "连小孩子都知道这个道理。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh 'ngay cả trẻ nhỏ' — trường hợp cực đoan nhất cũng biết.",
+        "en": "Focuses 'even small children' — the most extreme case also knows."
+      },
+      "translation": {"vi": "Ngay cả trẻ nhỏ cũng biết điều này.", "en": "Even small children know this."},
+      "pinyin": ["lián", "xiǎo", "hái", "zi", "dōu", "zhī", "dào", "zhè", "ge", "dào", "lǐ", ""]
+    },
+    {
+      "text": "她连一句话也没说。",
+      "form": "negative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 7, "role": "aux"},
+        {"start": 7, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định mạnh: ngay cả một câu tối thiểu cũng không nói.",
+        "en": "Strong negation: even the minimum of one sentence was not said."
+      },
+      "translation": {"vi": "Cô ấy thậm chí không nói một câu.", "en": "She did not say even one sentence."},
+      "pinyin": ["tā", "lián", "yī", "jù", "huà", "yě", "méi", "shuō", ""]
+    },
+    {
+      "text": "他忙得连饭都没时间吃。",
+      "form": "negative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 7, "role": "aux"},
+        {"start": 7, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh 'ngay cả bữa ăn' — mức tối thiểu cũng không có thời gian.",
+        "en": "Focuses 'even a meal' — not even the minimum has time."
+      },
+      "translation": {
+        "vi": "Anh ấy bận đến mức ngay cả ăn cũng không có thời gian.",
+        "en": "He is so busy that he does not even have time to eat."
+      },
+      "pinyin": ["tā", "máng", "dé", "lián", "fàn", "dōu", "méi", "shí", "jiān", "chī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "连 phải đứng trước thành phần được nhấn mạnh và cần 都/也 trước vị ngữ; không đặt 连 trực tiếp trước động từ.",
+        "en": "连 must precede the focused element and needs 都/也 before the predicate; it cannot go directly before the verb."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "他连知道这个问题。",
+      "right": "连他都知道这个问题。",
+      "wrong_pinyin": ["tā", "lián", "zhī", "dào", "zhè", "ge", "wèn", "tí", ""],
+      "right_pinyin": ["lián", "tā", "dōu", "zhī", "dào", "zhè", "ge", "wèn", "tí", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___饭都没时间吃。",
+      "options": [
+        {"text": "连", "error_tag": null, "pinyin": ["lián"]},
+        {"text": "跟", "error_tag": "word_choice", "pinyin": ["gēn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "连 đánh dấu thành phần tiêu điểm '饭'; 跟 là giới từ 'với', không dùng ở đây.",
+        "en": "连 marks the focused element '饭'; 跟 is the preposition 'with' and does not fit here."
+      },
+      "q_pinyin": ["tā", "", "", "", "fàn", "dōu", "méi", "shí", "jiān", "chī", ""]
+    },
+    {
+      "q": "她连一句话也___说。",
+      "options": [
+        {"text": "没", "error_tag": null, "pinyin": ["méi"]},
+        {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với hành động đã xảy ra trong quá khứ, phủ định dùng 没; 不 không đúng ngữ cảnh này.",
+        "en": "For a past action, the negation is 没; 不 does not fit this context."
+      },
+      "q_pinyin": ["tā", "lián", "yī", "jù", "huà", "yě", "", "", "", "shuō", ""]
+    },
+    {
+      "q": "连小孩子___知道这个道理。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "都/也 phải đứng trước vị ngữ để nhấn mạnh; 了 là trợ từ thể, không thay thế được.",
+        "en": "都/也 must come before the predicate for focus; 了 is an aspect particle and cannot replace it."
+      },
+      "q_pinyin": ["lián", "xiǎo", "hái", "zi", "", "", "", "zhī", "dào", "zhè", "ge", "dào", "lǐ", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 连……都/也…… để nói 'ngay cả…… cũng……' về một việc bạn từng trải qua.",
+      "en": "Write one sentence with 连……都/也…… meaning 'even……' about something you have experienced."
+    },
+    "placeholder": "我连……都/也……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["连"], "role": "marker"}, {"any_of": ["都"], "role": "marker"}]
+    },
+    "sample": {"text": "我连早饭都没吃。", "pinyin": ["wǒ", "lián", "zǎo", "fàn", "dōu", "méi", "chī", ""]},
+    "placeholder_pinyin": ["wǒ", "lián", "", "", "dōu", "", "yě", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348572",
+    "generated_at": "2026-10-07T04:49:32Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-3-topic"],
+      "content_version": 2,
+      "content_hash": "44f98c045b6aeb171a7bceb9d0b94a687b4f9f875aa0bfcb78c90e4514b55da4",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-3-topic",
+          "issue": "R5 ghi '连 + focus + 都/也 + predicate' nhưng không nêu rõ 都/也 đứng trước vị ngữ và không được tách khỏi vị ngữ.",
+          "fix": "Đã viết formula theo đúng thứ tự 连 + tiêu điểm + 都/也 + vị ngữ, và thêm lỗi thường gặp về vị trí 连."
+        },
+        {
+          "r5_id": "zh-hsk4-3-topic",
+          "issue": "R5 đưa ví dụ '这么简单的问题，我连想都不用想。' nhưng câu này có cấu trúc 连 + động từ + 都 + 不 + động từ, không khớp hoàn toàn với mẫu cơ bản và dễ gây nhầm cho người học.",
+          "fix": "Đã thay bằng ví dụ '他忙得连饭都没时间吃。' để minh họa rõ tiêu điểm là danh từ và phủ định 没."
+        },
+        {
+          "r5_id": "zh-hsk4-3-topic",
+          "issue": "R5 có lỗi sai '连他知道都这个问题。' với giải thích '都 belongs before predicate' nhưng câu đúng đưa ra là '连他都知道这个问题。' — lỗi này không phải lỗi người Việt thường mắc.",
+          "fix": "Đã thay bằng lỗi thực tế '他连知道这个问题。' (đặt 连 trực tiếp trước động từ) và câu đúng '连他都知道这个问题。'"
+        },
+        {
+          "r5_id": "zh-hsk4-3-topic",
+          "issue": "R5 không cung cấp bài tập cloze, không có quy tắc sản xuất cá nhân, và không có bản dịch tiếng Anh.",
+          "fix": "Đã bổ sung 3 câu quick_practice, personal_production với pattern_rule, và giải thích song ngữ vi/en."
+        }
+      ]
+    }
+  },
+  "review": null
+}

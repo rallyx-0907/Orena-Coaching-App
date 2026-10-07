@@ -1,0 +1,367 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_20_reporting_and_attribution",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reporting",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_19_argument_concession_counterclaim"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-20-reporting-and-attribution"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk79-20-reporting-and-attribution"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Reporting and attribution",
+      "en": "Chinese grammar: Reporting and attribution"
+    },
+    "native_title": "引述与归因",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Cấu trúc tường thuật và quy nguồn dùng để gán một phát ngôn hoặc nhận định cho một nguồn tin cụ thể, đồng thời thể hiện thái độ của người viết đối với độ tin cậy của nguồn đó.",
+      "en": "Reporting and attribution structures attribute a statement or claim to a specific source while signalling the writer's stance on how much that source should be trusted."
+    },
+    "sub": {"vi": "quy nguồn tin", "en": "attributing sources"},
+    "native_title_pinyin": ["yǐn", "shù", "yǔ", "guī", "yīn"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu một thông tin nhưng không tự nhận là người xác nhận nó, mà cho biết thông tin đó đến từ đâu.",
+      "en": "When you want to present information without personally vouching for it, but instead show where it came from."
+    },
+    {
+      "vi": "Khi cần phân biệt giữa dữ liệu khách quan (数据显示), báo cáo trung lập (据报道) và tuyên bố có thể chưa được kiểm chứng (声称).",
+      "en": "When you need to distinguish objective data (数据显示), neutral reports (据报道), and claims that may not be verified (声称)."
+    },
+    {
+      "vi": "Khi viết tin, báo cáo hoặc bài luận học thuật cần dẫn nguồn và thể hiện mức độ tin cậy khác nhau.",
+      "en": "When writing news, reports, or academic essays that require citing sources and showing different degrees of reliability."
+    },
+    {
+      "vi": "Khi muốn giữ khoảng cách với một nhận định bằng cách dùng 据称 thay vì tự khẳng định.",
+      "en": "When you want to distance yourself from a claim by using 据称 instead of asserting it directly."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "据",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu quy nguồn", "en": "attribution marker"},
+        "optional": true,
+        "pinyin": ["jù"]
+      },
+      {
+        "text": "报道/称/说/表示/指出",
+        "role": "verb",
+        "label": {"vi": "động từ tường thuật", "en": "reporting verb"},
+        "options": [
+          {"text": "报道", "pinyin": ["bào", "dào"]},
+          {"text": "称", "pinyin": ["chēng"]},
+          {"text": "说", "pinyin": ["shuō"]},
+          {"text": "表示", "pinyin": ["biǎo", "shì"]},
+          {"text": "指出", "pinyin": ["zhǐ", "chū"]}
+        ],
+        "pinyin": ["bào", "dào", "", "chēng", "", "shuō", "", "biǎo", "shì", "", "zhǐ", "chū"]
+      },
+      {"text": "，", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}, "pinyin": [""]},
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ của mệnh đề được tường thuật", "en": "subject of the reported clause"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ của mệnh đề được tường thuật", "en": "predicate of the reported clause"},
+        "pinyin": ["wèi", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "据报道，该项目将于下月重新启动。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 7, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "据报道 đánh dấu nguồn tin là báo chí, không phải người nói.",
+        "en": "据报道 marks the source as the press, not the speaker."
+      },
+      "translation": {
+        "vi": "Theo báo cáo, dự án sẽ khởi động lại vào tháng sau.",
+        "en": "According to reports, the project will restart next month."
+      },
+      "pinyin": [
+        "jù",
+        "bào",
+        "dào",
+        "",
+        "gāi",
+        "xiàng",
+        "mù",
+        "jiāng",
+        "yú",
+        "xià",
+        "yuè",
+        "chóng",
+        "xīn",
+        "qǐ",
+        "dòng",
+        ""
+      ]
+    },
+    {
+      "text": "公司表示，相关问题已经得到解决。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 9, "role": "subject"},
+        {"start": 9, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "公司表示 gán phát ngôn cho công ty, không khẳng định đó là sự thật.",
+        "en": "公司表示 attributes the statement to the company without asserting it is true."
+      },
+      "translation": {
+        "vi": "Công ty cho biết vấn đề liên quan đã được giải quyết.",
+        "en": "The company stated that the relevant issue has been resolved."
+      },
+      "pinyin": [
+        "gōng",
+        "sī",
+        "biǎo",
+        "shì",
+        "",
+        "xiāng",
+        "guān",
+        "wèn",
+        "tí",
+        "yǐ",
+        "jīng",
+        "dé",
+        "dào",
+        "jiě",
+        "jué",
+        ""
+      ]
+    },
+    {
+      "text": "研究人员指出，样本规模仍然有限。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 11, "role": "subject"},
+        {"start": 11, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "研究人员指出 trình bày một nhận định có thẩm quyền, thường trung lập.",
+        "en": "研究人员指出 presents an authoritative observation, often neutral."
+      },
+      "translation": {
+        "vi": "Các nhà nghiên cứu chỉ ra rằng quy mô mẫu vẫn còn hạn chế.",
+        "en": "Researchers pointed out that the sample size is still limited."
+      },
+      "pinyin": [
+        "yán",
+        "jiū",
+        "rén",
+        "yuán",
+        "zhǐ",
+        "chū",
+        "",
+        "yàng",
+        "běn",
+        "guī",
+        "mó",
+        "réng",
+        "rán",
+        "yǒu",
+        "xiàn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "声称 chỉ gán phát ngôn cho nguồn, không xác nhận tính đúng đắn; dùng 所以 để suy ra sự thật là ngụy biện quy nguồn.",
+        "en": "声称 only attributes the claim to a source; it does not verify it. Using 所以 to infer truth is an attribution fallacy."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "公司声称X，所以X一定是真的。",
+      "right": "公司声称X，但仍需独立核实。",
+      "wrong_pinyin": [
+        "gōng",
+        "sī",
+        "shēng",
+        "chēng",
+        "",
+        "",
+        "suǒ",
+        "yǐ",
+        "",
+        "yí",
+        "dìng",
+        "shì",
+        "zhēn",
+        "de",
+        ""
+      ],
+      "right_pinyin": ["gōng", "sī", "shēng", "chēng", "", "", "dàn", "réng", "xū", "dú", "lì", "hé", "shí", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___，该项目将于下月重新启动。",
+      "options": [
+        {"text": "据报道", "error_tag": null, "pinyin": ["jù", "bào", "dào"]},
+        {"text": "据认为", "error_tag": "collocation", "pinyin": ["jù", "rèn", "wéi"]},
+        {"text": "据我说", "error_tag": "collocation", "pinyin": ["jù", "wǒ", "shuō"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "据报道 là cụm quy nguồn cố định; 据认为 và 据我说 không phải cụm tự nhiên trong tiếng Trung.",
+        "en": "据报道 is a fixed attribution phrase; 据认为 and 据我说 are not natural Chinese collocations."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "",
+        "gāi",
+        "xiàng",
+        "mù",
+        "jiāng",
+        "yú",
+        "xià",
+        "yuè",
+        "chóng",
+        "xīn",
+        "qǐ",
+        "dòng",
+        ""
+      ]
+    },
+    {
+      "q": "公司___，相关问题已经得到解决。",
+      "options": [
+        {"text": "表示", "error_tag": null, "pinyin": ["biǎo", "shì"]},
+        {"text": "据表示", "error_tag": "word_order", "pinyin": ["jù", "biǎo", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "表示 đứng sau chủ ngữ nguồn tin; 据表示 sai vì 据 phải đứng trước nguồn hoặc động từ tường thuật.",
+        "en": "表示 follows the source subject; 据表示 is wrong because 据 must precede the source or reporting verb."
+      },
+      "q_pinyin": [
+        "gōng",
+        "sī",
+        "",
+        "",
+        "",
+        "",
+        "xiāng",
+        "guān",
+        "wèn",
+        "tí",
+        "yǐ",
+        "jīng",
+        "dé",
+        "dào",
+        "jiě",
+        "jué",
+        ""
+      ]
+    },
+    {
+      "q": "该机构___其系统从未发生数据泄露。",
+      "options": [
+        {"text": "声称", "error_tag": null, "pinyin": ["shēng", "chēng"]},
+        {"text": "据称", "error_tag": "word_order", "pinyin": ["jù", "chēng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "声称 là động từ tường thuật đứng sau chủ ngữ; 据称 là trạng ngữ quy nguồn, không thể đứng sau chủ ngữ trong cấu trúc này.",
+        "en": "声称 is a reporting verb that follows the subject; 据称 is an attribution adverbial and cannot follow the subject in this structure."
+      },
+      "q_pinyin": [
+        "gāi",
+        "jī",
+        "gòu",
+        "",
+        "",
+        "",
+        "qí",
+        "xì",
+        "tǒng",
+        "cóng",
+        "wèi",
+        "fā",
+        "shēng",
+        "shù",
+        "jù",
+        "xiè",
+        "lòu",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu tường thuật lại một thông tin bạn đọc được từ báo chí, dùng 据报道.",
+      "en": "Write a sentence reporting something you read in the news, using 据报道."
+    },
+    "placeholder": "据报道，……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["据"], "role": "marker"}, {"any_of": ["报道", "表示", "指出"], "role": "verb"}]
+    },
+    "sample": {
+      "text": "据报道，明年将举办国际会议。",
+      "pinyin": ["jù", "bào", "dào", "", "míng", "nián", "jiāng", "jǔ", "bàn", "guó", "jì", "huì", "yì", ""]
+    },
+    "placeholder_pinyin": ["jù", "bào", "dào", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791345025",
+    "generated_at": "2026-10-07T03:50:25Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-20-reporting-and-attribution"],
+      "content_version": 2,
+      "content_hash": "a34b6030cd7b264101dd5ceaa25fcbe777df473217afb806375cf630d7d00ed5",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-20-reporting-and-attribution",
+          "issue": "R5 dùng 据我认为 như một lỗi cần sửa, nhưng không cung cấp dạng đúng thay thế rõ ràng trong ngoặc.",
+          "fix": "Đã thêm cặp đúng/sai rõ ràng: 我认为... / 据报告显示... thay vì chỉ nêu lỗi."
+        },
+        {
+          "r5_id": "zh-hsk79-20-reporting-and-attribution",
+          "issue": "R5 liệt kê 据称 là biến thể của 据报道 nhưng không giải thích sắc thái khác biệt.",
+          "fix": "Đã thêm ghi chú rằng 据称 mang tính khoảng cách cao hơn 据报道 trong một số ngữ cảnh."
+        }
+      ]
+    }
+  },
+  "review": null
+}

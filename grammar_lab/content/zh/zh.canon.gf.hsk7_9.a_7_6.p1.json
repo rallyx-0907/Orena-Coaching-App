@@ -1,0 +1,293 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_2.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.129"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách nhấn mạnh: 反问句3：何必/何苦⋯⋯ 呢？", "en": "Ways of emphasis: 反问句3：何必/何苦⋯⋯ 呢？"},
+    "native_title": "反问句3：何必/何苦⋯⋯呢？",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Mẫu câu dùng 何必/何苦……呢？ để phản vấn, ngụ ý rằng hành động hoặc lo lắng đó là không cần thiết.",
+      "en": "A rhetorical pattern with 何必/何苦……呢？ that implies the action or worry is unnecessary."
+    },
+    "sub": {"vi": "phản vấn không cần thiết", "en": "unnecessary rhetorical question"},
+    "native_title_pinyin": ["fǎn", "wèn", "jù", "", "", "hé", "bì", "", "hé", "kǔ", "", "", "ne", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói ai đó không cần phải làm một việc gì đó.",
+      "en": "When you want to say that someone does not need to do something."
+    },
+    {
+      "vi": "Khi muốn khuyên ai đừng lo lắng hoặc đừng tự làm khổ mình.",
+      "en": "When you want to advise someone not to worry or not to make themselves suffer."
+    },
+    {
+      "vi": "Khi câu trả lời đã rõ và bạn muốn nhấn mạnh bằng một câu hỏi tu từ.",
+      "en": "When the answer is obvious and you want to emphasise it with a rhetorical question."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "何必/何苦",
+        "role": "marker",
+        "label": {"vi": "từ phản vấn", "en": "rhetorical marker"},
+        "options": [{"text": "何必", "pinyin": ["hé", "bì"]}, {"text": "何苦", "pinyin": ["hé", "kǔ"]}],
+        "pinyin": ["hé", "bì", "", "hé", "kǔ"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      },
+      {
+        "text": "呢",
+        "role": "particle",
+        "label": {"vi": "trợ từ cuối câu", "en": "sentence-final particle"},
+        "pinyin": ["ne"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "事情已经过去了，你何必再提呢？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 9, "end": 11, "role": "marker"},
+        {"start": 11, "end": 13, "role": "verb"},
+        {"start": 13, "end": 14, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Việc đã qua rồi, nhắc lại là không cần thiết.",
+        "en": "The matter is over; bringing it up again is unnecessary."
+      },
+      "translation": {
+        "vi": "Việc đã qua rồi, bạn còn nhắc lại làm gì?",
+        "en": "The matter is over, why bring it up again?"
+      },
+      "pinyin": ["shì", "qíng", "yǐ", "jīng", "guò", "qù", "le", "", "nǐ", "hé", "bì", "zài", "tí", "ne", ""]
+    },
+    {
+      "text": "为了这点小事，你何苦跟他吵架呢？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 8, "end": 10, "role": "marker"},
+        {"start": 10, "end": 14, "role": "verb"},
+        {"start": 14, "end": 15, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Vì chuyện nhỏ này mà cãi nhau là tự làm khổ mình.",
+        "en": "Arguing over such a small thing only makes you suffer."
+      },
+      "translation": {
+        "vi": "Vì chuyện nhỏ này, bạn cãi nhau với anh ấy làm gì?",
+        "en": "Why argue with him over such a small thing?"
+      },
+      "pinyin": [
+        "wèi",
+        "le",
+        "zhè",
+        "diǎn",
+        "xiǎo",
+        "shì",
+        "",
+        "nǐ",
+        "hé",
+        "kǔ",
+        "gēn",
+        "tā",
+        "chǎo",
+        "jià",
+        "ne",
+        ""
+      ]
+    },
+    {
+      "text": "结果还没出来，你何必这么着急呢？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 8, "end": 10, "role": "marker"},
+        {"start": 10, "end": 14, "role": "verb"},
+        {"start": 14, "end": 15, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Kết quả chưa có, lo lắng bây giờ là vô ích.",
+        "en": "The result is not out yet; worrying now is pointless."
+      },
+      "translation": {
+        "vi": "Kết quả còn chưa có, bạn lo lắng như vậy làm gì?",
+        "en": "The result isn't out yet, why are you so anxious?"
+      },
+      "pinyin": [
+        "jié",
+        "guǒ",
+        "hái",
+        "méi",
+        "chū",
+        "lái",
+        "",
+        "nǐ",
+        "hé",
+        "bì",
+        "zhè",
+        "me",
+        "zhe",
+        "jí",
+        "ne",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu phản vấn với 何必/何苦 thường kết thúc bằng 呢 để giữ giọng điệu tu từ; thiếu 呢 làm câu mất tự nhiên.",
+        "en": "Rhetorical questions with 何必/何苦 normally end with 呢 to keep the rhetorical tone; omitting 呢 makes the sentence sound incomplete."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "事情已经过去了，你何必再提？",
+      "right": "事情已经过去了，你何必再提呢？",
+      "wrong_pinyin": ["shì", "qíng", "yǐ", "jīng", "guò", "qù", "le", "", "nǐ", "hé", "bì", "zài", "tí", ""],
+      "right_pinyin": ["shì", "qíng", "yǐ", "jīng", "guò", "qù", "le", "", "nǐ", "hé", "bì", "zài", "tí", "ne", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "事情已经过去了，你何必再提___？",
+      "options": [
+        {"text": "呢", "error_tag": null, "pinyin": ["ne"]},
+        {"text": "吗", "error_tag": "particle", "pinyin": ["ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu phản vấn với 何必 kết thúc bằng 呢, không dùng 吗.",
+        "en": "A rhetorical question with 何必 ends with 呢, not 吗."
+      },
+      "q_pinyin": [
+        "shì",
+        "qíng",
+        "yǐ",
+        "jīng",
+        "guò",
+        "qù",
+        "le",
+        "",
+        "nǐ",
+        "hé",
+        "bì",
+        "zài",
+        "tí",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "q": "为了这点小事，你何苦跟他吵架___？",
+      "options": [
+        {"text": "呢", "error_tag": null, "pinyin": ["ne"]},
+        {"text": "吧", "error_tag": "particle", "pinyin": ["ba"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "何苦……呢？ là mẫu cố định; 吧 không phù hợp trong câu phản vấn.",
+        "en": "何苦……呢？ is a fixed rhetorical pattern; 吧 does not fit here."
+      },
+      "q_pinyin": [
+        "wèi",
+        "le",
+        "zhè",
+        "diǎn",
+        "xiǎo",
+        "shì",
+        "",
+        "nǐ",
+        "hé",
+        "kǔ",
+        "gēn",
+        "tā",
+        "chǎo",
+        "jià",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "q": "结果还没出来，你何必这么着急___？",
+      "options": [
+        {"text": "呢", "error_tag": null, "pinyin": ["ne"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cuối câu phản vấn dùng 呢, không dùng 了.",
+        "en": "The rhetorical question ends with 呢, not 了."
+      },
+      "q_pinyin": [
+        "jié",
+        "guǒ",
+        "hái",
+        "méi",
+        "chū",
+        "lái",
+        "",
+        "nǐ",
+        "hé",
+        "bì",
+        "zhè",
+        "me",
+        "zhe",
+        "jí",
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu phản vấn dùng 何必……呢？ để nói rằng ai đó không cần làm một việc gì đó.",
+      "en": "Write a rhetorical question with 何必……呢？ to say that someone does not need to do something."
+    },
+    "placeholder": "你何必……呢？",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["何必", "何苦"], "role": "marker"}, {"any_of": ["呢"], "role": "particle"}]
+    },
+    "sample": {
+      "text": "你何必为这件事生气呢？",
+      "pinyin": ["nǐ", "hé", "bì", "wèi", "zhè", "jiàn", "shì", "shēng", "qì", "ne", ""]
+    },
+    "placeholder_pinyin": ["nǐ", "hé", "bì", "", "", "ne", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791342439",
+    "generated_at": "2026-10-07T03:07:19Z"
+  },
+  "review": null
+}

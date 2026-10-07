@@ -1,0 +1,208 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.complement.degree_de",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.action_result",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["complement"],
+  "source_refs": {"r5": ["zh-hsk2-8-b-ng-m-c"], "gf0025": ["gf0025.hsk3.049"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk2-8-b-ng-m-c"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Bổ ngữ mức độ với 得", "en": "Degree complement with 得"},
+    "native_title": "程度补语“得”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "得 đứng sau động từ để nối với bổ ngữ mức độ, cho biết hành động được thực hiện như thế nào hoặc đến mức nào.",
+      "en": "得 follows a verb to introduce a degree or manner complement, saying how or how well an action is done."
+    },
+    "sub": {"vi": "bổ ngữ mức độ", "en": "degree complement"},
+    "native_title_pinyin": ["chéng", "dù", "bǔ", "yǔ", "", "dé", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một hành động được làm tốt, nhanh, hay, chậm… như thế nào.",
+      "en": "When you want to say how well, how fast, how nicely, or how slowly an action is done."
+    },
+    {
+      "vi": "Khi tính từ đứng sau động từ để đánh giá kết quả hoặc cách thức của hành động.",
+      "en": "When an adjective follows the verb to evaluate the result or manner of the action."
+    },
+    {
+      "vi": "Khi câu trả lời cho câu hỏi “làm thế nào?” hoặc “làm có tốt không?”.",
+      "en": "When answering questions like “how is it done?” or “is it done well?”."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "得",
+        "role": "particle",
+        "label": {"vi": "trợ từ 得", "en": "得 particle"},
+        "pinyin": ["dé"]
+      },
+      {
+        "text": "Adj",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ mức độ", "en": "degree complement"},
+        "pinyin": ["", "", ""]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "他说得很快。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "得 nối động từ 说 với bổ ngữ 很快, cho biết cách nói.",
+        "en": "得 links the verb 说 with the complement 很快, describing how he speaks."
+      },
+      "translation": {"vi": "Anh ấy nói rất nhanh.", "en": "He speaks very fast."},
+      "pinyin": ["tā", "shuō", "dé", "hěn", "kuài", ""]
+    },
+    {
+      "text": "她写得很好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "得 đứng sau 写, bổ ngữ 很好 đánh giá việc viết.",
+        "en": "得 follows 写, and the complement 很好 evaluates the writing."
+      },
+      "translation": {"vi": "Cô ấy viết rất tốt.", "en": "She writes very well."},
+      "pinyin": ["tā", "xiě", "dé", "hěn", "hǎo", ""]
+    },
+    {
+      "text": "他跑得很快。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "得 nối 跑 với 很快, cho biết tốc độ chạy.",
+        "en": "得 links 跑 with 很快, describing the speed of running."
+      },
+      "translation": {"vi": "Anh ấy chạy rất nhanh.", "en": "He runs very fast."},
+      "pinyin": ["tā", "pǎo", "dé", "hěn", "kuài", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt dễ dùng 的 vì quen với 的 trong “của”, nhưng sau động từ để nêu mức độ phải dùng 得.",
+        "en": "Vietnamese learners often use 的 because they know it as the possessive particle, but after a verb for degree or manner the correct particle is 得."
+      },
+      "error_tag": "complement",
+      "l1": ["vi"],
+      "wrong": "他说的很快。",
+      "right": "他说得很快。",
+      "wrong_pinyin": ["tā", "shuō", "de", "hěn", "kuài", ""],
+      "right_pinyin": ["tā", "shuō", "dé", "hěn", "kuài", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他跑___很快。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["dé"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ 跑 để nêu mức độ phải dùng 得, không dùng 的.",
+        "en": "After the verb 跑, the degree complement takes 得, not 的."
+      },
+      "q_pinyin": ["tā", "pǎo", "", "", "", "hěn", "kuài", ""]
+    },
+    {
+      "q": "她写___很好。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["dé"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "得 đứng sau động từ 写 để nối với bổ ngữ 很好.",
+        "en": "得 follows the verb 写 to link with the complement 很好."
+      },
+      "q_pinyin": ["tā", "xiě", "", "", "", "hěn", "hǎo", ""]
+    },
+    {
+      "q": "你唱___真好听。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["dé"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ 唱, dùng 得 trước bổ ngữ 真好听.",
+        "en": "After the verb 唱, use 得 before the complement 真好听."
+      },
+      "q_pinyin": ["nǐ", "chàng", "", "", "", "zhēn", "hǎo", "tīng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về cách bạn làm việc gì đó, dùng cấu trúc V + 得 + tính từ.",
+      "en": "Write one sentence about how you do something, using V + 得 + adjective."
+    },
+    "placeholder": "我写得……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["得"], "role": "particle"}]},
+    "sample": {"text": "我写得很好。", "pinyin": ["wǒ", "xiě", "dé", "hěn", "hǎo", ""]},
+    "placeholder_pinyin": ["wǒ", "xiě", "dé", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338121",
+    "generated_at": "2026-10-07T01:55:21Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-8-b-ng-m-c"],
+      "content_version": 2,
+      "content_hash": "909e8e816651216dd8408bda21fbf93929effb7b71d53c0837ab66eb2e94dd0e",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-8-b-ng-m-c",
+          "issue": "R5 ghi “他得说很快” là lỗi word order, nhưng 得 trong câu đó có thể đọc là děi (phải), gây nhầm lẫn; không phải lỗi trọng tâm của bổ ngữ 得.",
+          "fix": "Bỏ ví dụ lỗi này; chỉ giữ lỗi dùng 的 thay 得 vì đúng cơ chế của bổ ngữ mức độ."
+        },
+        {
+          "r5_id": "zh-hsk2-8-b-ng-m-c",
+          "issue": "R5 nói “Nếu verb có object, thường cần cấu trúc như 他中文说得很好 / 他说中文说得很好 ở patterns phát triển; HSK2 tập trung chunks” nhưng không đưa ra quy tắc rõ ràng.",
+          "fix": "Lược bỏ phần ngoài phạm vi HSK2; bài này chỉ dạy mẫu cơ bản S + V + 得 + Adj."
+        },
+        {
+          "r5_id": "zh-hsk2-8-b-ng-m-c",
+          "issue": "R5 dùng thuật ngữ “bổ ngữ mức độ” nhưng không giải thích vị trí của 得 trong câu.",
+          "fix": "Thêm formula S + V + 得 + Adj và nhấn mạnh 得 đứng ngay sau động từ."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,210 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_1_5_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_2_5_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.013"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 自", "en": "Chinese grammar: 自"},
+    "native_title": "自",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Giới từ 自 dùng để nói nơi chốn hoặc thời điểm bắt đầu của một hành động, thường đi với 从 trong kết cấu 自...起 hoặc 自...以来.",
+      "en": "The preposition 自 marks the place or time where an action starts, often paired with 从 in patterns like 自...起 or 自...以来."
+    },
+    "sub": {"vi": "điểm khởi đầu", "en": "starting point"},
+    "native_title_pinyin": ["zì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một hành động hay trạng thái bắt đầu từ một nơi chốn cụ thể, thường dùng 自 + nơi chốn.",
+      "en": "Use 自 + place when saying an action or state starts from a specific place."
+    },
+    {
+      "vi": "Khi nói một sự việc bắt đầu từ một mốc thời gian, dùng 自 + thời gian + 起.",
+      "en": "Use 自 + time + 起 when saying something starts from a point in time."
+    },
+    {
+      "vi": "Khi muốn nói 'từ khi... đến nay', dùng 自 + thời gian + 以来.",
+      "en": "Use 自 + time + 以来 to mean 'since ... up to now'."
+    },
+    {
+      "vi": "Trong văn viết hoặc câu trang trọng, 自 thường đứng trước động từ và không cần 从.",
+      "en": "In written or formal sentences, 自 often stands before the verb and does not need 从."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "自",
+        "role": "marker",
+        "label": {"vi": "giới từ bắt đầu", "en": "starting-point preposition"},
+        "pinyin": ["zì"]
+      },
+      {
+        "text": "地点/时间",
+        "role": "place",
+        "label": {"vi": "nơi chốn hoặc thời gian", "en": "place or time"},
+        "pinyin": ["dì", "diǎn", "", "shí", "jiān"]
+      },
+      {
+        "text": "起/以来",
+        "role": "particle",
+        "label": {"vi": "tiểu từ kết thúc", "en": "closing particle"},
+        "optional": true,
+        "options": [{"text": "起", "pinyin": ["qǐ"]}, {"text": "以来", "pinyin": ["yǐ", "lái"]}],
+        "pinyin": ["qǐ", "", "yǐ", "lái"]
+      },
+      {
+        "text": "VP",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我自北京出发。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "place"},
+        {"start": 4, "end": 6, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "自 + nơi chốn cho biết điểm khởi hành.",
+        "en": "自 + place marks the starting point of the journey."
+      },
+      "translation": {"vi": "Tôi xuất phát từ Bắc Kinh.", "en": "I set off from Beijing."},
+      "pinyin": ["wǒ", "zì", "běi", "jīng", "chū", "fā", ""]
+    },
+    {
+      "text": "他自去年起学习汉语。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "place"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "自 + thời gian + 起 cho biết hành động bắt đầu từ mốc đó.",
+        "en": "自 + time + 起 marks when the action began."
+      },
+      "translation": {
+        "vi": "Anh ấy học tiếng Trung từ năm ngoái.",
+        "en": "He has studied Chinese since last year."
+      },
+      "pinyin": ["tā", "zì", "qù", "nián", "qǐ", "xué", "xí", "hàn", "yǔ", ""]
+    },
+    {
+      "text": "她自小以来一直住在上海。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "place"},
+        {"start": 3, "end": 5, "role": "particle"},
+        {"start": 7, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "自 + thời gian + 以来 nhấn mạnh trạng thái kéo dài đến hiện tại.",
+        "en": "自 + time + 以来 stresses a state continuing up to now."
+      },
+      "translation": {
+        "vi": "Cô ấy sống ở Thượng Hải từ nhỏ đến nay.",
+        "en": "She has lived in Shanghai since childhood."
+      },
+      "pinyin": ["tā", "zì", "xiǎo", "yǐ", "lái", "yì", "zhí", "zhù", "zài", "shàng", "hǎi", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "自 + nơi chốn chỉ điểm khởi đầu, không dùng 了 để đánh dấu hoàn thành vì trọng tâm là điểm xuất phát, không phải kết quả.",
+        "en": "自 + place marks a starting point, so 了 is not used to mark completion; the focus is the origin, not the result."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我自北京出发了。",
+      "right": "我自北京出发。",
+      "wrong_pinyin": ["wǒ", "zì", "běi", "jīng", "chū", "fā", "le", ""],
+      "right_pinyin": ["wǒ", "zì", "běi", "jīng", "chū", "fā", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___去年起学习汉语。",
+      "options": [
+        {"text": "自", "error_tag": null, "pinyin": ["zì"]},
+        {"text": "从", "error_tag": "word_choice", "pinyin": ["cóng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "自 + thời gian + 起 là kết cấu cố định; 从 không đi với 起 trong câu này.",
+        "en": "自 + time + 起 is the fixed pattern; 从 does not combine with 起 here."
+      },
+      "q_pinyin": ["tā", "", "", "", "qù", "nián", "qǐ", "xué", "xí", "hàn", "yǔ", ""]
+    },
+    {
+      "q": "我___北京出发。",
+      "options": [
+        {"text": "自", "error_tag": null, "pinyin": ["zì"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "自 + nơi chốn chỉ điểm khởi hành; 在 chỉ nơi chốn hiện diện, không phù hợp.",
+        "en": "自 + place marks the starting point; 在 marks location, not origin."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "běi", "jīng", "chū", "fā", ""]
+    },
+    {
+      "q": "她自小___一直住在上海。",
+      "options": [
+        {"text": "以来", "error_tag": null, "pinyin": ["yǐ", "lái"]},
+        {"text": "起", "error_tag": "particle", "pinyin": ["qǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "自 + thời gian + 以来 diễn tả trạng thái kéo dài đến hiện tại; 起 chỉ dùng cho điểm bắt đầu hành động.",
+        "en": "自 + time + 以来 describes a state continuing to now; 起 marks only the start of an action."
+      },
+      "q_pinyin": ["tā", "zì", "xiǎo", "", "", "", "yì", "zhí", "zhù", "zài", "shàng", "hǎi", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân, dùng 自 + nơi chốn hoặc 自 + thời gian + 起/以来 để nói điểm khởi đầu.",
+      "en": "Write one sentence about yourself using 自 + place or 自 + time + 起/以来 to state a starting point."
+    },
+    "placeholder": "我自……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["自"], "role": "marker"}, {"any_of": ["起", "以来"], "role": "particle"}]
+    },
+    "sample": {"text": "我自去年起学习汉语。", "pinyin": ["wǒ", "zì", "qù", "nián", "qǐ", "xué", "xí", "hàn", "yǔ", ""]},
+    "placeholder_pinyin": ["wǒ", "zì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338406",
+    "generated_at": "2026-10-07T02:00:06Z"
+  },
+  "review": null
+}

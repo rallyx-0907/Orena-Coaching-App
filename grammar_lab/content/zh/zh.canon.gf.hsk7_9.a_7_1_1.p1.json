@@ -1,0 +1,212 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.possibility",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.r5.hsk6_5_patterns"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.001"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Động từ: 能愿动词：需", "en": "Verbs: 能愿动词：需"},
+    "native_title": "能愿动词：需",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng động từ năng nguyện 需 để diễn tả nhu cầu hoặc sự cần thiết.",
+      "en": "This grammar point teaches the modal verb 需 to express need or necessity."
+    },
+    "sub": {"vi": "nhu cầu", "en": "need"},
+    "native_title_pinyin": ["néng", "yuàn", "dòng", "cí", "", "xū"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói rằng ai đó cần một thứ gì đó hoặc cần làm một việc gì đó.",
+      "en": "When you want to say that someone needs something or needs to do something."
+    },
+    {
+      "vi": "Khi bạn muốn diễn tả một yêu cầu hoặc điều kiện cần thiết trong văn viết hoặc tình huống trang trọng.",
+      "en": "When you want to express a requirement or necessary condition in writing or formal situations."
+    },
+    {
+      "vi": "Khi bạn muốn nói rằng không cần làm gì đó, dùng 无需 hoặc 不需.",
+      "en": "When you want to say that something is not needed, use 无需 or 不需."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "需",
+        "role": "aux",
+        "label": {"vi": "động từ năng nguyện 需", "en": "modal verb 需"},
+        "pinyin": ["xū"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "无需",
+          "role": "aux",
+          "label": {"vi": "không cần", "en": "not need"},
+          "pinyin": ["wú", "xū"]
+        },
+        {
+          "text": "动词短语",
+          "role": "verb",
+          "label": {"vi": "cụm động từ", "en": "verb phrase"},
+          "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "你需按时完成作业。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "需 đứng trước động từ để diễn tả nhu cầu làm gì đó.",
+        "en": "需 comes before the verb to express the need to do something."
+      },
+      "translation": {
+        "vi": "Bạn cần hoàn thành bài tập đúng hạn.",
+        "en": "You need to finish your homework on time."
+      },
+      "pinyin": ["nǐ", "xū", "àn", "shí", "wán", "chéng", "zuò", "yè", ""]
+    },
+    {
+      "text": "我们需提前预订酒店。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "需 diễn tả một nhu cầu cần thiết trong kế hoạch.",
+        "en": "需 expresses a necessary need in a plan."
+      },
+      "translation": {"vi": "Chúng tôi cần đặt khách sạn trước.", "en": "We need to book the hotel in advance."},
+      "pinyin": ["wǒ", "men", "xū", "tí", "qián", "yù", "dìng", "jiǔ", "diàn", ""]
+    },
+    {
+      "text": "你无需担心这件事。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "aux"},
+        {"start": 3, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "无需 là dạng phủ định của 需, nghĩa là không cần.",
+        "en": "无需 is the negative form of 需, meaning 'no need to'."
+      },
+      "translation": {"vi": "Bạn không cần lo lắng về việc này.", "en": "You don't need to worry about this."},
+      "pinyin": ["nǐ", "wú", "xū", "dān", "xīn", "zhè", "jiàn", "shì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "需 là động từ năng nguyện, không dùng trực tiếp với 吗 để tạo câu hỏi; cần dùng dạng lặp 需不需要 hoặc 是否需.",
+        "en": "需 is a modal verb and cannot be directly used with 吗 to form a question; use the repeated form 需不需要 or 是否需."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "你需按时完成作业吗？",
+      "right": "你需不需要按时完成作业？",
+      "wrong_pinyin": ["nǐ", "xū", "àn", "shí", "wán", "chéng", "zuò", "yè", "ma", ""],
+      "right_pinyin": ["nǐ", "xū", "bù", "xū", "yào", "àn", "shí", "wán", "chéng", "zuò", "yè", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你___按时完成作业。",
+      "options": [
+        {"text": "需", "error_tag": null, "pinyin": ["xū"]},
+        {"text": "需要", "error_tag": "other", "pinyin": ["xū", "yào"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "需 là động từ năng nguyện, đứng trước động từ chính để diễn tả nhu cầu.",
+        "en": "需 is a modal verb placed before the main verb to express need."
+      },
+      "q_pinyin": ["nǐ", "", "", "", "àn", "shí", "wán", "chéng", "zuò", "yè", ""]
+    },
+    {
+      "q": "我们___提前预订酒店。",
+      "options": [
+        {"text": "需", "error_tag": null, "pinyin": ["xū"]},
+        {"text": "无需", "error_tag": "other", "pinyin": ["wú", "xū"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định dùng 需, không dùng 无需 vì 无需 mang nghĩa phủ định.",
+        "en": "Affirmative sentences use 需, not 无需, because 无需 is negative."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "tí", "qián", "yù", "dìng", "jiǔ", "diàn", ""]
+    },
+    {
+      "q": "你___担心这件事。",
+      "options": [
+        {"text": "无需", "error_tag": null, "pinyin": ["wú", "xū"]},
+        {"text": "需", "error_tag": "other", "pinyin": ["xū"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "无需 là dạng phủ định, nghĩa là không cần, phù hợp với ngữ cảnh.",
+        "en": "无需 is the negative form meaning 'no need to', which fits the context."
+      },
+      "q_pinyin": ["nǐ", "", "", "", "dān", "xīn", "zhè", "jiàn", "shì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn cần làm gì đó, dùng 需.",
+      "en": "Write a sentence about something you need to do, using 需."
+    },
+    "placeholder": "我需……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["需"], "role": "aux"}]},
+    "sample": {"text": "我需每天复习生词。", "pinyin": ["wǒ", "xū", "měi", "tiān", "fù", "xí", "shēng", "cí", ""]},
+    "placeholder_pinyin": ["wǒ", "xū", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338847",
+    "generated_at": "2026-10-07T02:07:27Z"
+  },
+  "review": null
+}

@@ -1,0 +1,298 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.zhiyao_jiu",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.condition_real",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["zh.ruguo_jiu", "zh.zhiyou_cai"],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk2-4-topic", "zh-hsk6-2-topic-175"], "gf0025": ["gf0025.hsk2.067"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk2-4-topic", "zh-hsk6-2-topic-175"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "只要 ... 就 ...", "en": "只要 ... 就 ..."},
+    "native_title": "“只要……就……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "只要...就... dùng để nói điều kiện đủ: chỉ cần A xảy ra thì B sẽ xảy ra hoặc có thể xảy ra.",
+      "en": "只要...就... expresses a sufficient condition: as long as A happens, B will or can happen."
+    },
+    "sub": {"vi": "điều kiện đủ", "en": "sufficient condition"},
+    "native_title_pinyin": ["", "zhǐ", "yào", "", "", "jiù", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói chỉ cần một điều kiện là đủ để kết quả xảy ra, không cần thêm điều kiện nào khác.",
+      "en": "Use it when one condition alone is enough for the result to happen, with no other condition needed."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh điều kiện dễ thực hiện hoặc tối thiểu, ví dụ 只要有时间 (chỉ cần có thời gian).",
+      "en": "Use it to highlight a minimal or easy condition, for example 只要有时间 (as long as there is time)."
+    },
+    {
+      "vi": "Khi kết quả có thể đi kèm động từ năng nguyện như 会, 能, 可以, 就 đứng trước phần kết quả.",
+      "en": "Use it when the result clause may contain a modal verb such as 会, 能, 可以; 就 comes before the result."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "只要",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu điều kiện đủ", "en": "sufficient-condition marker"},
+        "pinyin": ["zhǐ", "yào"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "điều kiện đủ", "en": "sufficient condition"},
+        "pinyin": [""]
+      },
+      {
+        "text": "就",
+        "role": "connector",
+        "label": {"vi": "nối kết quả", "en": "result connector"},
+        "pinyin": ["jiù"]
+      },
+      {"text": "B", "role": "other", "label": {"vi": "kết quả", "en": "result"}, "pinyin": [""]}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "只要努力，就会进步。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 9, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "只要 mở điều kiện đủ; 就 mở kết quả.",
+        "en": "只要 opens the sufficient condition; 就 opens the result."
+      },
+      "translation": {
+        "vi": "Chỉ cần cố gắng là sẽ tiến bộ.",
+        "en": "As long as you work hard, you will make progress."
+      },
+      "pinyin": ["zhǐ", "yào", "nǔ", "lì", "", "jiù", "huì", "jìn", "bù", ""]
+    },
+    {
+      "text": "只要不下雨，我们就去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 10, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện đủ là một cụm phủ định 不下雨.",
+        "en": "The sufficient condition is the negative phrase 不下雨."
+      },
+      "translation": {
+        "vi": "Chỉ cần trời không mưa là chúng tôi đi.",
+        "en": "As long as it doesn't rain, we will go."
+      },
+      "pinyin": ["zhǐ", "yào", "bù", "xià", "yǔ", "", "wǒ", "men", "jiù", "qù", ""]
+    },
+    {
+      "text": "只要有网络，我就能工作。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Kết quả có thể chứa động từ năng nguyện 能.",
+        "en": "The result can contain the modal verb 能."
+      },
+      "translation": {
+        "vi": "Chỉ cần có mạng là tôi có thể làm việc.",
+        "en": "As long as there is internet, I can work."
+      },
+      "pinyin": ["zhǐ", "yào", "yǒu", "wǎng", "luò", "", "wǒ", "jiù", "néng", "gōng", "zuò", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.ruguo_jiu",
+      "this_example": "只要努力，就会进步。",
+      "other_example": "如果努力，就会进步。",
+      "this_meaning": {
+        "vi": "只要...就... nói điều kiện đủ: chỉ cần A là đủ để B xảy ra.",
+        "en": "只要...就... states a sufficient condition: A alone is enough for B to happen."
+      },
+      "other_meaning": {
+        "vi": "如果...就... nói điều kiện trung tính, không nhấn mạnh điều kiện đó là đủ hay tối thiểu.",
+        "en": "如果...就... states a neutral condition; it does not stress that the condition is sufficient or minimal."
+      },
+      "this_example_pinyin": ["zhǐ", "yào", "nǔ", "lì", "", "jiù", "huì", "jìn", "bù", ""],
+      "other_example_pinyin": ["rú", "guǒ", "nǔ", "lì", "", "jiù", "huì", "jìn", "bù", ""]
+    },
+    {
+      "with": "zh.zhiyou_cai",
+      "this_example": "只要努力，就会进步。",
+      "other_example": "只有努力，才会进步。",
+      "this_meaning": {
+        "vi": "只要...就... nói điều kiện đủ: chỉ cần A là B xảy ra.",
+        "en": "只要...就... states a sufficient condition: as long as A, B happens."
+      },
+      "other_meaning": {
+        "vi": "只有...才... nói điều kiện cần: chỉ khi A thì B mới xảy ra, A là điều kiện bắt buộc.",
+        "en": "只有...才... states a necessary condition: only when A, B happens; A is required."
+      },
+      "this_example_pinyin": ["zhǐ", "yào", "nǔ", "lì", "", "jiù", "huì", "jìn", "bù", ""],
+      "other_example_pinyin": ["zhǐ", "yǒu", "nǔ", "lì", "", "cái", "huì", "jìn", "bù", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt Nam thường dịch 'mới' thành 才, nhưng 只要 phải đi với 就; 才 đi với 只有.",
+        "en": "Vietnamese learners often translate 'mới' as 才, but 只要 pairs with 就; 才 pairs with 只有."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "只要努力，才会进步。",
+      "right": "只要努力，就会进步。",
+      "wrong_pinyin": ["zhǐ", "yào", "nǔ", "lì", "", "cái", "huì", "jìn", "bù", ""],
+      "right_pinyin": ["zhǐ", "yào", "nǔ", "lì", "", "jiù", "huì", "jìn", "bù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "只要明天天气好，我们___去公园。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "才", "error_tag": "conjunction", "pinyin": ["cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "只要 đi với 就 để nói điều kiện đủ.",
+        "en": "只要 pairs with 就 to express a sufficient condition."
+      },
+      "q_pinyin": [
+        "zhǐ",
+        "yào",
+        "míng",
+        "tiān",
+        "tiān",
+        "qì",
+        "hǎo",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "qù",
+        "gōng",
+        "yuán",
+        ""
+      ]
+    },
+    {
+      "q": "只要你有时间，___可以来我家。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "才", "error_tag": "conjunction", "pinyin": ["cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 đứng trước động từ năng nguyện 可以 trong phần kết quả.",
+        "en": "就 comes before the modal verb 可以 in the result clause."
+      },
+      "q_pinyin": ["zhǐ", "yào", "nǐ", "yǒu", "shí", "jiān", "", "", "", "", "kě", "yǐ", "lái", "wǒ", "jiā", ""]
+    },
+    {
+      "q": "只要多听多说，你的汉语___会越来越好。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "才", "error_tag": "conjunction", "pinyin": ["cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "只要...就... là cặp cố định cho điều kiện đủ.",
+        "en": "只要...就... is the fixed pair for a sufficient condition."
+      },
+      "q_pinyin": [
+        "zhǐ",
+        "yào",
+        "duō",
+        "tīng",
+        "duō",
+        "shuō",
+        "",
+        "nǐ",
+        "de",
+        "hàn",
+        "yǔ",
+        "",
+        "",
+        "",
+        "huì",
+        "yuè",
+        "lái",
+        "yuè",
+        "hǎo",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 只要...就... để nói một điều kiện đủ.",
+      "en": "Write one sentence about yourself using 只要...就... to state a sufficient condition."
+    },
+    "placeholder": "只要……，我就……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["只要"], "role": "marker"}, {"any_of": ["就"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "只要明天有空，我就去图书馆。",
+      "pinyin": ["zhǐ", "yào", "míng", "tiān", "yǒu", "kòng", "", "wǒ", "jiù", "qù", "tú", "shū", "guǎn", ""]
+    },
+    "placeholder_pinyin": ["zhǐ", "yào", "", "", "", "wǒ", "jiù", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338096",
+    "generated_at": "2026-10-07T01:54:56Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-4-topic", "zh-hsk6-2-topic-175"],
+      "content_version": 2,
+      "content_hash": "e972e935664ddfa04b69e22cc3a398936055918e9363ad53c9b350b84e36d19d",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-4-topic",
+          "issue": "R5 dạy 只要...就... nhưng không cung cấp công thức trừu tượng, không có bindings cho ví dụ, và không có quick practice.",
+          "fix": "Đã thêm formula 只要 + A + 就 + B, bindings cho từng ví dụ, và 3 câu quick practice."
+        },
+        {
+          "r5_id": "zh-hsk2-4-topic",
+          "issue": "R5 ghi lỗi '只有有时间，就去。' nhưng không giải thích rõ cơ chế cặp đôi 只要...就... và 只有...才...",
+          "fix": "Đã thêm common_mistakes với lỗi '只要努力，才会进步。' và giải thích 只要 đi với 就, 只有 đi với 才."
+        },
+        {
+          "r5_id": "zh-hsk6-2-topic-175",
+          "issue": "R5 HSK6 bao gồm nhiều điểm ngữ pháp khác ngoài 只要...就..., không thuộc phạm vi bài này.",
+          "fix": "Chỉ giữ phần 只要...就...; lược bỏ 只有/除非/倘若/假如/一旦."
+        }
+      ]
+    }
+  },
+  "review": null
+}

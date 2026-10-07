@@ -1,0 +1,186 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_2_1_2.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.location",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_14_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.033"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 在⋯⋯上/下/中", "en": "Chinese grammar: 在⋯⋯上/下/中"},
+    "native_title": "在⋯⋯上/下/中",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc 在⋯⋯上/下/中 dùng để nói vị trí hoặc phạm vi của sự vật, sự việc.",
+      "en": "The pattern 在⋯⋯上/下/中 is used to say where something is or in what scope something happens."
+    },
+    "sub": {"vi": "vị trí, phạm vi", "en": "location, scope"},
+    "native_title_pinyin": ["zài", "", "", "shàng", "", "xià", "", "zhōng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một vật nằm ở trên, dưới hoặc trong một vật khác.",
+      "en": "When you want to say an object is on, under, or inside another object."
+    },
+    {
+      "vi": "Khi muốn nói một việc xảy ra trong một phạm vi hoặc lĩnh vực nào đó.",
+      "en": "When you want to say something happens within a certain scope or field."
+    },
+    {
+      "vi": "Khi cần mô tả vị trí cụ thể của người hoặc vật trong không gian.",
+      "en": "When you need to describe the specific position of a person or thing in space."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "在",
+        "role": "marker",
+        "label": {"vi": "giới từ chỉ vị trí", "en": "location marker"},
+        "pinyin": ["zài"]
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "danh từ chỉ vật", "en": "noun"},
+        "pinyin": [""]
+      },
+      {
+        "text": "上/下/中",
+        "role": "particle",
+        "label": {"vi": "từ chỉ vị trí", "en": "locative particle"},
+        "options": [
+          {"text": "上", "pinyin": ["shàng"]},
+          {"text": "下", "pinyin": ["xià"]},
+          {"text": "中", "pinyin": ["zhōng"]}
+        ],
+        "pinyin": ["shàng", "", "xià", "", "zhōng"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "书在桌子上。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {"vi": "在 + 桌子 + 上: vị trí trên mặt bàn", "en": "在 + 桌子 + 上: position on the table"},
+      "translation": {"vi": "Quyển sách ở trên bàn.", "en": "The book is on the table."},
+      "pinyin": ["shū", "zài", "zhuō", "zi", "shàng", ""]
+    },
+    {
+      "text": "猫在椅子下。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {"vi": "在 + 椅子 + 下: vị trí dưới ghế", "en": "在 + 椅子 + 下: position under the chair"},
+      "translation": {"vi": "Con mèo ở dưới ghế.", "en": "The cat is under the chair."},
+      "pinyin": ["māo", "zài", "yǐ", "zi", "xià", ""]
+    },
+    {
+      "text": "他在房间里。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {"vi": "在 + 房间 + 里: vị trí bên trong phòng", "en": "在 + 房间 + 里: position inside the room"},
+      "translation": {"vi": "Anh ấy ở trong phòng.", "en": "He is in the room."},
+      "pinyin": ["tā", "zài", "fáng", "jiān", "lǐ", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu từ chỉ vị trí 上 sau danh từ. Trong tiếng Trung, 在 + danh từ thường cần thêm 上/下/中 để chỉ vị trí cụ thể.",
+        "en": "Missing the locative particle 上 after the noun. In Chinese, 在 + noun usually needs 上/下/中 to specify the position."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "书在桌子。",
+      "right": "书在桌子上。",
+      "wrong_pinyin": ["shū", "zài", "zhuō", "zi", ""],
+      "right_pinyin": ["shū", "zài", "zhuō", "zi", "shàng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我的手机在包___。",
+      "options": [
+        {"text": "里", "error_tag": null, "pinyin": ["lǐ"]},
+        {"text": "上", "error_tag": "other", "pinyin": ["shàng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Điện thoại ở trong túi, nên dùng 里 (trong). 上 nghĩa là trên, không hợp ngữ cảnh.",
+        "en": "The phone is inside the bag, so 里 (inside) is correct. 上 means on, which does not fit the context."
+      },
+      "q_pinyin": ["wǒ", "de", "shǒu", "jī", "zài", "bāo", "", "", "", ""]
+    },
+    {
+      "q": "他坐在椅子___。",
+      "options": [
+        {"text": "上", "error_tag": null, "pinyin": ["shàng"]},
+        {"text": "下", "error_tag": "other", "pinyin": ["xià"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Ngồi trên ghế nên dùng 上. 下 nghĩa là dưới, không đúng.",
+        "en": "Sitting on a chair uses 上. 下 means under, which is incorrect."
+      },
+      "q_pinyin": ["tā", "zuò", "zài", "yǐ", "zi", "", "", "", ""]
+    },
+    {
+      "q": "猫在桌子___。",
+      "options": [
+        {"text": "下", "error_tag": null, "pinyin": ["xià"]},
+        {"text": "中", "error_tag": "other", "pinyin": ["zhōng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Con mèo ở dưới bàn nên dùng 下. 中 nghĩa là trong/giữa, không hợp.",
+        "en": "The cat is under the table, so 下 is correct. 中 means inside/among, which does not fit."
+      },
+      "q_pinyin": ["māo", "zài", "zhuō", "zi", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói đồ vật của bạn ở đâu, dùng 在⋯⋯上/下/中.",
+      "en": "Write a sentence saying where one of your belongings is, using 在⋯⋯上/下/中."
+    },
+    "placeholder": "我的书在……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["在"], "role": "marker"}, {"any_of": ["上", "下", "里"], "role": "particle"}]
+    },
+    "sample": {"text": "我的书在桌子上。", "pinyin": ["wǒ", "de", "shū", "zài", "zhuō", "zi", "shàng", ""]},
+    "placeholder_pinyin": ["wǒ", "de", "shū", "zài", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338430",
+    "generated_at": "2026-10-07T02:00:30Z"
+  },
+  "review": null
+}

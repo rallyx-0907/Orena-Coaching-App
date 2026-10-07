@@ -1,0 +1,213 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_7.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_1_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.074"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách biểu đạt đặc biệt: 概数表示法2", "en": "Special expressions: 概数表示法2"},
+    "native_title": "概数表示法2",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Cách dùng hai số từ liền nhau để biểu thị số lượng ước chừng, không cần con số chính xác.",
+      "en": "How to use two adjacent numerals to express an approximate quantity without giving an exact number."
+    },
+    "sub": {"vi": "số lượng ước chừng", "en": "approximate quantity"},
+    "native_title_pinyin": ["gài", "shù", "biǎo", "shì", "fǎ", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn không biết con số chính xác và chỉ muốn nói khoảng chừng.",
+      "en": "When you do not know the exact number and only want to give a rough range."
+    },
+    {
+      "vi": "Khi số lượng nhỏ và bạn muốn nói một hai, ba bốn đơn vị gì đó.",
+      "en": "When the quantity is small and you want to say something like one or two, three or four."
+    },
+    {
+      "vi": "Khi bạn muốn nói một khoảng thời gian hoặc số người ước lượng trong câu chuyện hằng ngày.",
+      "en": "When you want to give an estimated period of time or number of people in everyday speech."
+    },
+    {
+      "vi": "Khi cần nhấn mạnh rằng đó chỉ là con số phỏng đoán, không phải số liệu chính xác.",
+      "en": "When you need to stress that the number is a guess, not an exact figure."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "số từ",
+        "role": "other",
+        "label": {"vi": "số từ thứ nhất", "en": "first numeral"},
+        "pinyin": ["", "", "", "", ""]
+      },
+      {
+        "text": "số từ",
+        "role": "other",
+        "label": {"vi": "số từ thứ hai", "en": "second numeral"},
+        "pinyin": ["", "", "", "", ""]
+      },
+      {
+        "text": "lượng từ",
+        "role": "classifier",
+        "label": {"vi": "lượng từ", "en": "measure word"},
+        "pinyin": ["", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "danh từ",
+        "role": "object",
+        "label": {"vi": "danh từ", "en": "noun"},
+        "pinyin": ["", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我买了三四个苹果。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "classifier"},
+        {"start": 6, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hai số từ liền nhau 三 và 四 biểu thị số lượng ước chừng khoảng ba bốn quả.",
+        "en": "The adjacent numerals 三 and 四 express an approximate quantity of about three or four."
+      },
+      "translation": {"vi": "Tôi đã mua khoảng ba bốn quả táo.", "en": "I bought about three or four apples."},
+      "pinyin": ["wǒ", "mǎi", "le", "sān", "sì", "gè", "píng", "guǒ", ""]
+    },
+    {
+      "text": "他学了七八个月汉语。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "classifier"},
+        {"start": 6, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hai số từ 七 và 八 đứng cạnh nhau cho biết khoảng thời gian ước chừng bảy tám tháng.",
+        "en": "The adjacent numerals 七 and 八 give an estimated period of about seven or eight months."
+      },
+      "translation": {
+        "vi": "Anh ấy đã học tiếng Trung khoảng bảy tám tháng.",
+        "en": "He studied Chinese for about seven or eight months."
+      },
+      "pinyin": ["tā", "xué", "le", "qī", "bā", "gè", "yuè", "hàn", "yǔ", ""]
+    },
+    {
+      "text": "教室里有二十来个学生。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "classifier"},
+        {"start": 8, "end": 10, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "二十 và 来 đứng cạnh nhau biểu thị số lượng ước chừng khoảng hai mươi người.",
+        "en": "二十 and 来 stand together to express an approximate quantity of about twenty."
+      },
+      "translation": {
+        "vi": "Trong lớp học có khoảng hai mươi học sinh.",
+        "en": "There are about twenty students in the classroom."
+      },
+      "pinyin": ["jiào", "shì", "lǐ", "yǒu", "èr", "shí", "lái", "gè", "xué", "shēng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học quên dùng hai số từ liền nhau để biểu thị ước chừng, chỉ dùng một số từ nên câu không diễn đạt được ý khoảng chừng.",
+        "en": "The learner forgets to use two adjacent numerals for approximation and uses only one numeral, so the sentence does not express an approximate quantity."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我买了三苹果。",
+      "right": "我买了三四个苹果。",
+      "wrong_pinyin": ["wǒ", "mǎi", "le", "sān", "píng", "guǒ", ""],
+      "right_pinyin": ["wǒ", "mǎi", "le", "sān", "sì", "gè", "píng", "guǒ", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我买了___个苹果。",
+      "options": [
+        {"text": "三四个", "error_tag": null, "pinyin": ["sān", "sì", "gè"]},
+        {"text": "三个四", "error_tag": "word_order", "pinyin": ["sān", "gè", "sì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai số từ ước chừng phải đứng liền nhau trước lượng từ: 三四个. Đảo thành 三个四 là sai trật tự.",
+        "en": "The two approximate numerals must stand together before the measure word: 三四个. Reversing them as 三个四 is a word-order error."
+      },
+      "q_pinyin": ["wǒ", "mǎi", "le", "", "", "", "gè", "píng", "guǒ", ""]
+    },
+    {
+      "q": "他学了___个月汉语。",
+      "options": [
+        {"text": "七八", "error_tag": null, "pinyin": ["qī", "bā"]},
+        {"text": "七和八", "error_tag": "conjunction", "pinyin": ["qī", "hé", "bā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Biểu thị ước chừng chỉ cần hai số từ đứng cạnh nhau, không dùng liên từ 和 ở giữa.",
+        "en": "To express an approximate quantity, the two numerals stand next to each other; do not insert the conjunction 和 between them."
+      },
+      "q_pinyin": ["tā", "xué", "le", "", "", "", "gè", "yuè", "hàn", "yǔ", ""]
+    },
+    {
+      "q": "教室里有二十___个学生。",
+      "options": [
+        {"text": "来", "error_tag": null, "pinyin": ["lái"]},
+        {"text": "去", "error_tag": "word_choice", "pinyin": ["qù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "来 đặt sau số từ biểu thị ước chừng khoảng chừng; 去 không có chức năng này.",
+        "en": "来 after a numeral expresses approximation; 去 does not have this function."
+      },
+      "q_pinyin": ["jiào", "shì", "lǐ", "yǒu", "èr", "shí", "", "", "", "gè", "xué", "shēng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về số lượng đồ vật hoặc thời gian bạn ước chừng, dùng hai số từ liền nhau.",
+      "en": "Write one sentence about an approximate number of things or an estimated period of time, using two adjacent numerals."
+    },
+    "placeholder": "我买了……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["二", "三", "四", "七", "八", "十"], "role": "other"},
+        {"any_of": ["二", "三", "四", "七", "八", "十", "来"], "role": "other"},
+        {"any_of": ["个", "月"], "role": "classifier"}
+      ]
+    },
+    "sample": {"text": "我买了三四个苹果。", "pinyin": ["wǒ", "mǎi", "le", "sān", "sì", "gè", "píng", "guǒ", ""]},
+    "placeholder_pinyin": ["wǒ", "mǎi", "le", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338306",
+    "generated_at": "2026-10-07T01:58:26Z"
+  },
+  "review": null
+}

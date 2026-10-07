@@ -1,0 +1,213 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_2_1_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_1_8.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.023", "gf0025.hsk4.024"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 大A大B", "en": "Chinese grammar: 大A大B"},
+    "native_title": "大A大B",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Mẫu 大A大B dùng hai tính từ hoặc động từ đơn âm tiết để nhấn mạnh mức độ lớn, mạnh hoặc nhiều của sự việc.",
+      "en": "The 大A大B pattern uses two single-syllable adjectives or verbs to stress that something is done on a large scale, strongly, or to a great extent."
+    },
+    "sub": {"vi": "nhấn mạnh mức độ", "en": "emphasis on scale"},
+    "native_title_pinyin": ["dà", "", "dà", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một hành động được làm mạnh mẽ, thoải mái hoặc quy mô lớn, như 大吃大喝, 大吵大闹.",
+      "en": "When you want to say an action is done vigorously, freely, or on a large scale, as in 大吃大喝 or 大吵大闹."
+    },
+    {
+      "vi": "Khi hai từ đơn âm tiết ghép thành một cụm cố định, thường mang nghĩa tiêu cực hoặc phóng đại.",
+      "en": "When two single-syllable words form a fixed phrase, often with an exaggerated or negative tone."
+    },
+    {
+      "vi": "Khi câu cần nhấn mạnh thái độ hoặc cách làm việc, không chỉ nêu sự việc trung tính.",
+      "en": "When the sentence needs to stress the manner or attitude, not just state a neutral fact."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "大",
+        "role": "other",
+        "label": {"vi": "大 nhấn mạnh", "en": "emphatic 大"},
+        "pinyin": ["dà"]
+      },
+      {
+        "text": "A",
+        "role": "verb",
+        "label": {"vi": "động từ/tính từ đơn âm tiết thứ nhất", "en": "first single-syllable verb/adjective"},
+        "pinyin": [""]
+      },
+      {
+        "text": "大",
+        "role": "other",
+        "label": {"vi": "大 nhấn mạnh", "en": "emphatic 大"},
+        "pinyin": ["dà"]
+      },
+      {
+        "text": "B",
+        "role": "verb",
+        "label": {"vi": "động từ/tính từ đơn âm tiết thứ hai", "en": "second single-syllable verb/adjective"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他们昨天大吃大喝了一顿。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "大吃大喝 nhấn mạnh việc ăn uống nhiều và thoải mái.",
+        "en": "大吃大喝 stresses eating and drinking a lot and freely."
+      },
+      "translation": {"vi": "Hôm qua họ ăn uống thả ga một bữa.", "en": "Yesterday they ate and drank heartily."},
+      "pinyin": ["tā", "men", "zuó", "tiān", "dà", "chī", "dà", "hē", "le", "yī", "dùn", ""]
+    },
+    {
+      "text": "孩子们在客厅大吵大闹。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "verb"},
+        {"start": 8, "end": 9, "role": "other"},
+        {"start": 9, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "大吵大闹 nhấn mạnh việc gây ồn ào, náo loạn.",
+        "en": "大吵大闹 stresses making a lot of noise and causing a disturbance."
+      },
+      "translation": {
+        "vi": "Bọn trẻ đang ầm ĩ trong phòng khách.",
+        "en": "The children are making a lot of noise in the living room."
+      },
+      "pinyin": ["hái", "zi", "men", "zài", "kè", "tīng", "dà", "chǎo", "dà", "nào", ""]
+    },
+    {
+      "text": "她喜欢在大自然里大喊大叫。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 9, "end": 10, "role": "verb"},
+        {"start": 10, "end": 11, "role": "other"},
+        {"start": 11, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "大喊大叫 nhấn mạnh việc hét lên to và liên tục.",
+        "en": "大喊大叫 stresses shouting loudly and repeatedly."
+      },
+      "translation": {
+        "vi": "Cô ấy thích hét lớn trong thiên nhiên.",
+        "en": "She likes shouting loudly out in nature."
+      },
+      "pinyin": ["tā", "xǐ", "huān", "zài", "dà", "zì", "rán", "lǐ", "dà", "hǎn", "dà", "jiào", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Mẫu cố định là 大A大B, không phải A大B大; đảo vị trí 大 làm sai trật tự từ.",
+        "en": "The fixed pattern is 大A大B, not A大B大; moving 大 breaks the word order."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "他们昨天吃大喝大了一顿。",
+      "right": "他们昨天大吃大喝了一顿。",
+      "wrong_pinyin": ["tā", "men", "zuó", "tiān", "chī", "dà", "hē", "dà", "le", "yī", "dùn", ""],
+      "right_pinyin": ["tā", "men", "zuó", "tiān", "dà", "chī", "dà", "hē", "le", "yī", "dùn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "孩子们在客厅大___大闹。",
+      "options": [
+        {"text": "吵", "error_tag": null, "pinyin": ["chǎo"]},
+        {"text": "闹", "error_tag": "redundancy", "pinyin": ["nào"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu cố định là 大吵大闹, nghĩa là gây ồn ào.",
+        "en": "The fixed phrase is 大吵大闹, meaning to make a lot of noise."
+      },
+      "q_pinyin": ["hái", "zi", "men", "zài", "kè", "tīng", "dà", "", "", "", "dà", "nào", ""]
+    },
+    {
+      "q": "他们昨天大___大喝了一顿。",
+      "options": [
+        {"text": "吃", "error_tag": null, "pinyin": ["chī"]},
+        {"text": "喝", "error_tag": "redundancy", "pinyin": ["hē"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu cố định là 大吃大喝, nghĩa là ăn uống thả ga.",
+        "en": "The fixed phrase is 大吃大喝, meaning to eat and drink heartily."
+      },
+      "q_pinyin": ["tā", "men", "zuó", "tiān", "dà", "", "", "", "dà", "hē", "le", "yī", "dùn", ""]
+    },
+    {
+      "q": "她喜欢在大自然里大___大叫。",
+      "options": [
+        {"text": "喊", "error_tag": null, "pinyin": ["hǎn"]},
+        {"text": "叫", "error_tag": "redundancy", "pinyin": ["jiào"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu cố định là 大喊大叫, nghĩa là hét lớn.",
+        "en": "The fixed phrase is 大喊大叫, meaning to shout loudly."
+      },
+      "q_pinyin": ["tā", "xǐ", "huān", "zài", "dà", "zì", "rán", "lǐ", "dà", "", "", "", "dà", "jiào", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng mẫu 大A大B để nói về một việc em từng làm mạnh mẽ hoặc quy mô lớn.",
+      "en": "Write one sentence using the 大A大B pattern about something you did vigorously or on a large scale."
+    },
+    "placeholder": "我昨天……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["大"], "role": "other"},
+        {"regex": "[\\u4e00-\\u9fff]", "role": "verb"},
+        {"any_of": ["大"], "role": "other"},
+        {"regex": "[\\u4e00-\\u9fff]", "role": "verb"}
+      ]
+    },
+    "sample": {
+      "text": "我昨天大吃大喝了一顿。",
+      "pinyin": ["wǒ", "zuó", "tiān", "dà", "chī", "dà", "hē", "le", "yī", "dùn", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "zuó", "tiān", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338432",
+    "generated_at": "2026-10-07T02:00:32Z"
+  },
+  "review": null
+}

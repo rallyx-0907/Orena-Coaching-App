@@ -1,0 +1,306 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_8_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_7.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.145", "gf0025.hsk7_9.146"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 带关联词语", "en": "Chinese grammar: 带关联词语"},
+    "native_title": "带关联词语",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng cặp từ nối để liên kết hai mệnh đề trong câu tiếng Trung.",
+      "en": "This grammar point teaches how to use paired linking words to connect two clauses in a Chinese sentence."
+    },
+    "sub": {"vi": "cặp từ nối", "en": "paired connectors"},
+    "native_title_pinyin": ["dài", "guān", "lián", "cí", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu nguyên nhân và kết quả trong cùng một câu, ví dụ 因为...所以...",
+      "en": "When you want to state a cause and a result in one sentence, for example 因为...所以..."
+    },
+    {
+      "vi": "Khi bạn muốn nêu điều kiện và kết quả, ví dụ 只要...就...",
+      "en": "When you want to state a condition and a result, for example 只要...就..."
+    },
+    {
+      "vi": "Khi bạn muốn nêu sự tương phản giữa hai mệnh đề, ví dụ 虽然...但是...",
+      "en": "When you want to contrast two clauses, for example 虽然...但是..."
+    },
+    {
+      "vi": "Khi bạn muốn nêu mục đích của hành động, ví dụ 为了...",
+      "en": "When you want to state the purpose of an action, for example 为了..."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "关联词",
+        "role": "connector",
+        "label": {"vi": "từ nối thứ nhất", "en": "first connector"},
+        "options": [
+          {"text": "因为", "pinyin": ["yīn", "wèi"]},
+          {"text": "虽然", "pinyin": ["suī", "rán"]},
+          {"text": "只要", "pinyin": ["zhǐ", "yào"]},
+          {"text": "为了", "pinyin": ["wèi", "le"]}
+        ],
+        "pinyin": ["guān", "lián", "cí"]
+      },
+      {
+        "text": "分句一",
+        "role": "other",
+        "label": {"vi": "mệnh đề thứ nhất", "en": "first clause"},
+        "pinyin": ["fēn", "jù", "yī"]
+      },
+      {
+        "text": "关联词",
+        "role": "connector",
+        "label": {"vi": "từ nối thứ hai", "en": "second connector"},
+        "options": [
+          {"text": "所以", "pinyin": ["suǒ", "yǐ"]},
+          {"text": "但是", "pinyin": ["dàn", "shì"]},
+          {"text": "就", "pinyin": ["jiù"]}
+        ],
+        "pinyin": ["guān", "lián", "cí"]
+      },
+      {
+        "text": "分句二",
+        "role": "other",
+        "label": {"vi": "mệnh đề thứ hai", "en": "second clause"},
+        "pinyin": ["fēn", "jù", "èr"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "因为下雨，所以我没去公园。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "因为 nêu nguyên nhân, 所以 nêu kết quả.",
+        "en": "因为 introduces the cause, 所以 introduces the result."
+      },
+      "translation": {
+        "vi": "Vì trời mưa nên tôi không đi công viên.",
+        "en": "Because it rained, I didn't go to the park."
+      },
+      "pinyin": ["yīn", "wèi", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "méi", "qù", "gōng", "yuán", ""]
+    },
+    {
+      "text": "虽然他很累，但是他还是完成了工作。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "虽然 mở đầu nhượng bộ, 但是 nêu điều tương phản.",
+        "en": "虽然 introduces a concession, 但是 introduces the contrasting result."
+      },
+      "translation": {
+        "vi": "Mặc dù anh ấy rất mệt nhưng anh ấy vẫn hoàn thành công việc.",
+        "en": "Although he was very tired, he still finished the work."
+      },
+      "pinyin": [
+        "suī",
+        "rán",
+        "tā",
+        "hěn",
+        "lèi",
+        "",
+        "dàn",
+        "shì",
+        "tā",
+        "hái",
+        "shì",
+        "wán",
+        "chéng",
+        "le",
+        "gōng",
+        "zuò",
+        ""
+      ]
+    },
+    {
+      "text": "只要努力，就能学好中文。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "只要 nêu điều kiện, 就 nêu kết quả tất yếu.",
+        "en": "只要 states the condition, 就 states the necessary result."
+      },
+      "translation": {
+        "vi": "Chỉ cần cố gắng là có thể học tốt tiếng Trung.",
+        "en": "As long as you work hard, you can learn Chinese well."
+      },
+      "pinyin": ["zhǐ", "yào", "nǔ", "lì", "", "jiù", "néng", "xué", "hǎo", "zhōng", "wén", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng 但是 (tương phản) thay vì 所以 (kết quả) sau 因为, làm sai quan hệ nhân quả.",
+        "en": "The learner uses 但是 (contrast) instead of 所以 (result) after 因为, breaking the cause-result relation."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "因为下雨，但是我没去公园。",
+      "right": "因为下雨，所以我没去公园。",
+      "wrong_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "dàn", "shì", "wǒ", "méi", "qù", "gōng", "yuán", ""],
+      "right_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "méi", "qù", "gōng", "yuán", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___明天下雨，我们就不去爬山了。",
+      "options": [
+        {"text": "如果", "error_tag": null, "pinyin": ["rú", "guǒ"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]},
+        {"text": "虽然", "error_tag": "conjunction", "pinyin": ["suī", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "如果...就... là cặp từ nối điều kiện, phù hợp với ngữ cảnh giả định.",
+        "en": "如果...就... is the conditional pair, fitting the hypothetical context."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "bù",
+        "qù",
+        "pá",
+        "shān",
+        "le",
+        ""
+      ]
+    },
+    {
+      "q": "虽然这个题很难，___我还是做出来了。",
+      "options": [
+        {"text": "但是", "error_tag": null, "pinyin": ["dàn", "shì"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "虽然...但是... là cặp từ nối tương phản, 所以 và 因为 không phù hợp.",
+        "en": "虽然...但是... is the contrast pair; 所以 and 因为 do not fit."
+      },
+      "q_pinyin": [
+        "suī",
+        "rán",
+        "zhè",
+        "ge",
+        "tí",
+        "hěn",
+        "nán",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "hái",
+        "shì",
+        "zuò",
+        "chū",
+        "lái",
+        "le",
+        ""
+      ]
+    },
+    {
+      "q": "他___工作很忙，但是每天还是坚持学习。",
+      "options": [
+        {"text": "虽然", "error_tag": null, "pinyin": ["suī", "rán"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]},
+        {"text": "只要", "error_tag": "conjunction", "pinyin": ["zhǐ", "yào"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "虽然 đứng trước mệnh đề nhượng bộ, kết hợp với 但是 ở mệnh đề sau.",
+        "en": "虽然 introduces the concessive clause, paired with 但是 in the following clause."
+      },
+      "q_pinyin": [
+        "tā",
+        "",
+        "",
+        "",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "dàn",
+        "shì",
+        "měi",
+        "tiān",
+        "hái",
+        "shì",
+        "jiān",
+        "chí",
+        "xué",
+        "xí",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng cặp từ nối 因为...所以... để nói lý do và kết quả.",
+      "en": "Write a sentence about yourself using the pair 因为...所以... to state a reason and a result."
+    },
+    "placeholder": "因为……所以……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["因为"], "role": "connector"}, {"any_of": ["所以"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "因为今天下雨，所以我带伞了。",
+      "pinyin": ["yīn", "wèi", "jīn", "tiān", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "dài", "sǎn", "le", ""]
+    },
+    "placeholder_pinyin": ["yīn", "wèi", "", "", "suǒ", "yǐ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338949",
+    "generated_at": "2026-10-07T02:09:09Z"
+  },
+  "review": null
+}

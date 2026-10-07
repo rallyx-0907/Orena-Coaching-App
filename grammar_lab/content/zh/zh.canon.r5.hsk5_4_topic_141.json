@@ -1,0 +1,345 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_4_topic_141",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_4_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-4-topic-141"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["zh-hsk5-4-topic-141"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 倍数和比例", "en": "Chinese grammar: 倍数和比例"},
+    "native_title": "倍数和比例",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc 倍数和比例 dùng để nói một đại lượng gấp bao nhiêu lần hoặc tăng giảm bao nhiêu phần trăm so với một đại lượng khác.",
+      "en": "The 倍数和比例 pattern expresses how many times larger one quantity is than another, or how much a quantity increases or decreases in percentage terms."
+    },
+    "sub": {"vi": "gấp bao nhiêu lần", "en": "times and percentages"},
+    "native_title_pinyin": ["bèi", "shù", "hé", "bǐ", "lì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi so sánh hai đại lượng và muốn nói đại lượng này gấp N lần đại lượng kia.",
+      "en": "When comparing two quantities and saying one is N times the other."
+    },
+    {
+      "vi": "Khi nói mức tăng hoặc giảm của một con số theo phần trăm.",
+      "en": "When stating how much a figure rises or falls in percentage terms."
+    },
+    {
+      "vi": "Khi cần nêu tỷ lệ chính xác trong báo cáo, số liệu hoặc thảo luận công việc.",
+      "en": "When giving a precise ratio in reports, data, or work discussions."
+    },
+    {
+      "vi": "Khi muốn tránh cách nói mơ hồ giữa 'tăng gấp đôi' và 'tăng thêm gấp đôi'.",
+      "en": "When you need to avoid ambiguity between 'increased to twice' and 'increased by twice'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "subject",
+        "label": {"vi": "đại lượng được so sánh", "en": "quantity being compared"},
+        "pinyin": [""]
+      },
+      {
+        "text": "是",
+        "role": "verb",
+        "label": {"vi": "là / bằng", "en": "is / equals"},
+        "pinyin": ["shì"]
+      },
+      {
+        "text": "B",
+        "role": "object",
+        "label": {"vi": "đại lượng mốc so sánh", "en": "reference quantity"},
+        "pinyin": [""]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ sở hữu", "en": "possessive particle"},
+        "pinyin": ["de"]
+      },
+      {
+        "text": "N",
+        "role": "other",
+        "label": {"vi": "số lần", "en": "number of times"},
+        "pinyin": [""]
+      },
+      {
+        "text": "倍",
+        "role": "classifier",
+        "label": {"vi": "lần (bội số)", "en": "times (multiple)"},
+        "pinyin": ["bèi"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "今年的销售额是去年的两倍。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "subject"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 9, "role": "object"},
+        {"start": 9, "end": 10, "role": "particle"},
+        {"start": 10, "end": 11, "role": "other"},
+        {"start": 11, "end": 12, "role": "classifier"}
+      ],
+      "annotation": {
+        "vi": "A 是 B 的 N 倍: doanh số năm nay bằng hai lần năm ngoái.",
+        "en": "A 是 B 的 N 倍: this year's sales are twice last year's."
+      },
+      "translation": {
+        "vi": "Doanh số năm nay gấp đôi năm ngoái.",
+        "en": "This year's sales are twice last year's."
+      },
+      "pinyin": ["jīn", "nián", "de", "xiāo", "shòu", "é", "shì", "qù", "nián", "de", "liǎng", "bèi", ""]
+    },
+    {
+      "text": "新系统的速度是旧系统的三倍。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "subject"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 10, "role": "object"},
+        {"start": 10, "end": 11, "role": "particle"},
+        {"start": 11, "end": 12, "role": "other"},
+        {"start": 12, "end": 13, "role": "classifier"}
+      ],
+      "annotation": {
+        "vi": "A 是 B 的 N 倍: tốc độ hệ mới gấp ba lần hệ cũ.",
+        "en": "A 是 B 的 N 倍: the new system's speed is three times the old one's."
+      },
+      "translation": {
+        "vi": "Tốc độ của hệ thống mới gấp ba lần hệ thống cũ.",
+        "en": "The new system's speed is three times that of the old system."
+      },
+      "pinyin": ["xīn", "xì", "tǒng", "de", "sù", "dù", "shì", "jiù", "xì", "tǒng", "de", "sān", "bèi", ""]
+    },
+    {
+      "text": "这个城市的人口是那个城市的两倍。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "subject"},
+        {"start": 7, "end": 8, "role": "verb"},
+        {"start": 8, "end": 12, "role": "object"},
+        {"start": 12, "end": 13, "role": "particle"},
+        {"start": 13, "end": 14, "role": "other"},
+        {"start": 14, "end": 15, "role": "classifier"}
+      ],
+      "annotation": {
+        "vi": "A 是 B 的 N 倍: dân số thành phố này gấp đôi thành phố kia.",
+        "en": "A 是 B 的 N 倍: this city's population is twice that city's."
+      },
+      "translation": {
+        "vi": "Dân số của thành phố này gấp đôi dân số của thành phố kia.",
+        "en": "The population of this city is twice that of that city."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "chéng",
+        "shì",
+        "de",
+        "rén",
+        "kǒu",
+        "shì",
+        "nà",
+        "ge",
+        "chéng",
+        "shì",
+        "de",
+        "liǎng",
+        "bèi",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thêm 多 sau 倍 làm sai cấu trúc A 是 B 的 N 倍; 多 không đứng sau 倍 trong mẫu này.",
+        "en": "Adding 多 after 倍 breaks the A 是 B 的 N 倍 pattern; 多 does not follow 倍 in this structure."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "今年的销售额是去年的两倍多。",
+      "right": "今年的销售额是去年的两倍。",
+      "wrong_pinyin": [
+        "jīn",
+        "nián",
+        "de",
+        "xiāo",
+        "shòu",
+        "é",
+        "shì",
+        "qù",
+        "nián",
+        "de",
+        "liǎng",
+        "bèi",
+        "duō",
+        ""
+      ],
+      "right_pinyin": ["jīn", "nián", "de", "xiāo", "shòu", "é", "shì", "qù", "nián", "de", "liǎng", "bèi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "今年的产量是去年的___。",
+      "options": [
+        {"text": "两倍", "error_tag": null, "pinyin": ["liǎng", "bèi"]},
+        {"text": "两倍多", "error_tag": "other", "pinyin": ["liǎng", "bèi", "duō"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "A 是 B 的 N 倍: điền 两倍 để nói gấp đôi. 两倍多 không thuộc mẫu này.",
+        "en": "A 是 B 的 N 倍: use 两倍 for 'twice'. 两倍多 does not fit this pattern."
+      },
+      "q_pinyin": ["jīn", "nián", "de", "chǎn", "liàng", "shì", "qù", "nián", "de", "", "", "", ""]
+    },
+    {
+      "q": "价格比上个月上涨了___。",
+      "options": [
+        {"text": "百分之十", "error_tag": null, "pinyin": ["bǎi", "fēn", "zhī", "shí"]},
+        {
+          "text": "百分之十百分比",
+          "error_tag": "redundancy",
+          "pinyin": ["bǎi", "fēn", "zhī", "shí", "bǎi", "fēn", "bǐ"]
+        }
+      ],
+      "answer": 0,
+      "explain": {"vi": "百分之十 đã là 10%, không thêm 百分比.", "en": "百分之十 already means 10%; do not add 百分比."},
+      "q_pinyin": ["jià", "gé", "bǐ", "shàng", "gè", "yuè", "shàng", "zhǎng", "le", "", "", "", ""]
+    },
+    {
+      "q": "这个房间的面积是那个房间的___。",
+      "options": [
+        {"text": "三倍", "error_tag": null, "pinyin": ["sān", "bèi"]},
+        {"text": "三倍多", "error_tag": "other", "pinyin": ["sān", "bèi", "duō"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "A 是 B 的 N 倍: dùng 三倍 cho gấp ba lần.", "en": "A 是 B 的 N 倍: use 三倍 for 'three times'."},
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "fáng",
+        "jiān",
+        "de",
+        "miàn",
+        "jī",
+        "shì",
+        "nà",
+        "ge",
+        "fáng",
+        "jiān",
+        "de",
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh hai đại lượng mà bạn biết, dùng mẫu A 是 B 的 N 倍.",
+      "en": "Write one sentence comparing two quantities you know, using A 是 B 的 N 倍."
+    },
+    "placeholder": "这个房间的面积是那个房间的……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["是"], "role": "verb"},
+        {"any_of": ["的"], "role": "particle"},
+        {"any_of": ["倍"], "role": "classifier"}
+      ]
+    },
+    "sample": {
+      "text": "这个房间的面积是那个房间的两倍。",
+      "pinyin": [
+        "zhè",
+        "ge",
+        "fáng",
+        "jiān",
+        "de",
+        "miàn",
+        "jī",
+        "shì",
+        "nà",
+        "ge",
+        "fáng",
+        "jiān",
+        "de",
+        "liǎng",
+        "bèi",
+        ""
+      ]
+    },
+    "placeholder_pinyin": [
+      "zhè",
+      "ge",
+      "fáng",
+      "jiān",
+      "de",
+      "miàn",
+      "jī",
+      "shì",
+      "nà",
+      "ge",
+      "fáng",
+      "jiān",
+      "de",
+      "",
+      ""
+    ]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348645",
+    "generated_at": "2026-10-07T04:50:45Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-4-topic-141"],
+      "content_version": 2,
+      "content_hash": "cd838ee175d06c31754fd37c32a586cd21fbe8c94391e769f01de72f72639000",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-4-topic-141",
+          "issue": "R5 gộp cả cấu trúc 倍数 và 百分之 vào một điểm nhưng không cho công thức rõ ràng, khiến người học khó phân biệt hai mẫu.",
+          "fix": "Tách công thức chính A 是 B 的 N 倍 thành các slot riêng; giữ 百分之 như một biến thể trong phần giải thích và bài tập nhanh."
+        },
+        {
+          "r5_id": "zh-hsk5-4-topic-141",
+          "issue": "Ví dụ '新系统的速度比旧系统快一倍' dùng 比...快一倍, không khớp với công thức A 是 B 的 N 倍 đang dạy.",
+          "fix": "Thay bằng '新系统的速度是旧系统的三倍' để minh họa đúng mẫu A 是 B 的 N 倍."
+        },
+        {
+          "r5_id": "zh-hsk5-4-topic-141",
+          "issue": "Lỗi '百分之十百分比' được nêu nhưng thiếu giải thích cơ chế dư thừa.",
+          "fix": "Thêm lý do: 百分之十 đã bao hàm nghĩa phần trăm, nên 百分比 là dư thừa."
+        },
+        {
+          "r5_id": "zh-hsk5-4-topic-141",
+          "issue": "R5 không có bài tập điền khuyết hoặc sản xuất cá nhân theo mẫu.",
+          "fix": "Thêm quick_practice với ba câu điền khuyết và personal_production với mẫu A 是 B 的 N 倍."
+        }
+      ]
+    }
+  },
+  "review": null
+}

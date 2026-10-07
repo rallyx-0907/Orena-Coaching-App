@@ -1,0 +1,419 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_7_topic_145",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.relative",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_5_scope"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-7-topic-145", "zh-hsk6-9-topic"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk5-7-topic-145", "zh-hsk6-9-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 同位与解释", "en": "Chinese grammar: 同位与解释"},
+    "native_title": "同位与解释",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "同位与解释 dùng để đặt một cụm danh từ hoặc một mệnh đề ngay cạnh thành phần trước đó nhằm định danh, giải thích hoặc diễn đạt lại cùng một đối tượng.",
+      "en": "Apposition and explanation place a noun phrase or clause next to a preceding element to identify, explain, or reformulate the same referent."
+    },
+    "sub": {"vi": "đồng vị và giải thích", "en": "apposition & explanation"},
+    "native_title_pinyin": ["tóng", "wèi", "yǔ", "jiě", "shì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói rõ một người hoặc vật là ai, là gì bằng cách thêm một cụm danh từ ngay sau đó.",
+      "en": "When you want to clarify who or what someone or something is by adding a noun phrase right after it."
+    },
+    {
+      "vi": "Khi cần giải thích một khái niệm, một vị trí hoặc một chức danh mà không muốn tách thành câu riêng.",
+      "en": "When you need to explain a concept, position, or title without making it a separate sentence."
+    },
+    {
+      "vi": "Khi muốn diễn đạt lại ý vừa nói bằng cách nói khác, thường dùng 也就是说 hoặc 换句话说.",
+      "en": "When you want to restate what was just said in another way, often with 也就是说 or 换句话说."
+    },
+    {
+      "vi": "Khi viết hoặc nói ở mức độ trang trọng vừa phải, cần thêm thông tin phụ nhưng vẫn giữ mạch chính.",
+      "en": "When writing or speaking at a moderately formal level and you need to add parenthetical information while keeping the main flow."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "NP1",
+        "role": "subject",
+        "label": {"vi": "cụm danh từ chính", "en": "main noun phrase"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "，",
+        "role": "other",
+        "label": {"vi": "dấu ngăn cách", "en": "separator"},
+        "pinyin": [""]
+      },
+      {
+        "text": "NP2",
+        "role": "complement",
+        "label": {"vi": "cụm đồng vị / giải thích", "en": "appositive / explanatory phrase"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "，",
+        "role": "other",
+        "label": {"vi": "dấu ngăn cách", "en": "separator"},
+        "pinyin": [""]
+      },
+      {
+        "text": "Predicate",
+        "role": "verb",
+        "label": {"vi": "vị ngữ chính", "en": "main predicate"},
+        "pinyin": ["", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "王老师，我们的中文老师，今天请假了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 11, "role": "complement"},
+        {"start": 11, "end": 12, "role": "other"},
+        {"start": 12, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "「我们的中文老师」đứng ngay sau tên để định danh cùng một người.",
+        "en": "「我们的中文老师」follows the name to identify the same person."
+      },
+      "translation": {
+        "vi": "Thầy Vương, giáo viên tiếng Trung của chúng tôi, hôm nay đã xin nghỉ.",
+        "en": "Teacher Wang, our Chinese teacher, took leave today."
+      },
+      "pinyin": [
+        "wáng",
+        "lǎo",
+        "shī",
+        "",
+        "wǒ",
+        "men",
+        "de",
+        "zhōng",
+        "wén",
+        "lǎo",
+        "shī",
+        "",
+        "jīn",
+        "tiān",
+        "qǐng",
+        "jià",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "北京，中国的首都，是一座很大的城市。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 8, "role": "complement"},
+        {"start": 8, "end": 9, "role": "other"},
+        {"start": 9, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "「中国的首都」giải thích Bắc Kinh là gì, cùng chỉ một đối tượng.",
+        "en": "「中国的首都」explains what Beijing is, referring to the same entity."
+      },
+      "translation": {
+        "vi": "Bắc Kinh, thủ đô của Trung Quốc, là một thành phố rất lớn.",
+        "en": "Beijing, the capital of China, is a very large city."
+      },
+      "pinyin": [
+        "běi",
+        "jīng",
+        "",
+        "zhōng",
+        "guó",
+        "de",
+        "shǒu",
+        "dū",
+        "",
+        "shì",
+        "yī",
+        "zuò",
+        "hěn",
+        "dà",
+        "de",
+        "chéng",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "text": "这个方案风险很低，也就是说，失败的可能性不大。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "subject"},
+        {"start": 8, "end": 9, "role": "other"},
+        {"start": 9, "end": 13, "role": "complement"},
+        {"start": 13, "end": 14, "role": "other"},
+        {"start": 14, "end": 22, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "「也就是说」diễn đạt lại ý trước đó bằng cách nói khác.",
+        "en": "「也就是说」restates the previous idea in another way."
+      },
+      "translation": {
+        "vi": "Phương án này rủi ro rất thấp, nói cách khác, khả năng thất bại không lớn.",
+        "en": "This plan has very low risk; that is to say, the chance of failure is small."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "fēng",
+        "xiǎn",
+        "hěn",
+        "dī",
+        "",
+        "yě",
+        "jiù",
+        "shì",
+        "shuō",
+        "",
+        "shī",
+        "bài",
+        "de",
+        "kě",
+        "néng",
+        "xìng",
+        "bù",
+        "dà",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng 的 để nối hai cụm cùng chỉ một người, tạo thành quan hệ sở hữu sai. Đồng vị không phải là chuỗi sở hữu 的.",
+        "en": "The learner uses 的 to link two phrases that refer to the same person, creating a wrong possessive relation. Apposition is not a 的 possessive chain."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "王老师的我们的中文老师今天请假了。",
+      "right": "王老师，我们的中文老师，今天请假了。",
+      "wrong_pinyin": [
+        "wáng",
+        "lǎo",
+        "shī",
+        "de",
+        "wǒ",
+        "men",
+        "de",
+        "zhōng",
+        "wén",
+        "lǎo",
+        "shī",
+        "jīn",
+        "tiān",
+        "qǐng",
+        "jià",
+        "le",
+        ""
+      ],
+      "right_pinyin": [
+        "wáng",
+        "lǎo",
+        "shī",
+        "",
+        "wǒ",
+        "men",
+        "de",
+        "zhōng",
+        "wén",
+        "lǎo",
+        "shī",
+        "",
+        "jīn",
+        "tiān",
+        "qǐng",
+        "jià",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "王老师，___，今天请假了。",
+      "options": [
+        {
+          "text": "我们的中文老师",
+          "error_tag": null,
+          "pinyin": ["wǒ", "men", "de", "zhōng", "wén", "lǎo", "shī"]
+        },
+        {
+          "text": "我们的中文老师的",
+          "error_tag": "particle",
+          "pinyin": ["wǒ", "men", "de", "zhōng", "wén", "lǎo", "shī", "de"]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm đồng vị đứng giữa hai dấu phẩy, không thêm 的 ở cuối.",
+        "en": "The appositive sits between two commas and does not take a trailing 的."
+      },
+      "q_pinyin": ["wáng", "lǎo", "shī", "", "", "", "", "", "jīn", "tiān", "qǐng", "jià", "le", ""]
+    },
+    {
+      "q": "北京，中国的首都，___一座很大的城市。",
+      "options": [
+        {"text": "是", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau cụm đồng vị, câu chính cần vị ngữ 是 để nối với thành phần giải thích.",
+        "en": "After the appositive, the main clause needs the predicate 是 to link to the explanation."
+      },
+      "q_pinyin": [
+        "běi",
+        "jīng",
+        "",
+        "zhōng",
+        "guó",
+        "de",
+        "shǒu",
+        "dū",
+        "",
+        "",
+        "",
+        "",
+        "yī",
+        "zuò",
+        "hěn",
+        "dà",
+        "de",
+        "chéng",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "q": "这个方案风险很低，___，失败的可能性不大。",
+      "options": [
+        {"text": "也就是说", "error_tag": null, "pinyin": ["yě", "jiù", "shì", "shuō"]},
+        {"text": "虽然", "error_tag": "conjunction", "pinyin": ["suī", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「也就是说」dùng để diễn đạt lại ý trước đó, không phải để chuyển ý tương phản.",
+        "en": "「也就是说」is used to restate the previous idea, not to introduce a contrast."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "fēng",
+        "xiǎn",
+        "hěn",
+        "dī",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "shī",
+        "bài",
+        "de",
+        "kě",
+        "néng",
+        "xìng",
+        "bù",
+        "dà",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giới thiệu một người hoặc một nơi, dùng cấu trúc đồng vị: tên riêng + ， + cụm giải thích + ， + vị ngữ.",
+      "en": "Write a sentence introducing a person or place using apposition: proper name + ， + explanatory phrase + ， + predicate."
+    },
+    "placeholder": "李明，我们的班长，……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["，"], "role": "other"}, {"any_of": ["，"], "role": "other"}]
+    },
+    "sample": {
+      "text": "李明，我们的班长，今天没来上课。",
+      "pinyin": [
+        "lǐ",
+        "míng",
+        "",
+        "wǒ",
+        "men",
+        "de",
+        "bān",
+        "zhǎng",
+        "",
+        "jīn",
+        "tiān",
+        "méi",
+        "lái",
+        "shàng",
+        "kè",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["lǐ", "míng", "", "wǒ", "men", "de", "bān", "zhǎng", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338700",
+    "generated_at": "2026-10-07T02:05:00Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-7-topic-145", "zh-hsk6-9-topic"],
+      "content_version": 2,
+      "content_hash": "ea29083c7054eb966fcbf83b247a7e371b414b6a8f7d9fa4f6f498d9748d89c8",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-7-topic-145",
+          "issue": "R5 gộp cả 同位语 và 插入语/reformulation vào một bài HSK5, trong khi phạm vi điểm này chỉ là 同位与解释.",
+          "fix": "Chỉ giữ cấu trúc đồng vị và chức năng giải thích/diễn đạt lại; loại bỏ các nội dung thuộc 插入语 độc lập."
+        },
+        {
+          "r5_id": "zh-hsk5-7-topic-145",
+          "issue": "Ví dụ 他提出了一个目标：三个月内完成项目。 dùng dấu hai chấm để dẫn nội dung, không phải cấu trúc đồng vị NP1，NP2，Predicate.",
+          "fix": "Thay bằng ví dụ 这个方案风险很低，也就是说，失败的可能性不大。 để minh họa chức năng diễn đạt lại."
+        },
+        {
+          "r5_id": "zh-hsk5-7-topic-145",
+          "issue": "Lỗi 王老师的我们的中文老师。 thiếu vị ngữ và không phải câu hoàn chỉnh.",
+          "fix": "Sửa thành 王老师，我们的中文老师，今天请假了。 để có câu đúng và thể hiện rõ quan hệ đồng vị."
+        },
+        {
+          "r5_id": "zh-hsk6-9-topic",
+          "issue": "Bài HSK6 bao gồm 插入语 và các contrast 至于/关于/对于, vượt phạm vi điểm HSK5 này.",
+          "fix": "Không đưa các nội dung HSK6 vào bài; chỉ giữ phần đồng vị và giải thích phù hợp HSK5."
+        }
+      ]
+    }
+  },
+  "review": null
+}

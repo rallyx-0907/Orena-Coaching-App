@@ -1,0 +1,268 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_7.p3",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_7.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "register"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.140", "gf0025.hsk7_9.141", "gf0025.hsk7_9.142", "gf0025.hsk7_9.143"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 哪有X这么Y的/有X这样Y的吗", "en": "Chinese grammar: 哪有X这么Y的/有X这样Y的吗"},
+    "native_title": "哪有X这么Y的/有X这样Y的吗",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Mẫu câu 哪有X这么Y的 / 有X这样Y的吗 dùng để phủ nhận mạnh mẽ một nhận xét, cho rằng điều được nói là vô lý hoặc không thể có.",
+      "en": "The patterns 哪有X这么Y的 / 有X这样Y的吗 strongly reject a claim, treating what was said as unreasonable or impossible."
+    },
+    "sub": {"vi": "phủ định mạnh", "en": "strong rejection"},
+    "native_title_pinyin": ["nǎ", "yǒu", "", "zhè", "me", "", "de", "", "yǒu", "", "zhè", "yàng", "", "de", "ma"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi ai đó vừa nói một điều mà bạn thấy vô lý và muốn phản bác ngay.",
+      "en": "When someone has just said something you find unreasonable and you want to push back immediately."
+    },
+    {
+      "vi": "Khi bạn muốn nói 'làm gì có chuyện...' hoặc 'có ai lại... thế bao giờ'.",
+      "en": "When you want to say 'there is no way that...' or 'who ever... like that?'."
+    },
+    {
+      "vi": "Khi so sánh một người/vật với một chuẩn mực rõ ràng để cho thấy sự việc không thể xảy ra.",
+      "en": "When comparing a person or thing with a clear standard to show the claim cannot hold."
+    },
+    {
+      "vi": "Trong khẩu ngữ, khi muốn phản đối nhưng không cần quá nặng lời.",
+      "en": "In spoken Chinese, when you want to object without being too harsh."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "哪有",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu phủ định", "en": "negation marker"},
+        "pinyin": ["nǎ", "yǒu"]
+      },
+      {
+        "text": "X",
+        "role": "subject",
+        "label": {"vi": "đối tượng bị phản bác", "en": "rejected subject"},
+        "pinyin": [""]
+      },
+      {
+        "text": "这么",
+        "role": "marker",
+        "label": {"vi": "chỉ mức độ", "en": "degree marker"},
+        "pinyin": ["zhè", "me"]
+      },
+      {
+        "text": "Y",
+        "role": "complement",
+        "label": {"vi": "tính chất bị phủ nhận", "en": "rejected quality"},
+        "pinyin": [""]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ khẳng định", "en": "assertive particle"},
+        "pinyin": ["de"]
+      }
+    ],
+    "variants": {
+      "question": [
+        {
+          "text": "有",
+          "role": "verb",
+          "label": {"vi": "động từ tồn tại", "en": "existential verb"},
+          "pinyin": ["yǒu"]
+        },
+        {
+          "text": "X",
+          "role": "subject",
+          "label": {"vi": "đối tượng bị phản bác", "en": "rejected subject"},
+          "pinyin": [""]
+        },
+        {
+          "text": "这样",
+          "role": "marker",
+          "label": {"vi": "chỉ cách thức", "en": "manner marker"},
+          "pinyin": ["zhè", "yàng"]
+        },
+        {
+          "text": "Y",
+          "role": "complement",
+          "label": {"vi": "tính chất bị phủ nhận", "en": "rejected quality"},
+          "pinyin": [""]
+        },
+        {
+          "text": "的吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["de", "ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "哪有你这么说话的。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 5, "role": "marker"},
+        {"start": 5, "end": 7, "role": "complement"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Phản bác cách nói của người đối diện: không ai nói như vậy.",
+        "en": "Rejects the other person's way of speaking: nobody talks like that."
+      },
+      "translation": {"vi": "Làm gì có ai nói chuyện như anh chứ.", "en": "Nobody talks like that."},
+      "pinyin": ["nǎ", "yǒu", "nǐ", "zhè", "me", "shuō", "huà", "de", ""]
+    },
+    {
+      "text": "有他这样办事的吗？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "verb"},
+        {"start": 1, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "complement"},
+        {"start": 6, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi tu từ để phủ nhận: không ai làm việc kiểu đó.",
+        "en": "A rhetorical question that denies: no one handles things that way."
+      },
+      "translation": {
+        "vi": "Có ai lại làm việc kiểu như anh ấy không?",
+        "en": "Who ever handles things like that?"
+      },
+      "pinyin": ["yǒu", "tā", "zhè", "yàng", "bàn", "shì", "de", "ma", ""]
+    },
+    {
+      "text": "哪有北京这么冷的。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "marker"},
+        {"start": 6, "end": 7, "role": "complement"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Phủ nhận mức độ được nói đến: Bắc Kinh không thể lạnh đến thế.",
+        "en": "Denies the stated degree: Beijing cannot be that cold."
+      },
+      "translation": {
+        "vi": "Làm gì có chuyện Bắc Kinh lạnh đến thế.",
+        "en": "There is no way Beijing is that cold."
+      },
+      "pinyin": ["nǎ", "yǒu", "běi", "jīng", "zhè", "me", "lěng", "de", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Mẫu 哪有...的 kết thúc bằng 的, không dùng 吗; 吗 chỉ đi với câu hỏi thật, còn đây là câu phủ định mạnh.",
+        "en": "The 哪有...的 pattern ends with 的, not 吗; 吗 belongs to genuine questions, while this is a strong rejection."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "哪有你这么说话吗？",
+      "right": "哪有你这么说话的？",
+      "wrong_pinyin": ["nǎ", "yǒu", "nǐ", "zhè", "me", "shuō", "huà", "ma", ""],
+      "right_pinyin": ["nǎ", "yǒu", "nǐ", "zhè", "me", "shuō", "huà", "de", ""]
+    },
+    {
+      "reason": {
+        "vi": "Trong câu hỏi tu từ này phải dùng 有, không thêm 没; bản thân câu hỏi đã mang nghĩa phủ định, thêm 没 là sai văn phong khẩu ngữ.",
+        "en": "This rhetorical question uses 有, not 没有; the question itself already carries the negative meaning, so adding 没 is wrong in this spoken pattern."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong": "没有他这样办事的吗？",
+      "right": "有他这样办事的吗？",
+      "wrong_pinyin": ["méi", "yǒu", "tā", "zhè", "yàng", "bàn", "shì", "de", "ma", ""],
+      "right_pinyin": ["yǒu", "tā", "zhè", "yàng", "bàn", "shì", "de", "ma", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___有你这么说话的。",
+      "options": [
+        {"text": "哪", "error_tag": null, "pinyin": ["nǎ"]},
+        {"text": "那", "error_tag": "character_choice", "pinyin": ["nà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu cố định là 哪有, không phải 那有; 哪 mới mang nghĩa phủ định 'làm gì có'.",
+        "en": "The fixed pattern is 哪有, not 那有; only 哪 carries the 'there is no way' rejection."
+      },
+      "q_pinyin": ["", "", "", "yǒu", "nǐ", "zhè", "me", "shuō", "huà", "de", ""]
+    },
+    {
+      "q": "有他这样办事的___？",
+      "options": [
+        {"text": "吗", "error_tag": null, "pinyin": ["ma"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi tu từ kết thúc bằng 吗, còn 的 đứng cuối sẽ biến câu thành câu khẳng định phủ định, không đúng mẫu.",
+        "en": "The rhetorical question ends with 吗; a final 的 would make it a different, non-question pattern."
+      },
+      "q_pinyin": ["yǒu", "tā", "zhè", "yàng", "bàn", "shì", "de", "", "", "", ""]
+    },
+    {
+      "q": "哪有上海___热的。",
+      "options": [
+        {"text": "这么", "error_tag": null, "pinyin": ["zhè", "me"]},
+        {"text": "怎么", "error_tag": "word_choice", "pinyin": ["zěn", "me"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu dùng 这么/这样 để chỉ mức độ, không dùng 怎么; 怎么 là từ để hỏi cách thức.",
+        "en": "The pattern uses 这么/这样 for degree, not 怎么; 怎么 asks about manner."
+      },
+      "q_pinyin": ["nǎ", "yǒu", "shàng", "hǎi", "", "", "", "rè", "de", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu phản bác điều ai đó vừa nói, dùng mẫu 哪有...这么...的.",
+      "en": "Write a sentence rejecting what someone just said, using 哪有...这么...的."
+    },
+    "placeholder": "哪有……这么……的。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["哪有"], "role": "marker"},
+        {"any_of": ["这么"], "role": "marker"},
+        {"any_of": ["的"], "role": "particle"}
+      ]
+    },
+    "sample": {"text": "哪有你这么说话的。", "pinyin": ["nǎ", "yǒu", "nǐ", "zhè", "me", "shuō", "huà", "de", ""]},
+    "placeholder_pinyin": ["nǎ", "yǒu", "", "", "zhè", "me", "", "", "de", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338952",
+    "generated_at": "2026-10-07T02:09:12Z"
+  },
+  "review": null
+}

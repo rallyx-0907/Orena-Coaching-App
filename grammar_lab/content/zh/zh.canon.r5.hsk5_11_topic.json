@@ -1,0 +1,238 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_11_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_8_topic_146"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-11-topic", "zh-hsk6-6-topic-180"], "gf0025": ["gf0025.hsk7_9.083"]},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": ["zh-hsk5-11-topic", "zh-hsk6-6-topic-180"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 以⋯⋯ 为⋯⋯", "en": "Chinese grammar: 以⋯⋯ 为⋯⋯"},
+    "native_title": "以⋯⋯为⋯⋯",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc 以⋯⋯为⋯⋯ dùng để nêu rõ lấy A làm cơ sở, mục tiêu, tiêu chuẩn hoặc trung tâm cho B.",
+      "en": "The pattern 以⋯⋯为⋯⋯ states that A is taken as the basis, goal, standard, or center of B."
+    },
+    "sub": {"vi": "lấy A làm B", "en": "take A as B"},
+    "native_title_pinyin": ["yǐ", "", "", "wèi", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một sự vật, dữ liệu hay nguyên tắc được dùng làm nền tảng cho một hành động hoặc quyết định.",
+      "en": "When you want to say that something is used as the foundation for an action or decision."
+    },
+    {
+      "vi": "Khi nêu mục tiêu hoặc tiêu chuẩn đánh giá trong văn viết trang trọng, ví dụ trong báo cáo hoặc thông báo.",
+      "en": "When stating a goal or evaluation standard in formal writing, such as reports or announcements."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh một yếu tố là trung tâm hoặc ưu tiên chính, thay vì chỉ nói chung chung.",
+      "en": "When emphasizing that one factor is the center or main priority, rather than speaking generally."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "以",
+        "role": "marker",
+        "label": {"vi": "giới từ 以", "en": "the marker 以"},
+        "pinyin": ["yǐ"]
+      },
+      {
+        "text": "A",
+        "role": "object",
+        "label": {"vi": "cơ sở / mục tiêu / tiêu chuẩn", "en": "basis / goal / standard"},
+        "pinyin": [""]
+      },
+      {
+        "text": "为",
+        "role": "marker",
+        "label": {"vi": "giới từ 为", "en": "the marker 为"},
+        "pinyin": ["wèi"]
+      },
+      {
+        "text": "B",
+        "role": "complement",
+        "label": {"vi": "vai trò / kết quả", "en": "role / result"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我们以数据为基础做决定。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Lấy dữ liệu làm cơ sở để đưa ra quyết định.",
+        "en": "Data is taken as the basis for making decisions."
+      },
+      "translation": {
+        "vi": "Chúng tôi lấy dữ liệu làm cơ sở để quyết định.",
+        "en": "We make decisions based on data."
+      },
+      "pinyin": ["wǒ", "men", "yǐ", "shù", "jù", "wèi", "jī", "chǔ", "zuò", "jué", "dìng", ""]
+    },
+    {
+      "text": "这个项目以提高效率为目标。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 9, "role": "object"},
+        {"start": 9, "end": 10, "role": "marker"},
+        {"start": 10, "end": 12, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Lấy việc nâng cao hiệu suất làm mục tiêu của dự án.",
+        "en": "Improving efficiency is taken as the project's goal."
+      },
+      "translation": {
+        "vi": "Dự án này lấy việc nâng cao hiệu suất làm mục tiêu.",
+        "en": "This project aims to improve efficiency."
+      },
+      "pinyin": ["zhè", "ge", "xiàng", "mù", "yǐ", "tí", "gāo", "xiào", "lǜ", "wèi", "mù", "biāo", ""]
+    },
+    {
+      "text": "课程以实际应用为主。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "marker"},
+        {"start": 8, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Lấy ứng dụng thực tế làm trọng tâm chính của khóa học.",
+        "en": "Practical application is taken as the main focus of the course."
+      },
+      "translation": {
+        "vi": "Khóa học lấy ứng dụng thực tế làm chính.",
+        "en": "The course focuses mainly on practical application."
+      },
+      "pinyin": ["kè", "chéng", "yǐ", "shí", "jì", "yìng", "yòng", "wéi", "zhǔ", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Cấu trúc 以⋯⋯为⋯⋯ bắt buộc có 为 để gán vai trò cho A; thiếu 为 thì câu không còn là cấu trúc này.",
+        "en": "The pattern 以⋯⋯为⋯⋯ requires 为 to assign the role to A; without 为 the sentence no longer uses this structure."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我们以数据做基础。",
+      "right": "我们以数据为基础。",
+      "wrong_pinyin": ["wǒ", "men", "yǐ", "shù", "jù", "zuò", "jī", "chǔ", ""],
+      "right_pinyin": ["wǒ", "men", "yǐ", "shù", "jù", "wèi", "jī", "chǔ", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我们以数据___基础做决定。",
+      "options": [
+        {"text": "为", "error_tag": null, "pinyin": ["wèi"]},
+        {"text": "做", "error_tag": "other", "pinyin": ["zuò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc 以⋯⋯为⋯⋯ cần 为 để nối A với vai trò B.",
+        "en": "The pattern 以⋯⋯为⋯⋯ needs 为 to link A with its role B."
+      },
+      "q_pinyin": ["wǒ", "men", "yǐ", "shù", "jù", "", "", "", "jī", "chǔ", "zuò", "jué", "dìng", ""]
+    },
+    {
+      "q": "这个项目以___为目标。",
+      "options": [
+        {"text": "提高效率", "error_tag": null, "pinyin": ["tí", "gāo", "xiào", "lǜ"]},
+        {"text": "效率提高", "error_tag": "word_order", "pinyin": ["xiào", "lǜ", "tí", "gāo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong 以 A 为 B, A là một cụm động từ - tân ngữ, nên phải là 提高效率.",
+        "en": "In 以 A 为 B, A is a verb-object phrase, so it must be 提高效率."
+      },
+      "q_pinyin": ["zhè", "ge", "xiàng", "mù", "yǐ", "", "", "", "wèi", "mù", "biāo", ""]
+    },
+    {
+      "q": "课程以实际应用___。",
+      "options": [
+        {"text": "为主", "error_tag": null, "pinyin": ["wéi", "zhǔ"]},
+        {"text": "为", "error_tag": "other", "pinyin": ["wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi B là 主, cấu trúc cố định là 以⋯⋯为主, không dùng 为 một mình.",
+        "en": "When B is 主, the fixed pattern is 以⋯⋯为主, not 为 alone."
+      },
+      "q_pinyin": ["kè", "chéng", "yǐ", "shí", "jì", "yìng", "yòng", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 以⋯⋯为⋯⋯ để nói bạn lấy điều gì làm cơ sở, mục tiêu hoặc tiêu chuẩn.",
+      "en": "Write one sentence using 以⋯⋯为⋯⋯ to say what you take as a basis, goal, or standard."
+    },
+    "placeholder": "我以……为……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["以"], "role": "marker"}, {"any_of": ["为"], "role": "marker"}]
+    },
+    "sample": {
+      "text": "我以健康为目标每天运动。",
+      "pinyin": ["wǒ", "yǐ", "jiàn", "kāng", "wèi", "mù", "biāo", "měi", "tiān", "yùn", "dòng", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "yǐ", "", "", "wèi", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791342352",
+    "generated_at": "2026-10-07T03:05:52Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-11-topic", "zh-hsk6-6-topic-180"],
+      "content_version": 2,
+      "content_hash": "1a78f2d91befe5a0b21fde4621c303afe52dd8f594d92a51098643583cbe7e01",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-11-topic",
+          "issue": "Lỗi sai '以我来说，这很难。' không phải là lỗi của cấu trúc 以⋯⋯为⋯⋯ mà là nhầm với 对我来说; giữ lại sẽ làm loãng trọng tâm bài học.",
+          "fix": "Đã thay bằng lỗi thực sự liên quan đến cấu trúc: thiếu 为 trong '我们以数据做基础。' và sửa thành '我们以数据为基础。'"
+        },
+        {
+          "r5_id": "zh-hsk6-6-topic-180",
+          "issue": "Ví dụ '我们以三个月为一个评估周期。' dùng 以⋯⋯为⋯⋯ với B là danh từ chỉ chu kỳ, nhưng ở cấp HSK5 cấu trúc này thường dùng với các danh từ trừu tượng như 基础, 目标, 标准, 主; ví dụ này dễ gây nhầm lẫn về phạm vi sử dụng.",
+          "fix": "Đã thay bằng ví dụ '课程以实际应用为主。' để minh họa đúng phạm vi và sắc thái của cấu trúc ở cấp HSK5."
+        }
+      ]
+    }
+  },
+  "review": null
+}

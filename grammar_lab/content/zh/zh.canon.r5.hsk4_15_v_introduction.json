@@ -1,0 +1,231 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_15_v_introduction",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.relative",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_11_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-15-v-introduction", "zh-hsk6-3-n-ng-cao"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk4-15-v-introduction", "zh-hsk6-3-n-ng-cao"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: 所 + V: introduction",
+      "en": "Chinese grammar: 所 + V: introduction"
+    },
+    "native_title": "“所+ V”结构入门",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "所 + V là cấu trúc trang trọng dùng để biến cụm động từ thành định ngữ đứng trước danh từ, thường có 的 ở giữa.",
+      "en": "所 + V is a formal structure that turns a verb phrase into a modifier before a noun, usually with 的 in between."
+    },
+    "sub": {"vi": "định ngữ trang trọng", "en": "formal relative"},
+    "native_title_pinyin": ["", "suǒ", "", "", "", "", "jié", "gòu", "rù", "mén"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi viết văn bản trang trọng, báo cáo hoặc thông báo, muốn nêu rõ hành động hướng đến đối tượng nào.",
+      "en": "In formal writing such as reports or notices, when you want to make clear what the action is directed at."
+    },
+    {
+      "vi": "Khi động từ là ngoại động từ và có thể hiểu ngầm tân ngữ, ví dụ 知道, 说, 看到, 讨论.",
+      "en": "When the verb is transitive and its object can be understood, for example 知道, 说, 看到, 讨论."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh quan hệ giữa chủ thể và hành động trong một cụm danh từ, không chỉ nêu sự việc.",
+      "en": "When you want to highlight the relation between the subject and the action inside a noun phrase, not just state a fact."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ thể", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "所",
+        "role": "marker",
+        "label": {"vi": "trợ từ 所", "en": "所 marker"},
+        "pinyin": ["suǒ"]
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ ngoại động", "en": "transitive verb"},
+        "pinyin": [""]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ 的", "en": "的 particle"},
+        "pinyin": ["de"]
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {"vi": "danh từ trung tâm", "en": "head noun"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这是我所知道的情况。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 9, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "所 + 知道 + 的 + 情况: hành động 知道 hướng đến 情况.",
+        "en": "所 + 知道 + 的 + 情况: the action 知道 targets 情况."
+      },
+      "translation": {"vi": "Đây là tình hình mà tôi biết.", "en": "This is the situation that I know."},
+      "pinyin": ["zhè", "shì", "wǒ", "suǒ", "zhī", "dào", "de", "qíng", "kuàng", ""]
+    },
+    {
+      "text": "他所说的话很有道理。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 5, "role": "object"}
+      ],
+      "annotation": {"vi": "所 + 说 + 的 + 话: 话 là đối tượng của 说.", "en": "所 + 说 + 的 + 话: 话 is the object of 说."},
+      "translation": {"vi": "Những lời anh ấy nói rất có lý.", "en": "What he said makes a lot of sense."},
+      "pinyin": ["tā", "suǒ", "shuō", "de", "huà", "hěn", "yǒu", "dào", "lǐ", ""]
+    },
+    {
+      "text": "我们所看到的问题还很多。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "particle"},
+        {"start": 6, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "所 + 看到 + 的 + 问题: 问题 là đối tượng của 看到.",
+        "en": "所 + 看到 + 的 + 问题: 问题 is the object of 看到."
+      },
+      "translation": {
+        "vi": "Những vấn đề chúng tôi thấy vẫn còn nhiều.",
+        "en": "The problems we saw are still many."
+      },
+      "pinyin": ["wǒ", "men", "suǒ", "kàn", "dào", "de", "wèn", "tí", "hái", "hěn", "duō", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong cấu trúc 所 + V + 的 + N, 的 bắt buộc phải có trước danh từ trung tâm; thiếu 的 làm cụm danh từ mất tính định ngữ.",
+        "en": "In 所 + V + 的 + N, 的 is required before the head noun; without it the noun phrase loses its modifier."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这是我所知道情况。",
+      "right": "这是我所知道的情况。",
+      "wrong_pinyin": ["zhè", "shì", "wǒ", "suǒ", "zhī", "dào", "qíng", "kuàng", ""],
+      "right_pinyin": ["zhè", "shì", "wǒ", "suǒ", "zhī", "dào", "de", "qíng", "kuàng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这是我所知道___情况。",
+      "options": [
+        {"text": "的", "error_tag": null, "pinyin": ["de"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc 所 + V + 的 + N cần 的 trước danh từ trung tâm 情况.",
+        "en": "The structure 所 + V + 的 + N needs 的 before the head noun 情况."
+      },
+      "q_pinyin": ["zhè", "shì", "wǒ", "suǒ", "zhī", "dào", "", "", "", "qíng", "kuàng", ""]
+    },
+    {
+      "q": "他___说的话很有道理。",
+      "options": [
+        {"text": "所", "error_tag": null, "pinyin": ["suǒ"]},
+        {"text": "所以", "error_tag": "word_choice", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "所 đứng trước động từ 说 để tạo định ngữ trang trọng; 所以 là liên từ 'vì vậy', không dùng ở đây.",
+        "en": "所 stands before the verb 说 to form a formal modifier; 所以 is the conjunction 'therefore' and does not fit here."
+      },
+      "q_pinyin": ["tā", "", "", "", "shuō", "de", "huà", "hěn", "yǒu", "dào", "lǐ", ""]
+    },
+    {
+      "q": "我们所看到___问题还很多。",
+      "options": [
+        {"text": "的", "error_tag": null, "pinyin": ["de"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 所 + V cần 的 trước danh từ 问题; 了 không phù hợp trong cụm định ngữ này.",
+        "en": "After 所 + V, 的 is needed before the noun 问题; 了 does not fit in this modifier phrase."
+      },
+      "q_pinyin": ["wǒ", "men", "suǒ", "kàn", "dào", "", "", "", "wèn", "tí", "hái", "hěn", "duō", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng dùng 所 + V + 的 + N để nói về điều bạn biết hoặc thấy.",
+      "en": "Write one formal sentence using 所 + V + 的 + N about something you know or saw."
+    },
+    "placeholder": "我所知道的……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["所"], "role": "marker"}, {"any_of": ["的"], "role": "particle"}]
+    },
+    "sample": {
+      "text": "这是我所知道的情况。",
+      "pinyin": ["zhè", "shì", "wǒ", "suǒ", "zhī", "dào", "de", "qíng", "kuàng", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "suǒ", "zhī", "dào", "de", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791342315",
+    "generated_at": "2026-10-07T03:05:15Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-15-v-introduction", "zh-hsk6-3-n-ng-cao"],
+      "content_version": 2,
+      "content_hash": "a0a91484a20d39724c062bb52acc56b0feea31b725397ce82c445de693d8f08d",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-15-v-introduction",
+          "issue": "R5 ghi '这是研究所得出的结论' như ví dụ của 所 + V, nhưng 所得 ở đây là từ ghép cố định, không phải cấu trúc 所 + V + 的 + N đang dạy.",
+          "fix": "Bỏ ví dụ này khỏi phần minh họa cấu trúc; giữ 3 ví dụ đúng mẫu 所 + V + 的 + N."
+        },
+        {
+          "r5_id": "zh-hsk4-15-v-introduction",
+          "issue": "R5 nêu '所 + V + 的 + N / NP' nhưng không nói rõ 的 là bắt buộc trong mẫu có danh từ trung tâm.",
+          "fix": "Ghi rõ trong lỗi thường gặp và quick practice rằng 的 bắt buộc trước danh từ trung tâm."
+        },
+        {
+          "r5_id": "zh-hsk6-3-n-ng-cao",
+          "issue": "R5 HSK6 đưa các mẫu 有所/无所 và 所谓, vượt phạm vi HSK4 của điểm này.",
+          "fix": "Không đưa các mẫu nâng cao vào bài; chỉ giữ 所 + V + 的 + N ở mức HSK4."
+        }
+      ]
+    }
+  },
+  "review": null
+}

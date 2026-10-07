@@ -1,0 +1,219 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_4_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_4_1.p2"],
+  "contrasts": [],
+  "error_tags": ["particle", "complement"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.086", "gf0025.hsk7_9.087"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Bổ ngữ: 程度补语3", "en": "Complements: 程度补语3"},
+    "native_title": "程度补语3",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Bổ ngữ trình độ dùng 得/不 để nói mức độ hoặc khả năng đạt tới của một hành động, trạng thái.",
+      "en": "Degree complements use 得/不 to express the extent or the attainable degree of an action or state."
+    },
+    "sub": {"vi": "mức độ với 得/不", "en": "degree with 得/不"},
+    "native_title_pinyin": ["chéng", "dù", "bǔ", "yǔ", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một hành động hoặc trạng thái đạt tới mức độ nào đó, dùng 得 giữa động từ/tính từ và phần bổ ngữ.",
+      "en": "Use 得 between a verb/adjective and the complement when you want to say an action or state reaches a certain degree."
+    },
+    {
+      "vi": "Khi muốn nói không thể đạt tới mức độ đó, thay 得 bằng 不.",
+      "en": "Use 不 instead of 得 to say the degree cannot be reached."
+    },
+    {
+      "vi": "Phần sau 得/不 thường là tính từ hoặc cụm từ miêu tả mức độ, không phải một hành động mới.",
+      "en": "What follows 得/不 is usually an adjective or a phrase describing the degree, not a new action."
+    },
+    {
+      "vi": "Cấu trúc này hay dùng để đánh giá, nhận xét về cách một việc diễn ra.",
+      "en": "This structure is common for evaluating or commenting on how something happens."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "V/Adj",
+        "role": "verb",
+        "label": {"vi": "động từ / tính từ", "en": "verb / adjective"},
+        "pinyin": ["", "", "", "", ""]
+      },
+      {
+        "text": "得/不",
+        "role": "particle",
+        "label": {"vi": "trợ từ mức độ", "en": "degree particle"},
+        "options": [{"text": "得", "pinyin": ["dé"]}, {"text": "不", "pinyin": ["bù"]}],
+        "pinyin": ["dé", "", "bù"]
+      },
+      {
+        "text": "complement",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ mức độ", "en": "degree complement"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他跑得很快。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "complement"}
+      ],
+      "annotation": {"vi": "得 nối hành động 跑 với mức độ 很快.", "en": "得 links the action 跑 with the degree 很快."},
+      "translation": {"vi": "Anh ấy chạy rất nhanh.", "en": "He runs very fast."},
+      "pinyin": ["tā", "pǎo", "dé", "hěn", "kuài", ""]
+    },
+    {
+      "text": "这个箱子太重了，我搬不动。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 8, "end": 9, "role": "subject"},
+        {"start": 9, "end": 10, "role": "verb"},
+        {"start": 10, "end": 11, "role": "particle"},
+        {"start": 11, "end": 12, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "不 thay 得 để nói không đạt tới mức có thể chuyển động được.",
+        "en": "不 replaces 得 to say the degree of being able to move it is not reached."
+      },
+      "translation": {
+        "vi": "Cái hộp này nặng quá, tôi không bê nổi.",
+        "en": "This box is too heavy; I can't move it."
+      },
+      "pinyin": ["zhè", "ge", "xiāng", "zi", "tài", "zhòng", "le", "", "wǒ", "bān", "bù", "dòng", ""]
+    },
+    {
+      "text": "她普通话说得很流利。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "particle"},
+        {"start": 6, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "得 đứng sau 说 để đánh giá mức độ lưu loát.",
+        "en": "得 follows 说 to evaluate the degree of fluency."
+      },
+      "translation": {"vi": "Cô ấy nói tiếng Phổ thông rất lưu loát.", "en": "She speaks Mandarin very fluently."},
+      "pinyin": ["tā", "pǔ", "tōng", "huà", "shuō", "dé", "hěn", "liú", "lì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu 得 giữa động từ và bổ ngữ mức độ; tiếng Việt không có trợ từ này nên người học hay bỏ qua.",
+        "en": "The degree particle 得 is missing between the verb and the complement; Vietnamese has no equivalent particle, so learners often omit it."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "他跑很快。",
+      "right": "他跑得很快。",
+      "wrong_pinyin": ["tā", "pǎo", "hěn", "kuài", ""],
+      "right_pinyin": ["tā", "pǎo", "dé", "hěn", "kuài", ""]
+    },
+    {
+      "reason": {
+        "vi": "Sau 不 trong bổ ngữ mức độ không dùng 很; 很 chỉ đi với 得 ở dạng khẳng định.",
+        "en": "很 is not used after 不 in a degree complement; 很 only appears with 得 in the affirmative form."
+      },
+      "error_tag": "complement",
+      "l1": ["vi"],
+      "wrong": "他跑得不很快。",
+      "right": "他跑得不快。",
+      "wrong_pinyin": ["tā", "pǎo", "dé", "bù", "hěn", "kuài", ""],
+      "right_pinyin": ["tā", "pǎo", "dé", "bù", "kuài", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他写字写___很漂亮。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["dé"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]},
+        {"text": "地", "error_tag": "particle", "pinyin": ["dì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ lặp 写写 cần 得 để dẫn bổ ngữ mức độ 很漂亮.",
+        "en": "After the repeated verb 写写, 得 introduces the degree complement 很漂亮."
+      },
+      "q_pinyin": ["tā", "xiě", "zì", "xiě", "", "", "", "hěn", "piào", "liàng", ""]
+    },
+    {
+      "q": "这个箱子太重了，我搬___动。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bù"]},
+        {"text": "没", "error_tag": "aspect", "pinyin": ["méi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định khả năng đạt tới mức độ dùng 不, không dùng 没.",
+        "en": "To negate the attainable degree, use 不, not 没."
+      },
+      "q_pinyin": ["zhè", "ge", "xiāng", "zi", "tài", "zhòng", "le", "", "wǒ", "bān", "", "", "", "dòng", ""]
+    },
+    {
+      "q": "她唱歌唱___非常好听。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["dé"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "得 là trợ từ bắt buộc trước bổ ngữ mức độ 非常好听.",
+        "en": "得 is the required particle before the degree complement 非常好听."
+      },
+      "q_pinyin": ["tā", "chàng", "gē", "chàng", "", "", "", "fēi", "cháng", "hǎo", "tīng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 得/不 để nói mức độ của một hành động, ví dụ bạn nói hoặc làm gì đó như thế nào.",
+      "en": "Write one sentence about yourself using 得/不 to describe the degree of an action, for example how you speak or do something."
+    },
+    "placeholder": "我说中文……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"regex": "说|跑|唱|写|做|吃|走|睡|学|工作", "role": "verb"},
+        {"any_of": ["得", "不"], "role": "particle"},
+        {"regex": "很|非常|特别|太|真|挺|不", "role": "complement"}
+      ]
+    },
+    "sample": {
+      "text": "我说中文说得很流利。",
+      "pinyin": ["wǒ", "shuō", "zhōng", "wén", "shuō", "dé", "hěn", "liú", "lì", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "shuō", "zhōng", "wén", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338873",
+    "generated_at": "2026-10-07T02:07:53Z"
+  },
+  "review": null
+}

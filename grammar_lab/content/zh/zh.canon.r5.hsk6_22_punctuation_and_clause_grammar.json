@@ -1,0 +1,400 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_22_punctuation_and_clause_grammar",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.r5.hsk6_20_register_control"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk6-22-punctuation-and-clause-grammar"]},
+  "point_type": "other",
+  "sequence": 13,
+  "aliases": ["zh-hsk6-22-punctuation-and-clause-grammar"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Punctuation and clause grammar",
+      "en": "Chinese grammar: Punctuation and clause grammar"
+    },
+    "native_title": "标点与分句语法",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách dùng dấu câu tiếng Trung để thể hiện quan hệ giữa các mệnh đề: dấu phẩy nối mệnh đề trong một cặp liên kết, dấu chấm phẩy tách các nhóm mệnh đề song song, dấu hai chấm dẫn lời giải thích hoặc danh sách, dấu gạch dài đánh dấu phần chêm chú thích.",
+      "en": "This point teaches how Chinese punctuation marks clause relations: the comma links clauses inside one connector pair, the semicolon separates parallel clause groups, the colon introduces an explanation or list, and the dash marks a strong parenthetical."
+    },
+    "sub": {"vi": "dấu câu và mệnh đề", "en": "punctuation and clauses"},
+    "native_title_pinyin": ["biāo", "diǎn", "yǔ", "fēn", "jù", "yǔ", "fǎ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hai mệnh đề có quan hệ nhân quả, nhượng bộ hoặc tương phản và được nối bằng một cặp liên kết như 因为……所以…… hay 虽然……但是……, dùng dấu phẩy ở ranh giới mệnh đề.",
+      "en": "When two clauses form a cause–result, concession or contrast relation joined by one connector pair such as 因为……所以…… or 虽然……但是……, use a comma at the clause boundary."
+    },
+    {
+      "vi": "Khi trình bày hai hoặc nhiều nhóm mệnh đề song song có cấu trúc tương đương, dùng dấu chấm phẩy để tách các nhóm, còn dấu phẩy ở bên trong mỗi nhóm.",
+      "en": "When presenting two or more parallel clause groups of equivalent structure, use a semicolon between the groups and commas inside each group."
+    },
+    {
+      "vi": "Khi mệnh đề sau giải thích, liệt kê hoặc cụ thể hóa mệnh đề trước, dùng dấu hai chấm sau một khung dẫn nhập hoàn chỉnh.",
+      "en": "When the following clause explains, lists or specifies the previous one, use a colon after a complete introducing frame."
+    },
+    {
+      "vi": "Khi muốn chêm một chú thích hoặc làm rõ nghĩa, dùng dấu gạch dài đặt quanh phần chêm đó.",
+      "en": "When inserting a parenthetical remark or clarification, use a dash on each side of the inserted part."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "分句A",
+        "role": "other",
+        "label": {"vi": "mệnh đề A", "en": "clause A"},
+        "pinyin": ["fēn", "jù", ""]
+      },
+      {
+        "text": "标点",
+        "role": "other",
+        "label": {"vi": "dấu câu", "en": "punctuation"},
+        "options": [
+          {"text": "，", "pinyin": [""]},
+          {"text": "；", "pinyin": [""]},
+          {"text": "：", "pinyin": [""]}
+        ],
+        "pinyin": ["biāo", "diǎn"]
+      },
+      {
+        "text": "分句B",
+        "role": "other",
+        "label": {"vi": "mệnh đề B", "en": "clause B"},
+        "pinyin": ["fēn", "jù", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "虽然成本有所上升，但是系统稳定性明显提高了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "other"},
+        {"start": 8, "end": 9, "role": "other"},
+        {"start": 9, "end": 21, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Dấu phẩy tách hai vế có liên từ tương ứng 虽然…但是….",
+        "en": "The comma separates two correlated clauses in 虽然…但是…."
+      },
+      "translation": {
+        "vi": "Mặc dù chi phí tăng, độ ổn định của hệ thống được cải thiện rõ rệt.",
+        "en": "Although costs increased, system stability improved markedly."
+      },
+      "pinyin": [
+        "suī",
+        "rán",
+        "chéng",
+        "běn",
+        "yǒu",
+        "suǒ",
+        "shàng",
+        "shēng",
+        "",
+        "dàn",
+        "shì",
+        "xì",
+        "tǒng",
+        "wěn",
+        "dìng",
+        "xìng",
+        "míng",
+        "xiǎn",
+        "tí",
+        "gāo",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "第一种方案成本低，但风险高；第二种方案成本高，但更稳定。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "other"},
+        {"start": 13, "end": 14, "role": "other"},
+        {"start": 14, "end": 27, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Dấu chấm phẩy tách hai đơn vị song song lớn hơn dấu phẩy.",
+        "en": "The semicolon separates two larger parallel units."
+      },
+      "translation": {
+        "vi": "Phương án thứ nhất rẻ nhưng rủi ro cao; phương án thứ hai đắt nhưng ổn định hơn.",
+        "en": "The first plan is cheap but risky; the second costs more but is more stable."
+      },
+      "pinyin": [
+        "dì",
+        "yī",
+        "zhǒng",
+        "fāng",
+        "àn",
+        "chéng",
+        "běn",
+        "dī",
+        "",
+        "dàn",
+        "fēng",
+        "xiǎn",
+        "gāo",
+        "",
+        "dì",
+        "èr",
+        "zhǒng",
+        "fāng",
+        "àn",
+        "chéng",
+        "běn",
+        "gāo",
+        "",
+        "dàn",
+        "gèng",
+        "wěn",
+        "dìng",
+        ""
+      ]
+    },
+    {
+      "text": "我们只需要解决一个问题：数据不完整。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 11, "role": "other"},
+        {"start": 11, "end": 12, "role": "other"},
+        {"start": 12, "end": 17, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Dấu hai chấm dẫn phần giải thích cụ thể cho nội dung đứng trước.",
+        "en": "The colon introduces a specific explanation of what precedes it."
+      },
+      "translation": {
+        "vi": "Chúng ta chỉ cần giải quyết một vấn đề: dữ liệu không đầy đủ.",
+        "en": "We only need to solve one issue: incomplete data."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "zhǐ",
+        "xū",
+        "yào",
+        "jiě",
+        "jué",
+        "yí",
+        "gè",
+        "wèn",
+        "tí",
+        "",
+        "shù",
+        "jù",
+        "bù",
+        "wán",
+        "zhěng",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt Nam quen với việc ngắt bằng dấu chấm phẩy khi thấy hai vế, nhưng trong một cặp liên kết đơn giản như 因为……所以……, dấu chấm phẩy quá mạnh; phải dùng dấu phẩy.",
+        "en": "Vietnamese learners often separate the two halves with a semicolon, but inside a simple connector pair like 因为……所以…… a semicolon is too strong; a comma is required."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "因为数据不足；所以不能判断。",
+      "right": "因为数据不足，所以不能判断。",
+      "wrong_pinyin": ["yīn", "wèi", "shù", "jù", "bù", "zú", "", "suǒ", "yǐ", "bù", "néng", "pàn", "duàn", ""],
+      "right_pinyin": ["yīn", "wèi", "shù", "jù", "bù", "zú", "", "suǒ", "yǐ", "bù", "néng", "pàn", "duàn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "因为数据不足___所以不能判断。",
+      "options": [
+        {"text": "，", "error_tag": null, "pinyin": [""]},
+        {"text": "；", "error_tag": "punctuation", "pinyin": [""]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong cặp liên kết 因为……所以……, dấu phẩy đứng giữa hai mệnh đề; dấu chấm phẩy quá mạnh cho quan hệ đơn giản này.",
+        "en": "In the 因为……所以…… pair, a comma goes between the clauses; a semicolon is too strong for this simple relation."
+      },
+      "q_pinyin": [
+        "yīn",
+        "wèi",
+        "shù",
+        "jù",
+        "bù",
+        "zú",
+        "",
+        "",
+        "",
+        "suǒ",
+        "yǐ",
+        "bù",
+        "néng",
+        "pàn",
+        "duàn",
+        ""
+      ]
+    },
+    {
+      "q": "第一种方案成本低，但风险高___第二种方案成本高，但更稳定。",
+      "options": [
+        {"text": "；", "error_tag": null, "pinyin": [""]},
+        {"text": "，", "error_tag": "punctuation", "pinyin": [""]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai nhóm mệnh đề song song được tách bằng dấu chấm phẩy; dấu phẩy ở đây sẽ làm mờ ranh giới giữa hai nhóm.",
+        "en": "Two parallel clause groups are separated by a semicolon; a comma here would blur the boundary between the groups."
+      },
+      "q_pinyin": [
+        "dì",
+        "yī",
+        "zhǒng",
+        "fāng",
+        "àn",
+        "chéng",
+        "běn",
+        "dī",
+        "",
+        "dàn",
+        "fēng",
+        "xiǎn",
+        "gāo",
+        "",
+        "",
+        "",
+        "dì",
+        "èr",
+        "zhǒng",
+        "fāng",
+        "àn",
+        "chéng",
+        "běn",
+        "gāo",
+        "",
+        "dàn",
+        "gèng",
+        "wěn",
+        "dìng",
+        ""
+      ]
+    },
+    {
+      "q": "我们只需要解决一个问题___数据不完整。",
+      "options": [
+        {"text": "：", "error_tag": null, "pinyin": [""]},
+        {"text": "，", "error_tag": "punctuation", "pinyin": [""]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dấu hai chấm dẫn ra nội dung giải thích cho 'một vấn đề'; dấu phẩy không làm rõ được quan hệ giải thích này.",
+        "en": "The colon introduces the explanation of 'one problem'; a comma does not make this explanatory relation clear."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "zhǐ",
+        "xū",
+        "yào",
+        "jiě",
+        "jué",
+        "yí",
+        "gè",
+        "wèn",
+        "tí",
+        "",
+        "",
+        "",
+        "shù",
+        "jù",
+        "bù",
+        "wán",
+        "zhěng",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nhượng bộ về học tập hoặc công việc của bạn, dùng cặp 虽然……但是…… và dấu phẩy ở giữa.",
+      "en": "Write one concessive sentence about your study or work, using the 虽然……但是…… pair with a comma in the middle."
+    },
+    "placeholder": "虽然……，但是……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["，", "；", "："], "role": "other"}]},
+    "sample": {
+      "text": "虽然工作很忙，但是我每天还是坚持学习汉语。",
+      "pinyin": [
+        "suī",
+        "rán",
+        "gōng",
+        "zuò",
+        "hěn",
+        "máng",
+        "",
+        "dàn",
+        "shì",
+        "wǒ",
+        "měi",
+        "tiān",
+        "hái",
+        "shì",
+        "jiān",
+        "chí",
+        "xué",
+        "xí",
+        "hàn",
+        "yǔ",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["suī", "rán", "", "", "", "dàn", "shì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351891",
+    "generated_at": "2026-10-07T05:44:51Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-22-punctuation-and-clause-grammar"],
+      "content_version": 2,
+      "content_hash": "4bd7bf3b14766bdedce815f4c4b960e2a431139d53a7a0da05b2241741404fdf",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-22-punctuation-and-clause-grammar",
+          "issue": "R5 ghi '逗号 separates clauses/frames' nhưng không nói rõ dấu phẩy là bắt buộc trong cặp liên kết đơn giản, khiến người học dễ dùng dấu chấm phẩy.",
+          "fix": "Bổ sung quy tắc: trong cặp liên kết như 因为……所以…… hay 虽然……但是……, dùng dấu phẩy ở ranh giới mệnh đề; dấu chấm phẩy chỉ dùng giữa các nhóm mệnh đề song song."
+        },
+        {
+          "r5_id": "zh-hsk6-22-punctuation-and-clause-grammar",
+          "issue": "R5 nêu 'Colon requires an introducing frame' nhưng không định nghĩa khung dẫn nhập, và ví dụ 冒号放在主语和谓语之间：这个问题：很严重。 là một câu sai được đưa ra mà không có câu đúng tương ứng trong phần mistakes.",
+          "fix": "Thêm câu đúng 这个问题很严重。 và giải thích dấu hai chấm phải đứng sau một khung dẫn nhập hoàn chỉnh, không được chen giữa chủ ngữ và vị ngữ."
+        },
+        {
+          "r5_id": "zh-hsk6-22-punctuation-and-clause-grammar",
+          "issue": "R5 dùng dấu gạch dài trong ví dụ 这个结论——至少在目前看来——仍然是合理的。 nhưng không đưa vào bảng mistakes hay quick_practice, khiến điểm này không được kiểm tra.",
+          "fix": "Giữ ví dụ gạch dài trong phần giải thích và bổ sung một câu hỏi luyện tập về dấu hai chấm; dấu gạch dài được mô tả trong when_to_use."
+        },
+        {
+          "r5_id": "zh-hsk6-22-punctuation-and-clause-grammar",
+          "issue": "R5 không có công thức trừu tượng, không có ví dụ gắn slot, và không có personal production.",
+          "fix": "Thêm formula 虽然 + mệnh đề A + ， + 但是 + mệnh đề B, gắn slot cho từng ví dụ, và thêm thẻ personal_production với pattern_rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,367 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_7.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_6_2_7.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.111", "gf0025.hsk7_9.112"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 别管⋯⋯ ，都⋯⋯", "en": "Complex sentences: 别管⋯⋯ ，都⋯⋯"},
+    "native_title": "别管⋯⋯ ，都⋯⋯",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Mẫu câu phức 别管⋯⋯，都⋯⋯ dùng để nói rằng dù cho tình huống nào xảy ra, kết quả ở vế sau vẫn không thay đổi.",
+      "en": "The complex pattern 别管⋯⋯，都⋯⋯ states that no matter what situation occurs, the result in the second clause stays the same."
+    },
+    "sub": {"vi": "bất kể… đều…", "en": "no matter… still…"},
+    "native_title_pinyin": ["bié", "guǎn", "", "", "", "", "dōu", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói kết quả không thay đổi dù điều kiện ở vế đầu là gì.",
+      "en": "When you want to say the result does not change whatever the condition in the first clause is."
+    },
+    {
+      "vi": "Khi vế 别管 đưa ra một loạt khả năng hoặc một tình huống bất kỳ, thường có 谁、什么、怎么、哪儿.",
+      "en": "When the 别管 clause presents a range of possibilities or any situation, often with 谁, 什么, 怎么, 哪儿."
+    },
+    {
+      "vi": "Khi vế sau dùng 都 để nhấn mạnh rằng kết luận là chung cho mọi trường hợp.",
+      "en": "When the second clause uses 都 to stress that the conclusion holds in every case."
+    },
+    {
+      "vi": "Trong văn nói và văn viết ở mức cao, khi cần lập luận chắc chắn, không phụ thuộc điều kiện.",
+      "en": "In spoken and advanced written Chinese, when you need a firm argument that does not depend on conditions."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "别管",
+        "role": "connector",
+        "label": {"vi": "liên từ mở đầu", "en": "opening connector"},
+        "pinyin": ["bié", "guǎn"]
+      },
+      {
+        "text": "条件",
+        "role": "other",
+        "label": {"vi": "vế điều kiện", "en": "condition clause"},
+        "pinyin": ["tiáo", "jiàn"]
+      },
+      {
+        "text": "都",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu bao quát", "en": "universal marker"},
+        "pinyin": ["dōu"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "vế kết quả", "en": "result clause"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "别管明天下不下雨，比赛都照常进行。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 8, "role": "other"},
+        {"start": 11, "end": 12, "role": "marker"},
+        {"start": 12, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "别管 mở đầu điều kiện bất định, 都 khẳng định kết quả không đổi.",
+        "en": "别管 opens an indefinite condition; 都 confirms the unchanged result."
+      },
+      "translation": {
+        "vi": "Bất kể ngày mai trời có mưa hay không, trận đấu vẫn diễn ra như thường lệ.",
+        "en": "No matter whether it rains tomorrow, the match will go ahead as usual."
+      },
+      "pinyin": [
+        "bié",
+        "guǎn",
+        "míng",
+        "tiān",
+        "xià",
+        "bù",
+        "xià",
+        "yǔ",
+        "",
+        "bǐ",
+        "sài",
+        "dōu",
+        "zhào",
+        "cháng",
+        "jìn",
+        "xíng",
+        ""
+      ]
+    },
+    {
+      "text": "别管别人怎么看你，你都应该坚持自己的选择。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 8, "role": "other"},
+        {"start": 10, "end": 11, "role": "marker"},
+        {"start": 11, "end": 20, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Vế 别管 nêu tình huống bất kỳ, vế sau với 都 nói lời khuyên không đổi.",
+        "en": "The 别管 clause gives any situation; the 都 clause gives advice that does not change."
+      },
+      "translation": {
+        "vi": "Bất kể người khác nhìn bạn thế nào, bạn đều nên kiên trì với lựa chọn của mình.",
+        "en": "No matter how others see you, you should stick to your own choice."
+      },
+      "pinyin": [
+        "bié",
+        "guǎn",
+        "bié",
+        "rén",
+        "zěn",
+        "me",
+        "kàn",
+        "nǐ",
+        "",
+        "nǐ",
+        "dōu",
+        "yīng",
+        "gāi",
+        "jiān",
+        "chí",
+        "zì",
+        "jǐ",
+        "de",
+        "xuǎn",
+        "zé",
+        ""
+      ]
+    },
+    {
+      "text": "别管工作多忙，他每天都给父母打电话。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 10, "end": 11, "role": "marker"},
+        {"start": 11, "end": 17, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "别管 + 多忙 nhấn mạnh mức độ nào cũng không ảnh hưởng đến thói quen ở vế sau.",
+        "en": "别管 + 多忙 stresses that no degree of busyness affects the habit in the second clause."
+      },
+      "translation": {
+        "vi": "Bất kể công việc bận thế nào, anh ấy đều gọi điện cho bố mẹ mỗi ngày.",
+        "en": "No matter how busy work is, he calls his parents every day."
+      },
+      "pinyin": [
+        "bié",
+        "guǎn",
+        "gōng",
+        "zuò",
+        "duō",
+        "máng",
+        "",
+        "tā",
+        "měi",
+        "tiān",
+        "dōu",
+        "gěi",
+        "fù",
+        "mǔ",
+        "dǎ",
+        "diàn",
+        "huà",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Vế 别管 cần dạng bất định như 下不下雨; nếu chỉ nói 下雨 thì câu mất nghĩa bất kể.",
+        "en": "The 别管 clause needs an indefinite form such as 下不下雨; with only 下雨 the sentence loses the no-matter meaning."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "别管明天下雨，比赛都照常进行。",
+      "right": "别管明天下不下雨，比赛都照常进行。",
+      "wrong_pinyin": [
+        "bié",
+        "guǎn",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "bǐ",
+        "sài",
+        "dōu",
+        "zhào",
+        "cháng",
+        "jìn",
+        "xíng",
+        ""
+      ],
+      "right_pinyin": [
+        "bié",
+        "guǎn",
+        "míng",
+        "tiān",
+        "xià",
+        "bù",
+        "xià",
+        "yǔ",
+        "",
+        "bǐ",
+        "sài",
+        "dōu",
+        "zhào",
+        "cháng",
+        "jìn",
+        "xíng",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "别管___，他都坚持每天跑步。",
+      "options": [
+        {"text": "天气好不好", "error_tag": null, "pinyin": ["tiān", "qì", "hǎo", "bù", "hǎo"]},
+        {"text": "天气好", "error_tag": "conjunction", "pinyin": ["tiān", "qì", "hǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "别管 cần một vế điều kiện bất định như 天气好不好, không dùng câu khẳng định đơn giản 天气好.",
+        "en": "别管 needs an indefinite condition clause such as 天气好不好, not a simple affirmative 天气好."
+      },
+      "q_pinyin": ["bié", "guǎn", "", "", "", "", "tā", "dōu", "jiān", "chí", "měi", "tiān", "pǎo", "bù", ""]
+    },
+    {
+      "q": "别管别人怎么说，你___要相信自己。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 别管⋯⋯，都⋯⋯ dùng 都 ở vế sau, không dùng 也.",
+        "en": "The pattern 别管⋯⋯，都⋯⋯ uses 都 in the second clause, not 也."
+      },
+      "q_pinyin": [
+        "bié",
+        "guǎn",
+        "bié",
+        "rén",
+        "zěn",
+        "me",
+        "shuō",
+        "",
+        "nǐ",
+        "",
+        "",
+        "",
+        "yào",
+        "xiāng",
+        "xìn",
+        "zì",
+        "jǐ",
+        ""
+      ]
+    },
+    {
+      "q": "别管___，我们都应该按时完成任务。",
+      "options": [
+        {"text": "遇到什么困难", "error_tag": null, "pinyin": ["yù", "dào", "shén", "me", "kùn", "nán"]},
+        {
+          "text": "遇到困难什么",
+          "error_tag": "word_order",
+          "pinyin": ["yù", "dào", "kùn", "nán", "shén", "me"]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm bất định phải theo trật tự 什么 + danh từ, tức 遇到什么困难.",
+        "en": "The indefinite phrase must follow the order 什么 + noun, i.e. 遇到什么困难."
+      },
+      "q_pinyin": [
+        "bié",
+        "guǎn",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "men",
+        "dōu",
+        "yīng",
+        "gāi",
+        "àn",
+        "shí",
+        "wán",
+        "chéng",
+        "rèn",
+        "wù",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 别管⋯⋯，都⋯⋯ để nói rằng dù điều kiện nào xảy ra, bạn vẫn giữ một thói quen hoặc quyết định.",
+      "en": "Write one sentence with 别管⋯⋯，都⋯⋯ saying that whatever condition occurs, you still keep a habit or decision."
+    },
+    "placeholder": "别管……，我都……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["别管"], "role": "connector"}, {"any_of": ["都"], "role": "marker"}]
+    },
+    "sample": {
+      "text": "别管明天多忙，我都坚持学习汉语。",
+      "pinyin": [
+        "bié",
+        "guǎn",
+        "míng",
+        "tiān",
+        "duō",
+        "máng",
+        "",
+        "wǒ",
+        "dōu",
+        "jiān",
+        "chí",
+        "xué",
+        "xí",
+        "hàn",
+        "yǔ",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["bié", "guǎn", "", "", "", "wǒ", "dōu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348740",
+    "generated_at": "2026-10-07T04:52:20Z"
+  },
+  "review": null
+}

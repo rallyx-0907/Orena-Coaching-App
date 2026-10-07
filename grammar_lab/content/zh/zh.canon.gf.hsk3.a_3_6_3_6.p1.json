@@ -1,0 +1,287 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_6_3_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_6_3_4.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.069"]},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 要是⋯⋯，就⋯⋯", "en": "Complex sentences: 要是⋯⋯，就⋯⋯"},
+    "native_title": "要是⋯⋯，就⋯⋯",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Mẫu câu điều kiện 要是⋯⋯，就⋯⋯ dùng để nêu một giả thiết ở vế đầu và kết quả tất yếu ở vế sau.",
+      "en": "The 要是⋯⋯，就⋯⋯ pattern states a condition in the first clause and its natural result in the second."
+    },
+    "sub": {"vi": "điều kiện – kết quả", "en": "condition – result"},
+    "native_title_pinyin": ["yào", "shì", "", "", "", "jiù", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một việc sẽ xảy ra với điều kiện nào đó, trong giao tiếp hằng ngày.",
+      "en": "When you want to say something will happen under a certain condition, in everyday speech."
+    },
+    {
+      "vi": "Khi vế kết quả là một lời khuyên, một đề nghị hoặc một dự đoán dựa trên giả thiết.",
+      "en": "When the result clause is advice, a suggestion, or a prediction based on the condition."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh điều kiện bằng 要是 thay vì 如果 trang trọng hơn.",
+      "en": "When you want to stress the condition with 要是 instead of the more formal 如果."
+    },
+    {
+      "vi": "Khi cả hai vế cùng nói về tương lai hoặc một tình huống giả định, không nói về việc đã xảy ra.",
+      "en": "When both clauses concern the future or a hypothetical situation, not something already past."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "要是",
+        "role": "connector",
+        "label": {"vi": "nếu", "en": "if"},
+        "pinyin": ["yào", "shì"]
+      },
+      {
+        "text": "条件",
+        "role": "other",
+        "label": {"vi": "điều kiện", "en": "condition"},
+        "pinyin": ["tiáo", "jiàn"]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ vế kết quả", "en": "result-clause subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {"text": "就", "role": "connector", "label": {"vi": "thì", "en": "then"}, "pinyin": ["jiù"]},
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "kết quả", "en": "result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "要是明天下雨，我们就不去公园。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "要是 nêu điều kiện; 就 đánh dấu kết quả.",
+        "en": "要是 states the condition; 就 marks the result."
+      },
+      "translation": {
+        "vi": "Nếu ngày mai mưa, chúng tôi sẽ không đi công viên.",
+        "en": "If it rains tomorrow, we will not go to the park."
+      },
+      "pinyin": [
+        "yào",
+        "shì",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "bù",
+        "qù",
+        "gōng",
+        "yuán",
+        ""
+      ]
+    },
+    {
+      "text": "要是你有时间，就来我家吃饭。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Khi chủ ngữ vế sau đã rõ, có thể không lặp lại trước 就.",
+        "en": "The result clause can omit its subject when it is clear from context."
+      },
+      "translation": {
+        "vi": "Nếu bạn có thời gian thì đến nhà tôi ăn cơm.",
+        "en": "If you have time, come to my home for a meal."
+      },
+      "pinyin": ["yào", "shì", "nǐ", "yǒu", "shí", "jiān", "", "jiù", "lái", "wǒ", "jiā", "chī", "fàn", ""]
+    },
+    {
+      "text": "要是他不来，我们就开始吧。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "subject"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Vế điều kiện đứng trước, vế kết quả dùng 就.",
+        "en": "The condition comes first and the result clause uses 就."
+      },
+      "translation": {
+        "vi": "Nếu anh ấy không đến thì chúng ta bắt đầu nhé.",
+        "en": "If he does not come, let's start."
+      },
+      "pinyin": ["yào", "shì", "tā", "bù", "lái", "", "wǒ", "men", "jiù", "kāi", "shǐ", "ba", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người Việt thường dịch thẳng 'thì' bằng cách bỏ trống, nhưng tiếng Trung cần 就 ở vế kết quả để nối hai vế.",
+        "en": "Vietnamese speakers often drop the linking word, but Chinese needs 就 in the result clause to connect the two parts."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "要是明天下雨，我们不去公园。",
+      "right": "要是明天下雨，我们就不去公园。",
+      "wrong_pinyin": ["yào", "shì", "míng", "tiān", "xià", "yǔ", "", "wǒ", "men", "bù", "qù", "gōng", "yuán", ""],
+      "right_pinyin": [
+        "yào",
+        "shì",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "bù",
+        "qù",
+        "gōng",
+        "yuán",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "要是你明天有空，我们___去看电影。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế kết quả sau 要是 cần 就, không dùng 也.",
+        "en": "The result clause after 要是 needs 就, not 也."
+      },
+      "q_pinyin": [
+        "yào",
+        "shì",
+        "nǐ",
+        "míng",
+        "tiān",
+        "yǒu",
+        "kòng",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "qù",
+        "kàn",
+        "diàn",
+        "yǐng",
+        ""
+      ]
+    },
+    {
+      "q": "要是他生病了，他___来上课。",
+      "options": [
+        {"text": "就不", "error_tag": null, "pinyin": ["jiù", "bù"]},
+        {"text": "不", "error_tag": "conjunction", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định trong vế kết quả vẫn phải có 就: 就不.",
+        "en": "A negative result clause still keeps 就: 就不."
+      },
+      "q_pinyin": ["yào", "shì", "tā", "shēng", "bìng", "le", "", "tā", "", "", "", "lái", "shàng", "kè", ""]
+    },
+    {
+      "q": "___明天天气好，我们就去爬山。",
+      "options": [
+        {"text": "要是", "error_tag": null, "pinyin": ["yào", "shì"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu điều kiện mở đầu bằng 要是, không dùng 但是.",
+        "en": "A conditional sentence starts with 要是, not 但是."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "míng",
+        "tiān",
+        "tiān",
+        "qì",
+        "hǎo",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "qù",
+        "pá",
+        "shān",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về kế hoạch của bạn: nếu điều kiện nào đó xảy ra thì bạn sẽ làm gì.",
+      "en": "Write one sentence about your plans: if a certain condition happens, what will you do."
+    },
+    "placeholder": "要是明天……，我就……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["要是"], "role": "connector"}, {"any_of": ["就"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "要是明天天气好，我就去跑步。",
+      "pinyin": ["yào", "shì", "míng", "tiān", "tiān", "qì", "hǎo", "", "wǒ", "jiù", "qù", "pǎo", "bù", ""]
+    },
+    "placeholder_pinyin": ["yào", "shì", "míng", "tiān", "", "", "", "wǒ", "jiù", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351854",
+    "generated_at": "2026-10-07T05:44:14Z"
+  },
+  "review": null
+}

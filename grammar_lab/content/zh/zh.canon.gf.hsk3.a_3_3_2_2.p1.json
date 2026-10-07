@@ -1,0 +1,248 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_3_2_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_2_7.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.035", "gf0025.hsk3.036", "gf0025.hsk3.037"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 看起来", "en": "Chinese grammar: 看起来"},
+    "native_title": "看起来",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "看起来 dùng để nói điều mình quan sát hoặc cảm nhận qua vẻ bề ngoài, theo sau là một nhận xét.",
+      "en": "看起来 introduces what you observe or feel from outward appearance, followed by a comment."
+    },
+    "sub": {"vi": "nhìn có vẻ", "en": "it looks / seems"},
+    "native_title_pinyin": ["kàn", "qǐ", "lái"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói điều mình thấy qua mắt, chưa chắc đã đúng: 他看起来很高兴。",
+      "en": "When you say what you see with your eyes, without claiming it is certain: 他看起来很高兴。"
+    },
+    {
+      "vi": "Khi nhận xét một người, một vật hoặc một tình huống dựa trên vẻ bề ngoài: 这个菜看起来很好吃。",
+      "en": "When commenting on a person, thing or situation based on how it appears: 这个菜看起来很好吃。"
+    },
+    {
+      "vi": "Khi muốn nói một việc có vẻ sắp xảy ra: 看起来要下雨了。",
+      "en": "When saying something seems about to happen: 看起来要下雨了。"
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "看起来",
+        "role": "verb",
+        "label": {"vi": "động từ nhận xét", "en": "comment verb"},
+        "pinyin": ["kàn", "qǐ", "lái"]
+      },
+      {
+        "text": "很/不",
+        "role": "other",
+        "label": {"vi": "mức độ / phủ định", "en": "degree / negation"},
+        "optional": true,
+        "options": [{"text": "很", "pinyin": ["hěn"]}, {"text": "不", "pinyin": ["bù"]}],
+        "pinyin": ["hěn", "", "bù"]
+      },
+      {
+        "text": "形容词/动词短语",
+        "role": "complement",
+        "label": {"vi": "nhận xét", "en": "comment"},
+        "pinyin": ["xíng", "róng", "cí", "", "dòng", "cí", "duǎn", "yǔ"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "看起来",
+          "role": "verb",
+          "label": {"vi": "động từ nhận xét", "en": "comment verb"},
+          "pinyin": ["kàn", "qǐ", "lái"]
+        },
+        {
+          "text": "不",
+          "role": "other",
+          "label": {"vi": "phủ định", "en": "negation"},
+          "pinyin": ["bù"]
+        },
+        {
+          "text": "形容词/动词短语",
+          "role": "complement",
+          "label": {"vi": "nhận xét", "en": "comment"},
+          "pinyin": ["xíng", "róng", "cí", "", "dòng", "cí", "duǎn", "yǔ"]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "看起来",
+          "role": "verb",
+          "label": {"vi": "động từ nhận xét", "en": "comment verb"},
+          "pinyin": ["kàn", "qǐ", "lái"]
+        },
+        {
+          "text": "形容词/动词短语",
+          "role": "complement",
+          "label": {"vi": "nhận xét", "en": "comment"},
+          "pinyin": ["xíng", "róng", "cí", "", "dòng", "cí", "duǎn", "yǔ"]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他看起来很高兴。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nhìn vẻ ngoài mà đoán, không khẳng định chắc chắn.",
+        "en": "A guess from appearance, not a certain fact."
+      },
+      "translation": {"vi": "Anh ấy trông có vẻ rất vui.", "en": "He looks very happy."},
+      "pinyin": ["tā", "kàn", "qǐ", "lái", "hěn", "gāo", "xìng", ""]
+    },
+    {
+      "text": "这个菜看起来很好吃。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nhận xét món ăn qua vẻ bề ngoài.",
+        "en": "A comment on the dish based on how it looks."
+      },
+      "translation": {"vi": "Món này trông có vẻ rất ngon.", "en": "This dish looks very tasty."},
+      "pinyin": ["zhè", "ge", "cài", "kàn", "qǐ", "lái", "hěn", "hǎo", "chī", ""]
+    },
+    {
+      "text": "看起来要下雨了。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "verb"}, {"start": 3, "end": 7, "role": "complement"}],
+      "annotation": {
+        "vi": "Chủ ngữ ẩn, chỉ nói về tình hình sắp xảy ra.",
+        "en": "The subject is omitted; it only states what seems about to happen."
+      },
+      "translation": {"vi": "Có vẻ sắp mưa rồi.", "en": "It looks like it is going to rain."},
+      "pinyin": ["kàn", "qǐ", "lái", "yào", "xià", "yǔ", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "很 phải đứng trước tính từ, không đứng sau. Người Việt quen nói 'vui lắm' nên dễ đặt 很 ra sau.",
+        "en": "很 must come before the adjective, not after it. Vietnamese speakers often put the degree word after the adjective."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "他看起来高兴很。",
+      "right": "他看起来很高兴。",
+      "wrong_pinyin": ["tā", "kàn", "qǐ", "lái", "gāo", "xìng", "hěn", ""],
+      "right_pinyin": ["tā", "kàn", "qǐ", "lái", "hěn", "gāo", "xìng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___很高兴。",
+      "options": [
+        {"text": "看起来", "error_tag": null, "pinyin": ["kàn", "qǐ", "lái"]},
+        {"text": "看", "error_tag": "word_choice", "pinyin": ["kàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần 看起来 để nói 'trông có vẻ'; chỉ 看 là 'nhìn' không diễn tả nhận xét.",
+        "en": "You need 看起来 to mean 'looks/seems'; 看 alone means 'look' and does not express a comment."
+      },
+      "q_pinyin": ["tā", "", "", "", "hěn", "gāo", "xìng", ""]
+    },
+    {
+      "q": "这个菜看起来___好吃。",
+      "options": [
+        {"text": "很", "error_tag": null, "pinyin": ["hěn"]},
+        {"text": "不", "error_tag": "word_choice", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu khẳng định cần 很 trước tính từ; 不 tạo nghĩa phủ định không hợp ở đây.",
+        "en": "An affirmative sentence needs 很 before the adjective; 不 would make it negative and does not fit here."
+      },
+      "q_pinyin": ["zhè", "ge", "cài", "kàn", "qǐ", "lái", "", "", "", "hǎo", "chī", ""]
+    },
+    {
+      "q": "他看起来___高兴。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bù"]},
+        {"text": "很", "error_tag": "word_choice", "pinyin": ["hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với nghĩa phủ định, 不 đứng trước tính từ: 看起来不高兴.",
+        "en": "For a negative meaning, 不 comes before the adjective: 看起来不高兴."
+      },
+      "q_pinyin": ["tā", "kàn", "qǐ", "lái", "", "", "", "gāo", "xìng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 看起来 để nhận xét ai đó hoặc cái gì đó qua vẻ bề ngoài.",
+      "en": "Write one sentence with 看起来 to comment on someone or something from its appearance."
+    },
+    "placeholder": "他看起来……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["看起来"], "role": "verb"}]},
+    "sample": {"text": "他看起来很高兴。", "pinyin": ["tā", "kàn", "qǐ", "lái", "hěn", "gāo", "xìng", ""]},
+    "placeholder_pinyin": ["tā", "kàn", "qǐ", "lái", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791344853",
+    "generated_at": "2026-10-07T03:47:33Z"
+  },
+  "review": null
+}

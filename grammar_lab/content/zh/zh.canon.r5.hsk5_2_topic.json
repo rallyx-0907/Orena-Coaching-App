@@ -1,0 +1,252 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_2_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_15_tendencies"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-2-topic", "zh-hsk6-3-topic"]},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": ["zh-hsk5-2-topic", "zh-hsk6-3-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 并非/并不是", "en": "Chinese grammar: 并非/并不是"},
+    "native_title": "并非/并不是",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Phủ định nhấn mạnh 并非 / 并不是 dùng để bác bỏ một giả định hoặc khẳng định rằng điều gì đó không đúng như người ta tưởng.",
+      "en": "The emphatic negator 并非 / 并不是 is used to reject an assumption or state that something is not the case, often correcting what was expected."
+    },
+    "sub": {"vi": "phủ định nhấn mạnh", "en": "emphatic negation"},
+    "native_title_pinyin": ["bìng", "fēi", "", "bìng", "bú", "shì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn bác bỏ một nhận định hoặc giả định mà người khác có thể đang nghĩ tới.",
+      "en": "When you want to reject a claim or assumption that someone might be holding."
+    },
+    {
+      "vi": "Khi cần sắc thái trang trọng hơn 不是 trong văn viết hoặc diễn đạt có tính lập luận.",
+      "en": "When you need a more formal or argumentative tone than plain 不是."
+    },
+    {
+      "vi": "Khi phủ định một mệnh đề hoặc vị ngữ trọn vẹn, không chỉ một danh từ đơn lẻ.",
+      "en": "When negating a full clause or predicate, not just a single noun."
+    },
+    {
+      "vi": "Khi muốn nêu rõ phạm vi phủ định, đặc biệt trước các từ chỉ số lượng như 所有, 都.",
+      "en": "When you need to make the scope of negation clear, especially before quantity words like 所有 or 都."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ trước", "en": "preposed subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "并非/并不是",
+        "role": "aux",
+        "label": {"vi": "không hẳn/không phải", "en": "not necessarily/not"},
+        "options": [
+          {"text": "并非", "pinyin": ["bìng", "fēi"]},
+          {"text": "并不是", "pinyin": ["bìng", "bú", "shì"]}
+        ],
+        "pinyin": ["bìng", "fēi", "", "bìng", "bú", "shì"]
+      },
+      {
+        "text": "主语2",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ sau", "en": "postposed subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ", ""]
+      },
+      {
+        "text": "谓语/从句",
+        "role": "complement",
+        "label": {"vi": "vị ngữ/mệnh đề", "en": "predicate/clause"},
+        "pinyin": ["wèi", "yǔ", "", "cóng", "jù"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这并非事实。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "aux"},
+        {"start": 3, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "并非 phủ định một nhận định theo sắc thái trang trọng.",
+        "en": "并非 negates a statement in a relatively formal tone."
+      },
+      "translation": {"vi": "Điều này không phải là sự thật.", "en": "This is not the fact."},
+      "pinyin": ["zhè", "bìng", "fēi", "shì", "shí", ""]
+    },
+    {
+      "text": "并不是所有人都同意这个方案。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "aux"},
+        {"start": 3, "end": 6, "role": "subject"},
+        {"start": 6, "end": 13, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "并不是 có thể đứng trước chủ ngữ được phủ định.",
+        "en": "并不是 can precede the subject that is being negated."
+      },
+      "translation": {
+        "vi": "Không phải tất cả mọi người đều đồng ý với phương án này.",
+        "en": "Not everyone agrees with this plan."
+      },
+      "pinyin": ["bìng", "bú", "shì", "suǒ", "yǒu", "rén", "dōu", "tóng", "yì", "zhè", "ge", "fāng", "àn", ""]
+    },
+    {
+      "text": "问题并非无法解决。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "aux"},
+        {"start": 4, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "并非 + phủ định tạo nghĩa 'không phải là không thể'.",
+        "en": "并非 plus a negative predicate means 'it is not the case that it is impossible'."
+      },
+      "translation": {
+        "vi": "Vấn đề không phải là không thể giải quyết.",
+        "en": "The problem is not impossible to solve."
+      },
+      "pinyin": ["wèn", "tí", "bìng", "fēi", "wú", "fǎ", "jiě", "jué", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "并非 phải đứng trước vị ngữ, không đứng sau 是 trong cấu trúc này.",
+        "en": "并非 must precede the predicate; it cannot follow 是 in this structure."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这是并非事实。",
+      "right": "这并非事实。",
+      "wrong_pinyin": ["zhè", "shì", "bìng", "fēi", "shì", "shí", ""],
+      "right_pinyin": ["zhè", "bìng", "fēi", "shì", "shí", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这___事实。",
+      "options": [
+        {"text": "并非", "error_tag": null, "pinyin": ["bìng", "fēi"]},
+        {"text": "不是", "error_tag": "other", "pinyin": ["bú", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "并非 là phủ định nhấn mạnh, phù hợp với văn phong trang trọng; 不是 trung tính hơn nhưng vẫn đúng ngữ pháp, tuy nhiên ở đây cần sắc thái nhấn mạnh.",
+        "en": "并非 is the emphatic negator fitting the formal tone; 不是 is neutral and grammatical but lacks the emphatic nuance required here."
+      },
+      "q_pinyin": ["zhè", "", "", "", "shì", "shí", ""]
+    },
+    {
+      "q": "他___不努力，而是方法不对。",
+      "options": [
+        {"text": "并不是", "error_tag": null, "pinyin": ["bìng", "bú", "shì"]},
+        {"text": "并非", "error_tag": "other", "pinyin": ["bìng", "fēi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "并不是 thường dùng trước vị ngữ động từ trong cấu trúc 并不是...而是...; 并非 cũng đúng nhưng 并不是 tự nhiên hơn ở đây.",
+        "en": "并不是 is commonly used before a verb predicate in the 并不是...而是... pattern; 并非 is also possible but 并不是 is more natural here."
+      },
+      "q_pinyin": ["tā", "", "", "", "bù", "nǔ", "lì", "", "ér", "shì", "fāng", "fǎ", "bú", "duì", ""]
+    },
+    {
+      "q": "___所有人都同意这个方案。",
+      "options": [
+        {"text": "并非", "error_tag": null, "pinyin": ["bìng", "fēi"]},
+        {"text": "不是", "error_tag": "other", "pinyin": ["bú", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "并非 nhấn mạnh phạm vi phủ định trước 所有人, nghĩa là không phải tất cả; 不是 ở đây sẽ mơ hồ hơn.",
+        "en": "并非 emphasizes the scope of negation before 所有人, meaning not all; 不是 would be vaguer here."
+      },
+      "q_pinyin": ["", "", "", "suǒ", "yǒu", "rén", "dōu", "tóng", "yì", "zhè", "ge", "fāng", "àn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 并非 hoặc 并不是 để bác bỏ một giả định về bản thân hoặc một tình huống quen thuộc.",
+      "en": "Write a sentence using 并非 or 并不是 to reject an assumption about yourself or a familiar situation."
+    },
+    "placeholder": "我并非……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["并非", "并不是"], "role": "aux"}]},
+    "sample": {
+      "text": "我并非不想帮忙，只是现在没有时间。",
+      "pinyin": [
+        "wǒ",
+        "bìng",
+        "fēi",
+        "bù",
+        "xiǎng",
+        "bāng",
+        "máng",
+        "",
+        "zhǐ",
+        "shì",
+        "xiàn",
+        "zài",
+        "méi",
+        "yǒu",
+        "shí",
+        "jiān",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "bìng", "fēi", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351885",
+    "generated_at": "2026-10-07T05:44:45Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-2-topic", "zh-hsk6-3-topic"],
+      "content_version": 2,
+      "content_hash": "ee4154723b503bf9a2b5b33ceb32c362bc52cc7153adbcc83672012087ab8016",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-2-topic",
+          "issue": "Pinyin for 并不是 was given as 'bìng bú shì' but standard pinyin is 'bìng bù shì'.",
+          "fix": "Corrected to 'bìng bù shì' in the pinyin field."
+        },
+        {
+          "r5_id": "zh-hsk5-2-topic",
+          "issue": "Example '他并不是不努力，而是方法不对。' was listed under examples but the pinyin had 'bìng bú shì' instead of 'bìng bù shì'.",
+          "fix": "Corrected pinyin to 'bìng bù shì'."
+        },
+        {
+          "r5_id": "zh-hsk5-2-topic",
+          "issue": "The mistake '并非所有人都不同意 = nếu intended 'not everyone agrees'' was confusing and not a clear learner error.",
+          "fix": "Replaced with a clearer common mistake: '这是并非事实。' corrected to '这并非事实。'"
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,387 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_8_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_5_2_11.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk5-8-topic"], "gf0025": ["gf0025.hsk5.015", "gf0025.hsk7_9.096"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["zh-hsk5-8-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: 连接分句或句子：从而、加上、完了、一旦",
+      "en": "Chinese grammar: 连接分句或句子：从而、加上、完了、一旦"
+    },
+    "native_title": "连接分句或句子：从而、加上、完了、一旦",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "从而 và 进而 nối hai mệnh đề: 从而 nêu kết quả trực tiếp của hành động trước, 进而 nêu bước phát triển tiến thêm từ hành động trước.",
+      "en": "从而 and 进而 link two clauses: 从而 introduces the direct result of the first action, 进而 introduces the further step developed from it."
+    },
+    "sub": {"vi": "nối kết quả", "en": "result linkers"},
+    "native_title_pinyin": [
+      "lián",
+      "jiē",
+      "fēn",
+      "jù",
+      "huò",
+      "jù",
+      "zi",
+      "",
+      "cóng",
+      "ér",
+      "",
+      "jiā",
+      "shàng",
+      "",
+      "wán",
+      "le",
+      "",
+      "yí",
+      "dàn"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng 从而 khi mệnh đề sau là kết quả trực tiếp, thường là điều tốt hoặc điều mong muốn, của mệnh đề trước.",
+      "en": "Use 从而 when the second clause is the direct, usually desirable, result of the first."
+    },
+    {
+      "vi": "Dùng 进而 khi mệnh đề sau là bước tiến tiếp theo, mức độ cao hơn hoặc phạm vi rộng hơn, được phát triển từ mệnh đề trước.",
+      "en": "Use 进而 when the second clause is a further step, higher level or wider scope, developed from the first."
+    },
+    {
+      "vi": "Cả hai đều dùng trong văn viết, báo cáo, thuyết trình; ít dùng trong khẩu ngữ thân mật.",
+      "en": "Both belong to written, report or presentation style; they are rare in casual speech."
+    },
+    {
+      "vi": "Mệnh đề sau phải suy ra được từ mệnh đề trước, không phải chỉ là thêm một ý song song.",
+      "en": "The second clause must follow logically from the first, not merely add a parallel idea."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "mệnh đề thứ nhất", "en": "first clause"},
+        "pinyin": [""]
+      },
+      {
+        "text": "从而/进而",
+        "role": "connector",
+        "label": {"vi": "liên từ nối kết quả / bước tiến", "en": "result / further-step connector"},
+        "options": [{"text": "从而", "pinyin": ["cóng", "ér"]}, {"text": "进而", "pinyin": ["jìn", "ér"]}],
+        "pinyin": ["cóng", "ér", "", "jìn", "ér"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "mệnh đề thứ hai", "en": "second clause"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我们优化了流程，从而减少了错误。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Tối ưu quy trình là nguyên nhân; giảm lỗi là kết quả trực tiếp.",
+        "en": "Optimising the process is the cause; fewer errors is its direct result."
+      },
+      "translation": {
+        "vi": "Chúng tôi tối ưu quy trình, qua đó giảm được lỗi.",
+        "en": "We optimised the process, thereby reducing errors."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "yōu",
+        "huà",
+        "le",
+        "liú",
+        "chéng",
+        "",
+        "cóng",
+        "ér",
+        "jiǎn",
+        "shǎo",
+        "le",
+        "cuò",
+        "wù",
+        ""
+      ]
+    },
+    {
+      "text": "数据更加完整，从而提高了判断的准确性。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 18, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Dữ liệu đầy đủ hơn dẫn trực tiếp tới độ chính xác cao hơn.",
+        "en": "More complete data leads directly to greater accuracy."
+      },
+      "translation": {
+        "vi": "Dữ liệu đầy đủ hơn, do đó nâng cao độ chính xác của việc phán đoán.",
+        "en": "The data is more complete, thus improving the accuracy of judgement."
+      },
+      "pinyin": [
+        "shù",
+        "jù",
+        "gèng",
+        "jiā",
+        "wán",
+        "zhěng",
+        "",
+        "cóng",
+        "ér",
+        "tí",
+        "gāo",
+        "le",
+        "pàn",
+        "duàn",
+        "de",
+        "zhǔn",
+        "què",
+        "xìng",
+        ""
+      ]
+    },
+    {
+      "text": "研究发现了问题，进而提出了新的方案。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 17, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Phát hiện vấn đề là bước đầu; đề xuất phương án là bước tiến tiếp theo.",
+        "en": "Finding the problem is the first step; proposing a plan is the further step."
+      },
+      "translation": {
+        "vi": "Nghiên cứu phát hiện vấn đề, rồi tiến tới đề xuất phương án mới.",
+        "en": "The study found the problem and then went on to propose a new plan."
+      },
+      "pinyin": [
+        "yán",
+        "jiū",
+        "fā",
+        "xiàn",
+        "le",
+        "wèn",
+        "tí",
+        "",
+        "jìn",
+        "ér",
+        "tí",
+        "chū",
+        "le",
+        "xīn",
+        "de",
+        "fāng",
+        "àn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Đây là quan hệ thêm vào (cũng thích), không phải quan hệ kết quả, nên 从而 sai chức năng; chỉ dùng 也.",
+        "en": "This is addition (also like), not a result relation, so 从而 is the wrong connector; use 也."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "我喜欢茶，从而也喜欢咖啡。",
+      "right": "我喜欢茶，也喜欢咖啡。",
+      "wrong_pinyin": ["wǒ", "xǐ", "huān", "chá", "", "cóng", "ér", "yě", "xǐ", "huān", "kā", "fēi", ""],
+      "right_pinyin": ["wǒ", "xǐ", "huān", "chá", "", "yě", "xǐ", "huān", "kā", "fēi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "公司改善了服务，___提高了客户的满意度。",
+      "options": [
+        {"text": "从而", "error_tag": null, "pinyin": ["cóng", "ér"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cải thiện dịch vụ dẫn tới kết quả trực tiếp là tăng độ hài lòng, nên dùng 从而. 但是 chỉ tương phản, 因为 chỉ nguyên nhân.",
+        "en": "Better service leads directly to higher satisfaction, so 从而 fits. 但是 marks contrast and 因为 marks cause."
+      },
+      "q_pinyin": [
+        "gōng",
+        "sī",
+        "gǎi",
+        "shàn",
+        "le",
+        "fú",
+        "wù",
+        "",
+        "",
+        "",
+        "",
+        "tí",
+        "gāo",
+        "le",
+        "kè",
+        "hù",
+        "de",
+        "mǎn",
+        "yì",
+        "dù",
+        ""
+      ]
+    },
+    {
+      "q": "研究先发现了问题，___提出了新的方案。",
+      "options": [
+        {"text": "进而", "error_tag": null, "pinyin": ["jìn", "ér"]},
+        {"text": "从而", "error_tag": "conjunction", "pinyin": ["cóng", "ér"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đề xuất phương án là bước tiến tiếp theo sau khi phát hiện vấn đề, nên dùng 进而; 从而 chỉ kết quả trực tiếp.",
+        "en": "Proposing a plan is the next step after finding the problem, so 进而 fits; 从而 marks a direct result only."
+      },
+      "q_pinyin": [
+        "yán",
+        "jiū",
+        "xiān",
+        "fā",
+        "xiàn",
+        "le",
+        "wèn",
+        "tí",
+        "",
+        "",
+        "",
+        "",
+        "tí",
+        "chū",
+        "le",
+        "xīn",
+        "de",
+        "fāng",
+        "àn",
+        ""
+      ]
+    },
+    {
+      "q": "我们优化了流程，从而___了错误。",
+      "options": [
+        {"text": "减少", "error_tag": null, "pinyin": ["jiǎn", "shǎo"]},
+        {"text": "减少的", "error_tag": "particle", "pinyin": ["jiǎn", "shǎo", "de"]},
+        {"text": "减少着", "error_tag": "aspect", "pinyin": ["jiǎn", "shǎo", "zhe"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 从而 là kết quả đã xảy ra, dùng động từ 减少 với 了; 减少的 sai vì 的 không đánh dấu hoàn thành, 减少着 sai thể.",
+        "en": "After 从而 the result is realised, so 减少 with 了 is correct; 减少的 is wrong because 的 does not mark completion, and 减少着 is the wrong aspect."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "yōu",
+        "huà",
+        "le",
+        "liú",
+        "chéng",
+        "",
+        "cóng",
+        "ér",
+        "",
+        "",
+        "",
+        "le",
+        "cuò",
+        "wù",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã làm và kết quả trực tiếp của nó, dùng 从而.",
+      "en": "Write one sentence about something you did and its direct result, using 从而."
+    },
+    "placeholder": "我每天练习，从而……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["从而"], "role": "connector"}]},
+    "sample": {
+      "text": "我每天练习听力，从而提高了考试成绩。",
+      "pinyin": [
+        "wǒ",
+        "měi",
+        "tiān",
+        "liàn",
+        "xí",
+        "tīng",
+        "lì",
+        "",
+        "cóng",
+        "ér",
+        "tí",
+        "gāo",
+        "le",
+        "kǎo",
+        "shì",
+        "chéng",
+        "jì",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "měi", "tiān", "liàn", "xí", "", "cóng", "ér", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338566",
+    "generated_at": "2026-10-07T02:02:46Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-8-topic"],
+      "content_version": 2,
+      "content_hash": "340165559a9e9a426a28815ac7a7a78707369073477c9afcc54d094d27b04668",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-8-topic",
+          "issue": "R5 gộp 从而 và 进而 vào một điểm nhưng phần mistakes đưa ví dụ tiếng Anh lẫn tiếng Trung ('提高效率，进而成本下降 if simply direct result.'), không phải câu người học thật sự viết.",
+          "fix": "Thay bằng một lỗi thật của người học Việt: dùng 从而 cho quan hệ thêm vào ('我喜欢茶，从而也喜欢咖啡。') và sửa thành '我喜欢茶，也喜欢咖啡。'"
+        },
+        {
+          "r5_id": "zh-hsk5-8-topic",
+          "issue": "R5 không có công thức trừu tượng, không có bindings cho ví dụ, không có quick practice.",
+          "fix": "Thêm formula A + 从而/进而 + B với connector là một slot có options, gắn bindings cho cả 3 ví dụ, và thêm 3 câu quick practice."
+        },
+        {
+          "r5_id": "zh-hsk5-8-topic",
+          "issue": "R5 ghi '先改善服务，进而提高客户满意度' như ví dụ của 进而 nhưng không nêu rõ 进而 đánh dấu bước tiến tiếp theo khác với kết quả trực tiếp của 从而.",
+          "fix": "Giữ ví dụ 进而 với '研究发现了问题，进而提出了新的方案' và ghi chú rõ đây là bước tiến tiếp theo, không phải kết quả trực tiếp."
+        }
+      ]
+    }
+  },
+  "review": null
+}

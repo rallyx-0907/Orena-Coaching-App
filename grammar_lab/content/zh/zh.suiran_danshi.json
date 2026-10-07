@@ -1,0 +1,254 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.suiran_danshi",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["zh.yinwei_suoyi"],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk2-2-topic"], "gf0025": ["gf0025.hsk2.030"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk2-2-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "虽然 ... 但是 ...", "en": "虽然 ... 但是 ..."},
+    "native_title": "“虽然……但是……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "虽然...但是... dùng để nối một sự thật với một kết quả trái với điều người ta thường mong đợi.",
+      "en": "虽然...但是... connects a fact with a result that goes against what one would normally expect."
+    },
+    "sub": {"vi": "nhượng bộ", "en": "concession"},
+    "native_title_pinyin": ["", "suī", "rán", "", "", "dàn", "shì", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn thừa nhận một sự thật (A) nhưng kết quả lại khác với điều người ta thường nghĩ (B).",
+      "en": "When you want to admit a fact (A) but the result is different from what people would normally expect (B)."
+    },
+    {
+      "vi": "Khi hai vế có sự đối lập thật sự, không phải quan hệ nguyên nhân – kết quả.",
+      "en": "When the two clauses genuinely contrast, not cause and result."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh rằng dù A xảy ra, B vẫn đúng hoặc vẫn xảy ra.",
+      "en": "When you want to stress that even though A happens, B is still true or still happens."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "虽然",
+        "role": "connector",
+        "label": {"vi": "liên từ nhượng bộ", "en": "concession connector"},
+        "pinyin": ["suī", "rán"]
+      },
+      {"text": "A", "role": "other", "label": {"vi": "mệnh đề A", "en": "clause A"}, "pinyin": [""]},
+      {
+        "text": "但是",
+        "role": "connector",
+        "label": {"vi": "liên từ tương phản", "en": "contrast connector"},
+        "pinyin": ["dàn", "shì"]
+      },
+      {"text": "B", "role": "other", "label": {"vi": "mệnh đề B", "en": "clause B"}, "pinyin": [""]}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "虽然下雨，但是我们还是去了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Thừa nhận trời mưa (A), nhưng kết quả vẫn đi (B) — trái với mong đợi.",
+        "en": "Admits it rained (A), but they still went (B) — against expectation."
+      },
+      "translation": {"vi": "Dù trời mưa, chúng tôi vẫn đi.", "en": "Although it rained, we still went."},
+      "pinyin": ["suī", "rán", "xià", "yǔ", "", "dàn", "shì", "wǒ", "men", "hái", "shì", "qù", "le", ""]
+    },
+    {
+      "text": "虽然很累，但是他还在工作。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Thừa nhận mệt (A), nhưng vẫn tiếp tục làm việc (B).",
+        "en": "Admits being tired (A), but still keeps working (B)."
+      },
+      "translation": {
+        "vi": "Dù rất mệt, anh ấy vẫn đang làm việc.",
+        "en": "Although he is very tired, he is still working."
+      },
+      "pinyin": ["suī", "rán", "hěn", "lèi", "", "dàn", "shì", "tā", "hái", "zài", "gōng", "zuò", ""]
+    },
+    {
+      "text": "虽然这本书很贵，可是很好看。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Thừa nhận sách đắt (A), nhưng nội dung hay (B).",
+        "en": "Admits the book is expensive (A), but it is good to read (B)."
+      },
+      "translation": {
+        "vi": "Dù quyển sách này đắt, nhưng nó rất hay.",
+        "en": "Although this book is expensive, it is very good."
+      },
+      "pinyin": ["suī", "rán", "zhè", "běn", "shū", "hěn", "guì", "", "kě", "shì", "hěn", "hǎo", "kàn", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.yinwei_suoyi",
+      "this_example": "虽然下雨，但是我们还是去了。",
+      "other_example": "因为下雨，所以我们没去。",
+      "this_meaning": {
+        "vi": "虽然...但是... diễn tả quan hệ nhượng bộ: dù A xảy ra, B vẫn trái ngược với mong đợi.",
+        "en": "虽然...但是... expresses concession: even though A happens, B still goes against expectation."
+      },
+      "other_meaning": {
+        "vi": "因为...所以... diễn tả quan hệ nguyên nhân – kết quả: vì A nên B.",
+        "en": "因为...所以... expresses cause and result: because A, therefore B."
+      },
+      "this_example_pinyin": ["suī", "rán", "xià", "yǔ", "", "dàn", "shì", "wǒ", "men", "hái", "shì", "qù", "le", ""],
+      "other_example_pinyin": ["yīn", "wèi", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "men", "méi", "qù", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt Nam thường dịch \"dù\" thành \"vì\" vì cả hai đều mở đầu mệnh đề phụ, nhưng 因为 mở đầu nguyên nhân, không phải nhượng bộ. Cần dùng 虽然 cho quan hệ trái ngược.",
+        "en": "Vietnamese learners often translate \"dù\" as \"vì\" because both open a subordinate clause, but 因为 introduces a cause, not a concession. Use 虽然 for contrast."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "因为很累，但是他工作。",
+      "right": "虽然很累，但是他还在工作。",
+      "wrong_pinyin": ["yīn", "wèi", "hěn", "lèi", "", "dàn", "shì", "tā", "gōng", "zuò", ""],
+      "right_pinyin": ["suī", "rán", "hěn", "lèi", "", "dàn", "shì", "tā", "hái", "zài", "gōng", "zuò", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___很累，但是他还在工作。",
+      "options": [
+        {"text": "虽然", "error_tag": null, "pinyin": ["suī", "rán"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế sau dùng 但是 để chỉ kết quả trái ngược, nên vế đầu phải là 虽然 (nhượng bộ), không phải 因为 (nguyên nhân).",
+        "en": "The second clause uses 但是 to mark a contrasting result, so the first clause must be 虽然 (concession), not 因为 (cause)."
+      },
+      "q_pinyin": ["", "", "", "hěn", "lèi", "", "dàn", "shì", "tā", "hái", "zài", "gōng", "zuò", ""]
+    },
+    {
+      "q": "虽然这本书很贵，___很好看。",
+      "options": [
+        {"text": "但是", "error_tag": null, "pinyin": ["dàn", "shì"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 虽然 phải là một liên từ tương phản như 但是/可是, không dùng 所以 vì 所以 chỉ kết quả.",
+        "en": "After 虽然 you need a contrast connector like 但是/可是; 所以 is wrong because it marks result."
+      },
+      "q_pinyin": ["suī", "rán", "zhè", "běn", "shū", "hěn", "guì", "", "", "", "", "hěn", "hǎo", "kàn", ""]
+    },
+    {
+      "q": "虽然我不会做，___我想试试。",
+      "options": [
+        {"text": "但是", "error_tag": null, "pinyin": ["dàn", "shì"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai vế có sự trái ngược (không biết làm nhưng vẫn muốn thử), nên dùng 但是, không dùng 因为.",
+        "en": "The two clauses contrast (not knowing how but still wanting to try), so use 但是, not 因为."
+      },
+      "q_pinyin": ["suī", "rán", "wǒ", "bú", "huì", "zuò", "", "", "", "", "wǒ", "xiǎng", "shì", "shì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 虽然...但是... để nói một điều trái với mong đợi.",
+      "en": "Write one sentence about yourself using 虽然...但是... to say something against expectation."
+    },
+    "placeholder": "虽然……但是……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["虽然"], "role": "connector"}, {"any_of": ["但是", "可是"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "虽然今天很冷，但是我还是去跑步了。",
+      "pinyin": [
+        "suī",
+        "rán",
+        "jīn",
+        "tiān",
+        "hěn",
+        "lěng",
+        "",
+        "dàn",
+        "shì",
+        "wǒ",
+        "hái",
+        "shì",
+        "qù",
+        "pǎo",
+        "bù",
+        "le",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["suī", "rán", "", "", "dàn", "shì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338046",
+    "generated_at": "2026-10-07T01:54:06Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-2-topic"],
+      "content_version": 2,
+      "content_hash": "cbeb51f2916b28c26870e40aaa345ea2e4c37f3530f1911ebf0f273e19ebb7cc",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-2-topic",
+          "issue": "R5 dạy cả 如果...就... trong phần contrast, nhưng schema chỉ yêu cầu so sánh với 因为...所以...",
+          "fix": "Chỉ giữ so sánh với 因为...所以... theo yêu cầu của schema."
+        },
+        {
+          "r5_id": "zh-hsk2-2-topic",
+          "issue": "R5 nói có thể lược 但是 trong khẩu ngữ, nhưng HSK2 nên học cặp đầy đủ; lược bỏ dễ gây nhầm với câu đơn.",
+          "fix": "Giữ cặp đầy đủ 虽然...但是... trong công thức và ví dụ; không dạy lược bỏ ở cấp độ này."
+        },
+        {
+          "r5_id": "zh-hsk2-2-topic",
+          "issue": "R5 dùng ví dụ 虽然这本书很贵，可是很好看 — đúng, nhưng thiếu chủ ngữ ở vế B khiến câu kém tự nhiên khi đứng một mình.",
+          "fix": "Thêm chủ ngữ 它 hoặc giữ nguyên nếu ngữ cảnh rõ; trong bài này giữ nguyên vì vẫn đúng và tự nhiên trong tiếng Trung."
+        }
+      ]
+    }
+  },
+  "review": null
+}

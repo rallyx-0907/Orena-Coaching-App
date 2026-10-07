@@ -1,0 +1,331 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_4_patterns",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reference",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.r5.hsk6_3_agent_source"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk6-4-patterns"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk6-4-patterns"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 者 patterns", "en": "Chinese grammar: 者 patterns"},
+    "native_title": "“者”字结构",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Hậu tố 者 biến động từ, tính từ hoặc danh từ thành danh từ chỉ người hoặc sự vật, và 前者/后者 dùng để chỉ cái trước/cái sau trong hai đối tượng.",
+      "en": "The suffix 者 turns verbs, adjectives or nouns into nouns for people or things, and 前者/后者 refer to the former/latter of two items."
+    },
+    "sub": {"vi": "hậu tố 者", "en": "the 者 suffix"},
+    "native_title_pinyin": ["", "zhě", "", "zì", "jié", "gòu"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn gọi tên một nhóm người theo hành động hoặc đặc điểm của họ trong văn viết trang trọng: 申请者, 参与者, 研究者.",
+      "en": "When naming a group of people by their action or trait in formal writing: 申请者, 参与者, 研究者."
+    },
+    {
+      "vi": "Khi cần nhắc lại hai đối tượng vừa nêu mà không lặp lại tên: 前者 (cái trước), 后者 (cái sau).",
+      "en": "When referring back to two just-mentioned items without repeating them: 前者 (the former), 后者 (the latter)."
+    },
+    {
+      "vi": "Khi phân loại người theo lĩnh vực hoặc vai trò bằng một danh từ + 者 trong văn bản học thuật, hành chính.",
+      "en": "When classifying people by field or role with a noun + 者 in academic or administrative texts."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "V/Adj/N",
+        "role": "other",
+        "label": {"vi": "động từ / tính từ / danh từ", "en": "verb / adjective / noun"},
+        "pinyin": ["", "", "", "", "", "", ""]
+      },
+      {
+        "text": "者",
+        "role": "particle",
+        "label": {"vi": "hậu tố tạo danh từ chỉ người/vật", "en": "suffix forming a person/thing noun"},
+        "pinyin": ["zhě"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "所有申请者都必须提交身份证明。",
+      "form": "affirmative",
+      "spans": [{"start": 2, "end": 4, "role": "other"}, {"start": 4, "end": 5, "role": "particle"}],
+      "annotation": {
+        "vi": "申请 (động từ) + 者 tạo danh từ chỉ người nộp đơn.",
+        "en": "申请 (verb) + 者 forms a noun for a person who applies."
+      },
+      "translation": {
+        "vi": "Mọi ứng viên đều phải nộp giấy tờ tùy thân.",
+        "en": "All applicants must submit identity documents."
+      },
+      "pinyin": [
+        "suǒ",
+        "yǒu",
+        "shēn",
+        "qǐng",
+        "zhě",
+        "dōu",
+        "bì",
+        "xū",
+        "tí",
+        "jiāo",
+        "shēn",
+        "fèn",
+        "zhèng",
+        "míng",
+        ""
+      ]
+    },
+    {
+      "text": "研究者需要进一步验证这一结果。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "other"}, {"start": 2, "end": 3, "role": "particle"}],
+      "annotation": {
+        "vi": "研究 (động từ) + 者 tạo danh từ chỉ người nghiên cứu.",
+        "en": "研究 (verb) + 者 forms a noun for a person who researches."
+      },
+      "translation": {
+        "vi": "Nhà nghiên cứu cần xác minh thêm kết quả này.",
+        "en": "Researchers need to further verify this result."
+      },
+      "pinyin": [
+        "yán",
+        "jiū",
+        "zhě",
+        "xū",
+        "yào",
+        "jìn",
+        "yí",
+        "bù",
+        "yàn",
+        "zhèng",
+        "zhè",
+        "yī",
+        "jié",
+        "guǒ",
+        ""
+      ]
+    },
+    {
+      "text": "有两种方案，前者成本低，后者更稳定。",
+      "form": "affirmative",
+      "spans": [{"start": 6, "end": 7, "role": "other"}, {"start": 7, "end": 8, "role": "particle"}],
+      "annotation": {
+        "vi": "前 + 者 chỉ phương án được nhắc đến trước trong hai phương án.",
+        "en": "前 + 者 refers to the first of the two options mentioned."
+      },
+      "translation": {
+        "vi": "Có hai phương án, cái trước chi phí thấp, cái sau ổn định hơn.",
+        "en": "There are two options: the former is cheaper, the latter is more stable."
+      },
+      "pinyin": [
+        "yǒu",
+        "liǎng",
+        "zhǒng",
+        "fāng",
+        "àn",
+        "",
+        "qián",
+        "zhě",
+        "chéng",
+        "běn",
+        "dī",
+        "",
+        "hòu",
+        "zhě",
+        "gèng",
+        "wěn",
+        "dìng",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "前者/后者 chỉ dùng an toàn cho hai đối tượng; với ba đối tượng phải dùng số thứ tự.",
+        "en": "前者/后者 safely track only two items; with three items you must use ordinal numbers."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "三个方案，前者中者后者……",
+      "right": "三个方案中，第一个……第二个……第三个……",
+      "wrong_pinyin": ["sān", "gè", "fāng", "àn", "", "qián", "zhě", "zhōng", "zhě", "hòu", "zhě", "", ""],
+      "right_pinyin": [
+        "sān",
+        "gè",
+        "fāng",
+        "àn",
+        "zhōng",
+        "",
+        "dì",
+        "yí",
+        "gè",
+        "",
+        "",
+        "dì",
+        "èr",
+        "gè",
+        "",
+        "",
+        "dì",
+        "sān",
+        "gè",
+        "",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "所有___都必须提交身份证明。",
+      "options": [
+        {"text": "申请者", "error_tag": null, "pinyin": ["shēn", "qǐng", "zhě"]},
+        {"text": "申请的人", "error_tag": "register", "pinyin": ["shēn", "qǐng", "de", "rén"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong văn bản trang trọng, 申请者 là cách gọi chuẩn; 申请的人 đúng ngữ pháp nhưng quá khẩu ngữ.",
+        "en": "In formal writing, 申请者 is the standard term; 申请的人 is grammatical but too colloquial."
+      },
+      "q_pinyin": [
+        "suǒ",
+        "yǒu",
+        "",
+        "",
+        "",
+        "dōu",
+        "bì",
+        "xū",
+        "tí",
+        "jiāo",
+        "shēn",
+        "fèn",
+        "zhèng",
+        "míng",
+        ""
+      ]
+    },
+    {
+      "q": "有两种方案，___成本低，后者更稳定。",
+      "options": [
+        {"text": "前者", "error_tag": null, "pinyin": ["qián", "zhě"]},
+        {"text": "前", "error_tag": "other", "pinyin": ["qián"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "前者 là dạng đầy đủ để chỉ cái trước; chỉ 前 không đủ nghĩa trong cấu trúc này.",
+        "en": "前者 is the full form meaning 'the former'; 前 alone does not carry that meaning here."
+      },
+      "q_pinyin": [
+        "yǒu",
+        "liǎng",
+        "zhǒng",
+        "fāng",
+        "àn",
+        "",
+        "",
+        "",
+        "",
+        "chéng",
+        "běn",
+        "dī",
+        "",
+        "hòu",
+        "zhě",
+        "gèng",
+        "wěn",
+        "dìng",
+        ""
+      ]
+    },
+    {
+      "q": "这项研究由多位___共同完成。",
+      "options": [
+        {"text": "研究者", "error_tag": null, "pinyin": ["yán", "jiū", "zhě"]},
+        {"text": "研究", "error_tag": "other", "pinyin": ["yán", "jiū"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "研究者 là danh từ chỉ người nghiên cứu; 研究 là động từ, không thể làm chủ ngữ chỉ người ở đây.",
+        "en": "研究者 is the noun for a researcher; 研究 is a verb and cannot serve as the person noun here."
+      },
+      "q_pinyin": [
+        "zhè",
+        "xiàng",
+        "yán",
+        "jiū",
+        "yóu",
+        "duō",
+        "wèi",
+        "",
+        "",
+        "",
+        "gòng",
+        "tóng",
+        "wán",
+        "chéng",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng dùng 者 để gọi tên một nhóm người theo hành động của họ.",
+      "en": "Write one formal sentence using 者 to name a group of people by their action."
+    },
+    "placeholder": "所有……者都……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"regex": "[\\u4e00-\\u9fff]{1,4}", "role": "other"}, {"any_of": ["者"], "role": "particle"}]
+    },
+    "sample": {
+      "text": "所有参与者都可以领取资料。",
+      "pinyin": ["suǒ", "yǒu", "cān", "yù", "zhě", "dōu", "kě", "yǐ", "lǐng", "qǔ", "zī", "liào", ""]
+    },
+    "placeholder_pinyin": ["suǒ", "yǒu", "", "", "zhě", "dōu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338827",
+    "generated_at": "2026-10-07T02:07:07Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-4-patterns"],
+      "content_version": 2,
+      "content_hash": "90784bdb727a2f27341540f90d0ab35d8bcba9a763e3d9d2b8d60158837571d3",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-4-patterns",
+          "issue": "R5 ghi 'N + 者 may classify people in formal/literary style' nhưng không nêu rõ 者 cũng gắn với động từ/tính từ, và không phân biệt 者 với 的人 về register.",
+          "fix": "Bổ sung quy tắc V/Adj/N + 者 và nêu rõ 者 chủ yếu dùng trong văn viết trang trọng, khác với 的人 trung tính."
+        },
+        {
+          "r5_id": "zh-hsk6-4-patterns",
+          "issue": "R5 đưa ví dụ '参与者可在结束后领取资料' nhưng thiếu chủ ngữ rõ ràng và không tự nhiên trong ngữ cảnh HSK6.",
+          "fix": "Thay bằng '所有参与者都可以领取资料' để có chủ ngữ rõ và tự nhiên hơn."
+        },
+        {
+          "r5_id": "zh-hsk6-4-patterns",
+          "issue": "R5 liệt kê lỗi '聊天中说吃饭者代替吃饭的人' nhưng không đưa vào common_mistakes dạng cặp wrong/right.",
+          "fix": "Chuyển thành cặp lỗi sai/đúng với giải thích register, và thêm lỗi dùng 前者/后者 với ba đối tượng."
+        }
+      ]
+    }
+  },
+  "review": null
+}

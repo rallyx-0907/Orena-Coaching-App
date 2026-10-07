@@ -1,0 +1,202 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_2_5.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.r5.hsk5_17_introduction"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.020", "gf0025.hsk6.021"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Liên từ: 连接词或词组：而、同、与", "en": "Conjunctions: 连接词或词组：而、同、与"},
+    "native_title": "连接词或词组：而、同、与",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Liên từ 而, 同 và 与 dùng để nối hai từ, hai cụm từ hoặc hai mệnh đề có quan hệ song song hoặc tương phản nhẹ.",
+      "en": "The conjunctions 而, 同 and 与 link two words, phrases or clauses that are parallel or mildly contrastive."
+    },
+    "sub": {"vi": "liên từ nối", "en": "linking conjunctions"},
+    "native_title_pinyin": ["lián", "jiē", "cí", "huò", "cí", "zǔ", "", "ér", "", "tóng", "", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nối hai danh từ hoặc cụm danh từ có vai trò ngang nhau, thường dùng 同 hoặc 与 trong văn viết.",
+      "en": "When joining two nouns or noun phrases of equal status, use 同 or 与, especially in written Chinese."
+    },
+    {
+      "vi": "Khi nối hai tính từ hoặc hai mệnh đề có ý tương phản nhẹ, dùng 而.",
+      "en": "When joining two adjectives or two clauses with a mild contrast, use 而."
+    },
+    {
+      "vi": "Khi liệt kê hai đối tượng trong cùng một hành động, 同 và 与 đứng giữa hai đối tượng đó.",
+      "en": "When listing two objects in the same action, 同 and 与 stand between those two objects."
+    },
+    {
+      "vi": "Trong văn nói hằng ngày, 同 và 与 ít dùng hơn 和, nhưng vẫn xuất hiện trong văn bản trang trọng.",
+      "en": "In everyday speech, 同 and 与 are less common than 和, but they still appear in formal writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "thành phần thứ nhất", "en": "first element"},
+        "pinyin": [""]
+      },
+      {
+        "text": "而/同/与",
+        "role": "connector",
+        "label": {"vi": "liên từ", "en": "conjunction"},
+        "options": [
+          {"text": "而", "pinyin": ["ér"]},
+          {"text": "同", "pinyin": ["tóng"]},
+          {"text": "与", "pinyin": ["yǔ"]}
+        ],
+        "pinyin": ["ér", "", "tóng", "", "yǔ"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "thành phần thứ hai", "en": "second element"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个城市干净而安静。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 9, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "而 nối hai tính từ song song, không có ý tương phản mạnh.",
+        "en": "而 links two parallel adjectives without strong contrast."
+      },
+      "translation": {"vi": "Thành phố này sạch sẽ và yên tĩnh.", "en": "This city is clean and quiet."},
+      "pinyin": ["zhè", "ge", "chéng", "shì", "gān", "jìng", "ér", "ān", "jìng", ""]
+    },
+    {
+      "text": "我同他都是学生。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "connector"},
+        {"start": 2, "end": 3, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "同 nối hai đại từ làm chủ ngữ chung cho vị ngữ 都是学生.",
+        "en": "同 links two pronouns that together form the subject of 都是学生."
+      },
+      "translation": {"vi": "Tôi và anh ấy đều là học sinh.", "en": "He and I are both students."},
+      "pinyin": ["wǒ", "tóng", "tā", "dōu", "shì", "xué", "shēng", ""]
+    },
+    {
+      "text": "老师与学生都参加了会议。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "connector"},
+        {"start": 3, "end": 5, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "与 nối hai danh từ trong văn viết trang trọng, sau đó là 都参加了会议.",
+        "en": "与 links two nouns in formal writing, followed by 都参加了会议."
+      },
+      "translation": {
+        "vi": "Giáo viên và học sinh đều đã tham gia cuộc họp.",
+        "en": "The teacher and the students both attended the meeting."
+      },
+      "pinyin": ["lǎo", "shī", "yǔ", "xué", "shēng", "dōu", "cān", "jiā", "le", "huì", "yì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "同 chỉ nối hai thành phần song song trong cùng một câu, không dùng để nối hai mệnh đề có ý tương phản; trường hợp đó phải dùng 而.",
+        "en": "同 only links parallel elements inside one clause; it cannot link two contrastive clauses, where 而 is required."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "我同他都是学生，而同他很忙。",
+      "right": "我同他都是学生，而他很忙。",
+      "wrong_pinyin": ["wǒ", "tóng", "tā", "dōu", "shì", "xué", "shēng", "", "ér", "tóng", "tā", "hěn", "máng", ""],
+      "right_pinyin": ["wǒ", "tóng", "tā", "dōu", "shì", "xué", "shēng", "", "ér", "tā", "hěn", "máng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个房间干净___明亮。",
+      "options": [
+        {"text": "而", "error_tag": null, "pinyin": ["ér"]},
+        {"text": "同", "error_tag": "conjunction", "pinyin": ["tóng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "而 nối hai tính từ song song 干净 và 明亮; 同 không dùng cho tính từ.",
+        "en": "而 links the parallel adjectives 干净 and 明亮; 同 is not used with adjectives."
+      },
+      "q_pinyin": ["zhè", "ge", "fáng", "jiān", "gān", "jìng", "", "", "", "míng", "liàng", ""]
+    },
+    {
+      "q": "我___他都喜欢喝茶。",
+      "options": [
+        {"text": "同", "error_tag": null, "pinyin": ["tóng"]},
+        {"text": "而", "error_tag": "conjunction", "pinyin": ["ér"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "同 nối hai đại từ 我 và 他 làm chủ ngữ; 而 không nối hai chủ thể song song như vậy.",
+        "en": "同 links the two pronouns 我 and 他 as a compound subject; 而 does not join two parallel subjects this way."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "tā", "dōu", "xǐ", "huān", "hē", "chá", ""]
+    },
+    {
+      "q": "经理___客户都同意这个计划。",
+      "options": [
+        {"text": "与", "error_tag": null, "pinyin": ["yǔ"]},
+        {"text": "而", "error_tag": "conjunction", "pinyin": ["ér"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "与 nối hai danh từ 经理 và 客户 trong văn viết trang trọng; 而 không dùng để nối hai danh từ.",
+        "en": "与 links the two nouns 经理 and 客户 in formal writing; 而 is not used to join two nouns."
+      },
+      "q_pinyin": ["jīng", "lǐ", "", "", "", "kè", "hù", "dōu", "tóng", "yì", "zhè", "ge", "jì", "huà", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói về hai người hoặc hai vật bạn thích, dùng 同 hoặc 与 để nối chúng.",
+      "en": "Write one sentence about two people or things you like, using 同 or 与 to link them."
+    },
+    "placeholder": "我同……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["同", "与"], "role": "connector"}]},
+    "sample": {
+      "text": "我同我的朋友都喜欢音乐。",
+      "pinyin": ["wǒ", "tóng", "wǒ", "de", "péng", "yǒu", "dōu", "xǐ", "huān", "yīn", "yuè", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "tóng", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338723",
+    "generated_at": "2026-10-07T02:05:23Z"
+  },
+  "review": null
+}

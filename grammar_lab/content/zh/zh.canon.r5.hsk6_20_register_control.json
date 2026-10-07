@@ -1,0 +1,400 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_20_register_control",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.register_style",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.r5.hsk6_12_parallel_structure_in_formal_prose"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk6-20-register-control"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk6-20-register-control"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: Register control", "en": "Chinese grammar: Register control"},
+    "native_title": "语体控制",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách chọn cấu trúc câu phù hợp với văn phong: khẩu ngữ, văn viết trang trọng, hành chính hoặc học thuật.",
+      "en": "This point teaches how to choose sentence structures that match the register: conversational, formal written, administrative, or academic."
+    },
+    "sub": {"vi": "chọn văn phong", "en": "register choice"},
+    "native_title_pinyin": ["yǔ", "tǐ", "kòng", "zhì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi viết thông báo, quy định hoặc văn bản hành chính, dùng cấu trúc trang trọng như 未经授权，不得...",
+      "en": "When writing notices, rules, or administrative texts, use formal structures such as 未经授权，不得..."
+    },
+    {
+      "vi": "Khi viết luận hoặc báo cáo học thuật, ưu tiên danh từ hóa và cách nói khách quan như 该方案的可行性仍有待验证。",
+      "en": "When writing academic essays or reports, prefer nominalisation and objective phrasing such as 该方案的可行性仍有待验证。"
+    },
+    {
+      "vi": "Khi nói chuyện với bạn bè hoặc trong tình huống thân mật, dùng từ ngữ khẩu ngữ như 我觉得...不太靠谱。",
+      "en": "When talking with friends or in casual situations, use colloquial wording such as 我觉得...不太靠谱。"
+    },
+    {
+      "vi": "Khi hướng dẫn hoặc khuyến nghị, chọn cấu trúc phù hợp như 请务必... cho yêu cầu, 你最好... cho lời khuyên.",
+      "en": "When giving instructions or advice, choose appropriate structures such as 请务必... for requirements and 你最好... for suggestions."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "语体标记",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu văn phong", "en": "register marker"},
+        "options": [
+          {"text": "该", "pinyin": ["gāi"]},
+          {"text": "我觉得", "pinyin": ["wǒ", "jué", "de"]},
+          {"text": "未经授权", "pinyin": ["wèi", "jīng", "shòu", "quán"]},
+          {"text": "请务必", "pinyin": ["qǐng", "wù", "bì"]},
+          {"text": "你最好", "pinyin": ["nǐ", "zuì", "hǎo"]}
+        ],
+        "pinyin": ["yǔ", "tǐ", "biāo", "jì"]
+      },
+      {
+        "text": "内容",
+        "role": "other",
+        "label": {"vi": "nội dung mệnh đề", "en": "clause content"},
+        "pinyin": ["nèi", "róng"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "该方案的可行性仍有待进一步验证。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 1, "role": "marker"}, {"start": 1, "end": 15, "role": "other"}],
+      "annotation": {
+        "vi": "该 và 有待 là lựa chọn mang sắc thái trang trọng, thường thấy trong văn bản.",
+        "en": "该 and 有待 are formal-register choices common in written texts."
+      },
+      "translation": {
+        "vi": "Tính khả thi của phương án này vẫn cần được kiểm chứng thêm.",
+        "en": "The feasibility of this plan still requires further verification."
+      },
+      "pinyin": [
+        "gāi",
+        "fāng",
+        "àn",
+        "de",
+        "kě",
+        "xíng",
+        "xìng",
+        "réng",
+        "yǒu",
+        "dài",
+        "jìn",
+        "yí",
+        "bù",
+        "yàn",
+        "zhèng",
+        ""
+      ]
+    },
+    {
+      "text": "我觉得这个办法不太靠谱。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "marker"}, {"start": 3, "end": 11, "role": "other"}],
+      "annotation": {
+        "vi": "我觉得 và 靠谱 tạo sắc thái khẩu ngữ, thân mật hơn.",
+        "en": "我觉得 and 靠谱 create a more conversational register."
+      },
+      "translation": {
+        "vi": "Tôi thấy cách này không đáng tin lắm.",
+        "en": "I don't think this method is very reliable."
+      },
+      "pinyin": ["wǒ", "jué", "de", "zhè", "ge", "bàn", "fǎ", "bù", "tài", "kào", "pǔ", ""]
+    },
+    {
+      "text": "未经授权，不得修改系统设置。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 4, "role": "marker"}, {"start": 5, "end": 13, "role": "other"}],
+      "annotation": {
+        "vi": "未经…不得… là cấu trúc hành chính/pháp quy trang trọng.",
+        "en": "未经…不得… is a formal administrative/regulatory pattern."
+      },
+      "translation": {
+        "vi": "Không được thay đổi cài đặt hệ thống nếu chưa được ủy quyền.",
+        "en": "System settings may not be changed without authorization."
+      },
+      "pinyin": ["wèi", "jīng", "shòu", "quán", "", "bù", "dé", "xiū", "gǎi", "xì", "tǒng", "shè", "zhì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu quá khẩu ngữ, không phù hợp văn phong hành chính.",
+        "en": "The sentence is too colloquial for an administrative register."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "行政通知写：你别乱改这个东西。",
+      "right": "未经授权，不得修改相关设置。",
+      "wrong_pinyin": [
+        "xíng",
+        "zhèng",
+        "tōng",
+        "zhī",
+        "xiě",
+        "",
+        "nǐ",
+        "bié",
+        "luàn",
+        "gǎi",
+        "zhè",
+        "ge",
+        "dōng",
+        "xī",
+        ""
+      ],
+      "right_pinyin": [
+        "wèi",
+        "jīng",
+        "shòu",
+        "quán",
+        "",
+        "bù",
+        "dé",
+        "xiū",
+        "gǎi",
+        "xiāng",
+        "guān",
+        "shè",
+        "zhì",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "Thông báo hành chính nên viết:___授权，不得修改系统设置。",
+      "options": [
+        {"text": "未经", "error_tag": null, "pinyin": ["wèi", "jīng"]},
+        {"text": "没有", "error_tag": "register", "pinyin": ["méi", "yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "未经 là cách nói trang trọng, phù hợp văn bản hành chính; 没有 quá khẩu ngữ.",
+        "en": "未经 is the formal choice for administrative texts; 没有 is too colloquial."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "shòu",
+        "quán",
+        "",
+        "bù",
+        "dé",
+        "xiū",
+        "gǎi",
+        "xì",
+        "tǒng",
+        "shè",
+        "zhì",
+        ""
+      ]
+    },
+    {
+      "q": "Trong bài luận, nên viết:该方案的可行性仍有待___验证。",
+      "options": [
+        {"text": "进一步", "error_tag": null, "pinyin": ["jìn", "yí", "bù"]},
+        {"text": "再", "error_tag": "register", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "进一步 là từ trang trọng, phù hợp văn viết học thuật; 再 mang tính khẩu ngữ.",
+        "en": "进一步 is formal and suits academic writing; 再 is colloquial."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "gāi",
+        "fāng",
+        "àn",
+        "de",
+        "kě",
+        "xíng",
+        "xìng",
+        "réng",
+        "yǒu",
+        "dài",
+        "",
+        "",
+        "",
+        "yàn",
+        "zhèng",
+        ""
+      ]
+    },
+    {
+      "q": "Khi nói với bạn bè, câu tự nhiên là:这个办法我觉得不太___。",
+      "options": [
+        {"text": "靠谱", "error_tag": null, "pinyin": ["kào", "pǔ"]},
+        {"text": "可行", "error_tag": "register", "pinyin": ["kě", "xíng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "靠谱 là từ khẩu ngữ thân mật; 可行 trang trọng hơn, không hợp tình huống bạn bè.",
+        "en": "靠谱 is colloquial and friendly; 可行 is more formal and does not fit a casual chat."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "zhè",
+        "ge",
+        "bàn",
+        "fǎ",
+        "wǒ",
+        "jué",
+        "de",
+        "bù",
+        "tài",
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân, dùng cấu trúc trang trọng hoặc khẩu ngữ phù hợp với ngữ cảnh em chọn.",
+      "en": "Write one sentence about yourself using a formal or colloquial structure that fits your chosen context."
+    },
+    "placeholder": "我觉得……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["该", "我觉得", "未经授权"], "role": "marker"}]},
+    "sample": {
+      "text": "我觉得这个办法不太靠谱。",
+      "pinyin": ["wǒ", "jué", "de", "zhè", "ge", "bàn", "fǎ", "bù", "tài", "kào", "pǔ", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "jué", "de", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351890",
+    "generated_at": "2026-10-07T05:44:50Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-20-register-control"],
+      "content_version": 2,
+      "content_hash": "9092890b42eb645088d54b66c3a234dcca2eeaca8e632777a2589c57cd600c40",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-20-register-control",
+          "issue": "R5 examples had inconsistent pinyin and some translations were missing or incomplete.",
+          "fix": "Provided clean pinyin and full Vietnamese/English translations for all examples."
+        },
+        {
+          "r5_id": "zh-hsk6-20-register-control",
+          "issue": "R5 mistakes section included two errors but the schema requires exactly one entry for the 'other' tag.",
+          "fix": "Selected the most representative mistake (too colloquial for administrative notice) and corrected it."
+        },
+        {
+          "r5_id": "zh-hsk6-20-register-control",
+          "issue": "R5 did not include a structured formula or bindings for examples.",
+          "fix": "Added a formula with abstract slots and bound each example to the formula slots."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,234 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_3_agent_source",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.voice_causative",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.r5.hsk6_22_punctuation_and_clause_grammar"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk6-3-agent-source"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk6-3-agent-source"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 由 + agent/source", "en": "Chinese grammar: 由 + agent/source"},
+    "native_title": "“由”表示施事或来源",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "由 đứng trước một tác nhân hoặc nguồn gốc để nêu rõ ai/cái gì chịu trách nhiệm, đưa ra hoặc tạo ra sự việc, thường dùng trong văn phong trang trọng hoặc hành chính.",
+      "en": "由 introduces the agent or source responsible for, or producing, an action, and is common in formal and administrative writing."
+    },
+    "sub": {"vi": "tác nhân / nguồn", "en": "agent / source"},
+    "native_title_pinyin": ["", "yóu", "", "biǎo", "shì", "shī", "shì", "huò", "lái", "yuán"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói rõ ai hoặc bộ phận nào chịu trách nhiệm cho một công việc, quyết định hay nhiệm vụ, thay vì chỉ nói hành động chung chung.",
+      "en": "When you want to state clearly who or which unit is responsible for a task, decision or duty, rather than leaving the action vague."
+    },
+    {
+      "vi": "Khi nêu nguồn gốc hoặc nguồn tạo ra thông tin, dữ liệu, sản phẩm, thường trong báo cáo, thông báo hoặc văn bản chính thức.",
+      "en": "When naming the source or origin of information, data or a product, typically in reports, notices or official texts."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh tác nhân đứng sau hành động mà không dùng 被, vì 被 thường gợi ý bị tác động theo hướng tiêu cực.",
+      "en": "When you want to highlight the agent behind an action without using 被, since 被 often suggests an affected or negative passive meaning."
+    },
+    {
+      "vi": "Khi câu cần giữ giọng trang trọng, khách quan, phù hợp với văn bản hành chính, học thuật hoặc báo cáo công việc.",
+      "en": "When the sentence needs a formal, objective tone suitable for administrative, academic or work-report writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "由",
+        "role": "marker",
+        "label": {"vi": "giới từ đánh dấu tác nhân/nguồn", "en": "agent/source marker"},
+        "pinyin": ["yóu"]
+      },
+      {
+        "text": "施事/来源",
+        "role": "object",
+        "label": {"vi": "tác nhân hoặc nguồn", "en": "agent or source"},
+        "pinyin": ["shī", "shì", "", "lái", "yuán"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "最终决定由委员会作出。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 8, "role": "object"},
+        {"start": 8, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "由 đánh dấu 委员会 là tác nhân đưa ra quyết định.",
+        "en": "由 marks 委员会 as the agent who makes the decision."
+      },
+      "translation": {
+        "vi": "Quyết định cuối cùng do ủy ban đưa ra.",
+        "en": "The final decision is made by the committee."
+      },
+      "pinyin": ["zuì", "zhōng", "jué", "dìng", "yóu", "wěi", "yuán", "huì", "zuò", "chū", ""]
+    },
+    {
+      "text": "本项目由技术部门负责。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 8, "role": "object"},
+        {"start": 8, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "由 nêu bộ phận chịu trách nhiệm cho dự án.",
+        "en": "由 names the department responsible for the project."
+      },
+      "translation": {
+        "vi": "Dự án này do bộ phận kỹ thuật phụ trách.",
+        "en": "This project is handled by the technical department."
+      },
+      "pinyin": ["běn", "xiàng", "mù", "yóu", "jì", "shù", "bù", "mén", "fù", "zé", ""]
+    },
+    {
+      "text": "所有数据均由系统自动生成。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "object"},
+        {"start": 8, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "由 chỉ nguồn tạo ra dữ liệu; 均 nhấn mạnh tất cả.",
+        "en": "由 marks the source that produces the data; 均 emphasizes all of it."
+      },
+      "translation": {
+        "vi": "Mọi dữ liệu đều do hệ thống tự động tạo ra.",
+        "en": "All data is automatically generated by the system."
+      },
+      "pinyin": ["suǒ", "yǒu", "shù", "jù", "jūn", "yóu", "xì", "tǒng", "zì", "dòng", "shēng", "chéng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "由 không dùng cho bị động chịu tác động tiêu cực; khi người nói bị ảnh hưởng, tiếng Trung dùng 被.",
+        "en": "由 is not used for an affected, negative passive; when the speaker is negatively affected, Chinese uses 被."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我由经理批评了。",
+      "right": "我被经理批评了。",
+      "wrong_pinyin": ["wǒ", "yóu", "jīng", "lǐ", "pī", "píng", "le", ""],
+      "right_pinyin": ["wǒ", "bèi", "jīng", "lǐ", "pī", "píng", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个项目___技术部门负责。",
+      "options": [
+        {"text": "由", "error_tag": null, "pinyin": ["yóu"]},
+        {"text": "被", "error_tag": "bei_sentence", "pinyin": ["bèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "由 đánh dấu bộ phận chịu trách nhiệm; 被 gợi ý bị động chịu tác động, không hợp ở đây.",
+        "en": "由 marks the responsible department; 被 suggests an affected passive, which does not fit here."
+      },
+      "q_pinyin": ["zhè", "ge", "xiàng", "mù", "", "", "", "jì", "shù", "bù", "mén", "fù", "zé", ""]
+    },
+    {
+      "q": "最终决定由委员会___。",
+      "options": [
+        {"text": "作出", "error_tag": null, "pinyin": ["zuò", "chū"]},
+        {"text": "被作出", "error_tag": "bei_sentence", "pinyin": ["bèi", "zuò", "chū"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 由 + tác nhân là động từ chủ động; không thêm 被 vào cùng một khung.",
+        "en": "After 由 + agent comes an active verb; do not add 被 inside the same frame."
+      },
+      "q_pinyin": ["zuì", "zhōng", "jué", "dìng", "yóu", "wěi", "yuán", "huì", "", "", "", ""]
+    },
+    {
+      "q": "所有数据均由系统自动___。",
+      "options": [
+        {"text": "生成", "error_tag": null, "pinyin": ["shēng", "chéng"]},
+        {"text": "被生成", "error_tag": "bei_sentence", "pinyin": ["bèi", "shēng", "chéng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "由 đã đánh dấu nguồn, nên động từ theo sau không cần 被.",
+        "en": "由 already marks the source, so the following verb does not need 被."
+      },
+      "q_pinyin": ["suǒ", "yǒu", "shù", "jù", "jūn", "yóu", "xì", "tǒng", "zì", "dòng", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng nói rõ ai hoặc bộ phận nào chịu trách nhiệm cho một công việc, dùng 由 + tác nhân + động từ.",
+      "en": "Write one formal sentence stating who or which unit is responsible for a task, using 由 + agent + verb."
+    },
+    "placeholder": "这个任务由……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["由"], "role": "marker"}]},
+    "sample": {
+      "text": "这个任务由我们小组负责。",
+      "pinyin": ["zhè", "ge", "rèn", "wù", "yóu", "wǒ", "men", "xiǎo", "zǔ", "fù", "zé", ""]
+    },
+    "placeholder_pinyin": ["zhè", "ge", "rèn", "wù", "yóu", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338828",
+    "generated_at": "2026-10-07T02:07:08Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-3-agent-source"],
+      "content_version": 2,
+      "content_hash": "fda3128b67c7c04958632a14f52d067791c1515be4c40f66b7a2ea490a016460",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-3-agent-source",
+          "issue": "R5 ghi 由 là 'passive-like' và xếp 我由经理批评了 là lỗi của chính điểm này, nhưng không nói rõ 由 không dùng cho bị động chịu tác động tiêu cực.",
+          "fix": "Viết lại phần giải thích: 由 đánh dấu tác nhân/nguồn trong khung trang trọng, không phải dấu hiệu bị động phổ quát; lỗi 我由经理批评了 được giữ làm common_mistake với cách sửa 我被经理批评了."
+        },
+        {
+          "r5_id": "zh-hsk6-3-agent-source",
+          "issue": "R5 đưa 由此产生、由...发展而来 vào rules nhưng không có ví dụ hay bài tập nào cho cấu trúc nguồn gốc này, khiến phạm vi bài học không rõ.",
+          "fix": "Lược bỏ các cấu trúc nguồn gốc không được dạy trong bài; giữ 由 + tác nhân/nguồn + động từ làm khung duy nhất và minh họa bằng ba ví dụ đều theo khung đó."
+        },
+        {
+          "r5_id": "zh-hsk6-3-agent-source",
+          "issue": "R5 không có công thức trừu tượng, không có gắn nhãn slot cho ví dụ, không có quick practice và personal production.",
+          "fix": "Bổ sung formula 主语 + 由 + 施事/来源 + 动词短语, gắn slot cho từng ví dụ, thêm ba câu quick practice và thẻ personal production với pattern_rule kiểm tra 由."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,188 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_2_1_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.possibility",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_2_1_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.025", "gf0025.hsk4.027", "gf0025.hsk4.028", "gf0025.hsk4.032"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 看来", "en": "Chinese grammar: 看来"},
+    "native_title": "看来",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "「看来」đứng trước một nhận định để nói rằng người nói rút ra kết luận đó từ tình hình quan sát được.",
+      "en": "「看来」introduces a judgement that the speaker draws from the situation they can observe."
+    },
+    "sub": {"vi": "suy đoán từ tình hình", "en": "inference from evidence"},
+    "native_title_pinyin": ["kàn", "lái"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn nhìn thấy dấu hiệu bên ngoài rồi rút ra một kết luận, không phải nói về việc mình trực tiếp biết.",
+      "en": "When you see outward signs and draw a conclusion, rather than stating something you know directly."
+    },
+    {
+      "vi": "Khi nhận định của bạn có thể đúng nhưng chưa chắc chắn, nên giọng điệu mềm hơn một câu khẳng định.",
+      "en": "When your judgement is probably true but not certain, so the tone is softer than a plain statement."
+    },
+    {
+      "vi": "Khi bạn muốn nói về tình hình hiện tại hoặc một việc sắp xảy ra dựa trên những gì đang thấy.",
+      "en": "When you want to talk about the present situation or something about to happen, based on what you can see."
+    },
+    {
+      "vi": "Khi mở đầu câu trả lời cho câu hỏi kiểu «cậu thấy thế nào?» mà chưa muốn khẳng định chắc chắn.",
+      "en": "When opening an answer to a question like \"what do you think?\" without committing to full certainty."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "看来",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu suy đoán", "en": "inference marker"},
+        "pinyin": ["kàn", "lái"]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ của nhận định", "en": "subject of the judgement"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "nhận định được rút ra", "en": "the judgement"},
+        "pinyin": ["wèi", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "看来今天会下雨。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "subject"},
+        {"start": 4, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nhìn trời rồi rút ra kết luận, không phải khẳng định chắc chắn.",
+        "en": "A conclusion drawn from looking at the sky, not a certain statement."
+      },
+      "translation": {"vi": "Có vẻ hôm nay sẽ mưa.", "en": "It looks like it will rain today."},
+      "pinyin": ["kàn", "lái", "jīn", "tiān", "huì", "xià", "yǔ", ""]
+    },
+    {
+      "text": "看来他已经知道这件事了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 11, "role": "verb"}
+      ],
+      "annotation": {"vi": "Dựa vào biểu hiện của anh ấy mà suy ra.", "en": "Inferred from his behaviour."},
+      "translation": {"vi": "Có vẻ anh ấy đã biết chuyện này rồi.", "en": "It seems he already knows about this."},
+      "pinyin": ["kàn", "lái", "tā", "yǐ", "jīng", "zhī", "dào", "zhè", "jiàn", "shì", "le", ""]
+    },
+    {
+      "text": "看来这个办法不太行。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "subject"},
+        {"start": 6, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Nhận định dựa trên kết quả đã thấy.",
+        "en": "A judgement based on the results already seen."
+      },
+      "translation": {"vi": "Có vẻ cách này không ổn lắm.", "en": "It seems this way won't really work."},
+      "pinyin": ["kàn", "lái", "zhè", "ge", "bàn", "fǎ", "bù", "tài", "xíng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "「看来」đã là một nhận định suy đoán nên câu không dùng để hỏi; thêm 「吗」sẽ biến nó thành câu hỏi, không đúng chức năng.",
+        "en": "「看来」already states an inference, so the clause is not a question; adding 「吗」turns it into a question and breaks the function."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "看来今天会下雨吗？",
+      "right": "看来今天会下雨。",
+      "wrong_pinyin": ["kàn", "lái", "jīn", "tiān", "huì", "xià", "yǔ", "ma", ""],
+      "right_pinyin": ["kàn", "lái", "jīn", "tiān", "huì", "xià", "yǔ", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___他今天不太高兴。",
+      "options": [
+        {"text": "看来", "error_tag": null, "pinyin": ["kàn", "lái"]},
+        {"text": "看去", "error_tag": "word_choice", "pinyin": ["kàn", "qù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「看来」là dấu hiệu suy đoán đứng đầu câu; 「看去」không phải từ dùng ở vị trí này.",
+        "en": "「看来」is the inference marker at the start of the clause; 「看去」is not used in this position."
+      },
+      "q_pinyin": ["", "", "", "tā", "jīn", "tiān", "bù", "tài", "gāo", "xìng", ""]
+    },
+    {
+      "q": "看来这个周末___很冷。",
+      "options": [
+        {"text": "会", "error_tag": null, "pinyin": ["huì"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 「看来」, dự đoán về tương lai dùng 「会」; 「了」không diễn tả được dự đoán này.",
+        "en": "After 「看来」, a future prediction uses 「会」; 「了」cannot express this prediction."
+      },
+      "q_pinyin": ["kàn", "lái", "zhè", "ge", "zhōu", "mò", "", "", "", "hěn", "lěng", ""]
+    },
+    {
+      "q": "看来他___知道这个消息了。",
+      "options": [
+        {"text": "已经", "error_tag": null, "pinyin": ["yǐ", "jīng"]},
+        {"text": "已经过", "error_tag": "aspect", "pinyin": ["yǐ", "jīng", "guò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「已经」đứng trước động từ để nói việc đã xảy ra; 「已经过」sai vì 「过」không đi sau 「已经」ở đây.",
+        "en": "「已经」comes before the verb to mark what has happened; 「已经过」is wrong because 「过」does not follow 「已经」here."
+      },
+      "q_pinyin": ["kàn", "lái", "tā", "", "", "", "zhī", "dào", "zhè", "ge", "xiāo", "xī", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Nhìn một dấu hiệu quanh bạn rồi viết một câu suy đoán bắt đầu bằng 「看来」.",
+      "en": "Look at a sign around you and write one inference sentence starting with 「看来」."
+    },
+    "placeholder": "看来……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["看来"], "role": "marker"}]},
+    "sample": {"text": "看来明天会下雪。", "pinyin": ["kàn", "lái", "míng", "tiān", "huì", "xià", "xuě", ""]},
+    "placeholder_pinyin": ["kàn", "lái", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348552",
+    "generated_at": "2026-10-07T04:49:12Z"
+  },
+  "review": null
+}

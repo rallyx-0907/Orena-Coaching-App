@@ -1,0 +1,240 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.bu_negation",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": ["zh.mei_negation"],
+  "error_tags": ["word_order", "word_choice"],
+  "source_refs": {"r5": ["zh-hsk1-10-v"], "gf0025": ["gf0025.hsk1.014"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk1-10-v"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Phủ định với 不", "en": "Negation with 不"},
+    "native_title": "“不”的否定",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "不 đứng trước động từ hoặc tính từ để phủ định thói quen, ý muốn hoặc trạng thái ở hiện tại và tương lai.",
+      "en": "不 goes before a verb or adjective to negate habits, intentions, or states in the present and future."
+    },
+    "sub": {"vi": "phủ định hiện tại", "en": "present negation"},
+    "native_title_pinyin": ["", "bù", "", "de", "fǒu", "dìng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói mình không làm gì đó như một thói quen hoặc sở thích: 我不喝咖啡。",
+      "en": "When saying you do not do something as a habit or preference: 我不喝咖啡。"
+    },
+    {
+      "vi": "Khi nói mình không muốn hoặc không định làm gì đó: 我今天不去。",
+      "en": "When saying you do not want or do not plan to do something: 我今天不去。"
+    },
+    {
+      "vi": "Khi phủ định một tính từ chỉ trạng thái hiện tại: 今天不冷。",
+      "en": "When negating an adjective for a present state: 今天不冷。"
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "不",
+        "role": "marker",
+        "label": {"vi": "phó từ phủ định", "en": "negative adverb"},
+        "pinyin": ["bù"]
+      },
+      {
+        "text": "动词/形容词",
+        "role": "verb",
+        "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
+        "pinyin": ["dòng", "cí", "", "xíng", "róng", "cí"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我不喝咖啡。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "不 đứng trước động từ 喝 để phủ định thói quen.",
+        "en": "不 before the verb 喝 negates a habit."
+      },
+      "translation": {"vi": "Tôi không uống cà phê.", "en": "I don't drink coffee."},
+      "pinyin": ["wǒ", "bù", "hē", "kā", "fēi", ""]
+    },
+    {
+      "text": "我今天不忙。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "不 đứng trước tính từ 忙 để phủ định trạng thái hiện tại.",
+        "en": "不 before the adjective 忙 negates a present state."
+      },
+      "translation": {"vi": "Hôm nay tôi không bận.", "en": "I'm not busy today."},
+      "pinyin": ["wǒ", "jīn", "tiān", "bù", "máng", ""]
+    },
+    {
+      "text": "她不去学校。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "不 đứng trước động từ 去 để phủ định ý định.",
+        "en": "不 before the verb 去 negates an intention."
+      },
+      "translation": {"vi": "Cô ấy không đi học.", "en": "She isn't going to school."},
+      "pinyin": ["tā", "bù", "qù", "xué", "xiào", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.mei_negation",
+      "this_example": "我不吃肉。",
+      "other_example": "我没吃肉。",
+      "this_meaning": {
+        "vi": "不 phủ định thói quen, ý muốn hoặc trạng thái ở hiện tại/tương lai.",
+        "en": "不 negates habits, intentions, or states in the present or future."
+      },
+      "other_meaning": {
+        "vi": "没(有) phủ định sự việc đã xảy ra hoặc sự sở hữu.",
+        "en": "没(有) negates events that have happened or possession."
+      },
+      "this_example_pinyin": ["wǒ", "bù", "chī", "ròu", ""],
+      "other_example_pinyin": ["wǒ", "méi", "chī", "ròu", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "不 phải đứng ngay trước động từ, không đứng sau động từ.",
+        "en": "不 must come immediately before the verb, not after it."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "我喝不咖啡。",
+      "right": "我不喝咖啡。",
+      "wrong_pinyin": ["wǒ", "hē", "bù", "kā", "fēi", ""],
+      "right_pinyin": ["wǒ", "bù", "hē", "kā", "fēi", ""]
+    },
+    {
+      "reason": {"vi": "有 được phủ định bằng 没有, không dùng 不有.", "en": "有 is negated with 没有, not 不有."},
+      "error_tag": "word_choice",
+      "l1": ["vi"],
+      "wrong": "我不有车。",
+      "right": "我没有车。",
+      "wrong_pinyin": ["wǒ", "bù", "yǒu", "chē", ""],
+      "right_pinyin": ["wǒ", "méi", "yǒu", "chē", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___喝咖啡。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bù"]},
+        {"text": "没", "error_tag": "word_choice", "pinyin": ["méi"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Diễn tả thói quen ở hiện tại nên dùng 不.", "en": "A present habit takes 不."},
+      "q_pinyin": ["wǒ", "", "", "", "hē", "kā", "fēi", ""]
+    },
+    {
+      "q": "他___去学校。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bù"]},
+        {"text": "不去了", "error_tag": "aspect", "pinyin": ["bù", "qù", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định ý định ở hiện tại chỉ cần 不 + động từ, không thêm 了.",
+        "en": "Negating a present intention needs only 不 + verb, without 了."
+      },
+      "q_pinyin": ["tā", "", "", "", "qù", "xué", "xiào", ""]
+    },
+    {
+      "q": "今天___冷。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bù"]},
+        {"text": "没", "error_tag": "word_choice", "pinyin": ["méi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định tính từ chỉ trạng thái dùng 不, không dùng 没.",
+        "en": "Negating a state adjective takes 不, not 没."
+      },
+      "q_pinyin": ["jīn", "tiān", "", "", "", "lěng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói bạn không làm gì đó hoặc không có trạng thái nào đó, dùng 不.",
+      "en": "Write a sentence saying you don't do something or aren't in some state, using 不."
+    },
+    "placeholder": "我不……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["不"], "role": "marker"}]},
+    "sample": {"text": "我不喝咖啡。", "pinyin": ["wǒ", "bù", "hē", "kā", "fēi", ""]},
+    "placeholder_pinyin": ["wǒ", "bù", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791282244",
+    "generated_at": "2026-10-06T10:24:04Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-10-v"],
+      "content_version": 2,
+      "content_hash": "26d25e015b9ce75bb71f9ac9cd7826edc1917dc447913c70a2c25e013a2d435f",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-10-v",
+          "issue": "R5 gộp cả 不 và 没 trong một bài, nhưng điểm ngữ pháp hiện tại chỉ là 不.",
+          "fix": "Tách riêng 不; phần 没 được chuyển sang mục so sánh với zh.mei_negation."
+        },
+        {
+          "r5_id": "zh-hsk1-10-v",
+          "issue": "R5 dùng ví dụ 我没吃早饭 và 她没有妹妹 trong bài về 不.",
+          "fix": "Thay bằng ba ví dụ chỉ dùng 不: 我不喝咖啡。我今天不忙。她不去学校。"
+        },
+        {
+          "r5_id": "zh-hsk1-10-v",
+          "issue": "R5 có lỗi sai 我没吃了饭 với lời giải thích chưa đủ rõ.",
+          "fix": "Không đưa lỗi này vào bài 不; giữ lại hai lỗi đúng phạm vi là sai vị trí 不 và dùng 不有."
+        }
+      ]
+    }
+  },
+  "review": null
+}

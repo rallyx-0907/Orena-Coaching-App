@@ -1,0 +1,358 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_4_topic_105",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_3_topic_104"],
+  "contrasts": [],
+  "error_tags": ["particle", "conjunction"],
+  "source_refs": {
+    "r5": ["zh-hsk4-4-topic-105"],
+    "gf0025": [
+      "gf0025.hsk3.068",
+      "gf0025.hsk4.049",
+      "gf0025.hsk7_9.119",
+      "gf0025.hsk7_9.121",
+      "gf0025.hsk7_9.130",
+      "gf0025.hsk7_9.137"
+    ]
+  },
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk4-4-topic-105"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: ⋯⋯X 是 X，就是/不过⋯⋯", "en": "Chinese grammar: ⋯⋯X 是 X，就是/不过⋯⋯"},
+    "native_title": "⋯⋯X是X，就是/不过⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Mẫu câu ⋯⋯X 是 X，就是/不过⋯⋯ dùng để thừa nhận một sự thật (X 是 X) rồi thêm một hạn chế hoặc điều chỉnh nhẹ ở vế sau.",
+      "en": "The pattern ⋯⋯X 是 X，就是/不过⋯⋯ concedes a fact (X 是 X) and then adds a limitation or a mild correction in the second clause."
+    },
+    "sub": {"vi": "nhượng bộ rồi hạn chế", "en": "concede then limit"},
+    "native_title_pinyin": ["", "", "", "shì", "", "", "jiù", "shì", "", "bù", "guò", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn thừa nhận điều gì đó là đúng trước khi nêu một nhược điểm hoặc điều kiện.",
+      "en": "When you want to admit something is true before pointing out a drawback or condition."
+    },
+    {
+      "vi": "Khi bạn muốn giảm nhẹ sự phản đối, không phủ nhận hoàn toàn ý của người khác.",
+      "en": "When you want to soften disagreement without fully rejecting the other person's point."
+    },
+    {
+      "vi": "Khi vế sau là một hạn chế nhỏ, không phải lý do hay kết quả.",
+      "en": "When the second clause is a small limitation, not a cause or a result."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "X",
+        "role": "subject",
+        "label": {"vi": "chủ đề / chủ ngữ", "en": "topic / subject"},
+        "pinyin": [""]
+      },
+      {
+        "text": "是",
+        "role": "verb",
+        "label": {"vi": "là (khẳng định)", "en": "is (affirmation)"},
+        "pinyin": ["shì"]
+      },
+      {
+        "text": "X",
+        "role": "complement",
+        "label": {"vi": "lặp lại chủ đề", "en": "repeated topic"},
+        "pinyin": [""]
+      },
+      {
+        "text": "就是/不过",
+        "role": "connector",
+        "label": {"vi": "nhưng / tuy nhiên (nhẹ)", "en": "but / however (mild)"},
+        "options": [{"text": "就是", "pinyin": ["jiù", "shì"]}, {"text": "不过", "pinyin": ["bù", "guò"]}],
+        "pinyin": ["jiù", "shì", "", "bù", "guò"]
+      },
+      {
+        "text": "Y",
+        "role": "complement",
+        "label": {"vi": "hạn chế / điều chỉnh", "en": "limitation / correction"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个房子大是大，就是太贵了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "complement"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 13, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Thừa nhận nhà rộng, nhưng nêu hạn chế là quá đắt.",
+        "en": "Concedes the house is big, then adds the limitation that it is too expensive."
+      },
+      "translation": {
+        "vi": "Căn nhà này rộng thì rộng, nhưng mà quá đắt.",
+        "en": "This house is big, but it's too expensive."
+      },
+      "pinyin": ["zhè", "ge", "fáng", "zi", "dà", "shì", "dà", "", "jiù", "shì", "tài", "guì", "le", ""]
+    },
+    {
+      "text": "他聪明是聪明，不过经验不够。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "complement"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 13, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Thừa nhận anh ấy thông minh, nhưng nêu hạn chế về kinh nghiệm.",
+        "en": "Concedes he is smart, then adds the limitation about experience."
+      },
+      "translation": {
+        "vi": "Anh ấy thông minh thì thông minh, nhưng mà kinh nghiệm chưa đủ.",
+        "en": "He is smart, but he doesn't have enough experience."
+      },
+      "pinyin": ["tā", "cōng", "míng", "shì", "cōng", "míng", "", "bù", "guò", "jīng", "yàn", "bù", "gòu", ""]
+    },
+    {
+      "text": "这家餐厅好吃是好吃，就是人太多了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 9, "role": "complement"},
+        {"start": 10, "end": 12, "role": "connector"},
+        {"start": 12, "end": 16, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Thừa nhận món ăn ngon, nhưng nêu hạn chế là quá đông người.",
+        "en": "Concedes the food is good, then adds the limitation that it is too crowded."
+      },
+      "translation": {
+        "vi": "Nhà hàng này ngon thì ngon, nhưng mà đông người quá.",
+        "en": "This restaurant is tasty, but it's too crowded."
+      },
+      "pinyin": [
+        "zhè",
+        "jiā",
+        "cān",
+        "tīng",
+        "hǎo",
+        "chī",
+        "shì",
+        "hǎo",
+        "chī",
+        "",
+        "jiù",
+        "shì",
+        "rén",
+        "tài",
+        "duō",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Vế sau nêu một hạn chế đã xác định, nên dùng 了 để chốt trạng thái, không dùng 吧 (ngữ khí phỏng đoán/đề nghị).",
+        "en": "The second clause states a definite limitation, so 了 marks the settled state; 吧 (speculative/suggestive) does not fit."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "这个房子大是大，就是太贵吧。",
+      "right": "这个房子大是大，就是太贵了。",
+      "wrong_pinyin": ["zhè", "ge", "fáng", "zi", "dà", "shì", "dà", "", "jiù", "shì", "tài", "guì", "ba", ""],
+      "right_pinyin": ["zhè", "ge", "fáng", "zi", "dà", "shì", "dà", "", "jiù", "shì", "tài", "guì", "le", ""]
+    },
+    {
+      "reason": {
+        "vi": "就是/不过 đã là liên từ chuyển ý trong mẫu này; thêm 但是 ở trước tạo hai liên từ chồng nhau, sai logic câu.",
+        "en": "就是/不过 already serves as the contrast connector in this pattern; adding 但是 before it stacks two connectors and breaks the clause logic."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "这个房子大是大，但是就是太贵了。",
+      "right": "这个房子大是大，就是太贵了。",
+      "wrong_pinyin": [
+        "zhè",
+        "ge",
+        "fáng",
+        "zi",
+        "dà",
+        "shì",
+        "dà",
+        "",
+        "dàn",
+        "shì",
+        "jiù",
+        "shì",
+        "tài",
+        "guì",
+        "le",
+        ""
+      ],
+      "right_pinyin": ["zhè", "ge", "fáng", "zi", "dà", "shì", "dà", "", "jiù", "shì", "tài", "guì", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个手机便宜是便宜，___电池不太好。",
+      "options": [
+        {"text": "就是", "error_tag": null, "pinyin": ["jiù", "shì"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế sau nêu hạn chế, cần liên từ chuyển ý 就是/不过, không dùng 因为/所以 (nguyên nhân – kết quả).",
+        "en": "The second clause states a limitation, so the contrast connector 就是/不过 is needed; 因为/所以 (cause–result) do not fit."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "shǒu",
+        "jī",
+        "pián",
+        "yi",
+        "shì",
+        "pián",
+        "yi",
+        "",
+        "",
+        "",
+        "",
+        "diàn",
+        "chí",
+        "bù",
+        "tài",
+        "hǎo",
+        ""
+      ]
+    },
+    {
+      "q": "他忙是忙，___每天还是给家里打电话。",
+      "options": [
+        {"text": "不过", "error_tag": null, "pinyin": ["bù", "guò"]},
+        {"text": "但是不过", "error_tag": "conjunction", "pinyin": ["dàn", "shì", "bù", "guò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不过 đứng một mình làm liên từ chuyển ý; 但是不过 là chồng hai liên từ, sai.",
+        "en": "不过 alone works as the contrast connector; 但是不过 stacks two connectors and is wrong."
+      },
+      "q_pinyin": [
+        "tā",
+        "máng",
+        "shì",
+        "máng",
+        "",
+        "",
+        "",
+        "",
+        "měi",
+        "tiān",
+        "hái",
+        "shì",
+        "gěi",
+        "jiā",
+        "lǐ",
+        "dǎ",
+        "diàn",
+        "huà",
+        ""
+      ]
+    },
+    {
+      "q": "这道菜好吃是好吃，___太辣了。",
+      "options": [
+        {"text": "就是", "error_tag": null, "pinyin": ["jiù", "shì"]},
+        {"text": "吗", "error_tag": "particle", "pinyin": ["ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần 就是 để nối vế hạn chế; 吗 là trợ từ nghi vấn, không dùng ở đây.",
+        "en": "就是 is needed to link the limitation clause; 吗 is a question particle and does not fit here."
+      },
+      "q_pinyin": [
+        "zhè",
+        "dào",
+        "cài",
+        "hǎo",
+        "chī",
+        "shì",
+        "hǎo",
+        "chī",
+        "",
+        "",
+        "",
+        "",
+        "tài",
+        "là",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc/đồ vật bạn thừa nhận là tốt/đúng, nhưng có một hạn chế. Dùng mẫu ⋯⋯X 是 X，就是/不过⋯⋯.",
+      "en": "Write one sentence about something you admit is good/true but has a limitation. Use the pattern ⋯⋯X 是 X，就是/不过⋯⋯."
+    },
+    "placeholder": "这个……是……，就是……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["是"], "role": "verb"}, {"any_of": ["就是", "不过"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "这个工作好是好，就是太累了。",
+      "pinyin": ["zhè", "ge", "gōng", "zuò", "hǎo", "shì", "hǎo", "", "jiù", "shì", "tài", "lèi", "le", ""]
+    },
+    "placeholder_pinyin": ["zhè", "ge", "", "", "shì", "", "", "", "jiù", "shì", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791342261",
+    "generated_at": "2026-10-07T03:04:21Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-4-topic-105"],
+      "content_version": 2,
+      "content_hash": "2d2b60d8add7f5d3cc09df4a5292cb7ef7a42f78e0f1e0f29560161d7073286f",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-4-topic-105",
+          "issue": "R5 dạy 然而/不过/可是 như một điểm chuyển ý chung, không dạy mẫu ⋯⋯X 是 X，就是/不过⋯⋯ như tiêu đề yêu cầu.",
+          "fix": "Viết lại toàn bộ điểm theo mẫu ⋯⋯X 是 X，就是/不过⋯⋯, chỉ giữ 不过 như một lựa chọn trong slot liên từ."
+        },
+        {
+          "r5_id": "zh-hsk4-4-topic-105",
+          "issue": "R5 đưa ví dụ '因为下雨，然而比赛取消了。' là lỗi, nhưng không cung cấp cặp sai/đúng theo schema.",
+          "fix": "Chuyển thành common_mistakes với lỗi conjunction: '这个房子大是大，但是就是太贵了。' → '这个房子大是大，就是太贵了。'"
+        },
+        {
+          "r5_id": "zh-hsk4-4-topic-105",
+          "issue": "R5 không có formula, bindings, quick_practice hay personal_production.",
+          "fix": "Bổ sung formula 5 slot, bindings cho 3 ví dụ, 3 câu quick_practice và personal_production với pattern_rule."
+        }
+      ]
+    }
+  },
+  "review": null
+}

@@ -1,0 +1,532 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_12_reformulation_and_qualification",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_11_cause_vs_evidence_distinction"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {
+    "r5": [
+      "zh-hsk79-12-reformulation-and-qualification",
+      "zh-hsk6-23-summary-and-reformulation-structures",
+      "zh-hsk6-24-argument-qualification"
+    ]
+  },
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [
+    "zh-hsk79-12-reformulation-and-qualification",
+    "zh-hsk6-23-summary-and-reformulation-structures",
+    "zh-hsk6-24-argument-qualification"
+  ],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Reformulation and qualification",
+      "en": "Chinese grammar: Reformulation and qualification"
+    },
+    "native_title": "改述与限定",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Cấu trúc này dùng để diễn đạt lại ý trước đó bằng cách nói khác, hoặc giới hạn phạm vi, mức độ của một nhận định.",
+      "en": "This structure restates a previous idea in different words, or limits the scope and strength of a claim."
+    },
+    "sub": {"vi": "diễn đạt lại & giới hạn", "en": "reformulation & qualification"},
+    "native_title_pinyin": ["gǎi", "shù", "yǔ", "xiàn", "dìng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói lại một ý vừa nêu bằng cách diễn đạt rõ hơn hoặc khác đi, nhưng không đổi nội dung cốt lõi.",
+      "en": "When you want to restate a point just made in clearer or different words without changing the core meaning."
+    },
+    {
+      "vi": "Khi bạn cần điều chỉnh độ chính xác của câu trước, ví dụ thay 'thất bại' bằng 'chưa hoàn tất'.",
+      "en": "When you need to refine the precision of the previous statement, for example replacing 'failure' with 'not yet complete'."
+    },
+    {
+      "vi": "Khi bạn muốn giới hạn nhận định theo mức độ, phạm vi, điều kiện hoặc nguồn bằng chứng.",
+      "en": "When you want to limit a claim by degree, domain, condition, or evidence source."
+    },
+    {
+      "vi": "Khi viết văn nghị luận hoặc báo cáo, cần thể hiện thái độ thận trọng và chính xác.",
+      "en": "When writing an argument or report, you need to show caution and precision."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "换言之/也就是说/更准确地说/严格来说/在一定意义上/就……而言",
+        "role": "connector",
+        "label": {
+          "vi": "từ nối diễn đạt lại hoặc giới hạn",
+          "en": "reformulation or qualification connector"
+        },
+        "options": [
+          {"text": "换言之", "pinyin": ["huàn", "yán", "zhī"]},
+          {"text": "也就是说", "pinyin": ["yě", "jiù", "shì", "shuō"]},
+          {"text": "更准确地说", "pinyin": ["gèng", "zhǔn", "què", "dì", "shuō"]},
+          {"text": "严格来说", "pinyin": ["yán", "gé", "lái", "shuō"]},
+          {"text": "在一定意义上", "pinyin": ["zài", "yí", "dìng", "yì", "yì", "shàng"]},
+          {"text": "就……而言", "pinyin": ["jiù", "", "", "ér", "yán"]}
+        ],
+        "pinyin": [
+          "huàn",
+          "yán",
+          "zhī",
+          "",
+          "yě",
+          "jiù",
+          "shì",
+          "shuō",
+          "",
+          "gèng",
+          "zhǔn",
+          "què",
+          "dì",
+          "shuō",
+          "",
+          "yán",
+          "gé",
+          "lái",
+          "shuō",
+          "",
+          "zài",
+          "yí",
+          "dìng",
+          "yì",
+          "yì",
+          "shàng",
+          "",
+          "jiù",
+          "",
+          "",
+          "ér",
+          "yán"
+        ]
+      },
+      {"text": "，", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}, "pinyin": [""]},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {"text": "V", "role": "verb", "label": {"vi": "vị ngữ", "en": "predicate"}, "pinyin": [""]},
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "换言之，问题不在数据数量，而在数据质量。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "connector"},
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 6, "role": "subject"},
+        {"start": 6, "end": 19, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "换言之 báo hiệu phần sau là cách nói khác của cùng một ý.",
+        "en": "换言之 signals that what follows is another way of saying the same thing."
+      },
+      "translation": {
+        "vi": "Nói cách khác, vấn đề không nằm ở số lượng dữ liệu mà ở chất lượng dữ liệu.",
+        "en": "In other words, the problem is not the quantity of data but its quality."
+      },
+      "pinyin": [
+        "huàn",
+        "yán",
+        "zhī",
+        "",
+        "wèn",
+        "tí",
+        "bù",
+        "zài",
+        "shù",
+        "jù",
+        "shù",
+        "liàng",
+        "",
+        "ér",
+        "zài",
+        "shù",
+        "jù",
+        "zhì",
+        "liàng",
+        ""
+      ]
+    },
+    {
+      "text": "更准确地说，这并不是失败，而是一次未完成的验证。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "connector"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "subject"},
+        {"start": 7, "end": 23, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "更准确地说 điều chỉnh cách gọi tên sự việc cho chính xác hơn.",
+        "en": "更准确地说 refines the wording to be more precise."
+      },
+      "translation": {
+        "vi": "Chính xác hơn, đây không phải là thất bại mà là một lần kiểm chứng chưa hoàn tất.",
+        "en": "More precisely, this is not a failure but an unfinished verification."
+      },
+      "pinyin": [
+        "gèng",
+        "zhǔn",
+        "què",
+        "dì",
+        "shuō",
+        "",
+        "zhè",
+        "bìng",
+        "bú",
+        "shì",
+        "shī",
+        "bài",
+        "",
+        "ér",
+        "shì",
+        "yī",
+        "cì",
+        "wèi",
+        "wán",
+        "chéng",
+        "de",
+        "yàn",
+        "zhèng",
+        ""
+      ]
+    },
+    {
+      "text": "在一定意义上，这种变化是可以预期的。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "connector"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 11, "role": "subject"},
+        {"start": 11, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "在一定意义上 giới hạn nhận định trong một phạm vi nghĩa nhất định.",
+        "en": "在一定意义上 limits the claim to a certain sense or respect."
+      },
+      "translation": {
+        "vi": "Ở một nghĩa nhất định, sự thay đổi này có thể dự đoán được.",
+        "en": "In a certain sense, this change is predictable."
+      },
+      "pinyin": [
+        "zài",
+        "yí",
+        "dìng",
+        "yì",
+        "yì",
+        "shàng",
+        "",
+        "zhè",
+        "zhǒng",
+        "biàn",
+        "huà",
+        "shì",
+        "kě",
+        "yǐ",
+        "yù",
+        "qī",
+        "de",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "换言之 phải giữ nguyên hoặc làm rõ ý trước, không được đưa ra kết luận trái ngược hoặc mới hoàn toàn.",
+        "en": "换言之 must preserve or clarify the previous point; it cannot introduce a contradictory or entirely new conclusion."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "换言之，这个方案成本很高，所以我们应该立即放弃。",
+      "right": "换言之，这个方案成本很高，所以我们需要更多时间评估。",
+      "wrong_pinyin": [
+        "huàn",
+        "yán",
+        "zhī",
+        "",
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "chéng",
+        "běn",
+        "hěn",
+        "gāo",
+        "",
+        "suǒ",
+        "yǐ",
+        "wǒ",
+        "men",
+        "yīng",
+        "gāi",
+        "lì",
+        "jí",
+        "fàng",
+        "qì",
+        ""
+      ],
+      "right_pinyin": [
+        "huàn",
+        "yán",
+        "zhī",
+        "",
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "chéng",
+        "běn",
+        "hěn",
+        "gāo",
+        "",
+        "suǒ",
+        "yǐ",
+        "wǒ",
+        "men",
+        "xū",
+        "yào",
+        "gèng",
+        "duō",
+        "shí",
+        "jiān",
+        "píng",
+        "gū",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个方案成本高，___，短期内很难全面实施。",
+      "options": [
+        {"text": "也就是说", "error_tag": null, "pinyin": ["yě", "jiù", "shì", "shuō"]},
+        {"text": "总之", "error_tag": "conjunction", "pinyin": ["zǒng", "zhī"]},
+        {"text": "因此", "error_tag": "conjunction", "pinyin": ["yīn", "cǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "也就是说 dùng để diễn đạt lại cùng một ý vừa nêu; 总之 dùng để tổng kết, 因此 dùng để chỉ kết quả.",
+        "en": "也就是说 restates the same idea just given; 总之 summarises, and 因此 marks a result."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "chéng",
+        "běn",
+        "gāo",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "duǎn",
+        "qī",
+        "nèi",
+        "hěn",
+        "nán",
+        "quán",
+        "miàn",
+        "shí",
+        "shī",
+        ""
+      ]
+    },
+    {
+      "q": "严格来说，目前的证据___支持这一结论。",
+      "options": [
+        {"text": "还不能", "error_tag": null, "pinyin": ["hái", "bù", "néng"]},
+        {"text": "不能还", "error_tag": "word_order", "pinyin": ["bù", "néng", "hái"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Trạng từ 还 phải đứng trước 不能: 还不能.", "en": "The adverb 还 must precede 不能: 还不能."},
+      "q_pinyin": [
+        "yán",
+        "gé",
+        "lái",
+        "shuō",
+        "",
+        "mù",
+        "qián",
+        "de",
+        "zhèng",
+        "jù",
+        "",
+        "",
+        "",
+        "zhī",
+        "chí",
+        "zhè",
+        "yī",
+        "jié",
+        "lùn",
+        ""
+      ]
+    },
+    {
+      "q": "就短期效果___，这个方案更有优势。",
+      "options": [
+        {"text": "而言", "error_tag": null, "pinyin": ["ér", "yán"]},
+        {"text": "来说", "error_tag": "collocation", "pinyin": ["lái", "shuō"]},
+        {"text": "而言说", "error_tag": "redundancy", "pinyin": ["ér", "yán", "shuō"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc cố định là 就……而言, không dùng 来说 hoặc 而言说.",
+        "en": "The fixed frame is 就……而言; 来说 and 而言说 are not used here."
+      },
+      "q_pinyin": [
+        "jiù",
+        "duǎn",
+        "qī",
+        "xiào",
+        "guǒ",
+        "",
+        "",
+        "",
+        "",
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "gèng",
+        "yǒu",
+        "yōu",
+        "shì",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nhận định về một vấn đề bạn quan tâm, dùng 换言之 hoặc 在一定意义上 để diễn đạt lại hoặc giới hạn ý của bạn.",
+      "en": "Write a sentence about an issue you care about, using 换言之 or 在一定意义上 to restate or qualify your point."
+    },
+    "placeholder": "换言之，……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["换言之", "更准确地说", "在一定意义上"], "role": "connector"}]},
+    "sample": {
+      "text": "换言之，这个问题需要从另一个角度来理解。",
+      "pinyin": [
+        "huàn",
+        "yán",
+        "zhī",
+        "",
+        "zhè",
+        "ge",
+        "wèn",
+        "tí",
+        "xū",
+        "yào",
+        "cóng",
+        "lìng",
+        "yí",
+        "gè",
+        "jiǎo",
+        "dù",
+        "lái",
+        "lǐ",
+        "jiě",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["huàn", "yán", "zhī", "", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338980",
+    "generated_at": "2026-10-07T02:09:40Z",
+    "r5_source": {
+      "ids": [
+        "zh-hsk79-12-reformulation-and-qualification",
+        "zh-hsk6-23-summary-and-reformulation-structures",
+        "zh-hsk6-24-argument-qualification"
+      ],
+      "content_version": 2,
+      "content_hash": "6a86ed7477ff4d5db21184f90719f3a1e8fa14db0c9a14acdc6b79bda0faca5e",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-12-reformulation-and-qualification",
+          "issue": "Pinyin của ví dụ 换言之，问题不在数据数量，而在数据质量。 viết sai: 'Huàn yán zhī wèn tí...' thiếu dấu phẩy và tách sai âm tiết.",
+          "fix": "Đã viết lại thành 'Huàn yán zhī shuō, wèn tí bú zài shù jù shù liàng, ér zài shù jù zhì liàng.'"
+        },
+        {
+          "r5_id": "zh-hsk79-12-reformulation-and-qualification",
+          "issue": "Ví dụ 更准确地说，这并不是失败，而是一次未完成的验证。 có pinyin 'Gèng zhǔn què de shuō' nhưng thiếu dấu phẩy sau 说.",
+          "fix": "Đã thêm dấu phẩy: 'Gèng zhǔn què de shuō, zhè bìng bú shì shī bài, ér shì yí cì wèi wán chéng de yàn zhèng.'"
+        },
+        {
+          "r5_id": "zh-hsk79-12-reformulation-and-qualification",
+          "issue": "Ví dụ 在一定意义上，这种变化是可以预期的。 pinyin 'Zài yí dìng yì yì shàng' thiếu dấu phẩy sau 上.",
+          "fix": "Đã thêm dấu phẩy: 'Zài yí dìng yì yì shàng, zhè zhǒng biàn huà shì kě yǐ yù qī de.'"
+        },
+        {
+          "r5_id": "zh-hsk79-12-reformulation-and-qualification",
+          "issue": "Ví dụ 严格来说，目前的证据还不能支持这一结论。 pinyin 'Yán gé lái shuō' thiếu dấu phẩy sau 说.",
+          "fix": "Đã thêm dấu phẩy: 'Yán gé lái shuō, mù qián de zhèng jù hái bù néng zhī chí zhè yì jié lùn.'"
+        },
+        {
+          "r5_id": "zh-hsk6-23-summary-and-reformulation-structures",
+          "issue": "Ví dụ 这个方案成本高，也就是说，短期内很难全面实施。 pinyin thiếu dấu phẩy sau 说.",
+          "fix": "Đã thêm dấu phẩy: 'Zhè ge fāng àn chéng běn gāo, yě jiù shì shuō, duǎn qī nèi hěn nán quán miàn shí shī.'"
+        },
+        {
+          "r5_id": "zh-hsk6-23-summary-and-reformulation-structures",
+          "issue": "Ví dụ 换句话说，我们需要先解决数据问题。 pinyin thiếu dấu phẩy sau 说.",
+          "fix": "Đã thêm dấu phẩy: 'Huàn jù huà shuō, wǒ men xū yào xiān jiě jué shù jù wèn tí.'"
+        },
+        {
+          "r5_id": "zh-hsk6-23-summary-and-reformulation-structures",
+          "issue": "Ví dụ 总的来说，这次测试达到了预期目标。 pinyin thiếu dấu phẩy sau 说.",
+          "fix": "Đã thêm dấu phẩy: 'Zǒng de lái shuō, zhè cì cè shì dá dào le yù qī mù biāo.'"
+        },
+        {
+          "r5_id": "zh-hsk6-23-summary-and-reformulation-structures",
+          "issue": "Ví dụ 总之，在没有更多证据之前，不宜下结论。 pinyin thiếu dấu phẩy sau 之.",
+          "fix": "Đã thêm dấu phẩy: 'Zǒng zhī, zài méi yǒu gèng duō zhèng jù zhī qián, bù yí xià jié lùn.'"
+        },
+        {
+          "r5_id": "zh-hsk6-24-argument-qualification",
+          "issue": "Ví dụ 在一定程度上，这个解释是合理的。 pinyin thiếu dấu phẩy sau 上.",
+          "fix": "Đã thêm dấu phẩy: 'Zài yí dìng chéng dù shàng, zhè ge jiě shì shì hé lǐ de.'"
+        },
+        {
+          "r5_id": "zh-hsk6-24-argument-qualification",
+          "issue": "Ví dụ 就短期效果而言，这个方案更有优势。 pinyin thiếu dấu phẩy sau 言.",
+          "fix": "Đã thêm dấu phẩy: 'Jiù duǎn qī xiào guǒ ér yán, zhè ge fāng àn gèng yǒu yōu shì.'"
+        },
+        {
+          "r5_id": "zh-hsk6-24-argument-qualification",
+          "issue": "Ví dụ 在现有条件下，我们还无法进行大规模测试。 pinyin thiếu dấu phẩy sau 下.",
+          "fix": "Đã thêm dấu phẩy: 'Zài xiàn yǒu tiáo jiàn xià, wǒ men hái wú fǎ jìn xíng dà guī mó cè shì.'"
+        },
+        {
+          "r5_id": "zh-hsk6-24-argument-qualification",
+          "issue": "Ví dụ 从目前的数据来看，这一趋势并不稳定。 pinyin thiếu dấu phẩy sau 看.",
+          "fix": "Đã thêm dấu phẩy: 'Cóng mù qián de shù jù lái kàn, zhè yì qū shì bìng bù wěn dìng.'"
+        }
+      ]
+    }
+  },
+  "review": null
+}

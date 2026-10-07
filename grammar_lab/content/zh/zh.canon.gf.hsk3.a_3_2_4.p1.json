@@ -1,0 +1,234 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_2_4.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.comparison",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.012", "gf0025.hsk3.013", "gf0025.hsk3.014", "gf0025.hsk3.015"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 程度副词：比较、更加，还、相当", "en": "Adverbs: 程度副词：比较、更加，还、相当"},
+    "native_title": "程度副词：比较、更加，还、相当",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Các phó từ chỉ mức độ 比较, 更加, 还, 相当 đứng trước tính từ để so sánh hoặc nhấn mạnh mức độ.",
+      "en": "The degree adverbs 比较, 更加, 还 and 相当 go before an adjective to compare or emphasize a degree."
+    },
+    "sub": {"vi": "mức độ so sánh", "en": "degree comparison"},
+    "native_title_pinyin": ["chéng", "dù", "fù", "cí", "", "bǐ", "jiào", "", "gèng", "jiā", "", "hái", "", "xiāng", "dāng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một vật hay người có mức độ nào đó ở mức vừa phải, dùng 比较 trước tính từ.",
+      "en": "Use 比较 before an adjective when you want to say something is moderately or relatively at a certain degree."
+    },
+    {
+      "vi": "Khi so sánh hai việc và muốn nói việc sau ở mức cao hơn, dùng 更加 trước tính từ.",
+      "en": "Use 更加 before an adjective when comparing two things and saying the second is at a higher degree."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh mức độ cao hơn mong đợi hoặc hơn mức trước đó, dùng 还 trước tính từ.",
+      "en": "Use 还 before an adjective to emphasize a degree that is higher than expected or higher than before."
+    },
+    {
+      "vi": "Khi muốn nói mức độ khá cao nhưng chưa đến mức tuyệt đối, dùng 相当 trước tính từ.",
+      "en": "Use 相当 before an adjective to say the degree is fairly high but not absolute."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "比较/更加/还/相当",
+        "role": "marker",
+        "label": {"vi": "phó từ mức độ", "en": "degree adverb"},
+        "options": [
+          {"text": "比较", "pinyin": ["bǐ", "jiào"]},
+          {"text": "更加", "pinyin": ["gèng", "jiā"]},
+          {"text": "还", "pinyin": ["hái"]},
+          {"text": "相当", "pinyin": ["xiāng", "dāng"]}
+        ],
+        "pinyin": ["bǐ", "jiào", "", "gèng", "jiā", "", "hái", "", "xiāng", "dāng"]
+      },
+      {
+        "text": "形容词",
+        "role": "complement",
+        "label": {"vi": "tính từ", "en": "adjective"},
+        "pinyin": ["xíng", "róng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "今天比较冷。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "比较 đứng trước tính từ 冷 để nói mức độ vừa phải.",
+        "en": "比较 comes before the adjective 冷 to show a moderate degree."
+      },
+      "translation": {"vi": "Hôm nay khá lạnh.", "en": "Today is relatively cold."},
+      "pinyin": ["jīn", "tiān", "bǐ", "jiào", "lěng", ""]
+    },
+    {
+      "text": "这个办法更加简单。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "更加 đứng trước tính từ 简单 để so sánh mức độ cao hơn.",
+        "en": "更加 comes before the adjective 简单 to compare a higher degree."
+      },
+      "translation": {"vi": "Cách này còn đơn giản hơn.", "en": "This method is even simpler."},
+      "pinyin": ["zhè", "ge", "bàn", "fǎ", "gèng", "jiā", "jiǎn", "dān", ""]
+    },
+    {
+      "text": "那本书还新。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "还 đứng trước tính từ 新 để nhấn mạnh mức độ cao hơn mong đợi.",
+        "en": "还 comes before the adjective 新 to emphasize a higher-than-expected degree."
+      },
+      "translation": {"vi": "Cuốn sách kia vẫn còn mới.", "en": "That book is still quite new."},
+      "pinyin": ["nà", "běn", "shū", "hái", "xīn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "比较 đã biểu thị mức độ, không dùng thêm 很 trong cùng một cụm tính từ.",
+        "en": "比较 already marks degree, so 很 is not added in the same adjective phrase."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "今天比较很冷。",
+      "right": "今天比较冷。",
+      "wrong_pinyin": ["jīn", "tiān", "bǐ", "jiào", "hěn", "lěng", ""],
+      "right_pinyin": ["jīn", "tiān", "bǐ", "jiào", "lěng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个箱子___重，我一个人搬不动。",
+      "options": [
+        {"text": "相当", "error_tag": null, "pinyin": ["xiāng", "dāng"]},
+        {"text": "比较很", "error_tag": "other", "pinyin": ["bǐ", "jiào", "hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "相当 đứng trước tính từ 重 để nói mức độ khá cao; 比较很 là lỗi vì hai phó từ mức độ không đứng liền nhau.",
+        "en": "相当 comes before the adjective 重 to show a fairly high degree; 比较很 is wrong because two degree adverbs do not stack."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "xiāng",
+        "zi",
+        "",
+        "",
+        "",
+        "zhòng",
+        "",
+        "wǒ",
+        "yí",
+        "gè",
+        "rén",
+        "bān",
+        "bù",
+        "dòng",
+        ""
+      ]
+    },
+    {
+      "q": "妹妹___高，比去年高多了。",
+      "options": [
+        {"text": "更加", "error_tag": null, "pinyin": ["gèng", "jiā"]},
+        {"text": "更加很", "error_tag": "other", "pinyin": ["gèng", "jiā", "hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "更加 đứng trước tính từ 高 để so sánh mức độ cao hơn; 更加很 là lỗi vì không dùng hai phó từ mức độ liền nhau.",
+        "en": "更加 comes before the adjective 高 to compare a higher degree; 更加很 is wrong because two degree adverbs do not stack."
+      },
+      "q_pinyin": ["mèi", "mèi", "", "", "", "gāo", "", "bǐ", "qù", "nián", "gāo", "duō", "le", ""]
+    },
+    {
+      "q": "这家饭馆的菜___好吃，你可以试试。",
+      "options": [
+        {"text": "比较", "error_tag": null, "pinyin": ["bǐ", "jiào"]},
+        {"text": "比较很", "error_tag": "other", "pinyin": ["bǐ", "jiào", "hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "比较 đứng trước tính từ 好吃 để nói mức độ vừa phải; 比较很 là lỗi vì hai phó từ mức độ không đứng liền nhau.",
+        "en": "比较 comes before the adjective 好吃 to show a moderate degree; 比较很 is wrong because two degree adverbs do not stack."
+      },
+      "q_pinyin": [
+        "zhè",
+        "jiā",
+        "fàn",
+        "guǎn",
+        "de",
+        "cài",
+        "",
+        "",
+        "",
+        "hǎo",
+        "chī",
+        "",
+        "nǐ",
+        "kě",
+        "yǐ",
+        "shì",
+        "shì",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người hoặc vật em biết, dùng 比较, 更加, 还 hoặc 相当 trước một tính từ.",
+      "en": "Write one sentence about a person or thing you know, using 比较, 更加, 还 or 相当 before an adjective."
+    },
+    "placeholder": "我的房间比较……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["比较", "更加", "还"], "role": "marker"}]},
+    "sample": {"text": "我的房间比较小。", "pinyin": ["wǒ", "de", "fáng", "jiān", "bǐ", "jiào", "xiǎo", ""]},
+    "placeholder_pinyin": ["wǒ", "de", "fáng", "jiān", "bǐ", "jiào", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338255",
+    "generated_at": "2026-10-07T01:57:35Z"
+  },
+  "review": null
+}

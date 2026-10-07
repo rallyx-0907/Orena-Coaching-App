@@ -1,0 +1,347 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_2_n_ng_cao",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.voice_causative",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_15_v_introduction"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-2-n-ng-cao", "zh-hsk6-2-complex-constructions"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk4-2-n-ng-cao", "zh-hsk6-2-complex-constructions"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 被 nâng cao", "en": "Chinese grammar: 被 nâng cao"},
+    "native_title": "高级被字句",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Câu bị động với 被 ở trình độ nâng cao: chủ ngữ là người/vật chịu tác động, theo sau là 被, (tác nhân), rồi vị ngữ phức tạp có kết quả, xu hướng hoặc mức độ.",
+      "en": "The advanced 被 passive: the subject is the patient, followed by 被, an optional agent, and a complex predicate with a result, directional or degree complement."
+    },
+    "sub": {"vi": "bị động nâng cao", "en": "advanced passive"},
+    "native_title_pinyin": ["gāo", "jí", "bèi", "zì", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh người/vật chịu tác động và kết quả của hành động, không nhấn mạnh người làm.",
+      "en": "When you want to foreground the person or thing affected and the result of the action, not the doer."
+    },
+    {
+      "vi": "Khi tác nhân không quan trọng, không biết rõ, hoặc muốn giữ thể diện nên lược bỏ.",
+      "en": "When the agent is unimportant, unknown, or deliberately left out to keep the tone neutral."
+    },
+    {
+      "vi": "Khi vị ngữ cần thêm bổ ngữ kết quả, bổ ngữ xu hướng hoặc bổ ngữ mức độ để câu tự nhiên.",
+      "en": "When the predicate needs a result, directional or degree complement to sound complete and natural."
+    },
+    {
+      "vi": "Trong văn viết hoặc tình huống trang trọng, 被 thường trung tính hơn 让/叫.",
+      "en": "In writing or formal situations, 被 is usually more neutral than the colloquial 让/叫."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ (người/vật chịu tác động)", "en": "subject (patient)"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "被",
+        "role": "marker",
+        "label": {"vi": "trợ từ bị động", "en": "passive marker"},
+        "pinyin": ["bèi"]
+      },
+      {
+        "text": "施事",
+        "role": "object",
+        "label": {"vi": "tác nhân", "en": "agent"},
+        "optional": true,
+        "pinyin": ["shī", "shì"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ chính", "en": "main verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "补语",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ kết quả/xu hướng/mức độ", "en": "result/directional/degree complement"},
+        "pinyin": ["bǔ", "yǔ"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ hoàn thành", "en": "completion particle"},
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ (người/vật chịu tác động)", "en": "subject (patient)"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "没",
+          "role": "aux",
+          "label": {"vi": "phủ định", "en": "negation"},
+          "pinyin": ["méi"]
+        },
+        {
+          "text": "被",
+          "role": "marker",
+          "label": {"vi": "trợ từ bị động", "en": "passive marker"},
+          "pinyin": ["bèi"]
+        },
+        {
+          "text": "施事",
+          "role": "object",
+          "label": {"vi": "tác nhân", "en": "agent"},
+          "optional": true,
+          "pinyin": ["shī", "shì"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "补语",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ kết quả/xu hướng/mức độ", "en": "result/directional/degree complement"},
+          "pinyin": ["bǔ", "yǔ"]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ (người/vật chịu tác động)", "en": "subject (patient)"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "被",
+          "role": "marker",
+          "label": {"vi": "trợ từ bị động", "en": "passive marker"},
+          "pinyin": ["bèi"]
+        },
+        {
+          "text": "施事",
+          "role": "object",
+          "label": {"vi": "tác nhân", "en": "agent"},
+          "optional": true,
+          "pinyin": ["shī", "shì"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "补语",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ kết quả/xu hướng/mức độ", "en": "result/directional/degree complement"},
+          "pinyin": ["bǔ", "yǔ"]
+        },
+        {
+          "text": "了吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["le", "ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我的包被人拿走了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "complement"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ là vật chịu tác động; 被 đánh dấu bị động; 人 là tác nhân; 拿走 là động từ + bổ ngữ xu hướng; 了 hoàn thành.",
+        "en": "The subject is the patient; 被 marks passive; 人 is the agent; 拿走 is verb + directional complement; 了 marks completion."
+      },
+      "translation": {"vi": "Túi của tôi bị người ta lấy đi rồi.", "en": "My bag was taken away by someone."},
+      "pinyin": ["wǒ", "de", "bāo", "bèi", "rén", "ná", "zǒu", "le", ""]
+    },
+    {
+      "text": "这个问题已经被解决了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 9, "role": "verb"},
+        {"start": 9, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Lược bỏ tác nhân vì không quan trọng; 已经 nhấn mạnh kết quả đã xảy ra; 解决 là động từ, 了 hoàn thành.",
+        "en": "The agent is omitted because it is unimportant; 已经 emphasizes the result; 解决 is the verb and 了 marks completion."
+      },
+      "translation": {"vi": "Vấn đề này đã được giải quyết rồi.", "en": "This problem has already been solved."},
+      "pinyin": ["zhè", "ge", "wèn", "tí", "yǐ", "jīng", "bèi", "jiě", "jué", "le", ""]
+    },
+    {
+      "text": "比赛因为大雨被取消了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 9, "role": "verb"},
+        {"start": 9, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ là sự kiện chịu tác động; 因为大雨 nêu nguyên nhân; tác nhân không xuất hiện; 取消 + 了 diễn tả kết quả.",
+        "en": "The subject is the affected event; 因为大雨 gives the cause; the agent is absent; 取消 + 了 expresses the result."
+      },
+      "translation": {"vi": "Trận đấu bị hủy vì mưa lớn.", "en": "The match was cancelled because of heavy rain."},
+      "pinyin": ["bǐ", "sài", "yīn", "wèi", "dà", "yǔ", "bèi", "qǔ", "xiāo", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người nói đặt sai vai nghĩa: người nói không phải là vật chịu tác động, mà là người giải quyết vấn đề. Trong câu 被, chủ ngữ phải là người/vật chịu tác động, còn tác nhân đứng sau 被.",
+        "en": "The speaker assigned the wrong semantic role: the speaker is not the patient but the one who solved the problem. In a 被 sentence, the subject must be the patient, and the agent follows 被."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我被问题解决了。",
+      "right": "问题被我解决了。",
+      "wrong_pinyin": ["wǒ", "bèi", "wèn", "tí", "jiě", "jué", "le", ""],
+      "right_pinyin": ["wèn", "tí", "bèi", "wǒ", "jiě", "jué", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我的手机___偷走了。",
+      "options": [
+        {"text": "被", "error_tag": null, "pinyin": ["bèi"]},
+        {"text": "把", "error_tag": "ba_sentence", "pinyin": ["bǎ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này nhấn mạnh vật chịu tác động (điện thoại) nên dùng 被. 把 dùng khi chủ ngữ là người thực hiện hành động.",
+        "en": "This sentence foregrounds the affected object (the phone), so 被 is correct. 把 is used when the subject performs the action."
+      },
+      "q_pinyin": ["wǒ", "de", "shǒu", "jī", "", "", "", "tōu", "zǒu", "le", ""]
+    },
+    {
+      "q": "文件___送到了法律部门。",
+      "options": [
+        {"text": "被", "error_tag": null, "pinyin": ["bèi"]},
+        {"text": "让", "error_tag": "bei_sentence", "pinyin": ["ràng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong văn viết trang trọng, 被 phù hợp hơn 让. 让 thường mang sắc thái khẩu ngữ và dễ gây nhầm với nghĩa 'để/cho phép'.",
+        "en": "In formal writing, 被 is more appropriate than 让. 让 is colloquial and can be confused with the causative meaning 'let/make'."
+      },
+      "q_pinyin": ["wén", "jiàn", "", "", "", "sòng", "dào", "le", "fǎ", "lǜ", "bù", "mén", ""]
+    },
+    {
+      "q": "这个问题___专家解释得很清楚了。",
+      "options": [
+        {"text": "被", "error_tag": null, "pinyin": ["bèi"]},
+        {"text": "把", "error_tag": "ba_sentence", "pinyin": ["bǎ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 'vấn đề' là vật chịu tác động, không phải người thực hiện, nên phải dùng 被. 把 sẽ đảo ngược vai nghĩa.",
+        "en": "The subject 'the problem' is the patient, not the doer, so 被 is required. 把 would reverse the semantic roles."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "wèn",
+        "tí",
+        "",
+        "",
+        "",
+        "zhuān",
+        "jiā",
+        "jiě",
+        "shì",
+        "dé",
+        "hěn",
+        "qīng",
+        "chǔ",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc đã xảy ra với bạn hoặc đồ vật của bạn, dùng cấu trúc 被 + (tác nhân) + động từ + bổ ngữ + 了.",
+      "en": "Write one sentence about something that happened to you or your belongings, using 被 + (agent) + verb + complement + 了."
+    },
+    "placeholder": "我的……被……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["被"], "role": "marker"},
+        {"regex": "(走|掉|完|好|到|成|开|坏|清楚|干净|光|见)", "role": "complement"}
+      ]
+    },
+    "sample": {"text": "我的雨伞被人拿走了。", "pinyin": ["wǒ", "de", "yǔ", "sǎn", "bèi", "rén", "ná", "zǒu", "le", ""]},
+    "placeholder_pinyin": ["wǒ", "de", "", "", "bèi", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338543",
+    "generated_at": "2026-10-07T02:02:23Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-2-n-ng-cao", "zh-hsk6-2-complex-constructions"],
+      "content_version": 2,
+      "content_hash": "33211c18ef1781f787c5914220c9e1c197e989977c1343d46d120a714f32102b",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-2-n-ng-cao",
+          "issue": "R5 dạy lẫn 让/叫 như trợ từ bị động tương đương 被, nhưng ở HSK4 người học Việt dễ nhầm 让 causative 'để/cho phép' với bị động. Cần tách bạch và chỉ dùng 被 làm trọng tâm.",
+          "fix": "Giữ 被 làm trợ từ bị động chính; không đưa 让/叫 vào công thức. Ghi chú 让/叫 chỉ mang tính khẩu ngữ và dễ nhầm nghĩa, không dạy như biến thể ngang hàng."
+        },
+        {
+          "r5_id": "zh-hsk4-2-n-ng-cao",
+          "issue": "Ví dụ '钱让他拿走了' bị đưa vào bài 被 nâng cao nhưng dùng 让, không phải 被, gây lệch trọng tâm.",
+          "fix": "Thay bằng ví dụ dùng 被: '我的包被人拿走了。' và '比赛因为大雨被取消了。'"
+        },
+        {
+          "r5_id": "zh-hsk4-2-n-ng-cao",
+          "issue": "Lỗi '这个问题被解决' thiếu dấu hiệu hoàn thành/kết quả, nhưng R5 không nói rõ vì sao cần 了 hoặc bổ ngữ.",
+          "fix": "Thêm quy tắc: vị ngữ 被 thường cần bổ ngữ kết quả/xu hướng hoặc 了 để câu tự nhiên; sửa thành '这个问题已经被解决了。'"
+        },
+        {
+          "r5_id": "zh-hsk6-2-complex-constructions",
+          "issue": "R5 HSK6 đưa vào bài HSK4, vượt phạm vi cấp độ và làm loãng trọng tâm 被 nâng cao.",
+          "fix": "Chỉ giữ phần 被 + tác nhân + vị ngữ phức tạp phù hợp HSK4; lược bỏ các cấu trúc HSK6 như 被解释得很清楚, 被逐步改造成."
+        }
+      ]
+    }
+  },
+  "review": null
+}

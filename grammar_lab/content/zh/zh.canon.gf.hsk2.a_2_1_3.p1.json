@@ -1,0 +1,227 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_1_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_1_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.008"]},
+  "point_type": "morphology",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Tính từ: 形容词重叠：AA、AABB", "en": "Adjectives: 形容词重叠：AA、AABB"},
+    "native_title": "形容词重叠：AA、AABB",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Tính từ đơn tiết và hai tiết trong tiếng Trung có thể được lặp lại theo kiểu AA hoặc AABB để nhấn mạnh mức độ hoặc tạo cảm giác sinh động, dễ chịu.",
+      "en": "Single-syllable and two-syllable Chinese adjectives can be reduplicated as AA or AABB to intensify the degree or to give a vivid, pleasant feeling."
+    },
+    "sub": {"vi": "Lặp tính từ", "en": "Adjective reduplication"},
+    "native_title_pinyin": ["xíng", "róng", "cí", "chóng", "dié", "", "", "", "", "", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh một tính từ đơn tiết trong câu miêu tả, ví dụ khen đồ vật hoặc tả cảnh.",
+      "en": "When you want to intensify a single-syllable adjective in a descriptive sentence, for example praising an object or describing a scene."
+    },
+    {
+      "vi": "Khi muốn tạo cảm giác nhẹ nhàng, dễ chịu hoặc sinh động cho lời nói thay vì chỉ nêu tính chất trung tính.",
+      "en": "When you want to make your speech sound gentle, pleasant or vivid instead of stating a neutral quality."
+    },
+    {
+      "vi": "Khi miêu tả tính từ hai tiết như 高兴, 干净, 漂亮 trong văn nói hoặc viết thân mật.",
+      "en": "When describing two-syllable adjectives such as 高兴, 干净, 漂亮 in spoken or informal written Chinese."
+    },
+    {
+      "vi": "Khi tính từ làm vị ngữ hoặc định ngữ, không dùng dạng lặp lại trong câu so sánh hơn kém.",
+      "en": "When the adjective works as a predicate or attributive; do not use the reduplicated form in comparative sentences."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "AA",
+        "role": "complement",
+        "label": {"vi": "tính từ đơn tiết lặp lại", "en": "reduplicated single-syllable adjective"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ", "en": "particle"},
+        "optional": true,
+        "pinyin": ["de"]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "pinyin": [""]}
+    ],
+    "illustration": {
+      "kind": "morphology",
+      "morphology": [
+        {
+          "base": "红",
+          "affix": "红",
+          "result": "红红",
+          "base_pinyin": ["hóng"],
+          "affix_pinyin": ["hóng"],
+          "result_pinyin": ["hóng", "hóng"]
+        },
+        {
+          "base": "干净",
+          "affix": "干净",
+          "result": "干干净净",
+          "base_pinyin": ["gān", "jìng"],
+          "affix_pinyin": ["gān", "jìng"],
+          "result_pinyin": ["gān", "gān", "jìng", "jìng"]
+        },
+        {
+          "base": "高兴",
+          "affix": "高兴",
+          "result": "高高兴兴",
+          "base_pinyin": ["gāo", "xìng"],
+          "affix_pinyin": ["gāo", "xìng"],
+          "result_pinyin": ["gāo", "gāo", "xìng", "xìng"]
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "text": "红红的苹果很甜。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "complement"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "红红 nhấn mạnh màu đỏ tươi, 的 nối với danh từ.",
+        "en": "红红 intensifies the bright red colour, 的 links it to the noun."
+      },
+      "translation": {"vi": "Quả táo đỏ tươi rất ngọt.", "en": "The bright red apple is very sweet."},
+      "pinyin": ["hóng", "hóng", "de", "píng", "guǒ", "hěn", "tián", ""]
+    },
+    {
+      "text": "干干净净的房间让人舒服。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "complement"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "干干净净 là dạng AABB của 干净, nghĩa là rất sạch sẽ.",
+        "en": "干干净净 is the AABB form of 干净, meaning very clean."
+      },
+      "translation": {
+        "vi": "Căn phòng sạch sẽ khiến người ta thoải mái.",
+        "en": "The spotless room makes people feel comfortable."
+      },
+      "pinyin": ["gān", "gān", "jìng", "jìng", "de", "fáng", "jiān", "ràng", "rén", "shū", "fú", ""]
+    },
+    {
+      "text": "她高高兴兴地回家了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 5, "role": "complement"},
+        {"start": 5, "end": 6, "role": "particle"},
+        {"start": 6, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "高高兴兴 là dạng AABB của 高兴, bổ nghĩa cho động từ 回家.",
+        "en": "高高兴兴 is the AABB form of 高兴, modifying the verb 回家."
+      },
+      "translation": {"vi": "Cô ấy vui vẻ đi về nhà.", "en": "She went home happily."},
+      "pinyin": ["tā", "gāo", "gāo", "xìng", "xìng", "dì", "huí", "jiā", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi tính từ lặp lại làm vị ngữ miêu tả, thường phải thêm 的 ở cuối, nếu không câu nghe lửng và sai ngữ pháp.",
+        "en": "When a reduplicated adjective acts as a descriptive predicate, 的 is normally required at the end; without it the sentence sounds incomplete and ungrammatical."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "她的眼睛大大。",
+      "right": "她的眼睛大大的。",
+      "wrong_pinyin": ["tā", "de", "yǎn", "jīng", "dà", "dà", ""],
+      "right_pinyin": ["tā", "de", "yǎn", "jīng", "dà", "dà", "de", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他的房间___的，很舒服。",
+      "options": [
+        {"text": "干干净净", "error_tag": null, "pinyin": ["gān", "gān", "jìng", "jìng"]},
+        {"text": "干净干净", "error_tag": "word_order", "pinyin": ["gān", "jìng", "gān", "jìng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "干净 là tính từ hai tiết, dạng lặp đúng là AABB: 干干净净.",
+        "en": "干净 is a two-syllable adjective; the correct reduplication is AABB: 干干净净."
+      },
+      "q_pinyin": ["tā", "de", "fáng", "jiān", "", "", "", "de", "", "hěn", "shū", "fú", ""]
+    },
+    {
+      "q": "她___地笑了。",
+      "options": [
+        {"text": "高高兴兴", "error_tag": null, "pinyin": ["gāo", "gāo", "xìng", "xìng"]},
+        {"text": "高兴高兴", "error_tag": "word_order", "pinyin": ["gāo", "xìng", "gāo", "xìng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "高兴 là tính từ hai tiết, dạng lặp đúng là AABB: 高高兴兴.",
+        "en": "高兴 is a two-syllable adjective; the correct reduplication is AABB: 高高兴兴."
+      },
+      "q_pinyin": ["tā", "", "", "", "dì", "xiào", "le", ""]
+    },
+    {
+      "q": "这个___的苹果很好吃。",
+      "options": [
+        {"text": "红红", "error_tag": null, "pinyin": ["hóng", "hóng"]},
+        {"text": "红红红", "error_tag": "other", "pinyin": ["hóng", "hóng", "hóng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "红 là tính từ đơn tiết, dạng lặp đúng là AA: 红红.",
+        "en": "红 is a single-syllable adjective; the correct reduplication is AA: 红红."
+      },
+      "q_pinyin": ["zhè", "ge", "", "", "", "de", "píng", "guǒ", "hěn", "hǎo", "chī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu miêu tả đồ vật hoặc người bằng tính từ lặp AA hoặc AABB.",
+      "en": "Write one sentence describing an object or person using an AA or AABB reduplicated adjective."
+    },
+    "placeholder": "我的房间……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"regex": "([\\u4e00-\\u9fff])\\1", "role": "complement"},
+        {"any_of": ["的", "地"], "role": "particle"}
+      ]
+    },
+    "sample": {
+      "text": "我的房间干干净净的。",
+      "pinyin": ["wǒ", "de", "fáng", "jiān", "gān", "gān", "jìng", "jìng", "de", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "fáng", "jiān", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791347300",
+    "generated_at": "2026-10-07T04:28:20Z"
+  },
+  "review": null
+}

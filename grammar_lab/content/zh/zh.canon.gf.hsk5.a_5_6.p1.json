@@ -1,0 +1,233 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_5_2_8.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.058", "gf0025.hsk5.059", "gf0025.hsk5.062", "gf0025.hsk5.063"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách nhấn mạnh: 用副词“可”表示强调", "en": "Ways of emphasis: 用副词“可”表示强调"},
+    "native_title": "用副词“可”表示强调",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Phó từ 可 đặt trước động từ hoặc tính từ để nhấn mạnh, thường dùng trong khẩu ngữ.",
+      "en": "The adverb 可 is placed before a verb or adjective to add emphasis, mostly in spoken Chinese."
+    },
+    "sub": {"vi": "nhấn mạnh bằng 可", "en": "emphasis with 可"},
+    "native_title_pinyin": ["yòng", "fù", "cí", "", "kě", "", "biǎo", "shì", "qiáng", "diào"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh một đặc điểm hoặc trạng thái trong câu khẩu ngữ, thường là điều người nói thấy rõ hoặc tán thành.",
+      "en": "When you want to stress a quality or state in spoken Chinese, often something the speaker clearly feels or agrees with."
+    },
+    {
+      "vi": "Khi câu có tính từ làm vị ngữ, 可 đứng ngay trước tính từ đó.",
+      "en": "When the sentence has an adjective as its predicate, 可 comes right before that adjective."
+    },
+    {
+      "vi": "Khi câu có động từ chỉ tâm trạng, nhận thức hoặc hành động, 可 đứng ngay trước động từ đó.",
+      "en": "When the sentence has a verb of feeling, thinking or action, 可 comes right before that verb."
+    },
+    {
+      "vi": "Khi muốn phản bác nhẹ hoặc nhấn mạnh điều trái với suy nghĩ của người nghe, 可 thường đi với 不 hoặc 别.",
+      "en": "When you want to mildly contradict or stress something against the listener's expectation, 可 often goes with 不 or 别."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "可",
+        "role": "marker",
+        "label": {"vi": "phó từ nhấn mạnh 可", "en": "emphatic adverb 可"},
+        "pinyin": ["kě"]
+      },
+      {
+        "text": "动词/形容词",
+        "role": "verb",
+        "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
+        "pinyin": ["dòng", "cí", "", "xíng", "róng", "cí"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ 了", "en": "particle 了"},
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "可",
+          "role": "marker",
+          "label": {"vi": "phó từ nhấn mạnh 可", "en": "emphatic adverb 可"},
+          "pinyin": ["kě"]
+        },
+        {
+          "text": "不/别",
+          "role": "aux",
+          "label": {"vi": "phủ định 不 hoặc 别", "en": "negation 不 or 别"},
+          "options": [{"text": "不", "pinyin": ["bù"]}, {"text": "别", "pinyin": ["bié"]}],
+          "pinyin": ["bù", "", "bié"]
+        },
+        {
+          "text": "动词/形容词",
+          "role": "verb",
+          "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
+          "pinyin": ["dòng", "cí", "", "xíng", "róng", "cí"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个孩子可聪明了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "可 đứng trước tính từ 聪明 để nhấn mạnh, 了 làm câu mang sắc thái khẳng định rõ.",
+        "en": "可 before the adjective 聪明 adds emphasis, and 了 makes the statement sound definite."
+      },
+      "translation": {"vi": "Đứa trẻ này thông minh thật đấy.", "en": "This child really is clever."},
+      "pinyin": ["zhè", "ge", "hái", "zi", "kě", "cōng", "míng", "liǎo", ""]
+    },
+    {
+      "text": "我可喜欢这本书了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "可 đứng trước động từ 喜欢 để nhấn mạnh mức độ yêu thích.",
+        "en": "可 before the verb 喜欢 stresses how much the speaker likes it."
+      },
+      "translation": {"vi": "Tôi thích cuốn sách này lắm.", "en": "I really like this book."},
+      "pinyin": ["wǒ", "kě", "xǐ", "huān", "zhè", "běn", "shū", "le", ""]
+    },
+    {
+      "text": "你可别忘了带护照。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 4, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "可 đi với 别 để nhấn mạnh lời nhắc nhở, nghĩa là đừng quên.",
+        "en": "可 with 别 strengthens a reminder, meaning don't forget."
+      },
+      "translation": {"vi": "Bạn đừng quên mang hộ chiếu đấy.", "en": "Don't forget to bring your passport."},
+      "pinyin": ["nǐ", "kě", "bié", "wàng", "le", "dài", "hù", "zhào", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi 可 nhấn mạnh một tính từ làm vị ngữ, câu thường cần thêm 了 ở cuối; thiếu 了 làm câu nghe lửng và không tự nhiên.",
+        "en": "When 可 emphasises an adjective predicate, the sentence normally needs 了 at the end; without 了 it sounds incomplete and unnatural."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "这个孩子可聪明。",
+      "right": "这个孩子可聪明了。",
+      "wrong_pinyin": ["zhè", "ge", "hái", "zi", "kě", "cōng", "míng", ""],
+      "right_pinyin": ["zhè", "ge", "hái", "zi", "kě", "cōng", "míng", "liǎo", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个孩子可聪明___。",
+      "options": [
+        {"text": "了", "error_tag": null, "pinyin": ["le"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau tính từ được 可 nhấn mạnh, 了 thường đứng cuối câu để câu trọn nghĩa và tự nhiên.",
+        "en": "After an adjective emphasised by 可, 了 normally comes at the end to complete the sentence naturally."
+      },
+      "q_pinyin": ["zhè", "ge", "hái", "zi", "kě", "cōng", "míng", "", "", "", ""]
+    },
+    {
+      "q": "你可___忘了带护照。",
+      "options": [
+        {"text": "别", "error_tag": null, "pinyin": ["bié"]},
+        {"text": "不", "error_tag": "word_choice", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu nhắc nhở dùng 可 thường đi với 别, không dùng 不, vì 别 mới mang nghĩa đừng làm gì.",
+        "en": "A reminder with 可 normally uses 别, not 不, because 别 carries the meaning don't do something."
+      },
+      "q_pinyin": ["nǐ", "kě", "", "", "", "wàng", "le", "dài", "hù", "zhào", ""]
+    },
+    {
+      "q": "我___喜欢这本书了。",
+      "options": [
+        {"text": "可", "error_tag": null, "pinyin": ["kě"]},
+        {"text": "可以", "error_tag": "word_choice", "pinyin": ["kě", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "可 ở đây là phó từ nhấn mạnh, không phải 可以 nghĩa là có thể.",
+        "en": "Here 可 is an emphatic adverb, not 可以 meaning can or may."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "xǐ", "huān", "zhè", "běn", "shū", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân, dùng 可 trước động từ hoặc tính từ để nhấn mạnh.",
+      "en": "Write one sentence about yourself, using 可 before a verb or adjective for emphasis."
+    },
+    "placeholder": "我可喜欢……了。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["可"], "role": "marker"}, {"any_of": ["了"], "role": "particle"}]
+    },
+    "sample": {"text": "我可喜欢这本书了。", "pinyin": ["wǒ", "kě", "xǐ", "huān", "zhè", "běn", "shū", "le", ""]},
+    "placeholder_pinyin": ["wǒ", "kě", "xǐ", "huān", "", "", "le", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338618",
+    "generated_at": "2026-10-07T02:03:38Z"
+  },
+  "review": null
+}

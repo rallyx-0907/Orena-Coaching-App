@@ -1,0 +1,271 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.verb_reduplication",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.completed_past",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.le_completion"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk3-14-reduplication-ng-t-t-nh-t"], "gf0025": ["gf0025.hsk2.004"]},
+  "point_type": "morphology",
+  "sequence": 1,
+  "aliases": ["zh-hsk3-14-reduplication-ng-t-t-nh-t"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: 动词重叠：AA、A一A、A了A、ABAB",
+      "en": "Chinese grammar: 动词重叠：AA、A一A、A了A、ABAB"
+    },
+    "native_title": "动词重叠：AA、A一A、A了A、ABAB",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Động từ tiếng Trung có thể được lặp lại để diễn tả hành động nhẹ nhàng, thử làm hoặc làm một chút.",
+      "en": "Chinese verbs can be reduplicated to express a light, tentative, or brief action."
+    },
+    "sub": {"vi": "hành động nhẹ", "en": "light action"},
+    "native_title_pinyin": [
+      "dòng",
+      "cí",
+      "chóng",
+      "dié",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "yī",
+      "",
+      "",
+      "",
+      "le",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói 'thử làm gì đó' hoặc 'làm một chút' mà không nhấn mạnh kết quả.",
+      "en": "When you want to say 'try doing something' or 'do something a little' without focusing on the result."
+    },
+    {
+      "vi": "Khi bạn muốn làm dịu giọng yêu cầu hoặc gợi ý, ví dụ khi nhờ ai xem giúp.",
+      "en": "When you want to soften a request or suggestion, for example when asking someone to take a look."
+    },
+    {
+      "vi": "Khi hành động ngắn và không có kết quả rõ ràng, thường dùng trong hội thoại hàng ngày.",
+      "en": "When the action is short and has no clear result, often in everyday conversation."
+    },
+    {
+      "vi": "Với động từ hai âm tiết, dạng lặp thường là ABAB, ví dụ 休息休息.",
+      "en": "With two-syllable verbs, the reduplicated form is usually ABAB, for example 休息休息."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ lặp", "en": "reduplicated verb"},
+        "pinyin": [""]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "illustration": {
+      "kind": "morphology",
+      "morphology": [
+        {
+          "base": "看",
+          "affix": "看",
+          "result": "看看",
+          "base_pinyin": ["kàn"],
+          "affix_pinyin": ["kàn"],
+          "result_pinyin": ["kàn", "kàn"]
+        },
+        {
+          "base": "想",
+          "affix": "想",
+          "result": "想想",
+          "base_pinyin": ["xiǎng"],
+          "affix_pinyin": ["xiǎng"],
+          "result_pinyin": ["xiǎng", "xiǎng"]
+        },
+        {
+          "base": "休息",
+          "affix": "休息",
+          "result": "休息休息",
+          "base_pinyin": ["xiū", "xī"],
+          "affix_pinyin": ["xiū", "xī"],
+          "result_pinyin": ["xiū", "xī", "xiū", "xī"]
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "text": "你看看这个。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Lặp động từ một âm tiết để nói 'xem thử'.",
+        "en": "Reduplicating a one-syllable verb to mean 'take a look'."
+      },
+      "translation": {"vi": "Bạn xem cái này thử.", "en": "Take a look at this."},
+      "pinyin": ["nǐ", "kàn", "kàn", "zhè", "ge", ""]
+    },
+    {
+      "text": "让我想一想。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 4, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Lặp động từ để diễn tả 'nghĩ một chút'.",
+        "en": "Reduplicating the verb to mean 'think for a moment'."
+      },
+      "translation": {"vi": "Để tôi nghĩ một chút.", "en": "Let me think for a moment."},
+      "pinyin": ["ràng", "wǒ", "xiǎng", "yī", "xiǎng", ""]
+    },
+    {
+      "text": "我们休息休息吧。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Động từ hai âm tiết lặp theo dạng ABAB.",
+        "en": "A two-syllable verb reduplicated in the ABAB pattern."
+      },
+      "translation": {"vi": "Chúng ta nghỉ một chút nhé.", "en": "Let's take a short break."},
+      "pinyin": ["wǒ", "men", "xiū", "xī", "xiū", "xī", "ba", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Không dùng trợ từ 了 ngay sau động từ lặp; 了 diễn tả hoàn thành, còn lặp động từ diễn tả hành động nhẹ, không kết hợp trực tiếp.",
+        "en": "Do not put the particle 了 directly after a reduplicated verb; 了 marks completion, while reduplication marks a light action, and they do not combine directly."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "我看看了这本书。",
+      "right": "我看看这本书。",
+      "wrong_pinyin": ["wǒ", "kàn", "kàn", "le", "zhè", "běn", "shū", ""],
+      "right_pinyin": ["wǒ", "kàn", "kàn", "zhè", "běn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你___这个吧。",
+      "options": [
+        {"text": "看看", "error_tag": null, "pinyin": ["kàn", "kàn"]},
+        {"text": "看", "error_tag": "particle", "pinyin": ["kàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 看看 để nói 'xem thử', phù hợp với ngữ cảnh nhẹ nhàng.",
+        "en": "Use 看看 to mean 'take a look', which fits the light context."
+      },
+      "q_pinyin": ["nǐ", "", "", "", "zhè", "ge", "ba", ""]
+    },
+    {
+      "q": "让我___。",
+      "options": [
+        {"text": "想一想", "error_tag": null, "pinyin": ["xiǎng", "yī", "xiǎng"]},
+        {"text": "想了想", "error_tag": "aspect", "pinyin": ["xiǎng", "le", "xiǎng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dạng đúng là 想一想, không dùng 了 ở giữa.",
+        "en": "The correct form is 想一想; do not insert 了 in the middle."
+      },
+      "q_pinyin": ["ràng", "wǒ", "", "", "", ""]
+    },
+    {
+      "q": "我们___吧。",
+      "options": [
+        {"text": "休息休息", "error_tag": null, "pinyin": ["xiū", "xī", "xiū", "xī"]},
+        {"text": "休息一休息", "error_tag": "redundancy", "pinyin": ["xiū", "xī", "yī", "xiū", "xī"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Động từ hai âm tiết lặp theo dạng ABAB: 休息休息.",
+        "en": "Two-syllable verbs reduplicate in the ABAB pattern: 休息休息."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "ba", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng động từ lặp để nói bạn muốn thử làm gì đó.",
+      "en": "Write a sentence using a reduplicated verb to say you want to try doing something."
+    },
+    "placeholder": "我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["看", "想", "休息"], "role": "verb"}, {"any_of": ["看", "想", "休息"], "role": "verb"}]
+    },
+    "sample": {"text": "我看看这本书。", "pinyin": ["wǒ", "kàn", "kàn", "zhè", "běn", "shū", ""]},
+    "placeholder_pinyin": ["wǒ", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351903",
+    "generated_at": "2026-10-07T05:45:03Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-14-reduplication-ng-t-t-nh-t"],
+      "content_version": 2,
+      "content_hash": "29d954a5aa8f686b9f8e88b93b4669a72c19b176163410c59bf0136032c2d4bb",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-14-reduplication-ng-t-t-nh-t",
+          "issue": "R5 gộp cả reduplication động từ và tính từ, nhưng điểm ngữ pháp này chỉ tập trung vào động từ.",
+          "fix": "Chỉ giữ phần động từ; loại bỏ các ví dụ và quy tắc về tính từ như 高高兴兴."
+        },
+        {
+          "r5_id": "zh-hsk3-14-reduplication-ng-t-t-nh-t",
+          "issue": "R5 đưa ví dụ '孩子们高高兴兴地回家了' không thuộc phạm vi động từ.",
+          "fix": "Thay bằng ví dụ động từ: 我们休息休息吧。"
+        },
+        {
+          "r5_id": "zh-hsk3-14-reduplication-ng-t-t-nh-t",
+          "issue": "R5 có lỗi '我看看了这本书' nhưng không giải thích rõ cơ chế.",
+          "fix": "Giữ làm lỗi thường gặp với giải thích: không dùng 了 ngay sau động từ lặp."
+        }
+      ]
+    }
+  },
+  "review": null
+}

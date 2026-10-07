@@ -1,0 +1,210 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_1_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_1_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.002"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: -化、-式、-型、-性", "en": "Chinese grammar: -化、-式、-型、-性"},
+    "native_title": "-化、-式、-型、-性",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Hậu tố 化, 式, 型, 性 gắn sau danh từ hoặc động từ để tạo thành từ mới chỉ quá trình biến đổi, kiểu loại, mô hình hoặc tính chất.",
+      "en": "The suffixes 化, 式, 型, 性 attach to nouns or verbs to form new words meaning a process of change, a style, a model, or a quality."
+    },
+    "sub": {"vi": "hậu tố tạo từ", "en": "word-forming suffixes"},
+    "native_title_pinyin": ["", "huà", "", "", "shì", "", "", "xíng", "", "", "xìng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một sự vật, hiện tượng chuyển thành trạng thái khác, dùng 化 (hiện đại hóa, công nghiệp hóa).",
+      "en": "When something changes into a different state, use 化 (modernization, industrialization)."
+    },
+    {
+      "vi": "Khi muốn chỉ kiểu dáng, phong cách hoặc hình thức của sự vật, dùng 式 (kiểu Trung Quốc, kiểu Tây).",
+      "en": "When referring to a style, pattern, or form of an object, use 式 (Chinese-style, Western-style)."
+    },
+    {
+      "vi": "Khi muốn chỉ mô hình, kiểu loại cụ thể của sản phẩm hoặc đối tượng, dùng 型 (cỡ lớn, kiểu mới).",
+      "en": "When referring to a model or specific type of product or object, use 型 (large-size, new model)."
+    },
+    {
+      "vi": "Khi muốn nói đến tính chất, đặc điểm cố hữu của sự vật, dùng 性 (tính khả thi, tính quan trọng).",
+      "en": "When referring to an inherent quality or characteristic, use 性 (feasibility, importance)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "N/V",
+        "role": "other",
+        "label": {"vi": "gốc từ", "en": "base word"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "化/式/型/性",
+        "role": "particle",
+        "label": {"vi": "hậu tố", "en": "suffix"},
+        "options": [
+          {"text": "化", "pinyin": ["huà"]},
+          {"text": "式", "pinyin": ["shì"]},
+          {"text": "型", "pinyin": ["xíng"]},
+          {"text": "性", "pinyin": ["xìng"]}
+        ],
+        "pinyin": ["huà", "", "shì", "", "xíng", "", "xìng"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个城市的现代化速度很快。",
+      "form": "affirmative",
+      "spans": [{"start": 5, "end": 7, "role": "other"}, {"start": 7, "end": 8, "role": "particle"}],
+      "annotation": {
+        "vi": "化 biến 现代 thành quá trình trở nên hiện đại.",
+        "en": "化 turns 现代 into the process of becoming modern."
+      },
+      "translation": {
+        "vi": "Tốc độ hiện đại hóa của thành phố này rất nhanh.",
+        "en": "The speed of modernization of this city is very fast."
+      },
+      "pinyin": ["zhè", "ge", "chéng", "shì", "de", "xiàn", "dài", "huà", "sù", "dù", "hěn", "kuài", ""]
+    },
+    {
+      "text": "这家餐厅的装修是中式风格。",
+      "form": "affirmative",
+      "spans": [{"start": 8, "end": 9, "role": "other"}, {"start": 9, "end": 10, "role": "particle"}],
+      "annotation": {
+        "vi": "式 tạo ra từ chỉ phong cách Trung Quốc.",
+        "en": "式 forms a word meaning Chinese style."
+      },
+      "translation": {
+        "vi": "Cách trang trí của nhà hàng này là phong cách Trung Quốc.",
+        "en": "The decoration of this restaurant is Chinese-style."
+      },
+      "pinyin": ["zhè", "jiā", "cān", "tīng", "de", "zhuāng", "xiū", "shì", "zhōng", "shì", "fēng", "gé", ""]
+    },
+    {
+      "text": "这种型号的手机很受欢迎。",
+      "form": "affirmative",
+      "spans": [{"start": 2, "end": 3, "role": "other"}, {"start": 3, "end": 4, "role": "particle"}],
+      "annotation": {
+        "vi": "型 kết hợp với 号 tạo thành từ chỉ kiểu loại sản phẩm.",
+        "en": "型 combines with 号 to form a word meaning model/type of product."
+      },
+      "translation": {
+        "vi": "Loại điện thoại này rất được ưa chuộng.",
+        "en": "This model of phone is very popular."
+      },
+      "pinyin": ["zhè", "zhǒng", "xíng", "hào", "de", "shǒu", "jī", "hěn", "shòu", "huān", "yíng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu 的 khi hậu tố 性 tạo thành danh từ làm định ngữ; tiếng Việt không cần 'của' nhưng tiếng Trung cần 的.",
+        "en": "Missing 的 when the 性-suffixed noun modifies another noun; Vietnamese does not need a possessive marker but Chinese does."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这个计划可行性很高。",
+      "right": "这个计划的可行性很高。",
+      "wrong_pinyin": ["zhè", "ge", "jì", "huà", "kě", "xíng", "xìng", "hěn", "gāo", ""],
+      "right_pinyin": ["zhè", "ge", "jì", "huà", "de", "kě", "xíng", "xìng", "hěn", "gāo", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我们应该推动农业现代___。",
+      "options": [
+        {"text": "化", "error_tag": null, "pinyin": ["huà"]},
+        {"text": "式", "error_tag": "word_choice", "pinyin": ["shì"]},
+        {"text": "性", "error_tag": "word_choice", "pinyin": ["xìng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "化 diễn tả quá trình biến đổi thành hiện đại, phù hợp với 'hiện đại hóa nông nghiệp'.",
+        "en": "化 expresses the process of becoming modern, fitting 'modernization of agriculture'."
+      },
+      "q_pinyin": ["wǒ", "men", "yīng", "gāi", "tuī", "dòng", "nóng", "yè", "xiàn", "dài", "", "", "", ""]
+    },
+    {
+      "q": "这件衣服是西___的。",
+      "options": [
+        {"text": "式", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "化", "error_tag": "word_choice", "pinyin": ["huà"]},
+        {"text": "型", "error_tag": "word_choice", "pinyin": ["xíng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "式 chỉ phong cách, kiểu dáng; 西式 là kiểu phương Tây.",
+        "en": "式 indicates style; 西式 means Western-style."
+      },
+      "q_pinyin": ["zhè", "jiàn", "yī", "fú", "shì", "xī", "", "", "", "de", ""]
+    },
+    {
+      "q": "这种新___汽车很省油。",
+      "options": [
+        {"text": "型", "error_tag": null, "pinyin": ["xíng"]},
+        {"text": "性", "error_tag": "word_choice", "pinyin": ["xìng"]},
+        {"text": "化", "error_tag": "word_choice", "pinyin": ["huà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "型 chỉ kiểu loại, mô hình; 新型 là kiểu mới.",
+        "en": "型 indicates model or type; 新型 means new model."
+      },
+      "q_pinyin": ["zhè", "zhǒng", "xīn", "", "", "", "qì", "chē", "hěn", "shěng", "yóu", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một xu hướng hoặc đặc điểm của xã hội hiện đại, dùng một trong các hậu tố 化, 式, 型, 性.",
+      "en": "Write a sentence about a trend or feature of modern society, using one of the suffixes 化, 式, 型, 性."
+    },
+    "placeholder": "现代社会越来越……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "particle", "any_of": ["化", "式", "型", "性"]}]},
+    "sample": {
+      "text": "现代社会的城市化速度越来越快。",
+      "pinyin": [
+        "xiàn",
+        "dài",
+        "shè",
+        "huì",
+        "de",
+        "chéng",
+        "shì",
+        "huà",
+        "sù",
+        "dù",
+        "yuè",
+        "lái",
+        "yuè",
+        "kuài",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["xiàn", "dài", "shè", "huì", "yuè", "lái", "yuè", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791347386",
+    "generated_at": "2026-10-07T04:29:46Z"
+  },
+  "review": null
+}

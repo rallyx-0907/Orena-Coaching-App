@@ -1,0 +1,218 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_4.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_3_2_1.p1"],
+  "contrasts": [],
+  "error_tags": ["collocation"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.041"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cấu trúc cố định: 一……也/都+不/没⋯⋯", "en": "Fixed patterns: 一……也/都+不/没⋯⋯"},
+    "native_title": "一……也/都+不/没⋯⋯",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Mẫu cố định 一……也/都+不/没⋯⋯ dùng để phủ định hoàn toàn: 'một chút cũng không', 'ngay cả một cũng không'.",
+      "en": "The fixed pattern 一……也/都+不/没⋯⋯ expresses total negation: 'not even one', 'not at all'."
+    },
+    "sub": {"vi": "phủ định hoàn toàn", "en": "total negation"},
+    "native_title_pinyin": ["yī", "", "", "yě", "", "dōu", "", "bù", "", "méi", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói 'không một chút nào', 'hoàn toàn không', nhấn mạnh sự phủ định.",
+      "en": "When you want to say 'not at all' or 'not even one', stressing the negation."
+    },
+    {
+      "vi": "Khi chủ ngữ là người/vật và hành động liên quan đến một đơn vị tối thiểu (một câu, một chữ, một đồng...).",
+      "en": "When the subject is a person or thing and the action involves a minimal unit (one sentence, one word, one coin...)."
+    },
+    {
+      "vi": "Dùng 也 khi muốn nhấn mạnh 'cũng không', dùng 都 khi muốn nói 'đều không'.",
+      "en": "Use 也 to stress 'also not', use 都 to mean 'not at all / none'."
+    },
+    {
+      "vi": "Thường gặp trong câu phủ định với 不 (thói quen, khả năng) hoặc 没 (hành động đã xảy ra).",
+      "en": "Common in negative sentences with 不 (habit, ability) or 没 (completed action)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "一",
+        "role": "marker",
+        "label": {"vi": "số từ 'một'", "en": "'one' marker"},
+        "pinyin": ["yī"]
+      },
+      {
+        "text": "classifier",
+        "role": "classifier",
+        "label": {"vi": "lượng từ", "en": "measure word"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", ""]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "pinyin": [""]},
+      {
+        "text": "也/都",
+        "role": "marker",
+        "label": {"vi": "cũng / đều", "en": "also / all"},
+        "options": [{"text": "也", "pinyin": ["yě"]}, {"text": "都", "pinyin": ["dōu"]}],
+        "pinyin": ["yě", "", "dōu"]
+      },
+      {
+        "text": "不/没",
+        "role": "aux",
+        "label": {"vi": "phủ định", "en": "negation"},
+        "options": [{"text": "不", "pinyin": ["bù"]}, {"text": "没", "pinyin": ["méi"]}],
+        "pinyin": ["bù", "", "méi"]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我一句话也没说。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "classifier"},
+        {"start": 3, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "aux"},
+        {"start": 6, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định hoàn toàn: không nói một câu nào.",
+        "en": "Total negation: did not say even one sentence."
+      },
+      "translation": {"vi": "Tôi không nói một câu nào.", "en": "I didn't say a single word."},
+      "pinyin": ["wǒ", "yī", "jù", "huà", "yě", "méi", "shuō", ""]
+    },
+    {
+      "text": "他一个字都不认识。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "classifier"},
+        {"start": 3, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "aux"},
+        {"start": 6, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định hoàn toàn: ngay cả một chữ cũng không biết.",
+        "en": "Total negation: doesn't know even one character."
+      },
+      "translation": {"vi": "Anh ấy không biết một chữ nào.", "en": "He doesn't know a single character."},
+      "pinyin": ["tā", "yí", "gè", "zì", "dōu", "bù", "rèn", "shí", ""]
+    },
+    {
+      "text": "我一块钱也没有。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "classifier"},
+        {"start": 3, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "aux"},
+        {"start": 6, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định hoàn toàn: không có một đồng nào.",
+        "en": "Total negation: don't have even one yuan."
+      },
+      "translation": {"vi": "Tôi không có một đồng nào.", "en": "I don't have a single yuan."},
+      "pinyin": ["wǒ", "yī", "kuài", "qián", "yě", "méi", "yǒu", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trật tự cố định là 一 + lượng từ + danh từ + 也/都 + 不/没 + động từ; 也/都 phải đứng trước phủ định, không đứng sau động từ.",
+        "en": "The fixed order is 一 + classifier + noun + 也/都 + 不/没 + verb; 也/都 must come before the negation, not after the verb."
+      },
+      "error_tag": "collocation",
+      "l1": ["vi"],
+      "wrong": "我一句话不说也。",
+      "right": "我一句话也不说。",
+      "wrong_pinyin": ["wǒ", "yī", "jù", "huà", "bù", "shuō", "yě", ""],
+      "right_pinyin": ["wǒ", "yī", "jù", "huà", "yě", "bù", "shuō", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他一句话___说。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "都", "error_tag": "collocation", "pinyin": ["dōu"]},
+        {"text": "和", "error_tag": "conjunction", "pinyin": ["hé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong mẫu 一……也/都+不/没, 也 hoặc 都 đứng trước phủ định. 都 cũng đúng nhưng câu này chọn 也 theo nghĩa 'cũng không'. 和 không dùng trong mẫu này.",
+        "en": "In the pattern 一……也/都+不/没, 也 or 都 comes before the negation. 都 is also possible, but this sentence uses 也 for 'also not'. 和 is not used in this pattern."
+      },
+      "q_pinyin": ["tā", "yī", "jù", "huà", "", "", "", "shuō", ""]
+    },
+    {
+      "q": "我一块钱___有。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "都", "error_tag": "collocation", "pinyin": ["dōu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với 有, dùng 也 hoặc 都 trước 没. 都 cũng đúng nhưng ở đây chọn 也 để nhấn mạnh 'cũng không có'.",
+        "en": "With 有, use 也 or 都 before 没. 都 is also correct, but here 也 emphasizes 'also don't have'."
+      },
+      "q_pinyin": ["wǒ", "yī", "kuài", "qián", "", "", "", "yǒu", ""]
+    },
+    {
+      "q": "他一个字___认识。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "也", "error_tag": "collocation", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "都 nhấn mạnh 'đều không', phù hợp với nghĩa 'ngay cả một chữ cũng không biết'. 也 cũng đúng ngữ pháp nhưng ở đây chọn 都.",
+        "en": "都 emphasizes 'none at all', fitting 'doesn't know even one character'. 也 is also grammatical, but here 都 is chosen."
+      },
+      "q_pinyin": ["tā", "yí", "gè", "zì", "", "", "", "rèn", "shí", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng mẫu 一……也/都+不/没⋯⋯, ví dụ nói bạn không có một thứ gì đó.",
+      "en": "Write a sentence about yourself using 一……也/都+不/没⋯⋯, for example saying you don't have something at all."
+    },
+    "placeholder": "我一句话……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["一"], "role": "marker"},
+        {"any_of": ["也", "都"], "role": "marker"},
+        {"any_of": ["不", "没"], "role": "aux"}
+      ]
+    },
+    "sample": {"text": "我一句话也没说。", "pinyin": ["wǒ", "yī", "jù", "huà", "yě", "méi", "shuō", ""]},
+    "placeholder_pinyin": ["wǒ", "yī", "jù", "huà", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338257",
+    "generated_at": "2026-10-07T01:57:37Z"
+  },
+  "review": null
+}

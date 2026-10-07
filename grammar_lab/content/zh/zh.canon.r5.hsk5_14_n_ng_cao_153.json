@@ -1,0 +1,402 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_14_n_ng_cao_153",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.relative",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_13_reference"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-14-n-ng-cao-153", "zh-hsk4-13-ordering"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-14-n-ng-cao-153", "zh-hsk4-13-ordering"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Định ngữ: 长定语 nâng cao", "en": "Attributives: 长定语 nâng cao"},
+    "native_title": "高级长定语",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Định ngữ dài trong tiếng Trung đặt trước danh từ trung tâm, gồm nhiều tầng: mệnh đề quan hệ, cụm giới từ, tính ngữ và chỉ định từ, tất cả nối bằng 的.",
+      "en": "Long attributives in Chinese stack before the head noun in layers: relative clauses, prepositional phrases, descriptive phrases and demonstratives, joined by 的."
+    },
+    "sub": {"vi": "định ngữ dài", "en": "long attributives"},
+    "native_title_pinyin": ["gāo", "jí", "zhǎng", "dìng", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi cần xác định một danh từ bằng một mệnh đề đã xảy ra hoặc đang xảy ra, ví dụ 我们昨天讨论的 vấn đề.",
+      "en": "When you need to identify a noun with a clause about what happened or is happening, e.g. 我们昨天讨论的 vấn đề."
+    },
+    {
+      "vi": "Khi muốn thêm thông tin về nguồn gốc, chất liệu, chức năng hoặc đặc điểm của danh từ bằng cụm 的 + danh từ.",
+      "en": "When you want to add information about origin, material, function or a feature of the noun with a 的 + noun phrase."
+    },
+    {
+      "vi": "Khi cần kết hợp chỉ định từ như 那/这 với loại từ và định ngữ dài để chỉ rõ danh từ nào.",
+      "en": "When you need to combine a demonstrative like 那/这 with a classifier and a long modifier to point to a specific noun."
+    },
+    {
+      "vi": "Khi viết hoặc nói ở mức HSK5 và cần câu văn chặt chẽ, nhiều tầng thông tin nhưng vẫn rõ danh từ trung tâm.",
+      "en": "When writing or speaking at HSK5 level and you need a tight sentence with several layers of information while keeping the head noun clear."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "定语",
+        "role": "other",
+        "label": {"vi": "định ngữ", "en": "attributive"},
+        "pinyin": ["dìng", "yǔ"]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ kết nối", "en": "linking particle"},
+        "pinyin": ["de"]
+      },
+      {
+        "text": "指示/数量",
+        "role": "other",
+        "label": {"vi": "chỉ định / số lượng", "en": "demonstrative / quantity"},
+        "optional": true,
+        "pinyin": ["zhǐ", "shì", "", "shù", "liàng"]
+      },
+      {
+        "text": "中心名词",
+        "role": "object",
+        "label": {"vi": "danh từ trung tâm", "en": "head noun"},
+        "pinyin": ["zhōng", "xīn", "míng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我们昨天讨论的那个关于成本的问题还没有解决。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 9, "role": "other"},
+        {"start": 14, "end": 16, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề 我们昨天讨论 bổ nghĩa cho 问题, 那个 chỉ định danh từ trung tâm.",
+        "en": "The clause 我们昨天讨论 modifies 问题, and 那个 points to the head noun."
+      },
+      "translation": {
+        "vi": "Vấn đề về chi phí mà chúng tôi bàn hôm qua vẫn chưa được giải quyết.",
+        "en": "The cost issue we discussed yesterday has not been resolved yet."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "zuó",
+        "tiān",
+        "tǎo",
+        "lùn",
+        "de",
+        "nà",
+        "ge",
+        "guān",
+        "yú",
+        "chéng",
+        "běn",
+        "de",
+        "wèn",
+        "tí",
+        "hái",
+        "méi",
+        "yǒu",
+        "jiě",
+        "jué",
+        ""
+      ]
+    },
+    {
+      "text": "公司最近推出的那套新的管理系统很复杂。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 9, "role": "other"},
+        {"start": 11, "end": 15, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Cụm 公司最近推出 làm định ngữ, 那套 là chỉ định + loại từ cho 系统.",
+        "en": "The phrase 公司最近推出 is the modifier, and 那套 is the demonstrative plus classifier for 系统."
+      },
+      "translation": {
+        "vi": "Hệ thống quản lý mới mà công ty vừa ra mắt rất phức tạp.",
+        "en": "The new management system the company recently launched is very complex."
+      },
+      "pinyin": [
+        "gōng",
+        "sī",
+        "zuì",
+        "jìn",
+        "tuī",
+        "chū",
+        "de",
+        "nà",
+        "tào",
+        "xīn",
+        "de",
+        "guǎn",
+        "lǐ",
+        "xì",
+        "tǒng",
+        "hěn",
+        "fù",
+        "zá",
+        ""
+      ]
+    },
+    {
+      "text": "负责这个项目的那位有多年经验的工程师来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 9, "role": "other"},
+        {"start": 15, "end": 18, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Hai tầng định ngữ 负责这个项目 và 有多年经验 cùng bổ nghĩa cho 工程师.",
+        "en": "Two modifier layers, 负责这个项目 and 有多年经验, both describe 工程师."
+      },
+      "translation": {
+        "vi": "Kỹ sư có nhiều năm kinh nghiệm phụ trách dự án này đã đến.",
+        "en": "The engineer with many years of experience who is in charge of this project has arrived."
+      },
+      "pinyin": [
+        "fù",
+        "zé",
+        "zhè",
+        "ge",
+        "xiàng",
+        "mù",
+        "dì",
+        "nà",
+        "wèi",
+        "yǒu",
+        "duō",
+        "nián",
+        "jīng",
+        "yàn",
+        "de",
+        "gōng",
+        "chéng",
+        "shī",
+        "lái",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học đặt danh từ trung tâm lên trước định ngữ, theo thói quen tiếng Việt; tiếng Trung bắt buộc định ngữ dài đứng trước danh từ trung tâm.",
+        "en": "The learner puts the head noun before its modifier, following Vietnamese word order; Chinese requires the long attributive to precede the head noun."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "那个问题我们昨天讨论关于成本的。",
+      "right": "我们昨天讨论的那个关于成本的问题。",
+      "wrong_pinyin": [
+        "nà",
+        "ge",
+        "wèn",
+        "tí",
+        "wǒ",
+        "men",
+        "zuó",
+        "tiān",
+        "tǎo",
+        "lùn",
+        "guān",
+        "yú",
+        "chéng",
+        "běn",
+        "de",
+        ""
+      ],
+      "right_pinyin": [
+        "wǒ",
+        "men",
+        "zuó",
+        "tiān",
+        "tǎo",
+        "lùn",
+        "de",
+        "nà",
+        "ge",
+        "guān",
+        "yú",
+        "chéng",
+        "běn",
+        "de",
+        "wèn",
+        "tí",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我昨天买的那本___很有意思。",
+      "options": [
+        {"text": "书", "error_tag": null, "pinyin": ["shū"]},
+        {"text": "本书", "error_tag": "measure_word", "pinyin": ["běn", "shū"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 那本 cần danh từ trung tâm 书; 本书 sai vì 本 đã là loại từ, không đứng sau 那本.",
+        "en": "After 那本 the head noun 书 is needed; 本书 is wrong because 本 is already the classifier and cannot follow 那本."
+      },
+      "q_pinyin": ["wǒ", "zuó", "tiān", "mǎi", "de", "nà", "běn", "", "", "", "hěn", "yǒu", "yì", "si", ""]
+    },
+    {
+      "q": "公司最近推出的___新的管理系统很复杂。",
+      "options": [
+        {"text": "那套", "error_tag": null, "pinyin": ["nà", "tào"]},
+        {"text": "那", "error_tag": "measure_word", "pinyin": ["nà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần chỉ định từ kèm loại từ 那套 trước danh từ 系统; chỉ 那 thiếu loại từ.",
+        "en": "The demonstrative needs its classifier 那套 before the noun 系统; 那 alone lacks the classifier."
+      },
+      "q_pinyin": [
+        "gōng",
+        "sī",
+        "zuì",
+        "jìn",
+        "tuī",
+        "chū",
+        "de",
+        "",
+        "",
+        "",
+        "xīn",
+        "de",
+        "guǎn",
+        "lǐ",
+        "xì",
+        "tǒng",
+        "hěn",
+        "fù",
+        "zá",
+        ""
+      ]
+    },
+    {
+      "q": "负责这个项目的___有多年经验的工程师来了。",
+      "options": [
+        {"text": "那位", "error_tag": null, "pinyin": ["nà", "wèi"]},
+        {"text": "那位有", "error_tag": "word_order", "pinyin": ["nà", "wèi", "yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Định ngữ 有多年经验 phải đứng trước 的 và danh từ trung tâm; không được chèn 有 vào sau 那位.",
+        "en": "The modifier 有多年经验 must come before 的 and the head noun; 有 cannot be inserted after 那位."
+      },
+      "q_pinyin": [
+        "fù",
+        "zé",
+        "zhè",
+        "ge",
+        "xiàng",
+        "mù",
+        "dì",
+        "",
+        "",
+        "",
+        "yǒu",
+        "duō",
+        "nián",
+        "jīng",
+        "yàn",
+        "de",
+        "gōng",
+        "chéng",
+        "shī",
+        "lái",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng định ngữ dài để giới thiệu một người hoặc vật mà bạn biết rõ.",
+      "en": "Write one sentence using a long attributive to introduce a person or thing you know well."
+    },
+    "placeholder": "我昨天见到的那位……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "particle", "any_of": ["的"]}]},
+    "sample": {
+      "text": "我昨天见到的那位新来的老师很友好。",
+      "pinyin": [
+        "wǒ",
+        "zuó",
+        "tiān",
+        "jiàn",
+        "dào",
+        "de",
+        "nà",
+        "wèi",
+        "xīn",
+        "lái",
+        "de",
+        "lǎo",
+        "shī",
+        "hěn",
+        "yǒu",
+        "hǎo",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "zuó", "tiān", "jiàn", "dào", "de", "nà", "wèi", "", ""]
+  },
+  "status": "draft_ai",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348621",
+    "generated_at": "2026-10-07T04:50:21Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-14-n-ng-cao-153", "zh-hsk4-13-ordering"],
+      "content_version": 2,
+      "content_hash": "f26e6eb74dec310d7c3316ca2b5ba62572366a7a75ec60c467aa0d39393b83c8",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-14-n-ng-cao-153",
+          "issue": "Câu sai 那个问题我们昨天讨论关于成本的。 được đưa ra nhưng không có dấu câu và thiếu 的 ở cuối, khiến câu mẫu không rõ lỗi.",
+          "fix": "Đã sửa thành 我们昨天讨论的那个关于成本的问题。 và thêm dấu chấm câu."
+        },
+        {
+          "r5_id": "zh-hsk5-14-n-ng-cao-153",
+          "issue": "Câu sai 公司的最近的推出的新的系统。 có nhiều 的 thừa và không tự nhiên.",
+          "fix": "Đã sửa thành 公司最近推出的新系统。 để làm ví dụ đúng."
+        },
+        {
+          "r5_id": "zh-hsk4-13-ordering",
+          "issue": "Câu sai 书我昨天买的那本很好看。 đảo ngữ sai trật tự.",
+          "fix": "Đã sửa thành 我昨天买的那本书很好看。"
+        },
+        {
+          "r5_id": "zh-hsk4-13-ordering",
+          "issue": "Câu sai 那个重要我们讨论过的问题。 thiếu 的 và sai trật tự định ngữ.",
+          "fix": "Đã sửa thành 我们讨论过的那个重要问题。"
+        }
+      ]
+    }
+  },
+  "review": null
+}
