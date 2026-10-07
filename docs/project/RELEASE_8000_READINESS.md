@@ -276,7 +276,7 @@ Local results at `8875df48` plus the human's uncommitted `DESIGN_CONTRACT.md` ed
   uncommitted `docs/project/DESIGN_CONTRACT.md` edit; **it is in CI**, so the edit must be committed in a consistent way
   or reverted before the PR (owner: human, who owns that file).
 - Windows note: `test_orena_grammar.mjs` fails on a CRLF checkout and passes with LF (environment, memory note).
-- Python suite in the application image (AGENTS section 9 recipe, SQLite, local): one full run was started (`pytest -q -p no:cacheprovider test_app.py tests`, SQLite, `ai-writing-coach:local`). It is slow on this machine (shared Docker); at the time of writing it had reached 76% with **no F or E in the progress lines** and had not finished, so no final pass/fail count is claimed. The modules covering section 2 are `tests/test_ai_account_costs.py`, `tests/test_reading_on_demand.py`, `tests/test_media_metadata_postgres.py`. The final count must come from CI.
+- Python suite in the application image (AGENTS section 9 recipe, SQLite, local): one full run was started (`pytest -q -p no:cacheprovider test_app.py tests`, SQLite, `ai-writing-coach:local`). It is slow on this machine (shared Docker); at the time of writing it had reached 76% with **one F (at about 66%, test not yet identified, no E)** and had not finished, so no final pass/fail count is claimed and the failure is neither attributed nor dismissed (inherited failures are listed in CURRENT_HANDOFF; compare against a clean tree before calling it a regression). The modules covering section 2 are `tests/test_ai_account_costs.py`, `tests/test_reading_on_demand.py`, `tests/test_media_metadata_postgres.py`. The final count must come from CI.
 
 CI remains the gate; a local pass is not CI evidence.
 
