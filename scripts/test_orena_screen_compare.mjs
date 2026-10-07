@@ -219,6 +219,44 @@ assert.deepEqual(playPlan('word_by_word', { hasTake: true, hasWords: false }), [
   assert.deepEqual(wordBands(rich(RESULT), 0), [], 'no audio length, no bands');
 }
 
+/* --- LEX-050: a compound's tone is per syllable; the focus is the syllable the feedback names --- */
+{
+  const { toneSyllables, modeAvailable, effectiveMode } = await import('../static/orena/screens/compare/model.js');
+  const three = toneSyllables('中国人', 'Zhōng guó rén', { label: 'ren 2', score: 80 }, []);
+  assert.deepEqual(three.map((s) => [s.char, s.syllable, s.tone, s.focus]), [['中', 'Zhōng', 1, false], ['国', 'guó', 2, false], ['人', 'rén', 2, true]]);
+  assert.equal(toneSyllables('中国人', 'Zhōng guó rén', { label: 'ren', score: 80 }, [])[2].focus, true, 'letters alone name one syllable');
+  assert.equal(toneSyllables('中国人', 'Zhōng guó rén', { label: 'ren 4', score: 80 }, []).some((s) => s.focus), false, 'a tone that fits no syllable singles none out');
+  assert.equal(toneSyllables('中国人', 'Zhōng guó rén', null, []).some((s) => s.focus), false, 'no weakest sound, no focus');
+  assert.equal(toneSyllables('谁', 'shéi', { label: 'shei 2', score: 50 }, [])[0].focus, false, 'a one-syllable word has nothing to single out');
+  const twin = toneSyllables('人人', 'rén rén', { label: 'ren 2', score: 70 }, [{ label: 'ren 2', score: 90 }, { label: 'ren 2', score: 70 }]);
+  assert.deepEqual(twin.map((s) => s.focus), [false, true], 'identical syllables: the provider order decides');
+  assert.equal(toneSyllables('人人', 'rén rén', { label: 'ren 2', score: 70 }, []).some((s) => s.focus), false, 'ambiguous without an order: none');
+  assert.equal(toneSyllables('中国人', '', null), null);
+  // wordDetailFor: a three-syllable word has no single tone.
+  const view = pronunciationView(
+    { score_kind: 'measured', reference_text: '中国人', pron_score: 59, accuracy_score: 59, fluency_score: 90, completeness_score: 100,
+      words: [{ word: '中国人', accuracy_score: 59, error_type: 'Mispronunciation', offset_ms: 0, duration_ms: 900, syllables: [{ syllable: 'zhong 1', accuracy_score: 90 }, { syllable: 'guo 2', accuracy_score: 85 }, { syllable: 'ren 2', accuracy_score: 80 }] }] },
+    { language: 'zh', readings: [{ pinyin: 'Zhōng' }, { pinyin: 'guó' }, { pinyin: 'rén' }] },
+  );
+  const detail = wordDetailFor(view, 0);
+  assert.equal(detail.toneTarget, null, 'no one tone for the whole compound');
+  assert.deepEqual(detail.toneSyllables.map((s) => s.tone), [1, 2, 2]);
+  assert.equal(detail.toneSyllables.find((s) => s.focus).syllable, 'rén');
+}
+
+/* --- LEX-049: an attempt with no retained recording offers no mode that would play the learner --- */
+{
+  const { modeAvailable, effectiveMode } = await import('../static/orena/screens/compare/model.js');
+  const none = { hasTake: false, hasModel: true };
+  assert.deepEqual(PLAYBACK_MODES.map((m) => modeAvailable(m, none)), [false, false, true, false]);
+  assert.equal(effectiveMode('you_only', none), 'model_only', 'Yours only does not stay selected without a recording');
+  assert.equal(effectiveMode('word_by_word', none), 'model_only');
+  const both = { hasTake: true, hasModel: true };
+  assert.deepEqual(PLAYBACK_MODES.map((m) => modeAvailable(m, both)), [true, true, true, true]);
+  assert.equal(effectiveMode('you_only', both), 'you_only', 'with a recording the pick stands');
+  assert.equal(effectiveMode('model_only', { hasTake: true, hasModel: false }), 'you_only', 'no model line: the learner own take');
+}
+
 console.log('test_orena_screen_compare.mjs: Compare With Model data mapping - real audio-analysis pipeline, rule 40 throughout (no invented prosody chip, no invented reduced-attempt score, no unmeasured model timing): PASS');
 
 /* D-139 HD-5 / HD-7 / Attempt History review: IPA only from provider sounds, the embedded history card's

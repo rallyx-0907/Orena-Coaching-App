@@ -8,6 +8,7 @@
    verdict about the audio (D-076): a word's status is the assessment's own score and miscue flag,
    and a pitch line is only ever drawn, never described. */
 import { contourPolylines } from '../../capabilities/audio-analysis.js';
+import { toneOf } from '../../capabilities/pronunciation-result.js';
 
 /* ---- The component's own colour rules (read from its script, not unified with frame 15's) ---- */
 
@@ -91,12 +92,38 @@ export function wordDetailFor(view, index) {
     weakest: word.weakest,
     status,
     tone: statusTone(status),
-    toneTarget: word.toneTarget?.length ? word.toneTarget[0] : null,
+    /* One tone only for a one-syllable word; a compound's tones live on `toneSyllables`, each with its own
+       character and syllable (LEX-050) - never one tone standing for the whole word. */
+    toneTarget: word.toneTarget?.length === 1 ? word.toneTarget[0] : null,
+    toneSyllables: toneSyllables(word.text, word.pinyin, word.weakest, sounds),
     sounds,
     offsetMs: word.offsetMs,
     durationMs: word.durationMs,
     offsetKnown: Boolean(word.offsetKnown),
   };
+}
+
+const plainSyllable = (text) => String(text || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/* A Chinese word's tone, syllable by syllable: [{ char, syllable, tone, focus }] from the lesson's own reading
+   (`pinyin` is the syllables, space-separated), `char` the Han character it belongs to when the counts agree.
+   `focus` marks the one syllable the assessment's weakest sound names - found by the provider's own label
+   ("ren 2": letters, then the tone when it gives one) and only when exactly one syllable fits; when the label
+   fits none or several, no syllable is singled out rather than guessed. `null` without a reading. */
+export function toneSyllables(text, pinyin, weakest = null, sounds = []) {
+  const syllables = String(pinyin || '').split(/\s+/).filter(Boolean);
+  if (!syllables.length) return null;
+  const chars = [...String(text || '')].filter((ch) => /\p{Script=Han}/u.test(ch));
+  const paired = chars.length === syllables.length;
+  const items = syllables.map((syllable, at) => ({ char: paired ? chars[at] : '', syllable, tone: toneOf(syllable), focus: false }));
+  const label = String(weakest?.label || '').trim().toLowerCase().match(/^([a-zü]+)\s*([1-5])?$/);
+  if (label && items.length > 1) {
+    const fits = items.map((item, at) => (plainSyllable(item.syllable).replace(/ü/g, 'u') === label[1].replace(/ü/g, 'u') && (!label[2] || Number(label[2]) === item.tone) ? at : -1)).filter((at) => at >= 0);
+    // Two identical syllables: the provider's own list order says which one, when it has one entry per syllable.
+    const at = fits.length === 1 ? fits[0] : fits.length > 1 && sounds.length === items.length ? sounds.findIndex((sound) => sound.label === weakest.label && sound.score === weakest.score) : -1;
+    if (at >= 0 && fits.includes(at)) items[at].focus = true;
+  }
+  return items;
 }
 
 /* The first word that is not fine is opened by default (there is something to look at); with
@@ -223,6 +250,22 @@ export function playPlan(mode, { hasTake, hasWords }) {
   if (mode === 'model_only') return ['model'];
   if (mode === 'word_by_word') return hasWords && hasTake ? ['words'] : hasTake ? ['model', 'you'] : ['model'];
   return hasTake ? ['model', 'you'] : ['model'];
+}
+
+/* Which playback modes can play for this attempt. A mode that plays the learner's voice needs a retained
+   recording of it; an attempt only the account remembers (D-076) has none, and is never offered a mode that
+   would play something else under that name (LEX-049). */
+export function modeAvailable(mode, { hasTake, hasModel }) {
+  if (mode === 'model_only') return Boolean(hasModel);
+  if (mode === 'model_then_you') return Boolean(hasTake && hasModel);
+  return Boolean(hasTake); // word_by_word, you_only
+}
+
+/* The mode that plays now: the learner's pick when it can play, otherwise the one that can - the model when
+   there is no recording of the learner, the learner's own when there is no model. */
+export function effectiveMode(mode, caps) {
+  if (modeAvailable(mode, caps)) return mode;
+  return ['model_only', 'you_only', 'model_then_you', 'word_by_word'].find((item) => modeAvailable(item, caps)) || mode;
 }
 
 /* The attempt pills (oldest first, "Attempt 1" the first one made) and the crown: the best overall

@@ -35,7 +35,7 @@ import { openMicState, micGate } from '../mic/sheet.js';
 import { t } from './copy.js';
 import {
   ringColor, scoreLabelKey, headlineKey, wordStatus, pronunciationStatusKey, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
-  chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordPitchLines, wordPages, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey,
+  chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordPitchLines, wordPages, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey, modeAvailable, effectiveMode,
   ipaByStart, historyFor,
 } from './model.js';
 
@@ -99,6 +99,7 @@ export default async function mountCompareWithModel(element, ctx) {
   let tab = 'pitch';
   let mode = source.hasModelAudio ? PLAYBACK_MODES[0] : 'you_only';
   let speed = 1;
+  let modesOpen = false; // the phone's playback-mode list, opened from the bar
   let errorText = '';
   let rec = { phase: TAKE.IDLE, levels: new Array(40).fill(0), elapsedMs: 0 };
   const contours = new Map(); // take id -> { you } once measured
@@ -134,6 +135,9 @@ export default async function mountCompareWithModel(element, ctx) {
   }
 
   const q = (selector) => element.querySelector(selector);
+  /* What can play for this attempt: the learner's own mode needs a retained recording (LEX-049). */
+  const playCaps = () => ({ hasTake: Boolean(selectedTake()?.url), hasModel: source.hasModelAudio });
+  const modeNow = () => effectiveMode(mode, playCaps());
   const takeOf = (id) => takes.find((item) => item.id === id) || null;
   const selectedTake = () => takeOf(selectedId);
   const viewNow = () => decorateComparison(viewOfTake(selectedTake()), source, reference);
@@ -213,7 +217,12 @@ export default async function mountCompareWithModel(element, ctx) {
   function record() {
     if (recorder.busy) return;
     stopPlay();
-    micGate(ctx, () => recorder.start(), { textFallback: false }); // pronunciation has no typed fallback
+    /* The analysis stays where the learner left it while the consent sheet is open (LEX-053); it moves to the top
+       only once recording really starts and the record card takes its place. */
+    micGate(ctx, () => {
+      q('[data-scroll-region]')?.scrollTo({ top: 0 });
+      recorder.start();
+    }, { textFallback: false }); // pronunciation has no typed fallback
   }
 
   /* ---- Measuring the audio (browser side) ---- */
@@ -305,9 +314,11 @@ export default async function mountCompareWithModel(element, ctx) {
     const take = selectedTake();
     const view = viewNow();
     const hasTake = Boolean(take?.url);
-    if (mode !== 'model_only' && !hasTake) toast(t('noTakeAudio'));
-    const plan = playPlan(mode, { hasTake, hasWords: Boolean(view?.words?.some((word) => word.offsetKnown)) });
-    if (!plan.length) return;
+    const plan = playPlan(modeNow(), { hasTake, hasWords: Boolean(view?.words?.some((word) => word.offsetKnown)) });
+    if (!plan.length) {
+      toast(t('noTakeAudio'));
+      return;
+    }
     const token = ++playToken;
     playing = true;
     paint();
@@ -477,6 +488,21 @@ export default async function mountCompareWithModel(element, ctx) {
     </div>`;
   }
 
+  /* What this result is about (LEX-048): the whole line as its learner reads it, the source it comes from and
+     where in it, and the word the detail below is open on marked in the line. */
+  function anchorMarkup(view) {
+    const own = !selectedTake()?.url; // the account remembers this attempt, the recording is not kept (D-076)
+    const text = source.line.text;
+    const at = openWord();
+    const span = at == null ? null : placeWords(text, view.words || [], language)[at];
+    const position = lines.length > 1 && lineAt() >= 0 ? t('linePosition', { n: lineAt() + 1, total: lines.length }) : '';
+    return html`<div class="s-compare-anchor" data-anchor>
+      ${source.title || position ? html`<div class="s-compare-anchor__src">${source.title ? html`<span class="s-compare-anchor__title" lang="${langAttr(language)}">${source.title}</span>` : ''}${position ? html`<span class="s-compare-anchor__pos">${position}</span>` : ''}</div>` : ''}
+      <div class="s-compare-anchor__line" lang="${langAttr(language)}">${span ? html`${text.slice(0, span.start)}<mark class="s-compare-anchor__hit">${text.slice(span.start, span.end)}</mark>${text.slice(span.end)}` : text}</div>
+    ${own ? html`<p class="s-compare-anchor__note" role="status" data-own-audio-note>${t('noTakeAudio')}</p>` : ''}
+    </div>`;
+  }
+
   function pillsMarkup() {
     return html`<div class="s-compare-pills">${pillsFor(takes, selectedId).map(
       (pill) => html`<button type="button" class="${cls('s-compare-pill', pill.active && 's-compare-pill--active')}" data-select="${pill.id}" data-fk="pill-${pill.n}" aria-pressed="${pill.active}"><span class="s-compare-pill__label">${t('attemptN', { n: pill.n })}</span><span class="s-compare-pill__score">${pill.score ?? '—'}</span>${pill.crown ? html`<span class="s-compare-pill__crown">${filled('crown', 18)}</span>` : ''}</button>`,
@@ -573,8 +599,9 @@ export default async function mountCompareWithModel(element, ctx) {
     const analysis = contours.get(take.id);
     if (!analysis || analysis === 'loading' || !reference || reference.alignmentState === 'processing') return html`<div class="s-compare-chart s-compare-chart--wait" role="status" aria-label="${t('referenceAlignment')}"><span class="o-spinner"></span></div>`;
     const pair=pitchPair(detail,take,CHART.width);
-    if (!pair.model.length && !pair.you.length) return html`<p class="s-compare-note">${t('pitchUnavailable')}</p>`;
-    return html`${chartMarkup(pair)}${!pair.you.length ? html`<p class="s-compare-note">${t('yourLineUnavailable')}</p>` : ''}`;
+    if (!pair.model.length && !pair.you.length) return html`<p class="s-compare-note">${t(take.url ? 'pitchUnavailable' : 'pitchNotKept')}</p>`;
+    // An attempt without a retained recording (D-076) says so; a take with audio that had too little voice says that.
+    return html`${chartMarkup(pair)}${!pair.you.length ? html`<p class="s-compare-note">${t(take.url ? 'yourLineUnavailable' : 'pitchNotKept')}</p>` : ''}`;
   }
 
   function panelMarkup(detail, take) {
@@ -612,9 +639,14 @@ export default async function mountCompareWithModel(element, ctx) {
         ${heard ? html`<div class="s-compare-panel__heard">${t('pronHeard', { text: heard })}</div>` : ''}
       </div>`;
     }
-    const toneTitle = language === 'zh' && detail.toneTarget != null && detail.pinyin;
+    const syllables = language === 'zh' ? detail.toneSyllables : null;
+    const compound = syllables?.length > 1;
+    const focus = compound ? syllables.find((item) => item.focus && item.tone != null) : null;
+    const toneTitle = syllables?.length === 1 && detail.toneTarget != null && detail.pinyin;
     return html`<div class="s-compare-panel">
-      <div class="s-compare-panel__title">${toneTitle ? t('toneTitle', { word: detail.text, pinyin: detail.pinyin, n: detail.toneTarget, name: t(toneKey(detail.toneTarget)) }) : t('pitchTitle', { word: detail.text })}</div>
+      <div class="s-compare-panel__title">${compound ? t('toneSyllablesTitle', { word: detail.text }) : toneTitle ? t('toneTitle', { word: detail.text, pinyin: detail.pinyin, n: detail.toneTarget, name: t(toneKey(detail.toneTarget)) }) : t('pitchTitle', { word: detail.text })}</div>
+      ${compound ? html`<div class="s-compare-tonechips" data-tone-syllables>${syllables.map((item) => html`<span class="${cls('s-compare-tonechip', item.focus && 's-compare-tonechip--focus')}" ${item.focus ? raw('data-focus') : ''}>${item.char ? html`<span class="s-compare-tonechip__char" lang="${langAttr(language)}">${item.char}</span>` : ''}<span class="s-compare-tonechip__py">${item.syllable}</span>${item.tone != null ? html`<b style="color:${item.tone < 5 ? `var(--tone${item.tone})` : 'var(--text3)'}">${item.tone}</b>` : ''}</span>`)}</div>
+      ${focus ? html`<p class="s-compare-note s-compare-tonefocus">${t('toneFocus', { syllable: focus.syllable, n: focus.tone, name: t(toneKey(focus.tone)) })}</p>` : ''}` : ''}
       ${wordChart(detail, take)}
       <div class="s-compare-legend"><span><i style="background:var(--accent)"></i>${t('legendModel')}</span><span><i style="background:var(--green)"></i>${t('legendYou')}</span>${estimateNote()}</div>
       ${modelWordFor(detail) ? '' : html`<p class="s-compare-note">${t('modelWordUnavailable')}</p>`}
@@ -633,7 +665,8 @@ export default async function mountCompareWithModel(element, ctx) {
     const weak = detail.weakest && detail.weakest.score < 85 ? t('weakestOf', { u: detail.weakest.label, n: detail.weakest.score }) : '';
     const finding = detail.flagged || weak ? [detail.flagged ? errorLabel(detail.errorType) : '', weak].filter(Boolean).join(' · ') : '';
     const rows = [
-      ...(language === 'zh' && detail.toneTarget != null ? [{ label: t('rowTone'), value: `${detail.toneTarget} · ${t(toneKey(detail.toneTarget))}`, ink: 'var(--text)', kind: '' }] : []),
+      ...(language === 'zh' && detail.toneSyllables?.length === 1 && detail.toneTarget != null ? [{ label: t('rowTone'), value: `${detail.toneTarget} · ${t(toneKey(detail.toneTarget))}`, ink: 'var(--text)', kind: '' }] : []),
+      ...(language === 'zh' && detail.toneSyllables?.length > 1 ? [{ label: t('rowTone'), value: detail.toneSyllables.map((item) => `${item.syllable}${item.tone != null ? ` ${item.tone}` : ''}`).join(' · '), ink: 'var(--text)', kind: '' }] : []),
       ...(detail.offsetKnown ? [{ label: t('rowStart'), value: `${seconds(detail.offsetMs)} s`, ink: 'var(--text)', kind: '' }, { label: t('rowLength'), value: `${seconds(detail.durationMs)} s`, ink: 'var(--text)', kind: '' }] : []),
       { label: t('rowPron'), value: t(pronunciationStatusKey(detail)), ink: detail.status === 'ok' ? 'var(--green)' : 'var(--red)', kind: detail.status === 'ok' ? 'ok' : 'bad' },
     ];
@@ -660,18 +693,39 @@ export default async function mountCompareWithModel(element, ctx) {
         <div class="s-compare-rows">${rows.map((row) => html`<div class="s-compare-row"><span class="s-compare-muted">${row.label}</span><span class="s-compare-row__value" style="color:${row.ink}">${row.kind ? glyph(row.kind) : ''}${row.value}</span></div>`)}</div>
         <div class="s-compare-detail__buttons">
           <button type="button" class="s-compare-ghost" data-fk="hear-word-2" data-hear-word>${raw(icon('volume-2', { size: 18 }))}${t('hearWord')}</button>
-          <button type="button" class="s-compare-ghost" data-fk="hear-yours" data-hear-yours>${raw(icon('mic', { size: 18 }))}${t('hearYours')}</button>
+          <button type="button" class="s-compare-ghost" data-fk="hear-yours" data-hear-yours ${take.url ? '' : raw('disabled')} title="${take.url ? '' : t('noTakeAudio')}">${raw(icon('mic', { size: 18 }))}${t('hearYours')}</button>
         </div>
       </div>
     </div>`;
   }
 
+  /* The playback bar. One compact group (LEX-052): Play, speed and Try again on top; below, Previous line, the
+     playback mode and Next line. On a phone the modes are one button that shows the chosen mode and opens the
+     list over the analysis, so the bar does not grow; wide, the four modes sit inline as the frame draws them
+     and the line pair stays at the bottom of the room. */
   function barMarkup() {
-    return html`<div class="s-compare-bar">
-      <button type="button" class="s-compare-bar__play" data-fk="play" data-play aria-label="${playing ? t('stop') : t('play')}"><span class="s-compare-bar__disc">${playing ? filled('pause', 14) : filled('play', 14)}</span><span data-pb-label>${playing ? t('stop') : t('play')}</span></button>
-      <div class="s-compare-bar__modes" data-pb-modes>${PLAYBACK_MODES.map((m) => html`<button type="button" class="${cls('s-compare-bar__mode', mode === m && 's-compare-bar__mode--on')}" data-mode="${m}" data-fk="mode-${m}" ${!source.hasModelAudio && ['model_only','model_then_you'].includes(m) ? raw('disabled') : ''} aria-pressed="${mode === m}">${t(MODE_KEY[m])}</button>`)}</div>
-      <button type="button" class="s-compare-bar__speed" data-fk="speed-bar" data-speed><span data-pb-label class="s-compare-muted">${t('speed')} </span>${t('speedUnit', { n: speed })}</button>
-      <button type="button" class="s-compare-bar__again" data-fk="again" data-again>${raw(icon('rotate-cw', { size: 18, stroke: 2.2 }))}${t('tryAgain')}</button>
+    const caps = playCaps();
+    const active = modeNow();
+    const at = lineAt();
+    const pair = source.lessonId && lines.length > 1;
+    const navButton = (dir) => {
+      const target = lines[at + dir];
+      return html`<button type="button" class="s-compare-bar__nav" data-fk="bar-line-${dir < 0 ? 'prev' : 'next'}" data-source-line="${target?.lineId || ''}" aria-label="${t(dir < 0 ? 'previousLine' : 'nextLine')}" ${busyNow() || !target ? raw('disabled') : ''}>${raw(icon(dir < 0 ? 'chevron-left' : 'chevron-right', { size: 20 }))}</button>`;
+    };
+    return html`<div class="s-compare-bar" data-bar>
+      <div class="s-compare-bar__main">
+        <button type="button" class="s-compare-bar__play" data-fk="play" data-play aria-label="${playing ? t('stop') : t('play')}"><span class="s-compare-bar__disc">${playing ? filled('pause', 14) : filled('play', 14)}</span><span data-pb-label>${playing ? t('stop') : t('play')}</span></button>
+        <button type="button" class="s-compare-bar__speed" data-fk="speed-bar" data-speed><span data-pb-label class="s-compare-muted">${t('speed')} </span>${t('speedUnit', { n: speed })}</button>
+        <button type="button" class="s-compare-bar__again" data-fk="again" data-again>${raw(icon('rotate-cw', { size: 18, stroke: 2.2 }))}${t('tryAgain')}</button>
+      </div>
+      <div class="s-compare-bar__sub">
+        ${pair ? navButton(-1) : ''}
+        <div class="s-compare-bar__modewrap" data-modewrap>
+          <button type="button" class="s-compare-bar__modebtn" data-fk="modes-toggle" data-modes-toggle aria-expanded="${String(modesOpen)}" aria-label="${t('playbackMode')}: ${t(MODE_KEY[active])}"><span class="s-compare-muted">${t('playbackMode')}</span><b>${t(MODE_KEY[active])}</b>${raw(icon('chevron-up', { size: 16 }))}</button>
+          <div class="${cls('s-compare-bar__modes', modesOpen && 'is-open')}" data-pb-modes role="group" aria-label="${t('playbackMode')}">${PLAYBACK_MODES.map((m) => html`<button type="button" class="${cls('s-compare-bar__mode', active === m && 's-compare-bar__mode--on')}" data-mode="${m}" data-fk="mode-${m}" ${modeAvailable(m, caps) ? '' : raw('disabled')} aria-pressed="${active === m}">${t(MODE_KEY[m])}</button>`)}</div>
+        </div>
+        ${pair ? navButton(1) : ''}
+      </div>
     </div>`;
   }
 
@@ -751,6 +805,7 @@ export default async function mountCompareWithModel(element, ctx) {
       </div>
       <div class="s-compare-scroll${showRecord ? ' s-compare-scroll--record' : ''}" data-scroll-region>
         ${source.playback?.kind === 'embed' ? html`<div class="s-compare-model-preview${modelPreview ? ' is-model-playing' : ''}" data-original-player></div>` : ''}
+        ${result && !showRecord ? anchorMarkup(view) : ''}
         ${showRecord ? recordCard() : ''}
         ${errorText ? html`<div class="s-compare-error"><b>${t('errorTitle')}</b> ${errorText}</div>` : ''}
         ${result ? summaryMarkup(view, take) : ''}
@@ -851,13 +906,16 @@ export default async function mountCompareWithModel(element, ctx) {
       button.addEventListener('click', () => {
         stopPlay();
         mode = button.dataset.mode;
+        modesOpen = false;
         paint();
       });
     });
-    q('[data-again]')?.addEventListener('click', () => {
-      q('[data-scroll-region]')?.scrollTo({ top: 0, behavior: 'smooth' });
-      record();
+    q('[data-modes-toggle]')?.addEventListener('click', () => {
+      modesOpen = !modesOpen;
+      q('[data-pb-modes]')?.classList.toggle('is-open', modesOpen);
+      q('[data-modes-toggle]')?.setAttribute('aria-expanded', String(modesOpen));
     });
+    q('[data-again]')?.addEventListener('click', record);
   }
 
   wordSel = takes.length ? defaultWordIndex(viewNow()) : null;
@@ -873,7 +931,21 @@ export default async function mountCompareWithModel(element, ctx) {
   sizing.observe(q('[data-scroll-region]'));
   void readReference();
 
+  /* The phone's mode list closes on a press anywhere else and on Escape, focus back on its button. */
+  const closeModes = (event) => {
+    if (!modesOpen) return;
+    if (event.type === 'keydown' && event.key !== 'Escape') return;
+    if (event.type === 'pointerdown' && event.target.closest?.('[data-modewrap]')) return;
+    modesOpen = false;
+    q('[data-pb-modes]')?.classList.remove('is-open');
+    q('[data-modes-toggle]')?.setAttribute('aria-expanded', 'false');
+    if (event.type === 'keydown') q('[data-modes-toggle]')?.focus({ preventScroll: true });
+  };
+  document.addEventListener('pointerdown', closeModes);
+  document.addEventListener('keydown', closeModes);
+
   const releasers = [
+    () => { document.removeEventListener('pointerdown', closeModes); document.removeEventListener('keydown', closeModes); },
     registerActionHandler('play_model', () => {
       if (!source.hasModelAudio) return { ok: false, reason: 'model_unavailable' };
       stopPlay();

@@ -4976,3 +4976,18 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
 - **Dismissed findings are per visit.** The design's toast says a dismissed finding "won't count as an open issue".
   Orena has no server field for it, so the finding leaves the marks, the lists, the dimension counts and the Next bar
   for the visit; a reload shows it again. Needed only if the human wants dismissal to persist (a learner record, D4).
+
+
+## Speaking review batch (LEX-050, LEX-051), 2026-10-07
+
+- **LEX-051 Free Talk has no per-topic phrase source.** The topic bank (`content/voice-invitations.js`) authors a title,
+  prompt, cue and context per topic, but no chunks or useful phrases. The only evidence the screen holds is the topic's
+  own words, so a saved library item is called "related to your topic" only when it appears inside them (a Chinese item
+  as a substring, an English item as a word of four letters or more); otherwise the learner's recent saved short items
+  are shown as "From your library", secondary, never as help for the topic. Needed for real topic scaffolds: authored
+  speaking chunks per topic and language in the content bank (a content decision, no AI call), or a server relevance
+  signal for the library.
+- **LEX-050 Provider tone is not measured.** The word's tones come from the lesson's own reading (pinyin), per syllable;
+  the provider returns pronunciation scores per syllable but no tone judgement, so the screen names the syllable the
+  assessment scored lowest (matched by its label, and only when exactly one syllable fits) and never says which tone the
+  learner produced. Owner of anything beyond that: the assessment/provider layer.
