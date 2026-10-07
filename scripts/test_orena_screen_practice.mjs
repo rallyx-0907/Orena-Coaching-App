@@ -48,6 +48,10 @@ import {
   assert.equal(shadow, undefined, 'no duplicate Shadowing card');
   assert.equal(withItems.find((m) => m.key === 'retell'), undefined, 'Retell is deferred (H9) even when the library has an item');
 
+  const resumed = speakModes([], { params: { id: 'media:lesson-en' }, query: { segment: 's2' } }).find((m) => m.key === 'speak');
+  assert.equal(resumed.routeId, 'speak', 'D-139 HD-3: with a last line, Pronunciation opens it directly');
+  assert.deepEqual(resumed.params, { id: 'media:lesson-en' });
+  assert.deepEqual(resumed.query, { segment: 's2' });
   assert.deepEqual(speakModes(), speakModes([]), 'a missing list behaves like an empty one');
   assert.deepEqual(speakModes(null), speakModes([]), 'a non-array list behaves like an empty one, never a crash');
 }

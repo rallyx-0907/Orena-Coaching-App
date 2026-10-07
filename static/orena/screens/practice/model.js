@@ -93,13 +93,17 @@ function firstOfType(items, type) {
    the modes this build offers are drawn (D-101 H9); a group with none is simply absent. */
 export const SPEAK_GROUPS = ['natural', 'pronounce', 'challenge'];
 
-export function speakModes(items = []) {
+export function speakModes(items = [], last = null) {
   const list = Array.isArray(items) ? items : [];
   const modes = [
     { key: 'situation', group: 'natural', routeId: 'situation' },
     { key: 'conv', group: 'natural', routeId: 'conv' },
     { key: 'freetalk', group: 'natural', routeId: 'freetalk' },
-    { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } },
+    /* Pronunciation opens the learner's last line at once; the chooser ("Choose media") is behind "..." in
+       the room. Only with no last line does the chooser open directly (D-139 HD-3). */
+    last?.params?.id
+      ? { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'speak', params: last.params, query: last.query }
+      : { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } },
     { key: 'sound', group: 'pronounce', routeId: 'sound' },
     { key: 'timedreact', group: 'challenge', routeId: 'timedreact' },
   ];
@@ -174,7 +178,7 @@ export function grammarModes() {
 }
 
 export const SKILL_BUILDERS = {
-  speak: (data) => speakModes(data.speakingItems),
+  speak: (data) => speakModes(data.speakingItems, data.lastSpeakingLine),
   write: () => writeModes(),
   listen: (data) => listenModes(data.listeningItems),
   vocabulary: (data) => vocabularyModes(data.due),

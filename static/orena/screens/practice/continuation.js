@@ -2,6 +2,7 @@
    navigation place proves a visit; only the owning capability's work proves
    something remains unfinished. Unknown evidence never becomes an obligation. */
 import { continuationRows } from './model.js';
+import { speakingResumeTarget } from '../../product/speaking-resume.js';
 import { restoreConversation, MAX_CONVERSATION_TURNS } from '../../product/conversation.js';
 import { openMedia } from '../../product/media-source.js';
 import { sourceFromLesson } from '../../product/speaking-source.js';
@@ -80,4 +81,19 @@ export function recentRows(entries = [], mediaFacts = new Map()) {
     return [{ ...row, place: null, line: fact?.canonicalId ? { index: fact.index, total: fact.total } : null,
       ...(fact?.canonicalId ? { params: { id: ['compare', 'speak'].includes(row.routeId) ? `media:${fact.canonicalId}` : fact.canonicalId }, query: { segment: fact.segment } } : {}) }];
   });
+}
+
+/* The learner's last speaking line, as a route Pronunciation can open at once (D-139 HD-3): the newest
+   speaking place device memory holds, admitted only while its media is still readable, ready, in the
+   learning language and has its model audio (the same check Recent uses). Nothing admitted, no line:
+   the media chooser is then the way in. */
+export async function lastSpeakingLine(memory, options) {
+  const entries = (memory?.value?.continuation || []).filter((item) => speakingResumeTarget(item)).slice(0, 3);
+  if (!entries.length) return null;
+  const facts = await recentMediaFacts(entries, { ...options, memory });
+  for (const item of entries) {
+    const fact = facts.get(item.id);
+    if (fact?.canonicalId) return { params: { id: `media:${fact.canonicalId}` }, query: { segment: fact.segment } };
+  }
+  return null;
 }

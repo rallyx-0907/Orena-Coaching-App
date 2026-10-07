@@ -13,7 +13,7 @@ import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
-import { loadPendingRows, recentRows, recentMediaFacts } from './continuation.js';
+import { loadPendingRows, recentRows, recentMediaFacts, lastSpeakingLine } from './continuation.js';
 import { t } from './copy.js';
 import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SPEAK_GROUPS, buildSkillSections, writeRecommendation } from './model.js';
 
@@ -213,14 +213,16 @@ export default async function practiceHub(element, ctx) {
      Skill Hub visit needs whichever one its own skill owns. Each degrades to a real, honest empty
      on failure rather than throwing (this route is not `lesson: true`, so there is no router load-
      error screen to catch it). */
-  const [speakingItems, listeningItems, reading, recommendation] = await Promise.all([
+  const [speakingItems, listeningItems, reading, recommendation, lastLine] = await Promise.all([
     api.speakingLibrary(language).then((res) => (Array.isArray(res?.items) ? res.items : [])).catch(() => []),
     api.listeningLibrary(language).then((res) => (Array.isArray(res?.items) ? res.items : [])).catch(() => []),
     api.readingPracticeNext().catch(() => ({ available: false, next: null })),
     fetchRecommendation ? api.practiceRecommendation().catch(() => null) : Promise.resolve(null),
+    // Pronunciation opens the learner's last line at once (D-139 HD-3); only the hub and Speak's hub list it.
+    !skill || skill === 'speak' ? lastSpeakingLine(ctx.context.memory, { api, language, support: languages().support, owner: ctx.context.owner }).catch(() => null) : Promise.resolve(null),
   ]);
   if (!ctx.isCurrent()) return;
-  const data = { speakingItems, listeningItems, reading, due: ctx.context.due, recommendation };
+  const data = { speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine };
   if (skill) await renderSkillHub(element, ctx, data, skill);
   else await renderHub(element, ctx, data);
 }
