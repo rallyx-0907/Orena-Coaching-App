@@ -383,7 +383,9 @@
   align-items: center;
   justify-content: space-around;
   height: 72px;
-  margin: 0 12px calc(18px + env(safe-area-inset-bottom, 0px));
+  /* The design's 18px is drawn on a phone frame with no home indicator. On a phone that has one, the bar sits just
+     above it rather than adding both (18 + ~34pt left the bar floating high on an iPhone). */
+  margin: 0 12px max(18px, calc(env(safe-area-inset-bottom, 0px) - 10px));
   padding: 0 4px;
   border-radius: 24px;
   background: var(--surface);

@@ -910,5 +910,5 @@
   align-items: center;
   justify-content: center;
 }
-:root[data-device="mobile"] .s-orena-dock { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+:root[data-device="mobile"] .s-orena-dock { bottom: calc(78px + max(18px, calc(env(safe-area-inset-bottom, 0px) - 10px))); }
 :root[data-device="mobile"][data-focus='1'] .s-orena-dock { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); right: 12px; left: auto; transform: none; }

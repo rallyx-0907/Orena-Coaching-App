@@ -297,6 +297,10 @@
 .c-hero {
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px 20px 18px;
   background-color: var(--toast-bg);
   background-size: cover;
   background-position: center;
@@ -307,10 +311,7 @@
   background: linear-gradient(to top, var(--scrim), transparent 60%);
 }
 .c-hero__content {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  bottom: 18px;
+  position: relative;
   color: var(--toast-ink);
 }
 .c-hero__pill {
@@ -454,10 +455,12 @@
   justify-content: center;
   background-color: var(--tint2);
 }
-/* The hero's cover tile sits in the upper area, above the title block. */
+/* The hero's cover tile sits in the upper area, in the flow above the title block: it never covers the pill or
+   the title, however long they run. */
 .c-hero > .c-media__cover {
-  position: absolute;
-  top: 24px;
-  left: 20px;
+  position: relative;
   z-index: 1;
+  flex: none;
+  margin-bottom: auto;
 }
+.c-hero > .c-media__cover + .c-hero__scrim + .c-hero__content { margin-top: 16px; }
