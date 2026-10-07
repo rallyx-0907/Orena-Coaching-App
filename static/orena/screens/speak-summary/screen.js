@@ -11,7 +11,7 @@ import { loadAttemptsSince, loadCurrentSession } from '../../product/speaking-hi
 import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
 import { t } from './copy.js';
-import { tasksFor, tasksForServerSession, keyImprovement } from './model.js';
+import { tasksFor, tasksForServerSession, sessionScope, keyImprovement } from './model.js';
 
 /* Every room that logs to the session ledger, by the kind it logs: Scripted Pronunciation's label
    is this screen's own; the other rooms are named as the shell names them. */
@@ -34,9 +34,12 @@ export default async function mountSpeakingSummary(element, ctx) {
      the same on every tab and device. Otherwise (flag off, nothing live, unreadable) everything below is unchanged. */
   const current = await loadCurrentSession(api);
   if (!ctx.isCurrent()) return undefined;
-  const serverSession = current && current.meta && current.rows.length > 0 ? current : null;
-  const inSession = serverSession ? true : sessionTasks.length > 0;
-  const since = inSession ? Math.min(...sessionTasks.map((entry) => entry.at || Date.now())) - 60 * 1000 : Date.now() - 7 * 24 * 60 * 60 * 1000;
+  /* Feature on (`current` is not null): the server answer is authoritative, including `session: null` (none live). The
+     tab ledger is then never read as the session, so it cannot revive an expired one; the seven-day view shows instead.
+     Only the explicit feature-off answer (`current === null`) keeps the client ledger. */
+  const { serverSession, useLedger } = sessionScope(current, sessionTasks);
+  const inSession = serverSession ? true : useLedger;
+  const since = useLedger ? Math.min(...sessionTasks.map((entry) => entry.at || Date.now())) - 60 * 1000 : Date.now() - 7 * 24 * 60 * 60 * 1000;
   const server = serverSession ? serverSession.rows : await loadAttemptsSince(api, new Date(since).toISOString());
   if (!ctx.isCurrent()) return undefined;
   if (server === null) throw new Error('speaking_history_unavailable');

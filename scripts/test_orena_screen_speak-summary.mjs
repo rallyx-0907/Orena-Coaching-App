@@ -119,6 +119,14 @@ assert.equal(keyImprovement([]), null);
   assert.equal(tasks.length, 2, 'only the two server takes: tab-only activity (typed, or from before the session) is not counted');
   assert.equal(tasks.filter((task) => task.kind === 'free_talk').length, 0);
   assert.equal(tasksForServerSession([], live, labels)[1].note, 'Accuracy 90 · Fluency 80');
+  // an enabled feature with `session: null` is authoritative: a stale non-empty local ledger must not revive the old session
+  const { sessionScope } = await import('../static/orena/screens/speak-summary/model.js');
+  const staleLedger = [{ kind: 'free_talk', at: t0 - 3600000, facts: [] }, { kind: 'scripted_pronunciation', at: t0 - 3500000, facts: [] }];
+  const none = sessionScope(idle, staleLedger);
+  assert.deepEqual(none, { serverSession: null, useLedger: false }, 'session:null with a stale ledger -> neither the server session nor the ledger');
+  assert.deepEqual(sessionScope(null, staleLedger), { serverSession: null, useLedger: true }, 'only the explicit disabled answer keeps the ledger');
+  assert.equal(sessionScope(live, staleLedger).useLedger, false);
+  assert.ok(sessionScope(live, staleLedger).serverSession, 'a live server session is the session');
   // the screen lets a session failure reach the router's own load-error state (Back / Retry, shell copy EN/VI/ZH); it never catches it into the legacy notion
   const { readFileSync } = await import('node:fs');
   const screenSource = readFileSync(new URL('../static/orena/screens/speak-summary/screen.js', import.meta.url), 'utf8');

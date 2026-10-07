@@ -69,3 +69,12 @@ export function tasksForServerSession(ledger, current, labels) {
   const known = (ledger || []).filter((entry) => rows.some((row) => sameAttempt(entry, row)));
   return tasksFor(known, rows, labels);
 }
+
+/* Which notion of "this session" Speaking Summary uses. `current` is `loadCurrentSession`'s answer: null only when the
+   server explicitly says the feature is off (the client ledger then applies, as before); otherwise the server is
+   authoritative, and `meta: null` (no live session) never falls back to the tab ledger - it shows the seven-day view. */
+export function sessionScope(current, ledger) {
+  const serverSession = current && current.meta && current.rows.length > 0 ? current : null;
+  const useLedger = current === null && (ledger || []).length > 0;
+  return { serverSession, useLedger };
+}
