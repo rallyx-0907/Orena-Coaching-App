@@ -51,7 +51,7 @@ PASS  a writer WAITS while the advisory lock is held             ungranted advis
 PASS  the writer completes once it is released
 PASS  12 concurrent first attempts mint exactly one session id (repository)   returned ids=1 stored rows=12 distinct ids=1 errors=[]
 PASS  a later attempt within 30 minutes reuses the id
-PASS  an attempt after more than 30 idle minutes starts a new session
+PASS  an attempt after 30 or more idle minutes starts a new session
 PASS  another account never shares the session
 PASS  another language never shares the session
 PASS  12 concurrent POSTs through the route: one session holding all of them   statuses ok=12 count=12

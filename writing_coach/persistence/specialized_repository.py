@@ -1794,12 +1794,12 @@ class PostgresSpecializedLearningRepository:
         ).first()
         if latest is not None and latest[1] is not None:
             last = PostgresSpecializedLearningRepository._dt(latest[0])
-            if now - last <= PRACTICE_SESSION_IDLE:  # a slightly earlier `now` (clock skew between nodes) still joins
+            if now - last < PRACTICE_SESSION_IDLE:  # active while elapsed < 30 min (D-142); a slightly earlier `now` still joins
                 return latest[1]
         return uuid.uuid4()
 
     def current_speaking_session(self, now: datetime, *, limit: int = 50) -> dict[str, Any] | None:
-        """The live practice session of this account and language, or None once 30 minutes have passed since its
+        """The live practice session of this account and language, or None once 30 minutes have passed (elapsed >= 30:00) since its
         last activity (or when the latest attempt has no identity). Reads only; never starts or extends one."""
         uid, lang = self._scope()
         now = self._dt(now)
@@ -1812,7 +1812,7 @@ class PostgresSpecializedLearningRepository:
             ).first()
             if latest is None or latest[1] is None:
                 return None
-            if now - self._dt(latest[0]) > PRACTICE_SESSION_IDLE:
+            if now - self._dt(latest[0]) >= PRACTICE_SESSION_IDLE:  # expired at exactly 30:00 (D-142)
                 return None
             sid = latest[1]
             scope = (SpeakingAttempt.user_id == uid, SpeakingAttempt.language_code == lang,

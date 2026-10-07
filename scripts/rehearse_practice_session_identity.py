@@ -16,7 +16,7 @@ Steps (each a PASS/FAIL row; non-zero exit on any FAIL):
    and it completes once released.
 3. N concurrent first attempts of one account + language through the real repository: exactly one session id.
 4. the same through the real routes (POST /api/speech/attempts, GET ...?session=current) with the flag on.
-5. a later attempt within 30 minutes reuses the id; one after more than 30 minutes mints a new one; another account
+5. a later attempt within 30 minutes (< 30:00) reuses the id; one at 30:00 or later mints a new one; another account
    and another language never share one.
 """
 from __future__ import annotations
@@ -183,8 +183,8 @@ def main(url: str) -> int:
     # 5. window, accounts, languages -------------------------------------------------------------------------------
     first = write(race_user, "later-10min", now + timedelta(minutes=10))
     check("a later attempt within 30 minutes reuses the id", first == ids[0])
-    after_idle = write(race_user, "after-idle", now + timedelta(minutes=10 + PRACTICE_SESSION_IDLE_MINUTES + 1))
-    check("an attempt after more than 30 idle minutes starts a new session", after_idle != ids[0])
+    after_idle = write(race_user, "after-idle", now + timedelta(minutes=10 + PRACTICE_SESSION_IDLE_MINUTES))
+    check("an attempt after 30 or more idle minutes starts a new session", after_idle != ids[0])
     other = "other-account"
     add_user(engine, other)
     check("another account never shares the session", write(other, "o1", now) not in {ids[0], after_idle})

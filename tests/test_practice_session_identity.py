@@ -157,17 +157,17 @@ def test_flag_off_calls_the_repository_exactly_as_before(monkeypatch):
 
 def test_takes_inside_the_window_share_one_session_and_the_window_slides(client, engine):
     first = _post(client, "t1")
-    client.clock.advance(minutes=PRACTICE_SESSION_IDLE_MINUTES)  # exactly 30 minutes: still inside
+    client.clock.advance(minutes=PRACTICE_SESSION_IDLE_MINUTES - 1, seconds=59)  # 29:59: still inside (< 30:00)
     second = _post(client, "t2")
-    client.clock.advance(minutes=PRACTICE_SESSION_IDLE_MINUTES)  # 30 after the SECOND: activity refreshed the window
+    client.clock.advance(minutes=PRACTICE_SESSION_IDLE_MINUTES - 1, seconds=59)  # 29:59 after the SECOND: activity refreshed the window
     third = _post(client, "t3")
     assert first["practice_session_id"] == second["practice_session_id"] == third["practice_session_id"]
     assert uuid.UUID(first["practice_session_id"])
 
 
-def test_a_take_after_the_window_starts_a_new_session(client):
+def test_a_take_at_exactly_the_window_starts_a_new_session(client):
     first = _post(client, "t1")
-    client.clock.advance(minutes=PRACTICE_SESSION_IDLE_MINUTES, seconds=1)
+    client.clock.advance(minutes=PRACTICE_SESSION_IDLE_MINUTES)  # exactly 30:00: expired (D-142)
     second = _post(client, "t2")
     assert first["practice_session_id"] != second["practice_session_id"]
 
@@ -258,6 +258,15 @@ def test_the_read_is_exclusive_and_only_knows_current(client):
     assert client.get("/api/speech/attempts", params={"session": "current", "since": "2026-10-07T00:00:00Z"}).status_code == 422
     assert client.get("/api/speech/attempts", params={"session": "current", "asset_id": "x"}).status_code == 422
     assert client.get("/api/speech/attempts", params={"session": str(uuid.uuid4())}).status_code == 422
+
+
+def test_the_boundary_is_29_59_active_and_30_00_expired_on_a_frozen_clock(client):
+    _post(client, "t1")
+    client.clock.advance(minutes=PRACTICE_SESSION_IDLE_MINUTES - 1, seconds=59)
+    assert client.get("/api/speech/attempts", params={"session": "current"}).json()["session"] is not None
+    client.clock.advance(seconds=1)  # exactly 30:00 since the take
+    gone = client.get("/api/speech/attempts", params={"session": "current"}).json()
+    assert gone["session"] is None and gone["items"] == []
 
 
 def test_the_read_never_extends_the_window(client):

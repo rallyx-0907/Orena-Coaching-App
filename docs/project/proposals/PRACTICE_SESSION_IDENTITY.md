@@ -41,11 +41,11 @@ Legend: **[V]** verified in code at `7faf3ca`; **[I]** inferred.
 ## 1. Definition of a practice session
 
 A **practice session** is a run of the learner's completed speaking tasks, for one account and one learning
-language, in which no two consecutive tasks are more than **30 minutes apart** (server constant, one named value,
+language, in which no two consecutive tasks are **30 minutes or more** apart (active while elapsed < 30:00; expired at exactly 30:00) (server constant, one named value,
 not per-user).
 
 - **Start.** The first completed task when none exists inside the idle window. There is no "start session" action.
-- **End.** Implicit: the window lapses 30 minutes after the last task. There is no stored end, no "End session"
+- **End.** Implicit: the window lapses at exactly 30:00 after the last task. There is no stored end, no "End session"
   button (HD-11 "End" is the conversation's end, unrelated).
 - **Cross-device / cross-tab.** The session belongs to (account, language), not to a device: a take on the phone
   five minutes after one on the laptop is the same session. Switching learning language is a different session.
@@ -87,7 +87,7 @@ All additive; absent fields keep today's behaviour.
 
 - **`POST /api/speech/attempts`** (server decides, client sends nothing new). Inside the existing transaction:
   take a transaction-scoped advisory lock on `(user_id, language_code)`, read the latest row's
-  `created_at` and `practice_session_id`; if `now - created_at <= 30 min` and it has an id, join it, otherwise mint a
+  `created_at` and `practice_session_id`; if `now - created_at < 30 min` and it has an id, join it, otherwise mint a
   new UUID; insert. Response `item` gains `practice_session_id`. The lock serialises two devices finishing at once so
   they cannot mint two sessions. [I]
 - **Idempotency.** A replay of the same `take_id` returns the stored row and its original `practice_session_id`; the
@@ -97,7 +97,7 @@ All additive; absent fields keep today's behaviour.
   *written* (server time), not when it was recorded. Accepted: the server owns time, and a client clock is never a
   token (D4 §2.4). Closing a tab ends nothing; the idle window does.
 - **`GET /api/speech/attempts?session=current`** (new optional param, mutually exclusive with `since`; 422 if
-  both). Returns the items of the live session (the latest attempt's session if within 30 min, else empty), newest
+  both). Returns the items of the live session (the latest attempt's session if elapsed < 30 min, else empty), newest
   first, bounded by `limit`, plus
   `session: {id, started_at, last_activity_at, expires_at, count}` or `session: null`. `?session=<uuid>` for the
   learner's own past session is out of scope (Q3).
@@ -189,6 +189,6 @@ Nothing in this proposal decides the D-104 holds (general sync protocol, export 
   the proposed 0024/0026-0028 sit outside the chain and are re-parented when promoted).
 - `POST /api/speech/attempts`: flag on -> the repository assigns the id under a per-(account, language) lock
   (`pg_advisory_xact_lock` on PostgreSQL, a process lock on the SQLite test engine); a replay keeps the stored id.
-- `GET /api/speech/attempts?session=current` -> `{items, session, progress}`; `session` is null when idle > 30 minutes;
+- `GET /api/speech/attempts?session=current` -> `{items, session, progress}`; `session` is null when idle >= 30 minutes;
   404 `practice_session_disabled` with the flag off; 422 when combined with `since`, `asset_id` or `segment_id`.
 - Client: Summary asks the server once; a 404 or a null session keeps today's client ledger and 7-day fallback.
