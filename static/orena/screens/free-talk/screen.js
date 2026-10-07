@@ -7,8 +7,8 @@
    Rule 49: this route is a learning workspace - the root fills `.o-main`'s column and the one
    card that can grow long scrolls in its own `data-scroll-region`, never the page. Rule 40: the
    frame's three result stat tiles (Words / Pace / Linking) render only what is really measurable
-   from a real transcript and a real elapsed time (Words, Pace); Linking has no real detector behind
-   it anywhere in this build and always renders 0 - a UI fallback, not a score. Rule 43/44: the
+   from a real transcript and a real elapsed time (Words, Pace, and Linking, the count of linking
+   words through the language adapter in linking.js, D-139 HD-9) - counts, not scores. Rule 43/44: the
    frame's own "Demo ASR" pill (a prototype self-disclosure) and its regex `analyze()` scoring are
    not reproduced; nothing here is invented. Finish logs one entry to the session's speaking ledger
    (`product/speaking-session.js`) and opens Speaking Summary, like the source's `spFinish`. */

@@ -12,6 +12,7 @@
    returns - the same endpoint and shape the current Free Talk's own `coach()` already uses,
    `ui/speaking-free.js:251-267`). */
 import { voiceInvitations } from '../../content/voice-invitations.js';
+import { countLinkers } from './linking.js';
 
 /* The frame draws three duration pills (E2: "1/2/3 min"); each is also the real cap the recorder
    auto-stops at, so choosing one has a real effect, not a cosmetic label. */
@@ -66,10 +67,10 @@ export function pace(text, ms, language) {
 }
 
 /* The frame's three result tiles. Words and Pace are measured from the real transcript and the
-   real elapsed time; Linking has no detector anywhere in this build, so it is the layout's 0
-   (Design Contract rule 40) - a fallback for the component, never a score. */
+   real elapsed time; Linking counts the linking words in the transcript through the language
+   adapter in linking.js (D-139 HD-9) - a count, never a score. */
 export function resultStats(text, ms, language) {
-  return { words: unitCount(text, language), pace: pace(text, ms, language), linking: 0 };
+  return { words: unitCount(text, language), pace: pace(text, ms, language), linking: countLinkers(text, language) };
 }
 
 /* What Finish writes to the session's speaking ledger (`product/speaking-session.js`): only what

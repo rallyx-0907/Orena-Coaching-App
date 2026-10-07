@@ -67,7 +67,21 @@ assert.equal(pace('一二三四', 30_000, 'zh'), 8);
 {
   assert.deepEqual(resultStats('one two three four five six', 30_000, 'en'), { words: 6, pace: 12, linking: 0 });
   assert.deepEqual(resultStats('我今天很忙', 30_000, 'zh'), { words: 5, pace: 10, linking: 0 });
-  assert.deepEqual(resultStats('', 0, 'en'), { words: 0, pace: null, linking: 0 }, 'nothing measured: words 0, pace a dash, linking 0');
+  {
+  const { countLinkers } = await import('../static/orena/screens/free-talk/linking.js');
+  assert.equal(countLinkers('I was late because the bus broke down, so I walked. However, it was fine.', 'en'), 3);
+  assert.equal(countLinkers('First I woke up, and then I ate. For example, rice. Also tea, but finally coffee.', 'en'), 6);
+  assert.equal(countLinkers('She is also absolutely sober and thoughtful', 'en'), 1, 'whole words only: "so" inside "also"/"sober" is not a linker');
+  assert.equal(countLinkers('Because', 'en'), 1);
+  assert.equal(countLinkers('', 'en'), 0);
+  assert.equal(countLinkers('因为下雨，所以我没去。但是我很开心，然后我们回家了。', 'zh'), 4);
+  assert.equal(countLinkers('首先我吃饭，而且我喝茶。比如米饭。最后我睡觉。', 'zh'), 4);
+  assert.equal(countLinkers('我今天很忙', 'zh'), 0);
+  assert.equal(countLinkers('', 'zh'), 0);
+  assert.equal(resultStats('I ran but I was late.', 30_000, 'en').linking, 1);
+  assert.equal(resultStats('我很忙，但是我来了', 30_000, 'zh').linking, 1);
+}
+assert.deepEqual(resultStats('', 0, 'en'), { words: 0, pace: null, linking: 0 }, 'nothing measured: words 0, pace a dash, linking 0');
   const labels = { words: 'Words', pace: 'Pace', paceUnit: 'wpm' };
   assert.deepEqual(ledgerFacts({ words: 6, pace: 12, linking: 0 }, labels), [{ label: 'Words', value: '6' }, { label: 'Pace', value: '12 wpm' }]);
   assert.deepEqual(ledgerFacts({ words: 6, pace: null, linking: 0 }, labels), [{ label: 'Words', value: '6' }], 'no pace measured, none logged');
