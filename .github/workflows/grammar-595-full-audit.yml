@@ -40,3 +40,5 @@ jobs:
           path: grammar_lab/review/**/*.md
           if-no-files-found: error
           retention-days: 7
+
+# Rerun marker after aligning the suite with the complete 595-point corpus.
