@@ -276,7 +276,7 @@ Local results at `8875df48` plus the human's uncommitted `DESIGN_CONTRACT.md` ed
   uncommitted `docs/project/DESIGN_CONTRACT.md` edit; **it is in CI**, so the edit must be committed in a consistent way
   or reverted before the PR (owner: human, who owns that file).
 - Windows note: `test_orena_grammar.mjs` fails on a CRLF checkout and passes with LF (environment, memory note).
-- Python suite in the application image (AGENTS section 9 recipe, SQLite, local, not CI): 4398 passed, 380 skipped, 1 failed in 9m46s. The one failure, `tests/test_next_sign_in.py::test_logout_clears_the_session_and_names_a_validated_target`, belongs to the new-UI sign-in work that is still uncommitted (B7); the committed tree has no failing test.
+- Python suite in the application image (AGENTS section 9 recipe, SQLite, local, not CI): 4398 passed, 380 skipped, 1 failed in 9m46s. That failure was in the then-uncommitted sign-in work; after it landed (277c1ceb) the full suite is 4399 passed, 380 skipped, 0 failed.
 
 CI remains the gate; a local pass is not CI evidence.
 
@@ -290,7 +290,7 @@ CI remains the gate; a local pass is not CI evidence.
 | B4 | No account-deletion path; upload media not in the deletion enumeration (D-055(b)); no byte/count rails on uploads | Personal uploads accumulate unbounded; deletion is permanent-by-policy but unbuilt | Human (policy) + lane | Human decides whether :8000 is open or invitation-only for release 1; if open, build the owner-media deletion step and upload limits (UI_BACKEND_GAPS 4650, 4693) before. |
 | B5 | Old UI Reading breaks at 0016 | The generated Reading flow is retired in the same deploy (0016 docstring) | Lane + human | Decide shape A or C (section 4) and test `/` Reading after the migration on the restored copy. |
 | B6 | (resolved - not a blocker) | `test_orena_writing_workspace.mjs` fails only with the human's uncommitted `DESIGN_CONTRACT.md` edit; on the committed tree (what CI checks out) it passes (verified 2026-10-07 with `git archive HEAD`). It becomes a blocker only if that edit is committed without updating the gate. | Human | Keep the edit uncommitted or update the gate with it. |
-| B7 | New-UI sign-in unfinished | In progress in another lane; uncommitted | Auth lane | Land it with its tests; no action here. |
+| B7 | (resolved - landed) | New-UI sign-in landed in 9be69a82 / 277c1ceb behind the existing auth switch (strict /next return target, signed-out Welcome, Google only; email form is gap SIGN-1). Full pytest on that tree: 4399 passed, 380 skipped, 0 failed (local, not CI). Runtime steps: `NEXT_SIGN_IN_RUNTIME.md`. | Lane | None; :8000 already has the OAuth env. |
 
 Not blockers (resolved by analysis): unpromoted tables 0024/0026/0027/0028; agent routes in production; Grammar empty state;
 YouTube model clips (S-27); Onboarding polish.
