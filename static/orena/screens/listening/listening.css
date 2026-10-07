@@ -879,8 +879,9 @@
 .s-listening__playbtn svg { pointer-events: none; }
 
 /* The selected line's header tools (LEX-037): on a phone ⋯ and Close keep their 17px glyphs but each answers a
-   40px touch surface, 4px apart; the negative margin keeps the header's line height as the frame draws it. */
-:root[data-device="mobile"] .s-listening__selected-tools { display: inline-flex; align-items: center; gap: 4px; margin: -11px -11px -11px 0; }
+   40px touch surface, 4px apart. The surface reaches up into the card's empty top padding only, never down over
+   the line below it (LEX-037). */
+:root[data-device="mobile"] .s-listening__selected-tools { display: inline-flex; align-items: center; gap: 4px; margin: -12px -11px 0 0; }
 :root[data-device="mobile"] .s-listening__selected-close { width: 40px; height: 40px; padding: 0; border-radius: 10px; }
 
 /* The selected line's card never runs under the Transcript (LEX-037): on a phone the card may shrink - its line and
