@@ -88,6 +88,32 @@ assert.equal(keyImprovement([]), null);
   assert.equal(tasksFor(ledger, server).length, 2, 'without the session scope the window lists every attempt');
 }
 
+/* --- D-142: the server's practice session replaces the client notion only when it offers one --- */
+{
+  const { loadCurrentSession } = await import('../static/orena/product/speaking-history.js');
+  const { tasksForServerSession } = await import('../static/orena/screens/speak-summary/model.js');
+  const item = (id, take, at, accuracy) => ({
+    id, take_id: take, created_at: new Date(at).toISOString(), asset_id: 'free', segment_id: 's', language: 'en', transcript_text: 'hi',
+    dimensions: { pronunciation: accuracy, fluency: 80 }, provenance: { pronunciation: 'azure-speech', fluency: 'azure-speech' },
+    evidence: { pronunciation: { score_kind: 'measured', accuracy_score: accuracy } },
+  });
+  const t0 = Date.parse('2026-10-07T09:00:00Z');
+  const meta = { id: 's1', started_at: new Date(t0).toISOString(), count: 2 };
+  assert.equal(await loadCurrentSession({ speakingCurrentSession: async () => { throw new Error('404 practice_session_disabled'); } }), null, 'flag off (404) -> the client notion stays');
+  assert.equal(await loadCurrentSession({ speakingCurrentSession: async () => ({}) }), null, 'an unreadable payload is not a session');
+  const idle = await loadCurrentSession({ speakingCurrentSession: async () => ({ items: [], session: null }) });
+  assert.deepEqual(idle, { meta: null, rows: [] }, 'idle over 30 minutes: no live session, the 7-day fallback applies');
+  const live = await loadCurrentSession({ speakingCurrentSession: async () => ({ items: [item('b', 'tb', t0 + 5 * 60000, 90), item('a', 'ta', t0, 70)], session: meta }) });
+  assert.deepEqual(live.rows.map((row) => row.id), ['a', 'b'], 'oldest first, like the other history reads');
+  const labels = { accuracy: 'Accuracy', fluency: 'Fluency' };
+  // another device's takes are in the session; this tab's own entry for one of them is not counted twice
+  const tab = [{ kind: 'scripted_pronunciation', takeRef: 'ta', at: t0 + 1000, facts: [] }, { kind: 'free_talk', at: t0 + 2000, facts: [] }, { kind: 'free_talk', at: t0 - 3 * 3600000, facts: [] }];
+  const tasks = tasksForServerSession(tab, live, labels);
+  assert.equal(tasks.length, 3, 'two server takes + the tab\'s own typed task; the entry from before the session is not this session');
+  assert.equal(tasks.filter((task) => task.kind === 'free_talk').length, 1);
+  assert.equal(tasksForServerSession([], live, labels)[1].note, 'Accuracy 90 · Fluency 80');
+}
+
 /* --- every room that logs to the ledger is named, never shown as its raw kind --- */
 {
   const { readFileSync, readdirSync } = await import('node:fs');

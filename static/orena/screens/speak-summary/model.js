@@ -58,3 +58,14 @@ export function keyImprovement(tasks, threshold = 70) {
   if (!worst || worst.value >= threshold) return null;
   return worst;
 }
+
+/* D-142: with a live server session, the tasks of THIS session: the account's attempts of that session (any device) and
+   this tab's own ledger entries made since it began (a task with no server record, e.g. a typed one, stays as the tab logged
+   it; it is never persisted by this slice). A ledger entry older than the session is not part of it. */
+export function tasksForServerSession(ledger, current, labels) {
+  const began = Date.parse(current?.meta?.started_at) || 0;
+  const rows = current?.rows || [];
+  const sameAttempt = (entry, row) => (entry.attemptId && String(entry.attemptId) === row.id) || (entry.takeRef && entry.takeRef === row.takeId);
+  const own = (ledger || []).filter((entry) => (entry.at || 0) >= began - 60 * 1000 || rows.some((row) => sameAttempt(entry, row)));
+  return tasksFor(own, rows, labels);
+}

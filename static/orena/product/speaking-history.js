@@ -148,3 +148,17 @@ export async function loadAttemptsSince(api, sinceIso, limit = 100) {
     return null;
   }
 }
+
+/* D-142: the learner's live practice session (`GET /api/speech/attempts?session=current`), kept by the server so a second
+   tab or device sees the same one. `null` when the server does not offer it (the flag is off, or the read failed) - the
+   caller then keeps the client ledger and the seven-day window exactly as before. `meta` is null when no session is
+   live (idle for over 30 minutes). */
+export async function loadCurrentSession(api, limit = 100) {
+  try {
+    const payload = await api.speakingCurrentSession(limit);
+    if (!payload || typeof payload !== 'object' || !Array.isArray(payload.items)) return null;
+    return { meta: payload.session || null, rows: payload.items.map(attemptRow).sort((a, b) => a.at - b.at) };
+  } catch {
+    return null;
+  }
+}

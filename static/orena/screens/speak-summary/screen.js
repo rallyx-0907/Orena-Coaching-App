@@ -7,11 +7,11 @@ import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { readSpeakingSession } from '../../product/speaking-session.js';
-import { loadAttemptsSince } from '../../product/speaking-history.js';
+import { loadAttemptsSince, loadCurrentSession } from '../../product/speaking-history.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
 import { t } from './copy.js';
-import { tasksFor, keyImprovement } from './model.js';
+import { tasksFor, tasksForServerSession, keyImprovement } from './model.js';
 
 /* Every room that logs to the session ledger, by the kind it logs: Scripted Pronunciation's label
    is this screen's own; the other rooms are named as the shell names them. */
@@ -30,15 +30,22 @@ export default async function mountSpeakingSummary(element, ctx) {
      client session - no server notion of one exists). While it has any, only those are shown; with none, the
      last 7 days from the account, and the scope label says so. */
   const sessionTasks = readSpeakingSession();
-  const inSession = sessionTasks.length > 0;
+  /* D-142: when the server keeps the practice session (ORENA_PRACTICE_SESSION on) and one is live, it is the session -
+     the same on every tab and device. Otherwise (flag off, nothing live, unreadable) everything below is unchanged. */
+  const current = await loadCurrentSession(api);
+  if (!ctx.isCurrent()) return undefined;
+  const serverSession = current && current.meta && current.rows.length > 0 ? current : null;
+  const inSession = serverSession ? true : sessionTasks.length > 0;
   const since = inSession ? Math.min(...sessionTasks.map((entry) => entry.at || Date.now())) - 60 * 1000 : Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const server = await loadAttemptsSince(api, new Date(since).toISOString());
+  const server = serverSession ? serverSession.rows : await loadAttemptsSince(api, new Date(since).toISOString());
   if (!ctx.isCurrent()) return undefined;
   if (server === null) throw new Error('speaking_history_unavailable');
   const labels = { accuracy: t('metricAccuracy'), fluency: t('metricFluency') };
-  const tasks = inSession
-    ? tasksFor(sessionTasks, server || [], labels, { sessionOnly: true })
-    : tasksFor([], server || [], labels);
+  const tasks = serverSession
+    ? tasksForServerSession(sessionTasks, serverSession, labels)
+    : inSession
+      ? tasksFor(sessionTasks, server || [], labels, { sessionOnly: true })
+      : tasksFor([], server || [], labels);
   const improvement = keyImprovement(tasks);
 
   mount(
