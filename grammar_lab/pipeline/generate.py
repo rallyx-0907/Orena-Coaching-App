@@ -522,27 +522,29 @@ text, spaces, or the `___` blank.
 
 
 def _header_metadata(existing: dict[str, Any], locales: list[str]) -> dict[str, Any]:
-    """title/native_title/level: structural metadata, carried over, never generated.
+    """Prompt-facing structural metadata, carried over exactly from the catalogue.
 
-    Chinese learner-facing text is normalized here too.  The v0.4 generator already
-    normalizes every model-authored target-language field through ``target_text``;
-    leaving carried-over ``native_title`` untouched made deterministic validation reject
-    otherwise-valid cached candidates whose canonical title used display spaces around
-    symbols such as ``+``.
+    Keep this byte-for-byte stable with the canonical source because it participates in
+    the provider cache key. Learner-facing Chinese normalization happens only when the
+    assembled point is stored.
     """
-    zh = existing.get("target_lang") == ZH_HANS
     if "header" in existing:
         header = existing["header"]
-        native = target_text(str(header["native_title"]), zh)
-        return {"title": header["title"], "native_title": native, "level": dict(existing["level"])}
+        return {"title": header["title"], "native_title": header["native_title"], "level": dict(existing["level"])}
     title = existing["title"]
     native = title.get(existing["target_lang"]) or title.get("en") or title["vi"]
-    native = target_text(str(native), zh)
     return {
         "title": {locale: title[locale] for locale in locales if locale in title} or {"vi": title["vi"]},
         "native_title": native,
         "level": dict(existing["level"]),
     }
+
+
+def _stored_header_metadata(header: dict[str, Any], zh: bool) -> dict[str, Any]:
+    """Normalize only the learner-facing stored header, never prompt/cache input."""
+    out = copy.deepcopy(header)
+    out["native_title"] = target_text(str(out["native_title"]), zh)
+    return out
 
 
 def resolve_spans(text: str, spans: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -2846,6 +2848,7 @@ class Generator:
             )
             generation_problems.extend(production_problems)
             repair_personal_production_rule(personal_production, pattern, examples, zh)
+            stored_header = _stored_header_metadata(header, zh)
 
             point = {
                 **{key: existing[key] for key in (
@@ -2856,9 +2859,9 @@ class Generator:
                 **{key: existing[key] for key in ("sequence", "aliases") if key in existing},
                 "source_anchors": existing.get("source_anchors") or {"status": "unanchored", "items": []},
                 "header": {
-                    **header, "summary": loc(data["summary"]),
+                    **stored_header, "summary": loc(data["summary"]),
                     "sub": loc(data["sub"]),
-                    **({"native_title_pinyin": pinyin_from_pairs(header["native_title"], data.get("native_title_pinyin_pairs"))} if zh else {}),
+                    **({"native_title_pinyin": pinyin_from_pairs(stored_header["native_title"], data.get("native_title_pinyin_pairs"))} if zh else {}),
                 },
                 "when_to_use": [loc(item) for item in data["when_to_use"]],
                 "pattern": pattern,
