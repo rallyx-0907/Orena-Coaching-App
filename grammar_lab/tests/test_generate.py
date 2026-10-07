@@ -631,9 +631,9 @@ def test_generate_v04_retries_semantic_validation_with_feedback(tmp_path: Path) 
     lab = _v04_lab(tmp_path)
     lab.write()
     bad = copy.deepcopy(CANNED_V04)
-    # Use a semantic failure outside the targeted formula/span/rule repair
-    # surface so this test continues to exercise the full-candidate retry path.
-    bad["quick_practice"][0]["q"] = "He goes to school."
+    # Keep this outside every bounded repair surface so this test continues
+    # to exercise the fresh full-candidate retry path.
+    bad["formula"][0]["options"] = [{"text": "He"}, {"text": "He"}]
     calls: list[dict] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -703,7 +703,7 @@ def test_generate_v04_honors_one_full_attempt_hard_cap(tmp_path: Path) -> None:
     lab = _v04_lab(tmp_path)
     lab.write()
     bad = copy.deepcopy(CANNED_V04)
-    bad["quick_practice"][0]["q"] = "He goes to school."
+    bad["formula"][0]["options"] = [{"text": "He"}, {"text": "He"}]
     calls: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -733,9 +733,9 @@ def test_generate_v04_does_not_persist_after_three_semantic_failures(tmp_path: P
     path = lab.root / "content" / "en" / "en.alpha.json"
     before = path.read_text(encoding="utf-8")
     bad = copy.deepcopy(CANNED_V04)
-    # Keep this failure outside targeted repair: the contract under test is
+    # Keep this failure outside bounded repair: the contract under test is
     # three fresh full semantic attempts with no persisted bad draft.
-    bad["quick_practice"][0]["q"] = "He goes to school."
+    bad["formula"][0]["options"] = [{"text": "He"}, {"text": "He"}]
     calls: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -1130,6 +1130,8 @@ def test_generate_v04_mixed_structural_issue_repairs_structure_before_full_retry
             payload = bad
         elif tool_name == "emit_grammar_point_v04_structure_patch":
             payload = patch
+        elif tool_name == "emit_grammar_point_v04_learning_patch":
+            payload = {"quick_practice": copy.deepcopy(good_structure["quick_practice"])}
         else:
             raise AssertionError(tool_name)
         return httpx.Response(200, json={
@@ -1139,12 +1141,13 @@ def test_generate_v04_mixed_structural_issue_repairs_structure_before_full_retry
 
     outcome = make_generator(lab.root, httpx.MockTransport(handler)).generate("en.alpha")
 
-    assert outcome.status == "error"
-    # The first extra provider action must be the small structure patch, not a
-    # second full lesson.
-    assert calls[:2] == [
+    assert outcome.status == "written", outcome.reason
+    # Repair stays bounded: structure first, then only the implicated learner
+    # block. No second full lesson is requested.
+    assert calls == [
         "emit_grammar_point_v04",
         "emit_grammar_point_v04_structure_patch",
+        "emit_grammar_point_v04_learning_patch",
     ]
 
 
