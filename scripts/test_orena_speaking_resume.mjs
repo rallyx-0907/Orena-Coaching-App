@@ -17,6 +17,9 @@ for (const id of ['media:lesson-en', 'media:upload:source-zh']) {
 }
 assert.equal(continuationTarget({id:'media:',intent:'speaking_compare'}),null);
 assert.equal(continuationTarget({id:'unresolvable',intent:'speaking_compare'}),null);
-assert.deepEqual(speakModes([{id:'media:lesson-en',practice_type:'clip',level:'B2'}]).find(mode=>mode.routeId==='speak')?.params,
-  {id:'media:lesson-en'},'a real transcript-backed clip supports the Pronunciation entry too');
+// D-139 HD-3: with no remembered line, Pronunciation opens the media chooser for a real transcript-backed source; it
+// never assigns the first catalogue clip (the remembered-line path is covered by the Practice Hub gates).
+const pronunciation = speakModes([{id:'media:lesson-en',practice_type:'clip',level:'B2'}]).find(mode=>mode.key==='speak');
+assert.deepEqual([pronunciation?.routeId, pronunciation?.query, pronunciation?.params],
+  ['discover', {tab:'listen',practice:'pronunciation'}, undefined],'Pronunciation goes through the chooser, no first-clip assignment');
 console.log('Speaking resume: exact source/sentence/Compare, Today/Practice and existing account continuation: PASS');
