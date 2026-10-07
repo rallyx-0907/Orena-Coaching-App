@@ -435,6 +435,8 @@
   margin: 0 calc(var(--pad) * -1);
   padding: 4px var(--pad) 16px;
   scroll-snap-type: x mandatory;
+  /* The first card snaps to the gutter, not to the scrollport's edge (LEX-073). */
+  scroll-padding-inline: var(--pad);
 }
 .s-today-rail .c-media {
   flex: none;

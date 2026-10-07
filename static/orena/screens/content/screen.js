@@ -25,6 +25,7 @@ import { languages } from '../../copy/index.js';
 import { openMedia } from '../../product/media-source.js';
 import { mapLesson } from '../listening/model.js';
 import { t } from './copy.js';
+import { bookPlace } from '../../product/place-progress.js';
 import {
   parseContentId,
   contentIdFor,
@@ -196,6 +197,21 @@ export default async function content(element, ctx) {
   const place = destination === 'listening'
     ? mediaPlaceFor(ctx.context.memory.value.continuation, contentId, detail.starts, detail.durationMs)
     : placeFor(ctx.context.memory.value.continuation, contentId);
+  /* A book has no continuation row of its own: its chapters do ("book:<id>:<chapter>"). The newest one is the
+     learner's place, and Start becomes Continue at that chapter (LEX-083). */
+  const bookAt = kind === 'book' && !chapterId ? bookPlace(ctx.context.memory.value.continuation, id) : null;
+  if (bookAt?.started) {
+    place.started = true;
+    place.percent = bookAt.percent ?? 0;
+    place.chapter = bookAt.chapterId;
+    place.chapterIndex = bookAt.index;
+    place.chapterTotal = bookAt.total;
+    // A chapter read to its end resumes at the next one; the last chapter finished is a book read.
+    if (bookAt.within != null && bookAt.within >= 100) {
+      const next = (detail.chapters || [])[bookAt.index];
+      if (next) { place.chapter = next; place.chapterIndex = bookAt.index + 1; }
+    }
+  }
   const finished = destination !== 'listening' && place.started && place.percent >= 100;
   const showStrip = place.started && !finished && (destination !== 'listening' || place.at);
   // Media opens with the design's play mark: "▶ Start listening", or "▶ Continue watching" for a started video (L-08).
@@ -203,7 +219,9 @@ export default async function content(element, ctx) {
   const primaryLabel = destination === 'listening'
     ? html`${raw(icon('play', { size: 16 }))}${place.started ? t(resumeKey) : t('listen')}`
     : (finished ? t('readAgain') : place.started ? t('continueReading') : t('startReading'));
-  const primaryHref = destination === 'listening' ? ctx.href('listening', { id: kind === 'upload' ? uploadMediaId(id) : id }) : ctx.href('reader', { id: contentId });
+  const primaryHref = destination === 'listening'
+    ? ctx.href('listening', { id: kind === 'upload' ? uploadMediaId(id) : id })
+    : ctx.href('reader', { id: place.chapter ? contentIdFor('book', `${id}:${place.chapter}`) : contentId });
   // Shadowing is a secondary action behind "..." (X-10, HX-4 C): the frame draws no button for it, D-119 keeps the route.
   const shadowHref = destination === 'listening' && detail.canShadow ? ctx.href('shadow', { id: kind === 'upload' ? uploadMediaId(id) : id }) : '';
   const hasMore = own || Boolean(shadowHref);
@@ -229,7 +247,7 @@ export default async function content(element, ctx) {
         <div class="s-content__main">
           ${showStrip
             ? html`<div class="s-content__progress">
-                <div class="s-content__progress-labels"><span>${place.percent == null ? '' : t('progressPercent', { pct: place.percent })}</span><span>${place.at ? t('resumeAt', { at: place.at }) : t('resume')}</span></div>
+                <div class="s-content__progress-labels"><span>${place.percent == null ? '' : t('progressPercent', { pct: place.percent })}</span><span>${place.at ? t('resumeAt', { at: place.at }) : place.chapterIndex ? t('resumeChapter', { n: place.chapterIndex, total: place.chapterTotal }) : t('resume')}</span></div>
                 <div class="s-content__bar"><span style="width:${place.percent ?? 0}%"></span></div>
               </div>`
             : ''}

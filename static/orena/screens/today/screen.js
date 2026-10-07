@@ -161,7 +161,7 @@ export default async function mountToday(element, ctx) {
             <span class="s-today-hero__title">${wordTitle(hero)}</span>
             ${hero.reason ? html`<span class="s-today-hero__reason">${hero.reason}</span>` : ''}
           </span>
-          <span class="s-today-hero__cta">${t('startAction')} ${raw(icon('arrow-right', { size: 17 }))}</span>
+          <span class="s-today-hero__cta">${t(hero.source === 'continue' ? 'continueAction' : 'startAction')} ${raw(icon('arrow-right', { size: 17 }))}</span>
         </button>
         <div class="s-today-rest">
           ${rest.map(

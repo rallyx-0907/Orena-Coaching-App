@@ -111,3 +111,12 @@ assert.equal(zeroPercentRows[0].percent, 0, 'a real 0% is kept as the number 0, 
 }
 
 console.log('Orena screen sheets (Import, Notifications): media-url move, text stats, error mapping, membership records and continuation routing all pure and honest: PASS');
+
+// LEX-079: a title stored in capitals is written as a title; mixed case and other scripts are untouched.
+{
+  const { tidyTitle } = await import('../static/orena/product/tidy-title.js');
+  assert.equal(tidyTitle('THE CRY IN THE CORRIDOR'), 'The Cry in the Corridor');
+  assert.equal(tidyTitle('The Fox and the Stork'), 'The Fox and the Stork');
+  assert.equal(tidyTitle('城市的早上'), '城市的早上');
+  assert.equal(tidyTitle('NASA'), 'NASA', 'a lone acronym stays');
+}

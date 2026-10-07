@@ -9,7 +9,7 @@ const KEYS = [
   'startReading', 'continueReading', 'listen', 'continueListening', 'continueWatching',
   'save', 'saved', 'practiceThisText', 'transcript',
   'generated', 'captions', 'minutes',
-  'related', 'resume', 'resumeAt', 'readAgain', 'progressPercent',
+  'related', 'resume', 'resumeAt', 'resumeChapter', 'readAgain', 'progressPercent',
   'more', 'deleteFromOrena', 'deletedFromOrena',
 ];
 
@@ -24,7 +24,7 @@ export const t = defineCopy('content', {
     generated_one: 'Generated · {n} segment', generated_other: 'Generated · {n} segments',
     captions_one: 'Captions · {n} segment', captions_other: 'Captions · {n} segments',
     minutes: '{n} min',
-    related: 'Related', resume: 'Resume', resumeAt: 'Resume at {at}', readAgain: 'Read again', progressPercent: '{pct}% complete',
+    related: 'Related', resume: 'Resume', resumeAt: 'Resume at {at}', resumeChapter: 'Resume at chapter {n} of {total}', readAgain: 'Read again', progressPercent: '{pct}% complete',
     more: 'More', deleteFromOrena: 'Delete from Orena', deletedFromOrena: 'Deleted from Orena',
   },
   vi: {
@@ -36,7 +36,7 @@ export const t = defineCopy('content', {
     generated_other: 'Tự động tạo · {n} đoạn',
     captions_other: 'Phụ đề · {n} đoạn',
     minutes: '{n} phút',
-    related: 'Liên quan', resume: 'Tiếp tục', resumeAt: 'Tiếp tục từ {at}', readAgain: 'Đọc lại', progressPercent: 'Hoàn thành {pct}%',
+    related: 'Liên quan', resume: 'Tiếp tục', resumeAt: 'Tiếp tục từ {at}', resumeChapter: 'Tiếp tục ở chương {n} / {total}', readAgain: 'Đọc lại', progressPercent: 'Hoàn thành {pct}%',
     more: 'Thêm', deleteFromOrena: 'Xoá khỏi Orena', deletedFromOrena: 'Đã xoá khỏi Orena',
   },
   zh: {
@@ -48,7 +48,7 @@ export const t = defineCopy('content', {
     generated_other: '自动生成 · {n} 段',
     captions_other: '字幕 · {n} 段',
     minutes: '{n} 分钟',
-    related: '相关内容', resume: '继续', resumeAt: '从 {at} 继续', readAgain: '重新阅读', progressPercent: '已完成 {pct}%',
+    related: '相关内容', resume: '继续', resumeAt: '从 {at} 继续', resumeChapter: '从第 {n} / {total} 章继续', readAgain: '重新阅读', progressPercent: '已完成 {pct}%',
     more: '更多', deleteFromOrena: '从 Orena 删除', deletedFromOrena: '已从 Orena 删除',
   },
 });

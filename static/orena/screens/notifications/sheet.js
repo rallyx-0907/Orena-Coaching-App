@@ -47,16 +47,29 @@ export async function openNotifications(ctx = {}) {
       const title = t.plural('dueTitle', row.due);
       return listRow({ variant: 'outline', pad: '14px 18px', kind: t('reviewKind'), title, dataset: { row: 'due' } });
     }
-    const sub = row.percent != null ? t('percentComplete', { n: row.percent }) : '';
+    const sub = [row.context, row.percent != null ? t('percentComplete', { n: row.percent }) : ''].filter(Boolean).join(' · ');
     // languages-5 / finding A: `row.title` is the real content this continuation entry resumes -
     // always in the learner's active learning language (kit/lang.js's "the learner's learning
     // language the screen already read" source; no per-entry field exists on device memory).
-    return listRow({ variant: 'outline', pad: '14px 18px', kind: [t(KIND_LABEL[row.kind]), whenLabel(row.at, languages().ui)].filter(Boolean).join(' · '), title: langSpan(row.title, context.language), sub, dataset: { row: 'continue', route: row.routeId, id: row.id } });
+    return listRow({ variant: 'outline', pad: '14px 18px', kind: whenLabel(row.at, languages().ui), title: langSpan(row.title, context.language), sub, dataset: { row: 'continue', route: row.routeId, id: row.id } });
   }
 
   function bodyMarkup() {
     if (!rows.length) return emptyMarkup({ text: t('empty'), iconName: 'inbox' });
-    return html`${rows.map(rowMarkup)}`;
+    /* One action named once per group, then the items under it (LEX-079): "Continue reading" is not repeated on
+       every row. Rows stay in recency order inside a group; groups follow the first row's position. */
+    const out = [];
+    const groups = new Map();
+    for (const row of rows) {
+      const key = row.type === 'due' ? 'due' : row.kind;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(row);
+    }
+    for (const [key, list] of groups) {
+      if (key !== 'due') out.push(html`<div class="s-notifications__group">${t(KIND_LABEL[key])}</div>`);
+      out.push(...list.map(rowMarkup));
+    }
+    return html`${out}`;
   }
 
   const markup = html`<div class="o-sheet__head">

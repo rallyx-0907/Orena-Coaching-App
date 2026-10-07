@@ -16,6 +16,7 @@
    card entirely, exactly as kit/components.js#mediaCard() already does for an absent parameter. */
 
 import { duration } from '../../product/duration.js';
+import { placePercent } from '../../product/place-progress.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 
 export const TABS = Object.freeze(['all', 'read', 'listen', 'collections', 'imported']);
@@ -37,10 +38,8 @@ export function progressFromContinuation(continuation, id, { idPrefix = '' } = {
   const entry = idPrefix
     ? list.find((item) => String(item?.id || '').startsWith(idPrefix))
     : list.find((item) => String(item?.id || '') === id);
-  const index = Number(entry?.place?.index) || 0;
-  const total = Number(entry?.place?.total) || 0;
-  if (!entry || index < 1 || total < 1) return null;
-  return Math.max(1, Math.min(100, Math.round((index / total) * 100)));
+  // The one shared rule (product/place-progress.js): a "1 of 1" place is not 100%.
+  return entry ? placePercent(entry.place) : null;
 }
 
 /* GET /api/reading/articles item -> entry. No image field exists for an article today (a real

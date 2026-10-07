@@ -5,7 +5,7 @@
 import { defineCopy } from '../../copy/index.js';
 
 const INTERFACE_KEYS = [
-  'recommendedTitle', 'anotherAction', 'forYouTitle', 'seeAllAction', 'startAction',
+  'recommendedTitle', 'anotherAction', 'forYouTitle', 'seeAllAction', 'startAction', 'continueAction', 'placePercent',
   'goalLabel', 'ofGoalLabel', 'notTrackedYet', 'dayStreak', 'levelLabel', 'levelXp',
   'kindRead', 'kindListen', 'kindSpeak', 'kindWord', 'kindContinue', 'kindReview',
   'skillReading', 'skillListening', 'skillSpeaking',
@@ -35,7 +35,7 @@ export const t = defineCopy('today', {
   layers: Object.fromEntries([...INTERFACE_KEYS.map((k) => [k, 'interface']), ...SUPPORT_KEYS.map((k) => [k, 'support'])]),
   en: {
     recommendedTitle: 'Recommended for today', anotherAction: 'Another', forYouTitle: 'For you',
-    seeAllAction: 'See all', startAction: 'Start',
+    seeAllAction: 'See all', startAction: 'Start', continueAction: 'Continue', placePercent: '{pct}% done',
     goalLabel: "Today's goal", ofGoalLabel: "of today's goal", notTrackedYet: 'Not tracked yet',
     dayStreak: '{n} day streak', levelLabel: 'Level', levelXp: '{n} XP',
     kindRead: 'Read', kindListen: 'Listen', kindSpeak: 'Speak', kindWord: 'Word', kindContinue: 'Continue', kindReview: 'Review',
@@ -58,7 +58,7 @@ export const t = defineCopy('today', {
   },
   vi: {
     recommendedTitle: 'Đề xuất cho hôm nay', anotherAction: 'Đề xuất khác', forYouTitle: 'Dành cho bạn',
-    seeAllAction: 'Xem tất cả', startAction: 'Bắt đầu',
+    seeAllAction: 'Xem tất cả', startAction: 'Bắt đầu', continueAction: 'Tiếp tục', placePercent: 'Đã xong {pct}%',
     goalLabel: 'Mục tiêu hôm nay', ofGoalLabel: 'trong mục tiêu hôm nay', notTrackedYet: 'Chưa được theo dõi',
     dayStreak: 'Chuỗi {n} ngày', levelLabel: 'Cấp độ', levelXp: '{n} XP',
     kindRead: 'Đọc', kindListen: 'Nghe', kindSpeak: 'Nói', kindWord: 'Từ vựng', kindContinue: 'Tiếp tục', kindReview: 'Ôn tập',
@@ -79,7 +79,7 @@ export const t = defineCopy('today', {
   },
   zh: {
     recommendedTitle: '今天推荐', anotherAction: '换一个', forYouTitle: '为你推荐',
-    seeAllAction: '查看全部', startAction: '开始',
+    seeAllAction: '查看全部', startAction: '开始', continueAction: '继续', placePercent: '已完成 {pct}%',
     goalLabel: '今天的目标', ofGoalLabel: '达成今天的目标', notTrackedYet: '暂未记录',
     dayStreak: '连续 {n} 天', levelLabel: '等级', levelXp: '{n} XP',
     kindRead: '阅读', kindListen: '听力', kindSpeak: '口语', kindWord: '词语', kindContinue: '继续', kindReview: '复习',

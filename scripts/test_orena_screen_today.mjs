@@ -342,3 +342,21 @@ assert.deepEqual(usedRecommendationIds([{ id: 'a' }, { id: 'b' }, { id: null }])
 }
 
 console.log('Orena Today: recommendation pool, continuation mapping, For-you rail, the rule-40 zero-fallback (goal ring, streak, level) and the real-data header greeting/subtitle all hold: PASS');
+
+// LEX-073 / LEX-090: one card per title, the place when it is measured, a half-read text can be continued.
+{
+  const { buildForYou, usedRecommendationIds } = await import('../static/orena/screens/today/model.js');
+  const placed = mapContinuationEntry({ id: 'media:l1', title: 'Cosmic calendar', context: 'Science', place: { index: 1, total: 1, within: 40 } }, t);
+  assert.equal(placed.meta, 'Science · 40% done', 'the measured place follows the context');
+  assert.equal(mapContinuationEntry({ id: 'media:l1', title: 'x', place: { index: 1, total: 1 } }, t).meta, '', 'a 1 of 1 place with nothing measured says nothing');
+  const reading = mapContinuationEntry({ id: 'book:b1:c3', title: 'THE CRY IN THE CORRIDOR', context: 'The Secret Garden', place: { index: 3, total: 9 } }, t);
+  assert.equal(reading.routeId, 'reader');
+  assert.deepEqual(reading.routeParams, { id: 'book:b1:c3' });
+  assert.equal(reading.title, 'The Cry in the Corridor', 'a title stored in capitals is not shouted');
+  assert.equal(mapContinuationEntry({ id: 'article:a1', title: 'x', place: { index: 1, total: 1, within: 100 } }, t), null, 'a finished text is not continued');
+  const speakingItems = [{ id: 's1', title: 'Make room for someone' }, { id: 's2', title: 'Make room for someone' }, { id: 's3', title: 'Order coffee' }];
+  const rail = buildForYou({ continuation: [], listening: [], speaking: speakingItems, feed: [], usedIds: new Set() }, t);
+  assert.deepEqual(rail.map((item) => item.title), ['Make room for someone', 'Order coffee'], 'the same title is one card');
+  const used = usedRecommendationIds([{ id: 'x', title: 'Order coffee', routeParams: { id: 's3' } }]);
+  assert.deepEqual(buildForYou({ continuation: [], listening: [], speaking: speakingItems, feed: [], usedIds: used }, t).map((item) => item.title), ['Make room for someone'], 'a title the hero already shows is not repeated below');
+}

@@ -51,14 +51,17 @@ assert.equal(originRouteId('constructor'), 'discover', 'a prototype key is not a
   const lastChapter = { kind: 'book', isBook: true, bookId: 'b', neighbours: { next: null } };
   assert.equal(nextPick({ doc: lastChapter, articles, continuation: [] }).kind, 'discover');
   const first = { kind: 'article', id: articles[0].id, isBook: false };
-  assert.deepEqual(nextPick({ doc: first, articles, continuation: [] }), { kind: 'article', title: articles[1].title, id: `article:${articles[1].id}`, sameTheme: false }, 'another article, never this one');
+  // LEX-088: with no shared topic or author nothing is suggested (level alone is not relatedness).
+  assert.equal(nextPick({ doc: { ...first, level: 'B2', topic: '' }, articles: articles.map((a) => ({ ...a, level: 'B2', topic: '' })), continuation: [] }).kind, 'discover', 'no shared topic: no suggestion');
   // "Next · same theme" (frame 40): an article on the same topic is offered before any other.
   const themed = [{ id: 'a1', title: 'One', topic: 'food' }, { id: 'a2', title: 'Two', topic: 'work' }, { id: 'a3', title: 'Three', topic: 'work' }];
   assert.deepEqual(nextPick({ doc: { kind: 'article', id: 'a2', isBook: false, topic: 'work' }, articles: themed, continuation: [] }), { kind: 'article', title: 'Three', id: 'article:a3', sameTheme: true });
-  const finished = [{ id: `article:${articles[1].id}`, title: 'x', place: { index: 1, total: 1, within: 100 } }];
-  assert.equal(nextPick({ doc: first, articles, continuation: finished }).kind, 'discover', 'a finished article is not offered next');
-  const inProgress = [{ id: `article:${articles[1].id}`, title: 'x', place: { index: 1, total: 1, within: 40 } }];
-  assert.equal(nextPick({ doc: first, articles, continuation: inProgress }).kind, 'article', 'one in progress is');
+  const related = [{ id: 'r0', title: 'Zero', topic: 'tides' }, { id: 'r1', title: 'One', topic: 'tides' }];
+  const here = { kind: 'article', id: 'r0', isBook: false, topic: 'tides' };
+  const finished = [{ id: 'article:r1', title: 'x', place: { index: 1, total: 1, within: 100 } }];
+  assert.equal(nextPick({ doc: here, articles: related, continuation: finished }).kind, 'discover', 'a finished article is not offered next');
+  const inProgress = [{ id: 'article:r1', title: 'x', place: { index: 1, total: 1, within: 40 } }];
+  assert.equal(nextPick({ doc: here, articles: related, continuation: inProgress }).kind, 'article', 'one in progress is');
   assert.equal(nextPick({ doc: first, articles: [], continuation: [] }).kind, 'discover');
   assert.equal(nextPick({ doc: { kind: 'text', id: 't', isBook: false }, articles, continuation: [] }).kind, 'discover', 'an imported text has no catalogue to pick from');
   assert.equal(nextPick({ doc: first, articles: [{ id: 'z', title: '' }], continuation: [] }).kind, 'discover', 'an untitled item is not offered');

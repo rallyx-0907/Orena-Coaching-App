@@ -147,6 +147,8 @@ export function normalizeBook(book) {
     level: '',
     minutes: null,
     desc: String(book?.description || ''),
+    // The chapter ids in reading order, so a finished chapter can resume at the next one (LEX-083).
+    chapters: [...(Array.isArray(book?.chapters) ? book.chapters : [])].sort((a, b) => (a?.position ?? 0) - (b?.position ?? 0)).map((chapter) => String(chapter?.id || '')).filter(Boolean),
     image: book?.cover_asset_key ? `url("/api/reading/library/books/${encodeURIComponent(book.id)}/cover")` : '',
   };
 }
@@ -213,14 +215,16 @@ export function pickRelated(items, { excludeId, map, limit = 3, score = null }) 
   return out.slice(0, limit).map((entry) => entry.mapped);
 }
 
-/* How close a catalogue item is to the open one by the fields the catalogue really has: the same topic counts
-   most, the same level next. A field the open item does not have cannot relate anything. */
+/* How close a catalogue item is to the open one by the fields the catalogue really has: the same topic or the
+   same author. Level alone is NOT relatedness (LEX-075, LEX-088): two unrelated B2 stories share nothing the
+   learner cares about, so level only orders items that already share a topic or author. A field the open item
+   does not have cannot relate anything, so a text with no topic and no author has no related items. */
 export function relatednessScore(current, candidate) {
   const norm = (value) => String(value || '').trim().toLowerCase();
   let points = 0;
   if (norm(current?.topic) && norm(current.topic) === norm(candidate?.topic)) points += 2;
-  if (norm(current?.level) && norm(current.level) === norm(candidate?.level)) points += 1;
   if (norm(current?.source) && norm(current.source) === norm(candidate?.author || candidate?.source?.creator)) points += 2;
+  if (points > 0 && norm(current?.level) && norm(current.level) === norm(candidate?.level)) points += 1;
   return points;
 }
 

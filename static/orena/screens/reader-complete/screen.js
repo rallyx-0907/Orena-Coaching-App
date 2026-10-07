@@ -94,10 +94,10 @@ export default async function mountReaderComplete(element, ctx) {
           ${statCell(notesAndHighlights, t('notesHighlights'))}
           ${statCell(comprehensionLabel(evidence, doc.id), t('understood'))}
         </div>
-        <button type="button" class="s-rcomplete__next" data-next>
+        ${next.kind === 'discover' ? '' : html`<button type="button" class="s-rcomplete__next" data-next>
           <span class="s-rcomplete__next-body"><span class="s-rcomplete__next-label">${nextLabel}</span><span class="s-rcomplete__next-title"${next.kind === 'discover' ? '' : raw(` lang="${langAttr(doc.language)}"`)}>${nextTitle}</span></span>
           <span class="s-rcomplete__next-chev">${raw(icon('chevron-right', { size: 20 }))}</span>
-        </button>
+        </button>`}
         <div class="s-rcomplete__actions">
           ${savedFrom?.words?.length ? html`<button type="button" class="s-rcomplete__secondary" data-review>${t('reviewSavedWords')}</button>` : ''}
           <button type="button" class="s-rcomplete__secondary" data-transfer>${shellCopy('readingTransfer')}</button>

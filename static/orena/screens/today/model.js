@@ -9,6 +9,8 @@
    gap is recorded in docs/project/UI_BACKEND_GAPS.md and in SCRATCH/reports/today.md, not resolved
    by inventing a number. */
 
+import { tidyTitle } from '../../product/tidy-title.js';
+import { placePercent } from '../../product/place-progress.js';
 import { speakingResumeTarget } from '../../product/speaking-resume.js';
 
 export const RECOMMEND_LIMIT = 3;
@@ -148,10 +150,13 @@ export function buildRecommendationPool({ reading, listening = [], speaking = []
    does not draw; the "unfinished work" fact is carried in the card's meta text instead. */
 export function mapContinuationEntry(entry, t) {
   const id = String(entry?.id || '');
+  /* Where the learner stopped, when it is measured (LEX-090): the same percent every other surface reads. */
+  const pct = placePercent(entry?.place);
+  const where = (context) => [context || '', pct != null && pct < 100 ? t('placePercent', { pct }) : ''].filter(Boolean).join(' · ');
   const speaking = speakingResumeTarget(entry);
   if (speaking) return {
-    source:'continue', id, kind:t('kindContinue'), title:entry.title || '',
-    meta:entry.context || '', tag:null, durationLabel:'', image:'',
+    source:'continue', id, kind:t('kindContinue'), title:tidyTitle(entry.title || ''),
+    meta:where(entry.context), tag:null, durationLabel:'', image:'',
     routeId:speaking.routeId, routeParams:speaking.params, routeQuery:speaking.query,
   };
   if (id.startsWith('media:')) {
@@ -163,8 +168,8 @@ export function mapContinuationEntry(entry, t) {
       source: 'continue',
       id,
       kind: t('kindContinue'),
-      title: entry.title || '',
-      meta: entry.context || '',
+      title: tidyTitle(entry.title || ''),
+      meta: where(entry.context),
       tag: null,
       durationLabel: '',
       image: '',
@@ -173,13 +178,20 @@ export function mapContinuationEntry(entry, t) {
       routeQuery: {},
     };
   }
+  if (/^(article|book):[^:]+(:[^:]+)?$/.test(id) && !(entry.place?.within >= 100)) {
+    return {
+      source: 'continue', id, kind: t('kindContinue'), title: tidyTitle(entry.title || ''),
+      meta: where(entry.context), tag: null, durationLabel: '', image: '',
+      routeId: 'reader', routeParams: { id }, routeQuery: {},
+    };
+  }
   if (/^conversation:[\w-]+$/.test(id)) {
     return {
       source: 'continue',
       id,
       kind: t('kindContinue'),
-      title: entry.title || '',
-      meta: entry.context || '',
+      title: tidyTitle(entry.title || ''),
+      meta: where(entry.context),
       tag: null,
       durationLabel: '',
       image: '',
@@ -195,8 +207,8 @@ export function mapContinuationEntry(entry, t) {
       source: 'continue',
       id,
       kind: t('kindContinue'),
-      title: entry.title || '',
-      meta: entry.context || '',
+      title: tidyTitle(entry.title || ''),
+      meta: where(entry.context),
       tag: null,
       durationLabel: '',
       image: '',
@@ -219,16 +231,21 @@ export function buildForYou({ continuation = [], listening = [], speaking = [], 
   const seen = new Set();
   const place = (item) => `${item.routeId}:${item.routeParams?.id ?? ''}`;
   const taken = (item) => item.routeParams?.id && seen.has(place(item));
-  const take = (item) => { if (item.routeParams?.id) seen.add(place(item)); items.push(item); };
+  /* The same title is the same thing even when a continued place and a catalogue row name it by different ids
+     ("Make room for someone" twice). */
+  const titles = new Set([...usedIds].filter((value) => String(value).startsWith('title:')).map((value) => String(value).slice(6)));
+  const titleKey = (item) => String(item?.title || '').trim().toLowerCase();
+  const sameTitle = (item) => Boolean(titleKey(item)) && item.source !== 'word' && titles.has(titleKey(item));
+  const take = (item) => { if (item.routeParams?.id) seen.add(place(item)); if (titleKey(item) && item.source !== 'word') titles.add(titleKey(item)); items.push(item); };
   for (const entry of continuation) {
     if (items.length >= FOR_YOU_LIMIT) break;
     const mapped = mapContinuationEntry(entry, t);
-    if (mapped && !usedIds.has(mapped.id) && !taken(mapped)) take(mapped);
+    if (mapped && !usedIds.has(mapped.id) && !taken(mapped) && !sameTitle(mapped)) take(mapped);
   }
   for (const item of listening) {
     if (items.length >= FOR_YOU_LIMIT) break;
     if (!item?.lesson_id || usedIds.has(item.lesson_id)) continue;
-    if (taken({ routeId: 'listening', routeParams: { id: item.lesson_id } })) continue;
+    if (taken({ routeId: 'listening', routeParams: { id: item.lesson_id } }) || sameTitle(item)) continue;
     take({
       source: 'listening',
       id: item.lesson_id,
@@ -246,7 +263,7 @@ export function buildForYou({ continuation = [], listening = [], speaking = [], 
   for (const item of speaking) {
     if (items.length >= FOR_YOU_LIMIT) break;
     if (!item?.id || usedIds.has(item.id)) continue;
-    if (taken({ routeId: 'speak', routeParams: { id: item.id } })) continue;
+    if (taken({ routeId: 'speak', routeParams: { id: item.id } }) || sameTitle(item)) continue;
     take({
       source: 'speaking',
       id: item.id,
@@ -301,7 +318,7 @@ export function leadWithContinuation(pool, continuation, t, coverFor) {
 }
 
 export function usedRecommendationIds(pool) {
-  return new Set(pool.flatMap((item) => [item.id, item.routeParams?.id]).filter(Boolean));
+  return new Set(pool.flatMap((item) => [item.id, item.routeParams?.id, item.source !== 'word' && item.title ? `title:${String(item.title).trim().toLowerCase()}` : '']).filter(Boolean));
 }
 
 /* --- goal ring, streak, level/XP: rule 40 -------------------------------- */

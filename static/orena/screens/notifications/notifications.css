@@ -11,3 +11,14 @@
   padding: 14px 24px 24px;
   gap: 10px;
 }
+
+/* The action a group of rows shares, named once (LEX-079): a quiet label, never capitals. */
+.s-notifications__group {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.s-notifications__group:first-child {
+  margin-top: 0;
+}

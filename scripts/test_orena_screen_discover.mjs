@@ -62,8 +62,10 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
 {
   assert.equal(progressFromContinuation([], 'article:1'), null, 'no continuation at all');
   assert.equal(progressFromContinuation([{ id: 'article:1', place: { index: 0, total: 5 } }], 'article:1'), null, 'index 0 is not started');
-  assert.equal(progressFromContinuation([{ id: 'article:1', place: { index: 2, total: 4 } }], 'article:1'), 50, 'exact-id match computes a percent');
-  assert.equal(progressFromContinuation([{ id: 'book:9:ch2', place: { index: 3, total: 3 } }], 'book:9', { idPrefix: 'book:9:' }), 100, 'prefix match finds a chapter row');
+  assert.equal(progressFromContinuation([{ id: 'article:1', place: { index: 2, total: 4 } }], 'article:1'), 25, 'exact-id match: item 2 of 4 means one whole item behind it (LEX-082)');
+  assert.equal(progressFromContinuation([{ id: 'article:1', place: { index: 1, total: 1 } }], 'article:1'), null, 'a 1 of 1 place with nothing measured is not 100% (LEX-082)');
+  assert.equal(progressFromContinuation([{ id: 'media:1', place: { index: 1, total: 1, within: 2 } }], 'media:1'), 2, 'a flat place reports how far in the learner is, never its 1/1 pair');
+  assert.equal(progressFromContinuation([{ id: 'book:9:ch2', place: { index: 3, total: 3 } }], 'book:9', { idPrefix: 'book:9:' }), 67, 'prefix match finds a chapter row (chapter 3 of 3 opened: two behind it)');
   assert.equal(progressFromContinuation([{ id: 'book:9:ch2', place: { index: 3, total: 3 } }], 'book:9', { idPrefix: 'book:10:' }), null, 'prefix match is exact to the book id, not a substring of another book');
 }
 
@@ -72,7 +74,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
 {
   const entry = entryFromArticle(
     { id: 'a1', title: 'Why We Love Routines', level: 'B2', topic: 'Daily life', reading_time_seconds: 340 },
-    [{ id: 'article:a1', place: { index: 1, total: 1 } }],
+    [{ id: 'article:a1', place: { index: 1, total: 1, within: 100 } }],
   );
   assert.equal(entry.id, 'article:a1');
   assert.equal(entry.kind, 'article');
@@ -98,7 +100,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal(withoutCover.image, '', 'no cover_asset_key draws no image, never a placeholder URL');
   const started = entryFromBook({ id: 'b3', title: 'x' }, [{ id: 'book:b3:ch4', place: { index: 4, total: 8 } }], '');
   assert.equal(started.started, true);
-  assert.equal(started.progressPct, 50);
+  assert.equal(started.progressPct, 38, 'chapter 4 of 8 opened: three chapters behind it');
   // languages-5 / finding A: a book's own field is `learning_language`, a different name than an
   // article's `language` - both mapped to the same `entry.language`.
   assert.equal(entryFromBook({ id: 'b4', title: 'x', learning_language: 'en' }, [], '').language, 'en');

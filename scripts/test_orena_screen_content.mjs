@@ -92,7 +92,7 @@ assert.equal(normalizeArticle({ title: 'x', body: '', language: 'zh' }).language
 assert.equal(normalizeArticle({ title: 'Long', body: 'x'.repeat(400) }).desc, '', 'no description metadata: the block is hidden');
 
 assert.deepEqual(normalizeBook({ id: 'b1', title: 'Truyện', author: 'Tác giả', description: 'Mô tả' }), {
-  title: 'Truyện', language: '', source: 'Tác giả', level: '', minutes: null, desc: 'Mô tả', image: '',
+  title: 'Truyện', language: '', source: 'Tác giả', level: '', minutes: null, desc: 'Mô tả', chapters: [], image: '',
 });
 // languages-5 / finding A: `learning_language`, a book's own field name (different from an
 // article's `language`).
@@ -172,8 +172,18 @@ const catalogue = [
 ];
 assert.deepEqual(
   pickRelated(catalogue, { excludeId: 'x', map: (item) => ({ id: item.id, title: item.title }), score: (item) => relatednessScore(open, item) }).map((item) => item.id),
-  ['d', 'b', 'c'],
-  'same topic and level first, then the topic, then the level; the unrelated item is not offered',
+  ['d', 'b'],
+  'same topic and level first, then the topic; level alone is not relatedness (LEX-075 reopened), so c is not offered',
 );
 assert.deepEqual(pickRelated(catalogue, { excludeId: 'x', map: (item) => item, score: (item) => relatednessScore({ topic: '', level: '' }, item) }), [], 'an open item with no topic or level relates nothing');
 assert.equal(relatednessScore({ source: 'Aesop' }, { author: 'aesop' }), 2, 'the same author relates books');
+
+// LEX-082 / LEX-083: one place truth and a book's own place.
+import { placePercent, bookPlace } from '../static/orena/product/place-progress.js';
+assert.equal(placePercent({ index: 1, total: 1 }), null, 'a 1 of 1 place is not measured progress');
+assert.equal(placePercent({ index: 1, total: 1, within: 2 }), 2);
+assert.equal(placePercent({ index: 3, total: 9, within: 50 }), 28, 'two chapters and half of the third, of nine');
+const shelf = [{ id: 'book:b:c3', title: 'Chapter III', place: { index: 3, total: 9 } }, { id: 'book:b:c1', place: { index: 1, total: 9 } }];
+assert.equal(bookPlace(shelf, 'b').chapterId, 'c3', 'the furthest chapter is the place');
+assert.equal(bookPlace([{ id: 'book:b:c1', place: { index: 1, total: 9, within: 100 } }, { id: 'book:b:c3', place: { index: 3, total: 9 } }], 'b').chapterId, 'c3', 'reopening an earlier chapter does not move the place back');
+assert.equal(bookPlace(shelf, 'bb').started, false, 'another book id is not a prefix match');

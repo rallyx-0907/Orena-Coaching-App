@@ -6,6 +6,8 @@
    a "new best pronunciation attempt" line, a relative timestamp, a read/unread flag) is left out
    rather than invented (rule 40) - recorded in SCRATCH/reports/sheets.md, not resolved by guessing. */
 
+import { tidyTitle } from '../../product/tidy-title.js';
+
 /* Which new-shell route a continuation entry's id resolves to, by the same id-prefix contract
    product/intent.js and static/orena/ui/encounter.js already use - only the three experiences whose
    old and new routes take the identical `id` (reader, listening, writing) are surfaced; an entry
@@ -36,7 +38,8 @@ export function notificationRows({ due = 0, continuation = [] } = {}) {
       kind: target.kind,
       routeId: target.routeId,
       id: item.id,
-      title: item.title,
+      title: tidyTitle(item.title),
+      context: tidyTitle(item.context),
       percent: item.place && Number.isFinite(item.place.within) ? item.place.within : null,
     });
   }
