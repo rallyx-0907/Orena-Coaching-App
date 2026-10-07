@@ -64,3 +64,9 @@ after the fixes. The only automated hits left are listed under Residuals.
 - The level step of Welcome writes the profile on Continue (existing behaviour). During this sweep that step was
   advanced once with the stored defaults (B1, English with Vietnamese support), so the profile may have been re-saved
   with the same values. Nothing else was written.
+
+## Human review follow-up (2026-10-07)
+
+- **Dictation typing on iPhone lifted too far (human screenshot):** the sweep's media-column scroll (`overflow-y: auto`) let iOS scroll the answer out of view on focus, and the typing height did not subtract the new top safe-area clearance. Both removed/fixed; typing height is the visible height minus `env(safe-area-inset-top)`. Needs a real-iPhone recheck.
+- **Short-height Listening: CHANGES REQUIRED → recomposed.** No media-column scroll. On phones ≤ 700px tall with a line selected the player is a 96px strip, the line/meaning region is bounded (4.6em, scrolls inside), the Transcript keeps its own bounded region (≥ 72px; 52px while the practise group is open). With the practise group open on ≤ 700px, and with any line selected on ≤ 600px, the picture leaves (the player stays rendered and playing; transport stays). Measured: 375x667, 393x852, 390x844, 360x740 — no control hidden, no page scroll; 320x568 — no control hidden (3px residual padding, no scroll needed).
+- **Hit areas: APPROVED → applied.** `.o-tab`, `.c-seg__opt`, `.s-progress-back`, `.s-progress-skill` get a vertical-only ~44px area; the Progress card link and the Collection word play control an all-round area; the tab strip gets 4px room (negative margin, nothing moves). Edge hit tests: own control or nothing, never a neighbour.
