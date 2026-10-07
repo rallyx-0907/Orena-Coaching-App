@@ -886,3 +886,24 @@
   background: var(--accent-fill-press);
   transform: scale(0.97);
 }
+
+/* Three options sit on one row at every width (LEX-063: a lone wrapped option read as a different group). */
+.s-writing-setup__pills--even { flex-wrap: nowrap; gap: 8px; }
+.s-writing-setup__pills--even .s-writing__pill--setup {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 11px 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The line that says a new draft keeps this one (LEX-062). */
+.s-writing-choice__kept {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}

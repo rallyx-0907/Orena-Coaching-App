@@ -183,6 +183,16 @@ export function waitingDraft(expressions, language) {
   return null;
 }
 
+/* The drafts set aside, newest first, each as the room names it - for the "Earlier drafts" list (LEX-062). */
+export function earlierDrafts(expressions, language) {
+  return parkedKeys(expressions).reverse().map((id) => ({
+    key: id,
+    title: String(expressions?.[`${id}::task`] || '').trim(),
+    free: readIntent(expressions, id).free,
+    n: wordCountOf(String(expressions?.[id] || ''), language),
+  }));
+}
+
 /* The revision to open for a piece: the latest of its series. `revisions` is the detail's own list
    (`id`, `revision_no`, oldest first). */
 export function latestRevisionId(detail) {

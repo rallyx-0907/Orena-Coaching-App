@@ -136,7 +136,9 @@ export default async function mountWriting(element, ctx) {
      its own piece and ignores both. */
   const entryFree = !essay && ctx.query?.get('entry') === 'free';
   const entrySetup = !essay ? ctx.query?.get('setup') || '' : '';
-  if (ctx.query?.has('entry') || ctx.query?.has('setup')) history.replaceState(null, '', location.hash.split('?')[0]);
+  // An earlier draft chosen from the Practice Hub's list (LEX-062).
+  const entryOpen = !essay ? ctx.query?.get('open') || '' : '';
+  if (ctx.query?.has('entry') || ctx.query?.has('setup') || ctx.query?.has('open')) history.replaceState(null, '', location.hash.split('?')[0]);
   /* Register and target start at the design's own defaults for a new draft (Informal, ~150 words); a piece
      already reviewed shows only what the learner chose for it. */
   let register = intent.register || (essay ? '' : DEFAULT_REGISTER);
@@ -235,12 +237,13 @@ export default async function mountWriting(element, ctx) {
       .then(() => parked.flush())
       .catch(() => {});
   }
-  function restoreParked() {
+  function restoreParked(wanted = '') {
     const ex = memory.value.expressions;
     const keys = parkedKeys(ex);
-    const id = [...keys].reverse().find((k) => String(ex[k] || '').trim());
+    const id = wanted && keys.includes(wanted) ? wanted : [...keys].reverse().find((k) => String(ex[k] || '').trim());
     if (!id) return;
-    if (promptText.trim()) parkCurrent(); // a task typed with no words is set aside too, not dropped
+    // Choosing an earlier draft while words are in the box sets those words aside first: nothing is replaced.
+    if (promptText.trim() || (wanted && text.trim())) parkCurrent(); // a task typed with no words is set aside too, not dropped
     const kept = parkedKeys(memory.value.expressions).filter((k) => k !== id);
     const back = readIntent(ex, id);
     text = String(ex[id] || '');
@@ -263,6 +266,7 @@ export default async function mountWriting(element, ctx) {
     const holds = Boolean(text.trim() || promptText.trim());
     if (fresh && holds) choicePending = true;
     else if (fresh) startBlank();
+    else if (entryOpen) restoreParked(entryOpen);
     else if (!entrySetup && !text.trim()) restoreParked();
   }
   ctx.setCrumb(promptText || untitled());
@@ -305,11 +309,15 @@ export default async function mountWriting(element, ctx) {
     return `${counted} · ${t.plural('charsOnly', charCountOf(text))}`;
   }
 
+  /* The length is counted in the unit of the language being written: words, or Hanzi (LEX-063). */
+  const targetUnitKey = () => (language === 'zh' ? 'targetHanziOption' : 'targetWordsOption');
+
   function metaLine() {
-    const parts = [t('metaPrefix')];
+    // A blank page has no prompt to name; a prompt draft's line starts with that word.
+    const parts = free ? [] : [t('metaPrefix')];
     if (level) parts.push(levelLabel(level));
     if (register) parts.push(t(REGISTER_KEY[register]));
-    if (target) parts.push(`~${t.plural('targetWordsOption', target)}`);
+    if (target) parts.push(`~${t.plural(targetUnitKey(), target)}`);
     parts.push(essay ? t('versionLabel', { n: essay.revisionNo }) : t('versionNone'));
     return parts.join(' · ');
   }
@@ -319,7 +327,7 @@ export default async function mountWriting(element, ctx) {
   function headerMarkup() {
     return html`<button type="button" class="o-iconbtn o-iconbtn--back" data-act="back" aria-label="${s('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
       <div class="s-writing__title">
-        <div class="s-writing__title-text" lang="${langOf(language)}">${promptText || untitled()}</div>
+        <div class="s-writing__title-text" lang="${langOf(language)}">${leftMode === 'edit' && promptText ? (free ? t('freeTitle') : t('draftTab')) : promptText || untitled()}</div>
         <div class="s-writing__title-meta">${metaLine()}</div>
       </div>
       <button type="button" class="s-writing__btn" data-act="setup">${t('setupBtn')}</button>
@@ -793,7 +801,7 @@ export default async function mountWriting(element, ctx) {
   /* -------------------------------------------------------------------- Prompt setup -- */
 
   function pillGroup(label, options, selected, group) {
-    return html`<div class="s-writing-setup__group"><span class="s-writing-setup__label">${label}</span><div class="s-writing-setup__pills">${options.map(
+    return html`<div class="s-writing-setup__group"><span class="s-writing-setup__label">${label}</span><div class="${cls('s-writing-setup__pills', options.length <= 3 && 's-writing-setup__pills--even')}">${options.map(
       (option) => html`<button type="button" class="${cls('s-writing__pill', 's-writing__pill--setup', selected === option.id && 'is-active')}" data-choice="${group}" data-value="${option.id}" aria-pressed="${selected === option.id}">${option.label}</button>`,
     )}</div></div>`;
   }
@@ -809,7 +817,7 @@ export default async function mountWriting(element, ctx) {
         </div>
         ${pillGroup(t('levelGroupLabel'), setupLevels(language), level, 'level')}
         ${pillGroup(t('registerGroupLabel'), SETUP_REGISTERS.map((id) => ({ id, label: t(REGISTER_KEY[id]) })), register, 'register')}
-        ${pillGroup(t('targetGroupLabel'), SETUP_TARGETS.map((n) => ({ id: String(n), label: t.plural('targetWordsOption', n) })), String(target || ''), 'target')}
+        ${pillGroup(t('targetGroupLabel'), SETUP_TARGETS.map((n) => ({ id: String(n), label: t.plural(targetUnitKey(), n) })), String(target || ''), 'target')}
       </div>
       <div class="s-writing-setup__foot">
         <button type="button" class="s-writing-setup__write" data-write ${required && !promptText.trim() ? 'disabled' : ''}>${t('writeCta')}</button>
@@ -858,10 +866,10 @@ export default async function mountWriting(element, ctx) {
         mount(
           sheetEl,
           html`${sheetHead({ title: t('choiceTitle'), closeLabel: s('close') })}
-          <div class="s-writing-setup__body"><div class="s-writing-choice__line" lang="${langOf(language)}">${name} · ${count}</div></div>
+          <div class="s-writing-setup__body"><div class="s-writing-choice__line" lang="${langOf(language)}">${name} · ${count}</div><p class="s-writing-choice__kept">${t('choiceKept')}</p></div>
           <div class="s-writing-setup__foot s-writing-choice__foot">
-            <button type="button" class="s-writing-setup__write" data-new>${t('choiceNew')}</button>
-            <button type="button" class="s-writing__btn s-writing-choice__continue" data-continue>${t('choiceContinue')}</button>
+            <button type="button" class="s-writing-setup__write" data-continue>${t('choiceContinue')}</button>
+            <button type="button" class="s-writing__btn s-writing-choice__continue" data-new>${t('choiceNew')}</button>
           </div>`,
         );
         bindClose(sheetEl, handle);

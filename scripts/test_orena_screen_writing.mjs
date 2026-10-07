@@ -384,4 +384,16 @@ assert.equal(saveTone('device').color, 'var(--green)');
   assert.equal(m.saveTone('device').key, 'savedDevice');
 }
 
+{
+  const ex = {
+    'expression:parked:a': 'one two', 'expression:parked:a::task': 'First',
+    'expression:parked:b': '我去了车站', 'expression:parked:b::intent': JSON.stringify({ free: true }),
+    'expression:free::parked': 'expression:parked:a,expression:parked:b',
+  };
+  const list = (await import('../static/orena/screens/writing/model.js')).earlierDrafts(ex, 'zh');
+  assert.deepEqual(list.map((d) => d.key), ['expression:parked:b', 'expression:parked:a']);
+  assert.equal(list[0].free, true);
+  assert.equal(list[1].title, 'First');
+}
+
 console.log('Orena Writing screen model: PASS');

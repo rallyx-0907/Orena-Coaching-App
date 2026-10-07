@@ -42,14 +42,16 @@ const SPEAK_ICONS = {
 };
 /* The design's PH_MAP: "Continue draft" and "Prompt" are `pen` (Lucide pen-line), "Free Writing" and "Your
    Topic" are `note` (Lucide notebook-pen). */
-const WRITE_ICONS = { continue: 'pen-line', prompt: 'pen-line', free: 'notebook-pen', topic: 'notebook-pen' };
+const WRITE_ICONS = { continue: 'pen-line', prompt: 'pen-line', free: 'notebook-pen', topic: 'notebook-pen', earlier: 'history' };
 /* 'keyboard' (design PH_MAP "Dictation":"kbd") and 'repeat' (design PH_MAP "Shadowing":"repeat",
    the same icon Speak's own Shadowing mode already uses) - both already present in kit/icons.js,
    no sync needed. */
 const LISTEN_ICONS = { dictation: 'keyboard', listening: 'headphones', react: 'arrow-left-right' };
-/* The design's PH_MAP: Due review and Daily Feed are `cards` (Lucide panels-top-left), Collections and Saved language
-   are `lib` (Lucide library-big), Timed Recall `zap`, Context Transfer `target`. */
-const VOCAB_ICONS = { review: 'panels-top-left', timed: 'zap', transfer: 'target', feed: 'panels-top-left', collections: 'library-big', language: 'library-big' };
+/* The design's PH_MAP: Due review is `cards` (Lucide panels-top-left), Collections `lib` (Lucide library-big), Timed
+   Recall `zap`, Context Transfer `target`. The design gives Daily Feed `cards` and Saved language `lib` as well, so two
+   tiles of one group read as the same place; Daily Feed (flame) and Saved language (bookmark) have their own Lucide
+   icons here (LEX-071, a deviation recorded for the human). */
+const VOCAB_ICONS = { review: 'panels-top-left', timed: 'zap', transfer: 'target', feed: 'flame', collections: 'library-big', language: 'bookmark' };
 const GRAMMAR_ICONS = { grammarlib: 'book-open' };
 /* 'book-open' (design PH_MAP "Start Reading Practice":"book" - the same path as Lucide's
    book-open, already reused by Grammar library above). */
@@ -134,7 +136,7 @@ function shown(modes) {
    only while a draft is waiting. `draft` is { title, n } for it. */
 export const WRITE_GROUPS = ['free', 'respond', 'pressure'];
 
-export function writeModes(draft = null) {
+export function writeModes(draft = null, earlier = 0) {
   const modes = [];
   if (draft && draft.n > 0) modes.push({ key: 'continue', group: 'free', routeId: 'writing', draft });
   modes.push(
@@ -142,6 +144,8 @@ export function writeModes(draft = null) {
     { key: 'free', group: 'free', routeId: 'writing', query: { entry: 'free' } },
     { key: 'topic', group: 'free', routeId: 'writing', query: { setup: 'topic' } },
   );
+  // The drafts "Start new draft" set aside stay reachable (LEX-062): one row opens their list.
+  if (earlier > 0) modes.push({ key: 'earlier', group: 'free', routeId: 'writing', action: 'earlier', count: earlier });
   return shown(modes);
 }
 
@@ -215,7 +219,7 @@ export function grammarModes() {
 
 export const SKILL_BUILDERS = {
   speak: (data) => speakModes(data.speakingItems, data.lastSpeakingLine),
-  write: (data) => writeModes(data.draft),
+  write: (data) => writeModes(data.draft, data.earlier),
   listen: (data) => listenModes(data.listeningItems, data.lastListenedLine),
   vocabulary: (data) => vocabularyModes(data.due),
   grammar: () => grammarModes(),

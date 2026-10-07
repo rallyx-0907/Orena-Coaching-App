@@ -18,11 +18,11 @@ import { t } from './copy.js';
 import { loadAttemptsSince } from '../../product/speaking-history.js';
 import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SKILL_GROUPS, buildSkillSections, writeRecommendation, weakestLines, vocabularyRecommendation } from './model.js';
 import { t as writingT } from '../writing/copy.js';
-import { CATEGORY_IDS, waitingDraft } from '../writing/model.js';
+import { CATEGORY_IDS, waitingDraft, earlierDrafts } from '../writing/model.js';
 
 const GROUP_LABEL_KEY = { natural: 'groupNatural', pronounce: 'groupPronounce', challenge: 'groupChallenge', free: 'groupFree', respond: 'groupRespond', pressure: 'groupPressure', recall: 'groupRecall', use: 'groupUse', browse: 'groupBrowse' };
 const VOCAB_KEY = { review: 'vocabDue', collections: 'vocabCollections', language: 'vocabLanguage' };
-const WRITE_KEY = { continue: 'writeContinue', prompt: 'writePrompt', free: 'writeFree', topic: 'writeTopic' };
+const WRITE_KEY = { continue: 'writeContinue', prompt: 'writePrompt', free: 'writeFree', topic: 'writeTopic', earlier: 'writeEarlier' };
 
 const SKILL_LABEL_KEY = {
   speak: 'skillSpeak',
@@ -51,6 +51,7 @@ function labelOf(skill, mode) {
 function groupedFacts(skill, mode) {
   if (!mode.group) return null;
   if (skill === 'speak') return { desc: t(`${mode.key}Desc`), dur: t(`${mode.key}Dur`) };
+  if (skill === 'write' && mode.key === 'earlier') return { desc: t.plural('writeEarlierDesc', mode.count), dur: '' };
   if (skill === 'write' && mode.key === 'continue') return { desc: t('writeContinueDesc', { title: mode.draft.title || t('writeUntitled'), n: mode.draft.n }), dur: '' };
   if (skill === 'write') return { desc: t(`${WRITE_KEY[mode.key]}Desc`), dur: '' };
   // No Vocabulary mode has a measured duration (N-22), so none is drawn.
@@ -71,9 +72,15 @@ function speakDur(skill, mode) {
 function modeMeta(skill, mode) {
   // The duration never truncates: only the description gives way in a longer interface language.
   const facts = groupedFacts(skill, mode);
-  if (facts) return html`<span class="s-practice-tile__desc">${facts.desc}</span>${facts.dur ? html`<span class="s-practice-tile__dur">· ${facts.dur}</span>` : ''}`;
+  const due = skill === 'vocabulary' && mode.key === 'review' && mode.due > 0 ? ' s-practice-tile__desc--due' : '';
+  if (facts) return html`<span class="s-practice-tile__desc${due}">${facts.desc}</span>${facts.dur ? html`<span class="s-practice-tile__dur">· ${facts.dur}</span>` : ''}`;
   if ((skill === 'speak' || skill === 'listen' || skill === 'reading') && mode.level) return mode.level;
   return '';
+}
+
+/* A mode opens its route, or - Earlier drafts - a list in this room (LEX-062). */
+function modeDataset(mode) {
+  return mode.action === 'earlier' ? { earlier: '' } : { go: href(mode.routeId, mode.params, mode.query) };
 }
 
 function tileMarkup(skill, mode) {
@@ -85,7 +92,7 @@ function tileMarkup(skill, mode) {
     title: labelOf(skill, mode),
     sub: modeMeta(skill, mode),
     className: 's-practice-tile',
-    dataset: { go: href(mode.routeId, mode.params, mode.query) },
+    dataset: modeDataset(mode),
   });
 }
 
@@ -104,7 +111,7 @@ function hubRowMarkup(skill, mode) {
     trailing: meta ? html`<span class="s-practice-hubrow__meta">${meta}</span>` : null,
     chevron: true,
     className: 's-practice-hubrow',
-    dataset: { go: href(mode.routeId, mode.params, mode.query) },
+    dataset: modeDataset(mode),
   });
 }
 
@@ -207,6 +214,28 @@ function localisedWriteRecommendation(raw) {
   return { title: key ? writingT(key) : t('recWriteExpression'), reason: t(WRITE_REASON[raw.intent] || 'recWriteBaseline') };
 }
 
+/* The drafts "Start new draft" set aside, newest first; opening one sets the current words aside in turn (LEX-062). */
+function openEarlierDrafts(ctx) {
+  const rows = earlierDrafts(ctx.context.memory?.value?.expressions || {}, ctx.context.language);
+  const language = ctx.context.language;
+  openSheet({ label: t('writeEarlier'), render(sheet, handle) {
+    fillSheet(sheet, handle, html`${sheetHead({ title: t('writeEarlier'), closeLabel: shellCopy('close') })}
+      <div class="s-practice-recent">
+        ${rows.length ? rows.map((row) => listRow({
+    variant: 'shadow',
+    radius: 18,
+    pad: '12px',
+    leading: rowIconSwatch({ iconName: 'pen-line', tint: SKILL_TINT.write }),
+    title: row.title ? langSpan(row.title, language) : (row.free ? writingT('freeTitle') : t('writeUntitled')),
+    sub: t.plural(language === 'zh' ? 'writeEarlierHanzi' : 'writeEarlierWords', row.n, { n: row.n }),
+    trailing: html`<span class="s-practice-pill">${t('continueCta')}</span>`,
+    className: 's-practice-continue-row',
+    dataset: { go: href('writing', {}, { open: row.key }) },
+  })) : html`<p class="s-practice-empty">${t('writeEarlierNone')}</p>`}
+      </div>`);
+  } });
+}
+
 async function renderHub(element, ctx, data) {
   const memory = ctx.context.memory?.value || {};
   const continuation = await loadPendingRows(ctx.context.memory, ctx.context.language);
@@ -224,6 +253,7 @@ async function renderHub(element, ctx, data) {
       ${sections.map(({ skill, modes }) => sectionMarkup(skill, modes))}
     </div>`,
   );
+  element.querySelector('[data-earlier]')?.addEventListener('click', () => openEarlierDrafts(ctx));
   let recentOpening = false;
   element.querySelector('[data-recent]')?.addEventListener('click', async event => {
     if (recentOpening) return;
@@ -275,6 +305,7 @@ async function renderSkillHub(element, ctx, data, skill) {
     </div>`,
   );
   element.querySelector('[data-back]')?.addEventListener('click', () => ctx.back());
+  element.querySelector('[data-earlier]')?.addEventListener('click', () => openEarlierDrafts(ctx));
 }
 
 export default async function practiceHub(element, ctx) {
@@ -304,7 +335,8 @@ export default async function practiceHub(element, ctx) {
   // aside; named as the room names it - its task, "Free writing" for a blank page, "Untitled" only when it has neither.
   const waiting = waitingDraft(ctx.context.memory?.value?.expressions || {}, language);
   const draft = waiting ? { title: waiting.title || (waiting.free ? writingT('freeTitle') : ''), n: waiting.n } : null;
-  const data = { draft, speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine, lastListenedLine: listenedLine, speakRecommendation: speakRec };
+  const earlier = earlierDrafts(ctx.context.memory?.value?.expressions || {}, language).length;
+  const data = { draft, earlier, speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine, lastListenedLine: listenedLine, speakRecommendation: speakRec };
   if (skill) await renderSkillHub(element, ctx, data, skill);
   else await renderHub(element, ctx, data);
 }
