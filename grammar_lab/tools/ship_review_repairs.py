@@ -29,10 +29,13 @@ save(path, d)
 path, d = load("zh.canon.gf.hsk1.a_1_1_3.p1")
 qs = d["quick_practice"]
 qs[0]["q"] = "我叫小明。___是学生。"
+qs[0]["q_pinyin"] = ["wǒ", "jiào", "xiǎo", "míng", "", "", "", "", "shì", "xué", "shēng", ""]
 qs[0]["explain"] = {"vi": "Câu trước giới thiệu người nói là 小明, nên đại từ phù hợp là 我, không phải 我们."}
 qs[1]["q"] = "王老师是女老师。___是老师。"
+qs[1]["q_pinyin"] = ["wáng", "lǎo", "shī", "shì", "nǚ", "lǎo", "shī", "", "", "", "", "shì", "lǎo", "shī", ""]
 qs[1]["explain"] = {"vi": "王老师 được xác định là nữ, nên dùng 她, không dùng 他."}
 qs[2]["q"] = "小红和小丽来了。___是学生。"
+qs[2]["q_pinyin"] = ["xiǎo", "hóng", "hé", "xiǎo", "lì", "lái", "le", "", "", "", "", "shì", "xué", "shēng", ""]
 qs[2]["explain"] = {"vi": "小红 và 小丽 là hai nữ, nên dùng đại từ số nhiều 她们."}
 save(path, d)
 
@@ -40,6 +43,7 @@ save(path, d)
 path, d = load("zh.canon.gf.hsk1.a_1_4_4.p1")
 cm = d["common_mistakes"][0]
 cm["wrong"] = "我喜欢喝茶，也咖啡喜欢喝。"
+cm["wrong_pinyin"] = ["wǒ", "xǐ", "huan", "hē", "chá", "", "yě", "kā", "fēi", "xǐ", "huan", "hē", ""]
 cm["right"] = "我喜欢喝茶，也喜欢喝咖啡。"
 cm["reason"] = {"vi": "也 đặt trước vị ngữ của vế song song; không đảo tân ngữ 咖啡 lên trước động từ 喜欢喝."}
 save(path, d)
@@ -48,6 +52,7 @@ save(path, d)
 path, d = load("zh.canon.r5.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i")
 qp = d["quick_practice"][0]
 qp["q"] = "天气变___了，多穿点衣服。"
+qp["q_pinyin"] = ["tiān", "qì", "biàn", "", "", "", "le", "", "duō", "chuān", "diǎn", "yī", "fu", ""]
 qp["options"] = [
     {"text": "冷", "error_tag": None, "pinyin": ["lěng"]},
     {"text": "很冷", "error_tag": "particle", "pinyin": ["hěn", "lěng"]},
@@ -60,6 +65,7 @@ save(path, d)
 path, d = load("zh.de_possessive")
 qp = d["quick_practice"][2]
 qp["q"] = "这是小王___电脑。"
+qp["q_pinyin"] = ["zhè", "shì", "xiǎo", "wáng", "", "", "", "diàn", "nǎo", ""]
 qp["options"] = [
     {"text": "的", "error_tag": None, "pinyin": ["de"]},
     {"text": "新", "error_tag": "particle", "pinyin": ["xīn"]},
@@ -84,15 +90,20 @@ qp["answer"] = 0
 qp["explain"] = {"vi": "Trong mẫu hoàn thành này, 了 đứng sau động từ 看: 看了; không đặt 了 trước động từ."}
 save(path, d)
 
-# 7) 吗 comparison was labelled 呢 but the example is A-not-A.
+# 7) 吗 comparison: keep the declared 呢 contrast and use a real 呢 example.
 path, d = load("zh.ma_question")
-d["compare"][0]["with"] = "zh.affirmative_negative_question"
+cmp = d["compare"][0]
+cmp["with"] = "zh.ne_question"
+cmp["other_meaning"] = {"vi": "呢 thường dùng để hỏi tiếp hoặc hỏi ngược về một chủ đề đã rõ, không phải mẫu A-not-A."}
+cmp["other_example"] = "你呢？"
+cmp["other_example_pinyin"] = ["nǐ", "ne", ""]
 save(path, d)
 
 # 8) 请: 我请你喝茶 is valid ('I invite/treat you to tea'), so replace with a real word-order error.
 path, d = load("zh.qing_request")
 cm = d["common_mistakes"][0]
 cm["wrong"] = "请你茶喝。"
+cm["wrong_pinyin"] = ["qǐng", "nǐ", "chá", "hē", ""]
 cm["right"] = "请你喝茶。"
 cm["reason"] = {"vi": "Sau 请你, động từ 喝 đứng trước tân ngữ 茶: 请你喝茶."}
 save(path, d)
