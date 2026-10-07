@@ -91,8 +91,9 @@ export default async function mountCompareWithModel(element, ctx) {
   element.append(renderRoot);
 
   const requested = ctx.query.get('attempt');
-  /* A named attempt opens as asked (Attempt History); otherwise this tab's newest take, or the record card. */
-  let selectedId = takes.some((item) => item.id === requested) ? requested : tabList[0]?.id || '';
+  /* A named attempt opens as asked (Attempt History); otherwise this tab's newest take (its audio and word timing
+     draw the full comparison), else the account's newest attempt - the room never hides a result it has. */
+  let selectedId = takes.some((item) => item.id === requested) ? requested : tabList[0]?.id || takes[0]?.id || '';
   let wordSel = null;
   let tab = 'pitch';
   let mode = source.hasModelAudio ? PLAYBACK_MODES[0] : 'you_only';
