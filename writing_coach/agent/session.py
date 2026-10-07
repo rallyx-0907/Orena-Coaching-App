@@ -23,11 +23,12 @@ import secrets
 import threading
 import time
 from collections import OrderedDict
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any
 
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
+from writing_coach.agent.pending import SETTLED_KEPT, PendingInteraction
 from writing_coach.agent.schemas import AppContextSnapshot, SelectedItem
 
 
@@ -62,9 +63,11 @@ class AgentSessionState:
     turn_count: int = 0
     address_asked: bool = False  # the learner was asked once, this session, about an address pair
     target_language: str | None = None  # the contract target the kept context belongs to
-    # The places offered in the last answer (type, label, payload): "mở giúp tôi" / "open it" right after an offer
-    # opens that offer (text phone test 2026-10-06), and the next turn's model sees what it offered.
-    last_offers: tuple[Mapping[str, Any], ...] = ()
+    # The offer the learner has not answered (agent/pending.py): one generic record for any action, kept until it is
+    # completed, cancelled, expired or replaced - a question in between does not clear it. `settled` is the last few
+    # that ended, as (id, status), so an answer that arrives twice finds nothing left to run twice.
+    pending: PendingInteraction | None = None
+    settled: tuple[tuple[str, str], ...] = ()
     # The turns just before this one, verbatim and bounded (architecture target §4-5): the model sees them, so a
     # follow-up ("cho ví dụ khác", "đoạn thứ 3") has something to refer to. In this process only, like the rest.
     recent_turns: tuple[ConversationTurn, ...] = ()
@@ -72,11 +75,12 @@ class AgentSessionState:
     def for_target(self, target: str | None) -> AgentSessionState:
         """The session as a turn in `target` may see it (dogfood gate 3.3).
 
-        What was kept belongs to the language it was learned in: a selection, the
+        What was kept about the screen belongs to the language it was learned in: a selection, the
         tools' results, the app context, a goal and a voice session are dropped when
         the learner's target language changes, so nothing of an English context
-        reaches a Chinese turn. What does not depend on the target - who the session
-        belongs to, its turn count, whether an address was asked - stays.
+        reaches a Chinese turn. The conversation is not that: a language change is not a new
+        conversation, so the recent turns and the unanswered offer (a word names its own language)
+        stay, as do who the session belongs to, its turn count and whether an address was asked.
         """
 
         if target is None or self.target_language == target:
@@ -84,8 +88,7 @@ class AgentSessionState:
         if self.target_language is None and not self.turn_count:
             return replace(self, target_language=target)
         return replace(self, target_language=target, current_app_context=None, last_selected_entity=None,
-                       active_learning_goal=None, recent_tool_results=(), voice_session_ref=None, last_offers=(),
-                       recent_turns=())
+                       active_learning_goal=None, recent_tool_results=(), voice_session_ref=None)
 
     def with_context(self, context: AppContextSnapshot) -> AgentSessionState:
         selected = context.selected_item or self.last_selected_entity
@@ -116,10 +119,31 @@ class AgentSessionState:
             turns = turns[2:]
         return replace(self, recent_turns=turns)
 
-    def with_offers(self, offers: tuple[Mapping[str, Any], ...]) -> AgentSessionState:
-        """The places the last answer offered; every answer replaces them (an answer with none clears them)."""
+    def live_pending(self) -> PendingInteraction | None:
+        """The unanswered offer, unless it has been open past its turns."""
 
-        return replace(self, last_offers=tuple(offers))
+        pending = self.pending
+        return pending if pending is not None and pending.live_at(self.turn_count) else None
+
+    def with_offer(self, pending: PendingInteraction) -> AgentSessionState:
+        """A new offer takes the place of the old one."""
+
+        state = self.with_settled(self.pending, "replaced") if self.pending is not None else self
+        return replace(state, pending=pending)
+
+    def with_settled(self, pending: PendingInteraction | None, status: str) -> AgentSessionState:
+        """`pending` ended as `status`: it is no longer open, and its id is remembered."""
+
+        if pending is None:
+            return self
+        kept = (*self.settled, (pending.id, status))[-SETTLED_KEPT:]
+        return replace(self, pending=None if self.pending is not None and self.pending.id == pending.id else self.pending,
+                       settled=kept)
+
+    def without_expired(self) -> AgentSessionState:
+        if self.pending is not None and self.live_pending() is None:
+            return self.with_settled(self.pending, "expired")
+        return self
 
 
 class SessionCache:

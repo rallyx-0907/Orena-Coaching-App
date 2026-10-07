@@ -62,6 +62,7 @@ from writing_coach.agent.address import (
 from writing_coach.agent.events import ActionEvent, Display, MemoryUpdateEvent, SuggestionEvent, make_action
 from writing_coach.agent.honesty import plain_text
 from writing_coach.agent.notes import FORGET, asks_to_remember, confirmed_note, same_note
+from writing_coach.agent.pending import CANCEL, CONFIRM, DECISIONS, PendingInteraction
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.schemas import ClientInfo
 from writing_coach.vocabulary_library import normalize_vocabulary_word
@@ -213,10 +214,11 @@ SET_ADDRESS = "set_address"
 OFFER_ADDRESS = "offer_address"
 REMEMBER_NOTE = "remember_note"
 FORGET_NOTE = "forget_note"
+RESOLVE_PENDING = "resolve_pending"
 REPLY_TOOL_NAMES = frozenset(
     {
         PROPOSE_ACTION, SUGGEST_NEXT, CITE_EVIDENCE, SET_VOICE_STYLE, ADD_REFERENCE, SET_ADDRESS, OFFER_ADDRESS,
-        REMEMBER_NOTE, FORGET_NOTE,
+        REMEMBER_NOTE, FORGET_NOTE, RESOLVE_PENDING,
     }
 )  # fmt: skip
 MAX_NOTE_CHARS = 200
@@ -283,7 +285,7 @@ def opening_suggestions(surface: str | None) -> tuple[str, ...]:
 
 
 def reply_tool_specs(
-    client: ClientInfo, target: str, *, version: int = CONTRACT_VERSION, opening: bool = False
+    client: ClientInfo, target: str, *, version: int = CONTRACT_VERSION, opening: bool = False, pending: bool = False
 ) -> tuple[ProviderToolSpec, ...]:
     """The reply tools this client can use. No actions declared, no action tool; no address tools when opening."""
 
@@ -377,6 +379,22 @@ def reply_tool_specs(
                 {"type": "object", "properties": {"id": {"type": "string"}}, "required": ["id"], "additionalProperties": False},
             ),
         ]
+    if pending and not opening:  # only while an offer is open (agent/pending.py)
+        specs.append(
+            ProviderToolSpec(
+                RESOLVE_PENDING,
+                "The learner answers the offer in context.pending_interaction: confirm when their words accept it "
+                "(\"ok\", \"lưu đi\", \"được\", \"do it\", \"好\"), cancel when they decline it. Call it with that "
+                "offer's id. Not for a question or any other message: answer those and leave the offer open. "
+                "The server then runs the action once; you never do, and never say it is done.",
+                {
+                    "type": "object",
+                    "properties": {"id": {"type": "string"}, "decision": {"type": "string", "enum": list(DECISIONS)}},
+                    "required": ["id", "decision"],
+                    "additionalProperties": False,
+                },
+            )
+        )
     if not opening and version >= ADDRESS_VERSION:  # a v4 client is never sent an address note (§5.6)
         specs += [
             ProviderToolSpec(
@@ -436,6 +454,11 @@ class ReplyOutputs:
     selected_word: str | None = None  # the word in view, when a word is selected
     # Words a tool read found in the learner's library (`saved: true`): only these get a My Library button (D-135).
     saved_words: set[str] = field(default_factory=set)
+    # The offer open when this turn began, and how the learner answered it (agent/pending.py): the runtime runs a
+    # confirmed one once, under its own id; `settled` are the ids of offers already ended.
+    pending: PendingInteraction | None = None
+    settled: frozenset[str] = frozenset()
+    resolution: str | None = None  # confirm | cancel, once the model said which
 
     # --- ids the turn has seen ------------------------------------------------
 
@@ -485,6 +508,7 @@ class ReplyOutputs:
             SUGGEST_NEXT: self._suggest,
             SET_VOICE_STYLE: self._style,
             ADD_REFERENCE: self._reference,
+            RESOLVE_PENDING: self._resolve,
         }
         return handlers[name](args)
 
@@ -540,6 +564,38 @@ class ReplyOutputs:
             f"accepted: {action.id}, shown as the button '{action.label}'. The learner has not tapped it: "
             "offer it by that label; do not say it is done."
         )
+
+    def _resolve(self, args: Mapping[str, Any]) -> str:
+        """The learner accepted or declined the open offer. A confirmed one becomes an action that runs at once,
+        carrying the offer's own id, and only the first answer counts: the offer ends the moment it is answered."""
+
+        pending, decision = self.pending, args.get("decision")
+        if decision not in DECISIONS:
+            return "refused: decision is confirm or cancel"
+        if args.get("id") in self.settled and (pending is None or pending.id != args.get("id")):
+            return "refused: that offer has already been answered; it is not run again"
+        if pending is None or args.get("id") != pending.id:
+            return "refused: no such open offer - answer the learner in words"
+        if self.resolution is not None:
+            return "refused: the offer has already been answered this turn"
+        if decision == CANCEL:
+            self.resolution = CANCEL
+            return "accepted: the offer is dropped, nothing was done. Acknowledge in one short sentence."
+        allowed = pending.action in (self.client.allowed_actions & actions_for_version(self.version)) and (
+            pending.action != "navigate"
+            or pending.payload.get("intent") in (self.client.allowed_intents & intents_for_version(self.version))
+        )
+        if not allowed:
+            return "refused: this app cannot do that here; say it in words instead"
+        try:
+            action = make_action(pending.id, pending.action, self._label(action_label_key(pending.action, pending.payload)),
+                                 dict(pending.payload))
+        except (ValidationError, ValueError, KeyError) as exc:
+            return f"refused: the offer no longer fits ({_first_error(exc)})"
+        self.actions.insert(0, action.model_copy(update={"open": True}))
+        self.resolution = CONFIRM
+        return ("accepted: it runs now, once. Say nothing that it is done; the app does it. "
+                "At most one short sentence.")
 
     def _unsaved_word(self, payload: Mapping[str, Any]) -> str | None:
         """The word a My Library navigate is about, when no tool read found it saved (D-135); else None."""

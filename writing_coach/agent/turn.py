@@ -99,6 +99,7 @@ from writing_coach.agent.outputs import (
     selection_kind,
 )
 from writing_coach.agent.prompts import opening_messages
+from writing_coach.agent.pending import CANCELLED, COMPLETED, CONFIRM, PendingInteraction
 from writing_coach.agent.provider import (
     NORMAL_FINISH,
     AgentTurnProvider,
@@ -255,7 +256,9 @@ class _Turn:
         self.focused = False  # the turn is about what is in view (LEX-006, LEX-022)
         self.heard: str | None = None  # what the model was given as the learner's words, kept as the turn's history
         self.said = ""  # what the learner was shown as the answer, kept the same way
-        self.offered: tuple[dict, ...] = ()  # the places this answer offered, kept for an "open it" next
+        self.live: PendingInteraction | None = None  # the offer open when this turn began (agent/pending.py)
+        self.settle: str | None = None  # how this turn ended it: completed | cancelled
+        self.new_offer: tuple[str, str, dict] | None = None  # (type, label, payload) this answer offers, if any
         self.read_attempted = False  # a read was started this turn, whatever came of it
         self.address_offered_now = False
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
@@ -311,6 +314,7 @@ class _Turn:
             turn = TurnInput.from_request(self.request)
             # A changed target language starts from a clean context: nothing kept in the other one is read (3.3).
             session = session.for_target(self.locale.target)
+            self.live = None if self.opening else session.live_pending()
             tier1 = build_tier1(turn, session)
             self.address = tier1.address
             self.gate.address = tier1.address
@@ -429,6 +433,8 @@ class _Turn:
             and context.selected_item.type in ("word", "sentence"),
             selected_word=context.selected_item.text
             if context.selected_item is not None and context.selected_item.type == "word" else None,
+            pending=self.live,
+            settled=frozenset(done for done, _ in session.settled),
         )
         if mirrored is not None:
             outputs.memory_updates.append(MemoryUpdateEvent(op="upsert", note=mirrored))
@@ -502,7 +508,8 @@ class _Turn:
             if self.learner.contract_language in tool.languages
         )
         reply_specs = reply_tool_specs(
-            self.request.client, self.locale.target, version=self.stream.version, opening=self.opening
+            self.request.client, self.locale.target, version=self.stream.version, opening=self.opening,
+            pending=self.live is not None,
         )
         if self.screen_help:
             # Canonical stream S1 (contract §12): an answer, follow-up questions, nothing else.
@@ -762,8 +769,15 @@ class _Turn:
                 outputs.actions[0] = first.model_copy(update={"open": True})
                 offer_lang, offer_text = learner_copy.text("offer.now.navigate", interface=self.locale.interface,
                                                            support=support, address=self.address)  # fmt: skip
-        self.offered = tuple({"type": a.type, "label": a.label, "payload": dict(a.payload)}
-                             for a in outputs.actions if a.type == "navigate")  # fmt: skip
+            elif first.open:  # the learner accepted the open offer (agent/pending.py): it runs now, and is not "done"
+                now_key = f"offer.now.{first.type}" if f"offer.now.{first.type}" in learner_copy.CATALOG else "offer.now.action"
+                offer_lang, offer_text = learner_copy.text(now_key, interface=self.locale.interface, support=support,
+                                                           address=self.address)  # fmt: skip
+        if outputs.resolution is not None:
+            self.settle = COMPLETED if outputs.resolution == CONFIRM else CANCELLED
+        offered = next((a for a in outputs.actions if not a.open), None)  # what is only offered stays open for an answer
+        if offered is not None and not self.opening:
+            self.new_offer = (offered.type, offered.label, dict(offered.payload))
         inline = offer_text if offer_lang == support else None  # in the answer's own language, or apart
         apart = offer_text if inline is None else None
         nothing = nothing_done(self.locale.interface, support, self._address(support))
@@ -845,16 +859,17 @@ class _Turn:
         """"Open it" right after an offer: the place the last answer offered, as an action this client may run -
         else None (then the model answers as usual)."""
 
-        if self.opening or not session.last_offers or not opens_the_offer(turn.message):
+        offer_ = self.live
+        if self.opening or offer_ is None or offer_.action != "navigate" or not opens_the_offer(turn.message):
             return None
-        offer_ = session.last_offers[0]
-        payload = dict(offer_.get("payload") or {})
+        payload = dict(offer_.payload)
         if "navigate" not in self.stream.allowed_actions or payload.get("intent") not in self.stream.allowed_intents:
             return None
         try:
-            action = make_action("a1", "navigate", str(offer_.get("label") or ""), payload)
+            action = make_action(offer_.id, "navigate", offer_.label, payload)
         except (ValueError, ValidationError):
             return None
+        self.settle = COMPLETED
         return action.model_copy(update={"open": True})
 
     def _open_offered(self, action: ActionEvent) -> Iterator[Event]:
@@ -862,7 +877,6 @@ class _Turn:
 
         lang, said = learner_copy.text("offer.now.navigate", interface=self.locale.interface,
                                        support=self.locale.support, address=self.address)  # fmt: skip
-        self.offered = ({"type": action.type, "label": action.label, "payload": dict(action.payload)},)
         self.said = said
         self.timeline.mark("final_ready")
         self.timeline.facts.update(actions=[action.type], suggestions=0)
@@ -882,8 +896,13 @@ class _Turn:
                 state = state.with_exchange(self.heard or turn.message, self.said, self.rt.limits)
             if self.address_offered_now:
                 state = state.with_address_asked()
-            if not self.opening:  # what this answer offered, for an "open it" next (an answer with none clears it)
-                state = state.with_offers(self.offered)
+            if not self.opening:  # the offer this turn answered ends; one it expired on ends; a new one replaces
+                if self.live is not None and self.settle is not None:
+                    state = state.with_settled(self.live, self.settle)
+                state = state.without_expired()
+                if self.new_offer is not None:
+                    kind, label, payload = self.new_offer
+                    state = state.with_offer(PendingInteraction.offer(kind, payload, label, turn=state.turn_count))
             for record in self.records:
                 state = state.with_tool_result(record, limit=limit)
             return state

@@ -180,6 +180,7 @@ def context_document(
     session: AgentSessionState | None,
 ) -> dict:
     locale = tier1.contract_locale
+    live = session.live_pending() if session else None
     document = {
         "languages": {
             "support": {"code": locale.support, "name": _language_name(locale.support, target=False)},
@@ -208,13 +209,27 @@ def context_document(
         "earlier_in_session": [
             {"tool": record.tool, "summary": record.summary} for record in (session.recent_tool_results if session else ())
         ],
-        # What your last answer offered (a place to open): "open it" means that, not something new.
+        # What your last answer offered (a place to open): "open it" means that, not something new. Kept for the
+        # navigate offers that came first; every offer is in `pending_interaction` below.
         "offered_last_turn": [
-            {"label": offer.get("label"), "payload": dict(offer.get("payload") or {})}
-            for offer in (getattr(session, "last_offers", ()) if session else ())
+            {"label": pending.label, "payload": dict(pending.payload)}
+            for pending in ([live] if live is not None and live.action == "navigate" else [])
         ],
     }
+    if live is not None:
+        document["pending_interaction"] = {
+            "id": live.id, "action": live.action, "payload": dict(live.payload), "label": live.label,
+        }
     return redact_for_provider(document)
+
+
+PENDING_NOTE = """You offered the learner something and they have not answered (context.pending_interaction).
+- If their message accepts it (any language, any wording: "ok", "lưu đi", "được", "do it", "好"), call
+  resolve_pending with that id and decision "confirm". If it declines it, call resolve_pending with "cancel".
+- If it is a question or anything else - "give another example", "is it formal?" - answer that, and call
+  resolve_pending for neither: the offer stays open for later. A word like "that" or "it" means what the conversation
+  and the offer are about; never ask the learner to repeat what the conversation already says.
+- You never run the action and never say it is done: the server runs it after you confirm."""
 
 
 OPENING_TRIGGER = "[The learner opened Orena. There is no message from them: this is the opening turn.]"
@@ -342,6 +357,8 @@ def opening_messages(
         messages.append(ProviderMessage(role="system", content=selected))
     if screen_help and turn.message is not None:
         messages.append(ProviderMessage(role="system", content=SCREEN_HELP))
+    if turn.message is not None and not opening and not screen_help and session is not None and session.live_pending():
+        messages.append(ProviderMessage(role="system", content=PENDING_NOTE))
     if turn.message is not None:
         messages.append(ProviderMessage(role="user", content=turn.message))
     return messages
