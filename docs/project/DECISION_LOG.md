@@ -4384,3 +4384,21 @@ audio to measure and showed no model pitch or timing.
 - **Closing the slice.** Finish S-24, S-26, Similarity / Intonation and S-27, verify the real Speaking flow, send it
   to independent review. If it passes, the basic Speaking slice is closed and work returns to functional coverage of
   the whole of Orena; Speaking is not deepened further.
+
+## D-142 - Practice session identity: product decisions on the proposal
+
+2026-10-07, explicit human decisions on `docs/project/proposals/PRACTICE_SESSION_IDENTITY.md` (68cb2f2).
+
+1. A practice session ends after 30 minutes of inactivity; qualifying activity refreshes the window. Time is the
+   server's.
+2. No new learner persistence only to count text-only or non-recorded activities in this slice. They count only if an
+   existing durable server-side learner record already represents them, and never as pronunciation/audio attempts.
+3. Only the current session summary is needed now; no historical session browsing.
+4. No backfill: legacy attempts stay without a session identity; none is fabricated.
+5. Read-time 30-minute clustering is not the canonical model for new activity. It may later serve as a legacy,
+   read-only approximation; current cross-device correctness uses a persisted identity if the reviewed architecture
+   permits it.
+
+Review: the human reviews the architecture directly on the branch; the lane prepares a small proposal/implementation,
+commits it clearly and reports the branch, SHAs and scope. No other reviewer is sought unless the human asks. Any
+migration still waits for the human's authorization.
