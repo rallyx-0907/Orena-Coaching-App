@@ -39,7 +39,7 @@ import { icon } from '../../kit/icons.js';
 import { listRow } from '../../kit/components.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
-import { shellCopy } from '../../copy/shell.js';
+import { shellCopy, planName } from '../../copy/shell.js';
 import { t } from './copy.js';
 import { buildProfileModel, profileActions, weekdayAbbrevs, WEEKLY_GOAL_TARGET } from './model.js';
 
@@ -105,7 +105,7 @@ function heroMarkup(model, ctx) {
 function identityMarkup(model) {
   const metaParts = [];
   if (model.rankKnown) metaParts.push(`${model.rankName} · ${t('rankLevelLabel', { n: model.rankNumber })}`);
-  if (model.planKnown) metaParts.push(model.planName);
+  if (model.planKnown) metaParts.push(planName({ id: model.planId, name: model.planName }));
   const meta = metaParts.join(' · ');
   const bars = Array.from({ length: model.weeklyGoalTarget }, (_, index) => html`<span class="${cls('s-profile-weekly__bar', index < model.weeklyGoalDone && 's-profile-weekly__bar--filled')}"></span>`);
   return html`<div class="s-profile-identity">
@@ -115,7 +115,7 @@ function identityMarkup(model) {
         ${model.hasLevel ? html`<span class="s-profile-badge">${model.level}</span>` : ''}
       </span>
       <div>
-        <h1 class="s-profile-name">${model.name}</h1>
+        ${model.name ? html`<h1 class="s-profile-name">${model.name}</h1>` : ''}
         ${meta ? html`<div class="s-profile-meta">${meta}</div>` : ''}
         <div class="s-profile-goal">${t('goalPrefix')} · <b>${t(model.goalKey)}</b></div>
       </div>
@@ -217,7 +217,7 @@ export default async function profile(element, ctx) {
   if (!ctx.isCurrent()) return undefined;
 
   const model = buildProfileModel({ context, vocabulary, commerce });
-  const actions = profileActions({ isAdmin: model.isAdmin, planName: model.planName });
+  const actions = profileActions({ isAdmin: model.isAdmin, planName: model.planKnown ? planName({ id: model.planId, name: model.planName }) : '' });
 
   mount(
     element,

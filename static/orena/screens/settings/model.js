@@ -36,8 +36,7 @@ export function targetLanguageOptions(languages) {
 
 /* Support language: every one the platform lists (`support_languages[]`), labelled with the
    backend's own label exactly as static/orena/app.js's preferences dialog already renders it
-   (English language names, not translated per interface - a support language's own name is data,
-   not chrome; rule 26 governs Orena's interface strings, not a language's own name). */
+   (shown by endonym, kit/lang.js SUPPORT_ENDONYMS - a language's own name, the same in every interface language). */
 export function supportLanguageOptions(supportLanguages) {
   return (Array.isArray(supportLanguages) ? supportLanguages : [])
     .filter((item) => item && item.code && item.label)
@@ -140,7 +139,7 @@ export function notificationRows() {
 export function planRows({ plan, features, micOn, micState }) {
   const writingEvaluate = features && typeof features === 'object' ? features['writing.evaluate'] : null;
   return [
-    { id: 'plan', kind: 'action', disabled: true, planName: plan?.name || '', planDescription: plan?.description || '' },
+    { id: 'plan', kind: 'action', disabled: true, plan: plan || null, planName: plan?.name || '', planDescription: plan?.description || '' },
     // No entitlement key for AI-tutor messages or for pronunciation minutes exists in the plan
     // catalogue at all - UI_BACKEND_GAPS.md N-29/N-30.
     { id: 'messages', kind: 'bar', disabled: true, used: 0, limit: 0 },

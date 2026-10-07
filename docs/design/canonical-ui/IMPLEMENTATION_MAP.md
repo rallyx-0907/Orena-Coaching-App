@@ -32,13 +32,13 @@ Routes are hash routes of the new entry (`/next#/…` until the cutover, then
 | Banner · Loading · Load error | `kit/states.js` (offline banner in `main.js`) | `scripts/test_orena_kit.mjs` | reviewable |
 | Toast | `kit/toast.js` | `scripts/test_orena_kit.mjs` | building |
 | Sheet host (desk panel / phone bottom sheet, scrim) | `kit/overlay.js` | `scripts/test_orena_kit.mjs` | building |
-| Filter Sheet | `screens/discover/filter-sheet.js` | | planned |
+| Filter Sheet | `screens/discover/screen.js` (`paintSheetBody`), `screens/discover/model.js` (`filterOptions`, topic vocabulary) | `scripts/test_orena_screen_discover.mjs` | reviewable |
 | Word Quick Sheet · Sentence Quick Sheet | `screens/quick-sheet/` | `scripts/test_orena_screen_quick-sheet.mjs` | reviewable |
 | Vocabulary Focus | `screens/listening/vocab-sheet.js` | `scripts/test_orena_screen_listening.mjs` | reviewable |
 | Contextual Orena · Orena Voice | `screens/orena/panel.js`, `screens/orena/voice.js` | `scripts/test_orena_screen_orena.mjs`, `scripts/test_orena_agent.mjs` | reviewable |
 | Import | `screens/import/` (opened from Discover's "+ Import") | `scripts/test_orena_screen_sheets.mjs` | reviewable |
 | Notifications | `screens/notifications/` (opened from the shell bell, `shell/router.js`) | `scripts/test_orena_screen_sheets.mjs` | reviewable |
-| Stroke Practice | `screens/word/stroke-practice.js` | | planned |
+| Stroke Practice | `screens/word/stroke-sheet.js`, `screens/word/stroke-tiles.js` | `scripts/test_orena_screen_word.mjs` | building |
 | Prompt Setup (writing setup) | `screens/writing/` (its setup sheet) | `scripts/test_orena_screen_writing.mjs` | reviewable |
 | Mic state | `screens/mic/` | `scripts/test_orena_screen_mic.mjs` | reviewable |
 | Lesson complete | `screens/lesson-complete/` | `scripts/test_orena_screen_lesson-complete.mjs` | reviewable |

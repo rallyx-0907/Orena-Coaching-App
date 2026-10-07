@@ -112,18 +112,33 @@
    screen, per its own doc comment). A disabled choice row (Session length) stays drawn - rule 43 -
    with its control inert: dimmed and unclickable, never removed and never wired to pretend.
 
-   Support language draws every language the platform lists (model.js) - up to 12, not the frame's
-   2-option sample (D-068), and its own row is the one place in this screen real data outgrows the
-   design's sample: no segmented control fits 12 options on one line at any width the live design
-   itself is measurable at. Rule 49: its own track becomes its own horizontal scroll region
-   (content that does not fit scrolls inside itself, never off the edge of the screen) - the same
-   `overflow-x:auto` shape the tab strip above it already draws, for the same reason. */
+   A choice never scrolls (P-20): the support language has more options than a segmented control holds, so
+   it is the picker (D-098, model.js `usesPicker`); the groups left are short, and on the phone, where the
+   label and the control no longer fit side by side, the control takes its own line under the label. */
 .s-settings .c-row__trail {
   max-width: 55%;
 }
 .s-settings .c-seg {
   max-width: 100%;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  overflow: visible;
+}
+:root[data-device="mobile"] .s-settings .c-row:has(.c-seg) {
+  flex-wrap: wrap;
+}
+:root[data-device="mobile"] .s-settings .c-row:has(.c-seg) .c-row__body {
+  flex: 1 1 100%;
+}
+:root[data-device="mobile"] .s-settings .c-row:has(.c-seg) .c-row__trail,
+:root[data-device="mobile"] .s-settings .c-row:has(.c-seg) .s-settings-row__inert {
+  max-width: 100%;
+  width: 100%;
+}
+:root[data-device="mobile"] .s-settings .c-row:has(.c-seg) .c-seg {
+  width: 100%;
+}
+:root[data-device="mobile"] .s-settings .c-row:has(.c-seg) .c-seg__opt {
+  flex: 1 1 auto;
 }
 .s-settings-row__inert {
   opacity: 0.5;
@@ -215,3 +230,21 @@
 }
 :root[data-device="mobile"] .s-settings__tabs::-webkit-scrollbar { display: none; }
 :root[data-device="mobile"] .s-settings__tabs .o-chip { flex: none; }
+
+/* The licences pointer: a quiet text link at the foot of Plan & privacy (HP-4 A). */
+.s-settings-link {
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 8px 4px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.s-settings-link:hover {
+  color: var(--text);
+}

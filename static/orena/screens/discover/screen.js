@@ -19,7 +19,7 @@ import { t } from './copy.js';
 import {
   entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
   entryFromTextImport, entryFromMediaImport, filterOptions, visibleEntries,
-  presentCard, hrefFor, typeLabel, hasAnyFilter, filterCount, practiceCandidates, practiceHref, preparedMediaEntry,
+  presentCard, hrefFor, typeLabel, topicLabel, hasAnyFilter, filterCount, practiceCandidates, practiceHref, preparedMediaEntry,
 } from './model.js';
 
 const TAB_LABEL_KEY = { all: 'tabAll', read: 'tabRead', listen: 'tabListen', collections: 'tabCollections', imported: 'tabImported' };
@@ -159,12 +159,11 @@ export default async function discover(element, ctx) {
             <div class="s-discover-fgroup__chips">
               ${groups[group.key].map((value) => {
                 const pressed = state.filters[group.key].has(value);
-                const label = group.key === 'type' ? typeLabel(value, t) : value;
+                const label = group.key === 'type' ? typeLabel(value, t) : group.key === 'topic' ? topicLabel(value, t) : value;
                 // languages-4 (3) / finding B.3: the topic group's own chip is the same open,
                 // untranslatable content metadata as the card's own topic tag (presentCard above) -
                 // marked lang="en" for the same reason, never silently unlabelled.
-                const lang = group.key === 'topic' ? langAttr('en') : '';
-                return html`<button type="button" class="o-chip" aria-pressed="${pressed ? 'true' : 'false'}" lang="${lang}" data-fgroup="${group.key}" data-fvalue="${value}">${label}</button>`;
+                return html`<button type="button" class="o-chip" aria-pressed="${pressed ? 'true' : 'false'}" data-fgroup="${group.key}" data-fvalue="${value}">${label}</button>`;
               })}
             </div>
           </div>`,

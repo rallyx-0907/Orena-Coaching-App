@@ -425,3 +425,38 @@
 .o-stroke-tile .stroke-glyph__off { fill: var(--border2); }
 .o-stroke-tile .stroke-glyph__rad { fill: var(--hz-radical); }
 @media (prefers-reduced-motion: reduce) { .stroke-glyph__reveal { animation-duration: .01s; } }
+
+/* A card with no cover (HP-3 A): a --tint2 tile and the type's icon on its skill hue, as Today's hero draws it. */
+.c-media__img--blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--tint2);
+}
+.c-media__cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.c-media__cover--sm {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+}
+.c-row__thumb--blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--tint2);
+}
+/* The hero's cover tile sits in the upper area, above the title block. */
+.c-hero > .c-media__cover {
+  position: absolute;
+  top: 24px;
+  left: 20px;
+  z-index: 1;
+}

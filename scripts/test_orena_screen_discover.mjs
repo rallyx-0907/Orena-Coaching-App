@@ -24,7 +24,7 @@ import { practiceCandidates, practiceHref, preparedMediaEntry } from '../static/
 }
 import {
   progressFromContinuation, entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
-  entryFromTextImport, entryFromMediaImport, filterOptions, typeLabel, matchesFilters,
+  entryFromTextImport, entryFromMediaImport, filterOptions, topicKey, topicLabel, typeLabel, matchesFilters,
   hasAnyFilter, filterCount, visibleEntries, presentCard, hrefFor,
 } from '../static/orena/screens/discover/model.js';
 
@@ -37,6 +37,7 @@ function fill(text, params) {
 const LABELS = {
   typeArticle: 'Article', typeBook: 'Book', typeVideo: 'Video', typeAudio: 'Audio',
   typeCollection: 'Collection', typeText: 'Text', typeUpload: 'Imported',
+  topic_daily_life: 'Daily life', topic_culture: 'Culture',
   durationMinRead: '{n} min read', progressPercent: '{pct}%', progressLearnedOf: '{learned} / {total} learned',
 };
 function stubT() {
@@ -231,12 +232,19 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal(presentCard({ id: 'article:1', kind: 'article', title: 'x', language: 'zh' }, t).titleLang, 'zh');
   assert.equal(presentCard({ id: 'text:1', kind: 'text', title: 'x' }, t).titleLang, '', 'a device-memory import carries no language field - left unmarked, never guessed');
 
-  // languages-4 (3) / finding B.3: the topic tag is real content metadata Discover cannot
-  // translate (an open, ever-growing taxonomy - see UI_BACKEND_GAPS.md N-35) - kept, marked
-  // lang="en", never silently unlabelled.
-  const withTopic = presentCard({ id: 'article:1', kind: 'article', title: 'x', topic: 'shipping' }, t);
-  const topicTag = withTopic.tags.find((tag) => tag.label === 'shipping');
-  assert.equal(topicTag.lang, 'en', 'the topic chip is marked as English content metadata, not translated');
+  // P-06: a topic reaches a learner only when the vocabulary names it, in the interface language; any other
+  // tag (internal, test, ungoverned) is dropped from the cards and the Filter Sheet.
+  const known = presentCard({ id: 'article:1', kind: 'article', title: 'x', topic: 'Daily life' }, t);
+  assert.ok(known.tags.some((tag) => tag.label === 'Daily life'), 'a known topic is a card tag, labelled by the copy table');
+  const raw = presentCard({ id: 'article:1', kind: 'article', title: 'x', topic: 'sandbox-test' }, t);
+  assert.ok(!raw.tags.some((tag) => /sandbox/.test(tag.label)), 'an internal tag never reaches a card');
+  assert.deepEqual(filterOptions([{ kind: 'article', level: '', topic: 'sandbox-test' }, { kind: 'article', level: '', topic: 'culture' }, { kind: 'article', level: '', topic: 'daily-life' }]).topic, ['culture', 'daily-life'], 'the Filter Sheet lists only known topics');
+  assert.equal(topicKey('Daily life'), 'daily_life');
+  assert.equal(topicKey('sandbox-test'), '');
+  assert.equal(topicLabel('culture', t), 'Culture');
+  // P-03: a card with no cover carries the tile of its type.
+  assert.equal(presentCard({ id: 'article:1', kind: 'article', title: 'x' }, t).cover.icon, 'book-open');
+  assert.equal(presentCard({ id: 'media:1', kind: 'media', mediaType: 'audio', title: 'x' }, t).cover.icon, 'headphones');
 }
 
 // 12. hrefFor: every kind but a collection opens Content Detail by its content id; a collection

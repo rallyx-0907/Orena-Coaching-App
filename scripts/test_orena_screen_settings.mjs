@@ -355,7 +355,8 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   }
 
   const supportOpts = __internal.choiceOptions({ id: 'support', value: 'vi', options: [{ code: 'vi', label: 'Vietnamese' }, { code: 'ja', label: 'Japanese' }] });
-  assert.deepEqual(supportOpts.map((o) => o.label), ['Vietnamese', 'Japanese'], 'support options keep the backend\'s own English label, untranslated (rule 26 governs Orena\'s chrome, not a language\'s own name)');
+  assert.deepEqual(supportOpts.map((o) => o.label), ['Tiếng Việt', '日本語'], 'support options are named in their own language (endonyms, P-19), whatever the interface language');
+  assert.equal(__internal.choiceOptions({ id: 'support', value: 'xx', options: [{ code: 'xx', label: 'Klingon' }] })[0].label, 'Klingon', 'a code with no endonym keeps the platform label');
 
   const sizeOpts = __internal.choiceOptions({ id: 'readerSize', value: 'M', options: ['S', 'M', 'L'] });
   assert.deepEqual(sizeOpts.map((o) => o.label), [t('sizeS'), t('sizeM'), t('sizeL')]);

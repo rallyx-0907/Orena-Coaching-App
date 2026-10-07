@@ -12,6 +12,7 @@
    it never redefines them. Classes here are prefixed .c-. */
 import { html, raw, cls, esc, px } from './html.js';
 import { icon } from './icons.js';
+import { COVER_VISUALS } from './cover-visuals.js';
 
 /* data-* attributes from a plain object, values escaped, false/null/undefined dropped. Keys are
    developer-chosen constants, never learner or API text. */
@@ -38,7 +39,17 @@ export function headlineTitle(value) {
   return stripped || text;
 }
 
+/* Content with no cover (P-03, P-05, P-09, HP-3 A): a tile tinted by what the content is, with the type's icon,
+   drawn from semantic tokens only (the skill hues and --tint2). A caller passes `cover: { icon, tint }`. */
+export { COVER_VISUALS };
+
+export function coverTile(cover) {
+  if (!cover?.icon) return '';
+  return html`<span class="c-media__cover" style="background:${cover.tint}">${raw(icon(cover.icon, { size: 22 }))}</span>`;
+}
+
 export function mediaCard({
+  cover = null,
   image = '',
   imageHeight = null,
   kind = '',
@@ -55,7 +66,8 @@ export function mediaCard({
   const full = String(fullTitle || '').trim();
   const imgRules = [image ? `background-image:${image}` : '', imageHeight ? `height:${px(imageHeight)}` : ''].filter(Boolean).join(';');
   return html`<button type="button" class="o-card o-card--hover c-media"${dataAttrs(dataset)}>
-    <span class="c-media__img" style="${imgRules}">
+    <span class="${cls('c-media__img', !image && cover?.icon && 'c-media__img--blank')}" style="${imgRules}">
+      ${image ? '' : coverTile(cover)}
       ${kind ? html`<span class="o-overlay-pill c-media__badge c-media__badge--tl">${kind}</span>` : ''}
       ${duration ? html`<span class="o-overlay-pill c-media__badge c-media__badge--br">${duration}</span>` : ''}
       ${pct != null ? html`<span class="c-media__progress"><span style="width:${pct}%"></span></span>` : ''}
@@ -133,9 +145,10 @@ export function rowIconSwatch({ iconName, tint = 'var(--accent)', ink = 'var(--a
 
 /* listRow leading slot: an artwork thumbnail (My Library's Content tab, Content Detail's related
    rows). `image` is a resolved background-image CSS value. */
-export function rowThumb({ image = '', width = 64, height = 64, radius = 16 } = {}) {
+export function rowThumb({ image = '', width = 64, height = 64, radius = 16, cover = null } = {}) {
   const rules = image ? `background-image:${image}` : '';
-  return html`<span class="${cls('c-row__thumb', !image && 'o-art')}" style="width:${px(width)};height:${px(height)};border-radius:${px(radius)};${rules}"></span>`;
+  const tile = !image && cover?.icon;
+  return html`<span class="${cls('c-row__thumb', !image && !tile && 'o-art', tile && 'c-row__thumb--blank')}" style="width:${px(width)};height:${px(height)};border-radius:${px(radius)};${rules}">${tile ? html`<span class="c-media__cover c-media__cover--sm" style="background:${cover.tint}">${raw(icon(cover.icon, { size: 18 }))}</span>` : ''}</span>`;
 }
 
 /* listRow leading slot: a small coloured glyph badge (Progress's Evidence/Milestone rows). `glyph`
@@ -205,9 +218,10 @@ export function segmentedControl({ options = [], variant = 'surface', equalWidth
    sandbox's own seeded content, so `.c-hero`'s own `background-color` fallback (components.css)
    must still hold white overlay text at AA - it reads `--toast-bg`, not a themed surface (D-093
    AA fix; caller passes no separate "no image" markup, the fallback is CSS-only). */
-export function heroMedia({ image = '', height = 260, radius = 24, pill = '', title, titleSize = 28, meta = '', dataset = {} } = {}) {
+export function heroMedia({ cover = null, image = '', height = 260, radius = 24, pill = '', title, titleSize = 28, meta = '', dataset = {} } = {}) {
   const rules = [`height:${px(height)}`, `border-radius:${px(radius)}`, image ? `background-image:${image}` : ''].filter(Boolean).join(';');
   return html`<div class="c-hero" style="${rules}"${dataAttrs(dataset)}>
+    ${image ? '' : coverTile(cover)}
     <span class="c-hero__scrim" aria-hidden="true"></span>
     <div class="c-hero__content">
       ${pill ? html`<span class="c-hero__pill">${pill}</span>` : ''}
