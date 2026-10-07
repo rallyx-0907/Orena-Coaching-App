@@ -522,13 +522,22 @@ text, spaces, or the `___` blank.
 
 
 def _header_metadata(existing: dict[str, Any], locales: list[str]) -> dict[str, Any]:
-    """title/native_title/level: structural metadata, carried over, never generated. A point
-    still on the first v0.4 shape keeps them in a top-level title instead of a header."""
+    """title/native_title/level: structural metadata, carried over, never generated.
+
+    Chinese learner-facing text is normalized here too.  The v0.4 generator already
+    normalizes every model-authored target-language field through ``target_text``;
+    leaving carried-over ``native_title`` untouched made deterministic validation reject
+    otherwise-valid cached candidates whose canonical title used display spaces around
+    symbols such as ``+``.
+    """
+    zh = existing.get("target_lang") == ZH_HANS
     if "header" in existing:
         header = existing["header"]
-        return {"title": header["title"], "native_title": header["native_title"], "level": dict(existing["level"])}
+        native = target_text(str(header["native_title"]), zh)
+        return {"title": header["title"], "native_title": native, "level": dict(existing["level"])}
     title = existing["title"]
     native = title.get(existing["target_lang"]) or title.get("en") or title["vi"]
+    native = target_text(str(native), zh)
     return {
         "title": {locale: title[locale] for locale in locales if locale in title} or {"vi": title["vi"]},
         "native_title": native,
