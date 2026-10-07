@@ -27,6 +27,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any
 
+from writing_coach.agent.focus import Focus
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
 from writing_coach.agent.pending import RUN_WINDOW_TURNS, RUNS_KEPT, SETTLED_KEPT, PendingInteraction
 from writing_coach.agent.schemas import AppContextSnapshot, SelectedItem
@@ -71,6 +72,8 @@ class AgentSessionState:
     # The actions this session ran at the learner's word, as (learner turn, action key): the same words said twice
     # in a row ("ok lưu", "ok lưu") run it once.
     runs: tuple[tuple[int, str], ...] = ()
+    # What "that" and "it" refer to (agent/focus.py): the active topic, its referents, a long text the learner pasted.
+    focus: Focus = field(default_factory=Focus)
     # The turns just before this one, verbatim and bounded (architecture target §4-5): the model sees them, so a
     # follow-up ("cho ví dụ khác", "đoạn thứ 3") has something to refer to. In this process only, like the rest.
     recent_turns: tuple[ConversationTurn, ...] = ()
@@ -142,6 +145,9 @@ class AgentSessionState:
         kept = (*self.settled, (pending.id, status))[-SETTLED_KEPT:]
         return replace(self, pending=None if self.pending is not None and self.pending.id == pending.id else self.pending,
                        settled=kept)
+
+    def with_focus(self, focus: Focus) -> AgentSessionState:
+        return replace(self, focus=focus)
 
     def recent_runs(self) -> frozenset[str]:
         return frozenset(key for turn, key in self.runs if self.turn_count - turn < RUN_WINDOW_TURNS)

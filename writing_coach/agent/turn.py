@@ -54,6 +54,7 @@ from writing_coach.agent.errors import AgentError, ProviderUnavailable
 from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, default_address, mirrored_address
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
+from writing_coach.agent.focus import WORD_LOOKUP_ARGS, focus_after
 from writing_coach.agent.honesty import ClaimGate, asks_for_heading, nothing_done, offer, offer_instead
 from writing_coach.agent.notes import (
     CORRECT,
@@ -83,7 +84,7 @@ from writing_coach.agent.events import (
     make_action,
 )
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
-from writing_coach.agent.contract import OPENING_MAX_CHARS
+from writing_coach.agent.contract import OPENING_MAX_CHARS, WORD_ACTIONS
 from writing_coach.agent.events import Display
 from writing_coach.agent.outputs import (
     KEEP_NOTE_INTENT,
@@ -257,6 +258,8 @@ class _Turn:
         self.heard: str | None = None  # what the model was given as the learner's words, kept as the turn's history
         self.said = ""  # what the learner was shown as the answer, kept the same way
         self.live: PendingInteraction | None = None  # the offer open when this turn began (agent/pending.py)
+        self.lookups: list[tuple[str, str | None]] = []  # words a tool read this turn (agent/focus.py)
+        self.outputs_actions: tuple[ActionEvent, ...] = ()  # the actions of this answer, for the focus
         self.ran: tuple[str, ...] = ()  # keys of the actions this turn ran at the learner's word
         self.settle: str | None = None  # how this turn ended it: completed | cancelled
         self.new_offer: tuple[str, str, dict] | None = None  # (type, label, payload) this answer offers, if any
@@ -679,6 +682,7 @@ class _Turn:
             return "refused: tools read only the signed-in learner's own data"
         label = learner_copy.text(f"tool.{tool.name}", interface=self.locale.interface, support=self.locale.support)[1]
         self.timeline.tools.append(tool.name)
+        self._note_lookup(tool.name, args)
         self.read_attempted = True
         self.timeline.mark("tool_start")
         yield self.stream.emit(ToolCallEvent(tool=tool.name, label=label))
@@ -698,6 +702,16 @@ class _Turn:
         outputs.learn_from(result.data, kind=kind)
         outputs.learn_from([dict(e.ref) for e in result.evidence], kind=kind)
         return self._tool_message(result, messages)
+
+    def _note_lookup(self, name: str, args: Mapping[str, Any]) -> None:
+        """A word a tool is asked about is what the talk is about now (agent/focus.py)."""
+
+        key = WORD_LOOKUP_ARGS.get(name)
+        value = args.get(key) if key else None
+        if isinstance(value, list) and len(value) == 1:
+            value = value[0]
+        if isinstance(value, str) and value.strip():
+            self.lookups.append((value.strip(), self.locale.target))
 
     def _report(self, name: str, result: ToolResult) -> Iterator[Event]:
         first = len(self.evidence_ids)
@@ -775,6 +789,7 @@ class _Turn:
                 now_key = f"offer.now.{first.type}" if f"offer.now.{first.type}" in learner_copy.CATALOG else "offer.now.action"
                 offer_lang, offer_text = learner_copy.text(now_key, interface=self.locale.interface, support=support,
                                                            address=self.address)  # fmt: skip
+        self.outputs_actions = tuple(outputs.actions)
         self.ran = tuple(action_key(a.type, a.payload) for a in outputs.actions if a.open)
         if outputs.resolution is not None:
             self.settle = COMPLETED if outputs.resolution == CONFIRM else CANCELLED
@@ -899,6 +914,8 @@ class _Turn:
                 state = state.with_turn()
             if not self.opening and turn.message and self.said:  # the exchange, for the turns after it
                 state = state.with_exchange(self.heard or turn.message, self.said, self.rt.limits)
+            if not self.opening:
+                state = state.with_focus(self._focus(state, turn))
             if self.address_offered_now:
                 state = state.with_address_asked()
             if not self.opening:  # the offer this turn answered ends; one it expired on ends; a new one replaces
@@ -914,6 +931,19 @@ class _Turn:
 
         # None when it expired meanwhile: the next turn opens a new one.
         self.rt.sessions.update(session.agent_session_id, self.learner.user_key, change)
+
+    def _focus(self, state, turn: TurnInput):
+        """The session's focus after this turn: what was selected, looked up or offered, and a long paste."""
+
+        named = list(self.lookups)
+        named += [(a.payload["text"], a.payload.get("lang")) for a in self.outputs_actions
+                  if a.type in WORD_ACTIONS and isinstance(a.payload.get("text"), str)]
+        context = turn.context
+        ids = {k: getattr(context, k) for k in ("content_id", "lesson_id", "essay_id") if getattr(context, k, None)}
+        return focus_after(
+            state.focus, selected=context.selected_item, word=named[-1] if named else None, ids=ids,
+            pasted=turn.message, pasted_cap=self.rt.limits.max_turn_chars,
+        )
 
     def _meter(self) -> None:
         if self.rt.meter is None:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from writing_coach.agent.fake_provider import call_tools, reply
 from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.tools import LearnerScope
@@ -46,8 +47,13 @@ def test_after_a_switch_to_chinese_nothing_of_the_english_context_reaches_the_pr
 
     list(rt.run(_request("zh-CN", session_id=session_id), ZH))
     chinese = _provider_text(provider.requests[-1])
-    assert "ephemeral" not in chinese, "no stale English selection"
-    assert "two flagged syllables" not in chinese, "no English tool result in earlier_in_session"
+    # The screen's state belongs to the language it was learned in: no stale selection, no English tool result.
+    # The conversation does not (human direction 2026-10-07: a language change is not a new conversation), so the
+    # words the learner and Orena said stay in the history the model is shown.
+    context = json.loads(next(m.content for m in provider.requests[-1].messages if m.content.startswith("context: "))[9:])
+    assert context["selection"] is None, "no stale English selection"
+    assert context["earlier_in_session"] == [], "no English tool result in earlier_in_session"
+    assert "two flagged syllables" not in chinese
 
 
 def test_the_same_target_keeps_its_selection_for_a_follow_up():

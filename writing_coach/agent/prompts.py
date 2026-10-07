@@ -66,6 +66,11 @@ How you answer:
   its own line. When the learner asks for a format, give it: asked for a heading, start the answer with a "### "
   line (bold on its own line is not a heading); examples are "1." lines with their reading and meaning on the
   lines under each. A Chinese example is all Chinese: no English word between its characters.
+- The messages before the learner's newest are the conversation so far, whatever language or way (typed or spoken)
+  it was said in. context.conversation_focus says what it is about: active_topic, and referents (current_word,
+  current_sentence, a pasted text and its pasted_text). "That word", "it", "the one above", "another example",
+  "the third paragraph" mean those and the earlier messages: answer from them, and ask what they mean only when
+  neither says.
 - With something in view (a selection, an essay), answer about it and nothing else, briefly: at most three
   sentences and at most one example. No review, no words due and no next lesson unless the learner asks, and no
   closing offer ("Bạn có muốn xem thêm…?", "Would you like more examples?"): the learner asks for more if they
@@ -225,6 +230,9 @@ def context_document(
         document["sent_to_app_just_now"] = [
             {"action": action, "payload": payload} for action, payload in (json.loads(key) for key in sent)
         ]
+    focus = session.focus.to_context() if session else None
+    if focus is not None:  # what "that", "it", "the paragraph above" refer to when the learner does not name it
+        document["conversation_focus"] = focus
     if live is not None:
         document["pending_interaction"] = {
             "id": live.id, "action": live.action, "payload": dict(live.payload), "label": live.label,
@@ -358,6 +366,10 @@ def opening_messages(
         support_name = _language_name(tier1.contract_locale.support, target=False)
         messages.append(ProviderMessage(role="user", content=opening_trigger(support_name)))
     if session is not None and turn.message is not None and not opening:
+        pasted = session.focus.pasted
+        if pasted and not any(t.role == "user" and pasted[:200] in t.text for t in session.recent_turns):
+            # A long text the learner pasted earlier, past the recent turns: still what "this text" means.
+            messages.append(ProviderMessage(role="system", content="pasted_text: " + json.dumps(pasted, ensure_ascii=False)))
         # The conversation so far, as it was said: what "that", "the one above" and "another" refer to.
         for earlier in session.recent_turns:
             messages.append(ProviderMessage(role=earlier.role, content=earlier.text))  # type: ignore[arg-type]
