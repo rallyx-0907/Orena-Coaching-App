@@ -468,3 +468,19 @@
   margin-bottom: auto;
 }
 .c-hero > .c-media__cover + .c-hero__scrim + .c-hero__content { margin-top: 16px; }
+
+/* Phone hit areas (human review 2026-10-07): controls drawn smaller than ~44px keep their drawn size and answer a
+   ~44px touch area. The area grows only along the axis that is short, by no more than the gap to a neighbour, so
+   adjacent hit areas never overlap. */
+:root[data-device='mobile'] :is(.o-tab, .c-seg__opt, .s-progress-back, .s-progress-skill) { position: relative; }
+:root[data-device='mobile'] :is(.o-tab, .c-seg__opt, .s-progress-back, .s-progress-skill)::after {
+  content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px;
+}
+:root[data-device='mobile'] .s-progress-card__link { position: relative; }
+:root[data-device='mobile'] .s-progress-card__link::after { content: ''; position: absolute; inset: -14px -6px; }
+:root[data-device='mobile'] .s-collection-word__play { position: relative; }
+:root[data-device='mobile'] .s-collection-word__play::after { content: ''; position: absolute; inset: -9px; }
+/* The tab strip scrolls sideways, which also clips vertically: it gets 4px of room above and below (taken back with a
+   negative margin, so nothing moves) for the tabs' touch areas. */
+:root[data-device='mobile'] .o-tabs { padding-top: 4px; padding-bottom: 4px; margin-top: -4px; margin-bottom: -4px; }
+:root[data-device='mobile'] .s-progress-card__link { display: inline-block; z-index: 1; }
