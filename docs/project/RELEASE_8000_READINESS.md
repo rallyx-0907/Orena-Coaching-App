@@ -16,7 +16,7 @@ which human gate each step needs.
    be brought to head with any shipped procedure until a human-authorized, independently reviewed production variant
    exists (B1).
 2. **Authorization gaps.** Of the 20 revisions :8000 must apply, only 0017-0023 and 0025 name :8000 as a later gate; 0006-0016
-   were authorized for dev and sandbox only ("explicitly not production"), and 0029 (D-142) has no recorded human apply
+   were authorized for dev and sandbox only ("explicitly not production"), and 0029 (D-142) is approved for :8021 only and has no recorded :8000 apply
    authorization at all (B2).
 3. **Not blockers, proven.** The four unpromoted tables (0024, 0026, 0027, 0028) cannot break startup or a learner
    request on :8000: every code path is flag-guarded, wrapped, or not wired to the runtime (section 2).
@@ -40,8 +40,8 @@ which human gate each step needs.
 - Startup verifies, never migrates: `writing_coach/runtime_schema.py:29` (`readiness`) and `:73` (`SchemaNotReady`); wired
   in `writing_coach/persistence/runtime.py:103-111`. Anything other than "actual == head" refuses to serve. So code and
   schema are **one deployment unit**: new code on an old schema, or old code on a new schema, does not start.
-- :8021's schema is `20261004_0025` (CURRENT_HANDOFF line 24). Head is now 0029, so :8021's web container will refuse to
-  restart on this tree until 0029 is applied there. Lane housekeeping, separate from :8000 (section 9).
+- :8021's schema is `20261007_0029` (verified 2026-10-07 with `select version_num from alembic_version`): the human
+  approved 0029 for :8021 only (review of fbf11df1); it was applied after a pg_dump. :8021 is at head; nothing to do there.
 
 ### 1.2 Each revision
 
@@ -276,7 +276,7 @@ Local results at `8875df48` plus the human's uncommitted `DESIGN_CONTRACT.md` ed
   uncommitted `docs/project/DESIGN_CONTRACT.md` edit; **it is in CI**, so the edit must be committed in a consistent way
   or reverted before the PR (owner: human, who owns that file).
 - Windows note: `test_orena_grammar.mjs` fails on a CRLF checkout and passes with LF (environment, memory note).
-- Python suite in the application image (AGENTS section 9 recipe, SQLite, local): one full run was started (`pytest -q -p no:cacheprovider test_app.py tests`, SQLite, `ai-writing-coach:local`). It is slow on this machine (shared Docker); at the time of writing it had reached 76% with **one F (at about 66%, test not yet identified, no E)** and had not finished, so no final pass/fail count is claimed and the failure is neither attributed nor dismissed (inherited failures are listed in CURRENT_HANDOFF; compare against a clean tree before calling it a regression). The modules covering section 2 are `tests/test_ai_account_costs.py`, `tests/test_reading_on_demand.py`, `tests/test_media_metadata_postgres.py`. The final count must come from CI.
+- Python suite in the application image (AGENTS section 9 recipe, SQLite, local, not CI): 4398 passed, 380 skipped, 1 failed in 9m46s. The one failure, `tests/test_next_sign_in.py::test_logout_clears_the_session_and_names_a_validated_target`, belongs to the new-UI sign-in work that is still uncommitted (B7); the committed tree has no failing test.
 
 CI remains the gate; a local pass is not CI evidence.
 
@@ -285,11 +285,11 @@ CI remains the gate; a local pass is not CI evidence.
 | # | Item | Why | Owner | Smallest next step |
 | --- | --- | --- | --- | --- |
 | B1 | Migration 0016 cannot be applied to :8000 | Non-additive and gated; `bootstrap_runtime_schema.py` refuses it, `reading_canonical_cutover.py` refuses ports 8000/8010 and `APP_ENV=production`; integration revision needs independent delta review and explicit runtime authorization; "predecessor's authorization does not transfer" | Human (authorization) + independent reviewer + lane (tool) | Human decides whether :8000 takes the canonical Reading cutover; if yes, commission the delta review and a reviewed production variant of the cutover command (separate script or flag, pinned to :8000's cluster and database, with backup assertion), then rehearse on a restored copy. |
-| B2 | Authorization missing for most of the 20 revisions | 0006-0016 dev/sandbox only; D4 0017-0023 and 0025 name :8000 as "its own gates" (D-105.1); 0029 has no recorded apply authorization (D-142: "Any migration still waits for the human's authorization") | Human | One decision record naming :8000 for 0006-0029 (or an explicit subset), plus delta review for 0015/0016 and for the 0029 PR. |
+| B2 | Authorization missing for most of the 20 revisions | 0006-0016 dev/sandbox only; D4 0017-0023 and 0025 name :8000 as "its own gates" (D-105.1); 0029 is approved for :8021 only, not :8000 (D-142: "Any migration still waits for the human's authorization") | Human | One decision record naming :8000 for 0006-0029 (or an explicit subset), plus delta review for 0015/0016 and for the 0029 PR. |
 | B3 | `ACCOUNT_RECORD_LIMITS` not built | Server-side learner records with no per-account rails when the backbone is on | Lane, then independent review | Either keep `ORENA_ACCOUNT_BACKBONE=off` for release 1 (recommended; no code), or implement rev 5 and re-review. |
 | B4 | No account-deletion path; upload media not in the deletion enumeration (D-055(b)); no byte/count rails on uploads | Personal uploads accumulate unbounded; deletion is permanent-by-policy but unbuilt | Human (policy) + lane | Human decides whether :8000 is open or invitation-only for release 1; if open, build the owner-media deletion step and upload limits (UI_BACKEND_GAPS 4650, 4693) before. |
 | B5 | Old UI Reading breaks at 0016 | The generated Reading flow is retired in the same deploy (0016 docstring) | Lane + human | Decide shape A or C (section 4) and test `/` Reading after the migration on the restored copy. |
-| B6 | CI not green on this branch | PR needs CI; one CI gate (`test_orena_writing_workspace.mjs`) fails with the human's uncommitted `DESIGN_CONTRACT.md` | Human + lane | Commit or revert the `DESIGN_CONTRACT.md` edit; run CI on the PR. |
+| B6 | (resolved - not a blocker) | `test_orena_writing_workspace.mjs` fails only with the human's uncommitted `DESIGN_CONTRACT.md` edit; on the committed tree (what CI checks out) it passes (verified 2026-10-07 with `git archive HEAD`). It becomes a blocker only if that edit is committed without updating the gate. | Human | Keep the edit uncommitted or update the gate with it. |
 | B7 | New-UI sign-in unfinished | In progress in another lane; uncommitted | Auth lane | Land it with its tests; no action here. |
 
 Not blockers (resolved by analysis): unpromoted tables 0024/0026/0027/0028; agent routes in production; Grammar empty state;
@@ -300,7 +300,7 @@ YouTube model clips (S-27); Onboarding polish.
 1. Decide shape A or C (section 4) and whether :8000 gets the Reading cutover at all (B1, B5).
 2. Authorize the schema for :8000, naming the revisions (B2). Independent delta review of 0015/0016 recorded in Git.
 3. Decide backbone off for release 1 (B3) and whether :8000 is invitation-only (B4).
-4. CI green on the PR (B6); merge `codex/work` -> `main` (human merges; no auto-merge).
+4. CI green on the PR; merge `codex/work` -> `main` (human merges; no auto-merge).
 5. Maintenance window and "no other lane on Docker".
 6. Backup captured, restore-rehearsed and verified (section 1.4 step 2).
 7. Rehearsal of the 20-revision chain on the restored copy; lock times recorded (step 3).
@@ -321,6 +321,5 @@ YouTube model clips (S-27); Onboarding polish.
   the backbone on at release.
 - Build the owner-media deletion step and upload limits (B4) as code and tests with no runtime touched.
 - Re-parent proposal 0024 on the real head and update `migrations/proposed/README.md` (document and proposal file only).
-- Apply 0029 to :8021 only after the human authorizes it, so the QA runtime can restart on this tree.
 - Continue the UX queue (Onboarding, LEX-092/086 verification), on :8021 only, one unit at a time.
 - Run the CI-equivalent local sequence again after the `DESIGN_CONTRACT.md` decision.
