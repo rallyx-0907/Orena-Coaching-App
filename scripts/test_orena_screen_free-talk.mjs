@@ -94,6 +94,7 @@ assert.equal(pace('一二三四', 30_000, 'zh'), 8);
   assert.deepEqual(phraseWords(page), ['buffer', 'linger', 'poised', 'candid'], 'capped at 4, a blank word dropped');
   assert.deepEqual(phraseWords(null), []);
   assert.deepEqual(phraseWords({ items: [] }), []);
+  assert.deepEqual(phraseWords({ items: [{ word: 'With the big bang starting the year and as cheering began, we left.' }, { word: 'take a break' }, { word: '重要' }] }), ['take a break', '重要'], 'a whole sentence is not a useful-phrase chip (S-18)');
 }
 
 // 8. headlineKind: the 3-way split the frame's own headline draws (none / one / many), against a

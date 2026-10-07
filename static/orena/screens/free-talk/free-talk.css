@@ -215,9 +215,10 @@
 }
 .s-ft__working {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--muted);
   padding: 24px 0;
+  animation: pulse 1s infinite;
 }
 
 /* ---- Transcript ---- */
@@ -366,8 +367,8 @@
 }
 .s-ft__error {
   margin: 0;
-  font-size: 13.5px;
-  color: var(--red);
+  font-size: 14px;
+  color: var(--muted);
 }
 .s-ft__actions {
   display: flex;

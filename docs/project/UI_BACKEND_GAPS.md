@@ -4872,3 +4872,13 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   - The app now says so instead of offering a permission loop (BUG-01).
   - A trusted https address for :8021 needs Tailscale Serve, which must be enabled for the tailnet. That is an
     admin action the lane cannot take.
+
+## Speaking design audit (D-129), 2026-10-07
+
+- **S-24 Conversation: the partner cannot speak first.**
+  - Design (frame 30): the partner opens the chat, the learner then types or speaks.
+  - What happens: the situation text stands in as the partner's bubble and the learner speaks first, because
+    the conversation-turn request (`ConversationIn`) requires a learner turn; there is no way to ask for an
+    opening partner turn.
+  - Needed: a backend contract for an opening partner turn (no learner message) for a chosen scenario. No UI
+    change until that exists; the UI must not fabricate a partner line.

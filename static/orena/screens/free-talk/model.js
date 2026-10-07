@@ -100,7 +100,14 @@ export function strengthsOf(coaching) {
    is the real equivalent; recency order needs no separate ranking decision. */
 export function phraseWords(page) {
   const items = Array.isArray(page?.items) ? page.items : [];
-  return items.map((item) => String(item?.word || '').trim()).filter(Boolean).slice(0, 4);
+  /* Short phrases and words only: a whole sentence saved to the library is not a "useful phrase"
+     chip (S-18). Capped by unit count (6 words, or 12 Han characters) and length. */
+  const short = (text) => {
+    if (text.length > 40 || /[.!?。！？]\s*\S/u.test(text)) return false;
+    const han = (text.match(/\p{Script=Han}/gu) || []).length;
+    return han ? han <= 12 : text.split(/\s+/).length <= 6;
+  };
+  return items.map((item) => String(item?.word || '').trim()).filter((text) => text && short(text)).slice(0, 4);
 }
 
 /* 0 fixes -> "headlineNone"; 1 -> "headlineOne" (frame's singular wording); 2+ -> the plural key,

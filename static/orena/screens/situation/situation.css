@@ -166,8 +166,8 @@
 }
 .s-sit__error {
   margin: 0;
-  font-size: 13.5px;
-  color: var(--red);
+  font-size: 14px;
+  color: var(--muted);
 }
 .s-sit__actions {
   display: flex;

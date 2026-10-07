@@ -99,9 +99,10 @@ export default async function conversationScreen(element, ctx) {
   function headMarkup() {
     const item = convo ? bank.find((entry) => entry.title === convo.title) : null;
     const sub = convo ? (item ? `${item.title} · ${item.cue}` : convo.title) : '';
+    const subline = convo ? (sub ? html`<div class="s-conv__sub" lang="${lang}">${sub}</div>` : '') : html`<div class="s-conv__sub">${t('setupSubtitle')}</div>`;
     return html`<div class="s-conv__head">
       <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${ts('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
-      <div class="s-conv__headcol"><h1 class="s-conv__title">${ts('conversation')}</h1>${sub ? html`<div class="s-conv__sub" lang="${lang}">${sub}</div>` : ''}</div>
+      <div class="s-conv__headcol"><h1 class="s-conv__title">${ts('conversation')}</h1>${subline}</div>
       ${convo && !isOver() ? html`<button type="button" class="o-btn o-btn--text s-conv__end" data-end>${t('endConversation')}</button>` : ''}
     </div>`;
   }
