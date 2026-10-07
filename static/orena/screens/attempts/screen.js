@@ -7,7 +7,6 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { langSpan } from '../../kit/lang.js';
 import { pageHeader } from '../../kit/components.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
@@ -66,7 +65,7 @@ export default async function mountAttemptHistory(element, ctx) {
 
   mount(
     element,
-    html`${pageHeader({ back: { label: shellCopy('back'), dataset: { back: '1' } }, title: t('title'), meta: langSpan(source.title, source.language), compact: true })}
+    html`${pageHeader({ back: { label: shellCopy('back'), dataset: { back: '1' } }, title: t('title'), meta: t('subtitle'), compact: true })}
     <div class="s-attempts-scroll" data-scroll-region>
       <div class="s-attempts-stats">
         <div class="s-attempts-stat"><div class="s-attempts-stat__label">${t('statAttempts')}</div><div class="s-attempts-stat__value">${countLabel}</div></div>
@@ -74,7 +73,6 @@ export default async function mountAttemptHistory(element, ctx) {
         <div class="s-attempts-stat"><div class="s-attempts-stat__label">${t('statChange')}</div><div class="s-attempts-stat__value" style="color:var(--accent)">${deltaLabel(stats.delta)}</div></div>
       </div>
       <div class="s-attempts-rows">${rows.map(rowMarkup)}</div>
-      <p class="s-attempts-note">${t('historyScope')}</p>
       <p class="s-attempts-note">${t(keepRecent.value ? 'privacyNoteKept' : 'privacyNoteSession')}</p>
     </div>`,
   );

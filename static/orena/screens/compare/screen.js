@@ -325,11 +325,29 @@ export default async function mountCompareWithModel(element, ctx) {
     const han = (unit) => /\p{Script=Han}/u.test(unit.text);
     const aligned = language === 'zh' && syllables.length === units.filter((unit) => unit.unit && han(unit)).length;
     let spokenAt = 0;
-    return units.map((unit) => {
-      if (!unit.unit || (language === 'zh' && !han(unit))) return unit.text.trim() ? html`<span class="s-compare-token"><span class="s-compare-token__sub" aria-hidden="true">${raw('&nbsp;')}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${unit.text}</span></span>` : '';
+    /* Punctuation stays on its word (design: "stop," is one token): a closing mark joins the word
+       before it, an opening quote or bracket the word after it. */
+    const marks = (text) => /^[\p{P}\p{S}]+$/u.test(text.trim());
+    const opening = (text) => /^[\p{Ps}\p{Pi}]+$/u.test(text.trim());
+    const items = [];
+    let lead = '';
+    for (const unit of units) {
+      const text = unit.text;
+      if (!unit.unit && marks(text)) {
+        if (opening(text)) lead += text.trim();
+        else if (items.length && !items[items.length - 1].plain) items[items.length - 1].tail += text.trim();
+        else items.push({ unit, plain: true, lead: '', tail: '' });
+        continue;
+      }
+      items.push({ unit, plain: false, lead, tail: '' });
+      lead = '';
+    }
+    return items.map(({ unit, plain, lead: head, tail }) => {
+      const shown = `${head}${unit.text}${tail}`;
+      if (plain || !unit.unit || (language === 'zh' && !han(unit))) return shown.trim() ? html`<span class="s-compare-token"><span class="s-compare-token__sub" aria-hidden="true">${raw('&nbsp;')}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${shown}</span></span>` : '';
       const reading = aligned ? syllables[spokenAt++] : readingFor(unit.text, reference, language, unit.start);
       const tone = language === 'zh' && reading ? toneOf(reading) : null;
-      return html`<span class="s-compare-token"><span class="s-compare-token__sub" title="${reading ? '' : t('readingUnavailable')}" style="color:${tone && tone < 5 ? `var(--tone${tone})` : 'var(--text3)'}">${reading || '—'}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${unit.text}</span></span>`;
+      return html`<span class="s-compare-token"><span class="s-compare-token__sub" title="${reading ? '' : t('readingUnavailable')}" style="color:${tone && tone < 5 ? `var(--tone${tone})` : 'var(--text3)'}">${reading || '—'}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${shown}</span></span>`;
     });
   }
 
@@ -614,7 +632,7 @@ export default async function mountCompareWithModel(element, ctx) {
         <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
         <div class="s-compare-title-block"><div class="s-compare-title">${source.lessonId ? t('practiceTitle') : t('title')}</div><div class="s-compare-note s-compare-subtitle">${t('subtitle')}</div></div>
         ${takes.length ? pillsMarkup() : ''}
-        <button type="button" class="s-compare-history" data-attempts aria-label="${t('attemptHistory')}">${raw(icon('clock',{size:18}))}<span>${t('attemptHistory')}</span></button>
+        <button type="button" class="s-compare-history" data-attempts aria-label="${t('attemptHistory')}"><span>${t('attemptHistory')}</span></button>
       </div>
       ${sourceNavigation()}
       <div class="s-compare-scroll${showRecord ? ' s-compare-scroll--record' : ''}" data-scroll-region>
