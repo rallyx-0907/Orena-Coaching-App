@@ -155,6 +155,39 @@
   line-height: 1.5;
   font-style: italic;
 }
+.s-sit__judge {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.s-sit__jcard {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface2);
+}
+.s-sit__jcard--yes {
+  background: var(--green-soft);
+}
+.s-sit__jlabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-sit__jvalue {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--amber);
+}
+.s-sit__jcard--yes .s-sit__jvalue {
+  color: var(--green);
+}
+.s-sit__jvalue--plain {
+  color: inherit;
+}
+.s-sit__jnote {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
 .s-sit__improve {
   margin: 0;
   padding: 14px 18px;

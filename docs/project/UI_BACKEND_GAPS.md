@@ -4918,11 +4918,14 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   account conversation record (`/api/conversations/*`, schema reserved by D-104), so a conversation resumed from
   another device carries on at the level the chips open on. Learners whose declared level is not a CEFR B1-C1 code
   (A-levels, HSK) open on B1; the chips cannot express a second scheme.
-- **S-26 Situation Reaction Intent / Clarity cards stay unbuilt (D-139 HD-13).** The `spoken-response` coaching
-  shape (`carried`, `landed_differently`, `another_way`, `next_attempt`, `say_again`) carries no intent or clarity
-  judgement, so the cards are not drawn; they appear only if the response ever carries them. The context chip is
-  built from each scenario's authored `context` (`content/voice-invitations.js`, English and Chinese, in the learning
-  language like the scenario itself); there is no support-language translation of scenario text to follow.
+- **S-26 Situation Reaction Intent / Clarity cards (D-139 HD-13). RESOLVED.** `POST /api/dictionary/spoken-response`
+  asks, in the same single call and only when a situation is given, for `intent_achieved` (yes / partly / no) and
+  `clarity` (clear / mostly / unclear), each with one short reason in the support language, judged from the
+  transcript's words (never how they sounded). The server returns each only when its verdict is in the vocabulary and
+  its reason is non-empty; otherwise the key is absent. Situation Reaction draws the frame's two cards only for a
+  judgement that is present. These are model judgements of the words, not measurements. The context chip is built
+  from each scenario's authored `context` (`content/voice-invitations.js`, English and Chinese, in the learning
+  language like the scenario); there is no support-language translation of scenario text to follow.
 - **S-27 YouTube sources have no prepared model clip yet (D-140).** Model clips are cut at content readiness from
   the admitted source (`writing_coach/model_clips.py`; backfill `scripts/backfill_model_clips.py`). Curated catalogue
   media and stored uploads are prepared. A YouTube-provider import has no source file at rest: the readiness step and

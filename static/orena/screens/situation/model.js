@@ -29,3 +29,15 @@ export function progressLabel(index, total) {
 export function naturalAlternative(coaching) {
   return String(coaching?.say_again || coaching?.another_way || '').trim();
 }
+
+/* S-26: the two judgement cards of the result. The coaching response carries `intent_achieved` and `clarity`
+   ({ verdict, reason }) only when the provider returned a valid one; anything else is not drawn. */
+const INTENT = ['yes', 'partly', 'no'];
+const CLARITY = ['clear', 'mostly', 'unclear'];
+function judged(raw, verdicts) {
+  const reason = typeof raw?.reason === 'string' ? raw.reason.trim() : '';
+  return verdicts.includes(raw?.verdict) && reason ? { verdict: raw.verdict, reason } : null;
+}
+export function situationJudgements(coaching) {
+  return { intent: judged(coaching?.intent_achieved, INTENT), clarity: judged(coaching?.clarity, CLARITY) };
+}
