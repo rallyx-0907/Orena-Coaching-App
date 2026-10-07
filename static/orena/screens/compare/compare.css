@@ -998,6 +998,9 @@
 }
 .s-compare-linenav__btn:disabled { opacity: .45; }
 .s-compare-more-btn { flex: none; }
+@media (max-width: 600px) {
+  .s-compare-linenav--with-bar { display: none; }
+}
 
 /* The sheet behind "...": the media, its lines, then Listen and Choose media. */
 .s-compare-more { display: flex; flex-direction: column; gap: 14px; min-height: 0; padding: 4px 24px 24px; }

@@ -373,12 +373,14 @@ export default async function mountCompareWithModel(element, ctx) {
   const lineAt = () => lines.findIndex((line) => line.lineId === source.line.lineId);
   const busyNow = () => [TAKE.RECORDING, TAKE.PROCESSING].includes(rec.phase);
 
-  /* Previous / Next line at the bottom of the room, as frame 28 draws them (D-139 HD-4). */
-  function lineNavigation() {
+  /* Previous / Next line at the bottom of the room, as frame 28 draws them (D-139 HD-4). On a phone the
+     result state already spends the bottom on the playback bar, so the pair gives way to it (rule 49):
+     the line list behind "..." still moves to any line, and Try again returns to the pair. */
+  function lineNavigation(withBar = false) {
     if (!source.lessonId || lines.length < 2) return '';
     const at = lineAt();
     const busy = busyNow();
-    return html`<div class="s-compare-linenav">
+    return html`<div class="${cls('s-compare-linenav', withBar && 's-compare-linenav--with-bar')}">
       <button type="button" class="s-compare-linenav__btn" data-fk="line-prev" data-source-line="${lines[at - 1]?.lineId || ''}" ${busy || at <= 0 ? raw('disabled') : ''}>${raw('&larr;')} ${t('previousLine')}</button>
       <button type="button" class="s-compare-linenav__btn" data-fk="line-next" data-source-line="${lines[at + 1]?.lineId || ''}" ${busy || at >= lines.length - 1 ? raw('disabled') : ''}>${t('nextLine')}${raw(icon('arrow-right', { size: 16 }))}</button>
     </div>`;
@@ -726,7 +728,7 @@ export default async function mountCompareWithModel(element, ctx) {
         ${result && !showRecord ? historyMarkup() : ''}
       </div>
       ${result ? barMarkup() : ''}
-      ${lineNavigation()}`,
+      ${lineNavigation(result)}`,
     );
     if (originalPlayer) {
       if(source.playback.kind === 'embed') originalPlayer.attach(q('[data-original-player]'));
