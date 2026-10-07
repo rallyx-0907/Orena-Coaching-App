@@ -411,8 +411,11 @@ class _Turn:
             replace(turn, message=tapped) if tapped else turn, tier1, [c for c in here if c], session,
             opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
         )
-        if self.focused and word_in_view and (asks_about_status(turn.message) or asks_to_go(turn.message)):
-            # said next to the learner's words, like the selection line
+        answering = self.live is not None or bool(session.recent_runs())  # an open offer, or one just sent
+        if (self.focused and word_in_view and not answering
+                and (asks_about_status(turn.message) or asks_to_go(turn.message))):  # fmt: skip
+            # said next to the learner's words, like the selection line. Not while the learner is answering an offer
+            # ("ok lưu" is not a question about the library): the conversation is read, not the status words.
             messages.insert(len(messages) - 1, ProviderMessage(role="system", content=STATUS_ONLY))
         self.timeline.mark("context_built")
         outputs = ReplyOutputs(
