@@ -313,8 +313,13 @@ export default async function listening(element, ctx) {
     element.querySelector('.s-listening__player')?.classList.toggle('is-playing', playing);
     if (timeEl) timeEl.textContent = timeLabel(timeMs, lesson.excerptStartMs, clipEndMs);
     if (seekFillEl) seekFillEl.style.width = `${progressPercent(timeMs, lesson.excerptStartMs, clipEndMs)}%`;
+    // Redrawn only when play/pause flips (LEX-045): replacing the icon on every clock tick swapped the node under a
+    // press on the button's centre, and the browser dropped that click - only the rim answered.
     const glyph = element.querySelector('[data-play]');
-    if (glyph) mount(glyph, raw(icon(playing ? 'pause' : 'play', { size: 24 })));
+    if (glyph && glyph.dataset.glyph !== String(playing)) {
+      glyph.dataset.glyph = String(playing);
+      mount(glyph, raw(icon(playing ? 'pause' : 'play', { size: 24 })));
+    }
   }
 
   let chromeTimer = null;

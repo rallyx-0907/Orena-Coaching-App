@@ -874,3 +874,11 @@
   :root[data-device="mobile"] .s-listening__controls .s-listening__pill--speed,
   :root[data-device="mobile"] .s-listening__controls .s-listening__pill--toggle { padding: 0 10px; }
 }
+
+/* The transport icon is never the click target (LEX-045): a press anywhere on the round button is the button's. */
+.s-listening__playbtn svg { pointer-events: none; }
+
+/* The selected line's header tools (LEX-037): on a phone ⋯ and Close keep their 17px glyphs but each answers a
+   40px touch surface, 4px apart; the negative margin keeps the header's line height as the frame draws it. */
+:root[data-device="mobile"] .s-listening__selected-tools { display: inline-flex; align-items: center; gap: 4px; margin: -11px -11px -11px 0; }
+:root[data-device="mobile"] .s-listening__selected-close { width: 40px; height: 40px; padding: 0; border-radius: 10px; }
