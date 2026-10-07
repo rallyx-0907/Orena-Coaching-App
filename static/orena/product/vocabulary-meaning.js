@@ -53,10 +53,17 @@ export function meaningLanguageLabel(language, supportLanguage, ui = 'en') {
    sense's localization in another language (tagged with that language so a caller can say so),
    else null. The sense's own-language definition is not a localization and is not chosen here. */
 export function vocabularyMeaning(item, supportLanguage) {
+  const language = lower(supportLanguage);
   const localized = localizedMeaning(item, supportLanguage);
   if (localized) return localized;
   const note = clean(item?.definition);
-  if (note) return { text: note, language: '', source: 'note' };
+  if (note) {
+    // A catalogue word's `definition` is often the dictionary's own-language line (Chinese for a Chinese
+    // word). When it is written in Han and the support language is not Chinese it says so, instead of
+    // sitting unlabelled among the support-language meanings (LEX-070).
+    const written = /[㐀-鿿]/.test(note) && language !== 'zh' ? 'zh' : '';
+    return { text: note, language: written, source: 'note' };
+  }
   const own = lower(item?.language_code || item?.identity?.language);
   for (const entry of Array.isArray(item?.short_meanings) ? item.short_meanings : []) {
     const language = lower(entry?.language);

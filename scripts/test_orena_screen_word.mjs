@@ -276,4 +276,12 @@ assert.ok(
   'the loading skeleton is mounted before the item lookup and before the AI-backed wordDetail/wordClips fetch, so the main column is never blank while either is pending',
 );
 
+/* LEX-066: a word opened from a list with no saved record and no lookup answer still shows the list's reading
+   and meaning (the seed), tagged when it is not in the support language; with nothing at all there is no meaning. */
+const seeded = mapWordCard('车站', { detail: null, item: null, supportLanguage: 'vi', seed: { pronunciation: 'chēzhàn', short_meanings: [{ language: 'en', text: 'rail station; bus stop' }], identity: { language: 'zh' } } });
+assert.equal(seeded.ipa, 'chēzhàn');
+assert.equal(seeded.meaning, 'rail station; bus stop');
+assert.equal(seeded.meaningLanguage, 'en');
+assert.equal(mapWordCard('车站', { detail: null, item: null, supportLanguage: 'vi' }).hasMeaning, false);
+
 console.log('test_orena_screen_word.mjs: Word Detail data mapping - real backend contracts, rule 40 throughout: PASS');

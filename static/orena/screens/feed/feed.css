@@ -67,6 +67,9 @@
 }
 .s-feed-card.is-flipped {
   border-color: var(--accent);
+  /* The back holds the word, meaning, example, strokes and mastery: it gets the room the window allows
+     instead of cropping them into a small scroll box (LEX-069). */
+  height: min(640px, calc(100dvh - 200px));
 }
 
 .s-feed-face {
@@ -123,6 +126,33 @@
   min-height: 0;
   border-radius: 18px;
   overflow: hidden;
+  background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+}
+.s-feed-art__image {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tint2);
+}
+.s-feed-art__tile {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-feed-art__caption {
+  flex: none;
+  padding: 14px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--accent-text);
 }
 .s-feed-card__meta {
   display: flex;

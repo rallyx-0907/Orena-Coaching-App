@@ -62,6 +62,7 @@ NAMES = sorted(
         "ellipsis",
         "eye",
         "flame",
+        "history",
         "graduation-cap",
         "headphones",
         "highlighter",

@@ -10,9 +10,9 @@
 import { defineCopy } from '../../copy/index.js';
 
 const LAYERS = {
-  progress: 'interface', modeTarget: 'interface', modeCloze: 'interface', cueCloze: 'interface',
+  progress: 'interface', modeTarget: 'interface', modeCloze: 'interface',
   sourceReading: 'interface', sourceFeedback: 'interface',
-  tapToReveal: 'interface', hintLabel: 'interface', revealLabel: 'interface',
+  hintLabel: 'interface', revealLabel: 'interface',
   gradeAgain: 'interface', gradeUnsure: 'interface', gradeGotIt: 'interface',
   scheduleMinutes: 'interface', scheduleHours: 'interface', scheduleDays: 'interface', lessonCards: 'interface', lessonNext: 'interface',
   sessionCompleteTitle: 'interface', statAgain: 'interface', statUnsure: 'interface', statGotIt: 'interface',
@@ -36,9 +36,9 @@ const LAYERS = {
 export const t = defineCopy('review', {
   layers: LAYERS,
   en: {
-    progress: '{n} of {total}', modeTarget: 'Target → meaning', modeCloze: 'Source-aware cue',
-    cueCloze: 'Which word fits here?', sourceReading: 'From your reading', sourceFeedback: 'From your writing feedback',
-    tapToReveal: 'Tap to reveal', hintLabel: 'Hint', revealLabel: 'Reveal',
+    progress: '{n} of {total}', modeTarget: 'What does it mean?', modeCloze: 'Which word fits here?',
+    sourceReading: 'From your reading', sourceFeedback: 'From your writing feedback',
+    hintLabel: 'Hint', revealLabel: 'Reveal',
     gradeAgain: 'Again', gradeUnsure: 'Unsure', gradeGotIt: 'Got it',
     scheduleMinutes_one: '{n} min', scheduleMinutes_other: '{n} min',
     scheduleHours_one: '{n} hour', scheduleHours_other: '{n} hours',
@@ -66,9 +66,9 @@ export const t = defineCopy('review', {
     posProperNoun: 'Proper noun', posOther: 'Other', posJoin: ' / ',
   },
   vi: {
-    progress: '{n} trên {total}', modeTarget: 'Từ cần nhớ → nghĩa', modeCloze: 'Gợi ý theo nguồn',
-    cueCloze: 'Từ nào điền vừa vào chỗ trống?', sourceReading: 'Từ bài đọc của bạn', sourceFeedback: 'Từ phản hồi bài viết của bạn',
-    tapToReveal: 'Chạm để xem', hintLabel: 'Gợi ý', revealLabel: 'Xem đáp án',
+    progress: '{n} trên {total}', modeTarget: 'Từ này nghĩa là gì?', modeCloze: 'Từ nào điền vừa vào chỗ trống?',
+    sourceReading: 'Từ bài đọc của bạn', sourceFeedback: 'Từ phản hồi bài viết của bạn',
+    hintLabel: 'Gợi ý', revealLabel: 'Xem đáp án',
     gradeAgain: 'Quên', gradeUnsure: 'Chưa chắc', gradeGotIt: 'Nhớ rồi',
     scheduleMinutes_other: '{n} phút',
     scheduleHours_other: '{n} giờ',
@@ -96,9 +96,9 @@ export const t = defineCopy('review', {
     posProperNoun: 'Danh từ riêng', posOther: 'Khác', posJoin: ' / ',
   },
   zh: {
-    progress: '第 {n} 个 / 共 {total} 个', modeTarget: '目标词 → 词义', modeCloze: '来源语境提示',
-    cueCloze: '空格处应填哪个词？', sourceReading: '来自你的阅读', sourceFeedback: '来自你的写作反馈',
-    tapToReveal: '点击查看', hintLabel: '提示', revealLabel: '查看答案',
+    progress: '第 {n} 个 / 共 {total} 个', modeTarget: '这个词是什么意思？', modeCloze: '空格处应填哪个词？',
+    sourceReading: '来自你的阅读', sourceFeedback: '来自你的写作反馈',
+    hintLabel: '提示', revealLabel: '查看答案',
     gradeAgain: '忘记了', gradeUnsure: '不确定', gradeGotIt: '记住了',
     scheduleMinutes_other: '{n} 分钟',
     scheduleHours_other: '{n} 小时',

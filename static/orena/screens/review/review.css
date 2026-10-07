@@ -164,14 +164,6 @@
   letter-spacing: 0.12em;
   color: var(--accent);
 }
-.s-review-affordance {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: var(--muted);
-  margin-top: 6px;
-}
 
 .s-review-hidden-actions {
   flex: none;
@@ -503,4 +495,11 @@
 }
 .s-review-done__actions .o-btn--primary:hover {
   background: var(--accent-fill-hover);
+}
+
+/* The reading on the question side is the clue the learner works from: it is read at a glance (LEX-064). */
+.s-review-cue__reading {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
 }

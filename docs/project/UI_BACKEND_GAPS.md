@@ -5017,3 +5017,28 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   support languages Orena ships.
 - **P-18 Plan names.** The catalogue (`writing_coach/product/catalog.py`) returns English `name` and `description`; the
   UI translates them by plan id (`copy/shell.js` `planName`, `planDescription`). A new plan needs its words there.
+
+## Vocabulary review batch (LEX-066 to LEX-071, 2026-10-07)
+
+- **LEX-066 Word page for a word not yet saved.** The word lookup (`POST /api/dictionary/word-detail`) is context-based and
+  returns no pinyin and a generic "meaning in this context" for a bare headword. The UI now carries the catalogue card's
+  `pronunciation` and `meanings[]` from the list that opened the word (`product/word-seed.js`) and asks
+  `/api/vocabulary/catalogue/search` for a direct link; the catalogue search has no pronunciation field (`readings` is
+  empty), so a directly opened unsaved Chinese word still has a meaning but no pinyin. Owner: BACKEND (readings on the
+  catalogue search row). With no meaning anywhere the page says so.
+- **LEX-067 Collections content.** Test collections ("QA Collection practice ZH", "QA dictionary localization ...",
+  "[Mau kiem thu] ...") are published with `provenance.label = test-sample` or QA names. The UI does not hide them: every
+  published collection in this environment is one, so hiding would empty the tab. Owner: CONTENT (replace or unpublish; a
+  learner list should filter `provenance.label = test-sample` server-side). Collections have no cover image field; they
+  draw the type tile. The collection description and "met in your sources" count do not exist; the count is no longer drawn
+  as 0.
+- **LEX-070 Saved language data.** Rows without a Vietnamese localization show the English meaning tagged "English";
+  a Han-script `definition` under a non-Chinese support language is tagged "Chinese". The saved entry
+  "相关条目会在下方展开" is an interface sentence saved as a word (learner data, not deleted); the Saved-content media entry
+  `asset:youtube-9xIf7Tb0ykU` has no title and `availability: unavailable` (the UI says "Untitled · No longer available").
+  Owner: CONTENT / BACKEND (localizations for the saved catalogue words; cleanup of the two records by the owner of the account).
+- **LEX-071 Icons and tab names.** The design gives Due Review and Daily feed one icon and Collections and Saved language
+  another; the build uses flame (Daily feed) and bookmark (Saved language) from lucide-static. "Active use" is the design's
+  tab name and is unchanged. Human decision.
+- **LEX-062 Earlier drafts** are device memory (the account holds the copies under `expression:parked:<n>` but no list), so
+  on another device the list is empty. Owner: CONTRACT (account draft list).

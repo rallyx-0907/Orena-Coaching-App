@@ -11,6 +11,8 @@ import { emptyMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
 import { masteryBars } from '../../kit/components.js';
+import { COVER_VISUALS } from '../../kit/cover-visuals.js';
+import { rememberWordSeed } from '../../product/word-seed.js';
 import { langAttr } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
@@ -46,7 +48,10 @@ function frontMarkup(card, index, saved) {
       </div>
       ${masteryMarkup()}
     </div>
-    <div class="s-feed-art o-art" aria-hidden="true"></div>
+    <div class="s-feed-art">
+      <div class="s-feed-art__image" aria-hidden="true"><span class="s-feed-art__tile" style="background:${COVER_VISUALS.vocab.tint}">${raw(icon(COVER_VISUALS.vocab.icon, { size: 30 }))}</span></div>
+      <div class="s-feed-art__caption">${t('revealCaption')}</div>
+    </div>
     <div class="s-feed-front-actions">
       <button type="button" class="s-feed-pill" data-play="${index}">${raw(icon('volume-2', { size: 16 }))}${t('play')}</button>
       <button type="button" class="s-feed-save" data-save="${index}" style="${saved ? 'background:var(--green-soft);color:var(--green)' : 'background:var(--accent-fill);color:var(--accent-ink)'}" aria-pressed="${saved ? 'true' : 'false'}">${t(saved ? 'saved' : 'save')}</button>
@@ -92,6 +97,7 @@ export default async function mountFeed(element, ctx) {
   if (!ctx.isCurrent()) return undefined;
 
   const cards = mapFeedCards(payload, support);
+  for (const entry of payload?.items || []) rememberWordSeed(entry);
   const flipped = new Set();
   const savedIdx = new Set();
   let audio = null;

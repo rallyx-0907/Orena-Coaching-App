@@ -32,6 +32,8 @@ export async function openLessonComplete(ctx = {}, { title, facts, measured, nex
   if (ctx.isCurrent && !ctx.isCurrent()) return null;
   const realFacts = sanitizeFacts(facts);
   const score = measuredScore(measured);
+  // A 0% is not a celebration: no success mark and no big number, the facts speak (LEX-065).
+  const celebrate = score !== 0;
   const handle = openSheet({
     label: `${t('eyebrow')} · ${String(title || '')}`.trim(),
     className: 's-lc',
@@ -41,10 +43,10 @@ export async function openLessonComplete(ctx = {}, { title, facts, measured, nex
         element,
         html`<div class="s-lc__card">
           <span class="s-lc__blob"></span>
-          <div class="s-lc__icon">${raw(icon('check', { size: 30, stroke: 2.4 }))}</div>
+          ${celebrate ? html`<div class="s-lc__icon">${raw(icon('check', { size: 30, stroke: 2.4 }))}</div>` : ''}
           <div class="s-lc__eyebrow">${t('eyebrow')}</div>
           ${title ? html`<div class="s-lc__title">${title}</div>` : ''}
-          ${score == null ? '' : html`<div class="s-lc__score">${score}<span>%</span></div>`}
+          ${score == null || score === 0 ? '' : html`<div class="s-lc__score">${score}<span>%</span></div>`}
           ${realFacts.length ? html`<div class="s-lc__facts">${realFacts.map(factMarkup)}</div>` : ''}
           <button type="button" class="o-btn o-btn--primary o-btn--block s-lc__continue" data-continue>${t('continueLabel')}</button>
         </div>`,

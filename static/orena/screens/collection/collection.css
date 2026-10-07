@@ -180,3 +180,17 @@
   opacity: 0.5;
   cursor: default;
 }
+
+/* The pinyin after a word, and the line that says why Start review is off (LEX-066). */
+.s-collection-word__reading {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.s-collection-why {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}

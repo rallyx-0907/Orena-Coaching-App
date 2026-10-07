@@ -5,6 +5,7 @@ import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { mediaCard, masteryBars } from '../../kit/components.js';
+import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langAttr, langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { api } from '../../infrastructure/api.js';
@@ -54,8 +55,8 @@ function contentRow(row, language) {
   return html`<button type="button" class="s-library-content-row" data-content="${row.contentId}">
     <span class="s-library-content-row__body">
       <span class="s-library-content-row__type">${row.domain === 'media' ? sc('listening') : sc('content')}</span>
-      <span class="s-library-content-row__title">${langSpan(row.title, language)}</span>
-      ${row.source ? html`<span class="s-library-content-row__source">${row.source}</span>` : ''}
+      <span class="s-library-content-row__title">${row.title ? langSpan(row.title, language) : t('untitledContent')}</span>
+      ${row.source || row.unavailable ? html`<span class="s-library-content-row__source">${row.source || t('contentUnavailable')}</span>` : ''}
       <span class="s-library-content-row__progress"><span class="o-progress"><span style="width:${row.pct}%"></span></span><span class="s-library-content-row__pct">${row.pct}%</span></span>
     </span>
     <span class="s-library-content-row__chevron">${raw(icon('chevron-right', { size: 20 }))}</span>
@@ -90,7 +91,7 @@ function contentPanel(rows, language, menuFor) {
 function languageRow(row, language) {
   return html`<div class="s-library-lang-row">
     <span class="s-library-chip">${row.kind === 'phrase' ? t('typePhrase') : sc('word')}</span>
-    <button type="button" class="s-library-lang-row__text" data-word-open="${row.word}"><span class="s-library-lang-row__word" lang="${langAttr(language)}">${row.word}</span>${row.sub ? html`<span class="s-library-lang-row__sub">${row.sub}${meaningTag(row.subLanguage)}</span>` : ''}</button>
+    <button type="button" class="s-library-lang-row__text" data-word-open="${row.word}"><span class="s-library-lang-row__word" lang="${langAttr(language)}">${row.word}${row.reading ? html` <span class="s-library-lang-row__reading">${row.reading}</span>` : ''}</span>${row.sub ? html`<span class="s-library-lang-row__sub">${row.sub}${meaningTag(row.subLanguage)}</span>` : ''}</button>
     ${row.isNew ? html`<span class="${cls('s-library-chip', 's-library-chip--new')}">${t('newBadge')}</span>` : html`${masteryBars({ filled: row.filled })}`}
     <button type="button" class="s-library-lang-row__play" data-play="${row.word}" aria-label="${sc('pronunciation')}">${raw(icon('volume-2', { size: 18 }))}</button>
   </div>`;
@@ -111,6 +112,7 @@ function collectionsPanel(rows) {
   if (!rows.length) return html`<div class="s-library-lang-empty">${emptyMarkup({ text: t('emptyCollections'), iconName: 'inbox' })}</div>`;
   return html`<div class="s-library-collections-grid">${rows.map((row) => mediaCard({
     title: row.title,
+    cover: COVER_VISUALS.collection,
     meta: itemCountLabel(row.size),
     dataset: { collection: row.collectionId },
   }))}</div>`;
@@ -240,6 +242,25 @@ export default async function library(element, ctx) {
       </div>`,
     );
     bind();
+    cueTabs();
+  }
+
+  /* The strip scrolls on a phone (LEX-068): the chosen tab is brought into view, and an edge fade shows that
+     more tabs wait on that side. */
+  function cueTabs() {
+    const strip = element.querySelector('.o-tabs');
+    if (!strip) return;
+    const chosen = strip.querySelector('[aria-selected="true"]');
+    if (chosen && strip.scrollWidth > strip.clientWidth) {
+      strip.scrollLeft = Math.max(0, chosen.offsetLeft - (strip.clientWidth - chosen.offsetWidth) / 2);
+    }
+    const mark = () => {
+      const more = strip.scrollWidth - strip.clientWidth > 2;
+      strip.toggleAttribute('data-more-right', more && strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 2);
+      strip.toggleAttribute('data-more-left', more && strip.scrollLeft > 2);
+    };
+    strip.addEventListener('scroll', mark, { passive: true });
+    mark();
   }
 
   function bind() {

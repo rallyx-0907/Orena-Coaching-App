@@ -47,6 +47,7 @@ export function contentRows(entries = [], continuation = []) {
         domain: entry.ref.domain,
         title: entry.title || '',
         source: entry.snippet || '',
+        unavailable: entry.availability === 'unavailable',
         pct: placeFor(continuation, contentId).percent,
       };
     });
@@ -90,13 +91,14 @@ export function wordMeaning(item = {}, supportLanguage = 'en') {
 /* The language of that meaning when it is the sense's meaning in another language (D-124). */
 export function wordMeaningLanguage(item = {}, supportLanguage = 'en') {
   const meaning = vocabularyMeaning(item, supportLanguage);
-  return meaning?.source === 'other_language' ? meaning.language : '';
+  return meaning?.language && meaning.language !== String(supportLanguage || '').toLowerCase() ? meaning.language : '';
 }
 
 export function languageRows(items = [], supportLanguage = 'en') {
   return (items || []).map((item) => ({
     word: item.word || '',
     kind: wordKindOf(item.word),
+    reading: String(item.phonetic || '').trim(),
     sub: wordMeaning(item, supportLanguage),
     subLanguage: wordMeaningLanguage(item, supportLanguage),
     isNew: isNewWord(item),

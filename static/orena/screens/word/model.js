@@ -25,7 +25,7 @@ const HAN = /[㐀-鿿]/;
    working unchanged. */
 export { dueInfo } from '../../product/due-schedule.js';
 import { dueInfo } from '../../product/due-schedule.js';
-import { localizedMeaning } from '../../product/vocabulary-meaning.js';
+import { localizedMeaning, vocabularyMeaning } from '../../product/vocabulary-meaning.js';
 
 /* languages-5 / finding A: the one legitimate script check in this build. A saved word carries no
    per-item language field from the backend at all - `SavedWord.language_code`
@@ -91,10 +91,11 @@ export function contextFor(word, item) {
 
 /* The reading the frame's single `ipa` slot shows: pinyin for Chinese, IPA/phonetic otherwise -
    whichever the lookup actually returned (D7 §2.6: one binding, language-dependent content). */
-export function pronunciationOf(detail, item) {
-  if (!detail) return text(item?.phonetic);
-  if (detail.script === 'hanzi') return text(detail.pinyin) || text(item?.phonetic);
-  return text(detail.ipa) || text(item?.phonetic);
+export function pronunciationOf(detail, item, seed = null) {
+  const fallback = text(item?.phonetic) || text(seed?.pronunciation);
+  if (!detail) return fallback;
+  if (detail.script === 'hanzi') return text(detail.pinyin) || fallback;
+  return text(detail.ipa) || fallback;
 }
 
 export function savedTone(saved) {
@@ -135,7 +136,7 @@ export function highlightExample(example, word) {
 /* The word card (`wdWC`): the header, the meaning block, the example and the mastery footer, from
    whichever of the two answers actually carries each field. `detail` may be null (the lookup
    failed); `item` may be null (the word is not in the learner's saved list yet). */
-export function mapWordCard(word, { detail = null, item = null, supportLanguage = '' } = {}) {
+export function mapWordCard(word, { detail = null, item = null, supportLanguage = '', seed = null } = {}) {
   // `detail.available === false` (`claim: "word_detail_unavailable"`) means the lookup could
   // not resolve this word at all - but individual fields on `detail` (e.g. `partOfSpeech`, which
   // the backend can still fill from an independent heuristic) can still come back non-empty even
@@ -146,7 +147,11 @@ export function mapWordCard(word, { detail = null, item = null, supportLanguage 
   const headword = text(resolvedDetail?.headword) || text(word);
   const pos = text(resolvedDetail?.partOfSpeech) || text(item?.part_of_speech);
   const level = text(item?.level);
-  const meaning = text(resolvedDetail?.contextMeaning) || text(item?.definition);
+  // A word that is not saved has no sentence of the learner's own: the lookup's "meaning in this context"
+  // then describes nothing, so the sense's localization from the list (or the catalogue) leads (LEX-066).
+  const sense = item ? null : vocabularyMeaning(seed, supportLanguage);
+  const meaning = text(sense?.text) || text(resolvedDetail?.contextMeaning) || text(item?.definition);
+  const meaningLanguage = sense?.text && sense.language && sense.language !== String(supportLanguage || '').toLowerCase() ? sense.language : '';
   // The sense's localization for the learner's support language (D-124), never a fixed language.
   const localized = text(localizedMeaning(item, supportLanguage)?.text);
   const support = localized && localized !== meaning ? localized : '';
@@ -161,12 +166,13 @@ export function mapWordCard(word, { detail = null, item = null, supportLanguage 
   return {
     word: headword,
     script: resolvedDetail?.script === 'hanzi' || HAN.test(headword) ? 'hanzi' : 'latin',
-    ipa: pronunciationOf(resolvedDetail, item),
+    ipa: pronunciationOf(resolvedDetail, item, seed),
     pos,
     hasLevel: Boolean(level),
     level,
     meaning,
     hasMeaning: Boolean(meaning),
+    meaningLanguage,
     support,
     hasSupport: Boolean(support),
     hasExample: Boolean(example),

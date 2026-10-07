@@ -1,12 +1,10 @@
 /* Vocabulary Daily Feed's own words (frame 36, D-091; Design Contract rules 9, 26, 50). Rule 50:
-   the frame's front-card caption "Tap to reveal meaning and example" is not built - the header
-   subtitle already states the interaction ("tap to flip · swipe for the next"), so the caption is
-   the redundant duplicate E4 §3's own copy audit flags as a drop candidate (recorded in the
-   surface report). `stageNew` is the real stage-0 label a never-reviewed word has (rule 40). */
+   the frame's front-card caption "Tap to reveal meaning and example" is built (LEX-069: the front
+   otherwise says nothing about what turning it shows). `stageNew` is the real stage-0 label a never-reviewed word has (rule 40). */
 import { defineCopy } from '../../copy/index.js';
 
 const LAYERS = {
-  feedSubtitle: 'interface', empty: 'interface',
+  feedSubtitle: 'interface', empty: 'interface', revealCaption: 'interface',
   detail: 'interface', play: 'interface', playWord: 'interface', saveWord: 'interface', unsaveWord: 'interface',
   save: 'interface', saved: 'interface', stageNew: 'interface',
   noAudio: 'interface', savedToast: 'interface', removedToast: 'interface',
@@ -26,7 +24,7 @@ export const t = defineCopy('feed', {
   en: {
     feedSubtitle_one: '{n} card · tap to flip · swipe for the next',
     feedSubtitle_other: '{n} cards · tap to flip · swipe for the next',
-    empty: 'No new words in today’s feed',
+    empty: 'No new words in today’s feed', revealCaption: 'Tap to reveal meaning and example',
     detail: 'Detail', play: 'Play', playWord: 'Play pronunciation', saveWord: 'Save word', unsaveWord: 'Remove from saved words',
     save: 'Save', saved: 'Saved ✓', stageNew: 'New',
     noAudio: 'No audio for this word yet', savedToast: 'Saved', removedToast: 'Removed',
@@ -45,7 +43,7 @@ export const t = defineCopy('feed', {
   },
   vi: {
     feedSubtitle_other: '{n} thẻ · chạm để lật · vuốt sang thẻ tiếp theo',
-    empty: 'Hôm nay chưa có từ mới nào',
+    empty: 'Hôm nay chưa có từ mới nào', revealCaption: 'Chạm để xem nghĩa và ví dụ',
     detail: 'Chi tiết', play: 'Phát', playWord: 'Phát âm', saveWord: 'Lưu từ', unsaveWord: 'Bỏ khỏi danh sách đã lưu',
     save: 'Lưu', saved: 'Đã lưu ✓', stageNew: 'Mới',
     noAudio: 'Từ này chưa có âm thanh', savedToast: 'Đã lưu', removedToast: 'Đã xoá',
@@ -64,7 +62,7 @@ export const t = defineCopy('feed', {
   },
   zh: {
     feedSubtitle_other: '{n} 张卡片 · 点击翻面 · 滑动查看下一张',
-    empty: '今天暂时没有新词',
+    empty: '今天暂时没有新词', revealCaption: '点击查看词义和例句',
     detail: '详情', play: '播放', playWord: '播放发音', saveWord: '收藏该词', unsaveWord: '取消收藏',
     save: '收藏', saved: '已收藏 ✓', stageNew: '新词',
     noAudio: '这个词暂时没有发音', savedToast: '已收藏', removedToast: '已移除',
