@@ -381,6 +381,7 @@ def plan() -> dict:
 # --- multi-turn flows: a session, and the coach notes the device would keep ------------------
 
 VI = {"interface": "vi", "support": "vi"}
+SAVE = {"actions": ["navigate", "save_word"]}  # a client that can run save_word
 FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
     # name: [(target, step, locale, message, context extras)]
     "address": [
@@ -429,6 +430,24 @@ FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
         ("zh-CN", "forget", VI, "Quên ghi chú về ví dụ đó đi.", {}),
         ("zh-CN", "after", VI, "Cho mình một ví dụ với 朋友.", {}),
     ],
+    # Conversation kernel slice 2 (agent/pending.py): an offer survives a question in between, is run once on the
+    # learner's yes, dropped on a no, and not run twice. Each flow is one session; judged by `pending_verdict`.
+    "pending-save": [
+        ("en", "ask", VI, "abate nghĩa là gì? Mình có nên lưu từ này không?", SAVE),
+        ("en", "example", VI, "cho ví dụ nữa", SAVE),
+        ("en", "save", VI, "ừ lưu đi", SAVE),
+        ("en", "again", VI, "ok lưu", SAVE),
+    ],
+    "pending-cancel": [
+        ("en", "ask", VI, "abate nghĩa là gì? Mình có nên lưu từ này không?", SAVE),
+        ("en", "no", VI, "không", SAVE),
+        ("en", "after", VI, "từ đó có formal không?", SAVE),
+    ],
+    "pending-between": [
+        ("en", "ask", VI, "abate nghĩa là gì? Mình có nên lưu từ này không?", SAVE),
+        ("en", "between", VI, "từ đó có formal không?", SAVE),
+        ("en", "save", VI, "thôi lưu đi", SAVE),
+    ],
     "screens": [
         ("zh-CN", "vi", VI, "Màn này dùng để làm gì?", {"surface": "vocabulary.my_language"}),
         ("en", "zh", {"interface": "zh-CN", "support": "zh-CN"}, "这个页面是做什么的？", {"surface": "vocabulary.my_language"}),
@@ -458,6 +477,7 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
             if extra.get("word"):
                 context["selected_item"] = {"type": "word", "text": extra["word"], "lang": target}
                 actions = ["save_word", "add_word_to_collection"]
+            actions = extra.get("actions", actions)
             if context["surface"] in {"home", "orena.home"}:
                 actions, intents = ALL_ACTIONS, ALL_INTENTS
             body = {
@@ -556,6 +576,45 @@ def notes_verdict(rows: list[dict]) -> dict:
     after = steps.get("after") or {}
     verdict["after"] = bool(after) and not after.get("error") and not ops("after")
     verdict["pass"] = all(verdict[k] for k in ("complete", "remember", "correct", "forget", "after"))
+    return verdict
+
+
+def pending_verdict(rows: list[dict]) -> dict:
+    """The pending-interaction flows, judged from the actions the device received: `pass` per flow only when the
+    save was offered, an interjected question ran nothing, a yes ran save_word(abate) exactly once and with `open`,
+    a second yes ran nothing, and a no ran nothing."""
+
+    def acts(flow: str, step: str) -> list[dict]:
+        row = next((r for r in rows if r.get("flow") == flow and r.get("step") == step), None)
+        return [a for a in (row or {}).get("actions", [])]
+
+    def saves(items: list[dict]) -> list[dict]:
+        return [a for a in items if a.get("type") == "save_word" and a.get("payload", {}).get("text", "").lower() == "abate"]
+
+    def ran(items: list[dict]) -> list[dict]:
+        return [a for a in saves(items) if a.get("open") is True]
+
+    verdict: dict = {}
+    if any(r.get("flow") == "pending-save" for r in rows):
+        verdict["pending-save"] = {
+            "offered": bool(saves(acts("pending-save", "ask"))) and not ran(acts("pending-save", "ask")),
+            "interjection_ran_nothing": not ran(acts("pending-save", "example")),
+            "save_ran_once": len(ran(acts("pending-save", "save"))) == 1,
+            "repeat_ran_nothing": not ran(acts("pending-save", "again")),
+        }
+    if any(r.get("flow") == "pending-cancel" for r in rows):
+        verdict["pending-cancel"] = {
+            "offered": bool(saves(acts("pending-cancel", "ask"))),
+            "no_ran_nothing": not ran(acts("pending-cancel", "no")) and not ran(acts("pending-cancel", "after")),
+        }
+    if any(r.get("flow") == "pending-between" for r in rows):
+        verdict["pending-between"] = {
+            "offered": bool(saves(acts("pending-between", "ask"))),
+            "question_ran_nothing": not ran(acts("pending-between", "between")),
+            "late_yes_ran_once": len(ran(acts("pending-between", "save"))) == 1,
+        }
+    for checks in verdict.values():
+        checks["pass"] = all(checks.values())
     return verdict
 
 
@@ -884,12 +943,14 @@ def finish(rows: list[dict], spent: float, out: str) -> int:
                     "capability_models": {"agent_turn_fast": MODEL, "agent_turn_deep": MODEL},
                     "spent_bound_usd": round(spent, 4), "price": [PRICE_IN, PRICE_OUT],
                     "lock": LOCK_NOTES, "notes_verdict": notes_verdict(rows) if any(r.get("flow") == "notes" for r in rows)
-                    else None, "timing": timing(rows), "turns": rows},
+                    else None, "pending_verdict": pending_verdict(rows) or None, "timing": timing(rows), "turns": rows},
                    ensure_ascii=False, indent=2),  # fmt: skip
         encoding="utf-8",
     )
     if any(r.get("flow") == "notes" for r in rows):
         print(f"notes verdict: {notes_verdict(rows)}")
+    if any(str(r.get("flow", "")).startswith("pending") for r in rows):
+        print(f"pending verdict: {pending_verdict(rows)}")
     print(f"timing: {timing(rows)}")
     print(f"results: {out}  (spend bound ${spent:.4f})")
     return 0

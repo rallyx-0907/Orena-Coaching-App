@@ -344,6 +344,24 @@ Tiếp      Nhận lỗi test của người chủ dự án (R27); quota dùng c
 
 ---
 
+### Conversation kernel (ORENA_INTELLIGENCE_ARCHITECTURE.md, human direction 2026-10-07)
+
+```text
+K1  3b070a61  the model is shown the recent turns of the session (bounded: 20 turns / 36k chars, oldest whole
+              exchange dropped first; a long paste is kept whole up to 20k chars per turn).
+K2  6e2a703a  one generic PendingInteraction (agent/pending.py) replaces last_offers: stable id, ends only on
+              confirm | cancel | expiry (6 turns) | a newer offer. The model says what the learner meant with the
+              resolve_pending reply tool; the runtime runs the action once under the offer's id. A language change
+              keeps the conversation and the offer. Live runner flows: pending-save, pending-cancel, pending-between.
+LIMIT (temporary, by decision): turns and the pending offer live in the in-process session cache - lost after the
+              30-minute TTL, on restart, and on another worker. Nothing is stored; no schema, no contract change.
+              The record is plain data so a store can replace the cache without changing what reads it. Persistence
+              (conversation_sessions/turns/user_memories) waits for the human and an independent architecture review
+              (AGENTS.md §7; contract §10).
+NEXT          K3 referents / active_topic · K4 profile/RAG must not take a short continuation · K5 voice turns join
+              the same session · then chat UX, then long-term memory.
+```
+
 ## 1. Mục tiêu
 
 Xây dựng một AI Assistant riêng cho Orena có khả năng:
