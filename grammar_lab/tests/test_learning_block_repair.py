@@ -66,9 +66,10 @@ def test_generate_repairs_common_mistake_and_quick_practice_without_rewriting_le
     bad["common_mistakes"][0]["wrong"] = bad["common_mistakes"][0]["right"]
     bad["quick_practice"][0]["q"] = "He goes to school."
 
+    good_answer = _answer(copy.deepcopy(CANNED_V04))
     patch = {
-        "common_mistakes": copy.deepcopy(CANNED_V04["common_mistakes"]),
-        "quick_practice": copy.deepcopy(CANNED_V04["quick_practice"]),
+        "common_mistakes": copy.deepcopy(good_answer["common_mistakes"]),
+        "quick_practice": copy.deepcopy(good_answer["quick_practice"]),
     }
     calls: list[str] = []
 
