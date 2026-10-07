@@ -177,24 +177,34 @@ export default async function mountWordDetail(element, ctx) {
   element.classList.add('s-word-root');
   element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
 
+  // The list the learner came from already knows the reading and the meaning (the seed), and the saved
+  // record is a local read: paint from those at once (LEX-072). The AI-backed lookup and the clips refine the
+  // page when they return; only a page with nothing at all to show waits for the lookup.
   let item = await fetchItem(word);
   if (!ctx.isCurrent()) return undefined;
-  const context = contextFor(word, item);
-  const [detail, clipsPayload] = await Promise.all([
-    api.wordDetail({ depth: 'full', text: word, context, source_language: language, target_language: languages().support }).catch(() => null),
-    api.wordClips(word, 6).catch(() => null),
-  ]);
-  if (!ctx.isCurrent()) return undefined;
-
   let seed = wordSeed(word);
   if (!item && !seed) seed = await catalogueSeed(word, language);
   if (!ctx.isCurrent()) return undefined;
 
-  if (!detail && !item && !seed) throw new Error(`Word Detail: no lookup and no saved record for "${word}"`);
+  let detail = null;
+  let clips = [];
+  let clipsReady = false;
+  const pending = Promise.all([
+    api.wordDetail({ depth: 'full', text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch(() => null),
+    api.wordClips(word, 6).catch(() => null),
+  ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
+  const hasSomethingToShow = Boolean(item || seed);
+  if (!hasSomethingToShow) {
+    const { found, clipsPayload } = await pending;
+    if (!ctx.isCurrent()) return undefined;
+    if (!found) throw new Error(`Word Detail: no lookup and no saved record for "${word}"`);
+    detail = found;
+    clips = mapClips(clipsPayload);
+    clipsReady = true;
+  }
 
   let card = mapWordCard(word, { detail, item, supportLanguage: languages().support, seed });
-  const deepRows = mapDeepWord(detail);
-  const clips = mapClips(clipsPayload);
+  let deepRows = mapDeepWord(detail);
 
   ctx.setCrumb(card.word);
 
@@ -240,7 +250,7 @@ export default async function mountWordDetail(element, ctx) {
       </div>`
         : '';
 
-    const clipsPanel = html`<div class="s-word-panel">
+    const clipsPanel = !clipsReady ? '' : html`<div class="s-word-panel">
       <div class="s-word-panel__head"><div class="s-word-panel__title">${t('contextClipsTitle', { n: clips.length })}</div></div>
       ${clips.length ? clips.map((clip, index) => clipRow(clip, index)) : html`<div class="s-word-empty">${t('contextClipsEmpty')}</div>`}
     </div>`;
@@ -358,6 +368,18 @@ export default async function mountWordDetail(element, ctx) {
   }
 
   await paint();
+
+  if (hasSomethingToShow) {
+    pending.then(async ({ found, clipsPayload }) => {
+      if (!ctx.isCurrent()) return;
+      detail = found;
+      clips = mapClips(clipsPayload);
+      clipsReady = true;
+      deepRows = mapDeepWord(detail);
+      card = mapWordCard(word, { detail, item, supportLanguage: languages().support, seed });
+      await paint();
+    });
+  }
 
   return () => {
     audio?.pause();

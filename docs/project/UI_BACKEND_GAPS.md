@@ -5042,3 +5042,17 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   tab name and is unchanged. Human decision.
 - **LEX-062 Earlier drafts** are device memory (the account holds the copies under `expression:parked:<n>` but no list), so
   on another device the list is empty. Owner: CONTRACT (account draft list).
+- **LEX-072 Word lookup latency.** `POST /api/dictionary/word-detail` (depth full) is AI-backed and measured about 3.2 s on
+  the sandbox for an uncached word; the saved-record read and clips answer in about 25 ms. Word Detail now paints from the
+  list's seed and the saved record at once and fills the explanation, clips and deep word in when the lookup returns. A
+  word opened with no seed and no record still waits for the lookup. Owner: BACKEND (cache or precompute the catalogue
+  word's detail).
+- **LEX-075 Content description and related.** The Reading article list/detail carries no description and an empty
+  `topic`; D-130 forbids showing the first lines of the body as one, so the block stays hidden until an administrator
+  writes one. Related items are chosen by a shared topic, level or author; with nothing shared the section is hidden.
+  Related and Discover tiles for covers without artwork are the type tile (HP-3 A) and look alike. Owner: CONTENT.
+- **LEX-079 Plan and audio controls.** Plan "Manage" and "Delete audio" stay inert (no plan-change flow, no route that
+  deletes stored audio); the row now says why. Usage meters with no measure read "Not measured yet". Owner: BACKEND.
+- **LEX-081 Discover topics, Profile name.** Topic filter values come from the vetted vocabulary applied to the catalogue
+  (only Daily life and Science occur today): CONTENT. The design draws the streak twice on Profile (hero tile and stats
+  card); kept as drawn. A local session has no name (BUG-06).
