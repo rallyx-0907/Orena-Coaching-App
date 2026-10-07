@@ -4368,3 +4368,19 @@ audio to measure and showed no model pitch or timing.
 - **Word timing.** Verified word timestamps win. Without them the model's words are placed by estimate over the
   voiced part of the clip and labelled "est." (the D-137 L-13 rule).
 - **Existing content** is prepared by an explicit, bounded backfill, not on navigation.
+
+## D-141 - Speaking gaps: session identity proposed; historical timing and Clear deferred; close the basic slice
+
+2026-10-07, explicit human decisions on the Speaking gaps (UI_BACKEND_GAPS S-13a, S-13b, S-15a).
+
+- **Practice session identity: proposal approved.** Speaking Summary must count one practice session correctly across
+  tabs, reloads and devices, so a server-side practice session identity is proposed
+  (`docs/project/proposals/PRACTICE_SESSION_IDENTITY.md`). It is learner persistence: it goes through independent
+  architecture review, and any schema or migration waits for the human's authorization (AGENTS.md §7).
+- **Per-word timing for historical attempts: deferred.** The current take keeps its timing as now; learner
+  persistence is not widened in the Product Completion phase (S-13a stays a gap).
+- **Clear attempt history: deferred.** No destructive learner-data lifecycle in this Speaking batch (S-13b stays a
+  gap).
+- **Closing the slice.** Finish S-24, S-26, Similarity / Intonation and S-27, verify the real Speaking flow, send it
+  to independent review. If it passes, the basic Speaking slice is closed and work returns to functional coverage of
+  the whole of Orena; Speaking is not deepened further.
