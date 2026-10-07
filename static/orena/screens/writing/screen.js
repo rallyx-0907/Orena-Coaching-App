@@ -196,6 +196,8 @@ export default async function mountWriting(element, ctx) {
     memory.write(key, text);
     if (essay) leftMode = text === essay.text ? 'marked' : 'edit';
   }
+  // The sheet is named for the entry: a blank page is Free writing, a task is a Prompt (LEX-077).
+  const setupTitle = () => (free ? t('freeSetupTitle') : t('promptSetupTitle'));
   const untitled = () => (free ? t('freeTitle') : t('promptFallback'));
 
   /* Where the learner came in decides the draft they get (LEX-054). Free Writing and Your Topic are new
@@ -226,6 +228,8 @@ export default async function mountWriting(element, ctx) {
   /* Set the current draft aside under its own key: words, task and intent on the device, and the same
      snapshot with the account when it keeps drafts. */
   function parkCurrent() {
+    // A draft with no words is not a draft to keep: nothing is parked for it (LEX-077).
+    if (!text.trim()) return;
     const id = `${PARKED_PREFIX}${Date.now().toString(36)}`;
     memory.write(id, text);
     memory.write(`${id}::task`, promptText);
@@ -263,12 +267,14 @@ export default async function mountWriting(element, ctx) {
   }
   let choicePending = false;
   if (!essay) {
-    const holds = Boolean(text.trim() || promptText.trim());
+    const holds = Boolean(text.trim());
     if (fresh && holds) choicePending = true;
     else if (fresh) startBlank();
     else if (entryOpen) restoreParked(entryOpen);
     else if (!entrySetup && !text.trim()) restoreParked();
   }
+  // A blank page has no task: a draft that carries one is a prompt draft, whatever the entry said (LEX-077).
+  if (free && promptText.trim()) free = false;
   ctx.setCrumb(promptText || untitled());
 
   /* ------------------------------------------------------------------------- helpers -- */
@@ -809,7 +815,7 @@ export default async function mountWriting(element, ctx) {
   function paintSetup(sheetEl, handle, { required = false } = {}) {
     mount(
       sheetEl,
-      html`${sheetHead({ title: t('promptSetupTitle'), closeLabel: s('close') })}
+      html`${sheetHead({ title: setupTitle(), closeLabel: s('close') })}
       <div class="s-writing-setup__body" data-scroll-region>
         <div>
           <label class="s-writing-setup__label" for="s-writing-prompt">${t('promptFieldLabel')}</label>
@@ -887,7 +893,7 @@ export default async function mountWriting(element, ctx) {
 
   function openSetup({ focusPrompt = false, required = false } = {}) {
     openSheet({
-      label: t('promptSetupTitle'),
+      label: setupTitle(),
       className: 's-writing-setup',
       render: (sheetEl, handle) => {
         paintSetup(sheetEl, handle, { required });

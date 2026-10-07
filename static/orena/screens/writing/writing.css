@@ -96,10 +96,11 @@
   max-width: 100%;
 }
 :root[data-device='mobile'] .s-writing__header > .s-writing__btn {
-  flex: 1 1 0;
+  flex: 0 0 auto;
+  padding: 0 18px;
 }
 :root[data-device='mobile'] .s-writing__header > .s-writing__cta {
-  flex: 2 1 0;
+  flex: 1 1 0;
 }
 
 /* ---- Mobile Draft/Review tab ---- */
