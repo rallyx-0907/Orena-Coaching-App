@@ -23,9 +23,9 @@ import { SCREENS } from './screens.js';
 
 const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
 const STORY_ROUTES = ['reader', 'listening', 'dictation', 'checku', 'rtransfer', 'feed'];
-/* Speaking rooms belong to Practice Hub (rule 47): opened with no known origin (a direct load, a
-   reload in a new tab), the rail lights Practice Hub, not Today or Discover. */
-const SPEAKING_ROUTES = ['speak', 'compare', 'attempts', 'spsummary', 'freetalk', 'conv', 'situation'];
+/* Speaking and Writing rooms belong to Practice Hub (rule 47): opened with no known origin (a direct
+   load, a reload in a new tab), the rail lights Practice Hub, not Today or Discover. */
+const PRACTICE_ROOMS = ['speak', 'compare', 'attempts', 'spsummary', 'freetalk', 'conv', 'situation', 'writing', 'writingDraft', 'wrcompare'];
 const ORIGIN_KEY = 'orena.next.navOrigin';
 const DEPTH_KEY = 'orena.next.depth';
 
@@ -132,7 +132,7 @@ export function createRouter({ frame, getContext }) {
     crumbOverride = '';
     current = found;
     const { route } = found;
-    if (!originKnown && SPEAKING_ROUTES.includes(route.id)) origin = 'practice';
+    if (!originKnown && PRACTICE_ROOMS.includes(route.id)) origin = 'practice';
     originKnown = true;
     // A Skill Hub is a page of Practice Hub, whichever way the learner reached it: it always lights Practice.
     if (route.id === 'skillhub') {

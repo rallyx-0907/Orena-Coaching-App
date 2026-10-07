@@ -51,6 +51,10 @@ export async function loadPendingRows(memory, language) {
 
 export function pendingRows(memory = {}, language, { limit = 3 } = {}) {
   const rows = continuationRows(memory.continuation, { limit: Infinity });
+  /* Each opening of a room starts a conversation of its own, so a learner who left the same scenario
+     unfinished several times has several records with one title. Continue offers the newest of them once
+     (the list is most-recent-first); the others stay reachable from Recently opened (W-03). */
+  const conversations = new Set();
   return rows.flatMap(row => {
     if (row.id === 'expression:free' && String(memory.expressions?.[row.id] || '').trim()) {
       return [{ ...row, reason: 'draft', place: null }];
@@ -59,6 +63,9 @@ export function pendingRows(memory = {}, language, { limit = 3 } = {}) {
       const conversation = restoreConversation(memory.conversations?.[row.id], language);
       if (conversation && !conversation.ended && conversation.turns.length < MAX_CONVERSATION_TURNS &&
           conversation.turns.some(turn => turn.role === 'learner')) {
+        const same = `${row.title}|${conversation.situation || ''}`;
+        if (conversations.has(same)) return [];
+        conversations.add(same);
         return [{ ...row, reason: 'conversation', place: null }];
       }
     }
