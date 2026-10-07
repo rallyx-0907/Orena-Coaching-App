@@ -483,7 +483,7 @@ def list_speaking_attempts(
         if since or asset_id or segment_id:
             raise orena_http_error(422, "session_exclusive", "session=current cannot be combined with other filters.")
         if not practice_session_enabled():
-            raise orena_http_error(404, "practice_session_disabled", "Practice sessions are not enabled on this environment.")
+            raise orena_http_error(404, "practice_session_disabled", "Practice sessions are not enabled on this environment.", retryable=False)
         live = _speaking_attempt_repository.current_speaking_session(_server_now(), limit=bounded_limit)
         items = live.pop("items") if live else []
         return {

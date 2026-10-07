@@ -59,13 +59,13 @@ export function keyImprovement(tasks, threshold = 70) {
   return worst;
 }
 
-/* D-142: with a live server session, the tasks of THIS session: the account's attempts of that session (any device) and
-   this tab's own ledger entries made since it began (a task with no server record, e.g. a typed one, stays as the tab logged
-   it; it is never persisted by this slice). A ledger entry older than the session is not part of it. */
+/* D-142: with a live server session, the tasks of THIS session are the attempts the server holds for it (any device) and
+   nothing else. A tab-only entry with no durable server record (a typed task, an unsaved take) is NOT counted: D-142 gives
+   text-only activity no new persistence, so the persisted session is the only authority and reads the same on every tab and
+   device. A ledger entry is read only to name the kind of an attempt the server already holds. */
 export function tasksForServerSession(ledger, current, labels) {
-  const began = Date.parse(current?.meta?.started_at) || 0;
   const rows = current?.rows || [];
   const sameAttempt = (entry, row) => (entry.attemptId && String(entry.attemptId) === row.id) || (entry.takeRef && entry.takeRef === row.takeId);
-  const own = (ledger || []).filter((entry) => (entry.at || 0) >= began - 60 * 1000 || rows.some((row) => sameAttempt(entry, row)));
-  return tasksFor(own, rows, labels);
+  const known = (ledger || []).filter((entry) => rows.some((row) => sameAttempt(entry, row)));
+  return tasksFor(known, rows, labels);
 }
