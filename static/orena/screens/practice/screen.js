@@ -16,9 +16,12 @@ import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { loadPendingRows, recentRows, recentMediaFacts, lastSpeakingLine } from './continuation.js';
 import { t } from './copy.js';
 import { loadAttemptsSince } from '../../product/speaking-history.js';
-import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SPEAK_GROUPS, buildSkillSections, writeRecommendation, weakestLines } from './model.js';
+import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SKILL_GROUPS, buildSkillSections, writeRecommendation, weakestLines } from './model.js';
+import { t as writingT } from '../writing/copy.js';
+import { CATEGORY_IDS, NEW_DRAFT_KEY, wordCountOf } from '../writing/model.js';
 
-const GROUP_LABEL_KEY = { natural: 'groupNatural', pronounce: 'groupPronounce', challenge: 'groupChallenge' };
+const GROUP_LABEL_KEY = { natural: 'groupNatural', pronounce: 'groupPronounce', challenge: 'groupChallenge', free: 'groupFree', respond: 'groupRespond', pressure: 'groupPressure' };
+const WRITE_KEY = { continue: 'writeContinue', prompt: 'writePrompt', free: 'writeFree', topic: 'writeTopic' };
 
 const SKILL_LABEL_KEY = {
   speak: 'skillSpeak',
@@ -33,18 +36,35 @@ function modeLabel(routeId) {
   return shellCopy(byId(routeId).crumb);
 }
 
+/* A mode's own name: Write's modes are the design's four (Continue draft, Prompt, Free Writing, Your Topic),
+   named here; every other mode is the label of the route it opens. */
+function labelOf(skill, mode) {
+  return skill === 'write' && WRITE_KEY[mode.key] ? t(WRITE_KEY[mode.key]) : modeLabel(mode.labelRouteId || mode.routeId);
+}
+
+/* The design's one-line description and duration of a grouped mode (S1 `SK` groups). Speak carries both;
+   Write carries the description only - no measured duration exists for any Write mode (N-22), so none is drawn. */
+function groupedFacts(skill, mode) {
+  if (!mode.group) return null;
+  if (skill === 'speak') return { desc: t(`${mode.key}Desc`), dur: t(`${mode.key}Dur`) };
+  if (skill === 'write' && mode.key === 'continue') return { desc: t('writeContinueDesc', { title: mode.draft.title || t('writeUntitled'), n: mode.draft.n }), dur: '' };
+  if (skill === 'write') return { desc: t(`${WRITE_KEY[mode.key]}Desc`), dur: '' };
+  return null;
+}
+
 /* A mode's real per-item level (Speak's sentence/clip, Listen's dictation/shadowing item, Reading's
    next article) doubles as its meta text when there is nothing more specific to show - never an
    invented duration (rule 40: no skill's schema carries one). */
 /* Speak draws the design's one-line description and duration on each tile ("desc · dur") and the
    duration alone on a Skill Hub row (S1 `phSections` / `phGroups`). */
 function speakDur(skill, mode) {
-  return skill === 'speak' && mode.group ? t(`${mode.key}Dur`) : '';
+  return groupedFacts(skill, mode)?.dur || '';
 }
 
 function modeMeta(skill, mode) {
   // The duration never truncates: only the description gives way in a longer interface language.
-  if (skill === 'speak' && mode.group) return html`<span class="s-practice-tile__desc">${t(`${mode.key}Desc`)}</span><span class="s-practice-tile__dur">· ${t(`${mode.key}Dur`)}</span>`;
+  const facts = groupedFacts(skill, mode);
+  if (facts) return html`<span class="s-practice-tile__desc">${facts.desc}</span>${facts.dur ? html`<span class="s-practice-tile__dur">· ${facts.dur}</span>` : ''}`;
   if (skill === 'vocabulary' && mode.key === 'review') return t.plural('due', mode.due);
   if ((skill === 'speak' || skill === 'listen' || skill === 'reading') && mode.level) return mode.level;
   return '';
@@ -56,7 +76,7 @@ function tileMarkup(skill, mode) {
     radius: 18,
     pad: '14px',
     leading: rowIconSwatch({ iconName: SKILL_ICONS[skill][mode.key] || 'target', tint: SKILL_TINT[skill] }),
-    title: modeLabel(mode.labelRouteId || mode.routeId),
+    title: labelOf(skill, mode),
     sub: modeMeta(skill, mode),
     className: 's-practice-tile',
     dataset: { go: href(mode.routeId, mode.params, mode.query) },
@@ -68,12 +88,13 @@ function tileMarkup(skill, mode) {
    Practice Hub's tile, which stacks label/meta in two lines. `listRow`'s `trailing` slot, not
    `sub`, is what reproduces that. */
 function hubRowMarkup(skill, mode) {
-  const meta = speakDur(skill, mode) || modeMeta(skill, mode);
+  // A grouped mode's row draws its duration alone (the description is the Practice Hub tile's).
+  const meta = mode.group ? speakDur(skill, mode) : modeMeta(skill, mode);
   return listRow({
     variant: 'outline',
     radius: 14,
     pad: '13px 18px',
-    title: modeLabel(mode.labelRouteId || mode.routeId),
+    title: labelOf(skill, mode),
     trailing: meta ? html`<span class="s-practice-hubrow__meta">${meta}</span>` : null,
     chevron: true,
     className: 's-practice-hubrow',
@@ -167,6 +188,19 @@ async function speakRecommendation(ctx, language) {
   return null;
 }
 
+/* The Write card's words are the interface language's (W-09, HW-4 A): the recommender returns its label and
+   reason in the learning language, so the card is composed from what it decided - its intent and focus
+   category - not from its sentences. A category with no interface label is not named (the card says it
+   plainly) rather than shown in another language. */
+const FAMILY_LABEL = { grammar: 'kindGrammar', vocabulary: 'kindVocabulary', coherence: 'kindCoherence', naturalness: 'kindNaturalness', task_achievement: 'cat_task' };
+const WRITE_REASON = { repair: 'recWriteRepair', reinforce: 'recWriteReinforce', transfer: 'recWriteTransfer', baseline: 'recWriteBaseline' };
+function localisedWriteRecommendation(raw) {
+  if (!writeRecommendation(raw)) return null;
+  const id = String(raw.focus_category || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const key = CATEGORY_IDS.includes(id) ? `cat_${id}` : FAMILY_LABEL[raw.focus_family];
+  return { title: key ? writingT(key) : t('recWriteExpression'), reason: t(WRITE_REASON[raw.intent] || 'recWriteBaseline') };
+}
+
 async function renderHub(element, ctx, data) {
   const memory = ctx.context.memory?.value || {};
   const continuation = await loadPendingRows(ctx.context.memory, ctx.context.language);
@@ -214,7 +248,7 @@ async function renderSkillHub(element, ctx, data, skill) {
   const known = SKILL_ORDER.includes(skill);
   const modes = known ? SKILL_BUILDERS[skill](data) : [];
   const title = known ? t(SKILL_LABEL_KEY[skill]) : shellCopy('practiceHub');
-  const rec = known && skill === 'write' ? writeRecommendation(data.recommendation) : known && skill === 'speak' ? data.speakRecommendation : null;
+  const rec = known && skill === 'write' ? localisedWriteRecommendation(data.recommendation) : known && skill === 'speak' ? data.speakRecommendation : null;
   mount(
     element,
     html`<div class="s-practice-hub">
@@ -222,7 +256,7 @@ async function renderSkillHub(element, ctx, data, skill) {
       ${rec ? recommendationMarkup(rec, skill) : ''}
       ${modes.length
         ? (modes[0].group
-          ? html`<div class="s-practice-hub__groups">${SPEAK_GROUPS.map((group) => {
+          ? html`<div class="s-practice-hub__groups">${SKILL_GROUPS[skill].map((group) => {
             const rows = modes.filter((mode) => mode.group === group);
             return rows.length ? html`<section class="s-practice-hub__group">
               <h2 class="s-practice-hub__group-title">${t(GROUP_LABEL_KEY[group])}</h2>
@@ -257,7 +291,11 @@ export default async function practiceHub(element, ctx) {
     skill === 'speak' ? speakRecommendation(ctx, language).catch(() => null) : Promise.resolve(null),
   ]);
   if (!ctx.isCurrent()) return;
-  const data = { speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine, speakRecommendation: speakRec };
+  // The draft waiting in the free-writing slot (device memory), for the Write group's "Continue draft".
+  const slots = ctx.context.memory?.value?.expressions || {};
+  const draftText = String(slots[NEW_DRAFT_KEY] || '').trim();
+  const draft = draftText ? { title: String(slots[`${NEW_DRAFT_KEY}::task`] || '').trim(), n: wordCountOf(draftText, language) } : null;
+  const data = { draft, speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine, speakRecommendation: speakRec };
   if (skill) await renderSkillHub(element, ctx, data, skill);
   else await renderHub(element, ctx, data);
 }

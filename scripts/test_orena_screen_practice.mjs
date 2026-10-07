@@ -74,11 +74,18 @@ import {
   assert.equal(found[1].word, null, 'no kept words, no word claimed');
 }
 
-// --- Write: Writing only in this release (Context Rewrite, Timed Writing deferred, H9) ------------
+// --- Write: the design's "Write freely" group, the built modes only (HW-1 B, D-101 H9) -----------
 {
-  const modes = writeModes();
-  assert.deepEqual(modes.map((m) => m.key), ['writing']);
-  for (const m of modes) assert.equal(m.params, undefined);
+  assert.deepEqual(writeModes().map((m) => m.key), ['prompt', 'free', 'topic'], 'no waiting draft: no Continue draft');
+  const modes = writeModes({ title: 'Weekend', n: 142 });
+  assert.deepEqual(modes.map((m) => m.key), ['continue', 'prompt', 'free', 'topic']);
+  assert.ok(modes.every((m) => m.group === 'free' && m.routeId === 'writing'), 'Respond, Context Rewrite and Timed Writing are not listed: not built / no content id');
+  assert.deepEqual(modes.find((m) => m.key === 'prompt').query, { setup: 'prompt' }, 'Prompt opens Prompt Setup first (HW-2 B)');
+  assert.deepEqual(modes.find((m) => m.key === 'topic').query, { setup: 'topic' });
+  assert.deepEqual(modes.find((m) => m.key === 'free').query, { entry: 'free' });
+  assert.equal(modes.find((m) => m.key === 'continue').query, undefined);
+  assert.equal(writeModes({ title: 'x', n: 0 }).some((m) => m.key === 'continue'), false);
+  for (const m of modes) assert.ok(SKILL_ICONS.write[m.key], `${m.key} has the design's icon`);
 }
 
 // --- Vocabulary: Due Review carries the real due count, clamped and coerced -------------------

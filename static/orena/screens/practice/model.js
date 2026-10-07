@@ -40,7 +40,9 @@ const SPEAK_ICONS = {
   shadow: 'repeat',
   retell: 'rotate-ccw',
 };
-const WRITE_ICONS = { writing: 'pen-line', rewrite: 'repeat', timedwr: 'timer' };
+/* The design's PH_MAP: "Continue draft" and "Prompt" are `pen` (Lucide pen-line), "Free Writing" and "Your
+   Topic" are `note` (Lucide notebook-pen). */
+const WRITE_ICONS = { continue: 'pen-line', prompt: 'pen-line', free: 'notebook-pen', topic: 'notebook-pen' };
 /* 'keyboard' (design PH_MAP "Dictation":"kbd") and 'repeat' (design PH_MAP "Shadowing":"repeat",
    the same icon Speak's own Shadowing mode already uses) - both already present in kit/icons.js,
    no sync needed. */
@@ -121,15 +123,27 @@ function shown(modes) {
   return modes.filter((mode) => !isDeferred(mode.routeId));
 }
 
-/* Write's three modes are all parameterless routes; Writing's own entry setup (free / from a
-   prompt / a reply) is that screen's own concern once it is built, not a Practice Hub fork. */
-export function writeModes() {
-  return shown([
-    { key: 'writing', routeId: 'writing' },
-    { key: 'rewrite', routeId: 'rewrite' },
-    { key: 'timedwr', routeId: 'timedwr' },
-  ]);
+/* The design's own groups for Write (S1 `SK.Write.groups`): Continue draft, Prompt, Free Writing and Your
+   Topic under "Write freely"; Respond to Content and Context Rewrite under "Respond"; Timed Writing under
+   "Under pressure". Only what this build can open for real is drawn (D-101 H9, HW-1 B): Context Rewrite and
+   Timed Writing are not built; Respond to Content needs a content id nothing here supplies (W-17,
+   UI_BACKEND_GAPS). So only "Write freely" is present. Prompt and Your Topic open the room with Prompt
+   Setup already open (HW-2 B); Free Writing opens the room named "Free writing". Continue draft is listed
+   only while a draft is waiting. `draft` is { title, n } for it. */
+export const WRITE_GROUPS = ['free', 'respond', 'pressure'];
+
+export function writeModes(draft = null) {
+  const modes = [];
+  if (draft && draft.n > 0) modes.push({ key: 'continue', group: 'free', routeId: 'writing', draft });
+  modes.push(
+    { key: 'prompt', group: 'free', routeId: 'writing', query: { setup: 'prompt' } },
+    { key: 'free', group: 'free', routeId: 'writing', query: { entry: 'free' } },
+    { key: 'topic', group: 'free', routeId: 'writing', query: { setup: 'topic' } },
+  );
+  return shown(modes);
 }
+
+export const SKILL_GROUPS = { speak: SPEAK_GROUPS, write: WRITE_GROUPS };
 
 /* Human correction: listening comprehension and dictation are separate choices,
    both choose content before practice. Speaking owns the single pronunciation /
@@ -182,7 +196,7 @@ export function grammarModes() {
 
 export const SKILL_BUILDERS = {
   speak: (data) => speakModes(data.speakingItems, data.lastSpeakingLine),
-  write: () => writeModes(),
+  write: (data) => writeModes(data.draft),
   listen: (data) => listenModes(data.listeningItems),
   vocabulary: (data) => vocabularyModes(data.due),
   grammar: () => grammarModes(),
