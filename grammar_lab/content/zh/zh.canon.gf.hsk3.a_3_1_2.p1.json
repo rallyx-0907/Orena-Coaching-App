@@ -158,7 +158,7 @@
     "sample": {"text": "我家有一个儿子。", "pinyin": ["wǒ", "jiā", "yǒu", "yí", "gè", "ér", "zi", ""]},
     "placeholder_pinyin": ["wǒ", "jiā", "yǒu", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -166,5 +166,10 @@
     "run_id": "generate.1791348492",
     "generated_at": "2026-10-07T04:48:12Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

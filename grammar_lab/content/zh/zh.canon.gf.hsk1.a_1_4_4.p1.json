@@ -147,15 +147,15 @@
   "common_mistakes": [
     {
       "reason": {
-        "vi": "Người học bỏ liên từ 也 vì tiếng Việt có thể nối hai vị ngữ bằng dấu phẩy mà không cần từ nối, nhưng tiếng Trung cần liên từ để thể hiện quan hệ song song.",
-        "en": "Learners drop 也 because Vietnamese can link two predicates with just a comma, but Chinese needs a conjunction to mark the coordinate relation."
+        "vi": "Khi vế thứ hai nêu lại chủ ngữ, 也 đứng sau chủ ngữ: 我也喜欢..., không đứng trước 我.",
+        "en": "When the second clause repeats the subject, 也 comes after that subject: 我也喜欢..., not before 我."
       },
       "error_tag": "conjunction",
       "l1": ["vi"],
-      "wrong": "我喜欢喝茶，喜欢喝咖啡。",
-      "right": "我喜欢喝茶，也喜欢喝咖啡。",
-      "wrong_pinyin": ["wǒ", "xǐ", "huān", "hē", "chá", "", "xǐ", "huān", "hē", "kā", "fēi", ""],
-      "right_pinyin": ["wǒ", "xǐ", "huān", "hē", "chá", "", "yě", "xǐ", "huān", "hē", "kā", "fēi", ""]
+      "wrong": "我喜欢喝茶，也我喜欢喝咖啡。",
+      "right": "我喜欢喝茶，我也喜欢喝咖啡。",
+      "wrong_pinyin": ["wǒ", "xǐ", "huān", "hē", "chá", "", "yě", "wǒ", "xǐ", "huān", "hē", "kā", "fēi", ""],
+      "right_pinyin": ["wǒ", "xǐ", "huān", "hē", "chá", "", "wǒ", "yě", "xǐ", "huān", "hē", "kā", "fēi", ""]
     }
   ],
   "quick_practice": [
@@ -231,7 +231,7 @@
     },
     "placeholder_pinyin": ["wǒ", "xǐ", "huān", "", "", "", "yě", "xǐ", "huān", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
@@ -239,5 +239,10 @@
     "run_id": "generate.1791351850",
     "generated_at": "2026-10-07T05:44:10Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

@@ -201,7 +201,7 @@
     "sample": {"text": "你为何不来？", "pinyin": ["nǐ", "wèi", "hé", "bù", "lái", ""]},
     "placeholder_pinyin": ["nǐ", "wèi", "hé", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -209,5 +209,10 @@
     "run_id": "generate.1791344904",
     "generated_at": "2026-10-07T03:48:24Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:56Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

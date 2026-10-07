@@ -174,7 +174,7 @@
     "sample": {"text": "我的书在桌子上。", "pinyin": ["wǒ", "de", "shū", "zài", "zhuō", "zi", "shàng", ""]},
     "placeholder_pinyin": ["wǒ", "de", "shū", "zài", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -182,5 +182,10 @@
     "run_id": "generate.1791338430",
     "generated_at": "2026-10-07T02:00:30Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

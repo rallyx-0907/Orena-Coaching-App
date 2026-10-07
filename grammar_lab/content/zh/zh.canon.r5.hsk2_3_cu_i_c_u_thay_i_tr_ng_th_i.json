@@ -72,13 +72,16 @@
         {
           "text": "不",
           "role": "aux",
-          "label": {"vi": "phủ định", "en": "negation"},
+          "label": {
+            "vi": "không còn / phủ định trạng thái trước",
+            "en": "no longer / negates the previous state"
+          },
           "pinyin": ["bù"]
         },
         {
           "text": "V/Adj",
           "role": "verb",
-          "label": {"vi": "động từ / tính từ", "en": "verb / adjective"},
+          "label": {"vi": "trạng thái nay không còn", "en": "state that no longer holds"},
           "pinyin": ["", "", "", "", ""]
         },
         {
@@ -176,17 +179,17 @@
   ],
   "quick_practice": [
     {
-      "q": "天___了，多穿点衣服。",
+      "q": "天___，多穿点衣服。",
       "options": [
-        {"text": "冷", "error_tag": null, "pinyin": ["lěng"]},
-        {"text": "很冷", "error_tag": "particle", "pinyin": ["hěn", "lěng"]}
+        {"text": "冷了", "error_tag": null, "pinyin": ["lěng", "le"]},
+        {"text": "了冷", "error_tag": "particle", "pinyin": ["le", "lěng"]}
       ],
       "answer": 0,
       "explain": {
-        "vi": "V/Adj + 了 báo trạng thái mới; 很 không đứng trước 了 trong mẫu này.",
-        "en": "V/Adj + 了 marks the new state; 很 does not precede 了 in this pattern."
+        "vi": "了 đứng sau tính từ để báo trạng thái mới: 冷了, không đặt trước thành 了冷.",
+        "en": "Sentence-final 了 follows the adjective to mark a new state: 冷了, not 了冷."
       },
-      "q_pinyin": ["tiān", "", "", "", "le", "", "duō", "chuān", "diǎn", "yī", "fú", ""]
+      "q_pinyin": ["tiān", "", "", "", "", "duō", "chuān", "diǎn", "yī", "fú", ""]
     },
     {
       "q": "我不饿___。",
@@ -226,7 +229,7 @@
     "sample": {"text": "我会开车了。", "pinyin": ["wǒ", "huì", "kāi", "chē", "le", ""]},
     "placeholder_pinyin": ["wǒ", "", "", "le", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -256,5 +259,10 @@
       ]
     }
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

@@ -239,12 +239,12 @@
       "q": "他___吃饭呢。",
       "options": [
         {"text": "正在", "error_tag": null, "pinyin": ["zhèng", "zài"]},
-        {"text": "在", "error_tag": "aspect", "pinyin": ["zài"]}
+        {"text": "是", "error_tag": "aspect", "pinyin": ["shì"]}
       ],
       "answer": 0,
       "explain": {
-        "vi": "正在 đứng trước động từ 吃 để nhấn hành động đang diễn ra; 在 một mình không sai nhưng ở đây cần dạng nhấn mạnh với 呢.",
-        "en": "正在 goes before the verb 吃 to stress the action is in progress; 在 alone is not wrong, but here the emphatic form with 呢 is needed."
+        "vi": "正在 đứng trước động từ 吃 để nhấn hành động đang diễn ra; 是 không phải dấu hiệu tiếp diễn.",
+        "en": "正在 goes before 吃 to mark an action in progress; 是 is not a progressive marker."
       },
       "q_pinyin": ["tā", "", "", "", "chī", "fàn", "ne", ""]
     },
@@ -252,12 +252,12 @@
       "q": "我们___学习中文。",
       "options": [
         {"text": "在", "error_tag": null, "pinyin": ["zài"]},
-        {"text": "正在", "error_tag": "aspect", "pinyin": ["zhèng", "zài"]}
+        {"text": "有", "error_tag": "aspect", "pinyin": ["yǒu"]}
       ],
       "answer": 0,
       "explain": {
-        "vi": "在 trước 学习 là cách nói trung tính, thông dụng cho hành động đang diễn ra.",
-        "en": "在 before 学习 is the neutral, common way to say the action is in progress."
+        "vi": "在 đứng trước 学习 để nói hành động đang diễn ra; 有 không tạo thể tiếp diễn.",
+        "en": "在 before 学习 marks an action in progress; 有 does not form the progressive."
       },
       "q_pinyin": ["wǒ", "men", "", "", "", "xué", "xí", "zhōng", "wén", ""]
     },
@@ -289,7 +289,7 @@
     "sample": {"text": "我正在看书。", "pinyin": ["wǒ", "zhèng", "zài", "kàn", "shū", ""]},
     "placeholder_pinyin": ["wǒ", "zhèng", "zài", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -319,5 +319,10 @@
       ]
     }
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

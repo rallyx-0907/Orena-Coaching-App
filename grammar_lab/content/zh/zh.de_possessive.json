@@ -157,13 +157,13 @@
     {
       "q": "我喜欢___电脑。",
       "options": [
-        {"text": "新的", "error_tag": null, "pinyin": ["xīn", "de"]},
-        {"text": "新", "error_tag": "particle", "pinyin": ["xīn"]}
+        {"text": "很新的", "error_tag": null, "pinyin": ["hěn", "xīn", "de"]},
+        {"text": "很新", "error_tag": "particle", "pinyin": ["hěn", "xīn"]}
       ],
       "answer": 0,
       "explain": {
-        "vi": "Khi tính từ bổ nghĩa cho danh từ, cần 的 giữa tính từ và danh từ: 新的电脑.",
-        "en": "When an adjective modifies a noun, 的 is needed between them: 新的电脑."
+        "vi": "Cụm tính từ 很新 đứng trước danh từ cần 的: 很新的电脑.",
+        "en": "The adjective phrase 很新 needs 的 before the noun: 很新的电脑."
       },
       "q_pinyin": ["wǒ", "xǐ", "huān", "", "", "", "diàn", "nǎo", ""]
     }
@@ -182,7 +182,7 @@
     "sample": {"text": "这是我的书。", "pinyin": ["zhè", "shì", "wǒ", "de", "shū", ""]},
     "placeholder_pinyin": ["zhè", "shì", "wǒ", "de", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -217,5 +217,10 @@
       ]
     }
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

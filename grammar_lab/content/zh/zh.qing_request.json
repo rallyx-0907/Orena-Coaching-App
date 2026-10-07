@@ -113,14 +113,14 @@
   "common_mistakes": [
     {
       "reason": {
-        "vi": "Khi dùng “请” để mời hoặc yêu cầu, người Việt hay thêm chủ ngữ “我” theo thói quen dịch từ tiếng Việt. Trong tiếng Trung, “请” thường đứng đầu câu và không cần chủ ngữ.",
-        "en": "When using “请” to invite or request, Vietnamese speakers often add the subject “我” by habit from translating Vietnamese. In Chinese, “请” usually starts the sentence and needs no subject."
+        "vi": "Khi nêu người được mời/yêu cầu, người đó đứng sau 请 và trước động từ: 请你喝茶.",
+        "en": "When the person being invited or asked is stated, that person comes after 请 and before the verb: 请你喝茶."
       },
       "error_tag": "other",
       "l1": ["vi"],
-      "wrong": "我请你喝茶。",
+      "wrong": "请喝茶你。",
       "right": "请你喝茶。",
-      "wrong_pinyin": ["wǒ", "qǐng", "nǐ", "hē", "chá", ""],
+      "wrong_pinyin": ["qǐng", "hē", "chá", "nǐ", ""],
       "right_pinyin": ["qǐng", "nǐ", "hē", "chá", ""]
     }
   ],
@@ -179,7 +179,7 @@
     "sample": {"text": "请坐。", "pinyin": ["qǐng", "zuò", ""]},
     "placeholder_pinyin": ["qǐng", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -187,5 +187,10 @@
     "run_id": "generate.1791337990",
     "generated_at": "2026-10-07T01:53:10Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

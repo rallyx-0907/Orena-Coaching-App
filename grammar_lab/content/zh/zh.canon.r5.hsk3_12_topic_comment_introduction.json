@@ -176,7 +176,7 @@
     "sample": {"text": "这本书，我很喜欢。", "pinyin": ["zhè", "běn", "shū", "", "wǒ", "hěn", "xǐ", "huān", ""]},
     "placeholder_pinyin": ["zhè", "běn", "shū", "", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
@@ -206,5 +206,10 @@
       ]
     }
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

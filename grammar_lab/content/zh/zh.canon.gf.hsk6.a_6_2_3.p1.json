@@ -192,7 +192,7 @@
     "sample": {"text": "今天的天气特热。", "pinyin": ["jīn", "tiān", "de", "tiān", "qì", "tè", "rè", ""]},
     "placeholder_pinyin": ["jīn", "tiān", "de", "tiān", "qì", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -200,5 +200,10 @@
     "run_id": "generate.1790834038",
     "generated_at": "2026-10-01T05:53:58Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:07Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

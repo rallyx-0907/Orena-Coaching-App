@@ -218,7 +218,7 @@
     "sample": {"text": "我先吃饭，再学习。", "pinyin": ["wǒ", "xiān", "chī", "fàn", "", "zài", "xué", "xí", ""]},
     "placeholder_pinyin": ["wǒ", "xiān", "", "", "zài", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -263,5 +263,10 @@
       ]
     }
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

@@ -153,7 +153,7 @@
     "pattern_rule": {"ordered": true, "slots": [{"role": "object", "any_of": ["one", "ones", "did so", "so"]}]},
     "sample": {"text": "The new phone is better than the old one."}
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -189,5 +189,10 @@
     },
     "metadata_stale": true
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:13:57Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

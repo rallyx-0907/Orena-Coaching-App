@@ -109,17 +109,17 @@
     {
       "with": "zh.ne_question",
       "this_example": "你是老师吗？",
-      "other_example": "你是不是老师？",
+      "other_example": "我是老师，你呢？",
       "this_meaning": {
-        "vi": "Dùng 吗 ở cuối câu trần thuật để hỏi có/không.",
-        "en": "Use 吗 at the end of a statement to ask a yes/no question."
+        "vi": "吗 đặt cuối một câu đầy đủ để hỏi có/không.",
+        "en": "吗 goes at the end of a complete statement to make a yes/no question."
       },
       "other_meaning": {
-        "vi": "Dùng dạng khẳng định-phủ định (A-not-A) để hỏi, không thêm 吗.",
-        "en": "Use the affirmative-negative (A-not-A) form to ask, without adding 吗."
+        "vi": "呢 dùng để hỏi lại hoặc tiếp nối một chủ đề đã rõ, như ‘còn bạn thì sao?’. ",
+        "en": "呢 continues an established topic or asks a return question, like ‘and you?’."
       },
       "this_example_pinyin": ["nǐ", "shì", "lǎo", "shī", "ma", ""],
-      "other_example_pinyin": ["nǐ", "shì", "bú", "shì", "lǎo", "shī", ""]
+      "other_example_pinyin": ["wǒ", "shì", "lǎo", "shī", "", "nǐ", "ne", ""]
     },
     {
       "with": "zh.question_words",
@@ -200,7 +200,7 @@
     "sample": {"text": "你忙吗？", "pinyin": ["nǐ", "máng", "ma", ""]},
     "placeholder_pinyin": ["nǐ", "", "", "ma", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -235,5 +235,10 @@
       ]
     }
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

@@ -196,7 +196,7 @@
     "sample": {"text": "这件事让我很开心。", "pinyin": ["zhè", "jiàn", "shì", "ràng", "wǒ", "hěn", "kāi", "xīn", ""]},
     "placeholder_pinyin": ["zhè", "jiàn", "shì", "ràng", "wǒ", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -231,5 +231,10 @@
       ]
     }
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

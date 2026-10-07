@@ -192,7 +192,7 @@
     "sample": {"text": "我听到消息即出发。", "pinyin": ["wǒ", "tīng", "dào", "xiāo", "xi", "jí", "chū", "fā", ""]},
     "placeholder_pinyin": ["wǒ", "tīng", "dào", "", "", "jí", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -200,5 +200,10 @@
     "run_id": "generate.1790834496",
     "generated_at": "2026-10-01T06:01:36Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:56Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

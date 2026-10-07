@@ -182,43 +182,61 @@
   ],
   "quick_practice": [
     {
-      "q": "___是学生。",
+      "q": "我叫李明。___是学生。",
       "options": [
         {"text": "我", "error_tag": null, "pinyin": ["wǒ"]},
         {"text": "我们", "error_tag": "other", "pinyin": ["wǒ", "men"]}
       ],
       "answer": 0,
       "explain": {
-        "vi": "Câu này nói về một người học sinh, nên dùng đại từ số ít 我. 我们 là số nhiều, không hợp với 是学生 ở đây.",
-        "en": "This sentence is about one student, so the singular pronoun 我 is correct. 我们 is plural and does not fit 是学生 here."
+        "vi": "Người nói đang tự giới thiệu mình, nên dùng 我.",
+        "en": "The speaker is introducing himself, so 我 is the correct pronoun."
       },
-      "q_pinyin": ["", "", "", "shì", "xué", "shēng", ""]
+      "q_pinyin": ["wǒ", "jiào", "lǐ", "míng", "", "", "", "", "shì", "xué", "shēng", ""]
     },
     {
-      "q": "___是老师。",
+      "q": "王老师是女老师。___是老师。",
       "options": [
         {"text": "她", "error_tag": null, "pinyin": ["tā"]},
         {"text": "他", "error_tag": "other", "pinyin": ["tā"]}
       ],
       "answer": 0,
       "explain": {
-        "vi": "Câu nói về một giáo viên nữ, nên dùng 她. 他 chỉ người nam.",
-        "en": "The sentence is about a female teacher, so 她 is correct. 他 refers to a male person."
+        "vi": "Đã nói rõ 王老师 là nữ, nên dùng 她.",
+        "en": "王老师 is explicitly identified as female, so 她 is correct."
       },
-      "q_pinyin": ["", "", "", "shì", "lǎo", "shī", ""]
+      "q_pinyin": ["wáng", "lǎo", "shī", "shì", "nǚ", "lǎo", "shī", "", "", "", "", "shì", "lǎo", "shī", ""]
     },
     {
-      "q": "___是学生。",
+      "q": "小王和小李都是女生。___是学生。",
       "options": [
         {"text": "她们", "error_tag": null, "pinyin": ["tā", "men"]},
         {"text": "她", "error_tag": "other", "pinyin": ["tā"]}
       ],
       "answer": 0,
       "explain": {
-        "vi": "Câu nói về một nhóm nữ, nên dùng 她们. 她 chỉ một người nữ.",
-        "en": "The sentence is about a group of females, so 她们 is correct. 她 refers to one female person."
+        "vi": "Câu nói về hai bạn nữ, nên dùng đại từ số nhiều 她们.",
+        "en": "The sentence refers to two female students, so the plural pronoun 她们 is correct."
       },
-      "q_pinyin": ["", "", "", "shì", "xué", "shēng", ""]
+      "q_pinyin": [
+        "xiǎo",
+        "wáng",
+        "hé",
+        "xiǎo",
+        "lǐ",
+        "dōu",
+        "shì",
+        "nǚ",
+        "shēng",
+        "",
+        "",
+        "",
+        "",
+        "shì",
+        "xué",
+        "shēng",
+        ""
+      ]
     }
   ],
   "personal_production": {
@@ -232,7 +250,7 @@
     "sample": {"text": "我是学生。", "pinyin": ["wǒ", "shì", "xué", "shēng", ""]},
     "placeholder_pinyin": ["wǒ", "shì", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -240,5 +258,10 @@
     "run_id": "generate.1791281496",
     "generated_at": "2026-10-06T10:11:36Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

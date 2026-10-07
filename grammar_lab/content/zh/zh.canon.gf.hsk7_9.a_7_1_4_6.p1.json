@@ -180,7 +180,7 @@
     "sample": {"text": "我未收到他的回复。", "pinyin": ["wǒ", "wèi", "shōu", "dào", "tā", "de", "huí", "fù", ""]},
     "placeholder_pinyin": ["wǒ", "wèi", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -188,5 +188,10 @@
     "run_id": "generate.1791338847",
     "generated_at": "2026-10-07T02:07:27Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:56Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

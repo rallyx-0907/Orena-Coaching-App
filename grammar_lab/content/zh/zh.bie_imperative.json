@@ -187,7 +187,7 @@
     "sample": {"text": "你别吃太多糖。", "pinyin": ["nǐ", "bié", "chī", "tài", "duō", "táng", ""]},
     "placeholder_pinyin": ["nǐ", "bié", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -195,5 +195,10 @@
     "run_id": "generate.1791338144",
     "generated_at": "2026-10-07T01:55:44Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

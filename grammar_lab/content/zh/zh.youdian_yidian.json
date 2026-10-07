@@ -197,7 +197,7 @@
     "sample": {"text": "我今天有点儿累。", "pinyin": ["wǒ", "jīn", "tiān", "yǒu", "diǎn", "ér", "lèi", ""]},
     "placeholder_pinyin": ["wǒ", "jīn", "tiān", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -205,5 +205,10 @@
     "run_id": "generate.1791338229",
     "generated_at": "2026-10-07T01:57:09Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

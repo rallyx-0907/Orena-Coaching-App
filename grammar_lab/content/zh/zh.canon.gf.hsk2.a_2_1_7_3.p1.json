@@ -229,7 +229,7 @@
     "sample": {"text": "我家离公司很近。", "pinyin": ["wǒ", "jiā", "lí", "gōng", "sī", "hěn", "jìn", ""]},
     "placeholder_pinyin": ["wǒ", "jiā", "lí", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -238,5 +238,10 @@
     "generated_at": "2026-10-01T05:23:35Z",
     "metadata_stale": true
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

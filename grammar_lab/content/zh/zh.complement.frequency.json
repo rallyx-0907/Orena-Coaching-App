@@ -233,7 +233,7 @@
     "sample": {"text": "我去过北京两次。", "pinyin": ["wǒ", "qù", "guò", "běi", "jīng", "liǎng", "cì", ""]},
     "placeholder_pinyin": ["wǒ", "qù", "guò", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
@@ -258,5 +258,10 @@
       ]
     }
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

@@ -205,7 +205,7 @@
     },
     "placeholder_pinyin": ["wǒ", "de", "jiā", "xiāng", "wèi", "yú", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -213,5 +213,10 @@
     "run_id": "generate.1791348645",
     "generated_at": "2026-10-07T04:50:45Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:07Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }
