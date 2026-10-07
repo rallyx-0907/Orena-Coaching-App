@@ -908,3 +908,6 @@
   line-height: 1.5;
   color: var(--muted);
 }
+
+/* iOS Safari zooms the page when a text field under 16px takes focus (and leaves it zoomed): on a phone the field is 16px. */
+:root[data-device='mobile'] .s-writing-setup__input { font-size: 16px; }

@@ -420,3 +420,6 @@
 }
 .s-qs__stroke { display: flex; flex-direction: column; }
 .s-qs__stroke .s-qs__eyebrow { margin-bottom: 10px; }
+
+/* iOS Safari zooms the page when a text field under 16px takes focus (and leaves it zoomed): on a phone the field is 16px. */
+:root[data-device='mobile'] .s-qs__textarea { font-size: 16px; }

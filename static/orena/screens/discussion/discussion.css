@@ -163,3 +163,6 @@
 .s-discussion__send:disabled {
   opacity: 0.5;
 }
+
+/* iOS Safari zooms the page when a text field under 16px takes focus (and leaves it zoomed): on a phone the field is 16px. */
+:root[data-device='mobile'] .s-discussion__input { font-size: 16px; }
