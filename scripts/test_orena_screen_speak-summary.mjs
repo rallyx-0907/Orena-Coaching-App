@@ -88,6 +88,51 @@ assert.equal(keyImprovement([]), null);
   assert.equal(tasksFor(ledger, server).length, 2, 'without the session scope the window lists every attempt');
 }
 
+/* --- D-142: the server's practice session replaces the client notion only when it offers one --- */
+{
+  const { loadCurrentSession } = await import('../static/orena/product/speaking-history.js');
+  const { tasksForServerSession } = await import('../static/orena/screens/speak-summary/model.js');
+  const item = (id, take, at, accuracy) => ({
+    id, take_id: take, created_at: new Date(at).toISOString(), asset_id: 'free', segment_id: 's', language: 'en', transcript_text: 'hi',
+    dimensions: { pronunciation: accuracy, fluency: 80 }, provenance: { pronunciation: 'azure-speech', fluency: 'azure-speech' },
+    evidence: { pronunciation: { score_kind: 'measured', accuracy_score: accuracy } },
+  });
+  const t0 = Date.parse('2026-10-07T09:00:00Z');
+  const meta = { id: 's1', started_at: new Date(t0).toISOString(), count: 2 };
+  const failure = (props) => async () => { throw Object.assign(new Error('x'), props); };
+  const unavailable = (api, why) => assert.rejects(() => loadCurrentSession(api), /speaking_session_unavailable/, why);
+  assert.equal(await loadCurrentSession({ speakingCurrentSession: failure({ status: 404, category: 'practice_session_disabled' }) }), null, 'the explicit feature-disabled answer -> the client notion stays');
+  await unavailable({ speakingCurrentSession: failure({ status: 500 }) }, '5xx is a failure, not "disabled"');
+  await unavailable({ speakingCurrentSession: failure({ status: 404 }) }, 'a 404 without the disabled category is a failure');
+  await unavailable({ speakingCurrentSession: failure({}) }, 'a network error is a failure');
+  await unavailable({ speakingCurrentSession: async () => ({}) }, 'a malformed payload is a failure');
+  const idle = await loadCurrentSession({ speakingCurrentSession: async () => ({ items: [], session: null }) });
+  assert.deepEqual(idle, { meta: null, rows: [] }, 'idle over 30 minutes: no live session, the 7-day fallback applies');
+  const live = await loadCurrentSession({ speakingCurrentSession: async () => ({ items: [item('b', 'tb', t0 + 5 * 60000, 90), item('a', 'ta', t0, 70)], session: meta }) });
+  assert.deepEqual(live.rows.map((row) => row.id), ['a', 'b'], 'oldest first, like the other history reads');
+  const labels = { accuracy: 'Accuracy', fluency: 'Fluency' };
+  // another device's takes are in the session; this tab's own entry for one of them is not counted twice
+  const tab = [{ kind: 'scripted_pronunciation', takeRef: 'ta', at: t0 + 1000, facts: [] }, { kind: 'free_talk', at: t0 + 2000, facts: [] }, { kind: 'free_talk', at: t0 - 3 * 3600000, facts: [] }];
+  const tasks = tasksForServerSession(tab, live, labels);
+  /* D-142 supersedes the earlier slice's test, which asserted that the tab's own typed task was added to the server
+     session: with a persisted session authoritative, text-only/tab-only activity has no durable record and is not counted. */
+  assert.equal(tasks.length, 2, 'only the two server takes: tab-only activity (typed, or from before the session) is not counted');
+  assert.equal(tasks.filter((task) => task.kind === 'free_talk').length, 0);
+  assert.equal(tasksForServerSession([], live, labels)[1].note, 'Accuracy 90 · Fluency 80');
+  // an enabled feature with `session: null` is authoritative: a stale non-empty local ledger must not revive the old session
+  const { sessionScope } = await import('../static/orena/screens/speak-summary/model.js');
+  const staleLedger = [{ kind: 'free_talk', at: t0 - 3600000, facts: [] }, { kind: 'scripted_pronunciation', at: t0 - 3500000, facts: [] }];
+  const none = sessionScope(idle, staleLedger);
+  assert.deepEqual(none, { serverSession: null, useLedger: false }, 'session:null with a stale ledger -> neither the server session nor the ledger');
+  assert.deepEqual(sessionScope(null, staleLedger), { serverSession: null, useLedger: true }, 'only the explicit disabled answer keeps the ledger');
+  assert.equal(sessionScope(live, staleLedger).useLedger, false);
+  assert.ok(sessionScope(live, staleLedger).serverSession, 'a live server session is the session');
+  // the screen lets a session failure reach the router's own load-error state (Back / Retry, shell copy EN/VI/ZH); it never catches it into the legacy notion
+  const { readFileSync } = await import('node:fs');
+  const screenSource = readFileSync(new URL('../static/orena/screens/speak-summary/screen.js', import.meta.url), 'utf8');
+  assert.ok(/await loadCurrentSession\(api\)/.test(screenSource) && !/try\s*\{[^}]*loadCurrentSession/.test(screenSource), 'loadCurrentSession failures are not swallowed by the screen');
+}
+
 /* --- every room that logs to the ledger is named, never shown as its raw kind --- */
 {
   const { readFileSync, readdirSync } = await import('node:fs');

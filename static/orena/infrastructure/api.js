@@ -466,6 +466,8 @@ export const api={
     if(since)params.set('since',String(since));
     return request(`/api/speech/attempts?${params.toString()}`);
   },
+  /* D-142: the learner's live practice session as the server keeps it (404 while ORENA_PRACTICE_SESSION is off). */
+  speakingCurrentSession:(limit=100)=>request(`/api/speech/attempts?session=current&limit=${encodeURIComponent(String(limit))}`),
   listeningProgress:(assetId)=>request(`/api/listening/progress?asset_id=${encodeURIComponent(assetId||'')}`),
   saveListeningProgress:(payload)=>request('/api/listening/progress',{
     method:'POST',

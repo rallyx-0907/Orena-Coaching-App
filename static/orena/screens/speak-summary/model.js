@@ -58,3 +58,23 @@ export function keyImprovement(tasks, threshold = 70) {
   if (!worst || worst.value >= threshold) return null;
   return worst;
 }
+
+/* D-142: with a live server session, the tasks of THIS session are the attempts the server holds for it (any device) and
+   nothing else. A tab-only entry with no durable server record (a typed task, an unsaved take) is NOT counted: D-142 gives
+   text-only activity no new persistence, so the persisted session is the only authority and reads the same on every tab and
+   device. A ledger entry is read only to name the kind of an attempt the server already holds. */
+export function tasksForServerSession(ledger, current, labels) {
+  const rows = current?.rows || [];
+  const sameAttempt = (entry, row) => (entry.attemptId && String(entry.attemptId) === row.id) || (entry.takeRef && entry.takeRef === row.takeId);
+  const known = (ledger || []).filter((entry) => rows.some((row) => sameAttempt(entry, row)));
+  return tasksFor(known, rows, labels);
+}
+
+/* Which notion of "this session" Speaking Summary uses. `current` is `loadCurrentSession`'s answer: null only when the
+   server explicitly says the feature is off (the client ledger then applies, as before); otherwise the server is
+   authoritative, and `meta: null` (no live session) never falls back to the tab ledger - it shows the seven-day view. */
+export function sessionScope(current, ledger) {
+  const serverSession = current && current.meta && current.rows.length > 0 ? current : null;
+  const useLedger = current === null && (ledger || []).length > 0;
+  return { serverSession, useLedger };
+}

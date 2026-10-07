@@ -148,3 +148,27 @@ export async function loadAttemptsSince(api, sinceIso, limit = 100) {
     return null;
   }
 }
+
+/* D-142: the learner's live practice session (`GET /api/speech/attempts?session=current`), kept by the server so a second
+   tab or device sees the same one. `null` when the server does not offer it (the flag is off, or the read failed) - the
+   caller then keeps the client ledger and the seven-day window exactly as before. `meta` is null when no session is
+   live (idle for 30 minutes or more). */
+/* Three outcomes, never blurred:
+   - `null`: the server says, explicitly, that the feature is off (404, category `practice_session_disabled`) - the caller
+     keeps the client ledger and the seven-day window exactly as before;
+   - `{ meta, rows }`: the session (`meta` is null when none is live, idle for 30 minutes or more);
+   - a thrown `speaking_session_unavailable` for any other failure (5xx, network, malformed payload): the caller shows its
+     unavailable state and never falls back to the client notion, which could present cross-device data that is wrong. */
+export const SESSION_DISABLED_CATEGORY = 'practice_session_disabled';
+
+export async function loadCurrentSession(api, limit = 100) {
+  let payload;
+  try {
+    payload = await api.speakingCurrentSession(limit);
+  } catch (error) {
+    if (error && error.status === 404 && error.category === SESSION_DISABLED_CATEGORY) return null;
+    throw new Error('speaking_session_unavailable');
+  }
+  if (!payload || typeof payload !== 'object' || !Array.isArray(payload.items)) throw new Error('speaking_session_unavailable');
+  return { meta: payload.session || null, rows: payload.items.map(attemptRow).sort((a, b) => a.at - b.at) };
+}
