@@ -7,7 +7,7 @@
    improvement" and "Natural alternative" instead bind to the real coaching's own `next_attempt`
    and `say_again`/`another_way` (model.js's header comment). "Try another context" has no real
    content behind it either (the frame's own `.variant` sub-object does not exist in real content)
-   and is dropped, as is the context pill (no real delivery-mode field). Finish logs one entry to
+   and is dropped. The context pill is drawn from each scenario's authored `context` (D-139 HD-13). Finish logs one entry to
    the session's speaking ledger (`product/speaking-session.js`) and opens Speaking Summary, like
    the source's `spFinish`.
 
@@ -59,9 +59,13 @@ export default async function situation(element, ctx) {
     </div>`;
   }
 
+  /* The frame's context chip above the scenario: the scenario's authored delivery context. */
+  const contextChip = () => (current()?.context ? html`<span class="s-sit__context" lang="${lang}">${current().context}</span>` : '');
+
   function inputMarkup() {
     const busy = state !== 'input';
     return html`<section class="o-card o-card--24 s-sit__card">
+      ${contextChip()}
       <div class="s-sit__scenario" lang="${lang}">${current()?.scenario || ''}</div>
       <textarea class="s-sit__textarea" rows="3" lang="${lang}" placeholder="${t('answerPlaceholder')}" data-answer ${busy ? 'disabled' : ''}>${answer}</textarea>
       <div class="s-sit__row">
@@ -76,6 +80,7 @@ export default async function situation(element, ctx) {
     const improve = String(coaching?.next_attempt || '').trim();
     const alt = naturalAlternative(coaching);
     return html`<section class="o-card o-card--24 s-sit__card">
+      ${contextChip()}
       <div class="s-sit__scenario" lang="${lang}">${current()?.scenario || ''}</div>
       <div class="s-sit__scroll" data-scroll-region>
         <div class="s-sit__answer" lang="${lang}">“${answer}”</div>

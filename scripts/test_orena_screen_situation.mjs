@@ -40,3 +40,11 @@ for (const name of ['spoken_response.json', 'spoken_response_landed.json']) {
 }
 
 console.log('Orena screen situation: model mapping (scenarios, progress, natural alternative) against the real spoken-response captures: PASS');
+
+// D-139 HD-13: every scenario carries an authored context for the chip above it, in both languages.
+{
+  const { scenarios } = await import('../static/orena/screens/situation/model.js');
+  for (const language of ['en', 'zh']) {
+    for (const item of scenarios(language)) assert.ok(typeof item.context === 'string' && item.context.length > 0, `${language} ${item.key} has a context`);
+  }
+}

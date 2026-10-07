@@ -67,6 +67,15 @@
   flex-direction: column;
   gap: 18px;
 }
+.s-sit__context {
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
 .s-sit__scenario {
   margin: 0;
   font-size: 24px;

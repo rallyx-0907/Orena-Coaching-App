@@ -9,11 +9,13 @@
    their own words, no model sentence"; and real coaching on the real answer,
    `POST /api/dictionary/spoken-response` (the same endpoint and shape as Free Talk/Conversation).
    The frame's own Intent-achieved / Clarity result grid has no real measurement to bind - dropped
-   (rule 40/D-076), not reproduced with a client-side word-count or regex heuristic. */
+   (rule 40/D-076), not reproduced with a client-side word-count or regex heuristic. It is drawn only
+   when the coaching response carries those judgements (D-139 HD-13); today's `spoken-response` shape
+   never does (UI_BACKEND_GAPS). Each scenario carries an authored `context`, the chip above it. */
 import { voiceInvitations } from '../../content/voice-invitations.js';
 
 export function scenarios(language) {
-  return voiceInvitations(language).map((item) => ({ key: item.key, title: item.title, scenario: item.prompt }));
+  return voiceInvitations(language).map((item) => ({ key: item.key, title: item.title, scenario: item.prompt, context: item.context }));
 }
 
 /* The frame's header subtitle states the mode's defining constraint and a real position in the

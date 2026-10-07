@@ -4906,3 +4906,17 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
 - **S-01a Recommended for Speak names a real line, not a mode (D-139 HD-1).** There is no recommender service; the
   card is the learner's weakest line by its latest verified attempt, opened only while its media is still readable.
   Weakness by mode (Conversation, Free Talk) has no stored score and is not recommended.
+- **S-17 Free Talk Linking is a count (D-139 HD-9).** `screens/free-talk/linking.js` counts the linking words in the
+  transcript from a short authored list per language (English, Chinese; any other language uses the English list).
+  It counts devices, not their quality, and the lists are not exhaustive; a richer detector would be a backend/NLP
+  decision.
+- **S-20 Conversation level is per-conversation request data (D-139 HD-10).** `ConversationIn.level` (B1 / B2 / C1,
+  optional) sets the partner's language in `POST /api/dictionary/conversation-turn`. It is not persisted by the
+  account conversation record (`/api/conversations/*`, schema reserved by D-104), so a conversation resumed from
+  another device carries on at the level the chips open on. Learners whose declared level is not a CEFR B1-C1 code
+  (A-levels, HSK) open on B1; the chips cannot express a second scheme.
+- **S-26 Situation Reaction Intent / Clarity cards stay unbuilt (D-139 HD-13).** The `spoken-response` coaching
+  shape (`carried`, `landed_differently`, `another_way`, `next_attempt`, `say_again`) carries no intent or clarity
+  judgement, so the cards are not drawn; they appear only if the response ever carries them. The context chip is
+  built from each scenario's authored `context` (`content/voice-invitations.js`, English and Chinese, in the learning
+  language like the scenario itself); there is no support-language translation of scenario text to follow.
