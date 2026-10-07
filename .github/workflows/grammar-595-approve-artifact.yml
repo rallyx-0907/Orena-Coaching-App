@@ -8,11 +8,16 @@ on:
       - ".github/workflows/grammar-595-approve-artifact.yml"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   approve-artifact:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: codex/grammar-595-review-local
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -50,6 +55,20 @@ jobs:
           python -m grammar_lab.pipeline.cli coverage --lang en
           python -m grammar_lab.pipeline.cli coverage --lang zh
           python -m grammar_lab.pipeline.cli export-profile
+      - name: Commit approved corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add grammar_lab/content/en grammar_lab/content/zh grammar_lab/fixtures/ui
+          git diff --cached --stat
+          if git diff --cached --quiet; then
+            echo "No approval changes to commit"
+          else
+            git commit -m "content(grammar): approve reviewed 595-point corpus"
+            git push origin HEAD:codex/grammar-595-review-local
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: grammar-595-approved-content
