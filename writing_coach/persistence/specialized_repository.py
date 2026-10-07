@@ -5,8 +5,10 @@ import hashlib
 import json
 import re
 import sqlite3
+import threading
 import uuid
 from datetime import datetime, timedelta, timezone
+from contextlib import nullcontext
 from typing import Any, Callable, Protocol
 
 from sqlalchemy import Engine, func, inspect, select, text, update
@@ -221,6 +223,13 @@ PROFILE_OPTIONAL_FIELDS = (
 )
 
 
+# D-142.1: a practice session ends after this much inactivity (server time). One named value, not per learner.
+PRACTICE_SESSION_IDLE_MINUTES = 30
+PRACTICE_SESSION_IDLE = timedelta(minutes=PRACTICE_SESSION_IDLE_MINUTES)
+
+_SQLITE_SESSION_LOCK = threading.RLock()
+
+
 class SpecializedLearningRepository(Protocol):
     def get_profile_record(self) -> dict[str, Any] | None: ...
     def upsert_profile_record(
@@ -256,7 +265,8 @@ class SpecializedLearningRepository(Protocol):
     def list_recent_listening_progress_records(self, limit: int = 20) -> list[dict[str, Any]]: ...
     def save_shadowing_progress_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
     def list_shadowing_progress_records(self, asset_id: str) -> list[dict[str, Any]]: ...
-    def create_speaking_attempt_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
+    def create_speaking_attempt_record(self, values: dict[str, Any], *, assign_session: bool = False) -> dict[str, Any]: ...
+    def current_speaking_session(self, now: datetime, *, limit: int = 50) -> dict[str, Any] | None: ...
     def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None, since: datetime | None = None) -> list[dict[str, Any]]: ...
     def speaking_progress(self) -> dict[str, Any]: ...
     def activity_timestamps(self, since: datetime) -> dict[str, list[datetime]]: ...
@@ -989,7 +999,10 @@ class SQLiteSpecializedLearningRepository:
     def list_shadowing_progress_records(self, asset_id: str) -> list[dict[str, Any]]:
         raise RuntimeError("Durable Shadowing progress requires the PostgreSQL runtime.")
 
-    def create_speaking_attempt_record(self, values: dict[str, Any]) -> dict[str, Any]:
+    def create_speaking_attempt_record(self, values: dict[str, Any], *, assign_session: bool = False) -> dict[str, Any]:
+        raise RuntimeError("Durable Speaking attempts require the PostgreSQL runtime.")
+
+    def current_speaking_session(self, now: datetime, *, limit: int = 50) -> dict[str, Any] | None:
         raise RuntimeError("Durable Speaking attempts require the PostgreSQL runtime.")
 
     def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None, since: datetime | None = None) -> list[dict[str, Any]]:
@@ -1708,6 +1721,14 @@ class PostgresSpecializedLearningRepository:
 
     @staticmethod
     def _speaking_payload(row: Any) -> dict[str, Any]:
+        payload = PostgresSpecializedLearningRepository._speaking_fields(row)
+        # Only a row that has an identity carries the key, so a flag-off or legacy payload is unchanged.
+        if getattr(row, "practice_session_id", None) is not None:
+            payload["practice_session_id"] = str(row.practice_session_id)
+        return payload
+
+    @staticmethod
+    def _speaking_fields(row: Any) -> dict[str, Any]:
         return {
             "id": str(row.id),
             "created_at": PostgresSpecializedLearningRepository._iso(row.created_at),
@@ -1722,21 +1743,32 @@ class PostgresSpecializedLearningRepository:
             "evidence": dict(row.evidence or {}),
         }
 
-    def create_speaking_attempt_record(self, values: dict[str, Any]) -> dict[str, Any]:
+    def create_speaking_attempt_record(self, values: dict[str, Any], *, assign_session: bool = False) -> dict[str, Any]:
+        """Write one take. With `assign_session` (flag ORENA_PRACTICE_SESSION) a NEW row joins the learner's live
+        practice session or starts one (D-142.1); an existing row (a replay) keeps the identity it was given."""
         uid, lang = self._scope()
         attempt_id = stable_uuid("speaking-attempt", self._key(), lang, values["take_id"])
-        with Session(self.engine) as s, s.begin():
+        # PostgreSQL serialises with a transaction advisory lock below; the SQLite test engine has none, so a
+        # process lock stands in for it for the whole write.
+        process_lock = _SQLITE_SESSION_LOCK if assign_session and self.engine.dialect.name != "postgresql" else nullcontext()
+        with process_lock, Session(self.engine) as s, s.begin():
             if s.get(User, uid) is None:
                 raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
+            if assign_session and self.engine.dialect.name == "postgresql":
+                s.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"),
+                          {"k": f"practice-session:{uid}:{lang}"})
             row = s.get(SpeakingAttempt, attempt_id)
             if row is None:
+                created_at = self._dt(values["created_at"])
+                session_id = self._session_for_new_take(s, uid, lang, created_at) if assign_session else None
                 row = SpeakingAttempt(
                     id=attempt_id, user_id=uid, language_code=lang,
                     take_id=values["take_id"],
                     asset_id=values.get("asset_id", ""), segment_id=values.get("segment_id", ""),
                     reference_text=values["reference_text"], transcript_text=values["transcript_text"],
                     dimensions=dict(values.get("dimensions", {})), provenance=dict(values.get("provenance", {})),
-                    evidence=dict(values.get("evidence", {})), created_at=self._dt(values["created_at"]),
+                    evidence=dict(values.get("evidence", {})), created_at=created_at,
+                    practice_session_id=session_id,
                 )
                 s.add(row)
             else:
@@ -1750,6 +1782,58 @@ class PostgresSpecializedLearningRepository:
                 row.evidence = dict(values.get("evidence", {}))
             s.flush()
             return self._speaking_payload(row)
+
+    @staticmethod
+    def _session_for_new_take(s: Session, uid: Any, lang: str, now: datetime) -> uuid.UUID:
+        """Reuse the latest attempt's session while it is within the idle window of `now` (server time), else mint."""
+        latest = s.execute(
+            select(SpeakingAttempt.created_at, SpeakingAttempt.practice_session_id)
+            .where(SpeakingAttempt.user_id == uid, SpeakingAttempt.language_code == lang)
+            .order_by(SpeakingAttempt.created_at.desc())
+            .limit(1)
+        ).first()
+        if latest is not None and latest[1] is not None:
+            last = PostgresSpecializedLearningRepository._dt(latest[0])
+            if now - last <= PRACTICE_SESSION_IDLE:  # a slightly earlier `now` (clock skew between nodes) still joins
+                return latest[1]
+        return uuid.uuid4()
+
+    def current_speaking_session(self, now: datetime, *, limit: int = 50) -> dict[str, Any] | None:
+        """The live practice session of this account and language, or None once 30 minutes have passed since its
+        last activity (or when the latest attempt has no identity). Reads only; never starts or extends one."""
+        uid, lang = self._scope()
+        now = self._dt(now)
+        with Session(self.engine) as s:
+            latest = s.execute(
+                select(SpeakingAttempt.created_at, SpeakingAttempt.practice_session_id)
+                .where(SpeakingAttempt.user_id == uid, SpeakingAttempt.language_code == lang)
+                .order_by(SpeakingAttempt.created_at.desc())
+                .limit(1)
+            ).first()
+            if latest is None or latest[1] is None:
+                return None
+            if now - self._dt(latest[0]) > PRACTICE_SESSION_IDLE:
+                return None
+            sid = latest[1]
+            scope = (SpeakingAttempt.user_id == uid, SpeakingAttempt.language_code == lang,
+                     SpeakingAttempt.practice_session_id == sid)
+            started, last, count = s.execute(
+                select(func.min(SpeakingAttempt.created_at), func.max(SpeakingAttempt.created_at), func.count())
+                .where(*scope)
+            ).one()
+            rows = s.scalars(
+                select(SpeakingAttempt).where(*scope).order_by(SpeakingAttempt.created_at.desc())
+                .limit(max(1, min(int(limit), 100)))
+            ).all()
+            last = self._dt(last)
+            return {
+                "id": str(sid),
+                "started_at": self._iso(self._dt(started)),
+                "last_activity_at": self._iso(last),
+                "expires_at": self._iso(last + PRACTICE_SESSION_IDLE),
+                "count": int(count),
+                "items": [self._speaking_payload(row) for row in rows],
+            }
 
     def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None, since: datetime | None = None) -> list[dict[str, Any]]:
         uid, lang = self._scope()
