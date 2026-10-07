@@ -19,9 +19,19 @@ def fix_sentence_final_le(data: dict) -> None:
 
 
 def fix_serial_place_role(data: dict) -> None:
+    cleaned = []
+    seen_place = False
     for slot in data["pattern"]["formula"]:
         if slot.get("text") == "地点":
+            if seen_place:
+                continue
+            seen_place = True
             slot["role"] = "place"
+            slot.setdefault("label", {})["vi"] = "địa điểm"
+            slot["label"]["en"] = "place"
+            slot["optional"] = True
+        cleaned.append(slot)
+    data["pattern"]["formula"] = cleaned
 
 
 patch(ROOT / "content" / "zh" / "zh.canon.r5.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i.json", fix_sentence_final_le)
