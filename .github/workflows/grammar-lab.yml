@@ -29,3 +29,17 @@ jobs:
       - run: python -m grammar_lab.pipeline.cli sync-metadata --check
       - run: python -m grammar_lab.pipeline.cli seed-audit --lang all
       - run: python -m grammar_lab.pipeline.cli corpus-plan --lang all
+      - name: Upload grammar corpus snapshot for bounded review
+        uses: actions/upload-artifact@v4
+        with:
+          name: grammar-corpus-snapshot
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            grammar_lab/content/
+            grammar_lab/inventory/catalog_en.yaml
+            grammar_lab/inventory/catalog_zh.yaml
+            grammar_lab/inventory/seeds_en.yaml
+            grammar_lab/inventory/seeds_zh.yaml
+            grammar_lab/inventory/en.yaml
+            grammar_lab/inventory/zh.yaml
