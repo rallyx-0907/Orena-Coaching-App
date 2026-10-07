@@ -80,6 +80,26 @@ def _generated_v04(point: dict[str, Any]) -> bool:
     )
 
 
+def _practice_signature(item: dict[str, Any]) -> tuple[str, tuple[str, ...], int | None]:
+    """Identity of a learner exercise, excluding explanation/pinyin decoration.
+
+    Reusing the same sentence frame is valid when the answer choices differ; it
+    is only a duplicate when the actual task (prompt + ordered choices + answer)
+    is repeated.
+    """
+    options = item.get("options") if isinstance(item.get("options"), list) else []
+    option_texts = tuple(
+        str(option.get("text", "")).strip() if isinstance(option, dict) else str(option).strip()
+        for option in options
+    )
+    answer = item.get("answer")
+    return (
+        str(item.get("q", "")).strip(),
+        option_texts,
+        int(answer) if isinstance(answer, int) else None,
+    )
+
+
 def quality_issues(point: dict[str, Any]) -> list[dict[str, str]]:
     """Objective learner-content blockers not covered by JSON shape alone.
 
@@ -103,9 +123,14 @@ def quality_issues(point: dict[str, Any]) -> list[dict[str, str]]:
 
     if len(practice) != 3:
         issues.append(_issue(point, "quality.practice_count", "quick_practice", "v0.4 generated lessons require exactly 3 quick-practice items"))
-    practice_questions = [str(item.get("q", "")).strip() for item in practice if isinstance(item, dict)]
-    if len(practice_questions) != len(set(practice_questions)):
-        issues.append(_issue(point, "quality.practice_duplicate", "quick_practice", "quick-practice prompts must be distinct"))
+    practice_signatures = [_practice_signature(item) for item in practice if isinstance(item, dict)]
+    if len(practice_signatures) != len(set(practice_signatures)):
+        issues.append(_issue(
+            point,
+            "quality.practice_duplicate",
+            "quick_practice",
+            "quick-practice tasks must be distinct by prompt, options, and answer",
+        ))
 
     if not mistakes:
         issues.append(_issue(point, "quality.mistake_missing", "common_mistakes", "at least one real learner mistake is required"))
