@@ -1,0 +1,27 @@
+name: Grammar Initial Cache Guard
+on:
+  push:
+    branches:
+      - feature/grammar-lab-pipeline
+    paths:
+      - 'scripts/_tmp_test_require_initial_cache.py'
+      - '.github/workflows/grammar-initial-cache-guard.yml'
+      - 'grammar_lab/pipeline/llm_client.py'
+      - 'grammar_lab/pipeline/generate.py'
+      - 'grammar_lab/pipeline/cli.py'
+      - 'grammar_lab/tests/test_initial_cache_guard.py'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feature/grammar-lab-pipeline
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - name: Initial cache guard regression
+        run: python scripts/_tmp_test_require_initial_cache.py
