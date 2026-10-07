@@ -4955,3 +4955,7 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
     transcript pipeline's audio fallback for YouTube sources whose captions are not good enough, so it is worth one
     independent look. Until then those lessons keep an unavailable model plot; the read route answers 404 "not
     prepared", Compare shows the plot as unavailable, and nothing cuts on open (D-121).
+  - **Owner: shared Media Learning / Codex lane (human decision 2026-10-07).** The Speaking lane stops at this
+    diagnosis and does not modify the shared YouTube acquisition transport. After the transport fix, the Speaking side
+    needs only a re-run of `scripts/backfill_model_clips.py` (bounded, idempotent) on the runtime that holds the
+    imports.
