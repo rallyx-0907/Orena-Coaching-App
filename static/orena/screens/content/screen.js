@@ -34,6 +34,8 @@ import {
   libraryKindFor,
   primaryDestination,
   placeFor,
+  mediaPlaceFor,
+  segmentStarts,
   normalizeArticle,
   normalizeBook,
   normalizeMedia,
@@ -64,7 +66,12 @@ async function loadDetail(kind, id, ctx) {
       api, support: languages().support, language: ctx.context.language, owner: ctx.context.owner || 'local',
     });
     if (!payload?.asset) throw new Error('This media is unavailable.');
-    return { ...normalizeMedia(payload), canShadow: mapLesson(payload).modes.shadowing };
+    return {
+      ...normalizeMedia(payload),
+      canShadow: mapLesson(payload).modes.shadowing,
+      starts: segmentStarts(payload),
+      durationMs: payload.catalog?.duration_ms ?? payload.asset.duration_ms ?? null,
+    };
   }
   // text: a learner's own import, device memory only (product/memory.js) - never the network.
   const record = ctx.context.memory.value.imports.find((item) => item.id === contentIdFor('text', id));
@@ -179,14 +186,23 @@ export default async function content(element, ctx) {
   const memberId = importMemberId(contentId);
   const memory = ctx.context.memory.value;
   const own = Boolean(memberId) && [...(memory.imports || []), ...(memory.mediaImports || [])].some((item) => item.id === memberId);
-  const place = placeFor(ctx.context.memory.value.continuation, contentId);
   const destination = primaryDestination(kind);
+  // Media places carry a line, not a percent (X-11); an article's carries a percent, and 100% is finished (X-12).
+  const place = destination === 'listening'
+    ? mediaPlaceFor(ctx.context.memory.value.continuation, contentId, detail.starts, detail.durationMs)
+    : placeFor(ctx.context.memory.value.continuation, contentId);
+  const finished = destination !== 'listening' && place.started && place.percent >= 100;
+  const showStrip = place.started && !finished && (destination !== 'listening' || place.at);
   // Media opens with the design's play mark: "▶ Start listening", or "▶ Continue watching" for a started video (L-08).
   const resumeKey = detail.playbackKind === 'audio' ? 'continueListening' : 'continueWatching';
   const primaryLabel = destination === 'listening'
     ? html`${raw(icon('play', { size: 16 }))}${place.started ? t(resumeKey) : t('listen')}`
-    : (place.started ? t('continueReading') : t('startReading'));
+    : (finished ? t('readAgain') : place.started ? t('continueReading') : t('startReading'));
   const primaryHref = destination === 'listening' ? ctx.href('listening', { id: kind === 'upload' ? uploadMediaId(id) : id }) : ctx.href('reader', { id: contentId });
+  // Shadowing is a secondary action behind "..." (X-10, HX-4 C): the frame draws no button for it, D-119 keeps the route.
+  const shadowHref = destination === 'listening' && detail.canShadow ? ctx.href('shadow', { id: kind === 'upload' ? uploadMediaId(id) : id }) : '';
+  const hasMore = own || Boolean(shadowHref);
+  const menuItems = [...(shadowHref ? [{ key: 'shadow', label: shellCopy('shadowing') }] : []), ...(own ? [{ key: 'delete', label: t('deleteFromOrena') }] : [])];
   const isMedia = Boolean(detail.segments && detail.segments.length);
   const transcriptLabel = isMedia
     ? (detail.transcriptOrigin === 'provider_caption' ? t.plural('captions', detail.segments.length) : t.plural('generated', detail.segments.length))
@@ -206,20 +222,19 @@ export default async function content(element, ctx) {
       })}
       <div class="${cls('s-content__grid', !related.length && 's-content__grid--full')}">
         <div class="s-content__main">
-          ${place.started
+          ${showStrip
             ? html`<div class="s-content__progress">
-                <div class="s-content__progress-labels"><span>${t('progressPercent', { pct: place.percent })}</span><span>${t('resume')}</span></div>
-                <div class="s-content__bar"><span style="width:${place.percent}%"></span></div>
+                <div class="s-content__progress-labels"><span>${place.percent == null ? '' : t('progressPercent', { pct: place.percent })}</span><span>${place.at ? t('resumeAt', { at: place.at }) : t('resume')}</span></div>
+                <div class="s-content__bar"><span style="width:${place.percent ?? 0}%"></span></div>
               </div>`
             : ''}
           <div class="s-content__actions">
             <a class="o-btn o-btn--primary s-content__primary" href="${primaryHref}">${primaryLabel}</a>
-            ${destination === 'listening' && detail.canShadow ? html`<a class="s-content__secondary" href="${ctx.href('shadow', { id: kind === 'upload' ? uploadMediaId(id) : id })}">${shellCopy('shadowing')}</a>` : ''}
             ${hasPractice ? html`<a class="s-content__ai" href="${ctx.href('reader', { id: contentId }, { mode: 'practice' })}">${t('practiceThisText')}</a>` : ''}
             <button type="button" class="s-content__secondary" data-save aria-pressed="${state.saved ? 'true' : 'false'}">${state.saved ? t('saved') : t('save')}</button>
-            ${own ? html`<span data-more-slot>${moreButton({ label: t('more'), open: false, dataset: memberId })}</span>` : ''}
+            ${hasMore ? html`<span data-more-slot>${moreButton({ label: t('more'), open: false, dataset: memberId || 'more' })}</span>` : ''}
           </div>
-          ${own ? html`<div data-menu-slot></div>` : ''}
+          ${hasMore ? html`<div data-menu-slot></div>` : ''}
           ${detail.desc ? html`<p class="s-content__desc" lang="${langAttr(detail.language)}">${detail.desc}</p>` : ''}
           ${isMedia
             ? html`<div class="o-card s-content__transcript">
@@ -275,12 +290,12 @@ export default async function content(element, ctx) {
     button.textContent = state.saved ? t('saved') : t('save');
   });
 
-  if (own) {
+  if (hasMore) {
     const moreSlot = element.querySelector('[data-more-slot]');
     const menuSlot = element.querySelector('[data-menu-slot]');
     const drawMenu = () => {
-      mount(moreSlot, moreButton({ label: t('more'), open: state.menu, dataset: memberId }));
-      mount(menuSlot, state.menu ? moreMenu({ items: [{ key: 'delete', label: t('deleteFromOrena') }], closeLabel: shellCopy('close'), scope: memberId }) : html``);
+      mount(moreSlot, moreButton({ label: t('more'), open: state.menu, dataset: memberId || 'more' }));
+      mount(menuSlot, state.menu ? moreMenu({ items: menuItems, closeLabel: shellCopy('close'), scope: memberId || 'more' }) : html``);
       moreSlot.querySelector('[data-more]').addEventListener('click', () => {
         state.menu = !state.menu;
         drawMenu();
@@ -289,6 +304,7 @@ export default async function content(element, ctx) {
         state.menu = false;
         drawMenu();
       });
+      menuSlot.querySelector('[data-menu-item="shadow"]')?.addEventListener('click', () => ctx.go(shadowHref));
       menuSlot.querySelector('[data-menu-item="delete"]')?.addEventListener('click', async () => {
         state.menu = false;
         // Hidden at once with the design's toast and its Undo; the deletion is committed when that window ends.

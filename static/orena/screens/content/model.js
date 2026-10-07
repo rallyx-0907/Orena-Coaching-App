@@ -93,6 +93,32 @@ export function placeFor(continuation, id) {
   return { started: true, percent: Math.max(0, Math.min(100, Math.round(within))) };
 }
 
+/* Start time (ms) of each transcript line, by the segment id a media place carries (X-11). */
+export function segmentStarts(payload) {
+  const out = {};
+  for (const segment of payload?.transcript?.segments || []) {
+    const start = Number(segment?.start_ms);
+    if (segment?.segment_id && segment.start_ms != null && Number.isFinite(start) && start >= 0) out[segment.segment_id] = start;
+  }
+  return out;
+}
+
+/* A media item's saved place. Media places carry the line the learner was on (`segment`), not a
+   percent, so a place with a line that is in this transcript resumes at that line's start - the
+   same entry Today calls "Continue". `started` is true for any saved place (the room reopens
+   it); `atMs` / `at` only when the line is found; `percent` only when the duration is known
+   (rule 40: nothing is invented). */
+export function mediaPlaceFor(continuation, id, starts, durationMs) {
+  const entry = Array.isArray(continuation) ? continuation.find((item) => item?.id === id) : null;
+  if (!entry) return { started: false, atMs: null, at: '', percent: null };
+  const atMs = starts && Object.hasOwn(starts, entry.segment) ? starts[entry.segment] : null;
+  const duration = Number(durationMs);
+  const percent = atMs != null && Number.isFinite(duration) && duration > 0
+    ? Math.max(0, Math.min(100, Math.round((atMs / duration) * 100)))
+    : null;
+  return { started: true, atMs, at: atMs == null ? '' : mmss(atMs), percent };
+}
+
 /* An article's list/detail JSON -> this screen's own fields. `desc` is the article's own
    description metadata when an administrator gave one (D-130): the block is hidden without it, and
    the first lines of the body are never shown as a description. */

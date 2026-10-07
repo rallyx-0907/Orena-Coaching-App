@@ -13,6 +13,8 @@ const {
   libraryKindFor,
   primaryDestination,
   placeFor,
+  mediaPlaceFor,
+  segmentStarts,
   normalizeArticle,
   normalizeBook,
   normalizeMedia,
@@ -144,5 +146,16 @@ assert.deepEqual(
   pickRelated([{ lesson_id: 'x', title: 'Excluded by lesson_id' }, { lesson_id: 'm2', title: 'Kept' }], { excludeId: 'x', map: (item) => ({ id: item.lesson_id, title: item.title }) }),
   [{ id: 'm2', title: 'Kept' }],
 );
+
+// X-11: a media place carries a line, not a percent - it resumes at that line's start (the entry Today calls "Continue").
+{
+  const starts = segmentStarts({ transcript: { segments: [{ segment_id: 'm:1', start_ms: 0 }, { segment_id: 'm:2', start_ms: 44000 }, { segment_id: 'bad', start_ms: null }] } });
+  assert.deepEqual(starts, { 'm:1': 0, 'm:2': 44000 });
+  assert.deepEqual(mediaPlaceFor([{ id: 'media:a', segment: 'm:2' }], 'media:a', starts, 88000), { started: true, atMs: 44000, at: '0:44', percent: 50 });
+  assert.deepEqual(mediaPlaceFor([{ id: 'media:a', segment: 'm:2' }], 'media:a', starts, null), { started: true, atMs: 44000, at: '0:44', percent: null }, 'no duration, no percent');
+  assert.deepEqual(mediaPlaceFor([{ id: 'media:a', segment: 'gone' }], 'media:a', starts, 88000), { started: true, atMs: null, at: '', percent: null }, 'a place whose line is not in the transcript still continues, with no strip');
+  assert.equal(mediaPlaceFor([], 'media:a', starts, 88000).started, false);
+  assert.equal(mediaPlaceFor([{ id: 'media:b', segment: 'm:2' }], 'media:a', starts, 88000).started, false);
+}
 
 console.log('Orena Content Detail model: id scheme, rule-40 fallbacks, normalisation and related-list selection: PASS');
