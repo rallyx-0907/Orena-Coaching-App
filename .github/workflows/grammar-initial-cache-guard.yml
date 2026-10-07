@@ -30,8 +30,8 @@ jobs:
         run: python scripts/_tmp_test_require_initial_cache.py
       - name: Permanent guard regressions
         run: python -m pytest grammar_lab/tests/test_initial_cache_guard.py -q
-      - name: Generation and CLI regressions
-        run: python -m pytest grammar_lab/tests/test_generate.py grammar_lab/tests/test_llm_client.py grammar_lab/tests/test_cli_contract.py -q
+      - name: Generation and client regressions
+        run: python -m pytest grammar_lab/tests/test_generate.py grammar_lab/tests/test_llm_client.py -q
       - name: Full Grammar Lab suite
         run: python -m pytest grammar_lab/tests -q
       - name: Commit production patch and remove temporary files
