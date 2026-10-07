@@ -1,0 +1,42 @@
+name: Grammar Header Cache Key RED
+on:
+  push:
+    branches:
+      - feature/grammar-lab-pipeline
+    paths:
+      - '.github/workflows/header-cache-key-red.yml'
+permissions:
+  contents: read
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feature/grammar-lab-pipeline
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - name: Write regression only
+        shell: bash
+        run: |
+          cat > grammar_lab/tests/_tmp_test_header_cache_key.py <<'PY'
+          from grammar_lab.pipeline.generate import _header_metadata
+          from grammar_lab.pipeline.validate import ZH_HANS
+
+
+          def test_prompt_header_metadata_preserves_canonical_native_title() -> None:
+              existing = {
+                  "target_lang": ZH_HANS,
+                  "level": {"framework": "HSK", "value": "3"},
+                  "header": {
+                      "title": {"vi": "Liên động"},
+                      "native_title": "连动句“去/来 + 动词”",
+                  },
+              }
+              header = _header_metadata(existing, ["vi"])
+              assert header["native_title"] == "连动句“去/来 + 动词”"
+          PY
+      - name: RED regression
+        run: python -m pytest grammar_lab/tests/_tmp_test_header_cache_key.py -q
