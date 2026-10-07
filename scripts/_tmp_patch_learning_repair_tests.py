@@ -22,7 +22,7 @@ new = '''    bad = copy.deepcopy(CANNED_V04)
     bad["formula"][0]["options"] = [{"text": "He"}, {"text": "He"}]
     calls: list[httpx.Request] = []
 '''
-assert text.count(old) >= 2, 'hard-cap/full-failure anchors missing'
+assert text.count(old) >= 1, 'hard-cap anchor missing'
 text = text.replace(old, new, 1)
 
 old = '''    # Keep this failure outside targeted repair: the contract under test is
@@ -48,9 +48,6 @@ new = '''        elif tool_name == "emit_grammar_point_v04_structure_patch":
         else:
             raise AssertionError(tool_name)
 '''
-assert text.count(old) >= 1, 'mixed repair handler anchor missing'
-# Replace the occurrence inside the mixed structural test: it is the final
-# matching handler before test_apply_generation_structure_patch.
 pos = text.find('def test_generate_v04_mixed_structural_issue_repairs_structure_before_full_retry')
 assert pos >= 0, 'mixed structural test missing'
 tail = text[pos:]
