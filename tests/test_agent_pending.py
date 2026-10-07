@@ -176,3 +176,64 @@ def test_changing_the_learning_language_keeps_the_conversation_and_the_offer():
     sent = provider.requests[-1]
     assert ("user", "abate nghĩa là gì?") in [(m.role, m.content) for m in sent.messages]
     assert context_of(sent)["pending_interaction"]["action"] == "save_word"
+
+
+def test_the_instruction_has_the_model_offer_saving_as_a_button_not_in_words():
+    from writing_coach.agent.prompts import INSTRUCTION
+
+    assert "call propose_action save_word for that word" in INSTRUCTION
+    assert "Never offer saving in words" in INSTRUCTION
+
+
+def ask_to_run(proposal=SAVE_ABATE):
+    return [call_tools(("c1", "propose_action", {**proposal, "requested": True})), reply("Ok.")]
+
+
+def test_words_that_ask_for_an_action_run_it_even_with_no_earlier_offer():
+    rt, _ = runtime([*ask_to_run()])
+    events, _ = talk(rt, None, "lưu abate đi")
+    (saved,) = actions(events)
+    assert (saved.type, saved.payload, saved.open) == ("save_word", {"text": "abate", "lang": "en"}, True)
+
+
+def test_the_same_words_said_twice_run_the_action_once():
+    rt, _ = runtime([*ask_to_run(), *ask_to_run()])
+    first, _ = talk(rt, None, "ok lưu abate")
+    again, _ = talk(rt, session_of(first), "ok lưu")
+    assert len(actions(first)) == 1 and not [a for a in actions(again) if a.open]
+
+
+def test_proposing_the_open_offer_at_the_learners_word_accepts_it_under_its_own_id():
+    rt, provider = runtime([*offer(), *ask_to_run(), reply("x")])
+    first, _ = talk(rt, None, "abate nghĩa là gì?")
+    sid = session_of(first)
+    events, _ = talk(rt, sid, "ừ lưu đi")
+    pending_id = context_of(provider.requests[2])["pending_interaction"]["id"]
+    assert [(a.id, a.open) for a in actions(events)] == [(pending_id, True)]
+    talk(rt, sid, "còn gì nữa")
+    assert "pending_interaction" not in context_of(provider.requests[-1])
+
+
+def test_an_action_not_asked_for_is_only_offered():
+    rt, _ = runtime([*offer()])
+    events, _ = talk(rt, None, "abate nghĩa là gì?")
+    assert [a.open for a in actions(events)] == [None]
+
+
+def test_offering_the_same_button_again_keeps_the_same_offer():
+    rt, provider = runtime([*offer(), *offer(), reply("x")])
+    first, _ = talk(rt, None, "abate nghĩa là gì?")
+    sid = session_of(first)
+    talk(rt, sid, "cho ví dụ nữa")
+    talk(rt, sid, "ừ")
+    pending = context_of(provider.requests[-1])["pending_interaction"]
+    assert pending["id"].startswith("p1-")  # the offer of the first turn, not a new one each time
+
+
+def test_after_an_action_ran_the_model_is_told_it_was_sent_not_that_it_worked():
+    rt, provider = runtime([*ask_to_run(), reply("Đã gửi rồi.")])
+    first, _ = talk(rt, None, "lưu abate đi")
+    talk(rt, session_of(first), "ok lưu")
+    sent = provider.requests[-1]
+    assert context_of(sent)["sent_to_app_just_now"] == [{"action": "save_word", "payload": {"text": "abate", "lang": "en"}}]
+    assert any("never say it is saved or done" in " ".join(m.content.split()) for m in sent.messages if m.role == "system")

@@ -62,7 +62,7 @@ from writing_coach.agent.address import (
 from writing_coach.agent.events import ActionEvent, Display, MemoryUpdateEvent, SuggestionEvent, make_action
 from writing_coach.agent.honesty import plain_text
 from writing_coach.agent.notes import FORGET, asks_to_remember, confirmed_note, same_note
-from writing_coach.agent.pending import CANCEL, CONFIRM, DECISIONS, PendingInteraction
+from writing_coach.agent.pending import CANCEL, CONFIRM, DECISIONS, PendingInteraction, action_key
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.schemas import ClientInfo
 from writing_coach.vocabulary_library import normalize_vocabulary_word
@@ -338,6 +338,13 @@ def reply_tool_specs(
     if allowed:
         intents = sorted(client.allowed_intents & intents_for_version(version))
         properties: dict[str, Any] = {"type": {"type": "string", "enum": allowed}, "payload": {"type": "object"}}
+        if not opening:
+            properties["requested"] = {
+                "type": "boolean",
+                "description": "true only when the learner's own latest words ask for this action or accept it "
+                               "(\"lưu đi\", \"ok save it\", \"mở giúp tôi\"): the app then runs it at once. "
+                               "Otherwise leave it out and it is only offered as a button.",
+            }
         if version >= 2:
             properties["reason"] = {"type": "string", "maxLength": MAX_DISPLAY_REASON_CHARS}
         specs.insert(
@@ -459,6 +466,7 @@ class ReplyOutputs:
     pending: PendingInteraction | None = None
     settled: frozenset[str] = frozenset()
     resolution: str | None = None  # confirm | cancel, once the model said which
+    recent_runs: frozenset[str] = frozenset()  # keys of actions the session just ran: not run twice in a row
 
     # --- ids the turn has seen ------------------------------------------------
 
@@ -559,6 +567,17 @@ class ReplyOutputs:
                 f"refused: payload does not fit {action_type} ({_first_error(exc)}). "
                 f"It takes {payload_shapes(action_type, self.target)}"
             )
+        if args.get("requested") is True and not self.opening and self.learner_words.strip():
+            key = action_key(action_type, payload)
+            if key in self.recent_runs or self.resolution is not None:
+                return ("refused: that was just run at the learner's word; it is not run again. Tell them in "
+                        "one sentence it was already sent to the app.")
+            pending = self.pending
+            if pending is not None and action_key(pending.action, pending.payload) == key:
+                action = action.model_copy(update={"id": pending.id})  # accepting the open offer by proposing it
+                self.resolution = CONFIRM
+            self.actions.append(action.model_copy(update={"open": True}))
+            return "accepted: it runs now, once, at the learner's word. Say nothing that it is done; at most one short sentence."
         self.actions.append(action)
         return (
             f"accepted: {action.id}, shown as the button '{action.label}'. The learner has not tapped it: "

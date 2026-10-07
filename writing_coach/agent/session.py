@@ -28,7 +28,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any
 
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
-from writing_coach.agent.pending import SETTLED_KEPT, PendingInteraction
+from writing_coach.agent.pending import RUN_WINDOW_TURNS, RUNS_KEPT, SETTLED_KEPT, PendingInteraction
 from writing_coach.agent.schemas import AppContextSnapshot, SelectedItem
 
 
@@ -68,6 +68,9 @@ class AgentSessionState:
     # that ended, as (id, status), so an answer that arrives twice finds nothing left to run twice.
     pending: PendingInteraction | None = None
     settled: tuple[tuple[str, str], ...] = ()
+    # The actions this session ran at the learner's word, as (learner turn, action key): the same words said twice
+    # in a row ("ok lưu", "ok lưu") run it once.
+    runs: tuple[tuple[int, str], ...] = ()
     # The turns just before this one, verbatim and bounded (architecture target §4-5): the model sees them, so a
     # follow-up ("cho ví dụ khác", "đoạn thứ 3") has something to refer to. In this process only, like the rest.
     recent_turns: tuple[ConversationTurn, ...] = ()
@@ -139,6 +142,13 @@ class AgentSessionState:
         kept = (*self.settled, (pending.id, status))[-SETTLED_KEPT:]
         return replace(self, pending=None if self.pending is not None and self.pending.id == pending.id else self.pending,
                        settled=kept)
+
+    def recent_runs(self) -> frozenset[str]:
+        return frozenset(key for turn, key in self.runs if self.turn_count - turn < RUN_WINDOW_TURNS)
+
+    def with_runs(self, keys: tuple[str, ...]) -> AgentSessionState:
+        kept = (*self.runs, *((self.turn_count, key) for key in keys))[-RUNS_KEPT:]
+        return replace(self, runs=kept)
 
     def without_expired(self) -> AgentSessionState:
         if self.pending is not None and self.live_pending() is None:

@@ -99,7 +99,7 @@ from writing_coach.agent.outputs import (
     selection_kind,
 )
 from writing_coach.agent.prompts import opening_messages
-from writing_coach.agent.pending import CANCELLED, COMPLETED, CONFIRM, PendingInteraction
+from writing_coach.agent.pending import CANCELLED, COMPLETED, CONFIRM, PendingInteraction, action_key
 from writing_coach.agent.provider import (
     NORMAL_FINISH,
     AgentTurnProvider,
@@ -257,6 +257,7 @@ class _Turn:
         self.heard: str | None = None  # what the model was given as the learner's words, kept as the turn's history
         self.said = ""  # what the learner was shown as the answer, kept the same way
         self.live: PendingInteraction | None = None  # the offer open when this turn began (agent/pending.py)
+        self.ran: tuple[str, ...] = ()  # keys of the actions this turn ran at the learner's word
         self.settle: str | None = None  # how this turn ended it: completed | cancelled
         self.new_offer: tuple[str, str, dict] | None = None  # (type, label, payload) this answer offers, if any
         self.read_attempted = False  # a read was started this turn, whatever came of it
@@ -435,6 +436,7 @@ class _Turn:
             if context.selected_item is not None and context.selected_item.type == "word" else None,
             pending=self.live,
             settled=frozenset(done for done, _ in session.settled),
+            recent_runs=session.recent_runs(),
         )
         if mirrored is not None:
             outputs.memory_updates.append(MemoryUpdateEvent(op="upsert", note=mirrored))
@@ -769,14 +771,17 @@ class _Turn:
                 outputs.actions[0] = first.model_copy(update={"open": True})
                 offer_lang, offer_text = learner_copy.text("offer.now.navigate", interface=self.locale.interface,
                                                            support=support, address=self.address)  # fmt: skip
-            elif first.open:  # the learner accepted the open offer (agent/pending.py): it runs now, and is not "done"
+            elif first.open:  # asked for or accepted (agent/pending.py): it runs now, and is not "done"
                 now_key = f"offer.now.{first.type}" if f"offer.now.{first.type}" in learner_copy.CATALOG else "offer.now.action"
                 offer_lang, offer_text = learner_copy.text(now_key, interface=self.locale.interface, support=support,
                                                            address=self.address)  # fmt: skip
+        self.ran = tuple(action_key(a.type, a.payload) for a in outputs.actions if a.open)
         if outputs.resolution is not None:
             self.settle = COMPLETED if outputs.resolution == CONFIRM else CANCELLED
         offered = next((a for a in outputs.actions if not a.open), None)  # what is only offered stays open for an answer
-        if offered is not None and not self.opening:
+        same_offer = (offered is not None and self.live is not None
+                      and action_key(offered.type, offered.payload) == action_key(self.live.action, self.live.payload))
+        if offered is not None and not self.opening and not same_offer:  # the same button again changes nothing
             self.new_offer = (offered.type, offered.label, dict(offered.payload))
         inline = offer_text if offer_lang == support else None  # in the answer's own language, or apart
         apart = offer_text if inline is None else None
@@ -899,7 +904,7 @@ class _Turn:
             if not self.opening:  # the offer this turn answered ends; one it expired on ends; a new one replaces
                 if self.live is not None and self.settle is not None:
                     state = state.with_settled(self.live, self.settle)
-                state = state.without_expired()
+                state = state.without_expired().with_runs(self.ran)
                 if self.new_offer is not None:
                     kind, label, payload = self.new_offer
                     state = state.with_offer(PendingInteraction.offer(kind, payload, label, turn=state.turn_count))

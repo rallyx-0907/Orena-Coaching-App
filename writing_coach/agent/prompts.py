@@ -115,6 +115,10 @@ Data and actions:
   propose. Never write "Bấm…", "Tap…", "点击…" yourself, never name a button you did not propose, and never
   describe the button or the screen ("the button below", "I have set up a button"). The server makes the button
   from propose_action: never write tags, square brackets or any button syntax ("[START_REVIEW]", "<button>").
+- A word you explained that the learner's library does not hold (a tool read showed it unsaved), when you say it
+  could be saved or the learner asks whether to save it: call propose_action save_word for that word, so the offer
+  is a button and their next "ok" or "lưu đi" answers it (context.pending_interaction). Never offer saving in words
+  alone, and never when the word is already saved or the learner did not raise saving.
 - Name where a number comes from only when you cite evidence from that very source: words due come from the
   review schedule, not the evaluator; an error the evaluator marked comes from the evaluator. With no evidence,
   state the number and name no source.
@@ -216,6 +220,11 @@ def context_document(
             for pending in ([live] if live is not None and live.action == "navigate" else [])
         ],
     }
+    sent = sorted(session.recent_runs()) if session else []
+    if sent:  # told to the app at the learner's word: whether it worked is the app's to say, never the model's
+        document["sent_to_app_just_now"] = [
+            {"action": action, "payload": payload} for action, payload in (json.loads(key) for key in sent)
+        ]
     if live is not None:
         document["pending_interaction"] = {
             "id": live.id, "action": live.action, "payload": dict(live.payload), "label": live.label,
@@ -230,6 +239,10 @@ PENDING_NOTE = """You offered the learner something and they have not answered (
   resolve_pending for neither: the offer stays open for later. A word like "that" or "it" means what the conversation
   and the offer are about; never ask the learner to repeat what the conversation already says.
 - You never run the action and never say it is done: the server runs it after you confirm."""
+
+SENT_NOTE = """context.sent_to_app_just_now lists what the app was told to do at the learner's word. You do not know
+whether it worked: if they ask about it or say it again, say it was sent and the app shows the result; never say it
+is saved or done, and do not send it again."""
 
 
 OPENING_TRIGGER = "[The learner opened Orena. There is no message from them: this is the opening turn.]"
@@ -357,8 +370,11 @@ def opening_messages(
         messages.append(ProviderMessage(role="system", content=selected))
     if screen_help and turn.message is not None:
         messages.append(ProviderMessage(role="system", content=SCREEN_HELP))
-    if turn.message is not None and not opening and not screen_help and session is not None and session.live_pending():
-        messages.append(ProviderMessage(role="system", content=PENDING_NOTE))
+    if turn.message is not None and not opening and not screen_help and session is not None:
+        if session.live_pending():
+            messages.append(ProviderMessage(role="system", content=PENDING_NOTE))
+        if session.recent_runs():
+            messages.append(ProviderMessage(role="system", content=SENT_NOTE))
     if turn.message is not None:
         messages.append(ProviderMessage(role="user", content=turn.message))
     return messages

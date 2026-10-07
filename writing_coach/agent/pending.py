@@ -32,6 +32,16 @@ DEFAULT_TTL_TURNS = 6  # learner turns an unanswered offer stays open
 SETTLED_KEPT = 10
 
 
+RUN_WINDOW_TURNS = 3  # an action that ran this recently is not run again by the same words said twice
+RUNS_KEPT = 10
+
+
+def action_key(action: str, payload: Mapping[str, Any]) -> str:
+    """What an action is, whoever offered it or asked for it: the same word saved is the same action."""
+
+    return json.dumps([action, dict(payload)], sort_keys=True, ensure_ascii=False)
+
+
 @dataclass(frozen=True)
 class PendingInteraction:
     id: str
@@ -48,8 +58,7 @@ class PendingInteraction:
               ttl_turns: int = DEFAULT_TTL_TURNS) -> PendingInteraction:
         """An offer of `action`, with an id that is the same wherever and however often it is read back."""
 
-        canonical = json.dumps([KIND_ACTION_OFFER, action, dict(payload)], sort_keys=True, ensure_ascii=False)
-        digest = hashlib.sha1(canonical.encode("utf-8")).hexdigest()[:10]
+        digest = hashlib.sha1((KIND_ACTION_OFFER + action_key(action, payload)).encode("utf-8")).hexdigest()[:10]
         return cls(id=f"p{turn}-{digest}", kind=KIND_ACTION_OFFER, action=action, payload=dict(payload), label=label,
                    created_turn=turn, ttl_turns=ttl_turns)
 
