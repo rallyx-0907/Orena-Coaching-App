@@ -9,9 +9,9 @@
    a lesson may be audio and a source may be a book chapter or the learner's own text, so the
    media variant says "what you heard" and the reading variant "this text".
 
-   `usesSource` labels a tile no endpoint measures (`POST /api/evaluate` grades grammar,
-   vocabulary, coherence, task achievement, naturalness - nothing about the source), so it renders
-   0 in its component (rule 40). */
+   There is no "Uses the source" tile: no endpoint measures it (`POST /api/evaluate` grades grammar,
+   vocabulary, coherence, task achievement, naturalness - nothing about the source), and a bare 0 is
+   never drawn (rule 40, HX-2). */
 import { defineCopy } from '../../copy/index.js';
 
 const layers = {
@@ -23,7 +23,7 @@ const layers = {
   subtitleSuffix: 'interface', sourceLabel: 'interface',
   sourceKindVideo: 'interface', sourceKindAudio: 'interface', sourceKindArticle: 'interface', sourceKindBook: 'interface', sourceKindText: 'interface',
   placeholder: 'support', wordsLabel: 'interface', getFeedback: 'interface',
-  wordsTile: 'interface', usesSource: 'interface', fixesLabel: 'interface', nextStepLabel: 'interface',
+  wordsTile: 'interface', fixesLabel: 'interface', nextStepLabel: 'interface',
   feedbackError: 'support', askWhyQuestion: 'support', revise: 'interface', askOrenaWhy: 'interface', openSource: 'interface', done: 'interface',
 };
 
@@ -38,7 +38,7 @@ export const t = defineCopy('respond', {
     subtitleSuffix: 'source stays linked to your writing', sourceLabel: 'Source · {kind}',
     sourceKindVideo: 'Video transcript', sourceKindAudio: 'Audio transcript', sourceKindArticle: 'Article', sourceKindBook: 'Book', sourceKindText: 'Text',
     placeholder: 'Write your response…', wordsLabel_one: 'word', wordsLabel_other: 'words', getFeedback: 'Get feedback',
-    wordsTile: 'Words', usesSource: 'Uses the source', fixesLabel: 'Fixes', nextStepLabel: 'Next step',
+    wordsTile: 'Words', fixesLabel: 'Fixes', nextStepLabel: 'Next step',
     feedbackError: "Feedback isn't available right now.",
     revise: 'Revise', askOrenaWhy: 'Ask Orena why', askWhyQuestion: 'Why was this feedback given?', openSource: 'Open source', done: 'Done',
   },
@@ -51,7 +51,7 @@ export const t = defineCopy('respond', {
     subtitleSuffix: 'nguồn vẫn được liên kết với bài viết của bạn', sourceLabel: 'Nguồn · {kind}',
     sourceKindVideo: 'Bản ghi video', sourceKindAudio: 'Bản ghi âm thanh', sourceKindArticle: 'Bài viết', sourceKindBook: 'Sách', sourceKindText: 'Văn bản',
     placeholder: 'Viết phản hồi của bạn…', wordsLabel_other: 'từ', getFeedback: 'Nhận xét',
-    wordsTile: 'Số từ', usesSource: 'Dùng nguồn', fixesLabel: 'Điểm cần sửa', nextStepLabel: 'Bước tiếp theo',
+    wordsTile: 'Số từ', fixesLabel: 'Điểm cần sửa', nextStepLabel: 'Bước tiếp theo',
     feedbackError: 'Hiện chưa dùng được tính năng nhận xét.',
     revise: 'Sửa lại', askOrenaWhy: 'Hỏi Orena vì sao', askWhyQuestion: 'Vì sao nhận xét này được đưa ra?', openSource: 'Xem nguồn', done: 'Xong',
   },
@@ -64,7 +64,7 @@ export const t = defineCopy('respond', {
     subtitleSuffix: '来源会一直与你的写作关联', sourceLabel: '来源 · {kind}',
     sourceKindVideo: '视频文字稿', sourceKindAudio: '音频文字稿', sourceKindArticle: '文章', sourceKindBook: '书籍', sourceKindText: '文本',
     placeholder: '写下你的回应…', wordsLabel_other: '字', getFeedback: '获取点评',
-    wordsTile: '字数', usesSource: '用到来源', fixesLabel: '待修改', nextStepLabel: '下一步',
+    wordsTile: '字数', fixesLabel: '待修改', nextStepLabel: '下一步',
     feedbackError: '点评功能暂时不可用。',
     revise: '修改', askOrenaWhy: '问问 Orena 为什么', askWhyQuestion: '为什么会给出这条反馈？', openSource: '查看来源', done: '完成',
   },

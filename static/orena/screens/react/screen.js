@@ -6,7 +6,7 @@
      correct + two real distractors), never a generated question (rule 40); a line with fewer than
      two other real translations goes straight from Listen to Reveal.
    - Result: "Phrase reused?" is a real containment check on the catalogued phrase; "Intent
-     achieved?" is unmeasured (the coaching route does not score) and shows 0 (rule 40). The frame's
+     achieved?" shows only when the coaching returned a real verdict (S-26), and neither tile is drawn as a bare 0 (rule 40, HX-2). The frame's
      "One natural alternative" is the coaching's own `another_way`; what carried / what would land
      differently / the next attempt are the same real answer, drawn in the frame's own field style.
    - The Listen step's waveform is the frame's, dim until the line is playing (the frame binds it to
@@ -29,7 +29,7 @@ import { micGate, openMicState } from '../mic/sheet.js';
 import { saveResponse } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { openMedia } from '../../product/media-source.js';
-import { usefulPhrase, buildUnderstandCheck, mapCoaching, phraseReused, waveBars, promptKey } from './model.js';
+import { usefulPhrase, buildUnderstandCheck, mapCoaching, phraseReused, resultTiles, waveBars, promptKey } from './model.js';
 
 const STEPS = ['stepListen', 'stepUnderstand', 'stepReveal', 'stepContext', 'stepResult'];
 const WAVE_BARS = 32;
@@ -208,13 +208,15 @@ export default async function reactReuse(element, ctx) {
   }
   function resultMarkup() {
     const reused = phraseReused(phrase, answerText);
+    const tiles = resultTiles(reused, result?.intent);
     const alternative = result?.available ? (result.anotherWay || result.sayAgain) : '';
     return html`
       <div class="s-react__echo" lang="${langAttr(language)}">“${answerText}”</div>
-      <div class="s-react__tiles">
-        <div class="s-react__tile"><div class="s-react__tile-label">${t('intentAchieved')}</div><div class="s-react__tile-value">0</div></div>
-        <div class="s-react__tile${reused === true ? ' is-good' : ''}"><div class="s-react__tile-label">${t('phraseReused')}</div><div class="s-react__tile-value${reused === true ? ' is-good' : reused === false ? ' is-warn' : ''}">${reused == null ? '0' : reused ? t('yes') : t('notThisTime')}</div></div>
-      </div>
+      ${tiles.length ? html`<div class="s-react__tiles">
+        ${tiles.map((tile) => tile.key === 'intentAchieved'
+          ? html`<div class="s-react__tile${tile.verdict === 'yes' ? ' is-good' : ''}"><div class="s-react__tile-label">${t('intentAchieved')}</div><div class="s-react__tile-value${tile.verdict === 'yes' ? ' is-good' : ''}">${t(`intent_${tile.verdict}`)}</div></div>`
+          : html`<div class="s-react__tile${tile.good ? ' is-good' : ''}"><div class="s-react__tile-label">${t('phraseReused')}</div><div class="s-react__tile-value${tile.good ? ' is-good' : ' is-warn'}">${t(tile.valueKey)}</div></div>`)}
+      </div>` : ''}
       ${resultError ? html`<div class="s-react__empty">${t('coachingError')}</div>`
         : !result?.available ? html`<div class="s-react__empty">${t('notPrepared')}</div>`
         : html`
@@ -225,10 +227,10 @@ export default async function reactReuse(element, ctx) {
   }
 
   /* --------------------------------------------------------------- paint ---- */
-  const onward = (label) => html`<span class="s-react__spacer"></span><button type="button" class="o-btn o-btn--primary s-react__cta" data-next>${label}${raw(icon('arrow-right', { size: 16 }))}</button>`;
+  const onward = (label, extra = '') => html`<span class="s-react__spacer"></span><button type="button" class="o-btn o-btn--primary s-react__cta${extra}" data-next>${label}${raw(icon('arrow-right', { size: 16 }))}</button>`;
 
   function paintFooter() {
-    if (step === 0) mount(footEl, onward(t('continueLabel')));
+    if (step === 0) mount(footEl, onward(t('continueLabel'), ' s-react__cta--listen'));
     else if (step === 1 && check) {
       mount(footEl, picked != null
         ? html`<span class="s-react__verdict ${picked === check.correctIndex ? 'is-correct' : 'is-wrong'}">${picked === check.correctIndex ? t('correctLabel') : t('incorrectLabel')}</span>${onward(t('reveal'))}`

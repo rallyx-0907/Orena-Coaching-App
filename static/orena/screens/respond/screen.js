@@ -184,7 +184,6 @@ export default async function respondToContent(element, ctx) {
       mount(regionEl, html`
         <div class="s-respond__tiles">
           <div class="s-respond__tile"><div class="s-respond__tile-label">${t('wordsTile')}</div><div class="s-respond__tile-value">${wordCountOf(text, language)}</div></div>
-          <div class="s-respond__tile"><div class="s-respond__tile-label">${t('usesSource')}</div><div class="s-respond__tile-value">0</div></div>
           <div class="s-respond__tile"><div class="s-respond__tile-label">${t('fixesLabel')}</div><div class="s-respond__tile-value">${result.issues.length}</div></div>
         </div>
         ${result.issues.map(fixRow)}

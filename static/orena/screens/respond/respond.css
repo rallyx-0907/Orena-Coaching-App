@@ -129,7 +129,7 @@
 .s-respond__btn:hover { background: var(--surface2); }
 
 /* ---- Result ---- */
-.s-respond__tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.s-respond__tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .s-respond__tile { padding: 14px; border-radius: 16px; background: var(--surface2); }
 .s-respond__tile-label { font-size: 12px; color: var(--muted); }
 .s-respond__tile-value { font-size: 20px; font-weight: 700; margin-top: 2px; }

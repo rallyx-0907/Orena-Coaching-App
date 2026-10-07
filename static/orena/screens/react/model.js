@@ -9,6 +9,8 @@
    Ollama model, confirmed live end to end on the running app during the finish pass, 2026-09-29 -
    the shape below is read field-for-field from that function's own `return {...}`, matching the
    fixture). */
+import { situationJudgements } from '../situation/model.js';
+
 
 /* This lesson's own real vocabulary term found inside one segment - the same real match
    screens/listening/model.js#vocabularyForSegment makes, duplicated here (not imported: a
@@ -90,6 +92,17 @@ export function mapCoaching(raw) {
     anotherWay: String(raw?.another_way || ''),
     nextAttempt: String(raw?.next_attempt || ''),
     sayAgain: String(raw?.say_again || ''),
+    // The coaching's own intent verdict, only when the provider returned a valid one (S-26); never a default.
+    intent: situationJudgements(raw).intent,
   };
+}
+
+/* The Result's two tiles, only the ones with a real measurement (X-03, HX-2 A): "Intent achieved?" when the
+   coaching returned a verdict, "Phrase reused?" when the line has a catalogued phrase. A bare 0 is never shown. */
+export function resultTiles(reused, intent) {
+  const tiles = [];
+  if (intent) tiles.push({ key: 'intentAchieved', verdict: intent.verdict });
+  if (reused != null) tiles.push({ key: 'phraseReused', good: reused === true, valueKey: reused ? 'yes' : 'notThisTime' });
+  return tiles;
 }
 
