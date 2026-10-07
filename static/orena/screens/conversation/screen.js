@@ -34,10 +34,10 @@ import { logSpeakingTask } from '../../product/speaking-session.js';
 import { appendConversationTurn, loadConversation } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import {
-  conversation, learnerTurn, partnerTurn, pendingTurn, conversationRequest, restoreConversation, MAX_CONVERSATION_TURNS,
+  conversation, learnerTurn, partnerTurn, pendingTurn, conversationRequest, restoreConversation, MAX_CONVERSATION_TURNS, CONVERSATION_LEVELS,
 } from '../../product/conversation.js';
 import { t } from './copy.js';
-import { situations, turnSituation, learnerTurnCount, fixesOf, strengthsOf } from './model.js';
+import { situations, defaultLevel, turnSituation, learnerTurnCount, fixesOf, strengthsOf } from './model.js';
 
 function judgementLabel(judgement) {
   return t.has(`judge_${judgement}`) ? t(`judge_${judgement}`) : '';
@@ -57,6 +57,7 @@ export default async function conversationScreen(element, ctx) {
 
   const bank = situations(language);
   let pickedKey = bank[0]?.key || ''; // the frame opens with its first scenario chosen
+  let level = defaultLevel(ctx.context.level); // the Difficulty chip: B1 / B2 / C1, opening on the learner's level
   let convo = null; // the product/conversation.js state, once started
   let busy = false;
   let recording = false;
@@ -91,19 +92,20 @@ export default async function conversationScreen(element, ctx) {
     if (!alive()) return null;
     const restored = raw ? restoreConversation(raw, language) : null;
     if (restored && !local) memory.conversation(restored);
-    return restored;
+    /* A conversation saved without a level (older, or from the account) carries on at the level the
+       chips open on, so every further turn still says which level to speak at. */
+    return restored ? { ...restored, level: restored.level || level } : null;
   }
 
   const isOver = () => Boolean(convo) && (convo.ended || convo.turns.length >= MAX_CONVERSATION_TURNS);
 
   function headMarkup() {
     const item = convo ? bank.find((entry) => entry.title === convo.title) : null;
-    const sub = convo ? (item ? `${item.title} · ${item.cue}` : convo.title) : '';
+    const sub = convo ? [item ? item.title : convo.title, item?.cue, convo.level].filter(Boolean).join(' · ') : '';
     const subline = convo ? (sub ? html`<div class="s-conv__sub" lang="${lang}">${sub}</div>` : '') : html`<div class="s-conv__sub">${t('setupSubtitle')}</div>`;
     return html`<div class="s-conv__head">
       <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${ts('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
       <div class="s-conv__headcol"><h1 class="s-conv__title">${ts('conversation')}</h1>${subline}</div>
-      ${convo && !isOver() ? html`<button type="button" class="o-btn o-btn--text s-conv__end" data-end>${t('endConversation')}</button>` : ''}
     </div>`;
   }
 
@@ -119,6 +121,10 @@ export default async function conversationScreen(element, ctx) {
       <div>
         <div class="s-conv__label">${t('situationLabel')}</div>
         <div class="s-conv__scenarios">${bank.map(scenarioMarkup)}</div>
+      </div>
+      <div>
+        <div class="s-conv__label">${t('difficultyLabel')}</div>
+        <div class="s-conv__levels">${CONVERSATION_LEVELS.map((item) => html`<button type="button" class="s-conv__level" aria-pressed="${item === level ? 'true' : 'false'}" data-level="${item}">${item}</button>`)}</div>
       </div>
       <button type="button" class="o-btn o-btn--primary o-btn--block s-conv__start" data-start>${t('startCta')}</button>
     </section></div>`;
@@ -181,17 +187,21 @@ export default async function conversationScreen(element, ctx) {
     </div>`;
   }
 
+  /* "End" sits in the composer row once at least one turn exists (D-139 HD-11). */
+  const endButton = () => (convo.turns.length ? html`<button type="button" class="o-btn o-btn--text s-conv__end" data-end>${t('endConversation')}</button>` : '');
+
   function composerMarkup() {
     if (isOver()) return '';
     const failed = Boolean(pendingTurn(convo)) && !busy; // the reply was requested and the request itself failed
     if (failed) {
-      return html`<div class="s-conv__composer"><span class="s-conv__retry-text" role="alert">${t('replyFailed')}</span><button type="button" class="o-btn o-btn--secondary s-conv__retry-btn" data-retry>${t('retryCta')}</button></div>`;
+      return html`<div class="s-conv__composer"><span class="s-conv__retry-text" role="alert">${t('replyFailed')}</span><button type="button" class="o-btn o-btn--secondary s-conv__retry-btn" data-retry>${t('retryCta')}</button>${endButton()}</div>`;
     }
     const locked = busy || transcribing;
     return html`<form class="s-conv__composer" data-reply>
       <input type="text" class="s-conv__input" data-input placeholder="${transcribing ? t('transcribing') : t('replyPlaceholder')}" value="${draft}" lang="${lang}" autocomplete="off" ${locked ? 'disabled' : ''}>
       <button type="button" class="s-conv__mic" data-mic aria-pressed="${recording ? 'true' : 'false'}" aria-label="${recording ? t('micStop') : t('mic')}" ${locked ? 'disabled' : ''}>${raw(icon('mic', { size: 18 }))}</button>
       <button type="submit" class="s-conv__send" aria-label="${t('send')}" ${locked ? 'disabled' : ''}>${raw(icon('arrow-right', { size: 18 }))}</button>
+      ${endButton()}
     </form>`;
   }
 
@@ -214,6 +224,9 @@ export default async function conversationScreen(element, ctx) {
     if (!convo) {
       element.querySelectorAll('[data-situation]').forEach((button) => {
         button.onclick = () => { pickedKey = button.dataset.situation; paint(); };
+      });
+      element.querySelectorAll('[data-level]').forEach((button) => {
+        button.onclick = () => { level = button.dataset.level; paint(); };
       });
       element.querySelector('[data-start]').onclick = () => startConversation();
       return;
@@ -250,7 +263,7 @@ export default async function conversationScreen(element, ctx) {
   function startConversation() {
     const picked = bank.find((item) => item.key === pickedKey);
     if (!picked) return;
-    convo = conversation({ id: `conversation:${crypto.randomUUID()}`, language, title: picked.title, situation: picked.prompt });
+    convo = conversation({ id: `conversation:${crypto.randomUUID()}`, language, title: picked.title, situation: picked.prompt, level });
     coaching.clear();
     draft = '';
     remember();

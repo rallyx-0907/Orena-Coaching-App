@@ -1,7 +1,9 @@
 // An ordered exchange, independent of recording, routing or a provider. A failed
 // reply leaves one pending learner turn. Retrying never adds that turn again.
 export const MAX_CONVERSATION_TURNS = 24;
-export function conversation({ id, language, title, situation }) {
+export const CONVERSATION_LEVELS = ['B1', 'B2', 'C1'];
+const cleanLevel = (level) => (CONVERSATION_LEVELS.includes(level) ? level : '');
+export function conversation({ id, language, title, situation, level = '' }) {
   if (
     !/^conversation:[\w-]+$/.test(id) ||
     !['en', 'zh'].includes(language) ||
@@ -13,6 +15,7 @@ export function conversation({ id, language, title, situation }) {
     language,
     title: String(title).slice(0, 240),
     situation: situation.trim().slice(0, 1200),
+    level: cleanLevel(level),
     turns: [],
     ended: false,
   };
@@ -115,6 +118,7 @@ export function conversationRequest(state, support) {
     target_language: support,
     situation: state.situation,
     reply_to: pendingTurn(state).id,
+    ...(cleanLevel(state.level) ? { level: state.level } : {}),
     turns: state.turns.map(({ id, role, text }) => ({ id, role, text })),
   };
 }

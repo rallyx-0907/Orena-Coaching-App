@@ -48,6 +48,7 @@
 }
 .s-conv__end {
   flex: none;
+  padding: 0 8px;
 }
 
 /* ---- Setup ---- */
@@ -97,6 +98,27 @@
 .s-conv__scenario-cue {
   font-size: 13px;
   color: var(--muted);
+}
+/* The frame's own chip() pair, as Free Talk's duration pills: active is accent on accent-soft with
+   a tint2 ring, inactive is muted on surface with border2. */
+.s-conv__levels {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+.s-conv__level {
+  padding: 11px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-conv__level[aria-pressed='true'] {
+  border-color: var(--tint2);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 .s-conv__start {
   padding: 18px;

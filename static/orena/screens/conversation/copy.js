@@ -1,8 +1,8 @@
 /* Frame 30 "Conversation" (pinned design, focus route 'conv'). Interface layer throughout - the
    partner's own reply text is real, generated learning-language content, not chrome. Titles
    already in copy/shell.js (shellCopy) are reused instead of repeated here: `conversation`, `back`.
-   Rule 40/44: the frame's own B1/B2/C1 difficulty picker is dropped (cosmetic even in the source,
-   model.js's header comment) rather than reproduced as an inert control. The setup-state header
+   D-139 HD-10: the frame's B1/B2/C1 difficulty chips are drawn and are real - the chosen level
+   travels with every turn and sets the partner's language (`ConversationIn.level`). The setup-state header
    line ("Pick a scenario · partner replies naturally, coaching is separate") is drawn (S-21). The frame draws only a fixed Scenario picker (a
    2-column grid of title + role cards) - no free-text "describe your own situation" field; real
    content (`content/voice-invitations.js`'s 3 items, each carrying the `cue` line the card's role
@@ -11,7 +11,7 @@
 import { defineCopy } from '../../copy/index.js';
 
 const KEYS = [
-  'situationLabel', 'setupSubtitle', 'startCta',
+  'situationLabel', 'difficultyLabel', 'setupSubtitle', 'startCta',
   'thinking', 'transcribing', 'ended', 'turns', 'turnsLabel', 'howDidItLand', 'coachingWorking', 'coachingUnavailable',
   'carried', 'landed', 'anotherWay', 'nextAttempt', 'replyPlaceholder', 'send', 'mic', 'micStop', 'endConversation',
   'newScenario', 'finish', 'replyFailed', 'retryCta',
@@ -24,6 +24,7 @@ export const t = defineCopy('conversation', {
   layers: Object.fromEntries(KEYS.map((key) => [key, 'interface'])),
   en: {
     situationLabel: 'Scenario',
+    difficultyLabel: 'Difficulty',
     setupSubtitle: 'Pick a scenario · partner replies naturally, coaching is separate',
     startCta: 'Start conversation',
     thinking: 'Thinking…', transcribing: 'Getting what you said…', ended: 'Conversation complete', turns_one: '{n} turn', turns_other: '{n} turns', turnsLabel: 'Turns',
@@ -38,6 +39,7 @@ export const t = defineCopy('conversation', {
   },
   vi: {
     situationLabel: 'Tình huống',
+    difficultyLabel: 'Độ khó',
     setupSubtitle: 'Chọn một tình huống · đối tác đáp tự nhiên, phần góp ý tách riêng',
     startCta: 'Bắt đầu hội thoại',
     thinking: 'Đang suy nghĩ…', transcribing: 'Đang lấy nội dung bạn nói…', ended: 'Hội thoại đã hoàn tất', turns_other: '{n} lượt', turnsLabel: 'Lượt',
@@ -52,6 +54,7 @@ export const t = defineCopy('conversation', {
   },
   zh: {
     situationLabel: '情境',
+    difficultyLabel: '难度',
     setupSubtitle: '选择一个情境 · 对方自然回应，反馈另行提供',
     startCta: '开始对话',
     thinking: '正在思考…', transcribing: '正在获取你说的内容…', ended: '对话已完成', turns_other: '{n} 轮', turnsLabel: '轮数',

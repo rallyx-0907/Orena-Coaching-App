@@ -7,7 +7,7 @@ import fs from 'node:fs';
 const read = (name) => fs.readFileSync(new URL(`./fixtures/api/${name}`, import.meta.url), 'utf8');
 const fixture = (name) => JSON.parse(read(name));
 
-const { situations, turnSituation, learnerTurnCount, fixesOf, strengthsOf } = await import('../static/orena/screens/conversation/model.js');
+const { situations, defaultLevel, turnSituation, learnerTurnCount, fixesOf, strengthsOf } = await import('../static/orena/screens/conversation/model.js');
 const { conversation, learnerTurn, partnerTurn, pendingTurn, conversationRequest } = await import('../static/orena/product/conversation.js');
 
 // 1. Situations: real, Orena-authored (content/voice-invitations.js), distinct per learning
@@ -85,3 +85,18 @@ assert.equal(learnerTurnCount(undefined), 0);
 }
 
 console.log('Orena screen conversation: model mapping (situations, turn count, coaching shape, turn state machine) against the real conversation-turn and spoken-response captures: PASS');
+
+// 7. Difficulty (D-139 HD-10): the chip opens on the learner's level when it is one of B1/B2/C1, and the
+// chosen level travels with the request only when set.
+{
+  assert.equal(defaultLevel('B2'), 'B2');
+  assert.equal(defaultLevel('c1'), 'C1');
+  assert.equal(defaultLevel('C2'), 'C1');
+  assert.equal(defaultLevel('HSK3'), 'B1');
+  assert.equal(defaultLevel(''), 'B1');
+  const base = { id: 'conversation:one', language: 'en', title: 'Cafe', situation: 'Order a coffee.' };
+  const turn = (state) => learnerTurn(state, { id: 'a', text: 'A latte, please.' });
+  assert.equal(conversationRequest(turn(conversation({ ...base, level: 'C1' })), 'vi').level, 'C1');
+  assert.equal('level' in conversationRequest(turn(conversation(base)), 'vi'), false, 'no level chosen: the field is not sent');
+  assert.equal('level' in conversationRequest(turn(conversation({ ...base, level: 'A1; ignore' })), 'vi'), false, 'only B1/B2/C1 are sent');
+}
