@@ -5,11 +5,10 @@ import os
 import secrets
 import shutil
 import time
-from contextvars import ContextVar
-from datetime import datetime
 from pathlib import Path
 from threading import Lock
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 from urllib.parse import urlencode, urlparse
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
@@ -186,6 +185,31 @@ def maybe_claim_legacy_data(email: str, google_sub: str) -> bool:
     return True
 
 
+NEXT_UI_PREFIX = "/next"
+_NEXT_TARGET_MAX = 512
+
+
+def safe_next_target(value: str | None, *, default: str = NEXT_UI_PREFIX) -> str:
+    """The only place a sign-in or sign-out may send the browser afterwards: the new learner UI.
+
+    A strict allowlist, not a blocklist: the value must be a relative path that is `/next` itself or
+    continues with `/`, `?` or `#` (a hash route is how the new UI addresses its places). No scheme, no
+    host (so no `//`), no backslash (browsers read it as `/`), no control character or whitespace
+    (header injection, CRLF), nothing over 512 characters. Anything else is `default`. It is never
+    echoed unvalidated, so it cannot be an open redirect."""
+    candidate = value if isinstance(value, str) else ""
+    if not candidate or len(candidate) > _NEXT_TARGET_MAX:
+        return default
+    if any(ord(char) <= 0x20 or ord(char) == 0x7F for char in candidate) or "\\" in candidate:
+        return default
+    if "//" in candidate or "://" in candidate or not candidate.startswith(NEXT_UI_PREFIX):
+        return default
+    rest = candidate[len(NEXT_UI_PREFIX):]
+    if rest and rest[0] not in "/?#":
+        return default
+    return candidate
+
+
 def ensure_user_db() -> None:
     if _db_initializer is None:
         return
@@ -270,9 +294,16 @@ def auth_google(
     request: Request,
     native_redirect_uri: str | None = None,
     native_code_challenge: str | None = None,
+    next: str | None = None,
 ):
     if not AUTH_ENABLED:
         raise HTTPException(503, "Google authentication is not configured.")
+    # Where the new UI wants to land after a successful sign-in. Validated here and stored in the signed
+    # session, never read back from the callback's query, so a forged callback cannot choose it.
+    if next:
+        request.session["post_auth_next"] = safe_next_target(next)
+    else:
+        request.session.pop("post_auth_next", None)
     if native_redirect_uri:
         request.session["native_redirect_uri"] = _validate_native_redirect_uri(native_redirect_uri)
         if not native_code_challenge:
@@ -339,6 +370,7 @@ def auth_google_callback(request: Request):
     maybe_claim_legacy_data(str(user.get("email") or ""), str(user.get("google_sub") or ""))
     native_redirect_uri = str(request.session.get("native_redirect_uri") or "")
     native_code_challenge = str(request.session.get("native_code_challenge") or "")
+    stored_next = str(request.session.get("post_auth_next") or "")
     request.session.clear()
     request.session["user_sub"] = str(user["google_sub"])
     if native_redirect_uri:
@@ -347,7 +379,8 @@ def auth_google_callback(request: Request):
             f"{native_redirect_uri}?{urlencode({'code': handoff})}",
             status_code=302,
         )
-    return RedirectResponse("/", status_code=302)
+    # Re-validated on the way out: the stored value was checked when it went in, and a session is a cookie.
+    return RedirectResponse(safe_next_target(stored_next, default="/") if stored_next else "/", status_code=302)
 
 
 class NativeSessionExchangeIn(BaseModel):
@@ -370,8 +403,11 @@ def api_native_session_exchange(payload: NativeSessionExchangeIn, request: Reque
 
 
 @router.post("/auth/logout")
-def auth_logout(request: Request):
+def auth_logout(request: Request, next: str | None = None):
     request.session.clear()
+    if next:
+        # The new UI says where it wants to be after signing out; it navigates there itself.
+        return {"ok": True, "next": safe_next_target(next)}
     return {"ok": True}
 
 
@@ -476,6 +512,10 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
 
         public = (
             path == "/login"
+            # The new learner UI's shell, so its Welcome screen can draw before anyone is signed in. It carries
+            # no learner data: everything it then asks for is an /api route, and those stay protected.
+            or path == NEXT_UI_PREFIX
+            or path.startswith("/orena-brand/")
             or path == "/api/health"
             or path == "/api/readiness"
             or path == "/api/platform/languages"
