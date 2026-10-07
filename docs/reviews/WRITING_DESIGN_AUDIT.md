@@ -155,3 +155,32 @@ A real review, a failed review, Apply / Accept / re-review (they change the stor
 continuation card with a real draft, Chinese writing (Hanzi counter, ZH evaluator refresh), the Skill Hub Write on the design's phone (not reachable in the
 prototype), Context Rewrite and Timed Writing on the phone, and any state with real account essays (the account has none; result states used the repository's
 captured fixtures through a browser-side mock).
+
+
+## Lane defaults pending human confirmation
+
+2026-10-07, reason: human: continue without asking; follows D-139 precedent. Provisional and reversible; the human may
+override any of them. Implemented on `codex/work` in the commits named below.
+
+| Id | Default | What was done |
+| --- | --- | --- |
+| HW-1 B (W-01, W-02, W-18) | hubs list the built Write modes in the design's group, with the design's one-line description and no duration | Practice Hub tile and Skill Hub row: "Write freely" group with Continue draft (only while a draft waits; "title - n words"), Prompt, Free Writing, Your Topic; description translated EN / VI / ZH; Write has no measured duration (N-22), so none is drawn. Context Rewrite and Timed Writing stay hidden (not built, D-101 H9). Icons are the design's (`pen-line`, `notebook-pen`). Free Writing opens the room titled "Free writing" (an existing draft is never emptied, so a waiting draft is what opens). |
+| HW-2 B (W-04) | Prompt and Your Topic open Prompt Setup first, then the room | `#/write?setup=prompt` / `setup=topic`: the room mounts, the sheet opens over it (Your Topic puts the cursor in the Prompt field), the query is removed from the address so a reload does not reopen it. Free Writing and Continue draft open the room without the sheet. Prompt and Your Topic differ only by that cursor: the design also empties the prompt for Your Topic, which here would delete a waiting draft's task. |
+| HW-3 A (W-05) | register and target stay the learner's intent for the visit, shown in the header, not sent to the evaluator | Header meta is now "Prompt - level - register - ~n words - version" as the design draws, from the chosen values only (no invented defaults); `reviewPayload` is unchanged; the helper line stays out (false for register). |
+| HW-4 A (W-08, W-09) | system notes follow the interface language; AI text stays as returned | `noReviewYet`, `estimatedRange`, `tooShort*`, `tooLong*`, `appliedToast`, `reviewFailed` moved support to interface (gates `test_orena_copy`, `test_orena_copy_layers`; `test_orena_screen_writing` now checks them per interface language). The Write Recommended card is composed in the interface language from the recommender's intent and focus category (it returns its own sentences in the learning language); a category with no interface label is not named. The evaluator's overall sentence, strength notes and finding WHY / HOW are unchanged. |
+| HW-5 A, HW-6 A, HW-7 A | keep current behaviour | no work |
+| W-17 | Respond to Content: no entry | recorded in `UI_BACKEND_GAPS.md` (needs a content source decision); the Respond group is absent. |
+
+Defects fixed without a decision: W-03 (Continue showed one card per stored conversation record; same scenario now one
+card, newest, with a node test), W-10 (finding popover hangs under the clicked line box of a wrapped span, kept inside the
+card, re-placed when its own scrollbar narrows the card; measured inside the card with no horizontal scroll and no page
+overflow at 1920x1080, 1366x768, 390x844, 360x740, EN dark), W-14 (a direct load of `#/write*` lights Practice Hub, as the
+speaking rooms), W-13 (toast copy as the design, "Dismissed - it won't count as an open issue", translated; made true for
+the visit by removing a dismissed finding from the lists, dimension counts and Next bar; it is not persisted, see
+`UI_BACKEND_GAPS.md`). W-02 skin: group title (13 / 600 muted, 8px, 20px between groups) and tile / row skin reuse the Speak
+measurement (same classes).
+
+Left as they are: W-06 (truthful: "Saved on this device"), W-07 (D-098.6), W-11 and W-12 (HW-5 / HW-6 A), W-15 and W-16
+(HW-7 A), W-19 (the cross-skill Orena pass; Orena parked). Test note: `test_orena_writing_workspace` still fails only on its
+assertion that reads the human's uncommitted `DESIGN_CONTRACT.md`; with the committed contract it passes, so this change does
+not alter it.

@@ -328,11 +328,12 @@ assert.equal(saveTone('device').color, 'var(--green)');
     vi: { tooShortWords: 'Viết ít nhất 2 từ để yêu cầu nhận xét.', tooShortHan: 'Viết ít nhất 2 chữ Hán để yêu cầu nhận xét.' },
     zh: { tooShortWords: '至少写 2 个词才能请求点评。', tooShortHan: '至少写 2 个汉字才能请求点评。' },
   };
-  for (const support of ['en', 'vi', 'zh']) {
-    copy.setLanguages({ ui: 'en', support });
-    for (const [key, sentence] of Object.entries(said[support])) {
-      assert.equal(t.plural(key, 2), sentence, `${support} ${key}`);
-      assert.ok(!/\b10\b/.test(t.plural(key, 2)), `${support} ${key} no longer says ten`);
+  // A system note follows the INTERFACE language, whatever the support language is (W-08, D-139 HD-14).
+  for (const ui of ['en', 'vi', 'zh']) {
+    copy.setLanguages({ ui, support: 'en' });
+    for (const [key, sentence] of Object.entries(said[ui])) {
+      assert.equal(t.plural(key, 2), sentence, `${ui} ${key}`);
+      assert.ok(!/10/.test(t.plural(key, 2)), `${ui} ${key} no longer says ten`);
     }
   }
   copy.setLanguages({ ui: 'en', support: 'en' });

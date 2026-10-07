@@ -1,7 +1,8 @@
-/* Writing's own words (D-079, Design Contract rules 9, 26, 50). Chrome (labels, buttons, states)
-   is 'interface'; text that explains something to the learner (why the review pane is empty, what
-   the estimated range rests on, why Review is off, what applying a fix did not update) is
-   'support'.
+/* Writing's own words (D-079, Design Contract rules 9, 26, 50). Every word the screen itself says
+   - labels, buttons, states, and the notes that explain something (why the review pane is empty, what
+   the estimated range rests on, why Review is off, what applying a fix did not update) - is
+   'interface' (W-08, the D-139 HD-14 precedent: system notes follow the interface language). What the
+   evaluator writes (the overall sentence, strength notes, a finding's WHY / HOW) stays as it returns it.
 
    Rule 50 drops, each recorded in SCRATCH/reports/write.md: the empty review pane's frame sentence
    ("Press Review when you want feedback ...") is cut to the one clause a label could not say (the
@@ -16,21 +17,22 @@ const LAYERS = {
   promptFallback: 'interface', versionLabel: 'interface', versionNone: 'interface',
   charsOnly: 'interface', wordsOnly: 'interface', hanziCount: 'interface', savedShort: 'interface',
   savedDevice: 'interface', savedAccount: 'interface',
-  noReviewYet: 'support', reviewing: 'interface',
+  freeTitle: 'interface', metaPrefix: 'interface',
+  noReviewYet: 'interface', reviewing: 'interface',
   editDraft: 'interface', strengths: 'interface',
   priorityIssues: 'interface', otherIssues: 'interface',
   stateOpen: 'interface', stateFixed: 'interface',
   feedbackSummary: 'interface', outOf100: 'interface',
-  estimatedRange: 'support', nextPrefix: 'interface', nextOpenFirst: 'interface',
+  estimatedRange: 'interface', nextPrefix: 'interface', nextOpenFirst: 'interface',
   keep: 'interface', kept: 'interface',
   accept: 'interface', applySuggestion: 'interface', appliedCheck: 'interface', askDeeper: 'interface',
   whyTab: 'interface', howTab: 'interface', reusablePattern: 'interface', anotherExample: 'interface',
   dimStrong: 'interface', dimFixes: 'interface',
   kindGrammar: 'interface', kindVocabulary: 'interface', kindPunctuation: 'interface', kindRegister: 'interface', kindNaturalness: 'interface', kindCoherence: 'interface',
   legendPriority: 'interface', legendOther: 'interface', legendStrength: 'interface',
-  tooShortWords: 'support', tooShortHan: 'support', tooShortKanaHan: 'support',
-  moreWords: 'interface', moreHan: 'interface', moreKanaHan: 'interface', tooLongCharacters: 'support', tooLongBytes: 'support', tooLongLines: 'support',
-  dismissedToast: 'interface', appliedToast: 'support', reviewFailed: 'support',
+  tooShortWords: 'interface', tooShortHan: 'interface', tooShortKanaHan: 'interface',
+  moreWords: 'interface', moreHan: 'interface', moreKanaHan: 'interface', tooLongCharacters: 'interface', tooLongBytes: 'interface', tooLongLines: 'interface',
+  dismissedToast: 'interface', appliedToast: 'interface', reviewFailed: 'interface',
   promptSetupTitle: 'interface', promptFieldLabel: 'interface', levelGroupLabel: 'interface',
   registerGroupLabel: 'interface', targetGroupLabel: 'interface', writeCta: 'interface',
   registerInformal: 'interface', registerNeutral: 'interface', registerFormal: 'interface',
@@ -49,6 +51,7 @@ export const t = defineCopy('writing', {
   en: {
     setupBtn: 'Setup', reviewCta: 'Review', reviewAgainCta: 'Review again', reviewingCta: 'Reviewing…',
     draftTab: 'Draft', reviewTab: 'Review',
+    freeTitle: 'Free writing', metaPrefix: 'Prompt',
     promptFallback: 'Untitled draft', versionLabel: 'v{n}', versionNone: 'unreviewed',
     charsOnly_one: '{n} character', charsOnly_other: '{n} characters',
     wordsOnly_one: '{n} word', wordsOnly_other: '{n} words',
@@ -84,7 +87,7 @@ export const t = defineCopy('writing', {
     tooLongCharacters: 'This draft is over the character limit.',
     tooLongBytes: 'This draft is too long to review.',
     tooLongLines: 'This draft has too many lines to review.',
-    dismissedToast: 'Dismissed',
+    dismissedToast: "Dismissed · it won't count as an open issue",
     appliedToast: 'Applied — re-review to update the findings', reviewFailed: 'Could not get a review. Try again.',
     promptSetupTitle: 'Prompt setup', promptFieldLabel: 'Prompt', levelGroupLabel: 'Level',
     registerGroupLabel: 'Register', targetGroupLabel: 'Target length',
@@ -102,6 +105,7 @@ export const t = defineCopy('writing', {
   vi: {
     setupBtn: 'Thiết lập', reviewCta: 'Nhận xét', reviewAgainCta: 'Nhận xét lại', reviewingCta: 'Đang nhận xét…',
     draftTab: 'Bản viết', reviewTab: 'Nhận xét',
+    freeTitle: 'Viết tự do', metaPrefix: 'Đề bài',
     promptFallback: 'Bản viết chưa đặt tên', versionLabel: 'v{n}', versionNone: 'chưa nhận xét',
     charsOnly_other: '{n} ký tự',
     wordsOnly_other: '{n} từ',
@@ -131,7 +135,7 @@ export const t = defineCopy('writing', {
     tooLongCharacters: 'Bài viết này vượt quá số ký tự cho phép.',
     tooLongBytes: 'Bài viết này quá dài để nhận xét.',
     tooLongLines: 'Bài viết này có quá nhiều dòng để nhận xét.',
-    dismissedToast: 'Đã bỏ qua',
+    dismissedToast: 'Đã bỏ qua · sẽ không tính là lỗi còn mở',
     appliedToast: 'Đã áp dụng — hãy nhận xét lại để cập nhật các lỗi', reviewFailed: 'Không nhận được nhận xét. Hãy thử lại.',
     promptSetupTitle: 'Thiết lập đề bài', promptFieldLabel: 'Đề bài', levelGroupLabel: 'Trình độ',
     registerGroupLabel: 'Văn phong', targetGroupLabel: 'Độ dài mục tiêu',
@@ -149,6 +153,7 @@ export const t = defineCopy('writing', {
   zh: {
     setupBtn: '设置', reviewCta: '点评', reviewAgainCta: '重新点评', reviewingCta: '点评中…',
     draftTab: '草稿', reviewTab: '点评',
+    freeTitle: '自由写作', metaPrefix: '题目',
     promptFallback: '未命名的草稿', versionLabel: 'v{n}', versionNone: '未点评',
     charsOnly_other: '{n} 字符',
     wordsOnly_other: '{n} 词',
@@ -178,7 +183,7 @@ export const t = defineCopy('writing', {
     tooLongCharacters: '这篇草稿超过了字符上限。',
     tooLongBytes: '这篇草稿太长，无法点评。',
     tooLongLines: '这篇草稿行数太多，无法点评。',
-    dismissedToast: '已忽略',
+    dismissedToast: '已忽略 · 不会再算作待改问题',
     appliedToast: '已采用 — 重新点评以更新问题列表', reviewFailed: '未能获取点评，请重试。',
     promptSetupTitle: '题目设置', promptFieldLabel: '题目', levelGroupLabel: '级别',
     registerGroupLabel: '语域', targetGroupLabel: '目标字数',

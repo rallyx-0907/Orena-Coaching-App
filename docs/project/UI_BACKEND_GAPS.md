@@ -4959,3 +4959,20 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
     diagnosis and does not modify the shared YouTube acquisition transport. After the transport fix, the Speaking side
     needs only a re-run of `scripts/backfill_model_clips.py` (bounded, idempotent) on the runtime that holds the
     imports.
+
+
+## Writing design audit (D-129), 2026-10-07
+
+- **W-17 Respond to Content has no Write-hub entry.** The design lists "Respond to Content" ("From an article or video")
+  under Write > Respond and opens its Respond frame with a source. Its Respond frame draws no hand-off into the Writing
+  room, and the built Respond room (`#/respond/:id`) needs a content id (`media:<lesson>` or `<kind>:<id>`) that only
+  Listening's end / Reader's "More" menu supply. Nothing in the hubs can name "which content" without choosing for the
+  learner (a last-opened-content rule would be a product decision, like Speaking's last line, D-139 HD-3). So the hubs do
+  not list it (D-101 H9) and the Write hub's "Respond" group is absent. Needed: a decision on the source of the content
+  (recent content, or the content chooser as Pronunciation / Dictation use) before the entry can be drawn.
+- **W-03 Continue learning shows one card per unfinished scenario.** Each opening of the Conversation room starts a
+  conversation record of its own; the learner who leaves the same scenario unfinished twice has two records. Continue
+  offers the newest once; the others stay in "Recently opened". No backend change.
+- **Dismissed findings are per visit.** The design's toast says a dismissed finding "won't count as an open issue".
+  Orena has no server field for it, so the finding leaves the marks, the lists, the dimension counts and the Next bar
+  for the visit; a reload shows it again. Needed only if the human wants dismissal to persist (a learner record, D4).

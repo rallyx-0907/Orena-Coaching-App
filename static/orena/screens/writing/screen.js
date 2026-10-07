@@ -47,7 +47,6 @@ import {
   dimensionRows,
   draftKeyFor,
   findingIsOpen,
-  firstPriority,
   firstSentence,
   levelCode,
   levelLabel,
@@ -123,6 +122,13 @@ export default async function mountWriting(element, ctx) {
   let text = essay ? storedText || essay.text : storedText;
   let promptText = essay ? essay.prompt : storedTask;
   let level = levelCode(essay?.level, language) || levelCode(context.level, language);
+  /* How the learner came in (Practice Hub, HW-1/HW-2): `entry=free` names the blank page "Free writing";
+     `setup=prompt|topic` opens Prompt Setup over the room, as the design does, before writing. Neither
+     clears a draft that is waiting: the learner's words are never emptied by an entry. A reviewed piece is
+     its own piece and ignores both. */
+  const entryFree = !essay && ctx.query?.get('entry') === 'free';
+  const entrySetup = !essay ? ctx.query?.get('setup') || '' : '';
+  if (ctx.query?.has('entry') || ctx.query?.has('setup')) history.replaceState(null, '', location.hash.split('?')[0]);
   const intention = intentions.get(key) || {};
   let register = intention.register || '';
   let target = intention.target || 0;
@@ -162,7 +168,8 @@ export default async function mountWriting(element, ctx) {
     memory.write(key, text);
     if (essay) leftMode = text === essay.text ? 'marked' : 'edit';
   }
-  ctx.setCrumb(promptText || t('promptFallback'));
+  const untitled = () => (entryFree ? t('freeTitle') : t('promptFallback'));
+  ctx.setCrumb(promptText || untitled());
 
   /* ------------------------------------------------------------------------- helpers -- */
 
@@ -185,7 +192,7 @@ export default async function mountWriting(element, ctx) {
     if (!essay && !text.trim()) return;
     entered = true;
     try {
-      memory.enter({ id: key, title: promptText || essay?.prompt || t('promptFallback'), intent: 'writing', excerpt: text.slice(0, 240) });
+      memory.enter({ id: key, title: promptText || essay?.prompt || untitled(), intent: 'writing', excerpt: text.slice(0, 240) });
     } catch {
       /* Device memory refused; the room works without a Continue entry. */
     }
@@ -200,7 +207,7 @@ export default async function mountWriting(element, ctx) {
   }
 
   function metaLine() {
-    const parts = [];
+    const parts = [t('metaPrefix')];
     if (level) parts.push(levelLabel(level));
     if (register) parts.push(t(REGISTER_KEY[register]));
     if (target) parts.push(`~${t.plural('targetWordsOption', target)}`);
@@ -213,7 +220,7 @@ export default async function mountWriting(element, ctx) {
   function headerMarkup() {
     return html`<button type="button" class="o-iconbtn o-iconbtn--back" data-act="back" aria-label="${s('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
       <div class="s-writing__title">
-        <div class="s-writing__title-text" lang="${langOf(language)}">${promptText || t('promptFallback')}</div>
+        <div class="s-writing__title-text" lang="${langOf(language)}">${promptText || untitled()}</div>
         <div class="s-writing__title-meta">${metaLine()}</div>
       </div>
       <button type="button" class="s-writing__btn" data-act="setup">${t('setupBtn')}</button>
@@ -288,7 +295,7 @@ export default async function mountWriting(element, ctx) {
 
   function rangeMarkup() {
     const [before, after] = t('estimatedRange', { range: HOLE }).split(HOLE);
-    return html`<div class="s-writing__range" lang="${langOf(supportLang)}">${before}<b>${levelLabel(essay.range)}</b>${after}</div>`;
+    return html`<div class="s-writing__range" lang="${langOf(uiLocale)}">${before}<b>${levelLabel(essay.range)}</b>${after}</div>`;
   }
 
   function dimensionNote(note) {
@@ -296,10 +303,16 @@ export default async function mountWriting(element, ctx) {
     return note.key === 'dimFixes' ? t.plural('dimFixes', note.n) : t(note.key);
   }
 
+  /* A dismissed finding does not count as an open issue (the design's own promise in its toast): it leaves the
+     lists, the dimension counts and the Next bar for this visit. */
+  const undismissed = (list) => list.filter((issue) => !dismissed.has(issue.id));
+
   function reviewSummaryMarkup(enter) {
     const when = whenLabel(essay.createdAt, uiLocale);
-    const rows = dimensionRows(essay.dimensions, allIssues(essay), text);
-    const next = firstPriority(essay);
+    const priority = undismissed(essay.priorityIssues);
+    const other = undismissed(essay.otherIssues);
+    const rows = dimensionRows(essay.dimensions, [...priority, ...other], text);
+    const next = priority[0] || null;
     return html`<div class="${cls('s-writing__review-card', enter && 'is-enter')}" data-scroll-region>
       <div class="s-writing__review-head">
         <div>
@@ -315,10 +328,10 @@ export default async function mountWriting(element, ctx) {
             )}</div>`
           : ''
       }
-      <div><div class="s-writing__section-title s-writing__section-title--bad">${t.plural('priorityIssues', essay.priorityIssues.length)}</div>${essay.priorityIssues.map(findingRow)}</div>
+      <div><div class="s-writing__section-title s-writing__section-title--bad">${t.plural('priorityIssues', priority.length)}</div>${priority.map(findingRow)}</div>
       ${
-        essay.hasOther
-          ? html`<details><summary class="s-writing__section-title s-writing__section-title--other">${t.plural('otherIssues', essay.otherIssues.length)}</summary><div class="s-writing__other">${essay.otherIssues.map(findingRow)}</div></details>`
+        other.length
+          ? html`<details><summary class="s-writing__section-title s-writing__section-title--other">${t.plural('otherIssues', other.length)}</summary><div class="s-writing__other">${other.map(findingRow)}</div></details>`
           : ''
       }
       <div class="s-writing__scorecard">
@@ -376,7 +389,7 @@ export default async function mountWriting(element, ctx) {
       const issue = currentIssue();
       return issue ? findingDetailMarkup(issue, enter) : reviewSummaryMarkup(enter);
     }
-    return html`<div class="s-writing__noreview" lang="${langOf(supportLang)}">${t('noReviewYet')}</div>`;
+    return html`<div class="s-writing__noreview" lang="${langOf(uiLocale)}">${t('noReviewYet')}</div>`;
   }
 
   /* ---------------------------------------------------------------------- painting -- */
@@ -434,17 +447,37 @@ export default async function mountWriting(element, ctx) {
     paintReview({ enter: true });
   }
 
-  /* A popover opens under its words; one that would run past the card's edge is moved back inside,
-     and the card scrolls (inside itself, never the page) to show it whole. */
+  /* A popover opens under the line of the marked span the learner pointed at (a span that wraps has one
+     box per line - `getClientRects` - and the popover hangs from that one, not from the span's far end).
+     It is kept inside the card horizontally, and the card scrolls (inside itself, never the page) to show it. */
+  let pointer = null;
   function placePopover() {
     const pop = root.querySelector('[data-segment-pop]');
     const body = root.querySelector('.s-writing__marked-body');
-    if (!pop || !body) return;
-    pop.style.left = '0px';
-    pop.style.maxWidth = `${Math.min(300, body.clientWidth)}px`;
+    const seg = root.querySelector('.s-writing__seg[aria-expanded="true"]');
+    if (!pop || !body || !seg) return;
+    // The popover itself can make the card scroll (a scrollbar narrows it and rewraps the text), so the
+    // placing is done again against what it left behind until it holds still.
+    for (let pass = 0; pass < 3; pass += 1) {
+      const box = body.getBoundingClientRect();
+      const width = Math.min(300, body.clientWidth);
+      pop.style.maxWidth = `${width}px`;
+      const rects = [...seg.getClientRects()].filter((rect) => rect.width > 0);
+      if (!rects.length) return;
+      const hit = pointer && rects.find((rect) => pointer.y >= rect.top && pointer.y <= rect.bottom);
+      const line = hit || rects[0];
+      pop.style.left = '0px'; // its width is measured from the left edge, where it has the whole card
+      const popWidth = Math.min(pop.offsetWidth || width, width);
+      const start = (hit && pointer.x >= line.left && pointer.x <= line.right ? pointer.x : line.left) - box.left;
+      const left = `${Math.max(0, Math.min(start, body.clientWidth - popWidth))}px`;
+      const top = `${line.bottom - box.top + body.scrollTop + 8}px`;
+      const same = pop.dataset.at === `${left}|${top}`;
+      pop.style.left = left;
+      pop.style.top = top;
+      pop.dataset.at = `${left}|${top}`;
+      if (same) break;
+    }
     const box = body.getBoundingClientRect();
-    const overflow = pop.getBoundingClientRect().right - box.right;
-    if (overflow > 0) pop.style.left = `${-overflow}px`;
     const below = pop.getBoundingClientRect().bottom - box.bottom;
     if (below > 0) body.scrollTop += below + 8;
   }
@@ -681,20 +714,26 @@ export default async function mountWriting(element, ctx) {
 
   /* ------------------------------------------------------------------------- events -- */
 
+  function openSetup({ focusPrompt = false } = {}) {
+    openSheet({
+      label: t('promptSetupTitle'),
+      className: 's-writing-setup',
+      render: (sheetEl, handle) => {
+        paintSetup(sheetEl, handle);
+        // The sheet takes focus when it has rendered; the topic field takes it from there.
+        if (focusPrompt) setTimeout(() => sheetEl.querySelector('[data-prompt-input]')?.focus({ preventScroll: true }), 0);
+      },
+      // The header is repainted while the sheet is open, so the button that opened it is a new one.
+      onClose: () => root.querySelector('[data-act="setup"]')?.focus({ preventScroll: true }),
+    });
+  }
+
   function onClick(event) {
     const node = event.target.closest('[data-act]');
     if (!node || !root.contains(node)) return;
     const act = node.dataset.act;
     if (act === 'back') ctx.back();
-    else if (act === 'setup') {
-      openSheet({
-        label: t('promptSetupTitle'),
-        className: 's-writing-setup',
-        render: (sheetEl, handle) => paintSetup(sheetEl, handle),
-        // The header is repainted while the sheet is open, so the button that opened it is a new one.
-        onClose: () => root.querySelector('[data-act="setup"]')?.focus({ preventScroll: true }),
-      });
-    }
+    else if (act === 'setup') openSetup();
     else if (act === 'compare') {
       if (essay) ctx.go(ctx.href('wrcompare', { id: essay.id }));
     } else if (act === 'review') runReview();
@@ -710,6 +749,7 @@ export default async function mountWriting(element, ctx) {
       paintReview({ enter: true });
       root.querySelector('[data-draft-textarea]')?.focus({ preventScroll: true });
     } else if (act === 'segment') {
+      pointer = event.clientX || event.clientY ? { x: event.clientX, y: event.clientY } : null;
       finding === node.dataset.id ? closeFinding() : openFinding(node.dataset.id);
     } else if (act === 'open-finding') openFinding(node.dataset.id);
     else if (act === 'close-finding') closeFinding();
@@ -741,7 +781,7 @@ export default async function mountWriting(element, ctx) {
       if (issue) askAbout(issue);
     } else if (act === 'keep') toggleKeep();
     else if (act === 'next') {
-      const first = firstPriority(essay);
+      const first = undismissed(essay.priorityIssues)[0];
       if (first) openFinding(first.id, { tab: 'how' });
     }
   }
@@ -790,6 +830,8 @@ export default async function mountWriting(element, ctx) {
 
   paintAll();
   enterContinuation();
+  // After the router has focused the room, so the sheet keeps the focus it takes.
+  if (entrySetup) setTimeout(() => { if (ctx.isCurrent()) openSetup({ focusPrompt: entrySetup === 'topic' }); }, 0);
 
   if (essay) {
     const shown = essay.id;
