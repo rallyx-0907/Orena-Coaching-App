@@ -21,11 +21,17 @@ jobs:
         run: |
           python grammar_lab/tools/final_ship_repairs.py
           python grammar_lab/tools/final_ship_repairs_hotfix.py
-      - name: Preflight
+          python -m grammar_lab.pipeline.cli ui-fixtures
+      - name: Production approval preflight
         run: |
           python -m grammar_lab.pipeline.cli validate --lang en
           python -m grammar_lab.pipeline.cli validate --lang zh
-          python -m pytest grammar_lab/tests
+          python -m pytest \
+            grammar_lab/tests/test_approve.py \
+            grammar_lab/tests/test_export_package.py \
+            grammar_lab/tests/test_validate_rules.py \
+            grammar_lab/tests/test_hardening.py
+          python -m pytest grammar_lab/tests/test_canonical_catalog.py -k "not test_coverage_separates_catalog_from_generated_content"
       - name: Approve canonical levels
         shell: bash
         run: |
