@@ -89,12 +89,16 @@ export default async function search(element, ctx) {
     </div>`;
   }
 
+  // Before typing (LEX-074, frame 27's empty state): the learner's recent searches when there are any, and the
+  // one line saying what Search covers - the sources runSearch really reads.
   function recentMarkup() {
-    if (!recent.length) return html``;
-    return html`<div>
+    return html`${recent.length
+      ? html`<div>
       <div class="s-search__label">${t('recentLabel')}</div>
       <div class="s-search__chips">${recent.map((label, i) => html`<button type="button" class="s-search__chip" data-recent="${i}">${label}</button>`)}</div>
-    </div>`;
+    </div>`
+      : ''}
+    <div class="s-search__hint">${t('scopeHint')}</div>`;
   }
 
   function resultsMarkup() {

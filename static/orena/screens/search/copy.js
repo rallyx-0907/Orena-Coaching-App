@@ -7,7 +7,7 @@ import { defineCopy } from '../../copy/index.js';
 
 const KEYS = [
   'wordsGroup', 'kindArticle', 'kindMedia', 'kindUpload', 'kindText',
-  'recentLabel', 'placeholder', 'clearLabel', 'noneMessage', 'resultsFor',
+  'recentLabel', 'scopeHint', 'placeholder', 'clearLabel', 'noneMessage', 'resultsFor',
   'relationship_saved', 'relationship_completed', 'relationship_practised', 'relationship_submitted', 'relationship_spoken',
 ];
 
@@ -15,7 +15,7 @@ export const t = defineCopy('search', {
   layers: Object.fromEntries(KEYS.map((key) => [key, 'interface'])),
   en: {
     wordsGroup: 'Words', kindArticle: 'Article', kindMedia: 'Media', kindUpload: 'Upload', kindText: 'Text',
-    recentLabel: 'Recent', placeholder: 'Words, content, saved items…', clearLabel: 'Clear search',
+    recentLabel: 'Recent', scopeHint: 'Search covers words, texts and media, and what you have saved or imported. Results are grouped by kind.', placeholder: 'Words, content, saved items…', clearLabel: 'Clear search',
     noneMessage: 'Nothing found for “{query}”. Try a word, a title, or something you’ve saved.',
     resultsFor_one: '{n} result for “{query}”',
     resultsFor_other: '{n} results for “{query}”',
@@ -24,7 +24,7 @@ export const t = defineCopy('search', {
   },
   vi: {
     wordsGroup: 'Từ', kindArticle: 'Bài đọc', kindMedia: 'Media', kindUpload: 'Đã tải lên', kindText: 'Văn bản',
-    recentLabel: 'Gần đây', placeholder: 'Từ, nội dung, mục đã lưu…', clearLabel: 'Xóa tìm kiếm',
+    recentLabel: 'Gần đây', scopeHint: 'Tìm kiếm bao gồm từ vựng, văn bản, media và những gì bạn đã lưu hoặc nhập. Kết quả được nhóm theo loại.', placeholder: 'Từ, nội dung, mục đã lưu…', clearLabel: 'Xóa tìm kiếm',
     noneMessage: 'Không tìm thấy gì cho “{query}”. Thử một từ, một tiêu đề, hoặc thứ bạn đã lưu.',
     resultsFor_other: '{n} kết quả cho “{query}”',
     relationship_saved: 'Đã lưu', relationship_completed: 'Đã hoàn thành', relationship_practised: 'Đã luyện tập',
@@ -32,7 +32,7 @@ export const t = defineCopy('search', {
   },
   zh: {
     wordsGroup: '词语', kindArticle: '文章', kindMedia: '媒体', kindUpload: '上传内容', kindText: '文本',
-    recentLabel: '最近搜索', placeholder: '词语、内容、已保存的内容…', clearLabel: '清除搜索',
+    recentLabel: '最近搜索', scopeHint: '搜索范围包括词语、文本和媒体，以及你保存或导入的内容。结果按类型分组。', placeholder: '词语、内容、已保存的内容…', clearLabel: '清除搜索',
     noneMessage: '没有找到 “{query}” 的结果。试试某个词、标题，或你保存过的内容。',
     resultsFor_other: '找到 {n} 个结果：“{query}”',
     relationship_saved: '已保存', relationship_completed: '已完成', relationship_practised: '已练习',

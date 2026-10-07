@@ -20,6 +20,7 @@ const {
   normalizeMedia,
   normalizeText,
   pickRelated,
+  relatednessScore,
 } = await import('../static/orena/screens/content/model.js');
 
 // 1. The shared content-id scheme (article/book/media/upload/text; book carries an optional
@@ -82,9 +83,9 @@ assert.deepEqual(placeFor([{ id: 'other', place: { within: 50 } }], 'article:x')
 // or null, never a placeholder string or a guessed number.
 // D-130: the description is the article's own metadata; the body is never presented as one.
 assert.deepEqual(normalizeArticle({ title: 'Sông Hồng', attribution: { author: 'Báo X' }, level: 'B1', reading_time_seconds: 300, body: 'ngắn', description: 'Mô tả bài' }), {
-  title: 'Sông Hồng', language: '', source: 'Báo X', level: 'B1', minutes: 5, desc: 'Mô tả bài', image: '',
+  title: 'Sông Hồng', language: '', source: 'Báo X', level: 'B1', minutes: 5, topic: '', desc: 'Mô tả bài', image: '',
 });
-assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { title: 'No attribution', language: '', source: '', level: '', minutes: null, desc: '', image: '' });
+assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { title: 'No attribution', language: '', source: '', level: '', minutes: null, topic: '', desc: '', image: '' });
 // languages-5 / finding A: the article's own real language field
 // (reading_content_repository.py's `_article` projection), carried through untranslated.
 assert.equal(normalizeArticle({ title: 'x', body: '', language: 'zh' }).language, 'zh');
@@ -121,7 +122,7 @@ assert.equal(normalizeMedia({ catalog: { language: 'zh' }, asset: {} }).language
 assert.equal(normalizeMedia({ asset: { source_language: 'en' } }).language, 'en');
 
 const upload = normalizeMedia({ asset: { title: 'Học viên tự tải lên', duration_ms: null }, playback: { kind: 'video' }, transcript: null });
-assert.deepEqual(upload, { title: 'Học viên tự tải lên', language: '', source: '', level: '', minutes: null, desc: '', image: '', playbackKind: 'video', transcriptOrigin: 'none', segments: [] });
+assert.deepEqual(upload, { title: 'Học viên tự tải lên', language: '', source: '', level: '', minutes: null, topic: '', desc: '', image: '', playbackKind: 'video', transcriptOrigin: 'none', segments: [] });
 
 const text = normalizeText({ title: 'Của tôi', text: 'ngắn' });
 assert.deepEqual(text, { title: 'Của tôi', source: '', level: '', minutes: null, desc: 'ngắn', image: '' });
@@ -159,3 +160,20 @@ assert.deepEqual(
 }
 
 console.log('Orena Content Detail model: id scheme, rule-40 fallbacks, normalisation and related-list selection: PASS');
+
+// LEX-075: related means related. A score keeps only items that share a topic, a level or an author with the open
+// one, closest first; with nothing in common the section has no items (and is not drawn).
+const open = { topic: 'travel', level: 'B1', source: '' };
+const catalogue = [
+  { id: 'a', title: 'A', topic: 'food', level: 'B2' },
+  { id: 'b', title: 'B', topic: 'travel', level: 'B2' },
+  { id: 'c', title: 'C', topic: 'food', level: 'B1' },
+  { id: 'd', title: 'D', topic: 'travel', level: 'B1' },
+];
+assert.deepEqual(
+  pickRelated(catalogue, { excludeId: 'x', map: (item) => ({ id: item.id, title: item.title }), score: (item) => relatednessScore(open, item) }).map((item) => item.id),
+  ['d', 'b', 'c'],
+  'same topic and level first, then the topic, then the level; the unrelated item is not offered',
+);
+assert.deepEqual(pickRelated(catalogue, { excludeId: 'x', map: (item) => item, score: (item) => relatednessScore({ topic: '', level: '' }, item) }), [], 'an open item with no topic or level relates nothing');
+assert.equal(relatednessScore({ source: 'Aesop' }, { author: 'aesop' }), 2, 'the same author relates books');

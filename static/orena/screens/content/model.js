@@ -131,6 +131,7 @@ export function normalizeArticle(article) {
     source: String(article?.attribution?.author || ''),
     level: String(article?.level || ''),
     minutes: minutesFrom(article?.reading_time_seconds),
+    topic: String(article?.topic || ''),
     desc: String(article?.description || article?.summary || '').trim(),
     image: '',
   };
@@ -169,6 +170,7 @@ export function normalizeMedia(payload) {
     source: String(catalog?.source?.creator || asset.source_provider || ''),
     level: String(catalog?.level || ''),
     minutes: minutesFrom(catalog?.duration_ms ?? asset.duration_ms, { unitMs: true }),
+    topic: String(catalog?.topic || ''),
     desc: String(catalog?.description || ''),
     image: asset.thumbnail_url ? `url("${asset.thumbnail_url}")` : catalog?.poster_url ? `url("${catalog.poster_url}")` : '',
     playbackKind: String(payload?.playback?.kind || ''),
@@ -194,17 +196,32 @@ export function normalizeText(record) {
 /* Up to `limit` items from a raw listing, mapped by `map`, with the current item excluded (by
    the raw item's own id/lesson_id, before `map` renames it to a content route id) and any item
    `map` could not honestly build (no title) dropped rather than shown blank. */
-export function pickRelated(items, { excludeId, map, limit = 3 }) {
+export function pickRelated(items, { excludeId, map, limit = 3, score = null }) {
   const list = Array.isArray(items) ? items : [];
   const out = [];
-  for (const raw of list) {
-    if (out.length >= limit) break;
+  for (const [order, raw] of list.entries()) {
     const rawId = String(raw?.id ?? raw?.lesson_id ?? '');
     if (!rawId || rawId === excludeId) continue;
+    // Related means related (LEX-075): with a `score`, an item that shares nothing with the open one is not
+    // offered, and the closest come first; without one the caller has no relatedness signal and gets the list.
+    const points = score ? Number(score(raw)) || 0 : 1;
+    if (score && points <= 0) continue;
     const mapped = map(raw);
-    if (mapped && mapped.title) out.push(mapped);
+    if (mapped && mapped.title) out.push({ mapped, points, order });
   }
-  return out;
+  out.sort((a, b) => b.points - a.points || a.order - b.order);
+  return out.slice(0, limit).map((entry) => entry.mapped);
+}
+
+/* How close a catalogue item is to the open one by the fields the catalogue really has: the same topic counts
+   most, the same level next. A field the open item does not have cannot relate anything. */
+export function relatednessScore(current, candidate) {
+  const norm = (value) => String(value || '').trim().toLowerCase();
+  let points = 0;
+  if (norm(current?.topic) && norm(current.topic) === norm(candidate?.topic)) points += 2;
+  if (norm(current?.level) && norm(current.level) === norm(candidate?.level)) points += 1;
+  if (norm(current?.source) && norm(current.source) === norm(candidate?.author || candidate?.source?.creator)) points += 2;
+  return points;
 }
 
 /* The stored media id inside a content route's `upload` id. Discover and Search open a device

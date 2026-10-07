@@ -141,3 +141,9 @@
   color: var(--muted);
   max-width: 360px;
 }
+
+.s-search__hint {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}

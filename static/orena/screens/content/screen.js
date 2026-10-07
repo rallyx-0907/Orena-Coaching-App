@@ -41,6 +41,7 @@ import {
   normalizeMedia,
   normalizeText,
   pickRelated,
+  relatednessScore,
 } from './model.js';
 
 function typeLabel(kind, playbackKind) {
@@ -110,12 +111,13 @@ async function loadSaved(libKind, sourceId, contentId, memory) {
 /* The tile a content item without a cover draws, by its kind (HP-3 A). */
 const COVER_OF_KIND = Object.freeze({ article: 'read', book: 'read', media: 'listen', upload: 'upload', text: 'write' });
 
-async function loadRelated(kind, id, language) {
+async function loadRelated(kind, id, language, current) {
   try {
     if (kind === 'article') {
       const page = await api.readingArticles(language);
       return pickRelated(page?.items, {
         excludeId: id,
+        score: (item) => relatednessScore(current, item),
         map: (item) => ({
           id: contentIdFor('article', item.id),
           title: item.title,
@@ -131,6 +133,7 @@ async function loadRelated(kind, id, language) {
       const page = await api.libraryBooks(language);
       return pickRelated(page?.items, {
         excludeId: id,
+        score: (item) => relatednessScore(current, item),
         map: (item) => ({
           id: contentIdFor('book', item.id),
           title: item.title,
@@ -144,6 +147,7 @@ async function loadRelated(kind, id, language) {
       const page = await api.listeningLibrary(language);
       return pickRelated(page?.items, {
         excludeId: id,
+        score: (item) => relatednessScore(current, item),
         map: (item) => ({
           id: contentIdFor('media', item.lesson_id),
           title: item.title,
@@ -171,12 +175,13 @@ export default async function content(element, ctx) {
   const language = ctx.context.language;
   const libKind = libraryKindFor(kind);
 
-  const [detail, hasPractice, saved, related] = await Promise.all([
+  const [detail, hasPractice, saved] = await Promise.all([
     loadDetail(kind, id, ctx),
     loadHasPractice(kind, id),
     loadSaved(libKind, id, contentId, ctx.context.memory),
-    loadRelated(kind, id, language),
   ]);
+  // Related reads the open item's own topic, level and author, so it follows the detail (LEX-075).
+  const related = await loadRelated(kind, id, language, detail);
   if (!ctx.isCurrent()) return undefined;
   // The breadcrumb names the content itself, as the frame does (crumbScreen: the item's title).
   if (detail.title) ctx.setCrumb(detail.title);
