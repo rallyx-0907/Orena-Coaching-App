@@ -246,6 +246,10 @@ assert.equal(cardLanguage('latin'), 'en', 'a Latin-script card is real English, 
 const fakeT = (key) => `[${key}]`;
 assert.deepEqual(posLabel('pronoun', fakeT), { text: '[posPronoun]', known: true });
 assert.deepEqual(posLabel('PROPER_NOUN', fakeT), { text: '[posProperNoun]', known: true }, 'case-insensitive against the backend value');
+// V-19: a combined value is translated part by part and joined by the language's own join; a part outside the set keeps the whole raw.
+assert.deepEqual(posLabel('noun/verb', Object.assign((k) => (k === 'posJoin' ? ' + ' : `[${k}]`), {})), { text: '[posNoun] + [posVerb]', known: true });
+assert.deepEqual(posLabel('Noun, Verb', (k) => (k === 'posJoin' ? '/' : `[${k}]`)).text, '[posNoun]/[posVerb]');
+assert.deepEqual(posLabel('noun/gizmo', fakeT), { text: 'noun/gizmo', known: false }, 'never half-translated');
 assert.deepEqual(posLabel('transitive verb phrase', fakeT), { text: 'transitive verb phrase', known: false }, 'an unrecognised value is shown as-is, never guessed into one of the fifteen');
 assert.deepEqual(posLabel('', fakeT), { text: '', known: false }, 'no part of speech at all is not a translated label either');
 

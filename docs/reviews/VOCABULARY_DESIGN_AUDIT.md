@@ -121,3 +121,21 @@ Word Quick Sheet and Vocabulary Focus (structure matches the frames; not walked:
 ## 5. Learner state
 
 None changed. Review grades were mocked in the browser; no request reached `POST .../review`. No setting, language or interface change on the account.
+
+## Lane defaults pending human confirmation
+
+2026-10-07, reason: human: continue without asking; follows D-139 / Writing precedent. Provisional and reversible; the human may override any of them. Implemented on `codex/work`.
+
+| Id | Default | What was done |
+| --- | --- | --- |
+| HV-1 B (V-01, V-02, V-03) | hubs list the built vocabulary modes in the design's groups, with descriptions; Recommended only from real data | Practice Hub tile and Skill Hub row: Recall (Due Review, with its real due count) and Browse (Daily Feed, Collections, Saved language, the last two opening the Library tabs). "Due Review" replaces the route name "Review". Icons are the design's (`panels-top-left`, `library-big`). No duration is drawn (none measured, N-22). Skill Hub Recommended card "Review n due items" exists only while n > 0, with the plain reason "They are due now." (the design's "Recall is climbing" has no measurement). Timed Recall / Context Transfer stay hidden (D-101 H9). The one-line descriptions of Collections ("Sets of words and phrases") and Saved language ("Words and phrases") are neutral copy: the design's are sample content. |
+| HV-2 B (V-04) | Lesson complete sheet after the last grade, measured facts only | 350 ms after the last grade the existing sheet opens over the Session complete card: Got it share, cards reviewed, Got it / Unsure / Again counts, and the time until the soonest graded card returns (the server's `next_review_at`; omitted when offline grades give none). No XP, no minutes. |
+| HV-3 A (V-06) | Review cue and system notes follow the interface language | `cueCloze`, `reviewKept`, `reviewSaveFailed` moved support to interface; the sentence stays in the content language. |
+| HV-4 A (V-12) | "In this session" lists the due words | The due words of the queue Review builds (limit 50), each with "From your reading / writing feedback" when the saved kind names it; "source-aware" counts the cards that ask a sentence. Pinned items stand in only if the list cannot be read. |
+| HV-5 A (V-13, V-15) | Collections tab shows published curated collections, honest empty state; phrase rows do not repeat themselves | Curated collections for the content language lead the tab and open `#/collection/:id`; with nothing at all, "No collections yet." (EN/VI/ZH). A source line equal to the row's own text is dropped. Bars were already shown only for a reviewed item (NEW otherwise), so no further change. |
+| HV-6 A | keep Timed Recall, Context Transfer, 5-stage evidence | no work; V-14, V-16, V-17, V-20, V-21 kept. |
+| V-05, V-07, V-08, V-10, V-11, V-18, V-22, V-23, V-24 | respected decisions | no change. |
+
+Defects fixed without a decision: V-09 (Stroke Practice from Review loads `word.css` before opening, as Feed and the Quick Sheet already did; measured styled at 1920x1080 and 390x844), V-19 (a combined part of speech such as "noun/verb" is translated part by part and joined by each language's own join, `posJoin`: " / " EN and VI, "/" ZH; a value with any part outside the closed set stays raw, never half-translated; applies to Word, Review, Feed and Quick Sheet).
+
+Test note: expectations in `test_orena_screen_practice` for `vocabularyModes` changed only because HV-1 B adds Collections and Saved language. `test_orena_vocabulary_theme_tokens` still fails as before (its CSS-scope assertion, unrelated to this work).

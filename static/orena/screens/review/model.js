@@ -140,6 +140,18 @@ export function scheduleLabel(schedule, grade, t) {
   return '';
 }
 
+/* The soonest time any card graded in this session comes back (the server's own `next_review_at` on each graded
+   card), as the interval from `now` in the largest whole unit that keeps it exact enough to read: minutes under an
+   hour, hours under a day, days beyond. Empty when no card carries one (an offline grade has none yet). */
+export function nextDueLabel(isoTimes, now, t) {
+  const times = (isoTimes || []).map((value) => Date.parse(value)).filter((time) => Number.isFinite(time));
+  if (!times.length) return '';
+  const minutes = Math.max(1, Math.ceil((Math.min(...times) - now) / 60000));
+  if (minutes < 60) return t.plural('scheduleMinutes', minutes);
+  if (minutes < 1440) return t.plural('scheduleHours', Math.round(minutes / 60));
+  return t.plural('scheduleDays', Math.round(minutes / 1440));
+}
+
 export const GRADES = Object.freeze(['again', 'unsure', 'got_it']);
 
 export function initialStats() {

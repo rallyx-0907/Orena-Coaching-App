@@ -1,6 +1,6 @@
 /* Review Session's own words (frame 13, D-091; Design Contract rules 9, 26, 50). Chrome is
-   'interface'; the cue that tells the learner what to do with a card they cannot yet see is
-   'support' (real, necessary instruction - not the routine confirmation rule 50 drops).
+   'interface', and so are the cloze cue and the system notes (V-06, HV-3 A, D-139 HD-14): the sentence
+   being asked stays in the content language, what the screen says about it follows the interface language.
 
    Rule 50 drops recorded in the surface report: the frame's "Items marked Again come back sooner…"
    explainer line (obvious scheduler behaviour) is not built. The frame's four grades collapse to
@@ -10,14 +10,14 @@
 import { defineCopy } from '../../copy/index.js';
 
 const LAYERS = {
-  progress: 'interface', modeTarget: 'interface', modeCloze: 'interface', cueCloze: 'support',
+  progress: 'interface', modeTarget: 'interface', modeCloze: 'interface', cueCloze: 'interface',
   sourceReading: 'interface', sourceFeedback: 'interface',
   tapToReveal: 'interface', hintLabel: 'interface', revealLabel: 'interface',
   gradeAgain: 'interface', gradeUnsure: 'interface', gradeGotIt: 'interface',
-  scheduleMinutes: 'interface', scheduleDays: 'interface',
+  scheduleMinutes: 'interface', scheduleHours: 'interface', scheduleDays: 'interface', lessonCards: 'interface', lessonNext: 'interface',
   sessionCompleteTitle: 'interface', statAgain: 'interface', statUnsure: 'interface', statGotIt: 'interface',
   reviewAgainAction: 'interface', backToLibrary: 'interface',
-  emptyTitle: 'interface', reviewSaveFailed: 'support', reviewKept: 'support',
+  emptyTitle: 'interface', reviewSaveFailed: 'interface', reviewKept: 'interface',
   playWord: 'interface', saveWord: 'interface', unsaveWord: 'interface', noAudio: 'interface',
   savedToast: 'interface', removedToast: 'interface',
   practiseStrokes: 'interface', strokeOrder: 'interface',
@@ -30,7 +30,7 @@ const LAYERS = {
   posPronoun: 'interface', posDeterminer: 'interface', posPreposition: 'interface',
   posConjunction: 'interface', posNumeral: 'interface', posParticle: 'interface',
   posAuxiliary: 'interface', posInterjection: 'interface', posClassifier: 'interface',
-  posProperNoun: 'interface', posOther: 'interface',
+  posProperNoun: 'interface', posOther: 'interface', posJoin: 'interface',
 };
 
 export const t = defineCopy('review', {
@@ -41,7 +41,9 @@ export const t = defineCopy('review', {
     tapToReveal: 'Tap to reveal', hintLabel: 'Hint', revealLabel: 'Reveal',
     gradeAgain: 'Again', gradeUnsure: 'Unsure', gradeGotIt: 'Got it',
     scheduleMinutes_one: '{n} min', scheduleMinutes_other: '{n} min',
+    scheduleHours_one: '{n} hour', scheduleHours_other: '{n} hours',
     scheduleDays_one: '{n} day', scheduleDays_other: '{n} days',
+    lessonCards_one: 'card reviewed', lessonCards_other: 'cards reviewed', lessonNext: 'until next review',
     sessionCompleteTitle: 'Session complete', statAgain: 'Again', statUnsure: 'Unsure', statGotIt: 'Got it',
     reviewAgainAction: 'Review again', backToLibrary: 'Back to Library',
     emptyTitle: 'Nothing due for review right now', reviewSaveFailed: 'Couldn’t save that grade — it wasn’t counted.',
@@ -61,7 +63,7 @@ export const t = defineCopy('review', {
     posPronoun: 'Pronoun', posDeterminer: 'Determiner', posPreposition: 'Preposition',
     posConjunction: 'Conjunction', posNumeral: 'Numeral', posParticle: 'Particle',
     posAuxiliary: 'Auxiliary', posInterjection: 'Interjection', posClassifier: 'Classifier',
-    posProperNoun: 'Proper noun', posOther: 'Other',
+    posProperNoun: 'Proper noun', posOther: 'Other', posJoin: ' / ',
   },
   vi: {
     progress: '{n} trên {total}', modeTarget: 'Từ cần nhớ → nghĩa', modeCloze: 'Gợi ý theo nguồn',
@@ -69,7 +71,9 @@ export const t = defineCopy('review', {
     tapToReveal: 'Chạm để xem', hintLabel: 'Gợi ý', revealLabel: 'Xem đáp án',
     gradeAgain: 'Quên', gradeUnsure: 'Chưa chắc', gradeGotIt: 'Nhớ rồi',
     scheduleMinutes_other: '{n} phút',
+    scheduleHours_other: '{n} giờ',
     scheduleDays_other: '{n} ngày',
+    lessonCards_other: 'thẻ đã ôn', lessonNext: 'đến lần ôn tiếp theo',
     sessionCompleteTitle: 'Đã hoàn thành phiên ôn tập', statAgain: 'Quên', statUnsure: 'Chưa chắc', statGotIt: 'Nhớ rồi',
     reviewAgainAction: 'Ôn tập lại', backToLibrary: 'Về Thư viện của tôi',
     emptyTitle: 'Hiện chưa có từ nào đến hạn ôn tập', reviewSaveFailed: 'Không lưu được kết quả — lần này chưa được tính.',
@@ -89,7 +93,7 @@ export const t = defineCopy('review', {
     posPronoun: 'Đại từ', posDeterminer: 'Từ hạn định', posPreposition: 'Giới từ',
     posConjunction: 'Liên từ', posNumeral: 'Số từ', posParticle: 'Trợ từ',
     posAuxiliary: 'Trợ động từ', posInterjection: 'Thán từ', posClassifier: 'Loại từ',
-    posProperNoun: 'Danh từ riêng', posOther: 'Khác',
+    posProperNoun: 'Danh từ riêng', posOther: 'Khác', posJoin: ' / ',
   },
   zh: {
     progress: '第 {n} 个 / 共 {total} 个', modeTarget: '目标词 → 词义', modeCloze: '来源语境提示',
@@ -97,7 +101,9 @@ export const t = defineCopy('review', {
     tapToReveal: '点击查看', hintLabel: '提示', revealLabel: '查看答案',
     gradeAgain: '忘记了', gradeUnsure: '不确定', gradeGotIt: '记住了',
     scheduleMinutes_other: '{n} 分钟',
+    scheduleHours_other: '{n} 小时',
     scheduleDays_other: '{n} 天',
+    lessonCards_other: '张卡片已复习', lessonNext: '后下次复习',
     sessionCompleteTitle: '本次复习已完成', statAgain: '忘记了', statUnsure: '不确定', statGotIt: '记住了',
     reviewAgainAction: '再复习一次', backToLibrary: '返回我的词库',
     emptyTitle: '目前没有需要复习的词', reviewSaveFailed: '未能保存这次评分，这次不计入统计。',
@@ -117,6 +123,6 @@ export const t = defineCopy('review', {
     posPronoun: '代词', posDeterminer: '限定词', posPreposition: '介词',
     posConjunction: '连词', posNumeral: '数词', posParticle: '助词',
     posAuxiliary: '助动词', posInterjection: '叹词', posClassifier: '量词',
-    posProperNoun: '专有名词', posOther: '其他',
+    posProperNoun: '专有名词', posOther: '其他', posJoin: '/',
   },
 });

@@ -65,9 +65,13 @@ const POS_LABEL_KEY = Object.freeze({
 });
 
 export function posLabel(value, t) {
-  const raw = String(value || '').trim();
-  const key = POS_LABEL_KEY[raw.toLowerCase()];
-  return key ? { text: t(key), known: true } : { text: raw, known: false };
+  const raw = text(value);
+  const parts = raw.split(/\s*[\/,;|]\s*/).filter(Boolean);
+  const keys = parts.map((part) => POS_LABEL_KEY[part.toLowerCase().replace(/\s+/g, '_')]);
+  // A combined value ("noun/verb", V-19) is translated part by part and joined as the language joins a list;
+  // a value with any part outside the closed set stays exactly as given, never half-translated.
+  if (parts.length && keys.every(Boolean)) return { text: keys.map((key) => t(key)).join(t('posJoin')), known: true };
+  return { text: raw, known: false };
 }
 
 function text(value) {

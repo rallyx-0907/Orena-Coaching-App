@@ -19,6 +19,7 @@ import { useStyles } from '../../kit/styles.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
+import { openLessonComplete } from '../lesson-complete/sheet.js';
 import { masteryBars } from '../../kit/components.js';
 import { langAttr } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
@@ -52,6 +53,7 @@ import {
   sourceLabelKey,
   gradeOutcome,
   countsForSession,
+  nextDueLabel,
 } from './model.js';
 
 /* The kit's small tag naming a meaning's language when it is not the support language (D-124). */
@@ -199,7 +201,7 @@ export default async function mountReview(element, ctx) {
   }
   if (!ctx.isCurrent()) return undefined;
 
-  const state = { index: 0, revealed: false, hintOn: false, stats: initialStats(), grading: false, unsaved: new Set() };
+  const state = { index: 0, revealed: false, hintOn: false, stats: initialStats(), grading: false, unsaved: new Set(), nextTimes: [] };
   let audio = null;
 
   function currentRow() {
@@ -212,6 +214,7 @@ export default async function mountReview(element, ctx) {
     state.hintOn = false;
     state.stats = initialStats();
     state.unsaved = new Set();
+    state.nextTimes = [];
   }
 
   /* One place a grade goes. The outcome (model.js#gradeOutcome) says whether it counts toward the
@@ -225,6 +228,7 @@ export default async function mountReview(element, ctx) {
       error = caught;
     }
     const outcome = gradeOutcome({ result, error });
+    if (outcome === 'saved' && result?.item?.next_review_at) state.nextTimes.push(result.item.next_review_at);
     if (outcome === 'kept') {
       waiting = withWaiting(waiting, word, grade, new Date().toISOString());
       memory?.setReviewQueue?.(waiting);
@@ -232,6 +236,28 @@ export default async function mountReview(element, ctx) {
       drain().catch(() => {});
     }
     return outcome;
+  }
+
+  /* The design's Lesson complete modal after the last grade (V-04, HV-2 B), with measured facts only: the cards
+     reviewed, how each was graded, when the soonest comes back, and the Got it share. No XP, no minutes. */
+  function finishSession() {
+    const given = state.stats.again + state.stats.unsure + state.stats.got_it;
+    if (!given) return;
+    const next = nextDueLabel(state.nextTimes, Date.now(), t);
+    setTimeout(() => {
+      if (!ctx.isCurrent()) return;
+      openLessonComplete(ctx, {
+        title: shellCopy('review'),
+        measured: { correct: state.stats.got_it, total: given },
+        facts: [
+          { label: t.plural('lessonCards', given), value: given },
+          { label: t('statGotIt'), value: state.stats.got_it },
+          { label: t('statUnsure'), value: state.stats.unsure },
+          { label: t('statAgain'), value: state.stats.again },
+          { label: t('lessonNext'), value: next },
+        ],
+      });
+    }, 350);
   }
 
   function paint() {
@@ -342,6 +368,7 @@ export default async function mountReview(element, ctx) {
         state.hintOn = false;
         state.grading = false;
         paint();
+        if (state.index >= total) finishSession();
       });
     });
 
@@ -394,7 +421,9 @@ export default async function mountReview(element, ctx) {
       }
     });
 
-    element.querySelector('[data-practise-strokes]')?.addEventListener('click', () => {
+    element.querySelector('[data-practise-strokes]')?.addEventListener('click', async () => {
+      // The sheet's own rules (.s-word-*) live in word.css, which only the Word screen loads (V-09).
+      await useStyles('screens/word/word.css');
       const titleWord = card.ipa ? `${card.word} · ${card.ipa}` : card.word;
       openSheet({
         label: t('strokePracticeTitle', { word: titleWord }),

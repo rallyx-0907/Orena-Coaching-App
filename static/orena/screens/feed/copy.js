@@ -18,7 +18,7 @@ const LAYERS = {
   posPronoun: 'interface', posDeterminer: 'interface', posPreposition: 'interface',
   posConjunction: 'interface', posNumeral: 'interface', posParticle: 'interface',
   posAuxiliary: 'interface', posInterjection: 'interface', posClassifier: 'interface',
-  posProperNoun: 'interface', posOther: 'interface',
+  posProperNoun: 'interface', posOther: 'interface', posJoin: 'interface',
 };
 
 export const t = defineCopy('feed', {
@@ -41,7 +41,7 @@ export const t = defineCopy('feed', {
     posPronoun: 'Pronoun', posDeterminer: 'Determiner', posPreposition: 'Preposition',
     posConjunction: 'Conjunction', posNumeral: 'Numeral', posParticle: 'Particle',
     posAuxiliary: 'Auxiliary', posInterjection: 'Interjection', posClassifier: 'Classifier',
-    posProperNoun: 'Proper noun', posOther: 'Other',
+    posProperNoun: 'Proper noun', posOther: 'Other', posJoin: ' / ',
   },
   vi: {
     feedSubtitle_other: '{n} thẻ · chạm để lật · vuốt sang thẻ tiếp theo',
@@ -60,7 +60,7 @@ export const t = defineCopy('feed', {
     posPronoun: 'Đại từ', posDeterminer: 'Từ hạn định', posPreposition: 'Giới từ',
     posConjunction: 'Liên từ', posNumeral: 'Số từ', posParticle: 'Trợ từ',
     posAuxiliary: 'Trợ động từ', posInterjection: 'Thán từ', posClassifier: 'Loại từ',
-    posProperNoun: 'Danh từ riêng', posOther: 'Khác',
+    posProperNoun: 'Danh từ riêng', posOther: 'Khác', posJoin: ' / ',
   },
   zh: {
     feedSubtitle_other: '{n} 张卡片 · 点击翻面 · 滑动查看下一张',
@@ -79,6 +79,6 @@ export const t = defineCopy('feed', {
     posPronoun: '代词', posDeterminer: '限定词', posPreposition: '介词',
     posConjunction: '连词', posNumeral: '数词', posParticle: '助词',
     posAuxiliary: '助动词', posInterjection: '叹词', posClassifier: '量词',
-    posProperNoun: '专有名词', posOther: '其他',
+    posProperNoun: '专有名词', posOther: '其他', posJoin: '/',
   },
 });
