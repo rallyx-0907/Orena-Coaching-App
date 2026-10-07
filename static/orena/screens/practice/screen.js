@@ -13,7 +13,7 @@ import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
-import { loadPendingRows, recentRows, recentMediaFacts, lastSpeakingLine } from './continuation.js';
+import { loadPendingRows, recentRows, recentMediaFacts, lastSpeakingLine, lastListenedLine } from './continuation.js';
 import { t } from './copy.js';
 import { loadAttemptsSince } from '../../product/speaking-history.js';
 import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SKILL_GROUPS, buildSkillSections, writeRecommendation, weakestLines, vocabularyRecommendation } from './model.js';
@@ -287,7 +287,7 @@ export default async function practiceHub(element, ctx) {
      Skill Hub visit needs whichever one its own skill owns. Each degrades to a real, honest empty
      on failure rather than throwing (this route is not `lesson: true`, so there is no router load-
      error screen to catch it). */
-  const [speakingItems, listeningItems, reading, recommendation, lastLine, speakRec] = await Promise.all([
+  const [speakingItems, listeningItems, reading, recommendation, lastLine, speakRec, listenedLine] = await Promise.all([
     api.speakingLibrary(language).then((res) => (Array.isArray(res?.items) ? res.items : [])).catch(() => []),
     api.listeningLibrary(language).then((res) => (Array.isArray(res?.items) ? res.items : [])).catch(() => []),
     api.readingPracticeNext().catch(() => ({ available: false, next: null })),
@@ -296,13 +296,15 @@ export default async function practiceHub(element, ctx) {
     !skill || skill === 'speak' ? lastSpeakingLine(ctx.context.memory, { api, language, support: languages().support, owner: ctx.context.owner }).catch(() => null) : Promise.resolve(null),
     // Skill Hub Speak's Recommended card, from the learner's weakest real attempt (D-139 HD-1); none without attempts.
     skill === 'speak' ? speakRecommendation(ctx, language).catch(() => null) : Promise.resolve(null),
+    // React / Reuse opens the last listened line (X-01, HX-1 A); no line, no tile.
+    !skill || skill === 'listen' ? lastListenedLine(ctx.context.memory, { api, language, support: languages().support, owner: ctx.context.owner }).catch(() => null) : Promise.resolve(null),
   ]);
   if (!ctx.isCurrent()) return;
   // The draft waiting in the free-writing slot (device memory), for the Write group's "Continue draft".
   const slots = ctx.context.memory?.value?.expressions || {};
   const draftText = String(slots[NEW_DRAFT_KEY] || '').trim();
   const draft = draftText ? { title: String(slots[`${NEW_DRAFT_KEY}::task`] || '').trim(), n: wordCountOf(draftText, language) } : null;
-  const data = { draft, speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine, speakRecommendation: speakRec };
+  const data = { draft, speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine, lastListenedLine: listenedLine, speakRecommendation: speakRec };
   if (skill) await renderSkillHub(element, ctx, data, skill);
   else await renderHub(element, ctx, data);
 }

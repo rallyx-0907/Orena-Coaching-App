@@ -104,3 +104,17 @@ export async function lastSpeakingLine(memory, options) {
   }
   return null;
 }
+
+/* The learner's last listened line, as a route React / Reuse can open at once (X-01, HX-1 A): the newest media place
+   with a line that device memory holds, admitted by the same check as the last speaking line (readable, ready, in the
+   learning language, model audio). None admitted: no tile. React reads the line from `?seg=`. */
+export async function lastListenedLine(memory, options) {
+  const entries = (memory?.value?.continuation || []).filter((item) => String(item?.id || '').startsWith('media:') && item.segment).slice(0, 3);
+  if (!entries.length) return null;
+  const facts = await recentMediaFacts(entries, { ...options, memory });
+  for (const item of entries) {
+    const fact = facts.get(item.id);
+    if (fact?.canonicalId) return { params: { id: fact.canonicalId }, query: { seg: fact.segment } };
+  }
+  return null;
+}

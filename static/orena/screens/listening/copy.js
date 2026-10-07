@@ -35,7 +35,7 @@ const layers = {
   transcript: 'interface', mediaCompleted: 'interface',
   itemsSavedLabel: 'interface', dictationLinesLabel: 'interface', minutesLabel: 'interface',
   listened: 'interface', writeResponse: 'interface', reviewSaved: 'interface', replayAll: 'interface',
-  nextBecause: 'support', nextPlain: 'interface', noFocusTerms: 'support', hearInContext: 'interface', save: 'interface', saved: 'interface',
+  nextBecause: 'interface', nextPlain: 'interface', noFocusTerms: 'support', hearInContext: 'interface', save: 'interface', saved: 'interface',
   segmentLabel: 'interface', lineWordsLabel: 'interface', playbackUnavailable: 'support', removedToast: 'interface',
   typeVideo: 'interface', typeAudio: 'interface',
   meaningUnavailable: 'support', phraseTooLong: 'support', saveFailed: 'support',

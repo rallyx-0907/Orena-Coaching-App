@@ -143,3 +143,19 @@ Everything else measured is equal or differs only by the D-093 AA accent. Size m
 ## 6. Not walked
 
 Lesson complete after a real review / check (grading writes learner data), Speaking Summary with data, React Understand choices and error states, Respond error toast, "Ask Orena why", the mic and its sheets, the end panel on phones, Reader menu and Check Understanding entries to Respond (code-read), Today's writing-draft Continue, Vietnamese and Chinese of the Reading Complete / Respond copy beyond the size matrix (Vietnamese walked; Chinese interface not walked in this batch).
+
+## Lane defaults pending human confirmation
+
+2026-10-07, reason: human: continue without asking; follows earlier audits. Provisional and reversible; the human may
+override any of them. Implemented on `codex/work`.
+
+| Id | Default | What was done |
+| --- | --- | --- |
+| HX-2 A (X-03, X-08) | a result tile appears only with a real measurement | React: "Intent achieved?" is drawn only when the coaching carries a valid `intent_achieved` verdict (the S-26 pattern, Yes / Partly / No in the interface language) and "Phrase reused?" only when the line has a catalogued phrase; neither is ever a bare 0. Respond: the "Uses the source" tile is removed (no endpoint measures it); Words and Fixes stay, in two columns. |
+| HX-6 A (X-15) | the end panel's next row follows the interface language | The eyebrow copy moved to the interface layer; the topic is shown through Discover's `KNOWN_TOPICS` vocabulary in the interface language, and the row reads plain "Next" when the topic is unknown (never a raw slug). |
+| HX-4 C (X-10) | Shadowing behind "..." | Content Detail's "Shadowing" button moved into the "..." menu (shown for transcript-backed media, beside "Delete from Orena" for the learner's own imports). |
+| HX-1 A (X-01) | Practice Hub Listen tile "React / Reuse" | Opens the learner's last listened line (newest media place with a line, admitted by the same readable / ready / language / model-audio check as Pronunciation's last line); not drawn when there is none. Icon: Lucide `arrow-left-right` for the design's "swap". |
+| HX-3 A, HX-5 A | keep as built | No work. |
+| X-02, X-05, X-13, X-14, X-16..X-19 | no change | Recorded as in the table above. X-09 stays parked with the Orena entries. |
+
+Defects fixed without a decision: X-11 (a media place with a line resumes: "Continue watching / listening" and the strip "Resume at 0:44" from the line's start, the percent only when the duration is known), X-12 (a finished article, 100%, reads "Read again" and draws no strip), X-06 ("Understand" never breaks inside a word; it is centred and may overhang its bar by a pixel or two at 360), X-07 (Finish 14px / 46 high, "I've listened" 15px / 13 22 padding). Not copied: the frame's "I've listened" is 61 high only because its arrow icon is a block under the label (a prototype wrapping artefact); the arrow stays inline, 45 high.

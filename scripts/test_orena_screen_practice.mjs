@@ -231,4 +231,12 @@ import {
   assert.equal(noReason.reason, '', 'a missing reason is an honest empty string, not omitted or invented');
 }
 
+/* X-01 / HX-1 A: React / Reuse only with a real last listened line */
+{
+  assert.ok(!listenModes([]).some((m) => m.key === 'react'));
+  const last = { params: { id: 'lesson-en' }, query: { seg: 'lesson-en:003' } };
+  const react = listenModes([], last).find((m) => m.key === 'react');
+  assert.deepEqual([react.routeId, react.params, react.query], ['react', last.params, last.query]);
+}
+
 console.log('Orena Practice Hub / Skill Hub screen: skill/mode mapping, continuation resolution, rule-40 zeros and drops, no invented data: PASS');

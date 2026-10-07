@@ -37,6 +37,8 @@ import { openMedia, rememberMedia } from '../../product/media-source.js';
 import { processingProgressMarkup } from '../../kit/states.js';
 import { openWordSheet } from '../quick-sheet/sheet.js';
 import { openVocabFocus } from './vocab-sheet.js';
+import { topicLabel } from '../discover/model.js';
+import { t as discoverT } from '../discover/copy.js';
 import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { mapLesson as dictationLesson, progressBySegment } from '../dictation/model.js';
@@ -883,7 +885,7 @@ export default async function listening(element, ctx) {
           ${nextRec ? html`<button type="button" class="s-listening__end-next" data-act="next">
             <span class="s-listening__end-next-thumb" style="${nextRec.posterUrl ? `background-image:url('${posterUrl(nextRec.posterUrl)}')` : ''}"></span>
             <span class="s-listening__end-next-body">
-              <span class="s-listening__end-next-eyebrow">${nextRec.topic ? t('nextBecause', { topic: String(nextRec.topic).replace(/-/g, ' ') }) : t('nextPlain')}</span>
+              <span class="s-listening__end-next-eyebrow">${topicLabel(nextRec.topic, discoverT) ? t('nextBecause', { topic: topicLabel(nextRec.topic, discoverT) }) : t('nextPlain')}</span>
               <span class="s-listening__end-next-title">${metaLine([nextRec.title, nextMinutes])}</span>
             </span>
             ${raw(icon('chevron-right', { size: 20 }))}

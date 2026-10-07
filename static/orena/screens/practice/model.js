@@ -46,7 +46,7 @@ const WRITE_ICONS = { continue: 'pen-line', prompt: 'pen-line', free: 'notebook-
 /* 'keyboard' (design PH_MAP "Dictation":"kbd") and 'repeat' (design PH_MAP "Shadowing":"repeat",
    the same icon Speak's own Shadowing mode already uses) - both already present in kit/icons.js,
    no sync needed. */
-const LISTEN_ICONS = { dictation: 'keyboard', listening: 'headphones' };
+const LISTEN_ICONS = { dictation: 'keyboard', listening: 'headphones', react: 'arrow-left-right' };
 /* The design's PH_MAP: Due review and Daily Feed are `cards` (Lucide panels-top-left), Collections and Saved language
    are `lib` (Lucide library-big), Timed Recall `zap`, Context Transfer `target`. */
 const VOCAB_ICONS = { review: 'panels-top-left', timed: 'zap', transfer: 'target', feed: 'panels-top-left', collections: 'library-big', language: 'library-big' };
@@ -149,12 +149,15 @@ export function writeModes(draft = null) {
 /* Human correction: listening comprehension and dictation are separate choices,
    both choose content before practice. Speaking owns the single pronunciation /
    shadowing entry. Only lessons with materialized questions admit comprehension. */
-export function listenModes(items = []) {
+export function listenModes(items = [], last = null) {
   const list = Array.isArray(items) ? items : [];
   const modes = [];
   if (list.some(item => item?.comprehension_count > 0)) modes.push({ key: 'listening', labelRouteId: 'listenQuestions', routeId: 'discover', query: { tab: 'listen', practice: 'listening' } });
   // Personal prepared imports also support dictation; the chooser owns admission.
   modes.push({ key: 'dictation', labelRouteId: 'dictation', routeId: 'discover', query: { tab: 'listen', practice: 'dictation' } });
+  /* React / Reuse opens the learner's last listened line (X-01, HX-1 A; the Pronunciation pattern, D-139 HD-3). With
+     no such line the tile is not drawn: its route needs a media id and a line only the learner's own history supplies. */
+  if (last?.params?.id) modes.push({ key: 'react', routeId: 'react', params: last.params, query: last.query });
   return modes;
 }
 
@@ -213,7 +216,7 @@ export function grammarModes() {
 export const SKILL_BUILDERS = {
   speak: (data) => speakModes(data.speakingItems, data.lastSpeakingLine),
   write: (data) => writeModes(data.draft),
-  listen: (data) => listenModes(data.listeningItems),
+  listen: (data) => listenModes(data.listeningItems, data.lastListenedLine),
   vocabulary: (data) => vocabularyModes(data.due),
   grammar: () => grammarModes(),
   reading: (data) => readingModes(data.reading),
