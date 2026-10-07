@@ -4352,3 +4352,19 @@ addition for Attempt History.
 - **HD-13 Situation (S-25, S-26).** Each scenario carries an authored context field shown as the chip; the
   Intent / Clarity cards appear only when the coaching response carries real judgements.
 - **HD-14 language layers (S-27).** Mic sheets and system notes are wholly in the interface language.
+
+## D-140 - Compare's model pitch and timing are prepared once at content readiness
+
+2026-10-07, explicit human decision ("mất đâu màn hình compare có biểu đồ so sánh từng từ và timing nữa", then
+"Chuẩn bị 1 lần"). Since D-121 the model is the original segment played from the source, so Compare had no model
+audio to measure and showed no model pitch or timing.
+
+- **Prepared once.** At content readiness the server cuts each line's model clip from the admitted source and
+  stores it as a source artifact, once per content revision, through the existing media asset store and execution
+  owners. No provider is called.
+- **Read on open.** Compare only reads the prepared clip and measures its pitch in the browser with the same
+  tracker as the learner's take. Opening or reopening a line never cuts, fetches the source or prepares anything
+  (D-121 stays in force); a line without a prepared clip shows the model plot as unavailable.
+- **Word timing.** Verified word timestamps win. Without them the model's words are placed by estimate over the
+  voiced part of the clip and labelled "est." (the D-137 L-13 rule).
+- **Existing content** is prepared by an explicit, bounded backfill, not on navigation.
