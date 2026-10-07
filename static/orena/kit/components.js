@@ -236,7 +236,7 @@ export function segmentedControl({ options = [], variant = 'surface', equalWidth
    AA fix; caller passes no separate "no image" markup, the fallback is CSS-only). */
 export function heroMedia({ cover = null, image = '', height = 260, radius = 24, pill = '', title, titleSize = 28, meta = '', dataset = {} } = {}) {
   // A floor, not a fixed height: a long title on a phone grows the hero instead of spilling over its top edge.
-  const rules = [`min-height:${px(height)}`, `border-radius:${px(radius)}`, image ? `background-image:${image}` : ''].filter(Boolean).join(';');
+  const rules = [height === 'auto' ? '' : `min-height:${px(height)}`, `border-radius:${px(radius)}`, image ? `background-image:${image}` : ''].filter(Boolean).join(';');
   return html`<div class="c-hero" style="${rules}"${dataAttrs(dataset)}>
     ${image ? '' : coverTile(cover)}
     <span class="c-hero__scrim" aria-hidden="true"></span>

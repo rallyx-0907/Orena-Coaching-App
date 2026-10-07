@@ -893,7 +893,7 @@
 /* The phone's transport row keeps its controls together at 360px in longer languages (LEX-037): a slightly tighter
    gap, so More does not drop onto a row of its own. */
 :root[data-device="mobile"] .s-listening__controls { --ls-cgap: 6px; }
-@media (max-width: 370px) {
+@media (max-width: 389px) {
   :root[data-device="mobile"] .s-listening__controls { --ls-cgap: 4px; }
   :root[data-device="mobile"] .s-listening__controls .s-listening__pill--speed,
   :root[data-device="mobile"] .s-listening__controls .s-listening__pill--toggle { padding: 0 10px; }
@@ -919,6 +919,15 @@
 :root[data-device="mobile"] .s-listening__selected:has(.s-listening__extra-acts.is-open) .s-listening__selected-scroll { max-height: 5.4em; }
 :root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-scroll { flex: 0 1 auto; min-height: 40px; overflow-y: auto; }
 :root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-actions { flex: none; overflow: visible; }
+
+/* A short phone (375x667, 320x568) cannot hold player, transport, the selected line's card and a 140px Transcript:
+   the card used to run out of the media column and sit under the Transcript, hiding its actions. The Transcript gives up
+   height while a line is selected, and the media column scrolls in its own region for whatever is still over (the
+   controls are reached by scrolling it, never covered). Where everything fits nothing scrolls. */
+:root[data-device="mobile"] .s-listening__media { overflow-y: auto; overscroll-behavior: contain; }
+@media (max-height: 700px) {
+  :root[data-device="mobile"] .s-listening:has(.s-listening__selected) .s-listening__transcript { min-height: 96px; }
+}
 
 /* The completed panel's actions on a phone (LEX-037): two even columns, each label on one line with room around
    it, instead of four squeezed cells where one wraps. With three actions the primary takes the full row. */

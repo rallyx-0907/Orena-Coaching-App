@@ -28,6 +28,9 @@
    with height:'auto' so this is the only rule that decides the box height. */
 .c-hero[data-hero='collection'] {
   aspect-ratio: 16 / 8;
+  /* overflow:hidden (a scroll container) zeroes the automatic minimum, so a long title was cut off at the
+     ratio's height; overflow:clip still rounds the corners but keeps it, making the ratio a floor. */
+  overflow: clip;
 }
 
 /* Hero title line-height: the shared `.c-hero__title` (kit/components.css) sets

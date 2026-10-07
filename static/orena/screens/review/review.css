@@ -129,6 +129,7 @@
   line-height: 1.15;
   font-weight: 700;
   letter-spacing: -0.02em;
+  width: 100%;
   max-width: 460px;
   min-height: 0;
   overflow-wrap: anywhere;
@@ -151,6 +152,11 @@
 }
 .s-review-blank {
   white-space: nowrap;
+  /* A long word's blank (up to 14 full-width marks) is wider than a phone card: it stops at the card's edge instead of running past it. */
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  vertical-align: bottom;
 }
 .s-review-cue {
   font-size: 14px;

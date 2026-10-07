@@ -220,6 +220,10 @@
   font-size: 14px;
   font-weight: 600;
 }
+/* The design draws this link as bare text (about 18px tall): on a phone its touch area reaches 44px without moving or
+   resizing anything drawn. */
+:root[data-device='mobile'] .c-section-head__action { position: relative; }
+:root[data-device='mobile'] .c-section-head__action::after { content: ''; position: absolute; inset: -13px -8px; }
 .c-section-head--sm .c-section-head__action {
   font-size: 13px;
   color: var(--accent-text);
