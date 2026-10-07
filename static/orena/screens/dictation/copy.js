@@ -26,10 +26,11 @@ const layers = {
   hintNoteLettersHan: 'interface',
   liveLabel: 'interface',
   liveCount: 'interface',
-  usedHintBadge: 'support',
+  // System feedback follows the interface (LEX-039); the line's meaning stays in the support language.
+  usedHintBadge: 'interface',
   youWrote: 'interface',
   transcript: 'interface',
-  emptyAnswer: 'support',
+  emptyAnswer: 'interface',
   retry: 'interface',
   explainLine: 'interface',
   next: 'interface',
@@ -37,12 +38,18 @@ const layers = {
   finish: 'interface',
   previous: 'interface',
   doneLabel: 'interface',
-  scoreNoteExact: 'support',
-  scoreNoteClose: 'support',
-  scoreNoteAgain: 'support',
+  scoreNoteExact: 'interface',
+  scoreNoteClose: 'interface',
+  scoreNoteAgain: 'interface',
   placeholder: 'interface',
-  saveFailed: 'support',
-  progressUnread: 'support',
+  saveFailed: 'interface',
+  progressUnread: 'interface',
+  saveLanguage: 'interface',
+  // A Chinese score counts characters (and whole Latin words), the live strip counts words: each says its unit (LEX-041).
+  scoreUnitHan: 'interface',
+  // Explain asks this, as the learner's own question, in the support language (LEX-042).
+  explainAsk: 'support',
+  saveRetry: 'interface',
 };
 
 export const t = defineCopy('dictation', {
@@ -82,6 +89,10 @@ export const t = defineCopy('dictation', {
     scoreNoteAgain: 'Replay and try again; focus on the marked words.',
     placeholder: 'Type what you hear… (Enter to check)',
     saveFailed: "Couldn't save this attempt.",
+    saveLanguage: "Not saved: this lesson isn't in the language you're learning.",
+    saveRetry: 'Try again',
+    scoreUnitHan: 'characters',
+    explainAsk: 'What does this sentence mean? Give the meaning of the whole sentence first, then the key point.',
     progressUnread: "Couldn't read your earlier progress on this line, so this attempt wasn't saved and nothing was overwritten.",
   },
   vi: {
@@ -118,6 +129,10 @@ export const t = defineCopy('dictation', {
     scoreNoteAgain: 'Nghe lại và thử lần nữa; tập trung vào các từ được đánh dấu.',
     placeholder: 'Gõ lại những gì bạn nghe được… (Enter để kiểm tra)',
     saveFailed: 'Không lưu được lần thử này.',
+    saveLanguage: 'Chưa lưu: bài này không thuộc ngôn ngữ bạn đang học.',
+    saveRetry: 'Thử lại',
+    scoreUnitHan: 'chữ',
+    explainAsk: 'Câu này nghĩa là gì? Cho mình nghĩa của cả câu trước, rồi điểm chính cần chú ý.',
     progressUnread: 'Chưa đọc được tiến độ trước đó của câu này, nên lần thử này không được lưu và không có gì bị ghi đè.',
   },
   zh: {
@@ -154,6 +169,10 @@ export const t = defineCopy('dictation', {
     scoreNoteAgain: '再听一遍再试；重点看标出的词。',
     placeholder: '输入你听到的内容…（回车检查）',
     saveFailed: '这次结果没能保存。',
+    saveLanguage: '未保存：这门课不是你正在学的语言。',
+    saveRetry: '重试',
+    scoreUnitHan: '个字',
+    explainAsk: '这句话是什么意思？先说整句的意思，再说重点。',
     progressUnread: '暂时读不到你在这一句之前的练习记录，因此这次没有保存，也没有覆盖任何内容。',
   },
 });

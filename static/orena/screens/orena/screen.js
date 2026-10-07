@@ -15,7 +15,7 @@ import { onContext } from '../../shell/context.js';
 import { orenaPresent, onOrenaPresence } from '../../agent/presence.js';
 import { t } from './copy.js';
 import { homeSubtitle, latestSuggestions, thinkingText } from './model.js';
-import { messageMarkup } from './thread.js';
+import { messageMarkup, placeThread } from './thread.js';
 import { runOffered, openIfAsked } from './actions.js';
 import { dockVoice, undockVoice } from './voice-dock.js';
 import { keepFocus } from './focus.js';
@@ -98,7 +98,7 @@ export default async function mountOrena(element, ctx) {
     voiceShown = voiceMode;
     bind();
     const thread = element.querySelector('[data-scroll-region]');
-    if (thread) thread.scrollTop = thread.scrollHeight;
+    placeThread(thread, 's-orena-home'); // a long answer is read from its start (LEX-042)
     // The router moves focus to the main region once a screen has mounted, so the cursor goes in
     // the box after that (a macrotask), not during the mount.
     if (takeComposerFocus()) setTimeout(() => element.querySelector('[data-input]')?.focus({ preventScroll: true }), 0);

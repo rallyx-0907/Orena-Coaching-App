@@ -628,11 +628,39 @@
     "answer": "我用gpt4学习"
    },
    "result": {
-    "accuracy_percent": 67,
+    "accuracy_percent": 80,
     "exact": false,
-    "expected_unit_count": 3,
-    "answer_unit_count": 3,
+    "expected_unit_count": 5,
+    "answer_unit_count": 5,
     "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "另外用MonoBook 、MySkin等版本也有相同功能",
+    "answer": "另外用MonoBook、MySkin等版本也有相同功能"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 14,
+    "answer_unit_count": 14,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "另外用MonoBook 、MySkin等版本也有相同功能",
+    "answer": "另外用MonoBook MySkin版本有相同功能"
+   },
+   "result": {
+    "accuracy_percent": 86,
+    "exact": false,
+    "expected_unit_count": 14,
+    "answer_unit_count": 12,
+    "edit_distance": 2
    }
   },
   {
@@ -644,8 +672,8 @@
    "result": {
     "accuracy_percent": 100,
     "exact": true,
-    "expected_unit_count": 1,
-    "answer_unit_count": 1,
+    "expected_unit_count": 4,
+    "answer_unit_count": 4,
     "edit_distance": 0
    }
   },
@@ -656,10 +684,10 @@
     "answer": "I dont know不知道"
    },
    "result": {
-    "accuracy_percent": 67,
+    "accuracy_percent": 83,
     "exact": false,
-    "expected_unit_count": 3,
-    "answer_unit_count": 3,
+    "expected_unit_count": 6,
+    "answer_unit_count": 6,
     "edit_distance": 1
    }
   },
@@ -672,8 +700,8 @@
    "result": {
     "accuracy_percent": 100,
     "exact": true,
-    "expected_unit_count": 1,
-    "answer_unit_count": 1,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
     "edit_distance": 0
    }
   },

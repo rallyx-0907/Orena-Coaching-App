@@ -163,6 +163,8 @@ export function createRouter({ frame, getContext }) {
       context: getContext(),
       go,
       back,
+      // Whether Back returns within the app (false when the room was opened directly, e.g. from a link).
+      hasHistory: () => depth > 0,
       href,
       setCrumb,
       setLoadingLabel: (label) => { loadingLabel = String(label); },

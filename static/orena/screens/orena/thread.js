@@ -51,3 +51,22 @@ export function messageMarkup(message, { surface, ranActions, supported }) {
     ${message.error && !errorInline ? errorMarkup(prefix, message.error) : ''}
   </div>`;
 }
+
+/* Where the conversation sits after a paint (LEX-042): new messages come into view, but a long answer is read
+   from its beginning - once the latest Orena reply is taller than the region, its top stays at the top instead of
+   the region following its tail as it grows. A learner who has scrolled up keeps their place. */
+export function placeThread(region, prefix) {
+  if (!region) return;
+  const rows = region.querySelectorAll(`.${prefix}__row`);
+  const last = rows[rows.length - 1];
+  const wasAtEnd = region.dataset.placed !== '1' || region.scrollHeight - region.scrollTop - region.clientHeight < 80 || region.dataset.follow === '1';
+  if (last?.classList.contains(`${prefix}__row--orena`) && last.offsetHeight > region.clientHeight - 24) {
+    const top = last.offsetTop - region.offsetTop - 8;
+    if (wasAtEnd || region.scrollTop > top) region.scrollTop = Math.max(0, top);
+    region.dataset.follow = '0';
+  } else if (wasAtEnd) {
+    region.scrollTop = region.scrollHeight;
+    region.dataset.follow = '1';
+  }
+  region.dataset.placed = '1';
+}

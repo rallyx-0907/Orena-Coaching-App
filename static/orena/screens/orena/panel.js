@@ -34,7 +34,7 @@ import { refreshLearningLanguage } from './language-sync.js';
 import { setAgentHandler } from '../../shell/agent-bridge.js';
 import { t } from './copy.js';
 import { contextParts, latestSuggestions, thinkingText } from './model.js';
-import { messageMarkup } from './thread.js';
+import { messageMarkup, placeThread } from './thread.js';
 import { runOffered, openIfAsked } from './actions.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
@@ -98,7 +98,7 @@ export async function openOrenaPanel(context = {}, carry = null) {
     voiceShown = voiceMode;
     bind();
     const thread = sheetEl.querySelector('[data-scroll-region]');
-    if (thread) thread.scrollTop = thread.scrollHeight;
+    placeThread(thread, 's-orena-panel'); // a long answer is read from its start (LEX-042)
   }
 
   function startersMarkup(state) {

@@ -108,6 +108,7 @@ export default async function listening(element, ctx) {
   let autoScroll = defaults.autoscroll;
   let wordHighlight = stageRaw.wordhl !== false;
   let moreOpen = false;
+  let moreActs = false; // the phone's secondary line actions (Dictation, Shadowing, React) are shown
   let selectedId = null;
   const explicitSegment = ctx.query.get('segment') || ctx.query.get('seg');
   const requestedSegment = explicitSegment || place.segmentId;
@@ -150,6 +151,11 @@ export default async function listening(element, ctx) {
       paintVeil();
       paintRows();
       scrollRowIntoView(line.id);
+    },
+    // Retry hides the line again (LEX-038): its row and the picture are veiled until the new attempt is checked.
+    onRetry: () => {
+      paintVeil();
+      paintRows();
     },
     onNext: (line) => {
       const at = indexOf(line.id);
@@ -236,7 +242,19 @@ export default async function listening(element, ctx) {
   const selectedSlot = element.querySelector('[data-selected-slot]');
   const endSlot = element.querySelector('[data-end-slot]');
 
-  element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
+  /* Back (LEX-043): while the learner is typing an answer it only closes the keyboard - the lesson, the line and
+     the draft stay. Otherwise it leaves the lesson for where the learner came from, or, opened directly, for the
+     lesson's own page rather than an unrelated Today. */
+  element.querySelector('[data-back]').addEventListener('click', () => {
+    if (element.classList.contains('is-typing') || document.activeElement?.matches?.('.s-dict__input')) {
+      document.activeElement?.blur?.();
+      element.classList.remove('is-typing');
+      element.style.removeProperty('--ls-visible-h');
+      return;
+    }
+    if (ctx.hasHistory?.() === false) ctx.replace(ctx.href('content', { id: contentId }));
+    else ctx.back();
+  });
 
   /* ---------------------------------------------------------------- modes ---- */
   function modesMarkup() {
@@ -578,7 +596,10 @@ export default async function listening(element, ctx) {
     return html`<div class="s-listening__selected">
       <div class="s-listening__selected-head">
         <span class="s-listening__selected-label">${t('selectedSegment', { time: mmss(seg.start_ms) ?? '' })}</span>
-        <button type="button" class="s-listening__selected-close" data-act="clear" aria-label="${s('close')}">${raw(icon('x', { size: 17 }))}</button>
+        <span class="s-listening__selected-tools">
+          <button type="button" class="s-listening__selected-close s-listening__moreacts" data-act="more-acts" aria-expanded="${String(moreActs)}" aria-label="${t('more')}" title="${t('more')}">${raw(icon('ellipsis', { size: 17 }))}</button>
+          <button type="button" class="s-listening__selected-close" data-act="clear" aria-label="${s('close')}">${raw(icon('x', { size: 17 }))}</button>
+        </span>
       </div>
       <div class="s-listening__selected-scroll" data-scroll-region>
         <div class="s-listening__selected-text" lang="${langAttr(language)}">${seg.original_text}</div>
@@ -588,10 +609,12 @@ export default async function listening(element, ctx) {
         ${playbackOk ? pill({ id: 'play-seg', label: t('playSegment'), iconName: 'play', variant: 'primary' }) : ''}
         <button type="button" class="s-listening__pill${saved ? ' s-listening__pill--saved' : ''}" data-act="save-phrase" aria-pressed="${String(saved)}">${phraseLabelFor(seg)}</button>
         ${pill({ id: 'vocab', label: t('vocabularyFocus') })}
-        ${lesson.modes.dictation ? pill({ id: 'dictation', label: s('dictation') }) : ''}
         <button type="button" class="s-listening__pill--ai" data-act="explain">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explain')}</button>
-        ${lesson.modes.shadowing ? pill({ id: 'shadowing', label: s('shadowing') }) : ''}
-        ${pill({ id: 'react', label: s('reactReuse') })}
+        <span class="s-listening__extra-acts${moreActs ? ' is-open' : ''}">
+          ${lesson.modes.dictation ? pill({ id: 'dictation', label: s('dictation') }) : ''}
+          ${lesson.modes.shadowing ? pill({ id: 'shadowing', label: s('shadowing') }) : ''}
+          ${pill({ id: 'react', label: s('reactReuse') })}
+        </span>
       </div>
     </div>`;
   }
@@ -770,6 +793,8 @@ export default async function listening(element, ctx) {
     const id = selectedId || currentId;
     const seg = segOf(id);
     if (action === 'clear') { selectedId = null; paintRows(); paintSelected(); return; }
+    // The phone shows the frequent line actions and keeps the rest one tap away (LEX-037).
+    if (action === 'more-acts') { moreActs = !moreActs; paintSelected(); return; }
     if (!seg) return;
     if (action === 'play-seg') return playLine(id);
     if (action === 'save-phrase') return togglePhrase(seg);
@@ -786,6 +811,8 @@ export default async function listening(element, ctx) {
         // The contract's one namespace (§6.1, F-9): `media:<id>`, never the bare route id.
         content_id: contentId,
         selected_item: { type: 'sentence', id, text: seg.original_text, lang: language },
+        // Explain explains: the question goes at once, no choosing first (LEX-042).
+        ask: dictT('explainAsk'),
       });
       return;
     }

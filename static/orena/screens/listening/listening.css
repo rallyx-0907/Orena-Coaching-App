@@ -828,3 +828,49 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Line actions (LEX-037): on a desk all seven sit in the row as the frame draws them; on a phone the frequent
+   four come first in one tidy row and the other three open from ⋯, instead of four uneven rows. */
+.s-listening__selected-tools { display: flex; gap: 4px; }
+.s-listening__moreacts { display: none; }
+.s-listening__extra-acts { display: contents; }
+:root[data-device="mobile"] .s-listening__moreacts { display: inline-flex; }
+:root[data-device="mobile"] .s-listening__selected-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+:root[data-device="mobile"] .s-listening__selected-actions > *,
+:root[data-device="mobile"] .s-listening__extra-acts > * {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  height: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:root[data-device="mobile"] .s-listening__extra-acts { display: none; }
+:root[data-device="mobile"] .s-listening__extra-acts.is-open { display: contents; }
+
+/* Dictation result actions (LEX-037): one row - Retry and Explain as compact icon buttons on a phone, the next
+   step the one wide, filled action. */
+:root[data-device="mobile"] .s-listening__dict .s-dict__actions { flex-wrap: nowrap; gap: 8px; margin-top: 0; }
+:root[data-device="mobile"] .s-listening__dict .s-dict__actlabel {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+:root[data-device="mobile"] .s-listening__dict .s-dict__retry,
+:root[data-device="mobile"] .s-listening__dict .s-dict__ai {
+  flex: none; width: 46px; height: 46px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+}
+:root[data-device="mobile"] .s-listening__dict .s-dict__next { flex: 1 1 auto; height: 46px; min-width: 0; }
+
+
+/* The phone's transport row keeps its controls together at 360px in longer languages (LEX-037): a slightly tighter
+   gap, so More does not drop onto a row of its own. */
+:root[data-device="mobile"] .s-listening__controls { --ls-cgap: 6px; }
+@media (max-width: 370px) {
+  :root[data-device="mobile"] .s-listening__controls { --ls-cgap: 4px; }
+  :root[data-device="mobile"] .s-listening__controls .s-listening__pill--speed,
+  :root[data-device="mobile"] .s-listening__controls .s-listening__pill--toggle { padding: 0 10px; }
+}

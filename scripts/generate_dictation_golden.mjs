@@ -57,6 +57,9 @@ const cases = [
   ['zh', '我们练习听力', '你们练习听力'],
   ['zh', '我用 GPT-4 学习 123', '我用 gpt-4 学习 123'],
   ['zh', '我用GPT-4学习', '我用gpt4学习'],
+  // LEX-041: a Latin word ends where the Han text begins.
+  ['zh', '另外用MonoBook 、MySkin等版本也有相同功能', '另外用MonoBook、MySkin等版本也有相同功能'],
+  ['zh', '另外用MonoBook 、MySkin等版本也有相同功能', '另外用MonoBook MySkin版本有相同功能'],
   ['zh', 'abc中文def', 'abc中文def'],
   ['zh', "I don't know不知道", 'I dont know不知道'],
   ['zh', '１２３块', '123块'],
