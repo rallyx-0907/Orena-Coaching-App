@@ -5,6 +5,7 @@ on:
       - feature/grammar-lab-pipeline
     paths:
       - 'scripts/_tmp_test_require_initial_cache.py'
+      - 'scripts/_tmp_patch_initial_cache_guard.py'
       - '.github/workflows/grammar-initial-cache-guard.yml'
       - 'grammar_lab/pipeline/llm_client.py'
       - 'grammar_lab/pipeline/generate.py'
@@ -23,5 +24,22 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e "grammar_lab[dev]"
-      - name: Initial cache guard regression
+      - name: Apply production patch
+        run: python scripts/_tmp_patch_initial_cache_guard.py
+      - name: Temporary behavior regression
         run: python scripts/_tmp_test_require_initial_cache.py
+      - name: Permanent guard regressions
+        run: python -m pytest grammar_lab/tests/test_initial_cache_guard.py -q
+      - name: Generation and CLI regressions
+        run: python -m pytest grammar_lab/tests/test_generate.py grammar_lab/tests/test_llm_client.py grammar_lab/tests/test_cli_contract.py -q
+      - name: Full Grammar Lab suite
+        run: python -m pytest grammar_lab/tests -q
+      - name: Commit production patch and remove temporary files
+        shell: bash
+        run: |
+          git config user.name "CalisJI"
+          git config user.email "78250571+CalisJI@users.noreply.github.com"
+          git rm .github/workflows/grammar-initial-cache-guard.yml scripts/_tmp_test_require_initial_cache.py scripts/_tmp_patch_initial_cache_guard.py
+          git add grammar_lab/pipeline/llm_client.py grammar_lab/pipeline/generate.py grammar_lab/pipeline/cli.py grammar_lab/tests/test_initial_cache_guard.py
+          git commit -m "feat(grammar): require cached full candidates during repair"
+          git push origin HEAD:feature/grammar-lab-pipeline
