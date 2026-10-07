@@ -4323,3 +4323,32 @@ server's offer copy (learner_copy offer.*) in the interface layer.
   a suggestion unlocks device speech for the visit.
 - **Recording format.** A recording's upload name follows the format the device recorded (an iPhone records mp4,
   not webm).
+
+## D-139 - Speaking flow decisions on the D-129 audit (HD-1 to HD-14)
+
+2026-10-07, explicit human decision on `docs/reviews/SPEAKING_DESIGN_AUDIT.md` ("theo đề xuất"), plus one
+addition for Attempt History.
+
+- **HD-1 Recommended (S-01).** Skill Hub Speak shows the Recommended card from the learner's weakest real attempt
+  (line or mode) with its real reason; no card without attempts.
+- **HD-2 hidden modes (S-04).** Of the modes the design draws and the app does not build, only Shadowing is
+  offered, opening the shared D-119 room through the media chooser. The rest stay hidden (D-101 H9).
+- **HD-3 Pronunciation entry (S-05).** Pronunciation opens the learner's last line directly; "Choose media" sits
+  behind "…". The chooser opens directly only when there is no last line.
+- **HD-4 source bar (S-08).** Previous / Next line at the bottom as frame 28; the line list and "Choose media" in
+  a sheet behind "…".
+- **HD-5 IPA and stress hint (S-10).** IPA from the assessment provider's phonemes where it returns them; the row
+  is hidden otherwise (no dashes). Chinese keeps pinyin.
+- **HD-6 translation line (S-11).** The meaning is revealed on tap, not shown by default.
+- **HD-7 Attempt history in Compare (S-13).** The embedded Attempt history card is added as drawn.
+- **Attempt History review (human addition).** Choosing an attempt in Attempt History opens Compare With Model for
+  that attempt, so the learner can review it.
+- **HD-8 Summary scope (S-15).** This session while it has tasks; the last 7 days when the session is empty.
+- **HD-9 Linking (S-17).** Linking words are counted from the transcript through a language adapter (English and
+  Chinese).
+- **HD-10 Conversation difficulty (S-20).** B1 / B2 / C1 chips, passed into the conversation-turn prompt.
+- **HD-11 End (S-22).** "End" sits in the composer row once at least one turn exists.
+- **HD-12 coaching (S-23).** Inline now; the Contextual Orena panel entry is added later with the Orena work.
+- **HD-13 Situation (S-25, S-26).** Each scenario carries an authored context field shown as the chip; the
+  Intent / Clarity cards appear only when the coaching response carries real judgements.
+- **HD-14 language layers (S-27).** Mic sheets and system notes are wholly in the interface language.
