@@ -358,8 +358,17 @@ LIMIT (temporary, by decision): turns and the pending offer live in the in-proce
               The record is plain data so a store can replace the cache without changing what reads it. Persistence
               (conversation_sessions/turns/user_memories) waits for the human and an independent architecture review
               (AGENTS.md §7; contract §10).
-NEXT          K3 referents / active_topic · K4 profile/RAG must not take a short continuation · K5 voice turns join
-              the same session · then chat UX, then long-term memory.
+K2b f29056a3  the model may mark a proposed action `requested` when the learner's own words ask for it: the app runs it
+              at once, once (not twice for "ok lưu" twice); what was only sent is not claimed as done.
+K3  e9731bc1  agent/focus.py: active_topic + referents (current_word, current_sentence, content in view, pasted text)
+              from facts (selection, a word a tool read, a word an action names, message length) - never parsed from
+              the learner's words. A long paste stays reachable past the recent-turn window. A language change keeps
+              the conversation (gate 3.3 now guards stale screen state only; human direction 2026-10-07).
+K4  fded301b  an answer to an open offer is never read as a status question ("ok lưu" with a word in view).
+LIVE          gemini-3.5-flash-lite, spend bound ~$0.04 per batch: pending-save/-cancel/-between, convo-refs,
+              convo-paste, convo-lang all pass (scripts/agent_live/run.py --flows ...).
+NEXT          K5 voice turns join the same session (text and voice one conversation) - then chat UX, then long-term
+              memory.
 ```
 
 ## 1. Mục tiêu

@@ -382,6 +382,22 @@ def plan() -> dict:
 
 VI = {"interface": "vi", "support": "vi"}
 SAVE = {"actions": ["navigate", "save_word"]}  # a client that can run save_word
+ARTICLE_EN = (
+    "Automation is often described as a threat to jobs, but the evidence is more complicated than the headlines "
+    "suggest, and the debate has been conducted mostly in slogans. Economists have long noticed that new machines destroy some tasks while creating others, and the net "
+    "effect depends on how quickly workers can move from the old tasks to the new ones. Every earlier wave of "
+    "technology, from the loom to the spreadsheet, was feared in the same way before its benefits were understood. "
+    "The author argues that the loudest warnings come from people who confuse tasks with occupations. A bank "
+    "teller's job changed when cash machines arrived, yet the number of tellers grew for two decades because "
+    "branches became cheaper to open and banks opened more of them. The machine took over the counting; the people "
+    "took over the advice. The same pattern, the author says, appears in warehouses, in accounting firms and in "
+    "radiology departments, where software reads the scan and the doctor spends the time saved with the patient. "
+    "The strongest claim in the essay is that retraining programmes are a waste of public money. The author offers "
+    "a single study of one factory closure in Ohio and concludes from it that no retraining scheme anywhere has "
+    "ever worked. Nothing else is cited, and the essay does not say how the workers in that study were chosen. "
+    "Finally, the author proposes wage insurance instead: a payment that tops up the earnings of workers who "
+    "accept a lower-paid job after being laid off, so that they keep working while they learn new skills."
+)
 FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
     # name: [(target, step, locale, message, context extras)]
     "address": [
@@ -447,6 +463,23 @@ FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
         ("en", "ask", VI, "abate nghĩa là gì? Mình có nên lưu từ này không?", SAVE),
         ("en", "between", VI, "từ đó có formal không?", SAVE),
         ("en", "save", VI, "thôi lưu đi", SAVE),
+    ],
+    # Conversation kernel slices 3-4: references resolve from the conversation, a pasted text is asked about
+    # again without pasting it, and a change of learning language keeps the conversation. `conversation_verdict`.
+    "convo-refs": [
+        ("en", "ask", VI, "mitigate nghĩa là gì?", SAVE),
+        ("en", "example", VI, "cho ví dụ kiểu điện tử", SAVE),
+        ("en", "formal", VI, "formal không?", SAVE),
+        ("en", "save", VI, "từ đó lưu đi", SAVE),
+    ],
+    "convo-paste": [
+        ("en", "ask", VI, ARTICLE_EN + "\n\nTóm lại tác giả phản đối điều gì?", {}),
+        ("en", "third", VI, "đoạn thứ 3 lập luận có yếu không?", {}),
+        ("en", "first", VI, "còn đoạn đầu thì nói gì?", {}),
+    ],
+    "convo-lang": [
+        ("en", "ask", VI, "mitigate nghĩa là gì?", {}),
+        ("zh-CN", "switch", VI, "từ đó dịch sang tiếng Trung là gì?", {}),
     ],
     "screens": [
         ("zh-CN", "vi", VI, "Màn này dùng để làm gì?", {"surface": "vocabulary.my_language"}),
@@ -613,6 +646,43 @@ def pending_verdict(rows: list[dict]) -> dict:
             "question_ran_nothing": not ran(acts("pending-between", "between")),
             "late_yes_ran_once": len(ran(acts("pending-between", "save"))) == 1,
         }
+    for checks in verdict.values():
+        checks["pass"] = all(checks.values())
+    return verdict
+
+
+def conversation_verdict(rows: list[dict]) -> dict:
+    """The conversation flows, judged from the answers the device received: references resolved to the word named
+    earlier (an action or its text names it), a pasted text answered about without being pasted again, and a
+    language change that kept the topic. Keyword checks only; the answers are in the result for reading."""
+
+    def row(flow: str, step: str) -> dict:
+        return next((r for r in rows if r.get("flow") == flow and r.get("step") == step), {})
+
+    def says(r: dict, *words: str) -> bool:
+        text = (r.get("text") or "").casefold()
+        return any(w.casefold() in text for w in words)
+
+    asks_again = ("dán", "paste", "gửi lại", "cung cấp", "nội dung", "bạn muốn hỏi về", "đoạn nào")
+    verdict: dict = {}
+    if any(r.get("flow") == "convo-refs" for r in rows):
+        saved = [a for a in row("convo-refs", "save").get("actions", []) if a.get("type") == "save_word"]
+        verdict["convo-refs"] = {
+            "example_about_the_word": says(row("convo-refs", "example"), "mitigate"),
+            "formal_about_the_word": says(row("convo-refs", "formal"), "mitigate"),
+            "saved_mitigate_once": len(saved) == 1 and saved[0]["payload"].get("text", "").lower() == "mitigate"
+            and saved[0].get("open") is True,
+        }
+    if any(r.get("flow") == "convo-paste" for r in rows):
+        third, first = row("convo-paste", "third"), row("convo-paste", "first")
+        verdict["convo-paste"] = {
+            "third_answered_from_the_text": says(third, "Ohio", "một nhà máy", "một nghiên cứu", "đào tạo lại")
+            and not says(third, *asks_again[:4]),
+            "first_answered_from_the_text": says(first, "tự động hóa", "automation", "công việc", "nhiệm vụ")
+            and not says(first, *asks_again[:4]),
+        }
+    if any(r.get("flow") == "convo-lang" for r in rows):
+        verdict["convo-lang"] = {"kept_the_word_after_the_switch": says(row("convo-lang", "switch"), "缓解", "减轻", "减缓", "mitigate")}
     for checks in verdict.values():
         checks["pass"] = all(checks.values())
     return verdict
@@ -943,12 +1013,15 @@ def finish(rows: list[dict], spent: float, out: str) -> int:
                     "capability_models": {"agent_turn_fast": MODEL, "agent_turn_deep": MODEL},
                     "spent_bound_usd": round(spent, 4), "price": [PRICE_IN, PRICE_OUT],
                     "lock": LOCK_NOTES, "notes_verdict": notes_verdict(rows) if any(r.get("flow") == "notes" for r in rows)
-                    else None, "pending_verdict": pending_verdict(rows) or None, "timing": timing(rows), "turns": rows},
+                    else None, "pending_verdict": pending_verdict(rows) or None,
+                    "conversation_verdict": conversation_verdict(rows) or None, "timing": timing(rows), "turns": rows},
                    ensure_ascii=False, indent=2),  # fmt: skip
         encoding="utf-8",
     )
     if any(r.get("flow") == "notes" for r in rows):
         print(f"notes verdict: {notes_verdict(rows)}")
+    if any(str(r.get("flow", "")).startswith("convo") for r in rows):
+        print(f"conversation verdict: {conversation_verdict(rows)}")
     if any(str(r.get("flow", "")).startswith("pending") for r in rows):
         print(f"pending verdict: {pending_verdict(rows)}")
     print(f"timing: {timing(rows)}")
