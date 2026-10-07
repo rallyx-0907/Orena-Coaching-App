@@ -429,8 +429,9 @@
 /* A card with no cover (HP-3 A): a --tint2 tile and the type's icon on its skill hue, as Today's hero draws it. */
 .c-media__img--blank {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 10px;
   background-color: var(--tint2);
 }
 .c-media__cover {

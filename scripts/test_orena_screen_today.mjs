@@ -24,6 +24,7 @@ const {
   buildGoalSummary,
   buildSkillRings,
   buildStreak,
+  leadWithContinuation,
   buildLevel,
   todayDateLabel,
   greetingPeriod,
@@ -322,6 +323,22 @@ assert.deepEqual(usedRecommendationIds([{ id: 'a' }, { id: 'b' }, { id: null }])
   assert.equal(needsLevelPrompt({ exists: true, declared_level: 'HSK4' }), false);
   assert.equal(needsLevelPrompt({ exists: false, declared_level: '' }), false, 'a missing profile is Welcome, not a prompt');
   assert.equal(needsLevelPrompt(null), false, 'an unreadable profile is not a missing level');
+}
+
+// LEX-073: the learner's unfinished work leads Recommended, is taken out of For you, and the week strip marks today.
+{
+  const pool = [{ source: 'listening', id: 'les1', routeParams: { id: 'les1' }, kind: 'Listen' }, { source: 'reading', id: 'art1', routeParams: { id: 'art1' }, kind: 'Read' }];
+  const continuation = [{ id: 'media:les1', title: 'Cosmic', context: 'Continue listening', intent: 'listening' }];
+  const led = leadWithContinuation(pool, continuation, t, () => ({ icon: 'headphones', tint: 'var(--skill-listen)' }));
+  assert.equal(led[0].source, 'continue');
+  assert.equal(led[0].reason, 'Continue listening');
+  assert.deepEqual(led.map((item) => item.id), ['media:les1', 'art1'], 'the same lesson from the catalogue is not offered twice');
+  assert.ok(usedRecommendationIds(led).has('les1'), 'the lesson id is used, so For you drops it too');
+  assert.deepEqual(leadWithContinuation(pool, [], t, () => null), pool, 'nothing unfinished: the pool is unchanged');
+  const strip = buildStreak(t, { streak: { days: 0 }, today: '2026-10-07', week: { days: ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'].map((date, i) => ({ date, active: i === 0, future: i > 2 })) } });
+  assert.deepEqual(strip.days.map((day) => day.today), [false, false, true, false, false, false, false], 'today is marked');
+  assert.deepEqual(strip.days.map((day) => day.done), [true, false, false, false, false, false, false], 'only a really active day is ticked');
+  assert.deepEqual(strip.days.map((day) => day.future), [false, false, false, true, true, true, true]);
 }
 
 console.log('Orena Today: recommendation pool, continuation mapping, For-you rail, the rule-40 zero-fallback (goal ring, streak, level) and the real-data header greeting/subtitle all hold: PASS');

@@ -7,8 +7,8 @@
 import { defineCopy } from '../../copy/index.js';
 
 export const t = defineCopy('lesson-complete', {
-  layers: { eyebrow: 'interface', continueLabel: 'interface' },
-  en: { eyebrow: 'Lesson complete', continueLabel: 'Continue' },
-  vi: { eyebrow: 'Hoàn thành bài học', continueLabel: 'Tiếp tục' },
-  zh: { eyebrow: '课程完成', continueLabel: '继续' },
+  layers: { eyebrow: 'interface', continueLabel: 'interface', scoreLabel: 'interface' },
+  en: { eyebrow: 'Lesson complete', continueLabel: 'Continue', scoreLabel: 'correct' },
+  vi: { eyebrow: 'Hoàn thành bài học', continueLabel: 'Tiếp tục', scoreLabel: 'đúng' },
+  zh: { eyebrow: '课程完成', continueLabel: '继续', scoreLabel: '正确' },
 });

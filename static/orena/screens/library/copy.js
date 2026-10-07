@@ -11,7 +11,7 @@ import { defineCopy } from '../../copy/index.js';
 const KEYS = [
   'tabContent', 'tabLanguage', 'tabCollections', 'tabActive', 'tabDueCount',
   'typePhrase', 'newBadge', 'emptyLanguage',
-  'dueNow', 'dueItemsLabel', 'statWords', 'statPhrases', 'statSource', 'startReview', 'inThisSession',
+  'dueNow', 'dueItemsLabel', 'statWords', 'statPhrases', 'statSource', 'startReview', 'nothingDue', 'inThisSession',
   'kindSpeaking', 'sourceReading', 'sourceFeedback',
   /* The four Active-use cards (design: `activeUse[]{stage, title, desc, dur, onOpen}`, a fixed
      shortcut list into Vocabulary's own Recall/Use/Transfer flows, not a backend-fetched row set -
@@ -37,7 +37,7 @@ export const t = defineCopy('library', {
     statWords_one: 'word', statWords_other: 'words',
     statPhrases_one: 'phrase', statPhrases_other: 'phrases',
     statSource: 'source-aware',
-    startReview: 'Start review', inThisSession: 'In this session',
+    startReview: 'Start review', nothingDue: 'Nothing is due right now.', inThisSession: 'In this session',
     kindSpeaking: 'Speaking',
     sourceReading: 'From your reading', sourceFeedback: 'From your writing feedback',
     activeDueTitle: 'Due review',
@@ -59,7 +59,7 @@ export const t = defineCopy('library', {
     typePhrase: 'Cụm từ', newBadge: 'MỚI', emptyLanguage: 'Chưa lưu gì.',
     dueNow: 'Cần ôn ngay',
     dueItemsLabel_other: 'mục', statWords_other: 'từ', statPhrases_other: 'cụm từ', statSource: 'theo ngữ cảnh nguồn',
-    startReview: 'Bắt đầu ôn tập', inThisSession: 'Trong buổi này',
+    startReview: 'Bắt đầu ôn tập', nothingDue: 'Hiện chưa có mục nào đến hạn.', inThisSession: 'Trong buổi này',
     kindSpeaking: 'Nói',
     sourceReading: 'Từ bài đọc của bạn', sourceFeedback: 'Từ phản hồi bài viết của bạn',
     activeDueTitle: 'Ôn đến hạn',
@@ -79,7 +79,7 @@ export const t = defineCopy('library', {
     typePhrase: '短语', newBadge: '新', emptyLanguage: '还没有保存内容。',
     dueNow: '现在待复习',
     dueItemsLabel_other: '项', statWords_other: '单词', statPhrases_other: '短语', statSource: '结合来源',
-    startReview: '开始复习', inThisSession: '本次复习',
+    startReview: '开始复习', nothingDue: '现在没有到期的内容。', inThisSession: '本次复习',
     kindSpeaking: '口语',
     sourceReading: '来自你的阅读', sourceFeedback: '来自你的写作反馈',
     activeDueTitle: '待复习',

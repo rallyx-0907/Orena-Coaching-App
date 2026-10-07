@@ -69,7 +69,11 @@
   border-color: var(--accent);
   /* The back holds the word, meaning, example, strokes and mastery: it gets the room the window allows
      instead of cropping them into a small scroll box (LEX-069). */
-  height: min(640px, calc(100dvh - 200px));
+  /* ...and no more than its content needs: a back with little to say does not leave a blank lower area, and
+     never shrinks below the front's height so the deck stays level (LEX-076). */
+  height: auto;
+  min-height: min(420px, calc(100dvh - 200px));
+  max-height: min(640px, calc(100dvh - 200px));
 }
 
 .s-feed-face {

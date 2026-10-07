@@ -215,15 +215,21 @@ export function mapContinuationEntry(entry, t) {
    catalogues, then today's Daily Vocabulary Feed words - never an invented card. */
 export function buildForYou({ continuation = [], listening = [], speaking = [], feed = [], usedIds = new Set(), supportLang = 'en', language = '' }, t) {
   const items = [];
+  // One destination is one card (LEX-073): an item the learner is continuing is not offered again from the catalogue.
+  const seen = new Set();
+  const place = (item) => `${item.routeId}:${item.routeParams?.id ?? ''}`;
+  const taken = (item) => item.routeParams?.id && seen.has(place(item));
+  const take = (item) => { if (item.routeParams?.id) seen.add(place(item)); items.push(item); };
   for (const entry of continuation) {
     if (items.length >= FOR_YOU_LIMIT) break;
     const mapped = mapContinuationEntry(entry, t);
-    if (mapped && !usedIds.has(mapped.id)) items.push(mapped);
+    if (mapped && !usedIds.has(mapped.id) && !taken(mapped)) take(mapped);
   }
   for (const item of listening) {
     if (items.length >= FOR_YOU_LIMIT) break;
     if (!item?.lesson_id || usedIds.has(item.lesson_id)) continue;
-    items.push({
+    if (taken({ routeId: 'listening', routeParams: { id: item.lesson_id } })) continue;
+    take({
       source: 'listening',
       id: item.lesson_id,
       kind: t('kindListen'),
@@ -240,7 +246,8 @@ export function buildForYou({ continuation = [], listening = [], speaking = [], 
   for (const item of speaking) {
     if (items.length >= FOR_YOU_LIMIT) break;
     if (!item?.id || usedIds.has(item.id)) continue;
-    items.push({
+    if (taken({ routeId: 'speak', routeParams: { id: item.id } })) continue;
+    take({
       source: 'speaking',
       id: item.id,
       kind: t('kindSpeak'),
@@ -279,8 +286,22 @@ export function buildForYou({ continuation = [], listening = [], speaking = [], 
   return items;
 }
 
+/* The learner's own unfinished work leads the day (LEX-073): the most recent continuation entry the shell can
+   route becomes the first Recommended card - the design's hero, kind "Continue", its context as the reason - and
+   is taken out of "For you" by id, so no item appears twice. `cover` is the tile's icon and tint for its route. */
+export function leadWithContinuation(pool, continuation, t, coverFor) {
+  for (const entry of continuation || []) {
+    const mapped = mapContinuationEntry(entry, t);
+    if (!mapped) continue;
+    const cover = coverFor(mapped) || {};
+    const lead = { ...mapped, reason: mapped.meta || '', level: '', tint: cover.tint || 'var(--skill-read)', icon: cover.icon || 'book-open' };
+    return [lead, ...pool.filter((item) => item.id !== lead.id && item.routeParams?.id !== lead.routeParams?.id)].slice(0, RECOMMEND_LIMIT);
+  }
+  return pool;
+}
+
 export function usedRecommendationIds(pool) {
-  return new Set(pool.map((item) => item.id).filter(Boolean));
+  return new Set(pool.flatMap((item) => [item.id, item.routeParams?.id]).filter(Boolean));
 }
 
 /* --- goal ring, streak, level/XP: rule 40 -------------------------------- */
@@ -343,7 +364,15 @@ export function buildStreak(t, activity = null) {
     n: Math.max(0, Number(activity?.streak?.days) || 0),
     before: before || '',
     after: after || '',
-    days: WEEK_DAYS.map((key, index) => ({ key, letter: t(`weekday_${key}`), done: Boolean(week[index]?.active) })),
+    // The server names today's date and which days have not come yet (learner_activity.py): today is marked
+    // and only a day that really had activity is ticked (LEX-073).
+    days: WEEK_DAYS.map((key, index) => ({
+      key,
+      letter: t(`weekday_${key}`),
+      done: Boolean(week[index]?.active),
+      today: Boolean(week[index]?.date) && week[index].date === activity?.today,
+      future: Boolean(week[index]?.future),
+    })),
   };
 }
 

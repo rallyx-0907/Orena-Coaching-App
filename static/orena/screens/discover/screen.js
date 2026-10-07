@@ -5,7 +5,7 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { mediaCard, headlineTitle } from '../../kit/components.js';
+import { mediaCard, headlineTitle, settleCovers } from '../../kit/components.js';
 import { langSpan, langAttr } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
@@ -114,12 +114,12 @@ export default async function discover(element, ctx) {
     const tabSuffix = state.tab === 'all' ? '' : ` · ${t(TAB_LABEL_KEY[state.tab])}`;
     mount(
       resultsRowEl,
-      html`<div>${t.plural('resultsLabel', list.length)}${tabSuffix}</div>${hasFilters ? html`<button type="button" class="o-btn o-btn--link" data-clear>${t('clearFilters')}</button>` : ''}`,
+      html`<div>${t.plural('resultsLabel', list.length)}${tabSuffix}</div>${hasFilters && list.length ? html`<button type="button" class="o-btn o-btn--link" data-clear>${t('clearFilters')}</button>` : ''}`,
     );
     resultsRowEl.querySelector('[data-clear]')?.addEventListener('click', clearFilters);
 
     if (!list.length && !state.loading) {
-      mount(resultsEl, emptyMarkup({ text: t('emptyText'), actionLabel: t('clearFilters'), iconName: 'inbox' }));
+      mount(resultsEl, emptyMarkup({ text: t('emptyText'), actionLabel: hasFilters || state.query.trim() ? t('clearFilters') : '', iconName: 'inbox' }));
       resultsEl.querySelector('[data-empty-action]')?.addEventListener('click', clearFilters);
     } else {
       mount(
@@ -131,6 +131,7 @@ export default async function discover(element, ctx) {
         })}</div>`,
       );
     }
+    settleCovers(resultsEl);
     paintFilterBadge();
     if (sheetHandle) paintSheetBody(sheetHandle.element);
   }
@@ -171,7 +172,7 @@ export default async function discover(element, ctx) {
       </div>
       <div class="o-sheet__foot">
         <button type="button" class="o-btn o-btn--secondary" data-sheet-clear>${t('clear')}</button>
-        <button type="button" class="o-btn o-btn--primary" data-sheet-close>${t.plural('showResults', visible().length)}</button>
+        <button type="button" class="o-btn o-btn--primary" data-sheet-close${visible().length ? '' : raw(' disabled')}>${t.plural('showResults', visible().length)}</button>
       </div>`;
     /* fillSheet (kit/overlay.js) mounts the markup and wires every [data-sheet-close] to
        handle.close() itself (bindClose) - the header X and the "Show N results" footer button

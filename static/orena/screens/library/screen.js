@@ -168,9 +168,10 @@ function duePanel(stats, list) {
         <span><b>${stats.duePhrases}</b> ${t.plural('statPhrases', stats.duePhrases)}</span>
         <span><b>${stats.dueSource}</b> ${t('statSource')}</span>
       </div>
-      <button type="button" class="o-btn o-btn--primary s-library-due-cta" data-start-review>${t('startReview')}</button>
+      <button type="button" class="o-btn o-btn--primary s-library-due-cta" data-start-review${stats.dueCount ? '' : raw(' disabled')}>${t('startReview')}</button>
+      ${stats.dueCount ? '' : html`<div class="s-library-due-hero__reason">${t('nothingDue')}</div>`}
     </div>
-    <div class="s-library-due-list">
+    <div class="s-library-due-list"${list.length ? '' : raw(' hidden')}>
       <div class="s-library-due-list__title">${t('inThisSession')}</div>
       ${list.map((row) => html`<div class="s-library-due-row"><span class="s-library-due-row__text">${row.text || kindFallbackLabel(row.kindKey)}</span><span class="s-library-due-row__meta">${row.sourceKey ? t(row.sourceKey) : row.text && row.kindKey ? kindFallbackLabel(row.kindKey) : ''}</span></div>`)}
     </div>

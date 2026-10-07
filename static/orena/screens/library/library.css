@@ -320,3 +320,11 @@
   -webkit-mask-image: linear-gradient(to right, transparent, var(--text) 36px, var(--text) calc(100% - 36px), transparent);
   mask-image: linear-gradient(to right, transparent, var(--text) 36px, var(--text) calc(100% - 36px), transparent);
 }
+
+.s-library-due-hero__reason {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-library-due-list[hidden] {
+  display: none;
+}

@@ -46,7 +46,7 @@ export async function openLessonComplete(ctx = {}, { title, facts, measured, nex
           ${celebrate ? html`<div class="s-lc__icon">${raw(icon('check', { size: 30, stroke: 2.4 }))}</div>` : ''}
           <div class="s-lc__eyebrow">${t('eyebrow')}</div>
           ${title ? html`<div class="s-lc__title">${title}</div>` : ''}
-          ${score == null || score === 0 ? '' : html`<div class="s-lc__score">${score}<span>%</span></div>`}
+          ${score == null || score === 0 ? '' : html`<div class="s-lc__score">${score}<span>%</span><small class="s-lc__score-label">${t('scoreLabel')}</small></div>`}
           ${realFacts.length ? html`<div class="s-lc__facts">${realFacts.map(factMarkup)}</div>` : ''}
           <button type="button" class="o-btn o-btn--primary o-btn--block s-lc__continue" data-continue>${t('continueLabel')}</button>
         </div>`,
