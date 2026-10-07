@@ -34,6 +34,7 @@
    weekly-goal bar always draws, not a claimed measurement), so the value line reads the same
    honest "not tracked yet" text Today already uses for its own goal ring, rather than fabricating
    a "0 / 15 min" figure against a target that does not really exist (N-25). */
+import { SIGN_OUT_NEXT, signedOutDestination } from '../../shell/session.js';
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { listRow } from '../../kit/components.js';
@@ -197,13 +198,16 @@ function actionRow(action, ctx) {
   return listRow({ ...common, dataset: { go: actionHref(action.id, ctx) } });
 }
 
+/* Ends the session and returns to the new UI, which draws Welcome for a signed-out visitor (shell/session.js).
+   With sign-in off there is no session to end: the same address opens the local learner again. */
 async function signOut() {
+  let destination = SIGN_OUT_NEXT;
   try {
-    await api.logout();
+    destination = signedOutDestination(await api.logout(SIGN_OUT_NEXT));
   } catch (error) {
     console.error('[Orena] sign out failed', error);
   } finally {
-    location.href = '/login';
+    location.href = destination;
   }
 }
 

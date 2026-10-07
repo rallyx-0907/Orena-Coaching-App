@@ -3,6 +3,11 @@ import { navigationSignal } from './navigation.js';
 
 const JSON_HEADERS = {'Content-Type':'application/json'};
 
+/* What a 401 does. The old UI sends the learner to its sign-in page; the new UI installs its own
+   (main.js: Welcome), because the new UI has no /login. */
+let onUnauthorized=()=>{location.href='/login';};
+export function setUnauthorizedHandler(handler){onUnauthorized=typeof handler==='function'?handler:()=>{};}
+
 export async function request(url, options={}){
   const response = await fetch(url,{
     credentials:'same-origin',
@@ -20,7 +25,7 @@ export async function request(url, options={}){
   }
 
   if(!response.ok){
-    if(response.status===401)location.href='/login';
+    if(response.status===401)onUnauthorized();
     const detail=payload && typeof payload==='object' ? payload.detail : payload;
     const structured=detail && typeof detail==='object';
     const rawMessage=structured ? detail.message : detail;
@@ -506,7 +511,7 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload),
   }),
-  logout:()=>request('/auth/logout',{method:'POST'}),
+  logout:(next)=>request(next?`/auth/logout?next=${encodeURIComponent(next)}`:'/auth/logout',{method:'POST'}),
   // Whether this deployment keeps work with the account (I2): active,
   // disabled or unavailable. Drafts stay on the device unless active.
   accountBackbone:()=>request('/api/account-backbone'),

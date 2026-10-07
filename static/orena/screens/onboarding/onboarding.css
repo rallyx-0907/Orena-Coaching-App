@@ -658,3 +658,92 @@
 .s-onboarding__picker-row .c-row__trail {
   color: var(--accent);
 }
+
+/* ---- Signed out (Welcome's second button and the Account frame, Onboarding.dc.html 01-02) ---- */
+.s-onboarding__cta--pair {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-onboarding__alt {
+  height: 52px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-onboarding__alt:hover {
+  background: var(--surface2);
+}
+.s-onboarding__alt:active {
+  background: var(--surface3);
+}
+.s-onboarding__modes {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+}
+.s-onboarding__mode {
+  flex: 1;
+  height: 38px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-onboarding__mode[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--text);
+}
+.s-onboarding__google {
+  height: 52px;
+  border-radius: 16px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.s-onboarding__google:hover {
+  background: var(--surface2);
+}
+.s-onboarding__google:disabled {
+  opacity: 0.6;
+}
+.s-onboarding__g {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--hero-cta-fill);
+  color: var(--hero-cta-fill-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+.s-onboarding__spin {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2.5px solid var(--border2);
+  border-top-color: var(--text);
+  animation: spin 0.8s linear infinite;
+}
+.s-onboarding__terms {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.5;
+  text-align: center;
+}

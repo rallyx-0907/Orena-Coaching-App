@@ -14,6 +14,7 @@ import { shellCopy } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
 import { adoptLearningLanguage, updateContext } from '../../shell/context.js';
 import { selectLearningLanguage } from '../../product/account-settings.js';
+import { signInHref } from '../../shell/session.js';
 import { t } from './copy.js';
 import {
   STEP_COUNT, STEPS, clampStep, stepDots,
@@ -94,8 +95,14 @@ export default async function onboardingScreen(element, ctx) {
   const context = ctx.context;
 
   const levelOnly = ctx.query?.get?.('step') === 'level';
+  /* Nobody is signed in (main.js, the first read answered 401): only Welcome and Account exist, and Account is the
+     way in - Google. `mode` is the design's own, set by the button the learner pressed. After signing in, a new
+     learner is sent back to `#/welcome?step=languages` (shell/session.js), which opens that step directly. */
+  const signedOut = Boolean(context.signedOut);
+  const namedStep = ctx.query?.get?.('step') === 'languages' && !signedOut ? STEPS.indexOf('languages') : -1;
   const state = {
-    step: levelOnly ? STEPS.indexOf('level') : readStep(stepStorage),
+    mode: 'signup',
+    step: levelOnly ? STEPS.indexOf('level') : namedStep >= 0 ? namedStep : signedOut ? Math.min(readStep(stepStorage), 1) : readStep(stepStorage),
     level: readLevel(stepStorage),
     languagesData: null,
     busy: '',
@@ -134,11 +141,31 @@ export default async function onboardingScreen(element, ctx) {
         <h1 class="s-onboarding__h1" tabindex="-1">${t('welcomeHeadline')}</h1>
         <p class="s-onboarding__lead">${t('welcomeSub')}</p>
       </div>
-      ${cta('welcome-next', t('getStarted'), 'welcome')}
+      ${signedOut
+        ? html`<div class="s-onboarding__cta s-onboarding__cta--welcome s-onboarding__cta--pair"><button type="button" class="o-btn o-btn--primary o-btn--block" data-action="welcome-next">${t('getStarted')}</button><button type="button" class="s-onboarding__alt" data-action="welcome-login">${t('haveAccount')}</button></div>`
+        : cta('welcome-next', t('getStarted'), 'welcome')}
+    </section>`;
+  }
+
+  /* The design's Account frame, with what exists: the title and sub by mode, the mode switch, "Continue with
+     Google" and the terms line. The email, password and name fields and their submit are not built (the
+     backend has Google only; UI_BACKEND_GAPS "Email sign-in"). */
+  function signInBody() {
+    const signup = state.mode === 'signup';
+    const busy = state.busy === 'google';
+    return html`<section class="s-onboarding__panel">
+      <div class="s-onboarding__head"><h1 class="s-onboarding__title" tabindex="-1">${t(signup ? 'signupTitle' : 'loginTitle')}</h1><p class="s-onboarding__subtitle">${t(signup ? 'signupSub' : 'loginSub')}</p></div>
+      <div class="s-onboarding__modes" role="group" aria-label="${t('stepAccount')}">
+        <button type="button" class="s-onboarding__mode" aria-pressed="${signup ? 'true' : 'false'}" data-action="mode-signup">${t('tabSignup')}</button>
+        <button type="button" class="s-onboarding__mode" aria-pressed="${signup ? 'false' : 'true'}" data-action="mode-login">${t('tabLogin')}</button>
+      </div>
+      <button type="button" class="s-onboarding__google" data-action="google" ${busy ? 'disabled aria-busy="true"' : ''}>${busy ? html`<span class="s-onboarding__spin" aria-hidden="true"></span>` : html`<span class="s-onboarding__g" aria-hidden="true">G</span>`}${busy ? t('googleBusy') : t('googleCta')}</button>
+      <p class="s-onboarding__terms">${t('terms')}</p>
     </section>`;
   }
 
   function accountBody() {
+    if (signedOut) return signInBody();
     const id = identityOf(context.user);
     return html`<section class="s-onboarding__panel">
       <div class="s-onboarding__head"><h1 class="s-onboarding__title" tabindex="-1">${t('accountTitle')}</h1></div>
@@ -455,13 +482,41 @@ export default async function onboardingScreen(element, ctx) {
     ctx.go(ctx.href('today'));
   }
 
+  /* The one way in. The server runs the whole exchange and returns to the target it was given (a leaving page: the
+     busy state is what the learner sees until then). */
+  function startGoogle() {
+    if (state.busy) return;
+    state.busy = 'google';
+    render();
+    window.location.assign(signInHref(state.mode));
+  }
+
+  /* Coming back to this page from the browser's cache after leaving for Google: the button is usable again. */
+  function onPageShow(event) {
+    if (!event.persisted || state.busy !== 'google') return;
+    state.busy = '';
+    render();
+  }
+
   function onClick(event) {
     const target = event.target.closest('[data-action], [data-target], [data-support], [data-iface], [data-level]');
     if (!target) return;
     carry = { selector: focusSelector(target), top: scrollRegion()?.scrollTop ?? 0, at: Date.now() };
     const action = target.dataset.action;
     if (action === 'back') return levelOnly ? leaveLevelOnly() : setStep(state.step - 1);
-    if (action === 'welcome-next') return setStep(1);
+    if (action === 'welcome-next') {
+      state.mode = 'signup';
+      return setStep(1);
+    }
+    if (action === 'welcome-login') {
+      state.mode = 'login';
+      return setStep(1);
+    }
+    if (action === 'mode-signup' || action === 'mode-login') {
+      state.mode = action === 'mode-login' ? 'login' : 'signup';
+      return render();
+    }
+    if (action === 'google') return startGoogle();
     if (action === 'account-next') return setStep(2);
     if (action === 'lang-next') return setStep(3);
     if (action === 'level-next') return finishLevel();
@@ -484,5 +539,9 @@ export default async function onboardingScreen(element, ctx) {
     }, 0);
   }
   element.addEventListener('click', onClick);
-  return () => element.removeEventListener('click', onClick);
+  window.addEventListener('pageshow', onPageShow);
+  return () => {
+    element.removeEventListener('click', onClick);
+    window.removeEventListener('pageshow', onPageShow);
+  };
 }

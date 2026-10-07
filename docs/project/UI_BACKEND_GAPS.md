@@ -5056,3 +5056,24 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
 - **LEX-081 Discover topics, Profile name.** Topic filter values come from the vetted vocabulary applied to the catalogue
   (only Daily life and Science occur today): CONTENT. The design draws the streak twice on Profile (hero tile and stats
   card); kept as drawn. A local session has no name (BUG-06).
+
+## Signing in to the new UI (2026-10-07)
+
+- **SIGN-1 Email sign-in.** Onboarding.dc.html draws the Account frame with Name, Email and Password fields, a submit
+  button and "or with email". The backend has Google only (`auth_support.py`), so the new UI draws the title and sub by
+  mode, the Create account / Log in switch, "Continue with Google" and the terms line, and **no email form**. The
+  design's name and password fields have no backend. Owner: BACKEND / human decision (an email-and-password or
+  magic-link provider is an authentication architecture change, reviewed independently, HO-2 b).
+- **SIGN-2 Terms line.** The design's second sentence ("Your recordings are only used to give you feedback.") is a
+  product claim the build does not make; the line reads "By continuing you agree to the Terms and Privacy Policy." with
+  no links. Owner: human (wording) and CONTENT (the legal pages exist at `#/legal/...`).
+- **SIGN-3 Claiming the lane's existing data.** `maybe_claim_legacy_data` copies only the SQLite English file
+  (`WRITING_DB`) to the first Google account whose email is `BOOTSTRAP_OWNER_EMAIL`, and only when that account has no
+  such file. Everything held in PostgreSQL under the local key `legacy` (account settings, the learner profile, D4
+  records, imports) is **not** moved: the first Google sign-in on :8021 starts an empty account, and the `legacy` data
+  stays where it is. A claim path for PostgreSQL rows is learner-data persistence, reserved (AGENTS section 7); not built.
+- **SIGN-4 Internal-review gate.** An account that is not an administrator still meets the plain "limited" notice after
+  signing in (`main.js`). The account that signs in to try the app must be `BOOTSTRAP_OWNER_EMAIL` or in
+  `PLATFORM_ADMIN_EMAILS`.
+- **SIGN-5 One origin per runtime.** `GOOGLE_REDIRECT_URI` must equal `PUBLIC_BASE_URL` + `/auth/google/callback`
+  (`deployment.py`), so one container signs in on one origin: `http://localhost:8021` or the tailnet name, not both.
