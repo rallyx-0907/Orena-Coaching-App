@@ -42,7 +42,8 @@ function speakDur(skill, mode) {
 }
 
 function modeMeta(skill, mode) {
-  if (skill === 'speak' && mode.group) return `${t(`${mode.key}Desc`)} · ${t(`${mode.key}Dur`)}`;
+  // The duration never truncates: only the description gives way in a longer interface language.
+  if (skill === 'speak' && mode.group) return html`<span class="s-practice-tile__desc">${t(`${mode.key}Desc`)}</span><span class="s-practice-tile__dur">· ${t(`${mode.key}Dur`)}</span>`;
   if (skill === 'vocabulary' && mode.key === 'review') return t.plural('due', mode.due);
   if ((skill === 'speak' || skill === 'listen' || skill === 'reading') && mode.level) return mode.level;
   return '';
