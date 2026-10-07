@@ -5,11 +5,12 @@
 
    Real deviations from the frame, recorded rather than silently resolved (UI_BACKEND_GAPS "Speak
    more"):
-   - The frame's `cvStart` seeds a fixed opening line from a scripted partner. The real contract
-     cannot do that: `ConversationIn` (`writing_coach/conversation.py`) requires at least one turn
-     and that the last turn be the learner's pending one. The chat therefore opens with the
-     situation the learner is answering (drawn as the frame's partner bubble, never sent as a turn)
-     and the learner speaks first.
+   - The frame's `cvStart` seeds a fixed opening line from a scripted partner. Here the partner's first
+     line is asked of the real partner (`ConversationIn.opening`, S-24) and drawn as the frame's first
+     partner bubble with the thinking state while it comes; on failure the quiet caption with Retry
+     stands in, never a made-up line. The line is not a stored turn (the account record alternates
+     learner, partner from a learner first turn): it is kept beside the turns and sent back as context.
+     A conversation saved before this opening existed still shows its situation as the first bubble.
    - The frame ends a chat only when its 4-line script runs out. An open-ended AI partner needs a
      learner-driven end, so the header carries one "End" text button (where a page's own action
      sits in the design); it and the 24-turn cap both lead to the frame's "Conversation complete".
@@ -34,7 +35,7 @@ import { logSpeakingTask } from '../../product/speaking-session.js';
 import { appendConversationTurn, loadConversation } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import {
-  conversation, learnerTurn, partnerTurn, pendingTurn, conversationRequest, restoreConversation, MAX_CONVERSATION_TURNS, CONVERSATION_LEVELS,
+  conversation, learnerTurn, partnerTurn, pendingTurn, conversationRequest, restoreConversation, needsOpening, conversationOpeningRequest, withOpening, MAX_CONVERSATION_TURNS, CONVERSATION_LEVELS,
 } from '../../product/conversation.js';
 import { t } from './copy.js';
 import { situations, defaultLevel, turnSituation, learnerTurnCount, fixesOf, strengthsOf } from './model.js';
@@ -180,7 +181,8 @@ export default async function conversationScreen(element, ctx) {
 
   function listMarkup() {
     return html`<div class="s-conv__list" data-scroll-region data-list>
-      <div class="s-conv__msg s-conv__msg--partner"><div class="s-conv__bubble" lang="${lang}">${convo.situation}</div></div>
+      ${convo.opening ? html`<div class="s-conv__msg s-conv__msg--partner"><div class="s-conv__bubble" lang="${lang}">${convo.opening.text}</div></div>`
+        : convo.turns.length ? html`<div class="s-conv__msg s-conv__msg--partner"><div class="s-conv__bubble" lang="${lang}">${convo.situation}</div></div>` : ''}
       ${convo.turns.map(messageMarkup)}
       ${busy ? html`<div class="s-conv__thinking" role="status" aria-label="${t('thinking')}">…</div>` : ''}
       ${isOver() ? endedMarkup() : ''}
@@ -192,7 +194,7 @@ export default async function conversationScreen(element, ctx) {
 
   function composerMarkup() {
     if (isOver()) return '';
-    const failed = Boolean(pendingTurn(convo)) && !busy; // the reply was requested and the request itself failed
+    const failed = (Boolean(pendingTurn(convo)) || needsOpening(convo)) && !busy; // the opening or the reply was requested and the request itself failed
     if (failed) {
       return html`<div class="s-conv__composer"><span class="s-conv__retry-text" role="alert">${t('replyFailed')}</span><button type="button" class="o-btn o-btn--secondary s-conv__retry-btn" data-retry>${t('retryCta')}</button>${endButton()}</div>`;
     }
@@ -251,7 +253,7 @@ export default async function conversationScreen(element, ctx) {
     element.querySelector('[data-new]')?.addEventListener('click', () => { convo = null; draft = ''; coaching.clear(); paint(); });
     element.querySelector('[data-finish]')?.addEventListener('click', finish);
     element.querySelector('[data-end]')?.addEventListener('click', () => { convo = { ...convo, ended: true }; remember(); paint({ scroll: 'bottom' }); });
-    element.querySelector('[data-retry]')?.addEventListener('click', () => void requestReply());
+    element.querySelector('[data-retry]')?.addEventListener('click', () => void (needsOpening(convo) ? requestOpening() : requestReply()));
   }
 
   function finish() {
@@ -268,6 +270,26 @@ export default async function conversationScreen(element, ctx) {
     draft = '';
     remember();
     paint();
+    void requestOpening();
+  }
+
+  /* S-24: the partner's first line. A failure leaves the conversation without one and the composer is
+     replaced with Retry; nothing stands in for the line. */
+  async function requestOpening() {
+    if (!needsOpening(convo)) return;
+    busy = true;
+    paint({ scroll: 'bottom' });
+    try {
+      const reply = await api.conversationTurn(conversationOpeningRequest(convo, support));
+      if (!alive()) return;
+      convo = withOpening(convo, reply);
+      remember();
+    } catch {
+      // still without an opening; the retry control asks again.
+    } finally {
+      busy = false;
+      if (alive()) paint({ scroll: 'bottom' });
+    }
   }
 
   async function sendTurn(text, origin) {
@@ -378,6 +400,7 @@ export default async function conversationScreen(element, ctx) {
   const wanted = ctx.query?.get?.('id') || '';
   if (wanted) convo = await resume(wanted);
   paint({ scroll: 'bottom' });
+  if (convo && needsOpening(convo)) void requestOpening();
 
   return () => {
     disposed = true;

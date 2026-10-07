@@ -8,6 +8,9 @@ import {
   pendingTurn,
   conversationRequest,
   restoreConversation,
+  needsOpening,
+  conversationOpeningRequest,
+  withOpening,
 } from '../static/orena/product/conversation.js';
 import { learnerMemory } from '../static/orena/product/memory.js';
 import { continuationLink, route } from '../static/orena/product/intent.js';
@@ -203,6 +206,29 @@ contains(huge, 1);
 const zh = [{ text: '很'.repeat(CONTEXT_LIMIT) }, { text: '我昨天去了商店。' }];
 const zhContext = contains(zh, 1);
 assert.ok(zhContext.endsWith('我昨天去了商店。'));
+
+/* S-24: the partner speaks first. The opening is not a turn: the alternation, the account record and the
+   learner-first state machine stay as they were; the line rides along as context. */
+for (const language of ['en', 'zh']) {
+  let open = conversation({ id: 'conversation:open', language, title: 'Cafe', situation: 'Order a coffee.', level: 'B2' });
+  assert.equal(needsOpening(open), true);
+  assert.deepEqual(conversationOpeningRequest(open, 'vi'), {
+    source_language: language, target_language: 'vi', situation: 'Order a coffee.', opening: true, level: 'B2',
+  });
+  assert.throws(() => conversationRequest(open, 'vi'), 'no learner turn yet, so no turn request');
+  open = withOpening(open, { text: 'Welcome! What can I get you?', meaning: 'Chao mung!', support: 'vi' });
+  assert.equal(needsOpening(open), false);
+  assert.equal(open.turns.length, 0, 'the opening line is not a turn');
+  assert.throws(() => conversationOpeningRequest(open, 'vi'), 'asked once');
+  assert.throws(() => withOpening(conversation({ id: 'conversation:x', language, title: 't', situation: 's' }), { text: ' ' }));
+  open = learnerTurn(open, { id: 'one', text: 'A latte, please.' });
+  assert.equal(conversationRequest(open, 'vi').opening_line, 'Welcome! What can I get you?');
+  assert.equal(conversationRequest(open, 'vi').turns[0].role, 'learner');
+  const restored = restoreConversation(JSON.parse(JSON.stringify(open)), language);
+  assert.equal(restored.opening.text, 'Welcome! What can I get you?');
+  assert.equal(restoreConversation({ ...open, opening: { text: 'x'.repeat(2401) } }, language).opening, null);
+  assert.equal(conversationRequest(conversation({ id: 'conversation:y', language, title: 't', situation: 's' }) && learnerTurn(conversation({ id: 'conversation:y', language, title: 't', situation: 's' }), { id: 'a', text: 'Hi' }), 'vi').opening_line, undefined);
+}
 
 console.log(
   'Conversation ledger, coaching on your own turns, distinguishable threads, and context that keeps its selection: PASS',

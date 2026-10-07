@@ -4875,13 +4875,16 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
 
 ## Speaking design audit (D-129), 2026-10-07
 
-- **S-24 Conversation: the partner cannot speak first.**
-  - Design (frame 30): the partner opens the chat, the learner then types or speaks.
-  - What happens: the situation text stands in as the partner's bubble and the learner speaks first, because
-    the conversation-turn request (`ConversationIn`) requires a learner turn; there is no way to ask for an
-    opening partner turn.
-  - Needed: a backend contract for an opening partner turn (no learner message) for a chosen scenario. No UI
-    change until that exists; the UI must not fabricate a partner line.
+- **S-24 Conversation: the partner cannot speak first. RESOLVED** (commit named in the log).
+  - `POST /api/dictionary/conversation-turn` takes `opening: true` with a scenario and optional level and no
+    learner turn, and returns the partner's first line and its meaning (`reply_to` null, `opening` true). Conversation
+    draws it as the first partner bubble (thinking state while it comes; the quiet "reply didn't come through" caption
+    with Retry on failure, no made-up line).
+  - Remaining limit: the opening line is not a stored turn. The account conversation record alternates learner,
+    partner from a learner first turn (`work_repository._append_turn`, D4), and changing that is a persistence
+    decision reserved for the human and an independent reviewer. The line is kept on the device with the
+    conversation and sent back as `opening_line` context; a conversation resumed on another device from the account
+    record shows the scenario text as its first bubble instead (as before this change).
 
 ## Speaking Compare: reviewing a past attempt (D-139), 2026-10-07
 

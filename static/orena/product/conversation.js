@@ -16,8 +16,36 @@ export function conversation({ id, language, title, situation, level = '' }) {
     title: String(title).slice(0, 240),
     situation: situation.trim().slice(0, 1200),
     level: cleanLevel(level),
+    opening: null,
     turns: [],
     ended: false,
+  };
+}
+/* S-24: the partner speaks first. Its opening line is not a turn (the account record alternates learner,
+   partner from a learner first turn): it is the conversation's opening, asked for once, kept beside the
+   turns and sent back to the partner as context. */
+export const needsOpening = (state) =>
+  !state.opening && !state.turns.length && !state.ended;
+export function conversationOpeningRequest(state, support) {
+  if (!needsOpening(state)) throw Error('Conversation already opened');
+  return {
+    source_language: state.language,
+    target_language: support,
+    situation: state.situation,
+    opening: true,
+    ...(cleanLevel(state.level) ? { level: state.level } : {}),
+  };
+}
+export function withOpening(state, { text, meaning, support }) {
+  if (!needsOpening(state) || typeof text !== 'string' || !text.trim() || text.length > 2400)
+    throw Error('Invalid conversation opening');
+  return {
+    ...state,
+    opening: {
+      text: text.trim(),
+      meaning: String(meaning || '').slice(0, 2400),
+      support: String(support || '').slice(0, 32),
+    },
   };
 }
 export function restoreConversation(raw, language) {
@@ -60,6 +88,12 @@ export function restoreConversation(raw, language) {
         support: role === 'partner' ? String(t.support || '').slice(0, 32) : '',
       });
     }
+    if (typeof raw.opening?.text === 'string' && raw.opening.text.trim() && raw.opening.text.length <= 2400)
+      clean.opening = {
+        text: raw.opening.text,
+        meaning: String(raw.opening.meaning || '').slice(0, 2400),
+        support: String(raw.opening.support || '').slice(0, 32),
+      };
     clean.ended = raw.ended === true;
     return clean;
   } catch {
@@ -118,6 +152,7 @@ export function conversationRequest(state, support) {
     target_language: support,
     situation: state.situation,
     reply_to: pendingTurn(state).id,
+    ...(state.opening?.text ? { opening_line: state.opening.text } : {}),
     ...(cleanLevel(state.level) ? { level: state.level } : {}),
     turns: state.turns.map(({ id, role, text }) => ({ id, role, text })),
   };
