@@ -4937,10 +4937,21 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   judgement that is present. These are model judgements of the words, not measurements. The context chip is built
   from each scenario's authored `context` (`content/voice-invitations.js`, English and Chinese, in the learning
   language like the scenario); there is no support-language translation of scenario text to follow.
-- **S-27 YouTube sources have no prepared model clip yet (D-140).** Model clips are cut at content readiness from
-  the admitted source (`writing_coach/model_clips.py`; backfill `scripts/backfill_model_clips.py`). Curated catalogue
-  media and stored uploads are prepared. A YouTube-provider import has no source file at rest: the readiness step and
-  the backfill acquire its audio through the same `download_audio` the transcript pipeline uses, and on the :8021
-  sandbox that fetch of the resolved audio URL fails (`UnsafeMediaFetch`), so those lessons (e.g. the imported Chinese
-  `source-01637ff7...`) keep an unavailable model plot until audio acquisition works there. The read route answers 404
-  "not prepared" and Compare shows the plot as unavailable; nothing falls back to cutting on open (D-121).
+- **S-27 YouTube sources have no prepared model clip yet (D-140). Cause found; fix not made.**
+  - Model clips are cut at content readiness from the admitted source (`writing_coach/model_clips.py`; backfill
+    `scripts/backfill_model_clips.py`). Curated catalogue media and stored uploads are prepared. A YouTube import has
+    no source file at rest (the transcript pipeline fetches its audio "for this step only"), so the backfill acquires
+    it through `media_providers.youtube_audio.download_audio`.
+  - Measured on :8021 (2026-10-07, one bounded attempt on `source-01637ff7...`, plus a dry run): the SSRF / unsafe
+    fetch guard is NOT what refuses. The resolved audio host (`*.googlevideo.com`) resolves to a public address,
+    `validate_public_http_url` passes and the connected peer is public. The message "The media address could not be
+    fetched." (an `UnsafeMediaFetch` only by class) wraps an HTTP 403 from the media host: the signed audio URL
+    (format 140, no `ratebypass`) answers a plain, un-ranged GET with 403 and answers a ranged GET
+    (`Range: bytes=0-1048575`) with 206, with either the app's or yt-dlp's own headers. `download_bounded` issues one
+    un-ranged GET.
+  - Needed (not done, the fix is in the shared fetch code `media_safe_fetch.download_bounded`, which this lane does not
+    change): a ranged, chunked download that sends each `Range` request through the same `_open` (re-validating the
+    address and the connected peer every time) and stops at the byte budget. The same defect should also stop the
+    transcript pipeline's audio fallback for YouTube sources whose captions are not good enough, so it is worth one
+    independent look. Until then those lessons keep an unavailable model plot; the read route answers 404 "not
+    prepared", Compare shows the plot as unavailable, and nothing cuts on open (D-121).
