@@ -47,7 +47,9 @@ const WRITE_ICONS = { continue: 'pen-line', prompt: 'pen-line', free: 'notebook-
    the same icon Speak's own Shadowing mode already uses) - both already present in kit/icons.js,
    no sync needed. */
 const LISTEN_ICONS = { dictation: 'keyboard', listening: 'headphones' };
-const VOCAB_ICONS = { review: 'bookmark-check', timed: 'timer', transfer: 'arrow-left-right', feed: 'flame' };
+/* The design's PH_MAP: Due review and Daily Feed are `cards` (Lucide panels-top-left), Collections and Saved language
+   are `lib` (Lucide library-big), Timed Recall `zap`, Context Transfer `target`. */
+const VOCAB_ICONS = { review: 'panels-top-left', timed: 'zap', transfer: 'target', feed: 'panels-top-left', collections: 'library-big', language: 'library-big' };
 const GRAMMAR_ICONS = { grammarlib: 'book-open' };
 /* 'book-open' (design PH_MAP "Start Reading Practice":"book" - the same path as Lucide's
    book-open, already reused by Grammar library above). */
@@ -143,7 +145,6 @@ export function writeModes(draft = null) {
   return shown(modes);
 }
 
-export const SKILL_GROUPS = { speak: SPEAK_GROUPS, write: WRITE_GROUPS };
 
 /* Human correction: listening comprehension and dictation are separate choices,
    both choose content before practice. Speaking owns the single pronunciation /
@@ -175,18 +176,33 @@ export function readingModes(reading) {
   return [mode];
 }
 
-/* Vocabulary's Due Review carries the learner's real due count (context().due, rule 40: 0 is a
-   real answer, not an absence). Collections / Saved language are My Library's own tabs, not a
-   route this screen can address without inventing a query contract, so they stay out. */
+/* The design's groups for Vocabulary (S1 `SK.Vocabulary.groups`): Due Review and Timed Recall under "Recall",
+   Context Transfer under "Use", Daily Feed, Collections and Saved language under "Browse". Only what this build
+   opens for real is drawn (D-101 H9, HV-1 B): Timed Recall and Context Transfer are deferred, so only Recall (Due
+   Review) and Browse are present. Due Review carries the learner's real due count (context().due, rule 40: 0 is a
+   real answer, not an absence). Collections and Saved language are My Library's own tabs (`?tab=`). */
+export const VOCABULARY_GROUPS = ['recall', 'use', 'browse'];
+
 export function vocabularyModes(due = 0) {
   const n = Number.isFinite(Number(due)) ? Math.max(0, Number(due)) : 0;
   return shown([
-    { key: 'review', routeId: 'review', due: n },
-    { key: 'timed', routeId: 'timed' },
-    { key: 'transfer', routeId: 'transfer' },
-    { key: 'feed', routeId: 'feed' },
+    { key: 'review', group: 'recall', routeId: 'review', due: n },
+    { key: 'timed', group: 'recall', routeId: 'timed' },
+    { key: 'transfer', group: 'use', routeId: 'transfer' },
+    { key: 'feed', group: 'browse', routeId: 'feed' },
+    { key: 'collections', group: 'browse', routeId: 'library', query: { tab: 'collections' } },
+    { key: 'language', group: 'browse', routeId: 'library', query: { tab: 'language' } },
   ]);
 }
+
+/* Skill Hub Vocabulary's Recommended card, only from real data: the due count. Nothing is due, nothing is
+   recommended (HV-1 B). */
+export function vocabularyRecommendation(due = 0) {
+  const n = Number.isFinite(Number(due)) ? Math.max(0, Math.trunc(Number(due))) : 0;
+  return n > 0 ? { n } : null;
+}
+
+export const SKILL_GROUPS = { speak: SPEAK_GROUPS, write: WRITE_GROUPS, vocabulary: VOCABULARY_GROUPS };
 
 /* Grammar library is the one entry point this round wires for real; a "next concept"/"quick quiz"
    tile would need a recommended-lesson id nothing here derives without inventing a selection. */

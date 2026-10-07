@@ -16,11 +16,12 @@ import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { loadPendingRows, recentRows, recentMediaFacts, lastSpeakingLine } from './continuation.js';
 import { t } from './copy.js';
 import { loadAttemptsSince } from '../../product/speaking-history.js';
-import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SKILL_GROUPS, buildSkillSections, writeRecommendation, weakestLines } from './model.js';
+import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SKILL_GROUPS, buildSkillSections, writeRecommendation, weakestLines, vocabularyRecommendation } from './model.js';
 import { t as writingT } from '../writing/copy.js';
 import { CATEGORY_IDS, NEW_DRAFT_KEY, wordCountOf } from '../writing/model.js';
 
-const GROUP_LABEL_KEY = { natural: 'groupNatural', pronounce: 'groupPronounce', challenge: 'groupChallenge', free: 'groupFree', respond: 'groupRespond', pressure: 'groupPressure' };
+const GROUP_LABEL_KEY = { natural: 'groupNatural', pronounce: 'groupPronounce', challenge: 'groupChallenge', free: 'groupFree', respond: 'groupRespond', pressure: 'groupPressure', recall: 'groupRecall', use: 'groupUse', browse: 'groupBrowse' };
+const VOCAB_KEY = { review: 'vocabDue', collections: 'vocabCollections', language: 'vocabLanguage' };
 const WRITE_KEY = { continue: 'writeContinue', prompt: 'writePrompt', free: 'writeFree', topic: 'writeTopic' };
 
 const SKILL_LABEL_KEY = {
@@ -39,7 +40,10 @@ function modeLabel(routeId) {
 /* A mode's own name: Write's modes are the design's four (Continue draft, Prompt, Free Writing, Your Topic),
    named here; every other mode is the label of the route it opens. */
 function labelOf(skill, mode) {
-  return skill === 'write' && WRITE_KEY[mode.key] ? t(WRITE_KEY[mode.key]) : modeLabel(mode.labelRouteId || mode.routeId);
+  if (skill === 'write' && WRITE_KEY[mode.key]) return t(WRITE_KEY[mode.key]);
+  // Vocabulary's own names are the design's: "Due Review" (not the route's "Review", V-03), Collections, Saved language.
+  if (skill === 'vocabulary' && VOCAB_KEY[mode.key]) return t(VOCAB_KEY[mode.key]);
+  return modeLabel(mode.labelRouteId || mode.routeId);
 }
 
 /* The design's one-line description and duration of a grouped mode (S1 `SK` groups). Speak carries both;
@@ -49,6 +53,9 @@ function groupedFacts(skill, mode) {
   if (skill === 'speak') return { desc: t(`${mode.key}Desc`), dur: t(`${mode.key}Dur`) };
   if (skill === 'write' && mode.key === 'continue') return { desc: t('writeContinueDesc', { title: mode.draft.title || t('writeUntitled'), n: mode.draft.n }), dur: '' };
   if (skill === 'write') return { desc: t(`${WRITE_KEY[mode.key]}Desc`), dur: '' };
+  // No Vocabulary mode has a measured duration (N-22), so none is drawn.
+  if (skill === 'vocabulary' && mode.key === 'review') return { desc: t.plural('due', mode.due), dur: '' };
+  if (skill === 'vocabulary') return { desc: t(`vocab${mode.key === 'feed' ? 'Feed' : mode.key === 'collections' ? 'Collections' : 'Language'}Desc`), dur: '' };
   return null;
 }
 
@@ -65,7 +72,6 @@ function modeMeta(skill, mode) {
   // The duration never truncates: only the description gives way in a longer interface language.
   const facts = groupedFacts(skill, mode);
   if (facts) return html`<span class="s-practice-tile__desc">${facts.desc}</span>${facts.dur ? html`<span class="s-practice-tile__dur">· ${facts.dur}</span>` : ''}`;
-  if (skill === 'vocabulary' && mode.key === 'review') return t.plural('due', mode.due);
   if ((skill === 'speak' || skill === 'listen' || skill === 'reading') && mode.level) return mode.level;
   return '';
 }
@@ -248,7 +254,8 @@ async function renderSkillHub(element, ctx, data, skill) {
   const known = SKILL_ORDER.includes(skill);
   const modes = known ? SKILL_BUILDERS[skill](data) : [];
   const title = known ? t(SKILL_LABEL_KEY[skill]) : shellCopy('practiceHub');
-  const rec = known && skill === 'write' ? localisedWriteRecommendation(data.recommendation) : known && skill === 'speak' ? data.speakRecommendation : null;
+  const vocabRec = known && skill === 'vocabulary' ? vocabularyRecommendation(data.due) : null;
+  const rec = vocabRec ? { title: t.plural('recVocabTitle', vocabRec.n), reason: t('recVocabReason'), go: href('review') } : known && skill === 'write' ? localisedWriteRecommendation(data.recommendation) : known && skill === 'speak' ? data.speakRecommendation : null;
   mount(
     element,
     html`<div class="s-practice-hub">

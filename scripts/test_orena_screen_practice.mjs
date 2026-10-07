@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import {
   SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS,
-  speakModes, writeModes, listenModes, vocabularyModes, grammarModes, readingModes, buildSkillSections, weakestLines,
+  speakModes, writeModes, listenModes, vocabularyModes, grammarModes, readingModes, buildSkillSections, weakestLines, vocabularyRecommendation,
   continuationTarget, continuationRows, writeRecommendation,
 } from '../static/orena/screens/practice/model.js';
 
@@ -95,7 +95,12 @@ import {
   assert.equal(vocabularyModes(-4).find((m) => m.key === 'review').due, 0, 'a negative count floors at 0 rather than showing nonsense');
   assert.equal(vocabularyModes(undefined).find((m) => m.key === 'review').due, 0, 'a missing count is the rule-40 zero, not an absent field');
   assert.equal(vocabularyModes('not-a-number').find((m) => m.key === 'review').due, 0);
-  assert.deepEqual(vocabularyModes().map((m) => m.key), ['review', 'feed'], 'Timed Recall and Context Transfer are deferred (H9)');
+  assert.deepEqual(vocabularyModes().map((m) => m.key), ['review', 'feed', 'collections', 'language'], 'the built modes only: Timed Recall and Context Transfer are deferred (H9); Collections and Saved language are the Library tabs (HV-1 B)');
+  assert.deepEqual(vocabularyModes().map((m) => m.group), ['recall', 'browse', 'browse', 'browse'], 'the Recall and Browse groups of the design');
+  assert.deepEqual(vocabularyModes().filter((m) => m.routeId === 'library').map((m) => m.query.tab), ['collections', 'language']);
+  assert.deepEqual(vocabularyRecommendation(6), { n: 6 }, 'the Recommended card comes from the real due count');
+  assert.equal(vocabularyRecommendation(0), null, 'nothing due, nothing recommended');
+  assert.equal(vocabularyRecommendation(undefined), null);
 }
 
 // --- Listen: two content-gated modes, one per available_modes value ----------------------------
