@@ -1,0 +1,36 @@
+name: Grammar 595 Approval Audit
+
+on:
+  push:
+    branches:
+      - codex/grammar-595-review-local
+    paths:
+      - ".github/workflows/grammar-595-approval-audit.yml"
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - name: Audit approval gates for every level
+        shell: bash
+        run: |
+          set +e
+          NOTE="Approval-gate audit only"
+          failures=0
+          for spec in "en A1" "en A2" "en B1" "en B2" "en C1" "en C2" "zh HSK1" "zh HSK2" "zh HSK3" "zh HSK4" "zh HSK5" "zh HSK6" "zh HSK7" "zh HSK8" "zh HSK9"; do
+            lang="${spec%% *}"
+            level="${spec#* }"
+            echo "===== APPROVAL_AUDIT $lang $level ====="
+            python -m grammar_lab.pipeline.cli approve --lang "$lang" --level "$level" --reviewer "Thi" --note "$NOTE"
+            rc=$?
+            echo "===== RESULT $lang $level rc=$rc ====="
+            if [ "$rc" -ne 0 ]; then failures=$((failures+1)); fi
+          done
+          echo "APPROVAL_AUDIT_FAILURE_LEVELS=$failures"
+          exit 0
