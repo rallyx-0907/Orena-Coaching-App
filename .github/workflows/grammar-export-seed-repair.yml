@@ -1,0 +1,88 @@
+name: Grammar Export Seed Repair
+
+on:
+  push:
+    branches:
+      - codex/fix-grammar-export-seed-metadata
+    paths:
+      - ".github/workflows/grammar-export-seed-repair.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-prove:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: codex/fix-grammar-export-seed-metadata
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e "grammar_lab[dev]"
+
+      - name: Repair reviewed seed source
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path("grammar_lab/inventory/seeds_zh.yaml")
+          text = p.read_text(encoding="utf-8")
+          old = 'native_title: "连动句“去/来 + 动词”"'
+          new = 'native_title: "连动句“去/来+动词”"'
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f"expected exactly one old title, found {count}")
+          p.write_text(text.replace(old, new), encoding="utf-8", newline="\n")
+
+      - name: Regenerate derived catalog
+        run: python -m grammar_lab.pipeline.cli import-canonical --lang zh
+
+      - name: Green regression and corpus validation
+        run: |
+          python -m pytest -q grammar_lab/tests/test_export_seed_metadata.py
+          python -m grammar_lab.pipeline.cli validate --lang en
+          python -m grammar_lab.pipeline.cli validate --lang zh
+          python -m grammar_lab.pipeline.cli coverage --lang en
+          python -m grammar_lab.pipeline.cli coverage --lang zh
+
+      - name: Commit source and derived catalog
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add grammar_lab/inventory/seeds_zh.yaml grammar_lab/inventory/catalog_zh.yaml
+          git diff --cached --stat
+          git diff --cached --quiet || git commit -m "fix(grammar): keep serial-verb seed export-valid"
+
+      - name: Prove complete-language production exports
+        shell: bash
+        run: |
+          set -euo pipefail
+          EN_IDS="$(python - <<'PY'
+          import yaml
+          from pathlib import Path
+          rows = yaml.safe_load(Path('grammar_lab/inventory/catalog_en.yaml').read_text(encoding='utf-8'))
+          print(','.join(row['id'] for row in rows))
+          PY
+          )"
+          ZH_IDS="$(python - <<'PY'
+          import yaml
+          from pathlib import Path
+          rows = yaml.safe_load(Path('grammar_lab/inventory/catalog_zh.yaml').read_text(encoding='utf-8'))
+          print(','.join(row['id'] for row in rows))
+          PY
+          )"
+          rm -rf /tmp/grammar-export
+          mkdir -p /tmp/grammar-export
+          python -m grammar_lab.pipeline.cli export-package --lang en --ids "$EN_IDS" --out /tmp/grammar-export/en-all --set-version 2026-10-08.en.all --with-dropped --zip
+          python -m grammar_lab.pipeline.cli export-package --lang zh --ids "$ZH_IDS" --out /tmp/grammar-export/zh-all --set-version 2026-10-08.zh.all --with-dropped --zip
+          python -m grammar_lab.pipeline.cli validate-package /tmp/grammar-export/en-all
+          python -m grammar_lab.pipeline.cli validate-package /tmp/grammar-export/zh-all
+
+      - name: Push repair commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin HEAD:codex/fix-grammar-export-seed-metadata
