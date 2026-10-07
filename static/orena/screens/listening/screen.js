@@ -402,9 +402,30 @@ export default async function listening(element, ctx) {
     const box = row.getBoundingClientRect();
     const top = box.top - region.top + rowsEl.scrollTop;
     const bottom = top + box.height;
-    if (top < rowsEl.scrollTop + 8) rowsEl.scrollTop = Math.max(0, top - 8);
-    else if (bottom > rowsEl.scrollTop + rowsEl.clientHeight - 8) rowsEl.scrollTop = Math.min(top - 8, bottom - rowsEl.clientHeight + 8);
+    const view = rowsEl.clientHeight;
+    // The current line is the focus (LEX-047): whole, in the upper part of the pane, with a short strip of the
+    // previous line above it as context - never parked at the bottom edge under a centred past line. A line taller
+    // than the pane starts at its top and the learner scrolls for the rest.
+    const clipped = top < rowsEl.scrollTop + 8 || bottom > rowsEl.scrollTop + view - 8;
+    const low = top - rowsEl.scrollTop > view * 0.45;
+    if (!clipped && !low) return;
+    const context = Math.max(0, Math.min(Math.round(view * 0.18), view - box.height - 16));
+    rowsEl.scrollTop = Math.max(0, top - 8 - context);
   }
+  // A pane that changes size (a panel opened or closed, a rotation, the keyboard) frames the current line again,
+  // unless the learner has just scrolled the transcript themselves.
+  let userScrollAt = 0;
+  const markUserScroll = () => { userScrollAt = Date.now(); };
+  rowsEl.addEventListener('wheel', markUserScroll, { passive: true });
+  rowsEl.addEventListener('touchmove', markUserScroll, { passive: true });
+  let lastPaneHeight = 0;
+  const paneObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {
+    const height = rowsEl.clientHeight;
+    if (!height || height === lastPaneHeight) return;
+    lastPaneHeight = height;
+    if (autoScroll && Date.now() - userScrollAt > 3000 && currentId) scrollRowIntoView(currentId);
+  }) : null;
+  paneObserver?.observe(rowsEl);
 
   /* The frame's `playSeg`: from the line's start to its end, then stop. */
   function playLine(id) {
@@ -525,7 +546,7 @@ export default async function listening(element, ctx) {
         <span class="s-listening__row-time">${mmss(seg.start_ms) ?? ''}</span>
         <span class="s-listening__row-main">
           <span class="s-listening__row-text" data-zhf="${isZh ? '1' : '0'}" data-text>${rowTextMarkup(seg)}</span>
-          ${meaning ? html`<span class="s-listening__row-vi" style="display:block">${meaning}</span>` : ''}
+          ${meaning ? html`<span class="s-listening__row-vi" style="display:block" lang="${langAttr(support)}">${meaning}</span>` : ''}
         </span>
       </button>`;
     });
@@ -620,7 +641,7 @@ export default async function listening(element, ctx) {
       </div>
       <div class="s-listening__selected-scroll" data-scroll-region>
         <div class="s-listening__selected-text" lang="${langAttr(language)}">${seg.original_text}</div>
-        ${meaning ? html`<div class="s-listening__selected-vi">${meaning}</div>` : ''}
+        ${meaning ? html`<div class="s-listening__selected-vi" lang="${langAttr(support)}">${meaning}</div>` : ''}
       </div>
       <div class="s-listening__selected-actions" data-scroll-region>
         ${playbackOk ? pill({ id: 'play-seg', label: t('playSegment'), iconName: 'play', variant: 'primary' }) : ''}
@@ -644,7 +665,7 @@ export default async function listening(element, ctx) {
         <button type="button" class="s-listening__nowplaying-pick" data-act="pick">${t('workOnThisLine')}</button>
       </div>
       <div class="s-listening__nowplaying-text" lang="${langAttr(language)}">${cur.original_text}</div>
-      ${meaning ? html`<div class="s-listening__nowplaying-vi">${meaning}</div>` : ''}
+      ${meaning ? html`<div class="s-listening__nowplaying-vi" lang="${langAttr(support)}">${meaning}</div>` : ''}
     </div>`;
   }
 
@@ -951,6 +972,7 @@ export default async function listening(element, ctx) {
     playerEl.removeEventListener('pointerdown', revealPlayerChrome);
     clearTimeout(processingTimer);
     releasePlayModel();
+    paneObserver?.disconnect();
     if (playbackOk) {
       playerEl.removeEventListener('orena:media-time', onMediaTime);
       disconnectMediaPlayer(playerEl);

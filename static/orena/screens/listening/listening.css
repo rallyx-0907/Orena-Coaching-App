@@ -882,3 +882,20 @@
    40px touch surface, 4px apart; the negative margin keeps the header's line height as the frame draws it. */
 :root[data-device="mobile"] .s-listening__selected-tools { display: inline-flex; align-items: center; gap: 4px; margin: -11px -11px -11px 0; }
 :root[data-device="mobile"] .s-listening__selected-close { width: 40px; height: 40px; padding: 0; border-radius: 10px; }
+
+/* The selected line's card never runs under the Transcript (LEX-037): on a phone the card may shrink - its line and
+   meaning scroll in their own region - while its actions, the ⋯ row included, always keep their full height. */
+:root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) { flex: 0 1 auto; min-height: auto; }
+/* While ⋯ is open the learner is acting on the selected line: the Transcript gives up height (to its title and a strip of the line) so
+   the third action row fits whole. */
+:root[data-device="mobile"] .s-listening:has(.s-listening__extra-acts.is-open) .s-listening__transcript { min-height: 80px; }
+:root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-scroll { flex: 0 1 auto; min-height: 40px; overflow-y: auto; }
+:root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-actions { flex: none; overflow: visible; }
+
+/* The completed panel's actions on a phone (LEX-037): two even columns, each label on one line with room around
+   it, instead of four squeezed cells where one wraps. With three actions the primary takes the full row. */
+:root[data-device="mobile"] .s-listening__end-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+:root[data-device="mobile"] .s-listening__end-actions .o-btn {
+  min-width: 0; min-height: 44px; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+:root[data-device="mobile"] .s-listening__end-actions .o-btn:nth-child(odd):last-child { grid-column: 1 / -1; }

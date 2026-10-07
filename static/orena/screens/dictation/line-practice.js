@@ -9,6 +9,7 @@ import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { markGlyph } from '../../kit/brand.js';
 import { langAttr } from '../../kit/lang.js';
+import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { dictationEvidence, recoverListeningEvidence } from '../../product/evidence.js';
@@ -161,7 +162,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
         <div class="s-dict__chips" lang="${langAttr(lesson.language)}">
           ${chips.src.map((chip) => html`<span class="s-dict__chip s-dict__chip--src-${chip.kind}">${chip.text}</span>`)}
         </div>
-        ${seg.support ? html`<div class="s-dict__support">${seg.support}</div>` : ''}
+        ${seg.support ? html`<div class="s-dict__support" lang="${langAttr(languages().support)}">${seg.support}</div>` : ''}
       </div>
     </div>`);
     mount(dockEl, html`<div class="s-dict__actions">
