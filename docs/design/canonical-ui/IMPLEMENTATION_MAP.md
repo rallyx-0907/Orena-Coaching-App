@@ -38,7 +38,7 @@ Routes are hash routes of the new entry (`/next#/…` until the cutover, then
 | Contextual Orena · Orena Voice | `screens/orena/panel.js`, `screens/orena/voice.js` | `scripts/test_orena_screen_orena.mjs`, `scripts/test_orena_agent.mjs` | reviewable |
 | Import | `screens/import/` (opened from Discover's "+ Import") | `scripts/test_orena_screen_sheets.mjs` | reviewable |
 | Notifications | `screens/notifications/` (opened from the shell bell, `shell/router.js`) | `scripts/test_orena_screen_sheets.mjs` | reviewable |
-| Stroke Practice | `screens/word/stroke-sheet.js`, `screens/word/stroke-tiles.js` | `scripts/test_orena_screen_word.mjs` | building |
+| Stroke Practice | `screens/word/stroke-sheet.js`, `screens/word/stroke-tiles.js` | `scripts/test_orena_screen_word.mjs` | reviewable (styled from Word and Review, browser-checked in the Vocabulary batch 1ce3b816) |
 | Prompt Setup (writing setup) | `screens/writing/` (its setup sheet) | `scripts/test_orena_screen_writing.mjs` | reviewable |
 | Mic state | `screens/mic/` | `scripts/test_orena_screen_mic.mjs` | reviewable |
 | Lesson complete | `screens/lesson-complete/` | `scripts/test_orena_screen_lesson-complete.mjs` | reviewable |
