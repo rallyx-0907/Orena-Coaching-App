@@ -40,7 +40,7 @@ import { TABS, tabFromQuery, rowsForTab, barPercent, usesPicker } from './model.
 import { listVoices, chosenVoice, chooseVoice } from '../../agent/live-voice.js';
 import { toContractLang } from '../../agent/contract.js';
 
-const TAB_LABEL_KEY = { languages: 'tabLanguages', learning: 'tabLearning', review: 'tabReview', notifications: 'tabNotifications', plan: 'tabPlan' };
+const TAB_LABEL_KEY = { languages: 'tabLanguages', appearance: 'tabAppearance', learning: 'tabLearning', review: 'tabReview', notifications: 'tabNotifications', plan: 'tabPlan' };
 /* Every row's sub reads t(`${id}Sub`) except these two: "Plan" has no chrome sub at all (its sub
    is the real plan name/description, assembled from data, not copy - see planSub() below), and
    "Writing reviews" shares the same "This month" text "Pronunciation minutes" already has its own
@@ -61,6 +61,8 @@ function rowLabel(row) {
 
 function planSub(row) {
   const parts = [row.plan ? planName(row.plan) : row.planName, row.plan ? planDescription(row.plan) : row.planDescription].filter(Boolean);
+  // Manage is inert until plans can be changed: the row says so rather than leaving a grey button unexplained (LEX-079).
+  if (row.disabled) parts.push(t('manageUnavailable'));
   return parts.join(' · ');
 }
 
@@ -120,6 +122,8 @@ function choiceControl(row) {
 }
 
 function barControl(row) {
+  // A meter with nothing behind it says so, never "0 ... 0" (LEX-079).
+  if (row.disabled && !Number(row.limit)) return html`<div class="s-settings-bar"><div class="s-settings-bar__labels"><span>${t('notMeasured')}</span></div><div class="s-settings-bar__track"><div class="s-settings-bar__fill" style="width:0%"></div></div></div>`;
   const pct = barPercent(row.used, row.limit);
   return html`<div class="s-settings-bar"><div class="s-settings-bar__labels"><span>${row.used}</span><span>${row.limit}</span></div><div class="s-settings-bar__track"><div class="s-settings-bar__fill" style="width:${pct}%"></div></div></div>`;
 }

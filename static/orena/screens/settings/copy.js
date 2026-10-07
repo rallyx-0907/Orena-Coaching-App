@@ -6,7 +6,7 @@ import { defineCopy } from '../../copy/index.js';
 
 const KEYS = [
   'paletteLabel', 'paletteSub', 'palette_indigo', 'palette_orchid', 'palette_blue', 'palette_rose',
-  'tabLanguages', 'tabLearning', 'tabReview', 'tabNotifications', 'tabPlan',
+  'tabLanguages', 'tabAppearance', 'tabLearning', 'tabReview', 'tabNotifications', 'tabPlan',
   'targetLabel', 'targetSub', 'supportLabel', 'supportSub', 'interfaceLabel', 'interfaceSub',
   'themeLabel', 'themeSub', 'themeLight', 'themeDark', 'themeSystem',
   'readerSizeLabel', 'readerSizeSub', 'sizeS', 'sizeM', 'sizeL', 'orenaVoiceLabel', 'orenaVoiceSub',
@@ -20,7 +20,7 @@ const KEYS = [
   'pronunciationLabel', 'pronunciationSub', 'micLabel', 'micSub', 'micDeniedToast',
   'learnerAudioLabel', 'learnerAudioSub', 'historyLabel', 'historySub',
   'licencesLabel', 'licencesSub', 'licencesData', 'licencesContent', 'licencesAudio', 'licencesNone', 'licencesLoadError',
-  'manageAction', 'openAction', 'deleteAudioAction',
+  'manageAction', 'openAction', 'deleteAudioAction', 'notMeasured', 'manageUnavailable',
   'notYetAvailable', 'saveError', 'conflictError',
 ];
 
@@ -28,7 +28,7 @@ export const t = defineCopy('settings', {
   layers: Object.fromEntries(KEYS.map((key) => [key, 'interface'])),
   en: {
     paletteLabel: 'Accent', paletteSub: 'Colour for actions and selection', palette_indigo: 'Indigo', palette_orchid: 'Orchid', palette_blue: 'Blue', palette_rose: 'Rose',
-    tabLanguages: 'Languages', tabLearning: 'Learning', tabReview: 'Review',
+    tabLanguages: 'Languages', tabAppearance: 'Appearance', tabLearning: 'Learning', tabReview: 'Review',
     tabNotifications: 'Notifications', tabPlan: 'Plan & privacy',
     targetLabel: 'Target language', targetSub: "What you're learning",
     supportLabel: 'Support language', supportSub: 'Translations, hints and explanations',
@@ -62,13 +62,13 @@ export const t = defineCopy('settings', {
     licencesLabel: 'Licences and data sources', licencesSub: 'Dictionaries, recordings and texts Orena uses, and who made them',
     licencesData: 'Dictionaries and data', licencesContent: 'Texts and media', licencesAudio: 'Word recordings',
     licencesNone: 'Nothing here yet', licencesLoadError: "Couldn't load the licences. Try again.",
-    manageAction: 'Manage', openAction: 'Open', deleteAudioAction: 'Delete audio',
+    manageAction: 'Manage', openAction: 'Open', deleteAudioAction: 'Delete audio', notMeasured: 'Not measured yet', manageUnavailable: 'Plan changes are not available yet',
     notYetAvailable: 'Not available yet', saveError: "Couldn't save. Try again.",
     conflictError: 'Someone changed this. Reopen Settings.',
   },
   vi: {
     paletteLabel: 'Màu nhấn', paletteSub: 'Màu thao tác và lựa chọn', palette_indigo: 'Chàm', palette_orchid: 'Tím lan', palette_blue: 'Xanh', palette_rose: 'Hồng',
-    tabLanguages: 'Ngôn ngữ', tabLearning: 'Học tập', tabReview: 'Ôn tập',
+    tabLanguages: 'Ngôn ngữ', tabAppearance: 'Giao diện', tabLearning: 'Học tập', tabReview: 'Ôn tập',
     tabNotifications: 'Thông báo', tabPlan: 'Gói & quyền riêng tư',
     targetLabel: 'Ngôn ngữ đang học', targetSub: 'Ngôn ngữ bạn đang học',
     supportLabel: 'Ngôn ngữ hỗ trợ', supportSub: 'Bản dịch, gợi ý và giải thích',
@@ -102,13 +102,13 @@ export const t = defineCopy('settings', {
     licencesLabel: 'Giấy phép và nguồn dữ liệu', licencesSub: 'Từ điển, bản ghi âm và văn bản Orena dùng, cùng tác giả của chúng',
     licencesData: 'Từ điển và dữ liệu', licencesContent: 'Văn bản và media', licencesAudio: 'Bản ghi âm từ',
     licencesNone: 'Chưa có mục nào', licencesLoadError: 'Không tải được giấy phép. Thử lại nhé.',
-    manageAction: 'Quản lý', openAction: 'Mở', deleteAudioAction: 'Xoá bản ghi âm',
+    manageAction: 'Quản lý', openAction: 'Mở', deleteAudioAction: 'Xoá bản ghi âm', notMeasured: 'Chưa được đo', manageUnavailable: 'Chưa thể đổi gói',
     notYetAvailable: 'Chưa khả dụng', saveError: 'Không lưu được. Hãy thử lại.',
     conflictError: 'Có người vừa thay đổi mục này. Hãy mở lại Cài đặt.',
   },
   zh: {
     paletteLabel: '强调色', paletteSub: '操作和选中状态的颜色', palette_indigo: '靛蓝', palette_orchid: '兰紫', palette_blue: '蓝色', palette_rose: '玫瑰',
-    tabLanguages: '语言', tabLearning: '学习', tabReview: '复习',
+    tabLanguages: '语言', tabAppearance: '外观', tabLearning: '学习', tabReview: '复习',
     tabNotifications: '通知', tabPlan: '套餐与隐私',
     targetLabel: '学习语言', targetSub: '你正在学习的语言',
     supportLabel: '支持语言', supportSub: '翻译、提示和讲解',
@@ -142,7 +142,7 @@ export const t = defineCopy('settings', {
     licencesLabel: '许可与数据来源', licencesSub: 'Orena 使用的词典、录音和文本，以及它们的作者',
     licencesData: '词典与数据', licencesContent: '文本与媒体', licencesAudio: '单词录音',
     licencesNone: '暂无内容', licencesLoadError: '无法加载许可信息，请重试。',
-    manageAction: '管理', openAction: '打开', deleteAudioAction: '删除录音',
+    manageAction: '管理', openAction: '打开', deleteAudioAction: '删除录音', notMeasured: '尚未统计', manageUnavailable: '暂不能更改套餐',
     notYetAvailable: '暂不可用', saveError: '保存失败，请重试。',
     conflictError: '有人刚更改了这项。请重新打开设置。',
   },

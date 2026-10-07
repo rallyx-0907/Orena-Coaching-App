@@ -31,7 +31,7 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   assert.equal(tabFromQuery(''), TABS[0], 'empty falls back to the first tab');
   assert.equal(tabFromQuery('nope'), TABS[0], 'an unknown slug falls back, never throws');
   assert.equal(tabFromQuery(undefined), TABS[0]);
-  assert.deepEqual(TABS, ['languages', 'learning', 'review', 'notifications', 'plan']);
+  assert.deepEqual(TABS, ['languages', 'appearance', 'learning', 'review', 'notifications', 'plan']);
 }
 
 /* --- Language option builders --------------------------------------------- */
@@ -199,7 +199,8 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
     plan: { plan: null, features: {}, micOn: false, micState: 'prompt' },
   };
   assert.equal(rowsForTab('languages', inputs).length, 3);
-  assert.equal(rowsForTab('learning', inputs).length, 7);
+  assert.equal(rowsForTab('learning', inputs).length, 5, 'learning tab: the study rows only');
+  assert.deepEqual(rowsForTab('appearance', inputs).map((row) => row.id), ['theme', 'palette'], 'Appearance and Accent have their own tab (LEX-079)');
   assert.equal(rowsForTab('review', inputs).length, 4);
   assert.equal(rowsForTab('notifications', inputs).length, 4);
   assert.equal(rowsForTab('plan', inputs).length, 8, 'plan tab: the seven rows plus Licences and data sources (D-124)');

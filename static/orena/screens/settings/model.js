@@ -9,7 +9,10 @@
    docs/project/UI_BACKEND_GAPS.md, not silently decided. */
 import { INTERFACE_ENDONYMS, INTERFACE_LOCALES, interfaceLanguageOptions as sharedInterfaceLanguageOptions } from '../../kit/lang.js';
 
-export const TABS = Object.freeze(['languages', 'learning', 'review', 'notifications', 'plan']);
+/* Appearance and Accent are how Orena looks on this device, not how a learner studies, so they have their own
+   tab (LEX-079); the frame draws neither, so no frame tab holds them. */
+export const TABS = Object.freeze(['languages', 'appearance', 'learning', 'review', 'notifications', 'plan']);
+const APPEARANCE_ROW_IDS = Object.freeze(['theme', 'palette']);
 
 export function tabFromQuery(raw) {
   const value = String(raw || '').trim().toLowerCase();
@@ -162,7 +165,8 @@ export function planRows({ plan, features, micOn, micState }) {
 
 export function rowsForTab(tab, inputs) {
   if (tab === 'languages') return languageRows(inputs.languages);
-  if (tab === 'learning') return learningRows(inputs.learning);
+  if (tab === 'appearance') return learningRows(inputs.learning).filter((row) => APPEARANCE_ROW_IDS.includes(row.id));
+  if (tab === 'learning') return learningRows(inputs.learning).filter((row) => !APPEARANCE_ROW_IDS.includes(row.id));
   if (tab === 'review') return reviewRows(inputs.review);
   if (tab === 'notifications') return notificationRows();
   if (tab === 'plan') return planRows(inputs.plan);

@@ -61,7 +61,7 @@ export async function openNotifications(ctx = {}) {
 
   const markup = html`<div class="o-sheet__head">
     <div>
-      <div class="o-sheet__title">${s('notifications')}</div>
+      <div class="o-sheet__title">${t('title')}</div>
       <div class="s-notifications__sub">${t('subtitle')}</div>
     </div>
     <button type="button" class="o-iconbtn o-iconbtn--close" data-sheet-close aria-label="${s('close')}">${raw(icon('x', { size: 17 }))}</button>
@@ -69,7 +69,7 @@ export async function openNotifications(ctx = {}) {
   <div class="o-sheet__body s-notifications__body">${bodyMarkup()}</div>`;
 
   const handle = openSheet({
-    label: s('notifications'),
+    label: t('title'),
     className: 's-notifications',
     render(sheet, sheetHandle) {
       fillSheet(sheet, sheetHandle, markup);

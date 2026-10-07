@@ -52,7 +52,8 @@ export function createRouter({ frame, getContext }) {
 
   function state() {
     const route = current?.route;
-    const active = route && PRIMARY.includes(route.id) ? route.id : origin;
+    // Profile is its own place (the avatar, the rail's account row): the bar lights nothing there, never the place the learner came from (LEX-080).
+    const active = route && (PRIMARY.includes(route.id) || route.id === 'profile') ? route.id : origin;
     const section = route && !CRUMB_PRIMARY.includes(route.id) ? (route.id === 'progress' ? 'profile' : origin) : '';
     return {
       active,
@@ -214,7 +215,8 @@ export function createRouter({ frame, getContext }) {
     mount(
       holder,
       errorMarkup({
-        title: t(STORY_ROUTES.includes(route.id) ? 'errorStory' : 'errorLesson'),
+        // A browsing place is named for what it is (LEX-080); only a lesson-like route says "lesson" or "story".
+        title: route.lesson ? t(STORY_ROUTES.includes(route.id) ? 'errorStory' : 'errorLesson') : t('errorPlace', { place: t(route.crumb) }),
         text: t(offline ? 'errorOffline' : 'errorServer'),
         backLabel: t('back'),
         retryLabel: t('retry'),
@@ -223,6 +225,12 @@ export function createRouter({ frame, getContext }) {
     holder.querySelector('[data-error-back]').addEventListener('click', () => back());
     holder.querySelector('[data-error-retry]').addEventListener('click', () => retry());
     main.append(holder);
+    // A page that failed for want of a connection loads itself again when the connection returns (LEX-080).
+    if (offline) {
+      window.addEventListener('online', () => {
+        if (holder.isConnected) retry();
+      }, { once: true });
+    }
   }
 
   function onKey(event) {

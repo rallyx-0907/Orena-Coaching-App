@@ -150,3 +150,16 @@ human may override any of them. Implemented on `codex/work`.
 | P-11, P-24 | keep | Search empty and Coming soon stay as built: the design's scope sentence, body line and footnote are sample or internal copy (N-18, N-3, rule 50), not truthful learner copy. |
 
 Defects fixed without a decision: P-20 (Settings choices wrap, no scroll track, "中文" whole at 390 and 360), P-06 (topics vetted by a documented vocabulary, translated), P-19 label (endonyms), P-18 plan name ("Free" translated in VI / ZH, description too), P-29 (`IMPLEMENTATION_MAP.md` Filter Sheet reviewable, Stroke Practice building).
+
+### Places review batch, 2026-10-07 (LEX-072..081), lane defaults
+
+Provisional and reversible; the human may override any of them.
+
+| Id | Default | What was done |
+| --- | --- | --- |
+| P-11 revised (LEX-074) | Search before typing shows recent searches when there are any, and one truthful line saying what Search covers | The design's sentence is sample copy; the line names only the sources Search really reads. Replaces the earlier "keep as built". |
+| LEX-073 | Today leads with the learner's own unfinished item as the hero (kind Continue, its context as the reason); the streak card follows Recommended, before For you | The pinned frame draws the progress block before Recommended; the review asked for Continue first. The week strip marks today and dims days to come; only days the server reports active are ticked. |
+| LEX-079 | The bell sheet is titled "Up next" (it holds due words and unfinished work); Appearance and Accent move to their own Appearance tab | The design draws no theme control and no notification feed (D-104); Reader text size stays in Learning. |
+| LEX-080 | A browsing place's load error names the place; the page retries itself when the connection returns; Profile lights no bar tab | Rule 47: the bar has no Profile item. |
+| LEX-077 | A draft with no words is never set aside and does not raise "Draft in progress"; Free writing never shows a prompt | A waiting prompt draft stays a prompt draft whatever entry opened it. |
+| LEX-081 | A cover tile sits at the lower left of a card so it does not collide with the two pills; Import to Reader and Show 0 results are disabled when they cannot act | |
