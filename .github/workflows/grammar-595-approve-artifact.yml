@@ -17,10 +17,13 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e "grammar_lab[dev]"
+      - name: Apply reviewed deterministic repairs
+        run: python grammar_lab/tools/final_ship_repairs.py
       - name: Preflight
         run: |
           python -m grammar_lab.pipeline.cli validate --lang en
           python -m grammar_lab.pipeline.cli validate --lang zh
+          python -m pytest grammar_lab/tests
       - name: Approve canonical levels
         shell: bash
         run: |
@@ -32,7 +35,7 @@ jobs:
           for level in HSK1 HSK2 HSK3 HSK4 HSK5 HSK6 HSK7 HSK8 HSK9; do
             python -m grammar_lab.pipeline.cli approve --lang zh --level "$level" --reviewer "Thi" --note "$NOTE"
           done
-      - name: Verify
+      - name: Verify approved corpus
         run: |
           python -m grammar_lab.pipeline.cli validate --lang en
           python -m grammar_lab.pipeline.cli validate --lang zh
