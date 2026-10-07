@@ -24,9 +24,9 @@ def _v04_point() -> dict:
         ],
         "common_mistakes": [{"wrong": "我学习吗。", "right": "我学习。"}],
         "quick_practice": [
-            {"q": "我___。"},
-            {"q": "他___。"},
-            {"q": "她___。"},
+            {"q": "我___。", "options": [{"text": "学习"}, {"text": "休息"}], "answer": 0},
+            {"q": "他___。", "options": [{"text": "工作"}, {"text": "学习"}], "answer": 0},
+            {"q": "她___。", "options": [{"text": "休息"}, {"text": "工作"}], "answer": 0},
         ],
         "personal_production": {"prompt": {"vi": "Viết một câu.", "en": "Write one sentence."}, "sample": {"text": "我学习。"}},
     }
@@ -59,10 +59,20 @@ def test_quality_gate_accepts_objectively_complete_v04_point() -> None:
     assert quality_issues(_v04_point()) == []
 
 
+def test_quality_gate_allows_same_prompt_when_options_make_distinct_exercises() -> None:
+    point = _v04_point()
+    point["quick_practice"][2]["q"] = point["quick_practice"][0]["q"]
+    point["quick_practice"][2]["options"] = [{"text": "她"}, {"text": "她们"}]
+    point["quick_practice"][2]["answer"] = 1
+
+    codes = {issue["code"] for issue in quality_issues(point)}
+    assert "quality.practice_duplicate" not in codes
+
+
 def test_quality_gate_rejects_duplicate_or_incomplete_learning_material() -> None:
     point = _v04_point()
     point["examples"][1]["text"] = point["examples"][0]["text"]
-    point["quick_practice"][2]["q"] = point["quick_practice"][0]["q"]
+    point["quick_practice"][2] = dict(point["quick_practice"][0])
     point["common_mistakes"].append(dict(point["common_mistakes"][0]))
     point["personal_production"] = {}
 
