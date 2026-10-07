@@ -8,6 +8,23 @@ The question: the :8000 container has run fine with its configuration; what is s
 to `main` and runs there? This document decides nothing. It lists what is true, what blocks, who owns each step and
 which human gate each step needs.
 
+## Decided 2026-10-08 (D-143) - read this first
+
+The human decided B1-B5; sections below are the analysis they were decided on and are kept as written.
+
+- **Shape:** one UI. The cutover is finished before the :8000 release: `/` runs the new UI; old paths still needed are
+  ported or redirected, the rest deleted and tombstoned. Shapes A and C of section 4 are superseded.
+- **0016:** :8000 takes it; legacy Reading rows stay in the read-only archive, nothing is converted.
+- **Chain:** one production migration pack, rehearsed on a restored copy of :8000, reviewed by the human before any
+  apply. Built: `docs/project/proposals/PRODUCTION_MIGRATION_PACK.md` (`scripts/product_migration_pack.py`), local
+  synthetic evidence only; waiting for a :8000 backup taken by the human, its rehearsal, and the human's review.
+- **First release:** `ORENA_ACCOUNT_BACKBONE=off`, :8000 invitation-only. B3/B4 do not block the controlled trial;
+  they block a public release.
+- **Runtime policy:** no new persistent runtime; :8021 dev/QA, :8000 product-like acceptance, rehearsal disposable.
+- **Correction (2026-10-08 inventory):** the Admin console already exists in the new UI (`#/admin/*`, `screens/admin/*`,
+  on `Orena Admin.dc.html`); sections 4 and 7 saying it is old-UI only are stale. Old `#/admin?id=<section>` links need a
+  redirect at the cutover.
+
 ## 0. Verdict in five lines
 
 1. **Hard blocker, no tool exists.** Migration `20260924_0016` (Reading canonical cutover) is non-additive and gated.
@@ -284,11 +301,11 @@ CI remains the gate; a local pass is not CI evidence.
 
 | # | Item | Why | Owner | Smallest next step |
 | --- | --- | --- | --- | --- |
-| B1 | Migration 0016 cannot be applied to :8000 | Non-additive and gated; `bootstrap_runtime_schema.py` refuses it, `reading_canonical_cutover.py` refuses ports 8000/8010 and `APP_ENV=production`; integration revision needs independent delta review and explicit runtime authorization; "predecessor's authorization does not transfer" | Human (authorization) + independent reviewer + lane (tool) | Human decides whether :8000 takes the canonical Reading cutover; if yes, commission the delta review and a reviewed production variant of the cutover command (separate script or flag, pinned to :8000's cluster and database, with backup assertion), then rehearse on a restored copy. |
-| B2 | Authorization missing for most of the 20 revisions | 0006-0016 dev/sandbox only; D4 0017-0023 and 0025 name :8000 as "its own gates" (D-105.1); 0029 is approved for :8021 only, not :8000 (D-142: "Any migration still waits for the human's authorization") | Human | One decision record naming :8000 for 0006-0029 (or an explicit subset), plus delta review for 0015/0016 and for the 0029 PR. |
-| B3 | `ACCOUNT_RECORD_LIMITS` not built | Server-side learner records with no per-account rails when the backbone is on | Lane, then independent review | Either keep `ORENA_ACCOUNT_BACKBONE=off` for release 1 (recommended; no code), or implement rev 5 and re-review. |
-| B4 | No account-deletion path; upload media not in the deletion enumeration (D-055(b)); no byte/count rails on uploads | Personal uploads accumulate unbounded; deletion is permanent-by-policy but unbuilt | Human (policy) + lane | Human decides whether :8000 is open or invitation-only for release 1; if open, build the owner-media deletion step and upload limits (UI_BACKEND_GAPS 4650, 4693) before. |
-| B5 | Old UI Reading breaks at 0016 | The generated Reading flow is retired in the same deploy (0016 docstring) | Lane + human | Decide shape A or C (section 4) and test `/` Reading after the migration on the restored copy. |
+| B1 | 0016 on :8000 | Decided (D-143 2): take it, no conversion. Tool built: the pack applies 0016 through the reviewed `reading_canonical_cutover.apply` behind production gates (`PRODUCTION_MIGRATION_PACK.md`). | Human (backup, review, authorization) | Human runs `product_backup.ps1` on :8000 and `product_migration_rehearsal.ps1` on it; reviews `rehearsal.json`. |
+| B2 | Authorization of the chain | Decided (D-143 3): one pack, reviewed on a restored copy; 0015/0016/0029 get their own attention (pack section 5). | Human | Review the pack (code, this branch) and the rehearsal evidence; record the authorization the `apply` names. |
+| B3 | `ACCOUNT_RECORD_LIMITS` not built | Not a blocker for the first release (D-143 4: backbone off). Blocks a public release. | Lane, then review | Build before public release. |
+| B4 | Deletion and upload limits | Not a blocker for the invitation-only first release (D-143 4). Blocks a public release. | Lane + human | Build before public release; :8000 stays invitation-only until then. |
+| B5 | UI cutover | Decided (D-143 1): `/` runs the new UI before the :8000 release; old paths ported/redirected or deleted and tombstoned. | Lane | The cutover slice (D-091 item 5). |
 | B6 | (resolved - not a blocker) | `test_orena_writing_workspace.mjs` fails only with the human's uncommitted `DESIGN_CONTRACT.md` edit; on the committed tree (what CI checks out) it passes (verified 2026-10-07 with `git archive HEAD`). It becomes a blocker only if that edit is committed without updating the gate. | Human | Keep the edit uncommitted or update the gate with it. |
 | B7 | (resolved - landed) | New-UI sign-in landed in 9be69a82 / 277c1ceb behind the existing auth switch (strict /next return target, signed-out Welcome, Google only; email form is gap SIGN-1). Full pytest on that tree: 4399 passed, 380 skipped, 0 failed (local, not CI). Runtime steps: `NEXT_SIGN_IN_RUNTIME.md`. | Lane | None; :8000 already has the OAuth env. |
 

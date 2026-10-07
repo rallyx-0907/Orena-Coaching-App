@@ -4402,3 +4402,27 @@ audio to measure and showed no model pitch or timing.
 Review: the human reviews the architecture directly on the branch; the lane prepares a small proposal/implementation,
 commits it clearly and reports the branch, SHAs and scope. No other reviewer is sought unless the human asks. Any
 migration still waits for the human's authorization.
+
+## D-143 - Release to :8000: one UI, one schema chain, one artifact, one deploy path
+
+2026-10-08, explicit human decisions on `docs/project/RELEASE_8000_READINESS.md` (B1-B5), with the runtime policy and
+deployment artifact around them.
+
+1. **B5, release shape.** `/` and `/next` are not kept side by side. The new UI is the only UI; `/next` is a temporary
+   namespace. Before the :8000 release the cutover is finished so that `/` runs the new UI. An old path that is still
+   needed is PORTED or REDIRECTED; the rest is DELETED and tombstoned (`LEGACY_TOMBSTONES.md`). Supersedes the
+   readiness document's shapes A and C.
+2. **B1, migration 0016 and Reading data.** :8000 takes the canonical Reading migration `20260924_0016`. Old Reading
+   data is not converted or backfilled into the new model: legacy rows stay as they are, in the read-only archive the
+   revision creates. What is needed is a production-safe apply and rehearsal tool, not a script that turns old data
+   into new.
+3. **B2, the chain.** One production migration pack for the whole chain is prepared and reviewed on a restored copy of
+   :8000; not twenty separate architecture reviews. 0015/0016 and 0029 get their own attention (gate / delta review).
+   Nothing is applied to :8000 until the human has reviewed the evidence.
+4. **B3/B4, limits, deletion, public access.** The first release keeps `ORENA_ACCOUNT_BACKBONE=off` and :8000
+   restricted / invitation-only, not public. Account record limits, account deletion and upload limits therefore do
+   not block a controlled trial; they must be finished before a public release.
+5. **Runtime policy.** No further persistent Orena runtime is created. :8021 is dev/QA; :8000 is product-like
+   acceptance; migration rehearsal uses a disposable restored-copy environment that is removed afterwards.
+6. **Deployment artifact.** One UI, one schema chain, one release artifact, one deploy path. No agent opens a new port
+   or runtime, and none keeps two product paths in parallel.
