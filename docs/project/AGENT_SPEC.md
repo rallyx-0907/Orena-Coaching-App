@@ -367,8 +367,15 @@ K3  e9731bc1  agent/focus.py: active_topic + referents (current_word, current_se
 K4  fded301b  an answer to an open offer is never read as a status question ("ok lưu" with a word in view).
 LIVE          gemini-3.5-flash-lite, spend bound ~$0.04 per batch: pending-save/-cancel/-between, convo-refs,
               convo-paste, convo-lang all pass (scripts/agent_live/run.py --flows ...).
-NEXT          K5 voice turns join the same session (text and voice one conversation) - then chat UX, then long-term
-              memory.
+K5  303181df  text and voice are one conversation: a voice session opens inside the typed conversation and says
+              which session it is; what the server sees of a spoken turn (words heard, offer made or accepted, what
+              ran, the word) joins the same session; an optional transcript at voice/end adds the rest. Server only,
+              no client change needed; client additions are PROPOSED in proposals/AGENT_KERNEL_CLIENT_ADDITIONS.md.
+              Live voice not verified (needs a person speaking); covered by tests/test_agent_voice_kernel.py.
+LOCAL         full suite in the app image, 2026-10-08: 4334 passed, 380 skipped, 0 failed (local run, not CI).
+NEXT          needs a human: client adoption of the three additive items (UI lane); a durable store for turns and
+              memory (AGENTS.md section 7, independent architecture review). Intelligence-lane work left: rolling
+              summary and token budget (Phase 5), then memory distillation once a store is approved.
 ```
 
 ## 1. Mục tiêu
