@@ -28,7 +28,10 @@ export function notificationRows({ due = 0, continuation = [] } = {}) {
   for (const item of continuation) {
     const target = continuationRoute(item);
     if (!target) continue;
+    // A finished item is not something to continue (P-12, HP-2): it leaves the list.
+    if (item.place && Number.isFinite(item.place.within) && item.place.within >= 100) continue;
     rows.push({
+      at: typeof item.at === 'string' ? item.at : '',
       type: 'continue',
       kind: target.kind,
       routeId: target.routeId,
@@ -38,4 +41,18 @@ export function notificationRows({ due = 0, continuation = [] } = {}) {
     });
   }
   return rows;
+}
+
+/* "2 hours ago" in the interface language, for an ISO time the record carries; '' when there is none or it is
+   not a time (a device-made place has no time - nothing is invented). */
+export function whenLabel(at, locale, now = Date.now()) {
+  const stamp = Date.parse(at);
+  if (!Number.isFinite(stamp)) return '';
+  const seconds = Math.round((stamp - now) / 1000);
+  if (seconds > 60) return '';
+  const format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  for (const [unit, size] of [['day', 86400], ['hour', 3600], ['minute', 60]]) {
+    if (Math.abs(seconds) >= size) return format.format(Math.round(seconds / size), unit);
+  }
+  return format.format(0, 'minute');
 }

@@ -22,7 +22,8 @@ import { useStyles } from '../../kit/styles.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { href } from '../../shell/routes.js';
 import { t } from './copy.js';
-import { notificationRows } from './model.js';
+import { notificationRows, whenLabel } from './model.js';
+import { languages } from '../../copy/index.js';
 
 const KIND_LABEL = { reading: 'continueReadingKind', listening: 'continueListeningKind', writing: 'continueWritingKind' };
 
@@ -50,7 +51,7 @@ export async function openNotifications(ctx = {}) {
     // languages-5 / finding A: `row.title` is the real content this continuation entry resumes -
     // always in the learner's active learning language (kit/lang.js's "the learner's learning
     // language the screen already read" source; no per-entry field exists on device memory).
-    return listRow({ variant: 'outline', pad: '14px 18px', kind: t(KIND_LABEL[row.kind]), title: langSpan(row.title, context.language), sub, dataset: { row: 'continue', route: row.routeId, id: row.id } });
+    return listRow({ variant: 'outline', pad: '14px 18px', kind: [t(KIND_LABEL[row.kind]), whenLabel(row.at, languages().ui)].filter(Boolean).join(' · '), title: langSpan(row.title, context.language), sub, dataset: { row: 'continue', route: row.routeId, id: row.id } });
   }
 
   function bodyMarkup() {

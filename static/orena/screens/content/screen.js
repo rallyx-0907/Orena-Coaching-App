@@ -18,6 +18,7 @@ import { deleteWithUndo } from '../../product/import-undo.js';
 import { importMemberId, isRemovedContent } from '../../product/import-removed.js';
 import { useStyles } from '../../kit/styles.js';
 import { heroMedia, listRow, rowThumb } from '../../kit/components.js';
+import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langSpan, langAttr } from '../../kit/lang.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
@@ -99,6 +100,9 @@ async function loadSaved(libKind, sourceId, contentId, memory) {
    docs/project/UI_BACKEND_GAPS.md); this is the same catalogue Discover would show, just capped
    and pointed at Content Detail for each item. Upload/text have no shared catalogue at all, so
    they render no Related section (rule 40: an absent list is empty, not invented). */
+/* The tile a content item without a cover draws, by its kind (HP-3 A). */
+const COVER_OF_KIND = Object.freeze({ article: 'read', book: 'read', media: 'listen', upload: 'upload', text: 'write' });
+
 async function loadRelated(kind, id, language) {
   try {
     if (kind === 'article') {
@@ -194,6 +198,7 @@ export default async function content(element, ctx) {
       <button type="button" class="s-content__back" data-back>${t('back')}</button>
       ${heroMedia({
         image: detail.image,
+        cover: COVER_VISUALS[COVER_OF_KIND[kind]] || null,
         height: 'var(--hero-h)',
         pill: typeLabel(kind, detail.playbackKind),
         title: langSpan(detail.title, detail.language),
@@ -234,7 +239,7 @@ export default async function content(element, ctx) {
                 variant: 'outline',
                 radius: 16,
                 pad: '12px',
-                leading: item.image ? rowThumb({ image: item.image, width: 64, height: 48, radius: 12 }) : null,
+                leading: rowThumb({ image: item.image, cover: COVER_VISUALS[COVER_OF_KIND[String(item.id).split(':')[0]]] || null, width: 64, height: 48, radius: 12 }),
                 title: langSpan(item.title, item.lang),
                 sub: item.meta,
                 dataset: { go: ctx.href('content', { id: item.id }) },

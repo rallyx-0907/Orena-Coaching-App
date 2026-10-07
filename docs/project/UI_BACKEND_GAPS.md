@@ -4991,3 +4991,29 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   the provider returns pronunciation scores per syllable but no tone judgement, so the screen names the syllable the
   assessment scored lowest (matched by its label, and only when exactly one syllable fits) and never says which tone the
   learner produced. Owner of anything beyond that: the assessment/provider layer.
+
+## Places design audit (D-129), 2026-10-07
+
+- **P-06 No topic vocabulary in the content model.** `reading_articles.topic` and the listening/vocabulary topics are
+  open text, and internal or test tags ("sandbox-test") sit in the same field. Discover (`screens/discover/model.js`
+  `KNOWN_TOPICS`) now shows a topic only when it names one of 20 known topics (translated EN / VI / ZH in `copy.js`), on
+  cards and in the Filter Sheet; every other tag is hidden. Needed: a closed, authored topic taxonomy (or a tag
+  namespace, e.g. `topic:`) in the content model, with the translations owned by the content bank; Search's meta line
+  still prints the raw topic. Owner: content architecture.
+- **HP-2 Notifications have no typed events, unread state or Mark all read.** The bell lists what the device already
+  knows (due review; started items from the continuation, newest first). Finished items now leave the list and a row
+  shows "when" only when the server's place carries `place_at` (a device-made place has none). Still needed, reserved by
+  D-104: a typed notification record (Writing review ready, Media ready, System) with a time, and a per-account read
+  state behind Mark all read and the unread dot. No persistence was added.
+- **HP-6 Banners.** The offline banner has Retry (re-checks `navigator.onLine`; still offline says so). The design's
+  "Streak at risk", "Goal reached" and "Upload failed" banners stay absent: there is no measured daily goal (N-21) and no
+  upload-failure signal to base them on. The design's "Downloaded lessons still work" line is not drawn because offline
+  lessons do not exist.
+- **P-03, P-05, P-09 Covers.** Content without a cover draws a type-tinted tile (`kit/cover-visuals.js`); real covers
+  (a poster per article, a cover per collection) remain a content gap (N-19).
+- **P-19 Support language is 12 options.** The platform lists 12 support languages, more than a segmented control holds
+  (`SEGMENTED_MAX_OPTIONS`, D-098), so it stays a picker; its options are named by endonym (`kit/lang.js`
+  `SUPPORT_ENDONYMS`) in every interface language. The design's two-option segmented sample needs a decision on which
+  support languages Orena ships.
+- **P-18 Plan names.** The catalogue (`writing_coach/product/catalog.py`) returns English `name` and `description`; the
+  UI translates them by plan id (`copy/shell.js` `planName`, `planDescription`). A new plan needs its words there.

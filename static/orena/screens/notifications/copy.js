@@ -28,8 +28,9 @@ export const t = defineCopy('notifications', {
     // not support (their profile's support language, a different setting the bell has no reason
     // to follow).
     dueTitle: 'interface',
-    percentComplete: 'support',
-    empty: 'support',
+    // System copy follows the interface language (HP-1 A, as D-139 HD-14).
+    percentComplete: 'interface',
+    empty: 'interface',
   },
   en: {
     subtitle: 'Tap one to open the exact result',

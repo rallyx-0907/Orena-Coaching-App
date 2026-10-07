@@ -7,6 +7,7 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { mediaCard, sectionHead } from '../../kit/components.js';
+import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
@@ -26,6 +27,10 @@ import {
 } from './model.js';
 
 const PROMPT_SKIPPED = 'orena.today.levelPromptSkipped';
+
+/* The tile a For-you card without a cover draws: by its route (a continued item) or its source. */
+const FOR_YOU_COVER = Object.freeze({ listening: 'listen', dictation: 'listen', shadow: 'listen', speak: 'speak', conv: 'speak', gconcept: 'grammar', word: 'vocab', review: 'vocab', reader: 'read' });
+const forYouCover = (item) => COVER_VISUALS[FOR_YOU_COVER[item.routeId] || FOR_YOU_COVER[item.source]] || null;
 
 function promptSkipped(language) {
   try {
@@ -178,6 +183,7 @@ export default async function mountToday(element, ctx) {
         ${forYou.map((item) =>
           mediaCard({
             image: item.image ? `url("${item.image}")` : '',
+            cover: forYouCover(item),
             imageHeight: 130,
             kind: item.kind,
             duration: item.durationLabel,

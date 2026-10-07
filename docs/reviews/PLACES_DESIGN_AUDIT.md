@@ -133,3 +133,20 @@ Discover filtered and empty states, Import preview, processing and error steps (
 ## 5. Learner state
 
 None changed. No import was submitted, no setting or language was changed, no request that writes was sent (offline and 404 checks only read). No Orena Intelligence screen was opened.
+
+## Lane defaults pending human confirmation
+
+2026-10-07, reason: human: continue without asking; follows D-139 HD-14 / earlier audits. Provisional and reversible; the
+human may override any of them. Implemented on `codex/work`.
+
+| Id | Default | What was done |
+| --- | --- | --- |
+| HP-1 A (P-02, P-13, P-14) | system copy follows the interface language, learning content unchanged | Today subtitle (`subtitleBoth`, `subtitleOnly`) and the due-review reason, Notifications `percentComplete` and `empty`, Import option descriptions, counts, the length note and the "no percentage" line moved support to interface (`today`, `notifications`, `import` copy tables; gates `test_orena_copy`, `test_orena_copy_layers`). Import errors stay support (they explain). |
+| HP-3 A (P-03, P-05, P-09) | a type-tinted tile with the type icon where there is no cover | `kit/cover-visuals.js` (skill hues and `--tint2`, no new colour) drawn by `mediaCard` (Discover, Today For you), the Content Detail hero and Related thumbnails. No source/topic line was added: Discover's cards already show author and the (now vetted) topic. |
+| HP-4 A (P-19, P-23) | support language as the design's choice; licences a quiet link | Kept as the picker (12 support languages exceed a segmented control, D-098) with endonym labels; the licences row is a quiet text link under Plan & privacy. |
+| HP-5 (P-18) | BUG-06 already decided: a local session has no name and no placeholder is shown | The empty profile h1 is omitted; the avatar ring stays (initial only when the account has a name). The lane default "email local part" was not applied, it would contradict BUG-06. |
+| HP-6 A (P-25) | Retry on the offline banner; no goal, streak or upload banners | Retry re-checks the connection ("Still offline" toast, or the banner clears); the other banners are recorded in `UI_BACKEND_GAPS.md`. |
+| HP-2 (P-12), safe part | drop finished items, show the time when known | Items at 100% leave the bell; "Continue reading - yesterday" shows `place_at` when the server holds it. Typed events, unread dot and Mark all read are recorded in `UI_BACKEND_GAPS.md` (D-104). |
+| P-11, P-24 | keep | Search empty and Coming soon stay as built: the design's scope sentence, body line and footnote are sample or internal copy (N-18, N-3, rule 50), not truthful learner copy. |
+
+Defects fixed without a decision: P-20 (Settings choices wrap, no scroll track, "中文" whole at 390 and 360), P-06 (topics vetted by a documented vocabulary, translated), P-19 label (endonyms), P-18 plan name ("Free" translated in VI / ZH, description too), P-29 (`IMPLEMENTATION_MAP.md` Filter Sheet reviewable, Stroke Practice building).

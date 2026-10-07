@@ -11,7 +11,7 @@ import { html, mount, raw } from './kit/html.js';
 import { icon } from './kit/icons.js';
 import { loadBrand } from './kit/brand.js';
 import { setOverlayLayer } from './kit/overlay.js';
-import { setToastLayer } from './kit/toast.js';
+import { setToastLayer, toast } from './kit/toast.js';
 import { bannerMarkup } from './kit/states.js';
 import { useStyles } from './kit/styles.js';
 import { isAdminHash } from './shell/routes.js';
@@ -27,7 +27,9 @@ function offlineBanner(holder) {
       holder.replaceChildren();
       return;
     }
-    mount(holder, bannerMarkup({ kind: 'warn', title: t('offlineTitle'), dismissLabel: t('dismiss') }));
+    mount(holder, bannerMarkup({ kind: 'warn', title: t('offlineTitle'), actionLabel: t('retry'), dismissLabel: t('dismiss') }));
+    // Retry re-checks the connection: still offline says so, back online clears the banner (the design's own rule).
+    holder.querySelector('[data-banner-action]')?.addEventListener('click', () => (navigator.onLine === false ? toast(t('stillOffline')) : paint()));
     holder.querySelector('[data-banner-close]')?.addEventListener('click', () => holder.replaceChildren());
   };
   window.addEventListener('online', paint);

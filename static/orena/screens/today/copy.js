@@ -15,6 +15,9 @@ const INTERFACE_KEYS = [
   'greetingMorning', 'greetingAfternoon', 'greetingEvening',
   /* The skippable level prompt (D-105 H-19): a Banner (the design's frame) for a profile with no level. */
   'levelPromptTitle', 'levelPromptText', 'levelPromptAction',
+  /* System copy follows the interface language (HP-1 A, as D-139 HD-14): the due-review reason and the header
+     subtitle say what the page holds; only the learning content stays in the content language. */
+  'reviewReason', 'subtitleBoth', 'subtitleOnly',
 ];
 
 const SUPPORT_KEYS = [
@@ -24,10 +27,8 @@ const SUPPORT_KEYS = [
   /* The due-review recommendation's "why this" line (buildRecommendationPool, model.js) - an
      explanation of the suggestion, not a control label, so it is support-layer like the goal
      ring's own evidence sentence above. */
-  'reviewReason',
   /* The header subtitle (buildHeadSubtitle, model.js) - it explains what the real state of the
      page below actually holds, exactly like the evidence sentence above; never a control label. */
-  'subtitleBoth', 'subtitleOnly',
 ];
 
 export const t = defineCopy('today', {
