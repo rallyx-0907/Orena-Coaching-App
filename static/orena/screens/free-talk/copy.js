@@ -1,5 +1,5 @@
 /* Frame 29 "Free Talk" (pinned design, focus route 'freetalk'). Interface layer for every label,
-   button and state line; `support` for the two lines that explain an empty result. Titles already in
+   button and state line; the two lines that explain an empty result are interface too (D-139 HD-14). Titles already in
    copy/shell.js (shellCopy) are reused instead of repeated here: `freeTalk`, `back`. Rule 50: the
    frame's own "Demo ASR · edit to what you'd actually say" pill and "simulated" on the mic line are
    prototype self-disclosure and are not carried, nor is the trailing "Nice." on the empty-fixes
@@ -14,14 +14,13 @@ const INTERFACE_KEYS = [
   'statWords', 'statPace', 'statPaceUnit', 'statLinking', 'statChars', 'statPaceUnitChars',
   'strengthsTitle', 'fixesTitle', 'retryTitle', 'talkAgain', 'askAboutThis', 'finish',
   'transcribing', 'gettingFeedback', 'serviceError',
+  'strengthsEmpty', 'fixesEmpty',
   'minutes', 'headlineNone', 'headlineOne', 'headlineMany',
 ];
-const SUPPORT_KEYS = ['strengthsEmpty', 'fixesEmpty'];
 
 export const t = defineCopy('free-talk', {
   layers: {
     ...Object.fromEntries(INTERFACE_KEYS.map((key) => [key, 'interface'])),
-    ...Object.fromEntries(SUPPORT_KEYS.map((key) => [key, 'support'])),
   },
   en: {
     stepSetup: 'Set up · topic and duration', stepRecording: 'Recording', stepTranscript: 'Check the transcript', stepResult: 'Feedback',

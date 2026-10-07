@@ -19,7 +19,7 @@ const layers = {
   placeholderAnswer: 'support', checkLabel: 'interface', speak: 'interface', listening: 'interface',
   intentAchieved: 'interface', phraseReused: 'interface', yes: 'interface', notThisTime: 'interface',
   carriedLabel: 'interface', landedLabel: 'interface', anotherWayLabel: 'interface', nextAttemptLabel: 'interface',
-  notPrepared: 'support', coachingError: 'support',
+  notPrepared: 'interface', coachingError: 'interface',
   newContextAgain: 'interface', finishLabel: 'interface',
   playLabel: 'interface', pauseLabel: 'interface', correctLabel: 'interface', incorrectLabel: 'support',
 };

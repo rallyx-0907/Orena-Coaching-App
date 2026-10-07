@@ -76,6 +76,18 @@ assert.equal(keyImprovement([]), null);
   assert.equal(tasksFor([{ kind: 'free_talk', at: 5000, facts: [] }], [row('b', 2000, '000', 82, 88)]).length, 2);
 }
 
+/* --- D-139 HD-8: while the session has tasks only those are listed; the account's other attempts of the window are not --- */
+{
+  const row = (id, at, accuracy, fluency) => ({ id, at, assetId: 'asset', segmentId: 'asset:000', accuracy, fluency, verified: true });
+  const ledger = [{ kind: 'scripted_pronunciation', attemptId: 'b', at: 2050, facts: [] }];
+  const server = [row('a', 1000, 70, 60), row('b', 2000, 82, 88)];
+  const session = tasksFor(ledger, server, undefined, { sessionOnly: true });
+  assert.equal(session.length, 1, 'an earlier attempt of the window is not this session');
+  assert.equal(session[0].note, 'Accuracy 82 · Fluency 88', 'the session task still takes the verified facts of the account');
+  assert.equal(tasksFor([], server, undefined, { sessionOnly: true }).length, 0);
+  assert.equal(tasksFor(ledger, server).length, 2, 'without the session scope the window lists every attempt');
+}
+
 /* --- every room that logs to the ledger is named, never shown as its raw kind --- */
 {
   const { readFileSync, readdirSync } = await import('node:fs');

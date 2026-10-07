@@ -15,7 +15,7 @@
    browser. Each server attempt is a Scripted Pronunciation task; its facts
    are only the VERIFIED accuracy and fluency (an unverified attempt is still a task done, with no figure). A tab entry
    for the same task is the same task: a server attempt with the same persisted ID as a logged entry is not listed twice. */
-export function tasksFor(session, serverRows = [], labels = { accuracy: 'Accuracy', fluency: 'Fluency' }) {
+export function tasksFor(session, serverRows = [], labels = { accuracy: 'Accuracy', fluency: 'Fluency' }, { sessionOnly = false } = {}) {
   const sameAttempt = (entry, row) => (entry.attemptId && String(entry.attemptId) === row.id) || (entry.takeRef && entry.takeRef === row.takeId);
   const factsFor = row => row?.verified ? [
     ...(row.accuracy != null ? [{ label: labels.accuracy, value: row.accuracy }] : []),
@@ -32,7 +32,9 @@ export function tasksFor(session, serverRows = [], labels = { accuracy: 'Accurac
       takeRef: entry.takeRef,
     };
   });
-  const fromServer = (serverRows || [])
+  /* While this session has tasks (D-139 HD-8) only those are listed; the account's other attempts of the
+     window are read for the scores of the session's own tasks, never listed. */
+  const fromServer = sessionOnly ? [] : (serverRows || [])
     .filter((row) => !ledger.some((entry) => sameAttempt(entry, row)))
     .map((row) => {
       const facts = factsFor(row);

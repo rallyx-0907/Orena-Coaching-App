@@ -1,6 +1,6 @@
 /* Words of the Mic state sheet (frame 62, E2 §11): the six permission/recording states shared by
    every speaking surface. Titles and button labels are chrome ('interface'); the body/steps text
-   that explains what happened and why is 'support' - both layers real, functional copy (E2's own
+   that explains what happened and why is a system note and is 'interface' too: the sheet is wholly in the interface language (D-139 HD-14) (E2's own
    audit: "the cleanest frame in the set against rule 50 by construction"). */
 import { defineCopy } from '../../copy/index.js';
 
@@ -20,7 +20,7 @@ const SUPPORT_KEYS = [
 ];
 
 export const t = defineCopy('mic', {
-  layers: Object.fromEntries([...INTERFACE_KEYS.map((k) => [k, 'interface']), ...SUPPORT_KEYS.map((k) => [k, 'support'])]),
+  layers: Object.fromEntries([...INTERFACE_KEYS.map((k) => [k, 'interface']), ...SUPPORT_KEYS.map((k) => [k, 'interface'])]),
   en: {
     permissionTitle: 'Allow microphone', permissionAllow: 'Allow microphone', permissionDismiss: 'Not now',
     permissionBody: 'Orena listens only while you record. Audio is used to assess this attempt and is kept according to your privacy settings.',

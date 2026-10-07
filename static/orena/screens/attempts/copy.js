@@ -5,8 +5,8 @@ import { defineCopy } from '../../copy/index.js';
 
 const LAYERS = {
   title: 'interface', statAttempts: 'interface', statBest: 'interface', statChange: 'interface',
-  attemptLabel: 'interface', bestBadge: 'interface', currentBadge: 'interface', metaLine: 'support',
-  privacyNoteSession: 'support', privacyNoteKept: 'support', subtitle: 'interface',
+  attemptLabel: 'interface', bestBadge: 'interface', currentBadge: 'interface', metaLine: 'interface',
+  privacyNoteSession: 'interface', privacyNoteKept: 'interface', subtitle: 'interface',
 };
 
 export const t = defineCopy('attempts', {
