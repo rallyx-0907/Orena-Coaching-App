@@ -51,6 +51,9 @@ export function rowsFor(takes, currentRef = '') {
       tileColor: tone.ink,
       isBest: Boolean(best) && item.id === best.id,
       server: Boolean(item.server),
+      /* Compare opens any attempt that has something to review: this tab's own, and every one the account
+         holds with a verified score (its scores and words, no audio). An unverified one is only listed. */
+      reviewable: item.server ? Boolean(item.verified) : true,
       isCurrent: Boolean(currentRef) && item.id === currentRef,
       at: item.at,
       accuracy: item.accuracy ?? null,

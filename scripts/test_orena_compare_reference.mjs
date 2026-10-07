@@ -9,7 +9,9 @@ const modelWords = [ ['the',0,100], ['year',100,400], ['and',500,200], ['the',80
 const view = { measured:true, words:modelWords.map((w,index)=>({...w,index,offsetMs:w.offsetMs+300,score:80})) };
 const ref={words:modelWords,readings:{the:'/ðə/',year:'/jɪr/',and:'/ænd/'},model:{duration:1.4}};
 assert.equal(pairWord(source.line.text,view.words,4,ref.words,'en').offsetMs,900,'repeated words match by reference position');
-assert.equal(decorateComparison(view,source,ref).words[1].reading,'/jɪr/');
+assert.equal(decorateComparison(view,source,ref).words[1].reading,'','D-139 HD-5: English IPA is never taken from a dictionary - no provider sounds, no reading');
+const sounded={...view,words:view.words.map(w=>w.index===1?{...w,phonemes:[{label:'j',score:90},{label:'ɪ',score:80},{label:'r',score:70}]}:w)};
+assert.equal(decorateComparison(sounded,source,ref).words[1].reading,'jɪr','IPA is the provider own sounds for the word, in order');
 assert.equal(view.words[1].reading,undefined,'never mutate learner evidence');
 assert.equal(pairWord('你好你好',[{text:'你好'},{text:'你好'}],1,[
   {text:'你',offsetKnown:true,offsetMs:0,durationMs:100}, {text:'好',offsetKnown:true,offsetMs:100,durationMs:100},

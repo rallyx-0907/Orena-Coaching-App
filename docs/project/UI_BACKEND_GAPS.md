@@ -4882,3 +4882,20 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
     opening partner turn.
   - Needed: a backend contract for an opening partner turn (no learner message) for a chosen scenario. No UI
     change until that exists; the UI must not fabricate a partner line.
+
+## Speaking Compare: reviewing a past attempt (D-139), 2026-10-07
+
+- **S-13a A stored attempt has no word timing and no audio.**
+  - What the account keeps per attempt (`POST /api/speech/attempts`, `evidence.pronunciation`): each word's text,
+    score, miscue type and sounds, plus accuracy, completeness, prosody and the heard text. It does not keep
+    each word's offset/duration, the line's pace against the model, or audio (D-076).
+  - Effect: an attempt only the account remembers opens in Compare with scores, word detail, sounds and the heard
+    text, but its pitch plots, Timing tab and pace chip show "unavailable", and Play has nothing to play of "you".
+    An attempt this tab still holds keeps all of it.
+  - Needed (backend, not done): offset/duration per word in the stored evidence if past attempts should show
+    timing. The UI draws nothing it does not have.
+- **S-13b "Clear" on the embedded Attempt history card.** The frame's card has a Clear button for the prototype's
+  browser-only history. Orena's attempts are the account's record and no delete route exists, so it is not drawn.
+- **S-10a IPA alphabet is implied, not returned.** English sounds are IPA because the provider is asked for
+  `PhonemeAlphabet: IPA` (en-US); the stored evidence does not carry the alphabet. A provider that labels sounds
+  differently would show those labels. The stress hint line has no provider source and is not drawn.

@@ -21,18 +21,21 @@ import { api } from '../../infrastructure/api.js';
 import { registerActionHandler } from '../../agent/dispatcher.js';
 import { originalSegmentPlayer } from '../../product/original-segment-player.js';
 import { loadSpeakingSource, segmentOf } from '../../product/speaking-source.js';
-import { lineUnits } from '../../product/speaking-line.js';
+import { lineUnits, placeWords } from '../../product/speaking-line.js';
 import { comparisonReference, decorateComparison, pairWord, pairedTiming, readingFor } from '../../product/compare-reference.js';
 import { toneOf } from '../../capabilities/pronunciation-result.js';
 import { decodeAudio, analyse } from '../../capabilities/audio-analysis.js';
 import { createSpeakingRecorder, TAKE } from '../../product/speaking-recorder.js';
-import { lineKey, listTakes, viewOfTake } from '../../product/take-store.js';
+import { lineKey, listTakes, viewOfTake, attemptIdOf } from '../../product/take-store.js';
+import { loadLineAttempts, reviewableAttempts } from '../../product/speaking-history.js';
+import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { micStateFor } from '../speak/model.js';
 import { openMicState, micGate } from '../mic/sheet.js';
 import { t } from './copy.js';
 import {
   ringColor, scoreLabelKey, headlineKey, wordStatus, pronunciationStatusKey, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
   chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordPitchLines, wordPages, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey,
+  ipaByStart, historyFor,
 } from './model.js';
 
 const filled = (name, size) => raw(icon(name, { size }).replace('fill="none"', 'fill="currentColor"'));
@@ -72,15 +75,24 @@ export default async function mountCompareWithModel(element, ctx) {
     intent:'speaking_compare', segment:source.line.lineId});
 
   const key = lineKey(source.sourceId, source.line.lineId);
-  let takes = await listTakes(key);
+  /* This tab's takes (audio and the full assessment) and what the account holds for this line: a fresh
+     browser still has every verified attempt, without its audio (D-076), and each one can be reviewed. */
+  const [tabTakes, serverRows] = await Promise.all([
+    listTakes(key),
+    loadLineAttempts(api, { assetId: source.assetId, segmentId: source.line.lineId }).then((rows) => rows || []),
+  ]);
   if (!ctx.isCurrent()) return undefined;
+  let tabList = tabTakes;
+  const withAccount = (list) => reviewableAttempts(list.map((take) => ({ ...take, attemptId: take.attemptId || attemptIdOf(take.id) })), serverRows);
+  let takes = withAccount(tabList);
   mount(element,'');
   const renderRoot=document.createElement('div');
   renderRoot.className='s-compare-body';
   element.append(renderRoot);
 
   const requested = ctx.query.get('attempt');
-  let selectedId = takes.some((item) => item.id === requested) ? requested : takes[0]?.id || '';
+  /* A named attempt opens as asked (Attempt History); otherwise this tab's newest take, or the record card. */
+  let selectedId = takes.some((item) => item.id === requested) ? requested : tabList[0]?.id || '';
   let wordSel = null;
   let tab = 'pitch';
   let mode = source.hasModelAudio ? PLAYBACK_MODES[0] : 'you_only';
@@ -92,6 +104,7 @@ export default async function mountCompareWithModel(element, ctx) {
   let modelPreview = false;
   let playWord = null; // the word being played in "Word by word"
   let playToken = 0;
+  let meaningOpen = false; // the support-language meaning is revealed on tap (D-139 HD-6)
   let audioEl = null;
   let finishAudio = null;
   let revealSelection = true; // the first paint, and every change of attempt, brings the selection into view
@@ -143,7 +156,8 @@ export default async function mountCompareWithModel(element, ctx) {
         if (!ctx.isCurrent()) return;
         const finished = next.latest;
         if (finished?.take_ref && finished.take_ref !== selectedId && next.phase === TAKE.RESULT) {
-          takes = finished.list;
+          tabList = finished.list;
+          takes = withAccount(tabList);
           revealSelection = true;
           selectedId = finished.take_ref;
           wordSel = defaultWordIndex(viewOfTake(takeOf(selectedId)));
@@ -325,6 +339,10 @@ export default async function mountCompareWithModel(element, ctx) {
     const han = (unit) => /\p{Script=Han}/u.test(unit.text);
     const aligned = language === 'zh' && syllables.length === units.filter((unit) => unit.unit && han(unit)).length;
     let spokenAt = 0;
+    /* English IPA is the assessment provider's own sounds for the word, from the newest attempt that has
+       them (D-139 HD-5); with none, the reading row is not drawn at all - no dashes. Chinese keeps pinyin. */
+    const ipa = ipaByStart(takes.map(viewOfTake), source.line.text, language, placeWords);
+    const readingRow = language === 'zh' || ipa.size > 0;
     /* Punctuation stays on its word (design: "stop," is one token): a closing mark joins the word
        before it, an opening quote or bracket the word after it. */
     const marks = (text) => /^[\p{P}\p{S}]+$/u.test(text.trim());
@@ -344,30 +362,55 @@ export default async function mountCompareWithModel(element, ctx) {
     }
     return items.map(({ unit, plain, lead: head, tail }) => {
       const shown = `${head}${unit.text}${tail}`;
-      if (plain || !unit.unit || (language === 'zh' && !han(unit))) return shown.trim() ? html`<span class="s-compare-token"><span class="s-compare-token__sub" aria-hidden="true">${raw('&nbsp;')}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${shown}</span></span>` : '';
-      const reading = aligned ? syllables[spokenAt++] : readingFor(unit.text, reference, language, unit.start);
+      if (plain || !unit.unit || (language === 'zh' && !han(unit))) return shown.trim() ? html`<span class="s-compare-token">${readingRow ? html`<span class="s-compare-token__sub" aria-hidden="true">${raw('&nbsp;')}</span>` : ''}<span class="s-compare-token__word" lang="${langAttr(language)}">${shown}</span></span>` : '';
+      const reading = language === 'en' ? ipa.get(unit.start) || '' : aligned ? syllables[spokenAt++] : readingFor(unit.text, reference, language, unit.start);
       const tone = language === 'zh' && reading ? toneOf(reading) : null;
-      return html`<span class="s-compare-token"><span class="s-compare-token__sub" title="${reading ? '' : t('readingUnavailable')}" style="color:${tone && tone < 5 ? `var(--tone${tone})` : 'var(--text3)'}">${reading || '—'}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${shown}</span></span>`;
+      if (!readingRow) return html`<span class="s-compare-token"><span class="s-compare-token__word" lang="${langAttr(language)}">${shown}</span></span>`;
+      return html`<span class="s-compare-token"><span class="s-compare-token__sub" title="${reading || language !== 'zh' ? '' : t('readingUnavailable')}" style="color:${tone && tone < 5 ? `var(--tone${tone})` : 'var(--text3)'}">${reading || (language === 'zh' ? '—' : raw('&nbsp;'))}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${shown}</span></span>`;
     });
   }
 
-  function sourceNavigation() {
-    if (!source.lessonId) return '';
-    const at = lines.findIndex(line=>line.lineId===source.line.lineId);
-    const busy = [TAKE.RECORDING,TAKE.PROCESSING].includes(rec.phase);
-    return html`<div class="s-compare-source">
-      <div class="s-compare-source__media"><div class="s-compare-source__title" lang="${langAttr(language)}">${source.title}</div>
-        <button type="button" class="s-compare-ghost" data-choose-media ${busy ? raw('disabled') : ''}>${t('chooseMedia')}</button></div>
-      <div class="s-compare-source__actions">
-        <button type="button" class="s-compare-ghost" data-listen-source ${busy ? raw('disabled') : ''}>${t('listenSource')}</button>
-        <button type="button" class="o-iconbtn" data-source-line="${lines[at-1]?.lineId || ''}" aria-label="${t('previousLine')}" ${busy || at<=0 ? raw('disabled') : ''}>${raw(icon('chevron-left',{size:18}))}</button>
-        <select class="s-compare-source__select" aria-label="${t('chooseLine')}" data-source-select ${busy ? raw('disabled') : ''}>
-          ${lines.map(line=>html`<option value="${line.lineId}" ${line.lineId===source.line.lineId ? raw('selected') : ''}>${line.ordinal}. ${line.text}</option>`)}
-        </select>
-        <button type="button" class="o-iconbtn" data-source-line="${lines[at+1]?.lineId || ''}" aria-label="${t('nextLine')}" ${busy || at>=lines.length-1 ? raw('disabled') : ''}>${raw(icon('chevron-right',{size:18}))}</button>
-        <span class="s-compare-note">${t('linePosition',{n:at+1,total:lines.length})}</span>
-      </div>
+  const lineAt = () => lines.findIndex((line) => line.lineId === source.line.lineId);
+  const busyNow = () => [TAKE.RECORDING, TAKE.PROCESSING].includes(rec.phase);
+
+  /* Previous / Next line at the bottom of the room, as frame 28 draws them (D-139 HD-4). */
+  function lineNavigation() {
+    if (!source.lessonId || lines.length < 2) return '';
+    const at = lineAt();
+    const busy = busyNow();
+    return html`<div class="s-compare-linenav">
+      <button type="button" class="s-compare-linenav__btn" data-fk="line-prev" data-source-line="${lines[at - 1]?.lineId || ''}" ${busy || at <= 0 ? raw('disabled') : ''}>${raw('&larr;')} ${t('previousLine')}</button>
+      <button type="button" class="s-compare-linenav__btn" data-fk="line-next" data-source-line="${lines[at + 1]?.lineId || ''}" ${busy || at >= lines.length - 1 ? raw('disabled') : ''}>${t('nextLine')}${raw(icon('arrow-right', { size: 16 }))}</button>
     </div>`;
+  }
+
+  /* The line list and "Choose media" live in a sheet behind "..." (D-139 HD-4); Listen returns to this
+     exact line in Listening. */
+  function openMore() {
+    const at = lineAt();
+    openSheet({
+      label: t('lineAndMedia'),
+      render(sheet, handle) {
+        fillSheet(sheet, handle, html`${sheetHead({ title: t('lineAndMedia'), closeLabel: shellCopy('close') })}
+          <div class="s-compare-more">
+            <div class="s-compare-more__media" lang="${langAttr(language)}">${source.title}</div>
+            <div class="s-compare-more__lines">${lines.map((line, index) => html`<button type="button" class="s-compare-more__line" data-source-line="${line.lineId}" aria-current="${index === at}"><span class="s-compare-more__n">${line.ordinal}</span><span lang="${langAttr(language)}">${line.text}</span></button>`)}</div>
+            <div class="s-compare-more__actions">
+              <button type="button" class="s-compare-ghost" data-listen-source>${t('listenSource')}</button>
+              <button type="button" class="s-compare-ghost" data-choose-media>${t('chooseMedia')}</button>
+            </div>
+          </div>`);
+        sheet.querySelectorAll('[data-source-line]').forEach((button) => button.addEventListener('click', () => goLine(button.dataset.sourceLine)));
+        sheet.querySelector('[data-listen-source]').addEventListener('click', () => ctx.go(ctx.href('listening', { id: source.lessonId }, lineQuery)));
+        sheet.querySelector('[data-choose-media]').addEventListener('click', () => ctx.go(ctx.href('discover', {}, { tab: 'listen', practice: 'pronunciation', source: source.lessonId, segment: source.line.lineId })));
+      },
+    });
+  }
+
+  function goLine(id) {
+    if (!id || recorder.busy) return;
+    stopPlay();
+    ctx.go(ctx.href('compare', { id: source.sourceId }, { segment: id }));
   }
 
   function liveLine() {
@@ -388,7 +431,7 @@ export default async function mountCompareWithModel(element, ctx) {
         </div>
       </div>
       <div class="s-compare-record__content"><div class="s-compare-tokens">${tokensMarkup()}</div>
-      ${support !== language ? html`<p class="s-compare-note" lang="${langAttr(support)}">${source.line.meaning || t('meaningUnavailable')}</p>` : ''}
+      ${support !== language ? html`<div class="s-compare-meaning"><button type="button" class="s-compare-reveal" data-fk="meaning" data-meaning aria-expanded="${meaningOpen}">${t(meaningOpen ? 'hideMeaning' : 'showMeaning')}</button>${meaningOpen ? html`<p class="s-compare-note" lang="${langAttr(support)}">${source.line.meaning || t('meaningUnavailable')}</p>` : ''}</div>` : ''}
       ${source.hasModelAudio ? '' : html`<p class="s-compare-note">${t('modelUnavailable')}</p>`}
       </div>
       <div class="s-compare-recrow">
@@ -600,6 +643,45 @@ export default async function mountCompareWithModel(element, ctx) {
     </div>`;
   }
 
+  /* The component's own Attempt history card (frame 16, D-139 HD-7): every attempt this line has, the
+     sparkline of their scores, and for each the three numbers the assessment measured with the change
+     from the attempt before. Tapping one opens its analysis above - for an attempt only the account
+     remembers, without audio (D-076). The frame's "Clear" is not drawn: the account's record is not
+     deleted from here. */
+  function historyMarkup() {
+    const history = historyFor(takes, selectedId, viewOfTake);
+    if (!history.count) return '';
+    const dots = history.spark;
+    const line = dots.map((dot) => `${dot.cx.toFixed(1)},${dot.cy.toFixed(1)}`).join(' ');
+    const summary = history.scoredCount < 2
+      ? (history.count < 2 ? t('histSummaryFirst') : '')
+      : t('histSummary', { first: history.first, last: history.last, n: history.scoredCount, best: history.best, bestN: history.bestN });
+    const when = (at) => new Date(at).toLocaleString(ui, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return html`<div class="s-compare-card s-compare-hist">
+      <div class="s-compare-hist__top">
+        <div class="s-compare-hist__head">
+          <div class="s-compare-hist__title"><span>${t('attemptHistory')}</span><span class="s-compare-hist__count">${history.count}</span></div>
+          ${summary ? html`<div class="s-compare-hist__summary">${summary}</div>` : ''}
+        </div>
+        ${dots.length ? html`<svg viewBox="0 0 180 40" class="s-compare-hist__spark" aria-hidden="true"><line x1="0" y1="36" x2="180" y2="36" stroke="var(--border)" stroke-width="1"></line><polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>${dots.map((dot) => html`<circle cx="${dot.cx.toFixed(1)}" cy="${dot.cy.toFixed(1)}" r="${dot.id === selectedId ? 4.5 : 3}" fill="${dot.id === selectedId ? 'var(--accent)' : 'var(--surface)'}" stroke="var(--accent)" stroke-width="2"></circle>`)}</svg>` : ''}
+      </div>
+      <div class="s-compare-hist__rows">${history.rows.map((row) => html`<div class="${cls('s-compare-hist__row', row.active && 's-compare-hist__row--on')}">
+        <button type="button" class="s-compare-hist__open" data-fk="hist-${row.n}" data-hist-select="${row.id}" aria-pressed="${row.active}">
+          <span class="s-compare-hist__who">
+            <span class="s-compare-hist__n">#${row.n}</span>
+            <span class="s-compare-hist__what">
+              <span class="s-compare-hist__when"><span>${when(row.at)}</span>${row.isBest ? html`<span class="s-compare-hist__best">${t('histBest')}</span>` : ''}</span>
+              <span class="s-compare-hist__focus">${row.focus ? t('histFocusWord', { word: row.focus }) : t('histFocusNone')}</span>
+            </span>
+          </span>
+          <span class="s-compare-hist__metrics">${row.metrics.map((metric) => html`<span class="s-compare-hist__metric"><span class="s-compare-hist__label">${t(metric.key)}</span><span class="s-compare-hist__value"><b>${metric.value ?? '—'}</b>${metric.delta.zero ? html`<i style="color:var(--muted)">${t('histSame')}</i>` : metric.delta.text ? html`<i style="color:${metric.delta.tone}">${metric.delta.text}</i>` : ''}</span></span>`)}</span>
+        </button>
+        ${row.hasAudio ? html`<button type="button" class="s-compare-hist__play" data-hist-play="${row.id}" aria-label="${t('histPlay')}" title="${t('histPlay')}">${filled('play', 14)}</button>` : ''}
+      </div>`)}</div>
+      <div class="s-compare-hist__note">${t('histNote')}</div>
+    </div>`;
+  }
+
   function paintLive() {
     const line = q('[data-live]');
     if (line) line.setAttribute('points', liveLine());
@@ -633,16 +715,18 @@ export default async function mountCompareWithModel(element, ctx) {
         <div class="s-compare-title-block"><div class="s-compare-title">${source.lessonId ? t('practiceTitle') : t('title')}</div><div class="s-compare-note s-compare-subtitle">${t('subtitle')}</div></div>
         ${takes.length ? pillsMarkup() : ''}
         <button type="button" class="s-compare-history" data-attempts aria-label="${t('attemptHistory')}"><span>${t('attemptHistory')}</span></button>
+        ${source.lessonId ? html`<button type="button" class="o-iconbtn s-compare-more-btn" data-more aria-label="${t('more')}" title="${t('more')}" ${busyNow() ? raw('disabled') : ''}>${raw(icon('ellipsis', { size: 18 }))}</button>` : ''}
       </div>
-      ${sourceNavigation()}
       <div class="s-compare-scroll${showRecord ? ' s-compare-scroll--record' : ''}" data-scroll-region>
         ${source.playback?.kind === 'embed' ? html`<div class="s-compare-model-preview${modelPreview ? ' is-model-playing' : ''}" data-original-player></div>` : ''}
         ${showRecord ? recordCard() : ''}
         ${errorText ? html`<div class="s-compare-error"><b>${t('errorTitle')}</b> ${errorText}</div>` : ''}
         ${result ? summaryMarkup(view, take) : ''}
         ${result && view.words.length ? detailMarkup(view, take) : ''}
+        ${result && !showRecord ? historyMarkup() : ''}
       </div>
-      ${result ? barMarkup() : ''}`,
+      ${result ? barMarkup() : ''}
+      ${lineNavigation()}`,
     );
     if (originalPlayer) {
       if(source.playback.kind === 'embed') originalPlayer.attach(q('[data-original-player]'));
@@ -682,15 +766,25 @@ export default async function mountCompareWithModel(element, ctx) {
   }
 
   function bind() {
-    const goLine = id => {
-      if (!id || recorder.busy) return;
+    element.querySelectorAll('[data-source-line]').forEach((button) => button.addEventListener('click', () => goLine(button.dataset.sourceLine)));
+    q('[data-more]')?.addEventListener('click', openMore);
+    q('[data-meaning]')?.addEventListener('click', () => {
+      meaningOpen = !meaningOpen;
+      paint();
+    });
+    element.querySelectorAll('[data-hist-select]').forEach((button) => button.addEventListener('click', () => {
+      select(button.dataset.histSelect);
+      q('[data-scroll-region]')?.scrollTo({ top: 0, behavior: 'smooth' });
+    }));
+    element.querySelectorAll('[data-hist-play]').forEach((button) => button.addEventListener('click', () => {
+      const url = takeOf(button.dataset.histPlay)?.url;
+      if (!url) {
+        toast(t('noTakeAudio'));
+        return;
+      }
       stopPlay();
-      ctx.go(ctx.href('compare',{id:source.sourceId},{segment:id}));
-    };
-    element.querySelectorAll('[data-source-line]').forEach(button=>button.addEventListener('click',()=>goLine(button.dataset.sourceLine)));
-    q('[data-source-select]')?.addEventListener('change',event=>goLine(event.target.value));
-    q('[data-listen-source]')?.addEventListener('click',()=>ctx.go(ctx.href('listening',{id:source.lessonId},lineQuery)));
-    q('[data-choose-media]')?.addEventListener('click',()=>ctx.go(ctx.href('discover',{}, {tab:'listen',practice:'pronunciation',source:source.lessonId,segment:source.line.lineId})));
+      void playFile(url, playToken);
+    }));
     q('[data-back]').addEventListener('click', () => ctx.back());
     q('[data-attempts]').addEventListener('click', () => ctx.go(ctx.href('attempts', { id: ctx.params.id }, { ...lineQuery, attempt: selectedId })));
     element.querySelectorAll('[data-select]').forEach((button) => button.addEventListener('click', () => select(button.dataset.select)));

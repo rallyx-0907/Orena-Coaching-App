@@ -52,7 +52,10 @@ export function decorateComparison(view, source, reference) {
   if (!view) return view;
   const positions=placeWords(source.line.text,view.words || [],source.language);
   const words=(view.words || []).map((word,index)=>{
-    const reading=readingFor(word.text,reference,source.language,positions[index]?.start) || word.pinyin || '';
+    /* English: IPA is only what the assessment provider returned for this word (D-139 HD-5), never a
+       dictionary's; nothing returned, nothing shown. Chinese: the lesson's own pinyin. */
+    const reading=source.language === 'en' ? (word.phonemes || []).map(unit=>unit.label).join('')
+      : readingFor(word.text,reference,source.language,positions[index]?.start) || word.pinyin || '';
     return {...word,reading,...(source.language === 'zh' && reading ? {pinyin:reading,toneTarget:reading.split(/\s+/).map(toneOf).filter(n=>n!=null)} : {})};
   });
   const intervals=(reference?.words || []).filter(timed);

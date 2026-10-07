@@ -58,8 +58,9 @@ export default async function mountAttemptHistory(element, ctx) {
         </span>
         <span class="s-attempts-meta">${t('metaLine', { when, acc: row.accuracy ?? '—', flu: row.hasFluency ? row.fluency : '—' })}</span>
       </span>`;
-    // An attempt only the account remembers has no recording to compare (audio is never kept): listed, not opened.
-    if (row.server) return html`<div class="s-attempts-row s-attempts-row--kept">${inner}</div>`;
+    // An attempt with no verified score has nothing to review: listed, not opened. Any other opens Compare
+    // for that attempt - without its recording when only the account remembers it (audio is never kept, D-076).
+    if (!row.reviewable) return html`<div class="s-attempts-row s-attempts-row--kept">${inner}</div>`;
     return html`<button type="button" class="s-attempts-row" data-open="${row.id}">${inner}<span class="s-attempts-chevron">${raw(icon('chevron-right', { size: 18 }))}</span></button>`;
   }
 

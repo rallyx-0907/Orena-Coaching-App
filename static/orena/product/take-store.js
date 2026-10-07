@@ -14,6 +14,7 @@
    the full `pronunciationView()` result stays in this module's own session-only map, keyed by
    `take_ref`, for as long as this tab remembers it. */
 import { createAttemptStore, indexedDbAttempts, bestOf, MAX_PER_LINE } from '../capabilities/speaking-attempts.js';
+import { viewOfEvidence } from './speaking-history.js';
 
 let store = null;
 let activeScope = '';
@@ -104,6 +105,15 @@ export function viewOfTake(take) {
   const full = richView(take.id);
   if (full) return { ...full, reduced: false, words: full.words.map((word) => ({ ...word, scoreKnown: word.scoreMeasured !== false })) };
   const words = (take.words || []).map(reducedWord);
+  /* What the account kept of the assessment (scores, miscues, sounds, the heard text) fills in what the
+     reduced record dropped; where each word sat comes from the reduced record when it kept it. */
+  const kept = viewOfEvidence(take);
+  if (kept) {
+    return {
+      ...kept,
+      words: kept.words.map((word, at) => (words[at]?.text === word.text && words[at].offsetKnown ? { ...word, offsetMs: words[at].offsetMs, durationMs: words[at].durationMs, offsetKnown: true } : word)),
+    };
+  }
   return {
     measured: true,
     reduced: true,

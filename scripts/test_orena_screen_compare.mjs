@@ -220,3 +220,39 @@ assert.deepEqual(playPlan('word_by_word', { hasTake: true, hasWords: false }), [
 }
 
 console.log('test_orena_screen_compare.mjs: Compare With Model data mapping - real audio-analysis pipeline, rule 40 throughout (no invented prosody chip, no invented reduced-attempt score, no unmeasured model timing): PASS');
+
+/* D-139 HD-5 / HD-7 / Attempt History review: IPA only from provider sounds, the embedded history card's
+   figures, and an attempt only the account remembers reviewed from what it kept. */
+{
+  const { ipaByStart, historyFor, deltaOf } = await import('../static/orena/screens/compare/model.js');
+  const { placeWords } = await import('../static/orena/product/speaking-line.js');
+  const { attemptRow, viewOfEvidence, reviewableAttempts } = await import('../static/orena/product/speaking-history.js');
+  const assert = (await import('node:assert/strict')).default;
+  const view = { words: [{ text: 'big', phonemes: [{ label: 'b' }, { label: 'ɪ' }, { label: 'ɡ' }] }, { text: 'bang', phonemes: [] }] };
+  assert.deepEqual([...ipaByStart([view], 'big bang', 'en', placeWords)], [[0, 'bɪɡ']], 'only words the provider gave sounds for');
+  assert.equal(ipaByStart([view], 'big bang', 'zh', placeWords).size, 0, 'Chinese keeps pinyin, never provider sounds');
+  assert.equal(ipaByStart([{ words: [{ text: 'big', phonemes: [] }] }], 'big', 'en', placeWords).size, 0, 'no sounds anywhere: no IPA row');
+  assert.deepEqual(deltaOf(90, 86), { text: '+4', tone: 'var(--green)', zero: false });
+  assert.equal(deltaOf(null, 86).text, '');
+  const row = attemptRow({ id: 'a1', created_at: '2026-10-01T10:00:00Z', dimensions: { pronunciation: 80, fluency: 90 }, provenance: { pronunciation: 'azure', fluency: 'azure' },
+    transcript_text: 'big bang', evidence: { pronunciation: { score_kind: 'measured', accuracy_score: 82, completeness_score: 100, words: [
+      { word: 'big', accuracy_score: 70, error_type: 'Mispronunciation', phonemes: [{ phoneme: 'b', accuracy_score: 90 }, { phoneme: 'ɪ', accuracy_score: 50 }] },
+      { word: 'bang', accuracy_score: 95, error_type: 'None', phonemes: [] }] } } });
+  const kept = viewOfEvidence(row);
+  assert.equal(kept.words[0].flagged, true);
+  assert.deepEqual(kept.words[0].weakest, { label: 'ɪ', score: 50 });
+  assert.equal(kept.words[0].offsetKnown, false, 'word timing was never stored');
+  assert.equal(kept.heard, 'big bang');
+  assert.equal(attemptRow({ id: 'x', provenance: { pronunciation: 'stub-for-verification' }, evidence: { pronunciation: { score_kind: 'measured' } } }).evidence, null);
+  const list = reviewableAttempts([{ id: 't1', at: 5, attemptId: 'a1', overall: 80 }], [row, { ...row, id: 'a2', at: 3 }, attemptRow({ id: 'u', created_at: '2026-10-02T00:00:00Z' })]);
+  assert.deepEqual(list.map((item) => item.id).sort(), ['a2', 't1'], 'the tab take stands once; the other verified attempt follows');
+  assert.ok(list.find((item) => item.id === 't1').evidence, 'the tab take carries what the account kept of it');
+  assert.ok(!list.some((item) => item.id === 'u'), 'an unverified attempt has nothing to review');
+  const card = historyFor([{ id: 'b', at: 2, overall: 90, accuracy: 88 }, { id: 'a', at: 1, overall: 80, accuracy: 80 }], 'b', () => kept);
+  assert.equal(card.count, 2);
+  assert.equal(card.best, 90);
+  assert.equal(card.bestN, 2);
+  assert.equal(card.rows[0].id, 'b', 'newest on top');
+  assert.equal(card.rows[0].metrics[0].delta.text, '+10');
+  assert.equal(card.rows[0].focus, 'big');
+}

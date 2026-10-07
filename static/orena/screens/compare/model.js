@@ -238,3 +238,90 @@ export function pillsFor(takes, selectedId) {
 /* The tone name key for a pinyin tone number (1-4, 5 neutral): a fact about the reading, not about
    the audio. */
 export const toneKey = (tone) => `tone${tone >= 1 && tone <= 5 ? tone : 5}`;
+
+/* ---- IPA (D-139 HD-5) ---- */
+
+/* A word's IPA is only ever what the assessment provider returned for it: the word's sounds, in order
+   (English sounds come back as IPA, `PhonemeAlphabet: IPA`). Nothing else - no dictionary, no guess. */
+export const ipaOf = (word) => (word?.phonemes || []).map((unit) => unit.label).join('');
+
+/* English only (a Chinese line keeps its pinyin): where each word of the line has IPA, taken from the
+   newest attempt of this line whose assessment carried sounds. `views` are the line's attempts, newest
+   first, as `pronunciationView()`-shaped objects; `place(text, words)` is `placeWords` for the line.
+   Empty when no attempt has any - the row is then not drawn at all (no dashes). */
+export function ipaByStart(views, lineText, language, place) {
+  const found = new Map();
+  if (language !== 'en') return found;
+  const view = (views || []).find((item) => item?.words?.some((word) => ipaOf(word)));
+  if (!view) return found;
+  const where = place(lineText, view.words, language);
+  view.words.forEach((word, at) => {
+    const ipa = ipaOf(word);
+    if (ipa && where[at]) found.set(where[at].start, ipa);
+  });
+  return found;
+}
+
+/* ---- The embedded Attempt history card (frame 16's component, D-139 HD-7) ---- */
+
+/* The plain change from one number to the previous attempt's: "+4", "−2", "±0"; nothing for the first
+   attempt or a number either side did not measure. */
+export function deltaOf(current, previous) {
+  if (current == null || previous == null) return { text: '', tone: 'var(--muted)', zero: false };
+  const value = Math.round(current - previous);
+  if (value === 0) return { text: '', tone: 'var(--muted)', zero: true };
+  return { text: `${value > 0 ? '+' : '−'}${Math.abs(value)}`, tone: value > 0 ? 'var(--green)' : 'var(--red)', zero: false };
+}
+
+/* The first word the provider did not pass in an attempt: its one-line focus. */
+export function focusWordOf(view) {
+  const word = (view?.words || []).find((item) => item.flagged);
+  return word ? word.text : null;
+}
+
+/* The card's own figures, oldest first and then reversed for display (newest on top, as the frame):
+   one row per attempt this line has, each with the three numbers the assessment measured and the
+   change from the attempt before it. `viewOf(take)` is the screen's reader of one attempt. */
+export function historyFor(takes, selectedId, viewOf) {
+  const ordered = [...takes].reverse();
+  const scored = ordered.filter((item) => item.overall != null);
+  const best = scored.length > 1 ? scored.reduce((top, item) => (item.overall > top.overall ? item : top)) : null;
+  const rows = ordered.map((item, at) => {
+    const previous = ordered[at - 1];
+    return {
+      id: item.id,
+      n: at + 1,
+      at: item.at,
+      active: item.id === selectedId,
+      isBest: Boolean(best) && best.id === item.id,
+      hasAudio: Boolean(item.url),
+      focus: focusWordOf(viewOf(item)),
+      metrics: [
+        { key: 'histPron', value: item.overall, delta: deltaOf(item.overall, previous?.overall) },
+        { key: 'metricAccuracy', value: item.accuracy ?? null, delta: deltaOf(item.accuracy, previous?.accuracy) },
+        { key: 'metricFluency', value: item.fluency ?? null, delta: deltaOf(item.fluency, previous?.fluency) },
+      ],
+    };
+  });
+  const firstScored = scored[0], lastScored = scored.at(-1);
+  return {
+    count: ordered.length,
+    first: firstScored?.overall ?? null,
+    last: lastScored?.overall ?? null,
+    best: best ? best.overall : null,
+    bestN: best ? rows.find((row) => row.id === best.id).n : null,
+    scoredCount: scored.length,
+    rows: rows.reverse(),
+    spark: sparkPoints(scored),
+  };
+}
+
+/* The sparkline's own geometry (180 x 40, the component's): one point per scored attempt. */
+function sparkPoints(scored) {
+  const W = 180, H = 40;
+  return scored.map((item, at) => ({
+    id: item.id,
+    cx: scored.length < 2 ? W / 2 : 6 + at * ((W - 12) / (scored.length - 1)),
+    cy: H - 4 - (item.overall / 100) * (H - 8),
+  }));
+}
