@@ -10,7 +10,10 @@
    - `media:<lessonId>` - any usable transcript-backed Listening source
      (`GET /api/listening/library/{lessonId}`); its canonical playback and segment
      bounds are the model. Prepared word measurements are optional; entering
-     Speaking never extracts, downloads or assesses the source (D-121).
+     Speaking never extracts, downloads or assesses the source (D-121). The
+     line carries `modelClipUrl` only when the lesson says its model clip was
+     prepared at content readiness (D-140): Compare reads that stored clip to
+     measure the model's pitch, and nothing else.
    - a bare id with neither prefix - Progress's own speaking-evidence rows link here with a bare
      Listening asset id (`screens/progress/screen.js#openRoute`, `ctx.href('speak', { id:
      item.assetId })`), not the `speak:`/`media:` convention every other entry point
@@ -108,6 +111,9 @@ export function sourceFromLesson(lessonId, payload, segmentId = '', support = ''
       meaning: encounter(payload, support).meaning(segment.segment_id) || '',
       startMs: segment.start_ms,
       endMs: segment.end_ms,
+      // The model clip is read only when the lesson says it was prepared at content readiness (D-140).
+      modelClipUrl: (catalog.model_clip_segments || []).includes(segment.segment_id)
+        ? `/api/speaking/model-clip/${encodeURIComponent(lessonId)}/${encodeURIComponent(segment.segment_id)}` : '',
       wordTimings: spokenText === segment.original_text ? (wordSpans(segment) || []).map(span=>({
         text:spokenText.slice(span.start,span.end),offsetKnown:true,
         offsetMs:span.start_ms-segment.start_ms,durationMs:span.end_ms-span.start_ms,

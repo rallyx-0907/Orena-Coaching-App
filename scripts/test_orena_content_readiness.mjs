@@ -22,6 +22,22 @@ for (const language of ['en', 'zh']) {
     mediaSource:async(url,target)=>{assert.equal(target,'vi');return payload;}};
   assert.equal(await openMedia('url:https://youtu.be/B0p5SdkBydU',{api:readOnlyApi,support:'vi',language}),payload);
   assert.equal(providerCalls,0,'old URL membership resolves a stored item rather than importing it again');
+  assert.equal(source.line.modelClipUrl,'','no prepared clip: the line names no clip to read');
+
+  /* D-140: a clip prepared at content readiness is the ONE thing a reference may read; opening and reopening
+     fetches only that stored artifact and never calls source preparation. */
+  const preparedPayload={...payload,catalog:{...payload.catalog,model_clip_segments:['line-2']}};
+  const withClip=sourceFromLesson('prepared',preparedPayload,'line-2','vi');
+  assert.equal(withClip.line.modelClipUrl,'/api/speaking/model-clip/prepared/line-2');
+  const fetched=[];
+  const clipOptions={api:options.api,fetchImpl:async url=>{fetched.push(url);return {ok:true,blob:async()=>new Blob(['clip'])};},
+    decode:async()=>({duration:2}),analyse:()=>({duration:2,contour:[]})};
+  await loadComparisonReference(withClip,clipOptions);
+  await loadComparisonReference(withClip,clipOptions);
+  assert.deepEqual(fetched,['/api/speaking/model-clip/prepared/line-2','/api/speaking/model-clip/prepared/line-2'],`${language}: only the prepared artifact is read`);
+  assert.equal(providerCalls,0,`${language}: reading the prepared clip never executes source preparation`);
+  const other=sourceFromLesson('prepared',{...preparedPayload,transcript:{segments:[...payload.transcript.segments,{segment_id:'line-3',original_text:'x',start_ms:9000,end_ms:10000}]}},'line-3','vi');
+  assert.equal(other.line.modelClipUrl,'','a line the lesson does not list as prepared reads nothing');
 }
 const punctuated={asset:{source_language:'zh'},playback:{kind:'audio',provider:'orena',url:'/api/media/files/media/a/original.wav'},
   transcript:{segments:[{segment_id:'s',original_text:'你...好',start_ms:0,end_ms:1000}]},

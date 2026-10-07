@@ -119,6 +119,7 @@ export default async function mountCompareWithModel(element, ctx) {
   const takeOf = (id) => takes.find((item) => item.id === id) || null;
   const selectedTake = () => takeOf(selectedId);
   const viewNow = () => decorateComparison(viewOfTake(selectedTake()), source, reference);
+  const estimateNote = () => (reference?.timingEstimated ? html`<span class="s-compare-muted" data-timing-estimated>${t('timingEstimated')}</span>` : '');
   const modelWordFor = (word) => pairWord(source.line.text, viewNow()?.words || [], word?.index, reference?.words || [], language);
   async function readReference() {
     reference=await comparisonReference(source,{owner:ctx.context.owner || 'local',support});
@@ -529,6 +530,7 @@ export default async function mountCompareWithModel(element, ctx) {
         <div class="s-compare-legend">
           <span><i style="background:var(--accent)"></i>${t('legendModel')}</span>
           <span><i style="background:var(--green)"></i>${t('legendYou')}</span>
+          ${estimateNote()}
         </div>
         <div class="s-compare-legend s-compare-legend--small">
           <span><i class="s-compare-swatch s-compare-swatch--close"></i>${t('legendClose')}</span>
@@ -562,7 +564,7 @@ export default async function mountCompareWithModel(element, ctx) {
         </div>
         <div class="s-compare-panel__body">${spanText(timing.model,'legendModel')}${spanText(timing.you,'legendYou')}
           ${delta==null ? '' : html`<span>${t(delta===0?'timingSame':delta>0?'timingLonger':'timingShorter',{s:(Math.abs(delta)/1000).toFixed(2)})}</span>`}
-          <span class="s-compare-muted">${t('timingCompared')}</span>
+          <span class="s-compare-muted">${t('timingCompared')}</span>${estimateNote()}
         </div>
       </div>`;
     }
@@ -587,7 +589,7 @@ export default async function mountCompareWithModel(element, ctx) {
     return html`<div class="s-compare-panel">
       <div class="s-compare-panel__title">${toneTitle ? t('toneTitle', { word: detail.text, pinyin: detail.pinyin, n: detail.toneTarget, name: t(toneKey(detail.toneTarget)) }) : t('pitchTitle', { word: detail.text })}</div>
       ${wordChart(detail, take)}
-      <div class="s-compare-legend"><span><i style="background:var(--accent)"></i>${t('legendModel')}</span><span><i style="background:var(--green)"></i>${t('legendYou')}</span></div>
+      <div class="s-compare-legend"><span><i style="background:var(--accent)"></i>${t('legendModel')}</span><span><i style="background:var(--green)"></i>${t('legendYou')}</span>${estimateNote()}</div>
       ${modelWordFor(detail) ? '' : html`<p class="s-compare-note">${t('modelWordUnavailable')}</p>`}
     </div>`;
   }

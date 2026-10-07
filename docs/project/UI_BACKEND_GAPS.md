@@ -4920,3 +4920,10 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   judgement, so the cards are not drawn; they appear only if the response ever carries them. The context chip is
   built from each scenario's authored `context` (`content/voice-invitations.js`, English and Chinese, in the learning
   language like the scenario itself); there is no support-language translation of scenario text to follow.
+- **S-27 YouTube sources have no prepared model clip yet (D-140).** Model clips are cut at content readiness from
+  the admitted source (`writing_coach/model_clips.py`; backfill `scripts/backfill_model_clips.py`). Curated catalogue
+  media and stored uploads are prepared. A YouTube-provider import has no source file at rest: the readiness step and
+  the backfill acquire its audio through the same `download_audio` the transcript pipeline uses, and on the :8021
+  sandbox that fetch of the resolved audio URL fails (`UnsafeMediaFetch`), so those lessons (e.g. the imported Chinese
+  `source-01637ff7...`) keep an unavailable model plot until audio acquisition works there. The read route answers 404
+  "not prepared" and Compare shows the plot as unavailable; nothing falls back to cutting on open (D-121).
