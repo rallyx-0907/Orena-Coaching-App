@@ -116,14 +116,31 @@ class AgentSessionState:
         """The learner's words and Orena's answer, appended; the oldest whole exchanges go first when the history
         holds more than `max_recent_turns` turns or `max_history_chars` characters. The newest exchange stays."""
 
+        return self.with_spoken((ConversationTurn("user", user), ConversationTurn("assistant", assistant)), limits)
+
+    def with_spoken(self, added: tuple[ConversationTurn, ...], limits: AgentLimits) -> AgentSessionState:
+        """Turns appended as said - typed, or heard in a voice session - and the history bounded as above."""
+
         cap = limits.max_turn_chars
-        added = (ConversationTurn("user", user[:cap]), ConversationTurn("assistant", assistant[:cap]))
-        turns = (*self.recent_turns, *added)
+        turns = (*self.recent_turns, *(ConversationTurn(t.role, t.text[:cap]) for t in added))
         while len(turns) > 2 and (
             len(turns) > limits.max_recent_turns or sum(len(t.text) for t in turns) > limits.max_history_chars
         ):
             turns = turns[2:]
         return replace(self, recent_turns=turns)
+
+    def with_outcome(self, *, live: PendingInteraction | None, settle: str | None,
+                     new_offer: tuple[str, str, dict] | None, ran: tuple[str, ...]) -> AgentSessionState:
+        """What an answer did to the offer and to the actions: the offer it answered ends as `settle`, one past its
+        turns expires, what it ran is remembered, and a newer offer takes the place of the old one - the same
+        whether the answer was typed or spoken."""
+
+        state = self.with_settled(live, settle) if live is not None and settle is not None else self
+        state = state.without_expired().with_runs(ran)
+        if new_offer is not None:
+            kind, label, payload = new_offer
+            state = state.with_offer(PendingInteraction.offer(kind, payload, label, turn=state.turn_count))
+        return state
 
     def live_pending(self) -> PendingInteraction | None:
         """The unanswered offer, unless it has been open past its turns."""

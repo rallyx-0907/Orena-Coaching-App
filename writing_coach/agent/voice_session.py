@@ -31,8 +31,11 @@ from typing import Any, Protocol
 
 from writing_coach.agent import learner_copy, surfaces
 from writing_coach.agent.context import TurnInput, build_tier1
-from writing_coach.agent.contract import SURFACES, actions_for_version, intents_for_version
+from writing_coach.agent.contract import SURFACES, WORD_ACTIONS, actions_for_version, intents_for_version
 from writing_coach.agent.events import Event, ToolCallEvent, ToolResultEvent, EvidenceEvent, Display
+from writing_coach.agent.focus import focus_after, lookup_word
+from writing_coach.agent.pending import COMPLETED, CONFIRM, action_key
+from writing_coach.agent.session import ConversationTurn
 from writing_coach.agent.outputs import (
     FORGET_NOTE,
     KIND_BY_SOURCE,
@@ -119,6 +122,8 @@ _DO_ACTION_ARGS: dict[str, Any] = {
     "focus": {"type": "string", "enum": ["tone", "stress", "word"], "description": "start_targeted_drill"},
     "item_ids": {"type": "array", "items": {"type": "string"}, "description": "start_targeted_drill: items to drill"},
     "collection_id": {"type": "string", "description": "add_word_to_collection: a collection a tool returned"},
+    "requested": {"type": "boolean", "description": "true only when the learner's own words just asked for this or "
+                   "accepted your offer of it: the app then does it at once. Otherwise leave it out: a button is shown."},
 }
 
 
@@ -170,6 +175,9 @@ formatting rule above.
   not catch it and ask them to say it again. Never act on it.
 - If you cannot do what the learner asks - no tool for it, or a tool refused or found nothing - say so once, in one
   sentence, and stop. Never repeat yourself or ask the same thing again.
+- The conversation so far is in the context below, whether it was typed or spoken: carry on from it. When
+  context.pending_interaction is open and the learner accepts it in any words, call do_action with that same
+  action and requested true; if they decline or ask something else, do not.
 - A line starting "[context]" tells you where the learner is now; use it, never answer it.
 - If the learner interrupts, stop and listen; answer what they said next."""
 
@@ -275,6 +283,30 @@ class VoiceTokens(Protocol):
 
     def mint(self, setup: Mapping[str, Any], *, now: datetime, seconds: int) -> tuple[str, str]: ...
 
+TRANSCRIPT_MAX_TURNS = 40
+TRANSCRIPT_TURN_CHARS = 4000
+INSTRUCTION_TURNS = 12
+INSTRUCTION_CHARS = 4000
+
+
+def _conversation_so_far(state: Any) -> str:
+    """The last turns of the conversation, typed or spoken, for the voice model's instruction (it speaks, so it
+    must know what was said before the session opened)."""
+
+    lines: list[dict[str, str]] = []
+    total = 0
+    for turn in reversed(state.recent_turns[-INSTRUCTION_TURNS:]):
+        text = turn.text if len(turn.text) <= 600 else turn.text[:600] + "…"
+        if total + len(text) > INSTRUCTION_CHARS and lines:
+            break
+        total += len(text)
+        lines.append({"who": "learner" if turn.role == "user" else "orena", "said": text})
+    if not lines:
+        return ""
+    return ("The conversation so far (typed or spoken; carry on from it, never restart it): "
+            + json.dumps(list(reversed(lines)), ensure_ascii=False))
+
+
 # --- sessions ----------------------------------------------------------------------------------------------------
 
 
@@ -289,6 +321,8 @@ class VoiceSession:
     outputs: ReplyOutputs
     evidence_count: int = 0
     ended: bool = False
+    agent_session_id: str = ""  # the conversation this voice session is part of (the typed turns' session)
+    recorded: set[str] = field(default_factory=set)  # what was heard and already put in that conversation
 
 
 @dataclass
@@ -369,15 +403,19 @@ class VoiceService:
             client=request.client, interface=locale.interface, support=locale.support, target=locale.target,
             version=request.version, notes={note.id: note.weight for note in tier1.coach_notes},
             address_terms=tier1.address.pair, address_chosen=tier1.address.chosen,
+            pending=session_state.live_pending(), settled=frozenset(done for done, _ in session_state.settled),
+            recent_runs=session_state.recent_runs(),
         )  # fmt: skip
         _in_view(outputs, request.context)
         session = VoiceSession(
             voice_session_id=f"vs-{secrets.token_hex(8)}", user_key=learner.user_key, learner=learner,
             request=request, model=self.model, opened=self.sessions.clock(), outputs=outputs,
+            agent_session_id=session_state.agent_session_id,
         )  # fmt: skip
         self.sessions.add(session)
         return {
             "voice_session_id": session.voice_session_id,
+            "session_id": session_state.agent_session_id,  # the conversation: typed turns use the same one
             "mode": "s2s",
             "transport": "websocket",
             "connect": {
@@ -397,6 +435,9 @@ class VoiceService:
     def _instruction(self, turn: TurnInput, tier1, here, session_state) -> str:
         context = json.dumps(context_document(turn, tier1, here, session_state), ensure_ascii=False)
         parts = [INSTRUCTION, VOICE_RULES, f"context: {context}"]
+        earlier = _conversation_so_far(session_state)
+        if earlier:
+            parts.append(earlier)
         style = style_for(tier1.contract_locale.support, tier1.address)
         if style:
             parts.append(style)
@@ -472,14 +513,19 @@ class VoiceService:
         # An empty `heard` is a transcript that had not arrived yet, never an utterance of no words: it changes
         # nothing (the phone test: "" cleared the request to open and the turn's buttons).
         heard = heard if heard is not None and heard.strip() else None
+        self._refresh(session)  # a typed turn may have changed the offer or run something since the last call
+        new_heard = None
         if heard is not None and heard[:2000] != session.outputs.learner_words:
             # A new utterance is a new turn: its buttons and notes are counted afresh (what was read stays known).
             session.outputs.learner_words = heard[:2000]  # what the learner just said: a note needs their words
             session.outputs.actions.clear()
             session.outputs.memory_updates.clear()
+            session.outputs.resolution = None
+            new_heard = heard[:2000]
         responses: list[dict[str, Any]] = []
         events: list[Event] = []
         opened: str | None = None
+        words: list[tuple[str, str | None]] = []  # words a tool was asked about or an action named: the focus
         for call in calls:
             name, args, call_id = str(call.get("name") or ""), call.get("args"), call.get("id")
             args = args if isinstance(args, Mapping) else {}
@@ -490,12 +536,18 @@ class VoiceService:
                 continue
             if name == DO_ACTION:
                 before = len(session.outputs.actions)
-                answer = session.outputs.handle(PROPOSE_ACTION, self._action(session, args), known_evidence=frozenset())
+                proposal = self._action(session, args)
+                if args.get("requested") is True:  # the model's own judgement that the learner asked (agent/outputs.py)
+                    proposal["requested"] = True
+                answer = session.outputs.handle(PROPOSE_ACTION, proposal, known_evidence=frozenset())
                 added = session.outputs.actions[before:]
                 events.extend(added)
+                if added and added[0].open:
+                    opened = added[0].id
+                    answer += " It happens now: say in a few words what is happening."
                 # R29/R30: what the learner's own words asked for happens at once - a place opens (§7), a low-risk
                 # action runs, a CONFIRM one goes through the app's own confirmation; the button stays in the thread.
-                if added and asked_for(added[0].type, session.outputs.learner_words):
+                if added and not added[0].open and asked_for(added[0].type, session.outputs.learner_words):
                     events[events.index(added[0])] = added[0].model_copy(update={"open": True})
                     opened = added[0].id
                     answer += " It happens now: say in a few words what is happening."
@@ -508,9 +560,12 @@ class VoiceService:
                 events.extend(session.outputs.memory_updates[before[1]:])
                 result: dict[str, Any] = {"result": answer}
             else:
+                if (word := lookup_word(name, args)) is not None:
+                    words.append((word, session.request.context.locale.target))
                 result, read_events = self._read(session, name, args)
                 events.extend(read_events)
             responses.append({"id": call_id, "name": name, "response": result})
+        self._remember(session, heard=new_heard, events=events, words=words)
         answer = {"responses": responses, "events": [{"event": e.name, "data": e.to_wire()} for e in events]}
         if opened is not None:
             answer["open"] = opened  # the client runs this action now, without a tap (R29)
@@ -574,12 +629,76 @@ class VoiceService:
         session.outputs.learn_from([dict(e.ref) for e in result.evidence], kind=kind)
         return {"summary": result.summary, "data": redact_for_provider(dict(result.data))}, events
 
+    # -- one conversation with the typed turns -------------------------------------------------------------------
+
+    def _refresh(self, session: VoiceSession) -> None:
+        """The open offer and what was just sent, as the conversation holds them now."""
+
+        state = self.runtime.sessions.get(session.agent_session_id, session.user_key)
+        if state is not None:
+            session.outputs.pending = state.live_pending()
+            session.outputs.settled = frozenset(done for done, _ in state.settled)
+            session.outputs.recent_runs = state.recent_runs()
+
+    def _remember(self, session: VoiceSession, *, heard: str | None, events: list[Event],
+                  words: list[tuple[str, str | None]]) -> None:
+        """What the server saw of a spoken turn joins the conversation: the learner's words, the offer made or
+        accepted, what ran, the word it was about."""
+
+        actions = [e for e in events if e.name == "action"]
+        offered = next((a for a in actions if not a.open), None)
+        outputs = session.outputs
+        live = outputs.pending
+        settle = COMPLETED if outputs.resolution == CONFIRM and live is not None else None
+        words += [(a.payload["text"], a.payload.get("lang")) for a in actions
+                  if a.type in WORD_ACTIONS and isinstance(a.payload.get("text"), str)]
+        same_offer = (offered is not None and live is not None
+                      and action_key(offered.type, offered.payload) == action_key(live.action, live.payload))
+        new_offer = (offered.type, offered.label, dict(offered.payload)) if offered is not None and not same_offer else None
+        ran = tuple(action_key(a.type, a.payload) for a in actions if a.open)
+        if heard is None and not actions and not words:
+            return
+        limits = self.runtime.limits
+
+        def change(state):
+            if heard is not None:
+                state = state.with_spoken((ConversationTurn("user", heard),), limits)
+            state = state.with_outcome(live=live, settle=settle, new_offer=new_offer, ran=ran)
+            return state.with_focus(focus_after(state.focus, word=words[-1] if words else None))
+
+        if heard is not None:
+            session.recorded.add(heard.strip())
+        self.runtime.sessions.update(session.agent_session_id, session.user_key, change)
+
+    def _flush_transcript(self, session: VoiceSession, transcript: Any) -> None:
+        """The client's transcript of the session, if it sent one (optional, additive): the turns it holds that
+        the server did not already hear. Bounded, and anything that is not a turn is ignored."""
+
+        if not isinstance(transcript, list):
+            return
+        turns: list[ConversationTurn] = []
+        for item in transcript[:TRANSCRIPT_MAX_TURNS]:
+            role = item.get("role") if isinstance(item, Mapping) else None
+            text = item.get("text") if isinstance(item, Mapping) else None
+            if role not in ("user", "assistant") or not isinstance(text, str) or not text.strip():
+                continue
+            text = text.strip()[:TRANSCRIPT_TURN_CHARS]
+            if role == "user" and text[:2000] in session.recorded:
+                session.recorded.discard(text[:2000])  # already in the conversation, as it was heard
+                continue
+            turns.append(ConversationTurn(role, text))
+        if turns:
+            limits = self.runtime.limits
+            self.runtime.sessions.update(session.agent_session_id, session.user_key,
+                                         lambda state: state.with_spoken(tuple(turns), limits))
+
     # -- close and bill ------------------------------------------------------------------------------------------
 
-    def end(self, voice_session_id: str, learner: LearnerScope) -> dict[str, Any] | None:
+    def end(self, voice_session_id: str, learner: LearnerScope, transcript: Any = None) -> dict[str, Any] | None:
         session = self.sessions.close(voice_session_id, learner.user_key)
         if session is None:
             return None
+        self._flush_transcript(session, transcript)
         seconds = self._bill(session)
         return {"voice_session_id": voice_session_id, "seconds": seconds}
 

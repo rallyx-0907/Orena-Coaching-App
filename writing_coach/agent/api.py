@@ -203,7 +203,8 @@ def agent_voice_context(body: dict = Body(...), voice: VoiceService = Depends(_v
 
 @router.post("/voice/end")
 def agent_voice_end(body: dict = Body(...), voice: VoiceService = Depends(_voice_call_allowed)) -> dict:
-    answer = voice.end(str(body.get("voice_session_id") or ""), LearnerScope.from_request_context())
+    answer = voice.end(str(body.get("voice_session_id") or ""), LearnerScope.from_request_context(),
+                       body.get("transcript"))  # optional: the turns the client heard and showed
     if answer is None:
         raise HTTPException(status_code=404, detail="voice_session_not_found")
     return answer

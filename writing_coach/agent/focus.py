@@ -19,6 +19,16 @@ PASTE_HEAD_CHARS = 80
 WORD_LOOKUP_ARGS: Mapping[str, str] = {"get_word_detail": "text", "get_saved_word_state": "words"}
 
 
+def lookup_word(name: str, args: Mapping[str, Any]) -> str | None:
+    """The word a word tool is being asked about, or None: that is what the talk is about now."""
+
+    key = WORD_LOOKUP_ARGS.get(name)
+    value = args.get(key) if key else None
+    if isinstance(value, list) and len(value) == 1:
+        value = value[0]
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
 @dataclass(frozen=True)
 class Focus:
     topic: Mapping[str, Any] | None = None  # {"type": "word", "value": "mitigate", "lang": "en"}

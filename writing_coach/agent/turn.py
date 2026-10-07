@@ -54,7 +54,7 @@ from writing_coach.agent.errors import AgentError, ProviderUnavailable
 from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, default_address, mirrored_address
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
-from writing_coach.agent.focus import WORD_LOOKUP_ARGS, focus_after
+from writing_coach.agent.focus import focus_after, lookup_word
 from writing_coach.agent.honesty import ClaimGate, asks_for_heading, nothing_done, offer, offer_instead
 from writing_coach.agent.notes import (
     CORRECT,
@@ -709,12 +709,8 @@ class _Turn:
     def _note_lookup(self, name: str, args: Mapping[str, Any]) -> None:
         """A word a tool is asked about is what the talk is about now (agent/focus.py)."""
 
-        key = WORD_LOOKUP_ARGS.get(name)
-        value = args.get(key) if key else None
-        if isinstance(value, list) and len(value) == 1:
-            value = value[0]
-        if isinstance(value, str) and value.strip():
-            self.lookups.append((value.strip(), self.locale.target))
+        if (word := lookup_word(name, args)) is not None:
+            self.lookups.append((word, self.locale.target))
 
     def _report(self, name: str, result: ToolResult) -> Iterator[Event]:
         first = len(self.evidence_ids)
@@ -922,12 +918,7 @@ class _Turn:
             if self.address_offered_now:
                 state = state.with_address_asked()
             if not self.opening:  # the offer this turn answered ends; one it expired on ends; a new one replaces
-                if self.live is not None and self.settle is not None:
-                    state = state.with_settled(self.live, self.settle)
-                state = state.without_expired().with_runs(self.ran)
-                if self.new_offer is not None:
-                    kind, label, payload = self.new_offer
-                    state = state.with_offer(PendingInteraction.offer(kind, payload, label, turn=state.turn_count))
+                state = state.with_outcome(live=self.live, settle=self.settle, new_offer=self.new_offer, ran=self.ran)
             for record in self.records:
                 state = state.with_tool_result(record, limit=limit)
             return state
