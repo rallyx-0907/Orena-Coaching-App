@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 import json
 import logging
 import math
@@ -53,7 +53,7 @@ def practice_session_enabled() -> bool:
 
 def _server_now() -> datetime:
     """The server's clock: the only time a practice session is judged by (D-142.1)."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 router = APIRouter(prefix="/api/speech", tags=["speech"])
