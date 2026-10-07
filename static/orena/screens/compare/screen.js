@@ -23,6 +23,7 @@ import { originalSegmentPlayer } from '../../product/original-segment-player.js'
 import { loadSpeakingSource, segmentOf } from '../../product/speaking-source.js';
 import { lineUnits, placeWords } from '../../product/speaking-line.js';
 import { comparisonReference, decorateComparison, pairWord, pairedTiming, readingFor } from '../../product/compare-reference.js';
+import { matchOf } from '../../product/pitch-match.js';
 import { toneOf } from '../../capabilities/pronunciation-result.js';
 import { decodeAudio, analyse } from '../../capabilities/audio-analysis.js';
 import { createSpeakingRecorder, TAKE } from '../../product/speaking-recorder.js';
@@ -114,6 +115,23 @@ export default async function mountCompareWithModel(element, ctx) {
   let reference = null;
   const originalPlayer = originalSegmentPlayer(source);
 
+
+  /* How the take follows the model's pitch (product/pitch-match.js), or null until both contours are measured.
+     Word timing counts only when it is verified: an estimated model timing (D-140) is not used for a figure. */
+  function matchFor(take) {
+    const you = take ? contours.get(take.id)?.you : null;
+    const model = reference?.model;
+    if (!you || !model) return null;
+    let pairs = [];
+    if (reference.alignmentState === 'ready' && !reference.timingEstimated) {
+      const words = decorateComparison(viewOfTake(take), source, reference)?.words || [];
+      pairs = words.flatMap((word, index) => {
+        const modelWord = pairWord(source.line.text, words, index, reference.words || [], language);
+        return word.offsetKnown && modelWord ? [{ you: word, model: modelWord }] : [];
+      });
+    }
+    return matchOf({ you, model, pairs });
+  }
 
   const q = (selector) => element.querySelector(selector);
   const takeOf = (id) => takes.find((item) => item.id === id) || null;
@@ -207,6 +225,15 @@ export default async function mountCompareWithModel(element, ctx) {
       contours.set(id, { you });
     }
     if (ctx.isCurrent() && selectedId === id) paint();
+  }
+
+  /* Every attempt this tab still has audio for is measured once, so the history card can show its figures. */
+  async function measureAll() {
+    for (const item of takes) {
+      if (!item.blob || contours.has(item.id)) continue;
+      await measure(item.id);
+      if (ctx.isCurrent() && selectedId !== item.id) paint();
+    }
   }
 
   /* ---- Playback ---- */
@@ -511,7 +538,7 @@ export default async function mountCompareWithModel(element, ctx) {
   function summaryMarkup(view, take) {
     const score = view.overall;
     const chips = chipsFor(view);
-    const line = metricLineFor(view);
+    const line = metricLineFor(view, matchFor(take));
     const axis = axisFor(view);
     const metricText = [
       ...line.parts.map((part) => `${t(part.key)} ${part.value}`),
@@ -654,7 +681,7 @@ export default async function mountCompareWithModel(element, ctx) {
      remembers, without audio (D-076). The frame's "Clear" is not drawn: the account's record is not
      deleted from here. */
   function historyMarkup() {
-    const history = historyFor(takes, selectedId, viewOfTake);
+    const history = historyFor(takes, selectedId, viewOfTake, matchFor);
     if (!history.count) return '';
     const dots = history.spark;
     const line = dots.map((dot) => `${dot.cx.toFixed(1)},${dot.cy.toFixed(1)}`).join(' ');
@@ -835,7 +862,7 @@ export default async function mountCompareWithModel(element, ctx) {
 
   wordSel = takes.length ? defaultWordIndex(viewNow()) : null;
   paint();
-  if (selectedId) void measure(selectedId);
+  if (selectedId) void measure(selectedId).then(measureAll);
   sizing = new ResizeObserver(() => {
     const measured = Math.max(1, q('.s-compare-tiles__row')?.clientWidth || element.clientWidth - 48);
     if (Math.abs(measured - tileWidth) < 1 || !ctx.isCurrent()) return;

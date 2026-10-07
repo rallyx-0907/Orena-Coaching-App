@@ -4899,6 +4899,16 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
     timing. The UI draws nothing it does not have.
 - **S-13b "Clear" on the embedded Attempt history card.** The frame's card has a Clear button for the prototype's
   browser-only history. Orena's attempts are the account's record and no delete route exists, so it is not drawn.
+- **S-13c Similarity / Intonation on Compare and the Attempt history card (D-139 HD-7 note, D-141). BUILT, client side.**
+  `product/pitch-match.js` measures a take against the prepared model clip (D-140): Intonation is the correlation of
+  the two pitch melodies over their voiced spans (negative counted as 0); Timing is how far each word's start and end
+  sit from the model's, each within its own speech span; Similarity is 0.6 x Intonation + 0.4 x Timing, only when
+  both exist. Figures appear only for a take this tab holds audio for, against a model with a measured contour; the
+  Timing part needs verified model word timing, so a model whose timing is estimated ("est.", D-140) gives
+  Intonation only and no Similarity. Otherwise nothing is shown and the card keeps Pronunciation / Accuracy /
+  Fluency. Not built: the frame's Chinese "Tones %" (a per-syllable tone-shape check; Chinese shows Intonation
+  and Similarity under the same labels) and "Pace" in the history rows. A past attempt only the account remembers
+  has no audio, so it has no figure (S-13a).
 - **S-10a IPA alphabet is implied, not returned.** English sounds are IPA because the provider is asked for
   `PhonemeAlphabet: IPA` (en-US); the stored evidence does not carry the alphabet. A provider that labels sounds
   differently would show those labels. The stress hint line has no provider source and is not drawn.

@@ -255,4 +255,11 @@ console.log('test_orena_screen_compare.mjs: Compare With Model data mapping - re
   assert.equal(card.rows[0].id, 'b', 'newest on top');
   assert.equal(card.rows[0].metrics[0].delta.text, '+10');
   assert.equal(card.rows[0].focus, 'big');
+  assert.deepEqual(card.rows[0].metrics.map((m) => m.key), ['histPron', 'metricAccuracy', 'metricFluency'], 'nothing measured against the model: the assessment numbers stay');
+  const measured = historyFor([{ id: 'b', at: 2, overall: 90 }, { id: 'a', at: 1, overall: 80 }], 'b', () => kept, (item) => (item.id === 'b' ? { similarity: 72, intonation: 80 } : item.id === 'a' ? { similarity: 60, intonation: null } : null));
+  assert.deepEqual(measured.rows[0].metrics.map((m) => [m.key, m.value]), [['histSimilarity', 72], ['metricIntonation', 80], ['histPron', 90]]);
+  assert.equal(measured.rows[0].metrics[0].delta.text, '+12');
+  assert.equal(measured.rows[1].metrics[1].value, null, 'an attempt without a measured intonation shows none');
+  assert.deepEqual(metricLineFor(pronunciationView(RESULT, { language: 'en' }), { similarity: 70, intonation: 81 }).parts.slice(0, 2), [{ key: 'metricSimilarity', value: 70 }, { key: 'metricIntonation', value: 81 }]);
+  assert.ok(!metricLineFor(pronunciationView(RESULT, { language: 'en' }), { similarity: null, intonation: null }).parts.some((p) => /Similarity|Intonation/.test(p.key)));
 }

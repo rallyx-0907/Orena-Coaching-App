@@ -131,9 +131,12 @@ export function chipsFor(view) {
 
 /* The line under the chips (`metricLine`): the assessment's own three numbers, each only when it
    is known, plus the seconds of speech when the provider timed the words. */
-export function metricLineFor(view) {
+export function metricLineFor(view, match = null) {
   if (!view?.measured) return { parts: [], speechS: null };
   const parts = [];
+  // Measured against the model's pitch (product/pitch-match.js): only the figures that exist.
+  if (match?.similarity != null) parts.push({ key: 'metricSimilarity', value: match.similarity });
+  if (match?.intonation != null) parts.push({ key: 'metricIntonation', value: match.intonation });
   if (view.accuracy != null) parts.push({ key: 'metricAccuracy', value: view.accuracy });
   if (view.fluencyMeasured) parts.push({ key: 'metricFluency', value: view.fluency });
   if (view.completeness != null) parts.push({ key: 'metricCompleteness', value: view.completeness });
@@ -282,12 +285,16 @@ export function focusWordOf(view) {
 /* The card's own figures, oldest first and then reversed for display (newest on top, as the frame):
    one row per attempt this line has, each with the three numbers the assessment measured and the
    change from the attempt before it. `viewOf(take)` is the screen's reader of one attempt. */
-export function historyFor(takes, selectedId, viewOf) {
+export function historyFor(takes, selectedId, viewOf, matchOf = () => null) {
   const ordered = [...takes].reverse();
   const scored = ordered.filter((item) => item.overall != null);
   const best = scored.length > 1 ? scored.reduce((top, item) => (item.overall > top.overall ? item : top)) : null;
+  const matches = new Map(ordered.map((item) => [item.id, matchOf(item)]));
+  const anyMatch = ordered.some((item) => matches.get(item.id)?.similarity != null || matches.get(item.id)?.intonation != null);
   const rows = ordered.map((item, at) => {
     const previous = ordered[at - 1];
+    const mine = matches.get(item.id);
+    const before = previous ? matches.get(previous.id) : null;
     return {
       id: item.id,
       n: at + 1,
@@ -296,11 +303,19 @@ export function historyFor(takes, selectedId, viewOf) {
       isBest: Boolean(best) && best.id === item.id,
       hasAudio: Boolean(item.url),
       focus: focusWordOf(viewOf(item)),
-      metrics: [
-        { key: 'histPron', value: item.overall, delta: deltaOf(item.overall, previous?.overall) },
-        { key: 'metricAccuracy', value: item.accuracy ?? null, delta: deltaOf(item.accuracy, previous?.accuracy) },
-        { key: 'metricFluency', value: item.fluency ?? null, delta: deltaOf(item.fluency, previous?.fluency) },
-      ],
+      /* The frame's columns (Similarity, Intonation, Pronunciation) when any attempt was measured against the
+         model's pitch - an attempt without it shows "—"; otherwise the assessment's own three. */
+      metrics: anyMatch
+        ? [
+            { key: 'histSimilarity', value: mine?.similarity ?? null, delta: deltaOf(mine?.similarity, before?.similarity) },
+            { key: 'metricIntonation', value: mine?.intonation ?? null, delta: deltaOf(mine?.intonation, before?.intonation) },
+            { key: 'histPron', value: item.overall, delta: deltaOf(item.overall, previous?.overall) },
+          ]
+        : [
+            { key: 'histPron', value: item.overall, delta: deltaOf(item.overall, previous?.overall) },
+            { key: 'metricAccuracy', value: item.accuracy ?? null, delta: deltaOf(item.accuracy, previous?.accuracy) },
+            { key: 'metricFluency', value: item.fluency ?? null, delta: deltaOf(item.fluency, previous?.fluency) },
+          ],
     };
   });
   const firstScored = scored[0], lastScored = scored.at(-1);
