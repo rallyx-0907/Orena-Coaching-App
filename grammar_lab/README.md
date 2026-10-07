@@ -53,6 +53,7 @@ python -m grammar_lab.pipeline.cli generate --lang en --level A1 --provider deep
 # (chưa ai duyệt); --allow-default-safe-metadata là override tường minh cho case thứ hai, không bao giờ vượt qua catalog cũ
 python -m grammar_lab.pipeline.cli review-export --lang en --level A1   # -> review/en/A1.md cho model ngoài
 python -m grammar_lab.pipeline.cli apply-feedback --lang en --level A1 --files a.jsonl b.jsonl --dry-run
+python -m grammar_lab.pipeline.cli approve --lang en --level A1 --reviewer "Thi" --note "two-pass review complete"   # human gate: validate sạch rồi draft/auto_ok/flagged -> approved
 python -m grammar_lab.pipeline.cli feedback-stats --files a.jsonl b.jsonl   # sai kiến thức / phạm vi / diễn đạt / định dạng
 python -m grammar_lab.pipeline.cli engine-grade --lang en --level A1 --evaluator-url http://localhost:8020  # in ước tính rồi dừng; --yes để chạy
 ```
@@ -74,7 +75,9 @@ python -m grammar_lab.pipeline.cli engine-grade --lang en --level A1 --evaluator
 - **Review ngoài**: file `review/<lang>/<bậc>.md` có hướng dẫn hai lượt, danh sách nhãn lỗi engine, bảng tổng quan và
   các phần ~10 điểm; góp ý trả về JSONL `{"id","block","issue","severity","fix"}`; `issue` mở đầu bằng
   `[knowledge]`, `[scope]`, `[wording]` hoặc `[format]`. `apply-feedback` bỏ trùng, sinh lại đúng khối bị góp ý, validate
-  lại (khối làm hỏng validate bị trả về như cũ), ghi `review/<lang>/<bậc>.applied.json`, không bao giờ đặt `approved`.
+  lại (khối làm hỏng validate bị trả về như cũ), ghi `review/<lang>/<bậc>.applied.json`, không bao giờ tự đặt `approved`.
+  Sau khi người review xác nhận xong, chạy `approve --reviewer <tên>`; bước này fail-closed, ghi `review.*` và chỉ khi đó
+  mới chuyển điểm hợp lệ sang `approved` để `export-package` nhận.
 - **Chấm engine** (`engine-grade`) chỉ `common_mistakes` và `quick_practice`, luôn in số lượt gọi và chi phí ước tính
   trước (mặc định dừng ở đó).
 - **Nguồn đối chiếu**: `inventory/raw/` (metadata mã và bậc, không chép lời giải thích), `sources/` (script trích).
