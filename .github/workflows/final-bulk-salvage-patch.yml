@@ -63,7 +63,6 @@ jobs:
                   "level": dict(existing["level"]),
               }
           '''
-          # The source function is top-level, so strip the workflow's Python indentation.
           old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines()) + '\n'
           new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines()) + '\n'
           if old not in text:
@@ -71,7 +70,7 @@ jobs:
           path.write_text(text.replace(old, new, 1), encoding='utf-8')
 
           test = Path('grammar_lab/tests/test_zh_header_metadata.py')
-          test.write_text('''from grammar_lab.pipeline.generate import _header_metadata\nfrom grammar_lab.pipeline.validate import ZH_HANS\n\n\ndef test_zh_existing_header_native_title_is_unspaced() -> None:\n    existing = {\n        "target_lang": ZH_HANS,\n        "level": {"framework": "HSK", "value": "3"},\n        "header": {\n            "title": {"vi": "Liên động"},\n            "native_title": "连动句“去/来 + 动词”",\n        },\n    }\n    header = _header_metadata(existing, ["vi"])\n    assert header["native_title"] == "连动句“去/来+动词”"\n\n\ndef test_zh_legacy_title_native_title_is_unspaced() -> None:\n    existing = {\n        "target_lang": ZH_HANS,\n        "level": {"framework": "HSK", "value": "4"},\n        "title": {"vi": "Cấu trúc 所", ZH_HANS: "“所 + V”结构入门"},\n    }\n    header = _header_metadata(existing, ["vi"])\n    assert header["native_title"] == "“所+V”结构入门"\n''', encoding='utf-8')
+          test.write_text('''from grammar_lab.pipeline.generate import _header_metadata\nfrom grammar_lab.pipeline.validate import ZH_HANS, _ZH_SPACE\n\n\ndef test_zh_existing_header_native_title_matches_whitespace_contract() -> None:\n    existing = {\n        "target_lang": ZH_HANS,\n        "level": {"framework": "HSK", "value": "3"},\n        "header": {\n            "title": {"vi": "Liên động"},\n            "native_title": "连动句“去/来 + 动词”",\n        },\n    }\n    header = _header_metadata(existing, ["vi"])\n    assert header["native_title"] == "连动句“去/来+动词”"\n    assert _ZH_SPACE.search(header["native_title"]) is None\n\n\ndef test_zh_legacy_title_native_title_matches_whitespace_contract() -> None:\n    existing = {\n        "target_lang": ZH_HANS,\n        "level": {"framework": "HSK", "value": "4"},\n        "title": {"vi": "Cấu trúc 所", ZH_HANS: "“所 + V”结构入门"},\n    }\n    header = _header_metadata(existing, ["vi"])\n    assert header["native_title"] == "“所+ V”结构入门"\n    assert _ZH_SPACE.search(header["native_title"]) is None\n''', encoding='utf-8')
           PY
       - name: Focused regression
         run: python -m pytest grammar_lab/tests/test_zh_header_metadata.py -q
