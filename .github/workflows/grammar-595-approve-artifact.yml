@@ -18,7 +18,9 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -e "grammar_lab[dev]"
       - name: Apply reviewed deterministic repairs
-        run: python grammar_lab/tools/final_ship_repairs.py
+        run: |
+          python grammar_lab/tools/final_ship_repairs.py
+          python grammar_lab/tools/final_ship_repairs_hotfix.py
       - name: Preflight
         run: |
           python -m grammar_lab.pipeline.cli validate --lang en
