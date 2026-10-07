@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 import json
 import logging
 import math
+import os
 import time
 from typing import Annotated, Any
 
@@ -40,6 +41,20 @@ from writing_coach.speaking_evaluator import (
 
 logger = logging.getLogger(__name__)
 SINCE_MAX_DAYS = 7
+
+PRACTICE_SESSION_FLAG = "ORENA_PRACTICE_SESSION"
+
+
+def practice_session_enabled() -> bool:
+    """D-142: the persisted practice session identity. Off unless an operator turns it on (default off, so the
+    attempt routes behave exactly as before), and only after the 20261007_0029 revision is applied."""
+    return os.environ.get(PRACTICE_SESSION_FLAG, "").strip().casefold() in {"on", "1", "true", "yes"}
+
+
+def _server_now() -> datetime:
+    """The server's clock: the only time a practice session is judged by (D-142.1)."""
+    return datetime.now(timezone.utc)
+
 
 router = APIRouter(prefix="/api/speech", tags=["speech"])
 _speech_asr_provider: SpeechAsrProvider | None = None
@@ -278,7 +293,7 @@ def _normalize_speaking_attempt(payload: SpeakingAttemptIn) -> dict[str, Any]:
     if len(encoded_evidence) > 100_000 or len(encoded_provenance) > 8_000:
         raise SpeakingEvaluationInvalid("evaluation evidence is too large.")
     return {
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": _server_now().isoformat(),
         "language": language,
         "take_id": take_id,
         "asset_id": asset_id,
@@ -434,7 +449,10 @@ def save_speaking_attempt(payload: SpeakingAttemptIn) -> dict[str, Any]:
         )
     try:
         values = _normalize_speaking_attempt(payload)
-        saved = _speaking_attempt_repository.create_speaking_attempt_record(values)
+        if practice_session_enabled():
+            saved = _speaking_attempt_repository.create_speaking_attempt_record(values, assign_session=True)
+        else:
+            saved = _speaking_attempt_repository.create_speaking_attempt_record(values)
     except SpeakingEvaluationInvalid as exc:
         raise orena_http_error(422, "speaking_attempt_invalid", str(exc)) from exc
     return {"item": saved, "progress": _speaking_attempt_repository.speaking_progress()}
@@ -446,6 +464,7 @@ def list_speaking_attempts(
     asset_id: str | None = None,
     segment_id: str | None = None,
     since: Annotated[str | None, Query(max_length=40)] = None,
+    session: Annotated[str | None, Query(max_length=16)] = None,
 ) -> dict[str, Any]:
     """The learner's speaking attempts, newest first. `since` (an ISO instant) makes "this session" a
     window the server keeps rather than a list the browser holds (D4 I7): it is clamped to the last
@@ -457,6 +476,21 @@ def list_speaking_attempts(
             "Speaking history is not configured on this environment.",
         )
     bounded_limit = max(1, min(int(limit), 100))
+    if session is not None:
+        # D-142.3: only the learner's current session; there is no reading a past one by id.
+        if session != "current":
+            raise orena_http_error(422, "session_invalid", "session must be 'current'.")
+        if since or asset_id or segment_id:
+            raise orena_http_error(422, "session_exclusive", "session=current cannot be combined with other filters.")
+        if not practice_session_enabled():
+            raise orena_http_error(404, "practice_session_disabled", "Practice sessions are not enabled on this environment.")
+        live = _speaking_attempt_repository.current_speaking_session(_server_now(), limit=bounded_limit)
+        items = live.pop("items") if live else []
+        return {
+            "items": items,
+            "session": live,
+            "progress": _speaking_attempt_repository.speaking_progress(),
+        }
     window_start = None
     if since:
         try:
