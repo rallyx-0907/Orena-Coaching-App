@@ -134,6 +134,11 @@ export function createRouter({ frame, getContext }) {
     const { route } = found;
     if (!originKnown && SPEAKING_ROUTES.includes(route.id)) origin = 'practice';
     originKnown = true;
+    // A Skill Hub is a page of Practice Hub, whichever way the learner reached it: it always lights Practice.
+    if (route.id === 'skillhub') {
+      origin = 'practice';
+      session(ORIGIN_KEY, origin);
+    }
     if (PRIMARY.includes(route.id)) {
       origin = route.id;
       session(ORIGIN_KEY, origin);
