@@ -1,4 +1,4 @@
-name: Grammar Header Cache Key RED
+name: Grammar Header Cache Key GREEN
 on:
   push:
     branches:
@@ -6,9 +6,9 @@ on:
     paths:
       - '.github/workflows/header-cache-key-red.yml'
 permissions:
-  contents: read
+  contents: write
 jobs:
-  red:
+  green:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -18,25 +18,112 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e "grammar_lab[dev]"
-      - name: Write regression only
+      - name: Patch prompt/output header boundary and permanent tests
         shell: bash
         run: |
-          cat > grammar_lab/tests/_tmp_test_header_cache_key.py <<'PY'
-          from grammar_lab.pipeline.generate import _header_metadata
-          from grammar_lab.pipeline.validate import ZH_HANS
+          python - <<'PY'
+          from pathlib import Path
 
+          path = Path('grammar_lab/pipeline/generate.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''def _header_metadata(existing: dict[str, Any], locales: list[str]) -> dict[str, Any]:
+              """title/native_title/level: structural metadata, carried over, never generated.
 
-          def test_prompt_header_metadata_preserves_canonical_native_title() -> None:
-              existing = {
-                  "target_lang": ZH_HANS,
-                  "level": {"framework": "HSK", "value": "3"},
-                  "header": {
-                      "title": {"vi": "Liên động"},
-                      "native_title": "连动句“去/来 + 动词”",
-                  },
+              Chinese learner-facing text is normalized here too.  The v0.4 generator already
+              normalizes every model-authored target-language field through ``target_text``;
+              leaving carried-over ``native_title`` untouched made deterministic validation reject
+              otherwise-valid cached candidates whose canonical title used display spaces around
+              symbols such as ``+``.
+              """
+              zh = existing.get("target_lang") == ZH_HANS
+              if "header" in existing:
+                  header = existing["header"]
+                  native = target_text(str(header["native_title"]), zh)
+                  return {"title": header["title"], "native_title": native, "level": dict(existing["level"])}
+              title = existing["title"]
+              native = title.get(existing["target_lang"]) or title.get("en") or title["vi"]
+              native = target_text(str(native), zh)
+              return {
+                  "title": {locale: title[locale] for locale in locales if locale in title} or {"vi": title["vi"]},
+                  "native_title": native,
+                  "level": dict(existing["level"]),
               }
-              header = _header_metadata(existing, ["vi"])
-              assert header["native_title"] == "连动句“去/来 + 动词”"
+          '''
+          new = '''def _header_metadata(existing: dict[str, Any], locales: list[str]) -> dict[str, Any]:
+              """Prompt-facing structural metadata, carried over exactly from the catalogue.
+
+              Keep this byte-for-byte stable with the canonical source because it participates in
+              the provider cache key. Learner-facing Chinese normalization happens only when the
+              assembled point is stored.
+              """
+              if "header" in existing:
+                  header = existing["header"]
+                  return {"title": header["title"], "native_title": header["native_title"], "level": dict(existing["level"])}
+              title = existing["title"]
+              native = title.get(existing["target_lang"]) or title.get("en") or title["vi"]
+              return {
+                  "title": {locale: title[locale] for locale in locales if locale in title} or {"vi": title["vi"]},
+                  "native_title": native,
+                  "level": dict(existing["level"]),
+              }
+
+
+          def _stored_header_metadata(header: dict[str, Any], zh: bool) -> dict[str, Any]:
+              """Normalize only the learner-facing stored header, never prompt/cache input."""
+              out = copy.deepcopy(header)
+              out["native_title"] = target_text(str(out["native_title"]), zh)
+              return out
+          '''
+          old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines()) + '\n'
+          new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines()) + '\n'
+          if old not in text:
+              raise SystemExit('current _header_metadata block not found; refusing unsafe patch')
+          text = text.replace(old, new, 1)
+
+          old_assemble = '''            point = {
+              **{key: existing[key] for key in (
+          '''
+          new_assemble = '''            stored_header = _stored_header_metadata(header, zh)
+
+            point = {
+              **{key: existing[key] for key in (
+          '''
+          if old_assemble not in text:
+              raise SystemExit('point assembly anchor not found; refusing unsafe patch')
+          text = text.replace(old_assemble, new_assemble, 1)
+
+          old_header = '''                "header": {
+                    **header, "summary": loc(data["summary"]),
+                    "sub": loc(data["sub"]),
+                    **({"native_title_pinyin": pinyin_from_pairs(header["native_title"], data.get("native_title_pinyin_pairs"))} if zh else {}),
+                },
+          '''
+          new_header = '''                "header": {
+                    **stored_header, "summary": loc(data["summary"]),
+                    "sub": loc(data["sub"]),
+                    **({"native_title_pinyin": pinyin_from_pairs(stored_header["native_title"], data.get("native_title_pinyin_pairs"))} if zh else {}),
+                },
+          '''
+          if old_header not in text:
+              raise SystemExit('stored header assembly block not found; refusing unsafe patch')
+          text = text.replace(old_header, new_header, 1)
+          path.write_text(text, encoding='utf-8')
+
+          test = Path('grammar_lab/tests/test_zh_header_metadata.py')
+          test.write_text('''from grammar_lab.pipeline.generate import _header_metadata, _stored_header_metadata\nfrom grammar_lab.pipeline.validate import ZH_HANS, _ZH_SPACE\n\n\ndef test_prompt_header_metadata_preserves_existing_native_title_for_cache_key() -> None:\n    existing = {\n        "target_lang": ZH_HANS,\n        "level": {"framework": "HSK", "value": "3"},\n        "header": {\n            "title": {"vi": "Liên động"},\n            "native_title": "连动句“去/来 + 动词”",\n        },\n    }\n    header = _header_metadata(existing, ["vi"])\n    assert header["native_title"] == "连动句“去/来 + 动词”"\n\n\ndef test_stored_zh_header_normalizes_native_title_without_mutating_prompt_header() -> None:\n    header = {\n        "title": {"vi": "Liên động"},\n        "native_title": "连动句“去/来 + 动词”",\n        "level": {"framework": "HSK", "value": "3"},\n    }\n    stored = _stored_header_metadata(header, True)\n    assert header["native_title"] == "连动句“去/来 + 动词”"\n    assert stored["native_title"] == "连动句“去/来+动词”"\n    assert _ZH_SPACE.search(stored["native_title"]) is None\n\n\ndef test_prompt_legacy_title_is_preserved_but_stored_copy_matches_whitespace_contract() -> None:\n    existing = {\n        "target_lang": ZH_HANS,\n        "level": {"framework": "HSK", "value": "4"},\n        "title": {"vi": "Cấu trúc 所", ZH_HANS: "“所 + V”结构入门"},\n    }\n    header = _header_metadata(existing, ["vi"])\n    assert header["native_title"] == "“所 + V”结构入门"\n    stored = _stored_header_metadata(header, True)\n    assert stored["native_title"] == "“所+ V”结构入门"\n    assert _ZH_SPACE.search(stored["native_title"]) is None\n''', encoding='utf-8')
           PY
-      - name: RED regression
-        run: python -m pytest grammar_lab/tests/_tmp_test_header_cache_key.py -q
+      - name: Focused regression
+        run: python -m pytest grammar_lab/tests/test_zh_header_metadata.py -q
+      - name: Generation regressions
+        run: python -m pytest grammar_lab/tests/test_generate.py grammar_lab/tests/test_validate_rules.py -q
+      - name: Full Grammar Lab suite
+        run: python -m pytest grammar_lab/tests -q
+      - name: Commit production patch and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "CalisJI"
+          git config user.email "78250571+CalisJI@users.noreply.github.com"
+          git rm .github/workflows/header-cache-key-red.yml
+          git add grammar_lab/pipeline/generate.py grammar_lab/tests/test_zh_header_metadata.py
+          git commit -m "fix(grammar): preserve cache key while normalizing zh title output"
+          git push origin HEAD:feature/grammar-lab-pipeline
