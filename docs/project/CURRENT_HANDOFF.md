@@ -109,8 +109,8 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-D-129: Reading APPROVED; Listening VERIFIED (461d471). Speaking (D-139..142) awaits Reviewer; 0029 + practice
-session on :8021 only. S-27 to Codex lane. Next: Writing (D-129 audit).
+D-129: Reading APPROVED; Listening VERIFIED (461d471). Speaking, Writing, Vocabulary, places, cross-skill: audited,
+fixed, Reviewer-verified; human recording/AI/device check OK. Next: Onboarding (D-129 §2).
 
 D-124: → vi policy open-dsl → vi.wiktionary (strict) → English labelled; built, NOT enabled
 until the human grades docs/reviews/evidence/d124-vi. Licences page + THIRD_PARTY_NOTICES done.
