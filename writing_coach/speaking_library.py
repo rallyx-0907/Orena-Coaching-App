@@ -33,6 +33,7 @@ from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code
 from writing_coach.listening_catalog import catalog_lesson, catalog_lessons
 from writing_coach.media_safe_fetch import UnsafeMediaFetch, download_bounded
+from writing_coach import model_clips
 from writing_coach.book_asset_store import AssetNotFound, InvalidAssetKey
 
 CATALOG_PATH = Path(__file__).resolve().parent / "content" / "speaking_catalog.v1.json"
@@ -373,13 +374,16 @@ def _stored_source_file(entry: Any, *, access_check: Any = None) -> Path:
     return _cached_source_path(data)
 
 
-def _stored_segment(entry: Any, segment_id: str) -> tuple[Mapping[str, Any], int, int]:
-    """Resolve a transcript line after the ownership resolver has run."""
+def _stored_segment(entry: Any, segment_id: str, *, language: str | None = None) -> tuple[Mapping[str, Any], int, int]:
+    """Resolve a transcript line after the ownership resolver has run.
+
+    `language` is for readiness-time callers that have no request: they pass the entry's own language.
+    """
     from writing_coach.core.request_context import current_language_code
 
     if (
         str(getattr(entry, "status", "")).casefold() != "published"
-        or str(getattr(entry, "language", "")).casefold() != current_language_code().strip().casefold()
+        or str(getattr(entry, "language", "")).casefold() != (language if language is not None else current_language_code()).strip().casefold()
         or getattr(entry, "media_type", "") not in {"audio", "video"}
     ):
         raise LookupError(segment_id)
@@ -441,6 +445,42 @@ class _ResolvedModelLine:
     source_locator: str
 
 
+def _catalog_model_line(lesson: Any, segment_id: str, timed_segment: Any) -> _ResolvedModelLine:
+    source_segment = next(
+        (item for item in lesson.source.segments if item.get("segment_id") == segment_id),
+        {},
+    )
+    raw_words = source_segment.get("words") or ()
+    return _ResolvedModelLine(
+        lesson=lesson,
+        entry=None,
+        segment_id=segment_id,
+        language=lesson.source.language,
+        reference_text=str(source_segment.get("spoken_text") or timed_segment.original_text).strip(),
+        start_ms=timed_segment.start_ms,
+        end_ms=timed_segment.end_ms,
+        canonical_words=tuple(word for word in raw_words if isinstance(word, Mapping)),
+        source_identity=f"catalog:{lesson.source.source_media_id}",
+        source_locator=lesson.source.source_url,
+    )
+
+
+def _stored_model_line(entry: Any, segment_id: str, segment: Mapping[str, Any], start_ms: int, end_ms: int) -> _ResolvedModelLine:
+    raw_words = segment.get("words") or ()
+    return _ResolvedModelLine(
+        lesson=None,
+        entry=entry,
+        segment_id=segment_id,
+        language=str(entry.language),
+        reference_text=str(segment.get("spoken_text") or segment.get("original_text") or "").strip(),
+        start_ms=start_ms,
+        end_ms=end_ms,
+        canonical_words=tuple(word for word in raw_words if isinstance(word, Mapping)),
+        source_identity=f"stored:{entry.media_id}",
+        source_locator=f"{entry.canonical_url}\0{entry.playback.get('url', '')}",
+    )
+
+
 def _resolve_model_line(lesson_id: str, segment_id: str) -> _ResolvedModelLine:
     """Resolve a model line with publication, language and ownership gates."""
     resolved_id = str(lesson_id or "").strip()
@@ -459,23 +499,7 @@ def _resolve_model_line(lesson_id: str, segment_id: str) -> _ResolvedModelLine:
         )
         if timed_segment is None or lesson.playback.kind not in {"audio", "video"}:
             raise LookupError(segment_id)
-        source_segment = next(
-            (item for item in lesson.source.segments if item.get("segment_id") == segment_id),
-            {},
-        )
-        raw_words = source_segment.get("words") or ()
-        return _ResolvedModelLine(
-            lesson=lesson,
-            entry=None,
-            segment_id=segment_id,
-            language=lesson.source.language,
-            reference_text=str(source_segment.get("spoken_text") or timed_segment.original_text).strip(),
-            start_ms=timed_segment.start_ms,
-            end_ms=timed_segment.end_ms,
-            canonical_words=tuple(word for word in raw_words if isinstance(word, Mapping)),
-            source_identity=f"catalog:{lesson.source.source_media_id}",
-            source_locator=lesson.source.source_url,
-        )
+        return _catalog_model_line(lesson, segment_id, timed_segment)
 
     from writing_coach import media_library_api
 
@@ -485,19 +509,7 @@ def _resolve_model_line(lesson_id: str, segment_id: str) -> _ResolvedModelLine:
     if entry is None:
         raise LookupError(segment_id)
     segment, start_ms, end_ms = _stored_segment(entry, segment_id)
-    raw_words = segment.get("words") or ()
-    return _ResolvedModelLine(
-        lesson=None,
-        entry=entry,
-        segment_id=segment_id,
-        language=str(entry.language),
-        reference_text=str(segment.get("spoken_text") or segment.get("original_text") or "").strip(),
-        start_ms=start_ms,
-        end_ms=end_ms,
-        canonical_words=tuple(word for word in raw_words if isinstance(word, Mapping)),
-        source_identity=f"stored:{entry.media_id}",
-        source_locator=f"{entry.canonical_url}\0{entry.playback.get('url', '')}",
-    )
+    return _stored_model_line(entry, segment_id, segment, start_ms, end_ms)
 
 
 def _recheck_model_line(line: _ResolvedModelLine, lesson_id: str, segment_id: str) -> None:
@@ -716,6 +728,85 @@ def read_model_reference(lesson_id: str, segment_id: str) -> dict[str, Any]:
     }
 
 
+
+
+# --- Prepared model clips (D-140) --------------------------------------------------------------
+# Compare measures the model's own pitch and word timing from a clip that was cut once at content
+# readiness. This route only reads that stored artifact: it cannot cut, fetch or prepare, and a clip
+# that was not prepared is a plain 404 (D-121).
+def _clip_line_of(line: _ResolvedModelLine) -> model_clips.ClipLine:
+    owned_prefix = ""
+    entry = line.entry
+    if entry is not None and entry.provider == "upload" and entry.provider_media_id:
+        owned_prefix = f"media/{entry.provider_media_id}"
+    return model_clips.ClipLine(
+        source_identity=line.source_identity,
+        source_locator=line.source_locator,
+        segment_id=line.segment_id,
+        language=line.language,
+        start_ms=line.start_ms,
+        end_ms=line.end_ms,
+        owned_prefix=owned_prefix,
+    )
+
+
+def catalog_clip_lines(lesson: Any) -> list[model_clips.ClipLine]:
+    """The speakable lines of a curated lesson, with the identity the read route computes."""
+    transcript = lesson.media_object.transcript
+    if transcript is None or lesson.playback.kind not in {"audio", "video"}:
+        return []
+    return [
+        _clip_line_of(_catalog_model_line(lesson, segment.segment_id, segment))
+        for segment in transcript.segments
+    ]
+
+
+def entry_clip_lines(entry: Any) -> list[model_clips.ClipLine]:
+    """The speakable lines of a stored entry that its own gates admit; no request is needed."""
+    payload = (entry.lesson or {}).get("payload") if isinstance(getattr(entry, "lesson", None), Mapping) else None
+    segments = ((payload or {}).get("transcript") or {}).get("segments") if isinstance(payload, Mapping) else None
+    if not isinstance(segments, list):
+        return []
+    lines: list[model_clips.ClipLine] = []
+    for item in segments:
+        segment_id = str(item.get("segment_id")) if isinstance(item, Mapping) else ""
+        try:
+            segment, start_ms, end_ms = _stored_segment(entry, segment_id, language=str(entry.language))
+        except LookupError:
+            continue
+        lines.append(_clip_line_of(_stored_model_line(entry, segment_id, segment, start_ms, end_ms)))
+    return lines
+
+
+def prepared_clip_segments(lesson_id: str, *, lesson: Any = None, entry: Any = None) -> list[str]:
+    """Segment ids of a lesson or stored entry that have a prepared clip. Existence only; never prepares."""
+    try:
+        assets = _media_assets()
+    except ModelAudioUnavailable:
+        return []
+    lines = catalog_clip_lines(lesson) if lesson is not None else entry_clip_lines(entry) if entry is not None else []
+    return model_clips.prepared_segment_ids(assets, lines)
+
+
+@router.get("/model-clip/{lesson_id}/{segment_id}")
+def read_model_clip(lesson_id: str, segment_id: str) -> Response:
+    try:
+        line = _resolve_model_line(lesson_id, segment_id)
+        assets = _media_assets()
+    except LookupError as exc:
+        raise orena_http_error(404, "speaking_model_not_found", "This model line is unavailable.") from exc
+    except ModelAudioUnavailable as exc:
+        raise orena_http_error(404, "speaking_model_clip_not_prepared", "This model clip is not prepared.") from exc
+    clip = _clip_line_of(line)
+    data = model_clips.read_clip(assets, clip) if clip.speakable() else None
+    if data is None:
+        raise orena_http_error(404, "speaking_model_clip_not_prepared", "This model clip is not prepared.")
+    # Re-resolve: ownership, language and publication are rechecked after the stored bytes were read.
+    try:
+        _recheck_model_line(line, lesson_id, segment_id)
+    except LookupError as exc:
+        raise orena_http_error(404, "speaking_model_not_found", "This model line is unavailable.") from exc
+    return Response(content=data, media_type="audio/webm", headers={"Cache-Control": "private, no-store"})
 
 
 def model_line_audio(lesson_id: str, segment_id: str) -> bytes:

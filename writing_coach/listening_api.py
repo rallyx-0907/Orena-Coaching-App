@@ -196,6 +196,7 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
             response["catalog"]["pinyin_chars_by_segment"] = (stored.get("catalog") or {}).get("pinyin_chars_by_segment") or align_readings(media_object.transcript.segments, pinyin)
         elif media_object.asset.source_language.strip().casefold().startswith("en") and not response["catalog"].get("readings_by_segment"):
             response["catalog"]["readings_by_segment"] = _cached_source_readings(media_object.transcript.segments)
+        response["catalog"]["model_clip_segments"] = _prepared_model_clips(entry=entry)
         return response
     # No transcript: an imported file or a direct media URL. The learner gets
     # the player and the truth, which is the same 'source only' room a
@@ -652,8 +653,20 @@ def open_listening_library_lesson(
     metadata["pinyin_chars_by_segment"] = align_readings(segments, pinyin)
     if media_object.asset.source_language.strip().casefold().startswith("en"):
         metadata["readings_by_segment"] = _cached_source_readings(segments)
+    metadata["model_clip_segments"] = _prepared_model_clips(lesson=lesson)
     response["catalog"] = metadata
     return response
+
+
+def _prepared_model_clips(*, lesson: Any = None, entry: Any = None) -> list[str]:
+    """Segments whose model clip was prepared at content readiness (D-140). Existence only; reading this
+    payload never cuts, fetches or prepares anything (D-121)."""
+    from writing_coach.speaking_library import prepared_clip_segments
+
+    try:
+        return prepared_clip_segments("", lesson=lesson, entry=entry)
+    except Exception:  # a clip index problem must not take the lesson down; the plot is simply unavailable
+        return []
 
 
 @dataclass(frozen=True)

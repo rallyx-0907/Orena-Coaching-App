@@ -424,12 +424,44 @@ class MediaPipeline:
         rights = str(entry.source.get("rights") or RIGHTS_UNKNOWN)
         common = dict(checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
                       translation=translation, rights=rights)
+        if personal or rights == RIGHTS_CLEARED:
+            # Readiness is when source artifacts are made, once (D-121); the model clip Compare measures is one (D-140).
+            self._prepare_model_clips(assets, entry)
         if personal:
             self._write_processing(store, entry, state=STATE_READY, stage=STAGE_READY, reason="", detail="", auto_published=False, **common, status="published")
         elif rights == RIGHTS_CLEARED:
             self._write_processing(store, entry, state=STATE_READY, stage=STAGE_READY, reason="", detail="", auto_published=True, **common, status="published")
         else:
             self._write_processing(store, entry, state=STATE_HELD, stage=STAGE_READY, reason="rights_unknown", detail="", auto_published=False, **common, status="review")
+
+    def _prepare_model_clips(self, assets: BookAssetStore, entry: MediaLibraryEntry) -> None:
+        """Cut each speakable line's model clip once, from the source this item was admitted from.
+
+        Idempotent (a stored clip is never cut again), bounded, provider-free, and never able to fail
+        readiness: a lesson without clips is complete, and Compare says its model plot is unavailable.
+        """
+        if os.getenv("MEDIA_MODEL_CLIPS", "1").strip().casefold() in {"0", "false", "no", "off"}:
+            return
+        try:
+            from writing_coach import model_clips
+            from writing_coach.speaking_library import entry_clip_lines
+
+            lesson = dict(entry.lesson or {})
+            admitted = replace(entry, status="published", lesson={**lesson, "status": "PUBLISHED"})
+            pending = model_clips.missing_lines(assets, entry_clip_lines(admitted))
+            if not pending:
+                return
+            max_seconds = _env_int("MEDIA_ASR_MAX_SECONDS", 5400)
+            with tempfile.TemporaryDirectory(prefix="orena-clips-") as directory:
+                source = self._audio_source(assets, entry, Path(directory), max_seconds)
+                result = model_clips.prepare_clips(
+                    assets, source, pending,
+                    max_lines=_env_int("MEDIA_MODEL_CLIP_MAX_LINES", model_clips.DEFAULT_MAX_LINES),
+                    max_audio_ms=max_seconds * 1000,
+                )
+            _logger.info("model clips for %s: %s", entry.media_id, result.as_dict())
+        except Exception:  # noqa: BLE001 - optional artifact; readiness stands without it
+            _logger.warning("model clips could not be prepared for %s", entry.media_id, exc_info=True)
 
     def _hold_failed(self, store: Any, media_id: str, stop: PipelineStop) -> None:
         entry = store.get(media_id)
