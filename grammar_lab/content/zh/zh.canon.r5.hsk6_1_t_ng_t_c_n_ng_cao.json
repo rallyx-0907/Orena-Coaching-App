@@ -1,0 +1,323 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_1_t_ng_t_c_n_ng_cao",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.aspect_viewpoint",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_2_4_2.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk6-1-t-ng-t-c-n-ng-cao", "zh-hsk79-1-advanced-written-aspect-and-viewpoint"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk6-1-t-ng-t-c-n-ng-cao", "zh-hsk79-1-advanced-written-aspect-and-viewpoint"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: 了/过/着 tương tác nâng cao",
+      "en": "Chinese grammar: 了/过/着 tương tác nâng cao"
+    },
+    "native_title": "“了/过/着”的高级互动",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Phân biệt và phối hợp 了, 过, 着 để chọn đúng góc nhìn thể: sự kiện trọn vẹn, trải nghiệm, hay trạng thái duy trì.",
+      "en": "Distinguish and combine 了, 过 and 着 to choose the right aspectual viewpoint: bounded event, experience, or maintained state."
+    },
+    "sub": {"vi": "thể và góc nhìn", "en": "aspect and viewpoint"},
+    "native_title_pinyin": ["", "le", "", "guò", "", "zhe", "", "de", "gāo", "jí", "hù", "dòng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi kể một sự việc đã hoàn tất trọn vẹn, có kết quả hoặc số lượng rõ ràng, dùng 了 sau động từ.",
+      "en": "When reporting a bounded, completed event with a clear result or quantity, use 了 after the verb."
+    },
+    {
+      "vi": "Khi nói về một trải nghiệm đã từng xảy ra (không nhấn vào thời điểm hay kết quả), dùng 过 sau động từ.",
+      "en": "When talking about an experience that has occurred at least once, without focusing on time or result, use 过 after the verb."
+    },
+    {
+      "vi": "Khi mô tả một trạng thái đang được duy trì hoặc làm nền cho sự việc khác, dùng 着 sau động từ.",
+      "en": "When describing a state that is maintained or serves as background for another event, use 着 after the verb."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh tình huống hiện tại đã thay đổi hoặc có liên quan đến hiện tại, thêm 了 cuối câu bên cạnh 过 hoặc 了 đã có.",
+      "en": "When highlighting that the current situation has changed or is currently relevant, add sentence-final 了 alongside 过 or an existing 了."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "了/过/着",
+        "role": "particle",
+        "label": {"vi": "trợ từ thể", "en": "aspect particle"},
+        "options": [
+          {"text": "了", "pinyin": ["le"]},
+          {"text": "过", "pinyin": ["guò"]},
+          {"text": "着", "pinyin": ["zhe"]}
+        ],
+        "pinyin": ["le", "", "guò", "", "zhe"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {
+          "vi": "了 cuối câu (thay đổi/tình trạng hiện tại)",
+          "en": "sentence-final 了 (change/current relevance)"
+        },
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "没/没有",
+          "role": "aux",
+          "label": {"vi": "phủ định sự kiện", "en": "event negator"},
+          "options": [{"text": "没", "pinyin": ["méi"]}, {"text": "没有", "pinyin": ["méi", "yǒu"]}],
+          "pinyin": ["méi", "", "méi", "yǒu"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "过",
+          "role": "particle",
+          "label": {"vi": "trợ từ trải nghiệm", "en": "experiential particle"},
+          "optional": true,
+          "pinyin": ["guò"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "了/过/着",
+          "role": "particle",
+          "label": {"vi": "trợ từ thể", "en": "aspect particle"},
+          "options": [
+            {"text": "了", "pinyin": ["le"]},
+            {"text": "过", "pinyin": ["guò"]},
+            {"text": "着", "pinyin": ["zhe"]}
+          ],
+          "pinyin": ["le", "", "guò", "", "zhe"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我昨天看了两章。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "了 đánh dấu sự kiện trọn vẹn có số lượng rõ ràng.",
+        "en": "了 marks a bounded event with a clear quantity."
+      },
+      "translation": {"vi": "Hôm qua tôi đọc hai chương.", "en": "Yesterday I read two chapters."},
+      "pinyin": ["wǒ", "zuó", "tiān", "kàn", "le", "liǎng", "zhāng", ""]
+    },
+    {
+      "text": "这本书我已经看过了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 6, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "particle"},
+        {"start": 8, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "过 nêu trải nghiệm; 了 cuối câu cho thấy tình trạng hiện tại đã thay đổi.",
+        "en": "过 marks experience; sentence-final 了 shows the current situation has changed."
+      },
+      "translation": {"vi": "Cuốn sách này tôi đã từng đọc rồi.", "en": "I have read this book before."},
+      "pinyin": ["zhè", "běn", "shū", "wǒ", "yǐ", "jīng", "kàn", "guò", "le", ""]
+    },
+    {
+      "text": "门一直开着。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "着 mô tả trạng thái mở được duy trì liên tục.",
+        "en": "着 describes a maintained open state."
+      },
+      "translation": {"vi": "Cửa vẫn luôn mở.", "en": "The door has been open the whole time."},
+      "pinyin": ["mén", "yì", "zhí", "kāi", "zhe", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Phủ định sự kiện bằng 没/没有 không đi với 了 sau động từ; 了 bị loại bỏ khi có 没.",
+        "en": "Event negation with 没/没有 does not take 了 after the verb; 了 is dropped when 没 is present."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "我没看了这本书。",
+      "right": "我没看这本书。",
+      "wrong_pinyin": ["wǒ", "méi", "kàn", "le", "zhè", "běn", "shū", ""],
+      "right_pinyin": ["wǒ", "méi", "kàn", "zhè", "běn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我昨天___了两章。",
+      "options": [
+        {"text": "看", "error_tag": null, "pinyin": ["kàn"]},
+        {"text": "看了", "error_tag": "redundancy", "pinyin": ["kàn", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chỗ trống đứng trước 了 nên chỉ cần động từ 看; thêm 了 nữa sẽ thành hai lần đánh dấu thể.",
+        "en": "The blank comes before 了, so only the verb 看 is needed; adding another 了 would double-mark aspect."
+      },
+      "q_pinyin": ["wǒ", "zuó", "tiān", "", "", "", "le", "liǎng", "zhāng", ""]
+    },
+    {
+      "q": "这本书我已经看___了。",
+      "options": [
+        {"text": "过", "error_tag": null, "pinyin": ["guò"]},
+        {"text": "着", "error_tag": "aspect", "pinyin": ["zhe"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "过 đánh dấu trải nghiệm đã từng đọc; 着 không hợp vì không phải trạng thái duy trì.",
+        "en": "过 marks the experience of having read it; 着 does not fit because this is not a maintained state."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "wǒ", "yǐ", "jīng", "kàn", "", "", "", "le", ""]
+    },
+    {
+      "q": "门一直开___。",
+      "options": [
+        {"text": "着", "error_tag": null, "pinyin": ["zhe"]},
+        {"text": "了", "error_tag": "aspect", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "着 diễn tả trạng thái mở được duy trì; 了 sẽ gợi sự thay đổi đã hoàn tất, không hợp với 一直.",
+        "en": "着 expresses the maintained open state; 了 would suggest a completed change, which clashes with 一直."
+      },
+      "q_pinyin": ["mén", "yì", "zhí", "kāi", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một trải nghiệm bạn đã từng làm, dùng 过 và thêm 了 cuối câu nếu muốn nhấn tình trạng hiện tại.",
+      "en": "Write one sentence about an experience you have had, using 过 and adding sentence-final 了 if you want to highlight current relevance."
+    },
+    "placeholder": "我去过……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["过"], "role": "particle"}, {"any_of": ["了"], "role": "particle"}]
+    },
+    "sample": {"text": "我去过北京了。", "pinyin": ["wǒ", "qù", "guò", "běi", "jīng", "le", ""]},
+    "placeholder_pinyin": ["wǒ", "qù", "guò", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338780",
+    "generated_at": "2026-10-07T02:06:20Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-1-t-ng-t-c-n-ng-cao", "zh-hsk79-1-advanced-written-aspect-and-viewpoint"],
+      "content_version": 2,
+      "content_hash": "e2c7aae9ae608759147f0c42b50fa85112095f7df8e920db3745ba375d5baf56",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-1-t-ng-t-c-n-ng-cao",
+          "issue": "Câu ví dụ '天气已经变冷了。' không minh họa trực tiếp sự tương tác giữa 了/过/着 mà chỉ có 了 cuối câu.",
+          "fix": "Thay bằng ví dụ '这本书我已经看过了。' để thể hiện rõ sự phối hợp giữa 过 và 了 cuối câu."
+        },
+        {
+          "r5_id": "zh-hsk6-1-t-ng-t-c-n-ng-cao",
+          "issue": "Lỗi '门开过着。' không phải lỗi người học Việt thường mắc và không thuộc dạng lỗi trợ từ đơn thuần.",
+          "fix": "Loại bỏ lỗi này; giữ lỗi '我没看了这本书。' vì đúng là lỗi trợ từ phổ biến của người Việt."
+        },
+        {
+          "r5_id": "zh-hsk79-1-advanced-written-aspect-and-viewpoint",
+          "issue": "Bài học HSK7-9 vượt phạm vi HSK6 và không thuộc điểm ngữ pháp này.",
+          "fix": "Không đưa nội dung HSK7-9 vào; chỉ giữ các quy tắc và ví dụ phù hợp HSK6."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:07Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

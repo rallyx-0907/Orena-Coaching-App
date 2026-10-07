@@ -1,0 +1,328 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.zai_progressive",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.ongoing_now",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": ["zh.yibian", "zh.zhe_state"],
+  "error_tags": ["aspect"],
+  "source_refs": {"r5": ["zh-hsk1-15-topic"], "gf0025": ["gf0025.hsk1.011", "gf0025.hsk1.042"]},
+  "point_type": "tense_aspect",
+  "sequence": 1,
+  "aliases": ["zh-hsk1-15-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "在 / 正在 ... 呢 (đang)", "en": "在 / 正在 ... 呢: in progress"},
+    "native_title": "“在/正在……呢”",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "在 hoặc 正在 đặt trước động từ và 呢 đặt cuối câu để nói một hành động đang diễn ra ngay lúc này.",
+      "en": "在 or 正在 goes before a verb and 呢 goes at the end of the sentence to say an action is happening right now."
+    },
+    "sub": {"vi": "hành động đang diễn ra", "en": "action in progress"},
+    "native_title_pinyin": ["", "zài", "", "zhèng", "zài", "", "", "ne", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói ai đó đang làm gì ngay tại thời điểm nói.",
+      "en": "When you want to say someone is doing something at the moment of speaking."
+    },
+    {
+      "vi": "Khi cần nhấn mạnh hành động đang tiếp diễn, không phải thói quen hay việc đã xong.",
+      "en": "When you need to stress an action is in progress, not a habit or a finished event."
+    },
+    {
+      "vi": "Khi trả lời câu hỏi như 你在做什么？ (Bạn đang làm gì?).",
+      "en": "When answering a question like 你在做什么？ (What are you doing?)."
+    },
+    {
+      "vi": "Khi muốn thêm sắc thái nhẹ nhàng, thân mật bằng 呢 ở cuối câu.",
+      "en": "When you want a softer, more conversational tone by adding 呢 at the end."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "在/正在",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu đang diễn ra", "en": "progressive marker"},
+        "options": [{"text": "在", "pinyin": ["zài"]}, {"text": "正在", "pinyin": ["zhèng", "zài"]}],
+        "pinyin": ["zài", "", "zhèng", "zài"]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "呢",
+        "role": "particle",
+        "label": {"vi": "trợ từ cuối câu", "en": "sentence-final particle"},
+        "optional": true,
+        "pinyin": ["ne"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": [""]
+        },
+        {
+          "text": "没",
+          "role": "marker",
+          "label": {"vi": "phủ định", "en": "negation"},
+          "pinyin": ["méi"]
+        },
+        {
+          "text": "在",
+          "role": "marker",
+          "label": {"vi": "dấu hiệu đang diễn ra", "en": "progressive marker"},
+          "pinyin": ["zài"]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": [""]
+        },
+        {
+          "text": "呢",
+          "role": "particle",
+          "label": {"vi": "trợ từ cuối câu", "en": "sentence-final particle"},
+          "optional": true,
+          "pinyin": ["ne"]
+        }
+      ],
+      "question": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": [""]
+        },
+        {
+          "text": "在/正在",
+          "role": "marker",
+          "label": {"vi": "dấu hiệu đang diễn ra", "en": "progressive marker"},
+          "options": [{"text": "在", "pinyin": ["zài"]}, {"text": "正在", "pinyin": ["zhèng", "zài"]}],
+          "pinyin": ["zài", "", "zhèng", "zài"]
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": [""]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "timeline", "timeline": {"shape": "ongoing_now"}}
+  },
+  "examples": [
+    {
+      "text": "我在看书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "在 trước 看 cho biết hành động đọc đang diễn ra.",
+        "en": "在 before 看 shows the reading is happening now."
+      },
+      "translation": {"vi": "Tôi đang đọc sách.", "en": "I am reading a book."},
+      "pinyin": ["wǒ", "zài", "kàn", "shū", ""]
+    },
+    {
+      "text": "她正在吃饭呢。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "正在 nhấn mạnh đang ăn, 呢 làm câu thân mật hơn.",
+        "en": "正在 stresses she is eating right now, and 呢 makes it sound conversational."
+      },
+      "translation": {"vi": "Cô ấy đang ăn cơm.", "en": "She is eating right now."},
+      "pinyin": ["tā", "zhèng", "zài", "chī", "fàn", "ne", ""]
+    },
+    {
+      "text": "他们没在学习中文。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 6, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "没 đứng trước 在 để phủ định hành động đang diễn ra.",
+        "en": "没 before 在 negates the ongoing action."
+      },
+      "translation": {"vi": "Họ không đang học tiếng Trung.", "en": "They are not studying Chinese right now."},
+      "pinyin": ["tā", "men", "méi", "zài", "xué", "xí", "zhōng", "wén", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.yibian",
+      "this_example": "我在看书。",
+      "other_example": "我一边看书一边听音乐。",
+      "this_meaning": {
+        "vi": "在/正在...呢 nói một hành động đang diễn ra tại thời điểm nói.",
+        "en": "在/正在...呢 says one action is in progress at the moment of speaking."
+      },
+      "other_meaning": {
+        "vi": "一边...一边... nói hai hành động được làm cùng lúc, không nhấn thời điểm.",
+        "en": "一边...一边... says two actions are done at the same time, without focusing on the moment."
+      },
+      "this_example_pinyin": ["wǒ", "zài", "kàn", "shū", ""],
+      "other_example_pinyin": ["wǒ", "yī", "biān", "kàn", "shū", "yī", "biān", "tīng", "yīn", "yuè", ""]
+    },
+    {
+      "with": "zh.zhe_state",
+      "this_example": "他正在吃饭呢。",
+      "other_example": "他坐着看书。",
+      "this_meaning": {
+        "vi": "在/正在...呢 nhấn hành động đang tiến hành, có thể dùng với hành động ngắn.",
+        "en": "在/正在...呢 highlights an action in progress, and can be used with short actions."
+      },
+      "other_meaning": {
+        "vi": "着 mô tả trạng thái hoặc tư thế duy trì, không nhấn 'đang xảy ra ngay lúc này'.",
+        "en": "着 describes a continuing state or posture, not 'happening right now'."
+      },
+      "this_example_pinyin": ["tā", "zhèng", "zài", "chī", "fàn", "ne", ""],
+      "other_example_pinyin": ["tā", "zuò", "zhe", "kàn", "shū", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "正在 chỉ dùng trước động từ hành động; 学校 là nơi chốn nên chỉ dùng 在 vị trí.",
+        "en": "正在 only goes before action verbs; 学校 is a place, so only location 在 is used."
+      },
+      "error_tag": "aspect",
+      "l1": ["vi"],
+      "wrong": "我正在学校。",
+      "right": "我在学校。",
+      "wrong_pinyin": ["wǒ", "zhèng", "zài", "xué", "xiào", ""],
+      "right_pinyin": ["wǒ", "zài", "xué", "xiào", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___吃饭呢。",
+      "options": [
+        {"text": "正在", "error_tag": null, "pinyin": ["zhèng", "zài"]},
+        {"text": "是", "error_tag": "aspect", "pinyin": ["shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "正在 đứng trước động từ 吃 để nhấn hành động đang diễn ra; 是 không phải dấu hiệu tiếp diễn.",
+        "en": "正在 goes before 吃 to mark an action in progress; 是 is not a progressive marker."
+      },
+      "q_pinyin": ["tā", "", "", "", "chī", "fàn", "ne", ""]
+    },
+    {
+      "q": "我们___学习中文。",
+      "options": [
+        {"text": "在", "error_tag": null, "pinyin": ["zài"]},
+        {"text": "有", "error_tag": "aspect", "pinyin": ["yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "在 đứng trước 学习 để nói hành động đang diễn ra; 有 không tạo thể tiếp diễn.",
+        "en": "在 before 学习 marks an action in progress; 有 does not form the progressive."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "xué", "xí", "zhōng", "wén", ""]
+    },
+    {
+      "q": "他们___在学习中文。",
+      "options": [
+        {"text": "没", "error_tag": null, "pinyin": ["méi"]},
+        {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định của 在 + V là 没在 + V, không dùng 不在 + V.",
+        "en": "The negative of 在 + V is 没在 + V, not 不在 + V."
+      },
+      "q_pinyin": ["tā", "men", "", "", "", "zài", "xué", "xí", "zhōng", "wén", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đang làm ngay lúc này, dùng 在 hoặc 正在 trước động từ.",
+      "en": "Write one sentence about what you are doing right now, using 在 or 正在 before the verb."
+    },
+    "placeholder": "我正在……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["在", "正在"], "role": "marker"}, {"regex": "[\\u4e00-\\u9fff]+", "role": "verb"}]
+    },
+    "sample": {"text": "我正在看书。", "pinyin": ["wǒ", "zhèng", "zài", "kàn", "shū", ""]},
+    "placeholder_pinyin": ["wǒ", "zhèng", "zài", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791282232",
+    "generated_at": "2026-10-06T10:23:52Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-15-topic"],
+      "content_version": 2,
+      "content_hash": "7776ab625c9a1dbb2f4bfa262870498cc73853fd5e81ea651db7f6b21126d47d",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-15-topic",
+          "issue": "R5 dạy 在/正在...呢 nhưng không có công thức tách rời và không có ví dụ phủ định.",
+          "fix": "Thêm formula với các slot S + 在/正在 + V + O + 呢, thêm negative 没在 + V và ví dụ phủ định 他们没在学习中文。"
+        },
+        {
+          "r5_id": "zh-hsk1-15-topic",
+          "issue": "R5 ghi lỗi '我在很好。' nhưng câu này không phải lỗi điển hình của người Việt với điểm này.",
+          "fix": "Thay bằng lỗi thực tế '我正在学校。' với cách sửa '我在学校。' và giải thích 正在 cần động từ hành động."
+        },
+        {
+          "r5_id": "zh-hsk1-15-topic",
+          "issue": "R5 không có phần so sánh với 一边...一边... và 着.",
+          "fix": "Thêm hai mục compare: 在/正在...呢 với 一边...一边... và với 着."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

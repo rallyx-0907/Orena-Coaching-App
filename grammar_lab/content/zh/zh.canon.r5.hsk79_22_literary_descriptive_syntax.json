@@ -1,0 +1,355 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_22_literary_descriptive_syntax",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.register_style",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_21_legal_administrative_register_patterns"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-22-literary-descriptive-syntax"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk79-22-literary-descriptive-syntax"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Literary descriptive syntax",
+      "en": "Chinese grammar: Literary descriptive syntax"
+    },
+    "native_title": "文学描写句法",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Cấu trúc miêu tả văn học dùng khung địa điểm/chủ đề đứng trước, vị ngữ ngắn hoặc không có động từ, và nhịp điệu lặp để làm nổi bật cảnh vật hoặc cảm xúc.",
+      "en": "Literary descriptive syntax uses a fronted locative or topic frame, short or verbless predicates, and rhythmic repetition to foreground a scene or emotion."
+    },
+    "sub": {"vi": "miêu tả văn học", "en": "literary description"},
+    "native_title_pinyin": ["wén", "xué", "miáo", "xiě", "jù", "fǎ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi mở một đoạn miêu tả bằng khung địa điểm như 窗外, 远处, 路尽头 để đặt cảnh vật vào tiêu điểm.",
+      "en": "When opening a descriptive passage with a locative frame such as 窗外, 远处, 路尽头 to put the scene in focus."
+    },
+    {
+      "vi": "Khi muốn dùng vị ngữ ngắn hoặc không có động từ (一片寂静, 一排模糊的灯光) để tạo nhịp nhanh và sắc thái văn chương.",
+      "en": "When using a short or verbless predicate (一片寂静, 一排模糊的灯光) to create a quick rhythm and a literary tone."
+    },
+    {
+      "vi": "Khi cần nhịp điệu song song hoặc lặp từ (越……越……, 断断续续) để nhấn cảm xúc hoặc mức độ.",
+      "en": "When you need parallel rhythm or repetition (越……越……, 断断续续) to intensify emotion or degree."
+    },
+    {
+      "vi": "Trong văn miêu tả, tản văn hoặc tự sự; không dùng trong báo cáo kỹ thuật, văn bản hành chính.",
+      "en": "In descriptive prose, essays, or narrative; not in technical reports or administrative writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "khung địa điểm/chủ đề",
+        "role": "place",
+        "label": {"vi": "khung địa điểm/chủ đề", "en": "locative/topic frame"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "vị ngữ miêu tả",
+        "role": "complement",
+        "label": {"vi": "vị ngữ miêu tả", "en": "descriptive predicate"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "mệnh đề nối",
+        "role": "connector",
+        "label": {"vi": "mệnh đề nối", "en": "linked clause"},
+        "optional": true,
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "窗外，一片寂静，只有雨声断断续续。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "place"},
+        {"start": 3, "end": 7, "role": "complement"},
+        {"start": 8, "end": 16, "role": "connector"}
+      ],
+      "annotation": {
+        "vi": "Khung địa điểm 窗外 đứng trước, vị ngữ 一片寂静 không có động từ, rồi mệnh đề nối 只有…… làm rõ cảnh.",
+        "en": "The locative frame 窗外 comes first, the verbless predicate 一片寂静 follows, then the linked clause 只有…… sharpens the scene."
+      },
+      "translation": {
+        "vi": "Ngoài cửa sổ hoàn toàn yên tĩnh, chỉ có tiếng mưa ngắt quãng.",
+        "en": "Outside the window all is still; only the rain sounds on and off."
+      },
+      "pinyin": [
+        "chuāng",
+        "wài",
+        "",
+        "yī",
+        "piàn",
+        "jì",
+        "jìng",
+        "",
+        "zhǐ",
+        "yǒu",
+        "yǔ",
+        "shēng",
+        "duàn",
+        "duàn",
+        "xù",
+        "xù",
+        ""
+      ]
+    },
+    {
+      "text": "远处，是一排模糊的灯光。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "place"}, {"start": 3, "end": 11, "role": "complement"}],
+      "annotation": {
+        "vi": "远处 mở đầu như khung địa điểm; 是…… đóng vai vị ngữ miêu tả, không có mệnh đề nối.",
+        "en": "远处 opens as the locative frame; 是…… serves as the descriptive predicate, with no linked clause."
+      },
+      "translation": {"vi": "Phía xa là một hàng ánh đèn mờ.", "en": "In the distance is a row of blurred lights."},
+      "pinyin": ["yuǎn", "chù", "", "shì", "yī", "pái", "mó", "hú", "de", "dēng", "guāng", ""]
+    },
+    {
+      "text": "路越走越窄，天也越来越暗。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "place"},
+        {"start": 1, "end": 5, "role": "complement"},
+        {"start": 6, "end": 12, "role": "connector"}
+      ],
+      "annotation": {
+        "vi": "路 làm khung chủ đề; 越走越窄 là vị ngữ miêu tả có nhịp; 天也越来越暗 là mệnh đề nối song song.",
+        "en": "路 is the topic frame; 越走越窄 is the rhythmic descriptive predicate; 天也越来越暗 is the parallel linked clause."
+      },
+      "translation": {
+        "vi": "Đường càng đi càng hẹp, trời cũng càng lúc càng tối.",
+        "en": "The road narrows as you walk, and the sky grows darker and darker."
+      },
+      "pinyin": ["lù", "yuè", "zǒu", "yuè", "zhǎi", "", "tiān", "yě", "yuè", "lái", "yuè", "àn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt thường chuyển nhịp miêu tả văn học vào văn bản kỹ thuật, làm mất tính chính xác và register. Cần giữ câu đầy đủ, chủ ngữ – vị ngữ rõ ràng.",
+        "en": "Vietnamese learners often carry literary descriptive rhythm into technical writing, which breaks precision and register. Keep full clauses with clear subject and predicate."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "技术报告里，窗外一片寂静，只有雨声断断续续，数据表明系统正常。",
+      "right": "技术报告应保持完整、明确的句法主干，例如：系统运行正常，数据无异常。",
+      "wrong_pinyin": [
+        "jì",
+        "shù",
+        "bào",
+        "gào",
+        "lǐ",
+        "",
+        "chuāng",
+        "wài",
+        "yī",
+        "piàn",
+        "jì",
+        "jìng",
+        "",
+        "zhǐ",
+        "yǒu",
+        "yǔ",
+        "shēng",
+        "duàn",
+        "duàn",
+        "xù",
+        "xù",
+        "",
+        "shù",
+        "jù",
+        "biǎo",
+        "míng",
+        "xì",
+        "tǒng",
+        "zhèng",
+        "cháng",
+        ""
+      ],
+      "right_pinyin": [
+        "jì",
+        "shù",
+        "bào",
+        "gào",
+        "yīng",
+        "bǎo",
+        "chí",
+        "wán",
+        "zhěng",
+        "",
+        "míng",
+        "què",
+        "de",
+        "jù",
+        "fǎ",
+        "zhǔ",
+        "gàn",
+        "",
+        "lì",
+        "rú",
+        "",
+        "xì",
+        "tǒng",
+        "yùn",
+        "xíng",
+        "zhèng",
+        "cháng",
+        "",
+        "shù",
+        "jù",
+        "wú",
+        "yì",
+        "cháng",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___，一片寂静，只有雨声断断续续。",
+      "options": [
+        {"text": "窗外", "error_tag": null, "pinyin": ["chuāng", "wài"]},
+        {"text": "窗外很", "error_tag": "word_order", "pinyin": ["chuāng", "wài", "hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khung địa điểm 窗外 đứng trước vị ngữ miêu tả 一片寂静; thêm 很 sẽ phá vỡ cấu trúc không động từ.",
+        "en": "The locative frame 窗外 precedes the verbless predicate 一片寂静; adding 很 breaks the verbless structure."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "",
+        "yī",
+        "piàn",
+        "jì",
+        "jìng",
+        "",
+        "zhǐ",
+        "yǒu",
+        "yǔ",
+        "shēng",
+        "duàn",
+        "duàn",
+        "xù",
+        "xù",
+        ""
+      ]
+    },
+    {
+      "q": "远处，___一排模糊的灯光。",
+      "options": [
+        {"text": "是", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "有是", "error_tag": "redundancy", "pinyin": ["yǒu", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau khung địa điểm 远处, dùng 是 để dẫn vị ngữ miêu tả; 有是 là lỗi thừa từ.",
+        "en": "After the locative frame 远处, use 是 to introduce the descriptive predicate; 有是 is redundant."
+      },
+      "q_pinyin": ["yuǎn", "chù", "", "", "", "", "yī", "pái", "mó", "hú", "de", "dēng", "guāng", ""]
+    },
+    {
+      "q": "路越走越窄，天也___暗。",
+      "options": [
+        {"text": "越来越", "error_tag": null, "pinyin": ["yuè", "lái", "yuè"]},
+        {"text": "越来", "error_tag": "other", "pinyin": ["yuè", "lái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc song song 越来越…… nhấn mức độ tăng dần; 越来 thiếu 越, không tạo được nhịp.",
+        "en": "The parallel pattern 越来越…… marks increasing degree; 越来 lacks 越 and breaks the rhythm."
+      },
+      "q_pinyin": ["lù", "yuè", "zǒu", "yuè", "zhǎi", "", "tiān", "yě", "", "", "", "àn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu miêu tả khung cảnh bằng cấu trúc văn học: khung địa điểm/chủ đề + vị ngữ miêu tả ngắn (và có thể thêm mệnh đề nối).",
+      "en": "Write one scene description using the literary pattern: locative/topic frame + short descriptive predicate (and optionally a linked clause)."
+    },
+    "placeholder": "窗外，……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["窗外", "远处", "路", "天"], "role": "place"},
+        {"regex": "一片|一排|越.*越|是.*的|很.*", "role": "complement"}
+      ]
+    },
+    "sample": {
+      "text": "窗外，一片寂静，只有雨声断断续续。",
+      "pinyin": [
+        "chuāng",
+        "wài",
+        "",
+        "yī",
+        "piàn",
+        "jì",
+        "jìng",
+        "",
+        "zhǐ",
+        "yǒu",
+        "yǔ",
+        "shēng",
+        "duàn",
+        "duàn",
+        "xù",
+        "xù",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["chuāng", "wài", "", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791339007",
+    "generated_at": "2026-10-07T02:10:07Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-22-literary-descriptive-syntax"],
+      "content_version": 2,
+      "content_hash": "c552e8f96a6e87b77c756e7839732d38f8ab0c3c66923ec77802187059e53cf1",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-22-literary-descriptive-syntax",
+          "issue": "R5 examples lacked pinyin tone marks and had inconsistent spacing; some pinyin did not match the characters (e.g., 一片 written as yí piàn without tone mark on 一).",
+          "fix": "Provided clean zh-Hans examples with correct pinyin tone marks and spacing in the structured output."
+        },
+        {
+          "r5_id": "zh-hsk79-22-literary-descriptive-syntax",
+          "issue": "R5 mistakes section included a non-sentence '倒装后角色不清' as an incorrect example, which is a meta-comment, not a learner error.",
+          "fix": "Replaced with a realistic Vietnamese-learner mistake: mixing literary fragments into technical writing, and provided a corrected full-clause version."
+        },
+        {
+          "r5_id": "zh-hsk79-22-literary-descriptive-syntax",
+          "issue": "R5 guided_practice transformation prompt 'Viết lại theo principle: Marked order must remain interpretable and genre-motivated' was too abstract and not a concrete learner task.",
+          "fix": "Replaced with a concrete personal production prompt asking learners to write a scene description using the pattern."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:49Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

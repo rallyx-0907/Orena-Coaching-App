@@ -1,0 +1,244 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.ma_question",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": ["zh.ne_question", "zh.question_words"],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk1-11-v"], "gf0025": ["gf0025.hsk1.022", "gf0025.hsk1.045"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk1-11-v"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu hỏi với 吗", "en": "Questions with 吗"},
+    "native_title": "“吗”疑问句",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Thêm 吗 vào cuối câu trần thuật để tạo câu hỏi có/không, giữ nguyên trật tự từ.",
+      "en": "Add 吗 at the end of a statement to make a yes/no question, keeping the word order unchanged."
+    },
+    "sub": {"vi": "câu hỏi có/không", "en": "yes/no questions"},
+    "native_title_pinyin": ["", "ma", "", "yí", "wèn", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn hỏi một câu trả lời đúng/sai hoặc có/không, không cần từ để hỏi.",
+      "en": "When you want a yes/no answer and do not need a question word."
+    },
+    {
+      "vi": "Khi câu trần thuật đã đủ ý và bạn chỉ cần thêm 吗 ở cuối.",
+      "en": "When the statement is already complete and you only add 吗 at the end."
+    },
+    {
+      "vi": "Khi hỏi về một sự việc, trạng thái hoặc hành động ở hiện tại hoặc quá khứ gần.",
+      "en": "When asking about a present or recent-past situation, state, or action."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "吗",
+        "role": "particle",
+        "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+        "pinyin": ["ma"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "你是学生吗？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Câu trần thuật 你是学生 thêm 吗 ở cuối thành câu hỏi.",
+        "en": "The statement 你是学生 takes 吗 at the end to become a question."
+      },
+      "translation": {"vi": "Bạn là học sinh à?", "en": "Are you a student?"},
+      "pinyin": ["nǐ", "shì", "xué", "shēng", "ma", ""]
+    },
+    {
+      "text": "你喜欢茶吗？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {"vi": "Giữ nguyên trật tự 你喜欢茶 và thêm 吗.", "en": "Keep the order 你喜欢茶 and add 吗."},
+      "translation": {"vi": "Bạn thích trà không?", "en": "Do you like tea?"},
+      "pinyin": ["nǐ", "xǐ", "huān", "chá", "ma", ""]
+    },
+    {
+      "text": "他在家吗？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 4, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "在 là động từ, 家 là tân ngữ, 吗 đứng cuối.",
+        "en": "在 is the verb, 家 is the object, and 吗 comes last."
+      },
+      "translation": {"vi": "Anh ấy ở nhà không?", "en": "Is he at home?"},
+      "pinyin": ["tā", "zài", "jiā", "ma", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.ne_question",
+      "this_example": "你是老师吗？",
+      "other_example": "我是老师，你呢？",
+      "this_meaning": {
+        "vi": "吗 đặt cuối một câu đầy đủ để hỏi có/không.",
+        "en": "吗 goes at the end of a complete statement to make a yes/no question."
+      },
+      "other_meaning": {
+        "vi": "呢 dùng để hỏi lại hoặc tiếp nối một chủ đề đã rõ, như ‘còn bạn thì sao?’. ",
+        "en": "呢 continues an established topic or asks a return question, like ‘and you?’."
+      },
+      "this_example_pinyin": ["nǐ", "shì", "lǎo", "shī", "ma", ""],
+      "other_example_pinyin": ["wǒ", "shì", "lǎo", "shī", "", "nǐ", "ne", ""]
+    },
+    {
+      "with": "zh.question_words",
+      "this_example": "你喜欢茶吗？",
+      "other_example": "你喜欢什么？",
+      "this_meaning": {
+        "vi": "Câu hỏi có/không chỉ cần 吗, không dùng từ để hỏi.",
+        "en": "A yes/no question needs only 吗, not a question word."
+      },
+      "other_meaning": {
+        "vi": "Câu hỏi có từ để hỏi giữ nguyên vị trí của từ đó trong câu.",
+        "en": "A question with a question word keeps that word in its original sentence position."
+      },
+      "this_example_pinyin": ["nǐ", "xǐ", "huān", "chá", "ma", ""],
+      "other_example_pinyin": ["nǐ", "xǐ", "huān", "shén", "me", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học đặt 吗 ở đầu câu theo thói quen dịch từ tiếng Việt; 吗 phải đứng cuối câu.",
+        "en": "Learners put 吗 at the beginning by translating from Vietnamese; 吗 must go at the end."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "吗你是学生？",
+      "right": "你是学生吗？",
+      "wrong_pinyin": ["ma", "nǐ", "shì", "xué", "shēng", ""],
+      "right_pinyin": ["nǐ", "shì", "xué", "shēng", "ma", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你是老师___？",
+      "options": [
+        {"text": "吗", "error_tag": null, "pinyin": ["ma"]},
+        {"text": "呢", "error_tag": "particle", "pinyin": ["ne"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Câu hỏi có/không dùng 吗 ở cuối câu.", "en": "A yes/no question uses 吗 at the end."},
+      "q_pinyin": ["nǐ", "shì", "lǎo", "shī", "", "", "", ""]
+    },
+    {
+      "q": "他喜欢茶___？",
+      "options": [
+        {"text": "吗", "error_tag": null, "pinyin": ["ma"]},
+        {"text": "吧", "error_tag": "particle", "pinyin": ["ba"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "吧 dùng cho câu đề nghị hoặc phỏng đoán, không dùng cho câu hỏi có/không.",
+        "en": "吧 is for suggestions or guesses, not for yes/no questions."
+      },
+      "q_pinyin": ["tā", "xǐ", "huān", "chá", "", "", "", ""]
+    },
+    {
+      "q": "你___学生吗？",
+      "options": [
+        {"text": "是", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "有", "error_tag": "word_choice", "pinyin": ["yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi có/không với 吗 giữ nguyên động từ của câu trần thuật; 你是学生吗？",
+        "en": "A 吗 yes/no question keeps the statement verb; 你是学生吗？"
+      },
+      "q_pinyin": ["nǐ", "", "", "", "xué", "shēng", "ma", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi có/không về một người bạn hoặc thành viên gia đình, dùng 吗 ở cuối.",
+      "en": "Write a yes/no question about a friend or family member, using 吗 at the end."
+    },
+    "placeholder": "你……吗？",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["吗"], "role": "particle"}]},
+    "sample": {"text": "你忙吗？", "pinyin": ["nǐ", "máng", "ma", ""]},
+    "placeholder_pinyin": ["nǐ", "", "", "ma", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791299429",
+    "generated_at": "2026-10-06T15:10:29Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-11-v"],
+      "content_version": 2,
+      "content_hash": "e7bf00f80d1995e6f14a5b85017deea9398d2cc69f9d6c7a63dc258b98a14f7c",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-11-v",
+          "issue": "R5 gộp 吗 và 呢 trong một bài, nhưng điểm này chỉ dạy 吗.",
+          "fix": "Chỉ giữ phần 吗; bỏ 呢 và các ví dụ 呢 khỏi bài này."
+        },
+        {
+          "r5_id": "zh-hsk1-11-v",
+          "issue": "R5 dùng thuật ngữ 'yes/no question' và 'affirmative-negative question' bằng tiếng Anh trong phần giải thích tiếng Việt.",
+          "fix": "Dùng thuật ngữ tiếng Việt: 'câu hỏi có/không' và 'câu hỏi khẳng định-phủ định'."
+        },
+        {
+          "r5_id": "zh-hsk1-11-v",
+          "issue": "R5 đưa ví dụ 我很好，你呢？ không thuộc điểm 吗.",
+          "fix": "Bỏ ví dụ 呢; thay bằng ví dụ 吗 phù hợp trình độ."
+        },
+        {
+          "r5_id": "zh-hsk1-11-v",
+          "issue": "R5 chưa có công thức trừu tượng, so sánh, và bài kiểm tra nhanh theo schema.",
+          "fix": "Thêm formula S + V + O + 吗, mục compare với zh.ne_question và zh.question_words, và 3 câu quick_practice."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

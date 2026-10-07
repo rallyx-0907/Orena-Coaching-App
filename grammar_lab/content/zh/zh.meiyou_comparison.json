@@ -1,0 +1,246 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.meiyou_comparison",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.comparison",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.bi_comparison"],
+  "contrasts": ["zh.bi_comparison"],
+  "error_tags": ["word_order"],
+  "source_refs": {
+    "r5": ["zh-hsk2-5-so-s-nh-ph-nh"],
+    "gf0025": ["gf0025.hsk1.038", "gf0025.hsk2.058", "gf0025.hsk2.059", "gf0025.hsk3.058"]
+  },
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": ["zh-hsk2-5-so-s-nh-ph-nh"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "So sánh phủ định với 没有", "en": "Negative comparison with 没有"},
+    "native_title": "“没有”比较句",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Mẫu câu 没有 dùng để so sánh phủ định: A không đạt mức của B.",
+      "en": "The 没有 pattern makes a negative comparison: A does not reach B's level."
+    },
+    "sub": {"vi": "so sánh phủ định", "en": "negative comparison"},
+    "native_title_pinyin": ["", "méi", "yǒu", "", "bǐ", "jiào", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói A không bằng B về một tính chất nào đó.",
+      "en": "When you want to say A is not as good/great as B in some quality."
+    },
+    {
+      "vi": "Khi so sánh hai người, hai vật hoặc hai thời điểm.",
+      "en": "When comparing two people, two things, or two points in time."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh mức độ bằng 那么/这么 trước tính từ.",
+      "en": "When you want to emphasize the degree with 那么/这么 before the adjective."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "subject",
+        "label": {"vi": "chủ thể được so sánh", "en": "subject being compared"},
+        "pinyin": [""]
+      },
+      {
+        "text": "没有",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu so sánh phủ định", "en": "negative comparison marker"},
+        "pinyin": ["méi", "yǒu"]
+      },
+      {
+        "text": "B",
+        "role": "object",
+        "label": {"vi": "đối tượng so sánh", "en": "object of comparison"},
+        "pinyin": [""]
+      },
+      {
+        "text": "那么/这么",
+        "role": "other",
+        "label": {"vi": "từ nhấn mạnh mức độ", "en": "degree emphasizer"},
+        "optional": true,
+        "options": [{"text": "那么", "pinyin": ["nà", "me"]}, {"text": "这么", "pinyin": ["zhè", "me"]}],
+        "pinyin": ["nà", "me", "", "zhè", "me"]
+      },
+      {
+        "text": "Adj",
+        "role": "complement",
+        "label": {"vi": "tính từ chỉ mức độ", "en": "adjective of degree"},
+        "pinyin": ["", "", ""]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我没有他高。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "complement"}
+      ],
+      "annotation": {"vi": "A không cao bằng B.", "en": "A is not as tall as B."},
+      "translation": {"vi": "Tôi không cao bằng anh ấy.", "en": "I am not as tall as he is."},
+      "pinyin": ["wǒ", "méi", "yǒu", "tā", "gāo", ""]
+    },
+    {
+      "text": "今天没有昨天冷。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 6, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "So sánh hai thời điểm: hôm nay không lạnh bằng hôm qua.",
+        "en": "Comparing two times: today is not as cold as yesterday."
+      },
+      "translation": {"vi": "Hôm nay không lạnh bằng hôm qua.", "en": "Today is not as cold as yesterday."},
+      "pinyin": ["jīn", "tiān", "méi", "yǒu", "zuó", "tiān", "lěng", ""]
+    },
+    {
+      "text": "这本书没有那本书那么贵。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 5, "role": "marker"},
+        {"start": 5, "end": 8, "role": "object"},
+        {"start": 8, "end": 10, "role": "other"},
+        {"start": 10, "end": 11, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Có 那么 để nhấn mạnh mức độ: quyển này không đắt bằng quyển kia.",
+        "en": "With 那么 to emphasize degree: this book is not as expensive as that one."
+      },
+      "translation": {
+        "vi": "Quyển sách này không đắt bằng quyển kia.",
+        "en": "This book is not as expensive as that one."
+      },
+      "pinyin": ["zhè", "běn", "shū", "méi", "yǒu", "nà", "běn", "shū", "nà", "me", "guì", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.bi_comparison",
+      "this_example": "我没有他高。",
+      "other_example": "他比我高。",
+      "this_meaning": {
+        "vi": "A 没有 B + Adj: A không đạt mức của B (A thấp hơn B).",
+        "en": "A 没有 B + Adj: A does not reach B's level (A is lower than B)."
+      },
+      "other_meaning": {
+        "vi": "A 比 B + Adj: A hơn B (A cao hơn B).",
+        "en": "A 比 B + Adj: A is more than B (A is taller than B)."
+      },
+      "this_example_pinyin": ["wǒ", "méi", "yǒu", "tā", "gāo", ""],
+      "other_example_pinyin": ["tā", "bǐ", "wǒ", "gāo", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "不比 chỉ nói 'không hơn', có thể bằng nhau; muốn nói 'không bằng' phải dùng 没有.",
+        "en": "不比 only says 'not more than', which allows equality; to say 'not as ... as', use 没有."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "我不比他高。",
+      "right": "我没有他高。",
+      "wrong_pinyin": ["wǒ", "bù", "bǐ", "tā", "gāo", ""],
+      "right_pinyin": ["wǒ", "méi", "yǒu", "tā", "gāo", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我的中文___她的好。",
+      "options": [
+        {"text": "没有", "error_tag": null, "pinyin": ["méi", "yǒu"]},
+        {"text": "不比", "error_tag": "word_order", "pinyin": ["bù", "bǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Muốn nói 'không tốt bằng' phải dùng 没有, không dùng 不比.",
+        "en": "To say 'not as good as', use 没有, not 不比."
+      },
+      "q_pinyin": ["wǒ", "de", "zhōng", "wén", "", "", "", "tā", "de", "hǎo", ""]
+    },
+    {
+      "q": "今天___昨天冷。",
+      "options": [
+        {"text": "没有", "error_tag": null, "pinyin": ["méi", "yǒu"]},
+        {"text": "比", "error_tag": "word_order", "pinyin": ["bǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này so sánh phủ định nên dùng 没有, không dùng 比.",
+        "en": "This is a negative comparison, so use 没有, not 比."
+      },
+      "q_pinyin": ["jīn", "tiān", "", "", "", "zuó", "tiān", "lěng", ""]
+    },
+    {
+      "q": "这本书没有那本书___贵。",
+      "options": [
+        {"text": "那么", "error_tag": null, "pinyin": ["nà", "me"]},
+        {"text": "很", "error_tag": "word_order", "pinyin": ["hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong mẫu 没有 so sánh, dùng 那么/这么 trước tính từ, không dùng 很.",
+        "en": "In the 没有 comparison pattern, use 那么/这么 before the adjective, not 很."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "méi", "yǒu", "nà", "běn", "shū", "", "", "", "guì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh phủ định về bản thân hoặc đồ vật của bạn, dùng 没有.",
+      "en": "Write a negative comparison about yourself or your things, using 没有."
+    },
+    "placeholder": "我……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["没有"], "role": "marker"}]},
+    "sample": {"text": "我没有我哥哥高。", "pinyin": ["wǒ", "méi", "yǒu", "wǒ", "gē", "gē", "gāo", ""]},
+    "placeholder_pinyin": ["wǒ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338009",
+    "generated_at": "2026-10-07T01:53:29Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-5-so-s-nh-ph-nh"],
+      "content_version": 2,
+      "content_hash": "26fbb6561802cf5c13da18e563c2cfb4d00d2dfe0ddaa1b38004217ee6abf704",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-5-so-s-nh-ph-nh",
+          "issue": "R5 dùng '我不比他高' làm ví dụ sai nhưng không nêu rõ lỗi word order; cần chỉ ra 不比 khác 没有.",
+          "fix": "Đã thêm common_mistakes với wrong '我不比他高' và right '我没有他高', giải thích rõ 不比 chỉ 'không hơn'."
+        },
+        {
+          "r5_id": "zh-hsk2-5-so-s-nh-ph-nh",
+          "issue": "R5 chưa có quick practice và personal production theo schema mới.",
+          "fix": "Đã thêm 3 câu quick practice và personal production với pattern_rule."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

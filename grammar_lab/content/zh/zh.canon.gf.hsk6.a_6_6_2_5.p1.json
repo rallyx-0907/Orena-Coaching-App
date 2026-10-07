@@ -1,0 +1,366 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_6_2_5.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_5_3.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.049"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 虽⋯⋯，但/可/却/也⋯⋯", "en": "Complex sentences: 虽⋯⋯，但/可/却/也⋯⋯"},
+    "native_title": "虽⋯⋯，但/可/却/也⋯⋯",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Cấu trúc 虽⋯⋯，但/可/却/也⋯⋯ dùng để thừa nhận một sự thật rồi nêu ý trái ngược ở vế sau.",
+      "en": "The pattern 虽⋯⋯，但/可/却/也⋯⋯ concedes a fact in the first clause and states a contrasting point in the second."
+    },
+    "sub": {"vi": "nhượng bộ và tương phản", "en": "concession and contrast"},
+    "native_title_pinyin": ["suī", "", "", "", "dàn", "", "kě", "", "què", "", "yě", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn thừa nhận một điều là đúng hoặc có thật, nhưng kết quả hoặc thái độ của bạn lại khác.",
+      "en": "When you want to admit that something is true or real, but your result or attitude is different."
+    },
+    {
+      "vi": "Khi vế sau dùng 但, 可, 却 hoặc 也 để đánh dấu rõ sự trái ngược với vế 虽.",
+      "en": "When the second clause uses 但, 可, 却 or 也 to mark the contrast with the 虽 clause."
+    },
+    {
+      "vi": "Khi cả hai vế nói về cùng một chủ đề hoặc cùng một người, nên chủ ngữ vế sau thường được lược bỏ.",
+      "en": "When both clauses are about the same topic or person, so the second subject is usually left out."
+    },
+    {
+      "vi": "Khi bạn muốn câu nói mềm hơn, không phủ nhận hoàn toàn ý của người khác.",
+      "en": "When you want the sentence to sound softer and not completely deny the other person's point."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "虽/虽然",
+        "role": "connector",
+        "label": {"vi": "mặc dù", "en": "although"},
+        "options": [{"text": "虽", "pinyin": ["suī"]}, {"text": "虽然", "pinyin": ["suī", "rán"]}],
+        "pinyin": ["suī", "", "suī", "rán"]
+      },
+      {
+        "text": "分句A",
+        "role": "other",
+        "label": {"vi": "mệnh đề A", "en": "clause A"},
+        "pinyin": ["fēn", "jù", ""]
+      },
+      {
+        "text": "但/可是/却/也",
+        "role": "connector",
+        "label": {"vi": "nhưng/vẫn", "en": "but/still"},
+        "options": [
+          {"text": "但", "pinyin": ["dàn"]},
+          {"text": "可是", "pinyin": ["kě", "shì"]},
+          {"text": "却", "pinyin": ["què"]},
+          {"text": "也", "pinyin": ["yě"]}
+        ],
+        "pinyin": ["dàn", "", "kě", "shì", "", "què", "", "yě"]
+      },
+      {
+        "text": "分句B",
+        "role": "other",
+        "label": {"vi": "mệnh đề B", "en": "clause B"},
+        "pinyin": ["fēn", "jù", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "虽然这道菜很辣，可是味道很好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "虽然…可是… tạo quan hệ nhượng bộ–đối lập.",
+        "en": "虽然…可是… marks concession followed by contrast."
+      },
+      "translation": {
+        "vi": "Mặc dù món này rất cay nhưng hương vị rất ngon.",
+        "en": "Although this dish is spicy, it tastes very good."
+      },
+      "pinyin": [
+        "suī",
+        "rán",
+        "zhè",
+        "dào",
+        "cài",
+        "hěn",
+        "là",
+        "",
+        "kě",
+        "shì",
+        "wèi",
+        "dào",
+        "hěn",
+        "hǎo",
+        ""
+      ]
+    },
+    {
+      "text": "虽然他很累，却还是把工作做完了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "却 làm nổi bật kết quả trái với điều được dự đoán từ vế trước.",
+        "en": "却 highlights a result contrary to the expectation from the first clause."
+      },
+      "translation": {
+        "vi": "Mặc dù anh ấy rất mệt, anh ấy vẫn làm xong công việc.",
+        "en": "Although he was tired, he still finished the work."
+      },
+      "pinyin": [
+        "suī",
+        "rán",
+        "tā",
+        "hěn",
+        "lèi",
+        "",
+        "què",
+        "hái",
+        "shì",
+        "bǎ",
+        "gōng",
+        "zuò",
+        "zuò",
+        "wán",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "虽然这件衣服贵，但质量确实好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 14, "role": "other"}
+      ],
+      "annotation": {"vi": "但 nối vế đối lập sau 虽然.", "en": "但 introduces the contrasting clause after 虽然."},
+      "translation": {
+        "vi": "Mặc dù bộ quần áo này đắt nhưng chất lượng thực sự tốt.",
+        "en": "Although this clothing is expensive, its quality is genuinely good."
+      },
+      "pinyin": [
+        "suī",
+        "rán",
+        "zhè",
+        "jiàn",
+        "yī",
+        "fú",
+        "guì",
+        "",
+        "dàn",
+        "zhì",
+        "liàng",
+        "què",
+        "shí",
+        "hǎo",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau 虽然 cần một vế nhượng bộ/đối lập; dùng 所以 biến quan hệ thành nguyên nhân–kết quả.",
+        "en": "After 虽然, use a concessive/contrastive second clause; 所以 incorrectly changes it into cause-result."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "虽然天气很冷，所以我还是去跑步。",
+      "right": "虽然天气很冷，但是我还是去跑步。",
+      "wrong_pinyin": [
+        "suī",
+        "rán",
+        "tiān",
+        "qì",
+        "hěn",
+        "lěng",
+        "",
+        "suǒ",
+        "yǐ",
+        "wǒ",
+        "hái",
+        "shì",
+        "qù",
+        "pǎo",
+        "bù",
+        ""
+      ],
+      "right_pinyin": [
+        "suī",
+        "rán",
+        "tiān",
+        "qì",
+        "hěn",
+        "lěng",
+        "",
+        "dàn",
+        "shì",
+        "wǒ",
+        "hái",
+        "shì",
+        "qù",
+        "pǎo",
+        "bù",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___这个字很难写，但是我会记住它。",
+      "options": [
+        {"text": "虽然", "error_tag": null, "pinyin": ["suī", "rán"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế sau dùng 但是 để tương phản, nên vế đầu phải là 虽然, không phải 因为.",
+        "en": "The second clause uses 但是 to contrast, so the first clause must be 虽然, not 因为."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "zhè",
+        "ge",
+        "zì",
+        "hěn",
+        "nán",
+        "xiě",
+        "",
+        "dàn",
+        "shì",
+        "wǒ",
+        "huì",
+        "jì",
+        "zhù",
+        "tā",
+        ""
+      ]
+    },
+    {
+      "q": "这件衣服虽然很贵，___质量很好。",
+      "options": [
+        {"text": "但", "error_tag": null, "pinyin": ["dàn"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "虽⋯⋯，但⋯⋯ là cặp cố định; 所以 chỉ kết quả, không tương phản.",
+        "en": "虽⋯⋯，但⋯⋯ is a fixed pair; 所以 marks a result, not a contrast."
+      },
+      "q_pinyin": [
+        "zhè",
+        "jiàn",
+        "yī",
+        "fú",
+        "suī",
+        "rán",
+        "hěn",
+        "guì",
+        "",
+        "",
+        "",
+        "",
+        "zhì",
+        "liàng",
+        "hěn",
+        "hǎo",
+        ""
+      ]
+    },
+    {
+      "q": "他___很忙，也每天坚持锻炼。",
+      "options": [
+        {"text": "虽", "error_tag": null, "pinyin": ["suī"]},
+        {"text": "虽然", "error_tag": "conjunction", "pinyin": ["suī", "rán"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi vế sau dùng 也, vế trước thường dùng 虽 một mình, không dùng 虽然.",
+        "en": "When the second clause uses 也, the first clause usually uses 虽 alone, not 虽然."
+      },
+      "q_pinyin": ["tā", "", "", "", "hěn", "máng", "", "yě", "měi", "tiān", "jiān", "chí", "duàn", "liàn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân bạn, thừa nhận một điều bằng 虽然 rồi nêu ý trái ngược bằng 但, 可, 却 hoặc 也.",
+      "en": "Write one sentence about yourself that concedes something with 虽然 and then gives a contrasting point with 但, 可, 却 or 也."
+    },
+    "placeholder": "虽然我……，但……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["虽", "虽然"], "role": "connector"},
+        {"any_of": ["但", "可是", "却"], "role": "connector"}
+      ]
+    },
+    "sample": {
+      "text": "虽然我每天很忙，但我还是坚持学中文。",
+      "pinyin": [
+        "suī",
+        "rán",
+        "wǒ",
+        "měi",
+        "tiān",
+        "hěn",
+        "máng",
+        "",
+        "dàn",
+        "wǒ",
+        "hái",
+        "shì",
+        "jiān",
+        "chí",
+        "xué",
+        "zhōng",
+        "wén",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["suī", "rán", "wǒ", "", "", "", "dàn", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351858",
+    "generated_at": "2026-10-07T05:44:18Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:07Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

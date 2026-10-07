@@ -1,0 +1,43 @@
+name: Grammar 595 Review Export
+
+on:
+  push:
+    branches:
+      - codex/grammar-595-review-local
+    paths:
+      - "grammar_lab/**"
+      - ".github/workflows/grammar-595-review-export.yml"
+  workflow_dispatch:
+
+jobs:
+  export-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - name: Corpus status
+        run: |
+          python -m grammar_lab.pipeline.cli coverage --lang en
+          python -m grammar_lab.pipeline.cli coverage --lang zh
+          python -m grammar_lab.pipeline.cli corpus-plan --lang all
+      - name: Export all review levels
+        shell: bash
+        run: |
+          set -euo pipefail
+          for level in A1 A2 B1 B2 C1 C2; do
+            python -m grammar_lab.pipeline.cli review-export --lang en --level "$level"
+          done
+          for level in HSK1 HSK2 HSK3 HSK4 HSK5 HSK6 HSK7 HSK8 HSK9; do
+            python -m grammar_lab.pipeline.cli review-export --lang zh --level "$level"
+          done
+      - name: Inventory review exports
+        run: find grammar_lab/review -type f -name '*.md' -print -exec wc -c {} \;
+      - uses: actions/upload-artifact@v4
+        with:
+          name: grammar-595-review-exports-complete
+          path: grammar_lab/review/**/*.md
+          if-no-files-found: error
+          retention-days: 7

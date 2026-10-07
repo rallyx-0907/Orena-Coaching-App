@@ -1,0 +1,218 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_1_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "7", "rank": 7},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_7.p3"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.002", "gf0025.hsk7_9.003"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Đại từ: 疑问代词：何", "en": "Pronouns: 疑问代词：何"},
+    "native_title": "疑问代词：何",
+    "level": {"framework": "hsk3", "value": "7", "rank": 7},
+    "summary": {
+      "vi": "Đại từ nghi vấn 何 dùng để hỏi về sự vật, nơi chốn, thời gian hoặc lí do trong văn viết trang trọng.",
+      "en": "The interrogative pronoun 何 asks about things, places, times, or reasons in formal written Chinese."
+    },
+    "sub": {"vi": "nghi vấn văn viết", "en": "formal written questions"},
+    "native_title_pinyin": ["yí", "wèn", "dài", "cí", "", "hé"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng trong văn viết trang trọng, thông báo hoặc thành ngữ, không dùng trong khẩu ngữ thường ngày.",
+      "en": "Use it in formal writing, announcements, or set phrases, not in everyday spoken Chinese."
+    },
+    {
+      "vi": "Dùng khi hỏi về sự vật hoặc lí do, tương đương 什么 và 为什么 trong khẩu ngữ.",
+      "en": "Use it to ask about things or reasons, where spoken Chinese would use 什么 or 为什么."
+    },
+    {
+      "vi": "Dùng trong các cụm cố định như 何时, 何处, 为何 để hỏi thời gian, nơi chốn, nguyên nhân.",
+      "en": "Use it in fixed combinations such as 何时, 何处, 为何 to ask about time, place, or cause."
+    },
+    {
+      "vi": "Dùng khi câu hỏi cần giọng điệu trang trọng, súc tích, thường gặp trong văn bản hành chính hoặc văn học.",
+      "en": "Use it when a question needs a formal, concise tone, common in administrative or literary texts."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "何",
+        "role": "object",
+        "label": {"vi": "đại từ nghi vấn 何", "en": "interrogative 何"},
+        "pinyin": ["hé"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      }
+    ],
+    "variants": {
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "何",
+          "role": "object",
+          "label": {"vi": "đại từ nghi vấn 何", "en": "interrogative 何"},
+          "pinyin": ["hé"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "你为何不来？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "何 đứng trước động từ để hỏi lí do, tương đương 为什么.",
+        "en": "何 before the verb asks for a reason, equivalent to 为什么."
+      },
+      "translation": {"vi": "Bạn vì sao không đến?", "en": "Why are you not coming?"},
+      "pinyin": ["nǐ", "wèi", "hé", "bù", "lái", ""]
+    },
+    {
+      "text": "他何时出发？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "object"},
+        {"start": 3, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "何时 là cụm cố định hỏi thời gian, tương đương 什么时候.",
+        "en": "何时 is a fixed phrase asking about time, equivalent to 什么时候."
+      },
+      "translation": {"vi": "Anh ấy khởi hành khi nào?", "en": "When does he set off?"},
+      "pinyin": ["tā", "hé", "shí", "chū", "fā", ""]
+    },
+    {
+      "text": "我们何处见面？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 4, "end": 6, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "何处 là cụm cố định hỏi nơi chốn, tương đương 哪里.",
+        "en": "何处 is a fixed phrase asking about place, equivalent to 哪里."
+      },
+      "translation": {"vi": "Chúng ta gặp nhau ở đâu?", "en": "Where shall we meet?"},
+      "pinyin": ["wǒ", "men", "hé", "chù", "jiàn", "miàn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu hỏi đã có 何, không thêm 吗 ở cuối; tiếng Việt quen dùng trợ từ nghi vấn nên người học dễ thêm 吗.",
+        "en": "The question already contains 何, so 吗 is not added at the end; Vietnamese speakers often add 吗 by habit."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "你为何不来吗？",
+      "right": "你为何不来？",
+      "wrong_pinyin": ["nǐ", "wèi", "hé", "bù", "lái", "ma", ""],
+      "right_pinyin": ["nǐ", "wèi", "hé", "bù", "lái", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你___不来？",
+      "options": [
+        {"text": "何", "error_tag": null, "pinyin": ["hé"]},
+        {"text": "什么", "error_tag": "word_choice", "pinyin": ["shén", "me"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "何 là đại từ nghi vấn trang trọng, phù hợp với văn viết; 什么 không dùng trong cấu trúc này.",
+        "en": "何 is the formal interrogative pronoun for this written pattern; 什么 does not fit here."
+      },
+      "q_pinyin": ["nǐ", "", "", "", "bù", "lái", ""]
+    },
+    {
+      "q": "他___出发？",
+      "options": [
+        {"text": "何时", "error_tag": null, "pinyin": ["hé", "shí"]},
+        {"text": "什么", "error_tag": "word_choice", "pinyin": ["shén", "me"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "何时 là cụm cố định hỏi thời gian; 什么 không thể thay thế trong cấu trúc này.",
+        "en": "何时 is the fixed phrase for asking time; 什么 cannot replace it in this structure."
+      },
+      "q_pinyin": ["tā", "", "", "", "chū", "fā", ""]
+    },
+    {
+      "q": "我们___见面？",
+      "options": [
+        {"text": "何处", "error_tag": null, "pinyin": ["hé", "chù"]},
+        {"text": "哪里", "error_tag": "word_choice", "pinyin": ["nǎ", "lǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "何处 là cụm cố định hỏi nơi chốn trong văn viết; 哪里 thuộc khẩu ngữ.",
+        "en": "何处 is the fixed written phrase for asking place; 哪里 belongs to spoken Chinese."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "jiàn", "miàn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi trang trọng dùng 何 để hỏi lí do, thời gian hoặc nơi chốn.",
+      "en": "Write one formal question using 何 to ask about a reason, time, or place."
+    },
+    "placeholder": "你为何……",
+    "target_form": "question",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["何"], "role": "object"}]},
+    "sample": {"text": "你为何不来？", "pinyin": ["nǐ", "wèi", "hé", "bù", "lái", ""]},
+    "placeholder_pinyin": ["nǐ", "wèi", "hé", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791344904",
+    "generated_at": "2026-10-07T03:48:24Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:56Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_10.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.future_plans",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_8.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "register"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.080", "gf0025.hsk2.081"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 该⋯⋯了", "en": "Chinese grammar: 该⋯⋯了"},
+    "native_title": "该⋯⋯了",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Mẫu câu 该⋯⋯了 dùng để nói rằng đã đến lúc ai đó cần làm gì, hoặc một việc gì đó sắp xảy ra theo kế hoạch.",
+      "en": "The pattern 该⋯⋯了 says that it is time for someone to do something, or that something is about to happen as planned."
+    },
+    "sub": {"vi": "đã đến lúc", "en": "it's time to"},
+    "native_title_pinyin": ["gāi", "", "", "le"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nhắc ai đó làm một việc đã đến lúc phải làm, thường là việc hằng ngày hoặc theo lịch.",
+      "en": "When reminding someone that it is time to do something, often a daily or scheduled task."
+    },
+    {
+      "vi": "Khi nói về một việc sắp xảy ra theo kế hoạch hoặc thời gian biểu.",
+      "en": "When saying that something is about to happen according to a plan or timetable."
+    },
+    {
+      "vi": "Khi tự nói về việc mình cần làm, ví dụ 我该走了 (tôi phải đi rồi).",
+      "en": "When talking about what you yourself need to do, for example 我该走了 (I should go now)."
+    },
+    {
+      "vi": "Khi câu không có chủ ngữ, dùng để nhắc chung: 该吃饭了 (đến giờ ăn rồi).",
+      "en": "When the subject is omitted, it works as a general reminder: 该吃饭了 (it's time to eat)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "该",
+        "role": "aux",
+        "label": {"vi": "nên / đến lúc", "en": "should / it's time"},
+        "pinyin": ["gāi"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ 了", "en": "particle 了"},
+        "pinyin": ["le"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "该上课了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "aux"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Không có chủ ngữ; 该 + 上课 + 了 nói rằng đã đến giờ học.",
+        "en": "No subject; 该 + 上课 + 了 says it is time for class."
+      },
+      "translation": {"vi": "Đến giờ học rồi.", "en": "It's time for class."},
+      "pinyin": ["gāi", "shàng", "kè", "le", ""]
+    },
+    {
+      "text": "我们该走了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "我们 là chủ ngữ; 该 + 走 + 了 nghĩa là chúng ta nên đi.",
+        "en": "我们 is the subject; 该 + 走 + 了 means we should go."
+      },
+      "translation": {"vi": "Chúng ta phải đi rồi.", "en": "We should go now."},
+      "pinyin": ["wǒ", "men", "gāi", "zǒu", "le", ""]
+    },
+    {
+      "text": "你该睡觉了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "你 là chủ ngữ; 该 + 睡觉 + 了 nhắc người nghe đi ngủ.",
+        "en": "你 is the subject; 该 + 睡觉 + 了 reminds the listener to go to sleep."
+      },
+      "translation": {"vi": "Con đi ngủ đi.", "en": "You should go to bed now."},
+      "pinyin": ["nǐ", "gāi", "shuì", "jiào", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu 了 ở cuối câu. Trong mẫu 该⋯⋯了, 了 là bắt buộc để thể hiện tình trạng đã đến lúc, không phải một hành động đơn thuần.",
+        "en": "The sentence is missing the final 了. In the 该⋯⋯了 pattern, 了 is required to show that the time has come, not just a plain action."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "我们该走。",
+      "right": "我们该走了。",
+      "wrong_pinyin": ["wǒ", "men", "gāi", "zǒu", ""],
+      "right_pinyin": ["wǒ", "men", "gāi", "zǒu", "le", ""]
+    },
+    {
+      "reason": {
+        "vi": "Câu này là lời nhắc thân mật hằng ngày, dùng 您 quá trang trọng và không tự nhiên trong ngữ cảnh đó.",
+        "en": "This is an everyday, familiar reminder; 您 is too formal and sounds unnatural in that context."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong": "您该吃饭了。",
+      "right": "你该吃饭了。",
+      "wrong_pinyin": ["nín", "gāi", "chī", "fàn", "le", ""],
+      "right_pinyin": ["nǐ", "gāi", "chī", "fàn", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "八点了，我们___起床了。",
+      "options": [
+        {"text": "该", "error_tag": null, "pinyin": ["gāi"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "该 đứng trước động từ để nói đã đến lúc làm gì; 在 không hợp nghĩa ở đây.",
+        "en": "该 comes before the verb to say it is time to do something; 在 does not fit here."
+      },
+      "q_pinyin": ["bā", "diǎn", "le", "", "wǒ", "men", "", "", "", "qǐ", "chuáng", "le", ""]
+    },
+    {
+      "q": "时间不早了，我该___了。",
+      "options": [
+        {"text": "走", "error_tag": null, "pinyin": ["zǒu"]},
+        {"text": "走了", "error_tag": "redundancy", "pinyin": ["zǒu", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 该 dùng động từ trần 走, rồi thêm 了 ở cuối câu; không lặp 了 ngay sau động từ.",
+        "en": "After 该 use the bare verb 走, then add 了 at the end; do not repeat 了 right after the verb."
+      },
+      "q_pinyin": ["shí", "jiān", "bù", "zǎo", "le", "", "wǒ", "gāi", "", "", "", "le", ""]
+    },
+    {
+      "q": "孩子该睡觉___。",
+      "options": [
+        {"text": "了", "error_tag": null, "pinyin": ["le"]},
+        {"text": "吗", "error_tag": "particle", "pinyin": ["ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu 该⋯⋯了 kết thúc bằng 了; 吗 dùng cho câu hỏi nên không phù hợp.",
+        "en": "The 该⋯⋯了 pattern ends with 了; 吗 marks a question and does not fit."
+      },
+      "q_pinyin": ["hái", "zi", "gāi", "shuì", "jiào", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 该⋯⋯了 để nói việc bạn cần làm bây giờ.",
+      "en": "Write one sentence with 该⋯⋯了 about something you need to do now."
+    },
+    "placeholder": "我该……了",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["该"], "role": "aux"}, {"any_of": ["了"], "role": "particle"}]
+    },
+    "sample": {"text": "我该回家了。", "pinyin": ["wǒ", "gāi", "huí", "jiā", "le", ""]},
+    "placeholder_pinyin": ["wǒ", "gāi", "", "", "le"]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338120",
+    "generated_at": "2026-10-07T01:55:20Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

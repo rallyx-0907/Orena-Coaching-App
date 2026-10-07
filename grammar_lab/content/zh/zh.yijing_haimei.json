@@ -1,0 +1,242 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.yijing_haimei",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.yao_le"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: yijing_haimei", "en": "Chinese grammar: yijing_haimei"},
+    "native_title": "“已经……还没……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Mẫu câu 已经……还没…… dùng để so sánh một việc đã hoàn thành với một việc vẫn chưa xảy ra tại thời điểm nói.",
+      "en": "The pattern 已经……还没…… contrasts something that has already happened with something that has not happened yet at the time of speaking."
+    },
+    "sub": {"vi": "đã và chưa", "en": "already vs not yet"},
+    "native_title_pinyin": ["", "yǐ", "jīng", "", "", "hái", "méi", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một việc đã xong rồi, nhưng một việc khác thì vẫn chưa.",
+      "en": "When you want to say one thing is already done, but another thing still has not happened."
+    },
+    {
+      "vi": "Khi trả lời câu hỏi kiểu 'Bạn đã làm chưa?' và cần nêu rõ việc nào xong, việc nào chưa.",
+      "en": "When answering a question like 'Have you done it yet?' and you need to make clear which part is done and which is not."
+    },
+    {
+      "vi": "Khi so sánh tiến độ của hai việc trong cùng một tình huống, ví dụ làm bài tập và đọc sách.",
+      "en": "When comparing the progress of two tasks in the same situation, for example homework and reading."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh thời điểm: việc thứ nhất đã xảy ra, việc thứ hai vẫn đang chờ.",
+      "en": "When you want to highlight timing: the first action has happened, the second is still pending."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "已经",
+        "role": "marker",
+        "label": {"vi": "đã", "en": "already"},
+        "pinyin": ["yǐ", "jīng"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ hoàn thành", "en": "completion particle"},
+        "pinyin": ["le"]
+      },
+      {
+        "text": "还没",
+        "role": "marker",
+        "label": {"vi": "vẫn chưa", "en": "not yet"},
+        "pinyin": ["hái", "méi"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我已经吃了饭，还没喝咖啡。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 7, "end": 9, "role": "marker"},
+        {"start": 9, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Việc ăn đã xong, việc uống cà phê vẫn chưa xảy ra.",
+        "en": "Eating is done; drinking coffee has not happened yet."
+      },
+      "translation": {
+        "vi": "Tôi đã ăn cơm rồi, vẫn chưa uống cà phê.",
+        "en": "I have already eaten, but I have not had coffee yet."
+      },
+      "pinyin": ["wǒ", "yǐ", "jīng", "chī", "le", "fàn", "", "hái", "méi", "hē", "kā", "fēi", ""]
+    },
+    {
+      "text": "他已经买了票，还没订酒店。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 7, "end": 9, "role": "marker"},
+        {"start": 9, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mua vé đã hoàn thành, đặt khách sạn thì chưa.",
+        "en": "Buying the ticket is complete; booking the hotel is not."
+      },
+      "translation": {
+        "vi": "Anh ấy đã mua vé rồi, vẫn chưa đặt khách sạn.",
+        "en": "He has already bought the ticket, but he has not booked a hotel yet."
+      },
+      "pinyin": ["tā", "yǐ", "jīng", "mǎi", "le", "piào", "", "hái", "méi", "dìng", "jiǔ", "diàn", ""]
+    },
+    {
+      "text": "我们已经在做了，还没做完。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 8, "end": 10, "role": "marker"},
+        {"start": 10, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Đã bắt tay vào làm nhưng chưa xong.",
+        "en": "We have started doing it, but it is not finished yet."
+      },
+      "translation": {
+        "vi": "Chúng tôi đã làm rồi, vẫn chưa làm xong.",
+        "en": "We have already started, but we have not finished yet."
+      },
+      "pinyin": ["wǒ", "men", "yǐ", "jīng", "zài", "zuò", "le", "", "hái", "méi", "zuò", "wán", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu 了 sau động từ nên câu không thể hiện được việc đã hoàn thành; 已经 chỉ là trạng từ, không thay thế được 了.",
+        "en": "Missing 了 after the verb means the sentence does not show completion; 已经 is only an adverb and cannot replace 了."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我已经吃饭，还没喝咖啡。",
+      "right": "我已经吃了饭，还没喝咖啡。",
+      "wrong_pinyin": ["wǒ", "yǐ", "jīng", "chī", "fàn", "", "hái", "méi", "hē", "kā", "fēi", ""],
+      "right_pinyin": ["wǒ", "yǐ", "jīng", "chī", "le", "fàn", "", "hái", "méi", "hē", "kā", "fēi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我已经___了饭，还没喝咖啡。",
+      "options": [
+        {"text": "吃", "error_tag": null, "pinyin": ["chī"]},
+        {"text": "吃了", "error_tag": "redundancy", "pinyin": ["chī", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 已经 dùng động từ 吃, rồi thêm 了 ở cuối cụm; không lặp 了 ngay sau động từ khi đã có 了 ở cuối.",
+        "en": "After 已经 use the verb 吃, then add 了 at the end of the phrase; do not repeat 了 immediately after the verb when 了 already appears at the end."
+      },
+      "q_pinyin": ["wǒ", "yǐ", "jīng", "", "", "", "le", "fàn", "", "hái", "méi", "hē", "kā", "fēi", ""]
+    },
+    {
+      "q": "他___买了票，还没订酒店。",
+      "options": [
+        {"text": "已经", "error_tag": null, "pinyin": ["yǐ", "jīng"]},
+        {"text": "还没", "error_tag": "word_order", "pinyin": ["hái", "méi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế đầu nói việc đã xong nên dùng 已经; 还没 dành cho vế sau.",
+        "en": "The first clause says something is done, so use 已经; 还没 belongs in the second clause."
+      },
+      "q_pinyin": ["tā", "", "", "", "mǎi", "le", "piào", "", "hái", "méi", "dìng", "jiǔ", "diàn", ""]
+    },
+    {
+      "q": "我们已经在做了，___做完。",
+      "options": [
+        {"text": "还没", "error_tag": null, "pinyin": ["hái", "méi"]},
+        {"text": "已经", "error_tag": "other", "pinyin": ["yǐ", "jīng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế sau nói việc chưa xong nên dùng 还没, không dùng 已经.",
+        "en": "The second clause says the action is not finished, so use 还没, not 已经."
+      },
+      "q_pinyin": ["wǒ", "men", "yǐ", "jīng", "zài", "zuò", "le", "", "", "", "", "zuò", "wán", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân: một việc bạn đã làm rồi và một việc bạn vẫn chưa làm.",
+      "en": "Write one sentence about yourself: something you have already done and something you have not done yet."
+    },
+    "placeholder": "我已经……还没……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["已经"], "role": "marker"},
+        {"any_of": ["了"], "role": "particle"},
+        {"any_of": ["还没"], "role": "marker"}
+      ]
+    },
+    "sample": {
+      "text": "我已经吃了饭，还没喝咖啡。",
+      "pinyin": ["wǒ", "yǐ", "jīng", "chī", "le", "fàn", "", "hái", "méi", "hē", "kā", "fēi", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "yǐ", "jīng", "", "", "hái", "méi", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338206",
+    "generated_at": "2026-10-07T01:56:46Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

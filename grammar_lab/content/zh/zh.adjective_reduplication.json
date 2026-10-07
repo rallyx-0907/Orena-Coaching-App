@@ -1,0 +1,223 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.adjective_reduplication",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk3-14-reduplication-ng-t-t-nh-t"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: adjective_reduplication",
+      "en": "Chinese grammar: adjective_reduplication"
+    },
+    "native_title": "形容词重叠",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Tính từ đơn tiết và song tiết trong tiếng Trung có thể được lặp lại để nhấn mạnh mức độ hoặc tạo sắc thái sinh động, thường dùng trong văn nói và miêu tả.",
+      "en": "Chinese adjectives can be reduplicated to intensify the degree or create a vivid, descriptive effect, especially in spoken and descriptive writing."
+    },
+    "sub": {"vi": "tính từ lặp", "en": "adjective reduplication"},
+    "native_title_pinyin": ["xíng", "róng", "cí", "chóng", "dié"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh một tính từ ở mức độ cao hơn bình thường, thường trong câu miêu tả hoặc kể chuyện.",
+      "en": "When you want to emphasize an adjective to a higher degree, often in descriptive or narrative sentences."
+    },
+    {
+      "vi": "Khi muốn tạo cảm giác sinh động, dễ hình dung về trạng thái hoặc vẻ ngoài của người, vật.",
+      "en": "When you want to create a vivid, easy-to-picture impression of a person's or thing's state or appearance."
+    },
+    {
+      "vi": "Trong văn nói hoặc viết thân mật, không dùng trong văn bản trang trọng, hợp đồng hay báo cáo.",
+      "en": "In spoken or informal writing, not in formal documents, contracts, or reports."
+    },
+    {
+      "vi": "Với tính từ đơn tiết như 高, 大, 红, 慢, 好, thường lặp dạng AA; với tính từ song tiết như 高兴, 干净, 漂亮, thường lặp dạng AABB.",
+      "en": "With monosyllabic adjectives like 高, 大, 红, 慢, 好, the common pattern is AA; with disyllabic adjectives like 高兴, 干净, 漂亮, the common pattern is AABB."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "AA",
+        "role": "complement",
+        "label": {"vi": "tính từ đơn tiết lặp", "en": "reduplicated monosyllabic adjective"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ", "en": "particle"},
+        "optional": true,
+        "pinyin": ["de"]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "pinyin": [""]}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "红红的脸很可爱。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "complement"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 4, "role": "object"}
+      ],
+      "annotation": {"vi": "红红 nhấn mạnh màu đỏ tươi, sinh động.", "en": "红红 emphasizes a vivid, bright red."},
+      "translation": {"vi": "Khuôn mặt đỏ ửng trông rất đáng yêu.", "en": "The bright red face is very cute."},
+      "pinyin": ["hóng", "hóng", "de", "liǎn", "hěn", "kě", "ài", ""]
+    },
+    {
+      "text": "干干净净的房间让人舒服。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "complement"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "干干净净 là dạng AABB của 干净, nhấn mạnh sạch sẽ hoàn toàn.",
+        "en": "干干净净 is the AABB form of 干净, emphasizing complete cleanliness."
+      },
+      "translation": {
+        "vi": "Căn phòng sạch bong khiến người ta thoải mái.",
+        "en": "The spotless room makes people feel comfortable."
+      },
+      "pinyin": ["gān", "gān", "jìng", "jìng", "de", "fáng", "jiān", "ràng", "rén", "shū", "fú", ""]
+    },
+    {
+      "text": "大大的眼睛很像妈妈。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "complement"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {"vi": "大大 nhấn mạnh đôi mắt to rõ rệt.", "en": "大大 emphasizes noticeably large eyes."},
+      "translation": {
+        "vi": "Đôi mắt to trông rất giống mẹ.",
+        "en": "The big eyes look very much like the mother's."
+      },
+      "pinyin": ["dà", "dà", "de", "yǎn", "jīng", "hěn", "xiàng", "mā", "mā", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Không phải tính từ nào cũng có thể lặp tự do; 难 thường không dùng dạng lặp AA trong ngữ cảnh này, cần dùng 很 để biểu thị mức độ.",
+        "en": "Not every adjective can be freely reduplicated; 难 is not normally used in the AA form in this context, so 很 is used to show degree."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这个问题难难。",
+      "right": "这个问题很难。",
+      "wrong_pinyin": ["zhè", "ge", "wèn", "tí", "nán", "nán", ""],
+      "right_pinyin": ["zhè", "ge", "wèn", "tí", "hěn", "nán", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "她的脸___的，很可爱。",
+      "options": [
+        {"text": "红红", "error_tag": null, "pinyin": ["hóng", "hóng"]},
+        {"text": "红", "error_tag": "other", "pinyin": ["hóng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "红红 là dạng lặp AA của 红, nhấn mạnh màu đỏ tươi và sinh động.",
+        "en": "红红 is the AA reduplicated form of 红, emphasizing a vivid, bright red."
+      },
+      "q_pinyin": ["tā", "de", "liǎn", "", "", "", "de", "", "hěn", "kě", "ài", ""]
+    },
+    {
+      "q": "房间打扫得___的。",
+      "options": [
+        {"text": "干干净净", "error_tag": null, "pinyin": ["gān", "gān", "jìng", "jìng"]},
+        {"text": "干净干净", "error_tag": "other", "pinyin": ["gān", "jìng", "gān", "jìng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "干净 là tính từ song tiết, dạng lặp đúng là AABB: 干干净净, không phải ABAB.",
+        "en": "干净 is a disyllabic adjective; the correct reduplication is AABB: 干干净净, not ABAB."
+      },
+      "q_pinyin": ["fáng", "jiān", "dǎ", "sǎo", "dé", "", "", "", "de", ""]
+    },
+    {
+      "q": "他___地走进教室。",
+      "options": [
+        {"text": "慢慢", "error_tag": null, "pinyin": ["màn", "màn"]},
+        {"text": "慢", "error_tag": "other", "pinyin": ["màn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "慢慢 là dạng lặp AA của 慢, dùng làm trạng ngữ với 地 để miêu tả cách thức.",
+        "en": "慢慢 is the AA reduplicated form of 慢, used as an adverbial with 地 to describe manner."
+      },
+      "q_pinyin": ["tā", "", "", "", "dì", "zǒu", "jìn", "jiào", "shì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu miêu tả một người hoặc vật bằng tính từ lặp dạng AA hoặc AABB.",
+      "en": "Write a sentence describing a person or thing using an AA or AABB reduplicated adjective."
+    },
+    "placeholder": "她的眼睛……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"regex": "([\\u4e00-\\u9fff])\\1", "role": "complement"},
+        {"any_of": ["的"], "role": "particle"}
+      ]
+    },
+    "sample": {"text": "她的眼睛大大的。", "pinyin": ["tā", "de", "yǎn", "jīng", "dà", "dà", "de", ""]},
+    "placeholder_pinyin": ["tā", "de", "yǎn", "jīng", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338359",
+    "generated_at": "2026-10-07T01:59:19Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-14-reduplication-ng-t-t-nh-t"],
+      "content_version": 2,
+      "content_hash": "29d954a5aa8f686b9f8e88b93b4669a72c19b176163410c59bf0136032c2d4bb",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-14-reduplication-ng-t-t-nh-t",
+          "issue": "R5 gộp cả reduplication động từ và tính từ, trong khi điểm ngữ pháp này chỉ về tính từ.",
+          "fix": "Chỉ giữ phần tính từ lặp; loại bỏ các ví dụ và quy tắc về động từ như 看看, 想一想, 休息休息."
+        },
+        {
+          "r5_id": "zh-hsk3-14-reduplication-ng-t-t-nh-t",
+          "issue": "Ví dụ 孩子们高高兴兴地回家了 dùng 地 làm trạng ngữ, không khớp với mẫu định ngữ + 的 + danh từ của bài này.",
+          "fix": "Thay bằng ví dụ 红红的脸很可爱 và 干干净净的房间让人舒服 để minh họa đúng mẫu AA/AABB + 的 + N."
+        },
+        {
+          "r5_id": "zh-hsk3-14-reduplication-ng-t-t-nh-t",
+          "issue": "Lỗi 我看看了这本书 thuộc về reduplication động từ, không thuộc phạm vi tính từ lặp.",
+          "fix": "Loại bỏ lỗi này; thay bằng lỗi 这个问题难难 với cách sửa 这个问题很难, đúng phạm vi tính từ."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

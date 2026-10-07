@@ -1,0 +1,405 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_6_advanced_passive_causative_alternation",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.voice_causative",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-6-advanced-passive-causative-alternation"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk79-6-advanced-passive-causative-alternation"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Advanced passive/causative alternation",
+      "en": "Chinese grammar: Advanced passive/causative alternation"
+    },
+    "native_title": "高级被动与使役交替",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách chọn giữa cấu trúc bị động (nhấn vào đối tượng chịu tác động) và cấu trúc sai khiến (nhấn vào nguyên nhân hoặc tác nhân gây ra hành động) mà vẫn giữ nguyên vai nghĩa của sự việc.",
+      "en": "This point teaches how to choose between a passive structure (foregrounding the affected entity) and a causative structure (foregrounding the cause or the agent that brings the action about) while keeping the semantic roles of the event intact."
+    },
+    "sub": {"vi": "bị động và sai khiến", "en": "passive vs causative"},
+    "native_title_pinyin": ["gāo", "jí", "bèi", "dòng", "yǔ", "shǐ", "yì", "jiāo", "tì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh đối tượng chịu tác động và không cần nêu rõ ai làm, dùng bị động với 被 hoặc 为…所.",
+      "en": "When you want to foreground the affected entity and do not need to name who did it, use the passive with 被 or 为…所."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh nguyên nhân hoặc tác nhân khiến việc gì xảy ra, dùng sai khiến với 使, 令, 促使.",
+      "en": "When you want to foreground the cause or the agent that makes something happen, use the causative with 使, 令, 促使."
+    },
+    {
+      "vi": "Khi cùng một sự việc có thể được kể từ hai hướng, chọn cấu trúc theo điều bạn muốn người đọc chú ý: người bị ảnh hưởng hay nguyên nhân.",
+      "en": "When the same event can be told from two directions, choose the structure according to what you want the reader to notice: the affected party or the cause."
+    },
+    {
+      "vi": "Trong văn viết trang trọng, 为…所 là lựa chọn bị động có tính văn phong cao hơn 被.",
+      "en": "In formal writing, 为…所 is a more stylistically elevated passive choice than 被."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ thể bị tác động", "en": "affected subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "被/为",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu bị động", "en": "passive marker"},
+        "options": [{"text": "被", "pinyin": ["bèi"]}, {"text": "为", "pinyin": ["wèi"]}],
+        "pinyin": ["bèi", "", "wèi"]
+      },
+      {
+        "text": "施事",
+        "role": "object",
+        "label": {"vi": "tác nhân", "en": "agent"},
+        "optional": true,
+        "pinyin": ["shī", "shì"]
+      },
+      {
+        "text": "所",
+        "role": "particle",
+        "label": {"vi": "trợ từ 所", "en": "particle 所"},
+        "optional": true,
+        "pinyin": ["suǒ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ chính", "en": "main verb"},
+        "pinyin": ["dòng", "cí"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ thể bị tác động", "en": "affected subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "没有/未",
+          "role": "aux",
+          "label": {"vi": "phủ định", "en": "negation"},
+          "options": [{"text": "没有", "pinyin": ["méi", "yǒu"]}, {"text": "未", "pinyin": ["wèi"]}],
+          "pinyin": ["méi", "yǒu", "", "wèi"]
+        },
+        {
+          "text": "被/为",
+          "role": "marker",
+          "label": {"vi": "dấu hiệu bị động", "en": "passive marker"},
+          "options": [{"text": "被", "pinyin": ["bèi"]}, {"text": "为", "pinyin": ["wèi"]}],
+          "pinyin": ["bèi", "", "wèi"]
+        },
+        {
+          "text": "施事",
+          "role": "object",
+          "label": {"vi": "tác nhân", "en": "agent"},
+          "optional": true,
+          "pinyin": ["shī", "shì"]
+        },
+        {
+          "text": "所",
+          "role": "particle",
+          "label": {"vi": "trợ từ 所", "en": "particle 所"},
+          "optional": true,
+          "pinyin": ["suǒ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "pinyin": ["dòng", "cí"]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ thể bị tác động", "en": "affected subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "被/为",
+          "role": "marker",
+          "label": {"vi": "dấu hiệu bị động", "en": "passive marker"},
+          "options": [{"text": "被", "pinyin": ["bèi"]}, {"text": "为", "pinyin": ["wèi"]}],
+          "pinyin": ["bèi", "", "wèi"]
+        },
+        {
+          "text": "施事",
+          "role": "object",
+          "label": {"vi": "tác nhân", "en": "agent"},
+          "optional": true,
+          "pinyin": ["shī", "shì"]
+        },
+        {
+          "text": "所",
+          "role": "particle",
+          "label": {"vi": "trợ từ 所", "en": "particle 所"},
+          "optional": true,
+          "pinyin": ["suǒ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这一规定为多数机构所接受。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 9, "role": "object"},
+        {"start": 9, "end": 10, "role": "particle"},
+        {"start": 10, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cấu trúc 为…所 nhấn mạnh quy định được chấp nhận, không nêu ai chấp nhận.",
+        "en": "The 为…所 structure foregrounds the regulation being accepted, without naming who accepts it."
+      },
+      "translation": {
+        "vi": "Quy định này được đa số tổ chức chấp nhận.",
+        "en": "This regulation is accepted by most organizations."
+      },
+      "pinyin": ["zhè", "yī", "guī", "dìng", "wèi", "duō", "shù", "jī", "gòu", "suǒ", "jiē", "shòu", ""]
+    },
+    {
+      "text": "市场变化促使企业重新评估风险。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "object"},
+        {"start": 8, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cấu trúc sai khiến với 促使: nguyên nhân đứng trước, tác nhân và hành động theo sau.",
+        "en": "Causative structure with 促使: the cause comes first, followed by the agent and the action."
+      },
+      "translation": {
+        "vi": "Thay đổi thị trường khiến doanh nghiệp đánh giá lại rủi ro.",
+        "en": "Market changes prompt companies to reassess risks."
+      },
+      "pinyin": [
+        "shì",
+        "chǎng",
+        "biàn",
+        "huà",
+        "cù",
+        "shǐ",
+        "qǐ",
+        "yè",
+        "chóng",
+        "xīn",
+        "píng",
+        "gū",
+        "fēng",
+        "xiǎn",
+        ""
+      ]
+    },
+    {
+      "text": "企业被迫重新评估原有战略。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "object"},
+        {"start": 4, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Bị động với 被 kết hợp 迫: doanh nghiệp là chủ thể bị buộc phải hành động.",
+        "en": "Passive with 被 combined with 迫: the company is the affected subject forced to act."
+      },
+      "translation": {
+        "vi": "Doanh nghiệp bị buộc đánh giá lại chiến lược cũ.",
+        "en": "The company was forced to reassess its original strategy."
+      },
+      "pinyin": ["qǐ", "yè", "bèi", "pò", "chóng", "xīn", "píng", "gū", "yuán", "yǒu", "zhàn", "lüè", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học đảo ngược vai nghĩa của cấu trúc sai khiến: nguyên nhân phải đứng trước 促使, còn tác nhân bị tác động đứng sau.",
+        "en": "The learner reverses the semantic roles of the causative: the cause must precede 促使, and the affected agent follows it."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "企业促使市场变化重新评估风险。",
+      "right": "市场变化促使企业重新评估风险。",
+      "wrong_pinyin": [
+        "qǐ",
+        "yè",
+        "cù",
+        "shǐ",
+        "shì",
+        "chǎng",
+        "biàn",
+        "huà",
+        "chóng",
+        "xīn",
+        "píng",
+        "gū",
+        "fēng",
+        "xiǎn",
+        ""
+      ],
+      "right_pinyin": [
+        "shì",
+        "chǎng",
+        "biàn",
+        "huà",
+        "cù",
+        "shǐ",
+        "qǐ",
+        "yè",
+        "chóng",
+        "xīn",
+        "píng",
+        "gū",
+        "fēng",
+        "xiǎn",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这一规定___多数机构所接受。",
+      "options": [
+        {"text": "为", "error_tag": null, "pinyin": ["wèi"]},
+        {"text": "被", "error_tag": "bei_sentence", "pinyin": ["bèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong cấu trúc 为…所, dùng 为 chứ không dùng 被.",
+        "en": "In the 为…所 structure, use 为, not 被."
+      },
+      "q_pinyin": ["zhè", "yī", "guī", "dìng", "", "", "", "duō", "shù", "jī", "gòu", "suǒ", "jiē", "shòu", ""]
+    },
+    {
+      "q": "市场变化___企业重新评估风险。",
+      "options": [
+        {"text": "促使", "error_tag": null, "pinyin": ["cù", "shǐ"]},
+        {"text": "被", "error_tag": "bei_sentence", "pinyin": ["bèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này cần động từ sai khiến 促使, không phải dấu hiệu bị động 被.",
+        "en": "This sentence needs the causative verb 促使, not the passive marker 被."
+      },
+      "q_pinyin": [
+        "shì",
+        "chǎng",
+        "biàn",
+        "huà",
+        "",
+        "",
+        "",
+        "qǐ",
+        "yè",
+        "chóng",
+        "xīn",
+        "píng",
+        "gū",
+        "fēng",
+        "xiǎn",
+        ""
+      ]
+    },
+    {
+      "q": "企业___重新评估原有战略。",
+      "options": [
+        {"text": "被迫", "error_tag": null, "pinyin": ["bèi", "pò"]},
+        {"text": "促使", "error_tag": "word_choice", "pinyin": ["cù", "shǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "被迫 diễn tả chủ thể bị buộc phải làm gì; 促使 là sai khiến, không hợp ở đây.",
+        "en": "被迫 expresses that the subject is forced to do something; 促使 is causative and does not fit here."
+      },
+      "q_pinyin": ["qǐ", "yè", "", "", "", "chóng", "xīn", "píng", "gū", "yuán", "yǒu", "zhàn", "lüè", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một sự việc mà bạn hoặc một nhóm bị ảnh hưởng và phải thay đổi, dùng cấu trúc bị động với 被.",
+      "en": "Write one sentence about an event in which you or a group were affected and had to change, using the passive with 被."
+    },
+    "placeholder": "我被迫……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["被"], "role": "marker"}, {"regex": "[\\u4e00-\\u9fff]+", "role": "verb"}]
+    },
+    "sample": {
+      "text": "我被迫重新考虑我的计划。",
+      "pinyin": ["wǒ", "bèi", "pò", "chóng", "xīn", "kǎo", "lǜ", "wǒ", "de", "jì", "huà", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "bèi", "pò", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791345040",
+    "generated_at": "2026-10-07T03:50:40Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-6-advanced-passive-causative-alternation"],
+      "content_version": 2,
+      "content_hash": "aad9a79ac298c6ea7ed3694ca7c4ac6f15df0dca398ef3107abe05497da10de9",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-6-advanced-passive-causative-alternation",
+          "issue": "R5 gộp cả bị động và sai khiến vào một công thức duy nhất 'Passive: Patient + 被/为...所 + V; causative: Cause + 使/令/促使 + Experiencer/Agent + predicate', khiến người học không thấy đây là hai lựa chọn cấu trúc khác nhau.",
+          "fix": "Tách thành hai công thức riêng: một cho bị động với 被/为…所 và một cho sai khiến với 使/令/促使, mỗi công thức có ví dụ và bài tập riêng."
+        },
+        {
+          "r5_id": "zh-hsk79-6-advanced-passive-causative-alternation",
+          "issue": "Ví dụ '连续故障导致服务被暂时关闭' dùng 导致, không phải 使/令/促使, nên không minh họa đúng cấu trúc sai khiến của điểm ngữ pháp này.",
+          "fix": "Thay bằng ví dụ '市场变化促使企业重新评估风险' để minh họa rõ cấu trúc sai khiến với 促使."
+        },
+        {
+          "r5_id": "zh-hsk79-6-advanced-passive-causative-alternation",
+          "issue": "Lỗi '规定为接受多数机构所' được mô tả là 'Formal passive order is malformed' nhưng không giải thích rõ trật tự đúng.",
+          "fix": "Sửa thành '规定为多数机构所接受' và giải thích trật tự đúng: chủ thể + 为 + tác nhân + 所 + động từ."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:49Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

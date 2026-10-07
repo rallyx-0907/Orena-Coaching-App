@@ -1,0 +1,251 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_10_ngh_a_m_r_ng",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.action_result",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.complement.degree_de"],
+  "contrasts": [],
+  "error_tags": ["complement"],
+  "source_refs": {
+    "r5": ["zh-hsk3-10-ngh-a-m-r-ng", "zh-hsk4-11-ngh-a-m-r-ng"],
+    "gf0025": ["gf0025.hsk3.047", "gf0025.hsk4.037"]
+  },
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk3-10-ngh-a-m-r-ng", "zh-hsk4-11-ngh-a-m-r-ng"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Bổ ngữ: 趋向补语2", "en": "Complements: 趋向补语2"},
+    "native_title": "趋向补语2",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Bổ ngữ chỉ hướng 起来, 下来, 下去 khi đi sau động từ không còn nghĩa chuyển động thật, mà diễn tả bắt đầu, ghi nhận/ổn định, hoặc tiếp tục.",
+      "en": "The directional complements 起来, 下来 and 下去 after a verb lose their literal movement meaning and express beginning, recording/stabilising, or continuation."
+    },
+    "sub": {"vi": "nghĩa mở rộng", "en": "extended meaning"},
+    "native_title_pinyin": ["qū", "xiàng", "bǔ", "yǔ", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một hành động hay trạng thái bắt đầu nảy sinh: 笑起来, 下起雨来.",
+      "en": "When you want to say an action or state begins to emerge: 笑起来, 下起雨来."
+    },
+    {
+      "vi": "Khi muốn nói ghi lại, giữ lại hoặc chuyển sang trạng thái ổn định: 记下来, 安静下来.",
+      "en": "When you want to say something is recorded, kept, or settles into a stable state: 记下来, 安静下来."
+    },
+    {
+      "vi": "Khi muốn nói tiếp tục làm một việc đã bắt đầu: 说下去, 坚持下去.",
+      "en": "When you want to say an action already started continues: 说下去, 坚持下去."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "起来/下来/下去",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ hướng (nghĩa mở rộng)", "en": "directional complement (extended meaning)"},
+        "options": [
+          {"text": "起来", "pinyin": ["qǐ", "lái"]},
+          {"text": "下来", "pinyin": ["xià", "lái"]},
+          {"text": "下去", "pinyin": ["xià", "qù"]}
+        ],
+        "pinyin": ["qǐ", "lái", "", "xià", "lái", "", "xià", "qù"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ 了", "en": "particle 了"},
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "大家都笑起来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "complement"},
+        {"start": 6, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "起来 sau 笑 cho thấy hành động bắt đầu nảy sinh.",
+        "en": "起来 after 笑 shows the action begins to emerge."
+      },
+      "translation": {"vi": "Mọi người đều bắt đầu cười.", "en": "Everyone started laughing."},
+      "pinyin": ["dà", "jiā", "dōu", "xiào", "qǐ", "lái", "le", ""]
+    },
+    {
+      "text": "请把重点记下来。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "下来 sau 记 nghĩa là ghi lại, giữ thông tin lại.",
+        "en": "下来 after 记 means to write down and keep the information."
+      },
+      "translation": {"vi": "Hãy ghi lại những điểm chính.", "en": "Please write down the key points."},
+      "pinyin": ["qǐng", "bǎ", "zhòng", "diǎn", "jì", "xià", "lái", ""]
+    },
+    {
+      "text": "不管多难，我们都要坚持下去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 5, "end": 7, "role": "subject"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 11, "end": 13, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "下去 sau 坚持 nghĩa là tiếp tục làm việc đã bắt đầu.",
+        "en": "下去 after 坚持 means to continue the action already started."
+      },
+      "translation": {
+        "vi": "Dù khó đến đâu, chúng ta cũng phải kiên trì tiếp.",
+        "en": "No matter how hard it is, we must keep going."
+      },
+      "pinyin": ["bù", "guǎn", "duō", "nán", "", "wǒ", "men", "dōu", "yào", "jiān", "chí", "xià", "qù", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi muốn nói nhận ra qua quan sát, tiếng Trung dùng 出来, không dùng 出去. 出去 chỉ hướng ra ngoài thật.",
+        "en": "To say you recognise something from observing, Chinese uses 出来, not 出去. 出去 only means physical movement outward."
+      },
+      "error_tag": "complement",
+      "l1": ["vi"],
+      "wrong": "我看出去他很累。",
+      "right": "我看出来他很累。",
+      "wrong_pinyin": ["wǒ", "kàn", "chū", "qù", "tā", "hěn", "lèi", ""],
+      "right_pinyin": ["wǒ", "kàn", "chū", "lái", "tā", "hěn", "lèi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "大家听了这个笑话，都笑___了。",
+      "options": [
+        {"text": "起来", "error_tag": null, "pinyin": ["qǐ", "lái"]},
+        {"text": "下去", "error_tag": "complement", "pinyin": ["xià", "qù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "笑起来 nghĩa là bắt đầu cười; 笑下去 không tự nhiên vì 下去 nhấn mạnh tiếp tục một hành động đã bắt đầu.",
+        "en": "笑起来 means to start laughing; 笑下去 is unnatural because 下去 stresses continuing an action already underway."
+      },
+      "q_pinyin": [
+        "dà",
+        "jiā",
+        "tīng",
+        "le",
+        "zhè",
+        "ge",
+        "xiào",
+        "huà",
+        "",
+        "dōu",
+        "xiào",
+        "",
+        "",
+        "",
+        "le",
+        ""
+      ]
+    },
+    {
+      "q": "请把老师说的话记___。",
+      "options": [
+        {"text": "下来", "error_tag": null, "pinyin": ["xià", "lái"]},
+        {"text": "下去", "error_tag": "complement", "pinyin": ["xià", "qù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "记下来 nghĩa là ghi lại, lưu lại; 记下去 không dùng cho việc ghi chép.",
+        "en": "记下来 means to write down and keep; 记下去 is not used for recording."
+      },
+      "q_pinyin": ["qǐng", "bǎ", "lǎo", "shī", "shuō", "de", "huà", "jì", "", "", "", ""]
+    },
+    {
+      "q": "这个故事很有意思，请说___。",
+      "options": [
+        {"text": "下去", "error_tag": null, "pinyin": ["xià", "qù"]},
+        {"text": "起来", "error_tag": "complement", "pinyin": ["qǐ", "lái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "说下去 nghĩa là tiếp tục nói; 说起来 thường dùng để mở đầu hoặc nhắc đến điều gì đó.",
+        "en": "说下去 means to continue speaking; 说起来 is usually used to start or bring up something."
+      },
+      "q_pinyin": ["zhè", "ge", "gù", "shì", "hěn", "yǒu", "yì", "si", "", "qǐng", "shuō", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về việc bạn bắt đầu, ghi lại hoặc tiếp tục làm gì đó, dùng 起来, 下来 hoặc 下去.",
+      "en": "Write one sentence about starting, recording, or continuing something, using 起来, 下来 or 下去."
+    },
+    "placeholder": "我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"regex": ".", "role": "verb"}, {"any_of": ["起来", "下来", "下去"], "role": "complement"}]
+    },
+    "sample": {
+      "text": "我记下来老师说的话了。",
+      "pinyin": ["wǒ", "jì", "xià", "lái", "lǎo", "shī", "shuō", "de", "huà", "le", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338282",
+    "generated_at": "2026-10-07T01:58:02Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-10-ngh-a-m-r-ng", "zh-hsk4-11-ngh-a-m-r-ng"],
+      "content_version": 2,
+      "content_hash": "03c1e899b90078d21c9f7da496ed8d9427f22d7a9ab37404a14dc359fd15ecb4",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-10-ngh-a-m-r-ng",
+          "issue": "Câu ví dụ '我突然想起来他的名字了。' có trật tự bổ ngữ và tân ngữ chưa chuẩn: 想起来 + tân ngữ nên là 想起他的名字来 hoặc 想起来他的名字, nhưng bản R5 viết 想起来他的名字了 thiếu 来 ở cuối khi tân ngữ dài.",
+          "fix": "Đã thay bằng câu mẫu '我突然想起来一件事。' để trật tự đúng và tự nhiên hơn."
+        },
+        {
+          "r5_id": "zh-hsk3-10-ngh-a-m-r-ng",
+          "issue": "Lỗi '请说起来，如果 nghĩa tiếp tục nói' trộn tiếng Việt vào câu tiếng Trung và dùng 起来 sai nghĩa.",
+          "fix": "Đã sửa thành '请说下去。' và ghi rõ 下去 diễn tả tiếp tục."
+        },
+        {
+          "r5_id": "zh-hsk4-11-ngh-a-m-r-ng",
+          "issue": "Câu '请把重点记下去。' dùng sai bổ ngữ: 记下去 không mang nghĩa ghi chép, lưu lại.",
+          "fix": "Đã sửa thành '请把重点记下来。'"
+        },
+        {
+          "r5_id": "zh-hsk4-11-ngh-a-m-r-ng",
+          "issue": "Câu '我们要坚持下来，如果 nghĩa continue forward.' trộn tiếng Việt và dùng sai 下来 cho ý tiếp tục.",
+          "fix": "Đã sửa thành '不管多难，我们都要坚持下去。'"
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

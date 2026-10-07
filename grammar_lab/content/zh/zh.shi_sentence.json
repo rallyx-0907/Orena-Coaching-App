@@ -1,0 +1,255 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.shi_sentence",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.identity_state",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.svo_basic"],
+  "contrasts": ["zh.adjective_predicate"],
+  "error_tags": ["word_order"],
+  "source_refs": {"r5": ["zh-hsk1-2-c-u-nh-danh"], "gf0025": ["gf0025.hsk1.036"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk1-2-c-u-nh-danh"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu chữ 是", "en": "The 是 sentence"},
+    "native_title": "“是”字句",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "是 nối chủ ngữ với một danh từ hoặc cụm danh từ để nói ai đó hoặc cái gì đó là gì.",
+      "en": "是 links a subject to a noun or noun phrase to say who or what someone or something is."
+    },
+    "sub": {"vi": "định danh", "en": "identity"},
+    "native_title_pinyin": ["", "shì", "", "zì", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói tên, nghề nghiệp, quốc tịch hoặc vai trò của một người.",
+      "en": "When stating a person's name, job, nationality, or role."
+    },
+    {
+      "vi": "Khi phân loại một vật: nó thuộc nhóm nào.",
+      "en": "When classifying a thing: which group it belongs to."
+    },
+    {
+      "vi": "Khi câu trả lời là một danh từ hoặc cụm danh từ, không phải tính từ.",
+      "en": "When the answer is a noun or noun phrase, not an adjective."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {"text": "是", "role": "verb", "label": {"vi": "là", "en": "to be"}, "pinyin": ["shì"]},
+      {
+        "text": "N/NP",
+        "role": "complement",
+        "label": {"vi": "danh từ / cụm danh từ", "en": "noun / noun phrase"},
+        "pinyin": ["", "", "", ""]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": [""]
+        },
+        {
+          "text": "不是",
+          "role": "verb",
+          "label": {"vi": "không phải là", "en": "is not"},
+          "pinyin": ["bú", "shì"]
+        },
+        {
+          "text": "N/NP",
+          "role": "complement",
+          "label": {"vi": "danh từ / cụm danh từ", "en": "noun / noun phrase"},
+          "pinyin": ["", "", "", ""]
+        }
+      ],
+      "question": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": [""]
+        },
+        {"text": "是", "role": "verb", "label": {"vi": "là", "en": "to be"}, "pinyin": ["shì"]},
+        {
+          "text": "N/NP",
+          "role": "complement",
+          "label": {"vi": "danh từ / cụm danh từ", "en": "noun / noun phrase"},
+          "pinyin": ["", "", "", ""]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我是学生。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 4, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nói nghề nghiệp/vai trò của người nói.",
+        "en": "States the speaker's role or occupation."
+      },
+      "translation": {"vi": "Tôi là học sinh.", "en": "I am a student."},
+      "pinyin": ["wǒ", "shì", "xué", "shēng", ""]
+    },
+    {
+      "text": "他不是医生。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 3, "end": 5, "role": "complement"}
+      ],
+      "annotation": {"vi": "Phủ định danh tính bằng 不是.", "en": "Negates identity with 不是."},
+      "translation": {"vi": "Anh ấy không phải bác sĩ.", "en": "He is not a doctor."},
+      "pinyin": ["tā", "bú", "shì", "yī", "shēng", ""]
+    },
+    {
+      "text": "你是中国人吗？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 5, "role": "complement"},
+        {"start": 5, "end": 6, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi yes/no thêm 吗 ở cuối.",
+        "en": "Yes/no question formed by adding 吗 at the end."
+      },
+      "translation": {"vi": "Bạn là người Trung Quốc phải không?", "en": "Are you Chinese?"},
+      "pinyin": ["nǐ", "shì", "zhōng", "guó", "rén", "ma", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.adjective_predicate",
+      "this_example": "我是学生。",
+      "other_example": "我很好。",
+      "this_meaning": {
+        "vi": "Dùng 是 khi phần sau là danh từ hoặc cụm danh từ.",
+        "en": "Use 是 when what follows is a noun or noun phrase."
+      },
+      "other_meaning": {
+        "vi": "Không dùng 是 khi phần sau là tính từ miêu tả trạng thái.",
+        "en": "Do not use 是 when what follows is an adjective describing a state."
+      },
+      "this_example_pinyin": ["wǒ", "shì", "xué", "shēng", ""],
+      "other_example_pinyin": ["wǒ", "hěn", "hǎo", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Tiếng Việt có thể nói 'tôi học sinh' trong một số ngữ cảnh, nhưng tiếng Trung cần 是 để nối chủ ngữ với danh từ.",
+        "en": "Vietnamese can drop the copula in some contexts, but Chinese needs 是 to link a subject to a noun."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "我学生。",
+      "right": "我是学生。",
+      "wrong_pinyin": ["wǒ", "xué", "shēng", ""],
+      "right_pinyin": ["wǒ", "shì", "xué", "shēng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "她___老师。",
+      "options": [
+        {"text": "是", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Câu định danh dùng 是, không dùng 在.", "en": "An identity sentence uses 是, not 在."},
+      "q_pinyin": ["tā", "", "", "", "lǎo", "shī", ""]
+    },
+    {
+      "q": "他___医生。",
+      "options": [
+        {"text": "不是", "error_tag": null, "pinyin": ["bú", "shì"]},
+        {"text": "不", "error_tag": "word_choice", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định của 是 là 不是, không phải chỉ 不.",
+        "en": "The negative of 是 is 不是, not just 不."
+      },
+      "q_pinyin": ["tā", "", "", "", "yī", "shēng", ""]
+    },
+    {
+      "q": "你___中国人吗？",
+      "options": [
+        {"text": "是", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "有", "error_tag": "word_choice", "pinyin": ["yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Câu hỏi định danh dùng 是 + 吗.", "en": "An identity question uses 是 + 吗."},
+      "q_pinyin": ["nǐ", "", "", "", "zhōng", "guó", "rén", "ma", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giới thiệu nghề nghiệp hoặc quốc tịch của bạn, dùng 是.",
+      "en": "Write one sentence introducing your job or nationality, using 是."
+    },
+    "placeholder": "我是……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["是"], "role": "verb"}]},
+    "sample": {"text": "我是学生。", "pinyin": ["wǒ", "shì", "xué", "shēng", ""]},
+    "placeholder_pinyin": ["wǒ", "shì", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791299454",
+    "generated_at": "2026-10-06T15:10:54Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-2-c-u-nh-danh"],
+      "content_version": 2,
+      "content_hash": "432a823672b209c4b0f3ae493a3f5921dc29c24048563001dccf386513f11376",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-2-c-u-nh-danh",
+          "issue": "R5 dạy cả cấu trúc 有 và 在 như là điểm đối chiếu, nhưng phạm vi bài này chỉ là 是 định danh.",
+          "fix": "Chỉ giữ 是 định danh; đối chiếu với adjective predicate, không đưa 有/在 vào bài."
+        },
+        {
+          "r5_id": "zh-hsk1-2-c-u-nh-danh",
+          "issue": "R5 không có formula dạng slot trừu tượng và không có bindings cho ví dụ.",
+          "fix": "Thêm formula S + 是 + N/NP, negative S + 不是 + N/NP, question S + 是 + N/NP + 吗, và bindings cho từng ví dụ."
+        },
+        {
+          "r5_id": "zh-hsk1-2-c-u-nh-danh",
+          "issue": "R5 liệt kê lỗi '我是很好' nhưng không gắn error_tag word_order.",
+          "fix": "Ghi lỗi word_order với cặp sai/đúng '我学生' → '我是学生'."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

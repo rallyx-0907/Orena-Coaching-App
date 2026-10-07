@@ -1,0 +1,196 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.shi_bu_shi",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.haishi_huozhe"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: shi_bu_shi", "en": "Chinese grammar: shi_bu_shi"},
+    "native_title": "“是不是”正反问句",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Mẫu câu chính phản vấn \"是不是\" dùng để hỏi xác nhận, đặt trước vị ngữ của câu.",
+      "en": "The affirmative-negative question pattern \"是不是\" asks for confirmation and is placed before the predicate."
+    },
+    "sub": {"vi": "câu hỏi xác nhận", "en": "confirmation questions"},
+    "native_title_pinyin": ["", "shì", "bú", "shì", "", "zhèng", "fǎn", "wèn", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn xác nhận một thông tin mà mình đã đoán hoặc nghe nói, không phải hỏi thông tin mới.",
+      "en": "When you want to confirm something you already suspect or have heard, not ask for new information."
+    },
+    {
+      "vi": "Khi câu trả lời mong đợi là \"đúng\" hoặc \"không\", chứ không phải một câu trả lời mở.",
+      "en": "When the expected answer is yes or no, not an open-ended reply."
+    },
+    {
+      "vi": "Khi bạn muốn hỏi lịch sự, mềm hơn câu hỏi trực tiếp bằng \"吗\".",
+      "en": "When you want a softer, more polite question than a direct \"吗\" question."
+    },
+    {
+      "vi": "Khi chủ ngữ đứng trước \"是不是\" và vị ngữ theo sau nó.",
+      "en": "When the subject comes before \"是不是\" and the predicate follows it."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "是不是",
+        "role": "marker",
+        "label": {"vi": "kết cấu chính phản vấn", "en": "affirmative-negative marker"},
+        "pinyin": ["shì", "bú", "shì"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "你是不是中国人？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 4, "role": "marker"},
+        {"start": 4, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hỏi xác nhận quốc tịch, câu trả lời chỉ cần đúng hoặc không.",
+        "en": "Asks to confirm nationality; the answer is simply yes or no."
+      },
+      "translation": {"vi": "Bạn có phải là người Trung Quốc không?", "en": "Are you Chinese?"},
+      "pinyin": ["nǐ", "shì", "bú", "shì", "zhōng", "guó", "rén", ""]
+    },
+    {
+      "text": "他是不是老师？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Xác nhận nghề nghiệp của người thứ ba.",
+        "en": "Confirms a third person's occupation."
+      },
+      "translation": {"vi": "Anh ấy có phải là giáo viên không?", "en": "Is he a teacher?"},
+      "pinyin": ["tā", "shì", "bú", "shì", "lǎo", "shī", ""]
+    },
+    {
+      "text": "明天是不是星期一？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 5, "role": "marker"},
+        {"start": 5, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Xác nhận một mốc thời gian đã đoán trước.",
+        "en": "Confirms a time point the speaker already assumes."
+      },
+      "translation": {"vi": "Ngày mai có phải là thứ Hai không?", "en": "Is tomorrow Monday?"},
+      "pinyin": ["míng", "tiān", "shì", "bú", "shì", "xīng", "qī", "yī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học đã tách \"是不是\" thành hai từ riêng rồi thêm một \"是\" nữa cho vị ngữ, nhưng bản thân \"是不是\" đã chứa sẵn động từ \"是\".",
+        "en": "Learners split \"是不是\" into two words and then add another \"是\" for the predicate, but \"是不是\" already contains the verb \"是\"."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "你是不是是中国人？",
+      "right": "你是不是中国人？",
+      "wrong_pinyin": ["nǐ", "shì", "bú", "shì", "shì", "zhōng", "guó", "rén", ""],
+      "right_pinyin": ["nǐ", "shì", "bú", "shì", "zhōng", "guó", "rén", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你___学生吗？",
+      "options": [
+        {"text": "是不是", "error_tag": null, "pinyin": ["shì", "bú", "shì"]},
+        {"text": "是", "error_tag": "other", "pinyin": ["shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "\"是不是\" đứng trước vị ngữ để tạo câu hỏi xác nhận; chỉ dùng \"是\" thì câu không phải câu hỏi.",
+        "en": "\"是不是\" goes before the predicate to form a confirmation question; \"是\" alone does not make a question."
+      },
+      "q_pinyin": ["nǐ", "", "", "", "xué", "shēng", "ma", ""]
+    },
+    {
+      "q": "他___老师吗？",
+      "options": [
+        {"text": "是不是", "error_tag": null, "pinyin": ["shì", "bú", "shì"]},
+        {"text": "是不是是", "error_tag": "redundancy", "pinyin": ["shì", "bú", "shì", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "\"是不是\" đã bao gồm động từ \"是\", nên không thêm \"是\" nữa trước vị ngữ.",
+        "en": "\"是不是\" already includes the verb \"是\", so no extra \"是\" is added before the predicate."
+      },
+      "q_pinyin": ["tā", "", "", "", "lǎo", "shī", "ma", ""]
+    },
+    {
+      "q": "明天___星期一？",
+      "options": [
+        {"text": "是不是", "error_tag": null, "pinyin": ["shì", "bú", "shì"]},
+        {"text": "吗", "error_tag": "word_order", "pinyin": ["ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vị trí cần điền là kết cấu chính phản vấn đứng trước vị ngữ; \"吗\" chỉ đứng cuối câu.",
+        "en": "The blank needs the affirmative-negative marker before the predicate; \"吗\" only goes at the end of a sentence."
+      },
+      "q_pinyin": ["míng", "tiān", "", "", "", "xīng", "qī", "yī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi xác nhận về bản thân hoặc người bên cạnh, dùng \"是不是\".",
+      "en": "Write a confirmation question about yourself or someone near you, using \"是不是\"."
+    },
+    "placeholder": "我是不是……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["是不是"], "role": "marker"}]},
+    "sample": {"text": "我是不是学生？", "pinyin": ["wǒ", "shì", "bú", "shì", "xué", "shēng", ""]},
+    "placeholder_pinyin": ["wǒ", "shì", "bú", "shì", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348489",
+    "generated_at": "2026-10-07T04:48:09Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

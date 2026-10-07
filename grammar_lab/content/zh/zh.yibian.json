@@ -1,0 +1,243 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.yibian",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sequence",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["zh.zai_progressive"],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk2-11-topic"]},
+  "point_type": "word_order",
+  "sequence": 5,
+  "aliases": ["zh-hsk2-11-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "一边 ... 一边 ...", "en": "一边 ... 一边 ..."},
+    "native_title": "“一边……一边……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "一边...一边... dùng để nói hai hành động xảy ra cùng lúc, do cùng một chủ thể thực hiện.",
+      "en": "一边...一边... is used to say that two actions happen at the same time, performed by the same subject."
+    },
+    "sub": {"vi": "hai hành động cùng lúc", "en": "two actions at once"},
+    "native_title_pinyin": ["", "yī", "biān", "", "", "yī", "biān", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hai hành động diễn ra đồng thời và cùng một người thực hiện.",
+      "en": "When two actions happen simultaneously and are done by the same person."
+    },
+    {
+      "vi": "Khi cả hai hành động đều là hành động chủ động, có thể kéo dài và chồng lên nhau.",
+      "en": "When both actions are active, can last, and can overlap."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh việc vừa làm việc này vừa làm việc kia trong cùng một khoảng thời gian.",
+      "en": "When you want to emphasize doing one thing while doing another in the same period."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "一边",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu 1", "en": "marker 1"},
+        "pinyin": ["yī", "biān"]
+      },
+      {
+        "text": "VP1",
+        "role": "verb",
+        "label": {"vi": "cụm động từ 1", "en": "verb phrase 1"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "一边",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu 2", "en": "marker 2"},
+        "pinyin": ["yī", "biān"]
+      },
+      {
+        "text": "VP2",
+        "role": "verb",
+        "label": {"vi": "cụm động từ 2", "en": "verb phrase 2"},
+        "pinyin": ["", "", ""]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我一边听音乐，一边学习。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 7, "end": 9, "role": "marker"},
+        {"start": 9, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hai hành động nghe nhạc và học diễn ra cùng lúc.",
+        "en": "The two actions listening to music and studying happen at the same time."
+      },
+      "translation": {"vi": "Tôi vừa nghe nhạc vừa học.", "en": "I listen to music while studying."},
+      "pinyin": ["wǒ", "yī", "biān", "tīng", "yīn", "yuè", "", "yī", "biān", "xué", "xí", ""]
+    },
+    {
+      "text": "她一边走路，一边打电话。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 6, "end": 8, "role": "marker"},
+        {"start": 8, "end": 11, "role": "verb"}
+      ],
+      "annotation": {"vi": "Cô ấy vừa đi bộ vừa gọi điện.", "en": "She walks while making a phone call."},
+      "translation": {"vi": "Cô ấy vừa đi vừa gọi điện.", "en": "She walks while talking on the phone."},
+      "pinyin": ["tā", "yī", "biān", "zǒu", "lù", "", "yī", "biān", "dǎ", "diàn", "huà", ""]
+    },
+    {
+      "text": "我们一边吃饭，一边聊天。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 7, "end": 9, "role": "marker"},
+        {"start": 9, "end": 11, "role": "verb"}
+      ],
+      "annotation": {"vi": "Chúng tôi vừa ăn vừa trò chuyện.", "en": "We eat while chatting."},
+      "translation": {"vi": "Chúng tôi vừa ăn vừa trò chuyện.", "en": "We eat while chatting."},
+      "pinyin": ["wǒ", "men", "yī", "biān", "chī", "fàn", "", "yī", "biān", "liáo", "tiān", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.zai_progressive",
+      "this_example": "我一边听音乐，一边学习。",
+      "other_example": "我在听音乐。",
+      "this_meaning": {
+        "vi": "一边...一边... nối hai hành động cùng lúc, thường là hai hành động chủ động kéo dài.",
+        "en": "一边...一边... links two simultaneous actions, usually two active, ongoing actions."
+      },
+      "other_meaning": {
+        "vi": "在 + hành động diễn tả một hành động đang diễn ra tại một thời điểm, không nối hai hành động.",
+        "en": "在 + action describes one action in progress at a point in time; it does not link two actions."
+      },
+      "this_example_pinyin": ["wǒ", "yī", "biān", "tīng", "yīn", "yuè", "", "yī", "biān", "xué", "xí", ""],
+      "other_example_pinyin": ["wǒ", "zài", "tīng", "yīn", "yuè", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học trộn 先 (trình tự) với 一边 (đồng thời), tạo ra câu vừa nói trình tự vừa nói đồng thời.",
+        "en": "The learner mixes 先 (sequence) with 一边 (simultaneity), producing a sentence that claims both sequence and simultaneity."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "我先听音乐，一边学习。",
+      "right": "我一边听音乐，一边学习。",
+      "wrong_pinyin": ["wǒ", "xiān", "tīng", "yīn", "yuè", "", "yī", "biān", "xué", "xí", ""],
+      "right_pinyin": ["wǒ", "yī", "biān", "tīng", "yīn", "yuè", "", "yī", "biān", "xué", "xí", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___听音乐，一边学习。",
+      "options": [
+        {"text": "一边", "error_tag": null, "pinyin": ["yī", "biān"]},
+        {"text": "先", "error_tag": "conjunction", "pinyin": ["xiān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần 一边 để diễn tả hai hành động cùng lúc; 先 chỉ trình tự.",
+        "en": "Use 一边 to show two simultaneous actions; 先 only shows sequence."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "tīng", "yīn", "yuè", "", "yī", "biān", "xué", "xí", ""]
+    },
+    {
+      "q": "她一边走路，___打电话。",
+      "options": [
+        {"text": "一边", "error_tag": null, "pinyin": ["yī", "biān"]},
+        {"text": "在", "error_tag": "conjunction", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần 一边 thứ hai để hoàn thành cặp 一边...一边...; 在 không nối hai hành động.",
+        "en": "The second 一边 completes the 一边...一边... pair; 在 does not link two actions."
+      },
+      "q_pinyin": ["tā", "yī", "biān", "zǒu", "lù", "", "", "", "", "dǎ", "diàn", "huà", ""]
+    },
+    {
+      "q": "我们一边吃饭，一边___。",
+      "options": [
+        {"text": "聊天", "error_tag": null, "pinyin": ["liáo", "tiān"]},
+        {"text": "聊了天", "error_tag": "aspect", "pinyin": ["liáo", "le", "tiān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 一边 dùng động từ không có 了; 了 không phù hợp trong cấu trúc đồng thời.",
+        "en": "After 一边 use the verb without 了; 了 does not fit in this simultaneous structure."
+      },
+      "q_pinyin": ["wǒ", "men", "yī", "biān", "chī", "fàn", "", "yī", "biān", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn vừa làm việc này vừa làm việc kia cùng lúc, dùng 一边...一边...",
+      "en": "Write a sentence about doing two things at the same time, using 一边...一边..."
+    },
+    "placeholder": "我一边……一边……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["一边"], "role": "marker"}, {"any_of": ["一边"], "role": "marker"}]
+    },
+    "sample": {
+      "text": "我一边听音乐，一边做作业。",
+      "pinyin": ["wǒ", "yī", "biān", "tīng", "yīn", "yuè", "", "yī", "biān", "zuò", "zuò", "yè", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "yī", "biān", "", "", "yī", "biān", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338206",
+    "generated_at": "2026-10-07T01:56:46Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-11-topic"],
+      "content_version": 2,
+      "content_hash": "102f7a36c3eae6e731f008c69d5898decba779cee5d1e27dbc22ca70f46b4a67",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-11-topic",
+          "issue": "R5 dạy contrast với 除了...以外... nhưng schema yêu cầu so sánh với zh.zai_progressive.",
+          "fix": "Đã thay bằng so sánh 一边...一边... với 在 + hành động (zh.zai_progressive)."
+        },
+        {
+          "r5_id": "zh-hsk2-11-topic",
+          "issue": "R5 nói có thể lược một 一边 trong speech, nhưng HSK2 học full pair; điều này có thể gây nhầm lẫn.",
+          "fix": "Đã bỏ ghi chú lược 一边; chỉ dạy cặp đầy đủ 一边...一边... ở cấp độ này."
+        },
+        {
+          "r5_id": "zh-hsk2-11-topic",
+          "issue": "R5 có lỗi sai '我一边回家，一边到了家' với lý do chưa rõ ràng.",
+          "fix": "Đã thay bằng lỗi thực tế hơn: trộn 先 với 一边, và sửa thành '我一边听音乐，一边学习。'"
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

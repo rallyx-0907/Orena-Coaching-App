@@ -1,0 +1,262 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_2_2_2.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_2_2_1.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.072", "gf0025.hsk7_9.073", "gf0025.hsk7_9.074", "gf0025.hsk7_9.075"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 可不是", "en": "Chinese grammar: 可不是"},
+    "native_title": "可不是",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "「可不是」 dùng để xác nhận mạnh mẽ điều người khác vừa nói, nghĩa là \"đúng vậy, đúng thế\". Cấu trúc này thường đứng một mình hoặc theo sau là một mệnh đề nhắc lại ý đã nói.",
+      "en": "「可不是」 is used to strongly agree with what someone just said, meaning \"exactly\" or \"that's right\". It usually stands alone or is followed by a clause restating the point."
+    },
+    "sub": {"vi": "xác nhận mạnh", "en": "strong agreement"},
+    "native_title_pinyin": ["kě", "bú", "shì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi người khác vừa nêu một nhận xét và bạn hoàn toàn đồng ý, muốn nhấn mạnh sự đồng tình đó.",
+      "en": "When someone has just made a remark and you completely agree, and you want to emphasize that agreement."
+    },
+    {
+      "vi": "Khi câu trả lời của bạn chỉ gồm hai chữ 「可不是」, không cần thêm gì nữa.",
+      "en": "When your reply is just the two characters 「可不是」, with nothing else needed."
+    },
+    {
+      "vi": "Khi bạn muốn nhắc lại nguyên văn hoặc gần nguyên văn điều người kia vừa nói để xác nhận.",
+      "en": "When you want to repeat the other person's words, or nearly so, to confirm them."
+    },
+    {
+      "vi": "Trong khẩu ngữ thân mật, khi bạn muốn thể hiện sự đồng tình có phần nhấn mạnh, không dùng trong văn viết trang trọng.",
+      "en": "In casual spoken Chinese, when you want to show emphatic agreement; not used in formal writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "可不是",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu xác nhận mạnh", "en": "strong agreement marker"},
+        "pinyin": ["kě", "bú", "shì"]
+      },
+      {
+        "text": "mệnh đề nhắc lại",
+        "role": "other",
+        "label": {"vi": "mệnh đề nhắc lại ý đã nói", "en": "clause restating the point"},
+        "optional": true,
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "可不是，今天真冷。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "marker"}, {"start": 4, "end": 8, "role": "other"}],
+      "annotation": {
+        "vi": "「可不是」 đứng đầu câu, xác nhận điều người khác vừa nói, sau đó nhắc lại ý đó.",
+        "en": "「可不是」 opens the sentence, confirming what the other person said, then restates the point."
+      },
+      "translation": {"vi": "Đúng vậy, hôm nay lạnh thật.", "en": "Exactly, it's really cold today."},
+      "pinyin": ["kě", "bú", "shì", "", "jīn", "tiān", "zhēn", "lěng", ""]
+    },
+    {
+      "text": "可不是，这个办法最好。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "marker"}, {"start": 4, "end": 10, "role": "other"}],
+      "annotation": {
+        "vi": "「可不是」 dùng một mình rồi theo sau là mệnh đề nhắc lại để nhấn mạnh sự đồng tình.",
+        "en": "「可不是」 stands alone and is followed by a restating clause to emphasize agreement."
+      },
+      "translation": {"vi": "Đúng thế, cách này là tốt nhất.", "en": "That's right, this way is the best."},
+      "pinyin": ["kě", "bú", "shì", "", "zhè", "ge", "bàn", "fǎ", "zuì", "hǎo", ""]
+    },
+    {
+      "text": "可不是，他早就该来了。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "marker"}, {"start": 4, "end": 10, "role": "other"}],
+      "annotation": {
+        "vi": "「可不是」 thể hiện sự đồng tình mạnh mẽ với nhận xét trước đó.",
+        "en": "「可不是」 expresses strong agreement with the previous remark."
+      },
+      "translation": {
+        "vi": "Đúng vậy, anh ấy đáng lẽ phải đến từ lâu rồi.",
+        "en": "Exactly, he should have come long ago."
+      },
+      "pinyin": ["kě", "bú", "shì", "", "tā", "zǎo", "jiù", "gāi", "lái", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "「可不是」 là một cụm cố định, không thêm 「吗」 vào giữa. Thêm 「吗」 biến nó thành câu hỏi tu từ, không còn là lời xác nhận mạnh.",
+        "en": "「可不是」 is a fixed expression; do not insert 「吗」. Adding 「吗」 turns it into a rhetorical question, not a strong confirmation."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "可不是吗，今天真冷。",
+      "right": "可不是，今天真冷。",
+      "wrong_pinyin": ["kě", "bú", "shì", "ma", "", "jīn", "tiān", "zhēn", "lěng", ""],
+      "right_pinyin": ["kě", "bú", "shì", "", "jīn", "tiān", "zhēn", "lěng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "A：这个电影真好看。 B：___，我也这么觉得。",
+      "options": [
+        {"text": "可不是", "error_tag": null, "pinyin": ["kě", "bú", "shì"]},
+        {"text": "可不是吗", "error_tag": "particle", "pinyin": ["kě", "bú", "shì", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「可不是」 là cụm cố định dùng để xác nhận mạnh, không thêm 「吗」.",
+        "en": "「可不是」 is a fixed phrase for strong agreement; do not add 「吗」."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "zhè",
+        "ge",
+        "diàn",
+        "yǐng",
+        "zhēn",
+        "hǎo",
+        "kàn",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "yě",
+        "zhè",
+        "me",
+        "jué",
+        "de",
+        ""
+      ]
+    },
+    {
+      "q": "A：这家餐厅的菜太咸了。 B：___，我吃不下去了。",
+      "options": [
+        {"text": "可不是", "error_tag": null, "pinyin": ["kě", "bú", "shì"]},
+        {"text": "可不是吗", "error_tag": "particle", "pinyin": ["kě", "bú", "shì", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「可不是」 đứng một mình để xác nhận, không cần thêm trợ từ 「吗」.",
+        "en": "「可不是」 stands alone to confirm; no need to add the particle 「吗」."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "zhè",
+        "jiā",
+        "cān",
+        "tīng",
+        "de",
+        "cài",
+        "tài",
+        "xián",
+        "le",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "chī",
+        "bù",
+        "xià",
+        "qù",
+        "le",
+        ""
+      ]
+    },
+    {
+      "q": "A：他这次考试又没通过。 B：___，他最近都没复习。",
+      "options": [
+        {"text": "可不是", "error_tag": null, "pinyin": ["kě", "bú", "shì"]},
+        {"text": "可不是吗", "error_tag": "particle", "pinyin": ["kě", "bú", "shì", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「可不是」 là cách nói cố định để đồng tình mạnh mẽ, không dùng 「吗」.",
+        "en": "「可不是」 is a fixed way to agree strongly; do not use 「吗」."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "tā",
+        "zhè",
+        "cì",
+        "kǎo",
+        "shì",
+        "yòu",
+        "méi",
+        "tōng",
+        "guò",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "tā",
+        "zuì",
+        "jìn",
+        "dōu",
+        "méi",
+        "fù",
+        "xí",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu ngắn đồng tình với một nhận xét, dùng 「可不是」.",
+      "en": "Write a short sentence agreeing with a remark, using 「可不是」."
+    },
+    "placeholder": "可不是，……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["可不是"], "role": "marker"}]},
+    "sample": {"text": "可不是，今天真冷。", "pinyin": ["kě", "bú", "shì", "", "jīn", "tiān", "zhēn", "lěng", ""]},
+    "placeholder_pinyin": ["kě", "bú", "shì", "", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338872",
+    "generated_at": "2026-10-07T02:07:52Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:23Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

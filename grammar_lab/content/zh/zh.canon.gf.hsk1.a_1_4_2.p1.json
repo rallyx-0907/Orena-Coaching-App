@@ -197,7 +197,7 @@
     "sample": {"text": "我每天学习汉语。", "pinyin": ["wǒ", "měi", "tiān", "xué", "xí", "hàn", "yǔ", ""]},
     "placeholder_pinyin": ["wǒ", "měi", "tiān", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -205,5 +205,10 @@
     "run_id": "generate.1790831943",
     "generated_at": "2026-10-01T05:19:03Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

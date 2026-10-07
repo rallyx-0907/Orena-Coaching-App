@@ -1,0 +1,346 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_5_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_1_6.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-5-topic"], "gf0025": ["gf0025.hsk4.020", "gf0025.hsk4.055"]},
+  "point_type": "other",
+  "sequence": 8,
+  "aliases": ["zh-hsk4-5-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: 连接分句或句子：此外、而、而是、既然、可见、甚至、假如、总之",
+      "en": "Chinese grammar: 连接分句或句子：此外、而、而是、既然、可见、甚至、假如、总之"
+    },
+    "native_title": "连接分句或句子：此外、而、而是、既然、可见、甚至、假如、总之",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Nhóm liên từ nối phân câu và câu: 此外, 而, 而是, 既然, 可见, 甚至, 假如, 总之 — mỗi từ đánh dấu một quan hệ logic khác nhau giữa hai vế.",
+      "en": "A set of clause and sentence connectors — 此外, 而, 而是, 既然, 可见, 甚至, 假如, 总之 — each marking a different logical relation between two parts."
+    },
+    "sub": {"vi": "liên từ nối câu", "en": "clause connectors"},
+    "native_title_pinyin": [
+      "lián",
+      "jiē",
+      "fēn",
+      "jù",
+      "huò",
+      "jù",
+      "zi",
+      "",
+      "cǐ",
+      "wài",
+      "",
+      "ér",
+      "",
+      "ér",
+      "shì",
+      "",
+      "jì",
+      "rán",
+      "",
+      "kě",
+      "jiàn",
+      "",
+      "shèn",
+      "zhì",
+      "",
+      "jiǎ",
+      "rú",
+      "",
+      "zǒng",
+      "zhī"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi cần thêm một ý bổ sung cho câu trước, dùng 此外 ở đầu vế sau.",
+      "en": "When you add a further point to what was just said, start the next clause with 此外."
+    },
+    {
+      "vi": "Khi nêu tiền đề đã được chấp nhận rồi suy ra kết luận, dùng 既然 ... 就 ...",
+      "en": "When the premise is already accepted and you draw a conclusion from it, use 既然 ... 就 ..."
+    },
+    {
+      "vi": "Khi đính chính một ý vừa nói bằng 'không phải ... mà là ...', dùng 而是 sau 不是.",
+      "en": "When correcting what was just said with 'not ... but ...', use 而是 after 不是."
+    },
+    {
+      "vi": "Khi đưa ra giả thiết chưa xảy ra, dùng 假如 ở đầu vế điều kiện.",
+      "en": "When you pose a hypothesis that has not happened, open the condition clause with 假如."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "liên từ",
+        "role": "connector",
+        "label": {"vi": "liên từ nối", "en": "connector"},
+        "options": [
+          {"text": "此外", "pinyin": ["cǐ", "wài"]},
+          {"text": "而", "pinyin": ["ér"]},
+          {"text": "而是", "pinyin": ["ér", "shì"]},
+          {"text": "既然", "pinyin": ["jì", "rán"]},
+          {"text": "可见", "pinyin": ["kě", "jiàn"]},
+          {"text": "甚至", "pinyin": ["shèn", "zhì"]},
+          {"text": "假如", "pinyin": ["jiǎ", "rú"]},
+          {"text": "总之", "pinyin": ["zǒng", "zhī"]}
+        ],
+        "pinyin": ["", "", "", "", "", "", ""]
+      },
+      {
+        "text": "phân câu",
+        "role": "other",
+        "label": {"vi": "vế câu", "en": "clause"},
+        "pinyin": ["", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "此外，我们还要注意安全问题。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "connector"}, {"start": 3, "end": 13, "role": "other"}],
+      "annotation": {
+        "vi": "此外 thêm một điểm mới vào điều vừa nói.",
+        "en": "此外 adds a further point to what was just said."
+      },
+      "translation": {
+        "vi": "Ngoài ra, chúng ta còn phải chú ý vấn đề an toàn.",
+        "en": "In addition, we also have to pay attention to safety."
+      },
+      "pinyin": ["cǐ", "wài", "", "wǒ", "men", "hái", "yào", "zhù", "yì", "ān", "quán", "wèn", "tí", ""]
+    },
+    {
+      "text": "既然你已经决定了，就去做吧。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "connector"}, {"start": 2, "end": 13, "role": "other"}],
+      "annotation": {
+        "vi": "既然 đánh dấu tiền đề đã được chấp nhận, vế sau là kết luận.",
+        "en": "既然 marks an accepted premise; the following clause is the conclusion."
+      },
+      "translation": {
+        "vi": "Đã quyết định rồi thì làm đi.",
+        "en": "Since you've already decided, go ahead and do it."
+      },
+      "pinyin": ["jì", "rán", "nǐ", "yǐ", "jīng", "jué", "dìng", "le", "", "jiù", "qù", "zuò", "ba", ""]
+    },
+    {
+      "text": "假如明天下雨，比赛就取消。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "connector"}, {"start": 2, "end": 12, "role": "other"}],
+      "annotation": {
+        "vi": "假如 mở đầu giả thiết chưa xảy ra.",
+        "en": "假如 opens a hypothesis that has not happened yet."
+      },
+      "translation": {
+        "vi": "Nếu mai trời mưa thì hủy trận đấu.",
+        "en": "If it rains tomorrow, the match will be cancelled."
+      },
+      "pinyin": ["jiǎ", "rú", "míng", "tiān", "xià", "yǔ", "", "bǐ", "sài", "jiù", "qǔ", "xiāo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "既然 chỉ dùng cho sự việc đã được xác nhận, không dùng cho khả năng chưa xảy ra; ở đây phải dùng 假如.",
+        "en": "既然 only works with an already accepted fact, not a possibility; a hypothesis needs 假如."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "既然明天可能下雨，我们就不去。",
+      "right": "假如明天可能下雨，我们就不去。",
+      "wrong_pinyin": [
+        "jì",
+        "rán",
+        "míng",
+        "tiān",
+        "kě",
+        "néng",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "bù",
+        "qù",
+        ""
+      ],
+      "right_pinyin": [
+        "jiǎ",
+        "rú",
+        "míng",
+        "tiān",
+        "kě",
+        "néng",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "bù",
+        "qù",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___大家都同意，我们就开始吧。",
+      "options": [
+        {"text": "既然", "error_tag": null, "pinyin": ["jì", "rán"]},
+        {"text": "假如", "error_tag": "conjunction", "pinyin": ["jiǎ", "rú"]},
+        {"text": "此外", "error_tag": "conjunction", "pinyin": ["cǐ", "wài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mọi người đồng ý là sự việc đã được xác nhận, nên dùng 既然 ... 就 ...",
+        "en": "Everyone agreeing is an accepted fact, so 既然 ... 就 ... is required."
+      },
+      "q_pinyin": ["", "", "", "dà", "jiā", "dōu", "tóng", "yì", "", "wǒ", "men", "jiù", "kāi", "shǐ", "ba", ""]
+    },
+    {
+      "q": "这个办法不好，___那个办法更合适。",
+      "options": [
+        {"text": "而", "error_tag": null, "pinyin": ["ér"]},
+        {"text": "而是", "error_tag": "conjunction", "pinyin": ["ér", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "而 nối hai vế đối lập nhẹ; 而是 chỉ dùng sau 不是.",
+        "en": "而 links two mildly contrasting clauses; 而是 only appears after 不是."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "bàn",
+        "fǎ",
+        "bù",
+        "hǎo",
+        "",
+        "",
+        "",
+        "",
+        "nà",
+        "ge",
+        "bàn",
+        "fǎ",
+        "gèng",
+        "hé",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "q": "他工作很努力，___周末也不休息。",
+      "options": [
+        {"text": "甚至", "error_tag": null, "pinyin": ["shèn", "zhì"]},
+        {"text": "总之", "error_tag": "conjunction", "pinyin": ["zǒng", "zhī"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "甚至 nhấn mạnh trường hợp cực đoan; 总之 dùng để tổng kết, không hợp ở đây.",
+        "en": "甚至 highlights an extreme case; 总之 summarises and does not fit here."
+      },
+      "q_pinyin": [
+        "tā",
+        "gōng",
+        "zuò",
+        "hěn",
+        "nǔ",
+        "lì",
+        "",
+        "",
+        "",
+        "",
+        "zhōu",
+        "mò",
+        "yě",
+        "bù",
+        "xiū",
+        "xī",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 既然 ... 就 ... về một quyết định của bạn.",
+      "en": "Write one sentence with 既然 ... 就 ... about a decision of yours."
+    },
+    "placeholder": "既然我……，就……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["既然"], "role": "connector"}, {"regex": "就", "role": "other"}]
+    },
+    "sample": {
+      "text": "既然我已经报名了，就好好准备吧。",
+      "pinyin": [
+        "jì",
+        "rán",
+        "wǒ",
+        "yǐ",
+        "jīng",
+        "bào",
+        "míng",
+        "le",
+        "",
+        "jiù",
+        "hǎo",
+        "hǎo",
+        "zhǔn",
+        "bèi",
+        "ba",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["jì", "rán", "wǒ", "", "", "", "jiù", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338406",
+    "generated_at": "2026-10-07T02:00:06Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-5-topic"],
+      "content_version": 2,
+      "content_hash": "053411003d809a54135288b951e5a8bb29dd21e7e44ccd2d53df19e699014138",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-5-topic",
+          "issue": "R5 chỉ dạy 既然...就... nhưng tiêu đề điểm ngữ pháp bao gồm tám liên từ: 此外, 而, 而是, 既然, 可见, 甚至, 假如, 总之.",
+          "fix": "Mở rộng công thức thành một slot liên từ với tám lựa chọn, và thêm ví dụ cho 此外 và 假如."
+        },
+        {
+          "r5_id": "zh-hsk4-5-topic",
+          "issue": "Câu sai '既然明天可能下雨，就如果不去。' vừa sai trật tự vừa trộn tiền đề với giả thiết, khó thấy lỗi thật.",
+          "fix": "Thay bằng '既然明天可能下雨，我们就不去。' và bản sửa dùng 假如 để tách rõ tiền đề đã xác nhận với giả thiết."
+        },
+        {
+          "r5_id": "zh-hsk4-5-topic",
+          "issue": "R5 không có công thức trừu tượng, không có bài kiểm tra nhanh và không có bài sản xuất cá nhân.",
+          "fix": "Thêm formula, quick_practice ba câu và personal_production với pattern_rule."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

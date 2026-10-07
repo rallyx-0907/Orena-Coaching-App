@@ -1,0 +1,291 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_8.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_1_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.070", "gf0025.hsk5.071"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 用代词复指", "en": "Chinese grammar: 用代词复指"},
+    "native_title": "用代词复指",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Dùng đại từ để thay thế và chỉ lại một thành phần đã xuất hiện trước đó, tránh lặp từ.",
+      "en": "Use a pronoun to substitute for and refer back to an element already mentioned, avoiding repetition."
+    },
+    "sub": {"vi": "đại từ thay thế", "en": "pronoun substitution"},
+    "native_title_pinyin": ["yòng", "dài", "cí", "fù", "zhǐ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi một danh từ hoặc cụm danh từ vừa được nhắc đến và bạn không muốn lặp lại nó.",
+      "en": "When a noun or noun phrase has just been mentioned and you do not want to repeat it."
+    },
+    {
+      "vi": "Khi người nghe đã biết rõ đối tượng được nói tới, có thể dùng 它 / 他 / 她 / 它们 để chỉ lại.",
+      "en": "When the listener already knows the referent, use 它 / 他 / 她 / 它们 to point back to it."
+    },
+    {
+      "vi": "Khi cần phân biệt hai đối tượng trong cùng câu, dùng 前者 và 后者 để chỉ đối tượng trước và sau.",
+      "en": "When distinguishing two items in the same sentence, use 前者 and 后者 for the first and the latter."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh chính đối tượng đó, dùng 它本身 / 他本人 để chỉ lại kèm nhấn mạnh.",
+      "en": "When emphasizing the exact entity, use 它本身 / 他本人 to refer back with emphasis."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "代词",
+        "role": "object",
+        "label": {"vi": "đại từ chỉ lại", "en": "referring pronoun"},
+        "options": [
+          {"text": "它", "pinyin": ["tā"]},
+          {"text": "他", "pinyin": ["tā"]},
+          {"text": "她", "pinyin": ["tā"]},
+          {"text": "它们", "pinyin": ["tā", "men"]},
+          {"text": "前者", "pinyin": ["qián", "zhě"]},
+          {"text": "后者", "pinyin": ["hòu", "zhě"]}
+        ],
+        "pinyin": ["dài", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我买了一个新手机，它很好用。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 9, "end": 10, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "它 chỉ lại 新手机 đã nhắc ở vế trước.",
+        "en": "它 refers back to 新手机 mentioned in the previous clause."
+      },
+      "translation": {
+        "vi": "Tôi mua một chiếc điện thoại mới, nó rất dễ dùng.",
+        "en": "I bought a new phone; it is very easy to use."
+      },
+      "pinyin": ["wǒ", "mǎi", "le", "yí", "gè", "xīn", "shǒu", "jī", "", "tā", "hěn", "hǎo", "yòng", ""]
+    },
+    {
+      "text": "小王和小李都来了，前者带了礼物。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 6, "end": 8, "role": "verb"},
+        {"start": 9, "end": 11, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "前者 chỉ 小王, người được nhắc trước trong cặp.",
+        "en": "前者 refers to 小王, the first of the two mentioned."
+      },
+      "translation": {
+        "vi": "Tiểu Vương và Tiểu Lý đều đến, người trước mang quà.",
+        "en": "Xiao Wang and Xiao Li both came; the former brought a gift."
+      },
+      "pinyin": [
+        "xiǎo",
+        "wáng",
+        "hé",
+        "xiǎo",
+        "lǐ",
+        "dōu",
+        "lái",
+        "le",
+        "",
+        "qián",
+        "zhě",
+        "dài",
+        "le",
+        "lǐ",
+        "wù",
+        ""
+      ]
+    },
+    {
+      "text": "这个办法听起来不错，我们可以试试它。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 10, "end": 12, "role": "subject"},
+        {"start": 14, "end": 16, "role": "verb"},
+        {"start": 16, "end": 17, "role": "object"}
+      ],
+      "annotation": {"vi": "它 chỉ lại 这个办法 ở vế trước.", "en": "它 refers back to 这个办法 in the previous clause."},
+      "translation": {
+        "vi": "Cách này nghe hay đấy, chúng ta có thể thử nó.",
+        "en": "This method sounds good; we can try it."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "bàn",
+        "fǎ",
+        "tīng",
+        "qǐ",
+        "lái",
+        "bù",
+        "cuò",
+        "",
+        "wǒ",
+        "men",
+        "kě",
+        "yǐ",
+        "shì",
+        "shì",
+        "tā",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Tiếng Trung cần đại từ 它 để chỉ lại 新手机; bỏ đại từ làm câu thiếu chủ ngữ ở vế sau.",
+        "en": "Chinese needs the pronoun 它 to refer back to 新手机; dropping it leaves the second clause without a subject."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我买了一个新手机，很好用。",
+      "right": "我买了一个新手机，它很好用。",
+      "wrong_pinyin": ["wǒ", "mǎi", "le", "yí", "gè", "xīn", "shǒu", "jī", "", "hěn", "hǎo", "yòng", ""],
+      "right_pinyin": ["wǒ", "mǎi", "le", "yí", "gè", "xīn", "shǒu", "jī", "", "tā", "hěn", "hǎo", "yòng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我买了一个新手机，___很好用。",
+      "options": [
+        {"text": "它", "error_tag": null, "pinyin": ["tā"]},
+        {"text": "他", "error_tag": "word_choice", "pinyin": ["tā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Điện thoại là đồ vật, phải dùng 它, không dùng 他 chỉ người.",
+        "en": "A phone is an object, so use 它, not 他 which refers to a person."
+      },
+      "q_pinyin": ["wǒ", "mǎi", "le", "yí", "gè", "xīn", "shǒu", "jī", "", "", "", "", "hěn", "hǎo", "yòng", ""]
+    },
+    {
+      "q": "小王和小李都来了，___带了礼物。",
+      "options": [
+        {"text": "前者", "error_tag": null, "pinyin": ["qián", "zhě"]},
+        {"text": "后者", "error_tag": "word_choice", "pinyin": ["hòu", "zhě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Người mang quà là người được nhắc trước, nên dùng 前者.",
+        "en": "The one who brought a gift is the first mentioned, so use 前者."
+      },
+      "q_pinyin": [
+        "xiǎo",
+        "wáng",
+        "hé",
+        "xiǎo",
+        "lǐ",
+        "dōu",
+        "lái",
+        "le",
+        "",
+        "",
+        "",
+        "",
+        "dài",
+        "le",
+        "lǐ",
+        "wù",
+        ""
+      ]
+    },
+    {
+      "q": "这个办法听起来不错，我们可以试试___。",
+      "options": [
+        {"text": "它", "error_tag": null, "pinyin": ["tā"]},
+        {"text": "它们", "error_tag": "word_choice", "pinyin": ["tā", "men"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "办法 là số ít, dùng 它; 它们 dùng cho nhiều đối tượng.",
+        "en": "办法 is singular, so use 它; 它们 is for plural referents."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "bàn",
+        "fǎ",
+        "tīng",
+        "qǐ",
+        "lái",
+        "bù",
+        "cuò",
+        "",
+        "wǒ",
+        "men",
+        "kě",
+        "yǐ",
+        "shì",
+        "shì",
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một đồ vật bạn vừa mua và dùng 它 để chỉ lại nó.",
+      "en": "Write a sentence about something you just bought and use 它 to refer back to it."
+    },
+    "placeholder": "我买了一个……，它……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["买了"], "role": "verb"}, {"any_of": ["它"], "role": "object"}]
+    },
+    "sample": {
+      "text": "我买了一个新手机，它很好用。",
+      "pinyin": ["wǒ", "mǎi", "le", "yí", "gè", "xīn", "shǒu", "jī", "", "tā", "hěn", "hǎo", "yòng", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "mǎi", "le", "yí", "gè", "", "", "", "tā", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338642",
+    "generated_at": "2026-10-07T02:04:02Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

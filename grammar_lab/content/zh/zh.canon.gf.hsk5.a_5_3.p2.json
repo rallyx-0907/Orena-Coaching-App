@@ -1,0 +1,303 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_3.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_3.p1"],
+  "contrasts": [],
+  "error_tags": ["collocation"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.031"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cấu trúc cố định: 在 …… 看来", "en": "Fixed patterns: 在 …… 看来"},
+    "native_title": "在……看来",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc 在……看来 dùng để nêu rõ ai là người đưa ra nhận định, đánh giá.",
+      "en": "The pattern 在……看来 marks whose viewpoint or judgment a statement expresses."
+    },
+    "sub": {"vi": "nêu quan điểm", "en": "viewpoint marker"},
+    "native_title_pinyin": ["zài", "", "", "kàn", "lái"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói 'theo cách nhìn của ai đó' trước khi nêu ý kiến.",
+      "en": "When you want to say 'from someone's point of view' before giving an opinion."
+    },
+    {
+      "vi": "Khi người đưa ra đánh giá là một người hoặc một nhóm cụ thể, không phải bản thân người nói.",
+      "en": "When the person or group judging is specific and is not the speaker."
+    },
+    {
+      "vi": "Khi cần phân biệt rõ quan điểm của người này với quan điểm của người khác trong cùng một đoạn.",
+      "en": "When you need to contrast one person's view with another's in the same passage."
+    },
+    {
+      "vi": "Khi muốn nhận định khách quan hơn bằng cách gán nó cho một góc nhìn cụ thể.",
+      "en": "When you want a judgment to sound less personal by attaching it to a specific viewpoint."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "在",
+        "role": "marker",
+        "label": {"vi": "giới từ 在", "en": "the preposition 在"},
+        "pinyin": ["zài"]
+      },
+      {
+        "text": "NP",
+        "role": "other",
+        "label": {"vi": "người/nhóm đưa ra quan điểm", "en": "person or group holding the view"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "看来",
+        "role": "marker",
+        "label": {"vi": "cụm 看来", "en": "the phrase 看来"},
+        "pinyin": ["kàn", "lái"]
+      },
+      {
+        "text": "S",
+        "role": "other",
+        "label": {"vi": "mệnh đề nhận định", "en": "the judgment clause"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "在我看来，这个计划需要更多时间。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 5, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "在……看来 đánh dấu '我' là người đưa ra nhận định.",
+        "en": "在……看来 marks 我 as the holder of the judgment."
+      },
+      "translation": {
+        "vi": "Theo tôi thấy, kế hoạch này cần thêm thời gian.",
+        "en": "In my view, this plan needs more time."
+      },
+      "pinyin": [
+        "zài",
+        "wǒ",
+        "kàn",
+        "lái",
+        "",
+        "zhè",
+        "ge",
+        "jì",
+        "huà",
+        "xū",
+        "yào",
+        "gèng",
+        "duō",
+        "shí",
+        "jiān",
+        ""
+      ]
+    },
+    {
+      "text": "在老师看来，这次考试并不难。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 3, "role": "other"},
+        {"start": 3, "end": 5, "role": "marker"},
+        {"start": 6, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "在……看来 gán nhận định cho '老师', không phải người nói.",
+        "en": "在……看来 assigns the judgment to 老师, not the speaker."
+      },
+      "translation": {
+        "vi": "Theo thầy/cô, kỳ thi lần này không khó.",
+        "en": "From the teacher's point of view, this exam is not difficult."
+      },
+      "pinyin": ["zài", "lǎo", "shī", "kàn", "lái", "", "zhè", "cì", "kǎo", "shì", "bìng", "bù", "nán", ""]
+    },
+    {
+      "text": "在很多人看来，健康比金钱重要。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 4, "role": "other"},
+        {"start": 4, "end": 6, "role": "marker"},
+        {"start": 7, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "在……看来 dùng với một nhóm người, không chỉ một cá nhân.",
+        "en": "在……看来 can take a group of people, not only one individual."
+      },
+      "translation": {
+        "vi": "Theo nhiều người, sức khỏe quan trọng hơn tiền bạc.",
+        "en": "In many people's view, health is more important than money."
+      },
+      "pinyin": [
+        "zài",
+        "hěn",
+        "duō",
+        "rén",
+        "kàn",
+        "lái",
+        "",
+        "jiàn",
+        "kāng",
+        "bǐ",
+        "jīn",
+        "qián",
+        "zhòng",
+        "yào",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Cấu trúc cố định là 在……看来, không phải 在……看. Người học Việt Nam thường dịch 'theo tôi thấy' thành 在我看 vì bỏ mất 来.",
+        "en": "The fixed frame is 在……看来, not 在……看. Vietnamese learners often translate 'theo tôi thấy' as 在我看 and drop 来."
+      },
+      "error_tag": "collocation",
+      "l1": ["vi"],
+      "wrong": "在我看，这个计划需要更多时间。",
+      "right": "在我看来，这个计划需要更多时间。",
+      "wrong_pinyin": [
+        "zài",
+        "wǒ",
+        "kàn",
+        "",
+        "zhè",
+        "ge",
+        "jì",
+        "huà",
+        "xū",
+        "yào",
+        "gèng",
+        "duō",
+        "shí",
+        "jiān",
+        ""
+      ],
+      "right_pinyin": [
+        "zài",
+        "wǒ",
+        "kàn",
+        "lái",
+        "",
+        "zhè",
+        "ge",
+        "jì",
+        "huà",
+        "xū",
+        "yào",
+        "gèng",
+        "duō",
+        "shí",
+        "jiān",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "在___看来，这个办法不太合适。",
+      "options": [
+        {"text": "我", "error_tag": null, "pinyin": ["wǒ"]},
+        {"text": "我的", "error_tag": "collocation", "pinyin": ["wǒ", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "在……看来 cần một danh từ hoặc đại từ chỉ người đưa ra quan điểm; 我的 là sở hữu, không đứng một mình ở đây.",
+        "en": "在……看来 needs a noun or pronoun naming the viewpoint holder; 我的 is possessive and cannot stand alone here."
+      },
+      "q_pinyin": ["zài", "", "", "", "kàn", "lái", "", "zhè", "ge", "bàn", "fǎ", "bù", "tài", "hé", "shì", ""]
+    },
+    {
+      "q": "在___看来，孩子应该多读书。",
+      "options": [
+        {"text": "父母", "error_tag": null, "pinyin": ["fù", "mǔ"]},
+        {"text": "父母们", "error_tag": "redundancy", "pinyin": ["fù", "mǔ", "men"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "父母 đã là số nhiều, thêm 们 là thừa trong cấu trúc này.",
+        "en": "父母 is already plural; adding 们 is redundant in this frame."
+      },
+      "q_pinyin": ["zài", "", "", "", "kàn", "lái", "", "hái", "zi", "yīng", "gāi", "duō", "dú", "shū", ""]
+    },
+    {
+      "q": "在医生看来，他___休息几天。",
+      "options": [
+        {"text": "需要", "error_tag": null, "pinyin": ["xū", "yào"]},
+        {"text": "需要了", "error_tag": "aspect", "pinyin": ["xū", "yào", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề nhận định nêu trạng thái hiện tại, không dùng 了 ở đây.",
+        "en": "The judgment clause states a current need, so 了 is not used here."
+      },
+      "q_pinyin": ["zài", "yī", "shēng", "kàn", "lái", "", "tā", "", "", "", "xiū", "xī", "jǐ", "tiān", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nêu quan điểm của bạn về việc học tiếng Trung, dùng 在……看来.",
+      "en": "Write one sentence giving your view on learning Chinese, using 在……看来."
+    },
+    "placeholder": "在我看来，……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["在"], "role": "marker"}, {"any_of": ["看来"], "role": "marker"}]
+    },
+    "sample": {
+      "text": "在我看来，学习中文需要每天练习。",
+      "pinyin": [
+        "zài",
+        "wǒ",
+        "kàn",
+        "lái",
+        "",
+        "xué",
+        "xí",
+        "zhōng",
+        "wén",
+        "xū",
+        "yào",
+        "měi",
+        "tiān",
+        "liàn",
+        "xí",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zài", "wǒ", "kàn", "lái", "", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791347386",
+    "generated_at": "2026-10-07T04:29:46Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

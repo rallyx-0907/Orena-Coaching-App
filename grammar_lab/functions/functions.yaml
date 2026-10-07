@@ -27,13 +27,13 @@ functions:
     en:
     - en.there_is_are
     - en.canon.c1.015
-    zh-Hans: []
-    ja: []
-  planned:
-    en: []
     zh-Hans:
     - zh.you_sentence
     - zh.cunxian_sentence
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja:
     - ja.aru_iru
 - id: fn.quantity
@@ -59,19 +59,19 @@ functions:
     - zh.canon.gf.hsk2.a_2_1_4.p1
     - zh.canon.gf.hsk5.a_5_1_2.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_2.p1
+    - zh.liang_er
+    - zh.canon.gf.hsk3.a_3_7.p1
+    - zh.canon.gf.hsk4.a_4_6_1.p1
+    - zh.canon.gf.hsk6.a_6_6_2_10.p1
+    - zh.canon.gf.hsk2.a_2_4_1.p1
+    - zh.canon.gf.hsk2.a_2_7.p1
+    - zh.canon.r5.hsk5_3_approximate_quantities
+    - zh.canon.r5.hsk5_4_topic_141
+    - zh.canon.gf.hsk5.a_5_5_2_9.p1
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.liang_er
-    - zh.canon.gf.hsk2.a_2_4_1.p1
-    - zh.canon.gf.hsk2.a_2_7.p1
-    - zh.canon.gf.hsk3.a_3_7.p1
-    - zh.canon.gf.hsk4.a_4_6_1.p1
-    - zh.canon.gf.hsk5.a_5_5_2_9.p1
-    - zh.canon.r5.hsk5_3_approximate_quantities
-    - zh.canon.r5.hsk5_4_topic_141
-    - zh.canon.gf.hsk6.a_6_6_2_10.p1
+    zh-Hans: []
     ja:
     - ja.counters
 - id: fn.reference
@@ -93,12 +93,12 @@ functions:
     - en.canon.c2.016
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_1_7_1.p1
+    - zh.canon.r5.hsk6_4_patterns
+    - zh.canon.r5.hsk6_5_patterns
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.r5.hsk6_4_patterns
-    - zh.canon.r5.hsk6_5_patterns
+    zh-Hans: []
     ja:
     - ja.wa_ga
 - id: fn.ongoing_now
@@ -114,13 +114,13 @@ functions:
     - zh.canon.gf.hsk2.a_2_6.p1
     - zh.canon.r5.hsk4_1_v_v
     - zh.canon.gf.hsk6.a_6_2_4_2.p1
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
     - zh.zai_progressive
     - zh.canon.r5.hsk4_10_topic
     - zh.canon.gf.hsk5.a_5_2_1_2.p1
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja:
     - ja.te_iru.progressive
 - id: fn.completed_past
@@ -142,12 +142,12 @@ functions:
     - en.canon.b1.048
     zh-Hans:
     - zh.le_completion
+    - zh.canon.r5.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i
+    - zh.verb_reduplication
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.r5.hsk2_3_cu_i_c_u_thay_i_tr_ng_th_i
-    - zh.verb_reduplication
+    zh-Hans: []
     ja:
     - ja.ta_form
 - id: fn.past_experience
@@ -188,15 +188,15 @@ functions:
     - zh.canon.r5.hsk3_10_topic
     - zh.canon.gf.hsk4.a_4_1_7.p1
     - zh.canon.gf.hsk5.a_5_5_1.p2
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
-    - zh.bi_comparison
     - zh.meiyou_comparison
+    - zh.bi_comparison
     - zh.canon.gf.hsk3.a_3_2_4.p1
     - zh.bi_yidian_deduo
     - zh.canon.r5.hsk6_14_formal_comparison
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja:
     - ja.yori_comparison
 - id: fn.condition_real
@@ -217,16 +217,16 @@ functions:
     zh-Hans:
     - zh.canon.gf.hsk4.a_4_5_2_7.p1
     - zh.canon.gf.hsk6.a_6_6_2_7.p1
+    - zh.zhiyao_jiu
+    - zh.ruguo_jiu
+    - zh.canon.gf.hsk5.a_5_6.p2
+    - zh.jiaru_tangruo
+    - zh.canon.r5.hsk3_4_topic
+    - zh.zhiyou_cai
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.zhiyao_jiu
-    - zh.zhiyou_cai
-    - zh.ruguo_jiu
-    - zh.canon.r5.hsk3_4_topic
-    - zh.canon.gf.hsk5.a_5_6.p2
-    - zh.jiaru_tangruo
+    zh-Hans: []
     ja:
     - ja.tara_ba
 - id: fn.object_disposal
@@ -244,16 +244,16 @@ functions:
     - zh.canon.gf.hsk5.a_5_1_4_2.p1
     - zh.canon.r5.hsk6_6_topic
     - zh.canon.gf.hsk7_9.a_7_5_1.p1
+    - zh.canon.r5.hsk3_5_v_i_chi_u
+    - zh.canon.gf.hsk5.a_5_5_1.p1
+    - zh.canon.gf.hsk6.a_6_8.p2
+    - zh.canon.r5.hsk3_2_b_ng_k_t_qu
+    - zh.canon.r5.hsk3_3_topic
+    - zh.canon.r5.hsk4_1_v_i_c_u_tr_c_ph_c
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.r5.hsk3_2_b_ng_k_t_qu
-    - zh.canon.r5.hsk3_3_topic
-    - zh.canon.r5.hsk3_5_v_i_chi_u
-    - zh.canon.r5.hsk4_1_v_i_c_u_tr_c_ph_c
-    - zh.canon.gf.hsk5.a_5_5_1.p1
-    - zh.canon.gf.hsk6.a_6_8.p2
+    zh-Hans: []
     ja: []
 - id: fn.sentence_basics
   title:
@@ -291,32 +291,32 @@ functions:
     - zh.canon.gf.hsk6.a_6_6_1.p1
     - zh.canon.gf.hsk7_9.a_7_2_2_1.p2
     - zh.canon.gf.hsk7_9.a_7_4_1.p1
+    - zh.canon.gf.hsk2.a_2_2_2.p1
+    - zh.canon.gf.hsk2.a_2_1_10.p1
+    - zh.canon.gf.hsk3.a_3_1_1.p1
+    - zh.canon.gf.hsk4.a_4_1_8.p1
+    - zh.canon.gf.hsk4.a_4_2_1_1.p1
+    - zh.canon.gf.hsk6.a_6_4.p1
+    - zh.canon.r5.hsk79_14_productive_four_character_grammar_patterns
+    - zh.canon.r5.hsk5_11_topic
+    - zh.canon.gf.hsk3.a_3_3_2_2.p1
+    - zh.canon.gf.hsk6.a_6_1_1.p1
+    - zh.de_di_de
+    - zh.canon.gf.hsk4.a_4_4_1.p1
+    - zh.canon.gf.hsk6.a_6_1_2.p1
+    - zh.canon.r5.hsk5_2_topic_139
+    - zh.canon.r5.hsk3_11_nh_n_m_nh
+    - zh.canon.gf.hsk3.a_3_1_2.p1
+    - zh.canon.r5.hsk4_3_topic
+    - zh.canon.gf.hsk5.a_5_2_1_1.p2
+    - zh.canon.gf.hsk3.a_3_6_1.p1
+    - zh.canon.r5.hsk5_15_tendencies
+    - zh.canon.r5.hsk6_19_sentence_final_particles_in_advanced_use
+    - zh.canon.r5.hsk79_18_academic_definition_and_classification
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.gf.hsk2.a_2_1_10.p1
-    - zh.canon.gf.hsk2.a_2_2_2.p1
-    - zh.canon.r5.hsk3_11_nh_n_m_nh
-    - zh.canon.gf.hsk3.a_3_1_1.p1
-    - zh.canon.gf.hsk3.a_3_1_2.p1
-    - zh.canon.gf.hsk3.a_3_3_2_2.p1
-    - zh.canon.gf.hsk3.a_3_6_1.p1
-    - zh.de_di_de
-    - zh.canon.gf.hsk4.a_4_1_8.p1
-    - zh.canon.gf.hsk4.a_4_2_1_1.p1
-    - zh.canon.gf.hsk4.a_4_4_1.p1
-    - zh.canon.r5.hsk4_3_topic
-    - zh.canon.r5.hsk5_2_topic_139
-    - zh.canon.gf.hsk5.a_5_2_1_1.p2
-    - zh.canon.r5.hsk5_11_topic
-    - zh.canon.r5.hsk5_15_tendencies
-    - zh.canon.gf.hsk6.a_6_1_1.p1
-    - zh.canon.gf.hsk6.a_6_1_2.p1
-    - zh.canon.gf.hsk6.a_6_4.p1
-    - zh.canon.r5.hsk6_19_sentence_final_particles_in_advanced_use
-    - zh.canon.r5.hsk79_14_productive_four_character_grammar_patterns
-    - zh.canon.r5.hsk79_18_academic_definition_and_classification
+    zh-Hans: []
     ja: []
 - id: fn.identity_state
   title:
@@ -330,11 +330,11 @@ functions:
     - en.canon.b1.051
     zh-Hans:
     - zh.adjective_predicate
+    - zh.shi_sentence
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.shi_sentence
+    zh-Hans: []
     ja: []
 - id: fn.pronoun_reference
   title:
@@ -356,15 +356,15 @@ functions:
     - zh.canon.gf.hsk1.a_1_3_3.p1
     - zh.canon.gf.hsk4.a_4_1_2.p1
     - zh.canon.gf.hsk6.a_6_2_1.p1
+    - zh.canon.gf.hsk1.a_1_1_3.p1
+    - zh.canon.gf.hsk5.a_5_8.p1
+    - zh.canon.r5.hsk5_13_reference
+    - zh.canon.gf.hsk5.a_5_1_1.p1
+    - zh.canon.gf.hsk2.a_2_1_2.p1
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.gf.hsk1.a_1_1_3.p1
-    - zh.canon.gf.hsk2.a_2_1_2.p1
-    - zh.canon.gf.hsk5.a_5_1_1.p1
-    - zh.canon.gf.hsk5.a_5_8.p1
-    - zh.canon.r5.hsk5_13_reference
+    zh-Hans: []
     ja: []
 - id: fn.possession
   title:
@@ -377,12 +377,12 @@ functions:
     - en.possessive_pronouns
     - en.possessive_s
     - en.have_got
-    zh-Hans: []
+    zh-Hans:
+    - zh.de_possessive
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.de_possessive
+    zh-Hans: []
     ja: []
 - id: fn.instructions
   title:
@@ -392,13 +392,13 @@ functions:
   realizations:
     en:
     - en.imperatives
-    zh-Hans: []
-    ja: []
-  planned:
-    en: []
     zh-Hans:
     - zh.qing_request
     - zh.bie_imperative
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.questions
   title:
@@ -425,21 +425,21 @@ functions:
     - zh.canon.gf.hsk4.a_4_7.p3
     - zh.canon.gf.hsk6.a_6_3_2_2.p1
     - zh.canon.gf.hsk7_9.a_7_3.p1
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
     - zh.question_words
     - zh.ma_question
     - zh.ne_question
     - zh.zenme_question
-    - zh.duo_adjective_question
-    - zh.shi_bu_shi
     - zh.canon.gf.hsk3.a_3_8.p1
+    - zh.duo_adjective_question
+    - zh.canon.gf.hsk7_9.a_7_6.p1
+    - zh.canon.gf.hsk7_9.a_7_1_2.p1
+    - zh.shi_bu_shi
     - zh.wh_universal
     - zh.canon.r5.hsk6_6_rhetorical_questions
-    - zh.canon.gf.hsk7_9.a_7_1_2.p1
-    - zh.canon.gf.hsk7_9.a_7_6.p1
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.place_time
   title:
@@ -500,50 +500,50 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_4_9.p5
     - zh.canon.gf.hsk7_9.a_7_1_6.p1
     - zh.canon.gf.hsk7_9.a_7_5_2_12.p1
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
-    - zh.canon.gf.hsk1.a_1_4_4.p1
     - zh.he_conjunction
     - zh.ye_dou
     - zh.haishi_huozhe
     - zh.canon.r5.hsk3_9_topic
-    - zh.canon.gf.hsk3.a_3_6_3_1.p1
-    - zh.canon.r5.hsk3_1_topic
-    - zh.canon.gf.hsk3.a_3_6_3_6.p1
-    - zh.canon.r5.hsk3_12_topic_comment_introduction
-    - zh.canon.r5.hsk4_12_topic
     - zh.canon.r5.hsk4_2_topic
     - zh.canon.r5.hsk4_3_topic_104
-    - zh.canon.r5.hsk4_13_topic
     - zh.canon.r5.hsk4_5_topic
     - zh.canon.r5.hsk4_6_topic
-    - zh.canon.gf.hsk4.a_4_5_2_9.p1
-    - zh.canon.gf.hsk4.a_4_5_2_11.p1
-    - zh.canon.r5.hsk4_11_topic
     - zh.canon.r5.hsk5_8_topic
-    - zh.canon.gf.hsk5.a_5_3.p2
     - zh.canon.r5.hsk5_7_topic
-    - zh.canon.r5.hsk5_17_introduction
     - zh.canon.gf.hsk6.a_6_2_5.p1
     - zh.canon.gf.hsk6.a_6_6_2_2.p1
     - zh.canon.gf.hsk6.a_6_6_2_6.p1
-    - zh.canon.r5.hsk6_12_parallel_structure_in_formal_prose
-    - zh.canon.r5.hsk6_22_punctuation_and_clause_grammar
-    - zh.canon.gf.hsk7_9.a_7_5_2_1.p1
     - zh.canon.gf.hsk7_9.a_7_5_2_2.p1
-    - zh.canon.gf.hsk7_9.a_7_5_2_3.p1
-    - zh.canon.gf.hsk7_9.a_7_5_2_3.p2
     - zh.canon.gf.hsk7_9.a_7_5_2_4.p1
-    - zh.canon.gf.hsk7_9.a_7_5_2_9.p1
-    - zh.canon.gf.hsk7_9.a_7_5_2_10.p1
+    - zh.canon.gf.hsk7_9.a_7_5_2_3.p2
+    - zh.canon.gf.hsk7_9.a_7_5_2_3.p1
     - zh.canon.gf.hsk7_9.a_7_5_2_11.p1
-    - zh.canon.gf.hsk7_9.a_7_5_2_13.p1
     - zh.canon.gf.hsk7_9.a_7_8_1.p1
     - zh.canon.r5.hsk79_12_reformulation_and_qualification
     - zh.canon.r5.hsk79_28_advanced_connector_economy
     - zh.canon.r5.hsk79_8_long_sentence_architecture
+    - zh.canon.r5.hsk3_1_topic
+    - zh.canon.gf.hsk7_9.a_7_5_2_10.p1
+    - zh.canon.gf.hsk4.a_4_5_2_11.p1
+    - zh.canon.gf.hsk5.a_5_3.p2
+    - zh.canon.gf.hsk7_9.a_7_5_2_1.p1
+    - zh.canon.r5.hsk6_12_parallel_structure_in_formal_prose
+    - zh.canon.gf.hsk1.a_1_4_4.p1
+    - zh.canon.gf.hsk3.a_3_6_3_1.p1
+    - zh.canon.gf.hsk3.a_3_6_3_6.p1
+    - zh.canon.gf.hsk4.a_4_5_2_9.p1
+    - zh.canon.gf.hsk7_9.a_7_5_2_13.p1
+    - zh.canon.gf.hsk7_9.a_7_5_2_9.p1
+    - zh.canon.r5.hsk3_12_topic_comment_introduction
+    - zh.canon.r5.hsk4_11_topic
+    - zh.canon.r5.hsk4_12_topic
+    - zh.canon.r5.hsk4_13_topic
+    - zh.canon.r5.hsk5_17_introduction
+    - zh.canon.r5.hsk6_22_punctuation_and_clause_grammar
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.past_ongoing
   title:
@@ -582,14 +582,14 @@ functions:
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_2.p1
     - zh.canon.gf.hsk7_9.a_7_2_2_2.p1
+    - zh.modal.xiang_yao
+    - zh.canon.gf.hsk2.a_2_10.p1
+    - zh.canon.gf.hsk3.a_3_2_1.p1
+    - zh.yao_le
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.modal.xiang_yao
-    - zh.canon.gf.hsk2.a_2_10.p1
-    - zh.yao_le
-    - zh.canon.gf.hsk3.a_3_2_1.p1
+    zh-Hans: []
     ja: []
 - id: fn.degree
   title:
@@ -609,20 +609,20 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_1_4_1.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_1.p2
     - zh.canon.gf.hsk7_9.a_7_1_4_9.p4
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
     - zh.tai_le
-    - zh.canon.gf.hsk2.a_2_1_3.p1
     - zh.yuelaiyue
     - zh.yue_yue
     - zh.youdian_yidian
     - zh.adjective_reduplication
     - zh.canon.r5.hsk4_10_n_ng_cao
-    - zh.canon.r5.hsk5_6_topic
     - zh.canon.gf.hsk7_9.a_7_4_2.p1
     - zh.canon.gf.hsk7_9.a_7_7.p2
+    - zh.canon.gf.hsk2.a_2_1_3.p1
+    - zh.canon.r5.hsk5_6_topic
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.obligation_advice
   title:
@@ -643,13 +643,13 @@ functions:
     - zh.canon.gf.hsk2.a_2_3.p1
     - zh.canon.gf.hsk4.a_4_1_1.p1
     - zh.canon.gf.hsk6.a_6_7.p1
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
     - zh.ba_suggestion
     - zh.neng_yuan_dei
     - zh.canon.r5.hsk5_5_topic
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.possibility
   title:
@@ -679,15 +679,15 @@ functions:
     - zh.canon.r5.hsk6_2_topic
     - zh.canon.gf.hsk7_9.a_7_1_4_8.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_9.p1
+    - zh.modal.hui
+    - zh.modal.neng_keyi
+    - zh.canon.gf.hsk7_9.a_7_1_1.p1
+    - zh.canon.r5.hsk4_12_topic_115
+    - zh.canon.gf.hsk4.a_4_2_1_2.p1
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.modal.hui
-    - zh.modal.neng_keyi
-    - zh.canon.gf.hsk4.a_4_2_1_2.p1
-    - zh.canon.r5.hsk4_12_topic_115
-    - zh.canon.gf.hsk7_9.a_7_1_1.p1
+    zh-Hans: []
     ja: []
 - id: fn.verb_patterns
   title:
@@ -722,13 +722,13 @@ functions:
     - en.canon.c2.017
     zh-Hans:
     - zh.canon.gf.hsk7_9.a_7_1_4_7.p1
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
     - zh.jianyu_qing_rang
     - zh.canon.r5.hsk5_1_ki_m_ng
     - zh.canon.r5.hsk6_4_topic
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.relative
   title:
@@ -748,15 +748,15 @@ functions:
     zh-Hans:
     - zh.canon.gf.hsk3.a_3_5_3.p1
     - zh.canon.gf.hsk6.a_6_2_6.p1
+    - zh.canon.r5.hsk3_13_nh_ng_d_i_v_i
+    - zh.canon.r5.hsk5_7_topic_145
+    - zh.canon.r5.hsk4_15_v_introduction
+    - zh.canon.gf.hsk4.a_4_4_2.p1
+    - zh.canon.r5.hsk5_14_n_ng_cao_153
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.r5.hsk3_13_nh_ng_d_i_v_i
-    - zh.canon.gf.hsk4.a_4_4_2.p1
-    - zh.canon.r5.hsk4_15_v_introduction
-    - zh.canon.r5.hsk5_14_n_ng_cao_153
-    - zh.canon.r5.hsk5_7_topic_145
+    zh-Hans: []
     ja: []
 - id: fn.indefinite_reference
   title:
@@ -792,24 +792,24 @@ functions:
     - zh.canon.gf.hsk7_9.a_7_2_2_1.p1
     - zh.canon.gf.hsk7_9.a_7_7.p1
     - zh.canon.gf.hsk7_9.a_7_7.p4
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
     - zh.bu_negation
     - zh.mei_negation
     - zh.canon.gf.hsk3.a_3_4.p1
-    - zh.canon.gf.hsk4.a_4_7.p1
     - zh.canon.gf.hsk4.a_4_7.p2
-    - zh.canon.gf.hsk5.a_5_6.p1
     - zh.canon.gf.hsk5.a_5_6.p3
-    - zh.canon.r5.hsk5_2_topic
+    - zh.canon.gf.hsk5.a_5_6.p1
     - zh.canon.gf.hsk6.a_6_6_2_3.p1
     - zh.canon.r5.hsk6_7_topic
     - zh.canon.gf.hsk7_9.a_7_1_4_6.p1
     - zh.canon.gf.hsk7_9.a_7_2_2_2.p2
     - zh.canon.gf.hsk7_9.a_7_7.p3
     - zh.canon.r5.hsk79_3_negative_raising_and_scope
+    - zh.canon.gf.hsk4.a_4_7.p1
+    - zh.canon.r5.hsk5_2_topic
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.location
   title:
@@ -829,16 +829,16 @@ functions:
     - zh.canon.gf.hsk3.a_3_2_5_3.p1
     - zh.canon.r5.hsk5_10_topic_148
     - zh.canon.gf.hsk7_9.a_7_1_5_1.p1
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
     - zh.zai_location
     - zh.gei_dui
     - zh.canon.gf.hsk4.a_4_1_5_1.p1
     - zh.canon.gf.hsk4.a_4_2_1_2.p2
-    - zh.canon.gf.hsk6.a_6_2_4_1.p1
     - zh.canon.gf.hsk7_9.a_7_1_5_2.p1
+    - zh.canon.gf.hsk6.a_6_2_4_1.p1
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.time_expression
   title:
@@ -859,17 +859,17 @@ functions:
     - zh.canon.gf.hsk6.a_6_2_3.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_3.p1
     - zh.canon.gf.hsk7_9.a_7_1_5_3.p1
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
-    - zh.dates_times
     - zh.cong_dao
     - zh.yijing_haimei
     - zh.gang_gangcai
-    - zh.canon.gf.hsk5.a_5_1_3.p1
     - zh.canon.gf.hsk5.a_5_3.p1
     - zh.canon.gf.hsk5.a_5_4_3.p1
+    - zh.canon.gf.hsk5.a_5_1_3.p1
+    - zh.dates_times
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.action_result
   title:
@@ -880,16 +880,16 @@ functions:
     en: []
     zh-Hans:
     - zh.complement.result
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
-    - zh.canon.gf.hsk2.a_2_1_9.p1
-    - zh.complement.direction_simple
     - zh.complement.degree_de
     - zh.canon.r5.hsk3_10_ngh_a_m_r_ng
     - zh.canon.r5.hsk3_6_b_ng_xu_h_ng_k_p
     - zh.canon.gf.hsk6.a_6_5_2.p1
+    - zh.complement.direction_simple
+    - zh.canon.gf.hsk2.a_2_1_9.p1
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.duration_frequency
   title:
@@ -901,12 +901,12 @@ functions:
     zh-Hans:
     - zh.canon.gf.hsk1.a_1_1_6.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_4.p1
+    - zh.complement.duration
+    - zh.complement.frequency
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.complement.frequency
-    - zh.complement.duration
+    zh-Hans: []
     ja: []
 - id: fn.reason_result
   title:
@@ -922,18 +922,18 @@ functions:
     - zh.canon.r5.hsk5_8_topic_146
     - zh.canon.gf.hsk6.a_6_2_4_4.p1
     - zh.canon.gf.hsk7_9.a_7_8_2.p1
-    ja: []
-  planned:
-    en: []
-    zh-Hans:
-    - zh.canon.gf.hsk2.a_2_5_3.p2
     - zh.yinwei_suoyi
     - zh.canon.r5.hsk3_5_topic
     - zh.canon.r5.hsk4_5_topic_106
-    - zh.canon.gf.hsk4.a_4_5_2_8.p1
     - zh.canon.gf.hsk7_9.a_7_1_4_9.p3
     - zh.canon.gf.hsk7_9.a_7_5_2_8.p1
+    - zh.canon.gf.hsk4.a_4_5_2_8.p1
+    - zh.canon.gf.hsk2.a_2_5_3.p2
     - zh.canon.r5.hsk79_11_cause_vs_evidence_distinction
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.contrast
   title:
@@ -951,17 +951,17 @@ functions:
     - zh.canon.r5.hsk4_7_topic_109
     - zh.canon.gf.hsk7_9.a_7_1_4_9.p2
     - zh.canon.r5.hsk79_19_argument_concession_counterclaim
+    - zh.suiran_danshi
+    - zh.canon.r5.hsk4_4_topic
+    - zh.canon.r5.hsk4_4_topic_105
+    - zh.canon.gf.hsk7_9.a_7_5_2_5.p1
+    - zh.canon.gf.hsk7_9.a_7_5_2_7.p1
+    - zh.canon.gf.hsk6.a_6_6_2_5.p1
+    - zh.canon.r5.hsk5_9_topic
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.suiran_danshi
-    - zh.canon.r5.hsk4_4_topic_105
-    - zh.canon.r5.hsk4_4_topic
-    - zh.canon.r5.hsk5_9_topic
-    - zh.canon.gf.hsk6.a_6_6_2_5.p1
-    - zh.canon.gf.hsk7_9.a_7_5_2_5.p1
-    - zh.canon.gf.hsk7_9.a_7_5_2_7.p1
+    zh-Hans: []
     ja: []
 - id: fn.sequence
   title:
@@ -974,18 +974,18 @@ functions:
     zh-Hans:
     - zh.canon.gf.hsk5.a_5_1_3.p2
     - zh.canon.gf.hsk5.a_5_5_2_3.p1
+    - zh.canon.gf.hsk2.a_2_1_6.p2
+    - zh.jiu_cai
+    - zh.yibian
+    - zh.xian_zai
+    - zh.canon.gf.hsk7_9.a_7_2_2_2.p3
+    - zh.serial_verbs.qu_lai
+    - zh.yi_jiu
+    - zh.you_zai
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.serial_verbs.qu_lai
-    - zh.canon.gf.hsk2.a_2_1_6.p2
-    - zh.yi_jiu
-    - zh.jiu_cai
-    - zh.xian_zai
-    - zh.yibian
-    - zh.you_zai
-    - zh.canon.gf.hsk7_9.a_7_2_2_2.p3
+    zh-Hans: []
     ja: []
 - id: fn.exclusion
   title:
@@ -999,12 +999,12 @@ functions:
     - zh.canon.r5.hsk5_10_topic
     - zh.canon.gf.hsk6.a_6_2_4_5.p1
     - zh.canon.gf.hsk7_9.a_7_1_7_2.p1
+    - zh.chule_yiwai
+    - zh.canon.r5.hsk5_5_scope
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.chule_yiwai
-    - zh.canon.r5.hsk5_5_scope
+    zh-Hans: []
     ja: []
 - id: fn.separable_verbs
   title:
@@ -1031,12 +1031,12 @@ functions:
     - en.canon.c1.003
     - en.canon.c1.004
     - en.canon.c1.005
-    zh-Hans: []
+    zh-Hans:
+    - zh.canon.r5.hsk6_1_t_ng_t_c_n_ng_cao
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.r5.hsk6_1_t_ng_t_c_n_ng_cao
+    zh-Hans: []
     ja: []
 - id: fn.hypothetical_counterfactual
   title:
@@ -1051,11 +1051,11 @@ functions:
     - en.canon.c2.002
     zh-Hans:
     - zh.canon.r5.hsk79_10_conditional_rhetoric
+    - zh.canon.gf.hsk7_9.a_7_5_2_6.p1
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.gf.hsk7_9.a_7_5_2_6.p1
+    zh-Hans: []
     ja: []
 - id: fn.reporting
   title:
@@ -1071,12 +1071,12 @@ functions:
     - en.canon.b2.019
     - en.canon.c1.017
     - en.canon.c2.014
-    zh-Hans: []
+    zh-Hans:
+    - zh.canon.r5.hsk79_20_reporting_and_attribution
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.r5.hsk79_20_reporting_and_attribution
+    zh-Hans: []
     ja: []
 - id: fn.information_structure
   title:
@@ -1098,15 +1098,15 @@ functions:
     - en.canon.c2.010
     - en.canon.c2.011
     - en.canon.c2.015
-    zh-Hans: []
+    zh-Hans:
+    - zh.canon.r5.hsk6_7_topic_172
+    - zh.canon.r5.hsk79_17_ellipsis_and_recoverability
+    - zh.canon.r5.hsk79_16_information_structure_and_emphasis
+    - zh.canon.r5.hsk5_12_topic
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.r5.hsk5_12_topic
-    - zh.canon.r5.hsk6_7_topic_172
-    - zh.canon.r5.hsk79_16_information_structure_and_emphasis
-    - zh.canon.r5.hsk79_17_ellipsis_and_recoverability
+    zh-Hans: []
     ja: []
 - id: fn.voice_causative
   title:
@@ -1121,15 +1121,15 @@ functions:
     - en.canon.b2.015
     - en.canon.b2.016
     - en.canon.b2.043
-    zh-Hans: []
-    ja: []
-  planned:
-    en: []
     zh-Hans:
     - zh.canon.r5.hsk3_4_n_n_t_ng
     - zh.canon.r5.hsk4_2_n_ng_cao
     - zh.canon.r5.hsk6_3_agent_source
     - zh.canon.r5.hsk79_6_advanced_passive_causative_alternation
+    ja: []
+  planned:
+    en: []
+    zh-Hans: []
     ja: []
 - id: fn.register_style
   title:
@@ -1141,16 +1141,16 @@ functions:
     - en.canon.b2.040
     - en.canon.c1.028
     - en.canon.c2.018
-    zh-Hans: []
+    zh-Hans:
+    - zh.canon.r5.hsk79_22_literary_descriptive_syntax
+    - zh.canon.r5.hsk79_29_metadiscourse_grammar
+    - zh.canon.r5.hsk6_20_register_control
+    - zh.canon.r5.hsk79_21_legal_administrative_register_patterns
+    - zh.canon.r5.hsk79_5_in_modern_formal_prose
     ja: []
   planned:
     en: []
-    zh-Hans:
-    - zh.canon.r5.hsk6_20_register_control
-    - zh.canon.r5.hsk79_21_legal_administrative_register_patterns
-    - zh.canon.r5.hsk79_22_literary_descriptive_syntax
-    - zh.canon.r5.hsk79_29_metadiscourse_grammar
-    - zh.canon.r5.hsk79_5_in_modern_formal_prose
+    zh-Hans: []
     ja: []
 - id: fn.catalog_unclassified
   title:

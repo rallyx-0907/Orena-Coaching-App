@@ -1,0 +1,319 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_12_topic_115",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.possibility",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_2_1_2.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk4-12-topic-115"], "gf0025": ["gf0025.hsk4.026"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk4-12-topic-115"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 来得及/来不及", "en": "Chinese grammar: 来得及/来不及"},
+    "native_title": "来得及/来不及",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "来得及/来不及 diễn tả còn đủ hay không đủ thời gian để làm việc gì trước một mốc thời gian.",
+      "en": "来得及/来不及 express whether there is still enough time to do something before a deadline."
+    },
+    "sub": {"vi": "kịp thời gian", "en": "time sufficiency"},
+    "native_title_pinyin": ["lái", "de", "jí", "", "lái", "bù", "jí"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói còn kịp làm gì đó trước khi quá muộn, thường có 还.",
+      "en": "When saying there is still time to do something before it is too late, often with 还."
+    },
+    {
+      "vi": "Khi muốn nói đã quá muộn, không còn kịp làm gì, thường có 了 ở cuối câu.",
+      "en": "When saying it is already too late and there is no time left, often with sentence-final 了."
+    },
+    {
+      "vi": "Khi hỏi ai đó có kịp làm việc gì không, dùng 来得及吗？",
+      "en": "When asking whether someone has enough time to do something, use 来得及吗？"
+    },
+    {
+      "vi": "Khi nói về thời gian, không dùng cho khả năng chung như biết bơi hay biết lái xe.",
+      "en": "When talking about time, not for general ability such as knowing how to swim or drive."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "来得及/来不及",
+        "role": "verb",
+        "label": {"vi": "kịp/không kịp", "en": "have time / not have time"},
+        "pinyin": ["lái", "de", "jí", "", "lái", "bù", "jí"]
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ hành động", "en": "action verb"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": [""]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "来不及",
+          "role": "verb",
+          "label": {"vi": "không kịp", "en": "not have time"},
+          "pinyin": ["lái", "bù", "jí"]
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ hành động", "en": "action verb"},
+          "optional": true,
+          "pinyin": [""]
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": [""]
+        },
+        {
+          "text": "了",
+          "role": "particle",
+          "label": {"vi": "trợ từ cuối câu", "en": "sentence-final particle"},
+          "optional": true,
+          "pinyin": ["le"]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "来得及",
+          "role": "verb",
+          "label": {"vi": "kịp", "en": "have time"},
+          "pinyin": ["lái", "de", "jí"]
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ hành động", "en": "action verb"},
+          "optional": true,
+          "pinyin": [""]
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true,
+          "pinyin": [""]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "现在出发还来得及。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 4, "role": "subject"}, {"start": 5, "end": 8, "role": "verb"}],
+      "annotation": {
+        "vi": "Còn đủ thời gian để làm việc gì đó.",
+        "en": "There is still enough time to do something."
+      },
+      "translation": {"vi": "Bây giờ xuất phát vẫn còn kịp.", "en": "Leaving now is still in time."},
+      "pinyin": ["xiàn", "zài", "chū", "fā", "hái", "lái", "de", "jí", ""]
+    },
+    {
+      "text": "快一点，不然就来不及了。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 7, "end": 10, "role": "verb"},
+        {"start": 10, "end": 11, "role": "particle"}
+      ],
+      "annotation": {"vi": "Nếu không nhanh sẽ không kịp nữa.", "en": "If you do not hurry, it will be too late."},
+      "translation": {"vi": "Nhanh lên, nếu không sẽ không kịp.", "en": "Hurry up, otherwise it will be too late."},
+      "pinyin": ["kuài", "yì", "diǎn", "", "bù", "rán", "jiù", "lái", "bù", "jí", "le", ""]
+    },
+    {
+      "text": "十分钟来得及吃完吗？",
+      "form": "question",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 6, "end": 8, "role": "verb"},
+        {"start": 8, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Hỏi xem có đủ thời gian để ăn xong không.",
+        "en": "Asking whether there is enough time to finish eating."
+      },
+      "translation": {
+        "vi": "Mười phút có kịp ăn xong không?",
+        "en": "Is ten minutes enough time to finish eating?"
+      },
+      "pinyin": ["shí", "fēn", "zhōng", "lái", "de", "jí", "chī", "wán", "ma", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Phủ định của 来得及 là 来不及, không phải 不来及; thêm 了 để chỉ tình trạng đã quá muộn.",
+        "en": "The negative form is 来不及, not 不来及; 了 marks that it is already too late."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "现在走不来及。",
+      "right": "现在走来不及了。",
+      "wrong_pinyin": ["xiàn", "zài", "zǒu", "bù", "lái", "jí", ""],
+      "right_pinyin": ["xiàn", "zài", "zǒu", "lái", "bù", "jí", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "还有十分钟，我们___赶到车站。",
+      "options": [
+        {"text": "来得及", "error_tag": null, "pinyin": ["lái", "de", "jí"]},
+        {"text": "来不及", "error_tag": "word_choice", "pinyin": ["lái", "bù", "jí"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Còn mười phút nên vẫn kịp; 来得及 diễn tả còn đủ thời gian.",
+        "en": "There are still ten minutes, so there is enough time; 来得及 means there is still time."
+      },
+      "q_pinyin": [
+        "hái",
+        "yǒu",
+        "shí",
+        "fēn",
+        "zhōng",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "gǎn",
+        "dào",
+        "chē",
+        "zhàn",
+        ""
+      ]
+    },
+    {
+      "q": "已经八点了，现在去___了。",
+      "options": [
+        {"text": "来不及", "error_tag": null, "pinyin": ["lái", "bù", "jí"]},
+        {"text": "来得及", "error_tag": "word_choice", "pinyin": ["lái", "de", "jí"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đã tám giờ, đã quá muộn nên dùng 来不及 với 了.",
+        "en": "It is already eight o'clock, so it is too late; use 来不及 with 了."
+      },
+      "q_pinyin": ["yǐ", "jīng", "bā", "diǎn", "le", "", "xiàn", "zài", "qù", "", "", "", "le", ""]
+    },
+    {
+      "q": "你___吃完饭吗？我们要走了。",
+      "options": [
+        {"text": "来得及", "error_tag": null, "pinyin": ["lái", "de", "jí"]},
+        {"text": "来不及", "error_tag": "word_choice", "pinyin": ["lái", "bù", "jí"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi hỏi có kịp ăn xong không, dùng 来得及.",
+        "en": "The question asks whether there is enough time to finish eating, so use 来得及."
+      },
+      "q_pinyin": ["nǐ", "", "", "", "chī", "wán", "fàn", "ma", "", "wǒ", "men", "yào", "zǒu", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói rằng bạn vẫn còn kịp làm việc gì đó.",
+      "en": "Write a sentence saying you still have time to do something."
+    },
+    "placeholder": "我还来得及……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["来得及"], "role": "verb"}]},
+    "sample": {
+      "text": "我还来得及坐地铁去机场。",
+      "pinyin": ["wǒ", "hái", "lái", "de", "jí", "zuò", "dì", "tiě", "qù", "jī", "chǎng", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "hái", "lái", "de", "jí", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791344950",
+    "generated_at": "2026-10-07T03:49:10Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-12-topic-115"],
+      "content_version": 2,
+      "content_hash": "e99dc81cb0bd6668c6052233a7c04941e06e9b5fd62dd04efa79746569a2d35c",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-12-topic-115",
+          "issue": "Câu sai '现在走不来及。' không phải lỗi thực tế của người học; dạng đúng là 来不及, không phải 不来及.",
+          "fix": "Đã sửa thành '现在走来不及了。' và ghi rõ phủ định của 来得及 là 来不及."
+        },
+        {
+          "r5_id": "zh-hsk4-12-topic-115",
+          "issue": "Câu '我不会来得及游泳' không phải lỗi người học mắc phải mà là câu dịch sai nghĩa; 来不及 không dùng cho khả năng chung.",
+          "fix": "Đã loại bỏ khỏi phần lỗi thường gặp và thay bằng lỗi dùng sai dạng phủ định 不来及."
+        },
+        {
+          "r5_id": "zh-hsk4-12-topic-115",
+          "issue": "Thiếu công thức cấu trúc và các dạng phủ định, nghi vấn riêng biệt.",
+          "fix": "Đã thêm formula, negative và question với các slot cụ thể."
+        },
+        {
+          "r5_id": "zh-hsk4-12-topic-115",
+          "issue": "Ví dụ '十分钟来得及吃完吗？' chưa được gắn nhãn cấu trúc.",
+          "fix": "Đã thêm bindings cho từng slot trong ví dụ."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

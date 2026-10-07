@@ -175,7 +175,7 @@
     },
     "sample": {"text": "Did you visit your grandparents last weekend?"}
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -183,5 +183,10 @@
     "run_id": "generate.1790830674",
     "generated_at": "2026-10-01T04:57:54Z"
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:13:12Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

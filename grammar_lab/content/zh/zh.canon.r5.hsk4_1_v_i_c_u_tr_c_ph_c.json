@@ -1,0 +1,344 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_1_v_i_c_u_tr_c_ph_c",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.object_disposal",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_5_1.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-1-v-i-c-u-tr-c-ph-c", "zh-hsk6-1-complex-constructions"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk4-1-v-i-c-u-tr-c-ph-c", "zh-hsk6-1-complex-constructions"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: 把 với cấu trúc phức",
+      "en": "Chinese grammar: 把 với cấu trúc phức"
+    },
+    "native_title": "复杂把字句",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Câu chữ 把 với vị ngữ phức hợp dùng để nói rõ kết quả, mức độ, hướng hoặc đích đến của hành động tác động lên một đối tượng cụ thể.",
+      "en": "The 把 construction with a complex predicate states the result, degree, direction, or endpoint of an action performed on a specific object."
+    },
+    "sub": {"vi": "xử lý có kết quả", "en": "disposal with result"},
+    "native_title_pinyin": ["fù", "zá", "bǎ", "zì", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi đối tượng bị tác động đã xác định và người nói muốn nhấn mạnh kết quả hoặc cách xử lý nó.",
+      "en": "When the affected object is already specific and the speaker wants to highlight the result or the way it is handled."
+    },
+    {
+      "vi": "Khi vị ngữ cần thêm bổ ngữ kết quả, bổ ngữ mức độ với 得, bổ ngữ hướng hoặc cụm chỉ đích đến.",
+      "en": "When the predicate needs a result complement, a degree complement with 得, a directional complement, or a phrase showing the endpoint."
+    },
+    {
+      "vi": "Khi muốn đổi trật tự câu thường thành cấu trúc 把 để làm nổi bật hành động và kết quả thay vì chỉ nêu chủ thể và đối tượng.",
+      "en": "When you want to shift a neutral sentence into 把 order to foreground the action and its result rather than just subject and object."
+    },
+    {
+      "vi": "Khi câu có thêm 都, 给, 成, 到, 在 hoặc 得 để mở rộng vị ngữ sau động từ chính.",
+      "en": "When the sentence adds 都, 给, 成, 到, 在, or 得 to expand the predicate after the main verb."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "把",
+        "role": "marker",
+        "label": {"vi": "trợ từ 把", "en": "把 marker"},
+        "pinyin": ["bǎ"]
+      },
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "đối tượng xác định", "en": "specific object"},
+        "pinyin": [""]
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ chính", "en": "main verb"},
+        "pinyin": [""]
+      },
+      {
+        "text": "得",
+        "role": "particle",
+        "label": {"vi": "trợ từ 得", "en": "得 particle"},
+        "optional": true,
+        "pinyin": ["dé"]
+      },
+      {
+        "text": "complement",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ phức", "en": "complex complement"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ 了", "en": "了 particle"},
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": [""]
+        },
+        {
+          "text": "没有",
+          "role": "aux",
+          "label": {"vi": "phủ định 没有", "en": "negative 没有"},
+          "pinyin": ["méi", "yǒu"]
+        },
+        {
+          "text": "把",
+          "role": "marker",
+          "label": {"vi": "trợ từ 把", "en": "把 marker"},
+          "pinyin": ["bǎ"]
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "đối tượng xác định", "en": "specific object"},
+          "pinyin": [""]
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "pinyin": [""]
+        },
+        {
+          "text": "得",
+          "role": "particle",
+          "label": {"vi": "trợ từ 得", "en": "得 particle"},
+          "optional": true,
+          "pinyin": ["dé"]
+        },
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ phức", "en": "complex complement"},
+          "pinyin": ["", "", "", "", "", "", "", "", "", ""]
+        }
+      ],
+      "question": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": [""]
+        },
+        {
+          "text": "把",
+          "role": "marker",
+          "label": {"vi": "trợ từ 把", "en": "把 marker"},
+          "pinyin": ["bǎ"]
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "đối tượng xác định", "en": "specific object"},
+          "pinyin": [""]
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ chính", "en": "main verb"},
+          "pinyin": [""]
+        },
+        {
+          "text": "得",
+          "role": "particle",
+          "label": {"vi": "trợ từ 得", "en": "得 particle"},
+          "optional": true,
+          "pinyin": ["dé"]
+        },
+        {
+          "text": "complement",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ phức", "en": "complex complement"},
+          "pinyin": ["", "", "", "", "", "", "", "", "", ""]
+        },
+        {
+          "text": "了吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn 了吗", "en": "question particle 了吗"},
+          "pinyin": ["le", "ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "请把这个问题解释清楚。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 6, "end": 8, "role": "verb"},
+        {"start": 8, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "把 + đối tượng xác định + động từ + bổ ngữ kết quả 清楚.",
+        "en": "把 + specific object + verb + result complement 清楚."
+      },
+      "translation": {"vi": "Hãy giải thích rõ vấn đề này.", "en": "Please explain this problem clearly."},
+      "pinyin": ["qǐng", "bǎ", "zhè", "ge", "wèn", "tí", "jiě", "shì", "qīng", "chǔ", ""]
+    },
+    {
+      "text": "他把房间打扫得很干净。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "得 đứng sau động từ để dẫn bổ ngữ mức độ 很干净.",
+        "en": "得 follows the verb to introduce the degree complement 很干净."
+      },
+      "translation": {"vi": "Anh ấy dọn phòng rất sạch.", "en": "He cleaned the room very clean."},
+      "pinyin": ["tā", "bǎ", "fáng", "jiān", "dǎ", "sǎo", "dé", "hěn", "gān", "jìng", ""]
+    },
+    {
+      "text": "我把这些资料整理好了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "object"},
+        {"start": 6, "end": 8, "role": "verb"},
+        {"start": 8, "end": 9, "role": "complement"},
+        {"start": 9, "end": 10, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "好 làm bổ ngữ kết quả, 了 đánh dấu hoàn thành.",
+        "en": "好 is the result complement, 了 marks completion."
+      },
+      "translation": {"vi": "Tôi đã sắp xếp xong tài liệu.", "en": "I have sorted out these documents."},
+      "pinyin": ["wǒ", "bǎ", "zhè", "xiē", "zī", "liào", "zhěng", "lǐ", "hǎo", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu 把 cần vị ngữ cho thấy đối tượng bị tác động đến đâu; động từ trần 解释 không đủ để diễn tả kết quả.",
+        "en": "A 把 sentence needs a predicate showing how the object is affected; the bare verb 解释 does not express a result."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我把问题解释。",
+      "right": "我把问题解释清楚了。",
+      "wrong_pinyin": ["wǒ", "bǎ", "wèn", "tí", "jiě", "shì", ""],
+      "right_pinyin": ["wǒ", "bǎ", "wèn", "tí", "jiě", "shì", "qīng", "chǔ", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "请把这个问题解释___。",
+      "options": [
+        {"text": "清楚", "error_tag": null, "pinyin": ["qīng", "chǔ"]},
+        {"text": "很", "error_tag": "complement", "pinyin": ["hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ 解释 cần bổ ngữ kết quả 清楚; 很 không thể đứng một mình làm bổ ngữ.",
+        "en": "After the verb 解释, the result complement 清楚 is needed; 很 cannot stand alone as a complement."
+      },
+      "q_pinyin": ["qǐng", "bǎ", "zhè", "ge", "wèn", "tí", "jiě", "shì", "", "", "", ""]
+    },
+    {
+      "q": "他把房间打扫___很干净。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["dé"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bổ ngữ mức độ 很干净 cần trợ từ 得 sau động từ 打扫.",
+        "en": "The degree complement 很干净 requires the particle 得 after the verb 打扫."
+      },
+      "q_pinyin": ["tā", "bǎ", "fáng", "jiān", "dǎ", "sǎo", "", "", "", "hěn", "gān", "jìng", ""]
+    },
+    {
+      "q": "我把这些资料整理___了。",
+      "options": [
+        {"text": "好", "error_tag": null, "pinyin": ["hǎo"]},
+        {"text": "很", "error_tag": "complement", "pinyin": ["hěn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "好 là bổ ngữ kết quả thông dụng sau 整理; 很 không phù hợp ở vị trí này.",
+        "en": "好 is a common result complement after 整理; 很 does not fit here."
+      },
+      "q_pinyin": ["wǒ", "bǎ", "zhè", "xiē", "zī", "liào", "zhěng", "lǐ", "", "", "", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 把 để nói bạn đã xử lý xong một việc gì đó và nêu rõ kết quả.",
+      "en": "Write one sentence using 把 to say you finished handling something and state the result clearly."
+    },
+    "placeholder": "我把……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["把"], "role": "marker"},
+        {"regex": "[\\u4e00-\\u9fff]", "role": "verb"},
+        {"regex": "[\\u4e00-\\u9fff]", "role": "complement"}
+      ]
+    },
+    "sample": {"text": "我把作业写完了。", "pinyin": ["wǒ", "bǎ", "zuò", "yè", "xiě", "wán", "le", ""]},
+    "placeholder_pinyin": ["wǒ", "bǎ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348573",
+    "generated_at": "2026-10-07T04:49:33Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-1-v-i-c-u-tr-c-ph-c", "zh-hsk6-1-complex-constructions"],
+      "content_version": 2,
+      "content_hash": "44d71bf176e24fa33229471b52415036927dfec7c9cf5fccbc02321f882965e7",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-1-v-i-c-u-tr-c-ph-c",
+          "issue": "R5 ghi '他把房间很干净打扫' là lỗi nhưng không nêu rõ cơ chế; cách sửa đúng cần dùng 得 trước bổ ngữ mức độ.",
+          "fix": "Đã viết lại thành cặp sai/đúng '我把问题解释。' / '我把问题解释清楚了。' và giải thích rằng câu 把 cần vị ngữ thể hiện kết quả tác động."
+        },
+        {
+          "r5_id": "zh-hsk6-1-complex-constructions",
+          "issue": "R5 HSK6 đưa vào các ví dụ và quy tắc vượt phạm vi HSK4 của điểm này.",
+          "fix": "Chỉ giữ lại phần cấu trúc 把 + bổ ngữ phức phù hợp HSK4; lược bỏ các ví dụ và quy tắc thuộc HSK6."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

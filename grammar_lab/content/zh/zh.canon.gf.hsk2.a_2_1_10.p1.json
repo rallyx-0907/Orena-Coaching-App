@@ -1,0 +1,195 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_1_10.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_1_9.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.036"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Thán từ: 喂", "en": "Interjections: 喂"},
+    "native_title": "喂",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Điểm ngữ pháp này giới thiệu thán từ 喂 dùng để gọi hoặc thu hút sự chú ý của người khác, thường đứng đầu câu và tách biệt bằng dấu phẩy.",
+      "en": "This point introduces the interjection 喂, used to call or get someone's attention; it usually comes first in the sentence and is set off by a comma."
+    },
+    "sub": {"vi": "thán từ gọi", "en": "calling interjection"},
+    "native_title_pinyin": ["wèi"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn bắt đầu một cuộc gọi điện thoại và muốn xác nhận có người nghe máy.",
+      "en": "When you start a phone call and want to check that someone is listening."
+    },
+    {
+      "vi": "Khi bạn gọi ai đó ở khoảng cách xa hoặc trong nơi đông người.",
+      "en": "When you call someone from a distance or in a crowded place."
+    },
+    {
+      "vi": "Khi bạn muốn thu hút sự chú ý trước khi nói điều gì đó quan trọng.",
+      "en": "When you want to draw attention before saying something important."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "喂",
+        "role": "other",
+        "label": {"vi": "thán từ gọi", "en": "calling interjection"},
+        "pinyin": ["wèi"]
+      },
+      {"text": "，", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}, "pinyin": [""]},
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "喂，你好！",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "喂 đứng đầu câu để mở đầu cuộc gọi, sau đó là lời chào.",
+        "en": "喂 comes first to open a phone call, followed by a greeting."
+      },
+      "translation": {"vi": "A lô, xin chào!", "en": "Hello? Hi!"},
+      "pinyin": ["wèi", "", "nǐ", "hǎo", ""]
+    },
+    {
+      "text": "喂，请问张老师在吗？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 4, "end": 7, "role": "subject"},
+        {"start": 7, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "喂 dùng để gọi và hỏi thăm qua điện thoại.",
+        "en": "喂 is used to call and ask on the phone."
+      },
+      "translation": {"vi": "A lô, cho hỏi thầy Trương có ở đó không?", "en": "Hello, is Teacher Zhang there?"},
+      "pinyin": ["wèi", "", "qǐng", "wèn", "zhāng", "lǎo", "shī", "zài", "ma", ""]
+    },
+    {
+      "text": "喂，你的书掉了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 5, "role": "subject"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "喂 dùng để thu hút sự chú ý trước khi thông báo điều gì đó.",
+        "en": "喂 is used to get attention before telling someone something."
+      },
+      "translation": {"vi": "Này, sách của bạn rơi rồi.", "en": "Hey, your book fell."},
+      "pinyin": ["wèi", "", "nǐ", "de", "shū", "diào", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thường đặt 喂 sau lời chào vì quen với trật tự chào hỏi trong tiếng Việt, nhưng 喂 phải đứng đầu câu để gọi trước.",
+        "en": "Learners often put 喂 after the greeting because of Vietnamese greeting order, but 喂 must come first to call before speaking."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "你好，喂！",
+      "right": "喂，你好！",
+      "wrong_pinyin": ["nǐ", "hǎo", "", "wèi", ""],
+      "right_pinyin": ["wèi", "", "nǐ", "hǎo", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___，请问李明在吗？",
+      "options": [
+        {"text": "喂", "error_tag": null, "pinyin": ["wèi"]},
+        {"text": "你好", "error_tag": "other", "pinyin": ["nǐ", "hǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi gọi điện, ta dùng 喂 ở đầu câu để gọi, sau đó mới hỏi.",
+        "en": "On the phone, use 喂 at the beginning to call, then ask."
+      },
+      "q_pinyin": ["", "", "", "", "qǐng", "wèn", "lǐ", "míng", "zài", "ma", ""]
+    },
+    {
+      "q": "喂，___！",
+      "options": [
+        {"text": "你好", "error_tag": null, "pinyin": ["nǐ", "hǎo"]},
+        {"text": "喂", "error_tag": "redundancy", "pinyin": ["wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 喂, ta chào bằng 你好; không lặp lại 喂.",
+        "en": "After 喂, greet with 你好; do not repeat 喂."
+      },
+      "q_pinyin": ["wèi", "", "", "", "", ""]
+    },
+    {
+      "q": "喂，___？",
+      "options": [
+        {"text": "你听得到吗", "error_tag": null, "pinyin": ["nǐ", "tīng", "de", "dào", "ma"]},
+        {
+          "text": "你听得到吗喂",
+          "error_tag": "word_order",
+          "pinyin": ["nǐ", "tīng", "de", "dào", "ma", "wèi"]
+        }
+      ],
+      "answer": 0,
+      "explain": {"vi": "喂 phải đứng đầu câu, không đặt ở cuối.", "en": "喂 must come first, not at the end."},
+      "q_pinyin": ["wèi", "", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu bắt đầu bằng 喂 để gọi ai đó qua điện thoại.",
+      "en": "Write a sentence starting with 喂 to call someone on the phone."
+    },
+    "placeholder": "喂，……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["喂"], "role": "other"}]},
+    "sample": {"text": "喂，你好！", "pinyin": ["wèi", "", "nǐ", "hǎo", ""]},
+    "placeholder_pinyin": ["wèi", "", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338068",
+    "generated_at": "2026-10-07T01:54:28Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

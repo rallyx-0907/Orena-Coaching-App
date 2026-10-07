@@ -1,0 +1,420 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_2_2_2.p3",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sequence",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_5_2_3.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.076", "gf0025.hsk7_9.077", "gf0025.hsk7_9.078", "gf0025.hsk7_9.079"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 与此同时", "en": "Chinese grammar: 与此同时"},
+    "native_title": "与此同时",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "「与此同时」dùng để nối hai sự việc xảy ra cùng lúc, thường đứng đầu vế câu thứ hai.",
+      "en": "「与此同时」connects two events that happen at the same time, usually at the start of the second clause."
+    },
+    "sub": {"vi": "đồng thời", "en": "at the same time"},
+    "native_title_pinyin": ["yǔ", "cǐ", "tóng", "shí"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một việc khác cũng đang diễn ra trong cùng khoảng thời gian với việc vừa nêu.",
+      "en": "When you want to say another action is happening in the same period as the one just mentioned."
+    },
+    {
+      "vi": "Khi câu thứ hai bổ sung một hành động song song, không phải nguyên nhân hay kết quả của câu thứ nhất.",
+      "en": "When the second clause adds a parallel action, not a cause or result of the first."
+    },
+    {
+      "vi": "Trong văn viết hoặc báo cáo, khi cần liên kết hai thông tin có cùng mốc thời gian.",
+      "en": "In writing or reports, when linking two pieces of information that share the same time frame."
+    },
+    {
+      "vi": "Khi cả hai vế đều là mệnh đề hoàn chỉnh, có chủ ngữ riêng.",
+      "en": "When both clauses are complete and each has its own subject."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "与此同时",
+        "role": "connector",
+        "label": {"vi": "từ nối đồng thời", "en": "simultaneity connector"},
+        "pinyin": ["yǔ", "cǐ", "tóng", "shí"]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他在准备考试，与此同时，他的妹妹在练习钢琴。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 7, "end": 11, "role": "connector"},
+        {"start": 12, "end": 16, "role": "subject"},
+        {"start": 16, "end": 21, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "「与此同时」nối hai hành động diễn ra song song trong cùng khoảng thời gian.",
+        "en": "「与此同时」links two actions happening in parallel in the same period."
+      },
+      "translation": {
+        "vi": "Anh ấy đang ôn thi, cùng lúc đó em gái anh ấy đang luyện piano.",
+        "en": "He is preparing for an exam; at the same time, his younger sister is practicing the piano."
+      },
+      "pinyin": [
+        "tā",
+        "zài",
+        "zhǔn",
+        "bèi",
+        "kǎo",
+        "shì",
+        "",
+        "yǔ",
+        "cǐ",
+        "tóng",
+        "shí",
+        "",
+        "tā",
+        "de",
+        "mèi",
+        "mèi",
+        "zài",
+        "liàn",
+        "xí",
+        "gāng",
+        "qín",
+        ""
+      ]
+    },
+    {
+      "text": "公司正在开发新产品，与此同时，他们也在拓展海外市场。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 10, "end": 14, "role": "connector"},
+        {"start": 15, "end": 17, "role": "subject"},
+        {"start": 17, "end": 25, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "「与此同时」báo hiệu vế sau là một hoạt động song song khác.",
+        "en": "「与此同时」signals that the following clause is another parallel activity."
+      },
+      "translation": {
+        "vi": "Công ty đang phát triển sản phẩm mới, đồng thời họ cũng đang mở rộng thị trường nước ngoài.",
+        "en": "The company is developing a new product; at the same time, it is also expanding into overseas markets."
+      },
+      "pinyin": [
+        "gōng",
+        "sī",
+        "zhèng",
+        "zài",
+        "kāi",
+        "fā",
+        "xīn",
+        "chǎn",
+        "pǐn",
+        "",
+        "yǔ",
+        "cǐ",
+        "tóng",
+        "shí",
+        "",
+        "tā",
+        "men",
+        "yě",
+        "zài",
+        "tuò",
+        "zhǎn",
+        "hǎi",
+        "wài",
+        "shì",
+        "chǎng",
+        ""
+      ]
+    },
+    {
+      "text": "外面下着大雨，与此同时，屋里的人还在安静地看书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 7, "end": 11, "role": "connector"},
+        {"start": 12, "end": 16, "role": "subject"},
+        {"start": 16, "end": 23, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "「与此同时」đặt ở đầu vế thứ hai để so sánh hai cảnh cùng lúc.",
+        "en": "「与此同时」starts the second clause to contrast two scenes at the same moment."
+      },
+      "translation": {
+        "vi": "Ngoài trời đang mưa to, cùng lúc đó người trong nhà vẫn đang yên tĩnh đọc sách.",
+        "en": "It is raining heavily outside; at the same time, the people inside are still reading quietly."
+      },
+      "pinyin": [
+        "wài",
+        "miàn",
+        "xià",
+        "zhe",
+        "dà",
+        "yǔ",
+        "",
+        "yǔ",
+        "cǐ",
+        "tóng",
+        "shí",
+        "",
+        "wū",
+        "lǐ",
+        "de",
+        "rén",
+        "hái",
+        "zài",
+        "ān",
+        "jìng",
+        "dì",
+        "kàn",
+        "shū",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "「与此同时」là thành phần liên kết đứng đầu vế câu, sau nó thường có dấu phẩy để tách khỏi chủ ngữ.",
+        "en": "「与此同时」is a linking element at the start of a clause; it is normally followed by a comma before the subject."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "他在准备考试，与此同时他妹妹在练习钢琴。",
+      "right": "他在准备考试，与此同时，他的妹妹在练习钢琴。",
+      "wrong_pinyin": [
+        "tā",
+        "zài",
+        "zhǔn",
+        "bèi",
+        "kǎo",
+        "shì",
+        "",
+        "yǔ",
+        "cǐ",
+        "tóng",
+        "shí",
+        "tā",
+        "mèi",
+        "mèi",
+        "zài",
+        "liàn",
+        "xí",
+        "gāng",
+        "qín",
+        ""
+      ],
+      "right_pinyin": [
+        "tā",
+        "zài",
+        "zhǔn",
+        "bèi",
+        "kǎo",
+        "shì",
+        "",
+        "yǔ",
+        "cǐ",
+        "tóng",
+        "shí",
+        "",
+        "tā",
+        "de",
+        "mèi",
+        "mèi",
+        "zài",
+        "liàn",
+        "xí",
+        "gāng",
+        "qín",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他在准备考试，___，他的妹妹在练习钢琴。",
+      "options": [
+        {"text": "与此同时", "error_tag": null, "pinyin": ["yǔ", "cǐ", "tóng", "shí"]},
+        {"text": "因此", "error_tag": "conjunction", "pinyin": ["yīn", "cǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai hành động diễn ra song song nên dùng「与此同时」;「因此」chỉ kết quả.",
+        "en": "The two actions happen in parallel, so「与此同时」is correct;「因此」marks a result."
+      },
+      "q_pinyin": [
+        "tā",
+        "zài",
+        "zhǔn",
+        "bèi",
+        "kǎo",
+        "shì",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "tā",
+        "de",
+        "mèi",
+        "mèi",
+        "zài",
+        "liàn",
+        "xí",
+        "gāng",
+        "qín",
+        ""
+      ]
+    },
+    {
+      "q": "公司正在开发新产品，___，他们也在拓展海外市场。",
+      "options": [
+        {"text": "与此同时", "error_tag": null, "pinyin": ["yǔ", "cǐ", "tóng", "shí"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế sau là hoạt động song song, không phải tương phản, nên không dùng「但是」.",
+        "en": "The second clause is a parallel activity, not a contrast, so「但是」does not fit."
+      },
+      "q_pinyin": [
+        "gōng",
+        "sī",
+        "zhèng",
+        "zài",
+        "kāi",
+        "fā",
+        "xīn",
+        "chǎn",
+        "pǐn",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "tā",
+        "men",
+        "yě",
+        "zài",
+        "tuò",
+        "zhǎn",
+        "hǎi",
+        "wài",
+        "shì",
+        "chǎng",
+        ""
+      ]
+    },
+    {
+      "q": "外面下着大雨，___，屋里的人还在安静地看书。",
+      "options": [
+        {"text": "与此同时", "error_tag": null, "pinyin": ["yǔ", "cǐ", "tóng", "shí"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai cảnh diễn ra cùng lúc nên dùng「与此同时」;「因为」chỉ nguyên nhân.",
+        "en": "The two scenes happen at the same time, so「与此同时」is used;「因为」marks a cause."
+      },
+      "q_pinyin": [
+        "wài",
+        "miàn",
+        "xià",
+        "zhe",
+        "dà",
+        "yǔ",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "wū",
+        "lǐ",
+        "de",
+        "rén",
+        "hái",
+        "zài",
+        "ān",
+        "jìng",
+        "dì",
+        "kàn",
+        "shū",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể hai việc bạn và người khác làm cùng lúc, dùng「与此同时」.",
+      "en": "Write one sentence about two things you and someone else do at the same time, using「与此同时」."
+    },
+    "placeholder": "我在……，与此同时，……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["与此同时"], "role": "connector"}]},
+    "sample": {
+      "text": "我在做饭，与此同时，我的室友在打扫房间。",
+      "pinyin": [
+        "wǒ",
+        "zài",
+        "zuò",
+        "fàn",
+        "",
+        "yǔ",
+        "cǐ",
+        "tóng",
+        "shí",
+        "",
+        "wǒ",
+        "de",
+        "shì",
+        "yǒu",
+        "zài",
+        "dǎ",
+        "sǎo",
+        "fáng",
+        "jiān",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "zài", "", "", "", "yǔ", "cǐ", "tóng", "shí", "", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338872",
+    "generated_at": "2026-10-07T02:07:52Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:23Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

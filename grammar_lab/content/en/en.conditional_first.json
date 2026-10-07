@@ -21,43 +21,127 @@
     "sub": {"vi": "điều kiện có thể", "en": "real conditions"}
   },
   "when_to_use": [
-    {"vi": "Khi bạn muốn nói một việc có thể xảy ra nếu một điều kiện nào đó được đáp ứng."},
-    {"vi": "Khi đưa ra lời hứa hoặc lời đe dọa dựa trên một hành động trong tương lai."},
-    {"vi": "Khi cảnh báo ai đó về hậu quả nếu họ làm hoặc không làm gì đó."},
-    {"vi": "Khi thương lượng hoặc đề nghị: nếu bạn làm điều này, tôi sẽ làm điều kia."}
+    {
+      "vi": "Khi bạn muốn nói một việc có thể xảy ra nếu một điều kiện nào đó được đáp ứng.",
+      "en": "When you want to say something may happen if a condition is met."
+    },
+    {
+      "vi": "Khi đưa ra lời hứa hoặc lời đe dọa dựa trên một hành động trong tương lai.",
+      "en": "When making a promise or threat based on a future action."
+    },
+    {
+      "vi": "Khi cảnh báo ai đó về hậu quả nếu họ làm hoặc không làm gì đó.",
+      "en": "When warning someone about a consequence if they do or do not do something."
+    },
+    {
+      "vi": "Khi thương lượng hoặc đề nghị: nếu bạn làm điều này, tôi sẽ làm điều kia.",
+      "en": "When negotiating or making an offer: if you do this, I will do that."
+    }
   ],
   "pattern": {
     "formula": [
-      {"text": "If", "role": "marker", "label": {"vi": "từ nối điều kiện"}},
-      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề if"}},
-      {"text": "V", "role": "verb", "label": {"vi": "động từ chia hiện tại đơn"}},
-      {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true},
-      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề chính"}},
-      {"text": "will", "role": "aux", "label": {"vi": "trợ động từ will"}},
-      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể"}},
-      {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+      {
+        "text": "If",
+        "role": "marker",
+        "label": {"vi": "từ nối điều kiện", "en": "conditional linker"}
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề if", "en": "subject of the if-clause"}
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ chia hiện tại đơn", "en": "verb in the present simple"}
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true},
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề chính", "en": "subject of the main clause"}
+      },
+      {"text": "will", "role": "aux", "label": {"vi": "trợ động từ will", "en": "auxiliary will"}},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base-form verb"}},
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "optional": true}
     ],
     "variants": {
       "negative": [
-        {"text": "If", "role": "marker", "label": {"vi": "từ nối điều kiện"}},
-        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề if"}},
-        {"text": "do/does not", "role": "aux", "label": {"vi": "trợ động từ phủ định"}},
-        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể"}},
-        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true},
-        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề chính"}},
-        {"text": "will not", "role": "aux", "label": {"vi": "trợ động từ phủ định"}},
-        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể"}},
-        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+        {
+          "text": "If",
+          "role": "marker",
+          "label": {"vi": "từ nối điều kiện", "en": "conditional linker"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề if", "en": "subject of the if-clause"}
+        },
+        {
+          "text": "do/does not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base-form verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề chính", "en": "subject of the main clause"}
+        },
+        {
+          "text": "will not",
+          "role": "aux",
+          "label": {"vi": "trợ động từ phủ định", "en": "negative auxiliary"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base-form verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
       ],
       "question": [
-        {"text": "If", "role": "marker", "label": {"vi": "từ nối điều kiện"}},
-        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề if"}},
-        {"text": "V", "role": "verb", "label": {"vi": "động từ chia hiện tại đơn"}},
-        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true},
-        {"text": "will", "role": "aux", "label": {"vi": "trợ động từ will"}},
-        {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ mệnh đề chính"}},
-        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể"}},
-        {"text": "O", "role": "object", "label": {"vi": "tân ngữ"}, "optional": true}
+        {
+          "text": "If",
+          "role": "marker",
+          "label": {"vi": "từ nối điều kiện", "en": "conditional linker"}
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề if", "en": "subject of the if-clause"}
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {"vi": "động từ chia hiện tại đơn", "en": "verb in the present simple"}
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        },
+        {"text": "will", "role": "aux", "label": {"vi": "trợ động từ will", "en": "auxiliary will"}},
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ mệnh đề chính", "en": "subject of the main clause"}
+        },
+        {"text": "V", "role": "verb", "label": {"vi": "động từ nguyên thể", "en": "base-form verb"}},
+        {
+          "text": "O",
+          "role": "object",
+          "label": {"vi": "tân ngữ", "en": "object"},
+          "optional": true
+        }
       ]
     },
     "illustration": {"kind": "timeline", "timeline": {"shape": "future_condition"}}
@@ -74,8 +158,11 @@
         {"start": 16, "end": 20, "role": "aux"},
         {"start": 21, "end": 25, "role": "verb"}
       ],
-      "annotation": {"vi": "Điều kiện có thể xảy ra ở hiện tại, kết quả ở tương lai."},
-      "translation": {"vi": "Nếu trời mưa, chúng tôi sẽ ở nhà."}
+      "annotation": {
+        "vi": "Điều kiện có thể xảy ra ở hiện tại, kết quả ở tương lai.",
+        "en": "The condition may happen; the result is in the future."
+      },
+      "translation": {"vi": "Nếu trời mưa, chúng tôi sẽ ở nhà.", "en": "If it rains, we will stay at home."}
     },
     {
       "text": "If you study hard, you will pass the exam.",
@@ -89,8 +176,14 @@
         {"start": 28, "end": 32, "role": "verb"},
         {"start": 33, "end": 41, "role": "object"}
       ],
-      "annotation": {"vi": "Hành động học tập có thể dẫn đến kết quả thi đỗ."},
-      "translation": {"vi": "Nếu bạn học chăm chỉ, bạn sẽ đỗ kỳ thi."}
+      "annotation": {
+        "vi": "Hành động học tập có thể dẫn đến kết quả thi đỗ.",
+        "en": "Studying hard may lead to passing the exam."
+      },
+      "translation": {
+        "vi": "Nếu bạn học chăm chỉ, bạn sẽ đỗ kỳ thi.",
+        "en": "If you study hard, you will pass the exam."
+      }
     },
     {
       "text": "If she doesn't hurry, she will miss the train.",
@@ -105,8 +198,14 @@
         {"start": 31, "end": 35, "role": "verb"},
         {"start": 36, "end": 45, "role": "object"}
       ],
-      "annotation": {"vi": "Điều kiện phủ định: nếu cô ấy không nhanh lên, kết quả xấu sẽ xảy ra."},
-      "translation": {"vi": "Nếu cô ấy không nhanh lên, cô ấy sẽ lỡ chuyến tàu."}
+      "annotation": {
+        "vi": "Điều kiện phủ định: nếu cô ấy không nhanh lên, kết quả xấu sẽ xảy ra.",
+        "en": "Negative condition: if she does not hurry, the unwanted result may happen."
+      },
+      "translation": {
+        "vi": "Nếu cô ấy không nhanh lên, cô ấy sẽ lỡ chuyến tàu.",
+        "en": "If she doesn't hurry, she will miss the train."
+      }
     }
   ],
   "compare": [],
@@ -115,7 +214,8 @@
       "wrong": "If it will rain, we will stay at home.",
       "right": "If it rains, we will stay at home.",
       "reason": {
-        "vi": "Trong mệnh đề if của câu điều kiện loại 1, không dùng will; động từ phải chia ở hiện tại đơn để diễn tả điều kiện có thể xảy ra."
+        "vi": "Trong mệnh đề if của câu điều kiện loại 1, không dùng will; động từ phải chia ở hiện tại đơn để diễn tả điều kiện có thể xảy ra.",
+        "en": "In the if-clause of the first conditional, do not use will; use the present simple for the possible condition."
       },
       "error_tag": "tense",
       "l1": ["vi"]
@@ -130,7 +230,10 @@
         {"text": "studied", "error_tag": "tense"}
       ],
       "answer": 0,
-      "explain": {"vi": "Mệnh đề if dùng hiện tại đơn, không dùng will hay quá khứ đơn."}
+      "explain": {
+        "vi": "Mệnh đề if dùng hiện tại đơn, không dùng will hay quá khứ đơn.",
+        "en": "The if-clause uses the present simple, not will or the past simple."
+      }
     },
     {
       "q": "If she ___ the bus, she will be late.",
@@ -140,7 +243,10 @@
         {"text": "will miss", "error_tag": "tense"}
       ],
       "answer": 0,
-      "explain": {"vi": "Chủ ngữ she số ít nên động từ thêm -es; không dùng will trong mệnh đề if."}
+      "explain": {
+        "vi": "Chủ ngữ she số ít nên động từ thêm -es; không dùng will trong mệnh đề if.",
+        "en": "With singular she, the verb takes -es; do not use will in the if-clause."
+      }
     },
     {
       "q": "If it rains, we ___ at home.",
@@ -150,10 +256,13 @@
         {"text": "stayed", "error_tag": "tense"}
       ],
       "answer": 0,
-      "explain": {"vi": "Mệnh đề chính diễn tả kết quả trong tương lai nên dùng will + động từ nguyên thể."}
+      "explain": {
+        "vi": "Mệnh đề chính diễn tả kết quả trong tương lai nên dùng will + động từ nguyên thể.",
+        "en": "The main clause states the future result, so use will + base verb."
+      }
     }
   ],
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -162,7 +271,12 @@
     "generated_at": "2026-09-28T10:07:08Z",
     "metadata_stale": true
   },
-  "review": null,
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:13:12Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  },
   "sequence": 2,
   "personal_production": {
     "prompt": {

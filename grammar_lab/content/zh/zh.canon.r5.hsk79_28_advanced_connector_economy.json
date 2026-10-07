@@ -1,0 +1,385 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_28_advanced_connector_economy",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_22_literary_descriptive_syntax"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-28-advanced-connector-economy"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["zh-hsk79-28-advanced-connector-economy"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Advanced connector economy",
+      "en": "Chinese grammar: Advanced connector economy"
+    },
+    "native_title": "高级连接词的精简用法",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Ở văn viết nâng cao, quan hệ logic có thể được thể hiện bằng cú pháp, dấu câu và từ ngữ, nên chỉ cần một liên từ mạnh thay vì chồng nhiều liên từ.",
+      "en": "In advanced prose, a logical relation can be carried by syntax, punctuation and word choice, so one strong connector is enough instead of stacking several."
+    },
+    "sub": {"vi": "tinh giản liên từ", "en": "connector economy"},
+    "native_title_pinyin": ["gāo", "jí", "lián", "jiē", "cí", "de", "jīng", "jiǎn", "yòng", "fǎ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hai vế đã đối xứng về cú pháp và dấu câu đã cho thấy quan hệ tương phản hoặc tăng tiến.",
+      "en": "When the two clauses are already parallel in syntax and punctuation already signals contrast or addition."
+    },
+    {
+      "vi": "Khi một liên từ mạnh như 但, 因此, 此外 đã đủ để người đọc khôi phục quan hệ logic.",
+      "en": "When one strong connector such as 但, 因此 or 此外 is enough for the reader to recover the logical relation."
+    },
+    {
+      "vi": "Khi viết văn phân tích, báo cáo hoặc lập luận cần giọng điệu chững chạc, không lặp từ nối.",
+      "en": "When writing analysis, reports or argumentation that need a measured register without repeated connectors."
+    },
+    {
+      "vi": "Khi cần nhấn mạnh nội dung chứ không phải mối quan hệ giữa các câu.",
+      "en": "When the content itself, not the relation between sentences, should carry the emphasis."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "分句",
+        "role": "other",
+        "label": {"vi": "vế câu thứ nhất", "en": "first clause"},
+        "pinyin": ["fēn", "jù"]
+      },
+      {"text": "，", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}, "pinyin": [""]},
+      {
+        "text": "但/因此/此外",
+        "role": "connector",
+        "label": {"vi": "liên từ mạnh", "en": "strong connector"},
+        "options": [
+          {"text": "但", "pinyin": ["dàn"]},
+          {"text": "因此", "pinyin": ["yīn", "cǐ"]},
+          {"text": "此外", "pinyin": ["cǐ", "wài"]}
+        ],
+        "pinyin": ["dàn", "", "yīn", "cǐ", "", "cǐ", "wài"]
+      },
+      {
+        "text": "分句",
+        "role": "other",
+        "label": {"vi": "vế câu thứ hai", "en": "second clause"},
+        "pinyin": ["fēn", "jù"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "成本有所上升，但系统稳定性明显提高。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 17, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Một liên từ 但 đủ để thể hiện tương phản; không cần thêm 但是 hay 然而.",
+        "en": "One connector 但 carries the contrast; adding 但是 or 然而 is unnecessary."
+      },
+      "translation": {
+        "vi": "Chi phí có tăng, nhưng độ ổn định của hệ thống tăng rõ rệt.",
+        "en": "Costs rose somewhat, but system stability improved markedly."
+      },
+      "pinyin": [
+        "chéng",
+        "běn",
+        "yǒu",
+        "suǒ",
+        "shàng",
+        "shēng",
+        "",
+        "dàn",
+        "xì",
+        "tǒng",
+        "wěn",
+        "dìng",
+        "xìng",
+        "míng",
+        "xiǎn",
+        "tí",
+        "gāo",
+        ""
+      ]
+    },
+    {
+      "text": "样本规模有限，结论仍需谨慎解释。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Không có liên từ, nhưng 仍 cho thấy quan hệ nhượng bộ; dấu phẩy đã đủ để nối hai vế.",
+        "en": "No connector appears, but 仍 signals concession; the comma alone links the two clauses."
+      },
+      "translation": {
+        "vi": "Quy mô mẫu còn hạn chế, kết luận vẫn cần được giải thích thận trọng.",
+        "en": "The sample size is limited, so the conclusion still needs cautious interpretation."
+      },
+      "pinyin": [
+        "yàng",
+        "běn",
+        "guī",
+        "mó",
+        "yǒu",
+        "xiàn",
+        "",
+        "jié",
+        "lùn",
+        "réng",
+        "xū",
+        "jǐn",
+        "shèn",
+        "jiě",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "text": "数据尚不完整，因此暂不公布最终结果。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 17, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "因此 là liên từ mạnh duy nhất; không cần thêm 所以 hay 于是.",
+        "en": "因此 is the single strong connector; 所以 or 于是 would be redundant."
+      },
+      "translation": {
+        "vi": "Dữ liệu chưa đầy đủ, do đó tạm thời chưa công bố kết quả cuối cùng.",
+        "en": "The data is not yet complete, so the final results will not be released for now."
+      },
+      "pinyin": [
+        "shù",
+        "jù",
+        "shàng",
+        "bù",
+        "wán",
+        "zhěng",
+        "",
+        "yīn",
+        "cǐ",
+        "zàn",
+        "bù",
+        "gōng",
+        "bù",
+        "zuì",
+        "zhōng",
+        "jié",
+        "guǒ",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dịch từ tiếng Việt và xếp nhiều liên từ tăng tiến cùng lúc, nhưng 此外, 同时, 而且 đều đánh dấu quan hệ bổ sung nên chồng lên nhau là dư thừa.",
+        "en": "Learners translate from Vietnamese and stack several additive connectors, but 此外, 同时 and 而且 all mark addition, so using them together is redundant."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "此外同时而且，成本也下降了。",
+      "right": "此外，成本也下降了。",
+      "wrong_pinyin": ["cǐ", "wài", "tóng", "shí", "ér", "qiě", "", "chéng", "běn", "yě", "xià", "jiàng", "le", ""],
+      "right_pinyin": ["cǐ", "wài", "", "chéng", "běn", "yě", "xià", "jiàng", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "成本有所上升，___系统稳定性明显提高。",
+      "options": [
+        {"text": "但", "error_tag": null, "pinyin": ["dàn"]},
+        {"text": "但是但", "error_tag": "redundancy", "pinyin": ["dàn", "shì", "dàn"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "但 là một liên từ tương phản mạnh, đủ để nối hai vế; 但是但 là chồng liên từ, còn 所以 chỉ quan hệ nhân quả.",
+        "en": "但 is one strong contrast connector and is enough to link the clauses; 但是但 stacks connectors, and 所以 marks cause and effect."
+      },
+      "q_pinyin": [
+        "chéng",
+        "běn",
+        "yǒu",
+        "suǒ",
+        "shàng",
+        "shēng",
+        "",
+        "",
+        "",
+        "",
+        "xì",
+        "tǒng",
+        "wěn",
+        "dìng",
+        "xìng",
+        "míng",
+        "xiǎn",
+        "tí",
+        "gāo",
+        ""
+      ]
+    },
+    {
+      "q": "样本规模有限，结论___需谨慎解释。",
+      "options": [
+        {"text": "仍", "error_tag": null, "pinyin": ["réng"]},
+        {"text": "但是仍", "error_tag": "redundancy", "pinyin": ["dàn", "shì", "réng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "仍 đã thể hiện quan hệ nhượng bộ, không cần thêm 但是; thêm vào là dư thừa.",
+        "en": "仍 already signals concession, so 但是 is unnecessary; adding it is redundant."
+      },
+      "q_pinyin": [
+        "yàng",
+        "běn",
+        "guī",
+        "mó",
+        "yǒu",
+        "xiàn",
+        "",
+        "jié",
+        "lùn",
+        "",
+        "",
+        "",
+        "xū",
+        "jǐn",
+        "shèn",
+        "jiě",
+        "shì",
+        ""
+      ]
+    },
+    {
+      "q": "数据尚不完整，___暂不公布最终结果。",
+      "options": [
+        {"text": "因此", "error_tag": null, "pinyin": ["yīn", "cǐ"]},
+        {"text": "因此所以", "error_tag": "redundancy", "pinyin": ["yīn", "cǐ", "suǒ", "yǐ"]},
+        {"text": "此外", "error_tag": "conjunction", "pinyin": ["cǐ", "wài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "因此 là một liên từ kết quả mạnh; 因此所以 chồng hai liên từ cùng nghĩa, còn 此外 chỉ quan hệ bổ sung.",
+        "en": "因此 is one strong result connector; 因此所以 stacks two connectors of the same meaning, and 此外 marks addition."
+      },
+      "q_pinyin": [
+        "shù",
+        "jù",
+        "shàng",
+        "bù",
+        "wán",
+        "zhěng",
+        "",
+        "",
+        "",
+        "",
+        "zàn",
+        "bù",
+        "gōng",
+        "bù",
+        "zuì",
+        "zhōng",
+        "jié",
+        "guǒ",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu phân tích về một chủ đề bạn quan tâm, dùng đúng một liên từ mạnh (但, 因此 hoặc 此外) giữa hai vế.",
+      "en": "Write one analytical sentence about a topic you care about, using exactly one strong connector (但, 因此 or 此外) between two clauses."
+    },
+    "placeholder": "……，但……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["但", "因此"], "role": "connector"}]},
+    "sample": {
+      "text": "方案成本较低，但实施周期较长。",
+      "pinyin": [
+        "fāng",
+        "àn",
+        "chéng",
+        "běn",
+        "jiào",
+        "dī",
+        "",
+        "dàn",
+        "shí",
+        "shī",
+        "zhōu",
+        "qī",
+        "jiào",
+        "zhǎng",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["", "", "", "dàn", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791339008",
+    "generated_at": "2026-10-07T02:10:08Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-28-advanced-connector-economy"],
+      "content_version": 2,
+      "content_hash": "68c08894b2038dc1f5368163e7164f0984e5d24011c80b6820e35ad8b322c5cd",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-28-advanced-connector-economy",
+          "issue": "R5 dạy 'Advanced connector economy' nhưng không có công thức cấu trúc, không có biến thể phủ định/nghi vấn, và không có bài kiểm tra nhanh.",
+          "fix": "Đã thêm formula với các slot trừu tượng (分句 + dấu phẩy + liên từ mạnh + 分句), giữ negative và question rỗng vì điểm này không có dạng riêng, và thêm 3 câu quick_practice."
+        },
+        {
+          "r5_id": "zh-hsk79-28-advanced-connector-economy",
+          "issue": "R5 liệt kê 4 ví dụ nhưng không gắn nhãn cấu trúc, không có bản dịch tiếng Anh, và một số ví dụ không minh họa rõ việc tiết chế liên từ.",
+          "fix": "Đã chọn 3 ví dụ sạch, gắn binding theo slot của formula, thêm annotation và translation cho cả vi và en; loại bỏ ví dụ không thể hiện rõ nguyên tắc tiết chế."
+        },
+        {
+          "r5_id": "zh-hsk79-28-advanced-connector-economy",
+          "issue": "R5 có mục 'mistakes' nhưng lỗi thứ hai được viết dưới dạng mô tả tiếng Việt ('删除所有连接词导致因果/转折不明') chứ không phải câu sai cụ thể của người học.",
+          "fix": "Đã thay bằng một lỗi cụ thể, thực tế: '此外同时而且，成本也下降了。' với câu đúng '此外，成本也下降了。' và giải thích cơ chế dư thừa liên từ."
+        },
+        {
+          "r5_id": "zh-hsk79-28-advanced-connector-economy",
+          "issue": "R5 ghi 'contrasts' với 'Parallelism and cadence' và 'Metadiscourse grammar' nhưng không cung cấp nội dung so sánh cụ thể.",
+          "fix": "Đã để compare rỗng vì yêu cầu 'compare required: (none)' và không có đủ dữ liệu để viết so sánh chính xác."
+        },
+        {
+          "r5_id": "zh-hsk79-28-advanced-connector-economy",
+          "issue": "R5 dùng thuật ngữ 'Advanced connector economy' trong tiêu đề nhưng không có sub ngắn gọn cho giao diện.",
+          "fix": "Đã thêm sub: 'tinh giản liên từ' / 'connector economy'."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:49Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

@@ -1,0 +1,292 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_3.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_5_2_3.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.100", "gf0025.hsk7_9.101"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: ⋯⋯ ，且⋯⋯", "en": "Complex sentences: ⋯⋯ ，且⋯⋯"},
+    "native_title": "⋯⋯ ，且⋯⋯",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Liên từ 且 nối hai vế câu có quan hệ bổ sung, thường dùng trong văn viết trang trọng.",
+      "en": "The conjunction 且 links two clauses that add information, and it is mostly used in formal writing."
+    },
+    "sub": {"vi": "liên từ bổ sung", "en": "additive connector"},
+    "native_title_pinyin": ["", "", "", "", "qiě", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn thêm một ý cùng chiều với ý trước, đặc biệt trong văn viết, thông báo hoặc diễn văn.",
+      "en": "When you want to add a point that goes in the same direction as the first, especially in writing, notices or speeches."
+    },
+    {
+      "vi": "Khi hai vế đều là mệnh đề đầy đủ, mỗi vế có chủ ngữ và vị ngữ riêng.",
+      "en": "When both parts are full clauses, each with its own subject and predicate."
+    },
+    {
+      "vi": "Khi cần giọng điệu gọn và trang trọng hơn 而且 hoặc 并且.",
+      "en": "When you need a tighter, more formal tone than 而且 or 并且."
+    },
+    {
+      "vi": "Khi hai vế có thể đảo thứ tự mà nghĩa bổ sung không đổi.",
+      "en": "When the two clauses can swap order without changing the additive meaning."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "分句",
+        "role": "other",
+        "label": {"vi": "vế câu thứ nhất", "en": "first clause"},
+        "pinyin": ["fēn", "jù"]
+      },
+      {
+        "text": "且",
+        "role": "connector",
+        "label": {"vi": "liên từ bổ sung", "en": "additive connector"},
+        "pinyin": ["qiě"]
+      },
+      {
+        "text": "分句",
+        "role": "other",
+        "label": {"vi": "vế câu thứ hai", "en": "second clause"},
+        "pinyin": ["fēn", "jù"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个方案成本低，且操作简单。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "other"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "且 nối hai vế bổ sung cho nhau: chi phí thấp và vận hành đơn giản.",
+        "en": "且 links two clauses that add to each other: low cost and simple operation."
+      },
+      "translation": {
+        "vi": "Phương án này có chi phí thấp và vận hành đơn giản.",
+        "en": "This plan has low costs and is simple to operate."
+      },
+      "pinyin": ["zhè", "ge", "fāng", "àn", "chéng", "běn", "dī", "", "qiě", "cāo", "zuò", "jiǎn", "dān", ""]
+    },
+    {
+      "text": "他工作认真，且乐于帮助同事。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Vế thứ hai thêm một đức tính nữa của cùng một người.",
+        "en": "The second clause adds another quality of the same person."
+      },
+      "translation": {
+        "vi": "Anh ấy làm việc nghiêm túc và sẵn lòng giúp đỡ đồng nghiệp.",
+        "en": "He works carefully and is willing to help his colleagues."
+      },
+      "pinyin": ["tā", "gōng", "zuò", "rèn", "zhēn", "", "qiě", "lè", "yú", "bāng", "zhù", "tóng", "shì", ""]
+    },
+    {
+      "text": "这家餐厅环境安静，且价格合理。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "other"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "且 dùng trong câu nhận xét, hai vế cùng bổ sung cho chủ thể.",
+        "en": "且 is used in an evaluative sentence; both clauses add information about the same subject."
+      },
+      "translation": {
+        "vi": "Nhà hàng này có không gian yên tĩnh và giá cả hợp lý.",
+        "en": "This restaurant has a quiet setting and reasonable prices."
+      },
+      "pinyin": [
+        "zhè",
+        "jiā",
+        "cān",
+        "tīng",
+        "huán",
+        "jìng",
+        "ān",
+        "jìng",
+        "",
+        "qiě",
+        "jià",
+        "gé",
+        "hé",
+        "lǐ",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi hai vế có cùng chủ ngữ, người học thường lặp lại chủ ngữ sau 且. Trong văn viết trang trọng, chủ ngữ thứ hai thường được lược bỏ để câu gọn hơn.",
+        "en": "When both clauses share the same subject, learners often repeat the subject after 且. In formal writing the second subject is normally omitted to keep the sentence tight."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "他工作认真，且他乐于帮助同事。",
+      "right": "他工作认真，且乐于帮助同事。",
+      "wrong_pinyin": [
+        "tā",
+        "gōng",
+        "zuò",
+        "rèn",
+        "zhēn",
+        "",
+        "qiě",
+        "tā",
+        "lè",
+        "yú",
+        "bāng",
+        "zhù",
+        "tóng",
+        "shì",
+        ""
+      ],
+      "right_pinyin": ["tā", "gōng", "zuò", "rèn", "zhēn", "", "qiě", "lè", "yú", "bāng", "zhù", "tóng", "shì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个房间干净，___光线很好。",
+      "options": [
+        {"text": "且", "error_tag": null, "pinyin": ["qiě"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hai vế cùng bổ sung cho nhau nên dùng 且. 但是 chuyển ý, 因为 nêu nguyên nhân.",
+        "en": "The two clauses add to each other, so 且 fits. 但是 marks contrast and 因为 gives a cause."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "fáng",
+        "jiān",
+        "gān",
+        "jìng",
+        "",
+        "",
+        "",
+        "",
+        "guāng",
+        "xiàn",
+        "hěn",
+        "hǎo",
+        ""
+      ]
+    },
+    {
+      "q": "他经验丰富，___做事细心。",
+      "options": [
+        {"text": "且", "error_tag": null, "pinyin": ["qiě"]},
+        {"text": "而且", "error_tag": "register", "pinyin": ["ér", "qiě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này cần giọng văn trang trọng, gọn; 且 phù hợp hơn 而且 trong văn viết.",
+        "en": "This sentence needs a tight, formal tone; 且 fits better than 而且 in writing."
+      },
+      "q_pinyin": ["tā", "jīng", "yàn", "fēng", "fù", "", "", "", "", "zuò", "shì", "xì", "xīn", ""]
+    },
+    {
+      "q": "这家公司规模不大，___发展很快。",
+      "options": [
+        {"text": "且", "error_tag": null, "pinyin": ["qiě"]},
+        {"text": "并且", "error_tag": "register", "pinyin": ["bìng", "qiě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế sau bổ sung thêm một đặc điểm cùng chiều; 且 là lựa chọn trang trọng, ngắn gọn.",
+        "en": "The second clause adds another point in the same direction; 且 is the short, formal choice."
+      },
+      "q_pinyin": [
+        "zhè",
+        "jiā",
+        "gōng",
+        "sī",
+        "guī",
+        "mó",
+        "bù",
+        "dà",
+        "",
+        "",
+        "",
+        "",
+        "fā",
+        "zhǎn",
+        "hěn",
+        "kuài",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người hoặc một nơi bạn biết, dùng 且 để nối hai đặc điểm tốt.",
+      "en": "Write one sentence about a person or place you know, using 且 to link two good qualities."
+    },
+    "placeholder": "我的好朋友……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["且"], "role": "connector"}]},
+    "sample": {
+      "text": "我的好朋友性格开朗，且乐于助人。",
+      "pinyin": [
+        "wǒ",
+        "de",
+        "hǎo",
+        "péng",
+        "yǒu",
+        "xìng",
+        "gé",
+        "kāi",
+        "lǎng",
+        "",
+        "qiě",
+        "lè",
+        "yú",
+        "zhù",
+        "rén",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "hǎo", "péng", "yǒu", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338898",
+    "generated_at": "2026-10-07T02:08:18Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:23Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

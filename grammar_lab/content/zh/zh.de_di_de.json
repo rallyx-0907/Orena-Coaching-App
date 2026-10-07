@@ -1,0 +1,189 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.de_di_de",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.cunxian_sentence"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 9,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: de_di_de", "en": "Chinese grammar: de_di_de"},
+    "native_title": "的/地/得",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Phân biệt ba trợ từ kết cấu 的, 地 và 得 theo vị trí và chức năng trong câu.",
+      "en": "Distinguish the three structural particles 的, 地 and 得 by their position and function in a sentence."
+    },
+    "sub": {"vi": "的 / 地 / 得", "en": "的 / 地 / 得"},
+    "native_title_pinyin": ["de", "", "dì", "", "dé"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng 的 khi nối định ngữ với danh từ: 我的书, 红色的苹果.",
+      "en": "Use 的 to link a modifier to a noun: 我的书, 红色的苹果."
+    },
+    {
+      "vi": "Dùng 地 khi nối trạng ngữ với động từ hoặc tính từ: 慢慢地走, 高兴地说.",
+      "en": "Use 地 to link an adverbial to a verb or adjective: 慢慢地走, 高兴地说."
+    },
+    {
+      "vi": "Dùng 得 sau động từ để mở đầu phần bổ ngữ chỉ mức độ hoặc kết quả: 跑得很快, 说得很清楚.",
+      "en": "Use 得 after a verb to introduce a complement of degree or result: 跑得很快, 说得很清楚."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "定语",
+        "role": "other",
+        "label": {"vi": "định ngữ", "en": "modifier"},
+        "pinyin": ["dìng", "yǔ"]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ kết cấu 的", "en": "structural particle 的"},
+        "pinyin": ["de"]
+      },
+      {
+        "text": "名词",
+        "role": "object",
+        "label": {"vi": "danh từ", "en": "noun"},
+        "pinyin": ["míng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这是我的书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 5, "role": "object"}
+      ],
+      "annotation": {"vi": "的 nối định ngữ 我 với danh từ 书.", "en": "的 links the modifier 我 to the noun 书."},
+      "translation": {"vi": "Đây là sách của tôi.", "en": "This is my book."},
+      "pinyin": ["zhè", "shì", "wǒ", "de", "shū", ""]
+    },
+    {
+      "text": "她慢慢地走过来。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 5, "role": "object"}
+      ],
+      "annotation": {"vi": "地 nối trạng ngữ 慢慢 với động từ 走.", "en": "地 links the adverbial 慢慢 to the verb 走."},
+      "translation": {"vi": "Cô ấy chậm rãi bước tới.", "en": "She walks over slowly."},
+      "pinyin": ["tā", "màn", "màn", "dì", "zǒu", "guò", "lái", ""]
+    },
+    {
+      "text": "他跑得很快。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "得 đứng sau động từ 跑 để mở đầu bổ ngữ 很快.",
+        "en": "得 follows the verb 跑 to introduce the complement 很快."
+      },
+      "translation": {"vi": "Anh ấy chạy rất nhanh.", "en": "He runs very fast."},
+      "pinyin": ["tā", "pǎo", "dé", "hěn", "kuài", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Sau động từ, bổ ngữ mức độ phải dùng 得, không dùng 地. 地 chỉ đứng trước động từ để đánh dấu trạng ngữ.",
+        "en": "After a verb, a degree complement takes 得, not 地. 地 only appears before a verb to mark an adverbial."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "他跑地很快。",
+      "right": "他跑得很快。",
+      "wrong_pinyin": ["tā", "pǎo", "dì", "hěn", "kuài", ""],
+      "right_pinyin": ["tā", "pǎo", "dé", "hěn", "kuài", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "她高兴___说：“谢谢！”",
+      "options": [
+        {"text": "地", "error_tag": null, "pinyin": ["dì"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]},
+        {"text": "得", "error_tag": "particle", "pinyin": ["dé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "高兴 là trạng ngữ đứng trước động từ 说, nên dùng 地.",
+        "en": "高兴 is an adverbial before the verb 说, so 地 is used."
+      },
+      "q_pinyin": ["tā", "gāo", "xìng", "", "", "", "shuō", "", "", "xiè", "xiè", "", ""]
+    },
+    {
+      "q": "这是我最喜欢___电影。",
+      "options": [
+        {"text": "的", "error_tag": null, "pinyin": ["de"]},
+        {"text": "地", "error_tag": "particle", "pinyin": ["dì"]},
+        {"text": "得", "error_tag": "particle", "pinyin": ["dé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "最喜欢 bổ nghĩa cho danh từ 电影, nên dùng 的.",
+        "en": "最喜欢 modifies the noun 电影, so 的 is used."
+      },
+      "q_pinyin": ["zhè", "shì", "wǒ", "zuì", "xǐ", "huān", "", "", "", "diàn", "yǐng", ""]
+    },
+    {
+      "q": "他写___很清楚。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["dé"]},
+        {"text": "的", "error_tag": "particle", "pinyin": ["de"]},
+        {"text": "地", "error_tag": "particle", "pinyin": ["dì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau động từ 写 là bổ ngữ 很清楚, nên dùng 得.",
+        "en": "After the verb 写 comes the complement 很清楚, so 得 is used."
+      },
+      "q_pinyin": ["tā", "xiě", "", "", "", "hěn", "qīng", "chǔ", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 的 để nói về một đồ vật của bạn.",
+      "en": "Write one sentence using 的 to talk about something that belongs to you."
+    },
+    "placeholder": "这是我的……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["的"], "role": "particle"}]},
+    "sample": {"text": "这是我的手机。", "pinyin": ["zhè", "shì", "wǒ", "de", "shǒu", "jī", ""]},
+    "placeholder_pinyin": ["zhè", "shì", "wǒ", "de", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791345058",
+    "generated_at": "2026-10-07T03:50:58Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

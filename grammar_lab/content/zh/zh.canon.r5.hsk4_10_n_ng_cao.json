@@ -1,0 +1,219 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_10_n_ng_cao",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.yue_yue"],
+  "contrasts": [],
+  "error_tags": ["complement"],
+  "source_refs": {"r5": ["zh-hsk4-10-n-ng-cao"], "gf0025": ["gf0025.hsk5.036"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk4-10-n-ng-cao"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Bổ ngữ: 程度补语2", "en": "Complements: 程度补语2"},
+    "native_title": "程度补语2",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Bổ ngữ chỉ mức độ dùng 得 để nói một trạng thái hoặc hành động đạt mức độ nào đó, thường dẫn tới một kết quả hoặc hậu quả cụ thể.",
+      "en": "The degree complement with 得 describes how intense a state or action is, often leading to a concrete result or consequence."
+    },
+    "sub": {"vi": "mức độ dẫn kết quả", "en": "degree → result"},
+    "native_title_pinyin": ["chéng", "dù", "bǔ", "yǔ", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một trạng thái hoặc hành động mạnh đến mức gây ra một kết quả cụ thể.",
+      "en": "Use it when a state or action is so intense that it produces a concrete result."
+    },
+    {
+      "vi": "Khi phần sau 得 mô tả hậu quả trực tiếp, không chỉ mức độ đơn thuần.",
+      "en": "Use it when the part after 得 describes a direct consequence, not just a simple degree."
+    },
+    {
+      "vi": "Khi câu trả lời cho câu hỏi “đến mức nào?” hoặc “đến nỗi làm sao?”.",
+      "en": "Use it to answer questions like “to what extent?” or “so much that what happened?”."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "V/Adj",
+        "role": "verb",
+        "label": {"vi": "động từ / tính từ", "en": "verb / adjective"},
+        "pinyin": ["", "", "", "", ""]
+      },
+      {
+        "text": "得",
+        "role": "particle",
+        "label": {"vi": "trợ từ 得", "en": "得 particle"},
+        "pinyin": ["dé"]
+      },
+      {
+        "text": "result/degree clause",
+        "role": "complement",
+        "label": {"vi": "mệnh đề kết quả / mức độ", "en": "result / degree clause"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我累得走不动了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Mệt đến mức không đi nổi; 得 nối mức độ với hậu quả.",
+        "en": "So tired that I cannot walk; 得 links the degree to its consequence."
+      },
+      "translation": {"vi": "Tôi mệt đến mức không đi nổi.", "en": "I am so tired that I cannot walk."},
+      "pinyin": ["wǒ", "lèi", "dé", "zǒu", "bù", "dòng", "le", ""]
+    },
+    {
+      "text": "她高兴得跳了起来。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Vui đến mức nhảy lên; phần sau 得 là hành động do mức độ gây ra.",
+        "en": "So happy that she jumped up; the part after 得 is the action caused by the degree."
+      },
+      "translation": {"vi": "Cô ấy vui đến mức nhảy lên.", "en": "She was so happy that she jumped up."},
+      "pinyin": ["tā", "gāo", "xìng", "dé", "tiào", "le", "qǐ", "lái", ""]
+    },
+    {
+      "text": "孩子笑得肚子都疼了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Cười đến mức đau cả bụng; 得 mở ra hậu quả cụ thể.",
+        "en": "Laughed so much that his stomach hurt; 得 introduces the concrete consequence."
+      },
+      "translation": {
+        "vi": "Đứa trẻ cười đến mức đau cả bụng.",
+        "en": "The child laughed so much that his stomach hurt."
+      },
+      "pinyin": ["hái", "zi", "xiào", "dé", "dǔ", "zi", "dōu", "téng", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Kết quả sau 得 phải là dạng khả năng 走不动, không phải phủ định thường 不走动.",
+        "en": "The result after 得 must be the potential form 走不动, not the ordinary negative 不走动."
+      },
+      "error_tag": "complement",
+      "l1": ["vi"],
+      "wrong": "我累得不走动。",
+      "right": "我累得走不动了。",
+      "wrong_pinyin": ["wǒ", "lèi", "dé", "bù", "zǒu", "dòng", ""],
+      "right_pinyin": ["wǒ", "lèi", "dé", "zǒu", "bù", "dòng", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他跑得___，我追不上。",
+      "options": [
+        {"text": "太快了", "error_tag": null, "pinyin": ["tài", "kuài", "le"]},
+        {"text": "太快", "error_tag": "complement", "pinyin": ["tài", "kuài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 得 cần một mệnh đề kết quả hoàn chỉnh; 太快了 diễn tả mức độ dẫn đến việc không đuổi kịp.",
+        "en": "After 得, a complete result clause is needed; 太快了 expresses the degree that leads to not being able to catch up."
+      },
+      "q_pinyin": ["tā", "pǎo", "dé", "", "", "", "", "wǒ", "zhuī", "bù", "shàng", ""]
+    },
+    {
+      "q": "她高兴得___。",
+      "options": [
+        {"text": "跳了起来", "error_tag": null, "pinyin": ["tiào", "le", "qǐ", "lái"]},
+        {"text": "跳起来", "error_tag": "complement", "pinyin": ["tiào", "qǐ", "lái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "得 nối mức độ với hành động đã xảy ra; 了 đánh dấu kết quả hoàn thành.",
+        "en": "得 links the degree to the action that occurred; 了 marks the completed result."
+      },
+      "q_pinyin": ["tā", "gāo", "xìng", "dé", "", "", "", ""]
+    },
+    {
+      "q": "我累得___。",
+      "options": [
+        {"text": "走不动了", "error_tag": null, "pinyin": ["zǒu", "bù", "dòng", "le"]},
+        {"text": "不走动", "error_tag": "complement", "pinyin": ["bù", "zǒu", "dòng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 得 phải dùng bổ ngữ khả năng 走不动, không dùng phủ định thường 不走动.",
+        "en": "After 得, use the potential complement 走不动, not the ordinary negative 不走动."
+      },
+      "q_pinyin": ["wǒ", "lèi", "dé", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về lúc bạn mệt, vui hoặc buồn đến mức dẫn tới một kết quả cụ thể.",
+      "en": "Write a sentence about a time you were so tired, happy, or sad that it led to a concrete result."
+    },
+    "placeholder": "我累得……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["累", "高兴"], "role": "verb"}, {"any_of": ["得"], "role": "particle"}]
+    },
+    "sample": {"text": "我累得走不动了。", "pinyin": ["wǒ", "lèi", "dé", "zǒu", "bù", "dòng", "le", ""]},
+    "placeholder_pinyin": ["wǒ", "lèi", "dé", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338509",
+    "generated_at": "2026-10-07T02:01:49Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-10-n-ng-cao"],
+      "content_version": 2,
+      "content_hash": "c4fb71ca8b04faf3f122d0b244622da33cd97369460dec0c91816c051bc6ca43",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-10-n-ng-cao",
+          "issue": "R5 ghi ví dụ 他说得太快，我都听不清了 nhưng không tách rõ cấu trúc S + V/Adj + 得 + result/degree clause; phần giải thích còn lẫn với potential complement.",
+          "fix": "Đã viết lại thành công thức S + V/Adj + 得 + result/degree clause và thêm ghi chú phân biệt với potential 得 trong phần when_to_use."
+        },
+        {
+          "r5_id": "zh-hsk4-10-n-ng-cao",
+          "issue": "R5 có lỗi sai 我累得不走动 với lời giải thích chưa chỉ rõ cơ chế.",
+          "fix": "Đã sửa thành 我累得走不动了 và nêu rõ sau 得 phải dùng dạng khả năng 走不动, không dùng phủ định thường 不走动."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

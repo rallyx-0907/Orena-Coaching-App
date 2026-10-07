@@ -25,49 +25,111 @@
     "native_title_pinyin": ["dòng", "tài", "zhù", "cí", "", "le", ""]
   },
   "when_to_use": [
-    {"vi": "Khi muốn nói một hành động đã xảy ra và đã kết thúc, không cần nêu rõ thời gian."},
-    {"vi": "Khi câu có một mốc thời gian trong quá khứ như 昨天, 上午, 去年."},
-    {"vi": "Khi kể lại một chuỗi việc đã làm xong, mỗi động từ chính có thể mang 了."},
-    {"vi": "Khi muốn nhấn mạnh số lượng kết quả đã đạt được, ví dụ 买了三本书."}
+    {
+      "vi": "Khi muốn nói một hành động đã xảy ra và đã kết thúc, không cần nêu rõ thời gian.",
+      "en": "When you want to say an action happened and was completed, without needing to state the time."
+    },
+    {
+      "vi": "Khi câu có một mốc thời gian trong quá khứ như 昨天, 上午, 去年.",
+      "en": "When the sentence contains a past-time marker such as 昨天, 上午, or 去年."
+    },
+    {
+      "vi": "Khi kể lại một chuỗi việc đã làm xong, mỗi động từ chính có thể mang 了.",
+      "en": "When recounting a sequence of completed actions; each main verb may take 了."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh số lượng kết quả đã đạt được, ví dụ 买了三本书.",
+      "en": "When emphasizing a completed quantity or result, for example 买了三本书."
+    }
   ],
   "pattern": {
     "formula": [
-      {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
-      {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
-      {"text": "了", "role": "particle", "label": {"vi": "trợ từ hoàn thành"}, "pinyin": ["le"]},
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ hoàn thành", "en": "completion particle"},
+        "pinyin": ["le"]
+      },
       {
         "text": "宾语",
         "role": "object",
-        "label": {"vi": "tân ngữ"},
+        "label": {"vi": "tân ngữ", "en": "object"},
         "optional": true,
         "pinyin": ["bīn", "yǔ"]
       }
     ],
     "variants": {
       "negative": [
-        {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
-        {"text": "没有", "role": "aux", "label": {"vi": "phủ định"}, "pinyin": ["méi", "yǒu"]},
-        {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "没有",
+          "role": "aux",
+          "label": {"vi": "phủ định", "en": "negation"},
+          "pinyin": ["méi", "yǒu"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
         {
           "text": "宾语",
           "role": "object",
-          "label": {"vi": "tân ngữ"},
+          "label": {"vi": "tân ngữ", "en": "object"},
           "optional": true,
           "pinyin": ["bīn", "yǔ"]
         }
       ],
       "question": [
-        {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
-        {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
-        {"text": "了", "role": "particle", "label": {"vi": "trợ từ hoàn thành"}, "pinyin": ["le"]},
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "了",
+          "role": "particle",
+          "label": {"vi": "trợ từ hoàn thành", "en": "completion particle"},
+          "pinyin": ["le"]
+        },
         {
           "text": "宾语",
           "role": "object",
-          "label": {"vi": "tân ngữ"},
+          "label": {"vi": "tân ngữ", "en": "object"},
           "optional": true,
           "pinyin": ["bīn", "yǔ"]
         },
-        {"text": "吗", "role": "particle", "label": {"vi": "trợ từ nghi vấn"}, "pinyin": ["ma"]}
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
       ]
     },
     "illustration": {"kind": "timeline", "timeline": {"shape": "point_past"}}
@@ -82,8 +144,11 @@
         {"start": 4, "end": 5, "role": "particle"},
         {"start": 5, "end": 8, "role": "object"}
       ],
-      "annotation": {"vi": "Hành động mua đã hoàn thành trong quá khứ, có mốc thời gian 昨天."},
-      "translation": {"vi": "Hôm qua tôi đã mua một cuốn sách."},
+      "annotation": {
+        "vi": "Hành động mua đã hoàn thành trong quá khứ, có mốc thời gian 昨天.",
+        "en": "The buying action was completed in the past, with 昨天 as a time marker."
+      },
+      "translation": {"vi": "Hôm qua tôi đã mua một cuốn sách.", "en": "Yesterday I bought a book."},
       "pinyin": ["wǒ", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""]
     },
     {
@@ -95,8 +160,11 @@
         {"start": 2, "end": 3, "role": "verb"},
         {"start": 3, "end": 5, "role": "object"}
       ],
-      "annotation": {"vi": "Phủ định của hành động đã hoàn thành dùng 没, không dùng 了."},
-      "translation": {"vi": "Anh ấy chưa ăn sáng."},
+      "annotation": {
+        "vi": "Phủ định của hành động đã hoàn thành dùng 没, không dùng 了.",
+        "en": "A completed action is negated with 没, without 了."
+      },
+      "translation": {"vi": "Anh ấy chưa ăn sáng.", "en": "He didn't eat breakfast."},
       "pinyin": ["tā", "méi", "chī", "zǎo", "fàn", ""]
     },
     {
@@ -109,8 +177,11 @@
         {"start": 3, "end": 7, "role": "object"},
         {"start": 7, "end": 8, "role": "particle"}
       ],
-      "annotation": {"vi": "Câu hỏi có 吗, hành động xem đã hoàn thành hay chưa."},
-      "translation": {"vi": "Bạn đã xem bộ phim đó chưa?"},
+      "annotation": {
+        "vi": "Câu hỏi có 吗, hành động xem đã hoàn thành hay chưa.",
+        "en": "A 吗 question asks whether the viewing action was completed."
+      },
+      "translation": {"vi": "Bạn đã xem bộ phim đó chưa?", "en": "Have you watched that movie?"},
       "pinyin": ["nǐ", "kàn", "le", "nà", "gè", "diàn", "yǐng", "ma", ""]
     }
   ],
@@ -118,11 +189,13 @@
     {
       "with": "zh.guo_experience",
       "this_meaning": {
-        "vi": "了 nhấn mạnh hành động đã hoàn thành, thường gắn với một lần cụ thể hoặc kết quả cụ thể."
+        "vi": "了 nhấn mạnh hành động đã hoàn thành, thường gắn với một lần cụ thể hoặc kết quả cụ thể.",
+        "en": "了 emphasizes a completed action, usually tied to a specific occurrence or concrete result."
       },
       "this_example": "我昨天买了一本书。",
       "other_meaning": {
-        "vi": "过 nhấn mạnh kinh nghiệm từng trải qua ít nhất một lần, không quan tâm thời điểm cụ thể."
+        "vi": "过 nhấn mạnh kinh nghiệm từng trải qua ít nhất một lần, không quan tâm thời điểm cụ thể.",
+        "en": "过 emphasizes having had an experience at least once, regardless of a specific time."
       },
       "other_example": "我去过北京。",
       "this_example_pinyin": ["wǒ", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""],
@@ -131,14 +204,15 @@
   ],
   "common_mistakes": [
     {
-      "wrong": "我昨天买一本书了。",
+      "wrong": "我昨天了买一本书。",
       "right": "我昨天买了一本书。",
       "reason": {
-        "vi": "Người Việt thường đặt 了 ở cuối câu theo thói quen, nhưng 了 hoàn thành phải đứng ngay sau động từ khi có tân ngữ."
+        "vi": "了 chỉ sự hoàn thành đứng sau động từ chính trong mẫu này, không đứng trước động từ 买.",
+        "en": "Completion 了 follows the main verb in this pattern; it does not come before 买."
       },
       "error_tag": "aspect",
       "l1": ["vi"],
-      "wrong_pinyin": ["wǒ", "zuó", "tiān", "mǎi", "yī", "běn", "shū", "le", ""],
+      "wrong_pinyin": ["wǒ", "zuó", "tiān", "le", "mǎi", "yī", "běn", "shū", ""],
       "right_pinyin": ["wǒ", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""]
     }
   ],
@@ -151,7 +225,10 @@
         {"text": "吃过", "error_tag": "aspect", "pinyin": ["chī", "guo"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Hành động ăn đã hoàn thành trong quá khứ, cần 了 sau động từ 吃."},
+      "explain": {
+        "vi": "Hành động ăn đã hoàn thành trong quá khứ, cần 了 sau động từ 吃.",
+        "en": "The eating action was completed in the past, so 了 follows 吃."
+      },
       "q_pinyin": ["wǒ", "zuó", "tiān", "", "", "", "liǎng", "wǎn", "mǐ", "fàn", ""]
     },
     {
@@ -162,22 +239,27 @@
         {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Phủ định của hành động đã hoàn thành dùng 没, không dùng 了 hay 不."},
+      "explain": {
+        "vi": "Phủ định của hành động đã hoàn thành dùng 没, không dùng 了 hay 不.",
+        "en": "A completed action is negated with 没, without 了 or 不."
+      },
       "q_pinyin": ["tā", "", "", "", "qù", "xué", "xiào", ""]
     },
     {
-      "q": "你___那个电影吗？",
+      "q": "我昨天___一本书。",
       "options": [
-        {"text": "看了", "error_tag": null, "pinyin": ["kàn", "le"]},
-        {"text": "看", "error_tag": "aspect", "pinyin": ["kàn"]},
-        {"text": "看过", "error_tag": "aspect", "pinyin": ["kàn", "guo"]}
+        {"text": "买了", "error_tag": null, "pinyin": ["mǎi", "le"]},
+        {"text": "了买", "error_tag": "aspect", "pinyin": ["le", "mǎi"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Câu hỏi về hành động đã hoàn thành dùng 了 sau động từ 看."},
-      "q_pinyin": ["nǐ", "", "", "", "nà", "gè", "diàn", "yǐng", "ma", ""]
+      "explain": {
+        "vi": "Trong mẫu hành động hoàn thành, 了 đứng sau động từ: 买了, không phải 了买.",
+        "en": "For a completed action, 了 follows the verb: 买了, not 了买."
+      },
+      "q_pinyin": ["wǒ", "zuó", "tiān", "", "", "", "yī", "běn", "shū", ""]
     }
   ],
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -186,7 +268,12 @@
     "generated_at": "2026-09-28T10:06:15Z",
     "metadata_stale": true
   },
-  "review": null,
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  },
   "sequence": 1,
   "personal_production": {
     "prompt": {

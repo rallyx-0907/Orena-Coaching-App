@@ -1,0 +1,314 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_14_productive_four_character_grammar_patterns",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_12_reformulation_and_qualification"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-14-productive-four-character-grammar-patterns"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk79-14-productive-four-character-grammar-patterns"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Productive four-character grammar patterns",
+      "en": "Chinese grammar: Productive four-character grammar patterns"
+    },
+    "native_title": "四字格语法结构",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Cấu trúc bốn chữ có tính sản sinh là các mẫu ghép đối xứng (động-động, tính-tính, khả năng-khả năng) tạo nhịp trang trọng và súc tích, không chỉ là thành ngữ cố định.",
+      "en": "Productive four-character patterns are balanced, parallel structures (verb-verb, adjective-adjective, potential-potential) that create a compact formal cadence; they are not only fixed idioms."
+    },
+    "sub": {"vi": "cấu trúc bốn chữ", "en": "four-character patterns"},
+    "native_title_pinyin": ["sì", "zì", "gé", "yǔ", "fǎ", "jié", "gòu"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi cần diễn đạt hai mặt đối lập hoặc hai hành động song song trong một đơn vị bốn chữ, ví dụ 有利有弊, 可进可退.",
+      "en": "When you need to express two contrasting sides or two parallel actions in one four-character unit, e.g. 有利有弊, 可进可退."
+    },
+    {
+      "vi": "Khi muốn nêu đặc điểm hoặc đánh giá ngắn gọn, trang trọng trong văn viết hoặc thuyết trình.",
+      "en": "When you want a concise, formal evaluation or characterization in writing or presentations."
+    },
+    {
+      "vi": "Khi cần nhấn mạnh sự đối lập giữa hai xu hướng, ví dụ 不增反降 (không tăng mà còn giảm).",
+      "en": "When you need to highlight a contrast between two trends, e.g. 不增反降 (not increase but decrease)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "chủ đề",
+        "role": "subject",
+        "label": {"vi": "chủ đề", "en": "topic"},
+        "pinyin": ["", "", "", "", "", ""]
+      },
+      {
+        "text": "cấu trúc bốn chữ",
+        "role": "other",
+        "label": {"vi": "cấu trúc bốn chữ", "en": "four-character pattern"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "phần còn lại",
+        "role": "other",
+        "label": {"vi": "phần còn lại", "en": "rest of sentence"},
+        "optional": true,
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这一方案有利有弊，需要综合评估。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 8, "role": "other"},
+        {"start": 9, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "有利有弊 là cấu trúc bốn chữ đối xứng: có lợi / có hại.",
+        "en": "有利有弊 is a balanced four-character pattern: has benefits / has drawbacks."
+      },
+      "translation": {
+        "vi": "Phương án này có lợi có hại, cần đánh giá tổng hợp.",
+        "en": "This plan has pros and cons and needs a comprehensive evaluation."
+      },
+      "pinyin": [
+        "zhè",
+        "yī",
+        "fāng",
+        "àn",
+        "yǒu",
+        "lì",
+        "yǒu",
+        "bì",
+        "",
+        "xū",
+        "yào",
+        "zōng",
+        "hé",
+        "píng",
+        "gū",
+        ""
+      ]
+    },
+    {
+      "text": "新政策既稳增长，又控风险。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "subject"}, {"start": 3, "end": 12, "role": "other"}],
+      "annotation": {
+        "vi": "既...又... kết hợp hai cụm động từ song song, tạo nhịp bốn chữ.",
+        "en": "既...又... pairs two parallel verb phrases, creating a four-character rhythm."
+      },
+      "translation": {
+        "vi": "Chính sách mới vừa ổn định tăng trưởng vừa kiểm soát rủi ro.",
+        "en": "The new policy both stabilizes growth and controls risk."
+      },
+      "pinyin": ["xīn", "zhèng", "cè", "jì", "wěn", "zēng", "zhǎng", "", "yòu", "kòng", "fēng", "xiǎn", ""]
+    },
+    {
+      "text": "结果不增反降，值得进一步分析。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "不增反降 là cấu trúc bốn chữ đối lập: không tăng mà ngược lại giảm.",
+        "en": "不增反降 is a contrastive four-character pattern: not increase but instead decrease."
+      },
+      "translation": {
+        "vi": "Kết quả không tăng mà còn giảm, đáng phân tích thêm.",
+        "en": "The result did not increase but decreased, which deserves further analysis."
+      },
+      "pinyin": [
+        "jié",
+        "guǒ",
+        "bù",
+        "zēng",
+        "fǎn",
+        "jiàng",
+        "",
+        "zhí",
+        "de",
+        "jìn",
+        "yí",
+        "bù",
+        "fēn",
+        "xī",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Cấu trúc bốn chữ cần sự đối xứng; dùng 而且 phá vỡ nhịp và không tạo thành mẫu bốn chữ.",
+        "en": "The four-character pattern requires symmetry; using 而且 breaks the rhythm and does not form a four-character pattern."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "有利而且弊。",
+      "right": "有利有弊。",
+      "wrong_pinyin": ["yǒu", "lì", "ér", "qiě", "bì", ""],
+      "right_pinyin": ["yǒu", "lì", "yǒu", "bì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个计划___，我们需要仔细考虑。",
+      "options": [
+        {"text": "有利有弊", "error_tag": null, "pinyin": ["yǒu", "lì", "yǒu", "bì"]},
+        {"text": "有利而且弊", "error_tag": "other", "pinyin": ["yǒu", "lì", "ér", "qiě", "bì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "有利有弊 là cấu trúc bốn chữ đối xứng đúng; 有利而且弊 không đối xứng và sai ngữ pháp.",
+        "en": "有利有弊 is the correct balanced four-character pattern; 有利而且弊 is unbalanced and ungrammatical."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "jì",
+        "huà",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "men",
+        "xū",
+        "yào",
+        "zǐ",
+        "xì",
+        "kǎo",
+        "lǜ",
+        ""
+      ]
+    },
+    {
+      "q": "新政策___，既促进发展又保障安全。",
+      "options": [
+        {"text": "可进可退", "error_tag": null, "pinyin": ["kě", "jìn", "kě", "tuì"]},
+        {"text": "可进可退可", "error_tag": "other", "pinyin": ["kě", "jìn", "kě", "tuì", "kě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "可进可退 là mẫu bốn chữ diễn tả khả năng linh hoạt; thêm 可 thừa làm sai cấu trúc.",
+        "en": "可进可退 is the four-character pattern for flexibility; adding an extra 可 makes it incorrect."
+      },
+      "q_pinyin": [
+        "xīn",
+        "zhèng",
+        "cè",
+        "",
+        "",
+        "",
+        "",
+        "jì",
+        "cù",
+        "jìn",
+        "fā",
+        "zhǎn",
+        "yòu",
+        "bǎo",
+        "zhàng",
+        "ān",
+        "quán",
+        ""
+      ]
+    },
+    {
+      "q": "销量___，公司需要调整策略。",
+      "options": [
+        {"text": "不增反降", "error_tag": null, "pinyin": ["bù", "zēng", "fǎn", "jiàng"]},
+        {"text": "不增反而降", "error_tag": "other", "pinyin": ["bù", "zēng", "fǎn", "ér", "jiàng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不增反降 là cấu trúc bốn chữ đối lập; 不增反而降 không phải mẫu bốn chữ và sai nhịp.",
+        "en": "不增反降 is the contrastive four-character pattern; 不增反而降 is not a four-character pattern and breaks the rhythm."
+      },
+      "q_pinyin": ["xiāo", "liàng", "", "", "", "", "gōng", "sī", "xū", "yào", "tiáo", "zhěng", "cè", "lüè", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng cấu trúc bốn chữ để đánh giá một sự việc hoặc tình huống.",
+      "en": "Write one sentence using a four-character pattern to evaluate a situation or event."
+    },
+    "placeholder": "这个方案……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["有利有弊", "不增反降", "既稳增长，又控风险"], "role": "other"}]},
+    "sample": {
+      "text": "这个方案有利有弊，需要进一步讨论。",
+      "pinyin": [
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "yǒu",
+        "lì",
+        "yǒu",
+        "bì",
+        "",
+        "xū",
+        "yào",
+        "jìn",
+        "yí",
+        "bù",
+        "tǎo",
+        "lùn",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zhè", "ge", "fāng", "àn", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338976",
+    "generated_at": "2026-10-07T02:09:36Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-14-productive-four-character-grammar-patterns"],
+      "content_version": 2,
+      "content_hash": "67822e29c00699b94cc19602a955417c6c6ec4072edf012788cb4d0767a494c9",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-14-productive-four-character-grammar-patterns",
+          "issue": "R5 example '新政策既稳增长，又控风险。' is not a four-character pattern; it is a full clause with 既...又... and does not fit the point's scope.",
+          "fix": "Replaced with a true four-character pattern example: '结果不增反降，值得进一步分析。'"
+        },
+        {
+          "r5_id": "zh-hsk79-14-productive-four-character-grammar-patterns",
+          "issue": "R5 mistake '有利而且弊。' is ungrammatical and not a real learner error; it was listed as a mistake but the correction was not clearly explained.",
+          "fix": "Kept as a common mistake but clarified the reason: the four-character pattern requires symmetry and 而且 breaks it."
+        },
+        {
+          "r5_id": "zh-hsk79-14-productive-four-character-grammar-patterns",
+          "issue": "R5 did not provide a clear formula or structured explanation for the pattern.",
+          "fix": "Added a formula with abstract slots (topic + four-character pattern + optional rest) and structured when_to_use conditions."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:49Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

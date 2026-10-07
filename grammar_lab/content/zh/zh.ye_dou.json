@@ -1,0 +1,234 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.ye_dou",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.svo_basic"],
+  "contrasts": ["zh.he_conjunction"],
+  "error_tags": ["word_order"],
+  "source_refs": {"r5": ["zh-hsk1-19-v-tr-c-b-n"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk1-19-v-tr-c-b-n"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "也 và 都", "en": "也 and 都"},
+    "native_title": "“也”和“都”",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "也 nghĩa là “cũng”, 都 nghĩa là “đều”; cả hai đứng sau chủ ngữ và trước động từ hoặc tính từ vị ngữ.",
+      "en": "也 means “also/too” and 都 means “all/both”; both come after the subject and before the verb or predicate adjective."
+    },
+    "sub": {"vi": "vị trí cơ bản", "en": "basic position"},
+    "native_title_pinyin": ["", "yě", "", "hé", "", "dōu", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói ai đó hoặc việc gì đó cũng giống như đã nói trước đó, dùng 也.",
+      "en": "Use 也 when you want to say someone or something is the same as what was just mentioned."
+    },
+    {
+      "vi": "Khi bạn muốn nói tất cả thành viên trong một nhóm đều làm hoặc đều có cùng đặc điểm, dùng 都.",
+      "en": "Use 都 when you want to say every member of a group does something or shares the same quality."
+    },
+    {
+      "vi": "Khi cả hai ý “cũng” và “đều” cùng đúng, dùng 也 trước 都: 我们也都很忙.",
+      "en": "When both “also” and “all” are true, put 也 before 都: 我们也都很忙."
+    },
+    {
+      "vi": "Khi chủ ngữ là một nhóm rõ ràng (他们, 我们, 这些书), 都 thường xuất hiện để bao quát cả nhóm.",
+      "en": "When the subject is a clear group (他们, 我们, 这些书), 都 often appears to cover the whole group."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "也/都",
+        "role": "marker",
+        "label": {"vi": "cũng / đều", "en": "also / all"},
+        "options": [
+          {"text": "也", "pinyin": ["yě"]},
+          {"text": "都", "pinyin": ["dōu"]},
+          {"text": "也都", "pinyin": ["yě", "dōu"]}
+        ],
+        "pinyin": ["yě", "", "dōu"]
+      },
+      {
+        "text": "V/Adj",
+        "role": "verb",
+        "label": {"vi": "động từ / tính từ vị ngữ", "en": "verb / predicate adjective"},
+        "pinyin": ["", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我也喜欢中文。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "也 đứng sau chủ ngữ 我 và trước động từ 喜欢.",
+        "en": "也 comes after the subject 我 and before the verb 喜欢."
+      },
+      "translation": {"vi": "Tôi cũng thích tiếng Trung.", "en": "I also like Chinese."},
+      "pinyin": ["wǒ", "yě", "xǐ", "huān", "zhōng", "wén", ""]
+    },
+    {
+      "text": "他们都来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "都 bao quát cả nhóm 他们 và đứng trước động từ 来.",
+        "en": "都 covers the whole group 他们 and comes before the verb 来."
+      },
+      "translation": {"vi": "Họ đều đến rồi.", "en": "They have all arrived."},
+      "pinyin": ["tā", "men", "dōu", "lái", "le", ""]
+    },
+    {
+      "text": "我们也都很忙。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Khi cả “cũng” và “đều” cùng đúng, 也 đứng trước 都.",
+        "en": "When both “also” and “all” are true, 也 comes before 都."
+      },
+      "translation": {"vi": "Chúng tôi cũng đều bận.", "en": "We are all busy too."},
+      "pinyin": ["wǒ", "men", "yě", "dōu", "hěn", "máng", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.he_conjunction",
+      "this_example": "我也去。",
+      "other_example": "我和他都去。",
+      "this_meaning": {
+        "vi": "也/都 là phó từ, đứng sau chủ ngữ và trước vị ngữ để thêm nghĩa “cũng” hoặc “đều”.",
+        "en": "也/都 are adverbs that come after the subject and before the predicate to add “also” or “all”."
+      },
+      "other_meaning": {
+        "vi": "和 là liên từ nối hai danh từ hoặc cụm danh từ, đứng giữa hai thành phần được nối.",
+        "en": "和 is a conjunction that links two nouns or noun phrases and stands between the linked parts."
+      },
+      "this_example_pinyin": ["wǒ", "yě", "qù", ""],
+      "other_example_pinyin": ["wǒ", "hé", "tā", "dōu", "qù", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dịch từ tiếng Việt “tôi cũng thích” và đặt 也 sau động từ; thực ra 也 phải đứng trước động từ 喜欢.",
+        "en": "Learners translate Vietnamese “tôi cũng thích” and put 也 after the verb; actually 也 must come before the verb 喜欢."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "我喜欢也中文。",
+      "right": "我也喜欢中文。",
+      "wrong_pinyin": ["wǒ", "xǐ", "huān", "yě", "zhōng", "wén", ""],
+      "right_pinyin": ["wǒ", "yě", "xǐ", "huān", "zhōng", "wén", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___喜欢中文。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "喜欢也", "error_tag": "word_order", "pinyin": ["xǐ", "huān", "yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "也 đứng sau chủ ngữ 我 và trước động từ 喜欢.",
+        "en": "也 comes after the subject 我 and before the verb 喜欢."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "xǐ", "huān", "zhōng", "wén", ""]
+    },
+    {
+      "q": "他们___来了。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "来都", "error_tag": "word_order", "pinyin": ["lái", "dōu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "都 bao quát cả nhóm 他们 và đứng trước động từ 来.",
+        "en": "都 covers the whole group 他们 and comes before the verb 来."
+      },
+      "q_pinyin": ["tā", "men", "", "", "", "lái", "le", ""]
+    },
+    {
+      "q": "我们___很忙。",
+      "options": [
+        {"text": "也都", "error_tag": null, "pinyin": ["yě", "dōu"]},
+        {"text": "都也", "error_tag": "word_order", "pinyin": ["dōu", "yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi cả “cũng” và “đều” cùng đúng, 也 đứng trước 都.",
+        "en": "When both “also” and “all” are true, 也 comes before 都."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "hěn", "máng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bạn hoặc nhóm của bạn, dùng 也 hoặc 都 trước động từ/tính từ.",
+      "en": "Write one sentence about yourself or your group, using 也 or 都 before the verb/adjective."
+    },
+    "placeholder": "我也……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["也", "都", "也都"], "role": "marker"}]},
+    "sample": {"text": "我也喜欢中文。", "pinyin": ["wǒ", "yě", "xǐ", "huān", "zhōng", "wén", ""]},
+    "placeholder_pinyin": ["wǒ", "yě", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791337993",
+    "generated_at": "2026-10-07T01:53:13Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-19-v-tr-c-b-n"],
+      "content_version": 2,
+      "content_hash": "2674c5510ee7cd6cdb5912d52a2e7d592f09ba7ebb0ff9ff40b6b4bf5e36c82d",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-19-v-tr-c-b-n",
+          "issue": "R5 ghi quy tắc “S + 也/都 + V/Adj” nhưng không nêu rõ khi nào dùng 也, khi nào dùng 都, và thứ tự 也 trước 都.",
+          "fix": "Bổ sung điều kiện dùng: 也 cho sự giống nhau, 都 cho cả nhóm; khi cả hai cùng đúng thì 也 đứng trước 都."
+        },
+        {
+          "r5_id": "zh-hsk1-19-v-tr-c-b-n",
+          "issue": "R5 đưa ví dụ “我们也都很忙” nhưng không giải thích vì sao 也 đứng trước 都.",
+          "fix": "Thêm giải thích trong when_to_use và ví dụ: khi cả “cũng” và “đều” cùng đúng, 也 đứng trước 都."
+        },
+        {
+          "r5_id": "zh-hsk1-19-v-tr-c-b-n",
+          "issue": "R5 có lỗi sai “我们去都学校” nhưng không nêu rõ cơ chế lỗi.",
+          "fix": "Giữ lỗi tương tự trong common_mistakes và nêu rõ: 都 phải đứng trước động từ, không đứng sau động từ."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

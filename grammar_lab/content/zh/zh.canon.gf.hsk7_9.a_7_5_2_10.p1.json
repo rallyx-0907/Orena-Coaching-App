@@ -1,0 +1,324 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_10.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_5_2_9.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.123", "gf0025.hsk7_9.124"]},
+  "point_type": "other",
+  "sequence": 7,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: ⋯⋯， 以⋯⋯", "en": "Complex sentences: ⋯⋯， 以⋯⋯"},
+    "native_title": "⋯⋯，以⋯⋯",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Cấu trúc 「⋯⋯，以⋯⋯」 dùng để nối hai mệnh đề, trong đó mệnh đề sau nêu mục đích hoặc kết quả mà hành động ở mệnh đề trước hướng tới.",
+      "en": "The pattern 「⋯⋯，以⋯⋯」 links two clauses, where the second clause states the purpose or intended result of the action in the first clause."
+    },
+    "sub": {"vi": "mục đích, kết quả", "en": "purpose, result"},
+    "native_title_pinyin": ["", "", "", "yǐ", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói rõ mục đích của một hành động trong văn viết hoặc lời nói trang trọng.",
+      "en": "When you want to state the purpose of an action in written or formal speech."
+    },
+    {
+      "vi": "Khi mệnh đề sau là kết quả mong muốn hoặc điều kiện cần đạt được từ hành động trước.",
+      "en": "When the second clause is the intended result or condition to be achieved by the first action."
+    },
+    {
+      "vi": "Khi cần diễn đạt ngắn gọn thay cho 「为了⋯⋯」 hoặc 「以便⋯⋯」 trong câu ghép.",
+      "en": "When you need a concise alternative to 「为了⋯⋯」 or 「以便⋯⋯」 in a compound sentence."
+    },
+    {
+      "vi": "Khi viết thông báo, hướng dẫn hoặc văn bản hành chính cần nêu mục đích rõ ràng.",
+      "en": "When writing notices, instructions, or administrative texts that require a clear purpose."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "O",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "以",
+        "role": "connector",
+        "label": {"vi": "liên từ mục đích", "en": "purpose connector"},
+        "pinyin": ["yǐ"]
+      },
+      {
+        "text": "V2",
+        "role": "verb",
+        "label": {"vi": "động từ mục đích", "en": "purpose verb"},
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "O2",
+        "role": "object",
+        "label": {"vi": "tân ngữ mục đích", "en": "purpose object"},
+        "optional": true,
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我们要努力学习，以取得好成绩。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 7, "role": "verb"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 11, "end": 14, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "「以」nối mục đích: học tập chăm chỉ để đạt kết quả tốt.",
+        "en": "「以」links the purpose: study hard in order to get good results."
+      },
+      "translation": {
+        "vi": "Chúng ta phải học tập chăm chỉ để đạt được kết quả tốt.",
+        "en": "We must study hard in order to achieve good results."
+      },
+      "pinyin": ["wǒ", "men", "yào", "nǔ", "lì", "xué", "xí", "", "yǐ", "qǔ", "dé", "hǎo", "chéng", "jì", ""]
+    },
+    {
+      "text": "公司改进技术，以提高生产效率。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 10, "role": "verb"},
+        {"start": 10, "end": 14, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "「以」nêu mục đích của việc cải tiến kỹ thuật.",
+        "en": "「以」states the purpose of improving technology."
+      },
+      "translation": {
+        "vi": "Công ty cải tiến kỹ thuật để nâng cao hiệu suất sản xuất.",
+        "en": "The company improves its technology in order to increase production efficiency."
+      },
+      "pinyin": [
+        "gōng",
+        "sī",
+        "gǎi",
+        "jìn",
+        "jì",
+        "shù",
+        "",
+        "yǐ",
+        "tí",
+        "gāo",
+        "shēng",
+        "chǎn",
+        "xiào",
+        "lǜ",
+        ""
+      ]
+    },
+    {
+      "text": "他每天锻炼身体，以保持健康。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 5, "role": "verb"},
+        {"start": 5, "end": 7, "role": "object"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 11, "end": 13, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "「以」nối hành động với mục đích giữ gìn sức khỏe.",
+        "en": "「以」links the action with the purpose of staying healthy."
+      },
+      "translation": {
+        "vi": "Anh ấy tập thể dục mỗi ngày để giữ gìn sức khỏe.",
+        "en": "He exercises every day in order to stay healthy."
+      },
+      "pinyin": [
+        "tā",
+        "měi",
+        "tiān",
+        "duàn",
+        "liàn",
+        "shēn",
+        "tǐ",
+        "",
+        "yǐ",
+        "bǎo",
+        "chí",
+        "jiàn",
+        "kāng",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "「以」dẫn mục đích không đi với 「了」; thêm 「了」sai vì mệnh đề mục đích không đánh dấu hoàn thành.",
+        "en": "「以」introducing a purpose does not take 「了」; adding 「了」is wrong because the purpose clause does not mark completion."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "我们要努力学习，以取得好成绩了。",
+      "right": "我们要努力学习，以取得好成绩。",
+      "wrong_pinyin": [
+        "wǒ",
+        "men",
+        "yào",
+        "nǔ",
+        "lì",
+        "xué",
+        "xí",
+        "",
+        "yǐ",
+        "qǔ",
+        "dé",
+        "hǎo",
+        "chéng",
+        "jì",
+        "le",
+        ""
+      ],
+      "right_pinyin": ["wǒ", "men", "yào", "nǔ", "lì", "xué", "xí", "", "yǐ", "qǔ", "dé", "hǎo", "chéng", "jì", ""]
+    },
+    {
+      "reason": {
+        "vi": "「而且」diễn tả quan hệ bổ sung, không diễn tả mục đích; cần dùng 「以」để nối mục đích.",
+        "en": "「而且」expresses addition, not purpose; 「以」is needed to link the purpose."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "我们要努力学习，而且取得好成绩。",
+      "right": "我们要努力学习，以取得好成绩。",
+      "wrong_pinyin": [
+        "wǒ",
+        "men",
+        "yào",
+        "nǔ",
+        "lì",
+        "xué",
+        "xí",
+        "",
+        "ér",
+        "qiě",
+        "qǔ",
+        "dé",
+        "hǎo",
+        "chéng",
+        "jì",
+        ""
+      ],
+      "right_pinyin": ["wǒ", "men", "yào", "nǔ", "lì", "xué", "xí", "", "yǐ", "qǔ", "dé", "hǎo", "chéng", "jì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我们要节约用水，___保护环境。",
+      "options": [
+        {"text": "以", "error_tag": null, "pinyin": ["yǐ"]},
+        {"text": "而且", "error_tag": "conjunction", "pinyin": ["ér", "qiě"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「以」nối mục đích bảo vệ môi trường; 「而且」và 「但是」không diễn tả mục đích.",
+        "en": "「以」links the purpose of protecting the environment; 「而且」and 「但是」do not express purpose."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "yào",
+        "jié",
+        "yuē",
+        "yòng",
+        "shuǐ",
+        "",
+        "",
+        "",
+        "",
+        "bǎo",
+        "hù",
+        "huán",
+        "jìng",
+        ""
+      ]
+    },
+    {
+      "q": "他早起，___赶上第一班车。",
+      "options": [
+        {"text": "以", "error_tag": null, "pinyin": ["yǐ"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「以」dẫn mục đích đuổi kịp chuyến xe; 「了」không phù hợp ở đây.",
+        "en": "「以」introduces the purpose of catching the first bus; 「了」does not fit here."
+      },
+      "q_pinyin": ["tā", "zǎo", "qǐ", "", "", "", "", "gǎn", "shàng", "dì", "yī", "bān", "chē", ""]
+    },
+    {
+      "q": "公司增加投资，___扩大生产。",
+      "options": [
+        {"text": "以", "error_tag": null, "pinyin": ["yǐ"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「以」nêu mục đích mở rộng sản xuất; 「因为」nêu nguyên nhân, không hợp nghĩa.",
+        "en": "「以」states the purpose of expanding production; 「因为」states a cause, which does not fit."
+      },
+      "q_pinyin": ["gōng", "sī", "zēng", "jiā", "tóu", "zī", "", "", "", "", "kuò", "dà", "shēng", "chǎn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn làm gì đó với mục đích gì, dùng cấu trúc 「⋯⋯，以⋯⋯」.",
+      "en": "Write a sentence about what you do and for what purpose, using 「⋯⋯，以⋯⋯」."
+    },
+    "placeholder": "我每天……，以……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["以"], "role": "connector"}, {"regex": "[\\u4e00-\\u9fff]+", "role": "verb"}]
+    },
+    "sample": {
+      "text": "我每天复习生词，以通过考试。",
+      "pinyin": ["wǒ", "měi", "tiān", "fù", "xí", "shēng", "cí", "", "yǐ", "tōng", "guò", "kǎo", "shì", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "měi", "tiān", "", "", "", "yǐ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791342439",
+    "generated_at": "2026-10-07T03:07:19Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:23Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

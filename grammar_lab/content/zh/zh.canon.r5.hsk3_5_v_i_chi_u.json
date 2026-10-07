@@ -1,0 +1,330 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_5_v_i_chi_u",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.object_disposal",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_3_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk3-5-v-i-chi-u"]},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": ["zh-hsk3-5-v-i-chi-u"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 把 và 被 đối chiếu", "en": "Chinese grammar: 把 và 被 đối chiếu"},
+    "native_title": "把字句与被字句对比",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Cùng một sự việc có thể được diễn đạt theo hai cách: 把 đưa người xử lý lên trước và nêu rõ kết quả tác động lên vật, còn 被 đưa vật chịu tác động lên làm chủ ngữ.",
+      "en": "The same event can be packaged two ways: 把 puts the person handling the object first and states the result, while 被 makes the affected object the subject."
+    },
+    "sub": {"vi": "把 và 被", "en": "把 vs 被"},
+    "native_title_pinyin": ["bǎ", "zì", "jù", "yǔ", "bèi", "zì", "jù", "duì", "bǐ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói rõ ai đã xử lý một vật và kết quả của việc đó, dùng 把 + tân ngữ + động từ + kết quả.",
+      "en": "Use 把 + object + verb + result when you want to say who handled something and what result followed."
+    },
+    {
+      "vi": "Khi muốn nói một vật chịu tác động và ai gây ra tác động đó, dùng 被 với vật làm chủ ngữ.",
+      "en": "Use 被 with the affected thing as subject when you want to say what was affected and who caused it."
+    },
+    {
+      "vi": "Khi chuyển giữa hai cách nói, giữ nguyên vai trò: người xử lý và vật bị xử lý không đổi.",
+      "en": "When switching between the two patterns, keep the roles: the handler and the handled object do not change."
+    },
+    {
+      "vi": "Cả hai mẫu đều cần thông tin kết quả hoặc hướng rõ ràng sau động từ, không dừng ở động từ trần.",
+      "en": "Both patterns need a clear result or direction after the verb; a bare verb is not enough."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ (người xử lý)", "en": "subject (handler)"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "把",
+        "role": "marker",
+        "label": {"vi": "trợ từ 把", "en": "把 marker"},
+        "pinyin": ["bǎ"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ (vật bị xử lý)", "en": "object (handled thing)"},
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "结果补语",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ kết quả", "en": "result complement"},
+        "pinyin": ["jié", "guǒ", "bǔ", "yǔ"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ 了", "en": "了 particle"},
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ (người xử lý)", "en": "subject (handler)"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "没有",
+          "role": "aux",
+          "label": {"vi": "phủ định 没有", "en": "negative 没有"},
+          "pinyin": ["méi", "yǒu"]
+        },
+        {
+          "text": "把",
+          "role": "marker",
+          "label": {"vi": "trợ từ 把", "en": "把 marker"},
+          "pinyin": ["bǎ"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ (vật bị xử lý)", "en": "object (handled thing)"},
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "结果补语",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ kết quả", "en": "result complement"},
+          "pinyin": ["jié", "guǒ", "bǔ", "yǔ"]
+        }
+      ],
+      "question": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ (người xử lý)", "en": "subject (handler)"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "把",
+          "role": "marker",
+          "label": {"vi": "trợ từ 把", "en": "把 marker"},
+          "pinyin": ["bǎ"]
+        },
+        {
+          "text": "宾语",
+          "role": "object",
+          "label": {"vi": "tân ngữ (vật bị xử lý)", "en": "object (handled thing)"},
+          "pinyin": ["bīn", "yǔ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "结果补语",
+          "role": "complement",
+          "label": {"vi": "bổ ngữ kết quả", "en": "result complement"},
+          "pinyin": ["jié", "guǒ", "bǔ", "yǔ"]
+        },
+        {
+          "text": "了吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn 了吗", "en": "question particle 了吗"},
+          "pinyin": ["le", "ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我把门关上了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "complement"},
+        {"start": 5, "end": 6, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Người xử lý đứng trước 把, vật bị xử lý theo sau, kết quả 上 kết thúc hành động.",
+        "en": "The handler comes before 把, the handled object follows, and the result 上 closes the action."
+      },
+      "translation": {"vi": "Tôi đã đóng cửa lại.", "en": "I closed the door."},
+      "pinyin": ["wǒ", "bǎ", "mén", "guān", "shàng", "le", ""]
+    },
+    {
+      "text": "门被我关上了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "complement"},
+        {"start": 5, "end": 6, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Vật chịu tác động làm chủ ngữ, 被 đánh dấu người gây ra tác động.",
+        "en": "The affected thing is the subject, and 被 marks the person who caused the action."
+      },
+      "translation": {"vi": "Cửa đã bị tôi đóng lại.", "en": "The door was closed by me."},
+      "pinyin": ["mén", "bèi", "wǒ", "guān", "shàng", "le", ""]
+    },
+    {
+      "text": "杯子被他打破了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "complement"},
+        {"start": 6, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "被 đưa vật bị tác động lên đầu câu; kết quả 破 cho biết tình trạng sau hành động.",
+        "en": "被 moves the affected object to the front; the result 破 shows the state after the action."
+      },
+      "translation": {"vi": "Cái cốc đã bị anh ấy làm vỡ.", "en": "The cup was broken by him."},
+      "pinyin": ["bēi", "zi", "bèi", "tā", "dǎ", "pò", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học giữ trật tự tiếng Việt 'cái cốc bị anh ấy làm vỡ' nên đặt vật trước 把, nhưng 把 phải đứng sau người xử lý và trước vật bị xử lý.",
+        "en": "The learner keeps the Vietnamese order and puts the object before 把, but 把 must follow the handler and precede the handled object."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "杯子把他打破了。",
+      "right": "他把杯子打破了。",
+      "wrong_pinyin": ["bēi", "zi", "bǎ", "tā", "dǎ", "pò", "le", ""],
+      "right_pinyin": ["tā", "bǎ", "bēi", "zi", "dǎ", "pò", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___门关上了。",
+      "options": [
+        {"text": "把", "error_tag": null, "pinyin": ["bǎ"]},
+        {"text": "被", "error_tag": "bei_sentence", "pinyin": ["bèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ 我 là người xử lý, nên dùng 把 để đưa vật 门 vào giữa 把 và động từ.",
+        "en": "The subject 我 is the handler, so 把 is used to place the object 门 between 把 and the verb."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "mén", "guān", "shàng", "le", ""]
+    },
+    {
+      "q": "门___我关上了。",
+      "options": [
+        {"text": "把", "error_tag": "ba_sentence", "pinyin": ["bǎ"]},
+        {"text": "被", "error_tag": null, "pinyin": ["bèi"]}
+      ],
+      "answer": 1,
+      "explain": {
+        "vi": "Chủ ngữ 门 là vật chịu tác động, nên dùng 被 để đánh dấu người gây ra tác động là 我.",
+        "en": "The subject 门 is the affected thing, so 被 marks 我 as the person causing the action."
+      },
+      "q_pinyin": ["mén", "", "", "", "wǒ", "guān", "shàng", "le", ""]
+    },
+    {
+      "q": "他把杯子___了。",
+      "options": [
+        {"text": "打破", "error_tag": null, "pinyin": ["dǎ", "pò"]},
+        {"text": "打", "error_tag": "complement", "pinyin": ["dǎ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 把, động từ cần bổ ngữ kết quả; 打破 cho biết kết quả là vỡ, còn 打 trần không đủ.",
+        "en": "After 把, the verb needs a result complement; 打破 gives the result 'broken', while bare 打 is not enough."
+      },
+      "q_pinyin": ["tā", "bǎ", "bēi", "zi", "", "", "", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể việc bạn đã xử lý một vật và nêu rõ kết quả, dùng 把.",
+      "en": "Write one sentence about something you handled and its result, using 把."
+    },
+    "placeholder": "我把……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["把"], "role": "marker"},
+        {"regex": "(上|下|好|完|破|开|到|见|成|掉|走|住|着)", "role": "complement"}
+      ]
+    },
+    "sample": {"text": "我把窗户关上了。", "pinyin": ["wǒ", "bǎ", "chuāng", "hù", "guān", "shàng", "le", ""]},
+    "placeholder_pinyin": ["wǒ", "bǎ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338335",
+    "generated_at": "2026-10-07T01:58:55Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-5-v-i-chi-u"],
+      "content_version": 2,
+      "content_hash": "43c14135dbfea9c55823170f2bad2ce5d761c6fce1175986089d0659ad53f891",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-5-v-i-chi-u",
+          "issue": "R5 ghi câu sai '我被门关上了' với chú thích tiếng Anh lẫn tiếng Việt và không nêu rõ đây là lỗi trật tự vai nghĩa.",
+          "fix": "Đã thay bằng cặp lỗi thực tế '杯子把他打破了' → '他把杯子打破了' và giải thích cơ chế giữ trật tự tiếng Việt."
+        },
+        {
+          "r5_id": "zh-hsk3-5-v-i-chi-u",
+          "issue": "R5 chỉ có ví dụ 把 và 被 riêng lẻ, thiếu cặp đối chiếu cùng sự việc và thiếu công thức trừu tượng.",
+          "fix": "Đã bổ sung công thức 主语 + 把 + 宾语 + 动词 + 结果补语 (+ 了) và các ví dụ bindings cho cả 把 lẫn 被."
+        },
+        {
+          "r5_id": "zh-hsk3-5-v-i-chi-u",
+          "issue": "R5 không có phần luyện tập nhanh, không có sản xuất cá nhân và không có quy tắc nhận diện tự động.",
+          "fix": "Đã thêm 3 câu quick_practice, thẻ personal_production với pattern_rule dựa trên 把 và bổ ngữ kết quả."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

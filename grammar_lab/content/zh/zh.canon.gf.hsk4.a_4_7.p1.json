@@ -1,0 +1,208 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_7.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_4.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.063", "gf0025.hsk4.064", "gf0025.hsk4.067", "gf0025.hsk4.068"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách nhấn mạnh: 用反问句表示强调", "en": "Ways of emphasis: 用反问句表示强调"},
+    "native_title": "用反问句表示强调",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Dùng câu hỏi tu từ (câu hỏi không cần trả lời) để nhấn mạnh ý phủ định hoặc khẳng định.",
+      "en": "Use a rhetorical question (a question that needs no answer) to emphasise a negative or affirmative point."
+    },
+    "sub": {"vi": "nhấn mạnh bằng câu hỏi", "en": "emphasis by question"},
+    "native_title_pinyin": ["yòng", "fǎn", "wèn", "jù", "biǎo", "shì", "qiáng", "diào"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn phủ định mạnh: dùng 难道……吗？ để nói 'chẳng lẽ… sao?', ý thật là 'không thể nào'.",
+      "en": "When you want a strong negation: use 难道……吗？ to mean 'surely not…?', with the real meaning 'it can't be'."
+    },
+    {
+      "vi": "Khi muốn khẳng định mạnh: dùng 不是……吗？ để nói 'không phải là… sao?', ý thật là 'đúng là…'.",
+      "en": "When you want a strong affirmation: use 不是……吗？ to mean 'isn't it…?', with the real meaning 'it definitely is'."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh một sự thật hiển nhiên mà người nghe nên biết, thường dùng trong tranh luận hoặc khuyên bảo.",
+      "en": "When you want to stress an obvious fact the listener should know, often in arguments or advice."
+    },
+    {
+      "vi": "Khi câu trả lời không cần thiết: người nói không hỏi thông tin mà bày tỏ thái độ.",
+      "en": "When no answer is needed: the speaker is not asking for information but expressing an attitude."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "难道",
+        "role": "marker",
+        "label": {"vi": "trợ từ nhấn mạnh", "en": "emphasis marker"},
+        "pinyin": ["nán", "dào"]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      },
+      {
+        "text": "吗",
+        "role": "particle",
+        "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+        "pinyin": ["ma"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "难道你不知道这件事吗？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 9, "role": "verb"},
+        {"start": 9, "end": 10, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi tu từ nhấn mạnh 'bạn nhất định phải biết'.",
+        "en": "A rhetorical question emphasising 'you definitely should know'."
+      },
+      "translation": {"vi": "Chẳng lẽ bạn không biết chuyện này sao?", "en": "Don't you know about this?"},
+      "pinyin": ["nán", "dào", "nǐ", "bù", "zhī", "dào", "zhè", "jiàn", "shì", "ma", ""]
+    },
+    {
+      "text": "难道他会骗我们吗？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 7, "role": "verb"},
+        {"start": 7, "end": 8, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi tu từ nhấn mạnh 'anh ấy không thể lừa chúng ta'.",
+        "en": "A rhetorical question emphasising 'he can't possibly deceive us'."
+      },
+      "translation": {"vi": "Chẳng lẽ anh ấy lại lừa chúng ta sao?", "en": "Would he really lie to us?"},
+      "pinyin": ["nán", "dào", "tā", "huì", "piàn", "wǒ", "men", "ma", ""]
+    },
+    {
+      "text": "难道这不是你的错吗？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 8, "role": "verb"},
+        {"start": 8, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "Câu hỏi tu từ nhấn mạnh 'đây đúng là lỗi của bạn'.",
+        "en": "A rhetorical question emphasising 'this is indeed your fault'."
+      },
+      "translation": {"vi": "Chẳng lẽ đây không phải là lỗi của bạn sao?", "en": "Isn't this your fault?"},
+      "pinyin": ["nán", "dào", "zhè", "bú", "shì", "nǐ", "de", "cuò", "ma", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu hỏi tu từ với 难道 thường cần trợ từ 吗 ở cuối câu; thiếu 吗 làm câu mất tính nhấn mạnh và không tự nhiên.",
+        "en": "A rhetorical question with 难道 usually needs the particle 吗 at the end; without 吗 the sentence loses its emphatic force and sounds incomplete."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "难道你不知道这件事？",
+      "right": "难道你不知道这件事吗？",
+      "wrong_pinyin": ["nán", "dào", "nǐ", "bù", "zhī", "dào", "zhè", "jiàn", "shì", ""],
+      "right_pinyin": ["nán", "dào", "nǐ", "bù", "zhī", "dào", "zhè", "jiàn", "shì", "ma", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "难道你___这个道理吗？",
+      "options": [
+        {"text": "不懂", "error_tag": null, "pinyin": ["bù", "dǒng"]},
+        {"text": "不吗懂", "error_tag": "particle", "pinyin": ["bù", "ma", "dǒng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi tu từ dùng 难道……吗？, phủ định đặt trước động từ: 不懂.",
+        "en": "The rhetorical question uses 难道……吗？, with the negation before the verb: 不懂."
+      },
+      "q_pinyin": ["nán", "dào", "nǐ", "", "", "", "zhè", "ge", "dào", "lǐ", "ma", ""]
+    },
+    {
+      "q": "难道他不是老师___？",
+      "options": [
+        {"text": "吗", "error_tag": null, "pinyin": ["ma"]},
+        {"text": "呢", "error_tag": "particle", "pinyin": ["ne"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với 难道, trợ từ cuối câu là 吗, không dùng 呢.",
+        "en": "With 难道, the sentence-final particle is 吗, not 呢."
+      },
+      "q_pinyin": ["nán", "dào", "tā", "bú", "shì", "lǎo", "shī", "", "", "", ""]
+    },
+    {
+      "q": "___你不明白我的意思吗？",
+      "options": [
+        {"text": "难道", "error_tag": null, "pinyin": ["nán", "dào"]},
+        {"text": "难到", "error_tag": "character_choice", "pinyin": ["nán", "dào"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Trợ từ nhấn mạnh là 难道, không phải 难到.", "en": "The emphasis marker is 难道, not 难到."},
+      "q_pinyin": ["", "", "", "nǐ", "bù", "míng", "bái", "wǒ", "de", "yì", "si", "ma", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi tu từ dùng 难道……吗？ để nhấn mạnh điều bạn cho là hiển nhiên.",
+      "en": "Write a rhetorical question with 难道……吗？ to emphasise something you think is obvious."
+    },
+    "placeholder": "难道……吗？",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["难道"], "role": "marker"}, {"any_of": ["吗"], "role": "particle"}]
+    },
+    "sample": {
+      "text": "难道你不知道这个道理吗？",
+      "pinyin": ["nán", "dào", "nǐ", "bù", "zhī", "dào", "zhè", "ge", "dào", "lǐ", "ma", ""]
+    },
+    "placeholder_pinyin": ["nán", "dào", "", "", "ma", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348569",
+    "generated_at": "2026-10-07T04:49:29Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

@@ -1,0 +1,352 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_5_2_1.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.092", "gf0025.hsk7_9.093"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: ⋯⋯ ，此后⋯⋯", "en": "Complex sentences: ⋯⋯ ，此后⋯⋯"},
+    "native_title": "⋯⋯ ，此后⋯⋯",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Dùng 「此后」 sau một mệnh đề để nối sang một sự việc xảy ra sau đó, nghĩa là \"sau đó, kể từ đó\".",
+      "en": "Use 「此后」 after one clause to link to what happened next, meaning \"after that, from then on\"."
+    },
+    "sub": {"vi": "nối sự việc sau đó", "en": "linking what follows"},
+    "native_title_pinyin": ["", "", "", "", "cǐ", "hòu", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi kể lại hai sự việc theo trình tự thời gian và muốn nhấn mạnh sự việc thứ hai xảy ra sau đó.",
+      "en": "When narrating two events in time order and you want to stress that the second happened afterwards."
+    },
+    {
+      "vi": "Khi mệnh đề thứ hai mở ra một giai đoạn mới kéo dài, không chỉ một hành động đơn lẻ.",
+      "en": "When the second clause opens a new period that lasts, not just a single action."
+    },
+    {
+      "vi": "Trong văn viết hoặc lời kể trang trọng, ít dùng trong khẩu ngữ hằng ngày.",
+      "en": "In written or formal narration; it is rare in casual everyday speech."
+    },
+    {
+      "vi": "Khi không muốn lặp lại một mốc thời gian đã nêu ở mệnh đề trước.",
+      "en": "When you do not want to repeat a time point already given in the previous clause."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "mệnh đề 1",
+        "role": "other",
+        "label": {"vi": "mệnh đề nêu sự việc trước", "en": "clause stating the earlier event"},
+        "pinyin": ["", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "此后",
+        "role": "connector",
+        "label": {"vi": "từ đó trở đi", "en": "after that"},
+        "pinyin": ["cǐ", "hòu"]
+      },
+      {
+        "text": "mệnh đề 2",
+        "role": "other",
+        "label": {"vi": "mệnh đề nêu sự việc sau", "en": "clause stating the later event"},
+        "pinyin": ["", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他毕业回国，此后一直住在上海。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "「此后」nối sự việc trước với tình trạng kéo dài về sau.",
+        "en": "「此后」links the earlier event to the lasting situation that follows."
+      },
+      "translation": {
+        "vi": "Anh ấy tốt nghiệp rồi về nước, từ đó trở đi luôn sống ở Thượng Hải.",
+        "en": "He graduated and returned home; after that he has always lived in Shanghai."
+      },
+      "pinyin": [
+        "tā",
+        "bì",
+        "yè",
+        "huí",
+        "guó",
+        "",
+        "cǐ",
+        "hòu",
+        "yì",
+        "zhí",
+        "zhù",
+        "zài",
+        "shàng",
+        "hǎi",
+        ""
+      ]
+    },
+    {
+      "text": "公司换了老板，此后生意越来越好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "「此后」đánh dấu giai đoạn mới bắt đầu sau khi đổi chủ.",
+        "en": "「此后」marks the new period that began after the change of owner."
+      },
+      "translation": {
+        "vi": "Công ty đổi chủ, sau đó việc làm ăn ngày càng tốt hơn.",
+        "en": "The company changed owners; after that business got better and better."
+      },
+      "pinyin": [
+        "gōng",
+        "sī",
+        "huàn",
+        "le",
+        "lǎo",
+        "bǎn",
+        "",
+        "cǐ",
+        "hòu",
+        "shēng",
+        "yì",
+        "yuè",
+        "lái",
+        "yuè",
+        "hǎo",
+        ""
+      ]
+    },
+    {
+      "text": "我们那次见面以后，此后就再也没联系过。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 8, "role": "other"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 18, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "「此后」nhấn mạnh khoảng thời gian sau lần gặp đó.",
+        "en": "「此后」emphasises the whole stretch of time after that meeting."
+      },
+      "translation": {
+        "vi": "Sau lần gặp đó, từ đó trở đi chúng tôi không liên lạc nữa.",
+        "en": "After that meeting, we never got in touch again from then on."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "nà",
+        "cì",
+        "jiàn",
+        "miàn",
+        "yǐ",
+        "hòu",
+        "",
+        "cǐ",
+        "hòu",
+        "jiù",
+        "zài",
+        "yě",
+        "méi",
+        "lián",
+        "xì",
+        "guò",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "「此后」chỉ nối hai mệnh đề; nó không thay thế giới từ 「在」trước nơi chốn, nên vẫn phải giữ 「住在」.",
+        "en": "「此后」only links two clauses; it does not replace the preposition 「在」before a place, so 「住在」must stay."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "他毕业回国，此后一直住上海。",
+      "right": "他毕业回国，此后一直住在上海。",
+      "wrong_pinyin": ["tā", "bì", "yè", "huí", "guó", "", "cǐ", "hòu", "yì", "zhí", "zhù", "shàng", "hǎi", ""],
+      "right_pinyin": [
+        "tā",
+        "bì",
+        "yè",
+        "huí",
+        "guó",
+        "",
+        "cǐ",
+        "hòu",
+        "yì",
+        "zhí",
+        "zhù",
+        "zài",
+        "shàng",
+        "hǎi",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他毕业回国，___一直住在上海。",
+      "options": [
+        {"text": "此后", "error_tag": null, "pinyin": ["cǐ", "hòu"]},
+        {"text": "以前", "error_tag": "conjunction", "pinyin": ["yǐ", "qián"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sự việc thứ hai xảy ra sau khi về nước, nên dùng 「此后」; 「以前」chỉ thời gian trước đó.",
+        "en": "The second event comes after returning home, so 「此后」is correct; 「以前」refers to an earlier time."
+      },
+      "q_pinyin": [
+        "tā",
+        "bì",
+        "yè",
+        "huí",
+        "guó",
+        "",
+        "",
+        "",
+        "",
+        "yì",
+        "zhí",
+        "zhù",
+        "zài",
+        "shàng",
+        "hǎi",
+        ""
+      ]
+    },
+    {
+      "q": "公司换了老板，___生意越来越好。",
+      "options": [
+        {"text": "此后", "error_tag": null, "pinyin": ["cǐ", "hòu"]},
+        {"text": "因此", "error_tag": "conjunction", "pinyin": ["yīn", "cǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu chỉ nối tiếp về thời gian, không phải quan hệ nhân quả, nên không dùng 「因此」.",
+        "en": "The link is temporal, not causal, so 「因此」does not fit."
+      },
+      "q_pinyin": [
+        "gōng",
+        "sī",
+        "huàn",
+        "le",
+        "lǎo",
+        "bǎn",
+        "",
+        "",
+        "",
+        "",
+        "shēng",
+        "yì",
+        "yuè",
+        "lái",
+        "yuè",
+        "hǎo",
+        ""
+      ]
+    },
+    {
+      "q": "我们那次见面以后，___就再也没联系过。",
+      "options": [
+        {"text": "此后", "error_tag": null, "pinyin": ["cǐ", "hòu"]},
+        {"text": "然后", "error_tag": "conjunction", "pinyin": ["rán", "hòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「此后」nói về cả khoảng thời gian dài sau đó; 「然后」chỉ bước kế tiếp trong một chuỗi hành động.",
+        "en": "「此后」covers the whole period afterwards; 「然后」only marks the next step in a sequence."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "nà",
+        "cì",
+        "jiàn",
+        "miàn",
+        "yǐ",
+        "hòu",
+        "",
+        "",
+        "",
+        "",
+        "jiù",
+        "zài",
+        "yě",
+        "méi",
+        "lián",
+        "xì",
+        "guò",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể hai sự việc của bạn theo trình tự, dùng 「此后」ở giữa.",
+      "en": "Write one sentence about two events of yours in order, using 「此后」in the middle."
+    },
+    "placeholder": "我搬到这个城市，此后……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["此后"], "role": "connector"}]},
+    "sample": {
+      "text": "我搬到这个城市，此后一直在这里工作。",
+      "pinyin": [
+        "wǒ",
+        "bān",
+        "dào",
+        "zhè",
+        "ge",
+        "chéng",
+        "shì",
+        "",
+        "cǐ",
+        "hòu",
+        "yì",
+        "zhí",
+        "zài",
+        "zhè",
+        "lǐ",
+        "gōng",
+        "zuò",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "bān", "dào", "zhè", "ge", "chéng", "shì", "", "cǐ", "hòu", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338872",
+    "generated_at": "2026-10-07T02:07:52Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:23Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

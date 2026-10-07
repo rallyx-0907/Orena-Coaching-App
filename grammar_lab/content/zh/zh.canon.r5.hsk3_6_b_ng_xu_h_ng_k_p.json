@@ -1,0 +1,248 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_6_b_ng_xu_h_ng_k_p",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.action_result",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_4_n_n_t_ng"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk3-6-b-ng-xu-h-ng-k-p"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk3-6-b-ng-xu-h-ng-k-p"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Bổ ngữ xu hướng kép",
+      "en": "Chinese grammar: Bổ ngữ xu hướng kép"
+    },
+    "native_title": "复合趋向补语",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Bổ ngữ xu hướng kép dùng động từ chỉ hướng đi (进、出、上、下、回、过、起) kết hợp với 来 hoặc 去 để diễn tả hướng di chuyển so với người nói.",
+      "en": "A compound directional complement combines a path verb (进, 出, 上, 下, 回, 过, 起) with 来 or 去 to show the direction of movement relative to the speaker."
+    },
+    "sub": {"vi": "hướng di chuyển", "en": "direction of movement"},
+    "native_title_pinyin": ["fù", "hé", "qū", "xiàng", "bǔ", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói ai đó hoặc vật gì đó di chuyển theo một hướng cụ thể và hướng đó gắn với vị trí của người nói.",
+      "en": "Use it when someone or something moves in a specific direction that is anchored to the speaker's position."
+    },
+    {
+      "vi": "Khi động từ chính là động từ chuyển động như 走、跑、拿、搬、送, và bạn cần thêm cả đường đi lẫn hướng lại gần hay ra xa.",
+      "en": "Use it when the main verb is a motion verb such as 走, 跑, 拿, 搬, 送, and you need to add both the path and whether the movement comes toward or goes away from the speaker."
+    },
+    {
+      "vi": "Khi tân ngữ là vật cụ thể và bạn muốn đặt nó sau 来/去, hoặc dùng 把 để đưa tân ngữ lên trước động từ.",
+      "en": "Use it when the object is a concrete thing and you want to place it after 来/去, or use 把 to move the object before the verb."
+    },
+    {
+      "vi": "Khi cần phân biệt hướng lại gần (来) và hướng ra xa (去) trong cùng một đường đi, ví dụ 进来 so với 进去.",
+      "en": "Use it when you need to distinguish movement toward the speaker (来) from movement away from the speaker (去) along the same path, for example 进来 versus 进去."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ chuyển động", "en": "motion verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "进/出/上/下/回/过/起",
+        "role": "complement",
+        "label": {"vi": "hướng đi", "en": "path direction"},
+        "pinyin": ["jìn", "", "chū", "", "shàng", "", "xià", "", "huí", "", "guò", "", "qǐ"]
+      },
+      {
+        "text": "来/去",
+        "role": "complement",
+        "label": {"vi": "hướng so với người nói", "en": "deictic direction"},
+        "pinyin": ["lái", "", "qù"]
+      },
+      {
+        "text": "了",
+        "role": "particle",
+        "label": {"vi": "trợ từ hoàn thành", "en": "completion particle"},
+        "optional": true,
+        "pinyin": ["le"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他跑进来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "complement"},
+        {"start": 3, "end": 4, "role": "complement"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {"vi": "跑 + 进 + 来: chạy vào phía người nói.", "en": "跑 + 进 + 来: run in toward the speaker."},
+      "translation": {"vi": "Anh ấy chạy vào đây.", "en": "He ran in here."},
+      "pinyin": ["tā", "pǎo", "jìn", "lái", "le", ""]
+    },
+    {
+      "text": "请把书拿出来。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "complement"},
+        {"start": 5, "end": 6, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "拿 + 出 + 来: lấy ra phía người nói; 把 đưa tân ngữ lên trước động từ.",
+        "en": "拿 + 出 + 来: take out toward the speaker; 把 moves the object before the verb."
+      },
+      "translation": {"vi": "Hãy lấy sách ra đây.", "en": "Please take the book out here."},
+      "pinyin": ["qǐng", "bǎ", "shū", "ná", "chū", "lái", ""]
+    },
+    {
+      "text": "孩子走上去了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "complement"},
+        {"start": 4, "end": 5, "role": "complement"},
+        {"start": 5, "end": 6, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "走 + 上 + 去: đi lên phía xa người nói.",
+        "en": "走 + 上 + 去: walk up away from the speaker."
+      },
+      "translation": {"vi": "Đứa trẻ đi lên đó.", "en": "The child walked up there."},
+      "pinyin": ["hái", "zi", "zǒu", "shàng", "qù", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong tiếng Trung, động từ chuyển động đứng trước, rồi mới đến hướng đi và 来/去. Đặt 进 trước 跑 là bê trật tự tiếng Việt vào.",
+        "en": "In Chinese the motion verb comes first, then the path direction and 来/去. Putting 进 before 跑 follows Vietnamese order instead."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "他进跑来了。",
+      "right": "他跑进来了。",
+      "wrong_pinyin": ["tā", "jìn", "pǎo", "lái", "le", ""],
+      "right_pinyin": ["tā", "pǎo", "jìn", "lái", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他跑___了。",
+      "options": [
+        {"text": "进来", "error_tag": null, "pinyin": ["jìn", "lái"]},
+        {"text": "进跑", "error_tag": "word_order", "pinyin": ["jìn", "pǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "跑 là động từ chuyển động, 进来 là bổ ngữ xu hướng kép chỉ hướng vào phía người nói.",
+        "en": "跑 is the motion verb, and 进来 is the compound directional complement meaning 'in toward the speaker'."
+      },
+      "q_pinyin": ["tā", "pǎo", "", "", "", "le", ""]
+    },
+    {
+      "q": "请把书___。",
+      "options": [
+        {"text": "拿出来", "error_tag": null, "pinyin": ["ná", "chū", "lái"]},
+        {"text": "出来拿", "error_tag": "word_order", "pinyin": ["chū", "lái", "ná"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "拿 là động từ chính, 出来 là bổ ngữ xu hướng kép; 把 đưa tân ngữ 书 lên trước động từ.",
+        "en": "拿 is the main verb and 出来 is the compound directional complement; 把 moves the object 书 before the verb."
+      },
+      "q_pinyin": ["qǐng", "bǎ", "shū", "", "", "", ""]
+    },
+    {
+      "q": "孩子走___了。",
+      "options": [
+        {"text": "上去", "error_tag": null, "pinyin": ["shàng", "qù"]},
+        {"text": "去上", "error_tag": "word_order", "pinyin": ["qù", "shàng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "走 là động từ chuyển động, 上去 là bổ ngữ xu hướng kép chỉ hướng lên và ra xa người nói.",
+        "en": "走 is the motion verb, and 上去 is the compound directional complement meaning 'up and away from the speaker'."
+      },
+      "q_pinyin": ["hái", "zi", "zǒu", "", "", "", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về việc bạn hoặc ai đó đã đi/chạy vào đây hoặc ra đó, dùng bổ ngữ xu hướng kép.",
+      "en": "Write one sentence about you or someone moving in here or out there, using a compound directional complement."
+    },
+    "placeholder": "他跑……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"regex": "跑|走|拿|搬|送|飞|游|骑", "role": "verb"},
+        {"any_of": ["进", "出", "上"], "role": "complement"},
+        {"any_of": ["来", "去"], "role": "complement"}
+      ]
+    },
+    "sample": {"text": "他跑进来了。", "pinyin": ["tā", "pǎo", "jìn", "lái", "le", ""]},
+    "placeholder_pinyin": ["tā", "pǎo", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338334",
+    "generated_at": "2026-10-07T01:58:54Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-6-b-ng-xu-h-ng-k-p"],
+      "content_version": 2,
+      "content_hash": "6f1f9e0c6c7578a3f16b6394b5246d85082f0c84dfdee98fd4f9c0171e890304",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-6-b-ng-xu-h-ng-k-p",
+          "issue": "Pinyin của 他跑进来了 là 'Tā pǎo jìnlái le' nhưng chữ Hán là 跑进来了, không có 进 đứng riêng; pinyin phải là 'Tā pǎo jìnlái le' ứng với 跑进来了, không phải 跑进来了.",
+          "fix": "Đã viết lại ví dụ thành 他跑进来了。 với pinyin đúng Tā pǎo jìnlái le."
+        },
+        {
+          "r5_id": "zh-hsk3-6-b-ng-xu-h-ng-k-p",
+          "issue": "Câu sai 他进跑来了 được giải thích là 'Directional complement follows motion verb' nhưng không chỉ rõ lỗi là đặt hướng đi trước động từ theo trật tự tiếng Việt.",
+          "fix": "Đã viết lại lỗi thành 他进跑来了 → 他跑进来了 với lý do: động từ chuyển động đứng trước, rồi mới đến hướng đi và 来/去."
+        },
+        {
+          "r5_id": "zh-hsk3-6-b-ng-xu-h-ng-k-p",
+          "issue": "Câu sai 请出来拿书 được sửa thành 请把书拿出来 nhưng không giải thích rõ 出来 không thể đứng trước động từ 拿 trong cấu trúc này.",
+          "fix": "Đã bỏ câu sai này khỏi common_mistakes và thay bằng lỗi trật tự từ điển hình hơn; giải thích trong quick_practice rằng 拿出来 là một đơn vị sau 把."
+        },
+        {
+          "r5_id": "zh-hsk3-6-b-ng-xu-h-ng-k-p",
+          "issue": "Thiếu công thức cấu trúc rõ ràng và thiếu phân biệt 来/去 theo vị trí người nói.",
+          "fix": "Đã thêm formula với các slot 主语 + 动词 + hướng đi + 来/去 + 了 và giải thích 来 là hướng về phía người nói, 去 là hướng ra xa người nói."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

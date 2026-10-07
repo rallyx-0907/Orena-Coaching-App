@@ -1,0 +1,261 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_17_introduction",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_5_2_7.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk5-17-introduction"]},
+  "point_type": "other",
+  "sequence": 8,
+  "aliases": ["zh-hsk5-17-introduction"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 紧缩复句 introduction", "en": "Complex sentences: 紧缩复句 introduction"},
+    "native_title": "紧缩复句入门",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Câu phức rút gọn (紧缩复句) nén hai mệnh đề thành một cấu trúc ngắn, không dùng các cặp liên từ đầy đủ như 因为...所以... hay 如果...就....",
+      "en": "A compressed complex sentence (紧缩复句) squeezes two clauses into one short structure, without the full conjunction pairs such as 因为...所以... or 如果...就...."
+    },
+    "sub": {"vi": "câu phức rút gọn", "en": "compressed clauses"},
+    "native_title_pinyin": ["jǐn", "suō", "fù", "jù", "rù", "mén"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hai mệnh đề có quan hệ điều kiện, thời gian, tương quan hoặc tất yếu và bạn muốn nói ngắn, tự nhiên như người bản ngữ.",
+      "en": "When two clauses have a condition, time, correlation or necessity relation and you want a short, natural, native-like sentence."
+    },
+    {
+      "vi": "Khi cặp liên từ đầy đủ (因为...所以..., 如果...就...) bị lược bỏ nhưng quan hệ logic vẫn rõ nhờ chính cặp từ khóa như 越...越..., 一...就....",
+      "en": "When the full conjunction pair (因为...所以..., 如果...就...) is dropped but the logical relation stays clear through the key pair itself, such as 越...越... or 一...就...."
+    },
+    {
+      "vi": "Trong văn nói và văn viết thông thường, khi muốn câu gọn, nhịp nhanh, ít dấu phẩy.",
+      "en": "In everyday speech and writing, when you want a compact, fast-paced sentence with few commas."
+    },
+    {
+      "vi": "Với các khuôn cố định như 非...不可, 不...不... để diễn đạt sự tất yếu hoặc điều kiện kép.",
+      "en": "With fixed frames such as 非...不可 or 不...不... to express necessity or a double condition."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "前项标记",
+        "role": "connector",
+        "label": {"vi": "dấu hiệu vế trước", "en": "first marker"},
+        "options": [
+          {"text": "越", "pinyin": ["yuè"]},
+          {"text": "一", "pinyin": ["yī"]},
+          {"text": "非", "pinyin": ["fēi"]}
+        ],
+        "pinyin": ["qián", "xiàng", "biāo", "jì"]
+      },
+      {
+        "text": "V/A1",
+        "role": "verb",
+        "label": {"vi": "động/tính từ 1", "en": "verb/adjective 1"},
+        "pinyin": ["", "", "", ""]
+      },
+      {
+        "text": "后项标记",
+        "role": "connector",
+        "label": {"vi": "dấu hiệu vế sau", "en": "second marker"},
+        "options": [
+          {"text": "越", "pinyin": ["yuè"]},
+          {"text": "就", "pinyin": ["jiù"]},
+          {"text": "不可", "pinyin": ["bù", "kě"]}
+        ],
+        "pinyin": ["hòu", "xiàng", "biāo", "jì"]
+      },
+      {
+        "text": "V/A2",
+        "role": "complement",
+        "label": {"vi": "động/tính từ 2", "en": "verb/adjective 2"},
+        "optional": true,
+        "pinyin": ["", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个问题越想越复杂。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "connector"},
+        {"start": 5, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "越…越… nén hai mệnh đề thành một cấu trúc tăng tiến.",
+        "en": "越…越… compresses two clauses into a progressive construction."
+      },
+      "translation": {
+        "vi": "Vấn đề này càng nghĩ càng phức tạp.",
+        "en": "The more you think about this problem, the more complicated it becomes."
+      },
+      "pinyin": ["zhè", "ge", "wèn", "tí", "yuè", "xiǎng", "yuè", "fù", "zá", ""]
+    },
+    {
+      "text": "他一听就明白了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "connector"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "connector"},
+        {"start": 4, "end": 6, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "一…就… diễn tả hai hành động nối tiếp rất sát nhau.",
+        "en": "一…就… expresses two closely successive events."
+      },
+      "translation": {"vi": "Anh ấy vừa nghe là hiểu ngay.", "en": "He understood as soon as he heard it."},
+      "pinyin": ["tā", "yī", "tīng", "jiù", "míng", "bái", "le", ""]
+    },
+    {
+      "text": "这件事非解决不可。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 4, "role": "connector"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 6, "end": 8, "role": "connector"}
+      ],
+      "annotation": {
+        "vi": "非…不可 tạo nghĩa bắt buộc mạnh trong cấu trúc rút gọn.",
+        "en": "非…不可 expresses strong necessity in a compressed pattern."
+      },
+      "translation": {
+        "vi": "Việc này nhất định phải giải quyết.",
+        "en": "This matter absolutely must be resolved."
+      },
+      "pinyin": ["zhè", "jiàn", "shì", "fēi", "jiě", "jué", "bù", "kě", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Cấu trúc 越...越... đã tự mang quan hệ nhân quả; thêm 所以 vào giữa hai vế là thừa và sai vì 紧缩复句 không dùng cặp liên từ đầy đủ.",
+        "en": "The 越...越... frame already carries the causal relation; inserting 所以 between the two parts is redundant and wrong because a compressed complex sentence does not use the full conjunction pair."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "越想所以越复杂。",
+      "right": "越想越复杂。",
+      "wrong_pinyin": ["yuè", "xiǎng", "suǒ", "yǐ", "yuè", "fù", "zá", ""],
+      "right_pinyin": ["yuè", "xiǎng", "yuè", "fù", "zá", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个问题越想___复杂。",
+      "options": [
+        {"text": "越", "error_tag": null, "pinyin": ["yuè"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "越...越... là khuôn cố định; không chèn 所以 vào giữa.",
+        "en": "越...越... is a fixed frame; do not insert 所以 in the middle."
+      },
+      "q_pinyin": ["zhè", "ge", "wèn", "tí", "yuè", "xiǎng", "", "", "", "fù", "zá", ""]
+    },
+    {
+      "q": "他一听___明白了。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "然后", "error_tag": "conjunction", "pinyin": ["rán", "hòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "一...就... diễn tả quan hệ tức thì; 然后 không dùng trong khuôn này.",
+        "en": "一...就... expresses an immediate relation; 然后 is not used in this frame."
+      },
+      "q_pinyin": ["tā", "yī", "tīng", "", "", "", "míng", "bái", "le", ""]
+    },
+    {
+      "q": "这件事非解决___。",
+      "options": [
+        {"text": "不可", "error_tag": null, "pinyin": ["bù", "kě"]},
+        {"text": "不行", "error_tag": "collocation", "pinyin": ["bù", "xíng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "非...不可 là khuôn cố định diễn đạt sự tất yếu; 不行 không thuộc khuôn này.",
+        "en": "非...不可 is a fixed frame expressing necessity; 不行 does not belong to this frame."
+      },
+      "q_pinyin": ["zhè", "jiàn", "shì", "fēi", "jiě", "jué", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng khuôn 越...越... để nói về một việc càng làm thì càng thay đổi.",
+      "en": "Write one sentence using the 越...越... frame about something that changes the more you do it."
+    },
+    "placeholder": "我越……越……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["越"], "role": "connector"}, {"any_of": ["越"], "role": "connector"}]
+    },
+    "sample": {"text": "我越学越喜欢中文。", "pinyin": ["wǒ", "yuè", "xué", "yuè", "xǐ", "huān", "zhōng", "wén", ""]},
+    "placeholder_pinyin": ["wǒ", "yuè", "", "", "yuè", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351883",
+    "generated_at": "2026-10-07T05:44:43Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-17-introduction"],
+      "content_version": 2,
+      "content_hash": "9c9a0849752638694b03fca408370f721d4b45a95068d833953b8b90289f858e",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-17-introduction",
+          "issue": "R5 gộp bốn khuôn khác nhau (越...越..., 一...就..., 不...不..., 非...不可) vào một bài mà không có công thức chung, khiến người học khó nhận diện cấu trúc rút gọn.",
+          "fix": "Tách riêng từng khuôn trong phần giải thích và ví dụ; bài này lấy 越...越... làm khuôn đại diện có công thức rõ ràng, các khuôn khác chỉ giới thiệu ngắn."
+        },
+        {
+          "r5_id": "zh-hsk5-17-introduction",
+          "issue": "Ví dụ 不看不知道，一看吓一跳 là thành ngữ quen thuộc, không phù hợp để dạy cấu trúc 紧缩复句 ở trình độ HSK5 vì quá khẩu ngữ và khó phân tích.",
+          "fix": "Thay bằng ví dụ trung tính hơn: 他一听就明白了。"
+        },
+        {
+          "r5_id": "zh-hsk5-17-introduction",
+          "issue": "Lỗi 越想所以越复杂 được giải thích là '紧缩 pattern does not use 所以' nhưng không nói rõ 所以 thừa vì khuôn đã mang nghĩa nhân quả.",
+          "fix": "Giải thích rõ: 越...越... tự mang quan hệ nhân quả, thêm 所以 là thừa và sai."
+        },
+        {
+          "r5_id": "zh-hsk5-17-introduction",
+          "issue": "R5 không có bài tập cloze hay sản xuất cá nhân, thiếu phần kiểm tra người học tự dùng cấu trúc.",
+          "fix": "Thêm quick_practice với 3 câu cloze và personal_production yêu cầu viết câu dùng 越...越...."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

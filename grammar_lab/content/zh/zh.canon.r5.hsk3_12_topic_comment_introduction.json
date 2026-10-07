@@ -1,0 +1,215 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_12_topic_comment_introduction",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_3_topic_69"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk3-12-topic-comment-introduction"]},
+  "point_type": "other",
+  "sequence": 9,
+  "aliases": ["zh-hsk3-12-topic-comment-introduction"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Topic-comment introduction",
+      "en": "Chinese grammar: Topic-comment introduction"
+    },
+    "native_title": "话题—说明结构入门",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc chủ đề – bình luận đặt một sự vật hoặc khung cảnh làm chủ đề ở đầu câu, rồi phần sau nói điều gì về chủ đề đó.",
+      "en": "The topic–comment structure puts an entity or frame first as the topic, then the comment says something about it."
+    },
+    "sub": {"vi": "chủ đề – bình luận", "en": "topic – comment"},
+    "native_title_pinyin": ["huà", "tí", "", "shuō", "míng", "jié", "gòu", "rù", "mén"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói về một vật đã biết trong câu chuyện, thay vì mở đầu bằng chủ ngữ ngữ pháp.",
+      "en": "When you want to talk about something already known in the conversation instead of starting with the grammatical subject."
+    },
+    {
+      "vi": "Khi chủ đề là một bộ phận của tổng thể, ví dụ con voi và cái mũi của nó.",
+      "en": "When the topic is a part of a whole, for example an elephant and its trunk."
+    },
+    {
+      "vi": "Khi muốn tách một khung cảnh hoặc thời gian ra trước để bình luận về nó.",
+      "en": "When you want to set a frame or time first and then comment on it."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "话题",
+        "role": "other",
+        "label": {"vi": "chủ đề", "en": "topic"},
+        "pinyin": ["huà", "tí"]
+      },
+      {"text": "，", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}, "pinyin": [""]},
+      {
+        "text": "说明",
+        "role": "other",
+        "label": {"vi": "phần thuyết minh", "en": "comment"},
+        "pinyin": ["shuō", "míng"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这本书，我很喜欢。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 8, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "这本书 là chủ đề; phần sau dấu phẩy đưa ra nhận xét.",
+        "en": "这本书 is the topic; the clause after the comma comments on it."
+      },
+      "translation": {"vi": "Cuốn sách này, tôi rất thích.", "en": "This book, I like very much."},
+      "pinyin": ["zhè", "běn", "shū", "", "wǒ", "hěn", "xǐ", "huān", ""]
+    },
+    {
+      "text": "这个问题，我们明天再谈。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Chủ đề được đưa lên trước, sau đó mới nói cách xử lý.",
+        "en": "The topic is fronted before the comment about what to do with it."
+      },
+      "translation": {
+        "vi": "Vấn đề này, ngày mai chúng ta bàn tiếp.",
+        "en": "This issue, we'll discuss again tomorrow."
+      },
+      "pinyin": ["zhè", "ge", "wèn", "tí", "", "wǒ", "men", "míng", "tiān", "zài", "tán", ""]
+    },
+    {
+      "text": "大象，鼻子很长。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 7, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "大象 là chủ đề lớn; 鼻子很长 là phần thuyết minh.",
+        "en": "大象 is the topic; 鼻子很长 is the comment."
+      },
+      "translation": {"vi": "Voi thì vòi rất dài.", "en": "As for elephants, their trunks are long."},
+      "pinyin": ["dà", "xiàng", "", "bí", "zi", "hěn", "zhǎng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học đảo vai trò trong phần bình luận: đáng lẽ phải nói người nói thích sách, không phải sách thích người nói.",
+        "en": "The learner reverses the roles in the comment: the speaker likes the book, not the book likes the speaker."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这本书，喜欢我。",
+      "right": "这本书，我很喜欢。",
+      "wrong_pinyin": ["zhè", "běn", "shū", "", "xǐ", "huān", "wǒ", ""],
+      "right_pinyin": ["zhè", "běn", "shū", "", "wǒ", "hěn", "xǐ", "huān", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这本书，我___。",
+      "options": [
+        {"text": "很喜欢", "error_tag": null, "pinyin": ["hěn", "xǐ", "huān"]},
+        {"text": "喜欢我", "error_tag": "word_order", "pinyin": ["xǐ", "huān", "wǒ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau chủ đề 「这本书」, bình luận phải nói người nói thích sách: 「我很喜欢」.",
+        "en": "After the topic 「这本书」, the comment must say the speaker likes the book: 「我很喜欢」."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "", "wǒ", "", "", "", ""]
+    },
+    {
+      "q": "大象，___很长。",
+      "options": [
+        {"text": "鼻子", "error_tag": null, "pinyin": ["bí", "zi"]},
+        {"text": "大象", "error_tag": "redundancy", "pinyin": ["dà", "xiàng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ đề là 「大象」, phần bình luận nói về bộ phận của nó là 「鼻子」.",
+        "en": "The topic is 「大象」; the comment talks about its part, 「鼻子」."
+      },
+      "q_pinyin": ["dà", "xiàng", "", "", "", "", "hěn", "zhǎng", ""]
+    },
+    {
+      "q": "这个问题，我们___再谈。",
+      "options": [
+        {"text": "明天", "error_tag": null, "pinyin": ["míng", "tiān"]},
+        {"text": "昨天", "error_tag": "other", "pinyin": ["zuó", "tiān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "「再谈」 là kế hoạch tương lai, nên dùng 「明天」.",
+        "en": "「再谈」 is a future plan, so 「明天」 fits."
+      },
+      "q_pinyin": ["zhè", "ge", "wèn", "tí", "", "wǒ", "men", "", "", "", "zài", "tán", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một vật quen thuộc: đặt vật đó làm chủ đề, rồi nói bạn nghĩ gì về nó.",
+      "en": "Write one sentence about a familiar thing: put it first as the topic, then say what you think about it."
+    },
+    "placeholder": "这本书，……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["，"], "role": "other"}]},
+    "sample": {"text": "这本书，我很喜欢。", "pinyin": ["zhè", "běn", "shū", "", "wǒ", "hěn", "xǐ", "huān", ""]},
+    "placeholder_pinyin": ["zhè", "běn", "shū", "", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351868",
+    "generated_at": "2026-10-07T05:44:28Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-12-topic-comment-introduction"],
+      "content_version": 2,
+      "content_hash": "0dcc2a69d45e866237fbe9b8e12a3a55db1377bba7192fda08cd9e381abb21a2",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-12-topic-comment-introduction",
+          "issue": "R5 dùng dấu phẩy trong ví dụ nhưng không nói rõ dấu phẩy chỉ là cách viết, không phải một thành phần ngữ pháp.",
+          "fix": "Trong bản mới, dấu phẩy không được tính là slot hay span; công thức chỉ gồm Topic và Comment."
+        },
+        {
+          "r5_id": "zh-hsk3-12-topic-comment-introduction",
+          "issue": "R5 có lỗi sai 「明天，这本书我。」 thiếu vị ngữ hoàn chỉnh, không phải lỗi tiêu biểu của cấu trúc chủ đề – bình luận.",
+          "fix": "Thay bằng lỗi thật của người học Việt: 「这本书，喜欢我。」 với lý do đảo vai trò trong phần bình luận."
+        },
+        {
+          "r5_id": "zh-hsk3-12-topic-comment-introduction",
+          "issue": "R5 chưa có phần luyện nhanh và sản xuất cá nhân theo định dạng ứng dụng.",
+          "fix": "Thêm 3 câu hỏi điền khuyết và thẻ sản xuất cá nhân với mẫu câu và quy tắc nhận diện."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

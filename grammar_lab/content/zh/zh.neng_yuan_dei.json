@@ -1,0 +1,265 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.neng_yuan_dei",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.obligation_advice",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.jianyu_qing_rang"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: neng_yuan_dei", "en": "Chinese grammar: neng_yuan_dei"},
+    "native_title": "能愿动词“得”",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Động từ năng nguyện 得 (děi) diễn tả nghĩa vụ hoặc lời khuyên: việc gì đó cần phải làm.",
+      "en": "The modal verb 得 (děi) expresses obligation or advice: something needs to be done."
+    },
+    "sub": {"vi": "nghĩa vụ, lời khuyên", "en": "obligation, advice"},
+    "native_title_pinyin": ["néng", "yuàn", "dòng", "cí", "", "dé", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói một việc là cần thiết hoặc bắt buộc phải làm, thường vì thời gian, quy định hay hoàn cảnh.",
+      "en": "When something is necessary or required, often because of time, rules, or circumstances."
+    },
+    {
+      "vi": "Khi đưa lời khuyên nhẹ nhàng: người nghe nên làm gì đó.",
+      "en": "When giving gentle advice: the listener should do something."
+    },
+    {
+      "vi": "Trong câu khẳng định, 得 đứng trước động từ chính và không đổi theo chủ ngữ.",
+      "en": "In affirmative sentences, 得 comes before the main verb and does not change with the subject."
+    },
+    {
+      "vi": "Câu phủ định dùng 不用 (không cần) hoặc 不必 (không cần thiết), không dùng 不得.",
+      "en": "The negative uses 不用 (no need) or 不必 (not necessary), not 不得."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "得",
+        "role": "aux",
+        "label": {"vi": "động từ năng nguyện 得 (phải, cần)", "en": "modal verb 得 (must, need to)"},
+        "pinyin": ["dé"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "不用/不必",
+          "role": "aux",
+          "label": {"vi": "không cần / không cần thiết", "en": "no need / not necessary"},
+          "options": [{"text": "不用", "pinyin": ["bù", "yòng"]}, {"text": "不必", "pinyin": ["bù", "bì"]}],
+          "pinyin": ["bù", "yòng", "", "bù", "bì"]
+        },
+        {
+          "text": "动词短语",
+          "role": "verb",
+          "label": {"vi": "cụm động từ", "en": "verb phrase"},
+          "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我明天得去公司开会。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 3, "end": 4, "role": "aux"},
+        {"start": 4, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "得 đứng trước động từ 去, diễn tả việc bắt buộc phải làm.",
+        "en": "得 comes before the verb 去, expressing an obligation that must be done."
+      },
+      "translation": {
+        "vi": "Ngày mai tôi phải đến công ty họp.",
+        "en": "I have to go to the company for a meeting tomorrow."
+      },
+      "pinyin": ["wǒ", "míng", "tiān", "dé", "qù", "gōng", "sī", "kāi", "huì", ""]
+    },
+    {
+      "text": "你得多喝水，天气太热了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 5, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "得 dùng để khuyên ai đó nên làm gì.",
+        "en": "得 is used to advise someone to do something."
+      },
+      "translation": {
+        "vi": "Bạn cần uống nhiều nước, trời nóng quá rồi.",
+        "en": "You need to drink more water; it's too hot."
+      },
+      "pinyin": ["nǐ", "dé", "duō", "hē", "shuǐ", "", "tiān", "qì", "tài", "rè", "le", ""]
+    },
+    {
+      "text": "我们不用现在决定，可以再想想。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "aux"},
+        {"start": 4, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Phủ định của 得 là 不用, nghĩa là không cần làm gì.",
+        "en": "The negative of 得 is 不用, meaning there is no need to do something."
+      },
+      "translation": {
+        "vi": "Chúng ta không cần quyết định bây giờ, có thể nghĩ thêm.",
+        "en": "We don't need to decide now; we can think about it more."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "bù",
+        "yòng",
+        "xiàn",
+        "zài",
+        "jué",
+        "dìng",
+        "",
+        "kě",
+        "yǐ",
+        "zài",
+        "xiǎng",
+        "xiǎng",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Phủ định của 得 là 不用 hoặc 不必, không dùng 不得. 不得 thường mang nghĩa 'không được phép' trong một số ngữ cảnh, không phải 'không cần'.",
+        "en": "The negative of 得 is 不用 or 不必, not 不得. 不得 usually means 'must not' in some contexts, not 'no need'."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我不得明天去公司。",
+      "right": "我明天不用去公司。",
+      "wrong_pinyin": ["wǒ", "bù", "dé", "míng", "tiān", "qù", "gōng", "sī", ""],
+      "right_pinyin": ["wǒ", "míng", "tiān", "bù", "yòng", "qù", "gōng", "sī", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你发烧了，___去看医生。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["dé"]},
+        {"text": "不用", "error_tag": "other", "pinyin": ["bù", "yòng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này diễn tả việc cần thiết là đi khám bác sĩ, nên dùng 得. 不用 mang nghĩa 'không cần', trái với ngữ cảnh.",
+        "en": "This sentence expresses the necessity of seeing a doctor, so 得 is used. 不用 means 'no need', which contradicts the context."
+      },
+      "q_pinyin": ["nǐ", "fā", "shāo", "le", "", "", "", "", "qù", "kàn", "yī", "shēng", ""]
+    },
+    {
+      "q": "明天是周末，你___起那么早。",
+      "options": [
+        {"text": "不用", "error_tag": null, "pinyin": ["bù", "yòng"]},
+        {"text": "得", "error_tag": "other", "pinyin": ["dé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vì mai là cuối tuần nên không cần dậy sớm; phủ định của 得 là 不用.",
+        "en": "Because tomorrow is the weekend, there is no need to get up early; the negative of 得 is 不用."
+      },
+      "q_pinyin": ["míng", "tiān", "shì", "zhōu", "mò", "", "nǐ", "", "", "", "qǐ", "nà", "me", "zǎo", ""]
+    },
+    {
+      "q": "这件事很重要，我们___今天做完。",
+      "options": [
+        {"text": "得", "error_tag": null, "pinyin": ["dé"]},
+        {"text": "不用", "error_tag": "other", "pinyin": ["bù", "yòng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Việc quan trọng nên cần phải hoàn thành hôm nay, dùng 得 để diễn tả nghĩa vụ.",
+        "en": "The matter is important, so it needs to be finished today; 得 expresses obligation."
+      },
+      "q_pinyin": [
+        "zhè",
+        "jiàn",
+        "shì",
+        "hěn",
+        "zhòng",
+        "yào",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "jīn",
+        "tiān",
+        "zuò",
+        "wán",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn phải làm ngày mai, dùng 得.",
+      "en": "Write one sentence about something you have to do tomorrow, using 得."
+    },
+    "placeholder": "我明天得……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["得"], "role": "aux"}]},
+    "sample": {
+      "text": "我明天得去学校上课。",
+      "pinyin": ["wǒ", "míng", "tiān", "dé", "qù", "xué", "xiào", "shàng", "kè", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "míng", "tiān", "dé", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338381",
+    "generated_at": "2026-10-07T01:59:41Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

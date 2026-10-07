@@ -1,0 +1,227 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_6_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_2_1_1.p2"],
+  "contrasts": [],
+  "error_tags": ["particle", "complement"],
+  "source_refs": {"r5": ["zh-hsk5-6-topic"], "gf0025": ["gf0025.hsk5.022", "gf0025.hsk5.035", "gf0025.hsk5.061"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-6-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 不得了", "en": "Chinese grammar: 不得了"},
+    "native_title": "不得了",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc biểu thị yêu cầu mạnh hoặc cấm đoán mạnh: 务必 (nhất định phải), 切勿 (tuyệt đối đừng), 不得 (không được phép).",
+      "en": "Structures for strong obligation or strong prohibition: 务必 (must, be sure to), 切勿 (by no means do), 不得 (must not, not permitted)."
+    },
+    "sub": {"vi": "yêu cầu và cấm mạnh", "en": "strong obligation and prohibition"},
+    "native_title_pinyin": ["bù", "dé", "le"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng 务必 trước động từ để nhấn mạnh một yêu cầu bắt buộc phải làm, thường trong văn bản hướng dẫn hoặc lời nhắc trang trọng.",
+      "en": "Use 务必 before a verb to stress a requirement that must be carried out, typically in instructions or formal reminders."
+    },
+    {
+      "vi": "Dùng 切勿 trước động từ để cấm hoặc khuyên mạnh 'tuyệt đối đừng làm', thường trong cảnh báo.",
+      "en": "Use 切勿 before a verb to forbid or strongly warn against doing something, typically in warnings."
+    },
+    {
+      "vi": "Dùng 不得 trước động từ để nêu điều không được phép, phổ biến trong quy định, nội quy.",
+      "en": "Use 不得 before a verb to state what is not permitted, common in rules and regulations."
+    },
+    {
+      "vi": "Cả ba đều mang sắc thái mạnh và trang trọng, không dùng trong khẩu ngữ thân mật hằng ngày.",
+      "en": "All three carry a strong, formal tone and are not used in casual everyday speech."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "务必/切勿/不得",
+        "role": "aux",
+        "label": {"vi": "từ biểu thị yêu cầu/cấm mạnh", "en": "strong obligation/prohibition word"},
+        "options": [
+          {"text": "务必", "pinyin": ["wù", "bì"]},
+          {"text": "切勿", "pinyin": ["qiè", "wù"]},
+          {"text": "不得", "pinyin": ["bù", "dé"]}
+        ],
+        "pinyin": ["wù", "bì", "", "qiè", "wù", "", "bù", "dé"]
+      },
+      {
+        "text": "VP",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "请务必按时提交申请。",
+      "form": "affirmative",
+      "spans": [{"start": 1, "end": 3, "role": "aux"}, {"start": 3, "end": 9, "role": "verb"}],
+      "annotation": {
+        "vi": "务必 + VP: yêu cầu bắt buộc phải nộp đúng giờ.",
+        "en": "务必 + VP: a firm requirement to submit on time."
+      },
+      "translation": {"vi": "Nhất định phải nộp đơn đúng giờ.", "en": "Be sure to submit the application on time."},
+      "pinyin": ["qǐng", "wù", "bì", "àn", "shí", "tí", "jiāo", "shēn", "qǐng", ""]
+    },
+    {
+      "text": "使用设备前务必阅读说明。",
+      "form": "affirmative",
+      "spans": [{"start": 5, "end": 7, "role": "aux"}, {"start": 7, "end": 11, "role": "verb"}],
+      "annotation": {
+        "vi": "务必 + VP: nhấn mạnh việc đọc hướng dẫn là bắt buộc.",
+        "en": "务必 + VP: stresses that reading the instructions is required."
+      },
+      "translation": {
+        "vi": "Trước khi dùng thiết bị nhất định phải đọc hướng dẫn.",
+        "en": "Be sure to read the instructions before using the equipment."
+      },
+      "pinyin": ["shǐ", "yòng", "shè", "bèi", "qián", "wù", "bì", "yuè", "dú", "shuō", "míng", ""]
+    },
+    {
+      "text": "切勿将密码告诉他人。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "aux"}, {"start": 2, "end": 9, "role": "verb"}],
+      "annotation": {
+        "vi": "切勿 + VP: cấm mạnh, tuyệt đối không làm.",
+        "en": "切勿 + VP: a strong prohibition, do not do it under any circumstances."
+      },
+      "translation": {
+        "vi": "Tuyệt đối đừng nói mật khẩu cho người khác.",
+        "en": "By no means tell anyone your password."
+      },
+      "pinyin": ["qiè", "wù", "jiāng", "mì", "mǎ", "gào", "sù", "tā", "rén", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "切勿 mang nghĩa cấm đoán, trái với ý yêu cầu tích cực của câu; cần dùng 务必.",
+        "en": "切勿 means prohibition, which contradicts the positive requirement of the sentence; 务必 is needed."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "请切勿按时提交申请。",
+      "right": "请务必按时提交申请。",
+      "wrong_pinyin": ["qǐng", "qiè", "wù", "àn", "shí", "tí", "jiāo", "shēn", "qǐng", ""],
+      "right_pinyin": ["qǐng", "wù", "bì", "àn", "shí", "tí", "jiāo", "shēn", "qǐng", ""]
+    },
+    {
+      "reason": {
+        "vi": "不得 đã biểu thị điều không được phép; thêm 一定要 sau đó tạo xung đột giữa cấm đoán và bắt buộc, nên bỏ 一定要.",
+        "en": "不得 already expresses what is not permitted; adding 一定要 after it conflicts prohibition with obligation, so 一定要 should be removed."
+      },
+      "error_tag": "complement",
+      "l1": ["vi"],
+      "wrong": "未经允许不得一定要进入。",
+      "right": "未经允许不得进入。",
+      "wrong_pinyin": ["wèi", "jīng", "yǔn", "xǔ", "bù", "dé", "yí", "dìng", "yào", "jìn", "rù", ""],
+      "right_pinyin": ["wèi", "jīng", "yǔn", "xǔ", "bù", "dé", "jìn", "rù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "使用设备前___阅读说明。",
+      "options": [
+        {"text": "务必", "error_tag": null, "pinyin": ["wù", "bì"]},
+        {"text": "切勿", "error_tag": "word_choice", "pinyin": ["qiè", "wù"]},
+        {"text": "不得", "error_tag": "word_choice", "pinyin": ["bù", "dé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu yêu cầu bắt buộc phải đọc hướng dẫn nên dùng 务必; 切勿 và 不得 mang nghĩa cấm đoán.",
+        "en": "The sentence requires reading the instructions, so 务必 is correct; 切勿 and 不得 express prohibition."
+      },
+      "q_pinyin": ["shǐ", "yòng", "shè", "bèi", "qián", "", "", "", "yuè", "dú", "shuō", "míng", ""]
+    },
+    {
+      "q": "未经允许___进入实验室。",
+      "options": [
+        {"text": "不得", "error_tag": null, "pinyin": ["bù", "dé"]},
+        {"text": "务必", "error_tag": "word_choice", "pinyin": ["wù", "bì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là quy định cấm, dùng 不得; 务必 là yêu cầu phải làm, trái nghĩa.",
+        "en": "This is a prohibition rule, so 不得 is correct; 务必 is an obligation, the opposite meaning."
+      },
+      "q_pinyin": ["wèi", "jīng", "yǔn", "xǔ", "", "", "", "jìn", "rù", "shí", "yàn", "shì", ""]
+    },
+    {
+      "q": "___将密码告诉他人。",
+      "options": [
+        {"text": "切勿", "error_tag": null, "pinyin": ["qiè", "wù"]},
+        {"text": "务必", "error_tag": "word_choice", "pinyin": ["wù", "bì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu cảnh báo cấm tiết lộ mật khẩu nên dùng 切勿; 务必 sẽ đảo ngược ý nghĩa.",
+        "en": "The warning forbids revealing the password, so 切勿 is correct; 务必 would reverse the meaning."
+      },
+      "q_pinyin": ["", "", "", "jiāng", "mì", "mǎ", "gào", "sù", "tā", "rén", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 务必, 切勿 hoặc 不得 để đưa ra yêu cầu hoặc cấm đoán trong ngữ cảnh trang trọng.",
+      "en": "Write one sentence using 务必, 切勿 or 不得 to give a formal requirement or prohibition."
+    },
+    "placeholder": "请务必……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["务必", "切勿"], "role": "aux"}]},
+    "sample": {
+      "text": "请务必按时提交申请。",
+      "pinyin": ["qǐng", "wù", "bì", "àn", "shí", "tí", "jiāo", "shēn", "qǐng", ""]
+    },
+    "placeholder_pinyin": ["qǐng", "wù", "bì", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791347510",
+    "generated_at": "2026-10-07T04:31:50Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-6-topic"],
+      "content_version": 2,
+      "content_hash": "1f75e980872ccb7c5666d4fb6412ad2310e277eea3a7f3cdb286ba659b44d4fe",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-6-topic",
+          "issue": "R5 gộp 务必/切勿/不得 thành một điểm nhưng không có công thức trừu tượng, không có ví dụ gắn slot, và không có quick practice.",
+          "fix": "Đã thêm formula 务必/切勿/不得 + VP, gắn binding cho từng ví dụ, thêm 3 câu quick practice và bài sản xuất cá nhân."
+        },
+        {
+          "r5_id": "zh-hsk5-6-topic",
+          "issue": "R5 liệt kê lỗi '未经允许不得进入' là sai nhưng thực ra câu này đúng.",
+          "fix": "Đã sửa: giữ câu đúng và mô tả lỗi thật là thêm 一定要 sau 不得."
+        },
+        {
+          "r5_id": "zh-hsk5-6-topic",
+          "issue": "R5 dùng '务必 + VP = be sure to' nhưng không nêu rõ 务必 không dùng với VP phủ định đơn giản.",
+          "fix": "Đã thêm điều kiện dùng và sắc thái trang trọng trong when_to_use."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

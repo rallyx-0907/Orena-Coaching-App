@@ -1,0 +1,186 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_1_8.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_1_7.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.022"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Thán từ: 啊", "en": "Interjections: 啊"},
+    "native_title": "啊",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Trợ từ ngữ khí 啊 đặt ở cuối câu để làm giọng điệu nhẹ nhàng, thân mật hoặc nhấn mạnh cảm xúc.",
+      "en": "The sentence-final particle 啊 softens the tone, adds warmth, or highlights the speaker's feeling."
+    },
+    "sub": {"vi": "trợ từ cuối câu", "en": "sentence-final particle"},
+    "native_title_pinyin": ["a"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn câu nói bớt cứng và thân thiện hơn, nhất là trong hội thoại hằng ngày.",
+      "en": "When you want a sentence to sound less blunt and more friendly, especially in everyday conversation."
+    },
+    {
+      "vi": "Khi bày tỏ ngạc nhiên, thán phục hoặc cảm xúc nhẹ ở cuối câu.",
+      "en": "When expressing mild surprise, admiration, or emotion at the end of a sentence."
+    },
+    {
+      "vi": "Khi nhắc lại hoặc xác nhận điều gì đó với người nghe một cách nhẹ nhàng.",
+      "en": "When gently reminding or confirming something with the listener."
+    },
+    {
+      "vi": "Khi đưa ra lời mời, lời khuyên hoặc câu hỏi có giọng điệu mềm mỏng.",
+      "en": "When making an invitation, suggestion, or question with a softer tone."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {"text": "V", "role": "verb", "label": {"vi": "vị ngữ", "en": "predicate"}, "pinyin": [""]},
+      {
+        "text": "啊",
+        "role": "particle",
+        "label": {"vi": "trợ từ cuối câu", "en": "sentence-final particle"},
+        "pinyin": ["a"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个菜很好吃啊。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "啊 làm lời khen nghe tự nhiên và thân mật hơn.",
+        "en": "啊 makes the compliment sound natural and friendly."
+      },
+      "translation": {"vi": "Món này ngon thật đấy.", "en": "This dish is really tasty."},
+      "pinyin": ["zhè", "ge", "cài", "hěn", "hǎo", "chī", "a", ""]
+    },
+    {
+      "text": "你要小心啊。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "啊 làm lời nhắc nhở mềm mỏng, không ra lệnh.",
+        "en": "啊 softens the reminder so it does not sound like an order."
+      },
+      "translation": {"vi": "Cậu phải cẩn thận đấy.", "en": "You need to be careful."},
+      "pinyin": ["nǐ", "yào", "xiǎo", "xīn", "a", ""]
+    },
+    {
+      "text": "时间过得真快啊。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 6, "role": "verb"},
+        {"start": 6, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "啊 thể hiện cảm xúc ngạc nhiên nhẹ trước sự việc.",
+        "en": "啊 expresses mild surprise at how things are."
+      },
+      "translation": {"vi": "Thời gian trôi nhanh thật đấy.", "en": "Time really flies."},
+      "pinyin": ["shí", "jiān", "guò", "dé", "zhēn", "kuài", "a", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học hay thêm 啊 sau 吗 vì nghĩ rằng càng nhiều trợ từ thì câu càng mềm. Thực ra 吗 và 啊 đều đánh dấu câu hỏi nên không đứng cạnh nhau trong câu hỏi có 吗.",
+        "en": "Learners often add 啊 after 吗 because they think more particles make the sentence softer. In fact 吗 and 啊 both mark questions, so they do not co-occur in a 吗-question."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这个菜很好吃吗啊。",
+      "right": "这个菜很好吃啊。",
+      "wrong_pinyin": ["zhè", "ge", "cài", "hěn", "hǎo", "chī", "ma", "a", ""],
+      "right_pinyin": ["zhè", "ge", "cài", "hěn", "hǎo", "chī", "a", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "今天天气真好___。",
+      "options": [
+        {"text": "啊", "error_tag": null, "pinyin": ["a"]},
+        {"text": "吗", "error_tag": "particle", "pinyin": ["ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này là câu cảm thán, không phải câu hỏi, nên dùng 啊 ở cuối câu. 吗 chỉ dùng cho câu hỏi.",
+        "en": "This is an exclamation, not a question, so 啊 goes at the end. 吗 is only for questions."
+      },
+      "q_pinyin": ["jīn", "tiān", "tiān", "qì", "zhēn", "hǎo", "", "", "", ""]
+    },
+    {
+      "q": "你明天来我家吃饭___。",
+      "options": [
+        {"text": "啊", "error_tag": null, "pinyin": ["a"]},
+        {"text": "吧", "error_tag": "particle", "pinyin": ["ba"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "啊 làm lời mời nhẹ nhàng, thân mật. 吧 thường dùng cho lời đề nghị hoặc phỏng đoán, không hợp bằng trong lời mời này.",
+        "en": "啊 makes the invitation warm and friendly. 吧 is usually for suggestions or guesses, so it fits less well here."
+      },
+      "q_pinyin": ["nǐ", "míng", "tiān", "lái", "wǒ", "jiā", "chī", "fàn", "", "", "", ""]
+    },
+    {
+      "q": "别急，慢慢来___。",
+      "options": [
+        {"text": "啊", "error_tag": null, "pinyin": ["a"]},
+        {"text": "了", "error_tag": "aspect", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "啊 làm lời trấn an mềm mỏng. 了 không phù hợp vì câu này không nói về sự hoàn thành hay thay đổi trạng thái.",
+        "en": "啊 softens the reassurance. 了 does not fit because the sentence is not about completion or a change of state."
+      },
+      "q_pinyin": ["bié", "jí", "", "màn", "màn", "lái", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nhận xét hoặc cảm nhận của bạn về một việc hôm nay, dùng 啊 ở cuối câu.",
+      "en": "Write one sentence giving your comment or feeling about something today, using 啊 at the end."
+    },
+    "placeholder": "今天……啊。",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["啊"], "role": "particle"}]},
+    "sample": {"text": "今天真开心啊。", "pinyin": ["jīn", "tiān", "zhēn", "kāi", "xīn", "a", ""]},
+    "placeholder_pinyin": ["jīn", "tiān", "", "", "a", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338406",
+    "generated_at": "2026-10-07T02:00:06Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

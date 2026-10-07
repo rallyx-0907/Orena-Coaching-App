@@ -1,0 +1,262 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.question_words",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": ["zh.affirmative_negative_question", "zh.ma_question"],
+  "error_tags": ["word_order"],
+  "source_refs": {
+    "r5": ["zh-hsk1-12-t-h-i-gi-nguy-n-v-tr"],
+    "gf0025": ["gf0025.hsk1.004", "gf0025.hsk1.033", "gf0025.hsk1.046", "gf0025.hsk2.005", "gf0025.hsk2.077"]
+  },
+  "point_type": "word_order",
+  "sequence": 3,
+  "aliases": ["zh-hsk1-12-t-h-i-gi-nguy-n-v-tr"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Từ để hỏi giữ nguyên vị trí", "en": "Question words stay in place"},
+    "native_title": "疑问代词疑问句",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Từ để hỏi tiếng Trung đứng đúng ở vị trí mà câu trả lời sẽ nằm, không bị đưa lên đầu câu.",
+      "en": "Chinese question words stay in the position where the answer would be; they are not moved to the front of the sentence."
+    },
+    "sub": {"vi": "vị trí từ hỏi", "en": "question word position"},
+    "native_title_pinyin": ["yí", "wèn", "dài", "cí", "yí", "wèn", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn cần hỏi về một thành phần trong câu (tân ngữ, chủ ngữ, nơi chốn, thời gian) mà không biết thông tin đó.",
+      "en": "When you need to ask about one part of a sentence (object, subject, place, time) and you do not know that information."
+    },
+    {
+      "vi": "Khi câu trả lời sẽ đứng ở vị trí nào thì từ để hỏi thay vào đúng vị trí đó.",
+      "en": "When the answer would occupy a certain position, the question word replaces it in exactly that position."
+    },
+    {
+      "vi": "Khi bạn muốn hỏi ai làm gì, ở đâu, khi nào, cái gì — dùng 谁, 什么, 哪儿/哪里, 什么时候.",
+      "en": "When you want to ask who does something, where, when, or what — using 谁, 什么, 哪儿/哪里, 什么时候."
+    },
+    {
+      "vi": "Khi câu hỏi có từ để hỏi thì không thêm 吗 vào cuối câu.",
+      "en": "When a sentence already contains a question word, do not add 吗 at the end."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "…",
+        "role": "other",
+        "label": {"vi": "phần đứng trước từ để hỏi", "en": "context before the question word"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "疑问词",
+        "role": "other",
+        "label": {
+          "vi": "từ để hỏi ở đúng vị trí của phần cần hỏi",
+          "en": "question word in the missing information's original position"
+        },
+        "options": [
+          {"text": "什么", "pinyin": ["shén", "me"]},
+          {"text": "谁", "pinyin": ["shuí"]},
+          {"text": "哪儿", "pinyin": ["nǎ", "ér"]}
+        ],
+        "pinyin": ["yí", "wèn", "cí"]
+      },
+      {
+        "text": "…",
+        "role": "other",
+        "label": {"vi": "phần đứng sau từ để hỏi", "en": "context after the question word"},
+        "optional": true,
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "你买什么？",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "other"}, {"start": 2, "end": 4, "role": "other"}],
+      "annotation": {
+        "vi": "什么 thay cho tân ngữ, đứng sau động từ 买.",
+        "en": "什么 replaces the object and stays after the verb 买."
+      },
+      "translation": {"vi": "Bạn mua gì?", "en": "What are you buying?"},
+      "pinyin": ["nǐ", "mǎi", "shén", "me", ""]
+    },
+    {
+      "text": "谁是老师？",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 1, "role": "other"}, {"start": 1, "end": 4, "role": "other"}],
+      "annotation": {
+        "vi": "谁 thay cho chủ ngữ, đứng trước động từ 是.",
+        "en": "谁 replaces the subject and stays before the verb 是."
+      },
+      "translation": {"vi": "Ai là giáo viên?", "en": "Who is the teacher?"},
+      "pinyin": ["shuí", "shì", "lǎo", "shī", ""]
+    },
+    {
+      "text": "你在哪儿工作？",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "other"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 4, "end": 6, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "哪儿 thay cho nơi chốn, đứng sau 在 và trước động từ 工作.",
+        "en": "哪儿 replaces the place and stays after 在 and before the verb 工作."
+      },
+      "translation": {"vi": "Bạn làm việc ở đâu?", "en": "Where do you work?"},
+      "pinyin": ["nǐ", "zài", "nǎ", "ér", "gōng", "zuò", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.affirmative_negative_question",
+      "this_example": "你买什么？",
+      "other_example": "你买不买书？",
+      "this_meaning": {
+        "vi": "Câu hỏi có từ để hỏi dùng 什么/谁/哪儿/什么时候 và không cần 吗.",
+        "en": "A question with a question word uses 什么/谁/哪儿/什么时候 and does not need 吗."
+      },
+      "other_meaning": {
+        "vi": "Câu hỏi chính-phản lặp lại động từ/tính từ với 不, không dùng từ để hỏi.",
+        "en": "An affirmative-negative question repeats the verb/adjective with 不 and does not use a question word."
+      },
+      "this_example_pinyin": ["nǐ", "mǎi", "shén", "me", ""],
+      "other_example_pinyin": ["nǐ", "mǎi", "bù", "mǎi", "shū", ""]
+    },
+    {
+      "with": "zh.ma_question",
+      "this_example": "你在哪儿工作？",
+      "other_example": "你在北京工作吗？",
+      "this_meaning": {
+        "vi": "Câu hỏi từ để hỏi hỏi một thông tin cụ thể; từ để hỏi đứng ở vị trí câu trả lời.",
+        "en": "A question-word question asks for specific information; the question word sits in the answer's position."
+      },
+      "other_meaning": {
+        "vi": "Câu hỏi 吗 là câu hỏi có/không, thêm 吗 vào cuối câu và không có từ để hỏi.",
+        "en": "A 吗-question is a yes/no question; 吗 goes at the end and there is no question word."
+      },
+      "this_example_pinyin": ["nǐ", "zài", "nǎ", "ér", "gōng", "zuò", ""],
+      "other_example_pinyin": ["nǐ", "zài", "běi", "jīng", "gōng", "zuò", "ma", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dịch từ tiếng Việt/tiếng Anh nên đưa từ để hỏi lên đầu câu; trong tiếng Trung 什么 phải đứng ở vị trí tân ngữ sau động từ 买.",
+        "en": "Learners translate from Vietnamese/English and front the question word; in Chinese 什么 must stay in the object position after the verb 买."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "什么你买？",
+      "right": "你买什么？",
+      "wrong_pinyin": ["shén", "me", "nǐ", "mǎi", ""],
+      "right_pinyin": ["nǐ", "mǎi", "shén", "me", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你买___？",
+      "options": [
+        {"text": "什么", "error_tag": null, "pinyin": ["shén", "me"]},
+        {"text": "什么吗", "error_tag": "particle", "pinyin": ["shén", "me", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi từ để hỏi không dùng 吗; 什么 đứng sau 买.",
+        "en": "A question-word question does not use 吗; 什么 stays after 买."
+      },
+      "q_pinyin": ["nǐ", "mǎi", "", "", "", ""]
+    },
+    {
+      "q": "___是老师？",
+      "options": [
+        {"text": "谁", "error_tag": null, "pinyin": ["shuí"]},
+        {"text": "谁吗", "error_tag": "particle", "pinyin": ["shuí", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "谁 thay cho chủ ngữ và đứng trước 是; không thêm 吗.",
+        "en": "谁 replaces the subject and stays before 是; do not add 吗."
+      },
+      "q_pinyin": ["", "", "", "shì", "lǎo", "shī", ""]
+    },
+    {
+      "q": "你在___工作？",
+      "options": [
+        {"text": "哪儿", "error_tag": null, "pinyin": ["nǎ", "ér"]},
+        {"text": "哪儿吗", "error_tag": "particle", "pinyin": ["nǎ", "ér", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "哪儿 thay cho nơi chốn, đứng sau 在 và trước 工作; không thêm 吗.",
+        "en": "哪儿 replaces the place, stays after 在 and before 工作; do not add 吗."
+      },
+      "q_pinyin": ["nǐ", "zài", "", "", "", "gōng", "zuò", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu hỏi về việc bạn mua gì, dùng 什么 ở vị trí tân ngữ.",
+      "en": "Write a question about what you buy, using 什么 in the object position."
+    },
+    "placeholder": "你买……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["买"], "role": "other"}, {"any_of": ["什么"], "role": "other"}]
+    },
+    "sample": {"text": "你买什么？", "pinyin": ["nǐ", "mǎi", "shén", "me", ""]},
+    "placeholder_pinyin": ["nǐ", "mǎi", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791276157",
+    "generated_at": "2026-10-06T08:42:37Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-12-t-h-i-gi-nguy-n-v-tr"],
+      "content_version": 2,
+      "content_hash": "df85d0f62f39d3f83f6cb11df830541d7870634ec2537808526ad4a30718ae4b",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-12-t-h-i-gi-nguy-n-v-tr",
+          "issue": "R5 dạy 'WH subject/place/time stays in its slot' nhưng ví dụ 你什么时候来？ có 什么时候 đứng trước động từ 来, không khớp với công thức S + V + WH object.",
+          "fix": "Tách rõ: từ để hỏi thay đúng vị trí của thành phần bị hỏi. Trong bài này công thức minh họa vị trí tân ngữ (S + V + 什么/谁/哪儿/什么时候); các vị trí khác được nêu trong when_to_use và ví dụ 谁是老师？/你在哪儿工作？."
+        },
+        {
+          "r5_id": "zh-hsk1-12-t-h-i-gi-nguy-n-v-tr",
+          "issue": "R5 ghi 'Không thêm 吗 vào wh-question thông thường' nhưng vẫn đưa 你买什么吗？ vào mistakes mà không giải thích cơ chế.",
+          "fix": "Giữ lỗi 你买什么吗？ trong quick_practice với error_tag particle và giải thích rõ: câu đã có từ để hỏi thì không dùng 吗."
+        },
+        {
+          "r5_id": "zh-hsk1-12-t-h-i-gi-nguy-n-v-tr",
+          "issue": "R5 thiếu bảng so sánh với câu hỏi chính-phản và câu hỏi 吗.",
+          "fix": "Thêm hai mục compare: zh.affirmative_negative_question (你买不买书？) và zh.ma_question (你在北京工作吗？)."
+        },
+        {
+          "r5_id": "zh-hsk1-12-t-h-i-gi-nguy-n-v-tr",
+          "issue": "R5 không có formula dạng slot trừu tượng, không có bindings cho ví dụ, không có quick_practice và personal_production theo schema.",
+          "fix": "Bổ sung formula S + V + 什么/谁/哪儿/什么时候, bindings cho từng ví dụ, 3 câu quick_practice và thẻ personal_production."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

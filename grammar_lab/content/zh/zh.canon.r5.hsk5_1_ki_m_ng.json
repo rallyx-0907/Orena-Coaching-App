@@ -1,0 +1,240 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_1_ki_m_ng",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.verb_patterns",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_11_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-1-ki-m-ng", "zh-hsk6-5-topic"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-1-ki-m-ng", "zh-hsk6-5-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 使/令/让 + kiêm ngữ", "en": "Chinese grammar: 使/令/让 + kiêm ngữ"},
+    "native_title": "“使/令/让”兼语句",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc 使/令/让 + kiêm ngữ dùng để nói nguyên nhân khiến ai đó rơi vào một trạng thái hoặc làm một hành động nào đó.",
+      "en": "The 使/令/让 + pivotal construction expresses that something causes someone to be in a state or to do something."
+    },
+    "sub": {"vi": "câu sai khiến", "en": "causative pivot"},
+    "native_title_pinyin": ["", "shǐ", "", "lìng", "", "ràng", "", "jiān", "yǔ", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một sự việc, hành động hoặc con người gây ra một kết quả cảm xúc hay hành vi cho người khác.",
+      "en": "Use it when an event, action, or person causes an emotional result or behaviour in someone else."
+    },
+    {
+      "vi": "Khi chủ ngữ của vế sau vừa chịu tác động của 使/令/让 vừa là người thực hiện hành động hoặc mang trạng thái tiếp theo.",
+      "en": "Use it when the following subject is both affected by 使/令/让 and the one who performs the next action or holds the next state."
+    },
+    {
+      "vi": "Khi cần phân biệt sắc thái: 使 và 令 trang trọng hơn, 让 thông dụng hơn và cũng có thể mang nghĩa cho phép.",
+      "en": "Use it to choose register: 使 and 令 are more formal, while 让 is common and can also mean 'let' or 'allow'."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "subject",
+        "label": {"vi": "nguyên nhân / chủ thể gây ra", "en": "cause / causer"},
+        "pinyin": [""]
+      },
+      {
+        "text": "使/令/让",
+        "role": "verb",
+        "label": {"vi": "động từ sai khiến", "en": "causative verb"},
+        "options": [
+          {"text": "使", "pinyin": ["shǐ"]},
+          {"text": "令", "pinyin": ["lìng"]},
+          {"text": "让", "pinyin": ["ràng"]}
+        ],
+        "pinyin": ["shǐ", "", "lìng", "", "ràng"]
+      },
+      {
+        "text": "B",
+        "role": "object",
+        "label": {"vi": "kiêm ngữ (người chịu tác động)", "en": "pivotal noun (affected person)"},
+        "pinyin": [""]
+      },
+      {
+        "text": "VP/Adj",
+        "role": "complement",
+        "label": {"vi": "hành động / trạng thái do B thực hiện hoặc mang", "en": "action / state of B"},
+        "pinyin": ["", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个消息使我很高兴。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "object"},
+        {"start": 6, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Tin này là nguyên nhân khiến tôi rơi vào trạng thái vui.",
+        "en": "The news is the cause that puts me in a happy state."
+      },
+      "translation": {"vi": "Tin này làm tôi rất vui.", "en": "This news makes me very happy."},
+      "pinyin": ["zhè", "ge", "xiāo", "xī", "shǐ", "wǒ", "hěn", "gāo", "xìng", ""]
+    },
+    {
+      "text": "这次经历令他改变了想法。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "object"},
+        {"start": 6, "end": 11, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Trải nghiệm này khiến anh ấy thay đổi suy nghĩ.",
+        "en": "This experience caused him to change his mind."
+      },
+      "translation": {
+        "vi": "Trải nghiệm này khiến anh ấy đổi ý.",
+        "en": "This experience made him change his mind."
+      },
+      "pinyin": ["zhè", "cì", "jīng", "lì", "lìng", "tā", "gǎi", "biàn", "le", "xiǎng", "fǎ", ""]
+    },
+    {
+      "text": "老师让我们再做一遍。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Giáo viên là người khiến chúng tôi làm lại một lần nữa.",
+        "en": "The teacher is the one who causes us to do it again."
+      },
+      "translation": {
+        "vi": "Giáo viên bảo chúng tôi làm lại một lần nữa.",
+        "en": "The teacher made us do it again."
+      },
+      "pinyin": ["lǎo", "shī", "ràng", "wǒ", "men", "zài", "zuò", "yī", "biàn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong cấu trúc kiêm ngữ, B phải đứng ngay sau 使/令/让 và trước vị ngữ. Người Việt thường đặt B theo trật tự tiếng Việt ở cuối câu.",
+        "en": "In the pivotal construction, B must follow 使/令/让 and precede the predicate. Vietnamese learners often place B at the end following Vietnamese word order."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这个消息使很高兴我。",
+      "right": "这个消息使我很高兴。",
+      "wrong_pinyin": ["zhè", "ge", "xiāo", "xī", "shǐ", "hěn", "gāo", "xìng", "wǒ", ""],
+      "right_pinyin": ["zhè", "ge", "xiāo", "xī", "shǐ", "wǒ", "hěn", "gāo", "xìng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个消息___大家很担心。",
+      "options": [
+        {"text": "使", "error_tag": null, "pinyin": ["shǐ"]},
+        {"text": "被", "error_tag": "bei_sentence", "pinyin": ["bèi"]},
+        {"text": "把", "error_tag": "ba_sentence", "pinyin": ["bǎ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "使 đứng trước kiêm ngữ 大家 để nói nguyên nhân khiến mọi người lo lắng. 被 và 把 không dùng trong cấu trúc sai khiến này.",
+        "en": "使 precedes the pivotal noun 大家 to express the cause of everyone's worry. 被 and 把 are not used in this causative pattern."
+      },
+      "q_pinyin": ["zhè", "ge", "xiāo", "xī", "", "", "", "dà", "jiā", "hěn", "dān", "xīn", ""]
+    },
+    {
+      "q": "老师___我们明天交作业。",
+      "options": [
+        {"text": "让", "error_tag": null, "pinyin": ["ràng"]},
+        {"text": "被", "error_tag": "bei_sentence", "pinyin": ["bèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "让 ở đây nghĩa là bảo/khiến chúng tôi làm gì. 被 là câu bị động, không phù hợp.",
+        "en": "让 here means 'make/let us do something'. 被 forms a passive sentence and does not fit."
+      },
+      "q_pinyin": ["lǎo", "shī", "", "", "", "wǒ", "men", "míng", "tiān", "jiāo", "zuò", "yè", ""]
+    },
+    {
+      "q": "这次失败___他更加努力。",
+      "options": [
+        {"text": "令", "error_tag": null, "pinyin": ["lìng"]},
+        {"text": "把", "error_tag": "ba_sentence", "pinyin": ["bǎ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "令 trang trọng hơn, đứng trước kiêm ngữ 他 để nói nguyên nhân khiến anh ấy cố gắng hơn. 把 không dùng trong cấu trúc này.",
+        "en": "令 is more formal and precedes the pivotal noun 他 to express the cause of his greater effort. 把 is not used in this pattern."
+      },
+      "q_pinyin": ["zhè", "cì", "shī", "bài", "", "", "", "tā", "gèng", "jiā", "nǔ", "lì", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 使, 令 hoặc 让 để nói một sự việc khiến bạn hoặc ai đó thay đổi trạng thái hay hành động.",
+      "en": "Write one sentence using 使, 令, or 让 to say that something causes you or someone to change state or action."
+    },
+    "placeholder": "这件事让我……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["使", "令", "让"], "role": "verb"}]},
+    "sample": {"text": "这件事让我很开心。", "pinyin": ["zhè", "jiàn", "shì", "ràng", "wǒ", "hěn", "kāi", "xīn", ""]},
+    "placeholder_pinyin": ["zhè", "jiàn", "shì", "ràng", "wǒ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338646",
+    "generated_at": "2026-10-07T02:04:06Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-1-ki-m-ng", "zh-hsk6-5-topic"],
+      "content_version": 2,
+      "content_hash": "4281a322351f6bd0418c13011893fa3935b95a4cf9295f701bd9f2782f12c1b0",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-1-ki-m-ng",
+          "issue": "R5 ghi 'A + 使/令/让 + B + VP/Adj' nhưng không nêu rõ B là kiêm ngữ vừa làm tân ngữ vừa làm chủ ngữ của vị ngữ sau.",
+          "fix": "Đã viết formula theo bốn slot A, 使/令/让, B, VP/Adj và ghi rõ vai trò kiêm ngữ của B trong label."
+        },
+        {
+          "r5_id": "zh-hsk5-1-ki-m-ng",
+          "issue": "R5 có câu sai '我让老师被批评，如果 intended teacher made me...' không phải lỗi người học Việt thường mắc và khó hiểu.",
+          "fix": "Đã thay bằng lỗi thật: '这个消息使很高兴我。' với lý do đặt B sai vị trí do ảnh hưởng trật tự tiếng Việt."
+        },
+        {
+          "r5_id": "zh-hsk5-1-ki-m-ng",
+          "issue": "R5 dùng ví dụ '大雨让比赛无法继续。' nhưng không có trong phần giải thích cấu trúc, và thiếu ví dụ với 令.",
+          "fix": "Đã chọn ba ví dụ sạch, có đủ 使, 令, 让 và gắn binding cho từng slot."
+        },
+        {
+          "r5_id": "zh-hsk6-5-topic",
+          "issue": "R5 HSK6 đưa thêm 促使 và các contrast 为...所..., 导致/致使 nằm ngoài phạm vi điểm HSK5 này.",
+          "fix": "Đã lược bỏ 促使 và các contrast ngoài scope, chỉ giữ 使/令/让 + kiêm ngữ."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

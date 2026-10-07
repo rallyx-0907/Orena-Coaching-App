@@ -1,0 +1,196 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_6_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_5_1.p1"],
+  "contrasts": [],
+  "error_tags": ["word_order"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.053"]},
+  "point_type": "word_order",
+  "sequence": 7,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 主谓句4：主谓谓语句", "en": "Chinese grammar: 主谓句4：主谓谓语句"},
+    "native_title": "主谓句4：主谓谓语句",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Câu vị ngữ chủ vị (主谓谓语句) dùng một mệnh đề nhỏ làm vị ngữ cho chủ ngữ lớn, thường để nói về bộ phận cơ thể, đặc điểm hoặc trạng thái của chủ thể.",
+      "en": "A subject-predicate predicate sentence (主谓谓语句) uses a small subject-predicate clause as the predicate of the main subject, often describing a part, feature, or state of the topic."
+    },
+    "sub": {"vi": "chủ ngữ + vị ngữ chủ vị", "en": "topic + comment clause"},
+    "native_title_pinyin": ["zhǔ", "wèi", "jù", "", "", "zhǔ", "wèi", "wèi", "yǔ", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một bộ phận của ai/cái gì đó có đặc điểm gì, ví dụ: 她眼睛很大。",
+      "en": "When you want to say a part of someone or something has a certain feature, e.g. 她眼睛很大。"
+    },
+    {
+      "vi": "Khi chủ ngữ lớn là chủ đề, còn mệnh đề nhỏ nêu nhận xét hoặc trạng thái về chủ đề đó.",
+      "en": "When the main subject is the topic and the small clause gives a comment or state about that topic."
+    },
+    {
+      "vi": "Khi không dùng 的 giữa chủ thể và bộ phận, ví dụ nói 他身体很好 chứ không nói 他的身体很好 trong văn nói tự nhiên.",
+      "en": "When you do not use 的 between the whole and the part, e.g. 他身体很好 rather than 他的身体很好 in natural speech."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh đặc điểm của chủ thể bằng một tính từ đơn giản làm vị ngữ nhỏ.",
+      "en": "When you want to highlight a feature of the topic with a simple adjective as the small predicate."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ lớn", "en": "main subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "小主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ nhỏ", "en": "small subject"},
+        "pinyin": ["xiǎo", "zhǔ", "yǔ"]
+      },
+      {
+        "text": "小谓语",
+        "role": "complement",
+        "label": {"vi": "vị ngữ nhỏ", "en": "small predicate"},
+        "pinyin": ["xiǎo", "wèi", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "她眼睛很大。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "subject"},
+        {"start": 3, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "她 là chủ đề, 眼睛 là chủ ngữ nhỏ, 很大 là vị ngữ nhỏ.",
+        "en": "她 is the topic, 眼睛 is the small subject, 很大 is the small predicate."
+      },
+      "translation": {"vi": "Cô ấy mắt rất to.", "en": "Her eyes are big."},
+      "pinyin": ["tā", "yǎn", "jīng", "hěn", "dà", ""]
+    },
+    {
+      "text": "他身体很好。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "subject"},
+        {"start": 3, "end": 5, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "他 là chủ đề, 身体 là chủ ngữ nhỏ, 很好 là vị ngữ nhỏ.",
+        "en": "他 is the topic, 身体 is the small subject, 很好 is the small predicate."
+      },
+      "translation": {"vi": "Anh ấy sức khỏe rất tốt.", "en": "He is in good health."},
+      "pinyin": ["tā", "shēn", "tǐ", "hěn", "hǎo", ""]
+    },
+    {
+      "text": "这个房间窗户太小。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "subject"},
+        {"start": 6, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "这个房间 là chủ đề, 窗户 là chủ ngữ nhỏ, 太小 là vị ngữ nhỏ.",
+        "en": "这个房间 is the topic, 窗户 is the small subject, 太小 is the small predicate."
+      },
+      "translation": {"vi": "Cửa sổ của căn phòng này quá nhỏ.", "en": "The window of this room is too small."},
+      "pinyin": ["zhè", "ge", "fáng", "jiān", "chuāng", "hù", "tài", "xiǎo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong câu vị ngữ chủ vị, tính từ làm vị ngữ nhỏ không cần 是; thêm 是 là lỗi thừa.",
+        "en": "In a subject-predicate predicate sentence, an adjective as the small predicate does not need 是; adding 是 is redundant."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "她眼睛是很大。",
+      "right": "她眼睛很大。",
+      "wrong_pinyin": ["tā", "yǎn", "jīng", "shì", "hěn", "dà", ""],
+      "right_pinyin": ["tā", "yǎn", "jīng", "hěn", "dà", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "她眼睛___。",
+      "options": [
+        {"text": "很大", "error_tag": null, "pinyin": ["hěn", "dà"]},
+        {"text": "是很大", "error_tag": "redundancy", "pinyin": ["shì", "hěn", "dà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vị ngữ nhỏ là tính từ 很大, không dùng 是.",
+        "en": "The small predicate is the adjective 很大; 是 is not used."
+      },
+      "q_pinyin": ["tā", "yǎn", "jīng", "", "", "", ""]
+    },
+    {
+      "q": "他身体___。",
+      "options": [
+        {"text": "很好", "error_tag": null, "pinyin": ["hěn", "hǎo"]},
+        {"text": "好很", "error_tag": "word_order", "pinyin": ["hǎo", "hěn"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Trạng từ 很 đứng trước tính từ 好.", "en": "The adverb 很 comes before the adjective 好."},
+      "q_pinyin": ["tā", "shēn", "tǐ", "", "", "", ""]
+    },
+    {
+      "q": "这个房间窗户___。",
+      "options": [
+        {"text": "太小", "error_tag": null, "pinyin": ["tài", "xiǎo"]},
+        {"text": "小太", "error_tag": "word_order", "pinyin": ["xiǎo", "tài"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "太 đứng trước tính từ 小.", "en": "太 comes before the adjective 小."},
+      "q_pinyin": ["zhè", "ge", "fáng", "jiān", "chuāng", "hù", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng cấu trúc chủ ngữ + chủ ngữ nhỏ + vị ngữ nhỏ, ví dụ nói về mắt, tóc hoặc sức khỏe của bạn.",
+      "en": "Write a sentence about yourself using main subject + small subject + small predicate, e.g. about your eyes, hair, or health."
+    },
+    "placeholder": "我眼睛……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["眼睛", "身体", "窗户"], "role": "subject"},
+        {"any_of": ["很大", "很好", "太小"], "role": "complement"}
+      ]
+    },
+    "sample": {"text": "我眼睛很大。", "pinyin": ["wǒ", "yǎn", "jīng", "hěn", "dà", ""]},
+    "placeholder_pinyin": ["wǒ", "yǎn", "jīng", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351851",
+    "generated_at": "2026-10-07T05:44:11Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

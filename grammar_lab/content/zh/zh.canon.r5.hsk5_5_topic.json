@@ -1,0 +1,276 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_5_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.obligation_advice",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_6.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-5-topic"], "gf0025": ["gf0025.hsk7_9.030"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-5-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 不妨", "en": "Chinese grammar: 不妨"},
+    "native_title": "不妨",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "不妨 và 何不 dùng để đưa ra lời gợi ý nhẹ nhàng: 不妨 nghĩa là 'không ngại thử', 何不 nghĩa là 'sao không' (câu hỏi tu từ).",
+      "en": "不妨 and 何不 offer gentle suggestions: 不妨 means 'might as well try', 何不 means 'why not' (a rhetorical question)."
+    },
+    "sub": {"vi": "gợi ý nhẹ nhàng", "en": "gentle suggestion"},
+    "native_title_pinyin": ["bù", "fáng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn khuyên ai đó thử làm gì mà không gây áp lực, dùng 不妨 + động từ ngữ.",
+      "en": "When you want to suggest someone try something without pressure, use 不妨 + verb phrase."
+    },
+    {
+      "vi": "Khi muốn gợi ý bằng câu hỏi tu từ, dùng 何不 + động từ ngữ + ？",
+      "en": "When you want to suggest through a rhetorical question, use 何不 + verb phrase + ？"
+    },
+    {
+      "vi": "Khi đưa ra lựa chọn thay thế trong cuộc thảo luận, cả hai đều phù hợp và trang trọng hơn 可以.../要不要....",
+      "en": "When offering an alternative in a discussion, both fit and are more formal than 可以.../要不要...."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "不妨/何不",
+        "role": "aux",
+        "label": {"vi": "trợ từ gợi ý", "en": "suggestion marker"},
+        "options": [{"text": "不妨", "pinyin": ["bù", "fáng"]}, {"text": "何不", "pinyin": ["hé", "bù"]}],
+        "pinyin": ["bù", "fáng", "", "hé", "bù"]
+      },
+      {
+        "text": "VP",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "你不妨先试一试。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "aux"},
+        {"start": 3, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "不妨 + VP đưa ra gợi ý nhẹ nhàng, không ép buộc.",
+        "en": "不妨 + VP gives a gentle, non-pressuring suggestion."
+      },
+      "translation": {"vi": "Bạn có thể thử trước xem sao.", "en": "You might as well try it first."},
+      "pinyin": ["nǐ", "bù", "fáng", "xiān", "shì", "yī", "shì", ""]
+    },
+    {
+      "text": "我们不妨换一种方法。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "aux"},
+        {"start": 4, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "不妨 dùng để đề xuất một cách làm khác.",
+        "en": "不妨 proposes trying a different approach."
+      },
+      "translation": {"vi": "Chúng ta thử đổi cách khác xem.", "en": "We might as well try a different method."},
+      "pinyin": ["wǒ", "men", "bù", "fáng", "huàn", "yī", "zhǒng", "fāng", "fǎ", ""]
+    },
+    {
+      "text": "既然有时间，何不去看看？",
+      "form": "affirmative",
+      "spans": [{"start": 6, "end": 8, "role": "aux"}, {"start": 8, "end": 11, "role": "verb"}],
+      "annotation": {
+        "vi": "何不 + VP tạo câu hỏi tu từ mang tính gợi ý.",
+        "en": "何不 + VP forms a rhetorical question that suggests action."
+      },
+      "translation": {
+        "vi": "Đã có thời gian, sao không đi xem thử?",
+        "en": "Since we have time, why not go take a look?"
+      },
+      "pinyin": ["jì", "rán", "yǒu", "shí", "jiān", "", "hé", "bù", "qù", "kàn", "kàn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "不妨 + VP khẳng định mới diễn tả gợi ý thử làm gì; thêm 不 phủ định làm sai nghĩa.",
+        "en": "不妨 + affirmative VP expresses a suggestion to try; adding 不 negates it and breaks the meaning."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "不妨不去看看。",
+      "right": "不妨去看看。",
+      "wrong_pinyin": ["bù", "fáng", "bù", "qù", "kàn", "kàn", ""],
+      "right_pinyin": ["bù", "fáng", "qù", "kàn", "kàn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你___先试一试，看看效果怎么样。",
+      "options": [
+        {"text": "不妨", "error_tag": null, "pinyin": ["bù", "fáng"]},
+        {"text": "不防", "error_tag": "character_choice", "pinyin": ["bù", "fáng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不妨 là từ cố định nghĩa 'không ngại thử'; 不防 là lỗi chính tả do nhầm 妨/防.",
+        "en": "不妨 is the fixed word meaning 'might as well'; 不防 is a character confusion error."
+      },
+      "q_pinyin": [
+        "nǐ",
+        "",
+        "",
+        "",
+        "xiān",
+        "shì",
+        "yī",
+        "shì",
+        "",
+        "kàn",
+        "kàn",
+        "xiào",
+        "guǒ",
+        "zěn",
+        "me",
+        "yàng",
+        ""
+      ]
+    },
+    {
+      "q": "既然大家都没意见，___就这么办？",
+      "options": [
+        {"text": "何不", "error_tag": null, "pinyin": ["hé", "bù"]},
+        {"text": "何不你", "error_tag": "word_order", "pinyin": ["hé", "bù", "nǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "何不 đứng trước động từ ngữ; không chèn chủ ngữ vào giữa 何不 và VP.",
+        "en": "何不 comes before the verb phrase; do not insert the subject between 何不 and the VP."
+      },
+      "q_pinyin": [
+        "jì",
+        "rán",
+        "dà",
+        "jiā",
+        "dōu",
+        "méi",
+        "yì",
+        "jiàn",
+        "",
+        "",
+        "",
+        "",
+        "jiù",
+        "zhè",
+        "me",
+        "bàn",
+        ""
+      ]
+    },
+    {
+      "q": "这个方案太贵了，我们___考虑第二个方案。",
+      "options": [
+        {"text": "不妨", "error_tag": null, "pinyin": ["bù", "fáng"]},
+        {"text": "不妨不", "error_tag": "redundancy", "pinyin": ["bù", "fáng", "bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不妨 + VP khẳng định; thêm 不 sau 不妨 là thừa và sai nghĩa.",
+        "en": "不妨 + affirmative VP; adding 不 after 不妨 is redundant and wrong."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "tài",
+        "guì",
+        "le",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "kǎo",
+        "lǜ",
+        "dì",
+        "èr",
+        "gè",
+        "fāng",
+        "àn",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu gợi ý ai đó thử làm gì, dùng 不妨 + động từ ngữ.",
+      "en": "Write a sentence suggesting someone try something, using 不妨 + verb phrase."
+    },
+    "placeholder": "你不妨……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["不妨"], "role": "aux"}, {"regex": "[\\u4e00-\\u9fff]+", "role": "verb"}]
+    },
+    "sample": {"text": "你不妨先休息一下。", "pinyin": ["nǐ", "bù", "fáng", "xiān", "xiū", "xī", "yī", "xià", ""]},
+    "placeholder_pinyin": ["nǐ", "bù", "fáng", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338643",
+    "generated_at": "2026-10-07T02:04:03Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-5-topic"],
+      "content_version": 2,
+      "content_hash": "2f5aae7ea5c6ceade2f256d9c9ad79299c2375eae21310eca6fab84233f8f6c6",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-5-topic",
+          "issue": "R5 gộp 不妨 và 何不 thành một điểm nhưng không nêu rõ 何不 luôn tạo câu hỏi tu từ và không dùng ở dạng phủ định.",
+          "fix": "Tách rõ hai dạng trong formula: 不妨/何不 là một slot lựa chọn, và ghi chú 何不 thường đi với dấu hỏi."
+        },
+        {
+          "r5_id": "zh-hsk5-5-topic",
+          "issue": "Ví dụ '不妨不去' trong mistakes không phải lỗi người học Việt thường mắc mà là lỗi do dịch máy.",
+          "fix": "Thay bằng lỗi thực tế: thêm 不 sau 不妨 gây thừa/sai nghĩa, và lỗi chính tả 不防."
+        },
+        {
+          "r5_id": "zh-hsk5-5-topic",
+          "issue": "R5 không có quick practice dạng cloze và không gắn error_tag.",
+          "fix": "Thêm 3 câu cloze với lỗi character_choice, word_order, redundancy."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

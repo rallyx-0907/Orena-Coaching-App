@@ -1,0 +1,223 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_4_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_1_4.p1"],
+  "contrasts": [],
+  "error_tags": ["word_order"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.048"]},
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Vị ngữ: 名词、代词、数词或数量短语、名词性短语作谓语", "en": "Predicates: 名词、代词、数词或数量短语、名词性短语作谓语"},
+    "native_title": "名词、代词、数词或数量短语、名词性短语作谓语",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Câu tiếng Trung có thể dùng danh từ, đại từ, số từ hoặc cụm danh từ làm vị ngữ mà không cần động từ 是.",
+      "en": "A Chinese sentence can use a noun, pronoun, numeral, quantity phrase, or noun phrase as its predicate without the verb 是."
+    },
+    "sub": {"vi": "vị ngữ danh từ", "en": "noun predicate"},
+    "native_title_pinyin": [
+      "míng",
+      "cí",
+      "",
+      "dài",
+      "cí",
+      "",
+      "shù",
+      "cí",
+      "huò",
+      "shù",
+      "liàng",
+      "duǎn",
+      "yǔ",
+      "",
+      "míng",
+      "cí",
+      "xìng",
+      "duǎn",
+      "yǔ",
+      "zuò",
+      "wèi",
+      "yǔ"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói tuổi, ngày tháng, quê quán, nghề nghiệp hoặc số lượng, và không cần nhấn mạnh bằng 是.",
+      "en": "When stating age, dates, hometown, occupation, or quantity, and you do not need to emphasize with 是."
+    },
+    {
+      "vi": "Khi chủ ngữ và vị ngữ là cùng một sự vật, hoặc vị ngữ mô tả chủ ngữ bằng một cụm danh từ.",
+      "en": "When the subject and predicate refer to the same thing, or the predicate describes the subject with a noun phrase."
+    },
+    {
+      "vi": "Khi câu ngắn, mang tính khẩu ngữ hoặc thông báo thông tin, thường không dùng 是.",
+      "en": "In short, colloquial, or information-reporting sentences, 是 is often omitted."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "名词/代词/数词/数量短语/名词性短语",
+        "role": "complement",
+        "label": {"vi": "vị ngữ danh từ", "en": "noun predicate"},
+        "pinyin": [
+          "míng",
+          "cí",
+          "",
+          "dài",
+          "cí",
+          "",
+          "shù",
+          "cí",
+          "",
+          "shù",
+          "liàng",
+          "duǎn",
+          "yǔ",
+          "",
+          "míng",
+          "cí",
+          "xìng",
+          "duǎn",
+          "yǔ"
+        ]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我今年二十岁。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 1, "role": "subject"}, {"start": 1, "end": 6, "role": "complement"}],
+      "annotation": {
+        "vi": "二十岁 là cụm số từ + lượng từ làm vị ngữ, không dùng 是.",
+        "en": "二十岁 is a numeral + measure word phrase acting as the predicate; 是 is not used."
+      },
+      "translation": {"vi": "Năm nay tôi hai mươi tuổi.", "en": "I am twenty years old this year."},
+      "pinyin": ["wǒ", "jīn", "nián", "èr", "shí", "suì", ""]
+    },
+    {
+      "text": "他北京人。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 1, "role": "subject"}, {"start": 1, "end": 4, "role": "complement"}],
+      "annotation": {
+        "vi": "北京人 là cụm danh từ làm vị ngữ, câu vẫn đủ nghĩa.",
+        "en": "北京人 is a noun phrase serving as the predicate; the sentence is complete without 是."
+      },
+      "translation": {"vi": "Anh ấy là người Bắc Kinh.", "en": "He is from Beijing."},
+      "pinyin": ["tā", "běi", "jīng", "rén", ""]
+    },
+    {
+      "text": "这本书三十块。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "subject"}, {"start": 3, "end": 6, "role": "complement"}],
+      "annotation": {
+        "vi": "三十块 là cụm số từ + lượng từ làm vị ngữ, dùng để nói giá cả.",
+        "en": "三十块 is a numeral + measure word phrase as the predicate, used for price."
+      },
+      "translation": {"vi": "Cuốn sách này ba mươi tệ.", "en": "This book is thirty yuan."},
+      "pinyin": ["zhè", "běn", "shū", "sān", "shí", "kuài", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi vị ngữ là số từ hoặc cụm danh từ chỉ tuổi, ngày tháng, quê quán, tiếng Trung thường không dùng 是; thêm 是 là lỗi thừa động từ.",
+        "en": "When the predicate is a numeral or noun phrase for age, dates, or hometown, Chinese normally omits 是; adding 是 is an extra verb error."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "我今年是二十岁。",
+      "right": "我今年二十岁。",
+      "wrong_pinyin": ["wǒ", "jīn", "nián", "shì", "èr", "shí", "suì", ""],
+      "right_pinyin": ["wǒ", "jīn", "nián", "èr", "shí", "suì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___北京人。",
+      "options": [
+        {"text": "是", "error_tag": null, "pinyin": ["shì"]},
+        {"text": "不", "error_tag": "word_choice", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này có thể dùng 是 hoặc bỏ 是; khi nhấn mạnh quan hệ đồng nhất, 是 được chấp nhận. Trong bài này, vị ngữ danh từ thường không cần 是, nhưng 是 không sai nếu muốn nhấn mạnh.",
+        "en": "This sentence can use 是 or omit it; when emphasizing identity, 是 is acceptable. In this lesson the noun predicate often omits 是, but 是 is not wrong if emphasis is intended."
+      },
+      "q_pinyin": ["tā", "", "", "", "běi", "jīng", "rén", ""]
+    },
+    {
+      "q": "我今年___。",
+      "options": [
+        {"text": "二十岁", "error_tag": null, "pinyin": ["èr", "shí", "suì"]},
+        {"text": "是二十岁", "error_tag": "redundancy", "pinyin": ["shì", "èr", "shí", "suì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vị ngữ là cụm số từ + lượng từ chỉ tuổi, không cần 是.",
+        "en": "The predicate is a numeral + measure word phrase for age; 是 is not needed."
+      },
+      "q_pinyin": ["wǒ", "jīn", "nián", "", "", "", ""]
+    },
+    {
+      "q": "这本书___。",
+      "options": [
+        {"text": "三十块", "error_tag": null, "pinyin": ["sān", "shí", "kuài"]},
+        {"text": "是三十块", "error_tag": "redundancy", "pinyin": ["shì", "sān", "shí", "kuài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vị ngữ là cụm số từ + lượng từ chỉ giá cả, không cần 是.",
+        "en": "The predicate is a numeral + measure word phrase for price; 是 is not needed."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giới thiệu tuổi của bạn, dùng vị ngữ là cụm số từ + lượng từ, không dùng 是.",
+      "en": "Write a sentence about your age, using a numeral + measure word phrase as the predicate, without 是."
+    },
+    "placeholder": "我今年……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"role": "subject", "any_of": ["我", "他", "她", "你"]},
+        {"role": "complement", "regex": "(今年|北京|三十块|\\d+岁|\\d+块|\\d+元)"}
+      ]
+    },
+    "sample": {"text": "我今年二十岁。", "pinyin": ["wǒ", "jīn", "nián", "èr", "shí", "suì", ""]},
+    "placeholder_pinyin": ["wǒ", "jīn", "nián", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791347319",
+    "generated_at": "2026-10-07T04:28:39Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

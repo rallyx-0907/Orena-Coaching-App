@@ -1,0 +1,376 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_8.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.object_disposal",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.r5.hsk6_6_topic"],
+  "contrasts": [],
+  "error_tags": ["word_order", "particle", "register"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.060", "gf0025.hsk6.061", "gf0025.hsk6.062", "gf0025.hsk6.063"]},
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 好你个X", "en": "Chinese grammar: 好你个X"},
+    "native_title": "好你个X",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Mẫu 好你个X dùng để nhấn mạnh thái độ khi xử lý một đối tượng, thường là trách móc, chê bai hoặc mỉa mai.",
+      "en": "The pattern 好你个X stresses the speaker's attitude while dealing with a person or thing, usually blame, criticism, or sarcasm."
+    },
+    "sub": {"vi": "nhấn mạnh thái độ", "en": "attitude emphasis"},
+    "native_title_pinyin": ["hǎo", "nǐ", "gè", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn mắng hoặc trách ai đó vì một hành vi cụ thể, và muốn câu nói nặng hơn bình thường.",
+      "en": "When you want to scold or blame someone for a specific act, and want the sentence to sound stronger than usual."
+    },
+    {
+      "vi": "Khi bạn muốn chê bai hoặc mỉa mai một người, một vật, hoặc một việc vừa xảy ra.",
+      "en": "When you want to criticize or mock a person, a thing, or something that just happened."
+    },
+    {
+      "vi": "Khi đối tượng được nêu ngay sau 好你个, thường là một danh từ hoặc cụm danh từ chỉ người.",
+      "en": "When the target comes right after 好你个, usually a noun or noun phrase referring to a person."
+    },
+    {
+      "vi": "Khi câu mang giọng điệu cảm thán, thường đứng đầu câu và không dùng trong văn viết trang trọng.",
+      "en": "When the sentence has an exclamatory tone, usually at the beginning, and is not used in formal writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "好",
+        "role": "other",
+        "label": {"vi": "từ dẫn thái độ", "en": "attitude lead"},
+        "pinyin": ["hǎo"]
+      },
+      {
+        "text": "你",
+        "role": "other",
+        "label": {"vi": "đại từ hướng tới người nghe", "en": "pronoun pointing at the listener"},
+        "pinyin": ["nǐ"]
+      },
+      {
+        "text": "个",
+        "role": "particle",
+        "label": {"vi": "trợ từ nhấn mạnh", "en": "emphatic particle"},
+        "pinyin": ["gè"]
+      },
+      {
+        "text": "X",
+        "role": "object",
+        "label": {"vi": "đối tượng bị nhắm tới", "en": "target being addressed"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "好你个骗子，居然骗到我头上来了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "好你个X đứng đầu câu, nêu thẳng đối tượng bị trách là kẻ lừa đảo.",
+        "en": "好你个X opens the sentence and names the target being blamed as a liar."
+      },
+      "translation": {
+        "vi": "Đồ lừa đảo nhà ngươi, dám lừa cả ta.",
+        "en": "You liar, you actually dared to cheat me."
+      },
+      "pinyin": [
+        "hǎo",
+        "nǐ",
+        "gè",
+        "piàn",
+        "zi",
+        "",
+        "jū",
+        "rán",
+        "piàn",
+        "dào",
+        "wǒ",
+        "tóu",
+        "shàng",
+        "lái",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "好你个懒虫，作业又没写完。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "好你个X dùng để mắng thân mật, ở đây trách người lười.",
+        "en": "好你个X is used for a familiar scolding, here blaming a lazy person."
+      },
+      "translation": {
+        "vi": "Đồ lười nhà ngươi, bài tập lại chưa làm xong.",
+        "en": "You lazybones, you didn't finish your homework again."
+      },
+      "pinyin": ["hǎo", "nǐ", "gè", "lǎn", "chóng", "", "zuò", "yè", "yòu", "méi", "xiě", "wán", ""]
+    },
+    {
+      "text": "好你个没良心的，说走就走。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "other"},
+        {"start": 1, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "好你个X có thể theo sau bởi một cụm danh từ mang tính chê bai.",
+        "en": "好你个X can be followed by a noun phrase that carries criticism."
+      },
+      "translation": {
+        "vi": "Đồ vô lương tâm nhà ngươi, nói đi là đi ngay.",
+        "en": "You heartless one, you left just like that."
+      },
+      "pinyin": ["hǎo", "nǐ", "gè", "méi", "liáng", "xīn", "de", "", "shuō", "zǒu", "jiù", "zǒu", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học đặt 你 trước 好 theo thói quen tiếng Việt, nhưng mẫu cố định là 好你个X.",
+        "en": "Learners put 你 before 好 by habit from their first language, but the fixed pattern is 好你个X."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "你好个骗子，居然骗到我头上来了。",
+      "right": "好你个骗子，居然骗到我头上来了。",
+      "wrong_pinyin": [
+        "nǐ",
+        "hǎo",
+        "gè",
+        "piàn",
+        "zi",
+        "",
+        "jū",
+        "rán",
+        "piàn",
+        "dào",
+        "wǒ",
+        "tóu",
+        "shàng",
+        "lái",
+        "le",
+        ""
+      ],
+      "right_pinyin": [
+        "hǎo",
+        "nǐ",
+        "gè",
+        "piàn",
+        "zi",
+        "",
+        "jū",
+        "rán",
+        "piàn",
+        "dào",
+        "wǒ",
+        "tóu",
+        "shàng",
+        "lái",
+        "le",
+        ""
+      ]
+    },
+    {
+      "reason": {
+        "vi": "Thiếu trợ từ 个 làm mất nhịp và sắc thái nhấn mạnh của mẫu.",
+        "en": "Dropping the particle 个 removes the rhythm and emphatic force of the pattern."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "好你骗子，居然骗到我头上来了。",
+      "right": "好你个骗子，居然骗到我头上来了。",
+      "wrong_pinyin": [
+        "hǎo",
+        "nǐ",
+        "piàn",
+        "zi",
+        "",
+        "jū",
+        "rán",
+        "piàn",
+        "dào",
+        "wǒ",
+        "tóu",
+        "shàng",
+        "lái",
+        "le",
+        ""
+      ],
+      "right_pinyin": [
+        "hǎo",
+        "nǐ",
+        "gè",
+        "piàn",
+        "zi",
+        "",
+        "jū",
+        "rán",
+        "piàn",
+        "dào",
+        "wǒ",
+        "tóu",
+        "shàng",
+        "lái",
+        "le",
+        ""
+      ]
+    },
+    {
+      "reason": {
+        "vi": "Mẫu này mang giọng mắng, mỉa; dùng 请 làm câu lệch văn phong và không tự nhiên.",
+        "en": "This pattern carries a scolding, sarcastic tone; using 请 makes the sentence clash in register and sound unnatural."
+      },
+      "error_tag": "register",
+      "l1": ["vi"],
+      "wrong": "好你个骗子，请您以后注意。",
+      "right": "好你个骗子，你以后注意点。",
+      "wrong_pinyin": ["hǎo", "nǐ", "gè", "piàn", "zi", "", "qǐng", "nín", "yǐ", "hòu", "zhù", "yì", ""],
+      "right_pinyin": ["hǎo", "nǐ", "gè", "piàn", "zi", "", "nǐ", "yǐ", "hòu", "zhù", "yì", "diǎn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___，居然把我的书弄丢了。",
+      "options": [
+        {"text": "好你个粗心鬼", "error_tag": null, "pinyin": ["hǎo", "nǐ", "gè", "cū", "xīn", "guǐ"]},
+        {
+          "text": "你好个粗心鬼",
+          "error_tag": "word_order",
+          "pinyin": ["nǐ", "hǎo", "gè", "cū", "xīn", "guǐ"]
+        },
+        {"text": "好你粗心鬼", "error_tag": "particle", "pinyin": ["hǎo", "nǐ", "cū", "xīn", "guǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu đúng là 好你个X; đảo 你 lên trước hoặc bỏ 个 đều sai.",
+        "en": "The correct pattern is 好你个X; moving 你 forward or dropping 个 is wrong."
+      },
+      "q_pinyin": ["", "", "", "", "jū", "rán", "bǎ", "wǒ", "de", "shū", "nòng", "diū", "le", ""]
+    },
+    {
+      "q": "好你个懒虫，___。",
+      "options": [
+        {"text": "怎么还在睡觉", "error_tag": null, "pinyin": ["zěn", "me", "hái", "zài", "shuì", "jiào"]},
+        {
+          "text": "怎么睡觉还在",
+          "error_tag": "word_order",
+          "pinyin": ["zěn", "me", "shuì", "jiào", "hái", "zài"]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 好你个X là một câu trách móc; trạng từ 还 phải đứng trước động từ 在睡觉.",
+        "en": "After 好你个X comes a reproach; the adverb 还 must come before the verb phrase 在睡觉."
+      },
+      "q_pinyin": ["hǎo", "nǐ", "gè", "lǎn", "chóng", "", "", "", "", ""]
+    },
+    {
+      "q": "好你个___，连这点小事都做不好。",
+      "options": [
+        {"text": "笨蛋", "error_tag": null, "pinyin": ["bèn", "dàn"]},
+        {"text": "笨", "error_tag": "word_choice", "pinyin": ["bèn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 好你个 cần một danh từ hoặc cụm danh từ chỉ người; 笨 là tính từ nên không đứng một mình ở đây.",
+        "en": "After 好你个 you need a noun or noun phrase for a person; 笨 is an adjective and cannot stand alone here."
+      },
+      "q_pinyin": [
+        "hǎo",
+        "nǐ",
+        "gè",
+        "",
+        "",
+        "",
+        "",
+        "lián",
+        "zhè",
+        "diǎn",
+        "xiǎo",
+        "shì",
+        "dōu",
+        "zuò",
+        "bù",
+        "hǎo",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu mắng hoặc trách ai đó bằng mẫu 好你个X.",
+      "en": "Write one sentence scolding or blaming someone with the pattern 好你个X."
+    },
+    "placeholder": "好你个……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["好"], "role": "other"},
+        {"any_of": ["你"], "role": "other"},
+        {"any_of": ["个"], "role": "particle"}
+      ]
+    },
+    "sample": {
+      "text": "好你个骗子，居然骗到我头上来了。",
+      "pinyin": [
+        "hǎo",
+        "nǐ",
+        "gè",
+        "piàn",
+        "zi",
+        "",
+        "jū",
+        "rán",
+        "piàn",
+        "dào",
+        "wǒ",
+        "tóu",
+        "shàng",
+        "lái",
+        "le",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["hǎo", "nǐ", "gè", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338778",
+    "generated_at": "2026-10-07T02:06:18Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:07Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

@@ -1,0 +1,219 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.bi_yidian_deduo",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.comparison",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_7_b_ng_kh_n_ng"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: bi_yidian_deduo", "en": "Chinese grammar: bi_yidian_deduo"},
+    "native_title": "比较句+一点儿/得多",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Cấu trúc 比较句 dùng 一点儿 và 得多 để so sánh mức độ khác biệt giữa hai sự vật.",
+      "en": "The 比较句 pattern with 一点儿 and 得多 compares the degree of difference between two things."
+    },
+    "sub": {"vi": "so sánh mức độ", "en": "degree comparison"},
+    "native_title_pinyin": ["bǐ", "jiào", "jù", "", "yì", "diǎn", "ér", "", "dé", "duō"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói A hơn B một chút, dùng 一点儿 sau tính từ.",
+      "en": "Use 一点儿 after an adjective to say A is a little more than B."
+    },
+    {
+      "vi": "Khi muốn nói A hơn B nhiều, dùng 得多 sau tính từ.",
+      "en": "Use 得多 after an adjective to say A is much more than B."
+    },
+    {
+      "vi": "Khi so sánh hai người hoặc hai vật trong câu đơn giản, dùng 比 giữa hai đối tượng.",
+      "en": "Use 比 between two people or things in a simple comparison sentence."
+    },
+    {
+      "vi": "Khi không cần nêu mức độ cụ thể, có thể dùng 比 mà không thêm 一点儿 hay 得多.",
+      "en": "When the exact degree is not needed, 比 can be used without 一点儿 or 得多."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "subject",
+        "label": {"vi": "đối tượng thứ nhất", "en": "first item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "比",
+        "role": "marker",
+        "label": {"vi": "dấu so sánh", "en": "comparison marker"},
+        "pinyin": ["bǐ"]
+      },
+      {
+        "text": "B",
+        "role": "object",
+        "label": {"vi": "đối tượng thứ hai", "en": "second item"},
+        "pinyin": [""]
+      },
+      {
+        "text": "tính từ",
+        "role": "complement",
+        "label": {"vi": "tính từ so sánh", "en": "comparative adjective"},
+        "pinyin": ["", "", "", "", "", "", ""]
+      },
+      {
+        "text": "一点儿/得多",
+        "role": "complement",
+        "label": {"vi": "mức độ khác biệt", "en": "degree of difference"},
+        "optional": true,
+        "options": [{"text": "一点儿", "pinyin": ["yì", "diǎn", "ér"]}, {"text": "得多", "pinyin": ["dé", "duō"]}],
+        "pinyin": ["yì", "diǎn", "ér", "", "dé", "duō"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "今天比昨天冷一点儿。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "complement"},
+        {"start": 6, "end": 9, "role": "complement"}
+      ],
+      "annotation": {"vi": "一点儿 cho biết mức độ chênh lệch nhỏ.", "en": "一点儿 shows a small degree of difference."},
+      "translation": {"vi": "Hôm nay lạnh hơn hôm qua một chút.", "en": "Today is a little colder than yesterday."},
+      "pinyin": ["jīn", "tiān", "bǐ", "zuó", "tiān", "lěng", "yì", "diǎn", "ér", ""]
+    },
+    {
+      "text": "这个箱子比那个箱子重得多。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 9, "role": "object"},
+        {"start": 9, "end": 10, "role": "complement"},
+        {"start": 10, "end": 12, "role": "complement"}
+      ],
+      "annotation": {"vi": "得多 cho biết mức độ chênh lệch lớn.", "en": "得多 shows a large degree of difference."},
+      "translation": {
+        "vi": "Cái hộp này nặng hơn cái hộp kia nhiều.",
+        "en": "This box is much heavier than that box."
+      },
+      "pinyin": ["zhè", "ge", "xiāng", "zi", "bǐ", "nà", "ge", "xiāng", "zi", "zhòng", "dé", "duō", ""]
+    },
+    {
+      "text": "河内比胡志明市凉快得多。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 7, "role": "object"},
+        {"start": 7, "end": 9, "role": "complement"},
+        {"start": 9, "end": 11, "role": "complement"}
+      ],
+      "annotation": {"vi": "得多 nhấn mạnh sự khác biệt rõ rệt.", "en": "得多 emphasizes a clear difference."},
+      "translation": {
+        "vi": "Hà Nội mát hơn Thành phố Hồ Chí Minh nhiều.",
+        "en": "Hanoi is much cooler than Ho Chi Minh City."
+      },
+      "pinyin": ["hé", "nèi", "bǐ", "hú", "zhì", "míng", "shì", "liáng", "kuài", "dé", "duō", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Không dùng 了 sau 一点儿 trong câu so sánh mức độ; 了 không cần thiết và làm câu sai.",
+        "en": "Do not use 了 after 一点儿 in a degree comparison; 了 is unnecessary and makes the sentence wrong."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "今天比昨天冷一点儿了。",
+      "right": "今天比昨天冷一点儿。",
+      "wrong_pinyin": ["jīn", "tiān", "bǐ", "zuó", "tiān", "lěng", "yì", "diǎn", "ér", "le", ""],
+      "right_pinyin": ["jīn", "tiān", "bǐ", "zuó", "tiān", "lěng", "yì", "diǎn", "ér", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个苹果比那个苹果甜___。",
+      "options": [
+        {"text": "一点儿", "error_tag": null, "pinyin": ["yì", "diǎn", "ér"]},
+        {"text": "一点儿了", "error_tag": "particle", "pinyin": ["yì", "diǎn", "ér", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "一点儿 đứng sau tính từ để chỉ mức độ hơn một chút, không thêm 了.",
+        "en": "一点儿 follows the adjective to show a small degree, with no 了 added."
+      },
+      "q_pinyin": ["zhè", "ge", "píng", "guǒ", "bǐ", "nà", "ge", "píng", "guǒ", "tián", "", "", "", ""]
+    },
+    {
+      "q": "他的房间比我的房间大___。",
+      "options": [
+        {"text": "得多", "error_tag": null, "pinyin": ["dé", "duō"]},
+        {"text": "很多", "error_tag": "word_choice", "pinyin": ["hěn", "duō"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "得多 là cụm cố định chỉ mức độ hơn nhiều, không dùng 很多 ở vị trí này.",
+        "en": "得多 is the fixed phrase for 'much more'; 很多 is not used in this position."
+      },
+      "q_pinyin": ["tā", "de", "fáng", "jiān", "bǐ", "wǒ", "de", "fáng", "jiān", "dà", "", "", "", ""]
+    },
+    {
+      "q": "坐火车比坐飞机___。",
+      "options": [
+        {"text": "慢得多", "error_tag": null, "pinyin": ["màn", "dé", "duō"]},
+        {"text": "慢一点儿多", "error_tag": "word_order", "pinyin": ["màn", "yì", "diǎn", "ér", "duō"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "得多 đứng ngay sau tính từ, không tách rời hay đảo vị trí.",
+        "en": "得多 comes right after the adjective; it is not separated or reordered."
+      },
+      "q_pinyin": ["zuò", "huǒ", "chē", "bǐ", "zuò", "fēi", "jī", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh hai người hoặc hai vật bằng 比 và 一点儿 hoặc 得多.",
+      "en": "Write one sentence comparing two people or things with 比 and 一点儿 or 得多."
+    },
+    "placeholder": "我的手机比……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["比"], "role": "marker"}, {"any_of": ["一点儿", "得多"], "role": "complement"}]
+    },
+    "sample": {
+      "text": "我的手机比你的手机新一点儿。",
+      "pinyin": ["wǒ", "de", "shǒu", "jī", "bǐ", "nǐ", "de", "shǒu", "jī", "xīn", "yì", "diǎn", "ér", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "shǒu", "jī", "bǐ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791342243",
+    "generated_at": "2026-10-07T03:04:03Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

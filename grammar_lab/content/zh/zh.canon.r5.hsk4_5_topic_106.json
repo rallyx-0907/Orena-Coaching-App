@@ -1,0 +1,296 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_5_topic_106",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reason_result",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_5_1.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-5-topic-106"], "gf0025": ["gf0025.hsk4.046", "gf0025.hsk5.050"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk4-5-topic-106"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: ⋯⋯，于是⋯⋯", "en": "Chinese grammar: ⋯⋯，于是⋯⋯"},
+    "native_title": "⋯⋯，于是⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Liên từ 于是 nối một sự việc với hành động hoặc kết quả tiếp theo mà sự việc đó gây ra, thường dùng trong kể chuyện.",
+      "en": "The connector 于是 links a situation to the next action or result that it causes, typically in narrative sequences."
+    },
+    "sub": {"vi": "kết quả tường thuật", "en": "narrative result"},
+    "native_title_pinyin": ["", "", "", "yú", "shì", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi kể lại một chuỗi sự việc: việc trước xảy ra khiến người ta làm việc sau.",
+      "en": "When narrating a sequence: the earlier event makes someone do the next thing."
+    },
+    {
+      "vi": "Khi kết quả là một hành động cụ thể, không phải một suy luận trừu tượng.",
+      "en": "When the result is a concrete action, not an abstract inference."
+    },
+    {
+      "vi": "Khi muốn giọng văn kể chuyện, gần với 'thế là', 'rồi thì' trong tiếng Việt.",
+      "en": "When you want a storytelling tone, close to 'so then' or 'and so' in English."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "原因",
+        "role": "other",
+        "label": {"vi": "nguyên nhân / sự việc trước", "en": "cause / preceding situation"},
+        "pinyin": ["yuán", "yīn"]
+      },
+      {
+        "text": "于是",
+        "role": "connector",
+        "label": {"vi": "liên từ nối kết quả", "en": "result connector"},
+        "pinyin": ["yú", "shì"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "kết quả / hành động tiếp theo", "en": "result / next action"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他忘了带钥匙，于是又回家了一趟。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Quên chìa khóa là nguyên nhân; 于是 mở đầu hành động tiếp theo là quay về nhà.",
+        "en": "Forgetting the keys is the cause; 于是 introduces the next action, going back home."
+      },
+      "translation": {
+        "vi": "Anh ấy quên chìa khóa, thế là lại quay về nhà một chuyến.",
+        "en": "He forgot his keys, so he went back home again."
+      },
+      "pinyin": [
+        "tā",
+        "wàng",
+        "le",
+        "dài",
+        "yào",
+        "shi",
+        "",
+        "yú",
+        "shì",
+        "yòu",
+        "huí",
+        "jiā",
+        "le",
+        "yī",
+        "tàng",
+        ""
+      ]
+    },
+    {
+      "text": "路上堵车，于是我们改坐地铁。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "other"},
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Tắc đường là nguyên nhân; 于是 dẫn đến quyết định đổi sang đi tàu điện ngầm.",
+        "en": "The traffic jam is the cause; 于是 leads to the decision to take the subway instead."
+      },
+      "translation": {
+        "vi": "Đường tắc, thế là chúng tôi đổi sang đi tàu điện ngầm.",
+        "en": "There was a traffic jam, so we took the subway instead."
+      },
+      "pinyin": ["lù", "shàng", "dǔ", "chē", "", "yú", "shì", "wǒ", "men", "gǎi", "zuò", "dì", "tiě", ""]
+    },
+    {
+      "text": "下雨了，于是比赛取消了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "other"},
+        {"start": 4, "end": 6, "role": "connector"},
+        {"start": 6, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Trời mưa là nguyên nhân; 于是 nối tới kết quả là trận đấu bị hủy.",
+        "en": "The rain is the cause; 于是 connects to the result that the match was cancelled."
+      },
+      "translation": {"vi": "Trời mưa, thế là trận đấu bị hủy.", "en": "It rained, so the match was cancelled."},
+      "pinyin": ["xià", "yǔ", "le", "", "yú", "shì", "bǐ", "sài", "qǔ", "xiāo", "le", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Kết quả ở đây là một suy luận trừu tượng, không phải hành động kể tiếp, nên 因此/因而 phù hợp hơn 于是.",
+        "en": "The result here is an abstract inference, not a next action, so 因此/因而 fits better than 于是."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "研究结果不足，于是无法证明这个理论。",
+      "right": "研究结果不足，因此无法证明这个理论。",
+      "wrong_pinyin": [
+        "yán",
+        "jiū",
+        "jié",
+        "guǒ",
+        "bù",
+        "zú",
+        "",
+        "yú",
+        "shì",
+        "wú",
+        "fǎ",
+        "zhèng",
+        "míng",
+        "zhè",
+        "ge",
+        "lǐ",
+        "lùn",
+        ""
+      ],
+      "right_pinyin": [
+        "yán",
+        "jiū",
+        "jié",
+        "guǒ",
+        "bù",
+        "zú",
+        "",
+        "yīn",
+        "cǐ",
+        "wú",
+        "fǎ",
+        "zhèng",
+        "míng",
+        "zhè",
+        "ge",
+        "lǐ",
+        "lùn",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他忘了带钥匙，___又回家了一趟。",
+      "options": [
+        {"text": "于是", "error_tag": null, "pinyin": ["yú", "shì"]},
+        {"text": "因此", "error_tag": "conjunction", "pinyin": ["yīn", "cǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là chuỗi hành động kể tiếp, 于是 phù hợp; 因此 thiên về suy luận logic.",
+        "en": "This is a narrative sequence, so 于是 fits; 因此 is more for logical inference."
+      },
+      "q_pinyin": [
+        "tā",
+        "wàng",
+        "le",
+        "dài",
+        "yào",
+        "shi",
+        "",
+        "",
+        "",
+        "",
+        "yòu",
+        "huí",
+        "jiā",
+        "le",
+        "yī",
+        "tàng",
+        ""
+      ]
+    },
+    {
+      "q": "路上堵车，___我们改坐地铁。",
+      "options": [
+        {"text": "于是", "error_tag": null, "pinyin": ["yú", "shì"]},
+        {"text": "因而", "error_tag": "conjunction", "pinyin": ["yīn", "ér"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là hành động tiếp theo trong câu chuyện, 于是 tự nhiên hơn 因而.",
+        "en": "This is a next action in a story, so 于是 is more natural than 因而."
+      },
+      "q_pinyin": ["lù", "shàng", "dǔ", "chē", "", "", "", "", "wǒ", "men", "gǎi", "zuò", "dì", "tiě", ""]
+    },
+    {
+      "q": "下雨了，___比赛取消了。",
+      "options": [
+        {"text": "于是", "error_tag": null, "pinyin": ["yú", "shì"]},
+        {"text": "因此", "error_tag": "conjunction", "pinyin": ["yīn", "cǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Kết quả là một sự việc xảy ra sau đó, 于是 phù hợp; 因此 thiên về kết luận logic.",
+        "en": "The result is an event that follows, so 于是 fits; 因此 is more for logical conclusions."
+      },
+      "q_pinyin": ["xià", "yǔ", "le", "", "", "", "", "bǐ", "sài", "qǔ", "xiāo", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể lại việc gì đó xảy ra và hành động tiếp theo của bạn, dùng 于是.",
+      "en": "Write a sentence about something that happened and your next action, using 于是."
+    },
+    "placeholder": "我忘了……，于是……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["于是"], "role": "connector"}]},
+    "sample": {
+      "text": "我忘了带伞，于是跑回家拿。",
+      "pinyin": ["wǒ", "wàng", "le", "dài", "sǎn", "", "yú", "shì", "pǎo", "huí", "jiā", "ná", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "wàng", "le", "", "", "", "yú", "shì", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338457",
+    "generated_at": "2026-10-07T02:00:57Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-5-topic-106"],
+      "content_version": 2,
+      "content_hash": "69762d2f46d7ed0362d46b6b7fce8d014146f876a8027b52ade3cb5b58411816",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-5-topic-106",
+          "issue": "R5 gộp 因此/因而/于是 thành một điểm, nhưng tiêu đề bài học này chỉ là 于是.",
+          "fix": "Tách riêng 于是; chỉ dùng 因此/因而 làm đối chiếu trong phần lỗi thường gặp."
+        },
+        {
+          "r5_id": "zh-hsk4-5-topic-106",
+          "issue": "Ví dụ '成本持续上升，因而公司调整了计划。' dùng 因而, không thuộc phạm vi 于是.",
+          "fix": "Thay bằng ví dụ dùng 于是: '下雨了，于是比赛取消了。'"
+        },
+        {
+          "r5_id": "zh-hsk4-5-topic-106",
+          "issue": "Lỗi '他突然饿了，因而去买了面包。' không phải lỗi thực sự vì 因而 vẫn đúng ngữ pháp, chỉ kém tự nhiên.",
+          "fix": "Thay bằng lỗi thực sự: dùng 于是 cho suy luận trừu tượng, ví dụ '研究结果不足，于是无法证明这个理论。'"
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

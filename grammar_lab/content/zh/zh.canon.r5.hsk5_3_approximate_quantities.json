@@ -1,0 +1,260 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_3_approximate_quantities",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.quantity",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_2_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-3-approximate-quantities", "zh-hsk6-15-approximation-and-limitation"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["zh-hsk5-3-approximate-quantities", "zh-hsk6-15-approximation-and-limitation"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Approximate quantities",
+      "en": "Chinese grammar: Approximate quantities"
+    },
+    "native_title": "概数表达",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Cách nói số lượng gần đúng trong tiếng Trung bằng các từ như 大约, 左右, 将近, 多, 来 đặt quanh con số.",
+      "en": "How to express approximate quantities in Chinese with words like 大约, 左右, 将近, 多 and 来 placed around a number."
+    },
+    "sub": {"vi": "số lượng gần đúng", "en": "approximate quantity"},
+    "native_title_pinyin": ["gài", "shù", "biǎo", "dá"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn không biết con số chính xác và chỉ muốn nói khoảng chừng, ví dụ số người, số giờ, số tiền.",
+      "en": "When you do not know the exact figure and only want to give a rough one, such as a number of people, hours or money."
+    },
+    {
+      "vi": "Khi con số chỉ là ước lượng trong báo cáo, kế hoạch hoặc câu chuyện kể lại.",
+      "en": "When the number is only an estimate in a report, a plan or a story you are retelling."
+    },
+    {
+      "vi": "Khi bạn muốn nói 'hơn' một chút so với con số tròn, dùng 多 sau con số và trước lượng từ.",
+      "en": "When you want to say 'a bit more than' a round number, using 多 after the number and before the measure word."
+    },
+    {
+      "vi": "Khi bạn muốn nói 'gần' một con số nhưng chưa tới, dùng 将近 hoặc 近 trước con số.",
+      "en": "When you want to say 'nearly' a number but not quite reaching it, using 将近 or 近 before the number."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "大约/大概/将近",
+        "role": "other",
+        "label": {"vi": "từ ước lượng đứng trước", "en": "pre-number approximator"},
+        "optional": true,
+        "options": [
+          {"text": "大约", "pinyin": ["dà", "yuē"]},
+          {"text": "大概", "pinyin": ["dà", "gài"]},
+          {"text": "将近", "pinyin": ["jiāng", "jìn"]}
+        ],
+        "pinyin": ["dà", "yuē", "", "dà", "gài", "", "jiāng", "jìn"]
+      },
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "con số", "en": "number"},
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "多/来",
+        "role": "other",
+        "label": {"vi": "từ ước lượng đứng sau", "en": "post-number approximator"},
+        "optional": true,
+        "options": [{"text": "多", "pinyin": ["duō"]}, {"text": "来", "pinyin": ["lái"]}],
+        "pinyin": ["duō", "", "lái"]
+      },
+      {
+        "text": "量词",
+        "role": "classifier",
+        "label": {"vi": "lượng từ", "en": "measure word"},
+        "pinyin": ["liàng", "cí"]
+      },
+      {
+        "text": "名词",
+        "role": "object",
+        "label": {"vi": "danh từ", "en": "noun"},
+        "pinyin": ["míng", "cí"]
+      },
+      {
+        "text": "左右",
+        "role": "other",
+        "label": {"vi": "khoảng chừng (đứng sau)", "en": "approximate 'around' (postposed)"},
+        "optional": true,
+        "pinyin": ["zuǒ", "yòu"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "大约有五十个人参加。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "other"},
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "classifier"},
+        {"start": 6, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "大约 đứng trước con số, không dùng thêm 左右 trong cùng câu.",
+        "en": "大约 comes before the number; do not add 左右 in the same clause."
+      },
+      "translation": {"vi": "Khoảng năm mươi người tham gia.", "en": "About fifty people took part."},
+      "pinyin": ["dà", "yuē", "yǒu", "wǔ", "shí", "gè", "rén", "cān", "jiā", ""]
+    },
+    {
+      "text": "会议开了两个小时左右。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "classifier"},
+        {"start": 6, "end": 8, "role": "object"},
+        {"start": 8, "end": 10, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "左右 đứng sau danh từ chỉ đơn vị, nghĩa là khoảng chừng.",
+        "en": "左右 follows the noun it measures and means 'around'."
+      },
+      "translation": {"vi": "Cuộc họp kéo dài khoảng hai tiếng.", "en": "The meeting lasted about two hours."},
+      "pinyin": ["huì", "yì", "kāi", "le", "liǎng", "gè", "xiǎo", "shí", "zuǒ", "yòu", ""]
+    },
+    {
+      "text": "来了十多个人。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "classifier"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "多 đứng sau con số và trước lượng từ, nghĩa là hơn con số đó một chút.",
+        "en": "多 comes after the number and before the measure word, meaning 'a bit more than'."
+      },
+      "translation": {"vi": "Có hơn mười người đến.", "en": "More than ten people came."},
+      "pinyin": ["lái", "le", "shí", "duō", "gè", "rén", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt hay dịch 'khoảng chừng' bằng cả 大约 lẫn 左右, nhưng tiếng Trung chỉ cần một từ ước lượng cho một con số.",
+        "en": "Vietnamese learners often translate 'khoảng chừng' with both 大约 and 左右, but Chinese uses only one approximator per number."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "大约五十个人左右。",
+      "right": "大约五十个人。",
+      "wrong_pinyin": ["dà", "yuē", "wǔ", "shí", "gè", "rén", "zuǒ", "yòu", ""],
+      "right_pinyin": ["dà", "yuē", "wǔ", "shí", "gè", "rén", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "会议开了三个小时___。",
+      "options": [
+        {"text": "左右", "error_tag": null, "pinyin": ["zuǒ", "yòu"]},
+        {"text": "大约", "error_tag": "word_order", "pinyin": ["dà", "yuē"]},
+        {"text": "多", "error_tag": "word_order", "pinyin": ["duō"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "左右 đứng sau danh từ chỉ đơn vị để nói khoảng chừng; 大约 phải đứng trước con số, còn 多 đứng sau con số và trước lượng từ.",
+        "en": "左右 follows the measured noun to mean 'around'; 大约 must come before the number, and 多 goes after the number and before the measure word."
+      },
+      "q_pinyin": ["huì", "yì", "kāi", "le", "sān", "gè", "xiǎo", "shí", "", "", "", ""]
+    },
+    {
+      "q": "___有一百名学生报名。",
+      "options": [
+        {"text": "将近", "error_tag": null, "pinyin": ["jiāng", "jìn"]},
+        {"text": "左右", "error_tag": "word_order", "pinyin": ["zuǒ", "yòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "将近 đứng trước con số để nói 'gần tới'; 左右 không thể đứng đầu câu trước con số.",
+        "en": "将近 comes before the number to mean 'nearly'; 左右 cannot stand at the start before the number."
+      },
+      "q_pinyin": ["", "", "", "yǒu", "yì", "bǎi", "míng", "xué", "shēng", "bào", "míng", ""]
+    },
+    {
+      "q": "来了二十___个人。",
+      "options": [
+        {"text": "多", "error_tag": null, "pinyin": ["duō"]},
+        {"text": "左右", "error_tag": "word_order", "pinyin": ["zuǒ", "yòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "多 đứng ngay sau con số và trước lượng từ 个; 左右 phải đứng sau cả cụm danh từ.",
+        "en": "多 goes right after the number and before the measure word 个; 左右 must follow the whole noun phrase."
+      },
+      "q_pinyin": ["lái", "le", "èr", "shí", "", "", "", "gè", "rén", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về số người hoặc số giờ bạn ước lượng, dùng 大约, 左右, 将近 hoặc 多.",
+      "en": "Write one sentence about a number of people or hours you estimate, using 大约, 左右, 将近 or 多."
+    },
+    "placeholder": "我们班有……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["左右"], "role": "other"}]},
+    "sample": {
+      "text": "我们班有三十个学生左右。",
+      "pinyin": ["wǒ", "men", "bān", "yǒu", "sān", "shí", "gè", "xué", "shēng", "zuǒ", "yòu", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "men", "bān", "yǒu", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791347511",
+    "generated_at": "2026-10-07T04:31:51Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-3-approximate-quantities", "zh-hsk6-15-approximation-and-limitation"],
+      "content_version": 2,
+      "content_hash": "901fe1a24987b9b658c3d2355f9ea8d96485ac750b14f67a6643c1b39faf7cf3",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-3-approximate-quantities",
+          "issue": "R5 ghi '会议开了两个小时左右' nhưng thiếu lượng từ 个 trước 小时, câu không tự nhiên.",
+          "fix": "Sửa thành '会议开了两个小时左右'."
+        },
+        {
+          "r5_id": "zh-hsk5-3-approximate-quantities",
+          "issue": "R5 xếp 近/将近 và 大约/大概 cùng nhóm nhưng không nói rõ 将近/近 chỉ dùng cho con số chưa tới, khác với 大约/大概 là khoảng chừng hai chiều.",
+          "fix": "Tách nghĩa: 将近/近 = gần tới nhưng chưa tới; 大约/大概 = khoảng chừng."
+        },
+        {
+          "r5_id": "zh-hsk5-3-approximate-quantities",
+          "issue": "R5 nói 'number + 来 often approximate around a modest number' nhưng không cho ví dụ và không nói vị trí 来 đứng sau con số tròn, trước lượng từ.",
+          "fix": "Bổ sung quy tắc vị trí của 来 và ví dụ minh họa trong phần công thức."
+        },
+        {
+          "r5_id": "zh-hsk6-15-approximation-and-limitation",
+          "issue": "R5 HSK6 đưa vào các từ giới hạn như 至少, 不超过, 仅 thuộc phạm vi HSK6, vượt quá điểm HSK5 này.",
+          "fix": "Chỉ giữ các từ ước lượng thuộc HSK5: 大约, 大概, 左右, 将近, 多, 来."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

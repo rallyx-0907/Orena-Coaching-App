@@ -1,0 +1,343 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_7_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_9_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-7-topic", "zh-hsk6-8-topic"], "gf0025": ["gf0025.hsk5.053"]},
+  "point_type": "other",
+  "sequence": 7,
+  "aliases": ["zh-hsk5-7-topic", "zh-hsk6-8-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: ⋯⋯，以便⋯⋯", "en": "Chinese grammar: ⋯⋯，以便⋯⋯"},
+    "native_title": "⋯⋯，以便⋯⋯",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "以便 nối một hành động với mục đích mong muốn (để có thể), còn 以免 nối hành động với kết quả cần tránh (để khỏi).",
+      "en": "以便 links an action to a desired purpose (so that), while 以免 links an action to an unwanted outcome to avoid (so as not to)."
+    },
+    "sub": {"vi": "mục đích / phòng tránh", "en": "purpose / prevention"},
+    "native_title_pinyin": ["", "", "", "yǐ", "biàn", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói rõ mục đích thuận lợi của một hành động: làm A để B có thể xảy ra.",
+      "en": "When you want to state the beneficial purpose of an action: do A so that B can happen."
+    },
+    {
+      "vi": "Khi muốn nói một hành động nhằm ngăn một kết quả xấu: làm A để B khỏi xảy ra.",
+      "en": "When you want to say an action prevents a bad outcome: do A so that B does not happen."
+    },
+    {
+      "vi": "Trong văn viết trang trọng, thông báo, hướng dẫn hoặc báo cáo, khi cần nêu mục đích rõ ràng.",
+      "en": "In formal writing, notices, instructions or reports where the purpose must be explicit."
+    },
+    {
+      "vi": "Khi mệnh đề sau 以便/以免 là một kết quả chưa xảy ra, không phải một sự việc đã hoàn thành.",
+      "en": "When the clause after 以便/以免 is a not-yet-realised result, not a completed event."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "hành động / biện pháp", "en": "action / measure"},
+        "pinyin": [""]
+      },
+      {
+        "text": "以便/以免",
+        "role": "connector",
+        "label": {"vi": "liên từ mục đích", "en": "purpose connector"},
+        "options": [{"text": "以便", "pinyin": ["yǐ", "biàn"]}, {"text": "以免", "pinyin": ["yǐ", "miǎn"]}],
+        "pinyin": ["yǐ", "biàn", "", "yǐ", "miǎn"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "kết quả mong muốn / cần tránh", "en": "desired / avoided result"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "请提前准备，以便按时完成任务。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hành động 'chuẩn bị sớm' nhằm mục đích 'hoàn thành đúng giờ'.",
+        "en": "The action 'prepare early' serves the purpose 'finish on time'."
+      },
+      "translation": {
+        "vi": "Hãy chuẩn bị sớm để hoàn thành nhiệm vụ đúng giờ.",
+        "en": "Please prepare early so that you can finish the task on time."
+      },
+      "pinyin": [
+        "qǐng",
+        "tí",
+        "qián",
+        "zhǔn",
+        "bèi",
+        "",
+        "yǐ",
+        "biàn",
+        "àn",
+        "shí",
+        "wán",
+        "chéng",
+        "rèn",
+        "wù",
+        ""
+      ]
+    },
+    {
+      "text": "我们把文件备份，以免数据丢失。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hành động 'sao lưu tài liệu' nhằm tránh kết quả xấu 'mất dữ liệu'.",
+        "en": "The action 'back up the files' aims to avoid the bad outcome 'data loss'."
+      },
+      "translation": {
+        "vi": "Chúng tôi sao lưu tài liệu để tránh mất dữ liệu.",
+        "en": "We back up the files so as not to lose data."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "bǎ",
+        "wén",
+        "jiàn",
+        "bèi",
+        "fèn",
+        "",
+        "yǐ",
+        "miǎn",
+        "shù",
+        "jù",
+        "diū",
+        "shī",
+        ""
+      ]
+    },
+    {
+      "text": "请留下电话，以便我们联系你。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hành động 'để lại số điện thoại' nhằm mục đích 'chúng tôi liên hệ được với bạn'.",
+        "en": "The action 'leave a phone number' serves the purpose 'we can contact you'."
+      },
+      "translation": {
+        "vi": "Hãy để lại số điện thoại để chúng tôi liên hệ với bạn.",
+        "en": "Please leave your phone number so that we can contact you."
+      },
+      "pinyin": ["qǐng", "liú", "xià", "diàn", "huà", "", "yǐ", "biàn", "wǒ", "men", "lián", "xì", "nǐ", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dịch 'để tránh' thành 以便, nhưng 以便 chỉ dùng cho kết quả mong muốn; 'mất dữ liệu' là kết quả xấu nên phải dùng 以免.",
+        "en": "Learners translate 'in order to avoid' as 以便, but 以便 only introduces a desired result; 'data loss' is an unwanted outcome, so 以免 is required."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "备份文件，以便数据丢失。",
+      "right": "备份文件，以免数据丢失。",
+      "wrong_pinyin": ["bèi", "fèn", "wén", "jiàn", "", "yǐ", "biàn", "shù", "jù", "diū", "shī", ""],
+      "right_pinyin": ["bèi", "fèn", "wén", "jiàn", "", "yǐ", "miǎn", "shù", "jù", "diū", "shī", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "请提前提交材料，___我们及时审核。",
+      "options": [
+        {"text": "以便", "error_tag": null, "pinyin": ["yǐ", "biàn"]},
+        {"text": "以免", "error_tag": "conjunction", "pinyin": ["yǐ", "miǎn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "'Chúng tôi duyệt kịp' là kết quả mong muốn, nên dùng 以便.",
+        "en": "'We review in time' is the desired result, so 以便 is correct."
+      },
+      "q_pinyin": [
+        "qǐng",
+        "tí",
+        "qián",
+        "tí",
+        "jiāo",
+        "cái",
+        "liào",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "men",
+        "jí",
+        "shí",
+        "shěn",
+        "hé",
+        ""
+      ]
+    },
+    {
+      "q": "重要数据要定期备份，___丢失。",
+      "options": [
+        {"text": "以免", "error_tag": null, "pinyin": ["yǐ", "miǎn"]},
+        {"text": "以便", "error_tag": "conjunction", "pinyin": ["yǐ", "biàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "'Mất dữ liệu' là kết quả cần tránh, nên dùng 以免.",
+        "en": "'Data loss' is the outcome to avoid, so 以免 is correct."
+      },
+      "q_pinyin": [
+        "zhòng",
+        "yào",
+        "shù",
+        "jù",
+        "yào",
+        "dìng",
+        "qī",
+        "bèi",
+        "fèn",
+        "",
+        "",
+        "",
+        "",
+        "diū",
+        "shī",
+        ""
+      ]
+    },
+    {
+      "q": "出发前检查设备，___路上出问题。",
+      "options": [
+        {"text": "以免", "error_tag": null, "pinyin": ["yǐ", "miǎn"]},
+        {"text": "以便", "error_tag": "conjunction", "pinyin": ["yǐ", "biàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "'Gặp vấn đề trên đường' là điều cần tránh, nên dùng 以免.",
+        "en": "'Problems on the road' is what you want to avoid, so 以免 is correct."
+      },
+      "q_pinyin": [
+        "chū",
+        "fā",
+        "qián",
+        "jiǎn",
+        "chá",
+        "shè",
+        "bèi",
+        "",
+        "",
+        "",
+        "",
+        "lù",
+        "shàng",
+        "chū",
+        "wèn",
+        "tí",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói về việc bạn làm để đạt một mục đích hoặc để tránh một kết quả xấu, dùng 以便 hoặc 以免.",
+      "en": "Write one sentence about something you do to achieve a goal or to avoid a bad outcome, using 以便 or 以免."
+    },
+    "placeholder": "我提前准备，以便……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["以便", "以免"], "role": "connector"}]},
+    "sample": {
+      "text": "我提前准备，以便按时完成任务。",
+      "pinyin": [
+        "wǒ",
+        "tí",
+        "qián",
+        "zhǔn",
+        "bèi",
+        "",
+        "yǐ",
+        "biàn",
+        "àn",
+        "shí",
+        "wán",
+        "chéng",
+        "rèn",
+        "wù",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "tí", "qián", "zhǔn", "bèi", "", "yǐ", "biàn", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338619",
+    "generated_at": "2026-10-07T02:03:39Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-7-topic", "zh-hsk6-8-topic"],
+      "content_version": 2,
+      "content_hash": "17a18a9a49577c8e1e05c9fbdb73d186df3b88396a13eb1b86a73239f14923b5",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-7-topic",
+          "issue": "R5 gộp 以便 và 以免 thành một điểm với tiêu đề '以便/以免' nhưng không có công thức cấu trúc rõ ràng cho từng liên từ.",
+          "fix": "Tách thành một công thức chung A + 以便/以免 + B, trong đó 以便/以免 là một slot có options, và nêu rõ 以便 dẫn kết quả mong muốn còn 以免 dẫn kết quả cần tránh."
+        },
+        {
+          "r5_id": "zh-hsk5-7-topic",
+          "issue": "R5 đưa ví dụ '请提前准备，以便按时完成任务。' nhưng không gắn nhãn thành phần câu, khiến người học khó thấy vị trí của 以便.",
+          "fix": "Giữ ví dụ, thêm bindings cho hành động A, liên từ 以便 và kết quả B, kèm chú thích và bản dịch."
+        },
+        {
+          "r5_id": "zh-hsk5-7-topic",
+          "issue": "R5 có lỗi '备份文件，以便数据丢失。' nhưng không giải thích cơ chế lỗi là chọn sai loại kết quả (mong muốn vs cần tránh).",
+          "fix": "Đưa vào common_mistakes với lý do: 以便 chỉ dùng cho kết quả mong muốn, còn 'mất dữ liệu' là kết quả xấu nên phải dùng 以免."
+        },
+        {
+          "r5_id": "zh-hsk6-8-topic",
+          "issue": "R5 HSK6 thêm 以期 vào cùng điểm, nhưng 以期 không thuộc phạm vi HSK5 của điểm này.",
+          "fix": "Loại 以期 khỏi bài học này; chỉ giữ 以便 và 以免 đúng theo điểm zh.canon.r5.hsk5_7_topic."
+        },
+        {
+          "r5_id": "zh-hsk6-8-topic",
+          "issue": "R5 HSK6 có lỗi '提高效率，以期我们优化流程。' với thứ tự nhân quả đảo, nhưng không được sửa trong phần mistakes.",
+          "fix": "Không đưa lỗi này vào bài vì 以期 ngoài phạm vi; thay bằng lỗi thực tế của người học Việt với 以便/以免."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

@@ -25,50 +25,117 @@
     "native_title_pinyin": ["dòng", "tài", "zhù", "cí", "", "guò", ""]
   },
   "when_to_use": [
-    {"vi": "Khi muốn kể một trải nghiệm đã từng xảy ra, không quan tâm thời điểm cụ thể."},
-    {"vi": "Khi trả lời câu hỏi dạng 你...过...吗？ để xác nhận có hay chưa từng làm gì."},
-    {"vi": "Khi phủ định trải nghiệm bằng 没(有) + động từ + 过, không dùng 不."},
-    {"vi": "Khi muốn nhấn mạnh số lần đã trải qua, đặt cụm số lần sau 过."}
+    {
+      "vi": "Khi muốn kể một trải nghiệm đã từng xảy ra, không quan tâm thời điểm cụ thể.",
+      "en": "When you want to talk about an experience that happened before, without caring about the specific time."
+    },
+    {
+      "vi": "Khi trả lời câu hỏi dạng 你...过...吗？ để xác nhận có hay chưa từng làm gì.",
+      "en": "When answering questions like 你...过...吗？ to say whether you have ever done something."
+    },
+    {
+      "vi": "Khi phủ định trải nghiệm bằng 没(有) + động từ + 过, không dùng 不.",
+      "en": "When negating an experience with 没(有) + verb + 过, not 不."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh số lần đã trải qua, đặt cụm số lần sau 过.",
+      "en": "When emphasizing how many times the experience occurred, place the frequency phrase after 过."
+    }
   ],
   "pattern": {
     "formula": [
-      {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
-      {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
-      {"text": "过", "role": "particle", "label": {"vi": "trợ từ trải nghiệm"}, "pinyin": ["guo"]},
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "过",
+        "role": "particle",
+        "label": {"vi": "trợ từ trải nghiệm", "en": "experiential particle"},
+        "pinyin": ["guo"]
+      },
       {
         "text": "宾语",
         "role": "object",
-        "label": {"vi": "tân ngữ"},
+        "label": {"vi": "tân ngữ", "en": "object"},
         "optional": true,
         "pinyin": ["bīn", "yǔ"]
       }
     ],
     "variants": {
       "negative": [
-        {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
-        {"text": "没", "role": "aux", "label": {"vi": "phủ định"}, "pinyin": ["méi"]},
-        {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
-        {"text": "过", "role": "particle", "label": {"vi": "trợ từ trải nghiệm"}, "pinyin": ["guo"]},
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "没",
+          "role": "aux",
+          "label": {"vi": "phủ định", "en": "negation"},
+          "pinyin": ["méi"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "过",
+          "role": "particle",
+          "label": {"vi": "trợ từ trải nghiệm", "en": "experiential particle"},
+          "pinyin": ["guo"]
+        },
         {
           "text": "宾语",
           "role": "object",
-          "label": {"vi": "tân ngữ"},
+          "label": {"vi": "tân ngữ", "en": "object"},
           "optional": true,
           "pinyin": ["bīn", "yǔ"]
         }
       ],
       "question": [
-        {"text": "主语", "role": "subject", "label": {"vi": "chủ ngữ"}, "pinyin": ["zhǔ", "yǔ"]},
-        {"text": "动词", "role": "verb", "label": {"vi": "động từ"}, "pinyin": ["dòng", "cí"]},
-        {"text": "过", "role": "particle", "label": {"vi": "trợ từ trải nghiệm"}, "pinyin": ["guo"]},
+        {
+          "text": "主语",
+          "role": "subject",
+          "label": {"vi": "chủ ngữ", "en": "subject"},
+          "pinyin": ["zhǔ", "yǔ"]
+        },
+        {
+          "text": "动词",
+          "role": "verb",
+          "label": {"vi": "động từ", "en": "verb"},
+          "pinyin": ["dòng", "cí"]
+        },
+        {
+          "text": "过",
+          "role": "particle",
+          "label": {"vi": "trợ từ trải nghiệm", "en": "experiential particle"},
+          "pinyin": ["guo"]
+        },
         {
           "text": "宾语",
           "role": "object",
-          "label": {"vi": "tân ngữ"},
+          "label": {"vi": "tân ngữ", "en": "object"},
           "optional": true,
           "pinyin": ["bīn", "yǔ"]
         },
-        {"text": "吗", "role": "particle", "label": {"vi": "trợ từ nghi vấn"}, "pinyin": ["ma"]}
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
       ]
     },
     "illustration": {"kind": "timeline", "timeline": {"shape": "unspecified_past"}}
@@ -83,8 +150,11 @@
         {"start": 2, "end": 3, "role": "particle"},
         {"start": 3, "end": 7, "role": "object"}
       ],
-      "annotation": {"vi": "Kể lại một trải nghiệm đã từng có, không nêu thời điểm cụ thể."},
-      "translation": {"vi": "Tôi đã từng ăn vịt quay Bắc Kinh."},
+      "annotation": {
+        "vi": "Kể lại một trải nghiệm đã từng có, không nêu thời điểm cụ thể.",
+        "en": "Describes an experience that happened before without specifying when."
+      },
+      "translation": {"vi": "Tôi đã từng ăn vịt quay Bắc Kinh.", "en": "I have eaten Beijing roast duck before."},
       "pinyin": ["wǒ", "chī", "guo", "běi", "jīng", "kǎo", "yā", ""]
     },
     {
@@ -97,8 +167,14 @@
         {"start": 3, "end": 4, "role": "particle"},
         {"start": 4, "end": 6, "role": "object"}
       ],
-      "annotation": {"vi": "Phủ định trải nghiệm bằng 没, không dùng 不."},
-      "translation": {"vi": "Anh ấy chưa từng đi Vạn Lý Trường Thành."},
+      "annotation": {
+        "vi": "Phủ định trải nghiệm bằng 没, không dùng 不.",
+        "en": "Negate an experience with 没, not 不."
+      },
+      "translation": {
+        "vi": "Anh ấy chưa từng đi Vạn Lý Trường Thành.",
+        "en": "He has never been to the Great Wall."
+      },
       "pinyin": ["tā", "méi", "qù", "guo", "cháng", "chéng", ""]
     },
     {
@@ -111,18 +187,25 @@
         {"start": 3, "end": 5, "role": "object"},
         {"start": 5, "end": 6, "role": "particle"}
       ],
-      "annotation": {"vi": "Hỏi xem đối phương đã từng học chưa, dùng 过...吗."},
-      "translation": {"vi": "Bạn đã từng học tiếng Trung chưa?"},
+      "annotation": {
+        "vi": "Hỏi xem đối phương đã từng học chưa, dùng 过...吗.",
+        "en": "Asks whether the other person has ever studied it, using 过...吗."
+      },
+      "translation": {"vi": "Bạn đã từng học tiếng Trung chưa?", "en": "Have you ever studied Chinese?"},
       "pinyin": ["nǐ", "xué", "guo", "hàn", "yǔ", "ma", ""]
     }
   ],
   "compare": [
     {
       "with": "zh.le_completion",
-      "this_meaning": {"vi": "过 nhấn mạnh đã từng trải qua, không quan tâm thời điểm và kết quả hiện tại."},
+      "this_meaning": {
+        "vi": "过 nhấn mạnh đã từng trải qua, không quan tâm thời điểm và kết quả hiện tại.",
+        "en": "过 emphasizes having had an experience, regardless of a specific time or present result."
+      },
       "this_example": "我看过那部电影。",
       "other_meaning": {
-        "vi": "了 nhấn mạnh hành động đã hoàn thành, thường gắn với một thời điểm hoặc kết quả cụ thể."
+        "vi": "了 nhấn mạnh hành động đã hoàn thành, thường gắn với một thời điểm hoặc kết quả cụ thể.",
+        "en": "了 emphasizes a completed action, often tied to a specific time or concrete result."
       },
       "other_example": "我看了那部电影。",
       "this_example_pinyin": ["wǒ", "kàn", "guo", "nà", "bù", "diàn", "yǐng", ""],
@@ -134,7 +217,8 @@
       "wrong": "我不去过北京。",
       "right": "我没去过北京。",
       "reason": {
-        "vi": "Người học Việt Nam thường dịch thẳng 'không' thành 不, nhưng phủ định trải nghiệm với 过 bắt buộc dùng 没(有), không dùng 不."
+        "vi": "Người học Việt Nam thường dịch thẳng 'không' thành 不, nhưng phủ định trải nghiệm với 过 bắt buộc dùng 没(有), không dùng 不.",
+        "en": "Vietnamese learners may translate ‘không’ directly as 不, but experiential 过 is negated with 没(有), not 不."
       },
       "error_tag": "aspect",
       "l1": ["vi"],
@@ -151,7 +235,10 @@
         {"text": "了", "error_tag": "aspect", "pinyin": ["le"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Câu khẳng định kể trải nghiệm dùng động từ + 过, nên chỗ trống là động từ 去."},
+      "explain": {
+        "vi": "Câu khẳng định kể trải nghiệm dùng động từ + 过, nên chỗ trống là động từ 去.",
+        "en": "An affirmative experience uses verb + 过, so the blank is the verb 去."
+      },
       "q_pinyin": ["wǒ", "", "", "", "guo", "rì", "běn", ""]
     },
     {
@@ -162,7 +249,10 @@
         {"text": "了", "error_tag": "aspect", "pinyin": ["le"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Phủ định trải nghiệm với 过 dùng 没, không dùng 不 hay 了."},
+      "explain": {
+        "vi": "Phủ định trải nghiệm với 过 dùng 没, không dùng 不 hay 了.",
+        "en": "Negate experience with 过 using 没, not 不 or 了."
+      },
       "q_pinyin": ["tā", "", "", "", "chī", "guo", "yuè", "nán", "cài", ""]
     },
     {
@@ -173,11 +263,14 @@
         {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]}
       ],
       "answer": 0,
-      "explain": {"vi": "Câu hỏi về trải nghiệm dùng 过 sau động từ, không dùng 了 hay 不."},
+      "explain": {
+        "vi": "Câu hỏi về trải nghiệm dùng 过 sau động từ, không dùng 了 hay 不.",
+        "en": "Questions about experience use 过 after the verb, not 了 or 不."
+      },
       "q_pinyin": ["nǐ", "xué", "", "", "", "hàn", "yǔ", "ma", ""]
     }
   ],
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -186,7 +279,12 @@
     "generated_at": "2026-09-28T10:06:22Z",
     "metadata_stale": true
   },
-  "review": null,
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  },
   "sequence": 1,
   "personal_production": {
     "prompt": {

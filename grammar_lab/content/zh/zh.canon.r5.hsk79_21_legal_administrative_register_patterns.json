@@ -1,0 +1,401 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_21_legal_administrative_register_patterns",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.register_style",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_20_reporting_and_attribution"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-21-legal-administrative-register-patterns"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk79-21-legal-administrative-register-patterns"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Legal/administrative register patterns",
+      "en": "Chinese grammar: Legal/administrative register patterns"
+    },
+    "native_title": "法律与行政语体结构",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Các mẫu ngữ pháp hành chính – pháp lý dùng để đặt phạm vi áp dụng, nghĩa vụ, cấm đoán, điều kiện hợp lệ và trình tự thủ tục bằng những cấu trúc trang trọng, chặt chẽ.",
+      "en": "Legal and administrative register patterns set scope, obligation, prohibition, eligibility and procedure with formal, tightly bounded structures."
+    },
+    "sub": {"vi": "văn bản hành chính", "en": "formal register"},
+    "native_title_pinyin": ["fǎ", "lǜ", "yǔ", "xíng", "zhèng", "yǔ", "tǐ", "jié", "gòu"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi viết quy định, thông báo, hợp đồng hoặc văn bản hướng dẫn cần nêu rõ ai phải làm gì và trong điều kiện nào.",
+      "en": "When writing rules, notices, contracts or instructions that must state exactly who must do what and under which conditions."
+    },
+    {
+      "vi": "Khi cần đặt phạm vi cho mọi đối tượng liên quan, thường dùng 凡…均… để tránh hiểu lệch.",
+      "en": "When you need to set scope over every relevant party, often with 凡…均… so the coverage cannot be misread."
+    },
+    {
+      "vi": "Khi muốn diễn đạt điều kiện tiên quyết trước khi một hành động được phép, dùng 经…后 + 方可.",
+      "en": "When you want to express a prerequisite before an action is permitted, use 经…后 + 方可."
+    },
+    {
+      "vi": "Khi cần cấm đoán dứt khoát trong văn bản, dùng 不得 hoặc 严禁 thay cho cách nói khẩu ngữ.",
+      "en": "When you need a firm prohibition in a document, use 不得 or 严禁 instead of conversational wording."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "凡",
+        "role": "marker",
+        "label": {"vi": "phàm/tất cả", "en": "all those who"},
+        "optional": true,
+        "pinyin": ["fán"]
+      },
+      {
+        "text": "对象",
+        "role": "subject",
+        "label": {"vi": "đối tượng", "en": "subject"},
+        "pinyin": ["duì", "xiàng"]
+      },
+      {
+        "text": "均",
+        "role": "marker",
+        "label": {"vi": "đều", "en": "all"},
+        "optional": true,
+        "pinyin": ["jūn"]
+      },
+      {
+        "text": "条件",
+        "role": "other",
+        "label": {"vi": "điều kiện", "en": "condition"},
+        "optional": true,
+        "pinyin": ["tiáo", "jiàn"]
+      },
+      {
+        "text": "须/应/务必/方可",
+        "role": "aux",
+        "label": {"vi": "nghĩa vụ/điều kiện cho phép", "en": "obligation/permission"},
+        "options": [
+          {"text": "须", "pinyin": ["xū"]},
+          {"text": "应", "pinyin": ["yīng"]},
+          {"text": "务必", "pinyin": ["wù", "bì"]},
+          {"text": "方可", "pinyin": ["fāng", "kě"]}
+        ],
+        "pinyin": ["xū", "", "yīng", "", "wù", "bì", "", "fāng", "kě"]
+      },
+      {
+        "text": "动作",
+        "role": "verb",
+        "label": {"vi": "hành động", "en": "action"},
+        "pinyin": ["dòng", "zuò"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "未经",
+          "role": "marker",
+          "label": {"vi": "chưa qua / không có", "en": "without"},
+          "pinyin": ["wèi", "jīng"]
+        },
+        {
+          "text": "điều kiện",
+          "role": "other",
+          "label": {"vi": "điều kiện bắt buộc", "en": "required condition"},
+          "pinyin": ["", "", "", "", "", "", "", "", ""]
+        },
+        {
+          "text": "不得/严禁",
+          "role": "aux",
+          "label": {"vi": "không được / nghiêm cấm", "en": "must not / strictly prohibited"},
+          "options": [{"text": "不得", "pinyin": ["bù", "dé"]}, {"text": "严禁", "pinyin": ["yán", "jìn"]}],
+          "pinyin": ["bù", "dé", "", "yán", "jìn"]
+        },
+        {
+          "text": "động từ",
+          "role": "verb",
+          "label": {"vi": "hành động bị cấm", "en": "prohibited action"},
+          "pinyin": ["", "", "", "", "", "", ""]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "凡参加培训者均须提前登记。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 6, "role": "subject"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 8, "role": "aux"},
+        {"start": 8, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "凡…均… đặt phạm vi cho mọi người tham gia, 须 nêu nghĩa vụ bắt buộc.",
+        "en": "凡…均… sets scope over every participant, and 须 states the obligation."
+      },
+      "translation": {
+        "vi": "Mọi người tham gia đào tạo đều phải đăng ký trước.",
+        "en": "All training participants must register in advance."
+      },
+      "pinyin": ["fán", "cān", "jiā", "péi", "xùn", "zhě", "jūn", "xū", "tí", "qián", "dēng", "jì", ""]
+    },
+    {
+      "text": "未经书面许可，不得复制本文件。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "aux"},
+        {"start": 9, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "未经…不得… là cấu trúc cấm đoán có điều kiện: chỉ được làm khi đã có phép.",
+        "en": "未经…不得… is a conditional prohibition: the action is allowed only with prior permission."
+      },
+      "translation": {
+        "vi": "Không được sao chép tài liệu này nếu chưa có sự cho phép bằng văn bản.",
+        "en": "This document may not be copied without written permission."
+      },
+      "pinyin": [
+        "wèi",
+        "jīng",
+        "shū",
+        "miàn",
+        "xǔ",
+        "kě",
+        "",
+        "bù",
+        "dé",
+        "fù",
+        "zhì",
+        "běn",
+        "wén",
+        "jiàn",
+        ""
+      ]
+    },
+    {
+      "text": "申请材料经审核通过后方可进入下一阶段。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 10, "role": "other"},
+        {"start": 10, "end": 12, "role": "aux"},
+        {"start": 12, "end": 18, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "经…后 + 方可 diễn tả điều kiện tiên quyết: chỉ sau khi hồ sơ được duyệt mới được chuyển bước.",
+        "en": "经…后 + 方可 marks a prerequisite: only after the materials are approved may the next stage begin."
+      },
+      "translation": {
+        "vi": "Chỉ sau khi hồ sơ được duyệt mới được chuyển sang giai đoạn tiếp theo.",
+        "en": "Only after the application materials are approved may one proceed to the next stage."
+      },
+      "pinyin": [
+        "shēn",
+        "qǐng",
+        "cái",
+        "liào",
+        "jīng",
+        "shěn",
+        "hé",
+        "tōng",
+        "guò",
+        "hòu",
+        "fāng",
+        "kě",
+        "jìn",
+        "rù",
+        "xià",
+        "yī",
+        "jiē",
+        "duàn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu gốc dùng cách nói khẩu ngữ 你最好别…, không phù hợp ngữ vực hành chính – pháp lý và thiếu điều kiện phạm vi rõ ràng.",
+        "en": "The original uses conversational 你最好别…, which does not fit the legal-administrative register and lacks an explicit scope condition."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "你最好别进去。",
+      "right": "未经许可，不得进入。",
+      "wrong_pinyin": ["nǐ", "zuì", "hǎo", "bié", "jìn", "qù", ""],
+      "right_pinyin": ["wèi", "jīng", "xǔ", "kě", "", "bù", "dé", "jìn", "rù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "凡申请者___提交身份证明。",
+      "options": [
+        {"text": "均须", "error_tag": null, "pinyin": ["jūn", "xū"]},
+        {"text": "均不要", "error_tag": "register", "pinyin": ["jūn", "bú", "yào"]},
+        {"text": "均须不", "error_tag": "word_order", "pinyin": ["jūn", "xū", "bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "凡…均须… là cấu trúc chuẩn để nêu nghĩa vụ cho mọi đối tượng trong phạm vi.",
+        "en": "凡…均须… is the standard pattern for stating an obligation over every covered party."
+      },
+      "q_pinyin": ["fán", "shēn", "qǐng", "zhě", "", "", "", "tí", "jiāo", "shēn", "fèn", "zhèng", "míng", ""]
+    },
+    {
+      "q": "未经批准，___擅自修改合同内容。",
+      "options": [
+        {"text": "不得", "error_tag": null, "pinyin": ["bù", "dé"]},
+        {"text": "不要", "error_tag": "register", "pinyin": ["bú", "yào"]},
+        {
+          "text": "不得擅自修改合同内容",
+          "error_tag": "redundancy",
+          "pinyin": ["bù", "dé", "shàn", "zì", "xiū", "gǎi", "hé", "tóng", "nèi", "róng"]
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "未经…不得… là cặp cấu trúc cấm đoán có điều kiện; 不要 quá khẩu ngữ, còn lặp lại cả vế sau là dư thừa.",
+        "en": "未经…不得… is the conditional prohibition pair; 不要 is too conversational, and repeating the whole predicate is redundant."
+      },
+      "q_pinyin": [
+        "wèi",
+        "jīng",
+        "pī",
+        "zhǔn",
+        "",
+        "",
+        "",
+        "",
+        "shàn",
+        "zì",
+        "xiū",
+        "gǎi",
+        "hé",
+        "tóng",
+        "nèi",
+        "róng",
+        ""
+      ]
+    },
+    {
+      "q": "申请材料经审核通过___进入下一阶段。",
+      "options": [
+        {"text": "后方可", "error_tag": null, "pinyin": ["hòu", "fāng", "kě"]},
+        {"text": "以后可以", "error_tag": "register", "pinyin": ["yǐ", "hòu", "kě", "yǐ"]},
+        {"text": "后可以才", "error_tag": "word_order", "pinyin": ["hòu", "kě", "yǐ", "cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "经…后 + 方可 là cấu trúc chuẩn cho điều kiện tiên quyết trong văn bản hành chính.",
+        "en": "经…后 + 方可 is the standard prerequisite pattern in administrative writing."
+      },
+      "q_pinyin": [
+        "shēn",
+        "qǐng",
+        "cái",
+        "liào",
+        "jīng",
+        "shěn",
+        "hé",
+        "tōng",
+        "guò",
+        "",
+        "",
+        "",
+        "jìn",
+        "rù",
+        "xià",
+        "yī",
+        "jiē",
+        "duàn",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một quy định ngắn bằng tiếng Trung theo mẫu 凡…均须…, nêu rõ đối tượng áp dụng và nghĩa vụ của họ.",
+      "en": "Write a short rule in Chinese using 凡…均须…, stating clearly who is covered and what they must do."
+    },
+    "placeholder": "凡……均须……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["凡"], "role": "marker"},
+        {"any_of": ["均"], "role": "marker"},
+        {"any_of": ["须", "方可"], "role": "aux"}
+      ]
+    },
+    "sample": {
+      "text": "凡参加考试者均须携带身份证。",
+      "pinyin": [
+        "fán",
+        "cān",
+        "jiā",
+        "kǎo",
+        "shì",
+        "zhě",
+        "jūn",
+        "xū",
+        "xié",
+        "dài",
+        "shēn",
+        "fèn",
+        "zhèng",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["fán", "", "", "jūn", "xū", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351897",
+    "generated_at": "2026-10-07T05:44:57Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-21-legal-administrative-register-patterns"],
+      "content_version": 2,
+      "content_hash": "043aa645ee84514baf508ce31314ddbf9deb2c51b143d2c797e3f423ef27297d",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-21-legal-administrative-register-patterns",
+          "issue": "R5 gộp nhiều cấu trúc khác nhau (应/须/务必, 不得/严禁, 方可, 凡…均…, 经…后) vào một danh sách quy tắc mà không tách thành công thức riêng cho từng chức năng.",
+          "fix": "Tách thành hai công thức riêng: một công thức khẳng định cho phạm vi và nghĩa vụ (凡…均须/应/务必…), một công thức phủ định cho cấm đoán có điều kiện (未经…不得/严禁…); các mẫu 方可 và 经…后 được đưa vào ví dụ và phần when_to_use."
+        },
+        {
+          "r5_id": "zh-hsk79-21-legal-administrative-register-patterns",
+          "issue": "Ví dụ 申请材料经审核通过后方可进入下一阶段 trong R5 có thứ tự cấu trúc chưa được giải thích rõ: 方可 đứng sau 经…后, không phải trước.",
+          "fix": "Giữ nguyên câu đúng nhưng thêm binding và chú thích cho thấy 经审核通过后 đứng trước 方可, và đưa vào phần when_to_use như một mẫu điều kiện tiên quyết."
+        },
+        {
+          "r5_id": "zh-hsk79-21-legal-administrative-register-patterns",
+          "issue": "Lỗi 批准以后可能才可以 trong R5 không phải lỗi ngữ pháp điển hình của người học L1 tiếng Việt và không rõ cơ chế sai.",
+          "fix": "Thay bằng lỗi thực tế hơn: dùng cách nói khẩu ngữ 你最好别进去 thay vì cấu trúc cấm đoán hành chính 未经许可，不得进入, kèm giải thích về ngữ vực và điều kiện phạm vi."
+        },
+        {
+          "r5_id": "zh-hsk79-21-legal-administrative-register-patterns",
+          "issue": "R5 không có bài kiểm tra nhanh (quick practice) và không có phần sản xuất cá nhân (personal production).",
+          "fix": "Thêm 3 câu quick_practice dạng cloze với các lựa chọn sai là lỗi ngữ vực/thứ tự từ thực tế, và thêm personal_production với mẫu 凡…均须…."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:49Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

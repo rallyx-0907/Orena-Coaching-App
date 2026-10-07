@@ -1,0 +1,242 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.yue_yue",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.yuelaiyue"],
+  "contrasts": ["zh.yuelaiyue"],
+  "error_tags": ["word_order"],
+  "source_refs": {"r5": ["zh-hsk2-7-topic", "zh-hsk4-9-topic-111"], "gf0025": ["gf0025.hsk3.042"]},
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": ["zh-hsk2-7-topic", "zh-hsk4-9-topic-111"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "越 ... 越 ... (càng ... càng ...)", "en": "越 ... 越 ...: the more ... the more ..."},
+    "native_title": "“越……越……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Cấu trúc 越……越…… dùng để nói hai mức độ thay đổi cùng nhau: càng A thì càng B.",
+      "en": "The 越……越…… pattern links two changes: the more A, the more B."
+    },
+    "sub": {"vi": "càng… càng…", "en": "the more… the more…"},
+    "native_title_pinyin": ["", "yuè", "", "", "yuè", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi hai sự việc tăng hoặc giảm cùng lúc và có quan hệ nhân quả.",
+      "en": "When two things increase or decrease together and are causally linked."
+    },
+    {
+      "vi": "Khi muốn nói một hành động lặp lại càng lúc càng mang lại kết quả mới.",
+      "en": "When a repeated action produces a stronger result over time."
+    },
+    {
+      "vi": "Khi vế thứ hai là một tính từ hoặc trạng thái thay đổi theo vế thứ nhất.",
+      "en": "When the second clause is an adjective or state that changes with the first."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "越",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu càng", "en": "the more marker"},
+        "pinyin": ["yuè"]
+      },
+      {
+        "text": "V/Adj",
+        "role": "verb",
+        "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
+        "pinyin": ["", "", "", "", ""]
+      },
+      {
+        "text": "越",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu càng", "en": "the more marker"},
+        "pinyin": ["yuè"]
+      },
+      {
+        "text": "V/Adj",
+        "role": "verb",
+        "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
+        "pinyin": ["", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "中文越学越有意思。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Học càng nhiều thì càng thấy thú vị.",
+        "en": "The more you study, the more interesting it becomes."
+      },
+      "translation": {
+        "vi": "Tiếng Trung càng học càng thú vị.",
+        "en": "The more you study Chinese, the more interesting it gets."
+      },
+      "pinyin": ["zhōng", "wén", "yuè", "xué", "yuè", "yǒu", "yì", "si", ""]
+    },
+    {
+      "text": "他越说越快。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "verb"}
+      ],
+      "annotation": {"vi": "Nói càng lúc càng nhanh.", "en": "He speaks faster and faster."},
+      "translation": {"vi": "Anh ấy càng nói càng nhanh.", "en": "The more he talks, the faster he speaks."},
+      "pinyin": ["tā", "yuè", "shuō", "yuè", "kuài", ""]
+    },
+    {
+      "text": "天气越冷，我越想喝热茶。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Trời càng lạnh thì mong muốn càng tăng.",
+        "en": "The colder it is, the more I want hot tea."
+      },
+      "translation": {
+        "vi": "Trời càng lạnh tôi càng muốn uống trà nóng.",
+        "en": "The colder the weather, the more I want to drink hot tea."
+      },
+      "pinyin": ["tiān", "qì", "yuè", "lěng", "", "wǒ", "yuè", "xiǎng", "hē", "rè", "chá", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.yuelaiyue",
+      "this_example": "中文越学越有意思。",
+      "other_example": "天气越来越冷。",
+      "this_meaning": {
+        "vi": "越……越…… nối hai mức độ thay đổi có quan hệ với nhau.",
+        "en": "越……越…… links two changes that depend on each other."
+      },
+      "other_meaning": {
+        "vi": "越来越 chỉ một quá trình tăng dần theo thời gian, không có hai biến số.",
+        "en": "越来越 describes one gradual change over time, not two linked variables."
+      },
+      "this_example_pinyin": ["zhōng", "wén", "yuè", "xué", "yuè", "yǒu", "yì", "si", ""],
+      "other_example_pinyin": ["tiān", "qì", "yuè", "lái", "yuè", "lěng", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Vế thứ hai cũng cần 越 trước tính từ hoặc động từ.",
+        "en": "The second clause also needs 越 before the adjective or verb."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "我越学很喜欢。",
+      "right": "我越学越喜欢。",
+      "wrong_pinyin": ["wǒ", "yuè", "xué", "hěn", "xǐ", "huān", ""],
+      "right_pinyin": ["wǒ", "yuè", "xué", "yuè", "xǐ", "huān", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他越跑___快。",
+      "options": [
+        {"text": "越", "error_tag": null, "pinyin": ["yuè"]},
+        {"text": "很", "error_tag": "word_order", "pinyin": ["hěn"]},
+        {"text": "太", "error_tag": "word_order", "pinyin": ["tài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc 越……越…… cần 越 ở cả hai vế.",
+        "en": "The 越……越…… pattern needs 越 in both clauses."
+      },
+      "q_pinyin": ["tā", "yuè", "pǎo", "", "", "", "kuài", ""]
+    },
+    {
+      "q": "天气越冷，我___想喝热茶。",
+      "options": [
+        {"text": "越", "error_tag": null, "pinyin": ["yuè"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế kết quả phải có 越 để tạo tương quan.",
+        "en": "The result clause must contain 越 to form the correlation."
+      },
+      "q_pinyin": ["tiān", "qì", "yuè", "lěng", "", "wǒ", "", "", "", "xiǎng", "hē", "rè", "chá", ""]
+    },
+    {
+      "q": "这本书我越看___喜欢。",
+      "options": [
+        {"text": "越", "error_tag": null, "pinyin": ["yuè"]},
+        {"text": "很", "error_tag": "word_order", "pinyin": ["hěn"]},
+        {"text": "太", "error_tag": "word_order", "pinyin": ["tài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Không dùng 很 hoặc 太 trong mẫu 越……越…….",
+        "en": "Do not use 很 or 太 inside the 越……越…… pattern."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "wǒ", "yuè", "kàn", "", "", "", "xǐ", "huān", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 越……越……, ví dụ về việc học hoặc sở thích.",
+      "en": "Write one sentence about yourself using 越……越……, for example about studying or a hobby."
+    },
+    "placeholder": "我越……越……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["越"], "role": "marker"}, {"any_of": ["越"], "role": "marker"}]
+    },
+    "sample": {"text": "我越学中文越喜欢。", "pinyin": ["wǒ", "yuè", "xué", "zhōng", "wén", "yuè", "xǐ", "huān", ""]},
+    "placeholder_pinyin": ["wǒ", "yuè", "", "", "yuè", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338119",
+    "generated_at": "2026-10-07T01:55:19Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-7-topic", "zh-hsk4-9-topic-111"],
+      "content_version": 2,
+      "content_hash": "10105bb00a97ec90c8b6864d02e6b2e34194481deb9c2eca4eb3f229473ed476",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-7-topic",
+          "issue": "Câu sai '天气越来越冷，我越穿衣服。' không phải lỗi thực tế của mẫu 越……越…… và câu sửa '天气越冷，我穿得越多。' dùng bổ ngữ 得 ngoài phạm vi bài.",
+          "fix": "Thay bằng lỗi thực tế '我越学很喜欢。' và câu đúng '我越学越喜欢。'."
+        },
+        {
+          "r5_id": "zh-hsk4-9-topic-111",
+          "issue": "Bài HSK4 dạy 越是...越... vượt phạm vi HSK2 của điểm này.",
+          "fix": "Chỉ giữ mẫu 越……越…… cơ bản, không đưa 越是 vào công thức hay ví dụ."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

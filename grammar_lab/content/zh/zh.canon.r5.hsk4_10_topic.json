@@ -1,0 +1,373 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_10_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.ongoing_now",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk2.a_2_6.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk4-10-topic"], "gf0025": ["gf0025.hsk5.009"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk4-10-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 随着", "en": "Chinese grammar: 随着"},
+    "native_title": "随着",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "随着 giới thiệu một quá trình hoặc bối cảnh thay đổi dần, và mệnh đề chính nêu thay đổi đi kèm.",
+      "en": "随着 introduces a gradually changing process or background, and the main clause states the accompanying change."
+    },
+    "sub": {"vi": "biến đổi song song", "en": "parallel change"},
+    "native_title_pinyin": ["suí", "zhe"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một việc thay đổi cùng lúc với một quá trình khác đang tiến triển.",
+      "en": "When you want to say one thing changes together with another ongoing process."
+    },
+    {
+      "vi": "Khi chủ ngữ của 随着 là một danh từ hoặc cụm động từ chỉ sự thay đổi, không phải một người.",
+      "en": "When the element after 随着 is a noun or verb phrase naming a change, not a person."
+    },
+    {
+      "vi": "Khi mệnh đề chính thường có 越来越, 逐渐, 不断 hoặc 也 để nhấn sự thay đổi đi kèm.",
+      "en": "When the main clause often contains 越来越, 逐渐, 不断 or 也 to highlight the accompanying change."
+    },
+    {
+      "vi": "Khi muốn phân biệt với 因为, vốn chỉ nêu nguyên nhân trực tiếp, không nhấn quá trình song song.",
+      "en": "When you need to distinguish it from 因为, which states a direct cause rather than a parallel process."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "随着",
+        "role": "connector",
+        "label": {
+          "vi": "giới từ dẫn bối cảnh thay đổi",
+          "en": "preposition introducing a changing background"
+        },
+        "pinyin": ["suí", "zhe"]
+      },
+      {
+        "text": "N/VP",
+        "role": "other",
+        "label": {
+          "vi": "danh từ hoặc cụm động từ chỉ quá trình",
+          "en": "noun or verb phrase naming a process"
+        },
+        "pinyin": ["", "", "", ""]
+      },
+      {
+        "text": "，",
+        "role": "other",
+        "label": {"vi": "dấu phẩy ngăn cách", "en": "comma separator"},
+        "pinyin": [""]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề chính", "en": "main-clause subject"},
+        "pinyin": [""]
+      },
+      {
+        "text": "越来越/逐渐/不断",
+        "role": "other",
+        "label": {"vi": "trạng từ chỉ mức độ thay đổi", "en": "adverb of gradual change"},
+        "optional": true,
+        "options": [
+          {"text": "越来越", "pinyin": ["yuè", "lái", "yuè"]},
+          {"text": "逐渐", "pinyin": ["zhú", "jiàn"]},
+          {"text": "不断", "pinyin": ["bù", "duàn"]}
+        ],
+        "pinyin": ["yuè", "lái", "yuè", "", "zhú", "jiàn", "", "bù", "duàn"]
+      },
+      {
+        "text": "V/Adj",
+        "role": "verb",
+        "label": {"vi": "động từ hoặc tính từ nêu thay đổi", "en": "verb or adjective stating the change"},
+        "pinyin": ["", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "随着时间的变化，人们的想法也变了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "other"},
+        {"start": 8, "end": 13, "role": "subject"},
+        {"start": 14, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "随着 dẫn quá trình thay đổi; mệnh đề chính nêu kết quả đi kèm.",
+        "en": "随着 introduces the changing process; the main clause states the accompanying result."
+      },
+      "translation": {
+        "vi": "Theo thời gian, suy nghĩ của mọi người cũng thay đổi.",
+        "en": "As time changes, people's thinking changes too."
+      },
+      "pinyin": [
+        "suí",
+        "zhe",
+        "shí",
+        "jiān",
+        "de",
+        "biàn",
+        "huà",
+        "",
+        "rén",
+        "men",
+        "de",
+        "xiǎng",
+        "fǎ",
+        "yě",
+        "biàn",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "随着科技发展，生活越来越方便。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 12, "role": "other"},
+        {"start": 12, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "随着 + quá trình phát triển; 越来越 nhấn mức độ thay đổi tăng dần.",
+        "en": "随着 + a development process; 越来越 highlights the increasing degree of change."
+      },
+      "translation": {
+        "vi": "Cùng với sự phát triển của công nghệ, cuộc sống ngày càng tiện lợi.",
+        "en": "With the development of technology, life becomes more and more convenient."
+      },
+      "pinyin": [
+        "suí",
+        "zhe",
+        "kē",
+        "jì",
+        "fā",
+        "zhǎn",
+        "",
+        "shēng",
+        "huó",
+        "yuè",
+        "lái",
+        "yuè",
+        "fāng",
+        "biàn",
+        ""
+      ]
+    },
+    {
+      "text": "随着年龄增长，他更重视健康。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 13, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "随着 dẫn quá trình tăng tuổi; mệnh đề chính nêu thay đổi thái độ.",
+        "en": "随着 introduces the aging process; the main clause states a change in attitude."
+      },
+      "translation": {
+        "vi": "Khi tuổi tăng lên, anh ấy coi trọng sức khỏe hơn.",
+        "en": "As he grows older, he pays more attention to his health."
+      },
+      "pinyin": [
+        "suí",
+        "zhe",
+        "nián",
+        "líng",
+        "zēng",
+        "zhǎng",
+        "",
+        "tā",
+        "gèng",
+        "zhòng",
+        "shì",
+        "jiàn",
+        "kāng",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "随着 không dùng cho quan hệ đồng hành với người; nó cần một quá trình hoặc bối cảnh thay đổi. Quan hệ đi cùng phải dùng 跟.",
+        "en": "随着 is not used for accompaniment with a person; it needs a changing process or background. Accompaniment requires 跟."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "随着朋友，我去商店。",
+      "right": "我跟朋友去商店。",
+      "wrong_pinyin": ["suí", "zhe", "péng", "yǒu", "", "wǒ", "qù", "shāng", "diàn", ""],
+      "right_pinyin": ["wǒ", "gēn", "péng", "yǒu", "qù", "shāng", "diàn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___时间的变化，人们的想法也变了。",
+      "options": [
+        {"text": "随着", "error_tag": null, "pinyin": ["suí", "zhe"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "随着 dẫn quá trình thay đổi song song; 因为 chỉ nêu nguyên nhân trực tiếp, không hợp ở đây.",
+        "en": "随着 introduces a parallel changing process; 因为 states a direct cause and does not fit here."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "shí",
+        "jiān",
+        "de",
+        "biàn",
+        "huà",
+        "",
+        "rén",
+        "men",
+        "de",
+        "xiǎng",
+        "fǎ",
+        "yě",
+        "biàn",
+        "le",
+        ""
+      ]
+    },
+    {
+      "q": "随着科技发展，生活___方便。",
+      "options": [
+        {"text": "越来越", "error_tag": null, "pinyin": ["yuè", "lái", "yuè"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "越来越 diễn tả mức độ thay đổi tăng dần đi kèm với 随着; 因为 không đứng trước tính từ theo cách này.",
+        "en": "越来越 expresses the increasing degree of change that accompanies 随着; 因为 cannot precede an adjective this way."
+      },
+      "q_pinyin": ["suí", "zhe", "kē", "jì", "fā", "zhǎn", "", "shēng", "huó", "", "", "", "fāng", "biàn", ""]
+    },
+    {
+      "q": "随着年龄增长，他___重视健康。",
+      "options": [
+        {"text": "更", "error_tag": null, "pinyin": ["gèng"]},
+        {"text": "跟", "error_tag": "particle", "pinyin": ["gēn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "更 đánh dấu mức độ thay đổi trong mệnh đề chính; 跟 là giới từ đồng hành, không dùng ở đây.",
+        "en": "更 marks the degree of change in the main clause; 跟 is an accompaniment preposition and does not fit here."
+      },
+      "q_pinyin": [
+        "suí",
+        "zhe",
+        "nián",
+        "líng",
+        "zēng",
+        "zhǎng",
+        "",
+        "tā",
+        "",
+        "",
+        "",
+        "zhòng",
+        "shì",
+        "jiàn",
+        "kāng",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 随着 + một quá trình thay đổi, rồi nêu thay đổi đi kèm.",
+      "en": "Write a sentence about yourself using 随着 + a changing process, then state the accompanying change."
+    },
+    "placeholder": "随着……，我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["随着"], "role": "connector"}, {"regex": "我|我们|他|她|他们|她们", "role": "subject"}]
+    },
+    "sample": {
+      "text": "随着工作经验的增加，我越来越自信。",
+      "pinyin": [
+        "suí",
+        "zhe",
+        "gōng",
+        "zuò",
+        "jīng",
+        "yàn",
+        "de",
+        "zēng",
+        "jiā",
+        "",
+        "wǒ",
+        "yuè",
+        "lái",
+        "yuè",
+        "zì",
+        "xìn",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["suí", "zhe", "", "", "", "wǒ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338510",
+    "generated_at": "2026-10-07T02:01:50Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-10-topic"],
+      "content_version": 2,
+      "content_hash": "7925f6f62daf4cd427d4dc3ec621a8fdf2e664ff5ec254c2a9f35eda7b569f9f",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-10-topic",
+          "issue": "R5 example 随着经验增加，她工作得更快了。 uses 得 as a degree complement, which is not the point's pattern and adds an unrelated structure.",
+          "fix": "Replaced with 随着年龄增长，他更重视健康。 to keep the focus on 随着 + changing process + main-clause change."
+        },
+        {
+          "r5_id": "zh-hsk4-10-topic",
+          "issue": "R5 mistake 随着下雨，所以比赛取消。 mixes 随着 with 所以, but the real learner error is using 随着 for a simple cause instead of an evolving background.",
+          "fix": "Kept the correction 随着雨越下越大，比赛不得不取消。 and added a clearer common mistake 随着朋友，我去商店。 to show the accompaniment misuse."
+        },
+        {
+          "r5_id": "zh-hsk4-10-topic",
+          "issue": "R5 did not provide a structured formula with slots, bindings, or a personal-production rule.",
+          "fix": "Added the formula 随着 + N/VP + ，+ S + (越来越/逐渐/不断) + V/Adj, example bindings, and a pattern rule for personal production."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

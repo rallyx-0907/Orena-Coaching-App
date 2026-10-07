@@ -1,0 +1,355 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_7_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_4.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk6-7-topic", "zh-hsk6-5-double-negation"], "gf0025": ["gf0025.hsk6.053"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk6-7-topic", "zh-hsk6-5-double-negation"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 不⋯⋯不⋯⋯", "en": "Chinese grammar: 不⋯⋯不⋯⋯"},
+    "native_title": "不⋯⋯不⋯⋯",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Cấu trúc 不⋯⋯不⋯⋯ dùng để diễn tả sự bắt buộc, phủ định kép hoặc ý nhấn mạnh rằng không thể không làm gì đó.",
+      "en": "The 不⋯⋯不⋯⋯ pattern expresses obligation, double negation, or emphasis that one cannot help but do something."
+    },
+    "sub": {"vi": "phủ định kép", "en": "double negation"},
+    "native_title_pinyin": ["bù", "", "", "bù", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói 'buộc phải' do hoàn cảnh ép buộc, dùng 不得不.",
+      "en": "When you mean 'have no choice but to' because circumstances force you, use 不得不."
+    },
+    {
+      "vi": "Khi muốn nói 'không thể không' do logic hoặc đạo đức, dùng 不能不.",
+      "en": "When you mean 'cannot not' due to logic or morality, use 不能不."
+    },
+    {
+      "vi": "Khi muốn thừa nhận một khả năng một cách nhẹ nhàng, dùng 未尝不.",
+      "en": "When you want to softly acknowledge a possibility, use 未尝不."
+    },
+    {
+      "vi": "Khi muốn nói 'tất cả đều' trong văn viết trang trọng, dùng 无不.",
+      "en": "When you want to say 'all without exception' in formal writing, use 无不."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "不",
+        "role": "marker",
+        "label": {"vi": "phủ định thứ nhất", "en": "first negative"},
+        "pinyin": ["bù"]
+      },
+      {
+        "text": "得/能/尝/无",
+        "role": "aux",
+        "label": {"vi": "trợ động từ / phó từ", "en": "auxiliary / adverb"},
+        "options": [
+          {"text": "得", "pinyin": ["dé"]},
+          {"text": "能", "pinyin": ["néng"]},
+          {"text": "尝", "pinyin": ["cháng"]},
+          {"text": "无", "pinyin": ["wú"]}
+        ],
+        "pinyin": ["dé", "", "néng", "", "cháng", "", "wú"]
+      },
+      {
+        "text": "不",
+        "role": "marker",
+        "label": {"vi": "phủ định thứ hai", "en": "second negative"},
+        "pinyin": ["bù"]
+      },
+      {
+        "text": "动词短语",
+        "role": "verb",
+        "label": {"vi": "cụm động từ", "en": "verb phrase"},
+        "pinyin": ["dòng", "cí", "duǎn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "时间太晚了，我们不得不结束会议。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 6, "end": 8, "role": "subject"},
+        {"start": 8, "end": 9, "role": "marker"},
+        {"start": 9, "end": 10, "role": "aux"},
+        {"start": 10, "end": 11, "role": "marker"},
+        {"start": 11, "end": 15, "role": "verb"}
+      ],
+      "annotation": {"vi": "hoàn cảnh ép buộc phải kết thúc", "en": "circumstances force ending"},
+      "translation": {
+        "vi": "Quá muộn, chúng tôi buộc phải kết thúc cuộc họp.",
+        "en": "It was too late, so we had no choice but to end the meeting."
+      },
+      "pinyin": [
+        "shí",
+        "jiān",
+        "tài",
+        "wǎn",
+        "le",
+        "",
+        "wǒ",
+        "men",
+        "bù",
+        "dé",
+        "bù",
+        "jié",
+        "shù",
+        "huì",
+        "yì",
+        ""
+      ]
+    },
+    {
+      "text": "面对这些数据，我们不能不重新考虑。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 10, "role": "marker"},
+        {"start": 10, "end": 11, "role": "aux"},
+        {"start": 11, "end": 12, "role": "marker"},
+        {"start": 12, "end": 16, "role": "verb"}
+      ],
+      "annotation": {"vi": "không thể không cân nhắc lại", "en": "cannot not reconsider"},
+      "translation": {
+        "vi": "Trước những dữ liệu này, chúng tôi không thể không cân nhắc lại.",
+        "en": "Faced with this data, we cannot but reconsider."
+      },
+      "pinyin": [
+        "miàn",
+        "duì",
+        "zhè",
+        "xiē",
+        "shù",
+        "jù",
+        "",
+        "wǒ",
+        "men",
+        "bù",
+        "néng",
+        "bù",
+        "chóng",
+        "xīn",
+        "kǎo",
+        "lǜ",
+        ""
+      ]
+    },
+    {
+      "text": "换一种方法未尝不是一个好办法。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 7, "role": "aux"},
+        {"start": 7, "end": 8, "role": "marker"},
+        {"start": 8, "end": 14, "role": "verb"}
+      ],
+      "annotation": {"vi": "thừa nhận nhẹ nhàng một khả năng", "en": "softly acknowledges a possibility"},
+      "translation": {
+        "vi": "Đổi cách khác chưa hẳn không phải là cách hay.",
+        "en": "Changing the approach may well be a good solution."
+      },
+      "pinyin": [
+        "huàn",
+        "yī",
+        "zhǒng",
+        "fāng",
+        "fǎ",
+        "wèi",
+        "cháng",
+        "bú",
+        "shì",
+        "yí",
+        "gè",
+        "hǎo",
+        "bàn",
+        "fǎ",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "无不 có nghĩa 'tất cả đều', không dùng cho sự bắt buộc cá nhân.",
+        "en": "无不 means 'all without exception', not personal necessity."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "我无不去公司。",
+      "right": "我不得不去公司。",
+      "wrong_pinyin": ["wǒ", "wú", "bù", "qù", "gōng", "sī", ""],
+      "right_pinyin": ["wǒ", "bù", "dé", "bù", "qù", "gōng", "sī", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "时间太晚了，我们___结束会议。",
+      "options": [
+        {"text": "不得不", "error_tag": null, "pinyin": ["bù", "dé", "bù"]},
+        {"text": "无不", "error_tag": "particle", "pinyin": ["wú", "bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不得不 diễn tả sự bắt buộc do hoàn cảnh.",
+        "en": "不得不 expresses circumstantial necessity."
+      },
+      "q_pinyin": [
+        "shí",
+        "jiān",
+        "tài",
+        "wǎn",
+        "le",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "jié",
+        "shù",
+        "huì",
+        "yì",
+        ""
+      ]
+    },
+    {
+      "q": "面对这些数据，我们___重新考虑。",
+      "options": [
+        {"text": "不能不", "error_tag": null, "pinyin": ["bù", "néng", "bù"]},
+        {"text": "不得不", "error_tag": "particle", "pinyin": ["bù", "dé", "bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不能不 diễn tả sự bắt buộc về logic/đạo đức.",
+        "en": "不能不 expresses logical or moral necessity."
+      },
+      "q_pinyin": [
+        "miàn",
+        "duì",
+        "zhè",
+        "xiē",
+        "shù",
+        "jù",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "chóng",
+        "xīn",
+        "kǎo",
+        "lǜ",
+        ""
+      ]
+    },
+    {
+      "q": "换一种方法___不是一个好办法。",
+      "options": [
+        {"text": "未尝", "error_tag": null, "pinyin": ["wèi", "cháng"]},
+        {"text": "无不", "error_tag": "particle", "pinyin": ["wú", "bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "未尝不 thừa nhận một khả năng một cách nhẹ nhàng.",
+        "en": "未尝不 softly acknowledges a possibility."
+      },
+      "q_pinyin": [
+        "huàn",
+        "yī",
+        "zhǒng",
+        "fāng",
+        "fǎ",
+        "",
+        "",
+        "",
+        "bú",
+        "shì",
+        "yí",
+        "gè",
+        "hǎo",
+        "bàn",
+        "fǎ",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 不得不 để nói về việc bạn buộc phải làm gì đó.",
+      "en": "Write a sentence using 不得不 to say what you had no choice but to do."
+    },
+    "placeholder": "我不得不……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["不"], "role": "marker"},
+        {"any_of": ["得"], "role": "aux"},
+        {"any_of": ["不"], "role": "marker"}
+      ]
+    },
+    "sample": {
+      "text": "我不得不加班完成工作。",
+      "pinyin": ["wǒ", "bù", "dé", "bù", "jiā", "bān", "wán", "chéng", "gōng", "zuò", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "bù", "dé", "bù", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338777",
+    "generated_at": "2026-10-07T02:06:17Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-7-topic", "zh-hsk6-5-double-negation"],
+      "content_version": 2,
+      "content_hash": "be01711aa6c3941ce9606272fd34f8b6ed1738f4010891df23ed76ed91c85c1e",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-7-topic",
+          "issue": "R5 gộp bốn cấu trúc khác nhau vào một bài, gây quá tải cho người học.",
+          "fix": "Tách riêng từng cấu trúc, bài này chỉ tập trung vào 不⋯⋯不⋯⋯ với các biến thể 不得不, 不能不, 未尝不, 无不."
+        },
+        {
+          "r5_id": "zh-hsk6-7-topic",
+          "issue": "Ví dụ '换一种方法未尝不是一个好办法' dùng 未尝不 nhưng thiếu ngữ cảnh thừa nhận khả năng.",
+          "fix": "Giữ nguyên câu nhưng thêm annotation giải thích sắc thái thừa nhận nhẹ nhàng."
+        },
+        {
+          "r5_id": "zh-hsk6-5-double-negation",
+          "issue": "R5 dùng '并不是所有人都不知道' với nghĩa 'mọi người đều biết', nhưng câu này thực tế có nghĩa 'không phải tất cả mọi người đều không biết'.",
+          "fix": "Sửa thành '没有人不知道' để diễn tả đúng nghĩa 'mọi người đều biết'."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:07Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

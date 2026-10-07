@@ -1,0 +1,258 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_4_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_3_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-4-topic"], "gf0025": ["gf0025.hsk7_9.104"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["zh-hsk4-4-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 与其⋯⋯ ，不如⋯⋯", "en": "Chinese grammar: 与其⋯⋯ ，不如⋯⋯"},
+    "native_title": "与其⋯⋯ ，不如⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc 与其⋯⋯不如⋯⋯ dùng để so sánh hai lựa chọn và nêu rõ lựa chọn thứ hai (sau 不如) là phương án nên chọn.",
+      "en": "The pattern 与其⋯⋯不如⋯⋯ compares two options and states that the second option (after 不如) is the one to prefer."
+    },
+    "sub": {"vi": "chọn B thay A", "en": "prefer B over A"},
+    "native_title_pinyin": ["yǔ", "qí", "", "", "", "", "bù", "rú", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói 'thay vì làm A, tốt hơn nên làm B' và muốn người nghe thấy rõ B là lựa chọn bạn khuyên.",
+      "en": "When you want to say 'rather than doing A, it is better to do B' and make clear that B is the option you recommend."
+    },
+    {
+      "vi": "Khi hai lựa chọn có thể diễn đạt song song về mặt ngữ pháp (cùng là động từ, cùng là cụm động từ, cùng là danh từ).",
+      "en": "When the two options can be expressed in parallel grammatical form (both verbs, both verb phrases, both nouns)."
+    },
+    {
+      "vi": "Khi bạn muốn so sánh hai cách làm trong cùng một tình huống, không nhấn mạnh sự chịu đựng hay hy sinh.",
+      "en": "When you want to compare two ways of doing something in the same situation, without emphasising endurance or sacrifice."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "与其",
+        "role": "connector",
+        "label": {"vi": "liên từ mở đầu phương án A", "en": "connector introducing option A"},
+        "pinyin": ["yǔ", "qí"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "phương án không được chọn", "en": "option not chosen"},
+        "pinyin": [""]
+      },
+      {
+        "text": "不如",
+        "role": "connector",
+        "label": {"vi": "liên từ mở đầu phương án B", "en": "connector introducing option B"},
+        "pinyin": ["bù", "rú"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "phương án được chọn", "en": "option chosen"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "与其在这里等，不如先回家。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "A là 'chờ ở đây', B là 'về nhà trước'; 不如 đánh dấu B là lựa chọn nên làm.",
+        "en": "A is 'wait here', B is 'go home first'; 不如 marks B as the option to take."
+      },
+      "translation": {
+        "vi": "Thay vì chờ ở đây, tốt hơn là về nhà trước.",
+        "en": "Rather than waiting here, it is better to go home first."
+      },
+      "pinyin": ["yǔ", "qí", "zài", "zhè", "lǐ", "děng", "", "bù", "rú", "xiān", "huí", "jiā", ""]
+    },
+    {
+      "text": "与其抱怨，不如想办法解决。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai phương án song song: 'phàn nàn' và 'nghĩ cách giải quyết'.",
+        "en": "The two options are parallel: 'complain' and 'think of a way to solve it'."
+      },
+      "translation": {
+        "vi": "Thay vì phàn nàn, tốt hơn là nghĩ cách giải quyết.",
+        "en": "Rather than complaining, it is better to think of a way to solve it."
+      },
+      "pinyin": ["yǔ", "qí", "bào", "yuàn", "", "bù", "rú", "xiǎng", "bàn", "fǎ", "jiě", "jué", ""]
+    },
+    {
+      "text": "与其坐出租车，不如坐地铁。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Cùng động từ 坐, hai phương án song song; B (đi metro) được chọn.",
+        "en": "Same verb 坐, two parallel options; B (taking the subway) is preferred."
+      },
+      "translation": {
+        "vi": "Thay vì đi taxi, tốt hơn là đi tàu điện ngầm.",
+        "en": "Rather than taking a taxi, it is better to take the subway."
+      },
+      "pinyin": ["yǔ", "qí", "zuò", "chū", "zū", "chē", "", "bù", "rú", "zuò", "dì", "tiě", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học đảo ngược lựa chọn và thêm '更差' không song song. 与其 phải đứng trước phương án bị loại, 不如 đứng trước phương án được chọn; hai phương án cần song song về ngữ pháp.",
+        "en": "The learner reverses the options and adds non-parallel '更差'. 与其 must precede the rejected option, 不如 the preferred one; the two options need parallel grammar."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "与其坐地铁，不如出租车更差。",
+      "right": "与其坐出租车，不如坐地铁。",
+      "wrong_pinyin": ["yǔ", "qí", "zuò", "dì", "tiě", "", "bù", "rú", "chū", "zū", "chē", "gèng", "chà", ""],
+      "right_pinyin": ["yǔ", "qí", "zuò", "chū", "zū", "chē", "", "bù", "rú", "zuò", "dì", "tiě", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "与其在这里等，___先回家。",
+      "options": [
+        {"text": "不如", "error_tag": null, "pinyin": ["bù", "rú"]},
+        {"text": "不但", "error_tag": "conjunction", "pinyin": ["bù", "dàn"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc cố định là 与其⋯⋯不如⋯⋯; 不如 mở đầu phương án được chọn.",
+        "en": "The fixed frame is 与其⋯⋯不如⋯⋯; 不如 introduces the preferred option."
+      },
+      "q_pinyin": ["yǔ", "qí", "zài", "zhè", "lǐ", "děng", "", "", "", "", "xiān", "huí", "jiā", ""]
+    },
+    {
+      "q": "与其买新的，___先修一修。",
+      "options": [
+        {"text": "不如", "error_tag": null, "pinyin": ["bù", "rú"]},
+        {"text": "不如不", "error_tag": "redundancy", "pinyin": ["bù", "rú", "bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不如 đã mang nghĩa 'tốt hơn nên', không thêm 不 thứ hai.",
+        "en": "不如 already means 'it is better to', so no second 不 is added."
+      },
+      "q_pinyin": ["yǔ", "qí", "mǎi", "xīn", "de", "", "", "", "", "xiān", "xiū", "yī", "xiū", ""]
+    },
+    {
+      "q": "与其坐出租车，不如___。",
+      "options": [
+        {"text": "坐地铁", "error_tag": null, "pinyin": ["zuò", "dì", "tiě"]},
+        {"text": "地铁坐", "error_tag": "word_order", "pinyin": ["dì", "tiě", "zuò"]},
+        {"text": "坐地铁吗", "error_tag": "particle", "pinyin": ["zuò", "dì", "tiě", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phương án B cần song song với A (động từ + tân ngữ); 坐地铁 đúng trật tự, không thêm 吗.",
+        "en": "Option B must be parallel to A (verb + object); 坐地铁 has the right order and no question particle 吗."
+      },
+      "q_pinyin": ["yǔ", "qí", "zuò", "chū", "zū", "chē", "", "bù", "rú", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 与其⋯⋯不如⋯⋯ để so sánh hai lựa chọn trong đời sống của bạn và nêu rõ lựa chọn bạn thích hơn.",
+      "en": "Write one sentence using 与其⋯⋯不如⋯⋯ to compare two options in your own life and state clearly which one you prefer."
+    },
+    "placeholder": "与其……不如……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["与其"], "role": "connector"}, {"any_of": ["不如"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "与其周末在家睡觉，不如去公园跑步。",
+      "pinyin": [
+        "yǔ",
+        "qí",
+        "zhōu",
+        "mò",
+        "zài",
+        "jiā",
+        "shuì",
+        "jiào",
+        "",
+        "bù",
+        "rú",
+        "qù",
+        "gōng",
+        "yuán",
+        "pǎo",
+        "bù",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["yǔ", "qí", "", "", "bù", "rú", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338510",
+    "generated_at": "2026-10-07T02:01:50Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-4-topic"],
+      "content_version": 2,
+      "content_hash": "9724ee90a928d89ba9b4cd4ecb6031f030bd9ea3d8ce73dbe394f99dbbfcdd8a",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-4-topic",
+          "issue": "R5 mistake '与其坐地铁，不如出租车更差。' is not a real learner error and the correction is unclear; the wrong sentence is ungrammatical in a way that does not match the stated reason.",
+          "fix": "Replaced with a real L1 Vietnamese error: '与其坐地铁，不如出租车更差。' → '与其坐出租车，不如坐地铁。' with a reason explaining reversed options and non-parallel form."
+        },
+        {
+          "r5_id": "zh-hsk4-4-topic",
+          "issue": "R5 lists contrast targets 连...都/也... and 既然...就... but the schema for this point requires no compare entries.",
+          "fix": "Left compare empty as required by the point's compare list."
+        },
+        {
+          "r5_id": "zh-hsk4-4-topic",
+          "issue": "R5 examples are correct but lack formula-slot bindings and annotations needed for the structured lesson.",
+          "fix": "Kept three clean examples and added zero-based slot bindings, annotations and translations."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

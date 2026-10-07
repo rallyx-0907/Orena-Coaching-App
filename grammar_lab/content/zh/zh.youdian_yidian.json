@@ -1,0 +1,214 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.youdian_yidian",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.degree",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.yijing_haimei"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: youdian_yidian", "en": "Chinese grammar: youdian_yidian"},
+    "native_title": "“有点儿/一点儿”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Phân biệt 有点儿 (yǒudiǎnr) dùng trước tính từ để nói một điều hơi tiêu cực, và 一点儿 (yìdiǎnr) dùng sau tính từ để nói mức độ nhẹ hơn hoặc so sánh.",
+      "en": "Distinguish 有点儿 (yǒudiǎnr), used before an adjective to say something is slightly negative, and 一点儿 (yìdiǎnr), used after an adjective to mean a bit more or a slightly higher degree."
+    },
+    "sub": {"vi": "mức độ nhẹ", "en": "slight degree"},
+    "native_title_pinyin": ["", "yǒu", "diǎn", "ér", "", "yì", "diǎn", "ér", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một điều gì đó hơi mang tính tiêu cực: 有点儿 + tính từ.",
+      "en": "When you want to say something is slightly negative: 有点儿 + adjective."
+    },
+    {
+      "vi": "Khi bạn muốn nói mức độ nhẹ hơn hoặc so sánh hơn một chút: tính từ + 一点儿.",
+      "en": "When you want a slightly lower degree or a small comparison: adjective + 一点儿."
+    },
+    {
+      "vi": "Khi bạn muốn giảm nhẹ một yêu cầu hoặc lời đề nghị: tính từ + 一点儿.",
+      "en": "When you want to soften a request or suggestion: adjective + 一点儿."
+    },
+    {
+      "vi": "Khi bạn muốn nói một sự thay đổi nhỏ: tính từ + 一点儿 + 了.",
+      "en": "When you want to describe a small change: adjective + 一点儿 + 了."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "有点儿",
+        "role": "marker",
+        "label": {"vi": "hơi (tiêu cực)", "en": "slightly (negative)"},
+        "pinyin": ["yǒu", "diǎn", "ér"]
+      },
+      {
+        "text": "形容词",
+        "role": "complement",
+        "label": {"vi": "tính từ", "en": "adjective"},
+        "pinyin": ["xíng", "róng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "今天有点儿冷。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "有点儿 đứng trước tính từ, nói một điều hơi tiêu cực.",
+        "en": "有点儿 comes before the adjective, expressing a slightly negative quality."
+      },
+      "translation": {"vi": "Hôm nay hơi lạnh.", "en": "It's a bit cold today."},
+      "pinyin": ["jīn", "tiān", "yǒu", "diǎn", "ér", "lěng", ""]
+    },
+    {
+      "text": "这个菜有点儿咸。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 6, "role": "marker"},
+        {"start": 6, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "有点儿 + tính từ miêu tả món ăn hơi mặn.",
+        "en": "有点儿 + adjective describes the dish as a bit salty."
+      },
+      "translation": {"vi": "Món này hơi mặn.", "en": "This dish is a bit salty."},
+      "pinyin": ["zhè", "ge", "cài", "yǒu", "diǎn", "ér", "xián", ""]
+    },
+    {
+      "text": "请说慢一点儿。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 6, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "一点儿 đứng sau tính từ, làm nhẹ yêu cầu.",
+        "en": "一点儿 comes after the adjective, softening the request."
+      },
+      "translation": {"vi": "Xin nói chậm một chút.", "en": "Please speak a little more slowly."},
+      "pinyin": ["qǐng", "shuō", "màn", "yì", "diǎn", "ér", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "有点儿 đứng trước tính từ để nói điều hơi tiêu cực; 一点儿 đứng sau tính từ, nên đặt trước 冷 là sai vị trí.",
+        "en": "有点儿 goes before the adjective to express a slightly negative quality; 一点儿 goes after the adjective, so placing it before 冷 is the wrong position."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "今天一点儿冷。",
+      "right": "今天有点儿冷。",
+      "wrong_pinyin": ["jīn", "tiān", "yì", "diǎn", "ér", "lěng", ""],
+      "right_pinyin": ["jīn", "tiān", "yǒu", "diǎn", "ér", "lěng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "今天___冷，多穿点儿衣服吧。",
+      "options": [
+        {"text": "有点儿", "error_tag": null, "pinyin": ["yǒu", "diǎn", "ér"]},
+        {"text": "一点儿", "error_tag": "word_order", "pinyin": ["yì", "diǎn", "ér"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "有点儿 đứng trước tính từ 冷 để nói hôm nay hơi lạnh.",
+        "en": "有点儿 comes before the adjective 冷 to say it is a bit cold today."
+      },
+      "q_pinyin": ["jīn", "tiān", "", "", "", "lěng", "", "duō", "chuān", "diǎn", "ér", "yī", "fú", "ba", ""]
+    },
+    {
+      "q": "这个汤有点儿___，再加点儿水吧。",
+      "options": [
+        {"text": "咸", "error_tag": null, "pinyin": ["xián"]},
+        {"text": "咸一点儿", "error_tag": "word_order", "pinyin": ["xián", "yì", "diǎn", "ér"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 有点儿 là tính từ trần 咸; 一点儿 không đứng sau 有点儿.",
+        "en": "After 有点儿 comes the bare adjective 咸; 一点儿 does not follow 有点儿."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "tāng",
+        "yǒu",
+        "diǎn",
+        "ér",
+        "",
+        "",
+        "",
+        "",
+        "zài",
+        "jiā",
+        "diǎn",
+        "ér",
+        "shuǐ",
+        "ba",
+        ""
+      ]
+    },
+    {
+      "q": "请写___，我看不清楚。",
+      "options": [
+        {"text": "大一点儿", "error_tag": null, "pinyin": ["dà", "yī", "diǎn", "ér"]},
+        {"text": "有点儿大", "error_tag": "word_order", "pinyin": ["yǒu", "diǎn", "ér", "dà"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Muốn nói viết to hơn một chút thì dùng tính từ + 一点儿.",
+        "en": "To ask someone to write a bit bigger, use adjective + 一点儿."
+      },
+      "q_pinyin": ["qǐng", "xiě", "", "", "", "", "wǒ", "kàn", "bù", "qīng", "chǔ", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói rằng hôm nay bạn hơi mệt, dùng 有点儿.",
+      "en": "Write one sentence saying you are a bit tired today, using 有点儿."
+    },
+    "placeholder": "我今天……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["有点儿"], "role": "marker"}]},
+    "sample": {"text": "我今天有点儿累。", "pinyin": ["wǒ", "jīn", "tiān", "yǒu", "diǎn", "ér", "lèi", ""]},
+    "placeholder_pinyin": ["wǒ", "jīn", "tiān", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338229",
+    "generated_at": "2026-10-07T01:57:09Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

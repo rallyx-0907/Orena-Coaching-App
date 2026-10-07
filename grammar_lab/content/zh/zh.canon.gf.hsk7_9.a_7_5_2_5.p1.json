@@ -1,0 +1,399 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_5.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_6_2_5.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.106", "gf0025.hsk7_9.107"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: ⋯⋯，而 ⋯⋯（则）⋯⋯", "en": "Complex sentences: ⋯⋯，而 ⋯⋯（则）⋯⋯"},
+    "native_title": "⋯⋯，而⋯⋯（则）⋯⋯",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Cấu trúc 而 ⋯⋯（则）⋯⋯ dùng để nối hai vế câu, nêu rõ sự tương phản giữa hai đối tượng hoặc hai tình huống.",
+      "en": "The pattern 而 ⋯⋯（则）⋯⋯ links two clauses and marks a clear contrast between two subjects or two situations."
+    },
+    "sub": {"vi": "tương phản hai vế", "en": "contrasting two clauses"},
+    "native_title_pinyin": ["", "", "", "ér", "", "", "", "zé", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn so sánh hai người hoặc hai vật bằng hai vế câu đối lập nhau.",
+      "en": "When you want to compare two people or things with two opposing clauses."
+    },
+    {
+      "vi": "Khi vế thứ hai dùng 则 để nhấn mạnh sự đối lập với vế thứ nhất.",
+      "en": "When the second clause uses 则 to sharpen the contrast with the first."
+    },
+    {
+      "vi": "Khi câu có hai chủ ngữ khác nhau, mỗi chủ ngữ đứng trước một vế.",
+      "en": "When the sentence has two different subjects, each placed before its own clause."
+    },
+    {
+      "vi": "Khi bạn muốn nêu một nhận định khách quan, không dùng để kể lại một sự việc đơn lẻ.",
+      "en": "When you want to state an objective observation, not to narrate a single event."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语1",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ thứ nhất", "en": "first subject"},
+        "pinyin": ["zhǔ", "yǔ", ""]
+      },
+      {
+        "text": "谓语1",
+        "role": "verb",
+        "label": {"vi": "vị ngữ thứ nhất", "en": "first predicate"},
+        "pinyin": ["wèi", "yǔ", ""]
+      },
+      {
+        "text": "而",
+        "role": "connector",
+        "label": {"vi": "liên từ 而", "en": "connector 而"},
+        "pinyin": ["ér"]
+      },
+      {
+        "text": "主语2",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ thứ hai", "en": "second subject"},
+        "pinyin": ["zhǔ", "yǔ", ""]
+      },
+      {
+        "text": "则",
+        "role": "marker",
+        "label": {"vi": "trợ từ 则", "en": "marker 则"},
+        "optional": true,
+        "pinyin": ["zé"]
+      },
+      {
+        "text": "谓语2",
+        "role": "verb",
+        "label": {"vi": "vị ngữ thứ hai", "en": "second predicate"},
+        "pinyin": ["wèi", "yǔ", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "哥哥喜欢运动，而弟弟则喜欢看书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 6, "role": "verb"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 10, "role": "subject"},
+        {"start": 10, "end": 11, "role": "marker"},
+        {"start": 11, "end": 15, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "而 nối hai vế, 则 đứng sau chủ ngữ thứ hai để nhấn mạnh sự đối lập.",
+        "en": "而 joins the two clauses, and 则 after the second subject sharpens the contrast."
+      },
+      "translation": {
+        "vi": "Anh trai thích vận động, còn em trai thì thích đọc sách.",
+        "en": "The older brother likes sports, while the younger brother likes reading."
+      },
+      "pinyin": [
+        "gē",
+        "gē",
+        "xǐ",
+        "huān",
+        "yùn",
+        "dòng",
+        "",
+        "ér",
+        "dì",
+        "di",
+        "zé",
+        "xǐ",
+        "huān",
+        "kàn",
+        "shū",
+        ""
+      ]
+    },
+    {
+      "text": "这家店价格便宜，而那家店则贵得多。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 7, "role": "verb"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "subject"},
+        {"start": 12, "end": 13, "role": "marker"},
+        {"start": 13, "end": 16, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hai vế so sánh giá cả của hai cửa hàng; 则 làm rõ vế đối lập.",
+        "en": "The two clauses compare the prices of two shops; 则 marks the contrasting clause."
+      },
+      "translation": {
+        "vi": "Cửa hàng này giá rẻ, còn cửa hàng kia thì đắt hơn nhiều.",
+        "en": "This shop is cheap, while that shop is much more expensive."
+      },
+      "pinyin": [
+        "zhè",
+        "jiā",
+        "diàn",
+        "jià",
+        "gé",
+        "pián",
+        "yi",
+        "",
+        "ér",
+        "nà",
+        "jiā",
+        "diàn",
+        "zé",
+        "guì",
+        "dé",
+        "duō",
+        ""
+      ]
+    },
+    {
+      "text": "南方夏天潮湿，而北方夏天干燥。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 12, "role": "subject"},
+        {"start": 12, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Vế thứ hai không dùng 则; 而 vẫn đủ để nêu sự tương phản.",
+        "en": "The second clause omits 则; 而 alone still carries the contrast."
+      },
+      "translation": {
+        "vi": "Mùa hè ở miền Nam ẩm ướt, còn mùa hè ở miền Bắc thì khô ráo.",
+        "en": "Summers in the south are humid, while summers in the north are dry."
+      },
+      "pinyin": [
+        "nán",
+        "fāng",
+        "xià",
+        "tiān",
+        "cháo",
+        "shī",
+        "",
+        "ér",
+        "běi",
+        "fāng",
+        "xià",
+        "tiān",
+        "gān",
+        "zào",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "而 phải đứng ở đầu vế thứ hai, trước chủ ngữ, không đứng sau chủ ngữ.",
+        "en": "而 must stand at the start of the second clause, before its subject, not after it."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "哥哥喜欢运动，弟弟而喜欢看书。",
+      "right": "哥哥喜欢运动，而弟弟喜欢看书。",
+      "wrong_pinyin": [
+        "gē",
+        "gē",
+        "xǐ",
+        "huān",
+        "yùn",
+        "dòng",
+        "",
+        "dì",
+        "di",
+        "ér",
+        "xǐ",
+        "huān",
+        "kàn",
+        "shū",
+        ""
+      ],
+      "right_pinyin": [
+        "gē",
+        "gē",
+        "xǐ",
+        "huān",
+        "yùn",
+        "dòng",
+        "",
+        "ér",
+        "dì",
+        "di",
+        "xǐ",
+        "huān",
+        "kàn",
+        "shū",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "姐姐喜欢音乐，___妹妹喜欢画画。",
+      "options": [
+        {"text": "而", "error_tag": null, "pinyin": ["ér"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "而 nối hai vế tương phản trong cùng một câu; 但是 và 因为 không phù hợp ở vị trí này.",
+        "en": "而 links the two contrasting clauses in one sentence; 但是 and 因为 do not fit this position."
+      },
+      "q_pinyin": [
+        "jiě",
+        "jiě",
+        "xǐ",
+        "huān",
+        "yīn",
+        "yuè",
+        "",
+        "",
+        "",
+        "",
+        "mèi",
+        "mèi",
+        "xǐ",
+        "huān",
+        "huà",
+        "huà",
+        ""
+      ]
+    },
+    {
+      "q": "这家餐厅服务好，而那家餐厅___服务差。",
+      "options": [
+        {"text": "则", "error_tag": null, "pinyin": ["zé"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "则 đứng sau chủ ngữ vế hai để nhấn mạnh sự đối lập; 就 và 也 không mang nghĩa tương phản.",
+        "en": "则 follows the second subject to sharpen the contrast; 就 and 也 do not express contrast."
+      },
+      "q_pinyin": [
+        "zhè",
+        "jiā",
+        "cān",
+        "tīng",
+        "fú",
+        "wù",
+        "hǎo",
+        "",
+        "ér",
+        "nà",
+        "jiā",
+        "cān",
+        "tīng",
+        "",
+        "",
+        "",
+        "fú",
+        "wù",
+        "chà",
+        ""
+      ]
+    },
+    {
+      "q": "哥哥喜欢运动，而___喜欢看书。",
+      "options": [
+        {"text": "弟弟则", "error_tag": null, "pinyin": ["dì", "di", "zé"]},
+        {"text": "则弟弟", "error_tag": "word_order", "pinyin": ["zé", "dì", "di"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "则 phải đứng sau chủ ngữ, không đứng trước chủ ngữ.",
+        "en": "则 must come after the subject, not before it."
+      },
+      "q_pinyin": [
+        "gē",
+        "gē",
+        "xǐ",
+        "huān",
+        "yùn",
+        "dòng",
+        "",
+        "ér",
+        "",
+        "",
+        "",
+        "xǐ",
+        "huān",
+        "kàn",
+        "shū",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu so sánh hai người hoặc hai vật bằng cấu trúc 而 ⋯⋯（则）⋯⋯.",
+      "en": "Write one sentence comparing two people or things with 而 ⋯⋯（则）⋯⋯."
+    },
+    "placeholder": "我爸爸喜欢……，而我妈妈则……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["而"], "role": "connector"}, {"any_of": ["则"], "role": "marker"}]
+    },
+    "sample": {
+      "text": "我爸爸喜欢喝茶，而我妈妈则喜欢喝咖啡。",
+      "pinyin": [
+        "wǒ",
+        "bà",
+        "bà",
+        "xǐ",
+        "huān",
+        "hē",
+        "chá",
+        "",
+        "ér",
+        "wǒ",
+        "mā",
+        "mā",
+        "zé",
+        "xǐ",
+        "huān",
+        "hē",
+        "kā",
+        "fēi",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "bà", "bà", "xǐ", "huān", "", "", "", "ér", "wǒ", "mā", "mā", "zé", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791342422",
+    "generated_at": "2026-10-07T03:07:02Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:23Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

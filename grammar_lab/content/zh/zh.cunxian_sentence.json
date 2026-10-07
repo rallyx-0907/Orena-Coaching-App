@@ -1,0 +1,275 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.cunxian_sentence",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.existence",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.bi_yidian_deduo"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: cunxian_sentence", "en": "Chinese grammar: cunxian_sentence"},
+    "native_title": "存现句",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Câu tồn hiện dùng để nói rằng ở một nơi nào đó có hoặc xuất hiện một người hay vật nào đó.",
+      "en": "Existence sentences state that someone or something exists or appears in a place."
+    },
+    "sub": {"vi": "câu tồn hiện", "en": "existence sentences"},
+    "native_title_pinyin": ["cún", "xiàn", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói ở một nơi nào đó có người hoặc vật gì, chứ không phải ai đó làm gì.",
+      "en": "Use it to say what exists in a place, not what someone does."
+    },
+    {
+      "vi": "Khi bạn muốn giới thiệu một người hoặc vật lần đầu, chưa xác định cụ thể.",
+      "en": "Use it to introduce a person or thing for the first time, not yet identified."
+    },
+    {
+      "vi": "Khi bạn muốn nói một sự vật xuất hiện hoặc biến mất ở một nơi nào đó.",
+      "en": "Use it to say that something appears or disappears in a place."
+    },
+    {
+      "vi": "Khi bạn muốn mô tả cảnh vật xung quanh bằng một câu ngắn.",
+      "en": "Use it to describe a scene briefly."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "处所词",
+        "role": "place",
+        "label": {"vi": "nơi chốn", "en": "place"},
+        "pinyin": ["chù", "suǒ", "cí"]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "options": [
+          {"text": "有", "pinyin": ["yǒu"]},
+          {"text": "是", "pinyin": ["shì"]},
+          {"text": "出现", "pinyin": ["chū", "xiàn"]},
+          {"text": "来", "pinyin": ["lái"]}
+        ],
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "数量短语",
+        "role": "classifier",
+        "label": {"vi": "cụm số lượng", "en": "quantity phrase"},
+        "pinyin": ["shù", "liàng", "duǎn", "yǔ"]
+      },
+      {
+        "text": "名词",
+        "role": "object",
+        "label": {"vi": "danh từ", "en": "noun"},
+        "pinyin": ["míng", "cí"]
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "处所词",
+          "role": "place",
+          "label": {"vi": "nơi chốn", "en": "place"},
+          "pinyin": ["chù", "suǒ", "cí"]
+        },
+        {
+          "text": "没有",
+          "role": "verb",
+          "label": {"vi": "không có", "en": "not have"},
+          "pinyin": ["méi", "yǒu"]
+        },
+        {
+          "text": "数量短语",
+          "role": "classifier",
+          "label": {"vi": "cụm số lượng", "en": "quantity phrase"},
+          "optional": true,
+          "pinyin": ["shù", "liàng", "duǎn", "yǔ"]
+        },
+        {
+          "text": "名词",
+          "role": "object",
+          "label": {"vi": "danh từ", "en": "noun"},
+          "pinyin": ["míng", "cí"]
+        }
+      ],
+      "question": [
+        {
+          "text": "处所词",
+          "role": "place",
+          "label": {"vi": "nơi chốn", "en": "place"},
+          "pinyin": ["chù", "suǒ", "cí"]
+        },
+        {"text": "有", "role": "verb", "label": {"vi": "có", "en": "have"}, "pinyin": ["yǒu"]},
+        {
+          "text": "数量短语",
+          "role": "classifier",
+          "label": {"vi": "cụm số lượng", "en": "quantity phrase"},
+          "pinyin": ["shù", "liàng", "duǎn", "yǔ"]
+        },
+        {
+          "text": "名词",
+          "role": "object",
+          "label": {"vi": "danh từ", "en": "noun"},
+          "pinyin": ["míng", "cí"]
+        },
+        {
+          "text": "吗",
+          "role": "particle",
+          "label": {"vi": "trợ từ nghi vấn", "en": "question particle"},
+          "pinyin": ["ma"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "桌子上有一本书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "place"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "classifier"},
+        {"start": 6, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Nơi chốn đứng trước, động từ 有 báo sự tồn tại, sau đó là số lượng và danh từ.",
+        "en": "The place comes first, 有 marks existence, then the quantity and noun follow."
+      },
+      "translation": {"vi": "Trên bàn có một quyển sách.", "en": "There is a book on the table."},
+      "pinyin": ["zhuō", "zi", "shàng", "yǒu", "yī", "běn", "shū", ""]
+    },
+    {
+      "text": "门口站着两个学生。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "place"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "classifier"},
+        {"start": 6, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Động từ 站 kèm 着 tả tư thế tồn tại; người mới xuất hiện đứng sau.",
+        "en": "The verb 站 with 着 describes a state of existence; the new person comes after it."
+      },
+      "translation": {"vi": "Ở cổng có hai học sinh đang đứng.", "en": "Two students are standing at the gate."},
+      "pinyin": ["mén", "kǒu", "zhàn", "zhe", "liǎng", "gè", "xué", "shēng", ""]
+    },
+    {
+      "text": "教室里没有老师。",
+      "form": "negative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "place"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Phủ định của câu tồn hiện dùng 没有, không dùng 不有.",
+        "en": "The negative of an existence sentence uses 没有, not 不有."
+      },
+      "translation": {"vi": "Trong lớp học không có giáo viên.", "en": "There is no teacher in the classroom."},
+      "pinyin": ["jiào", "shì", "lǐ", "méi", "yǒu", "lǎo", "shī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Câu tồn hiện tả tư thế thường cần 着 sau động từ; thiếu 着 thì câu nghe như một mệnh lệnh hoặc thiếu kết thúc.",
+        "en": "A stative existence sentence usually needs 着 after the verb; without it the sentence sounds like a command or incomplete."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "桌子上放一本书。",
+      "right": "桌子上放着一本书。",
+      "wrong_pinyin": ["zhuō", "zi", "shàng", "fàng", "yī", "běn", "shū", ""],
+      "right_pinyin": ["zhuō", "zi", "shàng", "fàng", "zhe", "yī", "běn", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "桌子上___一本书。",
+      "options": [
+        {"text": "有", "error_tag": null, "pinyin": ["yǒu"]},
+        {"text": "在", "error_tag": "word_choice", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu tồn hiện dùng 有 để nói có gì đó; 在 dùng cho vị trí của chủ thể, không dùng ở đây.",
+        "en": "An existence sentence uses 有 to say something exists; 在 is for the location of a subject, not here."
+      },
+      "q_pinyin": ["zhuō", "zi", "shàng", "", "", "", "yī", "běn", "shū", ""]
+    },
+    {
+      "q": "门口站着___学生。",
+      "options": [
+        {"text": "两个", "error_tag": null, "pinyin": ["liǎng", "gè"]},
+        {"text": "二", "error_tag": "measure_word", "pinyin": ["èr"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Danh từ đếm được cần số lượng kèm lượng từ: 两个学生. 二 không đi trực tiếp với 个 ở đây.",
+        "en": "A countable noun needs a number with a measure word: 两个学生. 二 does not directly combine with 个 here."
+      },
+      "q_pinyin": ["mén", "kǒu", "zhàn", "zhe", "", "", "", "xué", "shēng", ""]
+    },
+    {
+      "q": "教室里___老师。",
+      "options": [
+        {"text": "没有", "error_tag": null, "pinyin": ["méi", "yǒu"]},
+        {"text": "不有", "error_tag": "other", "pinyin": ["bù", "yǒu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định của 有 là 没有, không nói 不有.",
+        "en": "The negative of 有 is 没有; 不有 is not used."
+      },
+      "q_pinyin": ["jiào", "shì", "lǐ", "", "", "", "lǎo", "shī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu tồn hiện về một nơi quen thuộc, ví dụ trong phòng của bạn có gì.",
+      "en": "Write an existence sentence about a familiar place, for example what is in your room."
+    },
+    "placeholder": "我的房间里……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["有"], "role": "verb"},
+        {"regex": "[一二两三四五六七八九十百千万几]+[个本只件张台把条位名]", "role": "classifier"}
+      ]
+    },
+    "sample": {
+      "text": "我的房间里有一张床。",
+      "pinyin": ["wǒ", "de", "fáng", "jiān", "lǐ", "yǒu", "yī", "zhāng", "chuáng", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "fáng", "jiān", "lǐ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791345049",
+    "generated_at": "2026-10-07T03:50:49Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

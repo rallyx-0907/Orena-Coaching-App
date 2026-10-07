@@ -1,0 +1,328 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_7_topic_172",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.information_structure",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.gf.hsk6.a_6_2_4_3.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {
+    "r5": ["zh-hsk6-7-topic-172"],
+    "gf0025": ["gf0025.hsk6.016", "gf0025.hsk7_9.115", "gf0025.hsk7_9.116"]
+  },
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk6-7-topic-172"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 至于", "en": "Chinese grammar: 至于"},
+    "native_title": "至于",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "以致/以至于 nối một tình huống ở vế trước với một kết quả thường là ngoài ý muốn ở vế sau; 以至于 còn nhấn mạnh mức độ đạt tới kết quả đó.",
+      "en": "以致/以至于 links a preceding situation to a usually unintended consequence; 以至于 also highlights the degree that reaches that result."
+    },
+    "sub": {"vi": "kết quả ngoài ý muốn", "en": "unintended result"},
+    "native_title_pinyin": ["zhì", "yú"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi vế trước nêu nguyên nhân, mức độ hoặc tình trạng, và vế sau là kết quả thực tế xảy ra từ đó.",
+      "en": "When the first clause states a cause, degree or situation, and the second clause is the actual consequence that follows."
+    },
+    {
+      "vi": "Khi kết quả là ngoài ý muốn hoặc đáng tiếc, không phải mục đích người nói nhắm tới.",
+      "en": "When the consequence is unintended or regrettable, not a purpose the speaker aimed at."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh mức độ: 太/越来越/得... thường đứng trước 以至于.",
+      "en": "When emphasising degree: 太/越来越/得... often precede 以至于."
+    },
+    {
+      "vi": "Trong văn viết hoặc nói trang trọng; 以致 gọn và trang trọng hơn 以至于.",
+      "en": "In written or formal speech; 以致 is more concise and formal than 以至于."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "tình huống / nguyên nhân", "en": "situation / cause"},
+        "pinyin": [""]
+      },
+      {"text": "，", "role": "other", "label": {"vi": "dấu phẩy", "en": "comma"}, "pinyin": [""]},
+      {
+        "text": "以致/以至于",
+        "role": "connector",
+        "label": {"vi": "liên từ kết quả", "en": "result connector"},
+        "options": [{"text": "以致", "pinyin": ["yǐ", "zhì"]}, {"text": "以至于", "pinyin": ["yǐ", "zhì", "yú"]}],
+        "pinyin": ["yǐ", "zhì", "", "yǐ", "zhì", "yú"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "kết quả (ngoài ý muốn)", "en": "consequence (unintended)"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他工作太忙，以至于连饭都忘了吃。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 9, "role": "connector"},
+        {"start": 9, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "太... nhấn mạnh mức độ; 以至于 dẫn tới kết quả ngoài ý muốn là quên ăn.",
+        "en": "太... marks the degree; 以至于 introduces the unintended result of forgetting to eat."
+      },
+      "translation": {
+        "vi": "Anh ấy bận quá, đến mức quên cả ăn.",
+        "en": "He was so busy that he even forgot to eat."
+      },
+      "pinyin": [
+        "tā",
+        "gōng",
+        "zuò",
+        "tài",
+        "máng",
+        "",
+        "yǐ",
+        "zhì",
+        "yú",
+        "lián",
+        "fàn",
+        "dōu",
+        "wàng",
+        "le",
+        "chī",
+        ""
+      ]
+    },
+    {
+      "text": "雨下得很大，以致比赛无法继续。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "得... biểu thị mức độ; 以致 nối tới kết quả không mong muốn.",
+        "en": "得... expresses degree; 以致 links to the unwanted consequence."
+      },
+      "translation": {
+        "vi": "Mưa to đến mức trận đấu không thể tiếp tục.",
+        "en": "It rained so hard that the match could not continue."
+      },
+      "pinyin": ["yǔ", "xià", "dé", "hěn", "dà", "", "yǐ", "zhì", "bǐ", "sài", "wú", "fǎ", "jì", "xù", ""]
+    },
+    {
+      "text": "问题越来越严重，以至于影响了整个项目。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "other"},
+        {"start": 8, "end": 11, "role": "connector"},
+        {"start": 11, "end": 18, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "越来越... cho thấy mức độ tăng dần; 以至于 dẫn tới kết quả tiêu cực.",
+        "en": "越来越... shows increasing degree; 以至于 leads to a negative consequence."
+      },
+      "translation": {
+        "vi": "Vấn đề ngày càng nghiêm trọng, đến mức ảnh hưởng cả dự án.",
+        "en": "The problem grew more and more serious, to the point that it affected the whole project."
+      },
+      "pinyin": [
+        "wèn",
+        "tí",
+        "yuè",
+        "lái",
+        "yuè",
+        "yán",
+        "zhòng",
+        "",
+        "yǐ",
+        "zhì",
+        "yú",
+        "yǐng",
+        "xiǎng",
+        "le",
+        "zhěng",
+        "gè",
+        "xiàng",
+        "mù",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "以致/以至于 chỉ dùng cho kết quả thực tế thường ngoài ý muốn, không dùng cho mục đích mong muốn; ở đây 'để mà' phải là 以便.",
+        "en": "以致/以至于 is for actual, usually unintended consequences, not intended purposes; 'so that' here must be 以便."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我们提前准备，以致按时完成。",
+      "right": "我们提前准备，以便按时完成。",
+      "wrong_pinyin": ["wǒ", "men", "tí", "qián", "zhǔn", "bèi", "", "yǐ", "zhì", "àn", "shí", "wán", "chéng", ""],
+      "right_pinyin": ["wǒ", "men", "tí", "qián", "zhǔn", "bèi", "", "yǐ", "biàn", "àn", "shí", "wán", "chéng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他工作太忙，___连饭都忘了吃。",
+      "options": [
+        {"text": "以至于", "error_tag": null, "pinyin": ["yǐ", "zhì", "yú"]},
+        {"text": "以便", "error_tag": "conjunction", "pinyin": ["yǐ", "biàn"]},
+        {"text": "为了", "error_tag": "conjunction", "pinyin": ["wèi", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Kết quả 'quên ăn' là ngoài ý muốn, nên dùng 以至于; 以便/为了 chỉ mục đích.",
+        "en": "The result 'forgot to eat' is unintended, so 以至于 is correct; 以便/为了 mark purpose."
+      },
+      "q_pinyin": [
+        "tā",
+        "gōng",
+        "zuò",
+        "tài",
+        "máng",
+        "",
+        "",
+        "",
+        "",
+        "lián",
+        "fàn",
+        "dōu",
+        "wàng",
+        "le",
+        "chī",
+        ""
+      ]
+    },
+    {
+      "q": "雨下得很大，___比赛无法继续。",
+      "options": [
+        {"text": "以致", "error_tag": null, "pinyin": ["yǐ", "zhì"]},
+        {"text": "以免", "error_tag": "conjunction", "pinyin": ["yǐ", "miǎn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "以致 nối nguyên nhân với kết quả thực tế; 以免 nghĩa 'để tránh', không hợp.",
+        "en": "以致 links cause to an actual consequence; 以免 means 'in order to avoid', which does not fit."
+      },
+      "q_pinyin": ["yǔ", "xià", "dé", "hěn", "dà", "", "", "", "", "bǐ", "sài", "wú", "fǎ", "jì", "xù", ""]
+    },
+    {
+      "q": "问题越来越严重，___影响了整个项目。",
+      "options": [
+        {"text": "以至于", "error_tag": null, "pinyin": ["yǐ", "zhì", "yú"]},
+        {"text": "以致于", "error_tag": "character_choice", "pinyin": ["yǐ", "zhì", "yú"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Dạng đúng là 以至于, không viết 以致于.", "en": "The correct form is 以至于, not 以致于."},
+      "q_pinyin": [
+        "wèn",
+        "tí",
+        "yuè",
+        "lái",
+        "yuè",
+        "yán",
+        "zhòng",
+        "",
+        "",
+        "",
+        "",
+        "yǐng",
+        "xiǎng",
+        "le",
+        "zhěng",
+        "gè",
+        "xiàng",
+        "mù",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một việc bạn quá bận/ quá mệt đến mức dẫn tới một kết quả ngoài ý muốn, dùng 以至于.",
+      "en": "Write one sentence about being so busy or tired that it led to an unintended result, using 以至于."
+    },
+    "placeholder": "我太忙了，以至于……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["以至于"], "role": "connector"}]},
+    "sample": {
+      "text": "我太忙了，以至于忘了给妈妈打电话。",
+      "pinyin": [
+        "wǒ",
+        "tài",
+        "máng",
+        "le",
+        "",
+        "yǐ",
+        "zhì",
+        "yú",
+        "wàng",
+        "le",
+        "gěi",
+        "mā",
+        "mā",
+        "dǎ",
+        "diàn",
+        "huà",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "tài", "máng", "le", "", "yǐ", "zhì", "yú", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338725",
+    "generated_at": "2026-10-07T02:05:25Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-7-topic-172"],
+      "content_version": 2,
+      "content_hash": "44ca8d70ee78d151b5fb245b0bcf2ab30eafbfba51f59569d3cd605d3275c358",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-7-topic-172",
+          "issue": "R5 ghi '以至于 used without preceding cause/degree' như một câu sai, nhưng đó là mô tả lỗi chứ không phải câu tiếng Trung.",
+          "fix": "Đã thay bằng cặp sai/đúng thực tế: '我们提前准备，以致按时完成。' → '我们提前准备，以便按时完成。'"
+        },
+        {
+          "r5_id": "zh-hsk6-7-topic-172",
+          "issue": "R5 dùng '问题越来越严重' nhưng viết sai chính tả 'wèn tí' trong pinyin.",
+          "fix": "Đã viết lại ví dụ với pinyin đúng: 问题越来越严重，以至于影响了整个项目。"
+        },
+        {
+          "r5_id": "zh-hsk6-7-topic-172",
+          "issue": "R5 không có công thức dạng slot, không có bindings cho ví dụ, không có quick practice.",
+          "fix": "Đã bổ sung formula A，以致/以至于 B, bindings cho từng ví dụ, và 3 câu quick practice."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:07Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

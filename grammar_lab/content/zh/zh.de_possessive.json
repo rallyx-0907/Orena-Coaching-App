@@ -1,0 +1,226 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.de_possessive",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.possession",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.shi_sentence"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk1-5-s-h-u-v-b-ngh-a"], "gf0025": ["gf0025.hsk1.020"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk1-5-s-h-u-v-b-ngh-a"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "的: sở hữu và bổ nghĩa", "en": "的: possession and modification"},
+    "native_title": "“的”表示所属",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "的 nối phần bổ nghĩa (người sở hữu hoặc tính từ) đứng trước với danh từ trung tâm đứng sau, tạo thành cụm danh từ sở hữu hoặc bổ nghĩa.",
+      "en": "的 links a modifier (a possessor or an adjective) that comes first to the head noun that follows, forming a possessive or descriptive noun phrase."
+    },
+    "sub": {"vi": "sở hữu và bổ nghĩa", "en": "possession & modification"},
+    "native_title_pinyin": ["", "de", "", "biǎo", "shì", "suǒ", "shǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một vật thuộc về ai: 我的书 (sách của tôi), 妈妈的手机 (điện thoại của mẹ).",
+      "en": "When you say that something belongs to someone: 我的书 (my book), 妈妈的手机 (mom's phone)."
+    },
+    {
+      "vi": "Khi bổ nghĩa cho danh từ bằng một tính từ đơn giản: 新的电脑 (máy tính mới), 好看的书 (sách hay).",
+      "en": "When you modify a noun with a simple adjective: 新的电脑 (a new computer), 好看的书 (an interesting book)."
+    },
+    {
+      "vi": "Khi phần bổ nghĩa dài hơn một từ, ví dụ tên người hoặc cụm danh từ: 老师的名字 (tên của giáo viên).",
+      "en": "When the modifier is longer than one word, for example a person's name or a noun phrase: 老师的名字 (the teacher's name)."
+    },
+    {
+      "vi": "Khi cần phân biệt cụm sở hữu với câu có động từ 有: 我的书 (sách của tôi) khác 我有书 (tôi có sách).",
+      "en": "When you need to distinguish a possessive phrase from a sentence with the verb 有: 我的书 (my book) versus 我有书 (I have books)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "修饰语",
+        "role": "other",
+        "label": {"vi": "phần bổ nghĩa", "en": "modifier"},
+        "pinyin": ["xiū", "shì", "yǔ"]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ 的", "en": "particle 的"},
+        "pinyin": ["de"]
+      },
+      {
+        "text": "名词",
+        "role": "object",
+        "label": {"vi": "danh từ trung tâm", "en": "head noun"},
+        "pinyin": ["míng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "这是我的书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "other"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "我 là người sở hữu, 的 nối với danh từ 书.",
+        "en": "我 is the possessor, 的 links it to the noun 书."
+      },
+      "translation": {"vi": "Đây là sách của tôi.", "en": "This is my book."},
+      "pinyin": ["zhè", "shì", "wǒ", "de", "shū", ""]
+    },
+    {
+      "text": "老师的名字是王老师。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "other"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "老师 là người sở hữu, 的 nối với danh từ 名字.",
+        "en": "老师 is the possessor, 的 links it to the noun 名字."
+      },
+      "translation": {"vi": "Tên của giáo viên là thầy/cô Vương.", "en": "The teacher's name is Teacher Wang."},
+      "pinyin": ["lǎo", "shī", "de", "míng", "zì", "shì", "wáng", "lǎo", "shī", ""]
+    },
+    {
+      "text": "我喜欢新的电脑。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 5, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "新 là tính từ bổ nghĩa, 的 nối với danh từ 电脑.",
+        "en": "新 is the modifying adjective, 的 links it to the noun 电脑."
+      },
+      "translation": {"vi": "Tôi thích máy tính mới.", "en": "I like the new computer."},
+      "pinyin": ["wǒ", "xǐ", "huān", "xīn", "de", "diàn", "nǎo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Tiếng Việt đặt danh từ trước (sách của tôi), nhưng tiếng Trung đặt phần bổ nghĩa trước danh từ trung tâm: 我的书.",
+        "en": "Vietnamese puts the noun first (sách của tôi), but Chinese puts the modifier before the head noun: 我的书."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "书我的",
+      "right": "我的书",
+      "wrong_pinyin": ["shū", "wǒ", "de"],
+      "right_pinyin": ["wǒ", "de", "shū"]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这是我的___。",
+      "options": [
+        {"text": "书", "error_tag": null, "pinyin": ["shū"]},
+        {"text": "的书", "error_tag": "particle", "pinyin": ["de", "shū"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 我的 phải là danh từ trung tâm, không lặp lại 的.",
+        "en": "After 我的 the head noun follows directly; 的 is not repeated."
+      },
+      "q_pinyin": ["zhè", "shì", "wǒ", "de", "", "", "", ""]
+    },
+    {
+      "q": "老师的___是王老师。",
+      "options": [
+        {"text": "名字", "error_tag": null, "pinyin": ["míng", "zì"]},
+        {"text": "名字的", "error_tag": "particle", "pinyin": ["míng", "zì", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm 老师的名字 có 的 đứng giữa người sở hữu và danh từ, không đặt 的 sau danh từ.",
+        "en": "In 老师的名字, 的 stands between the possessor and the noun; it does not come after the noun."
+      },
+      "q_pinyin": ["lǎo", "shī", "de", "", "", "", "shì", "wáng", "lǎo", "shī", ""]
+    },
+    {
+      "q": "我喜欢___电脑。",
+      "options": [
+        {"text": "很新的", "error_tag": null, "pinyin": ["hěn", "xīn", "de"]},
+        {"text": "很新", "error_tag": "particle", "pinyin": ["hěn", "xīn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cụm tính từ 很新 đứng trước danh từ cần 的: 很新的电脑.",
+        "en": "The adjective phrase 很新 needs 的 before the noun: 很新的电脑."
+      },
+      "q_pinyin": ["wǒ", "xǐ", "huān", "", "", "", "diàn", "nǎo", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giới thiệu một đồ vật của bạn, dùng cấu trúc 我的 + danh từ.",
+      "en": "Write one sentence introducing something that belongs to you, using 我的 + noun."
+    },
+    "placeholder": "这是我的……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["我"], "role": "other"}, {"any_of": ["的"], "role": "particle"}]
+    },
+    "sample": {"text": "这是我的书。", "pinyin": ["zhè", "shì", "wǒ", "de", "shū", ""]},
+    "placeholder_pinyin": ["zhè", "shì", "wǒ", "de", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791297684",
+    "generated_at": "2026-10-06T14:41:24Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-5-s-h-u-v-b-ngh-a"],
+      "content_version": 2,
+      "content_hash": "2e8b44a236fdd6833a6d6c1a156413bbbebd9c48524857b01dac397865de6ccf",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-5-s-h-u-v-b-ngh-a",
+          "issue": "R5 xếp 的: sở hữu và bổ nghĩa ở HSK1 nhưng điểm này được gán level hsk3 1; cần giữ nội dung ở mức HSK1 nhưng ghi nhãn level theo yêu cầu.",
+          "fix": "Giữ từ vựng và ví dụ đơn giản ở mức HSK1, không thêm cấu trúc nâng cao; level trong metadata do hệ thống gán là hsk3 1."
+        },
+        {
+          "r5_id": "zh-hsk1-5-s-h-u-v-b-ngh-a",
+          "issue": "R5 đưa ví dụ 老师的名字是王老师 nhưng không giải thích 的 nối possessor với noun head trong cụm danh từ.",
+          "fix": "Thêm formula 修饰语 + 的 + 名词 và binding cho từng slot trong ví dụ."
+        },
+        {
+          "r5_id": "zh-hsk1-5-s-h-u-v-b-ngh-a",
+          "issue": "R5 có lỗi sai 我的是书 với giải thích chưa rõ; lỗi này không phải lỗi điển hình của người Việt với 的.",
+          "fix": "Thay bằng lỗi thật của người Việt: đặt danh từ trước modifier (书我的), sửa thành 我的书."
+        },
+        {
+          "r5_id": "zh-hsk1-5-s-h-u-v-b-ngh-a",
+          "issue": "R5 thiếu phần so sánh với 有 và thiếu quick practice dạng cloze.",
+          "fix": "Thêm ghi chú phân biệt 我的书 với 我有书 trong when_to_use; thêm 3 câu quick practice với distractor là lỗi particle."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

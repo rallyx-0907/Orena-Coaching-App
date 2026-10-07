@@ -56,26 +56,23 @@
         "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
         "options": [
           {"text": "是", "pinyin": ["shì"]},
-          {"text": "有", "pinyin": ["yǒu"]},
           {"text": "去", "pinyin": ["qù"]},
           {"text": "好", "pinyin": ["hǎo"]}
         ],
         "pinyin": ["", "", "", "", ""]
       },
       {
-        "text": "不/没",
+        "text": "不",
         "role": "marker",
-        "label": {"vi": "phủ định", "en": "negator"},
-        "options": [{"text": "不", "pinyin": ["bù"]}, {"text": "没", "pinyin": ["méi"]}],
-        "pinyin": ["bù", "", "méi"]
+        "label": {"vi": "phủ định 不", "en": "negator 不"},
+        "pinyin": ["bù"]
       },
       {
         "text": "V/Adj",
         "role": "verb",
-        "label": {"vi": "lặp lại động từ hoặc tính từ", "en": "repeated verb or adjective"},
+        "label": {"vi": "lặp lại cùng động từ hoặc tính từ", "en": "repeat the same verb or adjective"},
         "options": [
           {"text": "是", "pinyin": ["shì"]},
-          {"text": "有", "pinyin": ["yǒu"]},
           {"text": "去", "pinyin": ["qù"]},
           {"text": "好", "pinyin": ["hǎo"]}
         ],
@@ -98,35 +95,22 @@
           "pinyin": ["zhǔ", "yǔ"]
         },
         {
-          "text": "V/Adj",
+          "text": "有",
           "role": "verb",
-          "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
-          "options": [
-            {"text": "是", "pinyin": ["shì"]},
-            {"text": "有", "pinyin": ["yǒu"]},
-            {"text": "去", "pinyin": ["qù"]},
-            {"text": "好", "pinyin": ["hǎo"]}
-          ],
-          "pinyin": ["", "", "", "", ""]
+          "label": {"vi": "động từ 有", "en": "verb 有"},
+          "pinyin": ["yǒu"]
         },
         {
-          "text": "不/没",
+          "text": "没",
           "role": "marker",
-          "label": {"vi": "phủ định", "en": "negator"},
-          "options": [{"text": "不", "pinyin": ["bù"]}, {"text": "没", "pinyin": ["méi"]}],
-          "pinyin": ["bù", "", "méi"]
+          "label": {"vi": "phủ định của 有", "en": "negator used with 有"},
+          "pinyin": ["méi"]
         },
         {
-          "text": "V/Adj",
+          "text": "有",
           "role": "verb",
-          "label": {"vi": "lặp lại động từ hoặc tính từ", "en": "repeated verb or adjective"},
-          "options": [
-            {"text": "是", "pinyin": ["shì"]},
-            {"text": "有", "pinyin": ["yǒu"]},
-            {"text": "去", "pinyin": ["qù"]},
-            {"text": "好", "pinyin": ["hǎo"]}
-          ],
-          "pinyin": ["", "", "", "", ""]
+          "label": {"vi": "lặp lại 有", "en": "repeated 有"},
+          "pinyin": ["yǒu"]
         },
         {
           "text": "宾语",
@@ -269,7 +253,7 @@
     "sample": {"text": "你去不去？", "pinyin": ["nǐ", "qù", "bu", "qù", ""]},
     "placeholder_pinyin": ["nǐ", "qù", "", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -309,5 +293,10 @@
       ]
     }
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

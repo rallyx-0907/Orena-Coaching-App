@@ -1,0 +1,292 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk6_19_sentence_final_particles_in_advanced_use",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk6-19-sentence-final-particles-in-advanced-use"]},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": ["zh-hsk6-19-sentence-final-particles-in-advanced-use"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Sentence-final particles in advanced use",
+      "en": "Chinese grammar: Sentence-final particles in advanced use"
+    },
+    "native_title": "句末语气词的高级用法",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Ngữ pháp này dạy cách dùng các trợ từ cuối câu như 吧, 呢, 啊/呀, 嘛 để điều chỉnh thái độ, mức độ chắc chắn, sự nhẹ nhàng và sắc thái giao tiếp trong câu tiếng Trung.",
+      "en": "This point teaches how to use sentence-final particles such as 吧, 呢, 啊/呀, 嘛 to adjust stance, certainty, softness and interpersonal tone in Chinese sentences."
+    },
+    "sub": {"vi": "trợ từ cuối câu", "en": "sentence-final particles"},
+    "native_title_pinyin": ["jù", "mò", "yǔ", "qì", "cí", "de", "gāo", "jí", "yòng", "fǎ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn đưa ra lời đề nghị hoặc suy đoán một cách mềm mỏng, không áp đặt, thường dùng 吧 ở cuối câu.",
+      "en": "When you want to make a suggestion or a softened inference without sounding forceful, use 吧 at the end of the sentence."
+    },
+    {
+      "vi": "Khi bạn muốn giữ một chủ đề đang bàn hoặc tạo sự tương phản nhẹ với điều vừa nói, dùng 呢 sau chủ đề hoặc cuối câu.",
+      "en": "When you want to keep a topic open or create a light contrast with what was just said, use 呢 after the topic or at the end of the sentence."
+    },
+    {
+      "vi": "Khi bạn muốn thêm sắc thái thân mật, nhấn mạnh cảm xúc hoặc sự quan tâm, dùng 啊 hoặc 呀 ở cuối câu.",
+      "en": "When you want to add warmth, emotional emphasis or concern, use 啊 or 呀 at the end of the sentence."
+    },
+    {
+      "vi": "Khi bạn muốn ngụ ý rằng điều gì đó là hiển nhiên hoặc cả hai bên đều đã biết, dùng 嘛 ở cuối câu.",
+      "en": "When you want to imply that something is obvious or already shared knowledge, use 嘛 at the end of the sentence."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语/话题",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ/chủ đề", "en": "subject/topic"},
+        "pinyin": ["zhǔ", "yǔ", "", "huà", "tí"]
+      },
+      {
+        "text": "话题语气词",
+        "role": "particle",
+        "label": {"vi": "trợ từ sau chủ đề", "en": "topic particle"},
+        "optional": true,
+        "options": [
+          {"text": "呢", "pinyin": ["ne"]},
+          {"text": "啊", "pinyin": ["a"]},
+          {"text": "呀", "pinyin": ["ya"]}
+        ],
+        "pinyin": ["huà", "tí", "yǔ", "qì", "cí"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ", "en": "predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      },
+      {
+        "text": "句末语气词",
+        "role": "particle",
+        "label": {"vi": "trợ từ cuối câu", "en": "sentence-final particle"},
+        "optional": true,
+        "options": [
+          {"text": "吧", "pinyin": ["ba"]},
+          {"text": "呢", "pinyin": ["ne"]},
+          {"text": "啊", "pinyin": ["a"]},
+          {"text": "呀", "pinyin": ["ya"]},
+          {"text": "嘛", "pinyin": ["ma"]}
+        ],
+        "pinyin": ["jù", "mò", "yǔ", "qì", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我们还是先看看情况吧。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 7, "role": "verb"},
+        {"start": 7, "end": 9, "role": "object"},
+        {"start": 9, "end": 10, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "吧 làm mềm đề nghị hoặc quyết định ở cuối câu.",
+        "en": "吧 softens a suggestion or decision at sentence end."
+      },
+      "translation": {"vi": "Chúng ta cứ xem tình hình trước nhé.", "en": "Let's first see how things go."},
+      "pinyin": ["wǒ", "men", "hái", "shì", "xiān", "kàn", "kàn", "qíng", "kuàng", "ba", ""]
+    },
+    {
+      "text": "这个问题呢，我们以后再讨论。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "particle"},
+        {"start": 6, "end": 13, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "呢 sau chủ đề giữ chủ đề đang mở và chuyển sang phần bình luận.",
+        "en": "呢 after a topic keeps it active before the comment."
+      },
+      "translation": {
+        "vi": "Còn vấn đề này thì chúng ta sẽ bàn sau.",
+        "en": "As for this issue, we'll discuss it later."
+      },
+      "pinyin": ["zhè", "ge", "wèn", "tí", "ne", "", "wǒ", "men", "yǐ", "hòu", "zài", "tǎo", "lùn", ""]
+    },
+    {
+      "text": "他第一次做，出点错也很正常嘛。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 13, "role": "verb"},
+        {"start": 13, "end": 14, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "嘛 ở cuối câu nhấn mạnh điều người nói xem là hiển nhiên.",
+        "en": "嘛 sentence-finally presents the point as obvious or understandable."
+      },
+      "translation": {
+        "vi": "Anh ấy làm lần đầu, mắc chút lỗi cũng là chuyện bình thường mà.",
+        "en": "It is his first time doing it, so making a small mistake is normal."
+      },
+      "pinyin": [
+        "tā",
+        "dì",
+        "yī",
+        "cì",
+        "zuò",
+        "",
+        "chū",
+        "diǎn",
+        "cuò",
+        "yě",
+        "hěn",
+        "zhèng",
+        "cháng",
+        "ma",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "嘛 mang tính khẩu ngữ, làm giảm tính trang trọng của văn bản chính thức.",
+        "en": "嘛 is conversational and weakens the formal register of an official report."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "正式报告：结果不稳定嘛。",
+      "right": "正式报告：结果仍不稳定。",
+      "wrong_pinyin": ["zhèng", "shì", "bào", "gào", "", "jié", "guǒ", "bù", "wěn", "dìng", "ma", ""],
+      "right_pinyin": ["zhèng", "shì", "bào", "gào", "", "jié", "guǒ", "réng", "bù", "wěn", "dìng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我们还是先看看情况___。",
+      "options": [
+        {"text": "吧", "error_tag": null, "pinyin": ["ba"]},
+        {"text": "呢", "error_tag": "particle", "pinyin": ["ne"]},
+        {"text": "嘛", "error_tag": "particle", "pinyin": ["ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "吧 phù hợp để đưa ra đề nghị nhẹ nhàng; 呢 và 嘛 không mang sắc thái đề nghị này.",
+        "en": "吧 is appropriate for a soft suggestion; 呢 and 嘛 do not carry this suggestion tone."
+      },
+      "q_pinyin": ["wǒ", "men", "hái", "shì", "xiān", "kàn", "kàn", "qíng", "kuàng", "", "", "", ""]
+    },
+    {
+      "q": "这个问题___，我们以后再讨论。",
+      "options": [
+        {"text": "呢", "error_tag": null, "pinyin": ["ne"]},
+        {"text": "吧", "error_tag": "particle", "pinyin": ["ba"]},
+        {"text": "啊", "error_tag": "particle", "pinyin": ["a"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "呢 dùng để giữ chủ đề đang bàn; 吧 và 啊 không phù hợp ở vị trí này.",
+        "en": "呢 keeps the topic open; 吧 and 啊 are not appropriate here."
+      },
+      "q_pinyin": ["zhè", "ge", "wèn", "tí", "", "", "", "", "wǒ", "men", "yǐ", "hòu", "zài", "tǎo", "lùn", ""]
+    },
+    {
+      "q": "他第一次做，出点错也很正常___。",
+      "options": [
+        {"text": "嘛", "error_tag": null, "pinyin": ["ma"]},
+        {"text": "吧", "error_tag": "particle", "pinyin": ["ba"]},
+        {"text": "呢", "error_tag": "particle", "pinyin": ["ne"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "嘛 ngụ ý điều gì đó là hiển nhiên; 吧 và 呢 không mang nghĩa này.",
+        "en": "嘛 implies obviousness; 吧 and 呢 do not carry this meaning."
+      },
+      "q_pinyin": [
+        "tā",
+        "dì",
+        "yī",
+        "cì",
+        "zuò",
+        "",
+        "chū",
+        "diǎn",
+        "cuò",
+        "yě",
+        "hěn",
+        "zhèng",
+        "cháng",
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu đề nghị nhẹ nhàng với bạn bè, dùng 吧 ở cuối câu.",
+      "en": "Write a soft suggestion to a friend, using 吧 at the end of the sentence."
+    },
+    "placeholder": "我们还是……吧。",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["吧"], "role": "particle"}]},
+    "sample": {"text": "我们还是先吃饭吧。", "pinyin": ["wǒ", "men", "hái", "shì", "xiān", "chī", "fàn", "ba", ""]},
+    "placeholder_pinyin": ["wǒ", "men", "hái", "shì", "", "", "ba", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351889",
+    "generated_at": "2026-10-07T05:44:49Z",
+    "r5_source": {
+      "ids": ["zh-hsk6-19-sentence-final-particles-in-advanced-use"],
+      "content_version": 2,
+      "content_hash": "7114a16cb1d20e9263e34a09c0bb4a14429fb504fbc414a6bc8fdbe642573306",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk6-19-sentence-final-particles-in-advanced-use",
+          "issue": "R5 example '别着急啊，慢慢来。' uses 啊 but the formula did not include 啊 as a particle option.",
+          "fix": "Added 啊 and 呀 to the formula particle options and used 啊 in a quick-practice distractor."
+        },
+        {
+          "r5_id": "zh-hsk6-19-sentence-final-particles-in-advanced-use",
+          "issue": "R5 mistake '吧 always means question.' is a meta-statement, not a learner sentence.",
+          "fix": "Replaced with a real learner error: using 嘛 in a formal report, which is a register mistake."
+        },
+        {
+          "r5_id": "zh-hsk6-19-sentence-final-particles-in-advanced-use",
+          "issue": "R5 did not provide a clear formula or slot bindings for examples.",
+          "fix": "Added a formula with slots S + V + O + particle and bound each example to the formula slots."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:07Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

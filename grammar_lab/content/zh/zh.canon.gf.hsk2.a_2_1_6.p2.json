@@ -1,0 +1,211 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk2.a_2_1_6.p2",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sequence",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk2.017", "gf0025.hsk2.018", "gf0025.hsk2.019", "gf0025.hsk2.020"]},
+  "point_type": "other",
+  "sequence": 6,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Trạng từ: 关联副词：就", "en": "Adverbs: 关联副词：就"},
+    "native_title": "关联副词：就",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Phó từ liên kết 就 nối hai sự việc: nêu điều kiện hoặc thời điểm ở vế trước, rồi nói kết quả hoặc hành động xảy ra ngay sau đó.",
+      "en": "The linking adverb 就 connects two events: it marks that the second event follows immediately from the condition or time in the first clause."
+    },
+    "sub": {"vi": "liên kết 就", "en": "linking 就"},
+    "native_title_pinyin": ["guān", "lián", "fù", "cí", "", "jiù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi vế trước nêu điều kiện (nếu…), vế sau dùng 就 để nói kết quả tất yếu.",
+      "en": "When the first clause states a condition (if…), the second clause uses 就 for the resulting action."
+    },
+    {
+      "vi": "Khi vế trước nêu thời điểm hoặc hành động vừa xong, 就 cho biết việc sau xảy ra ngay lập tức.",
+      "en": "When the first clause gives a time or a just-finished action, 就 shows the next event happens right away."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh hai việc nối tiếp nhau trong một câu kể.",
+      "en": "When you want to stress that two events follow one another in a single statement."
+    },
+    {
+      "vi": "就 đứng sau chủ ngữ của vế thứ hai và trước động từ hoặc tính từ.",
+      "en": "就 comes after the subject of the second clause and before its verb or adjective."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "条件/时间",
+        "role": "other",
+        "label": {"vi": "điều kiện hoặc thời điểm", "en": "condition or time"},
+        "pinyin": ["tiáo", "jiàn", "", "shí", "jiān"]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ vế sau", "en": "second-clause subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "就",
+        "role": "connector",
+        "label": {"vi": "phó từ liên kết 就", "en": "linking adverb 就"},
+        "pinyin": ["jiù"]
+      },
+      {
+        "text": "动词/形容词",
+        "role": "verb",
+        "label": {"vi": "động từ hoặc tính từ", "en": "verb or adjective"},
+        "pinyin": ["dòng", "cí", "", "xíng", "róng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "你一说，我就明白了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "other"},
+        {"start": 4, "end": 5, "role": "subject"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Vừa nói xong thì tôi hiểu ngay; 就 nối hành động trước với kết quả tức thì.",
+        "en": "As soon as you spoke, I understood; 就 links the first action to the immediate result."
+      },
+      "translation": {"vi": "Bạn vừa nói là tôi hiểu ngay.", "en": "As soon as you said it, I understood."},
+      "pinyin": ["nǐ", "yī", "shuō", "", "wǒ", "jiù", "míng", "bái", "le", ""]
+    },
+    {
+      "text": "他一来，我们就开始吃饭。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "other"},
+        {"start": 4, "end": 6, "role": "subject"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện 'anh ấy đến' dẫn đến hành động 'chúng tôi bắt đầu ăn' ngay sau đó.",
+        "en": "The condition 'he arrives' leads straight to 'we start eating'."
+      },
+      "translation": {
+        "vi": "Anh ấy đến là chúng tôi bắt đầu ăn ngay.",
+        "en": "As soon as he arrives, we start eating."
+      },
+      "pinyin": ["tā", "yī", "lái", "", "wǒ", "men", "jiù", "kāi", "shǐ", "chī", "fàn", ""]
+    },
+    {
+      "text": "明天早上八点，我就去公司。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 6, "role": "other"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mốc thời gian '8 giờ sáng mai' đi với 就 để nhấn mạnh việc đi công ty xảy ra đúng lúc đó.",
+        "en": "The time 'eight tomorrow morning' pairs with 就 to stress that going to the office happens right then."
+      },
+      "translation": {
+        "vi": "Tám giờ sáng mai tôi sẽ đi công ty ngay.",
+        "en": "At eight tomorrow morning, I'll go to the office right away."
+      },
+      "pinyin": ["míng", "tiān", "zǎo", "shàng", "bā", "diǎn", "", "wǒ", "jiù", "qù", "gōng", "sī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "就 phải đứng trước động từ hoặc tính từ của vế sau, không đứng sau chúng.",
+        "en": "就 must come before the verb or adjective of the second clause, not after it."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "你一说，我明白了就。",
+      "right": "你一说，我就明白了。",
+      "wrong_pinyin": ["nǐ", "yī", "shuō", "", "wǒ", "míng", "bái", "le", "jiù", ""],
+      "right_pinyin": ["nǐ", "yī", "shuō", "", "wǒ", "jiù", "míng", "bái", "le", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "你一说，我___明白了。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "才", "error_tag": "conjunction", "pinyin": ["cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 cho biết kết quả xảy ra ngay sau hành động ở vế trước; 才 lại nhấn mạnh sự muộn màng hoặc khó khăn, không hợp ở đây.",
+        "en": "就 marks the immediate result after the first action; 才 stresses lateness or difficulty, so it does not fit here."
+      },
+      "q_pinyin": ["nǐ", "yī", "shuō", "", "wǒ", "", "", "", "míng", "bái", "le", ""]
+    },
+    {
+      "q": "他一来，我们___开始吃饭。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 nối điều kiện 'anh ấy đến' với hành động tiếp theo; 也 chỉ thêm ý 'cũng', không diễn tả sự nối tiếp.",
+        "en": "就 links the condition 'he arrives' to the next action; 也 only adds 'also' and does not show sequence."
+      },
+      "q_pinyin": ["tā", "yī", "lái", "", "wǒ", "men", "", "", "", "kāi", "shǐ", "chī", "fàn", ""]
+    },
+    {
+      "q": "明天早上八点，我___去公司。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "再", "error_tag": "conjunction", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 nhấn mạnh hành động xảy ra đúng vào mốc thời gian đã nêu; 再 dùng cho hành động lặp lại hoặc kéo dài, không hợp ở đây.",
+        "en": "就 stresses that the action happens right at the stated time; 再 is for repetition or continuation, so it does not fit."
+      },
+      "q_pinyin": ["míng", "tiān", "zǎo", "shàng", "bā", "diǎn", "", "wǒ", "", "", "", "qù", "gōng", "sī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về thói quen của bạn, dùng 就 để nối thời điểm hoặc điều kiện với hành động tiếp theo.",
+      "en": "Write one sentence about your routine, using 就 to link a time or condition to the next action."
+    },
+    "placeholder": "我每天……就……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["就"], "role": "connector"}]},
+    "sample": {"text": "我每天七点就起床。", "pinyin": ["wǒ", "měi", "tiān", "qī", "diǎn", "jiù", "qǐ", "chuáng", ""]},
+    "placeholder_pinyin": ["wǒ", "měi", "tiān", "", "", "jiù", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338045",
+    "generated_at": "2026-10-07T01:54:05Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

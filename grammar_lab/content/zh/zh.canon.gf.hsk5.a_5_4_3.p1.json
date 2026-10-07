@@ -1,0 +1,233 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_4_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_1_3.p1"],
+  "contrasts": [],
+  "error_tags": ["particle", "complement"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.034", "gf0025.hsk5.037"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Bổ ngữ: 趋向补语 4：表示时间意义（引申用法）", "en": "Complements: 趋向补语 4：表示时间意义（引申用法）"},
+    "native_title": "趋向补语4：表示时间意义（引申用法）",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Bổ ngữ xu hướng 来/去 dùng theo nghĩa mở rộng để nói thời gian kéo dài hoặc tiếp diễn.",
+      "en": "The directional complements 来/去 used in their extended sense to talk about time stretching on or continuing."
+    },
+    "sub": {"vi": "thời gian kéo dài", "en": "time stretching on"},
+    "native_title_pinyin": [
+      "qū",
+      "xiàng",
+      "bǔ",
+      "yǔ",
+      "",
+      "",
+      "biǎo",
+      "shì",
+      "shí",
+      "jiān",
+      "yì",
+      "yì",
+      "",
+      "yǐn",
+      "shēn",
+      "yòng",
+      "fǎ",
+      ""
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một khoảng thời gian đã trôi qua hoặc sẽ trôi qua, dùng 下来/下去 sau từ chỉ thời gian.",
+      "en": "When you want to say a period of time has passed or will pass, use 下来/下去 after a time expression."
+    },
+    {
+      "vi": "Khi muốn nói một hoạt động tiếp tục từ hiện tại trở đi, dùng 下去 sau động từ.",
+      "en": "When you want to say an activity continues from now on, use 下去 after the verb."
+    },
+    {
+      "vi": "Khi muốn nói một trạng thái bắt đầu từ trước và kéo dài đến nay, dùng 下来 sau tính từ hoặc động từ.",
+      "en": "When you want to say a state started earlier and has lasted until now, use 下来 after an adjective or verb."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "V/Adj",
+        "role": "verb",
+        "label": {"vi": "động từ / tính từ", "en": "verb / adjective"},
+        "pinyin": ["", "", "", "", ""]
+      },
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "khoảng thời gian", "en": "duration"},
+        "optional": true,
+        "pinyin": ["", "", "", ""]
+      },
+      {
+        "text": "下来/下去",
+        "role": "complement",
+        "label": {"vi": "bổ ngữ xu hướng (nghĩa thời gian)", "en": "directional complement (time sense)"},
+        "options": [{"text": "下来", "pinyin": ["xià", "lái"]}, {"text": "下去", "pinyin": ["xià", "qù"]}],
+        "pinyin": ["xià", "lái", "", "xià", "qù"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他在这里住了下来。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 6, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "下来 cho thấy trạng thái ở lại bắt đầu và kéo dài.",
+        "en": "下来 shows the state of staying started and continues."
+      },
+      "translation": {"vi": "Anh ấy đã ở lại đây.", "en": "He stayed here."},
+      "pinyin": ["tā", "zài", "zhè", "lǐ", "zhù", "le", "xià", "lái", ""]
+    },
+    {
+      "text": "请你继续说下去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "下去 cho thấy hoạt động nói tiếp tục từ hiện tại trở đi.",
+        "en": "下去 shows the activity of speaking continues from now on."
+      },
+      "translation": {"vi": "Xin bạn tiếp tục nói.", "en": "Please continue speaking."},
+      "pinyin": ["qǐng", "nǐ", "jì", "xù", "shuō", "xià", "qù", ""]
+    },
+    {
+      "text": "这个习惯他坚持了三年下来。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 5, "role": "subject"},
+        {"start": 5, "end": 7, "role": "verb"},
+        {"start": 8, "end": 10, "role": "time"},
+        {"start": 10, "end": 12, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "下来 sau khoảng thời gian cho thấy thói quen được duy trì suốt ba năm.",
+        "en": "下来 after the duration shows the habit was kept up for three years."
+      },
+      "translation": {
+        "vi": "Anh ấy đã duy trì thói quen này suốt ba năm.",
+        "en": "He kept up this habit for three years."
+      },
+      "pinyin": ["zhè", "ge", "xí", "guàn", "tā", "jiān", "chí", "le", "sān", "nián", "xià", "lái", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu 了 để đánh dấu trạng thái đã bắt đầu và đang kéo dài; 下来 cần 了 khi nhấn mạnh kết quả đã hình thành.",
+        "en": "Missing 了 to mark that the state has started and continues; 下来 needs 了 when the resulting state is emphasized."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "他在这里住下来。",
+      "right": "他在这里住了下来。",
+      "wrong_pinyin": ["tā", "zài", "zhè", "lǐ", "zhù", "xià", "lái", ""],
+      "right_pinyin": ["tā", "zài", "zhè", "lǐ", "zhù", "le", "xià", "lái", ""]
+    },
+    {
+      "reason": {
+        "vi": "Lẫn giữa 上来 và 下去: 下去 mới diễn tả hoạt động tiếp tục từ hiện tại trở đi, còn 上来 chỉ hướng lên.",
+        "en": "Confusing 上来 with 下去: only 下去 expresses an activity continuing from now on, while 上来 means upward direction."
+      },
+      "error_tag": "complement",
+      "l1": ["vi"],
+      "wrong": "请你继续说上来。",
+      "right": "请你继续说下去。",
+      "wrong_pinyin": ["qǐng", "nǐ", "jì", "xù", "shuō", "shàng", "lái", ""],
+      "right_pinyin": ["qǐng", "nǐ", "jì", "xù", "shuō", "xià", "qù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他在这里住了___。",
+      "options": [
+        {"text": "下来", "error_tag": null, "pinyin": ["xià", "lái"]},
+        {"text": "下去", "error_tag": "complement", "pinyin": ["xià", "qù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "下来 diễn tả trạng thái ở lại bắt đầu và kéo dài đến hiện tại; 下去 chỉ hoạt động tiếp tục từ hiện tại trở đi.",
+        "en": "下来 expresses a state of staying that started and continues to now; 下去 only means an activity continues from now on."
+      },
+      "q_pinyin": ["tā", "zài", "zhè", "lǐ", "zhù", "le", "", "", "", ""]
+    },
+    {
+      "q": "请你继续说___。",
+      "options": [
+        {"text": "下去", "error_tag": null, "pinyin": ["xià", "qù"]},
+        {"text": "下来", "error_tag": "complement", "pinyin": ["xià", "lái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "下去 dùng cho hoạt động tiếp tục từ hiện tại trở đi; 下来 dùng cho trạng thái kéo dài đến nay.",
+        "en": "下去 is used for an activity continuing from now on; 下来 is used for a state lasting until now."
+      },
+      "q_pinyin": ["qǐng", "nǐ", "jì", "xù", "shuō", "", "", "", ""]
+    },
+    {
+      "q": "这个习惯他坚持了三年___。",
+      "options": [
+        {"text": "下来", "error_tag": null, "pinyin": ["xià", "lái"]},
+        {"text": "下去", "error_tag": "complement", "pinyin": ["xià", "qù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau khoảng thời gian đã qua, 下来 cho thấy việc duy trì kéo dài đến nay; 下去 chỉ hướng tiếp diễn về sau.",
+        "en": "After a past duration, 下来 shows the keeping-up lasted until now; 下去 points to continuing into the future."
+      },
+      "q_pinyin": ["zhè", "ge", "xí", "guàn", "tā", "jiān", "chí", "le", "sān", "nián", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một thói quen hoặc trạng thái bạn đã duy trì trong một khoảng thời gian, dùng 下来.",
+      "en": "Write a sentence about a habit or state you have kept up for a period of time, using 下来."
+    },
+    "placeholder": "我坚持了……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"regex": "坚持|保持|住|活|学|做", "role": "verb"}, {"any_of": ["下来"], "role": "complement"}]
+    },
+    "sample": {"text": "我坚持了三年下来。", "pinyin": ["wǒ", "jiān", "chí", "le", "sān", "nián", "xià", "lái", ""]},
+    "placeholder_pinyin": ["wǒ", "jiān", "chí", "le", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791342333",
+    "generated_at": "2026-10-07T03:05:33Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

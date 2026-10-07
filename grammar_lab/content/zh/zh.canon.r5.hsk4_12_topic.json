@@ -1,0 +1,288 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_12_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.neng_yuan_dei"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-12-topic"], "gf0025": ["gf0025.hsk3.029", "gf0025.hsk4.017"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk4-12-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 按、按照", "en": "Chinese grammar: 按、按照"},
+    "native_title": "按、按照",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "按照 và 根据 đều đứng trước một căn cứ, nhưng 按照 nhấn mạnh làm theo quy tắc hay chỉ dẫn, còn 根据 nhấn mạnh dựa trên bằng chứng hay nguồn tin để kết luận.",
+      "en": "按照 and 根据 both introduce a basis, but 按照 stresses following a rule or instruction, while 根据 stresses drawing a conclusion from evidence or a source."
+    },
+    "sub": {"vi": "căn cứ hành động", "en": "basis for action"},
+    "native_title_pinyin": ["àn", "", "àn", "zhào"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Dùng 按照 khi nói ai đó làm đúng theo quy tắc, kế hoạch, hướng dẫn hoặc lịch trình đã có.",
+      "en": "Use 按照 when someone acts in line with an existing rule, plan, instruction or schedule."
+    },
+    {
+      "vi": "Dùng 根据 khi kết luận hoặc quyết định dựa trên dữ liệu, báo cáo, điều tra hay nguồn tin cụ thể.",
+      "en": "Use 根据 when a conclusion or decision is based on data, a report, an investigation or a specific source."
+    },
+    {
+      "vi": "Cả hai đều đứng trước động từ chính, thường sau chủ ngữ, và có thể mở đầu câu khi phần căn cứ là thông tin nền.",
+      "en": "Both come before the main verb, usually after the subject, and can open the sentence when the basis is background information."
+    },
+    {
+      "vi": "Cụm 按照/根据 + căn cứ có thể đứng trước chủ ngữ để nhấn mạnh căn cứ, nhất là trong văn viết.",
+      "en": "The phrase 按照/根据 + basis can precede the subject to foreground the basis, especially in written Chinese."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "按照/根据",
+        "role": "marker",
+        "label": {"vi": "theo/dựa theo", "en": "according to"},
+        "options": [{"text": "按照", "pinyin": ["àn", "zhào"]}, {"text": "根据", "pinyin": ["gēn", "jù"]}],
+        "pinyin": ["àn", "zhào", "", "gēn", "jù"]
+      },
+      {
+        "text": "依据",
+        "role": "other",
+        "label": {"vi": "căn cứ", "en": "basis"},
+        "pinyin": ["yī", "jù"]
+      },
+      {
+        "text": "主语2",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ sau cụm căn cứ", "en": "post-basis subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ", ""]
+      },
+      {
+        "text": "行动/结论",
+        "role": "verb",
+        "label": {"vi": "hành động/kết luận", "en": "action/conclusion"},
+        "pinyin": ["xíng", "dòng", "", "jié", "lùn"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "请按照说明操作。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 5, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "按照 + căn cứ cho biết làm theo hướng dẫn nào.",
+        "en": "按照 + basis states what instructions to follow."
+      },
+      "translation": {"vi": "Hãy thao tác theo hướng dẫn.", "en": "Please operate according to the instructions."},
+      "pinyin": ["qǐng", "àn", "zhào", "shuō", "míng", "cāo", "zuò", ""]
+    },
+    {
+      "text": "我们按照计划开始工作。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "other"},
+        {"start": 6, "end": 10, "role": "verb"}
+      ],
+      "annotation": {"vi": "Chủ ngữ có thể đứng trước 按照.", "en": "The subject can appear before 按照."},
+      "translation": {
+        "vi": "Chúng tôi bắt đầu công việc theo kế hoạch.",
+        "en": "We started work according to the plan."
+      },
+      "pinyin": ["wǒ", "men", "àn", "zhào", "jì", "huà", "kāi", "shǐ", "gōng", "zuò", ""]
+    },
+    {
+      "text": "根据数据，这个方法更有效。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 9, "role": "subject"},
+        {"start": 9, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "根据 thường đặt cụm căn cứ ở đầu câu rồi nêu kết luận.",
+        "en": "根据 often fronts the basis before the conclusion."
+      },
+      "translation": {
+        "vi": "Dựa trên dữ liệu, phương pháp này hiệu quả hơn.",
+        "en": "According to the data, this method is more effective."
+      },
+      "pinyin": ["gēn", "jù", "shù", "jù", "", "zhè", "ge", "fāng", "fǎ", "gèng", "yǒu", "xiào", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi ý là làm theo đúng các bước trong chỉ dẫn, tiếng Trung dùng 按照; 根据 gợi ý lấy chỉ dẫn làm bằng chứng để suy luận, không hợp ngữ cảnh thao tác.",
+        "en": "When the meaning is to follow the steps in an instruction, Chinese uses 按照; 根据 suggests using the instruction as evidence for inference, which does not fit a procedural context."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "根据说明一步一步操作。",
+      "right": "按照说明一步一步操作。",
+      "wrong_pinyin": ["gēn", "jù", "shuō", "míng", "yí", "bù", "yí", "bù", "cāo", "zuò", ""],
+      "right_pinyin": ["àn", "zhào", "shuō", "míng", "yí", "bù", "yí", "bù", "cāo", "zuò", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "请___说明书安装这个软件。",
+      "options": [
+        {"text": "按照", "error_tag": null, "pinyin": ["àn", "zhào"]},
+        {"text": "根据", "error_tag": "word_choice", "pinyin": ["gēn", "jù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cài đặt theo các bước trong sách hướng dẫn là làm theo chỉ dẫn, nên dùng 按照. 根据 không sai ngữ pháp nhưng lệch nghĩa: nó thiên về lấy thông tin làm căn cứ để suy luận.",
+        "en": "Installing by following the steps in a manual is following instructions, so 按照 is correct. 根据 is not ungrammatical but shifts the meaning toward using information as evidence for inference."
+      },
+      "q_pinyin": ["qǐng", "", "", "", "shuō", "míng", "shū", "ān", "zhuāng", "zhè", "ge", "ruǎn", "jiàn", ""]
+    },
+    {
+      "q": "___调查，大多数学生每天用手机超过三小时。",
+      "options": [
+        {"text": "根据", "error_tag": null, "pinyin": ["gēn", "jù"]},
+        {"text": "按照", "error_tag": "word_choice", "pinyin": ["àn", "zhào"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu nêu kết luận dựa trên một cuộc điều tra, tức là dựa trên bằng chứng, nên dùng 根据. 按照 sẽ biến cuộc điều tra thành quy tắc phải tuân theo, không đúng ý.",
+        "en": "The sentence states a conclusion based on a survey, i.e. on evidence, so 根据 is correct. 按照 would turn the survey into a rule to follow, which is not the intended meaning."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "diào",
+        "chá",
+        "",
+        "dà",
+        "duō",
+        "shù",
+        "xué",
+        "shēng",
+        "měi",
+        "tiān",
+        "yòng",
+        "shǒu",
+        "jī",
+        "chāo",
+        "guò",
+        "sān",
+        "xiǎo",
+        "shí",
+        ""
+      ]
+    },
+    {
+      "q": "我们___公司的规定，每天九点上班。",
+      "options": [
+        {"text": "按照", "error_tag": null, "pinyin": ["àn", "zhào"]},
+        {"text": "根据", "error_tag": "word_choice", "pinyin": ["gēn", "jù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Quy định của công ty là quy tắc phải tuân theo, nên dùng 按照. 根据 không phù hợp vì không có suy luận từ bằng chứng.",
+        "en": "A company regulation is a rule to follow, so 按照 is correct. 根据 does not fit because there is no inference from evidence."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "gōng",
+        "sī",
+        "de",
+        "guī",
+        "dìng",
+        "",
+        "měi",
+        "tiān",
+        "jiǔ",
+        "diǎn",
+        "shàng",
+        "bān",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn làm theo một quy tắc, kế hoạch hoặc hướng dẫn, dùng 按照 hoặc 根据.",
+      "en": "Write one sentence about following a rule, plan or instruction, using 按照 or 根据."
+    },
+    "placeholder": "我按照……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["按照", "根据"], "role": "marker"}]},
+    "sample": {
+      "text": "我按照老师的要求完成了作业。",
+      "pinyin": ["wǒ", "àn", "zhào", "lǎo", "shī", "de", "yāo", "qiú", "wán", "chéng", "le", "zuò", "yè", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "àn", "zhào", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351874",
+    "generated_at": "2026-10-07T05:44:34Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-12-topic"],
+      "content_version": 2,
+      "content_hash": "cad90a9be41ccec8dab08857d50fbedf4e6b640e7c5fcfad87659e7e77c663cc",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-12-topic",
+          "issue": "R5 gộp 按照 và 根据 thành một mục '按照/根据...' nhưng không nêu rõ tiêu chí chọn: 按照 thiên về làm theo quy tắc/chỉ dẫn, 根据 thiên về dựa trên bằng chứng/nguồn tin.",
+          "fix": "Tách rõ hai tiêu chí trong when_to_use và common_mistakes: 按照 + quy tắc/chỉ dẫn/kế hoạch; 根据 + dữ liệu/báo cáo/điều tra/nguồn tin."
+        },
+        {
+          "r5_id": "zh-hsk4-12-topic",
+          "issue": "R5 đưa ví dụ '根据数据，这个方法更有效。' nhưng không có dấu phẩy sau 数据, trong khi câu có cụm căn cứ mở đầu cần dấu phẩy để tách mệnh đề.",
+          "fix": "Thêm dấu phẩy: '根据数据，这个方法更有效。'"
+        },
+        {
+          "r5_id": "zh-hsk4-12-topic",
+          "issue": "R5 liệt kê '根据说明一步一步操作。' là lỗi nhưng không giải thích rõ cơ chế: 根据 không sai ngữ pháp, chỉ sai sắc thái vì biến chỉ dẫn thành bằng chứng suy luận.",
+          "fix": "Ghi rõ trong reason: 根据 gợi ý lấy chỉ dẫn làm bằng chứng để suy luận, không hợp ngữ cảnh thao tác theo bước."
+        },
+        {
+          "r5_id": "zh-hsk4-12-topic",
+          "issue": "R5 không cung cấp công thức trừu tượng, không có bindings cho ví dụ, không có quick_practice và personal_production theo schema v0.4.",
+          "fix": "Bổ sung formula 4 slot, bindings cho từng ví dụ, 3 câu quick_practice và personal_production với pattern_rule."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

@@ -1,0 +1,359 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_29_metadiscourse_grammar",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.register_style",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_28_advanced_connector_economy"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-29-metadiscourse-grammar"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["zh-hsk79-29-metadiscourse-grammar"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Metadiscourse grammar",
+      "en": "Chinese grammar: Metadiscourse grammar"
+    },
+    "native_title": "元话语语法",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Cấu trúc diễn ngôn dùng để dẫn dắt người đọc qua bố cục lập luận, đánh dấu mức độ quan trọng và định hướng cách hiểu văn bản.",
+      "en": "Discourse structures that guide the reader through the organization of an argument, mark salience, and direct how the text should be understood."
+    },
+    "sub": {"vi": "dẫn dắt lập luận", "en": "guiding the argument"},
+    "native_title_pinyin": ["yuán", "huà", "yǔ", "yǔ", "fǎ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi mở đầu một bài viết học thuật và cần nêu rõ phạm vi hoặc các phần sẽ được trình bày.",
+      "en": "When opening an academic text and you need to state the scope or the parts that will be presented."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh một điểm giữa nhiều thông tin, để người đọc biết đâu là điều đáng chú ý.",
+      "en": "When you want to highlight one point among several, so the reader knows what deserves attention."
+    },
+    {
+      "vi": "Khi cần diễn đạt lại một ý vừa nêu bằng cách nói khác để tránh hiểu nhầm.",
+      "en": "When you need to restate a point in different words to prevent misunderstanding."
+    },
+    {
+      "vi": "Khi muốn liên kết với nội dung đã trình bày trước đó hoặc với phần sắp trình bày sau.",
+      "en": "When you want to link back to content already presented or forward to content still to come."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "元话语标记",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu diễn ngôn", "en": "metadiscourse marker"},
+        "options": [
+          {"text": "本文", "pinyin": ["běn", "wén"]},
+          {"text": "如上所述", "pinyin": ["rú", "shàng", "suǒ", "shù"]},
+          {"text": "换言之", "pinyin": ["huàn", "yán", "zhī"]},
+          {"text": "值得注意的是", "pinyin": ["zhí", "de", "zhù", "yì", "de", "shì"]},
+          {"text": "下文", "pinyin": ["xià", "wén"]}
+        ],
+        "pinyin": ["yuán", "huà", "yǔ", "biāo", "jì"]
+      },
+      {
+        "text": "，",
+        "role": "other",
+        "label": {"vi": "dấu phẩy", "en": "comma"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "命题内容",
+        "role": "other",
+        "label": {"vi": "nội dung mệnh đề", "en": "propositional content"},
+        "pinyin": ["mìng", "tí", "nèi", "róng"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "本文将从三个方面讨论这一问题。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "marker"}, {"start": 2, "end": 14, "role": "other"}],
+      "annotation": {
+        "vi": "本文 báo trước phạm vi và bố cục của bài viết.",
+        "en": "本文 announces the scope and structure of the paper."
+      },
+      "translation": {
+        "vi": "Bài này sẽ bàn vấn đề từ ba mặt.",
+        "en": "This paper will discuss the issue from three aspects."
+      },
+      "pinyin": [
+        "běn",
+        "wén",
+        "jiāng",
+        "cóng",
+        "sān",
+        "gè",
+        "fāng",
+        "miàn",
+        "tǎo",
+        "lùn",
+        "zhè",
+        "yī",
+        "wèn",
+        "tí",
+        ""
+      ]
+    },
+    {
+      "text": "如上所述，现有证据仍然有限。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "marker"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "如上所述 liên kết với nội dung đã nêu trước đó.",
+        "en": "如上所述 links back to content already stated."
+      },
+      "translation": {
+        "vi": "Như đã nêu trên, bằng chứng hiện có còn hạn chế.",
+        "en": "As stated above, the available evidence remains limited."
+      },
+      "pinyin": [
+        "rú",
+        "shàng",
+        "suǒ",
+        "shù",
+        "",
+        "xiàn",
+        "yǒu",
+        "zhèng",
+        "jù",
+        "réng",
+        "rán",
+        "yǒu",
+        "xiàn",
+        ""
+      ]
+    },
+    {
+      "text": "换言之，我们需要重新定义研究问题。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "marker"},
+        {"start": 3, "end": 4, "role": "other"},
+        {"start": 4, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "换言之 diễn đạt lại ý vừa nêu bằng cách nói khác.",
+        "en": "换言之 restates the previous point in different words."
+      },
+      "translation": {
+        "vi": "Nói cách khác, ta cần định nghĩa lại câu hỏi nghiên cứu.",
+        "en": "In other words, we need to redefine the research question."
+      },
+      "pinyin": [
+        "huàn",
+        "yán",
+        "zhī",
+        "",
+        "wǒ",
+        "men",
+        "xū",
+        "yào",
+        "chóng",
+        "xīn",
+        "dìng",
+        "yì",
+        "yán",
+        "jiū",
+        "wèn",
+        "tí",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "如上所述 chỉ dùng để quay lại nội dung đã nói trước đó; nếu chưa hề nêu nội dung ấy thì tham chiếu là sai, phá vỡ tính liên kết.",
+        "en": "如上所述 refers back to content already mentioned; if that content has not appeared, the reference is false and breaks cohesion."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "如上所述，下文将进一步说明这一点。",
+      "right": "下文将进一步说明这一点。",
+      "wrong_pinyin": [
+        "rú",
+        "shàng",
+        "suǒ",
+        "shù",
+        "",
+        "xià",
+        "wén",
+        "jiāng",
+        "jìn",
+        "yí",
+        "bù",
+        "shuō",
+        "míng",
+        "zhè",
+        "yì",
+        "diǎn",
+        ""
+      ],
+      "right_pinyin": ["xià", "wén", "jiāng", "jìn", "yí", "bù", "shuō", "míng", "zhè", "yì", "diǎn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___，现有证据仍然有限。",
+      "options": [
+        {"text": "如上所述", "error_tag": null, "pinyin": ["rú", "shàng", "suǒ", "shù"]},
+        {"text": "如上所讲", "error_tag": "collocation", "pinyin": ["rú", "shàng", "suǒ", "jiǎng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "如上所述 là cụm cố định dùng để quay lại nội dung đã nêu; 如上所讲 không phải cách nói chuẩn trong văn viết học thuật.",
+        "en": "如上所述 is the fixed phrase for referring back to earlier content; 如上所讲 is not the standard academic written form."
+      },
+      "q_pinyin": ["", "", "", "", "xiàn", "yǒu", "zhèng", "jù", "réng", "rán", "yǒu", "xiàn", ""]
+    },
+    {
+      "q": "本文将从三个方面___这一问题。",
+      "options": [
+        {"text": "讨论", "error_tag": null, "pinyin": ["tǎo", "lùn"]},
+        {"text": "讨论的", "error_tag": "particle", "pinyin": ["tǎo", "lùn", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 将 cần động từ chính; 讨论的 thêm 的 không phù hợp vì không có danh từ theo sau.",
+        "en": "After 将 the main verb is needed; 讨论的 adds 的 with no following noun, which is ungrammatical here."
+      },
+      "q_pinyin": [
+        "běn",
+        "wén",
+        "jiāng",
+        "cóng",
+        "sān",
+        "gè",
+        "fāng",
+        "miàn",
+        "",
+        "",
+        "",
+        "zhè",
+        "yī",
+        "wèn",
+        "tí",
+        ""
+      ]
+    },
+    {
+      "q": "换言之，我们需要___研究问题。",
+      "options": [
+        {"text": "重新定义", "error_tag": null, "pinyin": ["chóng", "xīn", "dìng", "yì"]},
+        {"text": "重新定义着", "error_tag": "aspect", "pinyin": ["chóng", "xīn", "dìng", "yì", "zhe"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "重新定义 là động từ chỉ hành động cần làm; 着 không dùng với động từ chỉ hành động có mục đích rõ ràng như vậy.",
+        "en": "重新定义 is the action verb needed here; 着 is not used with a deliberate action verb like this."
+      },
+      "q_pinyin": [
+        "huàn",
+        "yán",
+        "zhī",
+        "",
+        "wǒ",
+        "men",
+        "xū",
+        "yào",
+        "",
+        "",
+        "",
+        "yán",
+        "jiū",
+        "wèn",
+        "tí",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu mở đầu bài viết của bạn, dùng 本文 để nêu phạm vi hoặc các phần sẽ trình bày.",
+      "en": "Write an opening sentence for your paper, using 本文 to state the scope or the parts you will present."
+    },
+    "placeholder": "本文将从……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["本文"], "role": "marker"}]},
+    "sample": {
+      "text": "本文将从三个方面讨论这一问题。",
+      "pinyin": [
+        "běn",
+        "wén",
+        "jiāng",
+        "cóng",
+        "sān",
+        "gè",
+        "fāng",
+        "miàn",
+        "tǎo",
+        "lùn",
+        "zhè",
+        "yī",
+        "wèn",
+        "tí",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["běn", "wén", "jiāng", "cóng", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791347563",
+    "generated_at": "2026-10-07T04:32:43Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-29-metadiscourse-grammar"],
+      "content_version": 2,
+      "content_hash": "6034149a4dde3892e348689fe711540928d0c02005f5bf9b3304277f0c06f41f",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-29-metadiscourse-grammar",
+          "issue": "R5 đưa ra bốn ví dụ nhưng không có công thức, không có bindings, không có quick practice và personal production theo schema.",
+          "fix": "Đã bổ sung formula với slot 元话语标记 + dấu phẩy + 命题内容, bindings cho từng ví dụ, ba câu quick practice và thẻ personal production."
+        },
+        {
+          "r5_id": "zh-hsk79-29-metadiscourse-grammar",
+          "issue": "R5 ghi '如上所述 placed before content never mentioned earlier' là lỗi nhưng không đưa ra câu sai hoàn chỉnh.",
+          "fix": "Đã viết lại thành cặp wrong/right hoàn chỉnh: 如上所述，下文将进一步说明这一点。 → 下文将进一步说明这一点。"
+        },
+        {
+          "r5_id": "zh-hsk79-29-metadiscourse-grammar",
+          "issue": "R5 liệt kê '值得注意的是 every sentence' là lỗi nhưng không có câu sai cụ thể.",
+          "fix": "Đã lược bỏ khỏi common_mistakes vì không thể tạo câu sai hoàn chỉnh chỉ từ mô tả trừu tượng; thay bằng lỗi tham chiếu sai của 如上所述."
+        },
+        {
+          "r5_id": "zh-hsk79-29-metadiscourse-grammar",
+          "issue": "R5 dùng thuật ngữ 'Metadiscourse grammar' trong tiêu đề và giải thích tiếng Việt nhưng không có bản dịch tiếng Anh.",
+          "fix": "Đã viết summary, sub, when_to_use, label, annotation, translation, reason và explain cho cả vi và en."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:49Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

@@ -1,0 +1,302 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_15_tendencies",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_14_n_ng_cao_153"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-15-tendencies", "zh-hsk79-4-dense-nominal-structures"]},
+  "point_type": "other",
+  "sequence": 7,
+  "aliases": ["zh-hsk5-15-tendencies", "zh-hsk79-4-dense-nominal-structures"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Danh từ: 名词化 tendencies", "en": "Nouns: 名词化 tendencies"},
+    "native_title": "名词化倾向",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "名词化 là cách biến động từ hoặc tính từ thành cụm danh từ, thường dùng 的 để nối, giúp câu văn viết trang trọng và có thể nhắc lại sự việc như một khái niệm.",
+      "en": "Nominalisation turns a verb or adjective into a noun phrase, usually with 的, so a process can be referred to as a thing in formal writing."
+    },
+    "sub": {"vi": "danh từ hóa", "en": "nominalisation"},
+    "native_title_pinyin": ["míng", "cí", "huà", "qīng", "xiàng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhắc lại một hành động hoặc quá trình đã nói trước đó như một khái niệm, ví dụ 成本的降低.",
+      "en": "When you want to refer back to an action or process as a concept, for example 成本的降低."
+    },
+    {
+      "vi": "Khi viết văn bản trang trọng như báo cáo, phân tích, nơi chủ thể hành động không cần nêu rõ.",
+      "en": "In formal writing such as reports or analyses, where the agent does not need to be named."
+    },
+    {
+      "vi": "Khi muốn dùng cụm danh từ làm chủ ngữ hoặc tân ngữ của một động từ khác, ví dụ 技术的发展改变了工作方式.",
+      "en": "When the noun phrase needs to be the subject or object of another verb, for example 技术的发展改变了工作方式."
+    },
+    {
+      "vi": "Khi cần dùng cấu trúc 对...的 + danh từ hóa để nêu đối tượng bị tác động, ví dụ 对数据进行了分析.",
+      "en": "When using 对...的 + nominalised noun to name the affected object, for example 对数据进行了分析."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "名词",
+        "role": "subject",
+        "label": {"vi": "danh từ/cụm danh từ", "en": "noun phrase"},
+        "pinyin": ["míng", "cí"]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ 的", "en": "particle 的"},
+        "pinyin": ["de"]
+      },
+      {
+        "text": "名词化动作",
+        "role": "verb",
+        "label": {"vi": "hành động danh từ hóa", "en": "nominalized action"},
+        "pinyin": ["míng", "cí", "huà", "dòng", "zuò"]
+      },
+      {
+        "text": "谓语",
+        "role": "verb",
+        "label": {"vi": "vị ngữ chính", "en": "main predicate"},
+        "pinyin": ["wèi", "yǔ"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "成本的降低提高了产品竞争力。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 5, "end": 8, "role": "verb"},
+        {"start": 8, "end": 13, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "降低 được danh từ hóa bởi 的 và làm trung tâm của cụm chủ ngữ.",
+        "en": "降低 is nominalized with 的 and forms the core of the subject phrase."
+      },
+      "translation": {
+        "vi": "Việc giảm chi phí đã nâng cao sức cạnh tranh của sản phẩm.",
+        "en": "The reduction in cost improved product competitiveness."
+      },
+      "pinyin": [
+        "chéng",
+        "běn",
+        "de",
+        "jiàng",
+        "dī",
+        "tí",
+        "gāo",
+        "le",
+        "chǎn",
+        "pǐn",
+        "jìng",
+        "zhēng",
+        "lì",
+        ""
+      ]
+    },
+    {
+      "text": "数据的分析提供了重要依据。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 5, "end": 8, "role": "verb"},
+        {"start": 8, "end": 12, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "数据的分析 biến hành động 分析 thành một cụm danh từ.",
+        "en": "数据的分析 turns the action 分析 into a noun-like phrase."
+      },
+      "translation": {
+        "vi": "Việc phân tích dữ liệu đã cung cấp cơ sở quan trọng.",
+        "en": "The analysis of the data provided an important basis."
+      },
+      "pinyin": ["shù", "jù", "de", "fēn", "xī", "tí", "gōng", "le", "zhòng", "yào", "yī", "jù", ""]
+    },
+    {
+      "text": "技术的发展改变了工作方式。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 5, "end": 8, "role": "verb"},
+        {"start": 8, "end": 12, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "发展 được dùng như một danh từ sự kiện trong cụm 技术的发展.",
+        "en": "发展 functions as an event noun in 技术的发展."
+      },
+      "translation": {
+        "vi": "Sự phát triển của công nghệ đã thay đổi cách làm việc.",
+        "en": "The development of technology changed the way of working."
+      },
+      "pinyin": ["jì", "shù", "de", "fā", "zhǎn", "gǎi", "biàn", "le", "gōng", "zuò", "fāng", "shì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "进行 cần tân ngữ là cụm danh từ, không nhận trực tiếp cụm động từ 讨论这个问题; khi không cần văn phong trang trọng, dùng trực tiếp động từ 讨论.",
+        "en": "进行 takes a nominal object, not a verb phrase like 讨论这个问题; when formal packaging is not needed, use the verb 讨论 directly."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我们进行了讨论这个问题。",
+      "right": "我们讨论了这个问题。",
+      "wrong_pinyin": ["wǒ", "men", "jìn", "xíng", "le", "tǎo", "lùn", "zhè", "ge", "wèn", "tí", ""],
+      "right_pinyin": ["wǒ", "men", "tǎo", "lùn", "le", "zhè", "ge", "wèn", "tí", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我们___了这个问题。",
+      "options": [
+        {"text": "讨论", "error_tag": null, "pinyin": ["tǎo", "lùn"]},
+        {"text": "进行讨论", "error_tag": "other", "pinyin": ["jìn", "xíng", "tǎo", "lùn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi không cần văn phong trang trọng, dùng trực tiếp động từ 讨论; 进行讨论 cần tân ngữ danh từ hóa như 对这个问题进行了讨论.",
+        "en": "When formal packaging is not needed, use the verb 讨论 directly; 进行讨论 needs a nominalised object such as 对这个问题进行了讨论."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "le", "zhè", "ge", "wèn", "tí", ""]
+    },
+    {
+      "q": "成本的___提高了产品竞争力。",
+      "options": [
+        {"text": "降低", "error_tag": null, "pinyin": ["jiàng", "dī"]},
+        {"text": "降低了", "error_tag": "aspect", "pinyin": ["jiàng", "dī", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 的 cần dạng danh từ hóa 降低, không dùng 降低了 vì 了 đánh dấu thể hoàn thành của động từ.",
+        "en": "After 的, the nominalised form 降低 is needed; 降低了 is wrong because 了 marks verbal aspect."
+      },
+      "q_pinyin": [
+        "chéng",
+        "běn",
+        "de",
+        "",
+        "",
+        "",
+        "tí",
+        "gāo",
+        "le",
+        "chǎn",
+        "pǐn",
+        "jìng",
+        "zhēng",
+        "lì",
+        ""
+      ]
+    },
+    {
+      "q": "我们对数据___了详细分析。",
+      "options": [
+        {"text": "进行", "error_tag": null, "pinyin": ["jìn", "xíng"]},
+        {"text": "做", "error_tag": "collocation", "pinyin": ["zuò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc cố định là 对...进行 + danh từ hóa; 做 không kết hợp với 分析 trong mẫu này.",
+        "en": "The fixed pattern is 对...进行 + nominalised noun; 做 does not collocate with 分析 in this pattern."
+      },
+      "q_pinyin": ["wǒ", "men", "duì", "shù", "jù", "", "", "", "le", "xiáng", "xì", "fēn", "xī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 名词化 để nói về một thay đổi trong học tập hoặc công việc của bạn.",
+      "en": "Write one sentence using nominalisation to talk about a change in your study or work."
+    },
+    "placeholder": "……的……提高了……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["的"], "role": "particle"},
+        {"any_of": ["提高", "降低", "改善", "发展", "分析"], "role": "verb"}
+      ]
+    },
+    "sample": {
+      "text": "学习方法的改善提高了我的效率。",
+      "pinyin": [
+        "xué",
+        "xí",
+        "fāng",
+        "fǎ",
+        "de",
+        "gǎi",
+        "shàn",
+        "tí",
+        "gāo",
+        "le",
+        "wǒ",
+        "de",
+        "xiào",
+        "lǜ",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["", "", "de", "", "", "tí", "gāo", "le", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351882",
+    "generated_at": "2026-10-07T05:44:42Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-15-tendencies", "zh-hsk79-4-dense-nominal-structures"],
+      "content_version": 2,
+      "content_hash": "b28e79e5cd6bae0ef7143acffc5eec761a9d549b0ac5a5849c73900ebafe6fa8",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-15-tendencies",
+          "issue": "R5 mistake '对系统进行改善了。' is not a real learner error for this point; it is an unnatural sentence, and the correction '我们改善了系统。' changes the subject and meaning.",
+          "fix": "Replaced with the real error '我们进行了讨论这个问题。' and its correction '我们讨论了这个问题。', which shows the actual constraint that 进行 takes a nominal object."
+        },
+        {
+          "r5_id": "zh-hsk5-15-tendencies",
+          "issue": "R5 example '服务质量的改善需要时间。' is grammatical but does not show the full nominalisation pattern with a following main verb; it only shows a noun phrase as subject of 需要.",
+          "fix": "Replaced with '技术的发展改变了工作方式。', which shows the nominalised phrase as subject and a clear main verb 改变."
+        },
+        {
+          "r5_id": "zh-hsk79-4-dense-nominal-structures",
+          "issue": "R5 lesson for HSK7-9 is outside this point's scope and level; its dense nominal structures and examples are too advanced for HSK5.",
+          "fix": "Did not carry over any content from zh-hsk79-4-dense-nominal-structures; kept only the HSK5-level nominalisation pattern."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

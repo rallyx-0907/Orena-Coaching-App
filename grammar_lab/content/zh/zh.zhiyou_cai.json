@@ -1,0 +1,267 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.zhiyou_cai",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.condition_real",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.zhiyao_jiu"],
+  "contrasts": ["zh.zhiyao_jiu"],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk2-5-topic"], "gf0025": ["gf0025.hsk3.070"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["zh-hsk2-5-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "只有 ... 才 ...", "en": "只有 ... 才 ..."},
+    "native_title": "“只有……才……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "只有……才…… biểu thị điều kiện cần: chỉ khi điều kiện ở vế 只有 được thỏa mãn thì kết quả ở vế 才 mới có thể xảy ra.",
+      "en": "只有……才…… expresses a necessary condition: the result with 才 can occur only when the 只有 condition is met."
+    },
+    "sub": {"vi": "chỉ có… thì mới…", "en": "only if… then…"},
+    "native_title_pinyin": ["", "zhǐ", "yǒu", "", "", "cái", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nhấn mạnh một điều kiện là bắt buộc để kết quả xảy ra.",
+      "en": "Use it when a condition is necessary for the result to happen."
+    },
+    {
+      "vi": "只有 đứng trước điều kiện; 才 đứng trong vế kết quả, thường trước động từ hoặc trợ động từ.",
+      "en": "只有 precedes the condition; 才 appears in the result clause, usually before the verb or modal."
+    },
+    {
+      "vi": "Khác với 只要……就…… (điều kiện đủ), 只有……才…… nhấn mạnh tính cần thiết.",
+      "en": "Unlike 只要……就……, which gives a sufficient condition, 只有……才…… emphasizes necessity."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "只有",
+        "role": "connector",
+        "label": {"vi": "chỉ khi", "en": "only if"},
+        "pinyin": ["zhǐ", "yǒu"]
+      },
+      {
+        "text": "条件",
+        "role": "other",
+        "label": {"vi": "điều kiện", "en": "condition"},
+        "pinyin": ["tiáo", "jiàn"]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ vế kết quả", "en": "result-clause subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "才",
+        "role": "connector",
+        "label": {"vi": "thì mới", "en": "only then"},
+        "pinyin": ["cái"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "kết quả", "en": "result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "只有努力学习，才能取得进步。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 8, "role": "connector"},
+        {"start": 8, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "努力学习 được nêu như điều kiện cần để 取得进步.",
+        "en": "努力学习 is presented as the necessary condition for making progress."
+      },
+      "translation": {
+        "vi": "Chỉ có chăm chỉ học thì mới có thể tiến bộ.",
+        "en": "Only by studying hard can one make progress."
+      },
+      "pinyin": ["zhǐ", "yǒu", "nǔ", "lì", "xué", "xí", "", "cái", "néng", "qǔ", "dé", "jìn", "bù", ""]
+    },
+    {
+      "text": "只有你告诉我，我才知道。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Vế 才 có chủ ngữ riêng 我 đứng trước 才.",
+        "en": "The 才 clause has its own subject 我 before 才."
+      },
+      "translation": {"vi": "Chỉ khi bạn nói cho tôi thì tôi mới biết.", "en": "Only if you tell me will I know."},
+      "pinyin": ["zhǐ", "yǒu", "nǐ", "gào", "sù", "wǒ", "", "wǒ", "cái", "zhī", "dào", ""]
+    },
+    {
+      "text": "只有天气好，我们才去爬山。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "subject"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "天气好 là điều kiện cần để quyết định đi leo núi.",
+        "en": "Good weather is the necessary condition for going hiking."
+      },
+      "translation": {
+        "vi": "Chỉ khi thời tiết tốt chúng tôi mới đi leo núi.",
+        "en": "Only when the weather is good will we go hiking."
+      },
+      "pinyin": ["zhǐ", "yǒu", "tiān", "qì", "hǎo", "", "wǒ", "men", "cái", "qù", "pá", "shān", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.zhiyao_jiu",
+      "this_example": "只有努力学习，才能进步。",
+      "other_example": "只要努力学习，就会进步。",
+      "this_meaning": {
+        "vi": "只有……才…… nêu điều kiện cần: thiếu điều kiện này thì kết quả không xảy ra.",
+        "en": "只有……才…… states a necessary condition: without it, the result does not occur."
+      },
+      "other_meaning": {
+        "vi": "只要……就…… nêu điều kiện đủ: chỉ cần điều kiện này là kết quả có thể xảy ra.",
+        "en": "只要……就…… states a sufficient condition: once it is met, the result can follow."
+      },
+      "this_example_pinyin": ["zhǐ", "yǒu", "nǔ", "lì", "xué", "xí", "", "cái", "néng", "jìn", "bù", ""],
+      "other_example_pinyin": ["zhǐ", "yào", "nǔ", "lì", "xué", "xí", "", "jiù", "huì", "jìn", "bù", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "才 thường đi với 只有 để nhấn mạnh điều kiện cần; 只要 thường kết hợp với 就.",
+        "en": "才 normally pairs with 只有 to mark a necessary condition; 只要 normally pairs with 就."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "只要努力学习，才会进步。",
+      "right": "只有努力学习，才会进步。",
+      "wrong_pinyin": ["zhǐ", "yào", "nǔ", "lì", "xué", "xí", "", "cái", "huì", "jìn", "bù", ""],
+      "right_pinyin": ["zhǐ", "yǒu", "nǔ", "lì", "xué", "xí", "", "cái", "huì", "jìn", "bù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___努力学习，才能取得进步。",
+      "options": [
+        {"text": "只有", "error_tag": null, "pinyin": ["zhǐ", "yǒu"]},
+        {"text": "只要", "error_tag": "conjunction", "pinyin": ["zhǐ", "yào"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "才 ở vế sau cho thấy đây là quan hệ điều kiện cần, nên dùng 只有.",
+        "en": "才 in the result clause signals a necessary-condition pattern, so use 只有."
+      },
+      "q_pinyin": ["", "", "", "nǔ", "lì", "xué", "xí", "", "cái", "néng", "qǔ", "dé", "jìn", "bù", ""]
+    },
+    {
+      "q": "只有你告诉我，我___知道。",
+      "options": [
+        {"text": "才", "error_tag": null, "pinyin": ["cái"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "只有 ở vế điều kiện thường kết hợp với 才 ở vế kết quả.",
+        "en": "只有 in the condition clause normally pairs with 才 in the result clause."
+      },
+      "q_pinyin": ["zhǐ", "yǒu", "nǐ", "gào", "sù", "wǒ", "", "wǒ", "", "", "", "zhī", "dào", ""]
+    },
+    {
+      "q": "只有天气好，我们___去爬山。",
+      "options": [
+        {"text": "才", "error_tag": null, "pinyin": ["cái"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "才 biểu thị 'lúc đó mới' khi điều kiện cần được đáp ứng.",
+        "en": "才 means 'only then' once the necessary condition is satisfied."
+      },
+      "q_pinyin": ["zhǐ", "yǒu", "tiān", "qì", "hǎo", "", "wǒ", "men", "", "", "", "qù", "pá", "shān", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một điều kiện bắt buộc trong cuộc sống của bạn, dùng 只有……才…….",
+      "en": "Write one sentence about a necessary condition in your life using 只有……才……."
+    },
+    "placeholder": "只有……，我才……。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["只有"], "role": "connector"}, {"any_of": ["才"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "只有每天练习，我才能说得更流利。",
+      "pinyin": [
+        "zhǐ",
+        "yǒu",
+        "měi",
+        "tiān",
+        "liàn",
+        "xí",
+        "",
+        "wǒ",
+        "cái",
+        "néng",
+        "shuō",
+        "dé",
+        "gèng",
+        "liú",
+        "lì",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zhǐ", "yǒu", "", "", "", "wǒ", "cái", "", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351904",
+    "generated_at": "2026-10-07T05:45:04Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-5-topic"],
+      "content_version": 2,
+      "content_hash": "171484238b999e5cea7dee26d39f2dca62bfad9670d83703d433b605cba6a118",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-5-topic",
+          "issue": "R5 cần làm rõ đối lập giữa điều kiện cần 只有……才…… và điều kiện đủ 只要……就…….",
+          "fix": "Bổ sung compare trực tiếp với 只要……就……, ví dụ đối chiếu, lỗi thường gặp và bài tập chọn liên từ."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

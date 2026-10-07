@@ -1,0 +1,249 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_3_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.object_disposal",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_2_b_ng_k_t_qu"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk3-3-topic"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": ["zh-hsk3-3-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 把 + 在/给/成", "en": "Chinese grammar: 把 + 在/给/成"},
+    "native_title": "把+在/给/成",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "把 đưa tân ngữ lên trước động từ, rồi bổ ngữ 在/给/成 nêu rõ kết quả xử lý: đặt ở đâu, đưa cho ai, hoặc biến thành gì.",
+      "en": "把 moves the object before the verb, and the complement 在/给/成 states the handled result: where it is put, who receives it, or what it becomes."
+    },
+    "sub": {"vi": "xử lý tân ngữ", "en": "object disposal"},
+    "native_title_pinyin": ["bǎ", "", "zài", "", "gěi", "", "chéng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói rõ mình đã đặt/để tân ngữ ở đâu, dùng 把 + O + V + 在 + địa điểm.",
+      "en": "When you want to say exactly where you put or left the object, use 把 + O + V + 在 + place."
+    },
+    {
+      "vi": "Khi muốn nói đưa/trả/gửi tân ngữ cho ai, dùng 把 + O + V + 给 + người nhận.",
+      "en": "When you want to say you give, return, or send the object to someone, use 把 + O + V + 给 + recipient."
+    },
+    {
+      "vi": "Khi muốn nói tân ngữ bị biến đổi thành hình dạng, loại, hoặc trạng thái mới, dùng 把 + O + V + 成 + kết quả.",
+      "en": "When you want to say the object is changed into a new form, category, or state, use 把 + O + V + 成 + result."
+    },
+    {
+      "vi": "Khi tân ngữ đã xác định và câu cần nêu kết quả xử lý rõ ràng, không chỉ nói hành động chung chung.",
+      "en": "When the object is definite and the sentence needs a clear handled result, not just a general action."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "把",
+        "role": "marker",
+        "label": {"vi": "trợ từ 把", "en": "把 marker"},
+        "pinyin": ["bǎ"]
+      },
+      {"text": "O", "role": "object", "label": {"vi": "tân ngữ", "en": "object"}, "pinyin": [""]},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "在/给/成",
+        "role": "marker",
+        "label": {"vi": "bổ ngữ 在/给/成", "en": "complement 在/给/成"},
+        "options": [
+          {"text": "在", "pinyin": ["zài"]},
+          {"text": "给", "pinyin": ["gěi"]},
+          {"text": "成", "pinyin": ["chéng"]}
+        ],
+        "pinyin": ["zài", "", "gěi", "", "chéng"]
+      },
+      {
+        "text": "place/person/result",
+        "role": "complement",
+        "label": {"vi": "địa điểm/người nhận/kết quả", "en": "place/recipient/result"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "请把书放在桌子上。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 8, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "在 + 桌子上 nêu đích đến của việc đặt sách.",
+        "en": "在 + 桌子上 states the destination of putting the book."
+      },
+      "translation": {"vi": "Hãy đặt sách lên bàn.", "en": "Please put the book on the table."},
+      "pinyin": ["qǐng", "bǎ", "shū", "fàng", "zài", "zhuō", "zi", "shàng", ""]
+    },
+    {
+      "text": "我把钱还给他了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "object"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "complement"}
+      ],
+      "annotation": {"vi": "给 + 他 nêu người nhận tiền.", "en": "给 + 他 states the recipient of the money."},
+      "translation": {"vi": "Tôi đã trả tiền cho anh ấy.", "en": "I returned the money to him."},
+      "pinyin": ["wǒ", "bǎ", "qián", "huán", "gěi", "tā", "le", ""]
+    },
+    {
+      "text": "他把房间变成了办公室。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "object"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 7, "end": 10, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "成 + 办公室 nêu kết quả biến đổi của phòng.",
+        "en": "成 + 办公室 states the transformed result of the room."
+      },
+      "translation": {
+        "vi": "Anh ấy đã biến căn phòng thành văn phòng.",
+        "en": "He turned the room into an office."
+      },
+      "pinyin": ["tā", "bǎ", "fáng", "jiān", "biàn", "chéng", "le", "bàn", "gōng", "shì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học bê trật tự tiếng Việt 'đặt sách ở trên bàn' vào tiếng Trung, đặt cụm 在 + nơi chốn trước động từ. Trong cấu trúc 把, bổ ngữ 在 + nơi chốn phải đứng sau động từ.",
+        "en": "The learner carries the Vietnamese order 'put the book on the table' into Chinese and places 在 + place before the verb. In the 把 structure, the 在 + place complement must follow the verb."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我把书在桌子上放。",
+      "right": "我把书放在桌子上。",
+      "wrong_pinyin": ["wǒ", "bǎ", "shū", "zài", "zhuō", "zi", "shàng", "fàng", ""],
+      "right_pinyin": ["wǒ", "bǎ", "shū", "fàng", "zài", "zhuō", "zi", "shàng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "请把礼物送___老师。",
+      "options": [
+        {"text": "给", "error_tag": null, "pinyin": ["gěi"]},
+        {"text": "在", "error_tag": "particle", "pinyin": ["zài"]},
+        {"text": "成", "error_tag": "particle", "pinyin": ["chéng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "老师 là người nhận quà, nên dùng 给 sau động từ 送.",
+        "en": "老师 is the recipient of the gift, so 给 follows the verb 送."
+      },
+      "q_pinyin": ["qǐng", "bǎ", "lǐ", "wù", "sòng", "", "", "", "lǎo", "shī", ""]
+    },
+    {
+      "q": "他把房间变___办公室了。",
+      "options": [
+        {"text": "成", "error_tag": null, "pinyin": ["chéng"]},
+        {"text": "在", "error_tag": "particle", "pinyin": ["zài"]},
+        {"text": "给", "error_tag": "particle", "pinyin": ["gěi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "办公室 là kết quả biến đổi, nên dùng 成 sau động từ 变.",
+        "en": "办公室 is the transformed result, so 成 follows the verb 变."
+      },
+      "q_pinyin": ["tā", "bǎ", "fáng", "jiān", "biàn", "", "", "", "bàn", "gōng", "shì", "le", ""]
+    },
+    {
+      "q": "我把书放___桌子上了。",
+      "options": [
+        {"text": "在", "error_tag": null, "pinyin": ["zài"]},
+        {"text": "给", "error_tag": "particle", "pinyin": ["gěi"]},
+        {"text": "成", "error_tag": "particle", "pinyin": ["chéng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "桌子上 là địa điểm, nên dùng 在 sau động từ 放.",
+        "en": "桌子上 is the location, so 在 follows the verb 放."
+      },
+      "q_pinyin": ["wǒ", "bǎ", "shū", "fàng", "", "", "", "zhuō", "zi", "shàng", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể việc bạn đã đặt một đồ vật ở đâu, dùng 把 + tân ngữ + động từ + 在 + nơi chốn.",
+      "en": "Write one sentence about where you put an object, using 把 + object + verb + 在 + place."
+    },
+    "placeholder": "我把……放在……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["把"], "role": "marker"}, {"any_of": ["在"], "role": "marker"}]
+    },
+    "sample": {
+      "text": "我把手机放在桌子上了。",
+      "pinyin": ["wǒ", "bǎ", "shǒu", "jī", "fàng", "zài", "zhuō", "zi", "shàng", "le", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "bǎ", "", "", "fàng", "zài", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791344929",
+    "generated_at": "2026-10-07T03:48:49Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-3-topic"],
+      "content_version": 2,
+      "content_hash": "a4aaa0c052c9b052e417e6374dc7426d45a547b52da975261a50102539294c06",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-3-topic",
+          "issue": "R5 ghi '把字写成...' trong rules như một ví dụ chưa hoàn chỉnh, không phải câu đầy đủ.",
+          "fix": "Đã thay bằng câu đầy đủ 他把房间变成了办公室。 và giữ 成 + kết quả trong công thức."
+        },
+        {
+          "r5_id": "zh-hsk3-3-topic",
+          "issue": "R5 dùng 'complements' và 'explicate' trong phần tiếng Việt, không tự nhiên.",
+          "fix": "Đã viết lại thành 'bổ ngữ' và 'nêu rõ' trong phần giải thích tiếng Việt."
+        },
+        {
+          "r5_id": "zh-hsk3-3-topic",
+          "issue": "R5 có lỗi sai '他把房间成办公室了。' thiếu động từ 变 trước 成.",
+          "fix": "Đã sửa thành 他把房间变成了办公室。 và dùng làm ví dụ đúng."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

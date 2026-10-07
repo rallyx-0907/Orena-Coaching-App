@@ -1,0 +1,209 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_13_nh_ng_d_i_v_i",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.relative",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_12_topic_comment_introduction"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk3-13-nh-ng-d-i-v-i"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk3-13-nh-ng-d-i-v-i"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: Định ngữ dài với 的", "en": "Chinese grammar: Định ngữ dài với 的"},
+    "native_title": "“的”长定语",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Định ngữ dài dùng 的 để nối một cụm từ hoặc mệnh đề miêu tả đứng trước danh từ trung tâm.",
+      "en": "A long attributive uses 的 to link a describing phrase or clause before the head noun."
+    },
+    "sub": {"vi": "định ngữ dài", "en": "long attributive"},
+    "native_title_pinyin": ["", "de", "", "zhǎng", "dìng", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói rõ hơn về một danh từ bằng cả một hành động hoặc tình huống, không chỉ một tính từ đơn.",
+      "en": "When you want to specify a noun with a whole action or situation, not just a single adjective."
+    },
+    {
+      "vi": "Khi thông tin miêu tả là một mệnh đề có chủ ngữ và động từ, ví dụ ai đó làm gì.",
+      "en": "When the describing information is a clause with a subject and a verb, for example who did what."
+    },
+    {
+      "vi": "Khi bạn cần phân biệt một sự việc đã xảy ra (động từ + 了) với một danh từ được miêu tả (mệnh đề + 的 + danh từ).",
+      "en": "When you need to distinguish a completed event (verb + 了) from a described noun (clause + 的 + noun)."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "mệnh đề miêu tả",
+        "role": "other",
+        "label": {"vi": "mệnh đề miêu tả", "en": "describing clause"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ 的", "en": "particle 的"},
+        "pinyin": ["de"]
+      },
+      {
+        "text": "danh từ trung tâm",
+        "role": "object",
+        "label": {"vi": "danh từ trung tâm", "en": "head noun"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这是我昨天买的书。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 8, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề 我昨天买 miêu tả 书; 的 nối chúng lại.",
+        "en": "The clause 我昨天买 describes 书; 的 links them."
+      },
+      "translation": {"vi": "Đây là quyển sách tôi mua hôm qua.", "en": "This is the book I bought yesterday."},
+      "pinyin": ["zhè", "shì", "wǒ", "zuó", "tiān", "mǎi", "de", "shū", ""]
+    },
+    {
+      "text": "他是教我中文的老师。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "particle"},
+        {"start": 7, "end": 9, "role": "object"}
+      ],
+      "annotation": {"vi": "教我中文 là mệnh đề miêu tả 老师.", "en": "教我中文 is the clause describing 老师."},
+      "translation": {
+        "vi": "Anh ấy là giáo viên dạy tôi tiếng Trung.",
+        "en": "He is the teacher who teaches me Chinese."
+      },
+      "pinyin": ["tā", "shì", "jiào", "wǒ", "zhōng", "wén", "de", "lǎo", "shī", ""]
+    },
+    {
+      "text": "我喜欢你做的菜。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "particle"},
+        {"start": 6, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Mệnh đề 你做 miêu tả 菜; không thêm 它 sau 做.",
+        "en": "The clause 你做 describes 菜; no extra 它 after 做."
+      },
+      "translation": {"vi": "Tôi thích món ăn bạn nấu.", "en": "I like the food you cook."},
+      "pinyin": ["wǒ", "xǐ", "huān", "nǐ", "zuò", "de", "cài", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Tiếng Việt đặt mệnh đề miêu tả sau danh từ, nhưng tiếng Trung phải đặt mệnh đề + 的 trước danh từ trung tâm.",
+        "en": "Vietnamese places the describing clause after the noun, but Chinese must place the clause + 的 before the head noun."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "这是书我昨天买的。",
+      "right": "这是我昨天买的书。",
+      "wrong_pinyin": ["zhè", "shì", "shū", "wǒ", "zuó", "tiān", "mǎi", "de", ""],
+      "right_pinyin": ["zhè", "shì", "wǒ", "zuó", "tiān", "mǎi", "de", "shū", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这是我昨天___书。",
+      "options": [
+        {"text": "买的", "error_tag": null, "pinyin": ["mǎi", "de"]},
+        {"text": "买", "error_tag": "particle", "pinyin": ["mǎi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần 的 để nối mệnh đề 我昨天买 với danh từ 书.",
+        "en": "You need 的 to link the clause 我昨天买 with the noun 书."
+      },
+      "q_pinyin": ["zhè", "shì", "wǒ", "zuó", "tiān", "", "", "", "shū", ""]
+    },
+    {
+      "q": "我喜欢你___菜。",
+      "options": [
+        {"text": "做的", "error_tag": null, "pinyin": ["zuò", "de"]},
+        {"text": "做", "error_tag": "particle", "pinyin": ["zuò"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề 你做 phải có 的 trước danh từ 菜.",
+        "en": "The clause 你做 needs 的 before the noun 菜."
+      },
+      "q_pinyin": ["wǒ", "xǐ", "huān", "nǐ", "", "", "", "cài", ""]
+    },
+    {
+      "q": "他是教我中文___老师。",
+      "options": [
+        {"text": "的", "error_tag": null, "pinyin": ["de"]},
+        {"text": "了", "error_tag": "particle", "pinyin": ["le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 的 để nối mệnh đề 教我中文 với danh từ 老师; 了 không phù hợp.",
+        "en": "Use 的 to link the clause 教我中文 with the noun 老师; 了 is not correct here."
+      },
+      "q_pinyin": ["tā", "shì", "jiào", "wǒ", "zhōng", "wén", "", "", "", "lǎo", "shī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một người hoặc vật mà bạn biết, dùng mệnh đề + 的 + danh từ.",
+      "en": "Write a sentence about a person or thing you know, using clause + 的 + noun."
+    },
+    "placeholder": "我认识……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["的"], "role": "particle"}]},
+    "sample": {"text": "我认识的人是老师。", "pinyin": ["wǒ", "rèn", "shí", "de", "rén", "shì", "lǎo", "shī", ""]},
+    "placeholder_pinyin": ["wǒ", "rèn", "shí", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338305",
+    "generated_at": "2026-10-07T01:58:25Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-13-nh-ng-d-i-v-i"],
+      "content_version": 2,
+      "content_hash": "86473b33933c45e70c74427a32e38809c1bbe53517461050d68ee44cd7805cab",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-13-nh-ng-d-i-v-i",
+          "issue": "R5 example 站在门口的人是我朋友 is grammatical but the lesson's formula and explanation focus on clause + 的 + noun; the example is fine but was not bound to formula slots.",
+          "fix": "Kept the pattern but replaced examples with three that clearly show clause + 的 + noun and added formula-slot bindings."
+        },
+        {
+          "r5_id": "zh-hsk3-13-nh-ng-d-i-v-i",
+          "issue": "R5 mistake 我喜欢你做它的菜 was listed with reason 'Head 菜 already fills object relation; resumptive 它 is wrong.' The correction is right, but the wrong sentence is not a typical Vietnamese-L1 error for this point.",
+          "fix": "Replaced with the more common Vietnamese-L1 word-order error 这是书我昨天买的 and its correction 这是我昨天买的书."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

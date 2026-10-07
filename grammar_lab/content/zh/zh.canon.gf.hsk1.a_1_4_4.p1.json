@@ -1,0 +1,248 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk1.a_1_4_4.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.canon.gf.hsk1.a_1_1_8.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk1.039"]},
+  "point_type": "other",
+  "sequence": 4,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 并列复句", "en": "Complex sentences: 并列复句"},
+    "native_title": "并列复句",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Câu phức song song dùng các liên từ như 也, 又, 一边……一边…… để nối hai mệnh đề ngang hàng.",
+      "en": "Coordinate compound sentences use conjunctions like 也, 又, 一边……一边…… to link two parallel clauses."
+    },
+    "sub": {"vi": "câu ghép song song", "en": "coordinate clauses"},
+    "native_title_pinyin": ["bìng", "liè", "fù", "jù"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói hai sự việc cùng đúng hoặc cùng xảy ra, dùng 也 để nối mệnh đề thứ hai.",
+      "en": "When two facts are both true or both happen, use 也 to link the second clause."
+    },
+    {
+      "vi": "Khi muốn nói hai hành động cùng do một chủ thể thực hiện, dùng 又 để nối mệnh đề thứ hai.",
+      "en": "When one subject performs two actions, use 又 to link the second clause."
+    },
+    {
+      "vi": "Khi muốn nói hai hành động xảy ra đồng thời, dùng cấu trúc 一边……一边…… với hai động từ.",
+      "en": "When two actions happen at the same time, use 一边……一边…… with two verbs."
+    },
+    {
+      "vi": "Khi muốn nói hai sự việc đối lập nhẹ, dùng 而 để nối hai mệnh đề.",
+      "en": "When two facts contrast mildly, use 而 to link the two clauses."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "谓语1",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 1", "en": "predicate 1"},
+        "pinyin": ["wèi", "yǔ", ""]
+      },
+      {
+        "text": "也/又/而",
+        "role": "connector",
+        "label": {"vi": "liên từ", "en": "connector"},
+        "options": [
+          {"text": "也", "pinyin": ["yě"]},
+          {"text": "又", "pinyin": ["yòu"]},
+          {"text": "而", "pinyin": ["ér"]}
+        ],
+        "pinyin": ["yě", "", "yòu", "", "ér"]
+      },
+      {
+        "text": "主语2",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ vế 2", "en": "second-clause subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ", ""]
+      },
+      {
+        "text": "谓语2",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 2", "en": "predicate 2"},
+        "pinyin": ["wèi", "yǔ", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我喜欢喝茶，也喜欢喝咖啡。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 5, "role": "verb"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "也 nối hai sở thích song song của cùng một chủ ngữ.",
+        "en": "也 links two parallel preferences with the same subject."
+      },
+      "translation": {
+        "vi": "Tôi thích uống trà, cũng thích uống cà phê.",
+        "en": "I like drinking tea and also coffee."
+      },
+      "pinyin": ["wǒ", "xǐ", "huān", "hē", "chá", "", "yě", "xǐ", "huān", "hē", "kā", "fēi", ""]
+    },
+    {
+      "text": "他爱唱歌，又爱跳舞。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 4, "role": "verb"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "又 nối thêm một hành động song song của cùng chủ thể.",
+        "en": "又 adds another parallel action by the same subject."
+      },
+      "translation": {
+        "vi": "Anh ấy thích hát, lại còn thích nhảy.",
+        "en": "He likes singing and also likes dancing."
+      },
+      "pinyin": ["tā", "ài", "chàng", "gē", "", "yòu", "ài", "tiào", "wǔ", ""]
+    },
+    {
+      "text": "这个苹果大，而那个苹果小。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 5, "role": "verb"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 11, "role": "subject"},
+        {"start": 11, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "而 nối hai mệnh đề có ý đối chiếu nhẹ.",
+        "en": "而 links two clauses in a mild contrast."
+      },
+      "translation": {
+        "vi": "Quả táo này to, còn quả táo kia nhỏ.",
+        "en": "This apple is big, while that apple is small."
+      },
+      "pinyin": ["zhè", "ge", "píng", "guǒ", "dà", "", "ér", "nà", "ge", "píng", "guǒ", "xiǎo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Khi vế thứ hai nêu lại chủ ngữ, 也 đứng sau chủ ngữ: 我也喜欢..., không đứng trước 我.",
+        "en": "When the second clause repeats the subject, 也 comes after that subject: 我也喜欢..., not before 我."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "我喜欢喝茶，也我喜欢喝咖啡。",
+      "right": "我喜欢喝茶，我也喜欢喝咖啡。",
+      "wrong_pinyin": ["wǒ", "xǐ", "huān", "hē", "chá", "", "yě", "wǒ", "xǐ", "huān", "hē", "kā", "fēi", ""],
+      "right_pinyin": ["wǒ", "xǐ", "huān", "hē", "chá", "", "wǒ", "yě", "xǐ", "huān", "hē", "kā", "fēi", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我喜欢看书，___喜欢看电影。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "又", "error_tag": "conjunction", "pinyin": ["yòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "也 dùng để nối hai sở thích cùng đúng; 又 thường dùng cho hai hành động nối tiếp của cùng một chủ thể.",
+        "en": "也 links two preferences that are both true; 又 is usually for two sequential actions by the same subject."
+      },
+      "q_pinyin": ["wǒ", "xǐ", "huān", "kàn", "shū", "", "", "", "", "xǐ", "huān", "kàn", "diàn", "yǐng", ""]
+    },
+    {
+      "q": "他爱唱歌，___爱跳舞。",
+      "options": [
+        {"text": "又", "error_tag": null, "pinyin": ["yòu"]},
+        {"text": "而", "error_tag": "conjunction", "pinyin": ["ér"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "又 bổ sung một hành động song song; 而 thường tạo quan hệ đối chiếu.",
+        "en": "又 adds a parallel action; 而 usually marks a contrast."
+      },
+      "q_pinyin": ["tā", "ài", "chàng", "gē", "", "", "", "", "ài", "tiào", "wǔ", ""]
+    },
+    {
+      "q": "这个房间干净，___那个房间很脏。",
+      "options": [
+        {"text": "而", "error_tag": null, "pinyin": ["ér"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "而 nối hai mệnh đề đối lập nhẹ; 也 dùng cho quan hệ song song, không dùng cho đối lập.",
+        "en": "而 links two mildly contrasting clauses; 也 is for parallel relations, not contrast."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "fáng",
+        "jiān",
+        "gān",
+        "jìng",
+        "",
+        "",
+        "",
+        "",
+        "nà",
+        "ge",
+        "fáng",
+        "jiān",
+        "hěn",
+        "zāng",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói về hai sở thích của bạn, dùng 也 để nối hai vị ngữ.",
+      "en": "Write a sentence about two of your hobbies, using 也 to link two predicates."
+    },
+    "placeholder": "我喜欢……，也喜欢……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["也", "又", "而"], "role": "connector"}]},
+    "sample": {
+      "text": "我喜欢跑步，也喜欢游泳。",
+      "pinyin": ["wǒ", "xǐ", "huān", "pǎo", "bù", "", "yě", "xǐ", "huān", "yóu", "yǒng", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "xǐ", "huān", "", "", "", "yě", "xǐ", "huān", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351850",
+    "generated_at": "2026-10-07T05:44:10Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

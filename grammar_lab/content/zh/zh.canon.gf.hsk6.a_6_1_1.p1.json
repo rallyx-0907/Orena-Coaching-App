@@ -1,0 +1,300 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk6.a_6_1_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sentence_basics",
+  "level": {"framework": "hsk3", "value": "6", "rank": 6},
+  "prereqs": ["zh.canon.r5.hsk6_7_topic_181"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk6.001"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 超-、多-、反-、无-、亚-、准", "en": "Chinese grammar: 超-、多-、反-、无-、亚-、准"},
+    "native_title": "超-、多-、反-、无-、亚-、准",
+    "level": {"framework": "hsk3", "value": "6", "rank": 6},
+    "summary": {
+      "vi": "Các tiền tố 超-, 多-, 反-, 无-, 亚-, 准- gắn trước danh từ hoặc tính từ để tạo từ mới với nghĩa 'siêu, đa, phản, vô, á, chuẩn'.",
+      "en": "The prefixes 超-, 多-, 反-, 无-, 亚-, 准- attach before a noun or adjective to form new words meaning 'super-, multi-, anti-, -less, sub-, quasi-'."
+    },
+    "sub": {"vi": "tiền tố Hán", "en": "Chinese prefixes"},
+    "native_title_pinyin": ["chāo", "", "", "duō", "", "", "fǎn", "", "", "wú", "", "", "yà", "", "", "zhǔn"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một mức độ vượt trội hoặc vượt giới hạn thông thường, dùng 超-.",
+      "en": "Use 超- when you want to say something goes beyond the usual level or limit."
+    },
+    {
+      "vi": "Khi muốn diễn tả số lượng nhiều hoặc nhiều mặt, dùng 多-.",
+      "en": "Use 多- when you want to express many, multiple, or many-sided."
+    },
+    {
+      "vi": "Khi muốn nói ngược lại hoặc chống lại điều gì, dùng 反-.",
+      "en": "Use 反- when you want to say opposite to or against something."
+    },
+    {
+      "vi": "Khi muốn nói không có hoặc thiếu hẳn một cái gì, dùng 无-.",
+      "en": "Use 无- when you want to say without or lacking something."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "超-",
+        "role": "marker",
+        "label": {"vi": "tiền tố 'siêu'", "en": "prefix 'super-'"},
+        "optional": true,
+        "pinyin": ["chāo", ""]
+      },
+      {
+        "text": "多-",
+        "role": "marker",
+        "label": {"vi": "tiền tố 'đa'", "en": "prefix 'multi-'"},
+        "optional": true,
+        "pinyin": ["duō", ""]
+      },
+      {
+        "text": "反-",
+        "role": "marker",
+        "label": {"vi": "tiền tố 'phản'", "en": "prefix 'anti-'"},
+        "optional": true,
+        "pinyin": ["fǎn", ""]
+      },
+      {
+        "text": "无-",
+        "role": "marker",
+        "label": {"vi": "tiền tố 'vô'", "en": "prefix '-less'"},
+        "optional": true,
+        "pinyin": ["wú", ""]
+      },
+      {
+        "text": "亚-",
+        "role": "marker",
+        "label": {"vi": "tiền tố 'á'", "en": "prefix 'sub-'"},
+        "optional": true,
+        "pinyin": ["yà", ""]
+      },
+      {
+        "text": "准-",
+        "role": "marker",
+        "label": {"vi": "tiền tố 'chuẩn'", "en": "prefix 'quasi-'"},
+        "optional": true,
+        "pinyin": ["zhǔn", ""]
+      },
+      {
+        "text": "N / A",
+        "role": "other",
+        "label": {"vi": "gốc danh từ hoặc tính từ", "en": "noun or adjective base"},
+        "pinyin": ["", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这家超市的东西超便宜。",
+      "form": "affirmative",
+      "spans": [{"start": 2, "end": 3, "role": "marker"}, {"start": 8, "end": 10, "role": "other"}],
+      "annotation": {
+        "vi": "超- đứng trước tính từ 便宜 để nhấn mạnh mức độ vượt trội.",
+        "en": "超- precedes the adjective 便宜 to emphasize a level beyond the usual."
+      },
+      "translation": {"vi": "Đồ ở siêu thị này siêu rẻ.", "en": "Things in this supermarket are super cheap."},
+      "pinyin": ["zhè", "jiā", "chāo", "shì", "de", "dōng", "xī", "chāo", "pián", "yi", ""]
+    },
+    {
+      "text": "这个城市有多功能的地铁站。",
+      "form": "affirmative",
+      "spans": [{"start": 5, "end": 6, "role": "marker"}, {"start": 6, "end": 8, "role": "other"}],
+      "annotation": {
+        "vi": "多- đứng trước danh từ 功能 để tạo nghĩa 'đa chức năng'.",
+        "en": "多- precedes the noun 功能 to form the meaning 'multi-functional'."
+      },
+      "translation": {
+        "vi": "Thành phố này có ga tàu điện đa chức năng.",
+        "en": "This city has a multi-functional subway station."
+      },
+      "pinyin": ["zhè", "ge", "chéng", "shì", "yǒu", "duō", "gōng", "néng", "de", "dì", "tiě", "zhàn", ""]
+    },
+    {
+      "text": "他反对这个无意义的计划。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 8, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "反- tạo động từ 反对 'phản đối'; 无- đứng trước 意义 để tạo nghĩa 'vô nghĩa'.",
+        "en": "反- forms the verb 反对 'to oppose'; 无- precedes 意义 to mean 'meaningless'."
+      },
+      "translation": {"vi": "Anh ấy phản đối kế hoạch vô nghĩa này.", "en": "He opposes this meaningless plan."},
+      "pinyin": ["tā", "fǎn", "duì", "zhè", "ge", "wú", "yì", "yì", "de", "jì", "huà", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Tiếng Trung không dùng đại từ 它 làm tân ngữ cho 反对 khi đã có chủ ngữ rõ; cần lặp lại danh từ hoặc dùng cấu trúc khác.",
+        "en": "Chinese does not use the pronoun 它 as the object of 反对 when the subject is already clear; repeat the noun or use another structure."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "这个计划无意义，他反对它。",
+      "right": "这个计划无意义，他反对这个计划。",
+      "wrong_pinyin": ["zhè", "ge", "jì", "huà", "wú", "yì", "yì", "", "tā", "fǎn", "duì", "tā", ""],
+      "right_pinyin": [
+        "zhè",
+        "ge",
+        "jì",
+        "huà",
+        "wú",
+        "yì",
+        "yì",
+        "",
+        "tā",
+        "fǎn",
+        "duì",
+        "zhè",
+        "ge",
+        "jì",
+        "huà",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这家店的衣服___便宜，我买了很多。",
+      "options": [
+        {"text": "超", "error_tag": null, "pinyin": ["chāo"]},
+        {"text": "多", "error_tag": "word_choice", "pinyin": ["duō"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "超- đứng trước tính từ 便宜 để nhấn mạnh mức độ 'siêu rẻ'; 多- không hợp nghĩa ở đây.",
+        "en": "超- precedes the adjective 便宜 to emphasize 'super cheap'; 多- does not fit here."
+      },
+      "q_pinyin": [
+        "zhè",
+        "jiā",
+        "diàn",
+        "de",
+        "yī",
+        "fú",
+        "",
+        "",
+        "",
+        "pián",
+        "yi",
+        "",
+        "wǒ",
+        "mǎi",
+        "le",
+        "hěn",
+        "duō",
+        ""
+      ]
+    },
+    {
+      "q": "这个手机有很多___功能，很方便。",
+      "options": [
+        {"text": "多", "error_tag": null, "pinyin": ["duō"]},
+        {"text": "超", "error_tag": "word_choice", "pinyin": ["chāo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "多- đứng trước danh từ 功能 để tạo nghĩa 'đa chức năng'; 超- không dùng với 功能 trong ngữ cảnh này.",
+        "en": "多- precedes the noun 功能 to mean 'multi-functional'; 超- is not used with 功能 in this context."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "shǒu",
+        "jī",
+        "yǒu",
+        "hěn",
+        "duō",
+        "",
+        "",
+        "",
+        "gōng",
+        "néng",
+        "",
+        "hěn",
+        "fāng",
+        "biàn",
+        ""
+      ]
+    },
+    {
+      "q": "他___对这个计划，觉得它没有意义。",
+      "options": [
+        {"text": "反对", "error_tag": null, "pinyin": ["fǎn", "duì"]},
+        {"text": "无对", "error_tag": "character_choice", "pinyin": ["wú", "duì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "反- kết hợp với 对 tạo thành 反对 'phản đối'; 无- không kết hợp với 对 để tạo nghĩa này.",
+        "en": "反- combines with 对 to form 反对 'to oppose'; 无- does not combine with 对 for this meaning."
+      },
+      "q_pinyin": [
+        "tā",
+        "",
+        "",
+        "",
+        "duì",
+        "zhè",
+        "ge",
+        "jì",
+        "huà",
+        "",
+        "jué",
+        "de",
+        "tā",
+        "méi",
+        "yǒu",
+        "yì",
+        "yì",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng một trong các tiền tố 超-, 多-, 反-, 无-, 亚-, 准- trước một danh từ hoặc tính từ.",
+      "en": "Write one sentence using one of the prefixes 超-, 多-, 反-, 无-, 亚-, 准- before a noun or adjective."
+    },
+    "placeholder": "这个城市有……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["超"], "role": "marker"}, {"regex": "[\\u4e00-\\u9fff]+", "role": "other"}]
+    },
+    "sample": {
+      "text": "这个城市有超现代的地铁站。",
+      "pinyin": ["zhè", "ge", "chéng", "shì", "yǒu", "chāo", "xiàn", "dài", "de", "dì", "tiě", "zhàn", ""]
+    },
+    "placeholder_pinyin": ["zhè", "ge", "chéng", "shì", "yǒu", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791344895",
+    "generated_at": "2026-10-07T03:48:15Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:19:07Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

@@ -1,0 +1,237 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.cong_dao",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.bie_imperative"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {},
+  "point_type": "other",
+  "sequence": 5,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: cong_dao", "en": "Chinese grammar: cong_dao"},
+    "native_title": "“从……到……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Cấu trúc 从……到…… dùng để nói một khoảng thời gian hoặc một phạm vi, từ điểm bắt đầu đến điểm kết thúc.",
+      "en": "The pattern 从……到…… expresses a span from a starting point to an ending point, used for time or range."
+    },
+    "sub": {"vi": "khoảng thời gian", "en": "time span"},
+    "native_title_pinyin": ["", "cóng", "", "", "dào", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói về thời gian làm việc, học tập hoặc sinh hoạt hằng ngày, ví dụ từ mấy giờ đến mấy giờ.",
+      "en": "When talking about daily schedules, such as working or studying from one time to another."
+    },
+    {
+      "vi": "Khi nói về khoảng ngày tháng, ví dụ từ thứ Hai đến thứ Sáu.",
+      "en": "When talking about a range of days or dates, such as from Monday to Friday."
+    },
+    {
+      "vi": "Khi nói về phạm vi không gian hoặc số lượng, ví dụ từ nhà đến trường, từ 10 đến 20.",
+      "en": "When talking about a spatial or numerical range, such as from home to school, or from 10 to 20."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "从", "role": "marker", "label": {"vi": "từ", "en": "from"}, "pinyin": ["cóng"]},
+      {
+        "text": "起点",
+        "role": "time",
+        "label": {"vi": "điểm bắt đầu", "en": "starting point"},
+        "pinyin": ["qǐ", "diǎn"]
+      },
+      {"text": "到", "role": "marker", "label": {"vi": "đến", "en": "to"}, "pinyin": ["dào"]},
+      {
+        "text": "终点",
+        "role": "time",
+        "label": {"vi": "điểm kết thúc", "en": "ending point"},
+        "pinyin": ["zhōng", "diǎn"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我每天从八点到五点工作。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "time"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 9, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "从……到…… nối hai mốc thời gian để nói khoảng thời gian làm việc.",
+        "en": "从……到…… links two time points to express a working time span."
+      },
+      "translation": {
+        "vi": "Tôi làm việc từ tám giờ đến năm giờ mỗi ngày.",
+        "en": "I work from eight to five every day."
+      },
+      "pinyin": ["wǒ", "měi", "tiān", "cóng", "bā", "diǎn", "dào", "wǔ", "diǎn", "gōng", "zuò", ""]
+    },
+    {
+      "text": "商店从早上九点到晚上十点开门。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 7, "role": "time"},
+        {"start": 7, "end": 8, "role": "marker"},
+        {"start": 8, "end": 12, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "Cấu trúc đặt trước động từ 开门 để nói giờ mở cửa kéo dài từ lúc nào đến lúc nào.",
+        "en": "The pattern comes before the verb 开门 to show the opening hours from one time to another."
+      },
+      "translation": {
+        "vi": "Cửa hàng mở cửa từ chín giờ sáng đến mười giờ tối.",
+        "en": "The shop is open from nine in the morning to ten at night."
+      },
+      "pinyin": [
+        "shāng",
+        "diàn",
+        "cóng",
+        "zǎo",
+        "shàng",
+        "jiǔ",
+        "diǎn",
+        "dào",
+        "wǎn",
+        "shàng",
+        "shí",
+        "diǎn",
+        "kāi",
+        "mén",
+        ""
+      ]
+    },
+    {
+      "text": "从我家到学校很近。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "marker"},
+        {"start": 1, "end": 3, "role": "time"},
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "time"}
+      ],
+      "annotation": {
+        "vi": "从……到…… cũng dùng cho khoảng cách không gian, từ nhà đến trường.",
+        "en": "从……到…… also works for a spatial range, from home to school."
+      },
+      "translation": {"vi": "Từ nhà tôi đến trường rất gần.", "en": "It is very close from my home to school."},
+      "pinyin": ["cóng", "wǒ", "jiā", "dào", "xué", "xiào", "hěn", "jìn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng 从 nhưng quên 到, trong khi tiếng Trung cần cả hai vế 从……到…… để đóng khung khoảng thời gian.",
+        "en": "Learners use 从 but omit 到, while Chinese needs both parts 从……到…… to frame the time span."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我每天从八点五点工作。",
+      "right": "我每天从八点到五点工作。",
+      "wrong_pinyin": ["wǒ", "měi", "tiān", "cóng", "bā", "diǎn", "wǔ", "diǎn", "gōng", "zuò", ""],
+      "right_pinyin": ["wǒ", "měi", "tiān", "cóng", "bā", "diǎn", "dào", "wǔ", "diǎn", "gōng", "zuò", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我每天从八点___五点工作。",
+      "options": [
+        {"text": "到", "error_tag": null, "pinyin": ["dào"]},
+        {"text": "在", "error_tag": "particle", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc 从……到…… cần 到 để nối điểm bắt đầu với điểm kết thúc.",
+        "en": "The pattern 从……到…… needs 到 to link the starting point with the ending point."
+      },
+      "q_pinyin": ["wǒ", "měi", "tiān", "cóng", "bā", "diǎn", "", "", "", "wǔ", "diǎn", "gōng", "zuò", ""]
+    },
+    {
+      "q": "商店从早上九点___晚上十点开门。",
+      "options": [
+        {"text": "到", "error_tag": null, "pinyin": ["dào"]},
+        {"text": "和", "error_tag": "conjunction", "pinyin": ["hé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "和 chỉ dùng để nối danh từ, không dùng để nói khoảng thời gian từ…… đến…….",
+        "en": "和 only joins nouns; it cannot express a time span from one point to another."
+      },
+      "q_pinyin": [
+        "shāng",
+        "diàn",
+        "cóng",
+        "zǎo",
+        "shàng",
+        "jiǔ",
+        "diǎn",
+        "",
+        "",
+        "",
+        "wǎn",
+        "shàng",
+        "shí",
+        "diǎn",
+        "kāi",
+        "mén",
+        ""
+      ]
+    },
+    {
+      "q": "从我家___学校很近。",
+      "options": [
+        {"text": "到", "error_tag": null, "pinyin": ["dào"]},
+        {"text": "去", "error_tag": "word_choice", "pinyin": ["qù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi nói khoảng cách từ nơi này đến nơi khác, tiếng Trung dùng 从……到……, không dùng 去.",
+        "en": "For a distance from one place to another, Chinese uses 从……到……, not 去."
+      },
+      "q_pinyin": ["cóng", "wǒ", "jiā", "", "", "", "xué", "xiào", "hěn", "jìn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về lịch của bạn, dùng 从……到…… để nói từ mấy giờ đến mấy giờ.",
+      "en": "Write one sentence about your schedule, using 从……到…… to say from what time to what time."
+    },
+    "placeholder": "我每天从……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["从"], "role": "marker"}, {"any_of": ["到"], "role": "marker"}]
+    },
+    "sample": {
+      "text": "我每天从九点到六点上课。",
+      "pinyin": ["wǒ", "měi", "tiān", "cóng", "jiǔ", "diǎn", "dào", "liù", "diǎn", "shàng", "kè", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "měi", "tiān", "cóng", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338145",
+    "generated_at": "2026-10-07T01:55:45Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

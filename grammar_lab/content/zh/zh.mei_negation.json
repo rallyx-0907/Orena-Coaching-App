@@ -1,0 +1,265 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.mei_negation",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.negation",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": ["zh.bu_negation"],
+  "contrasts": ["zh.bu_negation", "zh.le_completion"],
+  "error_tags": ["aspect", "word_choice"],
+  "source_refs": {"r5": ["zh-hsk1-10-v"], "gf0025": ["gf0025.hsk1.014"]},
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Phủ định với 没(有)", "en": "Negation with 没(有)"},
+    "native_title": "“没(有)”的否定",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Phủ định hành động đã xảy ra hoặc sự sở hữu bằng 没(有), khác với 不 dùng cho thói quen, ý định và trạng thái.",
+      "en": "Negate completed actions or possession with 没(有), as opposed to 不 for habits, intentions and states."
+    },
+    "sub": {"vi": "phủ định bằng 没(有)", "en": "negation with 没(有)"},
+    "native_title_pinyin": ["", "méi", "", "yǒu", "", "", "de", "fǒu", "dìng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói một hành động đã không xảy ra hoặc chưa xảy ra tính đến hiện tại.",
+      "en": "When saying an action did not happen or has not happened up to now."
+    },
+    {"vi": "Khi phủ định sự sở hữu với 有: 没有.", "en": "When negating possession with 有: 没有."},
+    {
+      "vi": "Khi kể lại một sự việc trong quá khứ mà không dùng 了 sau động từ.",
+      "en": "When recounting a past event without using 了 after the verb."
+    },
+    {
+      "vi": "Khi muốn nói 'chưa' cho một trải nghiệm hoặc một việc còn dang dở.",
+      "en": "When expressing 'not yet' for an experience or an unfinished matter."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "没(有)",
+        "role": "aux",
+        "label": {"vi": "phó từ phủ định", "en": "negative adverb"},
+        "pinyin": ["méi", "", "yǒu", ""]
+      },
+      {
+        "text": "动词",
+        "role": "verb",
+        "label": {"vi": "động từ", "en": "verb"},
+        "pinyin": ["dòng", "cí"]
+      },
+      {
+        "text": "宾语",
+        "role": "object",
+        "label": {"vi": "tân ngữ", "en": "object"},
+        "optional": true,
+        "pinyin": ["bīn", "yǔ"]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我没吃早饭。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "没 phủ định hành động ăn sáng đã không xảy ra.",
+        "en": "没 negates the action of eating breakfast, which did not happen."
+      },
+      "translation": {"vi": "Tôi chưa ăn sáng.", "en": "I didn't eat breakfast."},
+      "pinyin": ["wǒ", "méi", "chī", "zǎo", "fàn", ""]
+    },
+    {
+      "text": "她没有妹妹。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "aux"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 5, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "没有 phủ định sự sở hữu, không dùng 不有.",
+        "en": "没有 negates possession; 不有 is not used."
+      },
+      "translation": {"vi": "Cô ấy không có em gái.", "en": "She doesn't have a younger sister."},
+      "pinyin": ["tā", "méi", "yǒu", "mèi", "mèi", ""]
+    },
+    {
+      "text": "我们没去公园。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "aux"},
+        {"start": 3, "end": 4, "role": "verb"},
+        {"start": 4, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "没 phủ định một chuyến đi đã không diễn ra.",
+        "en": "没 negates a trip that did not take place."
+      },
+      "translation": {"vi": "Chúng tôi đã không đi công viên.", "en": "We didn't go to the park."},
+      "pinyin": ["wǒ", "men", "méi", "qù", "gōng", "yuán", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.bu_negation",
+      "this_example": "我没吃早饭。",
+      "other_example": "我不吃早饭。",
+      "this_meaning": {
+        "vi": "没(有) phủ định hành động đã xảy ra hoặc sự sở hữu.",
+        "en": "没(有) negates completed actions or possession."
+      },
+      "other_meaning": {
+        "vi": "不 phủ định thói quen, ý định hoặc trạng thái hiện tại.",
+        "en": "不 negates habits, intentions or present states."
+      },
+      "this_example_pinyin": ["wǒ", "méi", "chī", "zǎo", "fàn", ""],
+      "other_example_pinyin": ["wǒ", "bù", "chī", "zǎo", "fàn", ""]
+    },
+    {
+      "with": "zh.le_completion",
+      "this_example": "我没吃饭。",
+      "other_example": "我吃了饭。",
+      "this_meaning": {
+        "vi": "没(有) phủ định một hành động đã không xảy ra; không dùng 了 sau động từ.",
+        "en": "没(有) negates an action that did not happen; 了 is not used after the verb."
+      },
+      "other_meaning": {
+        "vi": "了 đánh dấu một hành động đã hoàn thành hoặc đã xảy ra.",
+        "en": "了 marks an action as completed or having happened."
+      },
+      "this_example_pinyin": ["wǒ", "méi", "chī", "fàn", ""],
+      "other_example_pinyin": ["wǒ", "chī", "le", "fàn", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "有 luôn được phủ định bằng 没有, không dùng 不有.",
+        "en": "有 is always negated with 没有; 不有 is not used."
+      },
+      "error_tag": "word_choice",
+      "l1": ["vi"],
+      "wrong": "我不有车。",
+      "right": "我没有车。",
+      "wrong_pinyin": ["wǒ", "bù", "yǒu", "chē", ""],
+      "right_pinyin": ["wǒ", "méi", "yǒu", "chē", ""]
+    },
+    {
+      "reason": {
+        "vi": "没 đã đánh dấu phủ định hành động, nên không dùng thêm 了 sau động từ.",
+        "en": "没 already marks the action as negated, so 了 is not added after the verb."
+      },
+      "error_tag": "aspect",
+      "l1": ["vi"],
+      "wrong": "我没吃了饭。",
+      "right": "我没吃饭。",
+      "wrong_pinyin": ["wǒ", "méi", "chī", "le", "fàn", ""],
+      "right_pinyin": ["wǒ", "méi", "chī", "fàn", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___吃早饭。",
+      "options": [
+        {"text": "没", "error_tag": null, "pinyin": ["méi"]},
+        {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Hành động ăn sáng đã không xảy ra, nên dùng 没.",
+        "en": "The action of eating breakfast did not happen, so 没 is used."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "chī", "zǎo", "fàn", ""]
+    },
+    {
+      "q": "她___有妹妹。",
+      "options": [
+        {"text": "没", "error_tag": null, "pinyin": ["méi"]},
+        {"text": "不", "error_tag": "word_choice", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "有 phủ định bằng 没有, không dùng 不有.", "en": "有 is negated with 没有; 不有 is not used."},
+      "q_pinyin": ["tā", "", "", "", "yǒu", "mèi", "mèi", ""]
+    },
+    {
+      "q": "我们___去公园。",
+      "options": [
+        {"text": "没", "error_tag": null, "pinyin": ["méi"]},
+        {"text": "不", "error_tag": "aspect", "pinyin": ["bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chuyến đi đã không diễn ra, nên dùng 没.",
+        "en": "The trip did not take place, so 没 is used."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "qù", "gōng", "yuán", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể việc bạn đã không làm hôm qua, dùng 没(有).",
+      "en": "Write a sentence about something you did not do yesterday, using 没(有)."
+    },
+    "placeholder": "我昨天没……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["没", "没有"], "role": "aux"}]},
+    "sample": {"text": "我昨天没去学校。", "pinyin": ["wǒ", "zuó", "tiān", "méi", "qù", "xué", "xiào", ""]},
+    "placeholder_pinyin": ["wǒ", "zuó", "tiān", "méi", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791296890",
+    "generated_at": "2026-10-06T14:28:10Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-10-v"],
+      "content_version": 2,
+      "content_hash": "26d25e015b9ce75bb71f9ac9cd7826edc1917dc447913c70a2c25e013a2d435f",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-10-v",
+          "issue": "R5 gộp 不 và 没 thành một bài, nhưng điểm này chỉ dạy 没(有).",
+          "fix": "Tách riêng 没(有); 不 chỉ xuất hiện trong phần so sánh."
+        },
+        {
+          "r5_id": "zh-hsk1-10-v",
+          "issue": "R5 dùng ví dụ 我不喝咖啡 và 我今天不忙, không minh họa 没(有).",
+          "fix": "Thay bằng ba ví dụ đều dùng 没(有): 我没吃早饭, 她没有妹妹, 我们没去公园."
+        },
+        {
+          "r5_id": "zh-hsk1-10-v",
+          "issue": "R5 xếp 没有 thành 没 + 有 trong công thức, gây hiểu sai là hai từ riêng.",
+          "fix": "Coi 没(有) là một phó từ phủ định trong công thức."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

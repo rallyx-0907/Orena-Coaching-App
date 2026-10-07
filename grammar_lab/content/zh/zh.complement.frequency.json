@@ -1,0 +1,267 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.complement.frequency",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.duration_frequency",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": ["zh.complement.duration"],
+  "contrasts": ["zh.complement.duration"],
+  "error_tags": ["complement"],
+  "source_refs": {
+    "r5": ["zh-hsk2-13-b-ng-ng-l-ng-introduction", "zh-hsk3-9-b-ng-ng-l-ng"],
+    "gf0025": ["gf0025.hsk2.052", "gf0025.hsk3.050"]
+  },
+  "point_type": "word_order",
+  "sequence": 2,
+  "aliases": ["zh-hsk2-13-b-ng-ng-l-ng-introduction", "zh-hsk3-9-b-ng-ng-l-ng"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Bổ ngữ động lượng (số lần)", "en": "Frequency complements"},
+    "native_title": "动量补语",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "Bổ ngữ động lượng đếm số lần một hành động xảy ra, đặt sau động từ theo mẫu: động từ + số từ + lượng từ động tác.",
+      "en": "The frequency complement counts how many times an action happens, placed after the verb as: verb + number + verbal measure word."
+    },
+    "sub": {"vi": "số lần hành động", "en": "action frequency"},
+    "native_title_pinyin": ["dòng", "liàng", "bǔ", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một hành động đã xảy ra bao nhiêu lần, ví dụ: xem ba lần, đọc hai lượt.",
+      "en": "When you want to say how many times an action happened, for example: watched three times, read two passes."
+    },
+    {
+      "vi": "Khi câu có 了 hoặc 过 để đánh dấu hành động đã hoàn thành hoặc đã từng xảy ra, rồi thêm cụm số lần.",
+      "en": "When the sentence has 了 or 过 to mark a completed or experienced action, then adds the frequency phrase."
+    },
+    {
+      "vi": "Khi bạn cần phân biệt 次 (lần chung) với 遍 (trọn một lượt từ đầu đến cuối) hoặc 趟 (một chuyến đi).",
+      "en": "When you need to distinguish 次 (a general time) from 遍 (a complete pass from start to finish) or 趟 (one trip)."
+    },
+    {
+      "vi": "Khi tân ngữ là một sự vật cụ thể và bạn muốn đặt cụm số lần trước hoặc sau tân ngữ theo mẫu đã học.",
+      "en": "When the object is a specific thing and you want to place the frequency phrase before or after the object according to the learned patterns."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]},
+      {
+        "text": "了/过",
+        "role": "particle",
+        "label": {"vi": "trợ từ thể", "en": "aspect particle"},
+        "optional": true,
+        "options": [{"text": "了", "pinyin": ["le"]}, {"text": "过", "pinyin": ["guò"]}],
+        "pinyin": ["le", "", "guò"]
+      },
+      {
+        "text": "O1",
+        "role": "object",
+        "label": {"vi": "tân ngữ trước động lượng", "en": "object before frequency"},
+        "optional": true,
+        "pinyin": ["", ""]
+      },
+      {
+        "text": "数词",
+        "role": "other",
+        "label": {"vi": "số từ", "en": "number"},
+        "pinyin": ["shù", "cí"]
+      },
+      {
+        "text": "动量词",
+        "role": "classifier",
+        "label": {"vi": "động lượng từ", "en": "verbal measure"},
+        "options": [
+          {"text": "次", "pinyin": ["cì"]},
+          {"text": "遍", "pinyin": ["biàn"]},
+          {"text": "趟", "pinyin": ["tàng"]}
+        ],
+        "pinyin": ["dòng", "liàng", "cí"]
+      },
+      {
+        "text": "O2",
+        "role": "object",
+        "label": {"vi": "tân ngữ sau động lượng", "en": "object after frequency"},
+        "optional": true,
+        "pinyin": ["", ""]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我去过北京两次。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "classifier"}
+      ],
+      "annotation": {
+        "vi": "Tân ngữ 北京 đứng trước cụm động lượng 两次.",
+        "en": "The object 北京 comes before the frequency phrase 两次."
+      },
+      "translation": {"vi": "Tôi đã đi Bắc Kinh hai lần.", "en": "I have been to Beijing twice."},
+      "pinyin": ["wǒ", "qù", "guò", "běi", "jīng", "liǎng", "cì", ""]
+    },
+    {
+      "text": "我读了这篇文章两遍。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "verb"},
+        {"start": 2, "end": 3, "role": "particle"},
+        {"start": 3, "end": 7, "role": "object"},
+        {"start": 7, "end": 8, "role": "other"},
+        {"start": 8, "end": 9, "role": "classifier"}
+      ],
+      "annotation": {
+        "vi": "遍 đếm số lượt thực hiện trọn vẹn một hành động.",
+        "en": "遍 counts complete repetitions of an action."
+      },
+      "translation": {"vi": "Tôi đã đọc bài viết này hai lượt.", "en": "I read this article twice."},
+      "pinyin": ["wǒ", "dú", "le", "zhè", "piān", "wén", "zhāng", "liǎng", "biàn", ""]
+    },
+    {
+      "text": "我们见过三次面。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "particle"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "classifier"},
+        {"start": 6, "end": 7, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Trong 见面, 面 có thể đứng sau động lượng 三次.",
+        "en": "In 见面, 面 can follow the frequency phrase 三次."
+      },
+      "translation": {"vi": "Chúng tôi đã gặp nhau ba lần.", "en": "We have met three times."},
+      "pinyin": ["wǒ", "men", "jiàn", "guò", "sān", "cì", "miàn", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.complement.duration",
+      "this_example": "我去过北京两次。",
+      "other_example": "我学了两年汉语。",
+      "this_meaning": {
+        "vi": "Bổ ngữ động lượng trả lời câu hỏi 'mấy lần?', đếm số lần hành động lặp lại.",
+        "en": "The frequency complement answers 'how many times?', counting repetitions of an action."
+      },
+      "other_meaning": {
+        "vi": "Bổ ngữ thời lượng trả lời câu hỏi 'bao lâu?', đo khoảng thời gian hành động kéo dài.",
+        "en": "The duration complement answers 'how long?', measuring the length of time an action lasts."
+      },
+      "this_example_pinyin": ["wǒ", "qù", "guò", "běi", "jīng", "liǎng", "cì", ""],
+      "other_example_pinyin": ["wǒ", "xué", "le", "liǎng", "nián", "hàn", "yǔ", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "个 là lượng từ danh từ, không đếm số lần hành động; cần dùng lượng từ động tác như 次 và thêm 了 nếu hành động đã xảy ra.",
+        "en": "个 is a noun classifier and does not count action repetitions; use a verbal measure word like 次 and add 了 if the action is completed."
+      },
+      "error_tag": "complement",
+      "l1": ["vi"],
+      "wrong": "我看三个。",
+      "right": "我看了三次。",
+      "wrong_pinyin": ["wǒ", "kàn", "sān", "gè", ""],
+      "right_pinyin": ["wǒ", "kàn", "le", "sān", "cì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这本书我看了三___。",
+      "options": [
+        {"text": "遍", "error_tag": null, "pinyin": ["biàn"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "遍 là lượng từ động tác chỉ đọc trọn một lượt; 个 là lượng từ danh từ, không dùng để đếm số lần đọc.",
+        "en": "遍 is the verbal measure word for a complete reading pass; 个 is a noun classifier and cannot count readings."
+      },
+      "q_pinyin": ["zhè", "běn", "shū", "wǒ", "kàn", "le", "sān", "", "", "", ""]
+    },
+    {
+      "q": "我们见过三___面。",
+      "options": [
+        {"text": "次", "error_tag": null, "pinyin": ["cì"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với động từ ly hợp 见面, cụm số lần dùng 次 và chèn vào giữa: 见过三次面.",
+        "en": "With the separable verb 见面, the frequency phrase uses 次 and is inserted inside: 见过三次面."
+      },
+      "q_pinyin": ["wǒ", "men", "jiàn", "guò", "sān", "", "", "", "miàn", ""]
+    },
+    {
+      "q": "我___过两次北京。",
+      "options": [
+        {"text": "去", "error_tag": null, "pinyin": ["qù"]},
+        {"text": "去了", "error_tag": "aspect", "pinyin": ["qù", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "过 đã đánh dấu thể trải nghiệm, không thêm 了 vào cùng vị trí; đúng là 去过两次北京.",
+        "en": "过 already marks experiential aspect; do not add 了 in the same slot; the correct form is 去过两次北京."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "guò", "liǎng", "cì", "běi", "jīng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể về một hành động bạn đã làm bao nhiêu lần, dùng mẫu: động từ + 过/了 + số từ + 次/遍/趟.",
+      "en": "Write a sentence about how many times you have done an action, using: verb + 过/了 + number + 次/遍/趟."
+    },
+    "placeholder": "我去过……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["了", "过"], "role": "particle"}, {"any_of": ["次", "遍"], "role": "classifier"}]
+    },
+    "sample": {"text": "我去过北京两次。", "pinyin": ["wǒ", "qù", "guò", "běi", "jīng", "liǎng", "cì", ""]},
+    "placeholder_pinyin": ["wǒ", "qù", "guò", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351900",
+    "generated_at": "2026-10-07T05:45:00Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-13-b-ng-ng-l-ng-introduction", "zh-hsk3-9-b-ng-ng-l-ng"],
+      "content_version": 2,
+      "content_hash": "05de561c0f6258d27c4325ca00230d62c9a7954bc57160c2ce9067c450608735",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-13-b-ng-ng-l-ng-introduction",
+          "issue": "Bài R5 dạy 次, 遍, 趟 nhưng không nêu rõ vị trí tân ngữ có thể đứng trước hoặc sau cụm số lần, khiến người học dễ đặt sai trật tự.",
+          "fix": "Bổ sung quy tắc: cụm số lần thường đứng sau động từ; tân ngữ xác định có thể đứng trước chủ ngữ hoặc sau cụm số lần, ví dụ 我去过北京两次 và 这篇文章我读了两遍."
+        },
+        {
+          "r5_id": "zh-hsk3-9-b-ng-ng-l-ng",
+          "issue": "Bài R5 có câu sai '我读两个这篇文章' nhưng không giải thích rõ 个 là lượng từ danh từ, không phải lượng từ động tác.",
+          "fix": "Thêm giải thích: 个 đếm danh từ, không đếm số lần hành động; phải dùng 次/遍/趟, ví dụ 这篇文章我读了两遍."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

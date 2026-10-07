@@ -1,0 +1,227 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_6_topic"],
+  "contrasts": [],
+  "error_tags": ["particle", "collocation"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.027", "gf0025.hsk5.028", "gf0025.hsk5.029", "gf0025.hsk5.030"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cấu trúc cố định: 到⋯⋯为止", "en": "Fixed patterns: 到⋯⋯为止"},
+    "native_title": "到⋯⋯为止",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc 到⋯⋯为止 dùng để nêu mốc kết thúc của một khoảng thời gian, sự việc hoặc phạm vi.",
+      "en": "The pattern 到⋯⋯为止 marks the endpoint of a period of time, an event, or a range."
+    },
+    "sub": {"vi": "mốc kết thúc", "en": "endpoint marker"},
+    "native_title_pinyin": ["dào", "", "", "wéi", "zhǐ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói một hành động hoặc trạng thái kéo dài đến một thời điểm cụ thể.",
+      "en": "When saying that an action or state continues up to a specific point in time."
+    },
+    {
+      "vi": "Khi nêu giới hạn cuối cùng của một khoảng thời gian như ngày, tuần, tháng, năm.",
+      "en": "When stating the final limit of a time span such as a day, week, month, or year."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh phạm vi kết thúc của một sự việc, ví dụ đến lúc nào đó thì dừng lại.",
+      "en": "When emphasizing where an event stops, for example until a certain moment and no further."
+    },
+    {
+      "vi": "Khi câu có ý so sánh hoặc đánh giá tính đến một mốc nào đó.",
+      "en": "When a sentence compares or evaluates something up to a certain point."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "到",
+        "role": "marker",
+        "label": {"vi": "giới từ 到", "en": "preposition 到"},
+        "pinyin": ["dào"]
+      },
+      {
+        "text": "mốc thời gian / sự việc",
+        "role": "time",
+        "label": {"vi": "mốc thời gian hoặc sự việc", "en": "time point or event"},
+        "pinyin": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "为止",
+        "role": "particle",
+        "label": {"vi": "trợ từ 为止", "en": "particle 为止"},
+        "pinyin": ["wéi", "zhǐ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我们学到第五课为止。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 4, "role": "marker"},
+        {"start": 4, "end": 7, "role": "time"},
+        {"start": 7, "end": 9, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "到⋯⋯为止 đánh dấu điểm dừng của việc học.",
+        "en": "到⋯⋯为止 marks the stopping point of the study."
+      },
+      "translation": {"vi": "Chúng tôi học đến bài thứ năm thì dừng.", "en": "We study up to lesson five."},
+      "pinyin": ["wǒ", "men", "xué", "dào", "dì", "wǔ", "kè", "wéi", "zhǐ", ""]
+    },
+    {
+      "text": "这个商店开到晚上十点为止。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 10, "role": "time"},
+        {"start": 10, "end": 12, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "到⋯⋯为止 giới hạn thời gian mở cửa của cửa hàng.",
+        "en": "到⋯⋯为止 limits the shop's opening hours."
+      },
+      "translation": {"vi": "Cửa hàng này mở đến mười giờ tối.", "en": "This shop is open until ten at night."},
+      "pinyin": ["zhè", "ge", "shāng", "diàn", "kāi", "dào", "wǎn", "shàng", "shí", "diǎn", "wéi", "zhǐ", ""]
+    },
+    {
+      "text": "报名到今天为止。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 2, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "time"},
+        {"start": 5, "end": 7, "role": "particle"}
+      ],
+      "annotation": {
+        "vi": "到⋯⋯为止 nêu hạn cuối của việc đăng ký.",
+        "en": "到⋯⋯为止 states the deadline for registration."
+      },
+      "translation": {"vi": "Đăng ký đến hết hôm nay.", "en": "Registration is open until today."},
+      "pinyin": ["bào", "míng", "dào", "jīn", "tiān", "wéi", "zhǐ", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu trợ từ 为止 nên câu không đánh dấu rõ điểm kết thúc; 到 một mình chỉ nói đích đến, không nói giới hạn.",
+        "en": "Missing the particle 为止 leaves the endpoint unmarked; 到 alone shows a destination, not a limit."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "我们学到第五课。",
+      "right": "我们学到第五课为止。",
+      "wrong_pinyin": ["wǒ", "men", "xué", "dào", "dì", "wǔ", "kè", ""],
+      "right_pinyin": ["wǒ", "men", "xué", "dào", "dì", "wǔ", "kè", "wéi", "zhǐ", ""]
+    },
+    {
+      "reason": {
+        "vi": "为止 đã bao hàm ý kết thúc, thêm 结束 tạo cụm thừa và sai kết hợp.",
+        "en": "为止 already carries the meaning of ending, so adding 结束 creates a redundant and incorrect collocation."
+      },
+      "error_tag": "collocation",
+      "l1": ["vi"],
+      "wrong": "这个商店开到晚上十点结束为止。",
+      "right": "这个商店开到晚上十点为止。",
+      "wrong_pinyin": [
+        "zhè",
+        "ge",
+        "shāng",
+        "diàn",
+        "kāi",
+        "dào",
+        "wǎn",
+        "shàng",
+        "shí",
+        "diǎn",
+        "jié",
+        "shù",
+        "wéi",
+        "zhǐ",
+        ""
+      ],
+      "right_pinyin": ["zhè", "ge", "shāng", "diàn", "kāi", "dào", "wǎn", "shàng", "shí", "diǎn", "wéi", "zhǐ", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我们学到第五课___。",
+      "options": [
+        {"text": "为止", "error_tag": null, "pinyin": ["wéi", "zhǐ"]},
+        {"text": "以后", "error_tag": "word_choice", "pinyin": ["yǐ", "hòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "到⋯⋯为止 cần trợ từ 为止 ở cuối để đánh dấu điểm dừng.",
+        "en": "到⋯⋯为止 needs the particle 为止 at the end to mark the endpoint."
+      },
+      "q_pinyin": ["wǒ", "men", "xué", "dào", "dì", "wǔ", "kè", "", "", "", ""]
+    },
+    {
+      "q": "这个商店开到晚上十点___。",
+      "options": [
+        {"text": "为止", "error_tag": null, "pinyin": ["wéi", "zhǐ"]},
+        {"text": "结束", "error_tag": "collocation", "pinyin": ["jié", "shù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "为止 đã bao hàm ý kết thúc, không dùng 结束 thay thế trong cấu trúc này.",
+        "en": "为止 already means 'up to the end', so 结束 cannot replace it in this pattern."
+      },
+      "q_pinyin": ["zhè", "ge", "shāng", "diàn", "kāi", "dào", "wǎn", "shàng", "shí", "diǎn", "", "", "", ""]
+    },
+    {
+      "q": "报名到___为止。",
+      "options": [
+        {"text": "今天", "error_tag": null, "pinyin": ["jīn", "tiān"]},
+        {"text": "今天吗", "error_tag": "particle", "pinyin": ["jīn", "tiān", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 到 cần một mốc thời gian trần, không thêm trợ từ nghi vấn 吗.",
+        "en": "After 到 you need a plain time point, not the question particle 吗."
+      },
+      "q_pinyin": ["bào", "míng", "dào", "", "", "", "wéi", "zhǐ", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn làm gì đó đến một mốc thời gian nào, dùng 到⋯⋯为止.",
+      "en": "Write a sentence about doing something up to a certain time, using 到⋯⋯为止."
+    },
+    "placeholder": "我学到……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["到"], "role": "marker"}, {"any_of": ["为止"], "role": "particle"}]
+    },
+    "sample": {"text": "我学到第八课为止。", "pinyin": ["wǒ", "xué", "dào", "dì", "bā", "kè", "wéi", "zhǐ", ""]},
+    "placeholder_pinyin": ["wǒ", "xué", "dào", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338591",
+    "generated_at": "2026-10-07T02:03:11Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

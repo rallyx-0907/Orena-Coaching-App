@@ -1,0 +1,450 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_3_topic_104",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_2_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-3-topic-104"], "gf0025": ["gf0025.hsk3.064", "gf0025.hsk4.045"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["zh-hsk4-3-topic-104"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 首先⋯⋯，然后⋯⋯", "en": "Chinese grammar: 首先⋯⋯，然后⋯⋯"},
+    "native_title": "首先⋯⋯，然后⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "首先、然后、最后 dùng để sắp xếp các bước hoặc luận điểm theo một trình tự rõ ràng trong câu nói hay bài viết.",
+      "en": "首先, 然后 and 最后 order steps or points into a clear sequence in speech or writing."
+    },
+    "sub": {"vi": "trình tự bước", "en": "sequencing steps"},
+    "native_title_pinyin": ["shǒu", "xiān", "", "", "", "rán", "hòu", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn trình bày một quy trình gồm nhiều bước và muốn người nghe theo dõi thứ tự.",
+      "en": "When you present a process with several steps and want the listener to follow the order."
+    },
+    {
+      "vi": "Khi bạn nêu nhiều luận điểm trong một đoạn văn và cần đánh dấu điểm mở đầu và điểm kết thúc.",
+      "en": "When you list several points in a paragraph and need to mark the opening and closing point."
+    },
+    {
+      "vi": "Khi bạn kể lại việc mình đã làm theo từng giai đoạn, ví dụ buổi sáng, buổi chiều, buổi tối.",
+      "en": "When you recount what you did stage by stage, for example morning, afternoon, evening."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "首先",
+        "role": "connector",
+        "label": {"vi": "đầu tiên", "en": "first"},
+        "pinyin": ["shǒu", "xiān"]
+      },
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "VP1",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 1", "en": "predicate 1"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "然后",
+        "role": "connector",
+        "label": {"vi": "sau đó", "en": "then"},
+        "pinyin": ["rán", "hòu"]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "VP2",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 2", "en": "predicate 2"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "最后",
+        "role": "connector",
+        "label": {"vi": "cuối cùng", "en": "finally"},
+        "pinyin": ["zuì", "hòu"]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "VP3",
+        "role": "verb",
+        "label": {"vi": "vị ngữ 3", "en": "predicate 3"},
+        "pinyin": ["", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "首先我们看地图，然后我们买票，最后我们上车。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "subject"},
+        {"start": 4, "end": 7, "role": "verb"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 12, "role": "subject"},
+        {"start": 12, "end": 14, "role": "verb"},
+        {"start": 15, "end": 17, "role": "connector"},
+        {"start": 17, "end": 19, "role": "subject"},
+        {"start": 19, "end": 21, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "首先 mở đầu, 然后 tiếp nối, 最后 kết thúc chuỗi bước.",
+        "en": "首先 opens, 然后 continues, 最后 closes the sequence of steps."
+      },
+      "translation": {
+        "vi": "Đầu tiên chúng tôi xem bản đồ, sau đó mua vé, cuối cùng lên xe.",
+        "en": "First we look at the map, then we buy tickets, and finally we get on the bus."
+      },
+      "pinyin": [
+        "shǒu",
+        "xiān",
+        "wǒ",
+        "men",
+        "kàn",
+        "dì",
+        "tú",
+        "",
+        "rán",
+        "hòu",
+        "wǒ",
+        "men",
+        "mǎi",
+        "piào",
+        "",
+        "zuì",
+        "hòu",
+        "wǒ",
+        "men",
+        "shàng",
+        "chē",
+        ""
+      ]
+    },
+    {
+      "text": "首先他洗菜，然后他切菜，最后他炒菜。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 9, "role": "subject"},
+        {"start": 9, "end": 11, "role": "verb"},
+        {"start": 12, "end": 14, "role": "connector"},
+        {"start": 14, "end": 15, "role": "subject"},
+        {"start": 15, "end": 17, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Mỗi connector đứng trước một bước, chủ ngữ lặp lại sau mỗi connector.",
+        "en": "Each connector comes before one step, and the subject repeats after each connector."
+      },
+      "translation": {
+        "vi": "Đầu tiên anh ấy rửa rau, sau đó thái rau, cuối cùng xào rau.",
+        "en": "First he washes the vegetables, then he cuts them, and finally he stirs-fries them."
+      },
+      "pinyin": [
+        "shǒu",
+        "xiān",
+        "tā",
+        "xǐ",
+        "cài",
+        "",
+        "rán",
+        "hòu",
+        "tā",
+        "qiè",
+        "cài",
+        "",
+        "zuì",
+        "hòu",
+        "tā",
+        "chǎo",
+        "cài",
+        ""
+      ]
+    },
+    {
+      "text": "首先我复习生词，然后我做练习，最后我写作文。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 3, "role": "subject"},
+        {"start": 3, "end": 7, "role": "verb"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 11, "role": "subject"},
+        {"start": 11, "end": 14, "role": "verb"},
+        {"start": 15, "end": 17, "role": "connector"},
+        {"start": 17, "end": 18, "role": "subject"},
+        {"start": 18, "end": 21, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Chuỗi ba bước trong việc học, mỗi bước có một connector riêng.",
+        "en": "A three-step study routine, each step introduced by its own connector."
+      },
+      "translation": {
+        "vi": "Đầu tiên tôi ôn từ mới, sau đó làm bài tập, cuối cùng viết bài luận.",
+        "en": "First I review new words, then I do exercises, and finally I write an essay."
+      },
+      "pinyin": [
+        "shǒu",
+        "xiān",
+        "wǒ",
+        "fù",
+        "xí",
+        "shēng",
+        "cí",
+        "",
+        "rán",
+        "hòu",
+        "wǒ",
+        "zuò",
+        "liàn",
+        "xí",
+        "",
+        "zuì",
+        "hòu",
+        "wǒ",
+        "xiě",
+        "zuò",
+        "wén",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học lặp lại 首先 cho bước thứ hai vì quen dịch 'first... first...' từ tiếng Việt; bước tiếp theo cần 然后 hoặc 其次.",
+        "en": "The learner repeats 首先 for the second step, often by translating a Vietnamese habit; the next step needs 然后 or 其次."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "首先我们分析数据，首先我们讨论成本。",
+      "right": "首先我们分析数据，然后我们讨论成本。",
+      "wrong_pinyin": [
+        "shǒu",
+        "xiān",
+        "wǒ",
+        "men",
+        "fēn",
+        "xī",
+        "shù",
+        "jù",
+        "",
+        "shǒu",
+        "xiān",
+        "wǒ",
+        "men",
+        "tǎo",
+        "lùn",
+        "chéng",
+        "běn",
+        ""
+      ],
+      "right_pinyin": [
+        "shǒu",
+        "xiān",
+        "wǒ",
+        "men",
+        "fēn",
+        "xī",
+        "shù",
+        "jù",
+        "",
+        "rán",
+        "hòu",
+        "wǒ",
+        "men",
+        "tǎo",
+        "lùn",
+        "chéng",
+        "běn",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "首先我们看地图，___我们买票。",
+      "options": [
+        {"text": "然后", "error_tag": null, "pinyin": ["rán", "hòu"]},
+        {"text": "首先", "error_tag": "coherence", "pinyin": ["shǒu", "xiān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bước thứ hai cần 然后, không lặp lại 首先.",
+        "en": "The second step needs 然后, not a repeated 首先."
+      },
+      "q_pinyin": [
+        "shǒu",
+        "xiān",
+        "wǒ",
+        "men",
+        "kàn",
+        "dì",
+        "tú",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "men",
+        "mǎi",
+        "piào",
+        ""
+      ]
+    },
+    {
+      "q": "首先他洗菜，然后他切菜，___他炒菜。",
+      "options": [
+        {"text": "最后", "error_tag": null, "pinyin": ["zuì", "hòu"]},
+        {"text": "然后", "error_tag": "coherence", "pinyin": ["rán", "hòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Bước cuối cùng dùng 最后 để đóng chuỗi trình tự.",
+        "en": "The last step uses 最后 to close the sequence."
+      },
+      "q_pinyin": [
+        "shǒu",
+        "xiān",
+        "tā",
+        "xǐ",
+        "cài",
+        "",
+        "rán",
+        "hòu",
+        "tā",
+        "qiè",
+        "cài",
+        "",
+        "",
+        "",
+        "",
+        "tā",
+        "chǎo",
+        "cài",
+        ""
+      ]
+    },
+    {
+      "q": "___我复习生词，然后我做练习。",
+      "options": [
+        {"text": "首先", "error_tag": null, "pinyin": ["shǒu", "xiān"]},
+        {"text": "最后", "error_tag": "coherence", "pinyin": ["zuì", "hòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu mở đầu chuỗi cần 首先, không dùng 最后.",
+        "en": "The sentence that opens the sequence needs 首先, not 最后."
+      },
+      "q_pinyin": ["", "", "", "wǒ", "fù", "xí", "shēng", "cí", "", "rán", "hòu", "wǒ", "zuò", "liàn", "xí", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết ba bước trong thói quen buổi sáng của bạn, dùng 首先, 然后 và 最后.",
+      "en": "Write three steps of your morning routine using 首先, 然后 and 最后."
+    },
+    "placeholder": "首先我……，然后我……，最后我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["首先"], "role": "connector"},
+        {"any_of": ["然后"], "role": "connector"},
+        {"any_of": ["最后"], "role": "connector"}
+      ]
+    },
+    "sample": {
+      "text": "首先我刷牙，然后我吃早饭，最后我去上班。",
+      "pinyin": [
+        "shǒu",
+        "xiān",
+        "wǒ",
+        "shuā",
+        "yá",
+        "",
+        "rán",
+        "hòu",
+        "wǒ",
+        "chī",
+        "zǎo",
+        "fàn",
+        "",
+        "zuì",
+        "hòu",
+        "wǒ",
+        "qù",
+        "shàng",
+        "bān",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["shǒu", "xiān", "wǒ", "", "", "", "rán", "hòu", "wǒ", "", "", "", "zuì", "hòu", "wǒ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338383",
+    "generated_at": "2026-10-07T01:59:43Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-3-topic-104"],
+      "content_version": 2,
+      "content_hash": "76beaf3ff983467f18b77094dec21def0586c27c48e84e85048f8bd4a1258cb8",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-3-topic-104",
+          "issue": "R5 gộp bốn connector 首先/其次/此外/最后 vào một bài, trong đó 此外 không thuộc cặp trình tự 首先⋯⋯，然后⋯⋯ của điểm này.",
+          "fix": "Chỉ giữ 首先, 然后 và 最后 trong công thức và ví dụ; 此外 không được dạy ở đây."
+        },
+        {
+          "r5_id": "zh-hsk4-3-topic-104",
+          "issue": "R5 không có công thức trừu tượng, chỉ liệt kê nghĩa từng từ.",
+          "fix": "Thêm công thức theo slot: 首先 + S + VP1 + 然后 + S + VP2 + 最后 + S + VP3."
+        },
+        {
+          "r5_id": "zh-hsk4-3-topic-104",
+          "issue": "Ví dụ của R5 minh hoạ 其次 và 此外, không minh hoạ 然后.",
+          "fix": "Thay bằng ba ví dụ đều dùng đủ 首先, 然后, 最后."
+        },
+        {
+          "r5_id": "zh-hsk4-3-topic-104",
+          "issue": "Lỗi mẫu thứ hai của R5 ('此外用于结束全文') là một nhận định sai về cách dùng, không phải câu sai của người học.",
+          "fix": "Thay bằng lỗi thật của người Việt: lặp 首先 cho bước thứ hai thay vì dùng 然后."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

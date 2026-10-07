@@ -1,0 +1,406 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_9_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.contrast",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.gf.hsk5.a_5_4_2.p1"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-9-topic", "zh-hsk6-1-topic"], "gf0025": ["gf0025.hsk5.045"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk5-9-topic", "zh-hsk6-1-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 尽管⋯⋯，名声/可是⋯⋯", "en": "Chinese grammar: 尽管⋯⋯，名声/可是⋯⋯"},
+    "native_title": "尽管⋯⋯，名声/可是⋯⋯",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Mẫu câu nhượng bộ dùng 尽管 hoặc 固然 ở mệnh đề đầu để thừa nhận một sự thật, rồi dùng 还是/但是/却/也 ở mệnh đề sau để nêu kết quả trái ngược hoặc hạn chế.",
+      "en": "A concessive pattern that uses 尽管 or 固然 in the first clause to acknowledge a fact, then 还是/但是/却/也 in the second clause to state a contrasting result or limitation."
+    },
+    "sub": {"vi": "nhượng bộ", "en": "concession"},
+    "native_title_pinyin": ["jǐn", "guǎn", "", "", "", "míng", "shēng", "", "kě", "shì", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn thừa nhận một sự thật đã biết rồi nêu kết quả trái ngược với nó.",
+      "en": "When you acknowledge a known fact and then state a result that contrasts with it."
+    },
+    {
+      "vi": "Khi bạn muốn thừa nhận một ưu điểm của việc gì đó rồi giới hạn nó bằng một nhược điểm.",
+      "en": "When you want to grant a merit of something and then limit it with a drawback."
+    },
+    {
+      "vi": "Khi viết hoặc nói ở mức trang trọng vừa phải, không dùng để nêu nguyên nhân – kết quả.",
+      "en": "In moderately formal writing or speech, not for cause–result relations."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语1",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ trước liên từ", "en": "pre-connector subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ", ""]
+      },
+      {
+        "text": "尽管/固然",
+        "role": "connector",
+        "label": {"vi": "mặc dù/quả thật", "en": "although/admittedly"},
+        "options": [{"text": "尽管", "pinyin": ["jǐn", "guǎn"]}, {"text": "固然", "pinyin": ["gù", "rán"]}],
+        "pinyin": ["jǐn", "guǎn", "", "gù", "rán"]
+      },
+      {
+        "text": "分句A",
+        "role": "other",
+        "label": {"vi": "mệnh đề A", "en": "clause A"},
+        "pinyin": ["fēn", "jù", ""]
+      },
+      {
+        "text": "主语2",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ vế sau", "en": "second-clause subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ", ""]
+      },
+      {
+        "text": "还是/但是/却/也/并",
+        "role": "connector",
+        "label": {"vi": "liên từ vế sau", "en": "second connector"},
+        "options": [
+          {"text": "还是", "pinyin": ["hái", "shì"]},
+          {"text": "但是", "pinyin": ["dàn", "shì"]},
+          {"text": "却", "pinyin": ["què"]},
+          {"text": "也", "pinyin": ["yě"]},
+          {"text": "并", "pinyin": ["bìng"]}
+        ],
+        "pinyin": ["hái", "shì", "", "dàn", "shì", "", "què", "", "yě", "", "bìng"]
+      },
+      {
+        "text": "分句B",
+        "role": "other",
+        "label": {"vi": "mệnh đề B", "en": "clause B"},
+        "pinyin": ["fēn", "jù", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "尽管时间很紧，我们还是完成了任务。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "尽管 mở vế nhượng bộ; 还是 cho biết kết quả vẫn xảy ra.",
+        "en": "尽管 opens a concessive clause; 还是 shows the result still happened."
+      },
+      "translation": {
+        "vi": "Dù thời gian rất gấp, chúng tôi vẫn hoàn thành nhiệm vụ.",
+        "en": "Although time was tight, we still completed the task."
+      },
+      "pinyin": [
+        "jǐn",
+        "guǎn",
+        "shí",
+        "jiān",
+        "hěn",
+        "jǐn",
+        "",
+        "wǒ",
+        "men",
+        "hái",
+        "shì",
+        "wán",
+        "chéng",
+        "le",
+        "rèn",
+        "wù",
+        ""
+      ]
+    },
+    {
+      "text": "尽管价格上涨，需求并没有明显下降。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "subject"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "并没有 trong vế sau nhấn mạnh kết quả trái với dự đoán.",
+        "en": "并没有 emphasizes that the expected consequence did not occur."
+      },
+      "translation": {
+        "vi": "Mặc dù giá tăng, nhu cầu không giảm rõ rệt.",
+        "en": "Although prices rose, demand did not decline noticeably."
+      },
+      "pinyin": [
+        "jǐn",
+        "guǎn",
+        "jià",
+        "gé",
+        "shàng",
+        "zhǎng",
+        "",
+        "xū",
+        "qiú",
+        "bìng",
+        "méi",
+        "yǒu",
+        "míng",
+        "xiǎn",
+        "xià",
+        "jiàng",
+        ""
+      ]
+    },
+    {
+      "text": "这个方法固然简单，但是不够准确。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 4, "role": "subject"},
+        {"start": 4, "end": 6, "role": "connector"},
+        {"start": 6, "end": 8, "role": "other"},
+        {"start": 9, "end": 11, "role": "connector"},
+        {"start": 11, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "固然 thừa nhận ưu điểm trước khi 但是 đưa ra hạn chế.",
+        "en": "固然 concedes an advantage before 但是 introduces a limitation."
+      },
+      "translation": {
+        "vi": "Phương pháp này đúng là đơn giản nhưng không đủ chính xác.",
+        "en": "This method is admittedly simple, but not accurate enough."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "fāng",
+        "fǎ",
+        "gù",
+        "rán",
+        "jiǎn",
+        "dān",
+        "",
+        "dàn",
+        "shì",
+        "bù",
+        "gòu",
+        "zhǔn",
+        "què",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "固然 không dùng cho quan hệ nguyên nhân – kết quả; nó cần một mệnh đề nhượng bộ rồi mới đến kết quả trái ngược.",
+        "en": "固然 is not used for cause–result; it needs a concessive clause followed by a contrasting result."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "固然下雨，所以活动取消。",
+      "right": "虽然下雨，但是活动照常进行。",
+      "wrong_pinyin": ["gù", "rán", "xià", "yǔ", "", "suǒ", "yǐ", "huó", "dòng", "qǔ", "xiāo", ""],
+      "right_pinyin": [
+        "suī",
+        "rán",
+        "xià",
+        "yǔ",
+        "",
+        "dàn",
+        "shì",
+        "huó",
+        "dòng",
+        "zhào",
+        "cháng",
+        "jìn",
+        "xíng",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___时间很紧，我们还是完成了任务。",
+      "options": [
+        {"text": "尽管", "error_tag": null, "pinyin": ["jǐn", "guǎn"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "尽管 thừa nhận một sự thật rồi nêu kết quả trái ngược; 因为 chỉ nguyên nhân.",
+        "en": "尽管 acknowledges a fact and leads to a contrasting result; 因为 only marks cause."
+      },
+      "q_pinyin": [
+        "",
+        "",
+        "",
+        "shí",
+        "jiān",
+        "hěn",
+        "jǐn",
+        "",
+        "wǒ",
+        "men",
+        "hái",
+        "shì",
+        "wán",
+        "chéng",
+        "le",
+        "rèn",
+        "wù",
+        ""
+      ]
+    },
+    {
+      "q": "这个方法固然简单，___不够准确。",
+      "options": [
+        {"text": "但是", "error_tag": null, "pinyin": ["dàn", "shì"]},
+        {"text": "因此", "error_tag": "conjunction", "pinyin": ["yīn", "cǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 固然 cần từ nối thể hiện sự tương phản như 但是; 因此 chỉ kết quả.",
+        "en": "After 固然 you need a contrastive connector like 但是; 因此 marks result."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "fāng",
+        "fǎ",
+        "gù",
+        "rán",
+        "jiǎn",
+        "dān",
+        "",
+        "",
+        "",
+        "",
+        "bù",
+        "gòu",
+        "zhǔn",
+        "què",
+        ""
+      ]
+    },
+    {
+      "q": "尽管价格很高，___很多人还是买了。",
+      "options": [
+        {"text": "但是", "error_tag": null, "pinyin": ["dàn", "shì"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "尽管 đi với 但是/还是/却/也 để nêu kết quả trái ngược; 所以 chỉ nguyên nhân – kết quả.",
+        "en": "尽管 pairs with 但是/还是/却/也 for a contrasting result; 所以 marks cause–result."
+      },
+      "q_pinyin": [
+        "jǐn",
+        "guǎn",
+        "jià",
+        "gé",
+        "hěn",
+        "gāo",
+        "",
+        "",
+        "",
+        "",
+        "hěn",
+        "duō",
+        "rén",
+        "hái",
+        "shì",
+        "mǎi",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 尽管 hoặc 固然 ở đầu và 还是/但是/却/也 ở mệnh đề sau.",
+      "en": "Write one sentence about yourself using 尽管 or 固然 first and 还是/但是/却/也 in the second clause."
+    },
+    "placeholder": "尽管……，我还是……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["尽管", "固然"], "role": "connector"},
+        {"any_of": ["还是", "但是", "并"], "role": "connector"}
+      ]
+    },
+    "sample": {
+      "text": "尽管今天很累，我还是去跑步了。",
+      "pinyin": [
+        "jǐn",
+        "guǎn",
+        "jīn",
+        "tiān",
+        "hěn",
+        "lèi",
+        "",
+        "wǒ",
+        "hái",
+        "shì",
+        "qù",
+        "pǎo",
+        "bù",
+        "le",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["jǐn", "guǎn", "", "", "", "wǒ", "hái", "shì", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351886",
+    "generated_at": "2026-10-07T05:44:46Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-9-topic", "zh-hsk6-1-topic"],
+      "content_version": 2,
+      "content_hash": "5bfd478c55df6a0de1ec69b09f8d3418a8ccd2352c719c86dd7697f86070f300",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-9-topic",
+          "issue": "R5 ghi '尽管A，因此B' là sai; 因此 chỉ kết quả, không dùng trong nhượng bộ.",
+          "fix": "Đã sửa thành '尽管A，但是B' và thêm vào common_mistakes."
+        },
+        {
+          "r5_id": "zh-hsk5-9-topic",
+          "issue": "R5 dùng '固然下雨，所以活动取消' làm ví dụ sai nhưng không giải thích rõ cơ chế.",
+          "fix": "Đã thay bằng cặp đúng/sai rõ ràng: '固然下雨，所以活动取消' → '虽然下雨，但是活动照常进行'."
+        },
+        {
+          "r5_id": "zh-hsk6-1-topic",
+          "issue": "R5 gộp 尽管/固然 với 即使/哪怕/纵然, vượt quá phạm vi điểm này.",
+          "fix": "Chỉ giữ 尽管 và 固然 trong formula và ví dụ; không đưa 即使/哪怕/纵然 vào."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

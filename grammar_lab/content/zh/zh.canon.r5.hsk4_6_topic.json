@@ -1,0 +1,328 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_6_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_5_topic_106"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {
+    "r5": ["zh-hsk4-6-topic"],
+    "gf0025": ["gf0025.hsk4.050", "gf0025.hsk5.047", "gf0025.hsk5.048", "gf0025.hsk5.049"]
+  },
+  "point_type": "other",
+  "sequence": 11,
+  "aliases": ["zh-hsk4-6-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: ⋯⋯，否则⋯⋯", "en": "Chinese grammar: ⋯⋯，否则⋯⋯"},
+    "native_title": "⋯⋯，否则⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "除非...否则... dùng để nói rằng chỉ khi điều kiện A xảy ra thì mới tránh được kết quả B; nếu A không xảy ra thì B sẽ xảy ra.",
+      "en": "除非...否则... states that only if condition A happens can result B be avoided; if A does not happen, B will happen."
+    },
+    "sub": {"vi": "trừ khi... nếu không...", "en": "unless... otherwise..."},
+    "native_title_pinyin": ["", "", "", "fǒu", "zé", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nêu một ngoại lệ hoặc điều kiện bắt buộc để tránh một kết quả không mong muốn.",
+      "en": "When you want to name an exception or a necessary condition that prevents an unwanted result."
+    },
+    {
+      "vi": "Khi cần nhấn mạnh rằng nếu không có A thì chắc chắn B sẽ xảy ra.",
+      "en": "When you need to stress that without A, B will definitely happen."
+    },
+    {
+      "vi": "Khi đưa ra cảnh báo, điều kiện trong học tập, công việc hoặc đời sống hằng ngày.",
+      "en": "When giving warnings or conditions in study, work, or everyday situations."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "除非",
+        "role": "connector",
+        "label": {
+          "vi": "liên từ mở đầu điều kiện ngoại lệ",
+          "en": "connector introducing the exception condition"
+        },
+        "pinyin": ["chú", "fēi"]
+      },
+      {
+        "text": "A",
+        "role": "other",
+        "label": {"vi": "điều kiện ngoại lệ", "en": "exception condition"},
+        "pinyin": [""]
+      },
+      {
+        "text": "否则",
+        "role": "connector",
+        "label": {"vi": "liên từ nêu kết quả mặc định", "en": "connector introducing the default result"},
+        "pinyin": ["fǒu", "zé"]
+      },
+      {
+        "text": "B",
+        "role": "other",
+        "label": {"vi": "kết quả mặc định", "en": "default result"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "除非下雨，否则我们就去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 7, "role": "connector"},
+        {"start": 7, "end": 11, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "A là điều kiện ngoại lệ; B là kết quả mặc định nếu A không xảy ra.",
+        "en": "A is the exception condition; B is the default result if A does not happen."
+      },
+      "translation": {"vi": "Trừ khi trời mưa, nếu không chúng ta sẽ đi.", "en": "Unless it rains, we will go."},
+      "pinyin": ["chú", "fēi", "xià", "yǔ", "", "fǒu", "zé", "wǒ", "men", "jiù", "qù", ""]
+    },
+    {
+      "text": "除非你解释清楚，否则我不会同意。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "connector"},
+        {"start": 10, "end": 15, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Điều kiện bắt buộc là bạn phải giải thích rõ; nếu không tôi sẽ không đồng ý.",
+        "en": "The necessary condition is that you explain clearly; otherwise I will not agree."
+      },
+      "translation": {
+        "vi": "Trừ khi bạn giải thích rõ, nếu không tôi sẽ không đồng ý.",
+        "en": "Unless you explain clearly, I will not agree."
+      },
+      "pinyin": [
+        "chú",
+        "fēi",
+        "nǐ",
+        "jiě",
+        "shì",
+        "qīng",
+        "chǔ",
+        "",
+        "fǒu",
+        "zé",
+        "wǒ",
+        "bú",
+        "huì",
+        "tóng",
+        "yì",
+        ""
+      ]
+    },
+    {
+      "text": "除非马上出发，否则就来不及了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Nếu không xuất phát ngay thì sẽ không kịp; 否则 nêu kết quả mặc định.",
+        "en": "If we do not leave immediately, we will be late; 否则 introduces the default result."
+      },
+      "translation": {
+        "vi": "Trừ khi xuất phát ngay, nếu không sẽ không kịp.",
+        "en": "Unless we leave immediately, we will be too late."
+      },
+      "pinyin": [
+        "chú",
+        "fēi",
+        "mǎ",
+        "shàng",
+        "chū",
+        "fā",
+        "",
+        "fǒu",
+        "zé",
+        "jiù",
+        "lái",
+        "bù",
+        "jí",
+        "le",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "所以 chỉ kết quả nguyên nhân, không diễn tả quan hệ 'nếu không thì' của 否则.",
+        "en": "所以 marks a cause-result relation, not the 'otherwise' relation expressed by 否则."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "除非下雨，所以我们去。",
+      "right": "除非下雨，否则我们就去。",
+      "wrong_pinyin": ["chú", "fēi", "xià", "yǔ", "", "suǒ", "yǐ", "wǒ", "men", "qù", ""],
+      "right_pinyin": ["chú", "fēi", "xià", "yǔ", "", "fǒu", "zé", "wǒ", "men", "jiù", "qù", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "除非你道歉，___我不会原谅你。",
+      "options": [
+        {"text": "否则", "error_tag": null, "pinyin": ["fǒu", "zé"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "否则 nêu kết quả mặc định nếu điều kiện 除非 không được thực hiện.",
+        "en": "否则 introduces the default result if the 除非 condition is not met."
+      },
+      "q_pinyin": [
+        "chú",
+        "fēi",
+        "nǐ",
+        "dào",
+        "qiàn",
+        "",
+        "",
+        "",
+        "",
+        "wǒ",
+        "bú",
+        "huì",
+        "yuán",
+        "liàng",
+        "nǐ",
+        ""
+      ]
+    },
+    {
+      "q": "除非马上走，___会迟到。",
+      "options": [
+        {"text": "否则", "error_tag": null, "pinyin": ["fǒu", "zé"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "否则 là liên từ cần thiết để nối điều kiện ngoại lệ với kết quả mặc định.",
+        "en": "否则 is the connector needed to link the exception condition with the default result."
+      },
+      "q_pinyin": ["chú", "fēi", "mǎ", "shàng", "zǒu", "", "", "", "", "huì", "chí", "dào", ""]
+    },
+    {
+      "q": "除非有特殊情况，___不能改变计划。",
+      "options": [
+        {"text": "否则", "error_tag": null, "pinyin": ["fǒu", "zé"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]},
+        {"text": "而且", "error_tag": "conjunction", "pinyin": ["ér", "qiě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "否则 diễn tả 'nếu không có ngoại lệ thì kết quả mặc định sẽ xảy ra'.",
+        "en": "否则 expresses 'if the exception does not happen, the default result follows'."
+      },
+      "q_pinyin": [
+        "chú",
+        "fēi",
+        "yǒu",
+        "tè",
+        "shū",
+        "qíng",
+        "kuàng",
+        "",
+        "",
+        "",
+        "",
+        "bù",
+        "néng",
+        "gǎi",
+        "biàn",
+        "jì",
+        "huà",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 除非...否则... để nêu điều kiện và kết quả.",
+      "en": "Write a sentence about yourself using 除非...否则... to state a condition and result."
+    },
+    "placeholder": "除非……否则……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["除非"], "role": "connector"}, {"any_of": ["否则"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "除非我早点起床，否则我会迟到。",
+      "pinyin": [
+        "chú",
+        "fēi",
+        "wǒ",
+        "zǎo",
+        "diǎn",
+        "qǐ",
+        "chuáng",
+        "",
+        "fǒu",
+        "zé",
+        "wǒ",
+        "huì",
+        "chí",
+        "dào",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["chú", "fēi", "", "", "fǒu", "zé", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338458",
+    "generated_at": "2026-10-07T02:00:58Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-6-topic"],
+      "content_version": 2,
+      "content_hash": "be503579e3e72ed7ccabaafc8c9e1c148baa0be48736ee5a1558d7fd99ff56ee",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-6-topic",
+          "issue": "R5 dùng tiêu đề 除非...否则... nhưng phần rules lại nói 'Sometimes 才 pairs with 除非: 除非A，才B; lesson focus 除非...否则.' gây nhầm lẫn vì 才 không thuộc cấu trúc 除非...否则...",
+          "fix": "Loại bỏ ghi chú về 才 khỏi phần quy tắc; chỉ giữ 除非 + A，否则 + B."
+        },
+        {
+          "r5_id": "zh-hsk4-6-topic",
+          "issue": "R5 có lỗi sai '除非不下雨，否则我们就不去' với giải thích 'Negation reverses condition', nhưng câu này không sai ngữ pháp mà chỉ sai logic so với ý định.",
+          "fix": "Thay bằng lỗi thực tế '除非下雨，所以我们去。' và sửa thành '除非下雨，否则我们就去。'"
+        },
+        {
+          "r5_id": "zh-hsk4-6-topic",
+          "issue": "R5 thiếu công thức trừu tượng và liên kết slot cho ví dụ.",
+          "fix": "Bổ sung formula 除非 + A + 否则 + B và bindings cho từng ví dụ."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

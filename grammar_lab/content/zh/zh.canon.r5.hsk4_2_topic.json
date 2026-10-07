@@ -1,0 +1,398 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_2_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_12_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk4-2-topic"], "gf0025": ["gf0025.hsk3.062"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": ["zh-hsk4-2-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 一方面⋯⋯，另一方面⋯⋯", "en": "Chinese grammar: 一方面⋯⋯，另一方面⋯⋯"},
+    "native_title": "一方面⋯⋯，另一方面⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Cấu trúc 一方面……，另一方面…… dùng để trình bày hai mặt hoặc hai khía cạnh của cùng một vấn đề.",
+      "en": "The pattern 一方面……，另一方面…… presents two sides or aspects of the same issue."
+    },
+    "sub": {"vi": "hai mặt vấn đề", "en": "two aspects"},
+    "native_title_pinyin": ["yì", "fāng", "miàn", "", "", "", "lìng", "yì", "fāng", "miàn", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nêu hai lợi ích, hai khó khăn hoặc hai mặt của một sự việc.",
+      "en": "When you want to state two benefits, two difficulties, or two sides of one matter."
+    },
+    {
+      "vi": "Khi hai vế bổ sung cho nhau hoặc hơi đối lập nhưng vẫn thuộc cùng một chủ đề.",
+      "en": "When the two clauses complement each other or mildly contrast but stay on the same topic."
+    },
+    {
+      "vi": "Khi bạn cần diễn đạt cân bằng, không nhấn mạnh vế nào hơn vế nào.",
+      "en": "When you need a balanced presentation without making one side stronger than the other."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "一方面",
+        "role": "connector",
+        "label": {"vi": "liên từ thứ nhất", "en": "first connector"},
+        "pinyin": ["yì", "fāng", "miàn"]
+      },
+      {
+        "text": "mệnh đề A",
+        "role": "other",
+        "label": {"vi": "vế thứ nhất", "en": "first clause"},
+        "pinyin": ["", "", "", "", "", "", "", "", ""]
+      },
+      {
+        "text": "另一方面",
+        "role": "connector",
+        "label": {"vi": "liên từ thứ hai", "en": "second connector"},
+        "pinyin": ["lìng", "yì", "fāng", "miàn"]
+      },
+      {
+        "text": "mệnh đề B",
+        "role": "other",
+        "label": {"vi": "vế thứ hai", "en": "second clause"},
+        "pinyin": ["", "", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "一方面成本比较低，另一方面维护也方便。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "connector"},
+        {"start": 3, "end": 8, "role": "other"},
+        {"start": 9, "end": 13, "role": "connector"},
+        {"start": 13, "end": 18, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Nêu hai ưu điểm của cùng một phương án.",
+        "en": "States two advantages of the same option."
+      },
+      "translation": {
+        "vi": "Một mặt chi phí thấp, mặt khác bảo trì cũng tiện.",
+        "en": "On one hand the cost is low; on the other hand maintenance is convenient."
+      },
+      "pinyin": [
+        "yì",
+        "fāng",
+        "miàn",
+        "chéng",
+        "běn",
+        "bǐ",
+        "jiào",
+        "dī",
+        "",
+        "lìng",
+        "yì",
+        "fāng",
+        "miàn",
+        "wéi",
+        "hù",
+        "yě",
+        "fāng",
+        "biàn",
+        ""
+      ]
+    },
+    {
+      "text": "他一方面想换工作，另一方面又担心风险。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 1, "end": 4, "role": "connector"},
+        {"start": 4, "end": 8, "role": "other"},
+        {"start": 9, "end": 13, "role": "connector"},
+        {"start": 13, "end": 18, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai mặt tâm lý của cùng một người.",
+        "en": "Two psychological sides of the same person."
+      },
+      "translation": {
+        "vi": "Anh ấy một mặt muốn đổi việc, mặt khác lại lo rủi ro.",
+        "en": "On one hand he wants to change jobs; on the other hand he worries about the risk."
+      },
+      "pinyin": [
+        "tā",
+        "yì",
+        "fāng",
+        "miàn",
+        "xiǎng",
+        "huàn",
+        "gōng",
+        "zuò",
+        "",
+        "lìng",
+        "yì",
+        "fāng",
+        "miàn",
+        "yòu",
+        "dān",
+        "xīn",
+        "fēng",
+        "xiǎn",
+        ""
+      ]
+    },
+    {
+      "text": "学习语言一方面需要方法，另一方面需要坚持。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 4, "end": 7, "role": "connector"},
+        {"start": 7, "end": 11, "role": "other"},
+        {"start": 12, "end": 16, "role": "connector"},
+        {"start": 16, "end": 20, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Hai yếu tố bổ sung cho nhau trong cùng một việc.",
+        "en": "Two complementary factors in the same activity."
+      },
+      "translation": {
+        "vi": "Học ngôn ngữ một mặt cần phương pháp, mặt khác cần kiên trì.",
+        "en": "Learning a language requires method on one hand and persistence on the other."
+      },
+      "pinyin": [
+        "xué",
+        "xí",
+        "yǔ",
+        "yán",
+        "yì",
+        "fāng",
+        "miàn",
+        "xū",
+        "yào",
+        "fāng",
+        "fǎ",
+        "",
+        "lìng",
+        "yì",
+        "fāng",
+        "miàn",
+        "xū",
+        "yào",
+        "jiān",
+        "chí",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Đây là trình tự thời gian, không phải hai mặt của một vấn đề, nên không dùng 一方面……，另一方面…….",
+        "en": "This is a time sequence, not two aspects of one issue, so 一方面……，另一方面…… does not fit."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "一方面先吃饭，另一方面再学习。",
+      "right": "先吃饭，再学习。",
+      "wrong_pinyin": [
+        "yì",
+        "fāng",
+        "miàn",
+        "xiān",
+        "chī",
+        "fàn",
+        "",
+        "lìng",
+        "yì",
+        "fāng",
+        "miàn",
+        "zài",
+        "xué",
+        "xí",
+        ""
+      ],
+      "right_pinyin": ["xiān", "chī", "fàn", "", "zài", "xué", "xí", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个方案___能提高效率，另一方面也能节省时间。",
+      "options": [
+        {"text": "一方面", "error_tag": null, "pinyin": ["yì", "fāng", "miàn"]},
+        {"text": "一边", "error_tag": "conjunction", "pinyin": ["yī", "biān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần 一方面 để mở đầu vế thứ nhất; 一边 chỉ dùng cho hai hành động song song.",
+        "en": "一方面 is needed to open the first clause; 一边 is only for two simultaneous actions."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "fāng",
+        "àn",
+        "",
+        "",
+        "",
+        "néng",
+        "tí",
+        "gāo",
+        "xiào",
+        "lǜ",
+        "",
+        "lìng",
+        "yì",
+        "fāng",
+        "miàn",
+        "yě",
+        "néng",
+        "jié",
+        "shěng",
+        "shí",
+        "jiān",
+        ""
+      ]
+    },
+    {
+      "q": "他一方面想换工作，___又担心风险。",
+      "options": [
+        {"text": "另一方面", "error_tag": null, "pinyin": ["lìng", "yì", "fāng", "miàn"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Vế thứ hai là một mặt khác, không phải kết quả, nên dùng 另一方面.",
+        "en": "The second clause is another aspect, not a result, so 另一方面 is correct."
+      },
+      "q_pinyin": [
+        "tā",
+        "yì",
+        "fāng",
+        "miàn",
+        "xiǎng",
+        "huàn",
+        "gōng",
+        "zuò",
+        "",
+        "",
+        "",
+        "",
+        "yòu",
+        "dān",
+        "xīn",
+        "fēng",
+        "xiǎn",
+        ""
+      ]
+    },
+    {
+      "q": "学习语言一方面需要方法，另一方面___坚持。",
+      "options": [
+        {"text": "需要", "error_tag": null, "pinyin": ["xū", "yào"]},
+        {"text": "要", "error_tag": "word_choice", "pinyin": ["yào"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cấu trúc song song cần lặp lại 需要 ở vế thứ hai; 要 ở đây không sai hoàn toàn nhưng không giữ được sự cân bằng của mẫu.",
+        "en": "The parallel structure repeats 需要 in the second clause; 要 is not completely wrong but breaks the balanced pattern."
+      },
+      "q_pinyin": [
+        "xué",
+        "xí",
+        "yǔ",
+        "yán",
+        "yì",
+        "fāng",
+        "miàn",
+        "xū",
+        "yào",
+        "fāng",
+        "fǎ",
+        "",
+        "lìng",
+        "yì",
+        "fāng",
+        "miàn",
+        "",
+        "",
+        "",
+        "jiān",
+        "chí",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một việc bạn đang cân nhắc, dùng 一方面……，另一方面…… để nêu hai mặt.",
+      "en": "Write one sentence about something you are considering, using 一方面……，另一方面…… to give two sides."
+    },
+    "placeholder": "一方面……，另一方面……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["一方面"], "role": "connector"}, {"any_of": ["另一方面"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "一方面我想去旅行，另一方面我又想省钱。",
+      "pinyin": [
+        "yì",
+        "fāng",
+        "miàn",
+        "wǒ",
+        "xiǎng",
+        "qù",
+        "lǚ",
+        "xíng",
+        "",
+        "lìng",
+        "yì",
+        "fāng",
+        "miàn",
+        "wǒ",
+        "yòu",
+        "xiǎng",
+        "shěng",
+        "qián",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["yì", "fāng", "miàn", "", "", "", "lìng", "yì", "fāng", "miàn", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338382",
+    "generated_at": "2026-10-07T01:59:42Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-2-topic"],
+      "content_version": 2,
+      "content_hash": "6c1131d3cef56784421bfb9093200abfbfa9087339613de6a134125d20ccd567",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-2-topic",
+          "issue": "R5 dùng '一方面成本低，另一方面维护方便' làm ví dụ so sánh, nhưng câu này thiếu '也' và không tự nhiên bằng ví dụ gốc.",
+          "fix": "Đã thay bằng '一方面成本比较低，另一方面维护也方便。' trong phần ví dụ."
+        },
+        {
+          "r5_id": "zh-hsk4-2-topic",
+          "issue": "R5 xếp '一方面先吃饭，另一方面再学习' vào lỗi sai nhưng không giải thích rõ đó là lỗi về logic (trình tự thời gian).",
+          "fix": "Đã giữ làm lỗi thường gặp và thêm lý do: đây là trình tự thời gian, không phải hai mặt của một vấn đề."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

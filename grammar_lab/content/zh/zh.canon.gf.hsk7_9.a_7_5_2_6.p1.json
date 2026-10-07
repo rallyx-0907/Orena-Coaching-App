@@ -1,0 +1,325 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_6.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.hypothetical_counterfactual",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_5_2_4.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.108", "gf0025.hsk7_9.109", "gf0025.hsk7_9.110"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 倘若/若⋯⋯，⋯⋯", "en": "Complex sentences: 倘若/若⋯⋯，⋯⋯"},
+    "native_title": "倘若/若⋯⋯，⋯⋯",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Mẫu câu giả định dùng 倘若 hoặc 若 ở đầu vế điều kiện để nêu một tình huống giả định, rồi nêu kết quả ở vế sau.",
+      "en": "A hypothetical sentence pattern using 倘若 or 若 at the start of the condition clause to set up an imagined situation, followed by the result clause."
+    },
+    "sub": {"vi": "giả định", "en": "hypothetical"},
+    "native_title_pinyin": ["tǎng", "ruò", "", "ruò", "", "", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nêu một điều kiện giả định không có thật hoặc khó xảy ra, thường trong văn viết hoặc lời nói trang trọng.",
+      "en": "When you want to state an imagined or unlikely condition, typically in written or formal speech."
+    },
+    {
+      "vi": "Khi cần đưa ra lời khuyên hoặc cảnh báo dựa trên một tình huống giả sử.",
+      "en": "When giving advice or a warning based on a supposed situation."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh điều kiện hơn là chỉ nêu một khả năng bình thường như 如果.",
+      "en": "When you want to emphasize the condition more strongly than the neutral 如果."
+    },
+    {
+      "vi": "Khi vế kết quả thường đi kèm 就, 便 hoặc 则 để nối ý.",
+      "en": "When the result clause often takes 就, 便 or 则 to link the two parts."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "倘若/若",
+        "role": "connector",
+        "label": {"vi": "nếu", "en": "if"},
+        "options": [{"text": "倘若", "pinyin": ["tǎng", "ruò"]}, {"text": "若", "pinyin": ["ruò"]}],
+        "pinyin": ["tǎng", "ruò", "", "ruò"]
+      },
+      {
+        "text": "条件",
+        "role": "other",
+        "label": {"vi": "điều kiện", "en": "condition"},
+        "pinyin": ["tiáo", "jiàn"]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ vế kết quả", "en": "result-clause subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "就/便/则",
+        "role": "connector",
+        "label": {"vi": "thì", "en": "then"},
+        "optional": true,
+        "options": [
+          {"text": "就", "pinyin": ["jiù"]},
+          {"text": "便", "pinyin": ["biàn"]},
+          {"text": "则", "pinyin": ["zé"]}
+        ],
+        "pinyin": ["jiù", "", "biàn", "", "zé"]
+      },
+      {
+        "text": "结果",
+        "role": "other",
+        "label": {"vi": "kết quả", "en": "result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "倘若明天不下雨，我们就去爬山。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "subject"},
+        {"start": 10, "end": 11, "role": "connector"},
+        {"start": 11, "end": 14, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "倘若 nêu điều kiện giả định; 就 dẫn kết quả.",
+        "en": "倘若 introduces a hypothetical condition; 就 leads to the result."
+      },
+      "translation": {
+        "vi": "Nếu ngày mai không mưa, chúng tôi sẽ đi leo núi.",
+        "en": "If it does not rain tomorrow, we will go hiking."
+      },
+      "pinyin": [
+        "tǎng",
+        "ruò",
+        "míng",
+        "tiān",
+        "bù",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "qù",
+        "pá",
+        "shān",
+        ""
+      ]
+    },
+    {
+      "text": "若你有困难，便给我打电话。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "connector"},
+        {"start": 1, "end": 5, "role": "other"},
+        {"start": 6, "end": 7, "role": "connector"},
+        {"start": 7, "end": 12, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "若 trang trọng hơn 如果; 便 tương đương 就 trong văn viết.",
+        "en": "若 is more formal than 如果; 便 is a written-style equivalent of 就."
+      },
+      "translation": {"vi": "Nếu bạn gặp khó khăn thì gọi cho tôi.", "en": "If you have difficulties, call me."},
+      "pinyin": ["ruò", "nǐ", "yǒu", "kùn", "nán", "", "biàn", "gěi", "wǒ", "dǎ", "diàn", "huà", ""]
+    },
+    {
+      "text": "倘若他不来，我们则取消会议。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 5, "role": "other"},
+        {"start": 6, "end": 8, "role": "subject"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 13, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "则 thường dùng trong văn viết để đánh dấu kết quả.",
+        "en": "则 commonly marks the result in written Chinese."
+      },
+      "translation": {
+        "vi": "Nếu anh ấy không đến, chúng tôi sẽ hủy cuộc họp.",
+        "en": "If he does not come, we will cancel the meeting."
+      },
+      "pinyin": ["tǎng", "ruò", "tā", "bù", "lái", "", "wǒ", "men", "zé", "qǔ", "xiāo", "huì", "yì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng 倘若 rồi lại thêm 但是 như một từ nối tương phản, trong khi 倘若 đã mở đầu điều kiện giả định và không cần từ nối tương phản ở giữa.",
+        "en": "Learners add 但是 as a contrast connector after 倘若, but 倘若 already opens the hypothetical condition and does not need a contrast connector in the middle."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "倘若明天不下雨，我们就去爬山，但是如果下雨，我们就在家。",
+      "right": "倘若明天不下雨，我们就去爬山；如果下雨，我们就在家。",
+      "wrong_pinyin": [
+        "tǎng",
+        "ruò",
+        "míng",
+        "tiān",
+        "bù",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "qù",
+        "pá",
+        "shān",
+        "",
+        "dàn",
+        "shì",
+        "rú",
+        "guǒ",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "zài",
+        "jiā",
+        ""
+      ],
+      "right_pinyin": [
+        "tǎng",
+        "ruò",
+        "míng",
+        "tiān",
+        "bù",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "qù",
+        "pá",
+        "shān",
+        "",
+        "rú",
+        "guǒ",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "jiù",
+        "zài",
+        "jiā",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___你早点出发，就不会迟到。",
+      "options": [
+        {"text": "倘若", "error_tag": null, "pinyin": ["tǎng", "ruò"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "倘若 mở đầu điều kiện giả định, phù hợp với vế kết quả 就不会迟到.",
+        "en": "倘若 opens the hypothetical condition, matching the result clause 就不会迟到."
+      },
+      "q_pinyin": ["", "", "", "nǐ", "zǎo", "diǎn", "chū", "fā", "", "jiù", "bú", "huì", "chí", "dào", ""]
+    },
+    {
+      "q": "若明天下雨，我们___改天再去。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "却", "error_tag": "conjunction", "pinyin": ["què"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 nối điều kiện giả định với kết quả, còn 却 chỉ sự tương phản.",
+        "en": "就 links the hypothetical condition to the result, while 却 marks contrast."
+      },
+      "q_pinyin": [
+        "ruò",
+        "míng",
+        "tiān",
+        "xià",
+        "yǔ",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "gǎi",
+        "tiān",
+        "zài",
+        "qù",
+        ""
+      ]
+    },
+    {
+      "q": "倘若你不舒服，___休息一天。",
+      "options": [
+        {"text": "便", "error_tag": null, "pinyin": ["biàn"]},
+        {"text": "而且", "error_tag": "conjunction", "pinyin": ["ér", "qiě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "便 là từ nối kết quả trong câu giả định, còn 而且 là từ nối thêm ý.",
+        "en": "便 is the result connector in a hypothetical sentence, while 而且 adds information."
+      },
+      "q_pinyin": ["tǎng", "ruò", "nǐ", "bù", "shū", "fú", "", "", "", "", "xiū", "xī", "yī", "tiān", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giả định về bản thân dùng 倘若 hoặc 若 ở đầu vế điều kiện.",
+      "en": "Write a hypothetical sentence about yourself using 倘若 or 若 at the start of the condition clause."
+    },
+    "placeholder": "倘若我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["倘若", "若"], "role": "connector"},
+        {"any_of": ["就", "便", "则"], "role": "connector"}
+      ]
+    },
+    "sample": {
+      "text": "倘若我有时间，我就去旅行。",
+      "pinyin": ["tǎng", "ruò", "wǒ", "yǒu", "shí", "jiān", "", "wǒ", "jiù", "qù", "lǚ", "xíng", ""]
+    },
+    "placeholder_pinyin": ["tǎng", "ruò", "wǒ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351863",
+    "generated_at": "2026-10-07T05:44:23Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:23Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

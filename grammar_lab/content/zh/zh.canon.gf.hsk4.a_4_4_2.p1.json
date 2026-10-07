@@ -1,0 +1,240 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_4_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.relative",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_2_1_2.p2"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.036"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Định ngữ: 多项定语", "en": "Attributives: 多项定语"},
+    "native_title": "多项定语",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Điểm ngữ pháp này dạy cách xếp nhiều định ngữ trước một danh từ tiếng Trung theo đúng thứ tự: định ngữ sở hữu, định ngữ chỉ số lượng, định ngữ miêu tả, rồi mới đến danh từ.",
+      "en": "This point teaches how to stack several modifiers before a Chinese noun in the correct order: possessive, quantity, descriptive, then the noun."
+    },
+    "sub": {"vi": "nhiều định ngữ", "en": "multiple modifiers"},
+    "native_title_pinyin": ["duō", "xiàng", "dìng", "yǔ"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một danh từ thuộc về ai và đồng thời cho biết có bao nhiêu.",
+      "en": "When you want to say who a noun belongs to and also how many there are."
+    },
+    {
+      "vi": "Khi bạn muốn thêm một đặc điểm miêu tả như màu sắc, kích thước hay chất liệu cho danh từ đã có định ngữ sở hữu hoặc số lượng.",
+      "en": "When you want to add a descriptive feature such as colour, size or material to a noun that already has a possessive or quantity modifier."
+    },
+    {
+      "vi": "Khi câu có từ hai định ngữ trở lên và bạn cần biết cái nào đứng trước cái nào.",
+      "en": "When a phrase has two or more modifiers and you need to know which one comes first."
+    },
+    {
+      "vi": "Khi bạn muốn nhấn mạnh danh từ là trung tâm và mọi thông tin khác đều đứng trước nó.",
+      "en": "When you want to keep the noun as the centre and put all other information before it."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "定语1",
+        "role": "other",
+        "label": {"vi": "định ngữ sở hữu", "en": "possessive modifier"},
+        "optional": true,
+        "pinyin": ["dìng", "yǔ", ""]
+      },
+      {
+        "text": "定语2",
+        "role": "other",
+        "label": {"vi": "định ngữ số lượng", "en": "quantity modifier"},
+        "optional": true,
+        "pinyin": ["dìng", "yǔ", ""]
+      },
+      {
+        "text": "定语3",
+        "role": "other",
+        "label": {"vi": "định ngữ miêu tả", "en": "descriptive modifier"},
+        "optional": true,
+        "pinyin": ["dìng", "yǔ", ""]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ kết nối", "en": "linking particle"},
+        "optional": true,
+        "pinyin": ["de"]
+      },
+      {
+        "text": "名词",
+        "role": "object",
+        "label": {"vi": "danh từ trung tâm", "en": "head noun"},
+        "pinyin": ["míng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我的那本新书很有意思。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "other"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "other"},
+        {"start": 5, "end": 6, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Định ngữ sở hữu 我的 đứng trước định ngữ số lượng 那本, rồi đến định ngữ miêu tả 新, cuối cùng là danh từ 书.",
+        "en": "The possessive 我的 comes before the quantity 那本, then the descriptive 新, and finally the noun 书."
+      },
+      "translation": {
+        "vi": "Cuốn sách mới đó của tôi rất thú vị.",
+        "en": "That new book of mine is very interesting."
+      },
+      "pinyin": ["wǒ", "de", "nà", "běn", "xīn", "shū", "hěn", "yǒu", "yì", "si", ""]
+    },
+    {
+      "text": "她买了一件红色的毛衣。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 3, "end": 5, "role": "other"},
+        {"start": 5, "end": 7, "role": "other"},
+        {"start": 7, "end": 8, "role": "particle"},
+        {"start": 8, "end": 10, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Không có định ngữ sở hữu, câu bắt đầu bằng định ngữ số lượng 一件 rồi đến định ngữ miêu tả 红色.",
+        "en": "There is no possessive modifier, so the phrase starts with the quantity 一件 and then the descriptive 红色."
+      },
+      "translation": {"vi": "Cô ấy đã mua một chiếc áo len màu đỏ.", "en": "She bought a red sweater."},
+      "pinyin": ["tā", "mǎi", "le", "yī", "jiàn", "hóng", "sè", "de", "máo", "yī", ""]
+    },
+    {
+      "text": "我们学校的那位年轻老师很认真。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "other"},
+        {"start": 5, "end": 7, "role": "other"},
+        {"start": 7, "end": 9, "role": "other"},
+        {"start": 9, "end": 11, "role": "object"}
+      ],
+      "annotation": {
+        "vi": "Định ngữ sở hữu 我们学校的 đứng trước định ngữ số lượng 那位, rồi đến định ngữ miêu tả 年轻.",
+        "en": "The possessive 我们学校的 comes before the quantity 那位, then the descriptive 年轻."
+      },
+      "translation": {
+        "vi": "Thầy giáo trẻ đó của trường chúng tôi rất nghiêm túc.",
+        "en": "That young teacher from our school is very serious."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "xué",
+        "xiào",
+        "de",
+        "nà",
+        "wèi",
+        "nián",
+        "qīng",
+        "lǎo",
+        "shī",
+        "hěn",
+        "rèn",
+        "zhēn",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thường đặt định ngữ miêu tả sau danh từ vì tiếng Việt có thể nói 'áo len màu đỏ'. Trong tiếng Trung, mọi định ngữ phải đứng trước danh từ trung tâm.",
+        "en": "Learners often put the descriptive modifier after the noun because Vietnamese allows 'áo len màu đỏ'. In Chinese, all modifiers must come before the head noun."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "她买了一件毛衣红色的。",
+      "right": "她买了一件红色的毛衣。",
+      "wrong_pinyin": ["tā", "mǎi", "le", "yī", "jiàn", "máo", "yī", "hóng", "sè", "de", ""],
+      "right_pinyin": ["tā", "mǎi", "le", "yī", "jiàn", "hóng", "sè", "de", "máo", "yī", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我昨天买了一___新词典。",
+      "options": [
+        {"text": "本", "error_tag": null, "pinyin": ["běn"]},
+        {"text": "个", "error_tag": "measure_word", "pinyin": ["gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Danh từ 词典 cần lượng từ 本, không dùng 个.",
+        "en": "The noun 词典 takes the measure word 本, not 个."
+      },
+      "q_pinyin": ["wǒ", "zuó", "tiān", "mǎi", "le", "yī", "", "", "", "xīn", "cí", "diǎn", ""]
+    },
+    {
+      "q": "那是我们老师的一___书。",
+      "options": [
+        {"text": "本", "error_tag": null, "pinyin": ["běn"]},
+        {"text": "件", "error_tag": "measure_word", "pinyin": ["jiàn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Danh từ 书 đi với lượng từ 本, còn 件 dùng cho quần áo hoặc sự việc.",
+        "en": "The noun 书 goes with the measure word 本, while 件 is used for clothes or matters."
+      },
+      "q_pinyin": ["nà", "shì", "wǒ", "men", "lǎo", "shī", "de", "yī", "", "", "", "shū", ""]
+    },
+    {
+      "q": "她是一个___姑娘。",
+      "options": [
+        {"text": "漂亮的", "error_tag": null, "pinyin": ["piào", "liàng", "de"]},
+        {"text": "漂亮", "error_tag": "particle", "pinyin": ["piào", "liàng"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Định ngữ miêu tả hai âm tiết như 漂亮 thường cần 的 trước danh từ.",
+        "en": "A two-syllable descriptive modifier like 漂亮 normally needs 的 before the noun."
+      },
+      "q_pinyin": ["tā", "shì", "yí", "gè", "", "", "", "gū", "niáng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giới thiệu một đồ vật của bạn, dùng ít nhất hai định ngữ trước danh từ.",
+      "en": "Write one sentence about something you own, using at least two modifiers before the noun."
+    },
+    "placeholder": "我的那本……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "particle", "any_of": ["的"]}]},
+    "sample": {
+      "text": "我的那本新书很有意思。",
+      "pinyin": ["wǒ", "de", "nà", "běn", "xīn", "shū", "hěn", "yǒu", "yì", "si", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "de", "nà", "běn", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791344872",
+    "generated_at": "2026-10-07T03:47:52Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

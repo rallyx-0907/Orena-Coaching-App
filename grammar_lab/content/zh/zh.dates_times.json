@@ -1,0 +1,199 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.dates_times",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.time_expression",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["word_order"],
+  "source_refs": {"r5": ["zh-hsk1-17-th-i-gian-v-ng-y-gi"], "gf0025": ["gf0025.hsk1.044"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk1-17-th-i-gian-v-ng-y-gi"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Thời gian, ngày giờ", "en": "Dates and times"},
+    "native_title": "时间和日期的表达",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Diễn tả thời gian và ngày tháng trong tiếng Trung, đặt cụm thời gian trước động từ theo thứ tự từ lớn đến nhỏ.",
+      "en": "Express times and dates in Chinese, placing the time phrase before the verb and ordering units from largest to smallest."
+    },
+    "sub": {"vi": "thời gian, ngày giờ", "en": "time and dates"},
+    "native_title_pinyin": ["shí", "jiān", "hé", "rì", "qī", "de", "biǎo", "dá"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi nói một hành động xảy ra lúc nào: 我三点去学校。",
+      "en": "When saying when an action happens: 我三点去学校."
+    },
+    {
+      "vi": "Khi nói ngày tháng hoặc thứ: 今天是星期一。",
+      "en": "When stating a date or day of the week: 今天是星期一."
+    },
+    {"vi": "Khi nói giờ cụ thể: 我们三点见。", "en": "When stating a specific time: 我们三点见."},
+    {
+      "vi": "Khi nói sinh nhật hoặc ngày kỷ niệm: 我的生日是五月八号。",
+      "en": "When stating a birthday or anniversary: 我的生日是五月八号."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {"text": "S", "role": "subject", "label": {"vi": "chủ ngữ", "en": "subject"}, "pinyin": [""]},
+      {
+        "text": "time",
+        "role": "time",
+        "label": {"vi": "cụm thời gian", "en": "time phrase"},
+        "pinyin": ["", "", "", ""]
+      },
+      {"text": "V", "role": "verb", "label": {"vi": "động từ", "en": "verb"}, "pinyin": [""]}
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我今天上课。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "time"},
+        {"start": 3, "end": 5, "role": "verb"}
+      ],
+      "annotation": {"vi": "Cụm thời gian đứng trước động từ.", "en": "The time phrase comes before the verb."},
+      "translation": {"vi": "Hôm nay tôi đi học.", "en": "I have class today."},
+      "pinyin": ["wǒ", "jīn", "tiān", "shàng", "kè", ""]
+    },
+    {
+      "text": "我们三点见。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "time"},
+        {"start": 4, "end": 5, "role": "verb"}
+      ],
+      "annotation": {"vi": "Giờ cụ thể đứng trước động từ.", "en": "A specific time comes before the verb."},
+      "translation": {"vi": "Ba giờ chúng ta gặp.", "en": "We meet at three."},
+      "pinyin": ["wǒ", "men", "sān", "diǎn", "jiàn", ""]
+    },
+    {
+      "text": "我五月八号过生日。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 5, "role": "time"},
+        {"start": 5, "end": 8, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Ngày tháng đứng trước động từ làm trạng ngữ thời gian.",
+        "en": "The date appears before the verb as a time adverbial."
+      },
+      "translation": {
+        "vi": "Tôi tổ chức sinh nhật vào ngày 8 tháng 5.",
+        "en": "My birthday celebration is on May 8."
+      },
+      "pinyin": ["wǒ", "wǔ", "yuè", "bā", "hào", "guò", "shēng", "rì", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Trong câu trung tính, cụm thời gian phải đứng trước động từ, không đứng sau tân ngữ như thói quen tiếng Việt.",
+        "en": "In a neutral sentence, the time phrase must come before the verb, not after the object as in Vietnamese habit."
+      },
+      "error_tag": "word_order",
+      "l1": ["vi"],
+      "wrong": "我去学校三点。",
+      "right": "我三点去学校。",
+      "wrong_pinyin": ["wǒ", "qù", "xué", "xiào", "sān", "diǎn", ""],
+      "right_pinyin": ["wǒ", "sān", "diǎn", "qù", "xué", "xiào", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___去学校。",
+      "options": [
+        {"text": "三点", "error_tag": null, "pinyin": ["sān", "diǎn"]},
+        {"text": "去三点", "error_tag": "word_order", "pinyin": ["qù", "sān", "diǎn"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Cụm thời gian đứng trước động từ.", "en": "The time phrase comes before the verb."},
+      "q_pinyin": ["wǒ", "", "", "", "qù", "xué", "xiào", ""]
+    },
+    {
+      "q": "今天是星期___。",
+      "options": [
+        {"text": "一", "error_tag": null, "pinyin": ["yī"]},
+        {"text": "一个", "error_tag": "measure_word", "pinyin": ["yí", "gè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Thứ trong tuần không dùng lượng từ 个.",
+        "en": "Days of the week do not use the measure word 个."
+      },
+      "q_pinyin": ["jīn", "tiān", "shì", "xīng", "qī", "", "", "", ""]
+    },
+    {
+      "q": "我的生日是五月___。",
+      "options": [
+        {"text": "八号", "error_tag": null, "pinyin": ["bā", "hào"]},
+        {"text": "八个", "error_tag": "measure_word", "pinyin": ["bā", "gè"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "Ngày trong tháng dùng 号, không dùng 个.", "en": "Dates use 号, not 个."},
+      "q_pinyin": ["wǒ", "de", "shēng", "rì", "shì", "wǔ", "yuè", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói bạn làm gì đó lúc mấy giờ hoặc ngày nào.",
+      "en": "Write a sentence saying what you do at a certain time or on a certain day."
+    },
+    "placeholder": "我……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"regex": "(今天|明天|昨天|星期[一二三四五六日天]|\\d+月\\d+[号日]|\\d+点)", "role": "time"}]
+    },
+    "sample": {"text": "我明天上课。", "pinyin": ["wǒ", "míng", "tiān", "shàng", "kè", ""]},
+    "placeholder_pinyin": ["wǒ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351901",
+    "generated_at": "2026-10-07T05:45:01Z",
+    "r5_source": {
+      "ids": ["zh-hsk1-17-th-i-gian-v-ng-y-gi"],
+      "content_version": 2,
+      "content_hash": "ec34d2542d63cb2069be278d97820afd072e116ca10e1f9806b8385bdb915809",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk1-17-th-i-gian-v-ng-y-gi",
+          "issue": "R5 nói 'Time expressions thường đứng trước verb phrase, có thể trước hoặc sau subject tùy information flow', nhưng không đưa ra quy tắc rõ ràng cho câu trung tính.",
+          "fix": "Đã viết lại thành quy tắc: trong câu trung tính, cụm thời gian đứng trước động từ; có thể đứng trước hoặc sau chủ ngữ nhưng không đứng sau tân ngữ."
+        },
+        {
+          "r5_id": "zh-hsk1-17-th-i-gian-v-ng-y-gi",
+          "issue": "R5 đưa ví dụ '我的生日是五月八号' nhưng không giải thích vị trí của cụm thời gian trong câu có 是.",
+          "fix": "Đã thêm giải thích: ngày tháng đứng trước 是 trong câu nói về ngày tháng."
+        },
+        {
+          "r5_id": "zh-hsk1-17-th-i-gian-v-ng-y-gi",
+          "issue": "R5 liệt kê lỗi '五月个八号' nhưng không giải thích rõ tại sao sai.",
+          "fix": "Đã thêm giải thích: ngày trong tháng dùng 号, không dùng lượng từ 个."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

@@ -1,0 +1,390 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_5_2_8.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.reason_result",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk3_6_topic"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.056"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: ⋯⋯ ，可见 ⋯⋯", "en": "Complex sentences: ⋯⋯ ，可见 ⋯⋯"},
+    "native_title": "⋯⋯ ，可见⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Mẫu câu '⋯⋯ ，可见 ⋯⋯' dùng để nêu một sự việc rồi rút ra kết luận hoặc suy luận từ sự việc đó.",
+      "en": "The pattern '⋯⋯ ，可见 ⋯⋯' states a fact and then draws a conclusion or inference from it."
+    },
+    "sub": {"vi": "suy luận kết quả", "en": "drawing a conclusion"},
+    "native_title_pinyin": ["", "", "", "", "kě", "jiàn", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói một sự việc quan sát được và từ đó suy ra một kết luận.",
+      "en": "When you want to state an observable fact and infer a conclusion from it."
+    },
+    {
+      "vi": "Khi kết luận là điều người nghe có thể tự thấy nếu nhìn vào sự việc đã nêu.",
+      "en": "When the conclusion is something the listener can see for themselves from the stated fact."
+    },
+    {
+      "vi": "Khi bạn muốn lập luận có căn cứ, không chỉ nêu ý kiến chủ quan.",
+      "en": "When you want a reasoned argument, not just a subjective opinion."
+    },
+    {
+      "vi": "Dùng trong văn viết hoặc nói có tính phân tích, ít dùng khi trò chuyện thân mật.",
+      "en": "Used in analytical writing or speech; less common in casual chat."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "sự việc",
+        "role": "other",
+        "label": {"vi": "sự việc được nêu", "en": "stated fact"},
+        "pinyin": ["", "", "", "", "", "", ""]
+      },
+      {
+        "text": "可见",
+        "role": "connector",
+        "label": {"vi": "từ đó thấy rằng", "en": "from this it can be seen that"},
+        "pinyin": ["kě", "jiàn"]
+      },
+      {
+        "text": "kết luận",
+        "role": "other",
+        "label": {"vi": "kết luận rút ra", "en": "conclusion drawn"},
+        "pinyin": ["", "", "", "", "", "", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他每天都练习说汉语，可见他很努力。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "other"},
+        {"start": 10, "end": 12, "role": "connector"},
+        {"start": 12, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Nêu sự việc 'anh ấy luyện nói tiếng Trung mỗi ngày', rồi rút ra kết luận 'anh ấy rất chăm chỉ'.",
+        "en": "States the fact 'he practices speaking Chinese every day', then draws the conclusion 'he is very hardworking'."
+      },
+      "translation": {
+        "vi": "Anh ấy ngày nào cũng luyện nói tiếng Trung, có thể thấy anh ấy rất chăm chỉ.",
+        "en": "He practices speaking Chinese every day; from this it is clear that he is very hardworking."
+      },
+      "pinyin": [
+        "tā",
+        "měi",
+        "tiān",
+        "dōu",
+        "liàn",
+        "xí",
+        "shuō",
+        "hàn",
+        "yǔ",
+        "",
+        "kě",
+        "jiàn",
+        "tā",
+        "hěn",
+        "nǔ",
+        "lì",
+        ""
+      ]
+    },
+    {
+      "text": "这家饭馆总是坐满人，可见菜很好吃。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 9, "role": "other"},
+        {"start": 10, "end": 12, "role": "connector"},
+        {"start": 12, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Từ việc 'quán ăn này lúc nào cũng đông khách' suy ra 'món ăn rất ngon'.",
+        "en": "From the fact 'this restaurant is always full' it infers 'the food is very good'."
+      },
+      "translation": {
+        "vi": "Quán ăn này lúc nào cũng đông người, có thể thấy món ăn rất ngon.",
+        "en": "This restaurant is always packed; from this it is clear that the food is very good."
+      },
+      "pinyin": [
+        "zhè",
+        "jiā",
+        "fàn",
+        "guǎn",
+        "zǒng",
+        "shì",
+        "zuò",
+        "mǎn",
+        "rén",
+        "",
+        "kě",
+        "jiàn",
+        "cài",
+        "hěn",
+        "hǎo",
+        "chī",
+        ""
+      ]
+    },
+    {
+      "text": "他连这么简单的问题都答错了，可见他没有认真准备。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 13, "role": "other"},
+        {"start": 14, "end": 16, "role": "connector"},
+        {"start": 16, "end": 23, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Từ việc 'anh ấy trả lời sai cả câu hỏi đơn giản như vậy' suy ra 'anh ấy không chuẩn bị nghiêm túc'.",
+        "en": "From the fact 'he even got such a simple question wrong' it infers 'he did not prepare seriously'."
+      },
+      "translation": {
+        "vi": "Anh ấy trả lời sai cả câu hỏi đơn giản như vậy, có thể thấy anh ấy không chuẩn bị nghiêm túc.",
+        "en": "He even got such a simple question wrong; from this it is clear that he did not prepare seriously."
+      },
+      "pinyin": [
+        "tā",
+        "lián",
+        "zhè",
+        "me",
+        "jiǎn",
+        "dān",
+        "de",
+        "wèn",
+        "tí",
+        "dōu",
+        "dá",
+        "cuò",
+        "le",
+        "",
+        "kě",
+        "jiàn",
+        "tā",
+        "méi",
+        "yǒu",
+        "rèn",
+        "zhēn",
+        "zhǔn",
+        "bèi",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "'可见' dẫn ra một kết luận đã rút ra, không dùng để đặt câu hỏi. Muốn hỏi phải dùng cách hỏi khác, không thêm '吗' sau kết luận.",
+        "en": "'可见' introduces a conclusion already drawn; it does not form questions. To ask, use a different question form, not '吗' after the conclusion."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "他每天都练习说汉语，可见他很努力吗？",
+      "right": "他每天都练习说汉语，可见他很努力。",
+      "wrong_pinyin": [
+        "tā",
+        "měi",
+        "tiān",
+        "dōu",
+        "liàn",
+        "xí",
+        "shuō",
+        "hàn",
+        "yǔ",
+        "",
+        "kě",
+        "jiàn",
+        "tā",
+        "hěn",
+        "nǔ",
+        "lì",
+        "ma",
+        ""
+      ],
+      "right_pinyin": [
+        "tā",
+        "měi",
+        "tiān",
+        "dōu",
+        "liàn",
+        "xí",
+        "shuō",
+        "hàn",
+        "yǔ",
+        "",
+        "kě",
+        "jiàn",
+        "tā",
+        "hěn",
+        "nǔ",
+        "lì",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他每天都练习说汉语，___他很努力。",
+      "options": [
+        {"text": "可见", "error_tag": null, "pinyin": ["kě", "jiàn"]},
+        {"text": "可是", "error_tag": "conjunction", "pinyin": ["kě", "shì"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "'可见' nối sự việc với kết luận rút ra từ đó. '可是' là chuyển ý, '所以' chỉ nguyên nhân – kết quả trực tiếp, không diễn tả suy luận.",
+        "en": "'可见' links a fact to a conclusion drawn from it. '可是' marks contrast, and '所以' marks direct cause–result, not inference."
+      },
+      "q_pinyin": [
+        "tā",
+        "měi",
+        "tiān",
+        "dōu",
+        "liàn",
+        "xí",
+        "shuō",
+        "hàn",
+        "yǔ",
+        "",
+        "",
+        "",
+        "",
+        "tā",
+        "hěn",
+        "nǔ",
+        "lì",
+        ""
+      ]
+    },
+    {
+      "q": "这家饭馆总是坐满人，___菜很好吃。",
+      "options": [
+        {"text": "可见", "error_tag": null, "pinyin": ["kě", "jiàn"]},
+        {"text": "因为", "error_tag": "conjunction", "pinyin": ["yīn", "wèi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu này nêu sự việc rồi suy ra kết luận, nên dùng '可见'. '因为' dùng để nêu nguyên nhân, không phù hợp ở vị trí này.",
+        "en": "This sentence states a fact and then infers a conclusion, so '可见' is used. '因为' introduces a cause and does not fit here."
+      },
+      "q_pinyin": [
+        "zhè",
+        "jiā",
+        "fàn",
+        "guǎn",
+        "zǒng",
+        "shì",
+        "zuò",
+        "mǎn",
+        "rén",
+        "",
+        "",
+        "",
+        "",
+        "cài",
+        "hěn",
+        "hǎo",
+        "chī",
+        ""
+      ]
+    },
+    {
+      "q": "他连这么简单的问题都答错了，___他没有认真准备。",
+      "options": [
+        {"text": "可见", "error_tag": null, "pinyin": ["kě", "jiàn"]},
+        {"text": "可见吗", "error_tag": "conjunction", "pinyin": ["kě", "jiàn", "ma"]},
+        {"text": "可见得", "error_tag": "conjunction", "pinyin": ["kě", "jiàn", "dé"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "'可见' là một từ cố định, không thêm '吗' hay '得' sau nó. Cả câu chỉ cần '可见' để dẫn ra kết luận.",
+        "en": "'可见' is a fixed connector; do not add '吗' or '得' after it. The sentence only needs '可见' to introduce the conclusion."
+      },
+      "q_pinyin": [
+        "tā",
+        "lián",
+        "zhè",
+        "me",
+        "jiǎn",
+        "dān",
+        "de",
+        "wèn",
+        "tí",
+        "dōu",
+        "dá",
+        "cuò",
+        "le",
+        "",
+        "",
+        "",
+        "",
+        "tā",
+        "méi",
+        "yǒu",
+        "rèn",
+        "zhēn",
+        "zhǔn",
+        "bèi",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nêu một sự việc bạn quan sát được và dùng '可见' để rút ra kết luận từ đó.",
+      "en": "Write a sentence stating something you observed and use '可见' to draw a conclusion from it."
+    },
+    "placeholder": "他每天都……，可见……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["可见"], "role": "connector"}]},
+    "sample": {
+      "text": "他每天都去图书馆，可见他很爱学习。",
+      "pinyin": [
+        "tā",
+        "měi",
+        "tiān",
+        "dōu",
+        "qù",
+        "tú",
+        "shū",
+        "guǎn",
+        "",
+        "kě",
+        "jiàn",
+        "tā",
+        "hěn",
+        "ài",
+        "xué",
+        "xí",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["tā", "měi", "tiān", "dōu", "", "", "", "kě", "jiàn", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791342279",
+    "generated_at": "2026-10-07T03:04:39Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

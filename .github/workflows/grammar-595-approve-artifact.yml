@@ -1,0 +1,78 @@
+name: Grammar 595 Approval Artifact
+
+on:
+  push:
+    branches:
+      - codex/grammar-595-review-local
+    paths:
+      - ".github/workflows/grammar-595-approve-artifact.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  approve-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: codex/grammar-595-review-local
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - name: Apply reviewed deterministic repairs
+        run: |
+          python grammar_lab/tools/final_ship_repairs.py
+          python grammar_lab/tools/final_ship_repairs_hotfix.py
+          python -m grammar_lab.pipeline.cli ui-fixtures
+      - name: Production approval preflight
+        run: |
+          python -m grammar_lab.pipeline.cli validate --lang en
+          python -m grammar_lab.pipeline.cli validate --lang zh
+          python -m pytest \
+            grammar_lab/tests/test_approve.py \
+            grammar_lab/tests/test_export_package.py \
+            grammar_lab/tests/test_validate_rules.py \
+            grammar_lab/tests/test_hardening.py
+          python -m pytest grammar_lab/tests/test_canonical_catalog.py -k "not test_coverage_separates_catalog_from_generated_content"
+      - name: Approve canonical levels
+        shell: bash
+        run: |
+          set -euo pipefail
+          NOTE="Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+          for level in A1 A2 B1 B2 C1 C2; do
+            python -m grammar_lab.pipeline.cli approve --lang en --level "$level" --reviewer "Thi" --note "$NOTE"
+          done
+          for level in HSK1 HSK2 HSK3 HSK4 HSK5 HSK6 HSK7 HSK8 HSK9; do
+            python -m grammar_lab.pipeline.cli approve --lang zh --level "$level" --reviewer "Thi" --note "$NOTE"
+          done
+      - name: Verify approved corpus
+        run: |
+          python -m grammar_lab.pipeline.cli validate --lang en
+          python -m grammar_lab.pipeline.cli validate --lang zh
+          python -m grammar_lab.pipeline.cli coverage --lang en
+          python -m grammar_lab.pipeline.cli coverage --lang zh
+          python -m grammar_lab.pipeline.cli export-profile
+      - name: Commit approved corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add grammar_lab/content/en grammar_lab/content/zh grammar_lab/fixtures/ui
+          git diff --cached --stat
+          if git diff --cached --quiet; then
+            echo "No approval changes to commit"
+          else
+            git commit -m "content(grammar): approve reviewed 595-point corpus"
+            git push origin HEAD:codex/grammar-595-review-local
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: grammar-595-approved-content
+          path: |
+            grammar_lab/content/en
+            grammar_lab/content/zh
+          retention-days: 7

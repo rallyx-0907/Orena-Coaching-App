@@ -1,0 +1,228 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk5.a_5_2_1_2.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.ongoing_now",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk4_1_v_v"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk5.023", "gf0025.hsk5.024", "gf0025.hsk5.025"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 不敢当", "en": "Chinese grammar: 不敢当"},
+    "native_title": "不敢当",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "Cấu trúc 不敢当 dùng để khiêm tốn từ chối hoặc phủ nhận một lời khen, một sự tán thưởng hay một vinh dự mà người khác dành cho mình.",
+      "en": "The pattern 不敢当 is used to modestly decline or deny praise, a compliment, or an honour that someone offers you."
+    },
+    "sub": {"vi": "khiêm tốn từ chối", "en": "modest refusal"},
+    "native_title_pinyin": ["bù", "gǎn", "dāng"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi người khác khen bạn giỏi, đẹp, tài giỏi mà bạn muốn đáp lại một cách khiêm tốn.",
+      "en": "When someone praises your ability, looks, or talent and you want to respond modestly."
+    },
+    {
+      "vi": "Khi được trao một vinh dự, một danh hiệu hay một lời cảm ơn quá lớn so với bạn.",
+      "en": "When you are given an honour, a title, or thanks that feels too great for you."
+    },
+    {
+      "vi": "Khi muốn từ chối nhẹ nhàng một lời mời khen tặng, không làm người nói mất lòng.",
+      "en": "When you want to gently turn down a compliment without making the speaker uncomfortable."
+    },
+    {
+      "vi": "Thường dùng trong giao tiếp lịch sự, có thể đứng một mình hoặc theo sau là 您过奖了, 哪里哪里.",
+      "en": "It is common in polite conversation and can stand alone or be followed by 您过奖了 or 哪里哪里."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "不敢当",
+        "role": "verb",
+        "label": {"vi": "cụm từ khiêm tốn", "en": "modest set phrase"},
+        "pinyin": ["bù", "gǎn", "dāng"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "您这么夸我，我真是不敢当。",
+      "form": "affirmative",
+      "spans": [{"start": 4, "end": 5, "role": "subject"}, {"start": 9, "end": 12, "role": "verb"}],
+      "annotation": {
+        "vi": "我 là chủ ngữ, 不敢当 là lời khiêm tốn đáp lại lời khen.",
+        "en": "我 is the subject, and 不敢当 is the modest response to the praise."
+      },
+      "translation": {
+        "vi": "Bạn khen tôi như vậy, tôi thật không dám nhận.",
+        "en": "You praise me like that; I really don't deserve it."
+      },
+      "pinyin": ["nín", "zhè", "me", "kuā", "wǒ", "", "wǒ", "zhēn", "shì", "bù", "gǎn", "dāng", ""]
+    },
+    {
+      "text": "您过奖了，不敢当。",
+      "form": "affirmative",
+      "spans": [{"start": 5, "end": 8, "role": "verb"}],
+      "annotation": {
+        "vi": "Chủ ngữ 我 được lược bỏ; 不敢当 đứng một mình sau lời khen.",
+        "en": "The subject 我 is omitted; 不敢当 stands alone after the compliment."
+      },
+      "translation": {"vi": "Ngài quá khen rồi, tôi không dám nhận.", "en": "You flatter me; I don't deserve it."},
+      "pinyin": ["nín", "guò", "jiǎng", "le", "", "bù", "gǎn", "dāng", ""]
+    },
+    {
+      "text": "大家选我当代表，我实在不敢当。",
+      "form": "affirmative",
+      "spans": [{"start": 3, "end": 4, "role": "subject"}, {"start": 11, "end": 14, "role": "verb"}],
+      "annotation": {
+        "vi": "我 là chủ ngữ, 不敢当 từ chối vinh dự được chọn làm đại diện.",
+        "en": "我 is the subject, and 不敢当 declines the honour of being chosen as representative."
+      },
+      "translation": {
+        "vi": "Mọi người chọn tôi làm đại diện, tôi thật không dám nhận.",
+        "en": "Everyone chose me as the representative; I really don't deserve it."
+      },
+      "pinyin": [
+        "dà",
+        "jiā",
+        "xuǎn",
+        "wǒ",
+        "dāng",
+        "dài",
+        "biǎo",
+        "",
+        "wǒ",
+        "shí",
+        "zài",
+        "bù",
+        "gǎn",
+        "dāng",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "不敢当 là một cụm từ cố định, không thêm 了 để chỉ sự hoàn thành; thêm 了 làm câu nghe như một hành động đã kết thúc.",
+        "en": "不敢当 is a fixed set phrase and does not take 了 to mark completion; adding 了 makes it sound like a finished action."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "您这么夸我，我真是不敢当了。",
+      "right": "您这么夸我，我真是不敢当。",
+      "wrong_pinyin": ["nín", "zhè", "me", "kuā", "wǒ", "", "wǒ", "zhēn", "shì", "bù", "gǎn", "dāng", "le", ""],
+      "right_pinyin": ["nín", "zhè", "me", "kuā", "wǒ", "", "wǒ", "zhēn", "shì", "bù", "gǎn", "dāng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "您太客气了，我___。",
+      "options": [
+        {"text": "不敢当", "error_tag": null, "pinyin": ["bù", "gǎn", "dāng"]},
+        {"text": "不敢当了", "error_tag": "particle", "pinyin": ["bù", "gǎn", "dāng", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不敢当 là cụm từ cố định, không thêm 了.",
+        "en": "不敢当 is a fixed phrase and does not take 了."
+      },
+      "q_pinyin": ["nín", "tài", "kè", "qì", "le", "", "wǒ", "", "", "", ""]
+    },
+    {
+      "q": "朋友夸我做饭好吃，我说：“哪里哪里，___。”",
+      "options": [
+        {"text": "不敢当", "error_tag": null, "pinyin": ["bù", "gǎn", "dāng"]},
+        {"text": "不敢当吗", "error_tag": "particle", "pinyin": ["bù", "gǎn", "dāng", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu đáp khiêm tốn dùng 不敢当, không dùng 吗 vì đây không phải câu hỏi.",
+        "en": "The modest reply uses 不敢当; 吗 is not used because this is not a question."
+      },
+      "q_pinyin": [
+        "péng",
+        "yǒu",
+        "kuā",
+        "wǒ",
+        "zuò",
+        "fàn",
+        "hǎo",
+        "chī",
+        "",
+        "wǒ",
+        "shuō",
+        "",
+        "",
+        "nǎ",
+        "lǐ",
+        "nǎ",
+        "lǐ",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "q": "大家这么信任我，我___。",
+      "options": [
+        {"text": "不敢当", "error_tag": null, "pinyin": ["bù", "gǎn", "dāng"]},
+        {"text": "不敢当的", "error_tag": "particle", "pinyin": ["bù", "gǎn", "dāng", "de"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "不敢当 không đi với 的 ở cuối câu; đây là cụm từ cố định.",
+        "en": "不敢当 does not take 的 at the end; it is a fixed phrase."
+      },
+      "q_pinyin": ["dà", "jiā", "zhè", "me", "xìn", "rèn", "wǒ", "", "wǒ", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu khiêm tốn đáp lại lời khen hoặc vinh dự mà người khác dành cho bạn, dùng 不敢当.",
+      "en": "Write a modest sentence responding to praise or an honour someone gives you, using 不敢当."
+    },
+    "placeholder": "您这么夸我，我……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["不敢当"], "role": "verb"}]},
+    "sample": {
+      "text": "您这么夸我，我真是不敢当。",
+      "pinyin": ["nín", "zhè", "me", "kuā", "wǒ", "", "wǒ", "zhēn", "shì", "bù", "gǎn", "dāng", ""]
+    },
+    "placeholder_pinyin": ["nín", "zhè", "me", "kuā", "wǒ", "", "wǒ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338565",
+    "generated_at": "2026-10-07T02:02:45Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

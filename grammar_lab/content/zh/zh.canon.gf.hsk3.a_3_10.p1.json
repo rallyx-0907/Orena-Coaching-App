@@ -203,7 +203,7 @@
     "sample": {"text": "我都二十岁了。", "pinyin": ["wǒ", "dōu", "èr", "shí", "suì", "le", ""]},
     "placeholder_pinyin": ["wǒ", "dōu", "", "", "le", ""]
   },
-  "status": "draft_ai",
+  "status": "approved",
   "flags": [],
   "provenance": {
     "model": "deepseek:deepseek-flash",
@@ -212,5 +212,10 @@
     "generated_at": "2026-10-01T05:34:12Z",
     "metadata_stale": true
   },
-  "review": null
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
 }

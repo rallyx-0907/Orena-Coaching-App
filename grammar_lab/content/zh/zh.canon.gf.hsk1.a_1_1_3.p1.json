@@ -1,0 +1,267 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk1.a_1_1_3.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "hsk3", "value": "1", "rank": 1},
+  "prereqs": [],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"gf0025": ["gf0025.hsk1.005"]},
+  "point_type": "other",
+  "sequence": 2,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Đại từ: 人称代词：我、你、您、他、她、我们、你们、他们、她们", "en": "Pronouns: 人称代词：我、你、您、他、她、我们、你们、他们、她们"},
+    "native_title": "人称代词：我、你、您、他、她、我们、你们、他们、她们",
+    "level": {"framework": "hsk3", "value": "1", "rank": 1},
+    "summary": {
+      "vi": "Đại từ nhân xưng tiếng Trung thay đổi theo số ít/số nhiều và theo giống ở ngôi thứ ba.",
+      "en": "Chinese personal pronouns change for singular and plural, and the third person distinguishes gender in writing."
+    },
+    "sub": {"vi": "đại từ nhân xưng", "en": "personal pronouns"},
+    "native_title_pinyin": [
+      "rén",
+      "chēng",
+      "dài",
+      "cí",
+      "",
+      "wǒ",
+      "",
+      "nǐ",
+      "",
+      "nín",
+      "",
+      "tā",
+      "",
+      "tā",
+      "",
+      "wǒ",
+      "men",
+      "",
+      "nǐ",
+      "men",
+      "",
+      "tā",
+      "men",
+      "",
+      "tā",
+      "men"
+    ]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói về bản thân mình với tư cách chủ thể của câu.",
+      "en": "When you want to talk about yourself as the subject of a sentence."
+    },
+    {
+      "vi": "Khi bạn muốn nói với người đối diện một cách thân mật hoặc lịch sự.",
+      "en": "When you want to address the person you are speaking to, either casually or politely."
+    },
+    {
+      "vi": "Khi bạn muốn nói về một người hoặc một nhóm người không có mặt ở đó.",
+      "en": "When you want to talk about a person or a group of people who are not present."
+    },
+    {
+      "vi": "Khi bạn cần phân biệt người nam, người nữ hoặc một nhóm hỗn hợp trong văn viết.",
+      "en": "When you need to distinguish male, female, or a mixed group in writing."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "我/你/您/他/她",
+        "role": "subject",
+        "label": {"vi": "đại từ số ít", "en": "singular pronoun"},
+        "options": [
+          {"text": "我", "pinyin": ["wǒ"]},
+          {"text": "你", "pinyin": ["nǐ"]},
+          {"text": "您", "pinyin": ["nín"]},
+          {"text": "他", "pinyin": ["tā"]},
+          {"text": "她", "pinyin": ["tā"]}
+        ],
+        "pinyin": ["wǒ", "", "nǐ", "", "nín", "", "tā", "", "tā"]
+      },
+      {
+        "text": "我们/你们/他们/她们",
+        "role": "subject",
+        "label": {"vi": "đại từ số nhiều", "en": "plural pronoun"},
+        "optional": true,
+        "options": [
+          {"text": "我们", "pinyin": ["wǒ", "men"]},
+          {"text": "你们", "pinyin": ["nǐ", "men"]},
+          {"text": "他们", "pinyin": ["tā", "men"]},
+          {"text": "她们", "pinyin": ["tā", "men"]}
+        ],
+        "pinyin": ["wǒ", "men", "", "nǐ", "men", "", "tā", "men", "", "tā", "men"]
+      }
+    ],
+    "variants": {
+      "question": [
+        {
+          "text": "我/你/您/他/她",
+          "role": "subject",
+          "label": {"vi": "đại từ số ít", "en": "singular pronoun"},
+          "options": [
+            {"text": "我", "pinyin": ["wǒ"]},
+            {"text": "你", "pinyin": ["nǐ"]},
+            {"text": "您", "pinyin": ["nín"]},
+            {"text": "他", "pinyin": ["tā"]},
+            {"text": "她", "pinyin": ["tā"]}
+          ],
+          "pinyin": ["wǒ", "", "nǐ", "", "nín", "", "tā", "", "tā"]
+        },
+        {
+          "text": "我们/你们/他们/她们",
+          "role": "subject",
+          "label": {"vi": "đại từ số nhiều", "en": "plural pronoun"},
+          "optional": true,
+          "options": [
+            {"text": "我们", "pinyin": ["wǒ", "men"]},
+            {"text": "你们", "pinyin": ["nǐ", "men"]},
+            {"text": "他们", "pinyin": ["tā", "men"]},
+            {"text": "她们", "pinyin": ["tā", "men"]}
+          ],
+          "pinyin": ["wǒ", "men", "", "nǐ", "men", "", "tā", "men", "", "tā", "men"]
+        }
+      ]
+    },
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我是学生。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 1, "role": "subject"}],
+      "annotation": {
+        "vi": "我 là đại từ số ít ngôi thứ nhất, đứng làm chủ ngữ.",
+        "en": "我 is the first-person singular pronoun, used as the subject."
+      },
+      "translation": {"vi": "Tôi là học sinh.", "en": "I am a student."},
+      "pinyin": ["wǒ", "shì", "xué", "shēng", ""]
+    },
+    {
+      "text": "您贵姓？",
+      "form": "question",
+      "spans": [{"start": 0, "end": 1, "role": "subject"}],
+      "annotation": {
+        "vi": "您 là đại từ số ít ngôi thứ hai lịch sự, dùng khi hỏi người lớn tuổi hoặc người mới gặp.",
+        "en": "您 is the polite second-person singular pronoun, used with elders or new acquaintances."
+      },
+      "translation": {"vi": "Ngài họ gì ạ?", "en": "What is your surname?"},
+      "pinyin": ["nín", "guì", "xìng", ""]
+    },
+    {
+      "text": "她们是老师。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "subject"}],
+      "annotation": {
+        "vi": "她们 là đại từ số nhiều ngôi thứ ba chỉ toàn phụ nữ.",
+        "en": "她们 is the third-person plural pronoun for an all-female group."
+      },
+      "translation": {"vi": "Họ là giáo viên.", "en": "They are teachers."},
+      "pinyin": ["tā", "men", "shì", "lǎo", "shī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học Việt Nam thường dùng 他们 cho mọi người vì tiếng Việt không phân biệt giống ở ngôi thứ ba số nhiều, nhưng tiếng Trung dùng 她 cho một người nữ.",
+        "en": "Vietnamese learners often use 他们 for everyone because Vietnamese does not mark gender in the third person, but Chinese uses 她 for a single female person."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "他们是我的妈妈。",
+      "right": "她是我的妈妈。",
+      "wrong_pinyin": ["tā", "men", "shì", "wǒ", "de", "mā", "mā", ""],
+      "right_pinyin": ["tā", "shì", "wǒ", "de", "mā", "mā", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我叫李明。___是学生。",
+      "options": [
+        {"text": "我", "error_tag": null, "pinyin": ["wǒ"]},
+        {"text": "我们", "error_tag": "other", "pinyin": ["wǒ", "men"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Người nói đang tự giới thiệu mình, nên dùng 我.",
+        "en": "The speaker is introducing himself, so 我 is the correct pronoun."
+      },
+      "q_pinyin": ["wǒ", "jiào", "lǐ", "míng", "", "", "", "", "shì", "xué", "shēng", ""]
+    },
+    {
+      "q": "王老师是女老师。___是老师。",
+      "options": [
+        {"text": "她", "error_tag": null, "pinyin": ["tā"]},
+        {"text": "他", "error_tag": "other", "pinyin": ["tā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đã nói rõ 王老师 là nữ, nên dùng 她.",
+        "en": "王老师 is explicitly identified as female, so 她 is correct."
+      },
+      "q_pinyin": ["wáng", "lǎo", "shī", "shì", "nǚ", "lǎo", "shī", "", "", "", "", "shì", "lǎo", "shī", ""]
+    },
+    {
+      "q": "小王和小李都是女生。___是学生。",
+      "options": [
+        {"text": "她们", "error_tag": null, "pinyin": ["tā", "men"]},
+        {"text": "她", "error_tag": "other", "pinyin": ["tā"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu nói về hai bạn nữ, nên dùng đại từ số nhiều 她们.",
+        "en": "The sentence refers to two female students, so the plural pronoun 她们 is correct."
+      },
+      "q_pinyin": [
+        "xiǎo",
+        "wáng",
+        "hé",
+        "xiǎo",
+        "lǐ",
+        "dōu",
+        "shì",
+        "nǚ",
+        "shēng",
+        "",
+        "",
+        "",
+        "",
+        "shì",
+        "xué",
+        "shēng",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu giới thiệu bản thân, dùng đại từ nhân xưng ở đầu câu.",
+      "en": "Write one sentence introducing yourself, using a personal pronoun at the beginning."
+    },
+    "placeholder": "我是……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["我", "她", "她们"], "role": "subject"}]},
+    "sample": {"text": "我是学生。", "pinyin": ["wǒ", "shì", "xué", "shēng", ""]},
+    "placeholder_pinyin": ["wǒ", "shì", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791281496",
+    "generated_at": "2026-10-06T10:11:36Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:14:48Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

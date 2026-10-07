@@ -1,0 +1,396 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk79_16_information_structure_and_emphasis",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.information_structure",
+  "level": {"framework": "hsk3", "value": "9", "rank": 9},
+  "prereqs": ["zh.canon.r5.hsk79_14_productive_four_character_grammar_patterns"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk79-16-information-structure-and-emphasis"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk79-16-information-structure-and-emphasis"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {
+      "vi": "Ngữ pháp tiếng Trung: Information structure and emphasis",
+      "en": "Chinese grammar: Information structure and emphasis"
+    },
+    "native_title": "信息结构与强调",
+    "level": {"framework": "hsk3", "value": "9", "rank": 9},
+    "summary": {
+      "vi": "Cấu trúc thông tin quyết định cái gì là đã biết, là chủ đề, là đối lập hay là trọng tâm; tiếng Trung dùng trật tự chủ đề–bình luận, các tiểu từ và khuôn 是……的, 连……都, 只有……才 để đánh dấu.",
+      "en": "Information structure decides what is given, topical, contrasted or focused; Chinese uses topic–comment order, particles and patterns like 是……的, 连……都, 只有……才 to mark it."
+    },
+    "sub": {"vi": "cấu trúc thông tin", "en": "information structure"},
+    "native_title_pinyin": ["xìn", "xī", "jié", "gòu", "yǔ", "qiáng", "diào"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn đưa một thành phần đã được nhắc đến hoặc đã được ngầm hiểu lên làm chủ đề, rồi mới bình luận về nó.",
+      "en": "When you want to move an already-mentioned or assumed element into topic position, then comment on it."
+    },
+    {
+      "vi": "Khi cần nhấn mạnh đối lập, tức là chỉ ra đúng thành phần nào là câu trả lời, dùng 是……的 hoặc đặt thành phần đó sau 是.",
+      "en": "When you need contrastive identification, i.e. pointing to exactly which element is the answer, using 是……的 or placing that element after 是."
+    },
+    {
+      "vi": "Khi muốn diễn đạt cực điểm hoặc mức độ bất ngờ, dùng 连……都/也 hoặc 甚至.",
+      "en": "When you want to express a scalar extreme or surprise, using 连……都/也 or 甚至."
+    },
+    {
+      "vi": "Khi muốn giới hạn điều kiện hoặc phạm vi, dùng 只有……才 hoặc 就/才 để gắn trọng tâm vào đúng thành phần.",
+      "en": "When you want to restrict a condition or scope, using 只有……才 or 就/才 to attach focus to the right element."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "话题",
+        "role": "subject",
+        "label": {"vi": "chủ đề", "en": "topic"},
+        "optional": true,
+        "pinyin": ["huà", "tí"]
+      },
+      {
+        "text": "是",
+        "role": "marker",
+        "label": {"vi": "tiểu từ nhấn mạnh", "en": "focus marker"},
+        "optional": true,
+        "pinyin": ["shì"]
+      },
+      {
+        "text": "焦点",
+        "role": "complement",
+        "label": {"vi": "thành phần được nhấn mạnh", "en": "focused element"},
+        "pinyin": ["jiāo", "diǎn"]
+      },
+      {
+        "text": "的",
+        "role": "particle",
+        "label": {"vi": "trợ từ kết thúc", "en": "closing particle"},
+        "optional": true,
+        "pinyin": ["de"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这个问题，我们前面已经讨论过了。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 4, "role": "subject"}, {"start": 5, "end": 15, "role": "complement"}],
+      "annotation": {
+        "vi": "Đưa 'vấn đề này' lên làm chủ đề, phần sau là bình luận.",
+        "en": "Moves 'this issue' into topic position; the rest is the comment."
+      },
+      "translation": {
+        "vi": "Vấn đề này, chúng ta đã bàn ở phần trước rồi.",
+        "en": "This issue, we have already discussed earlier."
+      },
+      "pinyin": [
+        "zhè",
+        "ge",
+        "wèn",
+        "tí",
+        "",
+        "wǒ",
+        "men",
+        "qián",
+        "miàn",
+        "yǐ",
+        "jīng",
+        "tǎo",
+        "lùn",
+        "guò",
+        "le",
+        ""
+      ]
+    },
+    {
+      "text": "我们真正需要解决的是数据质量问题。",
+      "form": "affirmative",
+      "spans": [{"start": 9, "end": 10, "role": "marker"}, {"start": 10, "end": 16, "role": "complement"}],
+      "annotation": {
+        "vi": "Dùng 是……的 để nhấn mạnh đối lập: cái cần giải quyết chính là chất lượng dữ liệu.",
+        "en": "Uses 是……的 for contrastive identification: what really needs solving is data quality."
+      },
+      "translation": {
+        "vi": "Điều chúng ta thực sự cần giải quyết là vấn đề chất lượng dữ liệu.",
+        "en": "What we really need to solve is the data quality problem."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "zhēn",
+        "zhèng",
+        "xū",
+        "yào",
+        "jiě",
+        "jué",
+        "de",
+        "shì",
+        "shù",
+        "jù",
+        "zhì",
+        "liàng",
+        "wèn",
+        "tí",
+        ""
+      ]
+    },
+    {
+      "text": "连最保守的估计都高于原来的目标。",
+      "form": "affirmative",
+      "spans": [{"start": 1, "end": 7, "role": "complement"}],
+      "annotation": {
+        "vi": "Dùng 连……都 để nhấn mạnh cực điểm: ngay cả ước tính bảo thủ nhất cũng cao hơn.",
+        "en": "Uses 连……都 for scalar focus: even the most conservative estimate is higher."
+      },
+      "translation": {
+        "vi": "Ngay cả ước tính bảo thủ nhất cũng cao hơn mục tiêu ban đầu.",
+        "en": "Even the most conservative estimate is higher than the original target."
+      },
+      "pinyin": [
+        "lián",
+        "zuì",
+        "bǎo",
+        "shǒu",
+        "de",
+        "gū",
+        "jì",
+        "dōu",
+        "gāo",
+        "yú",
+        "yuán",
+        "lái",
+        "de",
+        "mù",
+        "biāo",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Tiểu từ 只有 phải gắn vào thành phần được nhấn mạnh là điều kiện, không phải vào kết quả; đặt sai vị trí làm trọng tâm lệch sang 'kết quả'.",
+        "en": "The particle 只有 must attach to the focused element, which is the condition, not the result; placing it wrongly shifts focus onto 'the result'."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "只有结果在这种条件下才具有可比性。",
+      "right": "只有在这种条件下，结果才具有可比性。",
+      "wrong_pinyin": [
+        "zhǐ",
+        "yǒu",
+        "jié",
+        "guǒ",
+        "zài",
+        "zhè",
+        "zhǒng",
+        "tiáo",
+        "jiàn",
+        "xià",
+        "cái",
+        "jù",
+        "yǒu",
+        "kě",
+        "bǐ",
+        "xìng",
+        ""
+      ],
+      "right_pinyin": [
+        "zhǐ",
+        "yǒu",
+        "zài",
+        "zhè",
+        "zhǒng",
+        "tiáo",
+        "jiàn",
+        "xià",
+        "",
+        "jié",
+        "guǒ",
+        "cái",
+        "jù",
+        "yǒu",
+        "kě",
+        "bǐ",
+        "xìng",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这个问题，我们前面已经讨论___了。",
+      "options": [
+        {"text": "过", "error_tag": null, "pinyin": ["guò"]},
+        {"text": "着", "error_tag": "aspect", "pinyin": ["zhe"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "过 diễn tả kinh nghiệm đã trải qua, phù hợp với 'đã bàn trước đây'.",
+        "en": "过 marks past experience, fitting 'have discussed before'."
+      },
+      "q_pinyin": [
+        "zhè",
+        "ge",
+        "wèn",
+        "tí",
+        "",
+        "wǒ",
+        "men",
+        "qián",
+        "miàn",
+        "yǐ",
+        "jīng",
+        "tǎo",
+        "lùn",
+        "",
+        "",
+        "",
+        "le",
+        ""
+      ]
+    },
+    {
+      "q": "我们真正需要解决的是数据质量___。",
+      "options": [
+        {"text": "问题", "error_tag": null, "pinyin": ["wèn", "tí"]},
+        {"text": "问", "error_tag": "word_choice", "pinyin": ["wèn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cần danh từ 'vấn đề' (问题) để hoàn thành khuôn 是……的.",
+        "en": "The noun 'problem' (问题) is needed to complete the 是……的 pattern."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "zhēn",
+        "zhèng",
+        "xū",
+        "yào",
+        "jiě",
+        "jué",
+        "de",
+        "shì",
+        "shù",
+        "jù",
+        "zhì",
+        "liàng",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "q": "连最保守的估计___高于原来的目标。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "才", "error_tag": "conjunction", "pinyin": ["cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "连……都 là cặp cố định để nhấn mạnh cực điểm; 才 không dùng trong khuôn này.",
+        "en": "连……都 is the fixed pair for scalar focus; 才 is not used in this pattern."
+      },
+      "q_pinyin": [
+        "lián",
+        "zuì",
+        "bǎo",
+        "shǒu",
+        "de",
+        "gū",
+        "jì",
+        "",
+        "",
+        "",
+        "gāo",
+        "yú",
+        "yuán",
+        "lái",
+        "de",
+        "mù",
+        "biāo",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một vấn đề bạn đã thảo luận trước đây, dùng cấu trúc chủ đề–bình luận.",
+      "en": "Write one sentence about an issue you discussed before, using topic–comment structure."
+    },
+    "placeholder": "这个问题，我们……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["这个问题"], "role": "subject"}, {"regex": ".*(讨论|商量|谈|说).*", "role": "complement"}]
+    },
+    "sample": {
+      "text": "这个问题，我们前面已经讨论过了。",
+      "pinyin": [
+        "zhè",
+        "ge",
+        "wèn",
+        "tí",
+        "",
+        "wǒ",
+        "men",
+        "qián",
+        "miàn",
+        "yǐ",
+        "jīng",
+        "tǎo",
+        "lùn",
+        "guò",
+        "le",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["zhè", "ge", "wèn", "tí", "", "wǒ", "men", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791347552",
+    "generated_at": "2026-10-07T04:32:32Z",
+    "r5_source": {
+      "ids": ["zh-hsk79-16-information-structure-and-emphasis"],
+      "content_version": 2,
+      "content_hash": "59f2cd490318cccc1675576e93555c5ef58e121a3421bceda1e26d61b13050c9",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk79-16-information-structure-and-emphasis",
+          "issue": "R5 đưa ra câu sai '只有结果在这种条件下才具有可比性' như một lỗi, nhưng không nêu rõ cơ chế sai là tiểu từ 只有 gắn sai thành phần.",
+          "fix": "Viết lại thành cặp wrong/right rõ ràng: wrong '只有结果在这种条件下才具有可比性' → right '只有在这种条件下，结果才具有可比性', kèm giải thích trọng tâm gắn vào điều kiện."
+        },
+        {
+          "r5_id": "zh-hsk79-16-information-structure-and-emphasis",
+          "issue": "R5 không cung cấp công thức trừu tượng cho cấu trúc thông tin, chỉ có câu ví dụ.",
+          "fix": "Thêm formula dạng slot: 话题 (tùy chọn) + 是 (tùy chọn) + 焦点 + 的 (tùy chọn)."
+        },
+        {
+          "r5_id": "zh-hsk79-16-information-structure-and-emphasis",
+          "issue": "R5 có câu '把新信息不断前置成话题' như một lỗi, nhưng đây là mô tả chiến lược, không phải câu sai cụ thể.",
+          "fix": "Chuyển thành lời khuyên trong when_to_use: chỉ đưa thành phần đã biết lên làm chủ đề, không đưa thông tin mới chưa neo."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:49Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

@@ -1,0 +1,319 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk4_11_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.r5.hsk4_4_topic"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"r5": ["zh-hsk4-11-topic"]},
+  "point_type": "other",
+  "sequence": 16,
+  "aliases": ["zh-hsk4-11-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 通过...", "en": "Chinese grammar: 通过..."},
+    "native_title": "通过...",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "通过 dùng để nêu phương thức, con đường hoặc trung gian giúp đạt được một kết quả.",
+      "en": "通过 introduces the means, route, or intermediary through which a result is achieved."
+    },
+    "sub": {"vi": "thông qua / bằng cách", "en": "through / by means of"},
+    "native_title_pinyin": ["tōng", "guò", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói đạt kết quả bằng một phương pháp hoặc quá trình cụ thể.",
+      "en": "Use it to state that a result is achieved through a specific method or process."
+    },
+    {
+      "vi": "通过 thường đứng trước cụm chỉ phương thức, sau đó là hành động hoặc kết quả chính.",
+      "en": "通过 usually precedes the means phrase, followed by the main action or result."
+    },
+    {
+      "vi": "Trong văn viết và văn nói trung tính, 通过 có thể giới thiệu kênh, người trung gian hoặc hoạt động làm phương tiện.",
+      "en": "In neutral spoken and written Chinese, 通过 can introduce a channel, intermediary, or activity used as the means."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "通过",
+        "role": "marker",
+        "label": {"vi": "thông qua", "en": "through"},
+        "pinyin": ["tōng", "guò"]
+      },
+      {
+        "text": "方式/途径",
+        "role": "object",
+        "label": {"vi": "phương thức/con đường", "en": "means/channel"},
+        "pinyin": ["fāng", "shì", "", "tú", "jìng"]
+      },
+      {
+        "text": "结果",
+        "role": "verb",
+        "label": {"vi": "hành động/kết quả", "en": "action/result"},
+        "pinyin": ["jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "我通过每天练习提高了口语水平。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 7, "role": "object"},
+        {"start": 7, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "通过每天练习 nêu phương thức dẫn đến kết quả 提高了口语水平。",
+        "en": "通过每天练习 states the means that leads to 提高了口语水平."
+      },
+      "translation": {
+        "vi": "Tôi nâng cao trình độ nói thông qua luyện tập hằng ngày.",
+        "en": "I improved my speaking through daily practice."
+      },
+      "pinyin": [
+        "wǒ",
+        "tōng",
+        "guò",
+        "měi",
+        "tiān",
+        "liàn",
+        "xí",
+        "tí",
+        "gāo",
+        "le",
+        "kǒu",
+        "yǔ",
+        "shuǐ",
+        "píng",
+        ""
+      ]
+    },
+    {
+      "text": "我们通过讨论找到了更好的方案。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "marker"},
+        {"start": 4, "end": 6, "role": "object"},
+        {"start": 6, "end": 14, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "讨论 là phương thức giúp nhóm tìm ra phương án tốt hơn.",
+        "en": "讨论 is the means by which the group found a better plan."
+      },
+      "translation": {
+        "vi": "Chúng tôi tìm được phương án tốt hơn thông qua thảo luận.",
+        "en": "We found a better plan through discussion."
+      },
+      "pinyin": [
+        "wǒ",
+        "men",
+        "tōng",
+        "guò",
+        "tǎo",
+        "lùn",
+        "zhǎo",
+        "dào",
+        "le",
+        "gèng",
+        "hǎo",
+        "de",
+        "fāng",
+        "àn",
+        ""
+      ]
+    },
+    {
+      "text": "他通过朋友认识了这位老师。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "marker"},
+        {"start": 3, "end": 5, "role": "object"},
+        {"start": 5, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "朋友 là người trung gian được giới thiệu bằng 通过.",
+        "en": "朋友 is the intermediary introduced by 通过."
+      },
+      "translation": {
+        "vi": "Anh ấy quen vị giáo viên này thông qua một người bạn.",
+        "en": "He met this teacher through a friend."
+      },
+      "pinyin": ["tā", "tōng", "guò", "péng", "yǒu", "rèn", "shí", "le", "zhè", "wèi", "lǎo", "shī", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "通过 phải đứng trước cụm phương thức mà nó giới thiệu, không đặt sau cụm đó.",
+        "en": "通过 should precede the means phrase it introduces, not follow it."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "我每天练习通过提高口语水平。",
+      "right": "我通过每天练习提高口语水平。",
+      "wrong_pinyin": [
+        "wǒ",
+        "měi",
+        "tiān",
+        "liàn",
+        "xí",
+        "tōng",
+        "guò",
+        "tí",
+        "gāo",
+        "kǒu",
+        "yǔ",
+        "shuǐ",
+        "píng",
+        ""
+      ],
+      "right_pinyin": [
+        "wǒ",
+        "tōng",
+        "guò",
+        "měi",
+        "tiān",
+        "liàn",
+        "xí",
+        "tí",
+        "gāo",
+        "kǒu",
+        "yǔ",
+        "shuǐ",
+        "píng",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___每天练习提高口语水平。",
+      "options": [
+        {"text": "通过", "error_tag": null, "pinyin": ["tōng", "guò"]},
+        {"text": "把", "error_tag": "particle", "pinyin": ["bǎ"]}
+      ],
+      "answer": 0,
+      "explain": {"vi": "通过 giới thiệu phương thức 每天练习.", "en": "通过 introduces the means 每天练习."},
+      "q_pinyin": ["wǒ", "", "", "", "měi", "tiān", "liàn", "xí", "tí", "gāo", "kǒu", "yǔ", "shuǐ", "píng", ""]
+    },
+    {
+      "q": "我们通过___找到了更好的方案。",
+      "options": [
+        {"text": "讨论", "error_tag": null, "pinyin": ["tǎo", "lùn"]},
+        {"text": "结果", "error_tag": "particle", "pinyin": ["jié", "guǒ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 通过 cần cụm chỉ phương thức phù hợp; 讨论 là cách thức thực hiện.",
+        "en": "After 通过, use a suitable means phrase; 讨论 is the method used."
+      },
+      "q_pinyin": [
+        "wǒ",
+        "men",
+        "tōng",
+        "guò",
+        "",
+        "",
+        "",
+        "zhǎo",
+        "dào",
+        "le",
+        "gèng",
+        "hǎo",
+        "de",
+        "fāng",
+        "àn",
+        ""
+      ]
+    },
+    {
+      "q": "他___朋友认识了这位老师。",
+      "options": [
+        {"text": "通过", "error_tag": null, "pinyin": ["tōng", "guò"]},
+        {"text": "为了", "error_tag": "particle", "pinyin": ["wèi", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "通过朋友 nghĩa là 'thông qua người bạn' làm trung gian.",
+        "en": "通过朋友 means 'through a friend' as an intermediary."
+      },
+      "q_pinyin": ["tā", "", "", "", "péng", "yǒu", "rèn", "shí", "le", "zhè", "wèi", "lǎo", "shī", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu nói bạn đạt được một kết quả bằng cách nào, dùng 通过.",
+      "en": "Write one sentence saying how you achieved a result, using 通过."
+    },
+    "placeholder": "我通过……。",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["通过"], "role": "marker"}]},
+    "sample": {
+      "text": "我通过看中文视频学到了很多新词。",
+      "pinyin": [
+        "wǒ",
+        "tōng",
+        "guò",
+        "kàn",
+        "zhòng",
+        "wén",
+        "shì",
+        "pín",
+        "xué",
+        "dào",
+        "le",
+        "hěn",
+        "duō",
+        "xīn",
+        "cí",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["wǒ", "tōng", "guò", "", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351871",
+    "generated_at": "2026-10-07T05:44:31Z",
+    "r5_source": {
+      "ids": ["zh-hsk4-11-topic"],
+      "content_version": 2,
+      "content_hash": "e8bb624e9e3ff849e38d23d4c881231a414599b023ebe3de8a2f1ba7824e6e33",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk4-11-topic",
+          "issue": "R5 chỉ nêu mẫu 通过... ở mức khái quát, chưa tách rõ thành phần chỉ phương thức/trung gian và kết quả.",
+          "fix": "Chuẩn hóa thành công thức 主语（可省）+通过+方式/途径+结果，并补充 bindings、练习和产出规则。"
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

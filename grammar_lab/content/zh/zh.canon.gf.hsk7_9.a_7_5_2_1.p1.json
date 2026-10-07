@@ -1,0 +1,221 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk7_9.a_7_5_2_1.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "8", "rank": 8},
+  "prereqs": ["zh.canon.gf.hsk7_9.a_7_1_6.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk7_9.091"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 一面⋯⋯ ，一面⋯⋯", "en": "Complex sentences: 一面⋯⋯ ，一面⋯⋯"},
+    "native_title": "一面⋯⋯ ，一面⋯⋯",
+    "level": {"framework": "hsk3", "value": "8", "rank": 8},
+    "summary": {
+      "vi": "Mẫu câu 一面⋯⋯，一面⋯⋯ dùng để nối hai hành động hoặc hai trạng thái diễn ra cùng lúc.",
+      "en": "The pattern 一面⋯⋯，一面⋯⋯ links two actions or states that happen at the same time."
+    },
+    "sub": {"vi": "hai việc cùng lúc", "en": "two actions at once"},
+    "native_title_pinyin": ["yí", "miàn", "", "", "", "", "yí", "miàn", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi một người vừa làm việc này vừa làm việc khác trong cùng một khoảng thời gian.",
+      "en": "When one person does one thing while doing another in the same period of time."
+    },
+    {
+      "vi": "Khi hai hành động có cùng chủ ngữ và cùng tiến hành song song.",
+      "en": "When the two actions share the same subject and run in parallel."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh hai mặt của một tình huống, ví dụ vừa học vừa làm.",
+      "en": "When you want to highlight two sides of one situation, for example studying while working."
+    },
+    {
+      "vi": "Dùng trong văn viết hoặc nói trang trọng hơn là 一边⋯⋯一边⋯⋯.",
+      "en": "Used in writing or more formal speech rather than 一边⋯⋯一边⋯⋯."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "一面",
+        "role": "connector",
+        "label": {"vi": "liên từ thứ nhất", "en": "first connector"},
+        "pinyin": ["yí", "miàn"]
+      },
+      {
+        "text": "VP1",
+        "role": "verb",
+        "label": {"vi": "vị ngữ thứ nhất", "en": "first predicate"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "一面",
+        "role": "connector",
+        "label": {"vi": "liên từ thứ hai", "en": "second connector"},
+        "pinyin": ["yí", "miàn"]
+      },
+      {
+        "text": "VP2",
+        "role": "verb",
+        "label": {"vi": "vị ngữ thứ hai", "en": "second predicate"},
+        "pinyin": ["", "", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "他一面走路，一面看手机。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "connector"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hai hành động 走路 và 看手机 diễn ra cùng lúc.",
+        "en": "The two actions 走路 and 看手机 happen at the same time."
+      },
+      "translation": {"vi": "Anh ấy vừa đi vừa xem điện thoại.", "en": "He walks while looking at his phone."},
+      "pinyin": ["tā", "yí", "miàn", "zǒu", "lù", "", "yí", "miàn", "kàn", "shǒu", "jī", ""]
+    },
+    {
+      "text": "我们一面吃饭，一面聊天。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "subject"},
+        {"start": 2, "end": 4, "role": "connector"},
+        {"start": 4, "end": 6, "role": "verb"},
+        {"start": 7, "end": 9, "role": "connector"},
+        {"start": 9, "end": 11, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Cùng một chủ ngữ 我们 thực hiện hai hành động song song.",
+        "en": "The same subject 我们 performs two parallel actions."
+      },
+      "translation": {"vi": "Chúng tôi vừa ăn vừa trò chuyện.", "en": "We eat while chatting."},
+      "pinyin": ["wǒ", "men", "yí", "miàn", "chī", "fàn", "", "yí", "miàn", "liáo", "tiān", ""]
+    },
+    {
+      "text": "她一面工作，一面学习。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 3, "role": "connector"},
+        {"start": 3, "end": 5, "role": "verb"},
+        {"start": 6, "end": 8, "role": "connector"},
+        {"start": 8, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hai hoạt động 工作 và 学习 được tiến hành đồng thời.",
+        "en": "The two activities 工作 and 学习 are carried out simultaneously."
+      },
+      "translation": {"vi": "Cô ấy vừa làm việc vừa học.", "en": "She works while studying."},
+      "pinyin": ["tā", "yí", "miàn", "gōng", "zuò", "", "yí", "miàn", "xué", "xí", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thường bỏ 一面 thứ hai vì nghĩ một lần là đủ, nhưng mẫu câu yêu cầu cả hai vế đều có 一面.",
+        "en": "Learners often drop the second 一面 because they think one is enough, but the pattern requires 一面 in both clauses."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "他一面走路，看手机。",
+      "right": "他一面走路，一面看手机。",
+      "wrong_pinyin": ["tā", "yí", "miàn", "zǒu", "lù", "", "kàn", "shǒu", "jī", ""],
+      "right_pinyin": ["tā", "yí", "miàn", "zǒu", "lù", "", "yí", "miàn", "kàn", "shǒu", "jī", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "他___听音乐，一面做作业。",
+      "options": [
+        {"text": "一面", "error_tag": null, "pinyin": ["yí", "miàn"]},
+        {"text": "一边", "error_tag": "conjunction", "pinyin": ["yī", "biān"]},
+        {"text": "又", "error_tag": "conjunction", "pinyin": ["yòu"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu câu 一面⋯⋯，一面⋯⋯ cần cả hai vế đều dùng 一面, không trộn với 一边.",
+        "en": "The pattern 一面⋯⋯，一面⋯⋯ requires 一面 in both clauses; do not mix it with 一边."
+      },
+      "q_pinyin": ["tā", "", "", "", "tīng", "yīn", "yuè", "", "yí", "miàn", "zuò", "zuò", "yè", ""]
+    },
+    {
+      "q": "我们___吃饭，一面看电视。",
+      "options": [
+        {"text": "一面", "error_tag": null, "pinyin": ["yí", "miàn"]},
+        {"text": "一边", "error_tag": "conjunction", "pinyin": ["yī", "biān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Khi dùng 一面 thì phải lặp lại 一面 ở vế sau, không trộn với 一边.",
+        "en": "When using 一面, repeat 一面 in the second clause; do not mix it with 一边."
+      },
+      "q_pinyin": ["wǒ", "men", "", "", "", "chī", "fàn", "", "yí", "miàn", "kàn", "diàn", "shì", ""]
+    },
+    {
+      "q": "她___工作，一面学习。",
+      "options": [
+        {"text": "一面", "error_tag": null, "pinyin": ["yí", "miàn"]},
+        {"text": "一边", "error_tag": "conjunction", "pinyin": ["yī", "biān"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Cả hai vế phải dùng 一面 để diễn tả hai hành động song song.",
+        "en": "Both clauses must use 一面 to express two parallel actions."
+      },
+      "q_pinyin": ["tā", "", "", "", "gōng", "zuò", "", "yí", "miàn", "xué", "xí", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn vừa làm việc này vừa làm việc khác, dùng 一面⋯⋯，一面⋯⋯.",
+      "en": "Write a sentence about doing one thing while doing another, using 一面⋯⋯，一面⋯⋯."
+    },
+    "placeholder": "我一面……，一面……。",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["一面"], "role": "connector"}, {"any_of": ["一面"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "我一面听音乐，一面做作业。",
+      "pinyin": ["wǒ", "yí", "miàn", "tīng", "yīn", "yuè", "", "yí", "miàn", "zuò", "zuò", "yè", ""]
+    },
+    "placeholder_pinyin": ["wǒ", "yí", "miàn", "", "", "", "yí", "miàn", "", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791347402",
+    "generated_at": "2026-10-07T04:30:02Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:20:23Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

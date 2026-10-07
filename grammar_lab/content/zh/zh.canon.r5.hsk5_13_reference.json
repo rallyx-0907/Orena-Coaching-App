@@ -1,0 +1,206 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk5_13_reference",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.pronoun_reference",
+  "level": {"framework": "hsk3", "value": "5", "rank": 5},
+  "prereqs": ["zh.canon.r5.hsk5_12_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk5-13-reference", "zh-hsk6-17-reference-chains"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": ["zh-hsk5-13-reference", "zh-hsk6-17-reference-chains"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 其/该/此/上述 reference", "en": "Chinese grammar: 其/该/此/上述 reference"},
+    "native_title": "“其/该/此/上述”的指代",
+    "level": {"framework": "hsk3", "value": "5", "rank": 5},
+    "summary": {
+      "vi": "其/该/此/上述 là các từ chỉ định trang trọng dùng để thay thế một danh từ đã xuất hiện trước đó trong văn viết.",
+      "en": "其/该/此/上述 are formal reference words that point back to a noun already mentioned in written Chinese."
+    },
+    "sub": {"vi": "từ chỉ định trang trọng", "en": "formal reference"},
+    "native_title_pinyin": ["", "qí", "", "gāi", "", "cǐ", "", "shàng", "shù", "", "de", "zhǐ", "dài"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi viết văn bản trang trọng (báo cáo, tin tức, hợp đồng) và cần nhắc lại một danh từ đã nêu ở câu trước.",
+      "en": "When writing formal texts (reports, news, contracts) and you need to refer back to a noun mentioned earlier."
+    },
+    {
+      "vi": "Khi muốn tránh lặp lại danh từ nhưng người đọc vẫn xác định rõ đối tượng nhờ ngữ cảnh trước đó.",
+      "en": "When you want to avoid repeating a noun while the reader can still identify the referent from the previous context."
+    },
+    {
+      "vi": "Khi cần phân biệt giữa 'cái này/cái kia' thông thường (这/那) và cách nói trang trọng hơn trong văn viết.",
+      "en": "When you need to distinguish everyday 'this/that' (这/那) from a more formal written alternative."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "其/该/此/上述",
+        "role": "other",
+        "label": {"vi": "từ chỉ định", "en": "reference word"},
+        "options": [
+          {"text": "其", "pinyin": ["qí"]},
+          {"text": "该", "pinyin": ["gāi"]},
+          {"text": "此", "pinyin": ["cǐ"]},
+          {"text": "上述", "pinyin": ["shàng", "shù"]}
+        ],
+        "pinyin": ["qí", "", "gāi", "", "cǐ", "", "shàng", "shù"]
+      },
+      {"text": "N", "role": "object", "label": {"vi": "danh từ", "en": "noun"}, "pinyin": [""]}
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "该公司已经公布了最新数据。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 1, "role": "other"}, {"start": 1, "end": 3, "role": "object"}],
+      "annotation": {
+        "vi": "该 chỉ công ty đã được nhắc đến trước đó.",
+        "en": "该 refers to the company already mentioned."
+      },
+      "translation": {
+        "vi": "Công ty nói trên đã công bố dữ liệu mới nhất.",
+        "en": "The said company has already released the latest data."
+      },
+      "pinyin": ["gāi", "gōng", "sī", "yǐ", "jīng", "gōng", "bù", "le", "zuì", "xīn", "shù", "jù", ""]
+    },
+    {
+      "text": "其主要原因仍不清楚。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 1, "role": "other"}, {"start": 1, "end": 5, "role": "object"}],
+      "annotation": {
+        "vi": "其 thay cho 'của nó/của vấn đề đó' đã nêu trước.",
+        "en": "其 replaces 'its / of it' referring to the previously mentioned issue."
+      },
+      "translation": {"vi": "Nguyên nhân chính của nó vẫn chưa rõ.", "en": "Its main cause is still unclear."},
+      "pinyin": ["qí", "zhǔ", "yào", "yuán", "yīn", "réng", "bù", "qīng", "chǔ", ""]
+    },
+    {
+      "text": "上述问题需要进一步讨论。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 2, "role": "other"}, {"start": 2, "end": 4, "role": "object"}],
+      "annotation": {
+        "vi": "上述 chỉ vấn đề đã được nêu ở phần trên.",
+        "en": "上述 refers to the issue mentioned above."
+      },
+      "translation": {
+        "vi": "Vấn đề nêu trên cần được thảo luận thêm.",
+        "en": "The above-mentioned issue needs further discussion."
+      },
+      "pinyin": ["shàng", "shù", "wèn", "tí", "xū", "yào", "jìn", "yí", "bù", "tǎo", "lùn", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "该 mang sắc thái trang trọng, không dùng cho vật cụ thể trong hội thoại hàng ngày; tiếng Việt cũng không dùng 'công ty nói trên' cho quả táo.",
+        "en": "该 is formal and not used for a concrete everyday object in conversation; it would sound odd like saying 'the said apple'."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "我今天买了该苹果。",
+      "right": "我今天买了这个苹果。",
+      "wrong_pinyin": ["wǒ", "jīn", "tiān", "mǎi", "le", "gāi", "píng", "guǒ", ""],
+      "right_pinyin": ["wǒ", "jīn", "tiān", "mǎi", "le", "zhè", "ge", "píng", "guǒ", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "___公司已经公布了最新数据。",
+      "options": [
+        {"text": "该", "error_tag": null, "pinyin": ["gāi"]},
+        {"text": "这", "error_tag": "register", "pinyin": ["zhè"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trong văn viết trang trọng, dùng 该 để chỉ công ty đã nhắc trước; 这 mang tính khẩu ngữ.",
+        "en": "In formal writing, use 该 for the previously mentioned company; 这 is colloquial."
+      },
+      "q_pinyin": ["", "", "", "gōng", "sī", "yǐ", "jīng", "gōng", "bù", "le", "zuì", "xīn", "shù", "jù", ""]
+    },
+    {
+      "q": "___主要原因仍不清楚。",
+      "options": [
+        {"text": "其", "error_tag": null, "pinyin": ["qí"]},
+        {"text": "该", "error_tag": "word_choice", "pinyin": ["gāi"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "其 thay cho 'của nó' (sở hữu), còn 该 chỉ 'cái đã nói' và không đứng trước '主要原因' trong ngữ cảnh này.",
+        "en": "其 means 'its' (possessive), while 该 means 'the said' and does not fit before '主要原因' here."
+      },
+      "q_pinyin": ["", "", "", "zhǔ", "yào", "yuán", "yīn", "réng", "bù", "qīng", "chǔ", ""]
+    },
+    {
+      "q": "___问题需要进一步讨论。",
+      "options": [
+        {"text": "上述", "error_tag": null, "pinyin": ["shàng", "shù"]},
+        {"text": "此", "error_tag": "word_choice", "pinyin": ["cǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "上述 chỉ vấn đề đã nêu ở phần trên; 此 thường chỉ 'này' gần hơn và ít dùng trong ngữ cảnh liệt kê văn bản.",
+        "en": "上述 refers to the issue mentioned above; 此 usually means 'this' and is less common in this textual listing context."
+      },
+      "q_pinyin": ["", "", "", "wèn", "tí", "xū", "yào", "jìn", "yí", "bù", "tǎo", "lùn", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu trang trọng dùng 该 + danh từ để nhắc lại một đối tượng đã nhắc trước đó.",
+      "en": "Write one formal sentence using 该 + noun to refer back to something mentioned earlier."
+    },
+    "placeholder": "该……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"any_of": ["该", "其", "上述"], "role": "other"}]},
+    "sample": {
+      "text": "该方案已经通过审批。",
+      "pinyin": ["gāi", "fāng", "àn", "yǐ", "jīng", "tōng", "guò", "shěn", "pī", ""]
+    },
+    "placeholder_pinyin": ["gāi", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338671",
+    "generated_at": "2026-10-07T02:04:31Z",
+    "r5_source": {
+      "ids": ["zh-hsk5-13-reference", "zh-hsk6-17-reference-chains"],
+      "content_version": 2,
+      "content_hash": "953b9ef43776a0a3f1f8900149561af9e5363d606e0cb8614132136afe24aa65",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk5-13-reference",
+          "issue": "R5 đưa ví dụ '此方法适用于小规模测试' nhưng không giải thích rõ 此 khác 该/其 thế nào trong chuỗi chỉ định.",
+          "fix": "Đã thêm ghi chú trong when_to_use và quick_practice để phân biệt sắc thái của 此 so với 该/其/上述."
+        },
+        {
+          "r5_id": "zh-hsk5-13-reference",
+          "issue": "R5 liệt kê lỗi '其表示谁不清楚' nhưng không cung cấp câu đúng cụ thể trong phần mistakes.",
+          "fix": "Đã thay bằng lỗi thực tế '我今天买了该苹果' với câu đúng '我今天买了这个苹果' và giải thích register."
+        },
+        {
+          "r5_id": "zh-hsk6-17-reference-chains",
+          "issue": "R5 HSK6 có nội dung về chuỗi chỉ định vượt quá phạm vi HSK5 của điểm này.",
+          "fix": "Đã lược bỏ phần chuỗi chỉ định phức tạp, chỉ giữ các quy tắc cơ bản về 其/该/此/上述 + N."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:18:15Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

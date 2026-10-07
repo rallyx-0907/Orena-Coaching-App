@@ -1,0 +1,215 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk3.a_3_8.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.questions",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.gf.hsk3.a_3_2_2.p1"],
+  "contrasts": [],
+  "error_tags": ["particle"],
+  "source_refs": {"gf0025": ["gf0025.hsk3.075", "gf0025.hsk3.076", "gf0025.hsk3.077"]},
+  "point_type": "other",
+  "sequence": 3,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Cách nhấn mạnh: 用“一点儿也不⋯⋯”表示强调", "en": "Ways of emphasis: 用“一点儿也不⋯⋯”表示强调"},
+    "native_title": "用“一点儿也不⋯⋯”表示强调",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "Mẫu 一点儿也不⋯⋯ dùng để phủ định hoàn toàn, nhấn mạnh rằng chủ thể không có chút nào thuộc tính được nói tới.",
+      "en": "The pattern 一点儿也不⋯⋯ expresses a total negation, stressing that the subject has none of the quality at all."
+    },
+    "sub": {"vi": "phủ định hoàn toàn", "en": "total negation"},
+    "native_title_pinyin": ["yòng", "", "yì", "diǎn", "ér", "yě", "bù", "", "", "", "biǎo", "shì", "qiáng", "diào"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói ai đó hoặc cái gì đó hoàn toàn không có một chút tính chất nào, mạnh hơn 不 thường.",
+      "en": "When you want to say someone or something has not even a little of a quality, stronger than plain 不."
+    },
+    {
+      "vi": "Khi trả lời câu hỏi có vẻ như người nói mong đợi điều ngược lại, để phủ định dứt khoát.",
+      "en": "When answering a question where the other person seems to expect the opposite, to deny firmly."
+    },
+    {
+      "vi": "Khi tính từ hoặc động từ chỉ trạng thái đứng sau 也不, thường là tính từ đơn như 累, 忙, 贵, 难.",
+      "en": "When the adjective or stative verb follows 也不, usually a simple adjective such as 累, 忙, 贵, 难."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "一点儿",
+        "role": "other",
+        "label": {"vi": "một chút", "en": "a bit"},
+        "pinyin": ["yì", "diǎn", "ér"]
+      },
+      {
+        "text": "也",
+        "role": "marker",
+        "label": {"vi": "cũng (nhấn mạnh)", "en": "even (emphasis)"},
+        "pinyin": ["yě"]
+      },
+      {"text": "不", "role": "marker", "label": {"vi": "không", "en": "not"}, "pinyin": ["bù"]},
+      {
+        "text": "形容词/动词",
+        "role": "complement",
+        "label": {"vi": "tính từ / động từ chỉ trạng thái", "en": "adjective / stative verb"},
+        "pinyin": ["xíng", "róng", "cí", "", "dòng", "cí"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "这本书一点儿也不贵。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 3, "role": "subject"},
+        {"start": 3, "end": 6, "role": "other"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 8, "role": "marker"},
+        {"start": 8, "end": 9, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Phủ định hoàn toàn: cuốn sách này không đắt một chút nào.",
+        "en": "Total negation: this book is not expensive at all."
+      },
+      "translation": {"vi": "Cuốn sách này không đắt một chút nào.", "en": "This book is not expensive at all."},
+      "pinyin": ["zhè", "běn", "shū", "yì", "diǎn", "ér", "yě", "bù", "guì", ""]
+    },
+    {
+      "text": "他一点儿也不累。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 4, "role": "other"},
+        {"start": 4, "end": 5, "role": "marker"},
+        {"start": 5, "end": 6, "role": "marker"},
+        {"start": 6, "end": 7, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Nhấn mạnh rằng anh ấy hoàn toàn không mệt.",
+        "en": "Stresses that he is not tired at all."
+      },
+      "translation": {"vi": "Anh ấy không mệt một chút nào.", "en": "He is not tired at all."},
+      "pinyin": ["tā", "yì", "diǎn", "ér", "yě", "bù", "lèi", ""]
+    },
+    {
+      "text": "今天的作业一点儿也不难。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 5, "role": "subject"},
+        {"start": 5, "end": 8, "role": "other"},
+        {"start": 8, "end": 9, "role": "marker"},
+        {"start": 9, "end": 10, "role": "marker"},
+        {"start": 10, "end": 11, "role": "complement"}
+      ],
+      "annotation": {
+        "vi": "Phủ định hoàn toàn: bài tập hôm nay không khó chút nào.",
+        "en": "Total negation: today's homework is not hard at all."
+      },
+      "translation": {
+        "vi": "Bài tập hôm nay không khó một chút nào.",
+        "en": "Today's homework is not hard at all."
+      },
+      "pinyin": ["jīn", "tiān", "de", "zuò", "yè", "yì", "diǎn", "ér", "yě", "bù", "nán", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học bỏ 也 vì nghĩ 一点儿不 đã đủ nghĩa phủ định, nhưng mẫu cố định là 一点儿也不⋯⋯, thiếu 也 thì câu không tự nhiên.",
+        "en": "Learners drop 也 because they think 一点儿不 already carries the negation, but the fixed pattern is 一点儿也不⋯⋯; without 也 the sentence sounds incomplete."
+      },
+      "error_tag": "particle",
+      "l1": ["vi"],
+      "wrong": "这本书一点儿不贵。",
+      "right": "这本书一点儿也不贵。",
+      "wrong_pinyin": ["zhè", "běn", "shū", "yì", "diǎn", "ér", "bù", "guì", ""],
+      "right_pinyin": ["zhè", "běn", "shū", "yì", "diǎn", "ér", "yě", "bù", "guì", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "这件衣服一点儿___贵。",
+      "options": [
+        {"text": "也不", "error_tag": null, "pinyin": ["yě", "bù"]},
+        {"text": "不也", "error_tag": "word_order", "pinyin": ["bù", "yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mẫu cố định là 一点儿也不 + tính từ, trật tự 也不 không đổi.",
+        "en": "The fixed pattern is 一点儿也不 + adjective; the order 也不 does not change."
+      },
+      "q_pinyin": ["zhè", "jiàn", "yī", "fú", "yì", "diǎn", "ér", "", "", "", "guì", ""]
+    },
+    {
+      "q": "他一点儿也不___。",
+      "options": [
+        {"text": "忙", "error_tag": null, "pinyin": ["máng"]},
+        {"text": "忙了", "error_tag": "aspect", "pinyin": ["máng", "le"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 也不 dùng tính từ ở dạng cơ bản, không thêm 了.",
+        "en": "After 也不 the adjective stays in its basic form; do not add 了."
+      },
+      "q_pinyin": ["tā", "yì", "diǎn", "ér", "yě", "bù", "", "", "", ""]
+    },
+    {
+      "q": "这个菜一点儿也不___。",
+      "options": [
+        {"text": "好吃", "error_tag": null, "pinyin": ["hǎo", "chī"]},
+        {"text": "好吃吗", "error_tag": "particle", "pinyin": ["hǎo", "chī", "ma"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Đây là câu phủ định hoàn toàn, không dùng trợ từ nghi vấn 吗 ở cuối.",
+        "en": "This is a total negation, so the question particle 吗 does not appear at the end."
+      },
+      "q_pinyin": ["zhè", "ge", "cài", "yì", "diǎn", "ér", "yě", "bù", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu dùng 一点儿也不⋯⋯ để nói rằng bạn hoàn toàn không có một tính chất nào đó (ví dụ: không mệt, không bận).",
+      "en": "Write one sentence with 一点儿也不⋯⋯ saying you have none of a quality at all (for example: not tired, not busy)."
+    },
+    "placeholder": "我一点儿也不……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {"any_of": ["一点儿"], "role": "other"},
+        {"any_of": ["也"], "role": "marker"},
+        {"any_of": ["不"], "role": "marker"}
+      ]
+    },
+    "sample": {"text": "我一点儿也不累。", "pinyin": ["wǒ", "yì", "diǎn", "ér", "yě", "bù", "lèi", ""]},
+    "placeholder_pinyin": ["wǒ", "yì", "diǎn", "ér", "yě", "bù", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791338305",
+    "generated_at": "2026-10-07T01:58:25Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

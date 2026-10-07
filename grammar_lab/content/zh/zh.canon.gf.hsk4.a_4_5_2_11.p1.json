@@ -1,0 +1,187 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_5_2_11.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_5_2_10.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.059", "gf0025.hsk4.060"]},
+  "point_type": "other",
+  "sequence": 15,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 无标记", "en": "Complex sentences: 无标记"},
+    "native_title": "无标记",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Câu phức không dùng từ nối: hai mệnh đề đặt cạnh nhau, quan hệ ý nghĩa được suy ra từ ngữ cảnh.",
+      "en": "Complex sentences without an explicit connector: two clauses sit side by side and the meaning relation is inferred from context."
+    },
+    "sub": {"vi": "nối không từ nối", "en": "linking without connectors"},
+    "native_title_pinyin": ["wú", "biāo", "jì"]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi quan hệ giữa hai mệnh đề đã rõ: nguyên nhân – kết quả, điều kiện – kết quả, hoặc tương phản nhẹ.",
+      "en": "When the relation between the two clauses is already clear: cause and result, condition and result, or mild contrast."
+    },
+    {
+      "vi": "Khi muốn câu gọn và tự nhiên trong văn nói hoặc văn viết thường ngày.",
+      "en": "When you want a compact, natural sentence in speech or everyday writing."
+    },
+    {
+      "vi": "Khi không muốn nhấn mạnh logic bằng 因为, 所以, 如果, 但是.",
+      "en": "When you do not want to foreground the logic with 因为, 所以, 如果, 但是."
+    },
+    {
+      "vi": "Khi mệnh đề thứ hai nêu kết quả hoặc nhận xét trực tiếp về mệnh đề thứ nhất.",
+      "en": "When the second clause states a result or a direct comment on the first clause."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "分句1",
+        "role": "other",
+        "label": {"vi": "mệnh đề 1", "en": "clause 1"},
+        "pinyin": ["fēn", "jù", ""]
+      },
+      {
+        "text": "分句2",
+        "role": "other",
+        "label": {"vi": "mệnh đề 2", "en": "clause 2"},
+        "pinyin": ["fēn", "jù", ""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "下雨了，我们不出门。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "other"}, {"start": 4, "end": 9, "role": "other"}],
+      "annotation": {
+        "vi": "Mệnh đề 1 nêu nguyên nhân, mệnh đề 2 nêu kết quả; không dùng từ nối.",
+        "en": "Clause 1 gives the cause, clause 2 the result; no connector is used."
+      },
+      "translation": {
+        "vi": "Trời mưa rồi, chúng tôi không ra ngoài.",
+        "en": "It's raining, so we're not going out."
+      },
+      "pinyin": ["xià", "yǔ", "le", "", "wǒ", "men", "bù", "chū", "mén", ""]
+    },
+    {
+      "text": "你累了，早点休息。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 3, "role": "other"}, {"start": 4, "end": 8, "role": "other"}],
+      "annotation": {
+        "vi": "Mệnh đề 1 nêu điều kiện, mệnh đề 2 nêu lời khuyên; quan hệ được suy ra từ ngữ cảnh.",
+        "en": "Clause 1 states the condition, clause 2 gives advice; the relation is inferred from context."
+      },
+      "translation": {"vi": "Bạn mệt rồi, nghỉ sớm đi.", "en": "You're tired, so rest early."},
+      "pinyin": ["nǐ", "lèi", "le", "", "zǎo", "diǎn", "xiū", "xī", ""]
+    },
+    {
+      "text": "这个字很难，我写不好。",
+      "form": "affirmative",
+      "spans": [{"start": 0, "end": 5, "role": "other"}, {"start": 6, "end": 10, "role": "other"}],
+      "annotation": {
+        "vi": "Mệnh đề 1 nêu đặc điểm, mệnh đề 2 nêu kết quả trực tiếp; không có từ nối.",
+        "en": "Clause 1 states a property, clause 2 the direct result; there is no connector."
+      },
+      "translation": {
+        "vi": "Chữ này khó quá, tôi viết không đẹp.",
+        "en": "This character is hard, so I can't write it well."
+      },
+      "pinyin": ["zhè", "ge", "zì", "hěn", "nán", "", "wǒ", "xiě", "bù", "hǎo", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học quen dùng 因为 để mở đầu mệnh đề nguyên nhân, nhưng trong câu phức không từ nối, 因为 là từ nối thừa và làm mất đặc điểm của mẫu câu.",
+        "en": "Learners often start the cause clause with 因为, but in a connector-free complex sentence 因为 is an extra connector and removes the point's defining feature."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "因为下雨了，我们不出门。",
+      "right": "下雨了，我们不出门。",
+      "wrong_pinyin": ["yīn", "wèi", "xià", "yǔ", "le", "", "wǒ", "men", "bù", "chū", "mén", ""],
+      "right_pinyin": ["xià", "yǔ", "le", "", "wǒ", "men", "bù", "chū", "mén", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "下雨了，我们___出门。",
+      "options": [
+        {"text": "不", "error_tag": null, "pinyin": ["bù"]},
+        {"text": "因为不", "error_tag": "conjunction", "pinyin": ["yīn", "wèi", "bù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu phức không từ nối chỉ cần hai mệnh đề đặt cạnh nhau; 因为 không được đặt giữa hai mệnh đề như một từ nối.",
+        "en": "A connector-free complex sentence just places two clauses side by side; 因为 cannot be inserted between them as a connector."
+      },
+      "q_pinyin": ["xià", "yǔ", "le", "", "wǒ", "men", "", "", "", "chū", "mén", ""]
+    },
+    {
+      "q": "你累了，___休息。",
+      "options": [
+        {"text": "早点", "error_tag": null, "pinyin": ["zǎo", "diǎn"]},
+        {"text": "所以早点", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ", "zǎo", "diǎn"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Quan hệ điều kiện – lời khuyên đã rõ, không cần thêm 所以.",
+        "en": "The condition–advice relation is already clear, so 所以 is not needed."
+      },
+      "q_pinyin": ["nǐ", "lèi", "le", "", "", "", "", "xiū", "xī", ""]
+    },
+    {
+      "q": "这个字很难，我___。",
+      "options": [
+        {"text": "写不好", "error_tag": null, "pinyin": ["xiě", "bù", "hǎo"]},
+        {"text": "但是写不好", "error_tag": "conjunction", "pinyin": ["dàn", "shì", "xiě", "bù", "hǎo"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Mệnh đề 2 nêu kết quả trực tiếp; thêm 但是 sẽ biến câu thành câu có từ nối tương phản.",
+        "en": "Clause 2 states the direct result; adding 但是 turns it into a contrastive sentence with a connector."
+      },
+      "q_pinyin": ["zhè", "ge", "zì", "hěn", "nán", "", "wǒ", "", "", "", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu phức không dùng từ nối về việc của bạn: nêu một tình huống rồi nêu kết quả hoặc lời khuyên.",
+      "en": "Write a connector-free complex sentence about yourself: state a situation, then a result or advice."
+    },
+    "placeholder": "今天很冷，我……",
+    "target_form": "affirmative",
+    "pattern_rule": {"ordered": true, "slots": [{"role": "other", "regex": ".+[，,].+"}]},
+    "sample": {
+      "text": "今天很冷，我在家看书。",
+      "pinyin": ["jīn", "tiān", "hěn", "lěng", "", "wǒ", "zài", "jiā", "kàn", "shū", ""]
+    },
+    "placeholder_pinyin": ["jīn", "tiān", "hěn", "lěng", "", "wǒ", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791344869",
+    "generated_at": "2026-10-07T03:47:49Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

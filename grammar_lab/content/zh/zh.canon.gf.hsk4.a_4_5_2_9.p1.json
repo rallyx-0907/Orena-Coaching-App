@@ -1,0 +1,373 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.gf.hsk4.a_4_5_2_9.p1",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.linking",
+  "level": {"framework": "hsk3", "value": "4", "rank": 4},
+  "prereqs": ["zh.canon.gf.hsk4.a_4_5_2_6.p1"],
+  "contrasts": [],
+  "error_tags": ["conjunction"],
+  "source_refs": {"gf0025": ["gf0025.hsk4.057"]},
+  "point_type": "other",
+  "sequence": 13,
+  "aliases": [],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Câu phức: 哪怕 ⋯⋯ ，也/还 ⋯⋯", "en": "Complex sentences: 哪怕 ⋯⋯ ，也/还 ⋯⋯"},
+    "native_title": "哪怕⋯⋯ ，也/还⋯⋯",
+    "level": {"framework": "hsk3", "value": "4", "rank": 4},
+    "summary": {
+      "vi": "Mẫu câu 哪怕……也/还…… dùng để nhấn mạnh rằng kết quả ở vế sau vẫn giữ nguyên, bất kể điều kiện ở vế trước có cực đoan đến đâu.",
+      "en": "The pattern 哪怕……也/还…… stresses that the result in the second clause stays the same no matter how extreme the condition in the first clause is."
+    },
+    "sub": {"vi": "nhượng bộ cực đoan", "en": "extreme concession"},
+    "native_title_pinyin": ["nǎ", "pà", "", "", "", "", "yě", "", "hái", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi bạn muốn nói 'dù cho… đi nữa thì…', với một điều kiện được đẩy lên mức cực đoan hoặc khó tin.",
+      "en": "When you want to say 'even if… still…', with the condition pushed to an extreme or hard-to-believe level."
+    },
+    {
+      "vi": "Khi vế sau là một kết quả không thay đổi, thường đi kèm 也 hoặc 还.",
+      "en": "When the second clause is an unchanging result, usually with 也 or 还."
+    },
+    {
+      "vi": "Khi bạn muốn thể hiện thái độ kiên quyết, không nhượng bộ trước khó khăn.",
+      "en": "When you want to show a firm attitude, refusing to give in to difficulty."
+    },
+    {
+      "vi": "Khi câu có thể đứng độc lập hoặc đứng sau một câu khác để tăng sắc thái nhấn mạnh.",
+      "en": "When the sentence stands alone or follows another sentence to add extra emphasis."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "哪怕",
+        "role": "connector",
+        "label": {"vi": "cho dù", "en": "even if"},
+        "pinyin": ["nǎ", "pà"]
+      },
+      {
+        "text": "极端条件",
+        "role": "other",
+        "label": {"vi": "điều kiện cực đoan", "en": "extreme condition"},
+        "pinyin": ["jí", "duān", "tiáo", "jiàn"]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ vế chính", "en": "main-clause subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "也/还",
+        "role": "connector",
+        "label": {"vi": "vẫn", "en": "still"},
+        "options": [{"text": "也", "pinyin": ["yě"]}, {"text": "还", "pinyin": ["hái"]}],
+        "pinyin": ["yě", "", "hái"]
+      },
+      {
+        "text": "不变结果",
+        "role": "other",
+        "label": {"vi": "kết quả không đổi", "en": "unchanged result"},
+        "pinyin": ["bù", "biàn", "jié", "guǒ"]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "哪怕明天下大雨，我也要去公园跑步。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 8, "end": 9, "role": "subject"},
+        {"start": 9, "end": 10, "role": "connector"},
+        {"start": 10, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "哪怕 đưa ra điều kiện cực đoan; 也 cho biết kết quả vẫn không đổi.",
+        "en": "哪怕 introduces an extreme condition; 也 shows the result still holds."
+      },
+      "translation": {
+        "vi": "Dù ngày mai mưa to, tôi vẫn sẽ đi công viên chạy bộ.",
+        "en": "Even if it rains heavily tomorrow, I will still run in the park."
+      },
+      "pinyin": [
+        "nǎ",
+        "pà",
+        "míng",
+        "tiān",
+        "xià",
+        "dà",
+        "yǔ",
+        "",
+        "wǒ",
+        "yě",
+        "yào",
+        "qù",
+        "gōng",
+        "yuán",
+        "pǎo",
+        "bù",
+        ""
+      ]
+    },
+    {
+      "text": "哪怕工作再忙，他还会每天给妈妈打电话。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 18, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "还 nhấn mạnh hành động vẫn tiếp tục bất chấp điều kiện.",
+        "en": "还 emphasizes that the action continues despite the condition."
+      },
+      "translation": {
+        "vi": "Dù công việc có bận đến đâu, anh ấy vẫn gọi cho mẹ mỗi ngày.",
+        "en": "No matter how busy work is, he still calls his mother every day."
+      },
+      "pinyin": [
+        "nǎ",
+        "pà",
+        "gōng",
+        "zuò",
+        "zài",
+        "máng",
+        "",
+        "tā",
+        "hái",
+        "huì",
+        "měi",
+        "tiān",
+        "gěi",
+        "mā",
+        "mā",
+        "dǎ",
+        "diàn",
+        "huà",
+        ""
+      ]
+    },
+    {
+      "text": "哪怕你不同意，我也要坚持这个计划。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 6, "role": "other"},
+        {"start": 7, "end": 8, "role": "subject"},
+        {"start": 8, "end": 9, "role": "connector"},
+        {"start": 9, "end": 16, "role": "other"}
+      ],
+      "annotation": {
+        "vi": "Vế chính giữ nguyên quyết định dù điều kiện không thuận lợi.",
+        "en": "The main clause keeps the decision despite an unfavorable condition."
+      },
+      "translation": {
+        "vi": "Dù bạn không đồng ý, tôi vẫn sẽ kiên trì với kế hoạch này.",
+        "en": "Even if you disagree, I will still stick to this plan."
+      },
+      "pinyin": [
+        "nǎ",
+        "pà",
+        "nǐ",
+        "bù",
+        "tóng",
+        "yì",
+        "",
+        "wǒ",
+        "yě",
+        "yào",
+        "jiān",
+        "chí",
+        "zhè",
+        "ge",
+        "jì",
+        "huà",
+        ""
+      ]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học thường bỏ 也/还 ở vế sau, nhưng mẫu 哪怕 bắt buộc phải có phó từ nối để thể hiện kết quả không đổi.",
+        "en": "Learners often drop 也/还 in the second clause, but the 哪怕 pattern requires the linking adverb to show the unchanged result."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "哪怕明天下大雨，我要去公园跑步。",
+      "right": "哪怕明天下大雨，我也要去公园跑步。",
+      "wrong_pinyin": [
+        "nǎ",
+        "pà",
+        "míng",
+        "tiān",
+        "xià",
+        "dà",
+        "yǔ",
+        "",
+        "wǒ",
+        "yào",
+        "qù",
+        "gōng",
+        "yuán",
+        "pǎo",
+        "bù",
+        ""
+      ],
+      "right_pinyin": [
+        "nǎ",
+        "pà",
+        "míng",
+        "tiān",
+        "xià",
+        "dà",
+        "yǔ",
+        "",
+        "wǒ",
+        "yě",
+        "yào",
+        "qù",
+        "gōng",
+        "yuán",
+        "pǎo",
+        "bù",
+        ""
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "哪怕今天很冷，我___要去游泳。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "但是", "error_tag": "conjunction", "pinyin": ["dàn", "shì"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Sau 哪怕, vế sau dùng 也/还 để nối kết quả không đổi; 但是 không phù hợp trong mẫu này.",
+        "en": "After 哪怕, the second clause uses 也/还 to link the unchanged result; 但是 does not fit this pattern."
+      },
+      "q_pinyin": [
+        "nǎ",
+        "pà",
+        "jīn",
+        "tiān",
+        "hěn",
+        "lěng",
+        "",
+        "wǒ",
+        "",
+        "",
+        "",
+        "yào",
+        "qù",
+        "yóu",
+        "yǒng",
+        ""
+      ]
+    },
+    {
+      "q": "哪怕再累，他___会完成工作。",
+      "options": [
+        {"text": "还", "error_tag": null, "pinyin": ["hái"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "还 nhấn mạnh kết quả vẫn giữ nguyên dù rất mệt; 就 không dùng trong mẫu nhượng bộ này.",
+        "en": "还 stresses the result stays the same despite being tired; 就 is not used in this concessive pattern."
+      },
+      "q_pinyin": ["nǎ", "pà", "zài", "lèi", "", "tā", "", "", "", "huì", "wán", "chéng", "gōng", "zuò", ""]
+    },
+    {
+      "q": "哪怕你不来，我们___会按时出发。",
+      "options": [
+        {"text": "也", "error_tag": null, "pinyin": ["yě"]},
+        {"text": "所以", "error_tag": "conjunction", "pinyin": ["suǒ", "yǐ"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "也 nối vế kết quả không đổi sau điều kiện cực đoan; 所以 chỉ kết quả nhân quả, không dùng ở đây.",
+        "en": "也 links the unchanged result after the extreme condition; 所以 marks a cause-effect result and does not fit here."
+      },
+      "q_pinyin": [
+        "nǎ",
+        "pà",
+        "nǐ",
+        "bù",
+        "lái",
+        "",
+        "wǒ",
+        "men",
+        "",
+        "",
+        "",
+        "huì",
+        "àn",
+        "shí",
+        "chū",
+        "fā",
+        ""
+      ]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng mẫu 哪怕……也/还……, ví dụ về một việc bạn vẫn làm dù điều kiện khó khăn.",
+      "en": "Write a sentence about yourself using 哪怕……也/还……, for example something you still do even when conditions are hard."
+    },
+    "placeholder": "哪怕……，我也……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["哪怕"], "role": "connector"}, {"any_of": ["也", "还"], "role": "connector"}]
+    },
+    "sample": {
+      "text": "哪怕每天很忙，我也要学习汉语。",
+      "pinyin": [
+        "nǎ",
+        "pà",
+        "měi",
+        "tiān",
+        "hěn",
+        "máng",
+        "",
+        "wǒ",
+        "yě",
+        "yào",
+        "xué",
+        "xí",
+        "hàn",
+        "yǔ",
+        ""
+      ]
+    },
+    "placeholder_pinyin": ["nǎ", "pà", "", "", "", "wǒ", "yě", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "offline:chatgpt-gpt-5.6-sol-final-exception-v1",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791351855",
+    "generated_at": "2026-10-07T05:44:15Z"
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:17:24Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

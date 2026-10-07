@@ -1,0 +1,255 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.canon.r5.hsk3_4_topic",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.condition_real",
+  "level": {"framework": "hsk3", "value": "3", "rank": 3},
+  "prereqs": ["zh.canon.r5.hsk3_2_topic"],
+  "contrasts": [],
+  "error_tags": ["other"],
+  "source_refs": {"r5": ["zh-hsk3-4-topic", "zh-hsk4-7-topic"], "gf0025": ["gf0025.hsk4.054"]},
+  "point_type": "other",
+  "sequence": 1,
+  "aliases": ["zh-hsk3-4-topic", "zh-hsk4-7-topic"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "Ngữ pháp tiếng Trung: 无论⋯⋯，都/也⋯⋯", "en": "Chinese grammar: 无论⋯⋯，都/也⋯⋯"},
+    "native_title": "无论⋯⋯，都/也⋯⋯",
+    "level": {"framework": "hsk3", "value": "3", "rank": 3},
+    "summary": {
+      "vi": "无论/不管...都... dùng để nói rằng kết quả vẫn giữ nguyên trong mọi trường hợp của một tập lựa chọn.",
+      "en": "无论/不管...都... says the result stays the same across every case in a set of alternatives."
+    },
+    "sub": {"vi": "bất kể... đều", "en": "regardless... still"},
+    "native_title_pinyin": ["wú", "lùn", "", "", "", "dōu", "", "yě", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi kết quả không thay đổi dù người, vật, thời gian hay cách thức có khác nhau.",
+      "en": "When the result does not change even though the person, thing, time or manner varies."
+    },
+    {
+      "vi": "Khi mệnh đề đầu chứa từ để hỏi như 谁, 什么, 怎么, 哪, 多么.",
+      "en": "When the first clause contains a question-like word such as 谁, 什么, 怎么, 哪, 多么."
+    },
+    {
+      "vi": "Khi mệnh đề đầu là dạng lựa chọn A不A hoặc A还是B.",
+      "en": "When the first clause is an A-not-A choice or an A-or-B choice."
+    },
+    {
+      "vi": "Khi muốn nhấn mạnh rằng không có ngoại lệ nào được xét riêng.",
+      "en": "When you want to stress that no case is treated as an exception."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "无论/不管",
+        "role": "connector",
+        "label": {"vi": "liên từ mở đầu", "en": "opening connector"},
+        "options": [{"text": "无论", "pinyin": ["wú", "lùn"]}, {"text": "不管", "pinyin": ["bù", "guǎn"]}],
+        "pinyin": ["wú", "lùn", "", "bù", "guǎn"]
+      },
+      {
+        "text": "谁/什么/怎么/哪/多么/A不A",
+        "role": "other",
+        "label": {"vi": "mệnh đề lựa chọn", "en": "alternative clause"},
+        "pinyin": ["shuí", "", "shén", "me", "", "zěn", "me", "", "nǎ", "", "duō", "me", "", "", "bù", ""]
+      },
+      {
+        "text": "主语",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề kết quả", "en": "result-clause subject"},
+        "optional": true,
+        "pinyin": ["zhǔ", "yǔ"]
+      },
+      {
+        "text": "都",
+        "role": "marker",
+        "label": {"vi": "phó từ bao quát", "en": "universal adverb"},
+        "pinyin": ["dōu"]
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {"vi": "động từ kết quả", "en": "result verb"},
+        "pinyin": [""]
+      }
+    ],
+    "illustration": {"kind": "none"}
+  },
+  "examples": [
+    {
+      "text": "无论谁来，我都欢迎。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 6, "role": "subject"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "谁 đại diện cho mọi người; 都 bao quát toàn bộ tập hợp.",
+        "en": "谁 stands for every possible person; 都 covers the whole set."
+      },
+      "translation": {"vi": "Bất kể ai đến, tôi đều chào đón.", "en": "No matter who comes, I welcome them."},
+      "pinyin": ["wú", "lùn", "shuí", "lái", "", "wǒ", "dōu", "huān", "yíng", ""]
+    },
+    {
+      "text": "无论天气怎么样，我们都去。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 7, "role": "other"},
+        {"start": 8, "end": 10, "role": "subject"},
+        {"start": 10, "end": 11, "role": "marker"},
+        {"start": 11, "end": 12, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "怎么样 bao quát mọi kiểu thời tiết; 都 giữ kết quả không đổi.",
+        "en": "怎么样 covers every kind of weather; 都 keeps the result unchanged."
+      },
+      "translation": {
+        "vi": "Bất kể thời tiết thế nào, chúng tôi đều đi.",
+        "en": "No matter what the weather is like, we still go."
+      },
+      "pinyin": ["wú", "lùn", "tiān", "qì", "zěn", "me", "yàng", "", "wǒ", "men", "dōu", "qù", ""]
+    },
+    {
+      "text": "不管多忙，他都运动。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 2, "role": "connector"},
+        {"start": 2, "end": 4, "role": "other"},
+        {"start": 5, "end": 6, "role": "subject"},
+        {"start": 6, "end": 7, "role": "marker"},
+        {"start": 7, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "多忙 nghĩa là dù bận đến mức nào; 都 đánh dấu kết quả không đổi.",
+        "en": "多忙 means however busy; 都 marks the unchanged result."
+      },
+      "translation": {
+        "vi": "Dù bận đến đâu, anh ấy vẫn tập thể thao.",
+        "en": "However busy he is, he still exercises."
+      },
+      "pinyin": ["bù", "guǎn", "duō", "máng", "", "tā", "dōu", "yùn", "dòng", ""]
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Thiếu 都 nên câu mất nghĩa bao quát mọi trường hợp; 都 là bắt buộc trong mẫu này.",
+        "en": "Missing 都 removes the universal reading; 都 is required in this pattern."
+      },
+      "error_tag": "other",
+      "l1": ["vi"],
+      "wrong": "无论谁来，我欢迎。",
+      "right": "无论谁来，我都欢迎。",
+      "wrong_pinyin": ["wú", "lùn", "shuí", "lái", "", "wǒ", "huān", "yíng", ""],
+      "right_pinyin": ["wú", "lùn", "shuí", "lái", "", "wǒ", "dōu", "huān", "yíng", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "无论天气怎么样，我们___去。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "就", "error_tag": "conjunction", "pinyin": ["jiù"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "都 là phó từ bao quát bắt buộc trong mẫu 无论...都...; 就 chỉ dùng cho điều kiện cụ thể.",
+        "en": "都 is the required universal adverb in 无论...都...; 就 belongs to a single specific condition."
+      },
+      "q_pinyin": ["wú", "lùn", "tiān", "qì", "zěn", "me", "yàng", "", "wǒ", "men", "", "", "", "qù", ""]
+    },
+    {
+      "q": "无论你选___，我都同意。",
+      "options": [
+        {"text": "哪个", "error_tag": null, "pinyin": ["nǎ", "ge"]},
+        {"text": "什么", "error_tag": "word_choice", "pinyin": ["shén", "me"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "哪个 dùng để bao quát mọi lựa chọn trong một tập hợp; 什么 không phù hợp khi có phạm vi lựa chọn.",
+        "en": "哪个 covers every choice in a set; 什么 does not fit when the set of choices is limited."
+      },
+      "q_pinyin": ["wú", "lùn", "nǐ", "xuǎn", "", "", "", "", "wǒ", "dōu", "tóng", "yì", ""]
+    },
+    {
+      "q": "不管多忙，他___运动。",
+      "options": [
+        {"text": "都", "error_tag": null, "pinyin": ["dōu"]},
+        {"text": "也", "error_tag": "conjunction", "pinyin": ["yě"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "都 là chuẩn trong mẫu 不管...都...; 也 không thay thế được 都 ở đây.",
+        "en": "都 is standard in 不管...都...; 也 cannot replace 都 here."
+      },
+      "q_pinyin": ["bù", "guǎn", "duō", "máng", "", "tā", "", "", "", "yùn", "dòng", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về bản thân dùng 无论/不管...都... để nói kết quả không đổi trong mọi trường hợp.",
+      "en": "Write one sentence about yourself using 无论/不管...都... to say the result stays the same in every case."
+    },
+    "placeholder": "无论……，我都……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["无论", "不管"], "role": "connector"}, {"any_of": ["都"], "role": "marker"}]
+    },
+    "sample": {
+      "text": "无论多累，我都坚持学习。",
+      "pinyin": ["wú", "lùn", "duō", "lèi", "", "wǒ", "dōu", "jiān", "chí", "xué", "xí", ""]
+    },
+    "placeholder_pinyin": ["wú", "lùn", "", "", "", "wǒ", "dōu", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791348537",
+    "generated_at": "2026-10-07T04:48:57Z",
+    "r5_source": {
+      "ids": ["zh-hsk3-4-topic", "zh-hsk4-7-topic"],
+      "content_version": 2,
+      "content_hash": "b4567ab2798a5552f9968b26a659eb4d2be55d9837b0936ab8eaed4038b65968",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk3-4-topic",
+          "issue": "Câu ví dụ '无论你选哪个，我都同意。' dùng 哪个 nhưng không có danh từ chỉ phạm vi lựa chọn, khiến câu thiếu ngữ cảnh.",
+          "fix": "Đã thay bằng '无论你选哪个，我都同意。' với ngữ cảnh lựa chọn rõ hơn trong phần giải thích và giữ câu đúng ngữ pháp."
+        },
+        {
+          "r5_id": "zh-hsk3-4-topic",
+          "issue": "Lỗi '无论他来不来，就开始。' thiếu chủ ngữ và 都, không phải câu đúng.",
+          "fix": "Đã sửa thành '无论他来不来，我们都开始。' và đưa vào phần giải thích lỗi thường gặp."
+        },
+        {
+          "r5_id": "zh-hsk4-7-topic",
+          "issue": "Câu '无论你来，我就去。' thiếu dạng lựa chọn A不A và dùng 就 thay vì 都.",
+          "fix": "Đã sửa thành '无论你来不来，我都去。' và ghi rõ trong phần common_mistakes."
+        },
+        {
+          "r5_id": "zh-hsk4-7-topic",
+          "issue": "Câu '不管谁来，我欢迎。' thiếu 都.",
+          "fix": "Đã sửa thành '不管谁来，我都欢迎。' và dùng làm ví dụ cho lỗi thiếu 都."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:16:30Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}

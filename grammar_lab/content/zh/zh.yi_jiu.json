@@ -1,0 +1,262 @@
+{
+  "schema_version": "0.4",
+  "id": "zh.yi_jiu",
+  "version": 1,
+  "target_lang": "zh-Hans",
+  "function": "fn.sequence",
+  "level": {"framework": "hsk3", "value": "2", "rank": 2},
+  "prereqs": [],
+  "contrasts": ["zh.xian_zai"],
+  "error_tags": ["conjunction"],
+  "source_refs": {"r5": ["zh-hsk2-6-topic-47"], "gf0025": ["gf0025.hsk2.069", "gf0025.hsk4.052"]},
+  "point_type": "word_order",
+  "sequence": 1,
+  "aliases": ["zh-hsk2-6-topic-47"],
+  "source_anchors": {"status": "unanchored", "items": []},
+  "header": {
+    "title": {"vi": "一 ... 就 ...", "en": "一 ... 就 ..."},
+    "native_title": "“一……就……”",
+    "level": {"framework": "hsk3", "value": "2", "rank": 2},
+    "summary": {
+      "vi": "一……就…… dùng để nói ngay khi việc A xảy ra thì việc B cũng xảy ra tức thì hoặc lặp lại đều đặn.",
+      "en": "一……就…… expresses that as soon as event A happens, event B happens immediately or habitually."
+    },
+    "sub": {"vi": "vừa… là…", "en": "as soon as"},
+    "native_title_pinyin": ["", "yī", "", "", "jiù", "", "", ""]
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi muốn nói hai việc xảy ra gần như cùng lúc, không có khoảng nghỉ ở giữa.",
+      "en": "When two events happen almost at the same moment, with no real gap between them."
+    },
+    {
+      "vi": "Khi mô tả một thói quen: hễ điều kiện A xảy ra là B luôn xảy ra.",
+      "en": "When describing a habit: whenever condition A happens, B always follows."
+    },
+    {
+      "vi": "Khi kể lại một phản ứng tức thì trong quá khứ, thường có 了 ở cuối.",
+      "en": "When recounting an immediate reaction in the past, often with 了 at the end."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ", "en": "subject"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "一",
+        "role": "marker",
+        "label": {"vi": "dấu hiệu 'ngay khi'", "en": "'as soon as' marker"},
+        "pinyin": ["yī"]
+      },
+      {
+        "text": "VP1",
+        "role": "verb",
+        "label": {"vi": "hành động/điều kiện thứ nhất", "en": "first action/condition"},
+        "pinyin": ["", "", ""]
+      },
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {"vi": "chủ ngữ mệnh đề sau", "en": "second-clause subject"},
+        "optional": true,
+        "pinyin": [""]
+      },
+      {
+        "text": "就",
+        "role": "connector",
+        "label": {"vi": "liên từ nối kết quả", "en": "result connector"},
+        "pinyin": ["jiù"]
+      },
+      {
+        "text": "VP2",
+        "role": "verb",
+        "label": {"vi": "hành động/kết quả thứ hai", "en": "second action/result"},
+        "pinyin": ["", "", ""]
+      }
+    ],
+    "illustration": {"kind": "word_order"}
+  },
+  "examples": [
+    {
+      "text": "我一到家就给你打电话。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 4, "role": "verb"},
+        {"start": 4, "end": 5, "role": "connector"},
+        {"start": 5, "end": 10, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Vừa về tới nhà là hành động gọi điện xảy ra ngay.",
+        "en": "As soon as I get home, the call happens immediately."
+      },
+      "translation": {"vi": "Vừa về tới nhà tôi sẽ gọi cho bạn.", "en": "I'll call you as soon as I get home."},
+      "pinyin": ["wǒ", "yī", "dào", "jiā", "jiù", "gěi", "nǐ", "dǎ", "diàn", "huà", ""]
+    },
+    {
+      "text": "他一吃辣的就不舒服。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 5, "role": "verb"},
+        {"start": 5, "end": 6, "role": "connector"},
+        {"start": 6, "end": 9, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Hễ ăn cay là phản ứng khó chịu xuất hiện ngay, mang tính thói quen.",
+        "en": "Whenever he eats spicy food, the discomfort follows immediately; this is habitual."
+      },
+      "translation": {
+        "vi": "Hễ ăn cay là anh ấy thấy khó chịu.",
+        "en": "Whenever he eats spicy food, he feels unwell."
+      },
+      "pinyin": ["tā", "yī", "chī", "là", "de", "jiù", "bù", "shū", "fú", ""]
+    },
+    {
+      "text": "我一看就明白了。",
+      "form": "affirmative",
+      "spans": [
+        {"start": 0, "end": 1, "role": "subject"},
+        {"start": 1, "end": 2, "role": "marker"},
+        {"start": 2, "end": 3, "role": "verb"},
+        {"start": 3, "end": 4, "role": "connector"},
+        {"start": 4, "end": 7, "role": "verb"}
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ mệnh đề sau trùng với chủ ngữ trước nên được lược bỏ; 了 cho thấy kết quả đã xảy ra.",
+        "en": "The second-clause subject is the same as the first and is omitted; 了 shows the result already happened."
+      },
+      "translation": {"vi": "Tôi vừa nhìn là hiểu ngay.", "en": "I understood as soon as I looked."},
+      "pinyin": ["wǒ", "yī", "kàn", "jiù", "míng", "bái", "le", ""]
+    }
+  ],
+  "compare": [
+    {
+      "with": "zh.xian_zai",
+      "this_example": "我一到家就睡觉。",
+      "other_example": "我先回家，再睡觉。",
+      "this_meaning": {
+        "vi": "一……就…… nhấn mạnh hai việc xảy ra tức thì, gần như không có khoảng cách.",
+        "en": "一……就…… stresses that the two events happen immediately, with almost no gap."
+      },
+      "other_meaning": {
+        "vi": "先……再…… chỉ nêu thứ tự trước sau, không nhấn mạnh sự tức thì.",
+        "en": "先……再…… only states a before-after order, without stressing immediacy."
+      },
+      "this_example_pinyin": ["wǒ", "yī", "dào", "jiā", "jiù", "shuì", "jiào", ""],
+      "other_example_pinyin": ["wǒ", "xiān", "huí", "jiā", "", "zài", "shuì", "jiào", ""]
+    }
+  ],
+  "common_mistakes": [
+    {
+      "reason": {
+        "vi": "Người học dùng 再 vì nghĩ đến trình tự 'rồi mới', nhưng 一……就…… bắt buộc dùng 就 để diễn tả kết quả tức thì.",
+        "en": "Learners use 再 because they think of a 'then' sequence, but 一……就…… requires 就 to mark the immediate result."
+      },
+      "error_tag": "conjunction",
+      "l1": ["vi"],
+      "wrong": "我一到家再给你打电话。",
+      "right": "我一到家就给你打电话。",
+      "wrong_pinyin": ["wǒ", "yī", "dào", "jiā", "zài", "gěi", "nǐ", "dǎ", "diàn", "huà", ""],
+      "right_pinyin": ["wǒ", "yī", "dào", "jiā", "jiù", "gěi", "nǐ", "dǎ", "diàn", "huà", ""]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "我___到家就给你打电话。",
+      "options": [
+        {"text": "一", "error_tag": null, "pinyin": ["yī"]},
+        {"text": "再", "error_tag": "conjunction", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "一 đứng trước hành động thứ nhất để mở đầu cấu trúc 一……就…….",
+        "en": "一 comes before the first action to open the 一……就…… pattern."
+      },
+      "q_pinyin": ["wǒ", "", "", "", "dào", "jiā", "jiù", "gěi", "nǐ", "dǎ", "diàn", "huà", ""]
+    },
+    {
+      "q": "他一吃辣的___不舒服。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "才", "error_tag": "conjunction", "pinyin": ["cái"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "就 nối kết quả xảy ra ngay sau điều kiện; 才 chỉ dùng cho điều kiện chặt, không hợp ở đây.",
+        "en": "就 links the result that follows immediately; 才 is for strict conditions and does not fit here."
+      },
+      "q_pinyin": ["tā", "yī", "chī", "là", "de", "", "", "", "bù", "shū", "fú", ""]
+    },
+    {
+      "q": "我一看___明白了。",
+      "options": [
+        {"text": "就", "error_tag": null, "pinyin": ["jiù"]},
+        {"text": "再", "error_tag": "conjunction", "pinyin": ["zài"]}
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Kết quả 'hiểu ngay' cần 就, không dùng 再 vì 再 chỉ trình tự.",
+        "en": "The immediate result 'understood' needs 就; 再 only marks sequence."
+      },
+      "q_pinyin": ["wǒ", "yī", "kàn", "", "", "", "míng", "bái", "le", ""]
+    }
+  ],
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu kể thói quen hoặc phản ứng tức thì của bạn, dùng 一……就…….",
+      "en": "Write one sentence about a habit or immediate reaction of yours, using 一……就……."
+    },
+    "placeholder": "我一……就……",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [{"any_of": ["一"], "role": "marker"}, {"any_of": ["就"], "role": "connector"}]
+    },
+    "sample": {"text": "我一回家就做饭。", "pinyin": ["wǒ", "yī", "huí", "jiā", "jiù", "zuò", "fàn", ""]},
+    "placeholder_pinyin": ["wǒ", "yī", "", "", "jiù", "", ""]
+  },
+  "status": "approved",
+  "flags": [],
+  "provenance": {
+    "model": "deepseek:deepseek-flash",
+    "prompt_version": "generate_point_v04.v16",
+    "run_id": "generate.1791345073",
+    "generated_at": "2026-10-07T03:51:13Z",
+    "r5_source": {
+      "ids": ["zh-hsk2-6-topic-47"],
+      "content_version": 2,
+      "content_hash": "9052bb85ef2d06fc67b562a16aa8042a11d8d5367eeee8b552462742b8ab2e58",
+      "corrections": [
+        {
+          "r5_id": "zh-hsk2-6-topic-47",
+          "issue": "R5 ghi '一 + VP1，就 + VP2' nhưng không nêu rõ chủ ngữ có thể xuất hiện trước mỗi mệnh đề và có thể lược bỏ khi trùng.",
+          "fix": "Formula được viết với slot chủ ngữ tùy chọn ở cả hai mệnh đề, phản ánh đúng các ví dụ như 我一到家就给你打电话 và 我一看就明白了."
+        },
+        {
+          "r5_id": "zh-hsk2-6-topic-47",
+          "issue": "R5 xếp 先……再…… vào contrasts nhưng không đưa vào danh sách compare bắt buộc; yêu cầu hiện tại chỉ so sánh với zh.xian_zai.",
+          "fix": "Chỉ giữ một mục compare với zh.xian_zai, dùng ví dụ 我先回家，再睡觉 để làm rõ khác biệt về tính tức thì."
+        },
+        {
+          "r5_id": "zh-hsk2-6-topic-47",
+          "issue": "R5 có lỗi '一我到家就睡觉' nhưng không giải thích rõ vị trí chủ ngữ phải đứng trước 一.",
+          "fix": "Giữ lỗi này trong common_mistakes với lời giải thích rằng chủ ngữ đứng trước 一, và bổ sung quick_practice kiểm tra trật tự."
+        }
+      ]
+    }
+  },
+  "review": {
+    "reviewer": "Thi",
+    "reviewed_at": "2026-10-07T16:15:31Z",
+    "seconds": 0.0,
+    "note": "Ship approval authorized by Thi after 595/595 deterministic validation; HSK1 semantic review completed; deep semantic review for remaining levels deferred to post-import QA."
+  }
+}
