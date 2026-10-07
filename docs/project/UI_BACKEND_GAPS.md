@@ -4899,3 +4899,10 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
 - **S-10a IPA alphabet is implied, not returned.** English sounds are IPA because the provider is asked for
   `PhonemeAlphabet: IPA` (en-US); the stored evidence does not carry the alphabet. A provider that labels sounds
   differently would show those labels. The stress hint line has no provider source and is not drawn.
+- **S-15a "This session" is a client notion (D-139 HD-8).** The server keeps no session. Speaking Summary treats the
+  tasks this browser tab logged since it opened (`product/speaking-session.js`, session storage) as the session;
+  a new tab, or a task made on another device, is not in it, and the summary then shows the last 7 days. A
+  server session would need a session id on `POST /api/speech/attempts` (backend, not done).
+- **S-01a Recommended for Speak names a real line, not a mode (D-139 HD-1).** There is no recommender service; the
+  card is the learner's weakest line by its latest verified attempt, opened only while its media is still readable.
+  Weakness by mode (Conversation, Free Talk) has no stored score and is not recommended.

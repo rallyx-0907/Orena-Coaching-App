@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import {
   SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS,
-  speakModes, writeModes, listenModes, vocabularyModes, grammarModes, readingModes, buildSkillSections,
+  speakModes, writeModes, listenModes, vocabularyModes, grammarModes, readingModes, buildSkillSections, weakestLines,
   continuationTarget, continuationRows, writeRecommendation,
 } from '../static/orena/screens/practice/model.js';
 
@@ -28,8 +28,8 @@ import {
 // with the Coming-soon screens, so no entry to them is offered.
 {
   const bare = speakModes([]);
-  assert.equal(bare.length, 4, 'Pronunciation has a real content/import chooser even without public catalogue items');
-  assert.deepEqual(bare.map((m) => m.key), ['situation', 'conv', 'freetalk', 'speak']);
+  assert.equal(bare.length, 5, 'Pronunciation has a real content/import chooser even without public catalogue items');
+  assert.deepEqual(bare.map((m) => m.key), ['situation', 'conv', 'freetalk', 'speak', 'shadow'], 'D-139 HD-2: Shadowing is the one extra mode offered');
   for (const m of bare) assert.equal(m.params, undefined, 'a parameterless route carries no params object');
 
   const withItems = speakModes([
@@ -38,14 +38,16 @@ import {
     { id: 22, practice_type: 'retell', level: 'A2' },
     { id: 33, practice_type: 'sentences', level: 'C1' }, // a later duplicate type must not replace the first
   ]);
-  assert.equal(withItems.length, 4, 'Pronunciation and media Shadowing share one entry');
+  assert.equal(withItems.length, 5, 'Pronunciation and Shadowing are two entries (D-139 HD-2)');
   const speak = withItems.find((m) => m.key === 'speak');
   assert.equal(speak.routeId, 'discover', 'Pronunciation starts with content choice');
   assert.equal(speak.labelRouteId, 'speak');
   assert.deepEqual(speak.query, { tab: 'listen', practice: 'pronunciation' });
   assert.equal(speak.params, undefined, 'no arbitrary first lesson is selected');
   const shadow = withItems.find((m) => m.key === 'shadow');
-  assert.equal(shadow, undefined, 'no duplicate Shadowing card');
+  assert.equal(shadow.routeId, 'discover', 'Shadowing opens the shared room through the media chooser (its route needs a media id)');
+  assert.deepEqual(shadow.query, { tab: 'listen', practice: 'shadowing' });
+  assert.equal(shadow.params, undefined, 'no arbitrary first lesson is selected');
   assert.equal(withItems.find((m) => m.key === 'retell'), undefined, 'Retell is deferred (H9) even when the library has an item');
 
   const resumed = speakModes([], { params: { id: 'media:lesson-en' }, query: { segment: 's2' } }).find((m) => m.key === 'speak');
@@ -54,6 +56,22 @@ import {
   assert.deepEqual(resumed.query, { segment: 's2' });
   assert.deepEqual(speakModes(), speakModes([]), 'a missing list behaves like an empty one');
   assert.deepEqual(speakModes(null), speakModes([]), 'a non-array list behaves like an empty one, never a crash');
+}
+
+// --- D-139 HD-1: Skill Hub Speak's Recommended card, from the learner's weakest real attempt ----
+{
+  const row = (assetId, segmentId, at, overall, words, verified = true) => ({ verified, overall, assetId, segmentId, at, evidence: words ? { words } : null });
+  assert.deepEqual(weakestLines([]), [], 'no attempts, no candidate');
+  assert.deepEqual(weakestLines([row('a', '1', 1, null, null, false)]), [], 'an unverified attempt has no score to be weak by');
+  const found = weakestLines([
+    row('a', '1', 1, 40, null), // improved since: its latest attempt (below) is what counts
+    row('a', '1', 5, 90, null),
+    row('b', '2', 2, 62, [{ text: 'tram', score: 31 }, { text: 'stop', score: 70 }, { text: 'x', score: null }]),
+    row('c', '3', 3, 75, null),
+  ]);
+  assert.deepEqual(found.map((c) => c.assetId), ['b', 'c', 'a'], 'weakest line first, each by its latest attempt');
+  assert.deepEqual(found[0].word, { text: 'tram', score: 31 }, 'the reason names the lowest-scoring word the account kept');
+  assert.equal(found[1].word, null, 'no kept words, no word claimed');
 }
 
 // --- Write: Writing only in this release (Context Rewrite, Timed Writing deferred, H9) ------------

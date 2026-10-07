@@ -43,8 +43,10 @@ export default async function discover(element, ctx) {
   const support = languages().support;
   const memory = learner.memory;
   const continuation = memory?.value?.continuation || [];
-  const practice = ['pronunciation','dictation','listening'].includes(ctx.query.get('practice')) ? ctx.query.get('practice') : '';
+  const practice = ['pronunciation','shadowing','dictation','listening'].includes(ctx.query.get('practice')) ? ctx.query.get('practice') : '';
   const pronunciation = practice === 'pronunciation';
+  // Shadowing (D-139 HD-2) chooses media for the same room; only media with a model recording, never an authored sentence.
+  const speakingPractice = pronunciation || practice === 'shadowing';
   const practiceLabel = pronunciation ? 'pronunciation' : practice === 'listening' ? 'listeningComprehension' : practice;
   if (practice) ctx.setCrumb(ts(practiceLabel));
   const practicePlace = { source: ctx.query.get('source'), segment: ctx.query.get('segment'), intent: practice };
@@ -66,7 +68,7 @@ export default async function discover(element, ctx) {
         ${raw(icon('search', { size: 18 }))}
         <input type="search" autocomplete="off" placeholder="${t(practice ? 'practiceSearch' : 'searchPlaceholder')}" data-query>
       </div>
-      ${practice ? html`<p class="o-muted">${t(pronunciation ? 'choosePracticeMedia' : practice === 'dictation' ? 'chooseDictationMedia' : 'chooseListeningMedia')}</p>` : ''}
+      ${practice ? html`<p class="o-muted">${t(speakingPractice ? 'choosePracticeMedia' : practice === 'dictation' ? 'chooseDictationMedia' : 'chooseListeningMedia')}</p>` : ''}
       <div class="o-tabs" data-tabs ${practice ? raw('hidden') : ''}></div>
       <div class="s-discover__results" data-results-row></div>
       <div data-results></div>
@@ -197,7 +199,7 @@ export default async function discover(element, ctx) {
 
   root.querySelector('[data-import]')?.addEventListener('click', () => {
     import('../import/sheet.js')
-      .then((module) => module.openImport(ctx, { mediaRoute: pronunciation ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' }))
+      .then((module) => module.openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' }))
       .catch((error) => console.error('[Orena] Import is not available yet', error));
   });
 

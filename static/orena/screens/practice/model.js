@@ -104,6 +104,9 @@ export function speakModes(items = [], last = null) {
     last?.params?.id
       ? { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'speak', params: last.params, query: last.query }
       : { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } },
+    /* Shadowing opens the shared room (D-119) through the media chooser: its route needs a media id, which only
+       the learner's choice supplies (D-139 HD-2). */
+    { key: 'shadow', group: 'pronounce', labelRouteId: 'shadow', routeId: 'discover', query: { tab: 'listen', practice: 'shadowing' } },
     { key: 'sound', group: 'pronounce', routeId: 'sound' },
     { key: 'timedreact', group: 'challenge', routeId: 'timedreact' },
   ];
@@ -274,4 +277,27 @@ export function writeRecommendation(rec) {
   const title = String(rec.focus_label || '').trim();
   if (!title) return null;
   return { title, reason: String(rec.reason || '').trim(), actionLabel: String(rec.action_label || '').trim() };
+}
+
+/* Skill Hub Speak's Recommended card (D-139 HD-1): the line the learner's real attempts say is weakest.
+   `rows` are the account's speaking attempts (`product/speaking-history.js#attemptRow`); only a VERIFIED score counts
+   (an unverified attempt has no score to be weak by). Each line is judged by its LATEST verified attempt, so a line
+   the learner has since improved is not recommended again. Returns up to `limit` candidates, weakest first, each with
+   the real evidence for its reason line: the line's score and its lowest-scoring word, when the account kept words.
+   No attempts, no candidate (no card). */
+export function weakestLines(rows = [], limit = 3) {
+  const latest = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!row?.verified || row.overall == null || !row.assetId || !row.segmentId) continue;
+    const key = `${row.assetId}\u0000${row.segmentId}`;
+    if (!latest.has(key) || (row.at || 0) >= (latest.get(key).at || 0)) latest.set(key, row);
+  }
+  return [...latest.values()]
+    .sort((a, b) => a.overall - b.overall || (b.at || 0) - (a.at || 0))
+    .slice(0, limit)
+    .map((row) => {
+      const words = (row.evidence?.words || []).filter((word) => word.score != null && word.text);
+      const weakest = words.reduce((low, word) => (low && low.score <= word.score ? low : word), null);
+      return { assetId: row.assetId, segmentId: row.segmentId, overall: row.overall, word: weakest ? { text: weakest.text, score: weakest.score } : null };
+    });
 }

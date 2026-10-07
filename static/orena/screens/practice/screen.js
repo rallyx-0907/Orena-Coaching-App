@@ -15,7 +15,8 @@ import { languages } from '../../copy/index.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { loadPendingRows, recentRows, recentMediaFacts, lastSpeakingLine } from './continuation.js';
 import { t } from './copy.js';
-import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SPEAK_GROUPS, buildSkillSections, writeRecommendation } from './model.js';
+import { loadAttemptsSince } from '../../product/speaking-history.js';
+import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SPEAK_GROUPS, buildSkillSections, writeRecommendation, weakestLines } from './model.js';
 
 const GROUP_LABEL_KEY = { natural: 'groupNatural', pronounce: 'groupPronounce', challenge: 'groupChallenge' };
 
@@ -123,15 +124,47 @@ function continueRowMarkup(row, language, recent = false) {
   });
 }
 
+/* The learner's own word inside a sentence of the interface language keeps its own `lang` (WCAG 3.1.2). */
+const WORD = '';
+function withWord(key, word, language, params = {}) {
+  const [before, after = ''] = t(key, { ...params, word: WORD }).split(WORD);
+  return html`${before}${langSpan(word, language)}${after}`;
+}
+
 function recommendationMarkup(rec, skill) {
-  return html`<button type="button" class="s-practice-rec" data-go="${href('skillhub', { skill })}">
+  return html`<button type="button" class="s-practice-rec" data-go="${rec.go || href('skillhub', { skill })}">
     <div class="s-practice-rec__body">
-      <div class="s-practice-rec__eyebrow">${t('recommended')}</div>
+      <div class="s-practice-rec__eyebrow">${t('recommended')}${rec.dur ? ` · ${rec.dur}` : ''}</div>
       <div class="s-practice-rec__title">${rec.title}</div>
       ${rec.reason ? html`<div class="s-practice-rec__reason">${rec.reason}</div>` : ''}
     </div>
     <span class="s-practice-rec__cta">${t('start')}</span>
   </button>`;
+}
+
+/* Speak's card: the weakest line of the learner's real attempts that can still be opened (its media readable, in
+   the learning language, with model audio - the same admission Recent uses), opening that line in the room. */
+async function speakRecommendation(ctx, language) {
+  const [rows, library] = await Promise.all([
+    loadAttemptsSince(api, '', 100),
+    api.listeningLibrary(language).then((res) => (Array.isArray(res?.items) ? res.items : [])).catch(() => []),
+  ]);
+  const options = { api, language, support: languages().support, owner: ctx.context.owner, memory: ctx.context.memory };
+  for (const candidate of weakestLines(rows || [])) {
+    // An attempt names the media object; the room opens by lesson id (the same value for an import).
+    const lessonId = library.find((item) => item?.media_object_id === candidate.assetId)?.lesson_id || candidate.assetId;
+    const facts = await recentMediaFacts([{ id: `media:${lessonId}` }], options);
+    const fact = facts.get(`media:${lessonId}`);
+    if (!fact?.canonicalId) continue;
+    // The line itself is the segment the attempt was made on, whichever line the media opened on.
+    return {
+      title: candidate.word ? withWord('recTitleWord', candidate.word.text, language) : t('recTitleLine'),
+      reason: candidate.word ? withWord('recReasonWord', candidate.word.text, language, { n: candidate.word.score }) : t('recReasonLine', { n: candidate.overall }),
+      dur: t('speakDur'),
+      go: href('speak', { id: `media:${fact.canonicalId}` }, { segment: candidate.segmentId }),
+    };
+  }
+  return null;
 }
 
 async function renderHub(element, ctx, data) {
@@ -181,7 +214,7 @@ async function renderSkillHub(element, ctx, data, skill) {
   const known = SKILL_ORDER.includes(skill);
   const modes = known ? SKILL_BUILDERS[skill](data) : [];
   const title = known ? t(SKILL_LABEL_KEY[skill]) : shellCopy('practiceHub');
-  const rec = known && skill === 'write' ? writeRecommendation(data.recommendation) : null;
+  const rec = known && skill === 'write' ? writeRecommendation(data.recommendation) : known && skill === 'speak' ? data.speakRecommendation : null;
   mount(
     element,
     html`<div class="s-practice-hub">
@@ -213,16 +246,18 @@ export default async function practiceHub(element, ctx) {
      Skill Hub visit needs whichever one its own skill owns. Each degrades to a real, honest empty
      on failure rather than throwing (this route is not `lesson: true`, so there is no router load-
      error screen to catch it). */
-  const [speakingItems, listeningItems, reading, recommendation, lastLine] = await Promise.all([
+  const [speakingItems, listeningItems, reading, recommendation, lastLine, speakRec] = await Promise.all([
     api.speakingLibrary(language).then((res) => (Array.isArray(res?.items) ? res.items : [])).catch(() => []),
     api.listeningLibrary(language).then((res) => (Array.isArray(res?.items) ? res.items : [])).catch(() => []),
     api.readingPracticeNext().catch(() => ({ available: false, next: null })),
     fetchRecommendation ? api.practiceRecommendation().catch(() => null) : Promise.resolve(null),
     // Pronunciation opens the learner's last line at once (D-139 HD-3); only the hub and Speak's hub list it.
     !skill || skill === 'speak' ? lastSpeakingLine(ctx.context.memory, { api, language, support: languages().support, owner: ctx.context.owner }).catch(() => null) : Promise.resolve(null),
+    // Skill Hub Speak's Recommended card, from the learner's weakest real attempt (D-139 HD-1); none without attempts.
+    skill === 'speak' ? speakRecommendation(ctx, language).catch(() => null) : Promise.resolve(null),
   ]);
   if (!ctx.isCurrent()) return;
-  const data = { speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine };
+  const data = { speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine, speakRecommendation: speakRec };
   if (skill) await renderSkillHub(element, ctx, data, skill);
   else await renderHub(element, ctx, data);
 }
