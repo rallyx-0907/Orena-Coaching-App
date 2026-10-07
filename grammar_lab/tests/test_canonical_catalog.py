@@ -247,7 +247,8 @@ def test_coverage_separates_catalog_from_generated_content(tmp_path: Path) -> No
     assert all(row["generated"] <= row["canonical"] for row in report["per_level"].values())
     zh = coverage_report("zh")
     assert zh["canonical_total"] == 380 and zh["gf0025"]["covered"] == zh["gf0025"]["total"] == 572
-    assert zh["generated_total"] < zh["canonical_total"]
+    assert 0 < zh["generated_total"] <= zh["canonical_total"]
+    assert zh["missing_content_total"] == zh["canonical_total"] - zh["generated_total"] == len(zh["missing_content"])
 
 
 def test_coverage_counts_generated_validated_and_approved_apart(tmp_path: Path) -> None:
