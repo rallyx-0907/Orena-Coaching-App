@@ -930,6 +930,44 @@ def review_export(
         typer.echo(f"wrote {path} ({path.stat().st_size:,} bytes)")
 
 
+@app.command("approve")
+def approve_command(
+    lang: str = typer.Option(..., "--lang", help=f"Target language: {', '.join(LANGS)}."),
+    ids: str = typer.Option("", "--ids", help="Comma-separated reviewed point ids."),
+    level: str = typer.Option("", "--level", help="Instead of --ids: every catalogue point of this level."),
+    reviewer: str = typer.Option(..., "--reviewer", help="Human reviewer name recorded in review.reviewer."),
+    seconds: float = typer.Option(0.0, "--seconds", help="Review seconds per point; 0 when bulk review time was not measured."),
+    note: str = typer.Option("", "--note", help="Optional human review note."),
+    root: Path = typer.Option(LAB_ROOT, "--root"),
+) -> None:
+    """Human gate: mark reviewed, validation-clean points approved and record review metadata."""
+    from grammar_lab.pipeline.approve import ApprovalError, approve_points
+
+    if lang not in LANGS:
+        raise typer.BadParameter(f"expected one of {', '.join(LANGS)}", param_hint="--lang")
+    if bool(ids) == bool(level):
+        raise typer.BadParameter("give exactly one of --ids and --level")
+    point_ids = [p.strip() for p in ids.split(",") if p.strip()] or select_ids(lang, level, root)
+    if level and not point_ids:
+        raise typer.BadParameter(f"no catalogue points at level {level}", param_hint="--level")
+    try:
+        result = approve_points(
+            lang, point_ids, reviewer=reviewer, seconds=seconds, note=note or None, root=root,
+        )
+    except ApprovalError as exc:
+        for problem in exc.problems:
+            typer.echo(f"approve blocked: {problem}", err=True)
+        raise typer.Exit(2) from exc
+    for point_id in result.approved:
+        typer.echo(f"approved  {point_id}")
+    for point_id in result.already_approved:
+        typer.echo(f"unchanged {point_id}: already approved")
+    typer.echo(
+        f"approve --lang {lang}: {len(result.approved)} approved, "
+        f"{len(result.already_approved)} already approved"
+    )
+
+
 @app.command("apply-feedback")
 def apply_feedback_command(
     lang: str = typer.Option(..., "--lang", help=f"Target language: {', '.join(LANGS)}."),
