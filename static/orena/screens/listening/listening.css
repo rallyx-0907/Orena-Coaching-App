@@ -785,7 +785,9 @@
 /* Typing with the phone keyboard open (mobile QA BUG-02): the room fits the visible area above the keyboard and
    keeps only the task - transport, answer, hint, Check. Video, seek bar and the line map return when typing ends. */
 :root[data-device="mobile"] .s-listening.is-typing {
-  height: var(--ls-visible-h, 100%);
+  /* The visible area above the keyboard, less the status-bar clearance the column already starts below: anything
+     taller makes iOS scroll the page and lift the answer out of sight. */
+  height: calc(var(--ls-visible-h, 100%) - env(safe-area-inset-top, 0px));
   padding-bottom: 8px;
 }
 /* The player stays rendered (Replay still plays it), only out of sight: a hidden iframe can stop its media. */
@@ -920,13 +922,31 @@
 :root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-scroll { flex: 0 1 auto; min-height: 40px; overflow-y: auto; }
 :root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-actions { flex: none; overflow: visible; }
 
-/* A short phone (375x667, 320x568) cannot hold player, transport, the selected line's card and a 140px Transcript:
-   the card used to run out of the media column and sit under the Transcript, hiding its actions. The Transcript gives up
-   height while a line is selected, and the media column scrolls in its own region for whatever is still over (the
-   controls are reached by scrolling it, never covered). Where everything fits nothing scrolls. */
-:root[data-device="mobile"] .s-listening__media { overflow-y: auto; overscroll-behavior: contain; }
+/* A short phone (375x667, 320x568) with a line selected (human review 2026-10-07): the room is recomposed, it never
+   scrolls the media column to reach a control. The poster/player is the non-essential visual and gives way first (a
+   compact strip that still plays and shows the time); transport and the selected line's actions stay in view; the
+   Transcript keeps its own bounded scroll region. */
 @media (max-height: 700px) {
-  :root[data-device="mobile"] .s-listening:has(.s-listening__selected) .s-listening__transcript { min-height: 96px; }
+  :root[data-device="mobile"] .s-listening:has(.s-listening__selected) .s-listening__player { flex: none; height: 96px; min-height: 0; aspect-ratio: auto; }
+  :root[data-device="mobile"] .s-listening:has(.s-listening__selected) .s-listening__transcript { min-height: 72px; }
+  /* The line and its meaning keep a bounded region of their own; the actions under them never move out of view. */
+  :root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-scroll { max-height: 4.6em; }
+}
+/* A very short phone (320x568): the picture itself gives way while a line is selected. The player stays rendered and
+   keeps playing (as in typing mode) - only its visual and the seek strip leave; transport stays in the row below. */
+/* On a short phone with the "Practise this line" group open the learner is acting on the line: the picture gives way
+   as on a very short phone, so the group's buttons are in view without scrolling. */
+@media (max-height: 700px) {
+  :root[data-device="mobile"] .s-listening:has(.s-listening__extra-acts.is-open) .s-listening__player {
+    position: absolute; width: 1px; height: 1px; min-height: 0; opacity: 0; pointer-events: none;
+  }
+  :root[data-device="mobile"] .s-listening:has(.s-listening__extra-acts.is-open) .s-listening__seek { display: none; }
+}
+@media (max-height: 600px) {
+  :root[data-device="mobile"] .s-listening:has(.s-listening__selected) .s-listening__player {
+    position: absolute; width: 1px; height: 1px; min-height: 0; opacity: 0; pointer-events: none;
+  }
+  :root[data-device="mobile"] .s-listening:has(.s-listening__selected) .s-listening__seek { display: none; }
 }
 
 /* The completed panel's actions on a phone (LEX-037): two even columns, each label on one line with room around
@@ -943,3 +963,8 @@
 :root[data-device="mobile"] .s-listening__selected-actions > .s-listening__extra-acts.is-open { height: auto; overflow: visible; }
 :root[data-device="mobile"] .s-listening__extra-acts .s-listening__practise-label { display: none; }
 :root[data-device="mobile"] .s-listening__moreacts-label { white-space: nowrap; }
+/* The smallest phones (320x568) with the group open: the line's own region narrows to about two lines (it scrolls
+   inside), so the three practise buttons stay in view. */
+@media (max-height: 600px) {
+  :root[data-device="mobile"] .s-listening__selected:has(.s-listening__extra-acts.is-open) .s-listening__selected-scroll { max-height: 2.9em; }
+}
