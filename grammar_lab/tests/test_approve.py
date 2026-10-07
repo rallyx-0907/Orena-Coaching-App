@@ -6,8 +6,10 @@ import shutil
 from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
 
 from grammar_lab.pipeline.approve import ApprovalError, approve_points
+from grammar_lab.pipeline.cli import app
 from grammar_lab.pipeline.content_store import load_point, save_point
 from grammar_lab.pipeline.validate import LAB_ROOT, validate_lang
 
@@ -117,3 +119,21 @@ def test_approve_rejects_invalid_inputs_before_writing(lab_copy: Path) -> None:
     assert "seconds" in joined
     assert "status 'rejected'" in joined
     assert load_point("en", point["id"], lab_copy)["status"] == "rejected"
+
+
+def test_cli_approve_exposes_the_human_gate(lab_copy: Path) -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "approve",
+            "--lang", "en",
+            "--ids", "en.there_is_are",
+            "--reviewer", "Thi",
+            "--note", "review complete",
+            "--root", str(lab_copy),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "approved  en.there_is_are" in result.output
+    assert load_point("en", "en.there_is_are", lab_copy)["status"] == "approved"
