@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   contentRows, contentRouteId, wordKindOf, isNewWord, masteryFilled, wordMeaning, languageRows,
-  libraryCollectionRows, deckRows, collectionsAndDecks, dueStats, pinnedKindKey, dueListRows,
+  libraryCollectionRows, deckRows, collectionsAndDecks, dueStats, pinnedKindKey, dueListRows, sessionRows, sessionSourceCount, curatedRows,
 } from '../static/orena/screens/library/model.js';
 
 // --- Content tab: only reading/media domains, a real content-kind route id, honest 0% progress ---
@@ -132,6 +132,18 @@ import {
   assert.match(screenSrc, /import\s*\{\s*langAttr,\s*langSpan\s*\}\s*from\s*'\.\.\/\.\.\/kit\/lang\.js'/, 'imports the shared lang helper from kit/lang.js');
   assert.match(screenSrc, /langSpan\(row\.title,\s*language\)/, 'the Saved content row title is wrapped with the active learning language');
   assert.match(screenSrc, /lang="\$\{langAttr\(language\)\}"/, 'the Saved language row word carries a real lang attribute');
+}
+
+// --- HV-4 A (V-12): "In this session" lists the due words; HV-5 A (V-13, V-15): curated collections, no repeated phrase ---
+{
+  const rows = sessionRows([{ word: 'resilient', source_kind: 'reading' }, { word: 'hedge', source_kind: 'manual' }, { word: '' }]);
+  assert.deepEqual(rows.map((r) => [r.text, r.sourceKey]), [['resilient', 'sourceReading'], ['hedge', '']], 'the due words, a source label only when the kind names one, no empty rows');
+  assert.equal(sessionSourceCount(sessionRows([{ word: 'a', source_fragment: 'It was a fine day.' }, { word: 'b' }])), 1, 'the source-aware count is the cards that ask a sentence');
+  assert.deepEqual(sessionRows(undefined), []);
+  assert.deepEqual(curatedRows([{ id: 'c1', title: 'Phrasal verbs', item_count: 12 }, { title: 'no id' }]), [{ collectionId: 'curated:c1', title: 'Phrasal verbs', size: 12 }]);
+  assert.equal(collectionsAndDecks([], [], [{ id: 'c1', title: 'X' }])[0].collectionId, 'curated:c1', 'curated collections lead the tab');
+  assert.equal(wordMeaning({ word: 'sets the tone', source_fragment: 'Sets the tone' }), '', 'a phrase row does not repeat its own text');
+  assert.equal(wordMeaning({ word: 'tone', source_fragment: 'Sets the tone for the day' }), 'Sets the tone for the day', 'a real source line stays');
 }
 
 console.log('Orena My Library screen: content/language/collections/due mapping, rule-40 zeros, no invented data: PASS');

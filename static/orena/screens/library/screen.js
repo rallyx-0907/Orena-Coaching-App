@@ -19,7 +19,7 @@ import { t } from './copy.js';
 import { placeFor } from '../content/model.js';
 import { isDeferred } from '../../shell/routes.js';
 import {
-  contentRows, languageRows, collectionsAndDecks, dueStats, dueListRows,
+  contentRows, languageRows, collectionsAndDecks, dueStats, dueListRows, sessionRows, sessionSourceCount,
 } from './model.js';
 
 /* Five tabs, the live design script's own order (`orena-script.js` LIBT) - not the four the
@@ -108,7 +108,7 @@ function itemCountLabel(n) {
 }
 
 function collectionsPanel(rows) {
-  if (!rows.length) return html``;
+  if (!rows.length) return html`<div class="s-library-lang-empty">${emptyMarkup({ text: t('emptyCollections'), iconName: 'inbox' })}</div>`;
   return html`<div class="s-library-collections-grid">${rows.map((row) => mediaCard({
     title: row.title,
     meta: itemCountLabel(row.size),
@@ -170,7 +170,7 @@ function duePanel(stats, list) {
     </div>
     <div class="s-library-due-list">
       <div class="s-library-due-list__title">${t('inThisSession')}</div>
-      ${list.map((row) => html`<div class="s-library-due-row"><span class="s-library-due-row__text">${row.text || kindFallbackLabel(row.kindKey)}</span><span class="s-library-due-row__meta">${row.text ? kindFallbackLabel(row.kindKey) : ''}</span></div>`)}
+      ${list.map((row) => html`<div class="s-library-due-row"><span class="s-library-due-row__text">${row.text || kindFallbackLabel(row.kindKey)}</span><span class="s-library-due-row__meta">${row.sourceKey ? t(row.sourceKey) : row.text && row.kindKey ? kindFallbackLabel(row.kindKey) : ''}</span></div>`)}
     </div>
   </div>`;
 }
@@ -194,12 +194,14 @@ export default async function library(element, ctx) {
   // The account's view of the imports first, so a deletion made on another device is not shown here.
   await syncImports(ctx.context.memory, language).catch(() => false);
 
-  const [collection, vocabulary, collections, decks, queue] = await Promise.all([
+  const [collection, vocabulary, collections, decks, queue, dueItems, curated] = await Promise.all([
     api.collection({ domains: ['reading', 'media'], limit: 24 }),
     api.libraryVocabulary({ limit: 24 }),
     safe(api.libraryCollections(), { collections: [] }),
     safe(api.vocabularyDecks(), { items: [] }),
     safe(api.libraryReviewQueue(), { pinned: [], pinned_count: 0, due_count: 0, total: 0 }),
+    safe(api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 }), null),
+    safe(api.vocabularyLibraryCollections(language), { items: [] }),
   ]);
 
   const ownRows = () => {
@@ -212,10 +214,13 @@ export default async function library(element, ctx) {
   const rows = {
     content: contentRows(collection.entries || [], ctx.context.memory?.value?.continuation || []),
     language: languageRows(vocabulary.items || [], support),
-    collections: collectionsAndDecks(collections.collections || [], decks.items || []),
+    collections: collectionsAndDecks(collections.collections || [], decks.items || [], curated.items || []),
   };
   const stats = dueStats(queue);
-  const dueRows = dueListRows(queue);
+  /* "In this session" lists the due words Review will ask (V-12, HV-4 A), and the source-aware count is that
+     session's. When that list cannot be read, the pinned items stand in as before. */
+  const dueRows = dueItems ? sessionRows(dueItems.items) : dueListRows(queue);
+  if (dueItems) stats.dueSource = sessionSourceCount(dueRows);
 
   function panelFor(id) {
     if (id === 'content') return contentPanel([...ownRows(), ...rows.content], language, menuFor);
@@ -279,7 +284,9 @@ export default async function library(element, ctx) {
        both concepts are a kind of ("Collection"/"Bộ sưu tập"/"合集") rather than inventing new copy
        for either concept (`copy/shell.js` is not this screen's file to add a key to). */
     for (const button of element.querySelectorAll('[data-collection]')) {
-      button.addEventListener('click', () => ctx.go(ctx.href('coming', { key: 'collection' })));
+      const id = button.dataset.collection;
+      // A curated collection has its own screen; a library collection and a deck have none yet (N-23).
+      button.addEventListener('click', () => ctx.go(id.startsWith('curated:') ? ctx.href('collection', { id: id.slice('curated:'.length) }) : ctx.href('coming', { key: 'collection' })));
     }
     element.querySelector('[data-start-review]')?.addEventListener('click', () => ctx.go(ctx.href('review')));
     for (const button of element.querySelectorAll('[data-active]')) {

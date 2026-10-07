@@ -12,7 +12,7 @@ const KEYS = [
   'tabContent', 'tabLanguage', 'tabCollections', 'tabActive', 'tabDueCount',
   'typePhrase', 'newBadge', 'emptyLanguage',
   'dueNow', 'dueItemsLabel', 'statWords', 'statPhrases', 'statSource', 'startReview', 'inThisSession',
-  'kindSpeaking',
+  'kindSpeaking', 'sourceReading', 'sourceFeedback',
   /* The four Active-use cards (design: `activeUse[]{stage, title, desc, dur, onOpen}`, a fixed
      shortcut list into Vocabulary's own Recall/Use/Transfer flows, not a backend-fetched row set -
      see model.js's `activeUseCards`). `dur` ("~3 min" in the design) is not carried: no route this
@@ -21,7 +21,7 @@ const KEYS = [
      match, not re-litigate per screen. */
   'activeDueTitle', 'activeDueDesc', 'activeTransferDesc', 'activeSituationTitle', 'activeSituationDesc',
   'activeTimedDesc', 'stageRecall', 'stageUse', 'stageTransfer', 'stageFast',
-  'collectionItems',
+  'collectionItems', 'emptyCollections',
   'more', 'deleteFromOrena', 'deletedFromOrena',
 ];
 
@@ -30,6 +30,7 @@ export const t = defineCopy('library', {
   en: {
     tabContent: 'Saved content', tabLanguage: 'Saved language', tabCollections: 'Collections', tabActive: 'Active use',
     tabDueCount: 'Due Review · {n}',
+    emptyCollections: 'No collections yet.',
     typePhrase: 'Phrase', newBadge: 'NEW', emptyLanguage: 'Nothing saved yet.',
     dueNow: 'Due now',
     dueItemsLabel_one: 'item', dueItemsLabel_other: 'items',
@@ -38,6 +39,7 @@ export const t = defineCopy('library', {
     statSource: 'source-aware',
     startReview: 'Start review', inThisSession: 'In this session',
     kindSpeaking: 'Speaking',
+    sourceReading: 'From your reading', sourceFeedback: 'From your writing feedback',
     activeDueTitle: 'Due review',
     activeDueDesc_one: 'Retrieve without seeing the answer · {n} item',
     activeDueDesc_other: 'Retrieve without seeing the answer · {n} items',
@@ -52,11 +54,13 @@ export const t = defineCopy('library', {
   vi: {
     tabContent: 'Nội dung đã lưu', tabLanguage: 'Từ & cụm đã lưu', tabCollections: 'Bộ sưu tập', tabActive: 'Vận dụng',
     tabDueCount: 'Cần ôn tập · {n}',
+    emptyCollections: 'Chưa có bộ sưu tập nào.',
     typePhrase: 'Cụm từ', newBadge: 'MỚI', emptyLanguage: 'Chưa lưu gì.',
     dueNow: 'Cần ôn ngay',
     dueItemsLabel_other: 'mục', statWords_other: 'từ', statPhrases_other: 'cụm từ', statSource: 'theo ngữ cảnh nguồn',
     startReview: 'Bắt đầu ôn tập', inThisSession: 'Trong buổi này',
     kindSpeaking: 'Nói',
+    sourceReading: 'Từ bài đọc của bạn', sourceFeedback: 'Từ phản hồi bài viết của bạn',
     activeDueTitle: 'Ôn đến hạn',
     activeDueDesc_other: 'Nhớ lại mà không xem đáp án · {n} mục',
     activeTransferDesc: 'Tạo ra từ từ một tình huống gợi ý; từ mục tiêu vẫn được giấu kín',
@@ -69,11 +73,13 @@ export const t = defineCopy('library', {
   zh: {
     tabContent: '已保存内容', tabLanguage: '已保存词语', tabCollections: '合集', tabActive: '运用',
     tabDueCount: '待复习 · {n}',
+    emptyCollections: '还没有合集。',
     typePhrase: '短语', newBadge: '新', emptyLanguage: '还没有保存内容。',
     dueNow: '现在待复习',
     dueItemsLabel_other: '项', statWords_other: '单词', statPhrases_other: '短语', statSource: '结合来源',
     startReview: '开始复习', inThisSession: '本次复习',
     kindSpeaking: '口语',
+    sourceReading: '来自你的阅读', sourceFeedback: '来自你的写作反馈',
     activeDueTitle: '待复习',
     activeDueDesc_other: '不看答案回忆 · {n} 项',
     activeTransferDesc: '根据情景提示说出该词；目标词保持隐藏',
