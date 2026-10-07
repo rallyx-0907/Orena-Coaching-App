@@ -307,6 +307,7 @@ class LLMClient:
         seed: int | None = None,
         max_tokens: int = 4096,
         check_schema: bool = True,
+        require_cache: bool = False,
     ) -> LLMResult:
         """One JSON object matching ``json_schema``, cached by input hash. The answer is checked against
         the full schema before it is cached or returned (``check_schema=False`` only for the legacy
@@ -344,6 +345,12 @@ class LLMClient:
                 int(usage_raw.get("output_tokens", 0)),
             )
             return LLMResult(data, usage, self.model, self.provider, cached=True)
+
+        if require_cache:
+            raise LLMError(
+                f"initial-cache-required mode: no cached completion for {self.provider}:{self.model}; "
+                "full provider call blocked"
+            )
 
         if self.cache_only:
             raise LLMError(

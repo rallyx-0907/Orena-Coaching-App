@@ -243,6 +243,13 @@ def generate_corpus_command(
         False, "--cache-only",
         help="Never call the provider. Re-evaluate only completions already present in the local LLM cache.",
     ),
+    require_initial_cache: bool = typer.Option(
+        False, "--require-initial-cache",
+        help=(
+            "Require the full lesson candidate to come from local cache, while still allowing "
+            "provider-backed structure/semantic repair calls. Prevents accidental full regeneration."
+        ),
+    ),
     replay_cache_file: Path | None = typer.Option(
         None, "--replay-cache-file",
         help="Use one explicit LLM cache JSON as the first completion; intended for zero-spend recovery with --cache-only.",
@@ -371,6 +378,7 @@ def generate_corpus_command(
         f"max-full-attempts={effective_max_full_attempts}, paid-repairs={effective_paid_repairs}"
         + (", one-shot" if one_shot else "")
         + (", cache-only" if cache_only else "")
+        + (", require-initial-cache" if require_initial_cache else "")
     )
     if not candidates:
         return
@@ -395,6 +403,7 @@ def generate_corpus_command(
                     allow_default_safe=False,
                     max_full_attempts=effective_max_full_attempts,
                     paid_repairs=effective_paid_repairs,
+                    require_initial_cache=require_initial_cache,
                 )
                 return generator.generate(
                     point_id,
@@ -465,6 +474,7 @@ def generate_corpus_command(
         "model": model,
         "deepseek_thinking": deepseek_thinking if provider == "deepseek" else None,
         "cache_only": cache_only,
+        "require_initial_cache": require_initial_cache,
         "replay_cache_file": str(replay_cache_file) if replay_cache_file is not None else None,
         "with_story": with_story,
         "story_mode": story_mode if with_story else None,

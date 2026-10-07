@@ -2643,6 +2643,7 @@ class Generator:
     allow_default_safe: bool = False  # explicit override for points whose metadata was never reviewed
     max_full_attempts: int = V04_SEMANTIC_ATTEMPTS
     paid_repairs: bool = True
+    require_initial_cache: bool = False
 
     def generate(
         self, point_id: str, *, regenerate_note: str | None = None, with_story: bool = False, story_mode: str = "everyday"
@@ -2695,6 +2696,7 @@ class Generator:
         result = self.llm.complete(
             system=system, user=user + note_suffix, json_schema=schema, schema_name="grammar_point_blocks",
             check_schema=False,  # legacy v0.2/0.3 path
+            require_cache=self.require_initial_cache,
         )
         for example in result.data["examples"]:
             example["seg"] = _normalize_seg(example["seg"])
@@ -2916,6 +2918,7 @@ class Generator:
                 result = self.llm.complete(
                     system=system, user=attempt_user, json_schema=provider_schema,
                     schema_name="grammar_point_v04", max_tokens=V04_MAX_TOKENS,
+                    require_cache=self.require_initial_cache,
                 )
             except LLMError as exc:
                 if exc.usage is None or attempt >= self.max_full_attempts:
