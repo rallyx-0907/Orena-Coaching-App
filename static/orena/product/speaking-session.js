@@ -6,7 +6,7 @@
    take, `pronunciationView().measured`), never a guessed score - `screens/speak` is this wave's
    only writer; any later speaking screen (Free Talk, Situation Reaction, ...) may log to the same
    ledger once it exists. When the server keeps the practice session (D-142, ORENA_PRACTICE_SESSION on), Speaking
-   Summary reads that session instead and this ledger only adds the tab's own tasks that have no server record. */
+   Summary reads that session alone; tab-only entries with no server record are not counted. */
 
 const KEY = 'orena.speaking.session.v1';
 const MAX_ENTRIES = 50;
