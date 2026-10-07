@@ -102,6 +102,12 @@ export function createRouter({ frame, getContext }) {
     document.title = crumbOverride ? `${crumbOverride} · Orena` : document.title;
   }
 
+  /* The browser's own wording when a dynamically imported module could not be fetched (Chromium, Firefox, Safari). */
+  function moduleLoadFailed(error) {
+    return error instanceof TypeError
+      && /dynamically imported module|importing a module script failed|error loading dynamically imported module/i.test(String(error.message));
+  }
+
   async function loadScreen(route) {
     const loader = SCREENS[route.screen];
     if (loader) return (await loader()).default;
@@ -200,7 +206,10 @@ export function createRouter({ frame, getContext }) {
     } catch (error) {
       if (mine !== generation || error?.name === 'AbortError') return;
       console.error('[Orena] screen failed', route.id, error);
-      showError(route, main, () => render());
+      // A room whose code failed to download stays failed for this page: the browser keeps a failed module for the
+      // page's life, so only a fresh load can fetch it again (LEX-092). Its Retry reloads; anything else re-renders.
+      const unloaded = moduleLoadFailed(error);
+      showError(route, main, unloaded ? () => location.reload() : () => render(), { connection: unloaded });
     } finally {
       clearTimeout(skeleton);
       if (mine === generation) main.querySelector('[data-state="loading"]')?.remove();
@@ -208,8 +217,8 @@ export function createRouter({ frame, getContext }) {
     if (mine === generation) main.focus({ preventScroll: true });
   }
 
-  function showError(route, main, retry) {
-    const offline = navigator.onLine === false;
+  function showError(route, main, retry, { connection = false } = {}) {
+    const offline = connection || navigator.onLine === false;
     const holder = document.createElement('div');
     holder.dataset.state = 'error';
     mount(
