@@ -28,7 +28,7 @@ import { saveResponse } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { t } from './copy.js';
 import {
-  DURATIONS_MS, topics, formatClock, waveBars, resultStats, ledgerFacts, fixesOf, strengthsOf, phraseWords, headlineKind,
+  DURATIONS_MS, topics, formatClock, waveBars, resultStats, ledgerFacts, fixesOf, strengthsOf, phrasesFor, headlineKind,
 } from './model.js';
 
 const MIN_TAKE_MS = 600;
@@ -50,10 +50,10 @@ export default async function freeTalk(element, ctx) {
   const alive = () => !disposed && ctx.isCurrent();
 
   const topicList = topics(language);
-  let phrases = [];
-  api.libraryVocabulary({ limit: 4, order: 'recent' }).then((page) => {
+  let savedPage = null;
+  api.libraryVocabulary({ limit: 40, order: 'recent' }).then((page) => {
     if (!alive()) return;
-    phrases = phraseWords(page);
+    savedPage = page;
     if (state === 'setup') paint();
   }).catch(() => {});
 
@@ -82,6 +82,18 @@ export default async function freeTalk(element, ctx) {
     </div>`;
   }
 
+  /* Saved short words, grouped honestly (LEX-051): "related to your topic" only when an item overlaps the topic's
+     own words, otherwise the learner's library, drawn secondary. */
+  function phrasesMarkup() {
+    const found = phrasesFor(savedPage, [topicText, topicSituation].join(' '));
+    if (!found.items.length) return '';
+    const topical = found.kind === 'topic';
+    return html`<div class="${topical ? '' : 's-ft__phrases--library'}">
+      <div class="s-ft__label">${t(topical ? 'phrasesTopicLabel' : 'phrasesLabel')}</div>
+      <div class="s-ft__pills">${found.items.map((word) => html`<span class="s-ft__phrase" lang="${langAttr(language)}">${word}</span>`)}</div>
+    </div>`;
+  }
+
   function setupMarkup() {
     return html`<section class="o-card o-card--24 s-ft__card s-ft__setup">
       <div>
@@ -93,10 +105,7 @@ export default async function freeTalk(element, ctx) {
         <div class="s-ft__label">${t('durationLabel')}</div>
         <div class="s-ft__durations">${DURATIONS_MS.map((ms) => html`<button type="button" class="s-ft__duration" aria-pressed="${ms === durationMs ? 'true' : 'false'}" data-duration="${ms}">${t.plural('minutes', Math.round(ms / 60000))}</button>`)}</div>
       </div>
-      ${phrases.length ? html`<div>
-        <div class="s-ft__label">${t('phrasesLabel')}</div>
-        <div class="s-ft__pills">${phrases.map((word) => html`<span class="s-ft__phrase" lang="${langAttr(language)}">${word}</span>`)}</div>
-      </div>` : ''}
+      <div data-phrases>${phrasesMarkup()}</div>
       <button type="button" class="o-btn o-btn--primary o-btn--block s-ft__start" data-start>${t('startCta')}</button>
     </section>`;
   }
@@ -188,7 +197,12 @@ export default async function freeTalk(element, ctx) {
   function bind() {
     if (state === 'setup') {
       const input = element.querySelector('[data-topic-input]');
-      input.oninput = () => { topicText = input.value; topicSituation = ''; };
+      input.oninput = () => {
+        topicText = input.value;
+        topicSituation = '';
+        const slot = element.querySelector('[data-phrases]');
+        if (slot) mount(slot, phrasesMarkup());
+      };
       element.querySelectorAll('[data-topic]').forEach((button) => {
         button.onclick = () => {
           const item = topicList.find((entry) => entry.key === button.dataset.topic);

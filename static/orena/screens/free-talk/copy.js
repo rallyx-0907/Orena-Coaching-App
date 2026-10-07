@@ -9,7 +9,7 @@ import { defineCopy } from '../../copy/index.js';
 
 const INTERFACE_KEYS = [
   'stepSetup', 'stepRecording', 'stepTranscript', 'stepResult',
-  'topicLabel', 'topicPlaceholder', 'durationLabel', 'phrasesLabel', 'startCta', 'pickTopicFirst',
+  'topicLabel', 'topicPlaceholder', 'durationLabel', 'phrasesLabel', 'phrasesTopicLabel', 'startCta', 'pickTopicFirst',
   'micOn', 'tapToFinish', 'transcriptTitle', 'transcriptPlain', 'recordAgain', 'getFeedback',
   'statWords', 'statPace', 'statPaceUnit', 'statLinking', 'statChars', 'statPaceUnitChars',
   'strengthsTitle', 'fixesTitle', 'retryTitle', 'talkAgain', 'askAboutThis', 'finish',
@@ -25,7 +25,7 @@ export const t = defineCopy('free-talk', {
   en: {
     stepSetup: 'Set up · topic and duration', stepRecording: 'Recording', stepTranscript: 'Check the transcript', stepResult: 'Feedback',
     topicLabel: 'Topic', topicPlaceholder: 'What do you want to talk about?', durationLabel: 'Duration',
-    phrasesLabel: 'Useful phrases · from your library',
+    phrasesLabel: 'From your library', phrasesTopicLabel: 'From your library · related to your topic',
     startCta: 'Start speaking', pickTopicFirst: 'Pick a topic first',
     micOn: 'Mic on', tapToFinish: 'Tap to finish',
     transcriptTitle: 'Transcript · {time} spoken', transcriptPlain: 'Transcript', recordAgain: 'Record again', getFeedback: 'Get feedback',
@@ -42,7 +42,7 @@ export const t = defineCopy('free-talk', {
   vi: {
     stepSetup: 'Thiết lập · chủ đề và thời lượng', stepRecording: 'Đang ghi âm', stepTranscript: 'Kiểm tra bản ghi lời nói', stepResult: 'Nhận xét',
     topicLabel: 'Chủ đề', topicPlaceholder: 'Bạn muốn nói về điều gì?', durationLabel: 'Thời lượng',
-    phrasesLabel: 'Cụm từ hữu ích · từ thư viện của bạn',
+    phrasesLabel: 'Từ thư viện của bạn', phrasesTopicLabel: 'Từ thư viện của bạn · liên quan đến chủ đề',
     startCta: 'Bắt đầu nói', pickTopicFirst: 'Hãy chọn một chủ đề trước',
     micOn: 'Đang bật micro', tapToFinish: 'Chạm để kết thúc',
     transcriptTitle: 'Bản ghi · đã nói {time}', transcriptPlain: 'Bản ghi', recordAgain: 'Ghi âm lại', getFeedback: 'Nhận xét',
@@ -59,7 +59,7 @@ export const t = defineCopy('free-talk', {
   zh: {
     stepSetup: '设置 · 主题和时长', stepRecording: '录音中', stepTranscript: '检查文字稿', stepResult: '反馈',
     topicLabel: '主题', topicPlaceholder: '你想聊些什么？', durationLabel: '时长',
-    phrasesLabel: '常用表达 · 来自你的词库',
+    phrasesLabel: '来自你的词库', phrasesTopicLabel: '来自你的词库 · 与主题相关',
     startCta: '开始说', pickTopicFirst: '先选一个主题',
     micOn: '麦克风已开启', tapToFinish: '点击结束',
     transcriptTitle: '文字稿 · 已说 {time}', transcriptPlain: '文字稿', recordAgain: '重新录音', getFeedback: '获取反馈',

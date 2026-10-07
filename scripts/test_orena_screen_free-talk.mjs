@@ -151,4 +151,18 @@ assert.equal(headlineKind(5), 'many');
   assert.doesNotMatch(screen, /t\('statWords'\)|t\('statPaceUnit'\)/, 'no tile names its unit without the learning language');
 }
 
+/* --- LEX-051: saved items are called what they are, and only called "related" with evidence --- */
+{
+  const { phrasesFor, relatesToTopic } = await import('../static/orena/screens/free-talk/model.js');
+  const page = { items: [{ word: '黄' }, { word: '城市' }, { word: '花生' }, { word: 'With the big bang starting the year and as cheering began, we left.' }, { word: 'commute' }] };
+  assert.deepEqual(phrasesFor(page, ''), { kind: 'library', items: ['黄', '城市', '花生', 'commute'] }, 'no topic: the library, sentences never');
+  assert.deepEqual(phrasesFor(page, '带一个人认识你的城市 一位朋友刚搬到你的城市'), { kind: 'topic', items: ['城市'] }, 'a Chinese item inside the topic is related');
+  assert.equal(phrasesFor(page, '换个角度看').kind, 'library', 'nothing overlaps: no relatedness is claimed');
+  assert.equal(relatesToTopic('commute', 'My daily commute to work'), true);
+  assert.equal(relatesToTopic('so', 'also so'), false, 'a short word proves nothing');
+  assert.equal(relatesToTopic('黄', '黄色的城市'), false, 'a single character proves nothing');
+  assert.equal(phrasesFor(null, '城市').items.length, 0);
+  assert.equal(phrasesFor(page, '').items.length <= 4, true);
+}
+
 console.log('Orena screen free-talk: model mapping (topics, clock, wave, counts, pace, result tiles, ledger facts, headline) and the real spoken-response captures: PASS');
