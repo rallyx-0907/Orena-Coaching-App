@@ -362,4 +362,26 @@ assert.equal(saveTone('device').color, 'var(--green)');
   assert.equal(t('appliedToast'), 'Applied — re-review to update the findings');
 }
 
+/* LEX-054/057/060: the intent kept with a draft, the draft set aside by "Start new draft", the one that waits. */
+{
+  const m = await import('../static/orena/screens/writing/model.js');
+  const ex = {
+    'expression:free': '', 'expression:free::parked': 'expression:parked:a,expression:parked:b',
+    'expression:parked:a': 'old words here', 'expression:parked:a::task': 'Old task',
+    'expression:parked:b': '', 'expression:parked:b::task': 'bare task',
+    'expression:parked:a::intent': m.intentRecord({ register: 'formal', target: 250, free: false }),
+  };
+  assert.deepEqual(m.parkedKeys(ex), ['expression:parked:a', 'expression:parked:b']);
+  const w = m.waitingDraft(ex, 'en');
+  assert.equal(w.key, 'expression:parked:a', 'a draft set aside waits when the current slot holds no words');
+  assert.equal(w.title, 'Old task');
+  assert.equal(w.n, 3);
+  assert.equal(m.waitingDraft({ ...ex, 'expression:free': 'now', 'expression:free::intent': m.intentRecord({ free: true }) }, 'en').free, true, 'the current draft wins and keeps its blank-page flag');
+  assert.deepEqual(m.readIntent(ex, 'expression:parked:a'), { register: 'formal', target: 250, level: '', free: false });
+  assert.deepEqual(m.readIntent({ 'k::intent': '{bad' }, 'k'), { register: '', target: 0, level: '', free: false }, 'a damaged record reads as no intent');
+  assert.equal(m.saveTone('saving').key, 'savingNow');
+  assert.equal(m.saveTone('account').key, 'savedAccount');
+  assert.equal(m.saveTone('device').key, 'savedDevice');
+}
+
 console.log('Orena Writing screen model: PASS');

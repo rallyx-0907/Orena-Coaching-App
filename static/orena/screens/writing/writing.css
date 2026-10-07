@@ -23,6 +23,7 @@
   flex-direction: column;
   gap: 18px;
   padding-top: 14px;
+  padding-bottom: 16px;
   height: 100%;
   min-height: 0;
 }
@@ -85,6 +86,22 @@
   transform: scale(0.97);
 }
 
+/* A phone's header is two intentional rows: back and the title, then the actions across the width with
+   Review the widest (LEX-058) - no action left alone at the start of a row. */
+:root[data-device='mobile'] .s-writing__title {
+  flex: 1 1 calc(100% - 52px);
+  min-width: 0;
+}
+:root[data-device='mobile'] .s-writing__title-text {
+  max-width: 100%;
+}
+:root[data-device='mobile'] .s-writing__header > .s-writing__btn {
+  flex: 1 1 0;
+}
+:root[data-device='mobile'] .s-writing__header > .s-writing__cta {
+  flex: 2 1 0;
+}
+
 /* ---- Mobile Draft/Review tab ---- */
 .s-writing__tabs {
   display: none;
@@ -132,6 +149,8 @@
 }
 .s-writing__pane--draft {
   gap: 12px;
+  /* The writing page takes the height the room has (LEX-059), not the 360px the frame's own box ends at. */
+  align-self: stretch;
 }
 .s-writing__pane--review {
   gap: 14px;
@@ -142,6 +161,36 @@
 }
 
 /* ---- Draft pane ---- */
+/* The task as content (LEX-055): the whole prompt, wrapping, in the draft pane's own width. */
+.s-writing__brief {
+  flex: none;
+  max-height: 7.5em;
+  overflow: auto;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.s-writing__textarea::placeholder {
+  color: var(--text3);
+}
+/* A review that failed stays here, with the way to ask again (LEX-061). */
+.s-writing__failed {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--red-soft);
+  color: var(--text);
+  font-size: 14.5px;
+  line-height: 1.45;
+}
 .s-writing__draftmeta {
   display: flex;
   justify-content: space-between;
@@ -185,9 +234,9 @@
 }
 .s-writing__textarea {
   width: 100%;
-  flex: 0 1 auto;
-  min-height: 360px;
-  resize: vertical;
+  flex: 1 1 auto;
+  min-height: 140px;
+  resize: none;
   border-radius: 20px;
   border: 1.5px solid transparent;
   background: var(--surface);
@@ -211,7 +260,7 @@
   padding: 24px 26px;
   display: flex;
   flex-direction: column;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: min(360px, 45vh);
   overflow: hidden;
   font-size: 17px;
@@ -230,9 +279,10 @@
   font-size: 14px;
   font-weight: 600;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  /* The task is read whole (LEX-055); a long one scrolls in its own line box, never clipped to one line. */
+  max-height: 4.5em;
+  overflow: auto;
 }
 .s-writing__marked-meta {
   font-size: 13px;
@@ -764,16 +814,43 @@
   color: var(--muted);
 }
 .s-writing-setup__input {
+  display: block;
   width: 100%;
-  height: 46px;
+  min-height: 46px;
   border-radius: 14px;
   border: 1.5px solid transparent;
   background: var(--surface2);
   color: var(--text);
-  padding: 0 18px;
+  padding: 12px 18px;
+  font: inherit;
   font-size: 15px;
+  line-height: 1.45;
   outline: 0;
   margin-top: 8px;
+  /* The prompt is long text, not one line (LEX-055): the field wraps it and is taller than one row. */
+  resize: vertical;
+}
+.s-writing-setup__input::placeholder {
+  color: var(--text3);
+}
+.s-writing-setup__write:disabled {
+  opacity: 0.5;
+}
+.s-writing-choice__line {
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.s-writing-choice__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-writing-choice__continue {
+  width: 100%;
+  height: 46px;
+  border-radius: 16px;
+  font-size: 14px;
 }
 .s-writing-setup__input:focus {
   border-color: var(--accent);
@@ -802,10 +879,10 @@
   font-weight: 700;
   transition: background 0.15s, transform 0.15s;
 }
-.s-writing-setup__write:hover {
+.s-writing-setup__write:hover:not(:disabled) {
   background: var(--accent-fill-hover);
 }
-.s-writing-setup__write:active {
+.s-writing-setup__write:active:not(:disabled) {
   background: var(--accent-fill-press);
   transform: scale(0.97);
 }

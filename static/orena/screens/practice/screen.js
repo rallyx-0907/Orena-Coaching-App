@@ -18,7 +18,7 @@ import { t } from './copy.js';
 import { loadAttemptsSince } from '../../product/speaking-history.js';
 import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SKILL_GROUPS, buildSkillSections, writeRecommendation, weakestLines, vocabularyRecommendation } from './model.js';
 import { t as writingT } from '../writing/copy.js';
-import { CATEGORY_IDS, NEW_DRAFT_KEY, wordCountOf } from '../writing/model.js';
+import { CATEGORY_IDS, waitingDraft } from '../writing/model.js';
 
 const GROUP_LABEL_KEY = { natural: 'groupNatural', pronounce: 'groupPronounce', challenge: 'groupChallenge', free: 'groupFree', respond: 'groupRespond', pressure: 'groupPressure', recall: 'groupRecall', use: 'groupUse', browse: 'groupBrowse' };
 const VOCAB_KEY = { review: 'vocabDue', collections: 'vocabCollections', language: 'vocabLanguage' };
@@ -300,10 +300,10 @@ export default async function practiceHub(element, ctx) {
     !skill || skill === 'listen' ? lastListenedLine(ctx.context.memory, { api, language, support: languages().support, owner: ctx.context.owner }).catch(() => null) : Promise.resolve(null),
   ]);
   if (!ctx.isCurrent()) return;
-  // The draft waiting in the free-writing slot (device memory), for the Write group's "Continue draft".
-  const slots = ctx.context.memory?.value?.expressions || {};
-  const draftText = String(slots[NEW_DRAFT_KEY] || '').trim();
-  const draft = draftText ? { title: String(slots[`${NEW_DRAFT_KEY}::task`] || '').trim(), n: wordCountOf(draftText, language) } : null;
+  // The draft waiting (device memory) for the Write group's "Continue draft": the current draft, else the newest one set
+  // aside; named as the room names it - its task, "Free writing" for a blank page, "Untitled" only when it has neither.
+  const waiting = waitingDraft(ctx.context.memory?.value?.expressions || {}, language);
+  const draft = waiting ? { title: waiting.title || (waiting.free ? writingT('freeTitle') : ''), n: waiting.n } : null;
   const data = { draft, speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine, lastListenedLine: listenedLine, speakRecommendation: speakRec };
   if (skill) await renderSkillHub(element, ctx, data, skill);
   else await renderHub(element, ctx, data);
