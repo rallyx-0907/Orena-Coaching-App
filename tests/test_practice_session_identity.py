@@ -44,6 +44,21 @@ class Clock:
         self.now += timedelta(**kw)
 
 
+@pytest.fixture(autouse=True)
+def _leave_no_process_state_behind():
+    """Everything these tests set on the process is put back: the request ContextVars (token + reset, so it does not
+    rest on tests/conftest.py alone) and the speaking repository `app.py` configures at import, which a plain
+    `configure_...(None)` would otherwise leave cleared for every later module."""
+    tokens = [(var, var.set(var.get())) for var in (USER_KEY_CTX, LANGUAGE_CODE_CTX)]
+    previous = speech_api._speaking_attempt_repository
+    try:
+        yield
+    finally:
+        speech_api.configure_speaking_attempt_repository(previous)
+        for var, token in reversed(tokens):
+            var.reset(token)
+
+
 @pytest.fixture
 def engine(tmp_path):
     eng = create_engine(f"sqlite+pysqlite:///{tmp_path / 'sessions.db'}", connect_args={"check_same_thread": False})

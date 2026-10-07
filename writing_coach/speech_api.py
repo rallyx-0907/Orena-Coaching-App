@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 import json
 import logging
 import math
@@ -497,8 +497,8 @@ def list_speaking_attempts(
             parsed = datetime.fromisoformat(since.replace("Z", "+00:00"))
         except ValueError:
             raise orena_http_error(422, "since_invalid", "since must be an ISO date and time.") from None
-        parsed = parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
-        now = datetime.now(timezone.utc)
+        parsed = parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+        now = datetime.now(UTC)
         window_start = min(now, max(parsed, now - timedelta(days=SINCE_MAX_DAYS)))
     scoped_asset = asset_id.strip() if isinstance(asset_id, str) and asset_id.strip() else None
     scoped_segment = segment_id.strip() if isinstance(segment_id, str) and segment_id.strip() else None
