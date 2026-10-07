@@ -272,6 +272,16 @@ export default async function listening(element, ctx) {
     holder.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => onMode(button.dataset.mode)));
     mount(element.querySelector('[data-mode-hint]'), html`${t(modeHintKey(mode))}`);
   }
+  /* The address carries the mode (LEX-044): a reload - a phone tab brought back, a rotation or device switch that
+     reloads - reopens Dictation on its line with the answer still hidden, never the Listening transcript. */
+  function keepModeInUrl() {
+    const { mode: _named, ...rest } = Object.fromEntries(ctx.query);
+    try {
+      history.replaceState(history.state, '', ctx.href(mode === 'dictation' ? 'dictation' : 'listening', ctx.params, rest));
+    } catch {
+      /* An address the route table cannot build: the mode still works, it just does not survive a reload. */
+    }
+  }
   function onMode(id) {
     if (id === mode) return;
     // Switching never plays on: the learner is on the same line, paused, in either mode.
@@ -280,6 +290,7 @@ export default async function listening(element, ctx) {
     if (id === 'dictation') {
       mode = 'dictation';
       selectedId = null;
+      keepModeInUrl();
       paintModes();
       paintControls();
       paintRows();
@@ -290,6 +301,7 @@ export default async function listening(element, ctx) {
     mode = id;
     selectedId = selectionAfterModeChange(id, currentId);
     bounded = false;
+    keepModeInUrl();
     paintModes();
     paintControls();
     paintRows();
