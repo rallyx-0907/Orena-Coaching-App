@@ -23,6 +23,9 @@ import { SCREENS } from './screens.js';
 
 const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
 const STORY_ROUTES = ['reader', 'listening', 'dictation', 'checku', 'rtransfer', 'feed'];
+/* Speaking rooms belong to Practice Hub (rule 47): opened with no known origin (a direct load, a
+   reload in a new tab), the rail lights Practice Hub, not Today or Discover. */
+const SPEAKING_ROUTES = ['speak', 'compare', 'attempts', 'spsummary', 'freetalk', 'conv', 'situation'];
 const ORIGIN_KEY = 'orena.next.navOrigin';
 const DEPTH_KEY = 'orena.next.depth';
 
@@ -38,8 +41,10 @@ function session(key, value) {
 
 export function createRouter({ frame, getContext }) {
   const root = document.documentElement;
-  let origin = session(ORIGIN_KEY) || DEFAULT_ROUTE;
+  const storedOrigin = session(ORIGIN_KEY);
+  let origin = storedOrigin || DEFAULT_ROUTE;
   let depth = Number(session(DEPTH_KEY)) || 0;
+  let originKnown = Boolean(storedOrigin);
   let cleanup = null;
   let generation = 0;
   let current = null;
@@ -127,6 +132,8 @@ export function createRouter({ frame, getContext }) {
     crumbOverride = '';
     current = found;
     const { route } = found;
+    if (!originKnown && SPEAKING_ROUTES.includes(route.id)) origin = 'practice';
+    originKnown = true;
     if (PRIMARY.includes(route.id)) {
       origin = route.id;
       session(ORIGIN_KEY, origin);

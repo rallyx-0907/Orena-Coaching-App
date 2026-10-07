@@ -179,3 +179,17 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+/* ---- Skill Hub groups (frame 09: group title 13/600 muted, 8px above its rows, 20px between groups) ---- */
+.s-practice-hub__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.s-practice-hub__group-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: normal;
+  font-weight: 600;
+  color: var(--muted);
+}

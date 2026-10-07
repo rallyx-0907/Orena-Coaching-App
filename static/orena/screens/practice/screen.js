@@ -15,7 +15,9 @@ import { languages } from '../../copy/index.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { loadPendingRows, recentRows, recentMediaFacts } from './continuation.js';
 import { t } from './copy.js';
-import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, buildSkillSections, writeRecommendation } from './model.js';
+import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SPEAK_GROUPS, buildSkillSections, writeRecommendation } from './model.js';
+
+const GROUP_LABEL_KEY = { natural: 'groupNatural', pronounce: 'groupPronounce', challenge: 'groupChallenge' };
 
 const SKILL_LABEL_KEY = {
   speak: 'skillSpeak',
@@ -33,7 +35,14 @@ function modeLabel(routeId) {
 /* A mode's real per-item level (Speak's sentence/clip, Listen's dictation/shadowing item, Reading's
    next article) doubles as its meta text when there is nothing more specific to show - never an
    invented duration (rule 40: no skill's schema carries one). */
+/* Speak draws the design's one-line description and duration on each tile ("desc · dur") and the
+   duration alone on a Skill Hub row (S1 `phSections` / `phGroups`). */
+function speakDur(skill, mode) {
+  return skill === 'speak' && mode.group ? t(`${mode.key}Dur`) : '';
+}
+
 function modeMeta(skill, mode) {
+  if (skill === 'speak' && mode.group) return `${t(`${mode.key}Desc`)} · ${t(`${mode.key}Dur`)}`;
   if (skill === 'vocabulary' && mode.key === 'review') return t.plural('due', mode.due);
   if ((skill === 'speak' || skill === 'listen' || skill === 'reading') && mode.level) return mode.level;
   return '';
@@ -57,7 +66,7 @@ function tileMarkup(skill, mode) {
    Practice Hub's tile, which stacks label/meta in two lines. `listRow`'s `trailing` slot, not
    `sub`, is what reproduces that. */
 function hubRowMarkup(skill, mode) {
-  const meta = modeMeta(skill, mode);
+  const meta = speakDur(skill, mode) || modeMeta(skill, mode);
   return listRow({
     variant: 'outline',
     radius: 14,
@@ -178,7 +187,15 @@ async function renderSkillHub(element, ctx, data, skill) {
       ${pageHeader({ back: { label: shellCopy('back'), dataset: { back: '' } }, title, compact: true, titleSize: 20 })}
       ${rec ? recommendationMarkup(rec, skill) : ''}
       ${modes.length
-        ? html`<div class="s-practice-hub__rows">${modes.map((mode) => hubRowMarkup(skill, mode))}</div>`
+        ? (modes[0].group
+          ? html`<div class="s-practice-hub__groups">${SPEAK_GROUPS.map((group) => {
+            const rows = modes.filter((mode) => mode.group === group);
+            return rows.length ? html`<section class="s-practice-hub__group">
+              <h2 class="s-practice-hub__group-title">${t(GROUP_LABEL_KEY[group])}</h2>
+              <div class="s-practice-hub__rows">${rows.map((mode) => hubRowMarkup(skill, mode))}</div>
+            </section>` : '';
+          })}</div>`
+          : html`<div class="s-practice-hub__rows">${modes.map((mode) => hubRowMarkup(skill, mode))}</div>`)
         : emptyMarkup({ text: t('emptySkill'), iconName: 'compass' })}
     </div>`,
   );

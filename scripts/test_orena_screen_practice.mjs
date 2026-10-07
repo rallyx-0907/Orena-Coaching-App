@@ -29,7 +29,7 @@ import {
 {
   const bare = speakModes([]);
   assert.equal(bare.length, 4, 'Pronunciation has a real content/import chooser even without public catalogue items');
-  assert.deepEqual(bare.map((m) => m.key), ['freetalk', 'conv', 'situation', 'speak']);
+  assert.deepEqual(bare.map((m) => m.key), ['situation', 'conv', 'freetalk', 'speak']);
   for (const m of bare) assert.equal(m.params, undefined, 'a parameterless route carries no params object');
 
   const withItems = speakModes([

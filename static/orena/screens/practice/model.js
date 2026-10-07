@@ -32,11 +32,11 @@ export const SKILL_ORDER = ['speak', 'write', 'listen', 'vocabulary', 'grammar',
 const SPEAK_ICONS = {
   freetalk: 'mic',
   conv: 'messages-square',
-  situation: 'puzzle',
+  situation: 'rotate-ccw',
   timedreact: 'timer',
   mock: 'square-check-big',
   sound: 'audio-lines',
-  speak: 'whole-word',
+  speak: 'audio-lines',
   shadow: 'repeat',
   retell: 'rotate-ccw',
 };
@@ -87,19 +87,25 @@ function firstOfType(items, type) {
 
 /* Generic Pronunciation opens the shared content chooser, including personal imports;
    it never silently assigns the first catalogue item. Deferred modes remain excluded. */
+/* The design's own order and groups for Speak (S1 `SK.Speak.groups`): Situation Reaction,
+   Conversation, Free Talk under "Speak naturally"; Pronunciation, Shadowing, Sound / Tone under
+   "Improve pronunciation"; Timed Reaction, Retell, Mock Interview under "Challenge yourself". Only
+   the modes this build offers are drawn (D-101 H9); a group with none is simply absent. */
+export const SPEAK_GROUPS = ['natural', 'pronounce', 'challenge'];
+
 export function speakModes(items = []) {
   const list = Array.isArray(items) ? items : [];
   const modes = [
-    { key: 'freetalk', routeId: 'freetalk' },
-    { key: 'conv', routeId: 'conv' },
-    { key: 'situation', routeId: 'situation' },
-    { key: 'timedreact', routeId: 'timedreact' },
-    { key: 'mock', routeId: 'mock' },
-    { key: 'sound', routeId: 'sound' },
+    { key: 'situation', group: 'natural', routeId: 'situation' },
+    { key: 'conv', group: 'natural', routeId: 'conv' },
+    { key: 'freetalk', group: 'natural', routeId: 'freetalk' },
+    { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } },
+    { key: 'sound', group: 'pronounce', routeId: 'sound' },
+    { key: 'timedreact', group: 'challenge', routeId: 'timedreact' },
   ];
-  modes.push({ key: 'speak', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } });
   const retell = firstOfType(list, 'retell');
-  if (retell) modes.push({ key: 'retell', routeId: 'retell', params: { id: retell.id }, level: retell.level || '' });
+  if (retell) modes.push({ key: 'retell', group: 'challenge', routeId: 'retell', params: { id: retell.id }, level: retell.level || '' });
+  modes.push({ key: 'mock', group: 'challenge', routeId: 'mock' });
   return shown(modes);
 }
 
