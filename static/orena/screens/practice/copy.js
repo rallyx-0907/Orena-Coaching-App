@@ -10,7 +10,7 @@ const KEYS = [
   'continueTitle', 'recentTitle', 'nothingPending', 'draftReason', 'conversationReason',
   'readingReason', 'recentLine', 'recentReason', 'recentExplanation', 'noRecent',
   'groupNatural', 'groupPronounce', 'groupChallenge', 'situationDesc', 'situationDur', 'convDesc', 'convDur', 'freetalkDesc', 'freetalkDur', 'speakDesc', 'speakDur', 'shadowDesc', 'shadowDur', 'recTitleWord', 'recTitleLine', 'recReasonWord', 'recReasonLine', 'soundDesc', 'soundDur', 'timedreactDesc', 'timedreactDur', 'retellDesc', 'retellDur', 'mockDesc', 'mockDur',
-  'groupFree', 'groupRespond', 'groupPressure', 'groupRecall', 'groupUse', 'groupBrowse', 'vocabDue', 'vocabCollections', 'vocabLanguage', 'vocabFeedDesc', 'vocabCollectionsDesc', 'vocabLanguageDesc', 'recVocabTitle', 'recVocabReason', 'writeContinue', 'writePrompt', 'writeFree', 'writeTopic', 'writeContinueDesc', 'writePromptDesc', 'writeFreeDesc', 'writeTopicDesc', 'writeUntitled', 'writeEarlier', 'writeEarlierDesc', 'writeEarlierWords', 'writeEarlierHanzi', 'writeEarlierNone', 'recWriteRepair', 'recWriteReinforce', 'recWriteTransfer', 'recWriteBaseline', 'recWriteExpression',
+  'groupFree', 'groupRespond', 'groupPressure', 'groupRecall', 'groupUse', 'groupBrowse', 'vocabDue', 'vocabCollections', 'vocabLanguage', 'vocabFeedDesc', 'vocabCollectionsDesc', 'vocabLanguageDesc', 'listenListeningDesc', 'listenDictationDesc', 'listenReactDesc', 'recVocabTitle', 'recVocabReason', 'writeContinue', 'writePrompt', 'writeFree', 'writeTopic', 'writeContinueDesc', 'writePromptDesc', 'writeFreeDesc', 'writeTopicDesc', 'writeUntitled', 'writeEarlier', 'writeEarlierDesc', 'writeEarlierWords', 'writeEarlierHanzi', 'writeEarlierNone', 'recWriteRepair', 'recWriteReinforce', 'recWriteTransfer', 'recWriteBaseline', 'recWriteExpression',
 ];
 
 export const t = defineCopy('practice', {
@@ -64,6 +64,9 @@ export const t = defineCopy('practice', {
     vocabFeedDesc: "Flip cards · swipe through today's words",
     vocabCollectionsDesc: 'Sets of words and phrases',
     vocabLanguageDesc: 'Words and phrases',
+    listenListeningDesc: 'Answer questions about what you hear',
+    listenDictationDesc: 'Hear a line, type what you heard',
+    listenReactDesc: 'Use a line you heard in a new sentence',
     recVocabTitle_one: 'Review {n} due item',
     recVocabTitle_other: 'Review {n} due items',
     recVocabReason: 'They are due now.',
@@ -138,6 +141,9 @@ export const t = defineCopy('practice', {
     vocabFeedDesc: 'Lật thẻ · vuốt xem các từ hôm nay',
     vocabCollectionsDesc: 'Các bộ từ và cụm từ',
     vocabLanguageDesc: 'Từ và cụm từ',
+    listenListeningDesc: 'Trả lời câu hỏi về những gì bạn nghe',
+    listenDictationDesc: 'Nghe một câu, gõ lại điều bạn nghe được',
+    listenReactDesc: 'Dùng câu bạn vừa nghe trong một câu mới',
     recVocabTitle_other: 'Ôn {n} mục đến hạn',
     recVocabReason: 'Các mục này đã đến hạn.',
     groupFree: 'Viết thoải mái',
@@ -211,6 +217,9 @@ export const t = defineCopy('practice', {
     vocabFeedDesc: '翻卡片 · 滑动浏览今日词语',
     vocabCollectionsDesc: '词语和短语的合集',
     vocabLanguageDesc: '词语和短语',
+    listenListeningDesc: '回答与所听内容有关的问题',
+    listenDictationDesc: '听一句话，写下你听到的内容',
+    listenReactDesc: '把刚听到的句子用在新句子里',
     recVocabTitle_other: '复习 {n} 个到期项目',
     recVocabReason: '这些项目已经到期。',
     groupFree: '自由地写',

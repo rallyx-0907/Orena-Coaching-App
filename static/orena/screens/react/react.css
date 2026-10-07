@@ -140,7 +140,15 @@
 }
 .s-react__option.is-correct { border-color: var(--green); background: var(--green-soft); }
 .s-react__option.is-wrong { border-color: var(--red); background: var(--red-soft); }
-.s-react__option:disabled { opacity: 1; }
+.s-react__option:disabled { opacity: 1; color: var(--text); }
+.s-react__option { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.s-react__option-mark { display: inline-flex; align-items: center; gap: 4px; flex: none; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.s-react__option.is-correct .s-react__option-mark { color: var(--green); }
+.s-react__option.is-wrong .s-react__option-mark { color: var(--red); }
+.s-react__qrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.s-react__replay { flex: none; }
+/* The line stays on screen while the learner writes with it (LEX-084). */
+.s-react__source { font-size: 16px; line-height: 1.5; color: var(--muted); }
 .s-react__verdict { font-size: 14px; font-weight: 600; }
 .s-react__verdict.is-correct { color: var(--green); }
 .s-react__verdict.is-wrong { color: var(--red); }

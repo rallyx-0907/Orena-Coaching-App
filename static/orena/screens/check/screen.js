@@ -66,7 +66,7 @@ function optionMarkup(question, index, text, result, supportLang) {
   </button>`;
 }
 
-function verdictMarkup(result, index, total, supportLang) {
+function verdictMarkup(result, index, total, supportLang, reviewing = false) {
   const ok = Boolean(result.correct);
   return html`<div class="s-check__verdict">
     <div class="s-check__verdict-line" style="color:${ok ? 'var(--green)' : 'var(--red)'}">${ok ? t('verdictCorrect') : t('verdictIncorrect')}</div>
@@ -77,17 +77,17 @@ function verdictMarkup(result, index, total, supportLang) {
     <div class="s-check__verdict-actions">
       ${result.evidence_fragment ? html`<button type="button" class="s-check__show" data-show-in-text>${t('showInText')}</button>` : ''}
       <span class="s-check__spacer"></span>
-      <button type="button" class="s-check__next" data-next>${nextLabel(index, total, t)}</button>
+      <button type="button" class="s-check__next" data-next>${reviewing ? t('backToResult') : nextLabel(index, total, t)}</button>
     </div>
   </div>`;
 }
 
-function activeCardMarkup(question, index, total, result, supportLang) {
+function activeCardMarkup(question, index, total, result, supportLang, reviewing = false) {
   return html`<div class="s-check__card" data-scroll-region>
     <span class="s-check__type">${typeLabel(question.question_type, t)}</span>
     <div class="s-check__question" lang="${langAttr(supportLang)}">${question.prompt}</div>
     <div class="s-check__options">${question.options.map((text, i) => optionMarkup(question, i, text, result, supportLang))}</div>
-    ${result ? verdictMarkup(result, index, total, supportLang) : ''}
+    ${result ? verdictMarkup(result, index, total, supportLang, reviewing) : ''}
   </div>`;
 }
 
@@ -96,7 +96,8 @@ function doneCardMarkup(summary, deeper, practice = null) {
     <span class="s-check__blob s-check__blob--a"></span><span class="s-check__blob s-check__blob--b"></span>
     <div class="s-check__result-label">${t('resultLabel')}</div>
     <div class="s-check__score">${t('resultHeadline', { correct: summary.correctCount, total: summary.total })}</div>
-    <div class="s-check__chips">${summary.chips.map((chip) => html`<span class="${chip.ok ? 's-check__chip' : 's-check__chip s-check__chip--bad'}">${chip.label} · ${chip.result}</span>`)}</div>
+    <div class="s-check__chips">${summary.chips.map((chip) => html`<button type="button" class="${chip.ok ? 's-check__chip' : 's-check__chip s-check__chip--bad'}" data-review="${chip.index}" aria-label="${t('reviewQuestion', { n: chip.index + 1 })}">${chip.index + 1}. ${chip.label} · ${chip.result}</button>`)}</div>
+    ${summary.chips.some((chip) => !chip.ok) ? html`<div class="s-check__review-hint">${t('reviewHint')}</div>` : ''}
     <div class="s-check__cta"><button type="button" class="s-check__continue" data-continue>${practice ? t('nextReading') : t('continueLabel')}</button>${
       practice ? html`<button type="button" class="s-check__exit" data-exit-practice>${t('exitPractice')}</button>` : ''
     }</div>
@@ -195,6 +196,8 @@ export default async function mountCheck(element, ctx) {
   let index = 0;
   let busy = false;
   let done = false;
+  // A question looked at again from the result (a chip): its answer, evidence and explanation, then back to the result.
+  let reviewing = null;
 
   /* The check keeps its place for this visit (LEX-024): "Show in text", practising this text's words or any
      other side trip comes back to the same question, its verdict, or the result - not to question 1. Kept per
@@ -237,6 +240,13 @@ export default async function mountCheck(element, ctx) {
     const keep = previous && shownIndex === index ? previous.scrollTop : 0;
     shownIndex = index;
     const question = questions[Math.min(index, questions.length - 1)];
+    if (done && reviewing != null && graded[questions[reviewing]?.id]) {
+      const asked = questions[reviewing];
+      const reviewMeta = [title, progressLabel(reviewing, questions.length, t)].filter(Boolean).join(' · ');
+      mount(element, html`<div class="s-check">${headerMarkup(reviewMeta)}${progressBarMarkup(100)}${activeCardMarkup(asked, reviewing, questions.length, graded[asked.id], supportLang, true)}</div>`);
+      bind();
+      return;
+    }
     const meta = [title, done ? t('progressDone') : progressLabel(Math.min(index, questions.length - 1), questions.length, t)].filter(Boolean).join(' · ');
     if (done) {
       const summary = scoreSummary(questions, graded, t);
@@ -320,7 +330,12 @@ export default async function mountCheck(element, ctx) {
        from this text, and the minutes this check took. */
     const minutes = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
     const kept = await keptFromText();
+    /* The celebration is for a result worth celebrating (LEX-087): below half right the result card is the one
+       completion step - it shows the score and each question to review. Where it does open, its Continue is
+       the result card's Continue, so there is no second one behind it. */
+    if (!summary.total || summary.correctCount / summary.total < 0.5) return;
     openLessonComplete(ctx, {
+      next: () => goOnward(),
       title: shellCopy('checkUnderstanding'),
       measured,
       facts: [
@@ -331,7 +346,16 @@ export default async function mountCheck(element, ctx) {
     });
   }
 
+  function goOnward() {
+    if (practice?.next) ctx.go(ctx.href('reader', { id: `article:${practice.next}` }, { mode: 'practice' }));
+    else ctx.go(ctx.href('rcomplete', { id: contentId }));
+  }
+
   function bind() {
+    element.querySelectorAll('[data-review]').forEach((button) => button.addEventListener('click', () => {
+      reviewing = Number(button.dataset.review);
+      paint();
+    }));
     element.querySelector('[data-back]')?.addEventListener('click', () => ctx.back());
     element.querySelectorAll('[data-option]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -342,16 +366,18 @@ export default async function mountCheck(element, ctx) {
     /* "Show in text" opens the Reader at the evidence sentence with its Sentence Quick Sheet, as the
        frame does (cuShowInText). */
     element.querySelector('[data-show-in-text]')?.addEventListener('click', () => {
-      const result = graded[questions[index]?.id];
+      const result = graded[questions[reviewing ?? index]?.id];
       ctx.go(ctx.href('reader', { id: contentId }, { evidence: result?.evidence_fragment || '' }));
     });
-    element.querySelector('[data-next]')?.addEventListener('click', () => advance());
+    element.querySelector('[data-next]')?.addEventListener('click', () => {
+      if (reviewing != null) {
+        reviewing = null;
+        paint();
+      } else advance();
+    });
     // Continue ends the check where the frame does (cuContinue): Reading Complete, or in practice the
     // next reading.
-    element.querySelector('[data-continue]')?.addEventListener('click', () => {
-      if (practice?.next) ctx.go(ctx.href('reader', { id: `article:${practice.next}` }, { mode: 'practice' }));
-      else ctx.go(ctx.href('rcomplete', { id: contentId }));
-    });
+    element.querySelector('[data-continue]')?.addEventListener('click', () => goOnward());
     element.querySelector('[data-exit-practice]')?.addEventListener('click', () => ctx.go(ctx.href('practice')));
     element.querySelectorAll('[data-deeper]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -361,6 +387,7 @@ export default async function mountCheck(element, ctx) {
           for (const question of questions) delete graded[question.id];
           index = 0;
           done = false;
+          reviewing = null;
           operationId = newOperationId();
           paint();
         } else if (key === 'words') ctx.go(ctx.href('review', {}, { words: keptWords.join(',') }));

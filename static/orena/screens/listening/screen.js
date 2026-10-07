@@ -196,7 +196,12 @@ export default async function listening(element, ctx) {
     const line = segOf(currentId);
     if (line && mode !== 'dictation') setViewSelection({ type: 'sentence', id: line.segment_id, text: line.original_text });
     try {
-      c.memory?.enter({ id: contentId, title: lesson.title, segment: currentId || '', intent: null });
+      /* How far into the clip this line is, so a card and the detail page say the same percent (LEX-082). Only
+         with a real line start and a real duration; otherwise the place carries none. */
+      const startMs = Number(line?.start_ms);
+      const total = Number(lesson.durationMs);
+      const within = line && Number.isFinite(startMs) && startMs >= 0 && total > 0 ? Math.min(100, Math.round((startMs / total) * 100)) : null;
+      c.memory?.enter({ id: contentId, title: lesson.title, segment: currentId || '', intent: null, ...(within != null && within >= 0 ? { place: { index: 1, total: 1, within } } : {}) });
     } catch {
       /* Device memory unavailable (private window): the session still works, it just does not
          resume next time. */
@@ -637,7 +642,7 @@ export default async function listening(element, ctx) {
       <div class="s-listening__selected-head">
         <span class="s-listening__selected-label">${t('selectedSegment', { time: mmss(seg.start_ms) ?? '' })}</span>
         <span class="s-listening__selected-tools">
-          <button type="button" class="s-listening__selected-close s-listening__moreacts" data-act="more-acts" aria-expanded="${String(moreActs)}" aria-label="${t('more')}" title="${t('more')}">${raw(icon('ellipsis', { size: 17 }))}</button>
+          <button type="button" class="s-listening__selected-close s-listening__moreacts" data-act="more-acts" aria-expanded="${String(moreActs)}" aria-label="${t('practiseLine')}" title="${t('practiseLine')}">${raw(icon('ellipsis', { size: 17 }))}<span class="s-listening__moreacts-label">${t('practiseLine')}</span></button>
           <button type="button" class="s-listening__selected-close" data-act="clear" aria-label="${s('close')}">${raw(icon('x', { size: 17 }))}</button>
         </span>
       </div>
@@ -650,10 +655,12 @@ export default async function listening(element, ctx) {
         <button type="button" class="s-listening__pill${saved ? ' s-listening__pill--saved' : ''}" data-act="save-phrase" aria-pressed="${String(saved)}">${phraseLabelFor(seg)}</button>
         ${pill({ id: 'vocab', label: t('vocabularyFocus') })}
         <button type="button" class="s-listening__pill--ai" data-act="explain">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explain')}</button>
-        <span class="s-listening__extra-acts${moreActs ? ' is-open' : ''}">
+        <span class="s-listening__extra-acts${moreActs ? ' is-open' : ''}" role="group" aria-label="${t('practiseLine')}">
+          <span class="s-listening__practise-label">${t('practiseLine')}</span>
           ${lesson.modes.dictation ? pill({ id: 'dictation', label: s('dictation') }) : ''}
           ${lesson.modes.shadowing ? pill({ id: 'shadowing', label: s('shadowing') }) : ''}
-          ${pill({ id: 'react', label: s('reactReuse') })}
+          ${pill({ id: 'react', label: s('reactReuse'), title: `${s('reactReuse')}: ${t('reactHint')}` })}
+          <span class="s-listening__practise-hint">${s('reactReuse')} · ${t('reactHint')}</span>
         </span>
       </div>
     </div>`;

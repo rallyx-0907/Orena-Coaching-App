@@ -38,6 +38,9 @@ import {
   wordCountOf, canGetFeedback, mapFeedback,
 } from './model.js';
 
+/* The source pane holds the whole text (to a generous cap), scrolling inside itself: a summary needs all of it,
+   not its first four sentences (LEX-089). */
+const SOURCE_LINES = 200;
 const KINDS = ['opinion', 'summary', 'reaction', 'continuation'];
 
 function joinParagraphs(raw) {
@@ -57,7 +60,7 @@ async function loadSource(parsed, ctx, support) {
       variant: 'media',
       kindKey: payload?.playback?.kind === 'audio' ? 'sourceKindAudio' : 'sourceKindVideo',
       title: catalog.title || payload?.asset?.title || '',
-      lines: sourceLinesFromSegments(payload?.transcript?.segments, 4),
+      lines: sourceLinesFromSegments(payload?.transcript?.segments, SOURCE_LINES),
       language: catalog.language || payload?.asset?.source_language || '',
     };
   }
@@ -67,7 +70,7 @@ async function loadSource(parsed, ctx, support) {
       variant: 'reading',
       kindKey: 'sourceKindArticle',
       title: article?.title || '',
-      lines: sourceLinesFromText(sentenceSpans, article?.body, 4),
+      lines: sourceLinesFromText(sentenceSpans, article?.body, SOURCE_LINES),
       language: article?.language || '',
     };
   }
@@ -81,7 +84,7 @@ async function loadSource(parsed, ctx, support) {
       variant: 'reading',
       kindKey: 'sourceKindBook',
       title: chapter?.title || book?.title || '',
-      lines: sourceLinesFromText(sentenceSpans, joinParagraphs(chapter), 4),
+      lines: sourceLinesFromText(sentenceSpans, joinParagraphs(chapter), SOURCE_LINES),
       language: chapter?.language || book?.learning_language || '',
     };
   }
@@ -91,7 +94,7 @@ async function loadSource(parsed, ctx, support) {
     variant: 'reading',
     kindKey: 'sourceKindText',
     title: record?.title || '',
-    lines: sourceLinesFromText(sentenceSpans, record?.text, 4),
+    lines: sourceLinesFromText(sentenceSpans, record?.text, SOURCE_LINES),
     language: record?.language || '',
   };
 }
@@ -182,6 +185,7 @@ export default async function respondToContent(element, ctx) {
   function paintRegion() {
     if (result) {
       mount(regionEl, html`
+        <div class="s-respond__yours"><div class="s-respond__yours-label">${t('yourResponse')}</div><div class="s-respond__yours-text" lang="${langAttr(language)}">${text}</div></div>
         <div class="s-respond__tiles">
           <div class="s-respond__tile"><div class="s-respond__tile-label">${t('wordsTile')}</div><div class="s-respond__tile-value">${wordCountOf(text, language)}</div></div>
           <div class="s-respond__tile"><div class="s-respond__tile-label">${t('fixesLabel')}</div><div class="s-respond__tile-value">${result.issues.length}</div></div>

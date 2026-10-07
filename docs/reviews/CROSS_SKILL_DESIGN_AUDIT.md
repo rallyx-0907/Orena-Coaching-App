@@ -159,3 +159,17 @@ override any of them. Implemented on `codex/work`.
 | X-02, X-05, X-13, X-14, X-16..X-19 | no change | Recorded as in the table above. X-09 stays parked with the Orena entries. |
 
 Defects fixed without a decision: X-11 (a media place with a line resumes: "Continue watching / listening" and the strip "Resume at 0:44" from the line's start, the percent only when the duration is known), X-12 (a finished article, 100%, reads "Read again" and draws no strip), X-06 ("Understand" never breaks inside a word; it is centred and may overhang its bar by a pixel or two at 360), X-07 (Finish 14px / 46 high, "I've listened" 15px / 13 22 padding). Not copied: the frame's "I've listened" is 61 high only because its arrow icon is a block under the label (a prototype wrapping artefact); the arrow stays inline, 45 high.
+
+### Cross-skill review batch, 2026-10-07 (LEX-082..091), lane defaults
+
+Provisional and reversible; the human may override any of them.
+
+| Id | Default | What was done |
+| --- | --- | --- |
+| LEX-082 | One progress rule for every surface: a "1 of 1" place (a media item, an article) says how far in the learner is only through `within`; its index/total pair is never a percent. | `product/place-progress.js#placePercent`, read by Discover, Today and Content Detail. The Listening room now writes `within` with a media place (the line's start over the duration). A media place saved before this change has no `within`, so its card shows no percent until the learner next opens it. |
+| LEX-083 | A book's place is its furthest chapter; a chapter read to its end resumes at the next one. | Content Detail reads the book's chapter rows ("book:id:chapter"), shows "Resume at chapter N of M" and "Continue reading" opening that chapter. The contents page being chapter 1 is content, handed to CONTENT. |
+| LEX-075 / LEX-088 | Related needs a shared topic or author; level only orders items that already share one; none, no section. Reading Complete's Next uses the same rule and is omitted otherwise (a book's next chapter stays). | `relatednessScore`, `nextPick`. |
+| LEX-087 | The celebration modal opens only for a result of at least half right, and its Continue is the result card's Continue; below that the result card is the one completion step. Each question chip opens its answer, evidence and explanation. | Check Understanding. |
+| LEX-084 / 085 | The line stays visible while writing in New context; Understand replays the audio and marks the chosen option (with "Your answer" and a check, never colour alone); Finish goes back to where the learner came from (the Practice Hub only when the room was opened directly). | React / Reuse. |
+| LEX-086 | The practice paths (Dictation, Shadowing, React / Reuse) are one named group, "Practise this line", under the line's own actions; React / Reuse carries a one-line description; on a phone the group opens from a labelled button; the line and its meaning keep their room. | Listening line panel. |
+| LEX-089 / 091 | Respond's source holds the whole text and scrolls inside itself; the learner's text stays above the result. Practice Hub Listen tiles say what the learner does. | Respond, Practice Hub. |

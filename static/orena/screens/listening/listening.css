@@ -833,8 +833,27 @@
    four come first in one tidy row and the other three open from ⋯, instead of four uneven rows. */
 .s-listening__selected-tools { display: flex; gap: 4px; }
 .s-listening__moreacts { display: none; }
-.s-listening__extra-acts { display: contents; }
-:root[data-device="mobile"] .s-listening__moreacts { display: inline-flex; }
+/* On a desk the selected line keeps the room its text and meaning need (LEX-086); the player gives way first, as it
+   already does (it keeps its 16:9 only while there is room). */
+:root[data-device="desktop"] .s-listening__selected:not(.s-listening__dict) { flex-shrink: 0; }
+:root[data-device="desktop"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-scroll { flex: none; max-height: 12em; }
+/* The practice paths are one named group under the line's own actions (LEX-086): what the learner does with this
+   line next, apart from what they do to it (play, save, look up, explain). */
+.s-listening__extra-acts {
+  flex: 1 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.s-listening__practise-label { flex: 1 0 100%; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.s-listening__practise-hint { flex: 1 0 100%; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.s-listening__moreacts-label { display: none; }
+:root[data-device="mobile"] .s-listening__moreacts { display: inline-flex; width: auto; gap: 6px; padding: 0 10px; align-items: center; }
+:root[data-device="mobile"] .s-listening__moreacts-label { display: inline; font-size: 13px; font-weight: 600; color: var(--text); }
 :root[data-device="mobile"] .s-listening__selected-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -851,7 +870,12 @@
   white-space: nowrap;
 }
 :root[data-device="mobile"] .s-listening__extra-acts { display: none; }
-:root[data-device="mobile"] .s-listening__extra-acts.is-open { display: contents; }
+:root[data-device="mobile"] .s-listening__extra-acts.is-open { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding-top: 4px; }
+:root[data-device="mobile"] .s-listening__extra-acts .o-btn, :root[data-device="mobile"] .s-listening__extra-acts .s-listening__pill { padding: 0 6px; font-size: 13px; }
+/* The phone keeps the group's name and drops the sentence under it: the room is for the line and its actions. */
+:root[data-device="mobile"] .s-listening__practise-hint { display: none; }
+:root[data-device="mobile"] .s-listening__practise-label,
+:root[data-device="mobile"] .s-listening__practise-hint { grid-column: 1 / -1; flex: none; width: auto; height: auto; text-align: left; white-space: normal; }
 
 /* Dictation result actions (LEX-037): one row - Retry and Explain as compact icon buttons on a phone, the next
    step the one wide, filled action. */
@@ -883,13 +907,16 @@
    the line below it (LEX-037). */
 :root[data-device="mobile"] .s-listening__selected-tools { display: inline-flex; align-items: center; gap: 4px; margin: -12px -11px 0 0; }
 :root[data-device="mobile"] .s-listening__selected-close { width: 40px; height: 40px; padding: 0; border-radius: 10px; }
+:root[data-device="mobile"] .s-listening__selected-close.s-listening__moreacts { width: auto; padding: 0 10px; }
 
 /* The selected line's card never runs under the Transcript (LEX-037): on a phone the card may shrink - its line and
    meaning scroll in their own region - while its actions, the ⋯ row included, always keep their full height. */
 :root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) { flex: 0 1 auto; min-height: auto; }
 /* While ⋯ is open the learner is acting on the selected line: the Transcript gives up height (to its title and a strip of the line) so
    the third action row fits whole. */
-:root[data-device="mobile"] .s-listening:has(.s-listening__extra-acts.is-open) .s-listening__transcript { min-height: 80px; }
+:root[data-device="mobile"] .s-listening:has(.s-listening__extra-acts.is-open) .s-listening__transcript { min-height: 52px; }
+/* With the practice group open the line and its meaning scroll in their own strip, so the group's buttons fit whole at 360x740. */
+:root[data-device="mobile"] .s-listening__selected:has(.s-listening__extra-acts.is-open) .s-listening__selected-scroll { max-height: 5.4em; }
 :root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-scroll { flex: 0 1 auto; min-height: 40px; overflow-y: auto; }
 :root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-actions { flex: none; overflow: visible; }
 

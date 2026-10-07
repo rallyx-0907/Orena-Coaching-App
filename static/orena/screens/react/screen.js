@@ -129,8 +129,8 @@ export default async function reactReuse(element, ctx) {
       bodyEl.querySelector('[data-wave]')?.classList.toggle('is-playing', playing);
       const button = bodyEl.querySelector('[data-play]');
       if (button) {
-        mount(button, raw(icon(playing ? 'pause' : 'play', { size: 26 })));
-        button.setAttribute('aria-label', t(playing ? 'pauseLabel' : 'playLabel'));
+        mount(button, raw(icon(playing ? 'pause' : 'play', { size: button.classList.contains('s-react__replay') ? 18 : 26 })));
+        button.setAttribute('aria-label', t(button.classList.contains('s-react__replay') ? 'replayLabel' : playing ? 'pauseLabel' : 'playLabel'));
       }
     });
     connectMediaPlayer(host, playback);
@@ -152,13 +152,20 @@ export default async function reactReuse(element, ctx) {
   /* --------------------------------------------------------- Understand ---- */
   function understandMarkup() {
     return html`
-      <div class="s-react__question">${t('question')}</div>
+      ${playbackOk ? html`<div class="s-react__media" aria-hidden="true" data-media>${raw(mediaPlayer(playback, title, { startMs: seg.start_ms, endMs: seg.end_ms, controls: false }))}</div>` : ''}
+      <div class="s-react__qrow">
+        <div class="s-react__question">${t('question')}</div>
+        ${playbackOk ? html`<button type="button" class="o-iconbtn s-react__replay" data-play aria-label="${t('replayLabel')}">${raw(icon('play', { size: 18 }))}</button>` : ''}
+      </div>
       <div class="s-react__options">${check.options.map((text, i) => {
         const tone = picked == null ? '' : i === check.correctIndex ? 'is-correct' : (i === picked ? 'is-wrong' : '');
-        return html`<button type="button" class="${['s-react__option', tone].filter(Boolean).join(' ')}" data-pick="${i}" ${picked != null ? 'disabled' : ''}>${text}</button>`;
+        // The chosen option is named as the learner's, and the right one carries a check: colour is never the only signal.
+        const mark = picked == null ? '' : i === picked ? html`<span class="s-react__option-mark">${raw(icon(i === check.correctIndex ? 'check' : 'x', { size: 14 }))}${t('yourAnswer')}</span>` : i === check.correctIndex ? html`<span class="s-react__option-mark">${raw(icon('check', { size: 14 }))}</span>` : '';
+        return html`<button type="button" class="${['s-react__option', tone].filter(Boolean).join(' ')}" data-pick="${i}" aria-pressed="${picked === i ? 'true' : 'false'}"${picked != null ? ' aria-disabled="true"' : ''}><span>${text}</span>${mark}</button>`;
       })}</div>`;
   }
   function bindUnderstand() {
+    bindListen();
     bodyEl.querySelectorAll('[data-pick]').forEach((button) => button.addEventListener('click', () => {
       if (picked != null) return;
       picked = Number(button.dataset.pick);
@@ -186,6 +193,7 @@ export default async function reactReuse(element, ctx) {
   function contextMarkup() {
     return html`
       <span class="s-react__chip">${t('newContextChip')}</span>
+      <div class="s-react__source" lang="${langAttr(language)}" aria-label="${t('sentenceLabel')}">${markedTranscript()}</div>
       <div class="s-react__prompt" lang="${langAttr(support)}">${promptText()}</div>
       <textarea class="s-react__textarea" rows="3" lang="${langAttr(language)}" placeholder="${t('placeholderAnswer')}" data-answer>${answerText}</textarea>`;
   }
@@ -253,7 +261,12 @@ export default async function reactReuse(element, ctx) {
     footEl.querySelector('[data-check]')?.addEventListener('click', onCheck);
     footEl.querySelector('[data-retry]')?.addEventListener('click', onRetry);
     footEl.querySelector('[data-again]')?.addEventListener('click', () => { contextIndex += 1; onRetry(); });
-    footEl.querySelector('[data-finish]')?.addEventListener('click', () => ctx.go(ctx.href('practice')));
+    footEl.querySelector('[data-finish]')?.addEventListener('click', () => {
+      // Back to where the learner came from - the Listening line - and the Practice Hub only when they entered from
+      // there or opened this room directly (LEX-085).
+      if (ctx.hasHistory()) ctx.back();
+      else ctx.go(ctx.href('practice'));
+    });
   }
 
   function paintBody() {

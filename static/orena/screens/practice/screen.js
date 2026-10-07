@@ -49,6 +49,8 @@ function labelOf(skill, mode) {
 /* The design's one-line description and duration of a grouped mode (S1 `SK` groups). Speak carries both;
    Write carries the description only - no measured duration exists for any Write mode (N-22), so none is drawn. */
 function groupedFacts(skill, mode) {
+  // Listen's three modes say what the learner does in each (LEX-091); none has a measured duration.
+  if (skill === 'listen' && ['listening', 'dictation', 'react'].includes(mode.key)) return { desc: t(`listen${mode.key[0].toUpperCase()}${mode.key.slice(1)}Desc`), dur: '' };
   if (!mode.group) return null;
   if (skill === 'speak') return { desc: t(`${mode.key}Desc`), dur: t(`${mode.key}Dur`) };
   if (skill === 'write' && mode.key === 'earlier') return { desc: t.plural('writeEarlierDesc', mode.count), dur: '' };

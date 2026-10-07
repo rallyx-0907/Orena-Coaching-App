@@ -81,10 +81,11 @@ export function scoreSummary(questions, graded, t) {
   const total = questions.length;
   const correctCount = questions.reduce((n, q) => n + (graded[q.id]?.correct ? 1 : 0), 0);
   const chips = questions
-    .filter((question) => graded[question.id])
-    .map((question) => {
+    .map((question, index) => ({ question, index }))
+    .filter(({ question }) => graded[question.id])
+    .map(({ question, index }) => {
       const ok = Boolean(graded[question.id].correct);
-      return { label: typeLabel(question.question_type, t), result: ok ? t('correctLabel') : t('missedLabel'), ok };
+      return { label: typeLabel(question.question_type, t), result: ok ? t('correctLabel') : t('missedLabel'), ok, index };
     });
   return { correctCount, total, chips };
 }

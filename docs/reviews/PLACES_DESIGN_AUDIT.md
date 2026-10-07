@@ -163,3 +163,13 @@ Provisional and reversible; the human may override any of them.
 | LEX-080 | A browsing place's load error names the place; the page retries itself when the connection returns; Profile lights no bar tab | Rule 47: the bar has no Profile item. |
 | LEX-077 | A draft with no words is never set aside and does not raise "Draft in progress"; Free writing never shows a prompt | A waiting prompt draft stays a prompt draft whatever entry opened it. |
 | LEX-081 | A cover tile sits at the lower left of a card so it does not collide with the two pills; Import to Reader and Show 0 results are disabled when they cannot act | |
+
+### Cross-skill batch, 2026-10-07 (LEX-073, 075, 079, 090), lane defaults
+
+Provisional and reversible; the human may override any of them.
+
+| Id | Default | What was done |
+| --- | --- | --- |
+| LEX-073 / 090 | One card per title; a Continue card names the measured place; hero chip and button say the same verb; the For you rail's first card sits on the page gutter. | Today: title de-duplication across the hero and the rail, "{pct}% done" after the context, article and book chapters continue in the Reader, `scroll-padding-inline` on the rail. |
+| LEX-079 | The Up next sheet names an action once per group, then lists items; a title stored in capitals is written as a title. | Notifications; `product/tidy-title.js` (more than one word, Latin script only). |
+| LEX-075 | Content Detail Related needs a shared topic or author (see the cross-skill audit). | Fox and the Stork shows none. |

@@ -274,6 +274,14 @@
   border-radius: 7px;
   background: var(--green-soft);
   color: var(--green);
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+.s-check__review-hint {
+  font-size: 13px;
+  color: var(--muted);
+  position: relative;
 }
 .s-check__chip--bad {
   background: var(--red-soft);

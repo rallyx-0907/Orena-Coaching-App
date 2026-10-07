@@ -22,7 +22,7 @@ const layers = {
   carriedLabel: 'interface', landedLabel: 'interface', anotherWayLabel: 'interface', nextAttemptLabel: 'interface',
   notPrepared: 'interface', coachingError: 'interface',
   newContextAgain: 'interface', finishLabel: 'interface',
-  playLabel: 'interface', pauseLabel: 'interface', correctLabel: 'interface', incorrectLabel: 'support',
+  playLabel: 'interface', replayLabel: 'interface', yourAnswer: 'interface', sentenceLabel: 'interface', pauseLabel: 'interface', correctLabel: 'interface', incorrectLabel: 'support',
 };
 
 export const t = defineCopy('react', {
@@ -43,7 +43,7 @@ export const t = defineCopy('react', {
     notPrepared: 'Coaching is not prepared for this response yet.',
     coachingError: "Coaching isn't available right now.",
     newContextAgain: 'New context', finishLabel: 'Finish',
-    playLabel: 'Play', pauseLabel: 'Pause', correctLabel: 'Correct', incorrectLabel: 'Not quite - the correct meaning is highlighted',
+    playLabel: 'Play', replayLabel: 'Play the line again', yourAnswer: 'Your answer', sentenceLabel: 'The line', pauseLabel: 'Pause', correctLabel: 'Correct', incorrectLabel: 'Not quite - the correct meaning is highlighted',
   },
   vi: {
     stepListen: 'Nghe', stepUnderstand: 'Hiểu', stepReveal: 'Xem lại', stepContext: 'Ngữ cảnh mới', stepResult: 'Kết quả',
@@ -61,7 +61,7 @@ export const t = defineCopy('react', {
     notPrepared: 'Chưa có nhận xét cho câu trả lời này.',
     coachingError: 'Hiện chưa dùng được tính năng nhận xét.',
     newContextAgain: 'Ngữ cảnh mới', finishLabel: 'Hoàn tất',
-    playLabel: 'Phát', pauseLabel: 'Tạm dừng', correctLabel: 'Đúng rồi', incorrectLabel: 'Chưa đúng - nghĩa đúng được tô sáng',
+    playLabel: 'Phát', replayLabel: 'Nghe lại câu này', yourAnswer: 'Câu bạn chọn', sentenceLabel: 'Câu gốc', pauseLabel: 'Tạm dừng', correctLabel: 'Đúng rồi', incorrectLabel: 'Chưa đúng - nghĩa đúng được tô sáng',
   },
   zh: {
     stepListen: '听', stepUnderstand: '理解', stepReveal: '查看', stepContext: '新语境', stepResult: '结果',
@@ -79,6 +79,6 @@ export const t = defineCopy('react', {
     notPrepared: '这次回答还没有准备好点评。',
     coachingError: '点评功能暂时不可用。',
     newContextAgain: '新语境', finishLabel: '完成',
-    playLabel: '播放', pauseLabel: '暂停', correctLabel: '答对了', incorrectLabel: '还不太对 - 正确的意思已高亮',
+    playLabel: '播放', replayLabel: '再听一遍这句话', yourAnswer: '你的选择', sentenceLabel: '原句', pauseLabel: '暂停', correctLabel: '答对了', incorrectLabel: '还不太对 - 正确的意思已高亮',
   },
 });
