@@ -22,13 +22,6 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: python -m pip install -e "grammar_lab[dev]"
-      - run: python -m grammar_lab.pipeline.cli sync-metadata
-      - run: python -m pytest grammar_lab/tests
-      - run: python -m grammar_lab.pipeline.cli import-canonical --check
-      - run: python -m grammar_lab.pipeline.cli sync-metadata --check
-      - run: python -m grammar_lab.pipeline.cli seed-audit --lang all
-      - run: python -m grammar_lab.pipeline.cli corpus-plan --lang all
       - name: Upload grammar corpus snapshot for bounded review
         uses: actions/upload-artifact@v4
         with:
@@ -43,3 +36,10 @@ jobs:
             grammar_lab/inventory/seeds_zh.yaml
             grammar_lab/inventory/en.yaml
             grammar_lab/inventory/zh.yaml
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - run: python -m grammar_lab.pipeline.cli sync-metadata
+      - run: python -m pytest grammar_lab/tests
+      - run: python -m grammar_lab.pipeline.cli import-canonical --check
+      - run: python -m grammar_lab.pipeline.cli sync-metadata --check
+      - run: python -m grammar_lab.pipeline.cli seed-audit --lang all
+      - run: python -m grammar_lab.pipeline.cli corpus-plan --lang all
