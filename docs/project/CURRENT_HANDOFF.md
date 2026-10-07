@@ -2,166 +2,68 @@
 
 ## Governance
 
-Purpose: current execution state only. Change when the active lane, verified
-batch, gates or next task changes. Do not store secrets, product philosophy or
-unverified claims. Product intent and technical authority follow
-`PROJECT_MEMORY.md`; local verification does not imply CI pass, human product
-approval, or production readiness.
+Purpose: current execution state only. Authority for durable product intent and technical rules is `PROJECT_MEMORY.md` and the canonical project-memory set. Change when the active lane, verified batch, gates, or next task changes. Do not store secrets, product philosophy, long history, or unverified claims here.
 
 ## Current branch / lane
 
-`codex/work` is the baseline and the UI lane. It is the UI lane (D-066, D-098)
-whichever agent works it: a Claude session continues here, not on `claude/<task>`. `feature/orena-intelligence`
-builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
-D-095, D-096), which is edited only on `codex/work`. Verified history:
-`PROJECT_STATE.md` "New learner UI migration".
+`codex/work` is the product/UI baseline. `feature/orena-intelligence` builds Agent Intelligence against `AGENT_CONTRACT.md`; `feature/grammar-lab-pipeline` owns the isolated Grammar Lab. New learner UI is built under `/next` before cutover; `/` remains the legacy learner UI until the approved cutover. Grammar Lab is the future grammar source; R5 retirement/integration stays behind the documented architecture/human gates.
 
-New learner UI (D-088 - D-091): the pinned design is built at `/next` and
-replaces the old UI at `/` in one cutover. Between slices `/` is the old UI,
-unchanged; `/next` holds the built surfaces; both share one domain layer; no
-learner-data schema changes; the agent runs on the contract mock and nothing
-calls `/api/agent/*` until the human says the intelligence lane is integrated.
-The intelligence lane integrates against `/next`. Frame → route → code →
-status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
-
-- Foundation: REVIEWABLE.
-- Wave A destinations: REVIEWABLE (`f13c542`) - built, reviewed, integrated,
-  re-checked in the browser, language layer finished, every API reader checked
-  against captured real payloads (`scripts/fixtures/api/`). Reviewable at
-  http://127.0.0.1:8021/next (isolated stack) until the 8011 sandbox is migrated.
-- Wave B workspaces: REVIEWABLE (`161d917`) - reading (Reader, Check,
-  Discussion, Reading Transfer), listening (Workspace, Dictation, Shadowing,
-  React, Respond), speaking (Scripted, Compare, Attempts, Summary, Free Talk,
-  Conversation, Situation), writing (Writing, Compare Versions), review (Review,
-  Feed, From Your Errors), Orena (Home, panel, voice, on the mock), Onboarding
-  and the shared overlays. Each is one commit, independently reviewed and fixed.
-  Routes with no backend are the design's Coming soon screen
-  (IMPLEMENTATION_MAP `coming-soon`). The two Grammar screens wait for the
-  contract below.
-- Agent UI side: contract v5 on the mock; Orena's entry points hide when the
-  agent is absent.
-- Grammar: R5 is being retired (human, 2026-09-28): Grammar Lab becomes the only
-  grammar source. The Grammar screens will render `GRAMMAR_CONTENT_CONTRACT.md`
-  (drafted by the Grammar Lab lane, reviewed and committed here like
-  AGENT_CONTRACT.md); no further R5-specific rendering. Order: the lane's PR
-  `governance/grammar-content-contract` into `codex/work` → reviewed here
-  against the screens' needs, gaps listed, nothing fixed → the human approves
-  and merges → DECISION_LOG entry (R5 replaced by Grammar Lab) → the two Grammar
-  screens are rebuilt. `grammar.point{grammar_id}` (AGENT_CONTRACT §6.1) moves
-  to its ids in a contract bump.
+This handoff is being compacted from the Grammar Lab approval lane. PR #86 (`codex/grammar-approve-command` -> `feature/grammar-lab-pipeline`) adds the explicit human `approve` gate between review/apply-feedback and `export-package`.
 
 ## Last verified batch
 
-2026-09-29, the D-098 batch (`5d9d64c`..`3f2cc23`), local: every node gate in
-ci.yml (114), the browser ESM graph and the memory validator pass; each learner
-change was checked in the browser on the isolated stack (en/vi/zh, both themes,
-desktop and phone touch; the Settings picker at all four rule-49 sizes). Full
-pytest on a clean export of `3f2cc23` (SQLite, CI backend): `2450 passed, 195 skipped`. The isolated stack
-mounts the checkout read-only, so a real upload cannot be stored there; the
-upload route is covered by `tests/test_media_learner_upload.py` (real WAV,
-ffprobe) instead.
+Grammar Lab CI for PR #86 head `23b124a` passed on 2026-10-07: 697 collected, 695 passed, 2 skipped; `test_approve.py` 6/6; `import-canonical --check` current for EN 215 / ZH 380; `sync-metadata --check` current; `seed-audit --lang all` 0 findings; `corpus-plan --lang all` completed. Corpus plan: 595 canonical; EN 215 generated; ZH 157 generated and 223 ready.
 
-Before it: 2026-09-29, `161d917`, local: each Wave B commit was checked on a clean export
-of HEAD plus the commit (all CI gate commands - 113 at the last, the browser ESM
-graph and the memory/architecture validators pass) and reviewed in the browser
-on the isolated stack (en/vi/zh, both themes, the four rule-49 sizes). Full
-pytest on a clean export (SQLite, CI backend): `2420 passed, 195 skipped`
-(`51522e4`). No CI pass is claimed. Visual-source gate: PINNED.
+Product/UI historical verification remains in `PROJECT_STATE.md` and related status docs; do not duplicate it here.
 
 ## DONE
 
-Design pinned and governed (D-088 - D-093); foundation at `/next`; agent
-contract v4 (D-095); copy engine fixes; Wave A destinations and Wave B
-workspaces (REVIEWABLE); the Writing request minimum per learning language.
-D-098 (the human's answers, 2026-09-29): Japanese Writing-minimum row
-(`c1393c9`); Writing's countdown while Review is off (`1ac1e6f`); Lesson
-complete draws only server-measured numbers (`6a402af`); the empty address
-opens Welcome for a learner with no profile (`81ae4bb`, the level half is H2
-below); Compare Versions follows the frame (`b221909`); Import > File uploads
-audio/video (`2052cb7`); the support-language picker past four (`3f2cc23`).
-Wave A review items confirmed in HEAD: theme row `b4373e2`, Today greeting
-`755d65b`, word audio 500 `7574765`, essay excerpt `8de1863`. PR #66 was
-reviewed on the PR (2026-09-28, three levels); it awaits the human.
+- Canonical project-memory/governance set exists and is validated by `scripts/validate_project_memory.py`.
+- `/next` learner UI foundation plus Wave A/Wave B surfaces are built/reviewable on the product lane; detailed history is in `PROJECT_STATE.md`.
+- Agent contract work is isolated on `feature/orena-intelligence`.
+- Grammar Lab has canonical catalogs, generation/validation/review/export pipeline, and dedicated CI.
+- PR #86 adds human approval with reviewer metadata, fail-closed validation, batch preflight, idempotent already-approved handling, CLI coverage, and README workflow documentation.
 
 ## IN PROGRESS
 
-- Human review of Wave A and Wave B.
-- Chinese writing evaluator recall: causes and fix options in
-  `ZH_WRITING_EVALUATOR_RECALL.md`; no change until the human chooses a fix.
-- `UI_COMPLETION_ROADMAP.md` (PROPOSED): Grammar, the eight Coming-soon
-  screens, cutover preparation and cutover, Admin, the live Orena panel; its
-  decisions H1-H10 wait for the human.
+- Human/product review of learner UI and completion roadmap.
+- Agent Intelligence lane completion and live product verification.
+- Grammar Lab: review generated content by level, apply external feedback, human-approve validated points, then export approved packages.
+- Chinese writing evaluator recall remains a separate product-lane issue.
 
 ## PENDING
 
-Human: the 8011 sandbox migration (BLOCKED); approval of
-`UI_COMPLETION_ROADMAP.md` and its decisions H1-H10 (H1 Grammar Concept frame
-23 or 47; H2 storing the declared level for the entry rule); the Chinese
-evaluator fix; merging PR #66.
+- Human decisions/gates recorded in the product roadmap and decision log.
+- Grammar Lab content review/approval, starting with generated HSK levels as chosen by the human.
+- R5 -> Grammar Lab integration only after the required architecture review and explicit human approval.
+- Public learner-content publication remains gated.
 
 ## BLOCKED
 
-- The 8011 sandbox refuses to start: its database (named volume
-  `orena-foundation-sandbox-data`, data intact) is at `20260923_0014`, the code
-  expects `20260924_0016`. The human authorised 0015/0016 on it; the harness
-  blocks the agent, so the human runs them (`scripts/start_orena_sandbox.ps1`
-  reports the state).
-- Every other shared runtime's Reading migration needs explicit human
-  authorization.
+- Do not modify production/shared databases, migrations, persistent volumes, provider credentials, deployment, DNS/Cloudflare, billing, or learner-owned persistence without the relevant human gate.
+- Any stale sandbox/runtime migration state must be handled through its documented lane/runbook rather than from Grammar Lab work.
+- No Grammar Lab content may bypass review by changing `draft_ai` directly to satisfy export.
 
 ## OPEN P0
 
-None.
+None recorded here. See canonical status/issue documents for newly opened P0 items.
 
 ## OPEN P1
 
-See `ORENA_STATUS.md` and `UI_BACKEND_GAPS.md` section N.
+See `ORENA_STATUS.md`, `UI_BACKEND_GAPS.md`, and current lane issue/review logs. This file intentionally does not duplicate long issue lists.
 
 ## HUMAN GATES
 
-Web is active; native mobile is frozen. PostgreSQL is the authoritative
-runtime, SQLite only an isolated test or frozen rollback/archive backend.
-Production, preview, provider credentials, OAuth/DNS/Cloudflare, billing,
-deployment, destructive lifecycle, and new learner-owned persistence remain
-human gates. Never touch persistent volumes as cleanup.
+PostgreSQL is authoritative for real product runtime; SQLite is for isolated tests or rollback/archive use. Production/preview mutation, provider credentials, OAuth/DNS/Cloudflare, billing, deployment, destructive lifecycle work, shared-runtime migrations, public learner-content publication, and new learner-owned persistence require explicit human authorization. Never touch persistent volumes as cleanup.
+
+Grammar replacement/integration is protected: Grammar Lab may prepare/validate/export content independently, but replacing live R5-backed product paths is a separate architecture-reviewed phase.
 
 ## NEXT EXACT TASK
 
-UI lane: wait for the human's decision on `UI_COMPLETION_ROADMAP.md`, then follow
-its approved order: the two Grammar screens after PR #66 is merged and the R5 →
-Grammar Lab decision is recorded; the Coming-soon screens; cutover preparation
-(the new UI's indirect imports of old `ui/`, Admin's host, the map's routes);
-then the cutover (tombstones, legacy redirects, the old UI and its gates
-replaced).
-Once every §6.1 surface is built: a one-line purpose per surface id in the copy
-layer (interface, en/vi/zh), published for the intelligence lane (contract v5
-§6.2).
+Grammar Lab:
+1. Merge/review PR #86 when its checks are clean.
+2. For a reviewed level, run external review -> `apply-feedback` -> validate -> `approve --lang <lang> --level <level> --reviewer <name>`.
+3. Run `export-package`; only approved points may export.
+4. Do not regenerate content merely to clear `draft_ai`.
 
-Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merging `codex/work`
-forward brings the version bump its contract test checks, the `address` note
-and `context.address`, the S5/S2 wording and `copy/surfaces.json` (§6.2).
-
-## Grammar Lab (`feature/grammar-lab-pipeline`, from `codex/work`)
-
-An isolated, offline, file-based content pipeline in `grammar_lab/` (own
-`pyproject.toml`, own tests) and `docs/grammar_lab/`. It does not import app
-code, the app does not import it, and app CI does not collect its tests; no
-app code, router, engine, migration or runtime is involved.
-
-Phase 0 (schema v0.2, 10-point English sample, `validate.py`) was
-self-reviewed and approved by Claude Code (2026-09-27,
-`PHASE0_DECISIONS.md`). Phase 1 (SPEC §7 checklist) is built and unit-tested
-(215 tests): `evaluator_client.py`, `llm_client.py` (Anthropic + OpenAI),
-`rules/en_morphology.py`, `generate.py`, `verify.py`, `route.py`, `report`.
-NEXT:
-
-- A real run needs `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` (none configured in
-  the agent's environment) and an evaluator sandbox reachable at
-  `--evaluator-url` -- never the public `orena.chillpickle.org` tunnel, which
-  is the production container (`writing-coach:8000`), a Safety human gate.
-  Estimated cost for a 10-point generate+verify smoke run: well under $1
-  (Haiku 4.5 generate + a small OpenAI-family model for blind solve).
-- Human review of `docs/grammar_lab/PHASE0_DECISIONS.md` §6: how lab point
-  IDs join the R5 Concept IDs before integration (SPEC §8). R5 is live (508
-  concepts, `/api/library/grammar*`) and a protected area; §6 has the
-  investigation, three options and a recommendation.
+Product/UI and Intelligence lanes continue from their own canonical roadmap/contract/status files; do not infer product readiness from Grammar Lab CI.

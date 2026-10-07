@@ -97,7 +97,7 @@ assert.equal(zhCard.hasSchedule, false, 'an unsaved word has no mastery footer t
 
 const savedCard = mapWordCard('buffer', {
   detail: { headword: 'buffer', script: 'latin', ipa: '/ˈbʌfər/', partOfSpeech: 'noun', contextMeaning: 'extra time or space kept in reserve', saved: true, audioUrl: '/a.mp3' },
-  item: { word: 'buffer', level: 'B1', review_stage: 2, stage_label: 'Reinforcing', due: false, next_review_at: '2026-10-02T00:00:00', translation_vi: 'khoảng đệm', source_fragment: 'Keep a buffer before the deadline.' },
+  item: { word: 'buffer', level: 'B1', review_stage: 2, stage_label: 'Reinforcing', due: false, next_review_at: '2099-01-01T00:00:00', translation_vi: 'khoảng đệm', source_fragment: 'Keep a buffer before the deadline.' },
 });
 assert.equal(savedCard.saved, true);
 assert.equal(savedCard.savedBg, 'var(--amber-soft)');
