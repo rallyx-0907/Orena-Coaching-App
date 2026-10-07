@@ -23,7 +23,7 @@
      this build (the `orena` route itself is still Coming Soon) and `shell/agent-bridge.js`'s
      `askOrena()` only navigates away when no agent panel is registered. Built to the task brief's
      own instruction: "the agent's mark and an opening line from the mock at most." */
-import { INTERFACE_LOCALES, INTERFACE_ENDONYMS, interfaceLanguageOptions, appendNativeName } from '../../kit/lang.js';
+import { INTERFACE_LOCALES, INTERFACE_ENDONYMS, interfaceLanguageOptions, appendNativeName, primaryLanguage } from '../../kit/lang.js';
 
 export const STEP_COUNT = 5;
 export const STEPS = Object.freeze(['welcome', 'account', 'languages', 'level', 'orena']);
@@ -49,7 +49,9 @@ export function stepDots(step, labels) {
    `user`) ------------------------------------------------------------------------------------- */
 export function identityOf(user) {
   const u = user && typeof user === 'object' ? user : {};
-  const name = String(u.name || '').trim();
+  // A local (no sign-in) session has no name of its own: the server answers a fixed placeholder
+  // ("Local user") there, which is never shown (mobile QA BUG-06; O-11).
+  const name = u.mode === 'local' ? '' : String(u.name || '').trim();
   const email = String(u.email || '').trim();
   const picture = typeof u.picture === 'string' && /^https:\/\//.test(u.picture) ? u.picture : '';
   return {
@@ -128,6 +130,19 @@ export function supportOptions(list, current) {
     .map((item) => ({ code: item.code, label: endonym(item.code, item.label), selected: item.code === current }));
   if (!options.length && current) return [{ code: current, label: endonym(current), selected: true }];
   return options;
+}
+
+/* The support-language pills the step draws (the frame draws two, HO-6 A): the languages a learner is
+   most likely to want - the current one, the interface locales and the browser's own languages - in
+   the backend's order, each only if the platform lists it as a support language. Every other language
+   is reached through the "More" picker (the one Settings uses, endonym rows), which lists them all.
+   `rest` is true when the pills leave any listed language out. */
+export function supportShortlist(options, { current = '', interfaceCodes = INTERFACE_LOCALES, browser = [] } = {}) {
+  const list = Array.isArray(options) ? options : [];
+  const likely = new Set([current, ...interfaceCodes, ...(Array.isArray(browser) ? browser : []).map((tag) => primaryLanguage(tag, ''))].filter(Boolean));
+  const pills = list.filter((option) => likely.has(option.code));
+  const shown = pills.length ? pills : list.slice(0, 2);
+  return { pills: shown, rest: shown.length < list.length };
 }
 
 /* Shared with settings/model.js's own identical picker (kit/lang.js) - only the `selected` overlay

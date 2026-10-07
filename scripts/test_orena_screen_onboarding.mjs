@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   STEP_COUNT, STEPS, clampStep, stepDots,
-  identityOf, targetOptions, targetLabel, endonym, supportOptions, INTERFACE_LOCALES, INTERFACE_ENDONYMS, interfaceOptions,
+  identityOf, supportShortlist, targetOptions, targetLabel, endonym, supportOptions, INTERFACE_LOCALES, INTERFACE_ENDONYMS, interfaceOptions,
   LEVELS, levelsFor, defaultLevelCode, levelRow, declaredLevelPatch, greetingParams, languageName,
 } from '../static/orena/screens/onboarding/model.js';
 // NOTE (Wave B fix pass, 2026-09-29): levelsFor/defaultLevelCode/levelRow now take the platform's
@@ -38,13 +38,26 @@ const fixture = (name) => JSON.parse(readFileSync(fileURLToPath(new URL(`./fixtu
   assert.deepEqual(dots.map((d) => d.current), [false, false, true, false, false]);
 }
 
+/* --- supportShortlist: the pills plus "More" (HO-6) ---------------------------------------------- */
+{
+  const all = ['en', 'vi', 'zh', 'ja', 'ko', 'es', 'fr', 'de', 'pt', 'ru', 'id', 'th'].map((code) => ({ code, label: code }));
+  const a = supportShortlist(all, { current: 'vi', browser: ['en-US'] });
+  assert.deepEqual(a.pills.map((p) => p.code), ['en', 'vi', 'zh'], 'the interface locales, in the backend order');
+  assert.equal(a.rest, true, 'the rest is reached through More');
+  const b = supportShortlist(all, { current: 'ja', browser: ['fr-FR', 'xx'] });
+  assert.deepEqual(b.pills.map((p) => p.code), ['en', 'vi', 'zh', 'ja', 'fr'], 'the current and the browser language join, only if the platform lists them');
+  assert.equal(supportShortlist(all.slice(0, 3), {}).rest, false, 'no More when nothing is left out');
+  assert.equal(supportShortlist(null, {}).pills.length, 0, 'never throws');
+  assert.equal(supportShortlist([{ code: 'ja', label: 'ja' }, { code: 'ko', label: 'ko' }, { code: 'th', label: 'th' }], { interfaceCodes: [] }).pills.length, 2, 'nothing likely: the first two');
+}
+
 /* --- identityOf: GET /api/me, both real captured shapes -------------------- */
 {
   const local = fixture('me.json'); // { mode: "local", name: "Local user", email: "", picture: "" }
   assert.equal(local.mode, 'local', 'sandbox fixture sanity');
   const idLocal = identityOf(local);
-  assert.equal(idLocal.name, 'Local user');
-  assert.equal(idLocal.initial, 'L');
+  assert.equal(idLocal.name, '', "a local session has no name: the server's placeholder is never shown (BUG-06, O-11)");
+  assert.equal(idLocal.initial, '');
   assert.equal(idLocal.email, '', 'never invented - the real payload carries none');
   assert.equal(idLocal.picture, '');
   assert.equal(idLocal.google, false);
@@ -234,8 +247,11 @@ console.log('Onboarding: real shapes from /api/me, /api/session/bootstrap and /a
   assert.ok(table, 'the onboarding namespace registered');
 
   const supportKeys = new Set(Object.keys(table.layers).filter((k) => table.layers[k] === 'support'));
-  assert.ok(supportKeys.has('greeting') && supportKeys.has('greetingAnon'), 'the greeting is explanation, following support - not chrome');
-  assert.ok(supportKeys.has('levelA1Desc'), 'a level description explains, follows support');
+  assert.equal(supportKeys.size, 0, 'every onboarding string follows the interface language (O-09, HD-14)');
+  assert.equal(table.layers.greeting, 'interface', 'the greeting is drawn in the interface language');
+  assert.equal(table.layers.greetingAnon, 'interface');
+  assert.equal(table.layers.levelA1Desc, 'interface', 'a level description is drawn in the interface language');
+  assert.ok(table.packs.en.settingUp && table.packs.vi.settingUp && table.packs.zh.settingUp, 'the busy label of the last step (O-05)');
   assert.equal(table.layers.levelA1Name, 'interface', 'the level name is a short chrome label');
   assert.equal(table.layers.stepWelcome, 'interface');
 

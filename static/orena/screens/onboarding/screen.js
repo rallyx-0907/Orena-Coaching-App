@@ -8,6 +8,8 @@ import { icon } from '../../kit/icons.js';
 import { brandChip, intelChip, markGlyph } from '../../kit/brand.js';
 import { api } from '../../infrastructure/api.js';
 import { toast } from '../../kit/toast.js';
+import { openSheet, fillSheet, sheetHead } from '../../kit/overlay.js';
+import { listRow } from '../../kit/components.js';
 import { shellCopy } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
 import { adoptLearningLanguage, updateContext } from '../../shell/context.js';
@@ -15,7 +17,7 @@ import { selectLearningLanguage } from '../../product/account-settings.js';
 import { t } from './copy.js';
 import {
   STEP_COUNT, STEPS, clampStep, stepDots,
-  identityOf, targetOptions, targetLabel, supportOptions, interfaceOptions,
+  identityOf, targetOptions, targetLabel, supportOptions, supportShortlist, interfaceOptions,
   levelsFor, defaultLevelCode, levelRow, declaredLevelPatch, greetingParams, languageName,
 } from './model.js';
 
@@ -143,7 +145,7 @@ export default async function onboardingScreen(element, ctx) {
       <div class="s-onboarding__identity">
         <span class="s-onboarding__avatar o-avatar">${id.picture ? html`<img src="${id.picture}" alt="">` : id.initial}</span>
         <div class="s-onboarding__identity-body">
-          <div class="s-onboarding__identity-name">${id.name}</div>
+          ${id.name ? html`<div class="s-onboarding__identity-name">${id.name}</div>` : ''}
           ${id.email ? html`<div class="s-onboarding__identity-email">${id.email}</div>` : ''}
           <div class="s-onboarding__identity-provider">${id.google ? t('signedInGoogle') : t('signedInLocal')}</div>
         </div>
@@ -158,6 +160,7 @@ export default async function onboardingScreen(element, ctx) {
     const supportCode = context.profile?.support_language || '';
     const supports = supportOptions(state.languagesData?.support_languages, supportCode);
     const ifaces = interfaceOptions(ui);
+    const shortlist = supportShortlist(supports, { current: supportCode, browser: navigator.languages?.length ? navigator.languages : [navigator.language] });
     return html`<section class="s-onboarding__panel s-onboarding__panel--languages">
       <div class="s-onboarding__head"><h1 class="s-onboarding__title" tabindex="-1">${t('langTitle')}</h1><p class="s-onboarding__subtitle">${t('langSub')}</p></div>
       <div class="s-onboarding__group s-onboarding__group--learning">
@@ -174,7 +177,7 @@ export default async function onboardingScreen(element, ctx) {
       <div class="s-onboarding__group">
         <div class="s-onboarding__label">${t('supportLabel')}</div>
         <div class="s-onboarding__note-sub">${t('supportSub')}</div>
-        <div class="s-onboarding__pills">${supports.map((sp) => html`<button type="button" class="s-onboarding__pill" lang="${sp.code}" aria-pressed="${sp.selected ? 'true' : 'false'}" data-support="${sp.code}" ${state.busy === 'support' ? 'disabled' : ''}>${sp.label}</button>`)}</div>
+        <div class="s-onboarding__pills">${shortlist.pills.map((sp) => html`<button type="button" class="s-onboarding__pill" lang="${sp.code}" aria-pressed="${sp.selected ? 'true' : 'false'}" data-support="${sp.code}" ${state.busy === 'support' ? 'disabled' : ''}>${sp.label}</button>`)}${shortlist.rest ? html`<button type="button" class="s-onboarding__pill s-onboarding__pill--more" data-action="support-more" aria-haspopup="dialog" ${state.busy === 'support' ? 'disabled' : ''}>${t('more')}${raw(icon('chevron-down', { size: 16 }))}</button>` : ''}</div>
       </div>
       <div class="s-onboarding__group">
         <div class="s-onboarding__label">${t('ifaceLabel')}</div>
@@ -202,9 +205,9 @@ export default async function onboardingScreen(element, ctx) {
     </section>`;
   }
 
-  /* The greeting is in the support language (explanation, D-079), with the two language names
-     written in that same language - the learning language and the support language the learner just
-     picked, from the platform's own names, never a hand-kept table. */
+  /* The greeting is in the interface language (O-09, HD-14), with the two language names written in
+     that same language - the learning language and the support language the learner just picked,
+     from the platform's own names, never a hand-kept table. */
   function greetingLine() {
     const locale = t.lang('greeting');
     const params = greetingParams(context, copyLanguages().support, { levels: levelGrid(), picked: state.level });
@@ -222,7 +225,7 @@ export default async function onboardingScreen(element, ctx) {
     return html`<section class="s-onboarding__panel s-onboarding__panel--orena">
       <div class="s-onboarding__orena-head">${intelChip({ size: 56, mark: 44 })}<h1 class="s-onboarding__title" tabindex="-1">${t('meetTitle')}</h1></div>
       <div class="s-onboarding__log"><div class="s-onboarding__bubble">${intelChip({ size: 28, mark: 22, className: 's-onboarding__bubble-mark' })}<div class="s-onboarding__bubble-text" lang="${line.locale}">${line.text}</div></div></div>
-      ${cta('finish', t('goToday'), 'finish', state.busy === 'finish')}
+      ${cta('finish', state.busy === 'finish' ? t('settingUp') : t('goToday'), 'finish', state.busy === 'finish')}
     </section>`;
   }
 
@@ -361,6 +364,40 @@ export default async function onboardingScreen(element, ctx) {
     render();
   }
 
+  /* "More": the picker Settings uses for the support language (D-098) - the kit's sheet, one row per
+     language the platform lists, each in its own name, a check on the current one. */
+  function openSupportPicker() {
+    const supportCode = context.profile?.support_language || '';
+    const options = supportOptions(state.languagesData?.support_languages, supportCode);
+    openSheet({
+      label: t('supportLabel'),
+      className: 's-onboarding-picker-sheet',
+      render(sheet, handle) {
+        fillSheet(
+          sheet,
+          handle,
+          html`${sheetHead({ title: t('supportLabel'), closeLabel: shellCopy('close') })}<div class="o-sheet__body s-onboarding__picker-list" role="listbox" aria-label="${t('supportLabel')}">${options.map((opt) =>
+            listRow({
+              title: opt.label,
+              trailing: opt.selected ? raw(icon('check', { size: 18 })) : null,
+              dataset: { pick: opt.code, selected: opt.selected ? '1' : '0' },
+              className: 's-onboarding__picker-row',
+            }),
+          )}</div>`,
+        );
+        for (const button of sheet.querySelectorAll('[data-pick]')) {
+          button.setAttribute('role', 'option');
+          button.setAttribute('aria-selected', button.dataset.selected === '1' ? 'true' : 'false');
+          button.addEventListener('click', () => {
+            handle.close();
+            pickSupport(button.dataset.pick);
+          });
+        }
+        return null;
+      },
+    });
+  }
+
   function pickInterface(code) {
     if (!code || code === copyLanguages().ui) return;
     // Device-only: chooseInterface's onLanguageChange listener (main.js) remounts this screen -
@@ -429,6 +466,7 @@ export default async function onboardingScreen(element, ctx) {
     if (action === 'lang-next') return setStep(3);
     if (action === 'level-next') return finishLevel();
     if (action === 'finish') return finish();
+    if (action === 'support-more') return openSupportPicker();
     if (target.dataset.target) return pickTarget(target.dataset.target);
     if (target.dataset.support) return pickSupport(target.dataset.support);
     if (target.dataset.iface) return pickInterface(target.dataset.iface);

@@ -88,3 +88,19 @@ Parity found: step order, step list and labels, top bar (back, 4 bars, "n / 4", 
 ## 6. Code-read only (not reachable without writing to the account or finishing)
 
 A6 level-only mode, A7 the Chinese grid and HSK 7-9 cell, A8 and A9 failure and 409 paths, A10 finish, A11 entry routing, the Chinese-target Meet greeting, offline behaviour, and the interface pill on the Languages step (it calls `chooseInterface`, a device change that was avoided here; the interface was switched through storage instead). Sources: `static/orena/screens/onboarding/{screen,model,copy}.js`, `static/orena/shell/routes.js` (`entryRoute`), `static/orena/screens/today/{screen,model}.js` (level prompt).
+
+## Lane defaults pending human confirmation
+
+Dated 2026-10-07. Reason: "human: continue without asking; follows Settings / D-139 precedent". Provisional and reversible; the human may override any of them.
+
+| Id | Default | What was done |
+| --- | --- | --- |
+| HO-5 A (O-09) | interface language for the level descriptions and the Meet greeting | `copy.js`: every onboarding key is layer `interface` (the 15 description and greeting keys moved from `support`). The greeting still names the support language it explains in. Verified Chinese interface with Vietnamese support: descriptions in Chinese; Vietnamese greeting. |
+| O-05 | busy label as drawn | The last step's button reads "Setting up your Today..." (EN, VI, ZH) while it is disabled and navigating. Not observable in the browser: finishing was not pressed (it would complete onboarding). |
+| O-11 | follows BUG-06 | `identityOf` returns no name for a local session: the Account card omits the name line and shows the provider line (the avatar stays, with no initial). |
+| HO-6 A (O-06) | the design's pills plus "More" | Support pills: the current language, the three interface locales and the browser languages the platform lists; "More" opens the Settings picker sheet (endonym rows, check on the current one) for all 12. Interface keeps its 3 pills. |
+| HO-1 A | self-pick level, no placement check | keep, no work. |
+| HO-2 A | identity card until the auth gate | keep, no work. |
+| HO-3 A | greeting only; Orena is parked | keep, no work. |
+| HO-4 A | immediate writes, as built | keep, no work. |
+| O-07, O-10, O-12 | accepted HSK decision; level-only mode and Today banner; dark-only prototype | no change. |

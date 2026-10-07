@@ -1,7 +1,7 @@
-/* Onboarding's own words (Onboarding.dc.html, frames 01-05). Mostly chrome ('interface': step
-   labels, buttons, section titles, states) - CEFR/HSK level descriptions and Meet Orena's greeting
-   are explanation ('support': the learner language contract's own line for what a level means and
-   what Orena will do), so they follow the learner's support language, not the interface. */
+/* Onboarding's own words (Onboarding.dc.html, frames 01-05). All of it is chrome of a setup screen
+   ('interface'): step labels, buttons, section titles, states, and (O-09, HO-5 A, D-139 HD-14) the
+   one-line level descriptions and Meet Orena's greeting, which the frames draw in the interface
+   language. The greeting still names the support language it will explain in. */
 import { defineCopy } from '../../copy/index.js';
 
 const INTERFACE_KEYS = [
@@ -14,10 +14,7 @@ const INTERFACE_KEYS = [
   'pickTitle', 'pickSub', 'adjustLabel',
   'levelA1Name', 'levelA2Name', 'levelB1Name', 'levelB2Name', 'levelC1Name', 'levelC2Name',
   'levelH1Name', 'levelH2Name', 'levelH3Name', 'levelH4Name', 'levelH5Name', 'levelH6Name', 'levelH79Name',
-  'meetTitle', 'goToday', 'saveError',
-];
-
-const SUPPORT_KEYS = [
+  'meetTitle', 'goToday', 'settingUp', 'saveError', 'more',
   'levelA1Desc', 'levelA2Desc', 'levelB1Desc', 'levelB2Desc', 'levelC1Desc', 'levelC2Desc',
   'levelH1Desc', 'levelH2Desc', 'levelH3Desc', 'levelH4Desc', 'levelH5Desc', 'levelH6Desc', 'levelH79Desc',
   'greeting', 'greetingAnon',
@@ -26,7 +23,6 @@ const SUPPORT_KEYS = [
 export const t = defineCopy('onboarding', {
   layers: {
     ...Object.fromEntries(INTERFACE_KEYS.map((key) => [key, 'interface'])),
-    ...Object.fromEntries(SUPPORT_KEYS.map((key) => [key, 'support'])),
   },
   en: {
     stepWelcome: 'Welcome', stepAccount: 'Account', stepLanguages: 'Languages', stepLevel: 'Your level', stepOrena: 'Meet Orena',
@@ -50,7 +46,7 @@ export const t = defineCopy('onboarding', {
     levelH1Name: 'Starter', levelH2Name: 'Elementary', levelH3Name: 'Intermediate',
     levelH4Name: 'Upper-int.', levelH5Name: 'Advanced', levelH6Name: 'Proficient',
     levelH79Name: 'Mastery',
-    meetTitle: 'Meet Orena', goToday: 'Go to Today →',
+    meetTitle: 'Meet Orena', goToday: 'Go to Today →', settingUp: 'Setting up your Today…', more: 'More',
     saveError: "That didn't save. Try again.",
     levelA1Desc: 'Simple words and phrases for everyday needs.',
     levelA2Desc: 'Short, familiar conversations and texts.',
@@ -90,7 +86,7 @@ export const t = defineCopy('onboarding', {
     levelH1Name: 'Mới bắt đầu', levelH2Name: 'Sơ cấp', levelH3Name: 'Trung cấp',
     levelH4Name: 'Trung cấp cao', levelH5Name: 'Nâng cao', levelH6Name: 'Thành thạo',
     levelH79Name: 'Tinh thông',
-    meetTitle: 'Làm quen Orena', goToday: 'Vào Hôm nay →',
+    meetTitle: 'Làm quen Orena', goToday: 'Vào Hôm nay →', settingUp: 'Đang chuẩn bị Hôm nay…', more: 'Khác',
     saveError: 'Chưa lưu được. Thử lại nhé.',
     levelA1Desc: 'Từ và câu đơn giản cho nhu cầu hằng ngày.',
     levelA2Desc: 'Hội thoại và bài đọc ngắn, quen thuộc.',
@@ -130,7 +126,7 @@ export const t = defineCopy('onboarding', {
     levelH1Name: '入门', levelH2Name: '初级', levelH3Name: '中级',
     levelH4Name: '中高级', levelH5Name: '高级', levelH6Name: '精通',
     levelH79Name: '高等',
-    meetTitle: '认识 Orena', goToday: '前往「今天」→',
+    meetTitle: '认识 Orena', goToday: '前往「今天」→', settingUp: '正在准备你的「今天」…', more: '更多',
     saveError: '未能保存，请重试。',
     levelA1Desc: '日常所需的简单词汇和短语。',
     levelA2Desc: '简短、熟悉的对话和文章。',

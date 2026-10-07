@@ -643,3 +643,18 @@
     animation: none;
   }
 }
+
+/* "More" (HO-6): the pill that opens the support-language picker, with the chevron Settings' picker draws. */
+.s-onboarding__pill--more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.s-onboarding__picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-onboarding__picker-row .c-row__trail {
+  color: var(--accent);
+}
