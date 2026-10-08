@@ -16,6 +16,16 @@ security requirements still apply, but no approved learner capability is held ba
 capability follows its own flag; `AGENT_ENABLED` is the Orena Intelligence switch (the old "never in production" rule
 is retired). Proposed :8000 env: `APP_ENV=staging`, `AGENT_ENABLED=true`, `AGENT_VOICE_ENABLED=false`.
 
+**Staging deployed 2026-10-08 (human decision after #101/#102):** `main` 5045fe74, image `orena:main-5045fe74`, schema
+0029 (no migration). Deploy path: `scripts/staging_8000_deploy.ps1 -Image orena:main-<sha>` (web + `reading-worker`, same
+image, same env). Runtime env: `%LOCALAPPDATA%\orena-product\staging-8000untime.env`, operator-owned, outside Git,
+ACL to the operator. Flags: `APP_ENV=staging`, `ORENA_ACCOUNT_BACKBONE=on`, `ORENA_PRACTICE_SESSION=on`,
+`AGENT_ENABLED=true`, `AGENT_VOICE_ENABLED=false`, `AGENT_DAILY_SPEND_CAP_USD=1`, `AI_RUNTIME_MODE=capability`,
+`PRONUNCIATION_PROVIDER` empty (Azure when configured). Provider credentials: Gemini and Azure Speech in the env file; a
+:8000-own `AI_PROVIDER_SECRETS_KEY`. AI routing rows (`ai.active_selection`, eight `ai.capability.*`) mirror :8021
+(gemini-3.5-flash-lite). Content: the S1 reading pack (4 sources, 30 EN + 22 ZH texts) promoted by content pack, sources
+approved in Admin, 52 jobs consumed by the worker, all published. Media has no content-pack path yet.
+
 ## Decided 2026-10-08 (D-143) - read this first
 
 The human decided B1-B5; sections below are the analysis they were decided on and are kept as written.
