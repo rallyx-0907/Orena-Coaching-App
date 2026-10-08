@@ -664,10 +664,39 @@ class GrammarStoreRepository:
             statement = statement.where(POINTS.c.id.in_(select(VERSIONS.c.point_id).where(VERSIONS.c.review_status == review)))
         with self.engine.connect() as connection:
             rows = connection.execute(statement).all()
-        return [{"id": r.id, "language": r.language_code, "lifecycle": r.lifecycle, "function": r.function_id,
-                 "level": None if r.level_rank is None else {"framework": r.level_framework, "value": r.level_value,
-                                                              "rank": r.level_rank},
-                 "sequence": r.sequence, "published_at": _iso(r.published_at)} for r in rows]
+            # What an Admin review row names and where its newest version stands, so the review queue draws without one
+            # detail read per point. A point's display columns are filled when it is published; before that, the
+            # header, level and function come from its newest version's content.
+            latest: dict[str, Any] = {}
+            if rows:
+                versions = connection.execute(
+                    select(VERSIONS.c.id, VERSIONS.c.point_id, VERSIONS.c.version, VERSIONS.c.review_status,
+                           VERSIONS.c.rights_status, VERSIONS.c.is_published, VERSIONS.c.content)
+                    .where(VERSIONS.c.point_id.in_([r.id for r in rows]))).all()
+                for v in versions:
+                    if v.point_id not in latest or v.version > latest[v.point_id].version:
+                        latest[v.point_id] = v
+        out = []
+        for r in rows:
+            newest = latest.get(r.id)
+            content = dict(newest.content or {}) if newest is not None else {}
+            header = content.get("header") if isinstance(content.get("header"), dict) else {}
+            level = (None if r.level_rank is None else {"framework": r.level_framework, "value": r.level_value,
+                                                         "rank": r.level_rank}) or content.get("level")
+            out.append({
+                "id": r.id, "language": r.language_code, "lifecycle": r.lifecycle,
+                "function": r.function_id or content.get("function"), "level": level,
+                "sequence": r.sequence if r.sequence is not None else content.get("sequence"),
+                "published_at": _iso(r.published_at),
+                "header": {"native_title": r.native_title or header.get("native_title"),
+                           "native_title_pinyin": r.native_title_pinyin or header.get("native_title_pinyin"),
+                           "title": header.get("title"), "sub": header.get("sub")},
+                "point_type": r.point_type or content.get("point_type"),
+                "latest_version": None if newest is None else {
+                    "id": str(newest.id), "version": newest.version, "review_status": newest.review_status,
+                    "rights_status": newest.rights_status, "is_published": bool(newest.is_published)},
+            })
+        return out
 
     def admin_point(self, point_id: str) -> dict[str, Any]:
         with self.engine.connect() as connection:
