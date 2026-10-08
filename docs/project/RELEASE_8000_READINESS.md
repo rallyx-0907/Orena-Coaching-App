@@ -18,7 +18,8 @@ is retired). Proposed :8000 env: `APP_ENV=staging`, `AGENT_ENABLED=true`, `AGENT
 
 **Staging deployed 2026-10-08 (human decision after #101/#102):** `main` 5045fe74, image `orena:main-5045fe74`, schema
 0029 (no migration). Deploy path: `scripts/staging_8000_deploy.ps1 -Image orena:main-<sha>` (web + `reading-worker`, same
-image, same env). Runtime env: `%LOCALAPPDATA%\orena-product\staging-8000untime.env`, operator-owned, outside Git,
+image, same env). Runtime env: `%LOCALAPPDATA%\orena-product\staging-8000
+untime.env`, operator-owned, outside Git,
 ACL to the operator. Flags: `APP_ENV=staging`, `ORENA_ACCOUNT_BACKBONE=on`, `ORENA_PRACTICE_SESSION=on`,
 `AGENT_ENABLED=true`, `AGENT_VOICE_ENABLED=false`, `AGENT_DAILY_SPEND_CAP_USD=1`, `AI_RUNTIME_MODE=capability`,
 `PRONUNCIATION_PROVIDER` empty (Azure when configured). Provider credentials: Gemini and Azure Speech in the env file; a
@@ -45,6 +46,18 @@ The human decided B1-B5; sections below are the analysis they were decided on an
 - **Observed on :8000 (read only):** its web container runs code bind-mounted from the `...-claudecode` worktree
   (`app.py`, `static/`, `templates/`, `writing_coach/` ...) on image `ai-writing-coach:local`. D-144 replaces this
   with an image built from the exact `main` SHA, with no source mounts.
+- **Released 2026-10-08 (human authorization; historical, superseded by the staging deployment above):** final v3 backup `20261008T042406Z` rehearsed with `main` 6d7ebff0
+  (PASS), then in a maintenance window (web stopped 04:36Z, no other session) the pack's preflight passed and the
+  chain 0004 -> 0029 was applied: `verify_after` ready, rows kept, legacy Reading 14/1 frozen by 4 triggers, chain
+  `65044f6e...` and execution `d418c352...` digests. The smoke of image `orena:main-6d7ebff0` found
+  `/orena-brand/logo/*` 404 (the Dockerfile copied no `assets/`); fixed by PR #98, released as **`main` a2342e62,
+  image `orena:main-a2342e62`**, no source mounts, only the `ai-writing-coach-data` volume; backbone and practice
+  session `off`, billing/agent unset. Access restored 05:20Z. The old container is kept stopped as
+  `ai-writing-coach-writing-coach-1-before-6d7ebff0` (restart `no`; it cannot run on the new schema). At that
+  release, still open for the operator: `PRONUNCIATION_PROVIDER` was `demo`, no `reading-worker` ran, the agent was
+  off. All three were resolved by the staging deployment of `main` 5045fe74 (above: Azure pronunciation, the worker,
+  the agent on). Invitation-only is not in the application (any verified Google account signs in); it rests on the
+  OAuth/Cloudflare configuration. Migration record: `proposals/PRODUCTION_MIGRATION_PACK.md` section 4c.
 - **Runtime policy:** no new persistent runtime; :8021 dev/QA, :8000 product-like acceptance, rehearsal disposable.
 - **Correction (2026-10-08 inventory):** the Admin console already exists in the new UI (`#/admin/*`, `screens/admin/*`,
   on `Orena Admin.dc.html`); sections 4 and 7 saying it is old-UI only are stale. Old `#/admin?id=<section>` links need a
@@ -69,6 +82,10 @@ The human decided B1-B5; sections below are the analysis they were decided on an
    release: backbone off (section 3).
 
 ## 1. Schema
+
+> Historical analysis, written before the release. The whole chain 0004 -> 0029, including 0029, was applied to :8000
+> on 2026-10-08 under the human's authorization: `proposals/PRODUCTION_MIGRATION_PACK.md` section 4c. Statements below that a
+> revision "waits for authorization" describe the state before that apply.
 
 ### 1.1 The facts
 
