@@ -100,6 +100,20 @@ def test_an_utterance_is_one_turn_whatever_tools_it_called():
     assert turns_of(rt, answer) == before + 2
 
 
+def test_a_tool_first_next_utterance_does_not_take_the_words_of_the_one_before():
+    rt, _, service, _ = build([])
+    answer = open_voice(service)
+    voice_id = answer["voice_session_id"]
+    relay(service, voice_id, "get_current_word_info", {}, "mitigate là gì", "u1")
+    service.utterance_turn(voice_id, "u1", "mitigate là gì", LEARNER)  # u1 closes
+    relay(service, voice_id, "get_current_word_info", {}, None, "u2")  # u2's tool call, before its transcript
+    assert turns_of(rt, answer) == 2
+    assert [(t.text, t.ref.rsplit(":", 1)[1]) for t in state_of(rt, answer["session_id"]).recent_turns] == [("mitigate là gì", "u1")]
+    service.utterance_turn(voice_id, "u2", "cho ví dụ", LEARNER)  # its words arrive with its boundary
+    texts = [(t.text, t.ref.rsplit(":", 1)[1]) for t in state_of(rt, answer["session_id"]).recent_turns]
+    assert texts == [("mitigate là gì", "u1"), ("cho ví dụ", "u2")] and turns_of(rt, answer) == 2
+
+
 def test_the_same_words_said_twice_are_two_turns_and_the_words_are_not_the_identity():
     rt, _, service, _ = build([])
     answer = open_voice(service)
@@ -259,7 +273,14 @@ def test_the_voice_sessions_identity_is_part_of_the_turns_identity():
 
 
 def tokens(req):
-    return sum((len(m.content) + 3) // 4 for m in req.messages)
+    """The worst case any tokenizer can reach: one token per UTF-8 byte (the shipped instruction counted as prose)."""
+
+    from writing_coach.agent.prompts import INSTRUCTION
+    from writing_coach.agent.tokens import FRAME_TOKENS, RESERVE_TOKENS, PROSE_CHARS_PER_TOKEN
+
+    return RESERVE_TOKENS + sum(
+        FRAME_TOKENS + (-(-len(m.content) // PROSE_CHARS_PER_TOKEN) if m.content == INSTRUCTION else len(m.content.encode()))
+        for m in req.messages)
 
 
 PASTE = "Remote work has changed how people live. " * 200  # 8,400 characters
@@ -296,7 +317,7 @@ def test_the_assembled_prompt_stays_inside_the_input_budget():
 
 
 def test_the_pasted_text_is_cut_to_what_fits_not_sent_whole():
-    budget = base_tokens() + 1_500
+    budget = base_tokens() + 6_000
     sent = long_conversation(budget)
     assert tokens(sent) <= budget
     carried = "".join(m.content for m in sent.messages if m.content.startswith(CARRIED_HEAD))
@@ -304,7 +325,7 @@ def test_the_pasted_text_is_cut_to_what_fits_not_sent_whole():
 
 
 def test_within_the_budget_nothing_is_dropped():
-    sent = long_conversation(AgentLimits().max_input_tokens_per_turn)
+    sent = long_conversation(60_000)
     users = [m.content for m in sent.messages if m.role == "user"]
     assert PASTE in users or any(PASTE in m.content for m in sent.messages)  # nothing was cut
     assert sum(1 for m in sent.messages if m.content.startswith("câu hỏi dài")) == 5
@@ -332,6 +353,7 @@ def test_a_long_chinese_paste_stays_inside_the_budget_under_a_conservative_count
     assert sent.messages[-1].content == "第三段是不是太弱了？"
     total = sum(real_tokens(m.content) for m in sent.messages)
     assert total <= budget, (total, budget)  # len/4 would call this about a third of what it is
+    assert tokens(sent) <= budget
 
 
 def test_the_estimate_never_undercounts_chinese():
@@ -339,6 +361,38 @@ def test_the_estimate_never_undercounts_chinese():
 
     text = "远程办公" * 500
     assert estimate_tokens(text) >= len(text)  # a Han character is at least one token
-    assert estimate_tokens("hello world " * 100) <= len("hello world " * 100) // 3
+    assert estimate_tokens("hello world " * 100) >= len("hello world " * 100)  # the bound, not a guess at prose
     kept = fit_chars(text, 1_000)
     assert estimate_tokens(text[:kept]) <= 1_000 < estimate_tokens(text[: kept + 1]) + 2
+
+
+ADVERSARIAL = {
+    "digits and punctuation": "1a!2b?3c;" * 700,
+    "emoji": "😀🎉" * 900,
+    "vietnamese": "Tiếng Việt có nhiều dấu: ắ ằ ẳ ẵ ặ. " * 120,
+    "arabic": "مرحبا بالعالم " * 400,
+    "mixed": "abc 远程办公 ñandú 😀 123 " * 250,
+}
+
+
+def test_the_bound_holds_for_adversarial_ascii_and_unicode_whatever_the_tokenizer():
+    from writing_coach.agent.tokens import estimate_tokens
+
+    for name, text in ADVERSARIAL.items():
+        assert estimate_tokens(text) >= len(text.encode("utf-8")), name  # a token is at least one byte
+        budget = base_tokens() + 2_500
+        limits = AgentLimits(max_input_tokens_per_turn=budget, compact_after_turns=100, compact_after_chars=10**9)
+        rt, provider = runtime([reply(text[:300]) for _ in range(8)], limits=limits)
+        sid = session_of(run(rt, request(text[:2400])))
+        for _ in range(3):
+            run(rt, request(text[:900], sid))
+        run(rt, request(text[:150], sid))
+        sent = provider.requests[-1]
+        assert sent.messages[-1].content == text[:150], name  # the learner's words stay
+        assert tokens(sent) <= budget, (name, tokens(sent), budget)
+
+
+def test_a_tool_result_is_left_out_when_the_bound_says_it_would_not_fit():
+    from writing_coach.agent.tokens import estimate_tokens
+
+    assert estimate_tokens("😀" * 100) == 400 and estimate_tokens("1" * 100) == 100

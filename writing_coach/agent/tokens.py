@@ -1,50 +1,43 @@
-"""A token estimate for the hard input budget that does not undercount other writing systems.
+"""A hard upper bound on the tokens of a text, for the input budget; independent of the provider's tokenizer.
 
-`len(text) / 4` is about right for English and far too small for Chinese, where a character is one token or more. The
-provider's own tokenizer is not reliably available (each vendor counts differently, and some only after the call), so
-the budget uses a conservative estimate by script: it may over-count, so a turn is trimmed a little early, and it must
-not under-count, so a turn never goes over the cost and context bound it was given.
+The budget (`AgentLimits.max_input_tokens_per_turn`) is a cost and context bound, so it must not be undercounted for any
+input - English, Chinese, Vietnamese, or an adversarial string of digits and punctuation. Every tokenizer in use (BPE
+with a byte fallback) emits at least one byte per token, so the number of UTF-8 bytes is an upper bound that holds for
+every language and every provider. It over-counts (about 4x for English prose) and the budget trims early: that is the
+price of a bound that cannot be exceeded.
+
+The one exception is text the repository itself ships (the fixed instruction): its tokenisation is not adversarial, so
+it is counted as prose with a wide margin (`PROSE_CHARS_PER_TOKEN`).
 """
 
 from __future__ import annotations
 
-CJK_TOKENS_PER_CHAR = 2  # Han, kana, Hangul, full-width forms: one to two tokens each in common tokenizers
-ACCENTED_CHARS_PER_TOKEN = 2  # other non-ASCII (Vietnamese and other accented Latin, Cyrillic, ...): multi-byte pieces
-ASCII_CHARS_PER_TOKEN = 4
+from collections.abc import Iterable
 
-_CJK = (
-    (0x2E80, 0x2FDF), (0x3000, 0x30FF), (0x3100, 0x312F), (0x3190, 0x31FF), (0x3400, 0x4DBF), (0x4E00, 0x9FFF),
-    (0xAC00, 0xD7AF), (0xF900, 0xFAFF), (0xFE30, 0xFE4F), (0xFF00, 0xFFEF), (0x20000, 0x2FA1F),
-)  # fmt: skip
-
-
-def _is_cjk(code: int) -> bool:
-    return any(low <= code <= high for low, high in _CJK)
+PROSE_CHARS_PER_TOKEN = 3  # our own English instruction runs about 4.3; counted at 3
+FRAME_TOKENS = 8  # a message's role and delimiters
+RESERVE_TOKENS = 256  # the provider's own framing of the request
 
 
 def estimate_tokens(text: str) -> int:
-    """An upper-leaning estimate of the tokens in `text`."""
+    """The tokens of `text`, at most: its UTF-8 bytes."""
 
-    if text.isascii():
-        return (len(text) + ASCII_CHARS_PER_TOKEN - 1) // ASCII_CHARS_PER_TOKEN
-    ascii_chars = cjk = other = 0
-    for char in text:
-        code = ord(char)
-        if code < 128:
-            ascii_chars += 1
-        elif _is_cjk(code):
-            cjk += 1
-        else:
-            other += 1
-    return (
-        (ascii_chars + ASCII_CHARS_PER_TOKEN - 1) // ASCII_CHARS_PER_TOKEN
-        + cjk * CJK_TOKENS_PER_CHAR
-        + (other + ACCENTED_CHARS_PER_TOKEN - 1) // ACCENTED_CHARS_PER_TOKEN
-    )
+    return len(text.encode("utf-8"))
+
+
+def prose_tokens(text: str) -> int:
+    return (len(text) + PROSE_CHARS_PER_TOKEN - 1) // PROSE_CHARS_PER_TOKEN
+
+
+def messages_tokens(contents: Iterable[str], *, fixed: str | None = None) -> int:
+    """The bound for a request's messages (their texts); `fixed` is the one text counted as shipped prose."""
+
+    return sum((prose_tokens(c) if fixed is not None and c == fixed else estimate_tokens(c)) + FRAME_TOKENS
+               for c in contents)
 
 
 def fit_chars(text: str, tokens: int) -> int:
-    """How many leading characters of `text` fit in `tokens` by the estimate above."""
+    """How many leading characters of `text` fit in `tokens` by the bound above."""
 
     low, high = 0, len(text)
     while low < high:

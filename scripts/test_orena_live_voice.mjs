@@ -88,15 +88,15 @@ const { createSession } = await import('../static/orena/agent/session.js');
 }
 
 // Each utterance has its own identity, never its words: the same words twice are two; a tool call joins the open
-// utterance; a call that arrives after the turn end with the words just closed is that utterance's.
+// utterance; a closed utterance is never reopened - a tool call that arrives before the next utterance's transcript
+// belongs to the next one.
 {
   const t = utteranceTracker();
-  assert.equal(t.forCall(true, false), 'u1');
-  assert.equal(t.forCall(true, true), 'u1', 'a second call in the same utterance');
+  assert.equal(t.forCall(), 'u1');
+  assert.equal(t.forCall(), 'u1', 'a second call in the same utterance');
   assert.equal(t.close({ heard: 'yes', said: 'Right.' }), 'u1');
-  assert.equal(t.forCall(false, true), 'u1', 'a late call carries the closed utterance');
-  assert.equal(t.close({ heard: '', said: '' }), null, 'it was closed and posted already');
-  assert.equal(t.open(), 'u2');
+  assert.equal(t.forCall(), 'u2', 'the first call of the next utterance, before its transcript');
+  assert.equal(t.open(), 'u2', 'its transcript then joins it');
   assert.equal(t.close({ heard: 'yes', said: 'Again.' }), 'u2', 'the same words are another utterance');
   assert.equal(t.close({ heard: '', said: 'Welcome.' }), null, 'a turn with no learner in it has no boundary');
   assert.deepEqual(t.transcript(), [

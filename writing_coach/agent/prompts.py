@@ -17,7 +17,7 @@ from writing_coach.agent.context import Tier1Context, TurnInput
 from writing_coach.agent.locale import to_internal
 from writing_coach.agent import surfaces
 from writing_coach.agent.address import Address, capitalised
-from writing_coach.agent.tokens import estimate_tokens, fit_chars
+from writing_coach.agent.tokens import RESERVE_TOKENS, estimate_tokens, fit_chars, messages_tokens
 from writing_coach.agent.provider import ProviderMessage
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.session import AgentSessionState
@@ -411,6 +411,8 @@ def opening_messages(
             return out + [ProviderMessage(role=t.role, content=t.text) for t in kept]  # type: ignore[arg-type]
 
         if budget_tokens is not None:
+            budget_tokens -= RESERVE_TOKENS  # the provider's own framing of the request
+
             def over(kept: list) -> int:
                 return _tokens([*messages, *conversation(kept), *tail]) - budget_tokens
 
@@ -434,7 +436,7 @@ PASTED_CUT = "\n[... the rest of the text is left out: it does not fit]"
 
 
 def _tokens(messages: Sequence[ProviderMessage]) -> int:
-    return sum(estimate_tokens(m.content) for m in messages)
+    return messages_tokens([m.content for m in messages], fixed=INSTRUCTION)
 
 
 def _tail_messages(turn: TurnInput, tier1: Tier1Context, session: AgentSessionState | None, *, opening: bool,

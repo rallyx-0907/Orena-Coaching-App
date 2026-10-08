@@ -55,7 +55,9 @@ def test_history_is_bounded_and_drops_the_oldest_first():
 
 def test_a_long_pasted_message_is_kept_whole_for_the_next_question():
     article = "Artificial intelligence has fundamentally changed work. " * 300  # ~16,500 characters
-    rt, provider = runtime([reply("Tác giả phản đối việc bỏ qua tác động."), reply("Đoạn đó lập luận khá mạnh.")])
+    # The input budget is a hard bound (at most one token per UTF-8 byte), so a text this long needs a budget for it.
+    rt, provider = runtime([reply("Tác giả phản đối việc bỏ qua tác động."), reply("Đoạn đó lập luận khá mạnh.")],
+                           limits=AgentLimits(max_input_tokens_per_turn=60_000))
     conversation(rt, article + "\nTác giả phản đối điều gì?", "đoạn thứ 3 lập luận có yếu không?")
     kept = [text for role, text in roles(provider.requests[1]) if role == "user"][0]
     assert kept.startswith(article[:200]) and kept.endswith("Tác giả phản đối điều gì?")

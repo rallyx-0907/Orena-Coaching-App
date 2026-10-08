@@ -122,7 +122,6 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   let worklet = null;
   let source = null;
   let heard = ''; // what the learner has said in the current turn
-  let lastHeard = ''; // the learner's latest words, kept past the turn's end
   let said = ''; // what Orena has said in the current turn
   const tracker = utteranceTracker();
   let playAt = 0;
@@ -227,11 +226,11 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   async function runTools(calls) {
     let answer = null;
     try {
-      // The vendor's input transcript can arrive after its tool call: the learner's latest words go instead of an
-      // empty string, which the server would read as "they said nothing" and lose the open-on-request (R29).
-      const words = heard.trim() || lastHeard;
-      // Late transcript: a call that comes after the turn end, with the words of the utterance just closed, is that one's.
-      const which = tracker.forCall(Boolean(heard.trim()), Boolean(lastHeard));
+      // The vendor's input transcript can arrive after its tool call, within the same utterance: the call is then sent
+      // without words (the server keeps the utterance's words from its boundary). A closed utterance is never reopened:
+      // the words of the one before are not this one's.
+      const words = heard.trim();
+      const which = tracker.forCall();
       answer = await post('/api/agent/voice/tool', { voice_session_id: id, utterance: which, calls, ...(words ? { heard: words } : {}) }, fetchImpl);
     } catch (error) {
       if (error?.status === 404) return end('server');
@@ -274,7 +273,6 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     if (content.inputTranscription?.text) {
       tracker.open();
       heard += content.inputTranscription.text;
-      if (heard.trim()) lastHeard = heard.trim();
       onLearner(heard);
     }
     if (content.outputTranscription?.text) {
@@ -347,22 +345,20 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
 export function utteranceTracker(limit = 40) {
   let seq = 0;
   let current = null;
-  let last = null;
   const turns = [];
   function open() {
     if (!current) {
       seq += 1;
       current = `u${seq}`;
-      last = current;
     }
     return current;
   }
   return {
     open,
-    /* The utterance a tool call belongs to: the open one; or, when it comes after the turn end with the words of the
-       utterance just closed (a late transcript), that one; else a new one. */
-    forCall(hasWordsNow, hasEarlierWords) {
-      return current || (!hasWordsNow && hasEarlierWords && last) || open();
+    /* The utterance a tool call belongs to: the open one, else a new one. A turn end closes an utterance for good: a
+       call after it - even before the next utterance's transcript has arrived - starts the next utterance. */
+    forCall() {
+      return open();
     },
     /* The vendor's turn end. Returns the identity to post as the boundary, or null when the turn had no learner in it
        (Orena's own greeting). */
