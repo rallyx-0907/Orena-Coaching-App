@@ -61,12 +61,18 @@ class World:
         return items
 
 
+@pytest.fixture(autouse=True)
+def _restore_module_state():
+    """Put back whatever the app wired into the module seams, so a later suite sees the app's own wiring."""
+    saved = (grammar_admin_api._state, grammar_api._state)
+    yield
+    grammar_admin_api._state, grammar_api._state = saved
+
+
 @pytest.fixture()
 def world(tmp_path):
     w = World(tmp_path)
     yield w
-    grammar_admin_api.configure_grammar_admin(admin_guard=None)
-    grammar_api.configure_grammar_api(None)
     w.engine.dispose()
 
 
