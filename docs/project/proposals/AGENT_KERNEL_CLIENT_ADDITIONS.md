@@ -23,13 +23,22 @@ architecture review (`AGENTS.md` §7).
    of. The client already may send `session_id` in the request body; when it does, the voice session opens inside that
    typed conversation. When it does not, the response says which session was created, and the client sends it on its
    next typed turn.
-2. **`POST /api/agent/voice/end` request gains `transcript`** (optional array, at most 40 items):
-   `[{ "role": "user" | "assistant", "text": string }]`, the learner's and Orena's words as the client showed them
-   (`inputTranscription`, `outputTranscription`; `onTurnComplete({ heard, said })` in `live-voice.js` already has both).
-   The server adds them to the session's recent turns, skipping any user words it already heard through a tool call,
-   so a typed turn after the voice session sees the whole exchange. Items that are not a turn are ignored; each text is
-   cut to 4000 characters. Send it on every end path (button, socket close, `pagehide` beacon).
-3. **`do_action` gains `requested`** (boolean, model-facing, not a client field): the model sets it when the learner's
+2. **An utterance identity** (`live-voice.js` implements it, `utteranceTracker`): the client numbers what the learner
+   says per voice session (`u1`, `u2`, ...; an opaque token of at most 64 characters, never the words). It opens with the
+   first thing that belongs to the utterance (its transcript or a tool call) and closes at the vendor's `turnComplete`.
+   - `POST /api/agent/voice/tool` gains `utterance`.
+   - **New** `POST /api/agent/voice/turn { voice_session_id, utterance, heard? }`, sent at `turnComplete` whenever the
+     learner spoke, with or without a tool call. The server counts the utterance as one turn of the conversation, once
+     (a repeat of the same `utterance` is a no-op), and puts its words in once.
+   Identical words said twice are two utterances. A client that sends no identity is still served, but its spoken turns
+   are not counted as turns.
+3. **`POST /api/agent/voice/end` request gains `transcript`** (optional array, at most 40 items):
+   `[{ "role": "user" | "assistant", "text": string, "utterance": string }]` (a reply carries the utterance it answers),
+   from `inputTranscription` / `outputTranscription`. The server merges it by `utterance` - never by the words - so each
+   reply sits behind the words it answers, and a typed turn or an earlier spoken one with the same words is never taken
+   for it. Items that are not a turn are ignored; each text is cut to 4000 characters. Send it on the end paths the
+   client can (button, socket close; the `pagehide` beacon carries none).
+4. **`do_action` gains `requested`** (boolean, model-facing, not a client field): the model sets it when the learner's
    own words asked for the action or accepted Orena's offer. The client sees no change: an action that runs at once
    still arrives with `open: true` (§7), now also for words no phrase list knows.
 

@@ -38,9 +38,9 @@ def typed(rt, message, session_id=None):
     return run(rt, request(message, session_id))
 
 
-def say(service, voice_id, heard, **do):
+def say(service, voice_id, heard, utterance=None, **do):
     call = {"id": "c1", "name": "do_action", "args": {"type": "save_word", "text": "mitigate", **do}}
-    return service.relay(voice_id, [call], LEARNER, heard=heard)
+    return service.relay(voice_id, [call], LEARNER, heard=heard, utterance=utterance)
 
 
 def test_a_voice_session_opened_after_typing_starts_from_that_conversation():
@@ -116,10 +116,12 @@ def test_a_voice_offer_accepted_by_voice_is_one_run_and_ends_the_offer():
 def test_a_transcript_sent_at_the_end_joins_the_conversation_without_doubling_what_was_heard():
     rt, provider, service, _ = build([reply("Ví dụ.")])
     answer = open_voice(service)
-    say(service, answer["voice_session_id"], "scarcity là gì", requested=False, text="scarcity")
+    say(service, answer["voice_session_id"], "scarcity là gì", "u1", requested=False, text="scarcity")
     ended = service.end(answer["voice_session_id"], LEARNER, transcript=[
-        {"role": "user", "text": "scarcity là gì"}, {"role": "assistant", "text": "Scarcity là sự khan hiếm."},
-        {"role": "user", "text": "cho ví dụ điện"}, {"role": "assistant", "text": "Điện khan hiếm vào mùa hè."},
+        {"role": "user", "text": "scarcity là gì", "utterance": "u1"},
+        {"role": "assistant", "text": "Scarcity là sự khan hiếm.", "utterance": "u1"},
+        {"role": "user", "text": "cho ví dụ điện", "utterance": "u2"},
+        {"role": "assistant", "text": "Điện khan hiếm vào mùa hè.", "utterance": "u2"},
     ])
     assert ended["voice_session_id"] == answer["voice_session_id"]
     typed(rt, "lưu cái đó", answer["session_id"])

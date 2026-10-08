@@ -48,6 +48,20 @@ class ConversationTurn:
 
     role: str  # "user" | "assistant"
     text: str
+    # A spoken turn's identity: "<voice session>:<utterance>" (the client's own sequence, never the words). A reply
+    # carries the identity of the utterance it answers. None for a typed turn.
+    ref: str | None = None
+
+
+def _bounded(turns: tuple[ConversationTurn, ...], limits: AgentLimits) -> tuple[ConversationTurn, ...]:
+    """The oldest whole exchanges go first when the history holds more than `max_recent_turns` turns or
+    `max_history_chars` characters. The newest exchange stays."""
+
+    while len(turns) > 2 and (
+        len(turns) > limits.max_recent_turns or sum(len(t.text) for t in turns) > limits.max_history_chars
+    ):
+        turns = turns[2:]
+    return turns
 
 
 @dataclass(frozen=True)
@@ -125,12 +139,42 @@ class AgentSessionState:
         """Turns appended as said - typed, or heard in a voice session - and the history bounded as above."""
 
         cap = limits.max_turn_chars
-        turns = (*self.recent_turns, *(ConversationTurn(t.role, t.text[:cap]) for t in added))
-        while len(turns) > 2 and (
-            len(turns) > limits.max_recent_turns or sum(len(t.text) for t in turns) > limits.max_history_chars
-        ):
-            turns = turns[2:]
-        return replace(self, recent_turns=turns)
+        turns = (*self.recent_turns, *(ConversationTurn(t.role, t.text[:cap], t.ref) for t in added))
+        return replace(self, recent_turns=_bounded(turns, limits))
+
+    def with_transcript(self, transcript: tuple[ConversationTurn, ...], limits: AgentLimits,
+                        counted: frozenset[str] = frozenset()) -> AgentSessionState:
+        """A voice session's transcript, in the order it was said. Turns are matched by their `ref` - the voice
+        session's own utterance identity - never by their words, so a typed "yes" or an earlier spoken one is never
+        taken for this one. A learner turn the server already holds stays where it is and its replies are placed right
+        behind it; one it does not hold is placed before the next one it holds, else at the end, and counts as a turn
+        of the conversation, as a typed one does (unless its `ref` is in `counted`)."""
+
+        cap = limits.max_turn_chars
+        turns = list(self.recent_turns)
+        unheard = 0
+
+        def anchor(ref: str | None) -> int | None:
+            return next((i for i, t in enumerate(turns) if ref is not None and t.role == "user" and t.ref == ref), None)
+
+        for k, item in enumerate(transcript):
+            added = ConversationTurn(item.role, item.text[:cap], item.ref)
+            if item.role == "user":
+                if anchor(item.ref) is not None:
+                    continue
+                unheard += item.ref not in counted  # a turn counted at its utterance boundary is not counted twice
+                later = next((anchor(t.ref) for t in transcript[k + 1:] if t.role == "user" and anchor(t.ref) is not None), None)
+                turns.insert(len(turns) if later is None else later, added)
+                continue
+            at = anchor(item.ref)
+            if at is None:
+                turns.append(added)
+                continue
+            at += 1
+            while at < len(turns) and turns[at].role == "assistant" and turns[at].ref == item.ref:
+                at += 1  # behind the replies already placed for this utterance
+            turns.insert(at, added)
+        return replace(self, recent_turns=_bounded(tuple(turns), limits), turn_count=self.turn_count + unheard)
 
     def compaction_job(self, limits: AgentLimits) -> tuple[str, tuple[ConversationTurn, ...]] | None:
         """(old summary, the turns to fold) once the recent turns pass the soft budget, else None. The last

@@ -34,7 +34,7 @@ from writing_coach.agent.context import TurnInput, build_tier1
 from writing_coach.agent.contract import SURFACES, WORD_ACTIONS, actions_for_version, intents_for_version
 from writing_coach.agent.events import Event, ToolCallEvent, ToolResultEvent, EvidenceEvent, Display
 from writing_coach.agent.focus import focus_after, lookup_word
-from writing_coach.agent.pending import COMPLETED, CONFIRM, action_key
+from writing_coach.agent.pending import CANCELLED, COMPLETED, CONFIRM, action_key
 from writing_coach.agent.session import ConversationTurn
 from writing_coach.agent.outputs import (
     FORGET_NOTE,
@@ -42,6 +42,7 @@ from writing_coach.agent.outputs import (
     OFFER_ADDRESS,
     PROPOSE_ACTION,
     REMEMBER_NOTE,
+    RESOLVE_PENDING,
     SET_ADDRESS,
     ReplyOutputs,
     asked_for,
@@ -105,7 +106,7 @@ def vendor_voice(choice: object) -> str:
 SESSION_SECONDS = 15 * 60  # §9: a voice session is capped at fifteen minutes
 # The reply tools a spoken turn may use besides do_action: a coach note, the address. Evidence ids, styles,
 # references and suggestions are a text thread's; the voice says what it read.
-VOICE_REPLY_TOOLS = frozenset({REMEMBER_NOTE, FORGET_NOTE, SET_ADDRESS, OFFER_ADDRESS})
+VOICE_REPLY_TOOLS = frozenset({REMEMBER_NOTE, FORGET_NOTE, SET_ADDRESS, OFFER_ADDRESS, RESOLVE_PENDING})
 
 # One tool for everything the app can do (R30, 2026-10-06: "an agent that can operate anything in the app"): every
 # §7 action the client declares, with flat arguments - the live run showed the voice model never filling
@@ -177,7 +178,8 @@ formatting rule above.
   sentence, and stop. Never repeat yourself or ask the same thing again.
 - The conversation so far is in the context below, whether it was typed or spoken: carry on from it. When
   context.pending_interaction is open and the learner accepts it in any words, call do_action with that same
-  action and requested true; if they decline or ask something else, do not.
+  action and requested true; if they decline it, call resolve_pending with that offer's id and decision cancel; if
+  they ask something else, do nothing about it.
 - A line starting "[context]" tells you where the learner is now; use it, never answer it.
 - If the learner interrupts, stop and listen; answer what they said next."""
 
@@ -308,6 +310,15 @@ def _conversation_so_far(state: Any) -> str:
             + json.dumps(list(reversed(lines)), ensure_ascii=False) + earlier)
 
 
+_UTTERANCE_ID = re.compile(r"^[A-Za-z0-9._:-]{1,64}$")
+
+
+def _utterance_id(value: object) -> str | None:
+    """The client's identity of one utterance: a short opaque token it numbers itself. Anything else is no identity."""
+
+    return value if isinstance(value, str) and _UTTERANCE_ID.match(value) else None
+
+
 # --- sessions ----------------------------------------------------------------------------------------------------
 
 
@@ -323,7 +334,14 @@ class VoiceSession:
     evidence_count: int = 0
     ended: bool = False
     agent_session_id: str = ""  # the conversation this voice session is part of (the typed turns' session)
-    recorded: set[str] = field(default_factory=set)  # what was heard and already put in that conversation
+    # The client's own utterance sequence (never the words): the one in progress, the ones already counted as a turn
+    # of the conversation, and the ones whose words are already in it.
+    utterance: str | None = None
+    counted: set[str] = field(default_factory=set)
+    texted: set[str] = field(default_factory=set)
+
+    def ref(self, utterance: str) -> str:
+        return f"{self.voice_session_id}:{utterance}"
 
 
 @dataclass
@@ -449,7 +467,7 @@ class VoiceService:
 
     def _tool_specs(self, request: TurnRequest, learner: LearnerScope) -> list[ProviderToolSpec]:
         reads = [ProviderToolSpec.from_tool(t) for t in self.runtime.tools.tools() if learner.contract_language in t.languages]
-        replies = [s for s in reply_tool_specs(request.client, request.context.locale.target, version=request.version)
+        replies = [s for s in reply_tool_specs(request.client, request.context.locale.target, version=request.version, pending=True)
                    if s.name in VOICE_REPLY_TOOLS]  # fmt: skip
         actions = request.client.allowed_actions & actions_for_version(request.version)
         intents = request.client.allowed_intents & intents_for_version(request.version)
@@ -505,8 +523,9 @@ class VoiceService:
     # -- tool calls --------------------------------------------------------------------------------------------
 
     def relay(self, voice_session_id: str, calls: Iterable[Mapping[str, Any]], learner: LearnerScope,
-              heard: str | None = None) -> dict[str, Any] | None:  # fmt: skip
-        """Run the model's function calls; None when the session is not this learner's or is over."""
+              heard: str | None = None, utterance: str | None = None) -> dict[str, Any] | None:  # fmt: skip
+        """Run the model's function calls; None when the session is not this learner's or is over. `utterance` is the
+        client's identity of what the learner is saying (see `utterance_turn`)."""
 
         session = self.sessions.get(voice_session_id, learner.user_key)
         if session is None:
@@ -515,14 +534,21 @@ class VoiceService:
         # nothing (the phone test: "" cleared the request to open and the turn's buttons).
         heard = heard if heard is not None and heard.strip() else None
         self._refresh(session)  # a typed turn may have changed the offer or run something since the last call
-        new_heard = None
-        if heard is not None and heard[:2000] != session.outputs.learner_words:
+        utterance = _utterance_id(utterance)
+        if utterance is not None:
+            new_utterance = utterance != session.utterance
+            session.utterance = utterance
+        else:  # a client with no identity: a change of words is the only sign of a new utterance
+            new_utterance = heard is not None and heard[:2000] != session.outputs.learner_words
+        if new_utterance:
             # A new utterance is a new turn: its buttons and notes are counted afresh (what was read stays known).
-            session.outputs.learner_words = heard[:2000]  # what the learner just said: a note needs their words
+            session.outputs.learner_words = ""
             session.outputs.actions.clear()
             session.outputs.memory_updates.clear()
             session.outputs.resolution = None
-            new_heard = heard[:2000]
+        if heard is not None:
+            session.outputs.learner_words = heard[:2000]  # what the learner just said: a note needs their words
+        new_heard = heard[:2000] if heard is not None and (utterance is not None or new_utterance) else None
         responses: list[dict[str, Any]] = []
         events: list[Event] = []
         opened: str | None = None
@@ -555,10 +581,13 @@ class VoiceService:
                 responses.append({"id": call_id, "name": name, "response": {"result": answer}})
                 continue
             if name in VOICE_REPLY_TOOLS:
-                before = (len(session.outputs.actions), len(session.outputs.memory_updates))
+                seen = (list(session.outputs.actions), len(session.outputs.memory_updates))
                 answer = session.outputs.handle(name, args, known_evidence=frozenset())
-                events.extend(session.outputs.actions[before[0]:])
-                events.extend(session.outputs.memory_updates[before[1]:])
+                added = [a for a in session.outputs.actions if not any(a is old for old in seen[0])]  # a confirmed offer is put first
+                events.extend(added)
+                events.extend(session.outputs.memory_updates[seen[1]:])
+                if added and added[0].open:  # accepting the open offer by its id: it runs now, once
+                    opened = added[0].id
                 result: dict[str, Any] = {"result": answer}
             else:
                 if (word := lookup_word(name, args)) is not None:
@@ -566,7 +595,7 @@ class VoiceService:
                 result, read_events = self._read(session, name, args)
                 events.extend(read_events)
             responses.append({"id": call_id, "name": name, "response": result})
-        self._remember(session, heard=new_heard, events=events, words=words)
+        self._remember(session, heard=new_heard, utterance=utterance, events=events, words=words)
         answer = {"responses": responses, "events": [{"event": e.name, "data": e.to_wire()} for e in events]}
         if opened is not None:
             answer["open"] = opened  # the client runs this action now, without a tap (R29)
@@ -641,35 +670,63 @@ class VoiceService:
             session.outputs.settled = frozenset(done for done, _ in state.settled)
             session.outputs.recent_runs = state.recent_runs()
 
-    def _remember(self, session: VoiceSession, *, heard: str | None, events: list[Event],
+    def _remember(self, session: VoiceSession, *, heard: str | None, utterance: str | None, events: list[Event],
                   words: list[tuple[str, str | None]]) -> None:
         """What the server saw of a spoken turn joins the conversation: the learner's words, the offer made or
-        accepted, what ran, the word it was about."""
+        accepted, what ran, the word it was about. An utterance with an identity is one turn of the conversation,
+        counted once however many calls it made (none, one or several), and its words are put in once."""
 
         actions = [e for e in events if e.name == "action"]
         offered = next((a for a in actions if not a.open), None)
         outputs = session.outputs
         live = outputs.pending
-        settle = COMPLETED if outputs.resolution == CONFIRM and live is not None else None
+        settle = None if live is None or outputs.resolution is None else (
+            COMPLETED if outputs.resolution == CONFIRM else CANCELLED)
         words += [(a.payload["text"], a.payload.get("lang")) for a in actions
                   if a.type in WORD_ACTIONS and isinstance(a.payload.get("text"), str)]
         same_offer = (offered is not None and live is not None
                       and action_key(offered.type, offered.payload) == action_key(live.action, live.payload))
         new_offer = (offered.type, offered.label, dict(offered.payload)) if offered is not None and not same_offer else None
         ran = tuple(action_key(a.type, a.payload) for a in actions if a.open)
-        if heard is None and not actions and not words:
+        ref = session.ref(utterance) if utterance is not None else None
+        count_turn = ref is not None and ref not in session.counted
+        put_words = heard is not None and (ref is None or ref not in session.texted)
+        if not (count_turn or put_words or actions or words):
             return
+        if ref is not None:
+            session.counted.add(ref)
+            if put_words:
+                session.texted.add(ref)
         limits = self.runtime.limits
 
         def change(state):
-            if heard is not None:
-                state = state.with_spoken((ConversationTurn("user", heard),), limits)
+            if count_turn:  # a spoken utterance is a turn of the conversation, as a typed one is
+                state = state.with_turn()
+            if put_words:
+                state = state.with_spoken((ConversationTurn("user", heard, ref),), limits)
             state = state.with_outcome(live=live, settle=settle, new_offer=new_offer, ran=ran)
             return state.with_focus(focus_after(state.focus, word=words[-1] if words else None))
 
-        if heard is not None:
-            session.recorded.add(heard.strip())
         self.runtime.sessions.update(session.agent_session_id, session.user_key, change)
+
+    def utterance_turn(self, voice_session_id: str, utterance: str | None, heard: str | None,
+                       learner: LearnerScope) -> dict[str, Any] | None:
+        """The boundary of one spoken utterance, from the client (the vendor's turn end): it is counted as a turn of
+        the conversation if no tool call has counted it already, and its words are put in if they are not yet. The
+        identity is the client's own sequence number for the session - never the words - so the same words said twice
+        are two turns, and one utterance is one turn however many tools it called."""
+
+        session = self.sessions.get(voice_session_id, learner.user_key)
+        utterance = _utterance_id(utterance)
+        if session is None:
+            return None
+        if utterance is None:
+            return {"voice_session_id": voice_session_id, "counted": False}
+        heard = heard.strip()[:2000] if isinstance(heard, str) and heard.strip() else None
+        self._refresh(session)
+        fresh = session.ref(utterance) not in session.counted
+        self._remember(session, heard=heard, utterance=utterance, events=[], words=[])
+        return {"voice_session_id": voice_session_id, "counted": fresh}
 
     def _flush_transcript(self, session: VoiceSession, transcript: Any) -> None:
         """The client's transcript of the session, if it sent one (optional, additive): the turns it holds that
@@ -683,15 +740,13 @@ class VoiceService:
             text = item.get("text") if isinstance(item, Mapping) else None
             if role not in ("user", "assistant") or not isinstance(text, str) or not text.strip():
                 continue
-            text = text.strip()[:TRANSCRIPT_TURN_CHARS]
-            if role == "user" and text[:2000] in session.recorded:
-                session.recorded.discard(text[:2000])  # already in the conversation, as it was heard
-                continue
-            turns.append(ConversationTurn(role, text))
+            utterance = _utterance_id(item.get("utterance"))
+            turns.append(ConversationTurn(role, text.strip()[:TRANSCRIPT_TURN_CHARS],
+                                          session.ref(utterance) if utterance is not None else None))
         if turns:
-            limits = self.runtime.limits
+            limits, counted = self.runtime.limits, frozenset(session.counted)
             self.runtime.sessions.update(session.agent_session_id, session.user_key,
-                                         lambda state: state.with_spoken(tuple(turns), limits))
+                                         lambda state: state.with_transcript(tuple(turns), limits, counted))
 
     # -- close and bill ------------------------------------------------------------------------------------------
 

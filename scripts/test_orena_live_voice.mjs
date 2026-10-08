@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 globalThis.btoa ??= (text) => Buffer.from(text, 'binary').toString('base64');
 globalThis.atob ??= (text) => Buffer.from(text, 'base64').toString('binary');
 
-const { voiceSessionBody, toBase64, pcm16ToFloat, voiceThread, openVoiceSession, VoiceSessionError } = await import('../static/orena/agent/live-voice.js');
+const { utteranceTracker, voiceSessionBody, toBase64, pcm16ToFloat, voiceThread, openVoiceSession, VoiceSessionError } = await import('../static/orena/agent/live-voice.js');
 const { createSession } = await import('../static/orena/agent/session.js');
 
 // A turn body without its message, at the contract version.
@@ -85,6 +85,25 @@ const { createSession } = await import('../static/orena/agent/session.js');
   assert.equal(viewContext().essay_id, '42');
   stop();
   assert.equal(seen.length, 4);
+}
+
+// Each utterance has its own identity, never its words: the same words twice are two; a tool call joins the open
+// utterance; a closed utterance is never reopened - a tool call that arrives before the next utterance's transcript
+// belongs to the next one.
+{
+  const t = utteranceTracker();
+  assert.equal(t.forCall(), 'u1');
+  assert.equal(t.forCall(), 'u1', 'a second call in the same utterance');
+  assert.equal(t.close({ heard: 'yes', said: 'Right.' }), 'u1');
+  assert.equal(t.forCall(), 'u2', 'the first call of the next utterance, before its transcript');
+  assert.equal(t.open(), 'u2', 'its transcript then joins it');
+  assert.equal(t.close({ heard: 'yes', said: 'Again.' }), 'u2', 'the same words are another utterance');
+  assert.equal(t.close({ heard: '', said: 'Welcome.' }), null, 'a turn with no learner in it has no boundary');
+  assert.deepEqual(t.transcript(), [
+    { role: 'user', text: 'yes', utterance: 'u1' }, { role: 'assistant', text: 'Right.', utterance: 'u1' },
+    { role: 'user', text: 'yes', utterance: 'u2' }, { role: 'assistant', text: 'Again.', utterance: 'u2' },
+    { role: 'assistant', text: 'Welcome.' },
+  ]);
 }
 
 console.log('Orena live voice (§9 mode A): session body, PCM16 codecs, thread writing, server refusals: PASS');

@@ -100,7 +100,8 @@ from writing_coach.agent.outputs import (
     reply_tool_specs,
     selection_kind,
 )
-from writing_coach.agent.prompts import opening_messages
+from writing_coach.agent.tokens import FRAME_TOKENS, RESERVE_TOKENS, estimate_tokens, messages_tokens
+from writing_coach.agent.prompts import INSTRUCTION, opening_messages
 from writing_coach.agent.pending import CANCELLED, COMPLETED, CONFIRM, PendingInteraction, action_key
 from writing_coach.agent.provider import (
     NORMAL_FINISH,
@@ -190,7 +191,7 @@ def _fit_greeting(text: str) -> str:
 
 
 def _estimate_tokens(messages: list[ProviderMessage]) -> int:
-    return sum((len(m.content) + 3) // 4 for m in messages)
+    return messages_tokens([m.content for m in messages], fixed=INSTRUCTION)
 
 
 @dataclass
@@ -416,6 +417,7 @@ class _Turn:
         messages = opening_messages(
             replace(turn, message=tapped) if tapped else turn, tier1, [c for c in here if c], session,
             opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
+            budget_tokens=self.rt.limits.max_input_tokens_per_turn,
         )
         answering = self.live is not None or bool(session.recent_runs())  # an open offer, or one just sent
         if (self.focused and word_in_view and not answering
@@ -754,7 +756,8 @@ class _Turn:
             ],
         }
         content = json.dumps(body, ensure_ascii=False, default=str)
-        if _estimate_tokens(messages) + (len(content) + 3) // 4 > self.rt.limits.max_input_tokens_per_turn:
+        if (_estimate_tokens(messages) + estimate_tokens(content) + FRAME_TOKENS + RESERVE_TOKENS
+                > self.rt.limits.max_input_tokens_per_turn):
             return json.dumps({"summary": result.summary, "note": "details omitted: this turn's input budget is used"})
         return content
 

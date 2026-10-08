@@ -387,6 +387,19 @@ K6b           telemetry: one `agent.summary` admin event per summary call (count
               (the AI platform's price catalog). Optional sinks (`record_summary`, `price_summary`), failure-proof.
               These rows are not swept by the agent.turn retention (small, no learner content); add them to it if
               the 90-day rule should cover them. The per-round `ai.operation` rows already price the call too.
+K7            review fixes of PR #92: voice answers an open offer with resolve_pending (a decline ends it); every
+              spoken utterance is one turn, by the client's own utterance identity (POST /voice/turn at the vendor's turn
+              end, `utterance` on /voice/tool), never by its words; the end-of-session transcript is merged by that
+              identity (each reply behind the words it answers; typed or earlier spoken turns with the same words are
+              never matched); the input budget covers the whole text prompt - the oldest turns go first, then the
+              carried pasted text is cut; summary and the learner's words stay - and it counts with a hard bound that
+              holds for any language and tokenizer (agent/tokens.py: one token per UTF-8 byte, the shipped instruction as
+              prose, a frame per message and a reserve). Consequence: with max_input_tokens_per_turn 12000 the fixed
+              parts take about 6.4k, leaving about 5.5k bytes (roughly 5k English characters) for history, summary and
+              pasted text; a larger working set needs a larger limit (a cost decision, not made here).
+              A closed utterance is never reopened by the client (a tool call before the next transcript starts the
+              next utterance).
+              Follow-ups, not done: the voice instruction's own history budget; agent.summary retention.
 LOCAL         full suite in the app image: see the commit message of K6 (local run, not CI).
 NEXT          needs a human: client adoption of the three additive items (UI lane); a durable store for turns and
               memory (AGENTS.md section 7, independent architecture review); then memory distillation (Phase 4).
