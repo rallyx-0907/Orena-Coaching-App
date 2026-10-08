@@ -63,11 +63,20 @@ export function sortCatalog(rows) {
 }
 
 export async function grammarCatalog(targetLang, { fetchJson = defaultFetch } = {}) {
+  return (await grammarLibraryData(targetLang, { fetchJson })).points;
+}
+
+/* The whole catalogue body the Library draws: the sorted, approved points and the corpus's functions (the topics,
+   `{id, title: {vi, en, zh?}}`), for the session's learning language. */
+export async function grammarLibraryData(targetLang, { fetchJson = defaultFetch } = {}) {
   const lang = TARGETS.includes(targetLang) ? targetLang : 'en';
   const body = await readJson(CATALOG_URL, fetchJson);
-  const rows = Array.isArray(body?.points) ? body.points : [];
-  if (body?.language && body.language !== lang) return [];
-  return sortCatalog(rows.filter((row) => approved(row) && row.id && (row.header?.native_title || row.native_title)));
+  if (!body || (body.language && body.language !== lang)) return { points: [], functions: [] };
+  const rows = Array.isArray(body.points) ? body.points : [];
+  return {
+    points: sortCatalog(rows.filter((row) => approved(row) && row.id && (row.header?.native_title || row.native_title))),
+    functions: (Array.isArray(body.functions) ? body.functions : []).filter((fn) => fn && fn.id),
+  };
 }
 
 /* One point, by its id. An old R5 id (deep links, Writing's grammar_links, Search, Today) is resolved

@@ -4278,6 +4278,16 @@ backend cannot yet serve:
 - **G-12 · Grammar Lab content: Chinese subtitles that show a raw slug (2026-10-08, owner: Grammar Lab).** Some ZH
   points' `header.title` reads like "Ngữ pháp tiếng Trung: tai_le" (seen in the Library on :8021 after importing
   `zh-complete.zip`). Fixed upstream in Grammar Lab and re-exported; never edited in the UI lane or the store.
+- **G-13 · the Claude Design project moved past the pin (2026-10-08, owner: human).** Read through DesignSync:
+  `support.js` and the project `CLAUDE.md` are unchanged. `Orena Admin.dc.html` (232508 bytes, unpinned) adds a
+  "Token usage" tab to A2 AI & Models (period filter, totals, per-provider/model rows, budget bars). In
+  `Orena.dc.html`, the first 256 KiB that DesignSync returns differ in three places: Discover gains a Level chip row, a
+  Sort segmented control and grouped sections (`dGroups`: heading 20/700 over a 1px border); the Reader's theme and
+  menu buttons change; and the device variables change (`--bill-cols`, `--price-cols`). The Grammar Library frame
+  (about 375 KB in) and the state script lie past the 256 KiB cut, so their new revision is unread. The Grammar
+  Library IA follow-up (human, 2026-10-08) uses the new Discover Level chip and grouped heading as measured from that
+  prefix. Needed: an export of the whole `Orena.dc.html` to pin the new revision (PINS.tsv, SYNC record) and re-diff
+  Grammar.
 
 ## Current Admin reconciliation — 2026-10-03
 
