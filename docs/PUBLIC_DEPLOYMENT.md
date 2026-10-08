@@ -30,7 +30,8 @@ Store real values only in the deployment environment or an ignored local
 `.env`; never commit them.
 
 ```env
-APP_ENV=production
+# staging: public, product-like (:8000, D-146); production is reserved for the final product.
+APP_ENV=staging
 APP_BIND_HOST=127.0.0.1
 PUBLIC_BASE_URL=https://staging.example.com
 SESSION_SECRET=replace-locally

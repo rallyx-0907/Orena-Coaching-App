@@ -142,7 +142,7 @@ current numbering. Trust the section *name* they describe, not the number.
 Concrete detail for the runtime boundaries and shared-runtime rule in
 `AGENTS.md` "Safety" — the rule is there, the local specifics are here:
 
-- On this machine the off-limits runtimes are production on **8000** and
+- On this machine the off-limits runtimes are the public, product-like staging on **8000** (D-146) and
   preview on **8010**; the shared named volumes are `ai-writing-coach-data` and
   `ai-writing-coach-postgres-data`; the lanes are the worktrees `...-v030`,
   `...-claudecode` and `...-codex`. `docker ps` shows which are live before you

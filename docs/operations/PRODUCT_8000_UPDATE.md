@@ -1,6 +1,6 @@
 # Updating the product on :8000 safely (D-127, completion plan item 1)
 
-:8000 is the product, run on this machine (D-127). Only the human updates it, through a merged PR
+:8000 is the public, product-like staging runtime, run on this machine (D-127, D-146: `APP_ENV=staging`). Only the human updates it, through a merged PR
 `codex/work` -> `main`. No lane runs any command on :8000. This page gives the human the commands, in order, and
 says what each one checks. Every command only reads :8000 until step 5.
 
@@ -20,7 +20,7 @@ that the Reading worker runs as its own service (`reading-worker`, added to `com
 ## Steps
 
 0. **Check the settings the new version requires** (security review, 2026-10-04):
-   - with `APP_ENV=production`, `SESSION_SECRET` must be at least 32 characters, or the app refuses to start.
+   - with `APP_ENV=staging` (or `production`), `SESSION_SECRET` must be at least 32 characters, or the app refuses to start.
      Check only its length, never print it:
      `docker exec ai-writing-coach-writing-coach-1 python -c "import os; print(len(os.environ.get('SESSION_SECRET','')) >= 32)"`.
      Changing it signs everyone out once;
