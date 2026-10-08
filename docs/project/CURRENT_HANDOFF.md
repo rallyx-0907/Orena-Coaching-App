@@ -18,6 +18,7 @@ D-095, D-096), which is edited only on `codex/work`. Verified history:
 
 Release (D-143): one UI; cutover done (`/` = learner UI, old UI deleted); schema via
 `proposals/PRODUCTION_MIGRATION_PACK.md`; backbone off, invite-only; no new runtime.
+:8000 staging (D-146): 0029, main-a2342e62.
 Agent stays on the contract mock until Intelligence integration is authorized.
 Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 

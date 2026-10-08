@@ -52,7 +52,7 @@ def test_no_provider_key_is_read_here():
 def test_the_router_is_mounted_once_behind_its_flag():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
     assert app.count("app.include_router(agent_router)") == 1
-    assert "if agent_enabled(os.environ, production=APP_ENV == \"production\")" in app
+    assert "if agent_enabled(os.environ)" in app
     assert '"/api/agent' not in app  # the routes are the agent package's own, not app.py's
 
 

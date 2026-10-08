@@ -4463,3 +4463,22 @@ Topology: `codex/work` (development + QA) -> release candidate -> restored-copy 
    initial controlled-release value (not 60,000). It is a cost decision and is revisited with usage data.
 3. **Follow-ups, not blockers:** budgeting the voice instruction's own conversation history; retention for
    `agent.summary` rows; physical and live-microphone QA of the voice client.
+
+## D-146 - :8000 is public, product-like staging; APP_ENV=staging; the environment is never a feature switch
+
+2026-10-08. Explicit human instruction; supersedes every earlier reading of :8000 as a production runtime.
+
+1. **Roles.** `codex/work` + :8021 = development / QA. `main` + :8000 + the public domain = product-like staging, for
+   real-user testing and feedback. There is no final production runtime yet; production hardening and a feature freeze
+   start only when the human says the product is being finalized.
+2. **`APP_ENV=staging`** is a first-class public environment. Staging and production share every public security
+   requirement (`DeploymentConfig.public`): non-local HTTPS `PUBLIC_BASE_URL` and callback, Google OAuth, secure session
+   cookies, `SESSION_SECRET` of 32+ characters, security headers and origin protection (unchanged, keyed on HTTPS), no
+   local-admin bypass (`ALLOW_LOCAL_ADMIN` ignored), no source mounts, developer docs/OpenAPI hidden.
+3. **Not a feature switch.** `APP_ENV=production` no longer disables anything a flag enabled. `AGENT_ENABLED` is the
+   Orena Intelligence switch everywhere (unset/false: absent; true: available); `AGENT_VOICE_ENABLED` stays separate.
+   Developer tooling stays development-only (generated listening catalog, synthetic pronunciation scores, docs).
+4. **Parity.** `main`/:8000 carries the approved learner capability set of `codex/work`/:8021. Differences are allowed
+   only for developer diagnostics, test fixtures, and work not yet reviewed and merged to `main`.
+5. **:8000 env (to apply after review, not before):** `APP_ENV=staging`, `AGENT_ENABLED=true`,
+   `AGENT_VOICE_ENABLED=false`. No schema change.

@@ -177,8 +177,8 @@ def _refused(base_url: str) -> str | None:
 def _server_refused(run: Run) -> str | None:
     readiness = run.call("GET", "/api/readiness", expect={200, 503}) or {}
     environment = str(readiness.get("environment") or "").strip().casefold()
-    if environment == "production":
-        return "the server reports APP_ENV=production - this run is for the admin sandbox only (D-083)"
+    if environment in {"production", "staging"}:
+        return f"the server reports APP_ENV={environment} - this run is for the admin sandbox only (D-083)"
     return None
 
 
