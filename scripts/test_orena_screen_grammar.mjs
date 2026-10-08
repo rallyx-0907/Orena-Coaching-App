@@ -31,7 +31,7 @@ const pointBa = fixture('points/zh.ba_sentence.json');
 const source = await import('../static/orena/product/grammar-source.js');
 const library = await import('../static/orena/screens/grammar/model.js');
 const concept = await import('../static/orena/screens/grammar-concept/model.js');
-const { CONTENT_BASE, grammarCatalog, grammarPoint, contractText, levelCode, targetOfId } = source;
+const { CATALOG_URL, PROGRESS_URL, pointUrl, grammarCatalog, grammarPoint, grammarProgress, recordGrammarCompletion, contractText, levelCode, targetOfId } = source;
 
 // The canonical contract uses zh-Hans in authored content, while profile/UI
 // language remains zh. It must never render Chinese as English or lose its gloss.
@@ -53,13 +53,20 @@ function stubFetch(files) {
   };
   return { fetchJson, calls };
 }
-const served = {
-  [`${CONTENT_BASE}/catalog.en.json`]: catalogEn,
-  [`${CONTENT_BASE}/catalog.zh.json`]: catalogZh,
-  [`${CONTENT_BASE}/points/en.present_perfect_experience.json`]: pointPP,
-  [`${CONTENT_BASE}/points/en.plural_nouns.json`]: pointPlural,
-  [`${CONTENT_BASE}/points/zh.guo_experience.json`]: pointGuo,
-  [`${CONTENT_BASE}/points/zh.ba_sentence.json`]: pointBa,
+// The Grammar Store's learner API shapes (writing_coach/grammar_api.py): the catalogue of the session's
+// language, one point with its published version, an old R5 id answered by the server's R5 map.
+const catalogBody = (language, points) => ({ language, catalog_revision: 'r1', functions: [], levels: [], points });
+const pointBody = (point) => ({ point, version: 1, content_hash: 'h' });
+const servedEn = {
+  [CATALOG_URL]: catalogBody('en', catalogEn),
+  [pointUrl('en.present_perfect_experience')]: pointBody(pointPP),
+  [pointUrl('en.plural_nouns')]: pointBody(pointPlural),
+  [pointUrl('test-r5-present-perfect')]: { language: 'en', point: null, redirect: 'en.present_perfect_experience' },
+};
+const servedZh = {
+  [CATALOG_URL]: catalogBody('zh', catalogZh),
+  [pointUrl('zh.guo_experience')]: pointBody(pointGuo),
+  [pointUrl('zh.ba_sentence')]: pointBody(pointBa),
 };
 
 // --- The seam: no content today, contract-shaped content when it is served -------------------
@@ -73,26 +80,48 @@ const served = {
 
   const empty = stubFetch({});
   assert.deepEqual(await grammarCatalog('en', empty), [], 'a catalogue that is not there is an empty catalogue, not an error');
-  assert.deepEqual(empty.calls, [`${CONTENT_BASE}/catalog.en.json`]);
+  assert.deepEqual(empty.calls, ['/api/grammar/v1/points'], 'the catalogue is the learner API, never a static file');
   assert.deepEqual(await grammarPoint('en.present_perfect_experience', empty), { point: null }, 'a point that is not there is "not found"');
 
   const failing = { fetchJson: async () => { throw Object.assign(new Error('boom'), { status: 500 }); } };
   await assert.rejects(grammarCatalog('en', failing), /boom/, 'any other failure is a load error for the router, never an empty catalogue');
 
-  const withDraft = stubFetch({ [`${CONTENT_BASE}/catalog.en.json`]: [...catalogEn, { ...catalogEn[0], id: 'en.draft', status: 'draft_ai' }] });
+  const withDraft = stubFetch({ [CATALOG_URL]: catalogBody('en', [...catalogEn, { ...catalogEn[0], id: 'en.draft', status: 'draft_ai' }]) });
   const rows = await grammarCatalog('en', withDraft);
   assert.deepEqual(rows.map((row) => row.id), ['en.plural_nouns', 'en.present_perfect_experience'], 'only approved rows, sorted by level.rank, function, sequence (§9)');
 
-  const zhRows = await grammarCatalog('zh', stubFetch(served));
+  const zhRows = await grammarCatalog('zh', stubFetch(servedZh));
   assert.deepEqual(zhRows.map((row) => row.id), ['zh.guo_experience', 'zh.ba_sentence'], 'HSK 2 before HSK 3');
+  assert.deepEqual(await grammarCatalog('en', stubFetch(servedZh)), [], 'another language\'s catalogue is never drawn');
 
-  const found = await grammarPoint('zh.ba_sentence', stubFetch(served));
+  const found = await grammarPoint('zh.ba_sentence', { targetLang: 'zh', ...stubFetch(servedZh) });
   assert.equal(found.point.id, 'zh.ba_sentence');
-  const draft = stubFetch({ [`${CONTENT_BASE}/points/en.present_perfect_experience.json`]: { ...pointPP, status: 'flagged' } });
+  assert.equal(found.version, 1, 'the published version comes with the point');
+  const draft = stubFetch({ [pointUrl('en.present_perfect_experience')]: pointBody({ ...pointPP, status: 'flagged' }) });
   assert.deepEqual(await grammarPoint('en.present_perfect_experience', draft), { point: null }, 'a point that is not approved never reaches the screen (§0)');
+  const other = stubFetch(servedZh);
+  assert.deepEqual(await grammarPoint('zh.ba_sentence', { targetLang: 'en', ...other }), { point: null }, 'a point of the other language is not asked for');
+  assert.deepEqual(other.calls, []);
 
-  assert.deepEqual(await grammarPoint('test-r5-present-perfect', { targetLang: 'en', ...stubFetch(served) }), { point: null, redirect: 'en.present_perfect_experience' }, 'an old R5 id resolves through `aliases` to the new id (§9 rule 1)');
-  assert.deepEqual(await grammarPoint('a1-unknown-r5-id', { targetLang: 'en', ...stubFetch(served) }), { point: null }, 'an R5 id with no replacement is not found, never guessed');
+  assert.deepEqual(await grammarPoint('test-r5-present-perfect', { targetLang: 'en', ...stubFetch(servedEn) }), { point: null, redirect: 'en.present_perfect_experience' }, 'an old R5 id is resolved by the server to the new id (§9 rule 1)');
+  assert.deepEqual(await grammarPoint('a1-unknown-r5-id', { targetLang: 'en', ...stubFetch(servedEn) }), { point: null }, 'an R5 id with no replacement is not found, never guessed');
+  assert.deepEqual(await grammarPoint('a1-dropped', { targetLang: 'en', ...stubFetch({ [pointUrl('a1-dropped')]: { language: 'en', point: null, dropped: true } }) }), { point: null }, 'a dropped R5 id is not found');
+
+  // Progress: read as an addition (a failure is no progress), written with the answers in quick_practice order.
+  const progress = stubFetch({ [PROGRESS_URL]: { language: 'en', progress: [{ point_id: 'en.plural_nouns', completed_at: 't', last_quiz: { correct: 2, total: 3 }, via: 'point' }] } });
+  assert.deepEqual((await grammarProgress(progress)).map((row) => row.point_id), ['en.plural_nouns']);
+  assert.deepEqual(await grammarProgress({ fetchJson: async () => { throw Object.assign(new Error('down'), { status: 503 }); } }), []);
+  const sent = [];
+  await recordGrammarCompletion('en.plural_nouns', [1, null, 0], { send: async (url, body) => sent.push([url, body]) });
+  assert.deepEqual(sent, [['/api/grammar/v1/progress/en.plural_nouns', { answers: [1, null, 0] }]], 'the answers are sent, never a score');
+  const quiz = concept.quizOf({ quick_practice: [
+    { q: 'kept', options: [{ text: 'a' }, { text: 'b' }], answer: 1 },
+    { q: '', options: [{ text: 'a' }, { text: 'b' }], answer: 0 },
+    { q: 'kept too', options: [{ text: 'a' }, { text: 'b' }], answer: 0 },
+  ] });
+  assert.deepEqual(quiz.map((question) => question.index), [0, 2], 'a question left out keeps the others at their quick_practice place');
+  const conceptSrc = fs.readFileSync('static/orena/screens/grammar-concept/screen.js', 'utf8');
+  assert.match(conceptSrc, /recordGrammarCompletion\(view\.id, answers\)/, 'finishing the quiz records completion through the seam');
   assert.equal(targetOfId('zh.ba_sentence'), 'zh');
   assert.equal(targetOfId('a2-present-perfect'), '');
 }
@@ -278,7 +307,7 @@ const served = {
     assert.ok(view.pattern.length && view.examples.length && view.quiz.length, point.id);
     assert.equal(view.quiz.length, point.quick_practice.length, `${point.id}: no question silently discarded`);
     for (const question of view.quiz) assert.ok(question.options.length >= 2);
-    const stub = stubFetch({ [`${CONTENT_BASE}/points/${point.id}.json`]: point });
+    const stub = stubFetch({ [pointUrl(point.id)]: pointBody(point) });
     assert.deepEqual(await grammarPoint(point.id, { targetLang: view.header.lang, ...stub }), { point: null });
     for (const key of ['provenance', 'review', 'flags']) assert.equal(Object.hasOwn(point, key), false);
     const fn = functions.find((entry) => entry.id === point.function);
@@ -286,9 +315,9 @@ const served = {
     for (const locale of ['vi', 'en', 'zh-Hans']) assert.ok(fn.title[locale]);
   }
   for (const lang of ['en', 'zh']) {
-    const stub = stubFetch({ [`${CONTENT_BASE}/catalog.${lang}.json`]: index.points });
+    const stub = stubFetch({ [CATALOG_URL]: catalogBody(lang, index.points) });
     assert.deepEqual(await grammarCatalog(lang, stub), [], 'draft corpus stays outside admitted learning');
   }
 }
 
-console.log('Orena Grammar surface (Library + Concept) on the grammar content contract, seam, fixtures test-only: PASS');
+console.log('Orena Grammar surface (Library + Concept) on the Grammar Store learner API: catalogue, point, R5 redirect, progress; fixtures test-only: PASS');

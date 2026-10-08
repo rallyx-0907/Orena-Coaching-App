@@ -165,10 +165,12 @@ export function mistakeOf(point, support = 'en', native = '') {
 }
 
 /* §7: `answer` is a 0-based index into 2 or 3 options - compared by index, never by text. A question
-   whose answer does not index one of its options is left out. */
+   whose answer does not index one of its options is left out; `index` keeps each question's place in
+   `quick_practice`, the order the server grades completion answers in. */
 export function quizOf(point, support = 'en') {
   return (Array.isArray(point?.quick_practice) ? point.quick_practice : [])
-    .map((item) => ({
+    .map((item, index) => ({
+      index,
       q: String(item?.q || ''),
       qPinyin: pinyinOf(item?.q_pinyin),
       options: (Array.isArray(item?.options) ? item.options : []).map((option) => ({ text: String(option?.text || ''), pinyin: pinyinOf(option?.pinyin) })),
