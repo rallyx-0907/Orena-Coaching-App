@@ -4330,6 +4330,16 @@ backend cannot yet serve:
     (AA: 5.7-9.1:1 measured on each hue's wash). Dark keeps the frame's values, except tag text, which the design
     review (2026-10-08) measured under AA on the violet and rose washes (3.6 and 4.3:1): lightened 30% toward white
     (5.8-8.8:1). The selected level's count stays the design's white on the accent fill (5.5:1 light, 4.5:1 dark).
+- **G-15 · Human UI requests queued for the next reviewer round (2026-10-08, owner: UI lane).** Done together with
+  the fixes from the design/UX reviewer's next report, not separately:
+  - **Category-hue wash on similar cards:** the Grammar category card's 135° wash of its own hue into the surface
+    (`linear-gradient(135deg, color-mix(hue 18%) 0%, var(--surface) 62%)`) is applied to the other cards of the same
+    kind that carry a skill or category hue (e.g. Practice/Skill Hub mode cards, Today's recommendation cards,
+    Discover collection cards), with the hue from the semantic tokens, under D-147/D-148 (no outline, same hover).
+  - **Every entry has a way back:** audit every route reachable from a place for a visible back/close control,
+    in the browser at 1920 and 390 (code scan 2026-10-08: speak-summary has "Back to Practice Hub", lesson-complete
+    is a sheet; unbuilt routes fall to Coming soon, which has Back); fix any that only the menu can leave.
+  - **D-147/D-148 across the app:** remove default thin borders and violet edges, one card hover, no press box.
 
 ## Current Admin reconciliation — 2026-10-03
 

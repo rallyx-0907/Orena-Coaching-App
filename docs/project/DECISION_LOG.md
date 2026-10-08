@@ -4513,3 +4513,15 @@ thì vẫn phải loại trừ lỗi này ra."
    summaries and `[role=button]` (kit `base.css`). The keyboard focus ring stays.
 3. First applied: Grammar Library (continue, category, topic and list cards). Other surfaces follow as they are
    touched; a reviewer scores a card with a different hover, or a box on press, as P2 (P1 if it is a violet edge).
+
+## D-149 - Pronunciation starts at the source chooser; "Choose source" is visible in the room
+
+2026-10-08, explicit human decision, superseding D-139 HD-3 and the "Choose media" half of HD-4. Human: "Phần
+Pronunciation bấm vào thay vì là vào nơi chọn nguồn phát âm thì lại cứ bị đưa vào phần attempt và bước để chọn nguồn
+để tập nói thì nằm tuốt ở ô ... nhỏ."
+
+1. Pronunciation (Practice Hub, Speak's Skill Hub) always opens the source chooser
+   (`#/discover?tab=listen&practice=pronunciation`) first; it never drops the learner into an attempt on the last line.
+2. In the speaking room the way to change source is a labelled header button, "Choose source", beside Attempt
+   history - not an item in the "…" sheet. The "…" sheet keeps only the line list and "Listen".
+3. The header's text buttons take D-147's light edge instead of a border2 outline.

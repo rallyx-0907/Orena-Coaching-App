@@ -426,8 +426,12 @@ export default async function mountCompareWithModel(element, ctx) {
     </div>`;
   }
 
-  /* The line list and "Choose media" live in a sheet behind "..." (D-139 HD-4); Listen returns to this
-     exact line in Listening. */
+  /* The line list lives in a sheet behind "..." (D-139 HD-4); Listen returns to this exact line in Listening.
+     "Choose source" is no longer buried there: it is a labelled header button (human, 2026-10-08, D-149). */
+  function chooseSource() {
+    ctx.go(ctx.href('discover', {}, { tab: 'listen', practice: 'pronunciation', source: source.lessonId, segment: source.line.lineId }));
+  }
+
   function openMore() {
     const at = lineAt();
     openSheet({
@@ -439,12 +443,10 @@ export default async function mountCompareWithModel(element, ctx) {
             <div class="s-compare-more__lines">${lines.map((line, index) => html`<button type="button" class="s-compare-more__line" data-source-line="${line.lineId}" aria-current="${index === at}"><span class="s-compare-more__n">${line.ordinal}</span><span lang="${langAttr(language)}">${line.text}</span></button>`)}</div>
             <div class="s-compare-more__actions">
               <button type="button" class="s-compare-ghost" data-listen-source>${t('listenSource')}</button>
-              <button type="button" class="s-compare-ghost" data-choose-media>${t('chooseMedia')}</button>
             </div>
           </div>`);
         sheet.querySelectorAll('[data-source-line]').forEach((button) => button.addEventListener('click', () => goLine(button.dataset.sourceLine)));
         sheet.querySelector('[data-listen-source]').addEventListener('click', () => ctx.go(ctx.href('listening', { id: source.lessonId }, lineQuery)));
-        sheet.querySelector('[data-choose-media]').addEventListener('click', () => ctx.go(ctx.href('discover', {}, { tab: 'listen', practice: 'pronunciation', source: source.lessonId, segment: source.line.lineId })));
       },
     });
   }
@@ -800,6 +802,7 @@ export default async function mountCompareWithModel(element, ctx) {
         <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
         <div class="s-compare-title-block"><div class="s-compare-title">${source.lessonId ? t('practiceTitle') : t('title')}</div><div class="s-compare-note s-compare-subtitle">${t('subtitle')}</div></div>
         ${takes.length ? pillsMarkup() : ''}
+        ${source.lessonId ? html`<button type="button" class="s-compare-history s-compare-source" data-choose-media ${busyNow() ? raw('disabled') : ''}>${raw(icon('library-big', { size: 17 }))}<span>${t('chooseMedia')}</span></button>` : ''}
         <button type="button" class="s-compare-history" data-attempts aria-label="${t('attemptHistory')}"><span>${t('attemptHistory')}</span></button>
         ${source.lessonId ? html`<button type="button" class="o-iconbtn s-compare-more-btn" data-more aria-label="${t('more')}" title="${t('more')}" ${busyNow() ? raw('disabled') : ''}>${raw(icon('ellipsis', { size: 18 }))}</button>` : ''}
       </div>
@@ -855,6 +858,7 @@ export default async function mountCompareWithModel(element, ctx) {
   function bind() {
     element.querySelectorAll('[data-source-line]').forEach((button) => button.addEventListener('click', () => goLine(button.dataset.sourceLine)));
     q('[data-more]')?.addEventListener('click', openMore);
+    q('[data-choose-media]')?.addEventListener('click', chooseSource);
     q('[data-meaning]')?.addEventListener('click', () => {
       meaningOpen = !meaningOpen;
       paint();

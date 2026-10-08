@@ -79,13 +79,19 @@
   height: 44px;
   padding: 0 16px;
   border-radius: 12px;
-  border: 1px solid var(--border2);
+  border: 0;
+  box-shadow: var(--edge-light), var(--sh1);
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
   flex: none;
   white-space: nowrap;
+}
+/* "Choose source" (D-149): the way to pick what to practise, labelled in the header, not behind "...". */
+.s-compare-source .ic {
+  color: var(--accent);
+  flex: none;
 }
 
 .s-compare-scroll {

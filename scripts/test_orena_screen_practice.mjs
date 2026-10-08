@@ -50,10 +50,10 @@ import {
   assert.equal(shadow.params, undefined, 'no arbitrary first lesson is selected');
   assert.equal(withItems.find((m) => m.key === 'retell'), undefined, 'Retell is deferred (H9) even when the library has an item');
 
-  const resumed = speakModes([], { params: { id: 'media:lesson-en' }, query: { segment: 's2' } }).find((m) => m.key === 'speak');
-  assert.equal(resumed.routeId, 'speak', 'D-139 HD-3: with a last line, Pronunciation opens it directly');
-  assert.deepEqual(resumed.params, { id: 'media:lesson-en' });
-  assert.deepEqual(resumed.query, { segment: 's2' });
+  const chooser = speakModes([]).find((m) => m.key === 'speak');
+  assert.equal(chooser.routeId, 'discover', 'D-149 (superseding D-139 HD-3): Pronunciation always opens the source chooser first');
+  assert.deepEqual(chooser.query, { tab: 'listen', practice: 'pronunciation' });
+  assert.equal(chooser.params, undefined, 'never straight into an attempt on the last line');
   assert.deepEqual(speakModes(), speakModes([]), 'a missing list behaves like an empty one');
   assert.deepEqual(speakModes(null), speakModes([]), 'a non-array list behaves like an empty one, never a crash');
 }

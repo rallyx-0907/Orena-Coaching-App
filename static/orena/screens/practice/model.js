@@ -99,17 +99,15 @@ function firstOfType(items, type) {
    the modes this build offers are drawn (D-101 H9); a group with none is simply absent. */
 export const SPEAK_GROUPS = ['natural', 'pronounce', 'challenge'];
 
-export function speakModes(items = [], last = null) {
+export function speakModes(items = []) {
   const list = Array.isArray(items) ? items : [];
   const modes = [
     { key: 'situation', group: 'natural', routeId: 'situation' },
     { key: 'conv', group: 'natural', routeId: 'conv' },
     { key: 'freetalk', group: 'natural', routeId: 'freetalk' },
-    /* Pronunciation opens the learner's last line at once; the chooser ("Choose media") is behind "..." in
-       the room. Only with no last line does the chooser open directly (D-139 HD-3). */
-    last?.params?.id
-      ? { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'speak', params: last.params, query: last.query }
-      : { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } },
+    /* Pronunciation opens the source chooser first, always (human, 2026-10-08, D-149, superseding D-139 HD-3): the
+       learner picks what to practise before any attempt. */
+    { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } },
     /* Shadowing opens the shared room (D-119) through the media chooser: its route needs a media id, which only
        the learner's choice supplies (D-139 HD-2). */
     { key: 'shadow', group: 'pronounce', labelRouteId: 'shadow', routeId: 'discover', query: { tab: 'listen', practice: 'shadowing' } },
@@ -218,7 +216,7 @@ export function grammarModes() {
 }
 
 export const SKILL_BUILDERS = {
-  speak: (data) => speakModes(data.speakingItems, data.lastSpeakingLine),
+  speak: (data) => speakModes(data.speakingItems),
   write: (data) => writeModes(data.draft, data.earlier),
   listen: (data) => listenModes(data.listeningItems, data.lastListenedLine),
   vocabulary: (data) => vocabularyModes(data.due),
