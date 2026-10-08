@@ -8,6 +8,13 @@ product direction; that lives in `ORENA_PRODUCT_CONSTITUTION.md` and
 If a change here would contradict either of those, the Constitution wins and
 this file is what needs updating.
 
+**UI rules in this guide are not authority (D-067).** How a surface looks and
+behaves is decided by the design at its source (`DESIGN_CONTRACT.md`, "The
+authority"). Anything below that describes a layout, a composition, a shared
+toolbar, a navigation shape or a visual rule of the D-046/D-051/D-057/D-060/D-065
+era is history of what was built and is void where it disagrees with the design.
+This guide is kept for where code lives, not for what a screen should be.
+
 For system boundaries and the proposed shared experience contracts, read
 `ORENA_REFERENCE_ARCHITECTURE.md`. It separates Codex's architectural ownership
 from Opus's feature implementation. This guide continues to describe existing

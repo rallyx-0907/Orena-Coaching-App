@@ -83,6 +83,9 @@ class SpokenResponseIn(BaseModel):
     # What the learner was asked to do. Without it, coaching has to guess at the
     # task and ends up marking ordinary choices as omissions.
     situation: str = Field(default="", max_length=1200)
+    # Reading Transfer (frame 39): the source sentence the learner restated. When given, the same call
+    # also judges whether its meaning came through and names an important idea left out.
+    source_text: str = Field(default="", max_length=2000)
 
     @field_validator("target_language")
     @classmethod
@@ -227,6 +230,46 @@ USAGE_JUDGEMENTS = (
 )
 
 
+# The roles a sentence's parts can play in the Quick Sheet (SentenceSheet.json).
+# Deliberately few and language-neutral: an object or a modifier that is not one
+# of the first three is a complement.
+STRUCTURE_ROLES = ("adverbial", "verb", "subject", "complement")
+
+
+def _contrast(raw: Any) -> list[dict[str, str]]:
+    items: list[dict[str, str]] = []
+    for item in raw if isinstance(raw, list) else ():
+        if not isinstance(item, dict):
+            continue
+        term = str(item.get("term") or "").strip()[:120]
+        note = str(item.get("note") or "").strip()[:400]
+        if term and note:
+            items.append({"term": term, "note": note})
+    return items[:4]
+
+
+def _structure(raw: Any, source: str) -> list[dict[str, str]]:
+    """Sentence parts, in order, each a literal piece of the selection.
+
+    A chunk the model paraphrased, or one out of order, is dropped rather than
+    shown: a structure that does not match the sentence the learner is looking at
+    teaches the wrong thing.
+    """
+    items: list[dict[str, str]] = []
+    cursor = 0
+    for item in raw if isinstance(raw, list) else ():
+        if not isinstance(item, dict):
+            continue
+        chunk = str(item.get("chunk") or "").strip()
+        role = str(item.get("role") or "").strip().casefold()
+        at = source.find(chunk, cursor) if chunk else -1
+        if at < 0 or role not in STRUCTURE_ROLES:
+            continue
+        items.append({"chunk": chunk, "role": role})
+        cursor = at + len(chunk)
+    return items[:12]
+
+
 def _judgement(value: Any) -> str:
     candidate = str(value or "").strip().casefold()
     return candidate if candidate in USAGE_JUDGEMENTS else "natural"
@@ -309,6 +352,31 @@ def _explanation_schema() -> dict[str, Any]:
                 "maxItems": 4,
                 "items": {"type": "string"},
             },
+            "context_meaning": {"type": "string"},
+            "core_idea": {"type": "string"},
+            "mental_model": {"type": "string"},
+            "common_mistake": {"type": "string"},
+            "contrast": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                    "type": "object",
+                    "properties": {"term": {"type": "string"}, "note": {"type": "string"}},
+                    "required": ["term", "note"],
+                },
+            },
+            "structure": {
+                "type": "array",
+                "maxItems": 12,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "chunk": {"type": "string"},
+                        "role": {"type": "string", "enum": list(STRUCTURE_ROLES)},
+                    },
+                    "required": ["chunk", "role"],
+                },
+            },
         },
         "required": [
             "summary",
@@ -322,7 +390,151 @@ def _explanation_schema() -> dict[str, Any]:
             "examples",
             "counter_examples",
             "follow_ups",
+            "context_meaning",
+            "core_idea",
+            "mental_model",
+            "common_mistake",
+            "contrast",
+            "structure",
         ],
+    }
+
+
+def _gloss_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "context_meaning": {"type": "string"},
+            "why_here": {"type": "string"},
+            "common_meaning": {"type": "string"},
+        },
+        "required": ["context_meaning", "why_here", "common_meaning"],
+    }
+
+
+def meaning_in_context(payload: MediaExplainIn) -> dict[str, Any]:
+    """Only what the first layer of the Quick Sheet needs: a short gloss.
+
+    The full explanation is a large structured answer and takes seconds; the
+    first layer of the sheet is meant to answer at once, so it asks for one
+    clause and the rest is asked for only when the learner opens it.
+    """
+    language = _validated_source_language(payload.source_language)
+    target = _support_language(payload.target_language)
+    target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
+    source_name = "Simplified Chinese" if language == "zh" else "English"
+    source = payload.text.strip()
+    raw = _run_structured(
+        "learner_dictionary",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    f"You are a dictionary for a learner of {source_name}. Answer in {target_name}. "
+                    "Give context_meaning: what the selected text means in this sentence, as one short "
+                    "clause a dictionary would give for this use. Also give why_here: one short sentence saying "
+                    "why the selected text has that meaning in this sentence, naming what in the sentence "
+                    "shows it. Also give common_meaning: what this word most commonly means, for this reading and "
+                    "part of speech, as a short dictionary gloss of at most two senses separated by '; ' - the "
+                    "learner's general meaning to carry to other sentences. No lecture, no examples."
+                ),
+            },
+            {"role": "user", "content": f"SELECTED TEXT:\n{source}\n\nCONTEXT:\n{payload.context.strip() or source}"},
+        ],
+        schema=_gloss_schema(),
+        max_output_tokens=200,
+    )
+    return {
+        "source_language": language,
+        "target_language": target,
+        "selected_text": source,
+        "context_meaning": str(raw.get("context_meaning") or "").strip()[:300],
+        "why_here": str(raw.get("why_here") or "").strip()[:300],
+        "common_meaning": str(raw.get("common_meaning") or "").strip()[:200],
+    }
+
+
+class TutorTurn(BaseModel):
+    """One earlier exchange of the learner's conversation, so a follow-up can build on it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    question: str = Field(max_length=400)
+    answer: str = Field(max_length=1500)
+
+
+def _tutor_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "answer": {"type": "string"},
+            "follow_ups": {"type": "array", "maxItems": 3, "items": {"type": "string"}},
+        },
+        "required": ["answer", "follow_ups"],
+    }
+
+
+def answer_learner_question(
+    *,
+    text: str,
+    context: str,
+    source_language: str,
+    target_language: str,
+    question: str,
+    history: list[TutorTurn] | tuple[TutorTurn, ...] = (),
+) -> dict[str, Any]:
+    """Answer the learner's own question, as a contextual tutor and not as a fixed explanation.
+
+    The selection and its context are supporting data: they make the answer exact, or give it an
+    example. They never decide the shape of the answer - the question does. So there is no template
+    here: no verdict, no summary of the selection, nothing restated. A question about the forms of a
+    verb is answered with the forms.
+    """
+    language = _validated_source_language(source_language)
+    target = _support_language(target_language)
+    target_name = _SUPPORT_LANGUAGE_NAMES.get(target, target)
+    source_name = "Simplified Chinese" if language == "zh" else "English"
+    system = (
+        f"You are a contextual language tutor. A learner of {source_name} asks you one question and you "
+        f"answer it in {target_name}. Speak to them directly in the second person (in Vietnamese, say bạn); "
+        "never call them 'the learner' or 'the student'. "
+        "Begin with the answer itself. Never restate, paraphrase or announce the question "
+        "(no 'You are asking about...', no 'Great question', no preamble). "
+        "The selected text and its sentence are supporting data only: use them when they make the answer "
+        "more exact or give you an example, but the question alone decides what the answer looks like. "
+        "If the question is general - the forms of a verb, a grammar point, a comparison - answer it in "
+        "general first and tie it to the sentence only if that helps. "
+        "You can be asked about the meaning of a word or phrase, grammar, tense, word forms, collocation, "
+        "pronunciation (give the IPA, or pinyin with tone marks, and say what is hard), naturalness, why A "
+        "is right and B is wrong, how two words or structures differ, a rewrite, a translation, or "
+        "examples: do what was asked, in the form it needs (a list of forms is a short list, a rewrite is "
+        "the rewrite, a translation is the translation). "
+        "For the forms of a verb, give every form in one compact line (base, third person singular, past, "
+        "past participle, -ing), then one short line on when each is used. "
+        "Default to short and direct: one to four sentences, or a compact list of lines. Go deeper only when "
+        "the learner asks for depth (explain fully, in detail, why). "
+        f"Quote {source_name} forms exactly as they are written; write everything else in {target_name}. "
+        "Plain text, no headings, no markdown. Do not invent rules, sources or cultural claims; if you are "
+        "not sure, say so in one clause. "
+        f"Also give up to three follow_ups: short, natural next questions the learner might ask, in {target_name}."
+    )
+    earlier = "".join(
+        f"Q: {turn.question.strip()}\nA: {turn.answer.strip()}\n\n" for turn in list(history)[-4:]
+    )
+    user = (
+        f"SELECTED TEXT:\n{text.strip()}\n\nSENTENCE IT IS IN:\n{context.strip() or text.strip()}\n\n"
+        + (f"EARLIER IN THIS CONVERSATION:\n{earlier}" if earlier else "")
+        + f"THE LEARNER'S QUESTION:\n{question.strip()}"
+    )
+    raw = _run_structured(
+        "learner_dictionary",
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+        schema=_tutor_schema(),
+        max_output_tokens=900,
+    )
+    return {
+        "answer": str(raw.get("answer") or "").strip()[:2400],
+        "follow_ups": [str(item).strip()[:200] for item in raw.get("follow_ups", []) if str(item).strip()][:3],
     }
 
 
@@ -351,6 +563,8 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
     )
     system = (
         "You are an interactive language tutor inside a transcript. "
+        "Speak to the learner directly, in the second person, as a teacher talks to the person in "
+        "front of them; never call them 'the learner' or 'the student' (in Vietnamese, say bạn). "
         f"The learner is studying {source_name}. Explain in {target_name}. "
         "Be concise, concrete, and tied to the supplied context. "
         "Do not invent cultural claims or grammar rules. "
@@ -363,6 +577,17 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
         "would plausibly produce or misread, each labelled with its own "
         "judgement. Counter-examples must be realistic mistakes, not absurd ones. "
         "Offer follow_ups the learner might ask next, phrased as their question. "
+        "Also give: context_meaning, a short gloss - one clause, no more - of what the "
+        "selection means in this sentence, as a dictionary would give it for this use; "
+        "core_idea, one plain sentence on what the selection means in "
+        "general; mental_model, a short image or analogy that makes the meaning "
+        "stick; common_mistake, the misunderstanding learners most often have, "
+        "or an empty string if there is no real one; contrast, near-equivalents a "
+        "learner might confuse it with, each with the one-line difference, or an "
+        "empty list if there is none; structure, only when the selection is a whole "
+        "sentence: its consecutive parts, each copied exactly from the selection and "
+        "in order, with the role subject, verb, adverbial or complement (an object "
+        "or any other part is a complement), otherwise an empty list. "
         "Never cite a source, rule number, dictionary or corpus you were not "
         "given; explain from the language itself instead. "
         + language_specific
@@ -381,6 +606,15 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
             "Answer their question about the selected text, staying inside this "
             "context and this selection."
         )
+    # The last thing the model reads names the language to answer in. A system line saying it
+    # once is outweighed by an English selection and English context, and the explanation came
+    # back in English for a Vietnamese learner.
+    user += (
+        f"\n\nWrite every explanation in {target_name}, whatever language the text above is in: "
+        "summary, meanings, notes, judgement_reason, the answer, and follow_ups (the learner's own "
+        f"next questions, so they are in {target_name} too). Only quoted fragments and examples "
+        "stay in the language they belong to."
+    )
     raw = _run_structured(
         "learner_dictionary",
         messages=[
@@ -422,12 +656,50 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
             for item in raw.get("follow_ups", [])
             if str(item).strip()
         ][:4],
+        "context_meaning": str(raw.get("context_meaning") or "").strip()[:300],
+        "core_idea": str(raw.get("core_idea") or "").strip()[:600],
+        "mental_model": str(raw.get("mental_model") or "").strip()[:800],
+        "common_mistake": str(raw.get("common_mistake") or "").strip()[:800],
+        "contrast": _contrast(raw.get("contrast")),
+        "structure": _structure(raw.get("structure"), source),
         "question": question,
         "claim": "contextual_ai_explanation",
     }
 
 
-def _spoken_schema() -> dict[str, Any]:
+MEANING_VERDICTS = ("preserved", "partly", "lost")
+# S-26: the Situation Reaction result's two judgement cards, read from the transcript like the rest of the coaching.
+INTENT_VERDICTS = ("yes", "partly", "no")
+CLARITY_VERDICTS = ("clear", "mostly", "unclear")
+
+
+def _judged(raw: Any, verdicts: tuple[str, ...]) -> dict[str, str] | None:
+    """One verdict and its one short reason, or None: a verdict outside the vocabulary or without a reason is dropped,
+    never repaired."""
+    if not isinstance(raw, dict) or raw.get("verdict") not in verdicts:
+        return None
+    reason = str(raw.get("reason") or "").strip()
+    return {"verdict": raw["verdict"], "reason": reason[:240]} if reason else None
+
+
+def _spoken_schema(*, with_meaning: bool = False, with_situation_judgement: bool = False) -> dict[str, Any]:
+    schema = _spoken_base_schema()
+    if with_situation_judgement and not with_meaning:
+        for key, verdicts in (("intent_achieved", INTENT_VERDICTS), ("clarity", CLARITY_VERDICTS)):
+            schema["properties"][key] = {
+                "type": "object",
+                "properties": {"verdict": {"type": "string", "enum": list(verdicts)}, "reason": {"type": "string"}},
+                "required": ["verdict", "reason"],
+            }
+            schema["required"] = [*schema["required"], key]
+    if with_meaning:
+        schema["properties"]["meaning_preserved"] = {"type": "string", "enum": list(MEANING_VERDICTS)}
+        schema["properties"]["missing_idea"] = {"type": "string"}
+        schema["required"] = [*schema["required"], "meaning_preserved", "missing_idea"]
+    return schema
+
+
+def _spoken_base_schema() -> dict[str, Any]:
     return {
         "type": "object",
         "properties": {
@@ -459,9 +731,29 @@ def _spoken_schema() -> dict[str, Any]:
             },
             "another_way": {"type": "string"},
             "next_attempt": {"type": "string"},
+            # One line the learner can say back and have assessed (Speaking 04); approved in D-077.
+            "say_again": {"type": "string"},
         },
-        "required": ["carried", "landed_differently", "another_way", "next_attempt"],
+        "required": ["carried", "landed_differently", "another_way", "next_attempt", "say_again"],
     }
+
+
+def _line_in_language(text: Any, language: str, *, limit: int = 300) -> str:
+    """A line the learner can say: only the learning language's script, or nothing.
+
+    The Speaking design's "say this again" is spoken back and assessed as a line, so advice in
+    the support language with a quotation inside it must never reach it.
+    """
+    line = str(text or "").strip().strip('"“”「」')
+    if not line or len(line) > limit:
+        return ""
+    letters = [ch for ch in line if ch.isalpha()]
+    han = [ch for ch in letters if "㐀" <= ch <= "鿿"]
+    latin = [ch for ch in letters if ch.isascii()]
+    other = [ch for ch in letters if ch not in han and not ch.isascii()]
+    if language == "zh":
+        return line if han and not other and len(latin) <= max(2, len(han) // 5) else ""
+    return line if latin and not han and not other else ""
 
 
 @contextual_router.post("/spoken-response")
@@ -481,10 +773,13 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
     source_name = "Simplified Chinese" if language == "zh" else "English"
     transcript = payload.transcript.strip()
     situation = payload.situation.strip()
+    source_text = payload.source_text.strip()
     if not transcript:
         raise HTTPException(422, "A transcript is required.")
 
     system = (
+        "Speak to the learner directly, in the second person; never call them 'the learner' or "
+        "'the student' (in Vietnamese, say bạn). "
         f"You are a speaking tutor. The learner speaks {source_name}; explain in "
         f"{target_name}. You are reading a speech-recognition transcript of what "
         "they said. You did NOT hear the audio: never comment on pronunciation, "
@@ -496,11 +791,31 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
         "in the transcript. Name at most three things that carried the meaning "
         "and at most three that would land differently, each with the reason. "
         "Give one alternative way to say part of it, not a rewrite of the whole "
-        "response, and one concrete thing to try in the next attempt. Do not "
+        "response, and one concrete thing to try in the next attempt. "
+        f"In say_again, give one sentence from what they said, corrected where needed, written "
+        f"only in {source_name}: no explanation, no quotation marks, no {target_name}. Do not "
         "score, grade or estimate a level. Never cite a source you were not given."
+        + (
+            " THE SITUATION is what the learner was reacting to. In intent_achieved, say whether what they said "
+            "did what the situation called for (yes, partly or no) with one short reason. In clarity, say whether "
+            "the message is clear from the words alone (clear, mostly or unclear) with one short reason. Judge the "
+            f"words only, never how they sounded. Write both reasons in {target_name}."
+            if situation and not source_text
+            else ""
+        )
+        + (
+            " The learner was restating THE SOURCE SENTENCE below. In meaning_preserved, say whether its "
+            "meaning came through: preserved, partly or lost. In missing_idea, name in a few words the most "
+            "important idea of the source sentence the learner left out, quoting the source's own words, or "
+            f"leave it empty when nothing important is missing. Write missing_idea in {target_name}, "
+            f"quoting {source_name} words exactly."
+            if source_text
+            else ""
+        )
     )
     user = (
         (f"THE SITUATION:\n{situation}\n\n" if situation else "")
+        + (f"THE SOURCE SENTENCE:\n{source_text}\n\n" if source_text else "")
         + f"WHAT RECOGNITION HEARD:\n{transcript}\n\n"
         + "Coach this spoken response."
     )
@@ -510,7 +825,7 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        schema=_spoken_schema(),
+        schema=_spoken_schema(with_meaning=bool(source_text), with_situation_judgement=bool(situation)),
         max_output_tokens=1400,
     )
 
@@ -534,7 +849,14 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
 
     carried = _grounded(raw.get("carried"), with_alternative=False)
     landed = _grounded(raw.get("landed_differently"), with_alternative=True)
+    judged: dict[str, Any] = {}
+    if situation and not source_text:
+        for key, verdicts in (("intent_achieved", INTENT_VERDICTS), ("clarity", CLARITY_VERDICTS)):
+            entry = _judged(raw.get(key), verdicts)
+            if entry:
+                judged[key] = entry
     return {
+        **judged,
         "source_language": language,
         "target_language": target,
         "transcript": transcript,
@@ -543,7 +865,14 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
         "landed_differently": landed,
         "another_way": str(raw.get("another_way") or "").strip()[:600],
         "next_attempt": str(raw.get("next_attempt") or "").strip()[:400],
+        # One line to say again, in the learning language only (Orena Speaking 04).
+        "say_again": _line_in_language(raw.get("say_again"), language),
         "available": bool(carried or landed),
+        # Reading Transfer only (with a source sentence); null / "" otherwise.
+        "meaning_preserved": (
+            str(raw.get("meaning_preserved")) if source_text and raw.get("meaning_preserved") in MEANING_VERDICTS else None
+        ),
+        "missing_idea": str(raw.get("missing_idea") or "").strip()[:300] if source_text else "",
         # Said in the payload as well as in the copy: this is derived from a
         # transcript, and it is not a measurement of speech.
         "claim": "spoken_response_coaching_from_transcript",

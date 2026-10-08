@@ -1,0 +1,676 @@
+{
+  "format": "orena.character-parts.v1",
+  "provenance": {
+    "source": "orena-curated",
+    "evidence_type": "structural-decomposition",
+    "note": "Modern structural decomposition, not documented etymology and not a mnemonic. ORENA_VOCABULARY_ARCHITECTURE.md §4 requires the three to be labelled as what they are; this file is only the first. Every radical declared here is checked against the vendored Make Me a Hanzi pack by tests/test_character_parts.py: the radical's own stroke count must equal the number of strokes the pack marks as the radical's, so a wrong radical fails a test rather than reaching a learner."
+  },
+  "characters": {
+    "妈": {
+      "radical": {
+        "surface": "女",
+        "reading": "nǚ",
+        "gloss_en": "woman",
+        "gloss_vi": "nữ"
+      },
+      "components": [
+        {
+          "surface": "马",
+          "reading": "mǎ",
+          "role": "phonetic",
+          "gloss_en": "horse",
+          "gloss_vi": "ngựa"
+        }
+      ]
+    },
+    "猫": {
+      "radical": {
+        "surface": "犭",
+        "reading": "quǎn",
+        "gloss_en": "dog radical",
+        "gloss_vi": "bộ khản"
+      },
+      "components": [
+        {
+          "surface": "苗",
+          "reading": "miáo",
+          "role": "phonetic",
+          "gloss_en": "sprout",
+          "gloss_vi": "mầm cây"
+        }
+      ]
+    },
+    "狗": {
+      "radical": {
+        "surface": "犭",
+        "reading": "quǎn",
+        "gloss_en": "dog radical",
+        "gloss_vi": "bộ khản"
+      },
+      "components": [
+        {
+          "surface": "句",
+          "reading": "jù",
+          "role": "phonetic",
+          "gloss_en": "phrase",
+          "gloss_vi": "câu"
+        }
+      ]
+    },
+    "爸": {
+      "radical": {
+        "surface": "父",
+        "reading": "fù",
+        "gloss_en": "father",
+        "gloss_vi": "cha"
+      },
+      "components": [
+        {
+          "surface": "巴",
+          "reading": "bā",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "想": {
+      "radical": {
+        "surface": "心",
+        "reading": "xīn",
+        "gloss_en": "heart, mind",
+        "gloss_vi": "tim, ý nghĩ"
+      },
+      "components": [
+        {
+          "surface": "相",
+          "reading": "xiāng",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": "gợi cách đọc"
+        }
+      ]
+    },
+    "喝": {
+      "radical": {
+        "surface": "口",
+        "reading": "kǒu",
+        "gloss_en": "mouth",
+        "gloss_vi": "miệng"
+      },
+      "components": [
+        {
+          "surface": "曷",
+          "reading": "hé",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "吃": {
+      "radical": {
+        "surface": "口",
+        "reading": "kǒu",
+        "gloss_en": "mouth",
+        "gloss_vi": "miệng"
+      },
+      "components": [
+        {
+          "surface": "乞",
+          "reading": "qǐ",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "唱": {
+      "radical": {
+        "surface": "口",
+        "reading": "kǒu",
+        "gloss_en": "mouth",
+        "gloss_vi": "miệng"
+      },
+      "components": [
+        {
+          "surface": "昌",
+          "reading": "chāng",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "响": {
+      "radical": {
+        "surface": "口",
+        "reading": "kǒu",
+        "gloss_en": "mouth",
+        "gloss_vi": "miệng"
+      },
+      "components": [
+        {
+          "surface": "向",
+          "reading": "xiàng",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "钱": {
+      "radical": {
+        "surface": "钅",
+        "reading": "jīn",
+        "gloss_en": "metal radical",
+        "gloss_vi": "bộ kim"
+      },
+      "components": [
+        {
+          "surface": "戈",
+          "reading": "gē",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "银": {
+      "radical": {
+        "surface": "钅",
+        "reading": "jīn",
+        "gloss_en": "metal radical",
+        "gloss_vi": "bộ kim"
+      },
+      "components": [
+        {
+          "surface": "艮",
+          "reading": "gèn",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "法": {
+      "radical": {
+        "surface": "氵",
+        "reading": "shuǐ",
+        "gloss_en": "water radical",
+        "gloss_vi": "bộ thủy"
+      },
+      "components": [
+        {
+          "surface": "去",
+          "reading": "qù",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "渐": {
+      "radical": {
+        "surface": "氵",
+        "reading": "shuǐ",
+        "gloss_en": "water radical",
+        "gloss_vi": "bộ thủy"
+      },
+      "components": [
+        {
+          "surface": "斩",
+          "reading": "zhǎn",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "游": {
+      "radical": {
+        "surface": "氵",
+        "reading": "shuǐ",
+        "gloss_en": "water radical",
+        "gloss_vi": "bộ thủy"
+      },
+      "components": []
+    },
+    "茶": {
+      "radical": {
+        "surface": "艹",
+        "reading": "cǎo",
+        "gloss_en": "grass radical",
+        "gloss_vi": "bộ thảo"
+      },
+      "components": []
+    },
+    "饭": {
+      "radical": {
+        "surface": "饣",
+        "reading": "shí",
+        "gloss_en": "food radical",
+        "gloss_vi": "bộ thực"
+      },
+      "components": [
+        {
+          "surface": "反",
+          "reading": "fǎn",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "病": {
+      "radical": {
+        "surface": "疒",
+        "reading": "chuáng",
+        "gloss_en": "illness radical",
+        "gloss_vi": "bộ nạch"
+      },
+      "components": [
+        {
+          "surface": "丙",
+          "reading": "bǐng",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "脑": {
+      "radical": {
+        "surface": "月",
+        "reading": "yuè",
+        "gloss_en": "flesh radical",
+        "gloss_vi": "bộ nhục"
+      },
+      "components": []
+    },
+    "体": {
+      "radical": {
+        "surface": "亻",
+        "reading": "rén",
+        "gloss_en": "person radical",
+        "gloss_vi": "bộ nhân"
+      },
+      "components": [
+        {
+          "surface": "本",
+          "reading": "běn",
+          "role": "semantic",
+          "gloss_en": "root",
+          "gloss_vi": "gốc"
+        }
+      ]
+    },
+    "你": {
+      "radical": {
+        "surface": "亻",
+        "reading": "rén",
+        "gloss_en": "person radical",
+        "gloss_vi": "bộ nhân"
+      },
+      "components": [
+        {
+          "surface": "尔",
+          "reading": "ěr",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "作": {
+      "radical": {
+        "surface": "亻",
+        "reading": "rén",
+        "gloss_en": "person radical",
+        "gloss_vi": "bộ nhân"
+      },
+      "components": [
+        {
+          "surface": "乍",
+          "reading": "zhà",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "话": {
+      "radical": {
+        "surface": "讠",
+        "reading": "yán",
+        "gloss_en": "speech radical",
+        "gloss_vi": "bộ ngôn"
+      },
+      "components": [
+        {
+          "surface": "舌",
+          "reading": "shé",
+          "role": "semantic",
+          "gloss_en": "tongue",
+          "gloss_vi": "lưỡi"
+        }
+      ]
+    },
+    "识": {
+      "radical": {
+        "surface": "讠",
+        "reading": "yán",
+        "gloss_en": "speech radical",
+        "gloss_vi": "bộ ngôn"
+      },
+      "components": [
+        {
+          "surface": "只",
+          "reading": "zhī",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "认": {
+      "radical": {
+        "surface": "讠",
+        "reading": "yán",
+        "gloss_en": "speech radical",
+        "gloss_vi": "bộ ngôn"
+      },
+      "components": [
+        {
+          "surface": "人",
+          "reading": "rén",
+          "role": "phonetic",
+          "gloss_en": "person",
+          "gloss_vi": "người"
+        }
+      ]
+    },
+    "谢": {
+      "radical": {
+        "surface": "讠",
+        "reading": "yán",
+        "gloss_en": "speech radical",
+        "gloss_vi": "bộ ngôn"
+      },
+      "components": [
+        {
+          "surface": "射",
+          "reading": "shè",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "课": {
+      "radical": {
+        "surface": "讠",
+        "reading": "yán",
+        "gloss_en": "speech radical",
+        "gloss_vi": "bộ ngôn"
+      },
+      "components": [
+        {
+          "surface": "果",
+          "reading": "guǒ",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "词": {
+      "radical": {
+        "surface": "讠",
+        "reading": "yán",
+        "gloss_en": "speech radical",
+        "gloss_vi": "bộ ngôn"
+      },
+      "components": [
+        {
+          "surface": "司",
+          "reading": "sī",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "试": {
+      "radical": {
+        "surface": "讠",
+        "reading": "yán",
+        "gloss_en": "speech radical",
+        "gloss_vi": "bộ ngôn"
+      },
+      "components": [
+        {
+          "surface": "式",
+          "reading": "shì",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "读": {
+      "radical": {
+        "surface": "讠",
+        "reading": "yán",
+        "gloss_en": "speech radical",
+        "gloss_vi": "bộ ngôn"
+      },
+      "components": []
+    },
+    "证": {
+      "radical": {
+        "surface": "讠",
+        "reading": "yán",
+        "gloss_en": "speech radical",
+        "gloss_vi": "bộ ngôn"
+      },
+      "components": [
+        {
+          "surface": "正",
+          "reading": "zhèng",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "译": {
+      "radical": {
+        "surface": "讠",
+        "reading": "yán",
+        "gloss_en": "speech radical",
+        "gloss_vi": "bộ ngôn"
+      },
+      "components": []
+    },
+    "时": {
+      "radical": {
+        "surface": "日",
+        "reading": "rì",
+        "gloss_en": "sun, day",
+        "gloss_vi": "mặt trời, ngày"
+      },
+      "components": [
+        {
+          "surface": "寸",
+          "reading": "cùn",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "明": {
+      "radical": {
+        "surface": "日",
+        "reading": "rì",
+        "gloss_en": "sun, day",
+        "gloss_vi": "mặt trời, ngày"
+      },
+      "components": [
+        {
+          "surface": "月",
+          "reading": "yuè",
+          "role": "semantic",
+          "gloss_en": "moon",
+          "gloss_vi": "mặt trăng"
+        }
+      ]
+    },
+    "春": {
+      "radical": {
+        "surface": "日",
+        "reading": "rì",
+        "gloss_en": "sun, day",
+        "gloss_vi": "mặt trời, ngày"
+      },
+      "components": []
+    },
+    "房": {
+      "radical": {
+        "surface": "户",
+        "reading": "hù",
+        "gloss_en": "door",
+        "gloss_vi": "cửa"
+      },
+      "components": [
+        {
+          "surface": "方",
+          "reading": "fāng",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "店": {
+      "radical": {
+        "surface": "广",
+        "reading": "guǎng",
+        "gloss_en": "shelter radical",
+        "gloss_vi": "bộ nghềm"
+      },
+      "components": [
+        {
+          "surface": "占",
+          "reading": "zhān",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "床": {
+      "radical": {
+        "surface": "广",
+        "reading": "guǎng",
+        "gloss_en": "shelter radical",
+        "gloss_vi": "bộ nghềm"
+      },
+      "components": [
+        {
+          "surface": "木",
+          "reading": "mù",
+          "role": "semantic",
+          "gloss_en": "wood",
+          "gloss_vi": "gỗ"
+        }
+      ]
+    },
+    "路": {
+      "radical": {
+        "surface": "足",
+        "reading": "zú",
+        "gloss_en": "foot radical",
+        "gloss_vi": "bộ túc"
+      },
+      "components": [
+        {
+          "surface": "各",
+          "reading": "gè",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "跳": {
+      "radical": {
+        "surface": "足",
+        "reading": "zú",
+        "gloss_en": "foot radical",
+        "gloss_vi": "bộ túc"
+      },
+      "components": [
+        {
+          "surface": "兆",
+          "reading": "zhào",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "饿": {
+      "radical": {
+        "surface": "饣",
+        "reading": "shí",
+        "gloss_en": "food radical",
+        "gloss_vi": "bộ thực"
+      },
+      "components": [
+        {
+          "surface": "我",
+          "reading": "wǒ",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "馆": {
+      "radical": {
+        "surface": "饣",
+        "reading": "shí",
+        "gloss_en": "food radical",
+        "gloss_vi": "bộ thực"
+      },
+      "components": [
+        {
+          "surface": "官",
+          "reading": "guān",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    },
+    "饼": {
+      "radical": {
+        "surface": "饣",
+        "reading": "shí",
+        "gloss_en": "food radical",
+        "gloss_vi": "bộ thực"
+      },
+      "components": [
+        {
+          "surface": "并",
+          "reading": "bìng",
+          "role": "phonetic",
+          "gloss_en": "",
+          "gloss_vi": ""
+        }
+      ]
+    }
+  }
+}

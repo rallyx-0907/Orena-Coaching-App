@@ -1,0 +1,253 @@
+{
+  "asset": {
+    "asset_id": "commons-zh-wikipedia-tutorial-1",
+    "source_url": "https://commons.wikimedia.org/wiki/File:%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv",
+    "source_provider": "wikimedia-commons",
+    "source_type": "licensed-video",
+    "title": "怎么搜索维基百科",
+    "source_language": "zh",
+    "processing_state": "ready",
+    "duration_ms": 198241,
+    "transcript_available": true,
+    "translation_available": true,
+    "thumbnail_url": ""
+  },
+  "playback": {
+    "provider": "wikimedia-commons",
+    "kind": "video",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/b/b1/%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv/%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv.480p.vp9.webm"
+  },
+  "transcript": {
+    "asset_id": "commons-zh-wikipedia-tutorial-1",
+    "source_language": "zh",
+    "segments": [
+      {
+        "segment_id": "commons-zh-wikipedia-tutorial-1:000",
+        "order": 0,
+        "start_ms": 16120,
+        "end_ms": 22000,
+        "original_text": "现在看到的是中文维基百科的首页(Vector版)",
+        "words": []
+      },
+      {
+        "segment_id": "commons-zh-wikipedia-tutorial-1:001",
+        "order": 1,
+        "start_ms": 22240,
+        "end_ms": 27520,
+        "original_text": "你可以输入你找的内容",
+        "words": []
+      },
+      {
+        "segment_id": "commons-zh-wikipedia-tutorial-1:002",
+        "order": 2,
+        "start_ms": 27800,
+        "end_ms": 30960,
+        "original_text": "相关条目会在下方展开",
+        "words": []
+      }
+    ]
+  },
+  "transcript_origin": "provider_caption",
+  "translations": [
+    {
+      "segment_id": "commons-zh-wikipedia-tutorial-1:000",
+      "target_language": "en",
+      "translated_meaning": "What you see now is the Chinese Wikipedia home page (Vector skin).",
+      "provenance": "editorial"
+    },
+    {
+      "segment_id": "commons-zh-wikipedia-tutorial-1:001",
+      "target_language": "en",
+      "translated_meaning": "You can type in what you are looking for.",
+      "provenance": "editorial"
+    },
+    {
+      "segment_id": "commons-zh-wikipedia-tutorial-1:002",
+      "target_language": "en",
+      "translated_meaning": "Related articles appear below.",
+      "provenance": "editorial"
+    }
+  ],
+  "translation": {
+    "status": "ready",
+    "target_language": "en",
+    "source": {
+      "capability_key": null,
+      "provider": "curated-editorial",
+      "model": null,
+      "request_count": 0
+    },
+    "failure_kind": null
+  },
+  "catalog": {
+    "spoken_text_by_segment": {},
+    "lesson_id": "zh-technology-search-wikipedia",
+    "media_object_id": "commons-zh-wikipedia-tutorial-1",
+    "title": "怎么搜索维基百科",
+    "description": "A screencast walkthrough of searching the Chinese Wikipedia, narrated step by step.",
+    "language": "zh",
+    "topic": "technology",
+    "subtopics": [
+      "how-to",
+      "internet"
+    ],
+    "level": "HSK4",
+    "estimated_level": "HSK4",
+    "reviewed_level": null,
+    "level_source": "deterministic-estimate",
+    "level_evidence": {
+      "vocabulary_band": "everyday-technical",
+      "sentence_complexity": "instructional-statements",
+      "speech_speed": "measured",
+      "review_note": "Deterministic estimate from instructional vocabulary; spoken variety and level still need human review."
+    },
+    "duration_ms": 43280,
+    "excerpt_start_ms": 16120,
+    "excerpt_end_ms": 59400,
+    "available_modes": [
+      "listen",
+      "active",
+      "dictation"
+    ],
+    "content_tags": [
+      "technology",
+      "how-to",
+      "narration"
+    ],
+    "vocabulary": [
+      "输入",
+      "条目",
+      "搜寻"
+    ],
+    "speech_speed": "measured",
+    "artwork": "technology",
+    "poster_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv/960px--%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv.jpg",
+    "playback_kind": "video",
+    "content_type": "video",
+    "published_state": "published",
+    "curation_state": "reviewed",
+    "is_development_candidate": false,
+    "source": {
+      "source_media_id": "commons-zh-wikipedia-tutorial-1",
+      "provider": "wikimedia-commons",
+      "type": "licensed-video",
+      "title": "中文維基百科教學頻道第一章",
+      "creator": "香港分子 (Wikimedia Commons)",
+      "source_url": "https://commons.wikimedia.org/wiki/File:%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv",
+      "provenance_url": "https://commons.wikimedia.org/wiki/File:%E4%B8%AD%E6%96%87%E7%B6%AD%E5%9F%BA%E7%99%BE%E7%A7%91%E6%95%99%E5%AD%B8%E9%A0%BB%E9%81%93%E7%AC%AC%E4%B8%80%E7%AB%A0.ogv",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "allowed_usage_type": "creative-commons-attribution-sharealike",
+      "rights_review_status": "verified"
+    },
+    "pinyin_by_segment": {
+      "commons-zh-wikipedia-tutorial-1:000": "Xiànzài kàndào de shì Zhōngwén Wéijī Bǎikē de shǒuyè (Vector bǎn)",
+      "commons-zh-wikipedia-tutorial-1:001": "Nǐ kěyǐ shūrù nǐ zhǎo de nèiróng",
+      "commons-zh-wikipedia-tutorial-1:002": "Xiāngguān tiáomù huì zài xiàfāng zhǎnkāi",
+      "commons-zh-wikipedia-tutorial-1:003": "Yě kě zài zuì xiàfāng xuǎnzé 「bāohán...」 lái sōuxún suǒyǒu xiāngguān tiáomù",
+      "commons-zh-wikipedia-tutorial-1:004": "Àn 「fàngdàjìng」 kěyǐ zhíjiē zhǎo nǐ shūrù de tiáomù",
+      "commons-zh-wikipedia-tutorial-1:005": "Zhèyàng, nǐ biàn kěyǐ zhǎodào suǒ xū de tiáomù le",
+      "commons-zh-wikipedia-tutorial-1:006": "Lìngwài yòng MonoBook、MySkin děng bǎnběn yě yǒu xiāngtóng gōngnéng"
+    },
+    "pinyin_chars_by_segment": {
+      "commons-zh-wikipedia-tutorial-1:000": [
+        {
+          "char": "现",
+          "pinyin": "Xiàn"
+        },
+        {
+          "char": "在",
+          "pinyin": "zài"
+        },
+        {
+          "char": "看",
+          "pinyin": "kàn"
+        }
+      ],
+      "commons-zh-wikipedia-tutorial-1:001": [
+        {
+          "char": "你",
+          "pinyin": "Nǐ"
+        },
+        {
+          "char": "可",
+          "pinyin": "kě"
+        },
+        {
+          "char": "以",
+          "pinyin": "yǐ"
+        }
+      ],
+      "commons-zh-wikipedia-tutorial-1:002": [
+        {
+          "char": "相",
+          "pinyin": "Xiāng"
+        },
+        {
+          "char": "关",
+          "pinyin": "guān"
+        },
+        {
+          "char": "条",
+          "pinyin": "tiáo"
+        }
+      ],
+      "commons-zh-wikipedia-tutorial-1:003": [
+        {
+          "char": "也",
+          "pinyin": "Yě"
+        },
+        {
+          "char": "可",
+          "pinyin": "kě"
+        },
+        {
+          "char": "在",
+          "pinyin": "zài"
+        }
+      ],
+      "commons-zh-wikipedia-tutorial-1:004": [
+        {
+          "char": "按",
+          "pinyin": "Àn"
+        },
+        {
+          "char": "放",
+          "pinyin": "fàng"
+        },
+        {
+          "char": "大",
+          "pinyin": "dà"
+        }
+      ],
+      "commons-zh-wikipedia-tutorial-1:005": [
+        {
+          "char": "这",
+          "pinyin": "Zhè"
+        },
+        {
+          "char": "样",
+          "pinyin": "yàng"
+        },
+        {
+          "char": "你",
+          "pinyin": "nǐ"
+        }
+      ],
+      "commons-zh-wikipedia-tutorial-1:006": [
+        {
+          "char": "另",
+          "pinyin": "Lìng"
+        },
+        {
+          "char": "外",
+          "pinyin": "wài"
+        },
+        {
+          "char": "用",
+          "pinyin": "yòng"
+        }
+      ]
+    }
+  }
+}

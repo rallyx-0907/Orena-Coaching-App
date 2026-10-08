@@ -14,7 +14,7 @@ from writing_coach.core.deployment import CALLBACK_PATH, resolve_deployment_conf
 
 SECRETS = {
     "GOOGLE_CLIENT_SECRET": "google-secret-value",
-    "SESSION_SECRET": "session-secret-value",
+    "SESSION_SECRET": "session-secret-value-for-tests-0123456789",
     "POSTGRES_RUNTIME_URL": (
         "postgresql+psycopg://staging-user:database-secret-value@postgres:5432/becoming"
     ),

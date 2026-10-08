@@ -1,0 +1,1639 @@
+"""Sources, snapshots, articles, targets and the review trail.
+
+Schema: `migrations/proposed/20260924_0015_reading_content_engine.py` -
+proposed, reviewed, rehearsed, not yet applied to any runtime. See
+`docs/project/READING_CONTENT_ENGINE_SCHEMA_REVIEW_REQUEST.md`.
+
+Three rules this module exists to keep, each of which a learner would feel if
+it broke:
+
+- **A snapshot is never rewritten.** The only `UPDATE` this module issues
+  against `reading_source_items` sets `superseded_at`, and it names that one
+  column. On PostgreSQL a trigger enforces the rule; here it is a design
+  constraint with a test that watches the SQL actually issued. The targeting
+  matters as much as the rule: the trigger compares `rights_snapshot_json` by
+  its stored bytes, so a whole-row write - or an ORM `merge()` that
+  re-serialises that JSON with a different key order - would be refused even
+  though nothing about it changed.
+- **`estimated_level` is the machine's and stays the machine's.** An admin
+  correction writes `reviewed_level`; `effective_level` - the column the
+  learner list filters on - is maintained here as `reviewed_level` when set,
+  else `estimated_level`, and is the only one a query ever reads.
+- **A list is a list.** The learner list and the admin queue return
+  projections without bodies, source payloads, analysis or review history; the
+  detail reads fetch those. That is what keeps a learner's request the same
+  size whether the corpus holds 500 articles or 500,000.
+
+Portable SQLAlchemy, like `admin_repository.py`: the hermetic suite runs this
+same SQL on SQLite while the runtime reads PostgreSQL.
+"""
+from __future__ import annotations
+
+import base64
+import json
+import uuid
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.engine import Engine
+
+from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
+from writing_coach.persistence.models import (
+    ReadingArticle,
+    ReadingArticleTarget,
+    ReadingReviewEvent,
+    ReadingSource,
+    ReadingSourceItem,
+)
+
+DEFAULT_ARTICLE_PAGE = 24
+MAX_ARTICLE_PAGE = 60
+MIN_TARGETS = 3
+MAX_TARGETS = 8
+
+# The three built-in input paths, with the ids the migration seeds. Kept here
+# as well because the hermetic suite creates its tables from metadata and has
+# no migration to seed them - `ensure_built_in_sources()` is the idempotent
+# bridge, and both sides must agree or manual dedupe silently stops working.
+BUILT_IN_SOURCES: dict[str, tuple[str, str, str]] = {
+    "manual": ("0a52e5d0-0000-4000-8000-000000000001", "orena-manual", "Manual paste"),
+    "direct_url": ("0a52e5d0-0000-4000-8000-000000000002", "orena-direct-url", "Direct URL"),
+    "file": ("0a52e5d0-0000-4000-8000-000000000003", "orena-file-upload", "File upload"),
+}
+
+LEARNER_VISIBLE_STATUS = "published"
+# Exactly what the learner routes return, and therefore exactly what must move
+# `content_revision` when it changes: the list projection's fields plus the
+# body and the approved targets the detail adds. `subtopic`, the analysis and
+# the review trail are admin-only, so changing one of those does not make every
+# cached copy refetch.
+LEARNER_VISIBLE_FIELDS = ("title", "body", "excerpt", "topic", "reviewed_level", "content_kind")
+# What the learner is reading - the learner-facing content type (D-083). Not a
+# source's feed mechanism (`reading_sources.source_type`) and not an editorial
+# category of the publisher, which stays deferred.
+CONTENT_KINDS = ("article", "news")
+QUEUE_STATUSES = ("draft", "processing", "needs_review", "ready")
+
+
+class InvalidCursor(ValueError):
+    """A `cursor` value that does not decode to this query's own shape."""
+
+
+@dataclass(frozen=True)
+class TargetInput:
+    text: str
+    canonical_form: str
+    target_type: str
+    context: str
+    estimated_level: str
+    rank: int
+    meaning: str = ""
+    machine_suggested: bool = True
+
+
+def _now(value: datetime | None) -> datetime:
+    return value or datetime.now(UTC)
+
+
+def _aware(value: Any) -> datetime | None:
+    if not isinstance(value, datetime):
+        return None
+    return value.astimezone(UTC) if value.tzinfo else value.replace(tzinfo=UTC)
+
+
+def _iso(value: Any) -> str | None:
+    moment = _aware(value)
+    return moment.isoformat() if moment else None
+
+
+def _uuid(value: Any) -> uuid.UUID:
+    return value if isinstance(value, uuid.UUID) else uuid.UUID(str(value))
+
+
+def _lookup_uuid(value: Any) -> uuid.UUID | None:
+    """The id of a row that could exist, or None for a string that never can.
+
+    A route path is a string, so `/articles/queue` arrives here as an id. That
+    names no row - which is absence, the same answer as a well-formed id
+    nobody used, and not a 500.
+    """
+    try:
+        return _uuid(value)
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def _encode_cursor(moment: datetime, row_id: str) -> str:
+    payload = json.dumps({"at": moment.isoformat(), "id": row_id}).encode("utf-8")
+    return base64.urlsafe_b64encode(payload).decode("ascii")
+
+
+def _decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(cursor.encode("ascii")))
+        return datetime.fromisoformat(payload["at"]), uuid.UUID(payload["id"])
+    except Exception as exc:  # noqa: BLE001 - any malformed cursor is the same outcome
+        raise InvalidCursor(cursor) from exc
+
+
+def _effective(estimated: str, reviewed: str | None) -> str:
+    return reviewed if reviewed else estimated
+
+
+def _source(row: Any) -> dict[str, Any]:
+    return {
+        "id": str(row.id),
+        "slug": row.slug,
+        "name": row.name,
+        "source_type": row.source_type,
+        "base_url": row.base_url,
+        "state": row.state,
+        "languages": list(row.languages or []),
+        "rights": {
+            "automation_allowed": bool(row.automation_allowed),
+            "can_republish": bool(row.can_republish),
+            "can_adapt": bool(row.can_adapt),
+            "attribution_required": bool(row.attribution_required),
+            "license_note": row.license_note,
+        },
+        "polling_enabled": bool(row.polling_enabled),
+        "last_checked_at": _iso(row.last_checked_at),
+        "last_success_at": _iso(row.last_success_at),
+        "last_error": row.last_error,
+        "created_at": _iso(row.created_at),
+    }
+
+
+PERMISSIONS = ("automation_allowed", "can_republish", "can_adapt")
+
+
+def rights_state(rights: Any) -> dict[str, str]:
+    """A rights question has three answers, and `False` is only one of them.
+
+    The snapshot stores exactly what the submitter asserted, so a key that is
+    absent means nobody answered - not that the answer was no. Flattening the
+    two together is how a manual paste with no rights information ends up
+    looking identical to content a publisher explicitly refused, and an admin
+    cannot tell which decision they are about to make.
+
+    Permissions read `allowed` / `denied` / `unknown`. Attribution is an
+    obligation rather than a permission, so it answers in its own words -
+    calling a required attribution "allowed" would be a sentence nobody means.
+    """
+    answered = rights if isinstance(rights, dict) else {}
+    state = {
+        key: ("allowed" if answered[key] else "denied") if key in answered else "unknown"
+        for key in PERMISSIONS
+    }
+    state["attribution_required"] = (
+        ("required" if answered["attribution_required"] else "not_required")
+        if "attribution_required" in answered
+        else "unknown"
+    )
+    return state
+
+
+RIGHTS_EVENT = "rights_set"
+RIGHTS_QUESTIONS = ("can_republish", "can_adapt", "attribution_required")
+
+
+def automation_override(decisions: Sequence[Mapping[str, Any]]) -> bool | None:
+    """The article-level automation answer, when a reviewer recorded one.
+
+    A source's `automation_allowed` is a default (D-106 READING-2). The last
+    recorded answer wins, and `None` clears the override back to the default.
+    """
+    override: bool | None = None
+    for answers in decisions:
+        if "automation_allowed" in answers:
+            value = answers["automation_allowed"]
+            override = None if value is None else bool(value)
+    return override
+
+
+def effective_automation(decisions: Sequence[Mapping[str, Any]], source_default: Any) -> dict[str, Any]:
+    """The one computation of an article's automation permission: the article's
+    override when present, else the source default. Every surface that shows or
+    uses it reads this."""
+    override = automation_override(decisions)
+    default = bool(source_default)
+    return {
+        "allowed": default if override is None else override,
+        "override": override,
+        "source_default": default,
+        "origin": "source" if override is None else "article",
+    }
+
+
+def overlay_rights(
+    snapshot: Any, decisions: Sequence[Mapping[str, Any]], source_default: Any = None
+) -> dict[str, Any]:
+    """The rights that govern publication: the immutable snapshot, then every
+    answer an administrator recorded afterwards, oldest first.
+
+    The snapshot is never rewritten (the trigger refuses it), so a correction
+    is a review event and the effective answer is the fold of the two. A
+    decision that leaves a question out leaves the earlier answer standing.
+    """
+    effective = dict(snapshot) if isinstance(snapshot, dict) else {}
+    # Automation is not the snapshot's to answer: it is the source's default
+    # unless the article carries a reviewed override.
+    effective.pop("automation_allowed", None)
+    if source_default is not None:
+        effective["automation_allowed"] = effective_automation(decisions, source_default)["allowed"]
+    for answers in decisions:
+        for key in (*RIGHTS_QUESTIONS, "license_note"):
+            if key in answers:
+                if answers[key] is None:
+                    effective.pop(key, None)
+                else:
+                    effective[key] = answers[key]
+    return effective
+
+
+def _item(row: Any) -> dict[str, Any]:
+    return {
+        "id": str(row.id),
+        "source_id": str(row.source_id),
+        "source_native_id": row.source_native_id,
+        "canonical_url": row.canonical_url,
+        "title": row.original_title,
+        "author": row.original_author,
+        "published_at": _iso(row.original_published_at),
+        "language": row.original_language,
+        "body": row.original_content,
+        "content_hash": row.content_hash,
+        "metadata": dict(row.metadata_json or {}),
+        "rights": dict(row.rights_snapshot_json or {}),
+        "rights_state": rights_state(row.rights_snapshot_json),
+        "revision": row.revision,
+        "supersedes_id": str(row.supersedes_id) if row.supersedes_id else None,
+        "superseded_at": _iso(row.superseded_at),
+        "fetched_at": _iso(row.fetched_at),
+    }
+
+
+def _target(row: Any) -> dict[str, Any]:
+    return {
+        "id": str(row.id),
+        "text": row.text,
+        "canonical_form": row.canonical_form,
+        "target_type": row.target_type,
+        "context": row.context,
+        "meaning": row.meaning,
+        "estimated_level": row.estimated_level,
+        "rank": row.rank,
+        "machine_suggested": bool(row.machine_suggested),
+        "admin_approved": bool(row.admin_approved),
+        "admin_rejected": bool(row.admin_rejected),
+    }
+
+
+def _article(row: Any) -> dict[str, Any]:
+    return {
+        "id": str(row.id),
+        "source_item_id": str(row.source_item_id),
+        "title": row.title,
+        "body": row.body,
+        "excerpt": row.excerpt,
+        "language": row.language,
+        "topic": row.topic,
+        "subtopic": row.subtopic,
+        "estimated_level": row.estimated_level,
+        "estimated_level_confidence": row.estimated_level_confidence,
+        "reviewed_level": row.reviewed_level,
+        "effective_level": row.effective_level,
+        "word_count": row.word_count,
+        "reading_time_seconds": row.reading_time_seconds,
+        "is_adapted": bool(row.is_adapted),
+        "content_kind": row.content_kind,
+        "adaptation": dict(row.adaptation_json or {}),
+        "analysis": dict(row.analysis_json or {}),
+        "status": row.status,
+        "rejection_reason": row.rejection_reason,
+        "content_revision": row.content_revision,
+        "created_at": _iso(row.created_at),
+        "updated_at": _iso(row.updated_at),
+        "published_at": _iso(row.published_at),
+        "unpublished_at": _iso(row.unpublished_at),
+    }
+
+
+def _queue_row(row: Any) -> dict[str, Any]:
+    """Admin Review Queue: enough to decide what to open, never the article."""
+    return {
+        "id": str(row.id),
+        "title": row.title,
+        "language": row.language,
+        "topic": row.topic,
+        "level": row.effective_level,
+        "estimated_level": row.estimated_level,
+        "reviewed_level": row.reviewed_level,
+        "word_count": row.word_count,
+        "reading_time_seconds": row.reading_time_seconds,
+        "status": row.status,
+        "created_at": _iso(row.created_at),
+        "source_name": getattr(row, "source_name", "") or "",
+        "target_count": int(getattr(row, "target_count", 0) or 0),
+    }
+
+
+def _learner_row(row: Any) -> dict[str, Any]:
+    """The learner list projection. Every field here is one a card draws."""
+    return {
+        "id": str(row.id),
+        "title": row.title,
+        "language": row.language,
+        "level": row.effective_level,
+        "topic": row.topic,
+        "reading_time_seconds": row.reading_time_seconds,
+        "word_count": row.word_count,
+        "excerpt": row.excerpt,
+        "published_at": _iso(row.published_at),
+        "content_revision": row.content_revision,
+    }
+
+
+class ReadingContentRepository:
+    def __init__(self, engine: Engine) -> None:
+        self.engine = engine
+
+    # ---- sources ---------------------------------------------------------
+    def ensure_built_in_sources(self, *, now: datetime | None = None) -> None:
+        """Insert the three built-in sources if they are absent.
+
+        Idempotent, and it agrees with the migration's seed rows down to the
+        ids: the runtime gets them from the migration, the hermetic suite from
+        here, and manual dedupe (`(source_id, content_hash)`) only works while
+        both spell the same id.
+        """
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            present = {
+                str(row.id)
+                for row in connection.execute(select(ReadingSource.id)).all()
+            }
+            for source_type, (source_id, slug, name) in BUILT_IN_SOURCES.items():
+                if source_id in present:
+                    continue
+                connection.execute(
+                    insert(ReadingSource).values(
+                        id=_uuid(source_id),
+                        slug=slug,
+                        name=name,
+                        source_type=source_type,
+                        state="active",
+                        languages=["en", "zh"],
+                        topic_hints=[],
+                        polling_policy={},
+                        created_by="orena:reading-engine",
+                        created_at=moment,
+                        updated_at=moment,
+                    )
+                )
+
+    def built_in_source_id(self, kind: str) -> str:
+        try:
+            return BUILT_IN_SOURCES[kind][0]
+        except KeyError as exc:
+            raise ValueError(f"unknown built-in source: {kind}") from exc
+
+    def create_source(
+        self,
+        *,
+        slug: str,
+        name: str,
+        source_type: str,
+        base_url: str,
+        languages: Sequence[str],
+        rights: dict[str, Any],
+        created_by: str,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """A source an admin adds. It starts unapproved, whatever it claims.
+
+        `state` is `needs_review` and polling is off, so nothing an admin types
+        into this form can begin fetching on its own - approval is a separate,
+        deliberate act (spec SS9).
+        """
+        moment = _now(now)
+        source_id = uuid.uuid4()
+        with self.engine.begin() as connection:
+            connection.execute(
+                insert(ReadingSource).values(
+                    id=source_id,
+                    slug=slug,
+                    name=name,
+                    source_type=source_type,
+                    base_url=base_url,
+                    state="needs_review",
+                    languages=list(languages),
+                    topic_hints=[],
+                    automation_allowed=bool(rights.get("automation_allowed")),
+                    can_republish=bool(rights.get("can_republish")),
+                    can_adapt=bool(rights.get("can_adapt")),
+                    attribution_required=bool(rights.get("attribution_required", True)),
+                    license_note=str(rights.get("license_note", "")),
+                    polling_enabled=False,
+                    polling_policy={},
+                    created_by=created_by,
+                    created_at=moment,
+                    updated_at=moment,
+                )
+            )
+            row = connection.execute(
+                select(ReadingSource).where(ReadingSource.id == source_id)
+            ).first()
+        return _source(row)
+
+    def get_source(self, source_id: str) -> dict[str, Any] | None:
+        if _lookup_uuid(source_id) is None:
+            return None
+        with self.engine.connect() as connection:
+            row = connection.execute(
+                select(ReadingSource).where(ReadingSource.id == _uuid(source_id))
+            ).first()
+        return _source(row) if row else None
+
+    def list_sources(self) -> list[dict[str, Any]]:
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingSource).order_by(ReadingSource.state, ReadingSource.name)
+            ).all()
+        return [_source(row) for row in rows]
+
+    def set_source_state(
+        self, source_id: str, state: str, *, actor: str, now: datetime | None = None
+    ) -> dict[str, Any] | None:
+        if _lookup_uuid(source_id) is None:
+            return None
+        moment = _now(now)
+        values: dict[str, Any] = {"state": state, "updated_at": moment}
+        if state == "active":
+            values |= {"approved_by": actor, "approved_at": moment}
+        if state != "active":
+            # The database says the same thing; setting it here keeps the row
+            # consistent rather than relying on a constraint to refuse later.
+            values["polling_enabled"] = False
+        with self.engine.begin() as connection:
+            updated = connection.execute(
+                update(ReadingSource)
+                .where(ReadingSource.id == _uuid(source_id))
+                .values(**values)
+            ).rowcount
+        return self.get_source(source_id) if updated else None
+
+    def set_polling(
+        self, source_id: str, *, enabled: bool, actor: str, now: datetime | None = None
+    ) -> dict[str, Any] | None:
+        """Turn polling on only where the rights and the approval both allow it.
+
+        Returns None when they do not - the refusal is a normal outcome an
+        admin sees as a message, not an exception, and the CHECK constraint
+        behind it is the backstop rather than the first line.
+        """
+        source = self.get_source(source_id)
+        if source is None:
+            return None
+        if enabled and not (source["state"] == "active" and source["rights"]["automation_allowed"]):
+            return None
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(ReadingSource)
+                .where(ReadingSource.id == _uuid(source_id))
+                .values(polling_enabled=bool(enabled), updated_at=_now(now))
+            )
+        return self.get_source(source_id)
+
+    # ---- snapshots -------------------------------------------------------
+    def record_source_item(
+        self,
+        *,
+        source_id: str,
+        source_native_id: str,
+        canonical_url: str,
+        title: str,
+        author: str,
+        published_at: datetime | None,
+        language: str,
+        body: str,
+        content_hash: str,
+        metadata: dict[str, Any],
+        rights: dict[str, Any],
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Store one original snapshot, or recognise it as one already held.
+
+        Three outcomes, in order:
+
+        1. These exact bytes already exist for this source - return that row
+           with `duplicate: True`. Running the same input twice never produces
+           a second candidate.
+        2. This source's own id for the item exists with *different* bytes -
+           the source changed. Stamp the current row `superseded_at`, then
+           insert the new one pointing back at it. That order is forced: two
+           rows with `superseded_at IS NULL` for one native id is exactly what
+           the partial unique index forbids, which is also what makes two
+           workers racing here safe.
+        3. Otherwise it is new.
+        """
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            existing = connection.execute(
+                select(ReadingSourceItem).where(
+                    ReadingSourceItem.source_id == _uuid(source_id),
+                    ReadingSourceItem.content_hash == content_hash,
+                )
+            ).first()
+            if existing is not None:
+                # A revert: these bytes are on file but were superseded. The
+                # row that holds them becomes current again and the one that
+                # replaced it is stamped - `revision` is a creation-order
+                # counter, so it does not move.
+                #
+                # Only for the *same* native item, though. A feed that
+                # regenerates its guids can offer bytes we already hold under a
+                # new id; that is a plain content duplicate, and treating it as
+                # a revert would flip the currency of an item the incoming
+                # fetch never named.
+                if (
+                    existing.superseded_at is not None
+                    and existing.source_native_id == source_native_id
+                ):
+                    connection.execute(
+                        update(ReadingSourceItem)
+                        .where(
+                            ReadingSourceItem.source_id == _uuid(source_id),
+                            ReadingSourceItem.source_native_id == existing.source_native_id,
+                            ReadingSourceItem.superseded_at.is_(None),
+                            ReadingSourceItem.source_native_id != "",
+                        )
+                        .values(superseded_at=moment)
+                    )
+                    connection.execute(
+                        update(ReadingSourceItem)
+                        .where(ReadingSourceItem.id == existing.id)
+                        .values(superseded_at=None)
+                    )
+                    existing = connection.execute(
+                        select(ReadingSourceItem).where(ReadingSourceItem.id == existing.id)
+                    ).first()
+                return {**_item(existing), "duplicate": True}
+
+            revision = 1
+            supersedes: uuid.UUID | None = None
+            if source_native_id:
+                current = connection.execute(
+                    select(ReadingSourceItem).where(
+                        ReadingSourceItem.source_id == _uuid(source_id),
+                        ReadingSourceItem.source_native_id == source_native_id,
+                        ReadingSourceItem.superseded_at.is_(None),
+                    )
+                ).first()
+                if current is not None:
+                    connection.execute(
+                        update(ReadingSourceItem)
+                        .where(ReadingSourceItem.id == current.id)
+                        .values(superseded_at=moment)
+                    )
+                    revision = current.revision + 1
+                    supersedes = current.id
+
+            item_id = uuid.uuid4()
+            connection.execute(
+                insert(ReadingSourceItem).values(
+                    id=item_id,
+                    source_id=_uuid(source_id),
+                    source_native_id=source_native_id,
+                    canonical_url=canonical_url,
+                    original_title=title,
+                    original_author=author,
+                    original_published_at=published_at,
+                    original_language=language,
+                    original_content=body,
+                    content_hash=content_hash,
+                    metadata_json=dict(metadata or {}),
+                    rights_snapshot_json=dict(rights or {}),
+                    revision=revision,
+                    supersedes_id=supersedes,
+                    fetched_at=moment,
+                    created_at=moment,
+                )
+            )
+            row = connection.execute(
+                select(ReadingSourceItem).where(ReadingSourceItem.id == item_id)
+            ).first()
+        return {**_item(row), "duplicate": False}
+
+    def get_source_item(self, item_id: str) -> dict[str, Any] | None:
+        if _lookup_uuid(item_id) is None:
+            return None
+        with self.engine.connect() as connection:
+            row = connection.execute(
+                select(ReadingSourceItem).where(ReadingSourceItem.id == _uuid(item_id))
+            ).first()
+        return _item(row) if row else None
+
+    def find_duplicate_content(
+        self, content_hash: str, *, exclude_source_id: str
+    ) -> list[dict[str, Any]]:
+        """The same bytes under a *different* source.
+
+        Legitimate - rights differ per source - but an admin about to publish
+        a second copy should be told, which is why this exists and why the
+        hash has a non-unique index of its own.
+
+        The source is named, not just identified. "Also under 2 other sources"
+        is not something anyone can decide with; "also under Manual paste" is,
+        because the rights that make a second copy legitimate are the source's.
+        """
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(
+                    ReadingSourceItem.id,
+                    ReadingSourceItem.source_id,
+                    ReadingSourceItem.original_title,
+                    ReadingSource.name.label("source_name"),
+                    ReadingSource.slug.label("source_slug"),
+                )
+                .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+                .where(
+                    ReadingSourceItem.content_hash == content_hash,
+                    ReadingSourceItem.source_id != _uuid(exclude_source_id),
+                )
+            ).all()
+        return [
+            {
+                "id": str(row.id),
+                "source_id": str(row.source_id),
+                "source_name": row.source_name,
+                "source_slug": row.source_slug,
+                "title": row.original_title,
+            }
+            for row in rows
+        ]
+
+    # ---- articles --------------------------------------------------------
+    def create_article(
+        self,
+        *,
+        source_item_id: str,
+        title: str,
+        body: str,
+        excerpt: str,
+        language: str,
+        topic: str,
+        estimated_level: str,
+        estimated_confidence: float,
+        word_count: int,
+        reading_time_seconds: int,
+        analysis: dict[str, Any],
+        targets: Sequence[TargetInput],
+        subtopic: str = "",
+        status: str = "needs_review",
+        automatic_admission: bool = False,
+        actor: str = "orena:reading-engine",
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """One candidate article and its targets, in one transaction.
+
+        Default candidates await review. The engine may request deterministic
+        admission under an active source's reviewed rights and automation policy.
+        The decision, targets and publication are committed together.
+        """
+        moment = _now(now)
+        article_id = uuid.uuid4()
+        with self.engine.begin() as connection:
+            admitted = False
+            prepared_analysis = dict(analysis or {})
+            if automatic_admission:
+                from writing_coach.reading_admission import automatic_admission as check_admission
+
+                snapshot_row = connection.execute(select(ReadingSourceItem).where(
+                    ReadingSourceItem.id == _uuid(source_item_id)).with_for_update()).first()
+                if snapshot_row is None:
+                    raise ValueError("Source snapshot not found")
+                existing = connection.execute(select(ReadingArticle).where(
+                    ReadingArticle.source_item_id == snapshot_row.id)).first()
+                if existing is not None:
+                    return {**_article(existing), "duplicate": True}
+                source_row = connection.execute(select(ReadingSource).where(
+                    ReadingSource.id == snapshot_row.source_id).with_for_update()).first()
+                decision = check_admission(source=_source(source_row), snapshot=_item(snapshot_row),
+                    language=language, body=body, analysis=prepared_analysis, targets=targets,
+                    min_targets=MIN_TARGETS, max_targets=MAX_TARGETS)
+                prepared_analysis["admission"] = decision
+                admitted = decision["decision"] == "published" and status == "needs_review"
+                if admitted:
+                    status = LEARNER_VISIBLE_STATUS
+            connection.execute(
+                insert(ReadingArticle).values(
+                    id=article_id,
+                    source_item_id=_uuid(source_item_id),
+                    title=title,
+                    body=body,
+                    excerpt=excerpt,
+                    language=language,
+                    topic=topic,
+                    subtopic=subtopic,
+                    estimated_level=estimated_level,
+                    estimated_level_confidence=float(estimated_confidence),
+                    reviewed_level=None,
+                    effective_level=estimated_level,
+                    word_count=int(word_count),
+                    reading_time_seconds=int(reading_time_seconds),
+                    is_adapted=False,
+                    adaptation_json={},
+                    analysis_json=prepared_analysis,
+                    status=status,
+                    published_at=moment if admitted else None,
+                    content_revision=1,
+                    created_at=moment,
+                    updated_at=moment,
+                )
+            )
+            for target in targets:
+                connection.execute(
+                    insert(ReadingArticleTarget).values(
+                        id=uuid.uuid4(),
+                        article_id=article_id,
+                        text=target.text,
+                        canonical_form=target.canonical_form,
+                        target_type=target.target_type,
+                        context=target.context,
+                        meaning=target.meaning,
+                        estimated_level=target.estimated_level,
+                        rank=target.rank,
+                        machine_suggested=target.machine_suggested,
+                        admin_approved=admitted,
+                        created_at=moment,
+                        updated_at=moment,
+                    )
+                )
+            self._record_event(
+                connection,
+                article_id=article_id,
+                actor=actor,
+                action="created",
+                reason="",
+                changes={"targets": len(targets), "estimated_level": estimated_level,
+                         **({"admission": decision} if automatic_admission else {})},
+                now=moment,
+            )
+            if admitted:
+                self._record_event(connection, article_id=article_id, actor=actor,
+                    action="auto_published", reason="",
+                    changes={"admission": decision, "automatically_approved_targets": len(targets)}, now=moment)
+            row = connection.execute(
+                select(ReadingArticle).where(ReadingArticle.id == article_id)
+            ).first()
+        return _article(row)
+
+    def get_article(self, article_id: str) -> dict[str, Any] | None:
+        """Everything review needs: the body, the targets, the snapshot, the
+        analysis. Not what a list returns - this is the Preview read."""
+        if _lookup_uuid(article_id) is None:
+            return None
+        with self.engine.connect() as connection:
+            row = connection.execute(
+                select(ReadingArticle).where(ReadingArticle.id == _uuid(article_id))
+            ).first()
+            if row is None:
+                return None
+            targets = connection.execute(
+                select(ReadingArticleTarget)
+                .where(ReadingArticleTarget.article_id == row.id)
+                .order_by(ReadingArticleTarget.rank, ReadingArticleTarget.id)
+            ).all()
+            source_item = connection.execute(
+                select(ReadingSourceItem).where(ReadingSourceItem.id == row.source_item_id)
+            ).first()
+            source_default = (
+                connection.execute(
+                    select(ReadingSource.automation_allowed).where(
+                        ReadingSource.id == source_item.source_id
+                    )
+                ).scalar()
+                if source_item
+                else None
+            )
+            decisions = self._rights_decisions(connection, [row.id]).get(row.id, [])
+        article = _article(row)
+        article["targets"] = [_target(target) for target in targets]
+        article["source"] = _item(source_item) if source_item else None
+        article["rights_review"] = None
+        article["automation"] = None
+        if article["source"] is not None:
+            # `source.rights` stays the snapshot as ingested; the state the gate
+            # and the review page read is the snapshot with the recorded answers.
+            answered = [entry["answers"] for entry in decisions]
+            effective = overlay_rights(article["source"]["rights"], answered, source_default)
+            article["automation"] = effective_automation(answered, source_default)
+            article["source"]["rights_state"] = rights_state(effective)
+            article["source"]["rights_effective"] = effective
+            if decisions:
+                article["rights_review"] = {
+                    "actor": decisions[-1]["actor"],
+                    "at": decisions[-1]["at"],
+                    "count": len(decisions),
+                }
+        return article
+
+    def _rights_decisions(
+        self, connection: Any, article_ids: Sequence[Any]
+    ) -> dict[Any, list[dict[str, Any]]]:
+        """Recorded rights answers per article, oldest first."""
+        if not article_ids:
+            return {}
+        rows = connection.execute(
+            select(ReadingReviewEvent)
+            .where(
+                ReadingReviewEvent.article_id.in_(list(article_ids)),
+                ReadingReviewEvent.action == RIGHTS_EVENT,
+            )
+            .order_by(ReadingReviewEvent.created_at, ReadingReviewEvent.id)
+        ).all()
+        found: dict[Any, list[dict[str, Any]]] = {}
+        for event in rows:
+            answers = (event.changes_json or {}).get("to") or {}
+            found.setdefault(event.article_id, []).append(
+                {"answers": dict(answers), "actor": event.actor, "at": _iso(event.created_at)}
+            )
+        return found
+
+    def set_rights(
+        self,
+        article_id: str,
+        answers: Mapping[str, Any],
+        *,
+        actor: str,
+        reason: str = "",
+        now: datetime | None = None,
+    ) -> dict[str, Any] | None:
+        """Record an administrator's answers to the rights questions.
+
+        Append-only: the source snapshot is evidence and stays as ingested, so
+        this writes a review event carrying the before and after, and the
+        effective rights are the snapshot with those events folded over it.
+        A value of `None` clears an earlier answer back to unanswered.
+        """
+        current = self.get_article(article_id)
+        if current is None or current["source"] is None:
+            return None
+        chosen = {
+            key: answers[key]
+            for key in (*RIGHTS_QUESTIONS, "license_note", "automation_allowed")
+            if key in answers
+        }
+        before = {
+            key: (
+                (current["automation"] or {}).get("override")
+                if key == "automation_allowed"
+                else current["source"]["rights_effective"].get(key)
+            )
+            for key in chosen
+        }
+        with self.engine.begin() as connection:
+            # The events are folded oldest first and ties fall back to a random id, so a later
+            # answer recorded in the same instant as an earlier one could lose. Each rights event
+            # is stamped strictly after the article's previous one instead.
+            moment = _now(now)
+            last = connection.execute(
+                select(func.max(ReadingReviewEvent.created_at)).where(
+                    ReadingReviewEvent.article_id == _uuid(article_id),
+                    ReadingReviewEvent.action == RIGHTS_EVENT,
+                )
+            ).scalar()
+            last = _aware(last)
+            if last is not None and moment <= last:
+                moment = last + timedelta(microseconds=1)
+            self._record_event(
+                connection,
+                article_id=_uuid(article_id),
+                actor=actor,
+                action=RIGHTS_EVENT,
+                reason=reason,
+                changes={"from": before, "to": chosen},
+                now=moment,
+            )
+        return self.get_article(article_id)
+
+    def article_for_source_item(self, source_item_id: str) -> dict[str, Any] | None:
+        if _lookup_uuid(source_item_id) is None:
+            return None
+        with self.engine.connect() as connection:
+            row = connection.execute(
+                select(ReadingArticle).where(
+                    ReadingArticle.source_item_id == _uuid(source_item_id)
+                )
+            ).first()
+        return _article(row) if row else None
+
+    def update_article(
+        self,
+        article_id: str,
+        *,
+        actor: str,
+        title: str | None = None,
+        body: str | None = None,
+        excerpt: str | None = None,
+        topic: str | None = None,
+        subtopic: str | None = None,
+        reviewed_level: str | None = "",
+        content_kind: str | None = None,
+        reason: str = "",
+        now: datetime | None = None,
+    ) -> dict[str, Any] | None:
+        """An admin's correction. `estimated_level` is never among the changes.
+
+        `reviewed_level` uses `""` as "not supplied" and `None` as "clear the
+        override", because those are genuinely different requests and a single
+        sentinel would make one of them unexpressable.
+        """
+        current = self.get_article(article_id)
+        if current is None:
+            return None
+        moment = _now(now)
+        values: dict[str, Any] = {"updated_at": moment}
+        changes: dict[str, Any] = {}
+        for field, value in (
+            ("title", title),
+            ("body", body),
+            ("excerpt", excerpt),
+            ("topic", topic),
+            ("subtopic", subtopic),
+            ("content_kind", content_kind),
+        ):
+            if value is not None and value != current[field]:
+                values[field] = value
+                changes[field] = {"from": current[field], "to": value}
+        level_changed = reviewed_level != ""
+        if level_changed:
+            values["reviewed_level"] = reviewed_level or None
+            values["effective_level"] = _effective(
+                current["estimated_level"], reviewed_level or None
+            )
+            changes["reviewed_level"] = {"from": current["reviewed_level"], "to": reviewed_level}
+        if len(values) == 1:
+            return current
+        # Any change to what a learner reads invalidates a cached copy. The
+        # level and the topic are on the card, not only in the article, so a
+        # correction to either has to move the revision an ETag is built from.
+        if set(LEARNER_VISIBLE_FIELDS) & set(changes):
+            values["content_revision"] = current["content_revision"] + 1
+        with self.engine.begin() as connection:
+            # The article row first, `FOR UPDATE`, and its body read again
+            # inside this transaction: the same lock a comprehension set's
+            # approval and a learner's submit take, so a body edit and either
+            # of them serialize instead of racing (canonical Reading, §5.1/§6).
+            locked = select(ReadingArticle.body).where(ReadingArticle.id == _uuid(article_id))
+            if connection.dialect.name == "postgresql":
+                locked = locked.with_for_update()
+            stored_body = connection.execute(locked).scalar_one()
+            if "body" in values and values["body"] == stored_body:
+                values.pop("body")
+                changes.pop("body", None)
+            connection.execute(
+                update(ReadingArticle)
+                .where(ReadingArticle.id == _uuid(article_id))
+                .values(**values)
+            )
+            if "body" in values:
+                # Every approved comprehension set whose anchor no longer
+                # matches becomes `stale`, in this same transaction.
+                changes["stale_comprehension_sets"] = stale_sets_for_body(
+                    connection, _uuid(article_id), values["body"], actor=actor, now=moment
+                )
+            self._record_event(
+                connection,
+                article_id=_uuid(article_id),
+                actor=actor,
+                action="level_override" if level_changed and len(changes) == 1 else "edited",
+                reason=reason,
+                changes=changes,
+                now=moment,
+            )
+        return self.get_article(article_id)
+
+    def set_status(
+        self,
+        article_id: str,
+        status: str,
+        *,
+        actor: str,
+        reason: str = "",
+        warnings: Sequence[Mapping[str, str]] = (),
+        now: datetime | None = None,
+    ) -> dict[str, Any] | None:
+        """Move an article through its lifecycle, recording who and why.
+
+        `warnings` are the rights advice that was showing when an administrator
+        published anyway; they are recorded beside the decision, so an override
+        is never separated from what it overrode (D-082, D-083).
+
+        Publication is the only transition that makes anything learner-visible,
+        and it is always an admin's act: nothing in the pipeline calls this.
+        """
+        current = self.get_article(article_id)
+        if current is None:
+            return None
+        moment = _now(now)
+        values: dict[str, Any] = {"status": status, "updated_at": moment}
+        if status == LEARNER_VISIBLE_STATUS:
+            values |= {"published_at": moment, "unpublished_at": None}
+            values["content_revision"] = current["content_revision"] + 1
+        elif current["status"] == LEARNER_VISIBLE_STATUS:
+            values["unpublished_at"] = moment
+        if status == "rejected":
+            values["rejection_reason"] = reason
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(ReadingArticle)
+                .where(ReadingArticle.id == _uuid(article_id))
+                .values(**values)
+            )
+            self._record_event(
+                connection,
+                article_id=_uuid(article_id),
+                actor=actor,
+                action=status,
+                reason=reason,
+                changes={
+                    "status": {"from": current["status"], "to": status},
+                    **({"warnings": [dict(item) for item in warnings],
+                        "published_over_warnings": True} if warnings else {}),
+                },
+                now=moment,
+            )
+        return self.get_article(article_id)
+
+    def list_queue(
+        self,
+        *,
+        statuses: Sequence[str] = QUEUE_STATUSES,
+        cursor: str | None = None,
+        limit: int = DEFAULT_ARTICLE_PAGE,
+    ) -> dict[str, Any]:
+        bounded = max(1, min(int(limit), MAX_ARTICLE_PAGE))
+        # The columns the queue draws, named for the same reason the learner
+        # list names its own: a reviewer scanning twenty-five candidates should
+        # not pull twenty-five article bodies across the connection to read
+        # their titles.
+        query = select(
+            ReadingArticle.id,
+            ReadingArticle.title,
+            ReadingArticle.language,
+            ReadingArticle.topic,
+            ReadingArticle.effective_level,
+            ReadingArticle.estimated_level,
+            ReadingArticle.reviewed_level,
+            ReadingArticle.word_count,
+            ReadingArticle.reading_time_seconds,
+            ReadingArticle.status,
+            ReadingArticle.created_at,
+            ReadingSource.name.label("source_name"),
+            ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
+            ReadingSource.automation_allowed.label("source_automation"),
+            (
+                select(func.count())
+                .select_from(ReadingArticleTarget)
+                .where(
+                    ReadingArticleTarget.article_id == ReadingArticle.id,
+                    ReadingArticleTarget.admin_rejected.is_(False),
+                )
+                .scalar_subquery()
+            ).label("target_count"),
+        )
+        query = query.join(
+            ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id
+        ).join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+        query = query.where(ReadingArticle.status.in_(tuple(statuses)))
+        if cursor:
+            after_at, after_id = _decode_cursor(cursor)
+            query = query.where(
+                (ReadingArticle.created_at < after_at)
+                | ((ReadingArticle.created_at == after_at) & (ReadingArticle.id < after_id))
+            )
+        query = query.order_by(
+            ReadingArticle.created_at.desc(), ReadingArticle.id.desc()
+        ).limit(bounded + 1)
+        with self.engine.connect() as connection:
+            rows = connection.execute(query).all()
+            page = rows[:bounded]
+            decisions = self._rights_decisions(connection, [row.id for row in page])
+        next_cursor = (
+            _encode_cursor(_aware(page[-1].created_at), str(page[-1].id))
+            if len(rows) > bounded and page
+            else None
+        )
+        items = []
+        for row in page:
+            item = _queue_row(row)
+            answered = [entry["answers"] for entry in decisions.get(row.id, [])]
+            effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            item["automation_allowed"] = effective_automation(answered, row.source_automation)["allowed"]
+            # The one answer the publication gate turns on, in the same three
+            # words the review page uses.
+            item["rights_level"] = rights_state(effective)["can_republish"]
+            items.append(item)
+        return {"items": items, "next_cursor": next_cursor}
+
+    def list_published(
+        self,
+        *,
+        language: str,
+        level: str | None = None,
+        topic: str | None = None,
+        cursor: str | None = None,
+        limit: int = DEFAULT_ARTICLE_PAGE,
+    ) -> dict[str, Any]:
+        """The learner list. Filtered and ordered in the database, bounded, and
+        without a body - the one query whose cost must not grow with the
+        corpus."""
+        bounded = max(1, min(int(limit), MAX_ARTICLE_PAGE))
+        # The ten columns a card draws, named rather than `select(Article)`:
+        # the entity form reads every body from disk and transfers it for up to
+        # sixty rows before Python throws them away, which is the cost the
+        # whole partial-index design exists to avoid.
+        query = select(
+            ReadingArticle.id,
+            ReadingArticle.title,
+            ReadingArticle.language,
+            ReadingArticle.effective_level,
+            ReadingArticle.topic,
+            ReadingArticle.reading_time_seconds,
+            ReadingArticle.word_count,
+            ReadingArticle.excerpt,
+            ReadingArticle.published_at,
+            ReadingArticle.content_revision,
+        ).where(
+            ReadingArticle.status == LEARNER_VISIBLE_STATUS,
+            ReadingArticle.language == language,
+        )
+        if level:
+            query = query.where(ReadingArticle.effective_level == level)
+        if topic:
+            query = query.where(ReadingArticle.topic == topic)
+        if cursor:
+            after_at, after_id = _decode_cursor(cursor)
+            query = query.where(
+                (ReadingArticle.published_at < after_at)
+                | ((ReadingArticle.published_at == after_at) & (ReadingArticle.id < after_id))
+            )
+        query = query.order_by(
+            ReadingArticle.published_at.desc(), ReadingArticle.id.desc()
+        ).limit(bounded + 1)
+        with self.engine.connect() as connection:
+            rows = connection.execute(query).all()
+        page = rows[:bounded]
+        next_cursor = (
+            _encode_cursor(_aware(page[-1].published_at), str(page[-1].id))
+            if len(rows) > bounded and page
+            else None
+        )
+        return {"items": [_learner_row(row) for row in page], "next_cursor": next_cursor}
+
+    def get_published_article(self, article_id: str) -> dict[str, Any] | None:
+        """What a learner opens: the text, the targets an admin approved, and
+        the attribution the rights require. No analysis, no review history, no
+        rights payload, no job state."""
+        if _lookup_uuid(article_id) is None:
+            return None
+        with self.engine.connect() as connection:
+            row = connection.execute(
+                select(ReadingArticle).where(
+                    ReadingArticle.id == _uuid(article_id),
+                    ReadingArticle.status == LEARNER_VISIBLE_STATUS,
+                )
+            ).first()
+            if row is None:
+                return None
+            targets = connection.execute(
+                select(ReadingArticleTarget)
+                .where(
+                    ReadingArticleTarget.article_id == row.id,
+                    ReadingArticleTarget.admin_approved.is_(True),
+                )
+                .order_by(ReadingArticleTarget.rank, ReadingArticleTarget.id)
+            ).all()
+            source_item = connection.execute(
+                select(
+                    ReadingSourceItem.original_author,
+                    ReadingSourceItem.canonical_url,
+                    ReadingSourceItem.original_published_at,
+                    ReadingSourceItem.source_id,
+                ).where(ReadingSourceItem.id == row.source_item_id)
+            ).first()
+        return {
+            "id": str(row.id),
+            "title": row.title,
+            "body": row.body,
+            "language": row.language,
+            "level": row.effective_level,
+            "topic": row.topic,
+            "reading_time_seconds": row.reading_time_seconds,
+            "word_count": row.word_count,
+            "content_revision": row.content_revision,
+            "published_at": _iso(row.published_at),
+            "targets": [
+                {
+                    "text": target.text,
+                    "canonical_form": target.canonical_form,
+                    "target_type": target.target_type,
+                    "context": target.context,
+                    "meaning": target.meaning,
+                }
+                for target in targets
+            ],
+            "attribution": {
+                "author": source_item.original_author if source_item else "",
+                "source_url": source_item.canonical_url if source_item else "",
+                "published_at": _iso(source_item.original_published_at) if source_item else None,
+            },
+        }
+
+    def article_for_content(
+        self, source_slug: str, content_hash: str, *, fingerprint: Callable[[str], str] | None = None
+    ) -> dict[str, Any] | None:
+        """The article this environment already holds with this text under that source, if any (pack dedupe).
+
+        A pack carries the article's text, which an editor may have changed after import, so the match is on the
+        text of each current article under the source (with the caller's `fingerprint`), and only falls back to
+        the snapshot hash. Bounded: one source's articles."""
+
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingArticle.id, ReadingArticle.status, ReadingArticle.body, ReadingSourceItem.content_hash)
+                .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
+                .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+                # Not only current snapshots: texts that share one address (a collection on one page) supersede
+                # each other's snapshot while every article stays live.
+                .where(ReadingSource.slug == source_slug)
+                .limit(5000)
+            ).all()
+        for row in rows:
+            if row.content_hash == content_hash or (fingerprint is not None and fingerprint(row.body) == content_hash):
+                return {"id": str(row.id), "status": row.status}
+        return None
+
+    def published_for_export(
+        self, *, source_slug_prefix: str = "", languages: Sequence[str] = (), limit: int = 5000
+    ) -> list[dict[str, Any]]:
+        """Published articles as a content pack carries them (proposals/CONTENT_PACKS.md): the text a learner reads,
+        where it came from, and the rights as the gate reads them - the snapshot with the recorded answers laid
+        over it. No ids leave with them except as `origin_id`, and nothing about learners or review history."""
+
+        query = (
+            select(
+                ReadingArticle.id, ReadingArticle.title, ReadingArticle.body, ReadingArticle.language,
+                ReadingArticle.topic, ReadingArticle.subtopic, ReadingArticle.content_kind,
+                ReadingSourceItem.canonical_url, ReadingSourceItem.original_author,
+                ReadingSourceItem.original_published_at, ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
+                ReadingSource.slug.label("source_slug"), ReadingSource.automation_allowed.label("source_automation"),
+            )
+            .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
+            .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+            .where(ReadingArticle.status == LEARNER_VISIBLE_STATUS)
+            .order_by(ReadingSource.slug, ReadingArticle.published_at, ReadingArticle.id)
+            .limit(max(1, min(int(limit), 5000)))
+        )
+        if source_slug_prefix:
+            query = query.where(ReadingSource.slug.startswith(source_slug_prefix))
+        if languages:
+            query = query.where(ReadingArticle.language.in_(tuple(languages)))
+        with self.engine.connect() as connection:
+            rows = connection.execute(query).all()
+            decisions = self._rights_decisions(connection, [row.id for row in rows])
+        exported = []
+        for row in rows:
+            answered = [entry["answers"] for entry in decisions.get(row.id, [])]
+            effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            exported.append({
+                "origin_id": str(row.id), "title": row.title, "body": row.body, "language": row.language,
+                "topic": row.topic, "subtopic": row.subtopic, "content_kind": row.content_kind,
+                "canonical_url": row.canonical_url, "author": row.original_author,
+                "published_at": _iso(row.original_published_at), "source_slug": row.source_slug,
+                "rights": {key: effective.get(key) for key in ("can_republish", "can_adapt", "attribution_required",
+                                                                  "license_note") if key in effective},
+            })
+        return exported
+
+    def published_credits(self, *, limit: int = 5000) -> list[dict[str, Any]]:
+        """Each learner-visible text with the credit its rights record: title,
+        author, source address and licence note, read from the snapshot with the
+        recorded rights answers laid over it - the same rights the gate reads.
+        No body."""
+        query = (
+            select(
+                ReadingArticle.id,
+                ReadingArticle.title,
+                ReadingArticle.language,
+                ReadingSourceItem.original_author,
+                ReadingSourceItem.canonical_url,
+                ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
+                ReadingSource.name.label("source_name"),
+                ReadingSource.automation_allowed.label("source_automation"),
+            )
+            .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
+            .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+            .where(ReadingArticle.status == LEARNER_VISIBLE_STATUS)
+            .order_by(ReadingArticle.language, ReadingArticle.title, ReadingArticle.id)
+            .limit(max(1, int(limit)))
+        )
+        with self.engine.connect() as connection:
+            rows = connection.execute(query).all()
+            decisions = self._rights_decisions(connection, [row.id for row in rows])
+        credits = []
+        for row in rows:
+            answered = [entry["answers"] for entry in decisions.get(row.id, [])]
+            effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            credits.append({
+                "title": row.title,
+                "language": row.language,
+                "author": row.original_author,
+                "source_url": row.canonical_url,
+                "source_name": row.source_name,
+                "license_note": str(effective.get("license_note") or ""),
+            })
+        return credits
+
+    def published_count(self, *, language: str | None = None) -> int:
+        query = select(func.count()).select_from(ReadingArticle).where(
+            ReadingArticle.status == LEARNER_VISIBLE_STATUS
+        )
+        if language:
+            query = query.where(ReadingArticle.language == language)
+        with self.engine.connect() as connection:
+            return int(connection.execute(query).scalar_one())
+
+    # Admission reasons that are about rights and source policy; any other reason is a validator that failed.
+    RIGHTS_REASONS = frozenset({"source_not_active", "automation_not_allowed", "rights_not_cleared",
+                                "attribution_unknown", "attribution_missing", "source_origin_mismatch"})
+
+    def review_reasons_summary(self, *, limit: int = 5000) -> dict[str, int]:
+        """Articles waiting in review, split by why: a rights or source-policy question, or a failed validator
+        ("invalid" on Admin's overview). An article an editor submitted by hand has no admission at all."""
+
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingArticle.analysis_json).where(ReadingArticle.status == "needs_review").limit(limit)
+            ).all()
+        summary = {"rights": 0, "invalid": 0, "unscreened": 0}
+        for (analysis,) in rows:
+            admission = (analysis or {}).get("admission") if isinstance(analysis, Mapping) else None
+            reasons = set((admission or {}).get("reasons") or [])
+            if not admission:
+                summary["unscreened"] += 1
+            elif reasons - self.RIGHTS_REASONS:
+                summary["invalid"] += 1
+            else:
+                summary["rights"] += 1
+        return summary
+
+    def counts_by_status(self) -> dict[str, int]:
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingArticle.status, func.count()).group_by(ReadingArticle.status)
+            ).all()
+        return {status: int(total) for status, total in rows}
+
+    # ---- targets ---------------------------------------------------------
+    def reorder_targets(
+        self, article_id: str, *, order: list[str], actor: str, now: datetime | None = None
+    ) -> list[dict[str, Any]] | None:
+        """The order a learner meets these targets in, set by the reviewer.
+
+        `rank` already decides the order everything reads them in, so this
+        writes that column rather than inventing a second notion of order.
+
+        The whole list is sent, not a move: an "up one" endpoint has to be
+        replayed in sequence to be correct, and two reviewers dragging at the
+        same time would interleave into an order neither of them chose. Sending
+        the order means the last write is a complete intention.
+
+        Refused as a whole - returning None and moving nothing - when the list
+        is not exactly this article's targets. A partial order would silently
+        renumber the rest, which is a worse outcome than a rejected request.
+        """
+        if _lookup_uuid(article_id) is None:
+            return None
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            existing = connection.execute(
+                select(ReadingArticleTarget.id).where(
+                    ReadingArticleTarget.article_id == _uuid(article_id)
+                )
+            ).all()
+            mine = {str(row.id) for row in existing}
+            wanted = [str(target_id) for target_id in order]
+            if len(wanted) != len(set(wanted)) or set(wanted) != mine:
+                return None
+            for rank, target_id in enumerate(wanted):
+                connection.execute(
+                    update(ReadingArticleTarget)
+                    .where(ReadingArticleTarget.id == _uuid(target_id))
+                    .values(rank=rank, updated_at=moment)
+                )
+            self._bump_revision(connection, _uuid(article_id), moment)
+            self._record_event(
+                connection,
+                article_id=_uuid(article_id),
+                actor=actor,
+                action="targets_reordered",
+                reason="",
+                changes={"count": len(wanted)},
+                now=moment,
+            )
+            rows = connection.execute(
+                select(ReadingArticleTarget)
+                .where(ReadingArticleTarget.article_id == _uuid(article_id))
+                .order_by(ReadingArticleTarget.rank, ReadingArticleTarget.id)
+            ).all()
+        return [_target(row) for row in rows]
+
+    def decide_target(
+        self,
+        target_id: str,
+        *,
+        article_id: str,
+        approved: bool,
+        actor: str,
+        now: datetime | None = None,
+    ) -> dict[str, Any] | None:
+        """The admin's decision, kept separate from the machine's suggestion.
+
+        `machine_suggested` is never cleared: "the machine proposed this and a
+        human approved it" and "a human added this" are different facts, and a
+        future processor re-run has to be able to tell them apart.
+
+        The article is part of the identity, not context. The route names both,
+        and a target id taken from one article and posted under another's URL
+        would otherwise decide the first article's target while the audit entry
+        and the revision bump landed on the second - a decision recorded
+        against content it was never made about.
+        """
+        if _lookup_uuid(target_id) is None or _lookup_uuid(article_id) is None:
+            return None
+        owned = (ReadingArticleTarget.id == _uuid(target_id)) & (
+            ReadingArticleTarget.article_id == _uuid(article_id)
+        )
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            row = connection.execute(select(ReadingArticleTarget).where(owned)).first()
+            if row is None:
+                return None
+            connection.execute(
+                update(ReadingArticleTarget)
+                .where(owned)
+                .values(
+                    admin_approved=bool(approved),
+                    admin_rejected=not approved,
+                    updated_at=moment,
+                )
+            )
+            self._bump_revision(connection, row.article_id, moment)
+            self._record_event(
+                connection,
+                article_id=row.article_id,
+                actor=actor,
+                action="target_approved" if approved else "target_rejected",
+                reason="",
+                changes={"target": row.text},
+                now=moment,
+            )
+            updated = connection.execute(select(ReadingArticleTarget).where(owned)).first()
+        return _target(updated)
+
+    def add_target(
+        self,
+        article_id: str,
+        *,
+        target: TargetInput,
+        actor: str,
+        now: datetime | None = None,
+    ) -> dict[str, Any] | None:
+        moment = _now(now)
+        target_id = uuid.uuid4()
+        with self.engine.begin() as connection:
+            connection.execute(
+                insert(ReadingArticleTarget).values(
+                    id=target_id,
+                    article_id=_uuid(article_id),
+                    text=target.text,
+                    canonical_form=target.canonical_form,
+                    target_type=target.target_type,
+                    context=target.context,
+                    meaning=target.meaning,
+                    estimated_level=target.estimated_level,
+                    rank=target.rank,
+                    machine_suggested=False,
+                    admin_approved=True,
+                    created_at=moment,
+                    updated_at=moment,
+                )
+            )
+            self._bump_revision(connection, _uuid(article_id), moment)
+            self._record_event(
+                connection,
+                article_id=_uuid(article_id),
+                actor=actor,
+                action="target_added",
+                reason="",
+                changes={"target": target.text},
+                now=moment,
+            )
+            row = connection.execute(
+                select(ReadingArticleTarget).where(ReadingArticleTarget.id == target_id)
+            ).first()
+        return _target(row)
+
+    def remove_target(self, target_id: str, *, actor: str, now: datetime | None = None) -> bool:
+        with self.engine.begin() as connection:
+            row = connection.execute(
+                select(ReadingArticleTarget).where(ReadingArticleTarget.id == _uuid(target_id))
+            ).first()
+            if row is None:
+                return False
+            connection.execute(
+                delete(ReadingArticleTarget).where(ReadingArticleTarget.id == _uuid(target_id))
+            )
+            self._bump_revision(connection, row.article_id, _now(now))
+            self._record_event(
+                connection,
+                article_id=row.article_id,
+                actor=actor,
+                action="target_removed",
+                reason="",
+                changes={"target": row.text},
+                now=_now(now),
+            )
+        return True
+
+    # ---- the review trail ------------------------------------------------
+    def list_review_events(self, article_id: str, *, limit: int = 50) -> list[dict[str, Any]]:
+        if _lookup_uuid(article_id) is None:
+            return []
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingReviewEvent)
+                .where(ReadingReviewEvent.article_id == _uuid(article_id))
+                .order_by(ReadingReviewEvent.created_at, ReadingReviewEvent.id)
+                .limit(max(1, min(int(limit), 200)))
+            ).all()
+        return [
+            {
+                "id": str(row.id),
+                "actor": row.actor,
+                "action": row.action,
+                "reason": row.reason,
+                "changes": dict(row.changes_json or {}),
+                "created_at": _iso(row.created_at),
+            }
+            for row in rows
+        ]
+
+    def _bump_revision(self, connection: Any, article_id: uuid.UUID, now: datetime) -> None:
+        """Move the number a learner's cached copy revalidates against.
+
+        Written inside the caller's transaction, so the change and the reason
+        to refetch it land together. An approved target is learner-visible -
+        it is in the detail read - which is why a decision about one counts as
+        a content change and not only as review bookkeeping.
+        """
+        connection.execute(
+            update(ReadingArticle)
+            .where(ReadingArticle.id == article_id)
+            .values(
+                content_revision=ReadingArticle.content_revision + 1,
+                updated_at=now,
+            )
+        )
+
+    def _record_event(
+        self,
+        connection: Any,
+        *,
+        article_id: uuid.UUID,
+        actor: str,
+        action: str,
+        reason: str,
+        changes: dict[str, Any],
+        now: datetime,
+    ) -> None:
+        """Written inside the caller's transaction, so a decision and its
+        record land together or not at all. `audit_logs` receives the same
+        mutation separately and remains the retention authority."""
+        connection.execute(
+            insert(ReadingReviewEvent).values(
+                id=uuid.uuid4(),
+                article_id=article_id,
+                actor=actor,
+                action=action,
+                reason=reason,
+                changes_json=changes,
+                created_at=now,
+            )
+        )

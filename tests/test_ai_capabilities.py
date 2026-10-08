@@ -32,9 +32,14 @@ EXPECTED_KEYS = {
     "learner_translation",
     "grammar_lesson_generator",
     "reading_evaluator",
+    "text_discussion",
     "speech_asr",
     "pronunciation_evaluator",
     "speaking_evaluator",
+    "agent_turn_fast",
+    "agent_turn_deep",
+    "conversational_speech",
+    "text_to_speech",
 }
 
 
@@ -83,17 +88,17 @@ def test_static_text_provider_definitions_need_no_credentials_or_network(monkeyp
         "DEEPSEEK_BASE_URL",
         "GROQ_API_KEY",
         "GROQ_BASE_URL",
+        "AZURE_OPENAI_API_KEY",
+        "AZURE_OPENAI_BASE_URL",
+        "AZURE_OPENAI_DEPLOYMENTS",
+        "AZURE_SPEECH_KEY",
+        "AZURE_SPEECH_REGION",
     ):
         monkeypatch.delenv(variable, raising=False)
 
     definitions = provider_definitions()
-    assert {definition.id for definition in definitions} == {
-        "ollama",
-        "openai",
-        "deepseek",
-        "groq",
-        "gemini",
-    }
+    text_providers = {"ollama", "openai", "deepseek", "groq", "gemini", "azure-openai"}
+    assert {definition.id for definition in definitions} == text_providers | {"azure-speech"}
 
     speech_operations = {
         AIOperation.SPEECH_RECOGNITION,
@@ -101,10 +106,20 @@ def test_static_text_provider_definitions_need_no_credentials_or_network(monkeyp
         AIOperation.SPEAKING_EVALUATION,
     }
     for definition in definitions:
-        assert definition.supports(AIOperation.STRUCTURED_TEXT_GENERATION)
-        assert definition.supported_operations.isdisjoint(speech_operations)
-        assert "temperature" in definition.supported_option_keys
         assert get_provider_definition(definition.id) is definition
+        if definition.id in text_providers:
+            # Every structured-text provider, Azure OpenAI included, generates text,
+            # takes a temperature and claims no speech operation.
+            assert definition.supports(AIOperation.STRUCTURED_TEXT_GENERATION)
+            assert definition.supported_operations.isdisjoint(speech_operations)
+            assert "temperature" in definition.supported_option_keys
+
+    # Azure Speech is a speech provider: pronunciation assessment only, no text
+    # generation and no text options (D-118).
+    speech = get_provider_definition("azure-speech")
+    assert speech.supported_operations == frozenset({AIOperation.PRONUNCIATION_EVALUATION})
+    assert not speech.supports(AIOperation.STRUCTURED_TEXT_GENERATION)
+    assert speech.supported_option_keys == frozenset()
 
 
 def test_capabilities_are_product_wide_and_only_reviewed_generators_allow_fallback() -> None:

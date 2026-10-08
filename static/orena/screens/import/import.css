@@ -1,0 +1,123 @@
+/* Frame 58 "Import", measured. Composes the sheet shell from kit/kit.css (.o-sheet, .o-sheet__head,
+   .o-sheet__body, .o-iconbtn--close, .o-btn/.o-btn--primary/.o-btn--secondary/.o-btn--sm, .o-tag)
+   and overrides only the geometry the frame draws differently (the body's own 18px gap, not the
+   sheet default 24px). No colour literal: every value is a kit/tokens.css token. */
+
+.s-import__step {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-import__body {
+  gap: 18px;
+}
+
+/* ---- Step 1: type ---- */
+.s-import__option {
+  width: 100%;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+}
+.s-import__option--primary {
+  border: 0;
+  background: var(--accent-soft);
+}
+.s-import__option-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-import__option-sub {
+  margin-top: 2px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ---- Step 2: text / url fields ---- */
+.s-import__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-import__input,
+.s-import__textarea {
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 15px;
+  outline: 0;
+  width: 100%;
+}
+.s-import__input {
+  height: 44px;
+  padding: 0 18px;
+}
+.s-import__input--url {
+  height: 46px;
+}
+.s-import__textarea {
+  resize: vertical;
+  line-height: 1.55;
+  padding: 14px;
+  font-family: inherit;
+}
+.s-import__input:focus,
+.s-import__textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.s-import__stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s-import__warn {
+  font-size: 13px;
+  color: var(--amber);
+}
+
+/* ---- Step 3: processing ---- */
+.s-import__stage {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+}
+.s-import__stage-label {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-import__note {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-import__error {
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ---- Shared footer ---- */
+.s-import__footer {
+  display: flex;
+  gap: 10px;
+}
+.s-import__cta {
+  flex: 1;
+  padding: 14px;
+  font-weight: 700;
+}
+
+/* iOS Safari zooms the page when a text field under 16px takes focus (and leaves it zoomed): on a phone the field is 16px. */
+:root[data-device='mobile'] .s-import__input,
+:root[data-device='mobile'] .s-import__textarea { font-size: 16px; }

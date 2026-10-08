@@ -23,8 +23,6 @@ git status --short
 git log -5 --oneline
 ```
 
-Then read only this canonical sequence:
-
 Then read this canonical sequence:
 
 1. `docs/project/PROJECT_MEMORY.md`
@@ -53,7 +51,9 @@ the live Git checks above.
 
 | File                         | Purpose                                 | Authority / editor                                                               | Change trigger                                     | Never store                                    |
 | ---------------------------- | --------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------- |
-| `PRODUCT_CONSTITUTION.md`    | Durable Orena product intent            | Human-governed; agents only with explicit human instruction                      | Accepted durable principle change                  | Current task status or implementation excuses  |
+| `docs/product/ORENA_PRODUCT_CONSTITUTION.md` | Product North Star | Human-governed | Accepted durable principle change | Execution status |
+| `docs/product/ORENA_CONTENT_ARCHITECTURE.md` | Content model | Human-governed | Accepted content-model change | Execution status |
+| `PRODUCT_CONSTITUTION.md` | Compatible inherited technical/product invariants only | Human-governed | Accepted invariant change | Competing product direction |
 | `CURRENT_PRODUCT_STATE.yaml` | Compact machine-readable verified truth | Agents after verification; schema-enforced                                       | Verified current truth changes                     | Narrative history, secrets, unverified success |
 | `LEGACY_TOMBSTONES.md`       | Retired or forbidden directions         | Human-governed                                                                   | Explicit accepted retirement/supersession          | Ordinary backlog or temporary bugs             |
 | `CURRENT_HANDOFF.md`         | Current execution state only            | Active agent after verification                                                  | Lane, status, gates, blocker, or next task changes | Product philosophy or historical closeouts     |
@@ -77,11 +77,17 @@ explicit current human instruction
 → assets/brand/orena/ for brand / mascot / visual identity work
 → accepted DECISION_LOG entries
 → docs/project/PRODUCT_CONSTITUTION.md for non-superseded compatibility invariants
-→ DESIGN_CONTRACT and LEGACY_TOMBSTONES
+→ LEGACY_TOMBSTONES
 → CURRENT_PRODUCT_STATE
 → CURRENT_HANDOFF
 → implementation
 ```
+
+For presentation, interaction and learner-facing data, the domain-specific chain is:
+explicit current human instruction → pinned canonical UI → DESIGN_CONTRACT →
+Product Constitution → Content Architecture → verified current state → implementation.
+The UI defines how the approved product is presented; it does not replace the product
+North Star or content model.
 
 Implementation fact precedence:
 
@@ -95,6 +101,11 @@ actual code, tests, runtime evidence, and verified Git state
 Directory names, old filenames, historical symbols, archived scripts, stale
 screenshots, deprecated routes, branch names, comments, and legacy
 documentation never establish current product direction.
+
+ROADMAP owns the current execution program, CURRENT_PRODUCT_STATE verified truth,
+CURRENT_HANDOFF the active position, and ORENA_STATUS current capability status.
+Historical stage completion and release sequencing are supporting evidence only;
+they never imply current browser journeys or public readiness are complete.
 
 ## Contradictions
 

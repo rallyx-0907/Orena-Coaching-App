@@ -1,0 +1,2 @@
+.o-original-segment-player:not([hidden]) { width: 100%; max-width: 360px; height: 200px; flex: 0 0 auto; border-radius: 14px; overflow: hidden; }
+.o-original-segment-player iframe { width: 100%; height: 100%; border: 0; display: block; }

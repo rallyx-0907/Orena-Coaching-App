@@ -1,9 +1,11 @@
 import json
 import hashlib
+import logging
 import random
 import os
 import re
 import statistics
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -41,9 +43,10 @@ from writing_coach.writing_evaluator_contract import (
     build_writing_evaluator_request,
     build_writing_evaluator_schema,
 )
+from writing_coach.writing_contract import project_review as project_writing_review, project_revision as project_revision_compare
 from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
-from auth_support import APP_ENV, AUTH_ENABLED, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
+from auth_support import APP_ENV, AUTH_ENABLED, SESSION_SECRET, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
 from writing_coach.product.api import router as product_router
 from writing_coach.media_api import (
     configure_media_fallback,
@@ -64,6 +67,22 @@ from writing_coach.media_translation import (
     MediaTranslationService,
     resolve_translation_provider_id,
 )
+from writing_coach.reading_lookup import ReadingLookupService
+from writing_coach.word_detail import configure_word_detail, router as word_detail_router
+from writing_coach.persistence.reading_derived_repository import ReadingDerivedRepository
+from writing_coach.reading_derived import DerivedCache
+from writing_coach.reading_summary import ReadingSummaryService
+from writing_coach.reading_translation import (
+    PlatformAITranslationProvider,
+    ReadingTranslationService,
+    resolve_reading_translation_provider_id,
+)
+from writing_coach.reading_translation_api import (
+    configure_reading_lookup,
+    configure_reading_summary,
+    configure_reading_translation,
+    router as reading_translation_router,
+)
 from writing_coach.speech_api import (
     configure_speech_asr,
     configure_speech_pronunciation,
@@ -72,40 +91,116 @@ from writing_coach.speech_api import (
 )
 from writing_coach.media_interaction import contextual_router as contextual_dictionary_router
 from writing_coach.collection_api import configure_collection, runtime_owners, router as collection_router
+from writing_coach.library_api import configure_library, continue_router, router as library_router
+from writing_coach.word_audio import WordAudioLibrary, default_voices
+from writing_coach.word_audio_api import configure_word_audio, router as word_audio_router
+from writing_coach.word_deep import configure_word_deep, router as word_deep_router
+from writing_coach.word_clips import router as word_clips_router
 from writing_coach.learner_summary_api import configure_learner_summary, runtime_sources, router as learner_summary_router
 from writing_coach.listening_api import (
+    configure_listening_media_library,
     configure_listening_progress,
     configure_listening_translation_cache,
+    stored_media_payload,
+    prepare_media_meanings,
     router as listening_progress_router,
 )
+from writing_coach.media_library_api import (
+    configure_media_library,
+    configure_media_library_payload,
+    media_learning_router as media_library_upload_router,
+    router as media_library_router,
+)
+from writing_coach.media_library_store import FileMediaLibraryStore
+from writing_coach.media_source_import import MediaSourceImporter
+from writing_coach.book_asset_store import FilesystemBookAssetStore
 from writing_coach.speech_asr import GroqSpeechAsrProvider
 from writing_coach.speech_pronunciation import build_speech_pronunciation_provider
-from writing_coach.core.errors import orena_http_error
+from writing_coach.speaking_library import router as speaking_library_router
+from writing_coach.core.errors import error_detail, orena_http_error
+from writing_coach.writing_limits import (
+    MAX_BYTES,
+    MAX_CHARACTERS,
+    MAX_PROMPT_CHARACTERS,
+    MAX_REVIEW_BYTES,
+    MAX_REVIEW_ITEMS,
+    check_minimum,
+    measure_writing,
+    minimum_message,
+)
+from writing_coach.writing_review_identity import (
+    identity_of_stored,
+    review_identity,
+    same_review,
+    v27_affects,
+)
 from writing_coach.core.platform_api import router as platform_router
 from writing_coach.core.language_registry import is_enabled
+from writing_coach.core.request_context import LANGUAGE_CODE_CTX
+from writing_coach.core.support_languages import (
+    resolve_support_language,
+    support_language,
+    support_language_uses_cjk,
+)
+from writing_coach.vocabulary_cards import vocabulary_card_from_catalog_entry
+from writing_coach.vocabulary_dictionary import complete_from_dictionary
+from writing_coach.vocabulary_meaning import configure_support_language as configure_vocabulary_support_language
+from writing_coach.vocabulary_localization import (
+    default_sources as default_vocabulary_localization_sources,
+    localize_records,
+    materialize_localizations,
+)
+from writing_coach.vocabulary_source_import import (
+    VocabularySourceError,
+    detect_vocabulary_mapping,
+    normalize_vocabulary_rows,
+    parse_vocabulary_source,
+    read_source_upload,
+    stable_collection_id,
+)
+from writing_coach.vocabulary_feed import (
+    LearnerFeedContext,
+    daily_feed_candidates,
+    vocabulary_card_from_feed_candidate,
+)
+from writing_coach.vocabulary_library import (
+    all_vocabulary_entries,
+    get_vocabulary_collection,
+    list_vocabulary_collections,
+    normalize_vocabulary_word,
+)
 from writing_coach.ai.base import AICapabilityError, AIProviderError, AIProviderUnavailable
 from writing_coach.ai.platform import active_ai_label, active_ai_status, admin_ai_operations, generate_structured, install_platform_ai, configure_platform_repository
+from writing_coach.text_discussion import install_text_discussion
 from writing_coach.ai.control_plane import AIControlPlane
 from writing_coach.product.service import configure_product_repository
 from writing_coach.persistence.runtime import build_runtime
+from writing_coach.persistence.vocabulary_repository import VocabularyContentUnavailable
 from writing_coach.persistence.learning_repository import (
     SQLiteLearningCacheRepository,
     SQLiteLearningRepository,
 )
-from writing_coach.persistence.specialized_repository import SQLiteSpecializedLearningRepository
+from writing_coach.account_records_api import router as account_records_router
+from writing_coach.learner_activity import configure_learner_activity, router as learner_activity_router
+from writing_coach.work_api import PromptRef
+from writing_coach.account_settings import configure_account_settings, router as account_settings_router
 from writing_coach.becoming_memory import (LearnerProfileIn, ProfilePatchIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, patch_learner_profile, put_learner_profile)
 from writing_coach.becoming_practice import PracticeNextIn, build_practice_recommendation, personalize_generated_task
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
-from writing_coach.becoming_library import LibraryVocabularyIn, VocabularyReviewIn, configure_becoming_library, delete_library_vocabulary, list_library_vocabulary, review_library_vocabulary, save_library_vocabulary
+from writing_coach.becoming_library import LibraryVocabularyIn, RestoreVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, library_summary, list_library_vocabulary, restore_library_vocabulary, review_library_vocabulary, save_library_vocabulary, saved_vocabulary_state, saved_vocabulary_words
+from writing_coach.persistence.library_repository import LibraryRepository
+from writing_coach.persistence.deck_repository import DeckRepository
+from writing_coach.deck_api import configure_decks, router as deck_router
+from writing_coach.persistence.specialized_repository import LIBRARY_PAGE_DEFAULT, LIBRARY_PAGE_MAX
 from writing_coach.becoming_linguistics import configure_becoming_linguistics, linguistic_annotations_for_essay
-from writing_coach.becoming_reading import ReadingAnswerIn, ReadingGenerateIn, configure_becoming_reading, create_reading_session, get_reading_session, list_reading_sessions, submit_reading_answers
 from writing_coach.cross_skill_transfer import select_cross_skill_cue
 from writing_coach.product_activity_api import product_activity_response
 from writing_coach.readiness_summary import build_readiness_summary
-from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.exception_handlers import request_validation_exception_handler as fastapi_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -125,12 +220,110 @@ APP_VERSION = os.getenv(
 )
 SCHEMA_VERSION = 11
 
-app = FastAPI(title="Orena", version=APP_VERSION)
+_PRODUCTION = APP_ENV == "production"
+# The schema browser is a developer tool: not served by a production deployment (security review 2026-10-04).
+app = FastAPI(title="Orena", version=APP_VERSION, docs_url=None if _PRODUCTION else "/docs",
+              redoc_url=None if _PRODUCTION else "/redoc", openapi_url=None if _PRODUCTION else "/openapi.json")
+
+
+# One sliding window per route group, per account (writing_coach/core/http_security.py RATE_GROUPS).
+_ROUTE_LIMITERS: dict[str, Any] = {}
+
+
+@app.middleware("http")
+async def refuse_cross_site_changes_and_harden_responses(request: Request, call_next):
+    """Every route: a browser changes something only from this site; every answer carries the hardening
+    headers (writing_coach/core/http_security.py)."""
+
+    from writing_coach.agent.ratelimit import SlidingWindowLimiter
+    from writing_coach.core.http_security import hardening_headers, origin_refusal, rate_group
+
+    refusal = origin_refusal(request.method, request.url.path, request.headers)
+    # Real accounts only: the single-user local mode (tests, a lane runtime) has no one to protect from.
+    group = rate_group(request.method, request.url.path) if refusal is None and AUTH_ENABLED else None
+    wait = None
+    if group is not None:
+        name, limit, window = group
+        account = str((request.scope.get("session") or {}).get("user_sub") or "local")
+        limiter = _ROUTE_LIMITERS.setdefault(name, SlidingWindowLimiter(limit, window, max_keys=50_000))
+        wait = limiter.check(account)
+    if wait is not None:
+        response = JSONResponse(status_code=429, headers={"Retry-After": str(max(1, int(wait) + 1))}, content={
+            "detail": error_detail("rate_limited", "Too many requests; try again in a moment.", retryable=True)})
+    elif refusal is not None:
+        logging.getLogger(__name__).warning("cross-site change refused: %s %s (%s)", request.method,
+                                            request.url.path, refusal)  # fmt: skip
+        response = JSONResponse(status_code=403, content={"detail": error_detail(
+            "origin_refused", "This change must come from Orena's own page.", retryable=False)})
+    else:
+        response = await call_next(request)
+    https = str(os.getenv("PUBLIC_BASE_URL", "")).strip().casefold().startswith("https://")
+    for name, value in hardening_headers(response.headers, https=https).items():
+        response.headers[name] = value
+    return response
+
+
+# The Writing endpoints that carry learner prose, and the largest body any of
+# them can legitimately need. Bounded here rather than globally, because an
+# EPUB or a media file is a legitimately large upload and must stay possible.
+#
+# The allowance is generous against the writing contract - JSON escaping, the
+# prompt, the intention and the envelope all ride along - and still refuses a
+# body that is not writing at all, before a parser has looked at it.
+_WRITING_BODY_PATHS = ("/api/evaluate", "/api/improve", "/api/work/drafts")
+_MAX_WRITING_BODY_BYTES = 4 * MAX_BYTES
+
+
+@app.middleware("http")
+async def bound_writing_request_bodies(request: Request, call_next):
+    """Refuse an oversized Writing body before anything reads it.
+
+    `Content-Length` is a claim, not a fact, so this is the cheap first gate
+    and not the only one: the route measures the actual text afterwards. What
+    this buys is that a client announcing ten megabytes is turned away without
+    a parse, an allocation or a line in a log containing any of it.
+    """
+    path = request.url.path.rstrip("/")
+    if any(path.startswith(prefix) for prefix in _WRITING_BODY_PATHS):
+        declared = request.headers.get("content-length")
+        try:
+            size = int(declared) if declared is not None else 0
+        except ValueError:
+            size = 0
+        if size > _MAX_WRITING_BODY_BYTES:
+            logging.getLogger(__name__).warning(
+                "writing body refused: endpoint=%s declared_bytes=%d max_bytes=%d",
+                path,
+                size,
+                _MAX_WRITING_BODY_BYTES,
+            )
+            return JSONResponse(
+                status_code=413,
+                content={
+                    "detail": error_detail(
+                        "writing_too_large",
+                        "This request is larger than Orena accepts.",
+                        retryable=False,
+                        context={"bytes": size, "max_bytes": _MAX_WRITING_BODY_BYTES},
+                    )
+                },
+            )
+    return await call_next(request)
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_error_response(request: Request, exc: RequestValidationError) -> Response:
-    """Preserve FastAPI validation bodies while marking mutable dictionary errors."""
+    """Preserve FastAPI validation bodies while marking mutable dictionary errors.
+
+    Without the rejected value. FastAPI echoes the input that failed, which for
+    a length rule means echoing the whole over-long field back to the client
+    and into anything that records the response - a learner's essay, in full,
+    because it was one character too long. The type, the location and the
+    message say what is wrong; the value adds nothing and travels badly.
+    """
+    for error in exc.errors():
+        if isinstance(error, dict):
+            error.pop("input", None)
     response = await fastapi_validation_exception_handler(request, exc)
     if request.url.path.rstrip("/") == "/api/dictionary":
         response.headers["Cache-Control"] = "no-store"
@@ -181,7 +374,9 @@ def orena_asset(asset_path: str, request: Request):
 ORENA_BRAND_ROOT = (ROOT / "assets" / "brand" / "orena").resolve()
 # The reference sheets are design authority for people, not runtime imagery -
 # several megabytes each, and never something to put in front of a learner.
-ORENA_BRAND_SERVED = ("actions", "expressions", "scenes")
+# `logo` is the brand mark and the Orena Intelligence mark (D-090), rendered by
+# the new learner UI from this one copy.
+ORENA_BRAND_SERVED = ("actions", "expressions", "scenes", "logo")
 
 @app.get("/orena-brand/{asset_path:path}", include_in_schema=False)
 def orena_brand_asset(asset_path: str):
@@ -212,14 +407,21 @@ class WritingContextIn(BaseModel):
 
 
 class EssayIn(BaseModel):
-    prompt: str = Field(default="", max_length=5000)
-    text: str = Field(min_length=10, max_length=20000)
+    # The shared Writing contract (`writing_coach/writing_limits.py`), not what
+    # a TEXT column happens to hold. The route measures bytes and lines too,
+    # which a character bound cannot see. There is no floor here on purpose: how
+    # little is still an attempt depends on the learning language, which a
+    # field cannot see, so `_guard_writing_minimum` applies it in the route.
+    prompt: str = Field(default="", max_length=MAX_PROMPT_CHARACTERS)
+    text: str = Field(max_length=MAX_CHARACTERS)
     target_cefr: str | None = Field(default=None, min_length=2, max_length=12)
     writing_mode: str = Field(default="guided", pattern=r"^(guided|journal)$")
     writing_context: WritingContextIn = Field(default_factory=WritingContextIn)
     parent_essay_id: int | None = Field(default=None, ge=1)
     practice_context: PracticeContextIn | None = None
     learning_language: str | None = Field(default=None, min_length=2, max_length=8)
+    # Which curated prompt this piece answers (D-103.6): a reference into the Prompt Bank, never its text.
+    prompt_ref: PromptRef | None = None
 
 
 class TaskGenerateIn(BaseModel):
@@ -232,7 +434,9 @@ class TaskGenerateIn(BaseModel):
     word_target: int = Field(default=150, ge=20, le=500)
 
 class ImproveIn(BaseModel):
-    text: str = Field(min_length=10, max_length=20000)
+    # No floor here for the reason `EssayIn.text` gives: the route applies the
+    # learning language's own minimum.
+    text: str = Field(max_length=20000)
     target_cefr: str = Field(default="B2", min_length=2, max_length=12)
     mode: str = Field(default="polish", pattern=r"^(correct|grammar|vocabulary|polish)$")
 
@@ -256,7 +460,12 @@ _persistence_runtime = build_runtime(
     backend=os.getenv("PERSISTENCE_BACKEND", "postgresql"),
 )
 configure_auth_repository(_persistence_runtime.auth_repository)
+configure_account_settings(_persistence_runtime.auth_repository)
 configure_platform_repository(_persistence_runtime.platform_repository)
+# AC-2: AI cost per signed-in account, kept 13 months; a no-op until migration 20261005_0026 is applied.
+from writing_coach.ai import account_costs as _account_costs  # noqa: E402
+
+_account_costs.install(_persistence_runtime.platform_repository)
 configure_product_repository(_persistence_runtime.product_repository)
 
 # PostgreSQL is the application runtime. In auth-disabled local development the
@@ -275,7 +484,20 @@ if _persistence_runtime.backend == "postgresql" and not AUTH_ENABLED:
         )
 
 _learning_repository = _persistence_runtime.learning_repository
-_learning_cache = SQLiteLearningCacheRepository(lambda: SQLiteLearningRepository(lambda: current_db_path(DB_PATH).with_name("learning_cache.db")).connect())
+def _learning_cache_path() -> Path:
+    # Derived dictionary/translation data only. Keep it with configured durable
+    # media rather than a per-container scratch DB, so reloads/restarts do not
+    # repeat provider work. PostgreSQL still owns all learner records.
+    configured = os.getenv("LEARNING_CACHE_DB", "").strip()
+    media_root = os.getenv("MEDIA_LIBRARY_ROOT", "").strip()
+    if configured:
+        return Path(configured)
+    if media_root:
+        return Path(media_root) / "learning_cache.db"
+    return current_db_path(DB_PATH).with_name("learning_cache.db")
+
+
+_learning_cache = SQLiteLearningCacheRepository(lambda: SQLiteLearningRepository(_learning_cache_path).connect())
 _specialized_learning_repository = _persistence_runtime.specialized_learning_repository
 
 
@@ -283,6 +505,9 @@ def init_db() -> None:
     if _persistence_runtime.backend == "sqlite":
         _learning_repository.initialize(schema_version=SCHEMA_VERSION)
         _specialized_learning_repository.initialize()
+        vocabulary_repository = getattr(_persistence_runtime, "vocabulary_repository", None)
+        if vocabulary_repository is not None:
+            vocabulary_repository.initialize()
     _learning_cache.initialize()
 
 
@@ -304,14 +529,16 @@ if _media_fallback_mode == "supadata" and _supadata_fallback_client is None:
 
 app.include_router(platform_router)
 app.include_router(product_router)
-configure_media_ingestion(
-    MediaIngestionService(
-        # One recovery policy, shared with the bulk importer, so a caption-less
-        # video means the same thing in My Media and in the catalog pipeline.
-        adapters=(build_youtube_adapter(),),
-        source_language_supported=is_enabled,
-    )
+# The one acquisition service, kept in a named binding because the Shared
+# Listening Library importer must resolve a source through exactly the same
+# provider boundary the learner's own import uses - never a second one.
+_media_ingestion_service = MediaIngestionService(
+    # One recovery policy, shared with the bulk importer, so a caption-less
+    # video means the same thing in My Media and in the catalog pipeline.
+    adapters=(build_youtube_adapter(),),
+    source_language_supported=is_enabled,
 )
+configure_media_ingestion(_media_ingestion_service)
 # Which engine translates shared media, resolved once here and never re-decided
 # per request. Groq is the default because it answers in about a second where
 # the local Marian service needed thirty-seven; the local service is kept as the
@@ -338,6 +565,64 @@ _media_translation_provider = (
     )
 )
 configure_media_translation(MediaTranslationService(_media_translation_provider))
+# Reading never inherits Listening's LLM engine: its default is the local,
+# non-LLM Marian service, and an operator must explicitly opt into Groq.
+try:
+    _reading_translation_provider_id = resolve_reading_translation_provider_id(
+        os.getenv("READING_TRANSLATION_PROVIDER", ""), groq_key=_GROQ_API_KEY
+    )
+except ValueError as exc:
+    raise RuntimeError(str(exc)) from exc
+
+_reading_translation_provider = (
+    GroqTranslationProvider(
+        _GROQ_API_KEY,
+        model=os.getenv("GROQ_TRANSLATION_MODEL", "openai/gpt-oss-120b"),
+        base_url=os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
+    )
+    if _reading_translation_provider_id == "groq"
+    else PlatformAITranslationProvider()
+    if _reading_translation_provider_id == "ai"
+    else LocalHttpTranslationProvider(
+        os.getenv("LOCAL_TRANSLATION_URL", "http://local-translator:8090")
+    )
+)
+# One cache for every on-demand Reading answer (translation, summary, contextual meaning); the shared table is
+# used only for published text and only once the proposed migration 20261005_0028 is applied.
+_reading_derived_cache = DerivedCache(
+    ReadingDerivedRepository(_persistence_runtime.engine) if _persistence_runtime.engine is not None else None
+)
+_reading_translation_service = ReadingTranslationService(
+    _reading_translation_provider, cache=_reading_derived_cache
+)
+configure_reading_translation(_reading_translation_service)
+configure_reading_summary(ReadingSummaryService(_reading_derived_cache))
+
+
+def _reading_english_dictionary(word: str) -> dict[str, Any] | None:
+    """English-only dictionary facts for Reading lookup. Never Chinese/AI."""
+    try:
+        return lookup_dictionary(word)
+    except HTTPException:
+        return None
+
+
+_reading_lookup_service = ReadingLookupService(
+    _persistence_runtime.vocabulary_repository,
+    _reading_english_dictionary,
+    _reading_translation_service,
+)
+configure_reading_lookup(_reading_lookup_service)
+# A saved word's meaning in the learner's support language (D-124), for the
+# payloads the server composes itself; resolved per request from the profile.
+configure_vocabulary_support_language(
+    lambda: resolve_support_language(get_learner_profile().get("native_language"))
+)
+configure_word_detail(
+    lookup=_reading_lookup_service.lookup,
+    saved_terms=saved_vocabulary_words,
+    cache=_reading_derived_cache,
+)
 configure_media_timing(
     MediaTimingService(
         YtDlpYouTubeAudioUrlResolver(),
@@ -353,14 +638,18 @@ configure_media_fallback(
 )
 app.include_router(media_learning_router)
 app.include_router(contextual_dictionary_router)
+app.include_router(word_detail_router)
+app.include_router(reading_translation_router)
 configure_speech_asr(_speech_asr_provider)
-configure_speech_pronunciation(build_speech_pronunciation_provider())
+configure_speech_pronunciation(build_speech_pronunciation_provider(), resolver=build_speech_pronunciation_provider)
 configure_speaking_attempt_repository(
     _specialized_learning_repository
     if _persistence_runtime.backend == "postgresql"
     else None
 )
 app.include_router(speech_router)
+# The Speaking library: the authored Speaking catalogue plus Listening lessons that can be shadowed.
+app.include_router(speaking_library_router)
 configure_listening_progress(
     _specialized_learning_repository
     if _persistence_runtime.backend == "postgresql"
@@ -370,25 +659,368 @@ configure_listening_progress(
 # given support language costs no provider quota.
 configure_listening_translation_cache(_learning_cache)
 app.include_router(listening_progress_router)
+
+# The learner's discussion about a whole text (D-072.2). The turn handler meters
+# and never denies: whether this becomes the product's first entitlement-gated
+# route is an activation decision the human has not taken.
+app.include_router(
+    install_text_discussion(
+        repository=_persistence_runtime.text_discussion_repository,
+        generate_structured=generate_structured,
+        product_repository=_persistence_runtime.product_repository,
+        learner_profile=get_learner_profile,
+    )
+)
+
+# Shared Listening Library (media). The store is Orena's own index of imported
+# sources, the asset store is where a generated thumbnail or an uploaded file
+# lives, and the importer is the media-specific source engine. One ingestion
+# service serves both an administrator's import and a learner's own, so a source
+# that is unsupported in one place is unsupported in the other.
+#
+# A stored entry resolves through the Listening boundary's own serializer
+# (`stored_media_payload`), because that module owns support-language
+# resolution and the persisted meaning cache; a second serializer here would
+# drift from the payload the curated catalog answers with.
+_media_library_root = Path(os.getenv("MEDIA_LIBRARY_ROOT", str(ROOT / "data" / "media_library")))
+_media_library_asset_root = Path(
+    os.getenv("MEDIA_LIBRARY_ASSET_ROOT", str(ROOT / "data" / "media_library_assets"))
+)
+_media_library_store = FileMediaLibraryStore(_media_library_root)
+_media_library_assets = FilesystemBookAssetStore(_media_library_asset_root)
+from writing_coach.media_spend import SpendLedger
+from writing_coach.media_transcript_pipeline import MediaPipeline
+from writing_coach.media_providers.youtube_audio import download_audio
+
+_media_pipeline = MediaPipeline(
+    ledger=SpendLedger(_media_library_root / "processing-spend.json"),
+    asr=_speech_asr_provider,
+    ingestion=_media_ingestion_service,
+    youtube_audio=download_audio,
+    meanings=prepare_media_meanings,
+    english_reading=lambda word: lookup_dictionary(word, language="en", allow_ai=False, persist=False).get("phonetic", ""),
+    workers=1,
+)
+configure_media_library(
+    _media_library_store,
+    _media_library_assets,
+    MediaSourceImporter(_media_ingestion_service, _media_library_store, _media_library_assets, pipeline=_media_pipeline),
+    admin_guard=require_admin,
+    language_supported=is_enabled,
+)
+configure_media_library_payload(stored_media_payload)
+configure_listening_media_library(_media_library_store)
+_media_pipeline.recover(_media_library_store, _media_library_assets)
+app.include_router(media_library_router)
+app.include_router(media_library_upload_router)
+# Canonical Reading evidence (D-075): the one Reading read contract every
+# consumer uses - the cross-skill cue, Collection, Learner Summary. The
+# repository is installed with the Reading engine below (PostgreSQL only);
+# until then, and on the SQLite test backend, there is no evidence to read.
+# The archived generated sessions are never read here.
+_reading_evidence_repository = None
+
+
+def list_reading_evidence(limit: int = 20) -> dict[str, Any]:
+    if _reading_evidence_repository is None:
+        return {"items": []}
+    return {"items": _reading_evidence_repository.list_evidence(limit)}
+
+
 # Collection retrieval (I4 step 1): one read over the owners that exist, each
 # read through what it already serves. No surface calls it yet.
 configure_collection(runtime_owners(
-    library=list_library_vocabulary,
-    reading=list_reading_sessions,
+    library=lambda limit, search='': list_library_vocabulary(limit=limit, search=search),
+    reading=list_reading_evidence,
     essays=_learning_repository.list_latest_series,
     specialized=_specialized_learning_repository,
+    grammar=lambda: _completed_grammar_rows(),
 ))
 app.include_router(collection_router)
+# The learner's own library: keeping, marking, filing, and the queue the design
+# orders "marked first, then whatever is due" (D-074). It lives in PostgreSQL,
+# so on any other backend every route says `library_unavailable` rather than
+# dropping a pin on the floor.
+configure_library(
+    lambda: LibraryRepository(_persistence_runtime.engine)
+    if getattr(_persistence_runtime, "engine", None) is not None
+    else None
+)
+app.include_router(library_router)
+app.include_router(continue_router)
+# The learner's own study sets - Vocabulary's, not My Library's (2026-09-23).
+# The tables are proposed and unapplied, so `available()` is False and every
+# route answers 503 rather than falling back to another domain's tables.
+configure_decks(
+    lambda: DeckRepository(_persistence_runtime.engine)
+    if getattr(_persistence_runtime, "engine", None) is not None
+    else None
+)
+app.include_router(deck_router)
+# How a saved word sounds, bound to the reading it was kept at (2026-09-23).
+# No schema: the clips and the licence they may be played under live in the
+# existing asset store, keyed by a digest of (entry identity, reading).
+_word_audio_root = Path(os.getenv("WORD_AUDIO_ASSET_ROOT", str(ROOT / "data" / "word_audio")))
+configure_word_audio(
+    lambda: WordAudioLibrary(FilesystemBookAssetStore(_word_audio_root), default_voices())
+)
+app.include_router(word_audio_router)
+
+
+def _licence_books() -> list[dict[str, Any]]:
+    if _persistence_runtime.engine is None:
+        return []
+    repository = PostgresReadingLibraryRepository(_persistence_runtime.engine)
+    books: list[dict[str, Any]] = []
+    for language in ("en", "zh"):
+        books.extend(repository.list_books(learning_language=language).get("items") or [])
+    return books
+
+
+@app.get("/api/licences", name="orena_licences")
+def orena_licences(response: Response) -> dict[str, Any]:
+    """Licences and data sources for the learner's Settings page: the vendored datasets and
+    bundled assets, and the per-item credits stored with content (each word recording, each
+    listening source, each registered reading source, each book). Read-only."""
+    from writing_coach.licences import licences_payload
+    from writing_coach.listening_catalog import catalog_lessons, lesson_metadata
+
+    response.headers["Cache-Control"] = "no-store"
+    return licences_payload(
+        word_audio=lambda: WordAudioLibrary(FilesystemBookAssetStore(_word_audio_root), ()).credits(),
+        media=lambda: _media_library_store.list(),
+        listening=lambda: [lesson_metadata(lesson) for lesson in catalog_lessons()],
+        reading_sources=lambda: ReadingContentRepository(_agent_engine()).list_sources(),
+        reading_texts=lambda: ReadingContentRepository(_agent_engine()).published_credits(),
+        books=_licence_books,
+    )
+# One word, opened all the way (2026-09-23), for the canonical deep frames.
+# Also no schema: the explained half is cached in the asset store beside the
+# audio, keyed by the same (entry identity, reading) the audio is keyed by, and
+# the learner's own sentences are read from the writing they already have.
+_word_deep_root = Path(os.getenv("WORD_DEEP_ASSET_ROOT", str(ROOT / "data" / "word_deep")))
+configure_word_deep(
+    store=lambda: FilesystemBookAssetStore(_word_deep_root),
+    learner_sentences=lambda word, _language, limit: _specialized_learning_repository.sentences_using(
+        word, limit=limit
+    ),
+)
+app.include_router(word_deep_router)
+# Where a word is actually said (2026-09-23). A read over the listening
+# catalogue's own timestamped segments: no store, no generated audio, and a
+# word never said in the catalogue simply has no clips.
+app.include_router(word_clips_router)
 # Learner summary (I6 read step): each domain's own evidence, side by side,
 # through the reads the app already serves. No surface calls it yet.
 configure_learner_summary(runtime_sources(
     essays=lambda: _learning_repository.list_essays(0, ascending=True),
-    reading=list_reading_sessions,
+    reading=list_reading_evidence,
     grammar=_learning_repository.completed_grammar_ids,
-    library=list_library_vocabulary,
+    library=lambda limit: list_library_vocabulary(limit=limit),
     specialized=_specialized_learning_repository,
 ))
 app.include_router(learner_summary_router)
+
+# Orena Intelligence (D-085): /api/agent/*. Off unless AGENT_ENABLED is set on a
+# runtime that is not production (human ruling 2026-09-27); while off both routes
+# answer 404. It routes through the legacy AI selection and reads with the app's
+# own services: the Writing review below and the usage store it meters with.
+from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router, voice_enabled  # noqa: E402
+from writing_coach.agent.voice_session import VoiceService  # noqa: E402
+from writing_coach.ai.live_voice import GeminiLiveTokens  # noqa: E402
+from writing_coach.ai.audio_telemetry import record_audio_operation  # noqa: E402
+from writing_coach.agent.runtime import AppReads, build_agent_runtime  # noqa: E402
+from writing_coach.agent.retention import TurnTelemetryRetention, sweep_enabled  # noqa: E402
+
+
+def _agent_writing_review(essay_id: int) -> dict[str, Any] | None:
+    try:
+        return essay_review(essay_id)
+    except HTTPException as exc:
+        if exc.status_code == 404:
+            return None
+        raise
+
+
+def _agent_learner_summary(window: str) -> dict[str, Any]:
+    # The route's own composition (GET /api/learner-summary); not configured is unreadable, never empty.
+    from writing_coach.learner_summary_api import summary
+
+    try:
+        return summary(window)
+    except HTTPException as exc:
+        raise RuntimeError("the learner summary is not available") from exc
+
+
+def _agent_engine() -> Any:
+    if _persistence_runtime.engine is None:
+        raise RuntimeError("the reading records require the PostgreSQL runtime")
+    return _persistence_runtime.engine
+
+
+def _agent_reading_evidence(limit: int) -> list[dict[str, Any]]:
+    if _reading_evidence_repository is None:  # not "no attempts": there is no store to ask
+        raise RuntimeError("reading evidence requires the PostgreSQL runtime")
+    return _reading_evidence_repository.list_evidence(limit)
+
+
+def _agent_listening_lesson(lesson_id: str) -> dict[str, Any] | None:
+    # The catalogue, never the lesson route: that one translates through a provider and writes a cache.
+    from writing_coach.listening_catalog import catalog_lesson, lesson_metadata
+
+    lesson = catalog_lesson(lesson_id)
+    return lesson_metadata(lesson) if lesson is not None else None
+
+
+def _agent_grammar_lesson(grammar_id: str) -> dict[str, Any] | None:
+    try:
+        return api_grammar_lesson(grammar_id)
+    except HTTPException as exc:
+        if exc.status_code in (404, 503):  # no such point here, or its knowledge is not there
+            return None
+        raise
+
+
+
+def _agent_spend_guard():
+    """The staging daily cap on the shared AI ledger (agent/budget.py); None when AGENT_DAILY_SPEND_CAP_USD is unset."""
+
+    from writing_coach.agent.budget import DailySpendGuard, cap_from_env
+
+    cap = cap_from_env(os.environ)
+    reader = getattr(_persistence_runtime.platform_repository, "ai_spend_since", None)
+    if cap is None:
+        return None
+    if not callable(reader):  # a cap with no ledger to read refuses every turn: it fails closed
+        return lambda: 3600.0
+    return DailySpendGuard(cap_usd=cap, read=reader)
+
+
+def _delete_agent_turns_before(before: datetime, limit: int) -> int:
+    deleter = getattr(_persistence_runtime.platform_repository, "delete_agent_turns_before", None)
+    return deleter(before, limit=limit) if callable(deleter) else 0
+
+
+# agent.turn rows are kept 90 days; the write path starts the sweep, at most once a day (agent/retention.py).
+# Off unless AGENT_TURN_RETENTION_SWEEP is switched on, after its independent review: off, nothing is deleted.
+_agent_turn_retention = TurnTelemetryRetention(
+    lambda before, limit: _delete_agent_turns_before(before, limit)
+) if sweep_enabled(os.environ) else None
+
+
+def _record_agent_turn(user_key: str, record: dict) -> None:
+    """One `agent.turn` row per turn (agent/timeline.py), linked to the learner's account like an audit row."""
+
+    writer = getattr(_persistence_runtime.platform_repository, "record_admin_event", None)
+    if callable(writer):
+        writer("agent.turn", actor=user_key, entity_type="agent_turn", entity_id=str(record.get("trace_id", "")),
+               payload=record)
+    if _agent_turn_retention is not None:
+        _agent_turn_retention.maybe_sweep()
+
+
+def _record_agent_summary(user_key: str, record: dict) -> None:
+    """One `agent.summary` row per rolling-summary call (agent/summary.py): counts, tokens, cost, never a word said."""
+
+    writer = getattr(_persistence_runtime.platform_repository, "record_admin_event", None)
+    if callable(writer):
+        writer("agent.summary", actor=user_key, entity_type="agent_summary", entity_id=str(record.get("trace_id", "")),
+               payload=record)
+
+
+def _price_agent_summary(input_tokens: int, output_tokens: int) -> dict:
+    """The provider and model the agent runs on, and what a call of this size is estimated to cost."""
+
+    from writing_coach.ai.platform import active_selection, estimate_token_cost
+
+    item, model = active_selection()
+    provider = str(getattr(item, "id", "") or "") or None
+    usage = {"prompt_tokens": input_tokens, "completion_tokens": output_tokens}
+    return {"provider": provider, "model": model or None, "cost": estimate_token_cost(provider, model, usage)}
+
+
+def _agent_listening_library(language: str, level: str | None, topic: str | None) -> list:
+    from writing_coach.listening_api import listening_library as _listening_library
+
+    return _listening_library(language=language, level=level, topic=topic, tag=None).get("items", [])
+
+
+def _gemini_key() -> str:
+    """The Gemini key the AI platform resolves (a stored credential, else GEMINI_API_KEY); never sent to a client."""
+
+    from writing_coach.ai.platform import providers as _ai_providers
+
+    provider = _ai_providers().get("gemini")
+    return str(getattr(provider, "api_key", "") or "")
+
+
+def _with_voice(runtime):
+    """Live voice, mode A (R28): only where the agent runs and AGENT_VOICE_ENABLED is on."""
+
+    if runtime is not None and voice_enabled(os.environ):
+        runtime.voice = VoiceService(runtime=runtime, tokens=GeminiLiveTokens(key=_gemini_key),
+                                     record_audio=record_audio_operation)  # fmt: skip
+    return runtime
+
+
+configure_agent(_with_voice(
+    build_agent_runtime(
+        writing_review=_agent_writing_review,
+        writing_history=lambda: api_error_memory(),
+        reads=AppReads(
+            grammar_library=lambda: api_grammar_library(),
+            grammar_lesson=lambda grammar_id: _agent_grammar_lesson(grammar_id),
+            # The learner records live on PostgreSQL only; elsewhere these raise and the tool reports unavailable.
+            speaking_attempts=lambda limit, *, asset_id=None, segment_id=None: (
+                _specialized_learning_repository.list_speaking_attempt_records(
+                    limit, asset_id=asset_id, segment_id=segment_id
+                )
+            ),
+            speaking_progress=lambda: _specialized_learning_repository.speaking_progress(),
+            listening_lesson=lambda lesson_id: _agent_listening_lesson(lesson_id),
+            listening_progress=lambda asset_id: _specialized_learning_repository.list_listening_progress_records(asset_id),
+            reading_article=lambda article_id: ReadingContentRepository(_agent_engine()).get_published_article(article_id),
+            reading_chapter=lambda book_id, chapter_id: PostgresReadingLibraryRepository(_agent_engine()).get_chapter(
+                book_id, chapter_id
+            ),
+            reading_evidence=lambda limit: _agent_reading_evidence(limit),
+            learner_summary=lambda window: _agent_learner_summary(window),
+            cross_skill_cue=lambda: becoming_cross_skill_cue_get(),
+            listening_recent=lambda limit: _specialized_learning_repository.list_recent_listening_progress_records(limit),
+            # find_content (R29): the learner's library pages, as their own routes compose them.
+            listening_library=lambda language, level, topic: _agent_listening_library(language, level, topic),
+            reading_articles=lambda language, level, topic, limit: ReadingContentRepository(_agent_engine()).list_published(
+                language=language, level=level, topic=topic, limit=limit
+            ).get("items", []),
+        ),
+        record_usage=_persistence_runtime.product_repository.record_usage,
+        record_turn=_record_agent_turn,
+        record_summary=_record_agent_summary,
+        price_summary=_price_agent_summary,
+        spend_guard=_agent_spend_guard(),
+    )
+    if agent_enabled(os.environ, production=APP_ENV == "production")
+    else None
+))
+app.include_router(agent_router)
+
+# Content packs (docs/project/proposals/CONTENT_PACKS.md, v1): approved content moved between environments
+# through the same engines and rules as a fresh Admin import. Vocabulary is bound late: its helpers live below.
+from writing_coach.content_pack_api import configure_content_packs, router as content_pack_router  # noqa: E402
+
+configure_content_packs(
+    vocabulary_ids=lambda languages, prefix: [
+        collection["id"]
+        for language in (languages or ("en", "zh"))
+        for collection in (_persistence_runtime.vocabulary_repository.list_collections(language) or [])
+        if str(collection.get("id", "")).startswith(prefix)
+    ],
+    vocabulary_export=lambda collection_id: _vocabulary_pack_export(collection_id),
+    vocabulary_import=lambda data, **kwargs: _vocabulary_pack_import(data, **kwargs),
+    environment=os.getenv("ORENA_ENVIRONMENT_LABEL", "local"),
+    app_version=(ROOT / "VERSION").read_text(encoding="utf-8").strip() if (ROOT / "VERSION").is_file() else "",
+)
+app.include_router(content_pack_router)
 
 # Account work (I2 write path). Built from the flag and the schema, both
 # required: off is `disabled`, on without the tables is `unavailable`, and only
@@ -411,14 +1043,197 @@ def _backbone_tables():
         return None
 
 
-configure_work(build_backbone(_persistence_runtime.engine, _backbone_tables()))
+_account_backbone = build_backbone(_persistence_runtime.engine, _backbone_tables())
+configure_work(_account_backbone)
 app.include_router(work_router)
+
+
+def _billing_service():
+    """Billing (completion plan item 4) exists only when switched on, on PostgreSQL, with the account backbone;
+    a gateway without keys and a plan without an approved price are simply not offered (human gates)."""
+
+    from writing_coach.billing.service import billing_enabled, build_gateways, load_prices, BillingService
+
+    if not billing_enabled(os.environ) or _persistence_runtime.engine is None or not _account_backbone.is_active:
+        return None
+    from writing_coach.persistence.billing_repository import PostgresBillingRepository
+    from writing_coach.persistence.commerce_repository import PostgresCommerceRepository
+
+    return BillingService(orders=PostgresBillingRepository(_persistence_runtime.engine),
+                          commerce=PostgresCommerceRepository(_persistence_runtime.engine),
+                          gateways=build_gateways(os.environ), prices=load_prices(os.environ))
+
+
+from writing_coach.billing_api import configure_billing, router as billing_router  # noqa: E402
+
+configure_billing(service=_billing_service(), backbone=_account_backbone, admin_guard=require_admin,
+                  public_base_url=os.getenv("PUBLIC_BASE_URL", ""))
+app.include_router(billing_router)
+app.include_router(account_records_router)
+app.include_router(learner_activity_router)
+configure_learner_activity(lambda since: _specialized_learning_repository.activity_timestamps(since))
+app.include_router(account_settings_router)
 install_platform_ai(app, require_admin)
 configure_becoming_memory(_specialized_learning_repository)
 configure_becoming_outcomes(_specialized_learning_repository)
 configure_becoming_library(_specialized_learning_repository)
-configure_becoming_reading(_specialized_learning_repository, generate_structured)
+configure_becoming_library_content(_persistence_runtime.vocabulary_repository)
 configure_becoming_linguistics(_specialized_learning_repository)
+
+# Reading Library (shared book catalog). Postgres-only, matching every other
+# schema-backed repository: unavailable under the SQLite test/archive backend
+# rather than silently falling back. Asset bytes are filesystem-backed for
+# this sandbox; BookAssetStore is the seam a future S3-compatible backend
+# swaps in without touching the catalog schema or these callers.
+from writing_coach.book_asset_store import FilesystemBookAssetStore  # noqa: E402
+from writing_coach.persistence.reading_library_repository import (  # noqa: E402
+    PostgresReadingLibraryRepository,
+)
+from writing_coach.reading_library_api import (  # noqa: E402
+    configure_reading_library,
+    router as reading_library_router,
+)
+
+_reading_library_asset_root = Path(
+    os.getenv("READING_LIBRARY_ASSET_ROOT", str(ROOT / "data" / "reading_library_assets"))
+)
+configure_reading_library(
+    PostgresReadingLibraryRepository(_persistence_runtime.engine)
+    if _persistence_runtime.backend == "postgresql"
+    else None,
+    FilesystemBookAssetStore(_reading_library_asset_root),
+    admin_guard=require_admin,
+    language_supported=is_enabled,
+)
+app.include_router(reading_library_router)
+
+# Platform Admin control center (`/api/admin/console`): one admin boundary over
+# the contracts wired above - AI control plane, catalogs, importers and the
+# learner-evidence tables. It adds read-only aggregates and audit rows only.
+from writing_coach.account_backbone import (  # noqa: E402
+    schema_present as _backbone_schema_present,
+    state as _backbone_state,
+)
+from writing_coach.admin_console_api import (  # noqa: E402
+    configure_admin_console,
+    describe_runtime_services,
+    publication_warnings,
+    router as admin_console_router,
+    schema_facts,
+)
+from writing_coach.persistence.admin_repository import AdminConsoleRepository  # noqa: E402
+
+
+def configure_admin_console_from_runtime() -> None:
+    engine = _persistence_runtime.engine
+    configure_admin_console(
+        admin_guard=require_admin,
+        backend=_persistence_runtime.backend,
+        repository=AdminConsoleRepository(engine) if engine is not None else None,
+        platform_repository=_persistence_runtime.platform_repository,
+        vocabulary_repository=_persistence_runtime.vocabulary_repository,
+        media_store=_media_library_store,
+        reading_repository=PostgresReadingLibraryRepository(engine) if _persistence_runtime.backend == "postgresql" else None,
+        runtime_services=describe_runtime_services(
+            media_translation=(_media_translation_provider_id, _media_translation_provider),
+            reading_translation=(_reading_translation_provider_id, _reading_translation_provider),
+            speech_recognition=_speech_asr_provider,
+            pronunciation=build_speech_pronunciation_provider(),
+            transcript_fallback=_media_fallback_mode,
+        ),
+        runtime_facts=lambda: {
+            "services": describe_runtime_services(
+                media_translation=(_media_translation_provider_id, _media_translation_provider),
+                reading_translation=(_reading_translation_provider_id, _reading_translation_provider),
+                speech_recognition=_speech_asr_provider,
+                pronunciation=build_speech_pronunciation_provider(),
+                transcript_fallback=_media_fallback_mode,
+            ),
+            "schema": schema_facts(engine),
+            "account_backbone": _backbone_state(
+                present=_backbone_schema_present(_backbone_tables()), asked=_backbone_requested()
+            ),
+        },
+        app_version=APP_VERSION,
+    )
+
+
+configure_admin_console_from_runtime()
+app.include_router(admin_console_router)
+
+# Reading Content Engine. Two boundaries over one engine: the admin side
+# (`/api/admin/reading`) submits, reviews and publishes; the learner side
+# (`/api/reading/articles`) reads published articles only. Both are wired
+# against the same repositories, and both answer 503 until the reviewed
+# migration is applied - the engine ships inert rather than half-active.
+from writing_coach.persistence.reading_content_repository import (  # noqa: E402
+    ReadingContentRepository,
+)
+from writing_coach.persistence.reading_job_repository import ReadingJobRepository  # noqa: E402
+from writing_coach.reading_admin_api import (  # noqa: E402
+    configure_reading_admin,
+    router as reading_admin_router,
+)
+from writing_coach.reading_articles_api import (  # noqa: E402
+    configure_reading_articles,
+    router as reading_articles_router,
+)
+from writing_coach.reading_content_engine import ReadingContentEngine  # noqa: E402
+from writing_coach.persistence.reading_evidence_repository import (  # noqa: E402
+    ReadingEvidenceRepository,
+)
+from writing_coach.reading_practice_api import (  # noqa: E402
+    configure_reading_practice,
+    router as reading_practice_router,
+)
+
+
+def configure_reading_engine_from_runtime() -> None:
+    global _reading_evidence_repository
+    engine = _persistence_runtime.engine
+    content = ReadingContentRepository(engine) if engine is not None else None
+    # Recommendations from /next are signed with a key derived from the
+    # session secret, so a submit can prove the policy recommended its set.
+    evidence = ReadingEvidenceRepository(engine, recommendation_secret=SESSION_SECRET) if engine is not None else None
+    _reading_evidence_repository = evidence
+    jobs = ReadingJobRepository(engine) if engine is not None else None
+    audit_repository = AdminConsoleRepository(engine) if engine is not None else None
+    configure_reading_admin(
+        admin_guard=require_admin,
+        content=content,
+        jobs=jobs,
+        engine=(
+            ReadingContentEngine(
+                content=content,
+                jobs=jobs,
+                # An uploaded file waits here between the request that accepted
+                # it and the worker that reads it - the same filesystem-backed
+                # store the Book Library already uses, under its own key prefix.
+                asset_store=FilesystemBookAssetStore(_reading_library_asset_root),
+            )
+            if content is not None and jobs is not None
+            else None
+        ),
+        # The same `audit_logs` table the console already writes to. One audit
+        # system, not a second one for this feature.
+        audit=audit_repository.record_event if audit_repository is not None else None,
+        # Canonical Reading: comprehension sets, written by the AI processor
+        # (never a passage) and decided by an administrator.
+        evidence=evidence,
+        generate=generate_structured,
+    )
+    configure_reading_articles(content, language_supported=is_enabled)
+    # Learner practice on the published corpus. Submit stays off until the
+    # live end-to-end run passes (D-076): ORENA_READING_PRACTICE_SUBMIT=on.
+    configure_reading_practice(
+        evidence, support_language=lambda: _resolved_writing_support_language()[0]
+    )
+
+
+configure_reading_engine_from_runtime()
+app.include_router(reading_admin_router)
+app.include_router(reading_articles_router)
+app.include_router(reading_practice_router)
 
 def weighted_overall(result: dict[str, Any]) -> float:
     return calculate_weighted_overall(result, active_rubric_weights())
@@ -458,6 +1273,10 @@ def extract_json(text: str) -> dict[str, Any]:
     )
 
 def validate_result(raw: dict[str, Any]) -> dict[str, Any]:
+    options: dict[str, Any] = {}
+    support_code = raw.get("__support_language")
+    if isinstance(support_code, str) and support_code:
+        options["allow_explanation_cjk"] = support_language_uses_cjk(support_code)
     return normalize_writing_evaluation(
         raw,
         rubric_weights=active_rubric_weights(),
@@ -466,10 +1285,28 @@ def validate_result(raw: dict[str, Any]) -> dict[str, Any]:
         error_categories=active_error_categories(),
         allow_cjk=is_chinese(),
         learner_text=str(raw.get("__learner_text", "")),
+        **options,
     )
 
-def evaluate_with_ai(payload: EssayIn) -> dict[str, Any]:
+
+def _resolved_writing_support_language() -> tuple[str, str]:
+    profile = get_learner_profile()
+    code = resolve_support_language(
+        profile.get("support_language"),
+        profile.get("native_language"),
+    )
+    definition = support_language(code)
+    if definition is None:
+        code = resolve_support_language()
+        definition = support_language(code)
+    assert definition is not None
+    return code, definition.translation_label
+
+def evaluate_with_ai(payload: EssayIn, *, support: tuple[str, str] | None = None) -> dict[str, Any]:
+    """`support` is (code, name) of the explanation language. Given, it is used as it stands: a refresh
+    of a stored review passes the STORED pair and never the current profile's (D-103.7)."""
     target_level = validate_target_level(payload.target_cefr)
+    support_code, support_name = support if support is not None else _resolved_writing_support_language()
     free_writing_context = (
         "(Free Chinese writing — evaluate clarity, language control and naturalness.)"
         if is_chinese()
@@ -477,6 +1314,7 @@ def evaluate_with_ai(payload: EssayIn) -> dict[str, Any]:
     )
     user_prompt = build_writing_evaluator_request(
         language_name=active_profile().name,
+        support_language_name=support_name,
         target_level=target_level,
         task_prompt=payload.prompt,
         learner_text=payload.text,
@@ -501,14 +1339,42 @@ def evaluate_with_ai(payload: EssayIn) -> dict[str, Any]:
     )
     raw = dict(ai.data)
     raw["__learner_text"] = payload.text
+    raw["__support_language"] = support_code
     result = validate_result(raw)
     result["_runtime"] = ai.runtime
     result["_ai_provider"] = ai.provider
     result["_ai_model"] = ai.model
     return result
 
+_WRITING_FALLBACK_COPY: dict[str, dict[str, Any]] = {
+    "en": {
+        "summary": "A temporary local evaluation is shown because AI Coach could not produce a full evaluation.",
+        "strength": "Your writing has enough content to save a progress record.",
+        "priority": "Use this result as a preview; run again when AI Coach is available for a full evaluation.",
+        "agreement": (
+            "The verb should agree with subject I.",
+            "I goes with have.",
+        ),
+    },
+    "ja": {
+        "summary": "AI Coach が完全な評価を作成できなかったため、一時的なローカル評価を表示しています。",
+        "strength": "進捗記録に保存できる十分な内容があります。",
+        "priority": "これはプレビューです。AI Coach が利用可能になったら再実行してください。",
+        "agreement": ("主語 I に動詞を一致させます。", "I には have を使います。"),
+    },
+    "zh": {
+        "summary": "由于 AI Coach 尚未生成完整评估，这里显示的是临时本地评估。",
+        "strength": "你的写作内容足够，可以保存进步记录。",
+        "priority": "这是预览结果；AI Coach 可用后请重新运行完整评估。",
+        "agreement": ("动词需要与主语 I 保持一致。", "I 要和 have 搭配。"),
+    },
+}
+
+
 def heuristic_fallback(payload: EssayIn) -> dict[str, Any]:
     text = payload.text.strip()
+    support_code, _ = _resolved_writing_support_language()
+    copy = _WRITING_FALLBACK_COPY.get(support_code)
     words = re.findall(r"\b[\w'-]+\b", text)
     sentences = [s for s in re.split(r"[.!?]+", text) if s.strip()]
     wc = max(1, len(words))
@@ -522,11 +1388,15 @@ def heuristic_fallback(payload: EssayIn) -> dict[str, Any]:
     }
     overall = weighted_overall(scores)
     errors: list[dict[str, Any]] = []
+    agreement_explanation, agreement_rule = (
+        copy["agreement"] if copy else
+        ("The verb should agree with subject I.", "I goes with have.")
+    )
     if not is_chinese():
         for pattern, suggestion, explanation, rule in (
-            (r"\bI has\b", "I have", "The verb should agree with subject I.", "I goes with have."),
-            (r"\bhe have\b", "he has", "The verb should agree with subject he.", "He goes with has."),
-            (r"\bShe have\b", "She has", "The verb should agree with subject she.", "She goes with has."),
+            (r"\bI has\b", "I have", agreement_explanation, agreement_rule),
+            (r"\bhe have\b", "he has", agreement_explanation, agreement_rule),
+            (r"\bShe have\b", "She has", agreement_explanation, agreement_rule),
         ):
             match = re.search(pattern, text, flags=re.IGNORECASE)
             if match:
@@ -535,25 +1405,43 @@ def heuristic_fallback(payload: EssayIn) -> dict[str, Any]:
                     "suggestion": suggestion, "explanation_vi": explanation,
                     "mini_rule_vi": rule, "confidence": 0.99,
                 })
+    fallback_copy = copy or (
+        {
+            "summary": "Đánh giá cục bộ tạm thời vì AI Coach chưa tạo được đánh giá đầy đủ có thể sử dụng. Phần điểm và bằng chứng này chỉ để kiểm tra luồng.",
+            "strength": "Bài viết có đủ nội dung để lưu vào hồ sơ tiến bộ.",
+            "priority": "Dùng phần bằng chứng này như bản xem thử; hãy chạy lại khi AI Coach tạo được đánh giá đầy đủ.",
+        }
+        if support_code == "vi"
+        else _WRITING_FALLBACK_COPY["en"]
+    )
     raw = {
         **scores,
         "cefr_estimate": app_cefr(overall),
-        "summary_vi": "Đánh giá cục bộ tạm thời vì AI Coach chưa tạo được đánh giá đầy đủ có thể sử dụng. Phần điểm và bằng chứng này chỉ để kiểm tra luồng.",
-        "strengths_vi": ["Bài viết có đủ nội dung để lưu vào hồ sơ tiến bộ."],
+        "summary_vi": fallback_copy["summary"],
+        "strengths_vi": [fallback_copy["strength"]],
         "strength_evidence": [],
-        "priorities_vi": ["Dùng phần bằng chứng này như bản xem thử; hãy chạy lại khi AI Coach tạo được đánh giá đầy đủ."],
+        "priorities_vi": [fallback_copy["priority"]],
         "errors": errors,
     }
-    return validate_result({**raw, "__learner_text": text})
+    return validate_result({**raw, "__learner_text": text, "__support_language": support_code})
 
 
-def evaluate(payload: EssayIn) -> tuple[dict[str, Any], str]:
+def evaluate(
+    payload: EssayIn,
+    *,
+    support: tuple[str, str] | None = None,
+    allow_fallback: bool | None = None,
+) -> tuple[dict[str, Any], str]:
+    """Run the evaluator. `allow_fallback=False` (the refresh) forbids the local heuristic outright, so a
+    provider failure can never be stored as a review; None keeps the deployment's `ALLOW_FALLBACK`."""
+    fallback_allowed = ALLOW_FALLBACK if allow_fallback is None else allow_fallback
     try:
-        result = evaluate_with_ai(payload)
+        # The stored pair is passed only by a refresh; an ordinary review resolves it from the profile.
+        result = evaluate_with_ai(payload, **({"support": support} if support is not None else {}))
         evaluator = f"{result.pop('_ai_provider', 'ai')}:{result.pop('_ai_model', 'model')}"
         return result, evaluator
     except AIProviderUnavailable as exc:
-        if ALLOW_FALLBACK:
+        if fallback_allowed:
             return heuristic_fallback(payload), "fallback-demo"
         raise orena_http_error(
             503,
@@ -561,13 +1449,36 @@ def evaluate(payload: EssayIn) -> tuple[dict[str, Any], str]:
             "AI evaluation is temporarily unavailable. Please try again.",
         ) from exc
     except AIProviderError as exc:
-        if ALLOW_FALLBACK:
+        if fallback_allowed:
             return heuristic_fallback(payload), "fallback-demo"
         raise orena_http_error(
             502,
             "evaluation_provider_failure",
             "AI evaluation could not produce a usable result.",
         ) from exc
+
+# N-36 point 1 (docs/project/UI_BACKEND_GAPS.md): the list route strips the
+# full essay text (below), but Progress's Evidence rows draw a short excerpt
+# next to each essay's score. This is the one place that excerpt is derived -
+# never the full text, and never a schema/migration change.
+ESSAY_LIST_EXCERPT_MAX_CHARS = 160
+
+
+def essay_list_excerpt(text: Any, max_chars: int = ESSAY_LIST_EXCERPT_MAX_CHARS) -> str:
+    """A short, single-line preview of a stored essay for list rows.
+
+    Collapses all whitespace (including newlines) to single spaces first, so a
+    multi-line prompt/draft reads as the one line the row's layout draws. The
+    cut point is a plain Python string index - a Unicode code point boundary -
+    which never splits a Vietnamese precomposed character or a Chinese
+    character the way a raw byte offset could. An ellipsis is appended only
+    when the text was actually cut, never on text that already fit.
+    """
+    normalized = " ".join(str(text or "").split())
+    if len(normalized) <= max_chars:
+        return normalized
+    return normalized[:max_chars].rstrip() + "…"
+
 
 def row_to_dict(row: dict[str, Any], detail: bool = False) -> dict[str, Any]:
     d = dict(row)
@@ -606,7 +1517,7 @@ def row_to_dict(row: dict[str, Any], detail: bool = False) -> dict[str, Any]:
                 "why": item.get("why", item.get("explanation_vi", "")),
                 "how": item.get("how", item.get("mini_rule_vi", "")),
                 "suggestion": item.get("suggestion", ""),
-                "examples": item.get("examples", []),
+                "examples": [item["example"]] if item.get("example") else item.get("examples", []),
             }
             for index, item in enumerate(d["errors"])
             if isinstance(item, dict)
@@ -624,6 +1535,7 @@ def row_to_dict(row: dict[str, Any], detail: bool = False) -> dict[str, Any]:
         ]
         d["next_actions"] = d["priorities_vi"]
     else:
+        d["excerpt"] = essay_list_excerpt(d.get("text"))
         d.pop("strengths_json", None)
         d.pop("priorities_json", None)
         d.pop("errors_json", None)
@@ -661,6 +1573,44 @@ def revision_delta(current: dict[str, Any], previous: dict[str, Any] | None) -> 
     persistent_keys = sorted(set(current_items) & set(previous_items))
     unmatched_previous = sorted(set(previous_items) - set(current_items))
     unmatched_current = sorted(set(current_items) - set(previous_items))
+
+    # The evaluator words a finding differently from one review to the next - a
+    # longer or shorter stretch of the same sentence - so identical wording is too
+    # strict a test of "the same problem". When both texts are known the question
+    # is put to the words themselves: a finding whose words are gone from the new
+    # text is fixed; one whose words are still there, and are flagged again, is
+    # still there; and a finding on words that were already in the old text is not
+    # a problem the revision introduced.
+    current_text, previous_text = current.get("text"), previous.get("text")
+    if isinstance(current_text, str) and current_text and isinstance(previous_text, str) and previous_text:
+        def words(item: dict[str, Any]) -> str:
+            return str(item.get("fragment", item.get("quote", "")) or "")
+
+        def overlap(a: dict[str, Any], b: dict[str, Any]) -> bool:
+            first, second = words(a), words(b)
+            return bool(first and second and (first in second or second in first))
+
+        persistent_current = set(persistent_keys)
+        unmatched_previous = []
+        for key, item in sorted(previous_items.items()):
+            if key in current_items:
+                continue
+            flagged_again = next((k for k, cur in current_items.items() if k not in persistent_current and overlap(cur, item)), None)
+            if flagged_again is not None:
+                persistent_current.add(flagged_again)
+            elif words(item) not in current_text:
+                unmatched_previous.append(key)
+            # Otherwise the words are unchanged and not flagged again: neither fixed nor
+            # still a finding, so it is not claimed either way.
+        unmatched_current = []
+        for key, item in sorted(current_items.items()):
+            if key in persistent_current:
+                continue
+            if words(item) and words(item) in previous_text:
+                persistent_current.add(key)
+            else:
+                unmatched_current.append(key)
+        persistent_keys = sorted(persistent_current)
 
     # What remains may hold a genuine revision: the same problem, reworded. That
     # can only be claimed where the correspondence is unambiguous - exactly one
@@ -761,30 +1711,28 @@ def startup() -> None:
 
 @app.get("/", response_class=HTMLResponse)
 def home() -> HTMLResponse:
-    # The shell carries the list of stylesheets and modules the app loads, so a
-    # cached copy of it keeps loading yesterday's asset list - a stylesheet
-    # added since is simply never requested, and the screen renders unstyled.
-    # It is small, so it stays uncached outright; the assets it names revalidate
-    # instead, which is the same freshness for a fraction of the bytes.
+    # The learner UI (D-088), the only one since the cutover (D-091, D-143). The shell carries the list of
+    # stylesheets and modules the app loads, so a cached copy of it keeps loading yesterday's asset list - a
+    # stylesheet added since is simply never requested, and the screen renders unstyled. It is small, so it
+    # stays uncached outright; the assets it names revalidate instead.
     return HTMLResponse(
         (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8"),
         headers={"Cache-Control": "no-store, max-age=0"},
     )
 
 
+@app.get("/next")
+@app.get("/next/")
+def former_learner_ui_address() -> RedirectResponse:
+    # The learner UI's address before the cutover. A browser keeps the hash across the redirect, so
+    # `/next#/listen/...` opens the same place at `/`.
+    return RedirectResponse("/", status_code=302)
 
 
 @app.get("/becoming", response_class=HTMLResponse)
 @app.get("/becoming/", response_class=HTMLResponse)
 def becoming_preview() -> RedirectResponse:
     return RedirectResponse("/", status_code=302)
-@app.get("/static/account.js")
-def account_script() -> HTMLResponse:
-    return HTMLResponse(
-        (ROOT / "static" / "account.js").read_text(encoding="utf-8"),
-        media_type="application/javascript",
-        headers={"Cache-Control": "no-cache"},
-    )
 
 
 def model_family(model_name: str) -> str:
@@ -1355,7 +2303,7 @@ def chinese_dictionary_ai(word: str) -> dict[str, Any]:
     return result
 
 
-def lookup_dictionary(word: str) -> dict[str, Any]:
+def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool = True, persist: bool = True) -> dict[str, Any]:
     clean = normalise_lookup_word(word)
     cache_key = clean.casefold()
 
@@ -1372,7 +2320,7 @@ def lookup_dictionary(word: str) -> dict[str, Any]:
 
     payload = None
 
-    if is_chinese():
+    if language == "zh" or (language is None and is_chinese()):
         try:
             payload = chinese_dictionary_ai(clean)
             payload["cached"] = False
@@ -1432,6 +2380,8 @@ def lookup_dictionary(word: str) -> dict[str, Any]:
             payload = None
 
         if payload is None:
+            if not allow_ai:
+                return {"phonetic": ""}
             try:
                 payload = dictionary_ai_fallback(clean)
                 payload["cached"] = False
@@ -1441,16 +2391,20 @@ def lookup_dictionary(word: str) -> dict[str, Any]:
                     "Dictionary service is unavailable and AI fallback failed.",
                 ) from exc
 
-    _learning_cache.put_dictionary(
-        cache_key,
-        payload,
-        datetime.now().astimezone().isoformat(timespec="seconds"),
-    )
+    if persist:
+        _learning_cache.put_dictionary(
+            cache_key,
+            payload,
+            datetime.now().astimezone().isoformat(timespec="seconds"),
+        )
 
     return payload
 
 @app.post("/api/improve")
 def api_improve(payload: ImproveIn) -> dict[str, Any]:
+    _guard_writing_minimum(
+        payload.text, active_grammar_language_code(), endpoint="/api/improve"
+    )
     try:
         return improve_with_ai(payload)
     except requests.RequestException as exc:
@@ -1463,6 +2417,27 @@ def _grammar_storage_key(lesson: dict[str, Any]) -> str:
     version = int(lesson.get("content_version") or 1)
     language = active_grammar_language_code()
     return f"{language}:grammar:v{version}:{lesson['id']}"
+
+
+def _completed_grammar_rows() -> list[dict[str, Any]]:
+    """The patterns this learner marked complete, as rows with their titles.
+
+    The progress owner stores storage keys, not titles, and the course stores
+    titles, not progress; one read joins them so a collection entry can say
+    which pattern it is without either side learning about the other.
+    """
+    completed = _learning_repository.completed_grammar_ids()
+    language = active_grammar_language_code()
+    return [
+        {
+            "id": str(lesson["id"]),
+            "title": str(lesson.get("title") or ""),
+            "level": str(lesson.get("level") or ""),
+            "language_code": language,
+        }
+        for lesson in active_grammar_course()
+        if _grammar_storage_key(lesson) in completed
+    ]
 
 
 @app.get("/api/library/grammar")
@@ -1708,8 +2683,134 @@ def api_delete_vocabulary(word: str) -> dict[str, Any]:
     clean = normalise_lookup_word(word)
     return {"deleted": _learning_repository.delete_saved_word(clean)}
 
+def _guard_writing_size(text: str, *, endpoint: str) -> None:
+    """Refuse writing that is not writing, before anything is spent on it.
+
+    First, and deterministically. Everything after this point costs something -
+    a tokenizer pass, a prompt, a row, a provider call - and none of it should
+    be reachable by sending a megabyte. The refusal carries the measurement so
+    a learner is told by how much, and carries no part of the text, so an
+    oversized request cannot put somebody's writing into a log.
+    """
+    measured = measure_writing(text)
+    if measured.within_limits:
+        return
+    # Operational metadata only: the size, the limit and where it happened.
+    # Never the writing itself, however small the breach.
+    logging.getLogger(__name__).warning(
+        "writing size refused: endpoint=%s limit=%s characters=%d bytes=%d lines=%d",
+        endpoint,
+        measured.limit_exceeded,
+        measured.characters,
+        measured.bytes,
+        measured.lines,
+    )
+    raise orena_http_error(
+        413,
+        "writing_too_large",
+        "This piece of writing is longer than Orena accepts.",
+        retryable=False,
+        context=measured.as_context(),
+    )
+
+
+def _guard_writing_minimum(text: str, language: str, *, endpoint: str) -> None:
+    """Refuse text that is not an attempt at writing, before anything is spent on it.
+
+    The other end of `_guard_writing_size`, and the same shape: first, cheap,
+    deterministic, and carrying the measurement rather than the writing. What
+    counts is the learning language's own unit (`writing_limits.MINIMUM_BY_LANGUAGE`),
+    so an HSK 1 sentence of five characters is an attempt and ten spaces are
+    not. A short attempt that passes is judged, and if it is too short to grade
+    the evaluator says so itself (`band_status: insufficient_evidence`); this
+    only refuses what is not writing.
+    """
+    checked = check_minimum(text, language)
+    if checked.met:
+        return
+    logging.getLogger(__name__).info(
+        "writing minimum refused: endpoint=%s language=%s unit=%s count=%d minimum=%d",
+        endpoint,
+        checked.language,
+        checked.unit,
+        checked.count,
+        checked.minimum,
+    )
+    raise orena_http_error(
+        422,
+        "writing_too_short",
+        minimum_message(checked),
+        retryable=False,
+        context=checked.as_context(),
+    )
+
+
+def _bounded_review(result: dict[str, Any]) -> dict[str, Any]:
+    """Refuse a provider answer that is not an answer.
+
+    The schema already says what shape a review has; this says how much of it
+    there may be. A model that returns ten thousand issues would otherwise
+    become a multi-megabyte row and a page nobody can render - so the
+    collections are bounded and an answer that is still enormous after that is
+    rejected rather than stored.
+    """
+    bounded = dict(result)
+    for key in ("errors", "strengths_vi", "priorities_vi", "strength_evidence"):
+        value = bounded.get(key)
+        if isinstance(value, list) and len(value) > MAX_REVIEW_ITEMS:
+            bounded[key] = value[:MAX_REVIEW_ITEMS]
+    size = len(json.dumps(bounded, ensure_ascii=False, default=str).encode("utf-8"))
+    if size > MAX_REVIEW_BYTES:
+        raise orena_http_error(
+            502,
+            "writing_review_unusable",
+            "The review that came back could not be used.",
+            retryable=True,
+            context={"bytes": size, "max_bytes": MAX_REVIEW_BYTES},
+        )
+    return bounded
+
+
+# One evaluation per identity, even when several requests ask at once.
+#
+# The browser disables its button, which stops one learner double-clicking and
+# nothing else: a reload mid-flight, two tabs, a retry, or a direct client can
+# all ask for the same review concurrently, and each one would have been a
+# separate paid call. The first request through holds the identity; the others
+# wait for it and then read the answer it stored. Keyed by identity, so
+# different writing never waits on unrelated work.
+_review_in_flight: dict[str, threading.Lock] = {}
+_review_in_flight_guard = threading.Lock()
+
+
+def _review_gate(fingerprint: str) -> threading.Lock:
+    with _review_in_flight_guard:
+        lock = _review_in_flight.get(fingerprint)
+        if lock is None:
+            lock = threading.Lock()
+            _review_in_flight[fingerprint] = lock
+        return lock
+
+
+def _stored_review_for(identity: dict[str, str]) -> dict[str, Any] | None:
+    """A review already earned for exactly this request, if there is one.
+
+    Scoped by the repository to this account and learning language, so another
+    learner's essay can never answer this one.
+    """
+    # `detail=True` is what parses the metadata bag the identity lives in - and
+    # is also the shape a review is returned in, so a reused answer needs no
+    # second read.
+    for row in _learning_repository.list_essays(60):
+        stored = row_to_dict(row, detail=True)
+        if same_review(identity, identity_of_stored(stored.get("module_data"))):
+            return stored
+    return None
+
+
 @app.post("/api/evaluate")
 def api_evaluate(payload: EssayIn) -> dict[str, Any]:
+    _guard_writing_size(payload.text, endpoint="/api/evaluate")
     active_language = active_grammar_language_code()
     if payload.learning_language:
         requested_language = payload.learning_language.casefold().replace("_", "-")
@@ -1721,6 +2822,7 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
                 "Writing language does not match the selected learning language.",
                 context={"requested_language": requested_language, "active_language": active_language},
             )
+    _guard_writing_minimum(payload.text, active_language, endpoint="/api/evaluate")
     previous: dict[str, Any] | None = None
     series_id: int | None = None
     revision_no = 1
@@ -1737,8 +2839,50 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
             )
         series_id = int(previous["series_id"] or previous["id"])
         revision_no = _learning_repository.next_revision_no(series_id)
+        # The repository hands back the stored row, whose findings are still a
+        # JSON string. The comparison reads parsed findings, so it is given the
+        # row in the same shape a review is returned in; without it every earlier
+        # issue was invisible and every current one looked new.
+        previous = row_to_dict(previous, detail=True)
 
+    # Has this exact review already been earned?
+    #
+    # The same words, task, level and pair of languages, judged by the same
+    # evaluator contract, are the same review. Asking a provider for it again
+    # buys nothing and is charged every time - so the identity is computed
+    # first and a stored answer is returned as it stands. A learner pressing
+    # Review twice, a reload, a second tab and a retry all land here.
+    #
+    # The gate below makes that true under concurrency too: the first request
+    # holds the identity, the rest wait and then find the answer it stored.
+    # Twenty identical requests are one provider call.
+    support_code, _support_name = _resolved_writing_support_language()
+    identity = review_identity(
+        text=payload.text,
+        learning_language=active_language,
+        support_language=support_code,
+        target_level=payload.target_cefr or "",
+        prompt=payload.prompt,
+    )
+    existing = _stored_review_for(identity)
+    if existing is not None:
+        return _review_payload(existing, previous)
+    with _review_gate(identity["fingerprint"]):
+        existing = _stored_review_for(identity)
+        if existing is not None:
+            return _review_payload(existing, previous)
+        return _run_review(payload, identity, previous, series_id, revision_no)
+
+
+def _run_review(
+    payload: EssayIn,
+    identity: dict[str, str],
+    previous: dict[str, Any] | None,
+    series_id: int | None,
+    revision_no: int,
+) -> dict[str, Any]:
     result, evaluator = evaluate(payload)
+    result = _bounded_review(result)
     result["grammar_links"] = grammar_links_for_issues(
         result.get("errors", []),
         active_grammar_knowledge_by_id(),
@@ -1761,7 +2905,9 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         "prompt": payload.prompt,
         "text": payload.text,
         "word_count": word_count,
-        "target_cefr": payload.target_cefr,
+        # "no level asked for" is an empty level, not a missing one: the column
+        # is NOT NULL and the PostgreSQL side already defaults it to "".
+        "target_cefr": payload.target_cefr or "",
         "grammar": result["grammar"],
         "vocabulary": result["vocabulary"],
         "coherence": result["coherence"],
@@ -1780,6 +2926,13 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         "parent_id": payload.parent_essay_id,
         "practice_context": practice_context,
         "grammar_links": result["grammar_links"],
+        "prompt_ref": (
+            {"source": payload.prompt_ref.source, "id": payload.prompt_ref.id} if payload.prompt_ref else None
+        ),
+        # The identity of the review travels with the review, in the per-essay
+        # metadata both backends already persist - so no column and no
+        # migration, and it reaches the client through the same payload.
+        "review_identity": identity,
     })
     essay_id = int(created["id"])
     series_id = int(created["series_id"])
@@ -1800,10 +2953,29 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
     }
 
 
+def _review_payload(stored: dict[str, Any], previous: dict[str, Any] | None) -> dict[str, Any]:
+    """A stored evaluation, shaped exactly as a fresh one.
+
+    A reused review must be indistinguishable from an earned one, or the room
+    would have to know which it got and would drift into two renderings of the
+    same thing. It is the stored row, read through the same serializer, with
+    the same delta computed against the same previous revision.
+    """
+    overall = float(stored.get("overall") or 0.0)
+    delta = revision_delta({**stored, "overall": overall}, previous)
+    return {
+        **stored,
+        "overall": overall,
+        "app_cefr": app_cefr(overall),
+        "delta": delta,
+        "reused": True,
+    }
+
+
 @app.get("/api/essays")
-def essays(limit: int = 200) -> list[dict[str, Any]]:
+def essays(limit: int = 200, kept: bool = False) -> list[dict[str, Any]]:
     limit = min(max(1, limit), 500)
-    rows = _learning_repository.list_essays(limit)
+    rows = _learning_repository.list_essays(limit, kept_only=kept)
     return [row_to_dict(r) for r in rows]
 
 
@@ -1815,6 +2987,7 @@ def essay_detail(essay_id: int) -> dict[str, Any]:
     series_id = int(row["series_id"] or row["id"])
     series_rows = _learning_repository.list_series_revisions(series_id)
     previous = _learning_repository.previous_revision(series_id, int(row["revision_no"] or 1))
+    previous = row_to_dict(previous, detail=True) if previous else None
     d = row_to_dict(row, detail=True)
     d["revisions"] = series_rows
     d["delta"] = revision_delta(d, previous)
@@ -1822,6 +2995,140 @@ def essay_detail(essay_id: int) -> dict[str, Any]:
     # does not come back without it.
     d["app_cefr"] = app_cefr(float(d.get("overall") or 0))
     return d
+
+@app.get("/api/essays/{essay_id}/review")
+def essay_review(essay_id: int) -> dict[str, Any]:
+    """The review in the Writing room's canonical shape (WritingReview)."""
+    detail = essay_detail(essay_id)
+    return {**project_writing_review(detail), "id": detail["id"], "parentId": detail.get("parent_id")}
+
+
+def _primary_subtag(code: Any) -> str:
+    return str(code or "").strip().casefold().replace("_", "-").split("-", 1)[0]
+
+
+def _refresh_answer(essay_id: int, status: str) -> dict[str, Any]:
+    """The stored review as it now stands, and what the refresh did about it."""
+    return {"status": status, "id": essay_id, "review": essay_review(essay_id)}
+
+
+@app.post("/api/essays/{essay_id}/review/refresh")
+def essay_review_refresh(essay_id: int) -> dict[str, Any]:
+    """Re-grade ONE stored essay under the current evaluator contract, keeping the old review as history.
+
+    D-103.7, D4 I19. Idempotent, no body. Only the STORED pair is used (the essay's own text, prompt and
+    target level; the learning and support languages of its stored review identity), never the current
+    profile's, and only a real provider result is stored: a failure or a fallback writes nothing.
+    Statuses: `refreshed`; `current` (unaffected pair, already on the current contract, or another writer
+    got there first); `unverifiable` (no stored pair, so nothing is inferred - D-104 H-15); `unavailable`
+    (the provider gave nothing usable; retryable).
+    """
+    row = _learning_repository.get_essay(essay_id)
+    if not row:
+        raise HTTPException(404, "Essay not found")
+    detail = row_to_dict(row, detail=True)
+    stored = identity_of_stored(detail.get("module_data"))
+    learning, support_code = stored.get("learning_language", ""), stored.get("support_language", "")
+    prior = stored.get("fingerprint", "")
+    if (
+        not prior
+        or not learning
+        or not support_code
+        or _primary_subtag(learning) != _primary_subtag(active_grammar_language_code())
+    ):
+        return _refresh_answer(essay_id, "unverifiable")
+    if not v27_affects(learning, support_code):
+        return _refresh_answer(essay_id, "current")
+    definition = support_language(support_code)
+    if definition is None:
+        # An explanation language this build cannot name is a pair it cannot verify: nothing is guessed.
+        return _refresh_answer(essay_id, "unverifiable")
+    new_identity = review_identity(
+        text=str(detail.get("text") or ""),
+        learning_language=learning,
+        support_language=support_code,
+        target_level=str(detail.get("target_cefr") or ""),
+        prompt=str(detail.get("prompt") or ""),
+    )
+    if same_review(new_identity, stored):
+        return _refresh_answer(essay_id, "current")
+    with _review_gate(f"refresh:{essay_id}:{prior}"):
+        fresh = _learning_repository.get_essay(essay_id)
+        if not fresh or identity_of_stored(row_to_dict(fresh, detail=True).get("module_data")).get("fingerprint") != prior:
+            return _refresh_answer(essay_id, "current")
+        try:
+            result, evaluator = evaluate(
+                EssayIn(
+                    text=str(detail.get("text") or ""),
+                    prompt=str(detail.get("prompt") or ""),
+                    target_cefr=(str(detail.get("target_cefr") or "") or None),
+                ),
+                support=(support_code, definition.translation_label),
+                allow_fallback=False,
+            )
+            if evaluator == "fallback-demo":
+                raise RuntimeError("a fallback evaluation is never stored")
+            result = _bounded_review(result)
+        except Exception:  # noqa: BLE001 - a refresh that cannot be earned writes nothing and can be retried
+            logging.getLogger(__name__).warning("essay review refresh unavailable", exc_info=True)
+            return _refresh_answer(essay_id, "unavailable")
+        outcome = _specialized_learning_repository.refresh_essay_review(
+            essay_id,
+            prior,
+            {
+                **{name: result[name] for name in ("grammar", "vocabulary", "coherence", "task_achievement", "naturalness")},
+                "overall": weighted_overall(result),
+                "cefr_estimate": result["cefr_estimate"],
+                "evaluator": evaluator,
+                "summary_vi": result["summary_vi"],
+                "strengths": result["strengths_vi"],
+                "strength_evidence": result["strength_evidence"],
+                "priorities": result["priorities_vi"],
+                "errors": result["errors"],
+            },
+            new_identity,
+            datetime.now().astimezone().isoformat(timespec="seconds"),
+        )
+    return _refresh_answer(essay_id, "refreshed" if outcome["status"] == "refreshed" else "current")
+
+
+@app.get("/api/essays/{essay_id}/review/history")
+def essay_review_history(essay_id: int) -> dict[str, Any]:
+    """The reviews this essay had before an evaluator refresh, newest first. Read-only audit evidence;
+    the scope-checked essay is loaded first, so another account's or language's id is a 404."""
+    if not _learning_repository.get_essay(essay_id):
+        raise HTTPException(404, "Essay not found")
+    return {"items": _specialized_learning_repository.list_essay_review_history(essay_id)}
+
+
+@app.get("/api/essays/{essay_id}/revision")
+def essay_revision(essay_id: int) -> dict[str, Any]:
+    """This version beside the one before it (RevisionCompare)."""
+    detail = essay_detail(essay_id)
+    row = _learning_repository.previous_revision(int(detail["series_id"] or detail["id"]), int(detail["revision_no"] or 1))
+    if not row:
+        raise HTTPException(404, "This is the first version; there is nothing to compare it with.")
+    return project_revision_compare(detail, row_to_dict(row, detail=True))
+
+
+def _set_review_kept(essay_id: int, kept: bool) -> dict[str, Any]:
+    """D-072.1. The learner keeps a review to read again; the flag rides on the
+    essay row, so no review data is duplicated."""
+    row = _learning_repository.set_essay_review_kept(essay_id, kept)
+    if row is None:
+        raise HTTPException(404, "Essay not found")
+    return {"id": essay_id, "kept": bool(row.get("review_kept_at")), "kept_at": row.get("review_kept_at")}
+
+
+@app.post("/api/essays/{essay_id}/keep")
+def keep_essay_review(essay_id: int) -> dict[str, Any]:
+    return _set_review_kept(essay_id, True)
+
+
+@app.delete("/api/essays/{essay_id}/keep")
+def unkeep_essay_review(essay_id: int) -> dict[str, Any]:
+    return _set_review_kept(essay_id, False)
+
 
 @app.delete("/api/essays/{essay_id}")
 def delete_essay(essay_id: int) -> dict[str, bool]:
@@ -1862,7 +3169,7 @@ def dashboard() -> dict[str, Any]:
     recent = latest[-10:]
     weights = list(range(1, len(recent) + 1))
     skill_score = round(
-        sum(float(r["overall"]) * w for r, w in zip(recent, weights)) / sum(weights), 1
+        sum(float(r["overall"]) * w for r, w in zip(recent, weights, strict=True)) / sum(weights), 1
     )
 
     metrics = {
@@ -1977,6 +3284,476 @@ def admin_readiness_summary(request: Request) -> dict[str, Any]:
     product_activity = product_activity_response(request, _specialized_learning_repository, require_admin, window_days=7, operations_loader=lambda: operations)
     return build_readiness_summary(config, operations, product_activity)
 
+
+# === ADMIN VOCABULARY SOURCE IMPORT ROUTES START ===
+def _json_form_object(raw: str, field: str) -> dict[str, Any]:
+    try:
+        value = json.loads(raw or "{}")
+    except json.JSONDecodeError as exc:
+        raise HTTPException(422, f"{field} must be valid JSON.") from exc
+    if not isinstance(value, dict):
+        raise HTTPException(422, f"{field} must be a JSON object.")
+    return value
+
+
+def _admin_vocabulary_metadata(raw: str) -> dict[str, Any]:
+    metadata = _json_form_object(raw, "metadata")
+    language_code = str(metadata.get("language_code") or "").strip().casefold()
+    title = str(metadata.get("title") or "").strip()
+    if not language_code:
+        raise HTTPException(422, "metadata.language_code is required.")
+    if not title:
+        raise HTTPException(422, "metadata.title is required for a learner-facing collection.")
+    if len(language_code) > 20 or not re.fullmatch(r"[a-zA-Z][a-zA-Z0-9-]{1,19}", language_code):
+        raise HTTPException(422, "metadata.language_code is invalid.")
+    if not is_enabled(language_code):
+        raise HTTPException(
+            422,
+            detail={
+                "category": "vocabulary_target_language_unsupported",
+                "retryable": False,
+                "message": f"Target language '{language_code}' is not enabled for the learner Library.",
+            },
+        )
+    return {
+        **metadata,
+        "language_code": language_code,
+        "title": title[:255],
+        "framework": str(metadata.get("framework") or "").strip()[:80],
+        "level": str(metadata.get("level") or "").strip()[:80],
+        "level_range": str(metadata.get("level_range") or "").strip()[:80],
+        "topic": str(metadata.get("topic") or "").strip()[:160],
+        "meaning_language": str(metadata.get("meaning_language") or "").strip().casefold()[:20],
+        "collection_id": str(metadata.get("collection_id") or "").strip()[:160],
+        "rights_status": str(metadata.get("rights_status") or "").strip().casefold()[:40],
+        "completeness": str(metadata.get("completeness") or "").strip().casefold()[:40],
+        "publish": metadata.get("publish") is True,
+        "publication_attested": metadata.get("publication_attested") is True,
+        "provenance": metadata.get("provenance") if isinstance(metadata.get("provenance"), dict) else {},
+    }
+
+
+_VOCABULARY_PUBLISHABLE_RIGHTS = {
+    "public_domain",
+    "licensed",
+    "creator_authorized",
+    "internal_curated",
+}
+
+
+VOCABULARY_AUTO_PUBLISHER = "orena:auto-publish (D-111)"
+
+
+def _vocabulary_admission(
+    metadata: dict[str, Any], *, imported_by: str
+) -> tuple[str, dict[str, Any]]:
+    """Require an explicit admin admission before learner publication."""
+
+    rights_status = metadata.get("rights_status", "")
+    completeness = metadata.get("completeness", "")
+    attested = bool(metadata.get("publication_attested"))
+    publish = bool(metadata.get("publish"))
+    admission = {
+        "rights_status": rights_status,
+        "completeness": completeness,
+        "review_status": "approved" if publish and attested else "pending_review",
+        "publication_attested": attested,
+    }
+    if not publish:
+        # D-111 point 1: cleared rights and a complete collection publish by the rule, without a per-import
+        # attestation - and still only when every row of every file imports (the batch_failed check below).
+        if rights_status in _VOCABULARY_PUBLISHABLE_RIGHTS and completeness == "complete":
+            # The rule is the reviewer of record: approved and attested in its own name, and marked as such.
+            admission.update(review_status="approved", publication_attested=True, auto_published=True,
+                             attested_by=VOCABULARY_AUTO_PUBLISHER, warnings_at_publication=[],
+                             published_over_warnings=False)  # fmt: skip
+            return "published", admission
+        return "pending_review", admission
+    if not attested:
+        raise HTTPException(
+            422,
+            detail={
+                "category": "vocabulary_admission_required",
+                "retryable": False,
+                "message": "Confirm source rights and collection readiness before publishing.",
+            },
+        )
+    # Rights and completeness are decision support, not a permission gate (the
+    # same rule the console's publish route follows): they tell an
+    # administrator what they are about to do, and the administrator decides.
+    # The attestation above is that decision and is still required - an
+    # unattested request is not an override, it is a request nobody made.
+    warnings = publication_warnings(rights_status, completeness)
+    admission["attested_by"] = imported_by
+    admission["warnings_at_publication"] = warnings
+    admission["published_over_warnings"] = bool(warnings)
+    return "published", admission
+
+
+def _localization_table_available(repository: Any) -> bool:
+    probe = getattr(repository, "localizations_available", None)
+    try:
+        return bool(probe()) if callable(probe) else False
+    except Exception:  # noqa: BLE001 - an absent table is the pre-migration state, not an error
+        return False
+
+
+async def _parse_uploaded_vocabulary_source(upload: UploadFile):
+    filename = str(upload.filename or "source").strip() or "source"
+    raw = await read_source_upload(upload)
+    return parse_vocabulary_source(filename, raw)
+
+
+def _vocabulary_source_format_hint(filename: str) -> str:
+    suffix = Path(filename or "").suffix.casefold().lstrip(".")
+    return {"csv": "csv", "tsv": "tsv", "json": "json", "txt": "txt", "text": "txt", "xlsx": "xlsx", "xlsm": "xlsx"}.get(suffix, "")
+
+
+@app.post("/api/admin/vocabulary/preview", name="admin_vocabulary_source_preview")
+async def admin_vocabulary_source_preview(
+    request: Request,
+    files: list[UploadFile] = File(...),
+) -> dict[str, Any]:
+    """Parse uploads and suggest mappings without touching persistence."""
+
+    require_admin(request)
+    if not files:
+        raise HTTPException(422, "Choose at least one vocabulary source file.")
+    items: list[dict[str, Any]] = []
+    for upload in files:
+        filename = str(upload.filename or "source").strip() or "source"
+        try:
+            source = await _parse_uploaded_vocabulary_source(upload)
+            detected = detect_vocabulary_mapping(source)
+            items.append(
+                {
+                    "filename": source.filename,
+                    "format": source.format,
+                    "content_hash": source.content_hash,
+                    "row_count": len(source.rows),
+                    "headers": list(source.headers),
+                    "sample": [dict(row) for row in source.rows[:5]],
+                    "detected_mapping": detected.mapping,
+                    "confidence": detected.confidence,
+                    "warnings": list(detected.warnings),
+                    "error": "",
+                }
+            )
+        except VocabularySourceError as exc:
+            items.append(
+                {
+                    "filename": filename,
+                    "format": "",
+                    "content_hash": "",
+                    "row_count": 0,
+                    "headers": [],
+                    "sample": [],
+                    "detected_mapping": {},
+                    "confidence": {},
+                    "warnings": [],
+                    "error": str(exc),
+                }
+            )
+    return {"items": items}
+
+
+# What a vocabulary entry carries in a content pack: the record `import_source` takes, never an id or a learner field.
+VOCABULARY_PACK_RECORD_KEYS = (
+    "term", "language_code", "normalized_term", "identity_key", "sense_key", "pronunciations", "readings",
+    "short_meanings", "detailed_definitions", "part_of_speech", "examples", "usage_notes", "orthography", "level",
+    "framework", "topic", "content_origins",
+)
+
+
+def _vocabulary_pack_export(collection_id: str) -> dict[str, Any] | None:
+    """A published collection as a pack carries it: its metadata, its admission answers and its entries."""
+
+    repository = _persistence_runtime.vocabulary_repository
+    collection = repository.get_collection(collection_id, limit=5000)
+    if collection is None:
+        return None
+    provenance = collection.get("provenance") if isinstance(collection.get("provenance"), dict) else {}
+    admission = provenance.get("admission") if isinstance(provenance.get("admission"), dict) else {}
+    meanings = {m.get("language") for e in collection.get("entries", []) for m in (e.get("short_meanings") or [])
+                if isinstance(m, dict) and m.get("language") not in (None, "", "unknown")}  # fmt: skip
+    return {
+        "id": collection["id"], "title": collection.get("title", ""), "language_code": collection.get("language_code", ""),
+        "framework": collection.get("framework", ""), "level": collection.get("level", ""), "topic": collection.get("topic", ""),
+        "meaning_language": next(iter(meanings)) if len(meanings) == 1 else "",
+        "rights_status": admission.get("rights_status", ""), "completeness": admission.get("completeness", ""),
+        "label": provenance.get("label", ""),
+        "entries": [{key: entry.get(key) for key in VOCABULARY_PACK_RECORD_KEYS} for entry in collection.get("entries", [])],
+    }
+
+
+def _vocabulary_pack_import(data: dict[str, Any], *, imported_by: str, pack_id: str) -> dict[str, Any]:
+    """One pack collection through the same path a CSV import takes after parsing: the metadata normaliser, the
+    D-111 publication rule, `import_source`, localization, and publication only when every entry imported."""
+
+    metadata = {key: data.get(key) for key in ("title", "framework", "level", "topic", "meaning_language",
+                                                "rights_status", "completeness")}  # fmt: skip
+    metadata.update(language_code=data.get("language_code"), collection_id=data.get("id"),
+                    provenance={"label": data.get("label", ""), "content_pack": pack_id})  # fmt: skip
+    collection_metadata = _admin_vocabulary_metadata(json.dumps(metadata, ensure_ascii=False))
+    repository = _persistence_runtime.vocabulary_repository
+    if not repository.available():
+        raise ValueError("vocabulary persistence is not active here")
+    collection_id = collection_metadata["collection_id"]
+    requested, admission = _vocabulary_admission(collection_metadata, imported_by=imported_by)
+    provenance = {**collection_metadata.get("provenance", {}), "origin": "imported", "catalog_status": "pending_review",
+                  "admission": {**admission, "review_status": "pending_review", "publication_attested": False}}  # fmt: skip
+    collection = {**collection_metadata, "id": collection_id, "catalog_status": "pending_review", "origin": "imported",
+                  "provenance": provenance}  # fmt: skip
+    records = [{key: entry.get(key) for key in VOCABULARY_PACK_RECORD_KEYS}
+               | {"provenance": {"content_pack": pack_id, "origin": "content_pack"}} for entry in data.get("entries", [])]
+    source = {"filename": f"content-pack-{pack_id}", "format": "orena-content-pack",
+              "content_hash": hashlib.sha256(json.dumps(records, sort_keys=True, ensure_ascii=False).encode()).hexdigest(),
+              "skipped": [], "warnings": []}  # fmt: skip
+    if not _localization_table_available(repository):
+        records, _report = localize_records(records, collection_metadata["language_code"],
+                                            default_vocabulary_localization_sources())  # fmt: skip
+    result = repository.import_source(collection=collection, source=source, records=records, mapping={},
+                                      imported_by=imported_by)  # fmt: skip
+    if _localization_table_available(repository):
+        try:
+            materialize_localizations(repository, collection_metadata["language_code"],
+                                      default_vocabulary_localization_sources(), collection_id=collection_id)  # fmt: skip
+        except Exception:  # noqa: BLE001 - localization never undoes a completed import
+            logging.getLogger(__name__).warning("content pack: localization after import failed", exc_info=True)
+    status = "pending_review"
+    if requested == "published" and not int(result.get("failed") or 0):
+        repository.finalize_collection_publication(collection_id, admission=admission)
+        status = "published"
+    return {"collection_id": collection_id, "status": status, "imported": int(result.get("imported") or 0),
+            "duplicates": int(result.get("duplicates") or 0), "failed": int(result.get("failed") or 0)}
+
+
+@app.post("/api/admin/vocabulary/import", name="admin_vocabulary_source_import")
+async def admin_vocabulary_source_import(
+    request: Request,
+    files: list[UploadFile] = File(...),
+    metadata: str = Form(default="{}"),
+    mappings: str = Form(default="{}"),
+) -> dict[str, Any]:
+    """Import a batch one source at a time and return per-source outcomes."""
+
+    admin = require_admin(request)
+    if not files:
+        raise HTTPException(422, "Choose at least one vocabulary source file.")
+    collection_metadata = _admin_vocabulary_metadata(metadata)
+    mapping_by_filename = _json_form_object(mappings, "mappings")
+    repository = _persistence_runtime.vocabulary_repository
+    try:
+        if not repository.available():
+            raise VocabularyContentUnavailable(
+                "Vocabulary content persistence is not active. The reviewed vocabulary schema must be applied before import."
+            )
+    except VocabularyContentUnavailable as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "category": "vocabulary_schema_unavailable",
+                "retryable": False,
+                "message": str(exc),
+            },
+        ) from exc
+
+    collection_id = collection_metadata.get("collection_id") or stable_collection_id(
+        collection_metadata["title"],
+        collection_metadata["language_code"],
+        collection_metadata.get("framework", ""),
+    )
+    imported_by = str(admin.get("google_sub") or admin.get("email") or "admin")
+    requested_catalog_status, admission = _vocabulary_admission(
+        collection_metadata,
+        imported_by=imported_by,
+    )
+    # Every source in a batch is imported into a non-published collection.
+    # Publication is a finalization step below, so a later failed file cannot
+    # expose the earlier successful files to learners.
+    pending_admission = {
+        **admission,
+        "review_status": "pending_review",
+        "publication_attested": False,
+    }
+    provenance = {
+        **collection_metadata.get("provenance", {}),
+        "origin": "imported",
+        "catalog_status": "pending_review",
+        "admission": pending_admission,
+    }
+    collection = {
+        **collection_metadata,
+        "id": collection_id,
+        "catalog_status": "pending_review",
+        "origin": "imported",
+        "provenance": provenance,
+    }
+    results: list[dict[str, Any]] = []
+    collection_persisted = False
+
+    def failed_source_result(
+        *,
+        filename: str,
+        raw: bytes,
+        source: Any = None,
+        mapping: dict[str, Any] | None = None,
+        reason: str,
+    ) -> dict[str, Any]:
+        try:
+            receipt = repository.record_source_failure(
+                collection_id=collection_id if collection_persisted else None,
+                filename=filename,
+                source_format=str(getattr(source, "format", "") or _vocabulary_source_format_hint(filename)),
+                content_hash=str(getattr(source, "content_hash", "") or hashlib.sha256(raw).hexdigest()),
+                mapping=mapping or {},
+                failure_reason=reason,
+                imported_by=imported_by,
+            )
+            return receipt
+        except Exception as receipt_error:  # pragma: no cover - provider-specific guard
+            return {
+                "source_import_id": "",
+                "filename": filename,
+                "status": "failed",
+                "imported": 0,
+                "skipped": 0,
+                "duplicates": 0,
+                "warnings": [f"Could not record failure receipt: {receipt_error}"],
+                "failed": 1,
+                "failure_reason": reason,
+            }
+
+    for index, upload in enumerate(files):
+        filename = str(upload.filename or "source").strip() or "source"
+        raw = b""
+        source = None
+        mapping: dict[str, Any] = {}
+        try:
+            raw = await read_source_upload(upload)
+            source = parse_vocabulary_source(filename, raw)
+            detected = detect_vocabulary_mapping(source)
+            raw_mapping = mapping_by_filename.get(filename)
+            if raw_mapping is None:
+                raw_mapping = mapping_by_filename.get(str(index))
+            mapping = raw_mapping if isinstance(raw_mapping, dict) else detected.mapping
+            normalized = normalize_vocabulary_rows(
+                source,
+                mapping=mapping,
+                language_code=collection_metadata["language_code"],
+                meaning_language=collection_metadata.get("meaning_language", ""),
+                collection_level=collection_metadata.get("level", ""),
+                collection_framework=collection_metadata.get("framework", ""),
+                collection_topic=collection_metadata.get("topic", ""),
+            )
+            if not normalized["records"]:
+                raise VocabularySourceError("The source has no valid vocabulary rows to import.")
+            # Readings the source left out are dictionary facts, and a meaning in
+            # a support language is a localization of the sense: both obtained
+            # here, once, from data and free offline tools - never generated by
+            # a paid model (AI cost reduction plan P1, D-121, D-124).
+            records, dictionary_summary = complete_from_dictionary(
+                normalized["records"], collection_metadata["language_code"]
+            )
+            # Before the localization table exists, localizations travel with
+            # the imported records (unpublished senses only); once it does, they
+            # are materialized into it after the import, below.
+            localization_report: list[dict[str, Any]] = []
+            if not _localization_table_available(repository):
+                records, localization_report = localize_records(
+                    records, collection_metadata["language_code"], default_vocabulary_localization_sources()
+                )
+            result = repository.import_source(
+                collection=collection,
+                source=normalized,
+                records=records,
+                mapping=mapping,
+                imported_by=imported_by,
+            )
+            collection_persisted = True
+            results.append({**result, "dictionary": dictionary_summary, "localizations": localization_report})
+        except (VocabularySourceError, ValueError) as exc:
+            results.append(failed_source_result(
+                filename=filename,
+                raw=raw,
+                source=source,
+                mapping=mapping,
+                reason=str(exc),
+            )
+            )
+        except (VocabularyContentUnavailable, RuntimeError, OSError) as exc:
+            # A source-level infrastructure failure does not erase or relabel
+            # other successful files in the batch.
+            results.append(failed_source_result(
+                filename=filename,
+                raw=raw,
+                source=source,
+                mapping=mapping,
+                reason=f"persistence unavailable: {exc}",
+            )
+            )
+        except Exception as exc:  # pragma: no cover - provider/database-specific guard
+            # A single malformed or concurrently conflicting source must not
+            # abort the rest of a batch.  The source result remains explicit so
+            # an administrator can retry only this file after inspection.
+            results.append(
+                failed_source_result(
+                    filename=filename,
+                    raw=raw,
+                    source=source,
+                    mapping=mapping,
+                    reason=f"import failed: {exc}",
+                )
+            )
+    if collection_persisted and _localization_table_available(repository):
+        try:
+            table_reports = await run_in_threadpool(
+                materialize_localizations,
+                repository,
+                collection_metadata["language_code"],
+                default_vocabulary_localization_sources(),
+                collection_id=collection_id,
+            )
+        except Exception:  # noqa: BLE001 - localization never undoes a completed import
+            table_reports = []
+        for item in results:
+            if item.get("status") != "failed":
+                item["localizations"] = table_reports
+                break
+    batch_failed = any(
+        item.get("status") == "failed" or int(item.get("failed") or 0) > 0
+        for item in results
+    )
+    publication_failure = ""
+    published_collection: dict[str, Any] | None = None
+    if requested_catalog_status == "published" and collection_persisted and not batch_failed:
+        try:
+            published_collection = repository.finalize_collection_publication(
+                collection_id,
+                admission=admission,
+            )
+        except Exception as exc:  # pragma: no cover - provider-specific guard
+            # Keep the imported content pending when final admission cannot be
+            # committed.  The source receipts remain truthful and an admin can
+            # retry publication after the provider/infrastructure is repaired.
+            publication_failure = str(exc) or "publication finalization failed"
+    collection_result = {
+        "id": collection_id,
+        "title": collection["title"],
+        "catalog_status": (
+            "published"
+            if published_collection is not None
+            else ("pending_review" if collection_persisted else "not_created")
+        ),
+    }
+    if publication_failure:
+        collection_result["publication_failure"] = publication_failure
+    return {
+        "collection": collection_result,
+        "items": results,
+    }
+# === ADMIN VOCABULARY SOURCE IMPORT ROUTES END ===
+
 @app.get("/api/cross-skill-cue", name="becoming_cross_skill_cue_get")
 def becoming_cross_skill_cue_get() -> dict[str, Any]:
     """Return one language-scoped, evidence-backed cue without persistence."""
@@ -1987,7 +3764,7 @@ def becoming_cross_skill_cue_get() -> dict[str, Any]:
     except Exception:
         writing = None
     try:
-        reading_payload = list_reading_sessions(20)
+        reading_payload = list_reading_evidence(20)
         raw_reading = reading_payload.get("items", []) if isinstance(reading_payload, dict) else []
         reading = [{**item, "language": language} for item in raw_reading if isinstance(item, dict)]
     except Exception:
@@ -2120,9 +3897,40 @@ def becoming_practice_outcomes(limit: int = 20) -> dict[str, Any]:
 # === BECOMING PRACTICE OUTCOME ROUTES END ===
 
 # === BECOMING VOCABULARY LIBRARY ROUTES START ===
+# The learner's saved vocabulary, one page at a time. Ordering, searching and
+# filtering are the database's work: a screen that needs twelve due words must
+# not cost what ten thousand saved words cost. `summary` is counted with
+# aggregates and travels with every page, so a caller never has to add the
+# items up to know how many there are.
+#
+# `query` matches the word, its definition and the translation kept with it -
+# what the learner's own database holds. `cursor` belongs to the question it
+# came from: change `query`, `status`, `order` or `focus` and the old cursor is
+# ignored rather than read against a different ordering, so the caller gets the
+# first page of what they actually asked.
 @app.get("/api/library/vocabulary", name="becoming_library_vocabulary_list")
-def becoming_library_vocabulary_list() -> dict[str, Any]:
-    return list_library_vocabulary()
+def becoming_library_vocabulary_list(
+    limit: int = Query(default=LIBRARY_PAGE_DEFAULT, ge=1, le=LIBRARY_PAGE_MAX),
+    cursor: str = Query(default="", max_length=512),
+    query: str = Query(default="", max_length=180),
+    status: str = Query(default="", pattern=r"^(|all|learning|mastered|due)$"),
+    order: str = Query(default="recent", pattern=r"^(recent|due|word)$"),
+    focus: list[str] = Query(default=[]),
+) -> dict[str, Any]:
+    return list_library_vocabulary(
+        limit=limit,
+        cursor=cursor,
+        search=query,
+        status="" if status == "all" else status,
+        order=order,
+        focus=tuple(item for item in focus if str(item or "").strip())[:40],
+    )
+
+# What Hồ sơ, Tiến độ and Home actually need: the counts and the rank, without
+# a single saved word crossing the wire.
+@app.get("/api/library/vocabulary/summary", name="becoming_library_vocabulary_summary")
+def becoming_library_vocabulary_summary() -> dict[str, Any]:
+    return library_summary()
 
 @app.post("/api/library/vocabulary", name="becoming_library_vocabulary_save")
 def becoming_library_vocabulary_save(payload: LibraryVocabularyIn) -> dict[str, Any]:
@@ -2138,44 +3946,298 @@ def becoming_library_vocabulary_review(
 ) -> dict[str, Any]:
     return review_library_vocabulary(word, payload)
 
+@app.post("/api/library/vocabulary/restore", name="becoming_library_vocabulary_restore")
+def becoming_library_vocabulary_restore(payload: RestoreVocabularyIn) -> dict[str, Any]:
+    """Undo a deletion within the window the surface offers it in."""
+
+    return restore_library_vocabulary(payload)
+
+
 @app.delete("/api/library/vocabulary/{word}", name="becoming_library_vocabulary_delete")
 def becoming_library_vocabulary_delete(word: str) -> dict[str, Any]:
     return delete_library_vocabulary(word)
 # === BECOMING VOCABULARY LIBRARY ROUTES END ===
 
-# === BECOMING READING STUDIO ROUTES START ===
-@app.get("/api/reading/sessions", name="becoming_reading_sessions")
-def becoming_reading_sessions(limit: int = 8) -> dict[str, Any]:
-    return list_reading_sessions(limit)
+# === BECOMING VOCABULARY LIBRARY CATALOG ROUTES START ===
+# The static curated Vocabulary Library catalog (writing_coach/vocabulary_library.py):
+# named collections (TOEIC, HSK, ...) a learner browses before saving anything.
+# Distinct from the "BECOMING VOCABULARY LIBRARY ROUTES" block above, which is
+# the learner's own saved/review state at /api/library/vocabulary — do not
+# rename or merge these blocks. Browsing a collection never creates a
+# SavedWord-equivalent row; "saved" below is a per-request cross-reference
+# against the learner's existing saved words, not stored membership. "Keep"
+# from this catalog reuses the existing POST /api/library/vocabulary with
+# source_kind="collection" — no new save endpoint is added here.
 
-@app.get("/api/reading/session/{session_id}", name="becoming_reading_session")
-def becoming_reading_session(session_id: int) -> dict[str, Any]:
-    return get_reading_session(session_id)
 
-@app.post("/api/reading/session", name="becoming_reading_create")
-def becoming_reading_create(payload: ReadingGenerateIn) -> dict[str, Any]:
-    language = active_profile().code
-    default_level = "HSK4" if language == "zh" else "B2"
-    target_level = validate_target_level(payload.target_level or default_level)
-    return create_reading_session(
-        payload,
-        language_code=language,
-        target_level=target_level,
-        learner_profile=get_learner_profile(),
-    )
+def _require_vocabulary_language_code(language_code: str) -> str:
+    code = str(language_code or "").strip().casefold()
+    if not code:
+        raise HTTPException(422, "language_code is required.")
+    if not is_enabled(code):
+        raise HTTPException(422, f"Unsupported language_code '{language_code}'.")
+    return code
 
-@app.post("/api/reading/session/{session_id}/answer", name="becoming_reading_answer")
-def becoming_reading_answer(
-    session_id: int,
-    payload: ReadingAnswerIn,
+
+def _persisted_vocabulary_collections(language_code: str) -> list[dict[str, Any]]:
+    repository = _persistence_runtime.vocabulary_repository
+    try:
+        if not repository.available():
+            return []
+        return repository.list_collections(language_code)
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        # A PostgreSQL runtime before the reviewed content migration remains a
+        # truthful static-catalog runtime.  Import writes fail closed below;
+        # learner reads never turn a missing shared schema into fake data.
+        return []
+
+
+def _persisted_vocabulary_collection(
+    collection_id: str,
+    *,
+    search: str = "",
+    level: str = "",
+    limit: int = 100,
+    offset: int = 0,
+) -> dict[str, Any] | None:
+    repository = _persistence_runtime.vocabulary_repository
+    try:
+        if not repository.available():
+            return None
+        return repository.get_collection(
+            collection_id,
+            search=search,
+            level=level,
+            limit=limit,
+            offset=offset,
+        )
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        return None
+
+
+def _vocabulary_feed_pool(language_code: str) -> list[dict[str, Any]]:
+    static_entries = all_vocabulary_entries(language_code)
+    repository = _persistence_runtime.vocabulary_repository
+    persisted_entries: list[dict[str, Any]] = []
+    try:
+        if repository.available():
+            persisted_entries = repository.list_entries_for_language(language_code, limit=5000)
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        persisted_entries = []
+    # An imported lexical entry replaces a static seed with the same identity,
+    # while an explicit sense identity remains distinct.  Memberships do not
+    # create repeated Feed cards for every collection.
+    merged: dict[str, dict[str, Any]] = {}
+    for entry in static_entries + persisted_entries:
+        key = str(entry.get("identity_key") or "").strip()
+        if not key:
+            key = f"{entry.get('language_code', language_code)}|{entry.get('normalized_word') or normalize_vocabulary_word(entry.get('word'))}"
+        merged[key] = dict(entry)
+    return list(merged.values())
+
+
+@app.get("/api/vocabulary/catalogue/search", name="becoming_vocabulary_catalogue_search")
+def becoming_vocabulary_catalogue_search(
+    q: str = Query(default="", max_length=80),
+    language_code: str = Query(default=""),
+    limit: int = Query(default=20, ge=1, le=50),
 ) -> dict[str, Any]:
-    result = submit_reading_answers(session_id, payload)
-    if not result.get("found", False):
-        raise HTTPException(404, "Reading session not found.")
-    if not result.get("valid", True):
-        raise HTTPException(422, result.get("message") or "Invalid reading answers.")
-    return result
-# === BECOMING READING STUDIO ROUTES END ===
+    """Words in the shared catalogue that match what the learner typed.
+
+    The other half of the search screen - the learner's own words are searched
+    by `/api/library/vocabulary`, which already does it in the database. This
+    half can only ever return words an admitted collection carries, and it
+    returns at most `limit` of them, so a one-letter query is as cheap as a
+    long one. It says nothing about what the learner has kept; the screen asks
+    that separately, about the words it is drawing.
+    """
+
+    code = _require_vocabulary_language_code(language_code)
+    wanted = str(q or "").strip()
+    repository = _persistence_runtime.vocabulary_repository
+    if not wanted or repository is None:
+        return {"items": [], "query": wanted, "language_code": code}
+    try:
+        found = repository.search_entries(code, wanted, limit=limit)
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        found = []
+    items = [
+        {
+            "word": str(entry.get("term") or ""),
+            "normalized_word": str(entry.get("normalized_term") or ""),
+            "identity_key": str(entry.get("identity_key") or ""),
+            "part_of_speech": str(entry.get("part_of_speech") or ""),
+            "readings": entry.get("readings") or [],
+            "short_meanings": entry.get("short_meanings") or [],
+            "level": str(entry.get("level") or ""),
+        }
+        for entry in found
+        if str(entry.get("term") or "")
+    ]
+    return {"items": items, "query": wanted, "language_code": code}
+
+
+@app.get("/api/vocabulary/library/collections", name="becoming_vocabulary_library_collections")
+def becoming_vocabulary_library_collections(language_code: str = Query(default="")) -> dict[str, Any]:
+    code = _require_vocabulary_language_code(language_code)
+    by_id = {summary["id"]: dict(summary) for summary in list_vocabulary_collections(code)}
+    for summary in _persisted_vocabulary_collections(code):
+        by_id[summary["id"]] = dict(summary)
+    catalogs = {
+        summary["id"]: (
+            _persisted_vocabulary_collection(summary["id"], limit=5000)
+            if summary.get("origin") == "imported"
+            else get_vocabulary_collection(summary["id"])
+        ) or {"entries": []}
+        for summary in by_id.values()
+    }
+    # The learner's state for the words these collections contain - asked about
+    # those words, rather than by reading everything the learner has ever saved.
+    candidates = {
+        str(entry.get("word") or "")
+        for catalog in catalogs.values()
+        for entry in catalog.get("entries", [])
+        if entry.get("word")
+    }
+    language_token = LANGUAGE_CODE_CTX.set(code)
+    try:
+        saved_by_word = saved_vocabulary_state(tuple(candidates))
+    finally:
+        LANGUAGE_CODE_CTX.reset(language_token)
+    summaries = []
+    for summary in by_id.values():
+        summary = dict(summary)
+        summary["progress"] = _vocabulary_collection_progress(
+            catalogs[summary["id"]].get("entries", []), saved_by_word
+        )
+        summaries.append(summary)
+    summaries.sort(key=lambda item: (str(item.get("framework") or ""), str(item.get("title") or "")))
+    return {"items": summaries}
+
+
+def _vocabulary_collection_progress(
+    entries: list[dict[str, Any]], saved_by_word: dict[str, dict[str, Any]]
+) -> dict[str, int]:
+    matched = [
+        saved_by_word[entry["normalized_word"]]
+        for entry in entries
+        if entry.get("normalized_word") in saved_by_word
+    ]
+    return {
+        "learned_count": len(matched),
+        "learning_count": sum(1 for item in matched if int(item.get("review_stage") or 0) < 3),
+        "due_count": sum(1 for item in matched if item.get("due")),
+        "mastered_count": sum(1 for item in matched if int(item.get("review_stage") or 0) >= 3),
+    }
+
+
+@app.get(
+    "/api/vocabulary/library/collections/{collection_id}",
+    name="becoming_vocabulary_library_collection_detail",
+)
+def becoming_vocabulary_library_collection_detail(
+    collection_id: str,
+    search: str = Query(default=""),
+    level: str = Query(default=""),
+    limit: int = Query(default=100, ge=1, le=5000),
+    offset: int = Query(default=0, ge=0),
+    include_review: bool = Query(default=False),
+) -> dict[str, Any]:
+    collection = _persisted_vocabulary_collection(
+        collection_id,
+        search=search,
+        level=level,
+        limit=limit,
+        offset=offset,
+    )
+    if collection is None:
+        collection = get_vocabulary_collection(collection_id)
+    if collection is None:
+        raise HTTPException(404, "Vocabulary collection not found.")
+    entries = collection.pop("entries")
+    if search or level:
+        needle = search.strip().casefold()
+        wanted_level = level.strip().casefold()
+        entries = [
+            entry
+            for entry in entries
+            if (not needle or needle in f"{entry.get('word', '')} {entry.get('normalized_word', '')}".casefold())
+            and (not wanted_level or str(entry.get("level") or "").casefold() == wanted_level)
+        ]
+    language_token = LANGUAGE_CODE_CTX.set(collection["language_code"])
+    try:
+        # Only the words on this page of the collection.
+        saved_by_word = saved_vocabulary_state(
+            tuple(str(entry.get("word") or "") for entry in entries if entry.get("word"))
+        )
+    finally:
+        LANGUAGE_CODE_CTX.reset(language_token)
+    items = []
+    for entry in entries:
+        card = vocabulary_card_from_catalog_entry(entry)
+        saved = saved_by_word.get(entry["normalized_word"])
+        card["saved"] = saved is not None
+        card["review_stage"] = int(saved.get("review_stage") or 0) if saved else 0
+        card["due"] = bool(saved.get("due")) if saved else False
+        card["successful_recalls"] = int(saved.get("successful_recalls") or 0) if saved else 0
+        card["lapse_count"] = int(saved.get("lapse_count") or 0) if saved else 0
+        items.append(card)
+    collection["items"] = items
+    collection["progress"] = _vocabulary_collection_progress(entries, saved_by_word)
+    if include_review:
+        # The collection's own saved rows, resolved by the existing owner above.
+        # No scan of the learner's whole library and no dictionary generation.
+        collection["review_items"] = list(saved_by_word.values())
+    return collection
+# === BECOMING VOCABULARY LIBRARY CATALOG ROUTES END ===
+
+# === BECOMING VOCABULARY FEED ROUTES START ===
+# The Daily Vocabulary Feed (writing_coach/vocabulary_feed.py): a filtered,
+# day-seeded view over the same static catalog the collection routes above
+# browse directly. "Keep" from this feed reuses the existing
+# POST /api/library/vocabulary with source_kind="feed" — no new save endpoint
+# is added here.
+#
+# `_VOCABULARY_FEED_SANDBOX_LEARNER_KEY` is a documented, fixed sandbox
+# learner identity, not a multi-user architecture decision: this route
+# surface has no per-request account/session identity today (see
+# writing_coach/vocabulary_feed.py's module docstring and
+# docs/superpowers/plans/2026-09-14-vocabulary-experience.md §5). It is a
+# request-scoped Python constant only, never persisted, and is trivially
+# replaced once a durable account identity exists.
+_VOCABULARY_FEED_SANDBOX_LEARNER_KEY = "sandbox-learner"
+
+
+@app.get("/api/vocabulary/feed", name="becoming_vocabulary_feed")
+def becoming_vocabulary_feed(
+    language_code: str = Query(default=""),
+    target_level: str = Query(default=""),
+) -> dict[str, Any]:
+    code = _require_vocabulary_language_code(language_code)
+    declared_level = target_level.strip() or None
+    language_token = LANGUAGE_CODE_CTX.set(code)
+    try:
+        # What the learner already keeps, as words: the feed only needs to know
+        # what to leave out, not what each one looks like.
+        exclude_normalized = saved_vocabulary_words()
+    finally:
+        LANGUAGE_CODE_CTX.reset(language_token)
+    learner_context = LearnerFeedContext(
+        learner_key=_VOCABULARY_FEED_SANDBOX_LEARNER_KEY, target_level=declared_level
+    )
+    candidates = daily_feed_candidates(
+        code,
+        learner_context=learner_context,
+        exclude_normalized=exclude_normalized,
+        candidate_pool=_vocabulary_feed_pool(code),
+    )
+    items = [vocabulary_card_from_feed_candidate(entry) for entry in candidates]
+    return {"items": items, "date": datetime.now().astimezone().date().isoformat()}
+# === BECOMING VOCABULARY FEED ROUTES END ===
+
+# The generated-reading studio (`/api/reading/session*`) is retired (D-075,
+# D-076): no internal AI writes a source passage. Reading is the published
+# corpus (`/api/reading/articles`) and its practice (`/api/reading/practice`).
 
 # === BECOMING LINGUISTIC LENS ROUTES START ===
 @app.post("/api/essays/{essay_id}/linguistic-annotations", name="becoming_linguistic_annotations")

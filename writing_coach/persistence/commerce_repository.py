@@ -1,9 +1,8 @@
 """Subscription state and the provider-event inbox.
 
-PROPOSAL, NOT DEPLOYED — the tables this reads and writes are in
-`migrations/proposed/20260911_0006`, not `migrations/versions/`. Nothing here
-runs against any real database until that migration is reviewed, approved and
-moved, mirroring I2's path. No caller is wired to this either way.
+DEPLOYED, INACTIVE — the tables this reads and writes are in
+`migrations/versions/20260911_0006`, approved by delegated review and applied
+to the sandbox runtime. No caller is wired to it; billing stays off.
 
 Revised against two rounds of review (docs/project/I3_SCHEMA_REVIEW_REQUEST.md):
 

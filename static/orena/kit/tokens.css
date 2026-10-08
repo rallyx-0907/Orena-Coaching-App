@@ -1,0 +1,234 @@
+/* The new learner UI's one colour owner (D-088, D-089; Design Contract rules 16, 30).
+
+   Both themes' values are copied exactly from the pinned design
+   (docs/design/canonical-ui/screens/Orena.dc.html, <helmet>, body[data-theme=…]). The theme is
+   chosen by kit/device.js: the operating system's prefers-color-scheme, unless the learner used
+   the Reader's light/dark button (a device preference). Nothing else in the new UI writes a
+   colour literal except where the design itself draws one on brand artwork (the mark's disc).
+
+   The design scopes these to body; they sit on the root element here so the first paint - before
+   <body> exists - already has them. */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: linear-gradient(160deg, #0B0B12 0%, #121022 50%, #1A1020 100%);
+  --bg: #0E0E16;
+  --surface: #171722;
+  --surface2: #1E1E2B;
+  --surface3: #272736;
+  --border: #262634;
+  --border2: #34344A;
+  --text: #F3F3F8;
+  --muted: #A9A9BC;
+  --text3: #858599; /* AA, D-093 (design #77778E) */
+  --accent: #847FF6; /* AA, D-093 (design #7D78F5) */
+  --accent-hover: #8E8AF7;
+  --accent-press: #6C67E6;
+  --accent-ink: #fff;
+  /* Filled controls under white text: AA, D-093 (the design fills with --accent). */
+  --accent-fill: #6862F3;
+  --accent-fill-hover: #5E58EA;
+  --accent-fill-press: #544EDC;
+  /* Numbers on the red count badge: dark ink, AA, D-093 (the design uses white). */
+  --badge-ink: #0E0E16;
+  --accent-soft: #24224A;
+  --tint2: #302C66;
+  --accent-text: #A9A5FF;
+  --ring: rgba(125, 120, 245, .4);
+  --green: #3DD68C;
+  --green-soft: #12291F;
+  --support: #7FB2FF;
+  --support-soft: #15233A;
+  --amber: #F5B544;
+  --amber-soft: #2E2412;
+  --red: #FF6B70;
+  --red-soft: #331719;
+  --ai: linear-gradient(135deg, #7B6CFF 0%, #B06CF7 55%, #F58AAE 100%);
+  --ai-soft: #221D3D;
+  --ai-ink: #B9A6FF;
+  --ai-line: #3A2F6B;
+  --scrim: rgba(0, 0, 0, .6);
+  --sh1: 0 1px 2px rgba(0, 0, 0, .3);
+  --sh2: 0 8px 24px rgba(0, 0, 0, .45);
+  --sh3: 0 24px 64px rgba(0, 0, 0, .6);
+  --shadow: 0 24px 64px rgba(0, 0, 0, .6);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page: linear-gradient(160deg, #E9EEFB 0%, #EEEAFB 45%, #F4E8F5 100%);
+  --bg: #F5F5FA;
+  --surface: #FFFFFF;
+  --surface2: #F4F4F9;
+  --surface3: #EBEBF3;
+  --border: #ECECF3;
+  --border2: #DCDCE7;
+  --text: #17171F;
+  --muted: #5C5C6E;
+  --text3: #6E6E86; /* AA, D-093 (design #8E8EA2) */
+  --accent: #5A55E3;
+  --accent-hover: #4C47D2;
+  --accent-press: #403BBE;
+  --accent-ink: #fff;
+  --accent-fill: #5A55E3;
+  --accent-fill-hover: #4C47D2;
+  --accent-fill-press: #403BBE;
+  --badge-ink: #fff;
+  --accent-soft: #EFEDFD;
+  --tint2: #DDD9FB;
+  --accent-text: #4C47D2;
+  --ring: rgba(90, 85, 227, .24);
+  --green: #117E52; /* AA, D-093 (design #138A5A) */
+  --green-soft: #E6F6EE;
+  --support: #2B6FD9;
+  --support-soft: #E8F1FE;
+  --amber: #A16000; /* AA, D-093 (design #B86E00) */
+  --amber-soft: #FEF3DD;
+  --red: #D0292E; /* AA, D-093 (design #D93D42) */
+  --red-soft: #FDECEC;
+  --ai: linear-gradient(135deg, #6B5CF6 0%, #A35CF2 55%, #F2789F 100%);
+  --ai-soft: #F5F0FF;
+  --ai-ink: #6A4FE0;
+  --ai-line: #D6C8FD;
+  --scrim: rgba(24, 22, 48, .38);
+  --sh1: 0 1px 2px rgba(23, 23, 50, .04), 0 2px 10px rgba(23, 23, 50, .04);
+  --sh2: 0 2px 6px rgba(40, 36, 110, .05), 0 12px 32px rgba(40, 36, 110, .10);
+  --sh3: 0 24px 64px rgba(40, 36, 110, .20);
+  --shadow: 0 24px 64px rgba(40, 36, 110, .20);
+}
+
+/* Visual Skin EN/ZH Board accent options. Semantic statuses, skill hues and brand
+   artwork do not follow the selected accent. Indigo retains measured AA fixes. */
+:root[data-palette="orchid"] { --palette-base: #7B4FD8; }
+:root[data-palette="blue"] { --palette-base: #2F6FEB; }
+:root[data-palette="rose"] { --palette-base: #D9487A; }
+:root[data-palette]:not([data-palette="indigo"])[data-theme="light"] {
+  --accent: var(--palette-base);
+  --accent-hover: color-mix(in oklch, var(--palette-base), black 10%);
+  --accent-press: color-mix(in oklch, var(--palette-base), black 22%);
+  --accent-text: var(--accent-hover);
+  --accent-soft: color-mix(in oklch, var(--palette-base) 10%, #FFFFFF);
+  --tint2: color-mix(in oklch, var(--palette-base) 22%, #FFFFFF);
+  --ring: color-mix(in oklch, var(--palette-base) 26%, transparent);
+  /* Small white labels require the darker action step for AA. */
+  --accent-fill: var(--accent-hover);
+  --accent-fill-hover: var(--accent-press);
+  --accent-fill-press: var(--accent-press);
+}
+:root[data-palette]:not([data-palette="indigo"])[data-theme="dark"] {
+  --accent: color-mix(in oklch, var(--palette-base), white 18%);
+  --accent-hover: color-mix(in oklch, var(--palette-base), white 28%);
+  --accent-press: color-mix(in oklch, var(--palette-base), white 8%);
+  --accent-text: var(--accent-hover);
+  --accent-soft: color-mix(in oklch, var(--palette-base) 22%, #171722);
+  --tint2: color-mix(in oklch, var(--palette-base) 38%, #171722);
+  --ring: color-mix(in oklch, var(--palette-base) 45%, transparent);
+  --accent-fill: color-mix(in oklch, var(--palette-base), black 10%);
+  --accent-fill-hover: color-mix(in oklch, var(--palette-base), black 22%);
+  --accent-fill-press: var(--accent-fill-hover);
+}
+/* Blue/rose source swatches need the darker step when used as small text. */
+:root[data-palette="blue"][data-theme="light"],
+:root[data-palette="rose"][data-theme="light"] { --accent: var(--accent-hover); }
+
+/* Theme-independent hues the design sets on body: tone marks for Chinese (1-4), and the skill
+   hues that colour skill icons and small markers only (rule 32). */
+:root {
+  --tone1: #D63A57;
+  --tone2: #C27A00;
+  --tone3: #0F8F8F;
+  --tone4: #3B57D6;
+  --skill-read: #FF7A3D;
+  --skill-listen: #1FB8B8;
+  --skill-speak: #EE4F6C;
+  --skill-write: #7B4FD8;
+  --skill-vocab: #F2B705;
+  --skill-grammar: #4867EC;
+  /* A character's radical strokes in the stroke-order animation: the design's stroke writer `radicalColor`. */
+  --hz-radical: #FF7A3D;
+  /* The brand mark's disc, as the design draws it behind ol-mark / ol-intel (brand artwork,
+     D-090), and the toast's fixed ink surface. */
+  --mark-disc: radial-gradient(circle at 30% 20%, #2B2158, #150F2E 72%);
+  --mark-glow: 0 4px 12px rgba(122, 92, 246, .3);
+  --mark-glow-strong: 0 4px 12px rgba(122, 92, 246, .35);
+  --mark-glow-bar: 0 10px 24px rgba(122, 92, 246, .35);
+  --mark-ring: inset 0 0 0 1px rgba(255, 255, 255, .07);
+  --toast-bg: #1C1B2E;
+  --toast-ink: #fff;
+  --toast-chip: rgba(255, 255, 255, .14);
+  --toast-action: rgba(255, 255, 255, .12);
+  /* The initials avatar's gradient and ink (the design has no learner photo). */
+  --avatar-bg: linear-gradient(135deg, #FFD4B8, #F7A8C4);
+  --avatar-ink: #7A2E4A;
+  /* The placeholder the design draws where artwork is missing (rule 37). */
+  --art-placeholder: repeating-linear-gradient(135deg, rgba(255, 255, 255, .5) 0 6px, transparent 6px 12px), var(--tint2);
+
+  /* Purpose-named "white on a fixed-dark surface, regardless of app theme" tokens (D-091 kit
+     fidelity pass): each frame below draws its own literal unconditionally - never gated by
+     body[data-theme] - so each is defined once here rather than duplicated per theme or reusing a
+     same-shaped token meant for something else (the toast's own chip/ink stay named for the toast).
+     - --photo-chip / --photo-progress: a translucent-white chip/progress-track drawn on
+       photographic artwork (heroMedia()'s type pill - Content Detail, Collection Detail -
+       04-Discover.html/21-Collection-Detail.html/05-Content-Detail.html all draw the pill at
+       rgba(255,255,255,.18); mediaCard()'s start-progress track - 04-Discover.html - at .25).
+     - --hero-chip: the translucent tile background on Profile's hero card (25-Profile-Today-s-
+       progress.html, rgba(255,255,255,.08) - lighter than --toast-chip's .14).
+     - --hero-cta-ink: the "Due review" tile's own secondary CTA text on the hero card (#C9BFFF).
+     - --hero-cta-fill / --hero-cta-fill-ink: the hero's primary "Open Progress" CTA - a white pill
+       with dark ink, not an accent fill (#fff / #1A1433).
+     - --sh-hero: the hero card's own elevation (0 18px 40px rgba(60,40,140,.28)), a fixed purple
+       shadow distinct from the per-theme --sh1/2/3 scale.
+     - --deco-strong / --deco-soft: Today's hero card's two decorative circles
+       (10-Today.html, rgba(255,255,255,.22) / rgba(255,255,255,.16)). */
+  --photo-chip: rgba(255, 255, 255, .18);
+  --photo-progress: rgba(255, 255, 255, .25);
+  --hero-chip: rgba(255, 255, 255, .08);
+  --hero-cta-ink: #C9BFFF;
+  --hero-cta-fill: #fff;
+  --hero-cta-fill-ink: #1A1433;
+  /* A day the learner was active, on Profile's hero streak strip (25-Profile-Today-s-progress.html, #A99BFF). */
+  --hero-day-done: #A99BFF;
+  --sh-hero: 0 18px 40px rgba(60, 40, 140, .28);
+  --deco-strong: rgba(255, 255, 255, .22);
+  --deco-soft: rgba(255, 255, 255, .16);
+
+  /* Orena's own theme-independent literals (11-Orena-Home, 55-Contextual-Orena, 56-Orena-Voice;
+     D1 "Orena Home" §6, E5 "Contextual Orena"/"Orena Voice" §6-7; orena-script.js's voiceDot/
+     voiceMainBg/voiceSpeakBg maps) - moved out of screens/orena/orena.css under the same D-091
+     pattern above, each value measured against the pinned source, not invented:
+     - --sh-composer: the gradient-ring composer card's own shadow (D1 §6, "box-shadow:0 10px
+       30px rgba(122,92,246,.14)").
+     - --mark-glow-hero: Orena Home's 56px header mark glow (D1 §6, "box-shadow:0 8px 20px
+       rgba(122,92,246,.35)").
+     - --voice-dot-idle/listening/thinking/speaking: the phase dot on the inline voice row and
+       the voice screen (orena-script.js voiceDot map, exact per-phase hex).
+     - --voice-main / --voice-main-listening / --voice-main-shadow: the main mic/stop button
+       (voiceMainBg: the brand gradient idle/thinking/speaking, red while listening) and its own
+       shadow (E5 §7.2, "box-shadow:0 10px 30px rgba(122,92,246,.4)").
+     - --voice-bg / --voice-ink / --voice-ink-soft / --voice-mute / --voice-mute-soft /
+       --voice-line / --voice-line-soft / --voice-fill / --voice-fill-faint / --voice-fill-on /
+       --voice-glow / --voice-glow-strong: frame 56, which the source renders identically
+       regardless of body[data-theme] (E5 §7.2 - confirmed against the frame's own literal
+       styles, not the themed tokens); --voice-fill-on is voiceSpeakBg's "reply on" literal. */
+  --sh-composer: 0 10px 30px rgba(122, 92, 246, .14);
+  --mark-glow-hero: 0 8px 20px rgba(122, 92, 246, .35);
+  --voice-dot-idle: #7cffb2;
+  --voice-dot-listening: #6fd6ff;
+  --voice-dot-thinking: #ff7ad9;
+  --voice-dot-speaking: #b98cff;
+  --voice-main: linear-gradient(135deg, #7a5cf6, #ff7ad9);
+  --voice-main-listening: #e5484d;
+  --voice-main-shadow: 0 10px 30px rgba(122, 92, 246, .4);
+  --voice-bg: radial-gradient(120% 80% at 50% 30%, #221a4a 0%, #120e26 55%, #0b0918 100%);
+  --voice-ink: #f4f2fa;
+  --voice-ink-soft: #d9d4ea;
+  --voice-mute: #b9b3cc;
+  --voice-mute-soft: #8f88a8;
+  --voice-line: rgba(255, 255, 255, .14);
+  --voice-line-soft: rgba(255, 255, 255, .08);
+  --voice-fill: rgba(255, 255, 255, .06);
+  --voice-fill-faint: rgba(255, 255, 255, .05);
+  --voice-fill-on: rgba(255, 255, 255, .08);
+  --voice-glow: rgba(111, 214, 255, .12);
+  --voice-glow-strong: rgba(111, 214, 255, .4);
+}

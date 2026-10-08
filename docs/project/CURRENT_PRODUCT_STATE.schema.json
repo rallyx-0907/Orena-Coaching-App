@@ -94,7 +94,7 @@
       "additionalProperties": false,
       "required": ["id", "name", "status"],
       "properties": {
-        "id": {"type": "string", "pattern": "^(R|M)[0-9]+$"},
+        "id": {"type": "string", "pattern": "^(ORENA_PRODUCT_COMPLETION|(R|M)[0-9]+)$", "description": "Current Product Completion program or a numbered historical stage."},
         "name": {"type": "string", "minLength": 1},
         "status": {"enum": ["closed", "complete_local_acceptance", "in_progress", "human_gate", "planned", "blocked"]}
       }
@@ -112,11 +112,13 @@
     "design": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["web_is_visual_source_of_truth", "native_strategy", "native_may_redesign_product"],
+      "required": ["web_is_visual_source_of_truth", "native_strategy", "native_may_redesign_product", "visual_authority", "themes"],
       "properties": {
         "web_is_visual_source_of_truth": {"const": true},
         "native_strategy": {"const": "full_native_port"},
-        "native_may_redesign_product": {"const": false}
+        "native_may_redesign_product": {"const": false},
+        "visual_authority": {"const": "canonical_ui_design_d088"},
+        "themes": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"enum": ["light", "dark"]}}
       }
     },
     "languages": {

@@ -181,6 +181,8 @@ def resolve_segment_meanings(
     )
     if not ordered:
         return MeaningOutcome((), "unavailable", provider_calls, "translation_unavailable")
+    if len(ordered) != len(segments):
+        return MeaningOutcome(ordered, "unavailable", provider_calls, "translation_incomplete")
     return MeaningOutcome(ordered, "ready", provider_calls)
 
 

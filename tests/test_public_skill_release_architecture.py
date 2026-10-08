@@ -58,23 +58,33 @@ def test_platform_contract_is_one_language_wide_release_matrix() -> None:
 
 
 def test_new_navigation_is_independent_of_historical_skill_hierarchy() -> None:
-    source = (ROOT / 'static/orena/app.js').read_text(encoding='utf-8')
-    # The gate itself is the contract, not the source formatting around it.
-    assert re.search(r"if\s*\(\s*!\s*user\.is_admin\s*\)", source)  # internal review remains gated
-    assert 'applySkillNavigation' not in source
-    assert 'routeAvailable' not in source
+    # The learner UI (D-143) holds the admin flag from the signed-in user; the retired app.js is gone.
+    shell = (ROOT / 'static/orena/shell/context.js').read_text(encoding='utf-8')
+    assert re.search(r"state\.isAdmin\s*=\s*Boolean\(\s*user\?\.is_admin\s*\)", shell)  # internal review remains gated
+    assert not (ROOT / 'static/orena/app.js').exists()
+    for path in (ROOT / 'static/orena').rglob('*.js'):
+        if 'vendor' in path.parts:
+            continue
+        source = path.read_text(encoding='utf-8')
+        assert 'applySkillNavigation' not in source, path
+        assert 'routeAvailable' not in source, path
     assert not (ROOT / 'static/becoming').exists()
 
 
 def test_reading_implementation_and_release_versions_remain_intact() -> None:
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert (ROOT / "writing_coach/becoming_reading.py").is_file()
-    assert (ROOT / "static/orena/ui/encounter.js").is_file()
+    # One canonical Reading flow (D-082): the corpus, Admin-approved
+    # comprehension sets and canonical evidence. The generated-passage
+    # studio and its session routes are retired, not kept beside it.
+    assert not (ROOT / "writing_coach/becoming_reading.py").exists()
+    assert (ROOT / "writing_coach/reading_practice_api.py").is_file()
+    assert (ROOT / "static/orena/screens/reader/screen.js").is_file()
+    assert "include_router(reading_practice_router)" in app
     for route in (
-        '@app.get("/api/reading/sessions"',
-        '@app.get("/api/reading/session/{session_id}"',
-        '@app.post("/api/reading/session"',
-        '@app.post("/api/reading/session/{session_id}/answer"',
+        '"/api/reading/sessions"',
+        '"/api/reading/session/{session_id}"',
+        '"/api/reading/session"',
+        '"/api/reading/session/{session_id}/answer"',
     ):
-        assert route in app
+        assert route not in app
     assert (ROOT / "VERSION").read_text(encoding="utf-8").strip() == "1.4.0"

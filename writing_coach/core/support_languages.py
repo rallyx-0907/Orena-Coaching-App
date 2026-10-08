@@ -17,6 +17,7 @@ class SupportLanguageDefinition:
 
     code: str
     translation_label: str
+    script_family: str = "latin"
 
 
 # Orena is globally designed. Every entry needs a translation_label because the
@@ -26,9 +27,9 @@ class SupportLanguageDefinition:
 _DEFINITIONS = (
     SupportLanguageDefinition("en", "English"),
     SupportLanguageDefinition("vi", "Vietnamese"),
-    SupportLanguageDefinition("zh", "Simplified Chinese"),
-    SupportLanguageDefinition("ja", "Japanese"),
-    SupportLanguageDefinition("ko", "Korean"),
+    SupportLanguageDefinition("zh", "Simplified Chinese", "cjk"),
+    SupportLanguageDefinition("ja", "Japanese", "cjk"),
+    SupportLanguageDefinition("ko", "Korean", "cjk"),
     SupportLanguageDefinition("es", "Spanish"),
     SupportLanguageDefinition("fr", "French"),
     SupportLanguageDefinition("de", "German"),
@@ -57,6 +58,13 @@ def normalize_support_language(code: str | None) -> str:
     if definition is None:
         raise UnsupportedSupportLanguage("Choose a valid support language.")
     return definition.code
+
+
+def support_language_uses_cjk(code: str | None) -> bool:
+    """Return whether support copy may contain the CJK script family."""
+
+    definition = support_language(code)
+    return bool(definition and definition.script_family == "cjk")
 
 
 # --- Resolution -------------------------------------------------------------

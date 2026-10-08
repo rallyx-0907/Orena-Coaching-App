@@ -46,40 +46,6 @@
       ]
     },
     {
-      "source_media_id": "commons-taxi-dialogue-1",
-      "source_url": "https://commons.wikimedia.org/wiki/File:Dialogue1.ogg",
-      "source_provider": "wikimedia-commons",
-      "source_type": "licensed-audio",
-      "source_title": "Taxi Language dialogue 1",
-      "source_creator": "Ferenc6 / Taxi Language Wikibook",
-      "language": "en",
-      "duration_ms": 71138,
-      "playback": {
-        "provider": "wikimedia-commons",
-        "kind": "audio",
-        "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Dialogue1.ogg"
-      },
-      "rights": {
-        "license_name": "CC BY-SA 4.0",
-        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-        "provenance_url": "https://commons.wikimedia.org/wiki/File:Dialogue1.ogg",
-        "allowed_usage_type": "creative-commons-attribution-sharealike",
-        "review_status": "verified"
-      },
-      "segments": [
-        {
-          "segment_id": "commons-taxi-dialogue-1:000",
-          "start_ms": 0,
-          "end_ms": 71138,
-          "original_text": "Oh no! It's raining! Taxi! Taxi! I need a taxi. Taxi! Taxi! Oh no, I'm in a hurry! I'm going to be late! Taxi! Taxi! It's eight o'clock already. Taxi! Taxi! I see you're in a hurry. Do you need a taxi? Yes, I'm really late. I need a taxi. Taxi! Phew! Thanks a lot. You're welcome.",
-          "translations": {
-            "vi": "Ôi không, trời đang mưa! Taxi! Tôi cần một chiếc taxi. Tôi đang vội và sắp muộn. Đã tám giờ rồi. Bạn có cần taxi không? Có, tôi muộn thật rồi. Cảm ơn rất nhiều. Không có gì.",
-            "zh": "糟了，下雨了！出租车！我需要一辆出租车。我很着急，要迟到了。已经八点了。你需要出租车吗？是的，我真的迟到了。非常感谢。不客气。"
-          }
-        }
-      ]
-    },
-    {
       "source_media_id": "commons-zh-lesson-7-dialogue-1",
       "source_url": "https://commons.wikimedia.org/wiki/File:Chinese-lesson-7-dialogue-1.ogg",
       "source_provider": "wikimedia-commons",
@@ -312,7 +278,7 @@
           "start_ms": 16120,
           "end_ms": 22000,
           "original_text": "现在看到的是中文维基百科的首页(Vector版)",
-          "pinyin": "Xiànzài kàndào de shì Zhōngwén Wéijī Bǎkē de shǒuyè (Vector bǎn)",
+          "pinyin": "Xiànzài kàndào de shì Zhōngwén Wéijī Bǎikē de shǒuyè (Vector bǎn)",
           "translations": {
             "en": "What you see now is the Chinese Wikipedia home page (Vector skin).",
             "vi": "Đây là trang chủ Wikipedia tiếng Trung (giao diện Vector)."
@@ -367,7 +333,7 @@
           "start_ms": 42120,
           "end_ms": 50440,
           "original_text": "这样，你便可以找到所需的条目了",
-          "pinyin": "Zhèyàng, nǐ biàn kěyǐ zhǎdào suǒ xū de tiáomù le",
+          "pinyin": "Zhèyàng, nǐ biàn kěyǐ zhǎodào suǒ xū de tiáomù le",
           "translations": {
             "en": "This way, you can find the article you need.",
             "vi": "Như vậy, bạn có thể tìm được mục từ mình cần."
@@ -432,51 +398,38 @@
         "dictation",
         "beginner",
         "new"
-      ]
-    },
-    {
-      "lesson_id": "en-travel-rainy-day-taxi",
-      "source_media_id": "commons-taxi-dialogue-1",
-      "excerpt_start_ms": 0,
-      "excerpt_end_ms": 71138,
-      "title": "A rainy day taxi",
-      "description": "A lively exchange about finding a taxi before work.",
-      "topic": "travel",
-      "subtopics": [
-        "conversations",
-        "work"
       ],
-      "tags": [
-        "conversation",
-        "travel",
-        "work",
-        "story"
-      ],
-      "estimated_level": "A2",
-      "reviewed_level": "A2",
-      "level_evidence": {
-        "vocabulary_band": "high-frequency",
-        "sentence_complexity": "short-connected-utterances",
-        "speech_speed": "natural",
-        "review_note": "Repeated high-frequency phrases with time pressure and connected dialogue."
-      },
-      "available_modes": [
-        "listen",
-        "active",
-        "shadowing"
-      ],
-      "status": "PUBLISHED",
-      "artwork": "travel",
-      "vocabulary": [
-        "in a hurry",
-        "late",
-        "taxi"
-      ],
-      "sections": [
-        "recommended",
-        "beginner",
-        "popular",
-        "new"
+      "comprehension": [
+        {
+          "id": "en-daily-pen-in-my-bag:q1",
+          "prompt": "What does the speaker ask Anna for?",
+          "options": [
+            "A pen",
+            "A bag",
+            "A book"
+          ],
+          "correct_index": 0,
+          "explanation": "The speaker asks Anna whether she has a pen.",
+          "evidence_segment_ids": [
+            "commons-voa-anna-pen:000"
+          ],
+          "evidence_text": "Anna, do you have a pen?"
+        },
+        {
+          "id": "en-daily-pen-in-my-bag:q2",
+          "prompt": "Where is Anna’s pen?",
+          "options": [
+            "On the table",
+            "In her bag",
+            "At home"
+          ],
+          "correct_index": 1,
+          "explanation": "Anna says she has a pen in her bag.",
+          "evidence_segment_ids": [
+            "commons-voa-anna-pen:001"
+          ],
+          "evidence_text": "Yes. I have a pen in my bag."
+        }
       ]
     },
     {
@@ -524,6 +477,38 @@
         "dictation",
         "beginner",
         "new"
+      ],
+      "comprehension": [
+        {
+          "id": "zh-daily-what-is-this:q1",
+          "prompt": "“那”最后指的是什么？",
+          "options": [
+            "杂志",
+            "字典",
+            "书"
+          ],
+          "correct_index": 1,
+          "explanation": "李红说：“那不是杂志。那是字典。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-7-dialogue-1:000"
+          ],
+          "evidence_text": "王明：这是什么？李红：这是书。王明：那是什么？李红：那是钢笔。王明：那是杂志吗？李红：不，那不是杂志。那是字典。"
+        },
+        {
+          "id": "zh-daily-what-is-this:q2",
+          "prompt": "王明问“那是什么”时，李红说是什么？",
+          "options": [
+            "钢笔",
+            "杂志",
+            "书"
+          ],
+          "correct_index": 0,
+          "explanation": "李红回答：“那是钢笔。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-7-dialogue-1:000"
+          ],
+          "evidence_text": "王明：这是什么？李红：这是书。王明：那是什么？李红：那是钢笔。王明：那是杂志吗？李红：不，那不是杂志。那是字典。"
+        }
       ]
     },
     {
@@ -569,6 +554,38 @@
         "dictation",
         "beginner",
         "new"
+      ],
+      "comprehension": [
+        {
+          "id": "zh-culture-nationalities:q1",
+          "prompt": "艾美是哪国人？",
+          "options": [
+            "中国人",
+            "美国人",
+            "英国人"
+          ],
+          "correct_index": 0,
+          "explanation": "欧文说：“她是艾美，她是中国人。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-1-dialogue-2:001"
+          ],
+          "evidence_text": "欧文：她是艾美，她是中国人。他是东尼，他是美国人。"
+        },
+        {
+          "id": "zh-culture-nationalities:q2",
+          "prompt": "谁是美国人？",
+          "options": [
+            "金妮",
+            "艾美",
+            "东尼"
+          ],
+          "correct_index": 2,
+          "explanation": "欧文说：“他是东尼，他是美国人。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-1-dialogue-2:001"
+          ],
+          "evidence_text": "欧文：她是艾美，她是中国人。他是东尼，他是美国人。"
+        }
       ]
     },
     {
@@ -616,6 +633,38 @@
         "dictation",
         "beginner",
         "new"
+      ],
+      "comprehension": [
+        {
+          "id": "zh-culture-where-are-you-from:q1",
+          "prompt": "欧文是哪国人？",
+          "options": [
+            "美国人",
+            "英国人",
+            "法国人"
+          ],
+          "correct_index": 1,
+          "explanation": "欧文回答：“不是，我是英国人。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-1-dialogue-2:003"
+          ],
+          "evidence_text": "欧文：不是，我是英国人。你呢？你是哪国人？"
+        },
+        {
+          "id": "zh-culture-where-are-you-from:q2",
+          "prompt": "金妮是哪国人？",
+          "options": [
+            "法国人",
+            "英国人",
+            "中国人"
+          ],
+          "correct_index": 0,
+          "explanation": "金妮说：“我是法国人。”",
+          "evidence_segment_ids": [
+            "commons-zh-lesson-1-dialogue-2:004"
+          ],
+          "evidence_text": "金妮：我是法国人。"
+        }
       ]
     },
     {
@@ -661,6 +710,38 @@
         "recommended",
         "new",
         "dictation"
+      ],
+      "comprehension": [
+        {
+          "id": "en-science-cosmic-calendar:q1",
+          "prompt": "On the cosmic calendar, when did the first stars form?",
+          "options": [
+            "January 5",
+            "January 9",
+            "In September"
+          ],
+          "correct_index": 0,
+          "explanation": "The first stars formed on January 5; the first galaxies formed on January 9.",
+          "evidence_segment_ids": [
+            "commons-royalsociety-cosmic-calendar:002"
+          ],
+          "evidence_text": "The first stars formed on the 5th of January and the first galaxies formed on the 9th"
+        },
+        {
+          "id": "en-science-cosmic-calendar:q2",
+          "prompt": "When did our Solar System and Earth form on this calendar?",
+          "options": [
+            "In May",
+            "In September",
+            "On December 25"
+          ],
+          "correct_index": 1,
+          "explanation": "The speaker places the formation of our Solar System and Earth in September.",
+          "evidence_segment_ids": [
+            "commons-royalsociety-cosmic-calendar:003"
+          ],
+          "evidence_text": "For the thin disk of the Milky Way Galaxy didn't form until May Our Solar System and Earth formed in September"
+        }
       ]
     },
     {
@@ -706,6 +787,38 @@
         "recommended",
         "new",
         "dictation"
+      ],
+      "comprehension": [
+        {
+          "id": "zh-technology-search-wikipedia:q1",
+          "prompt": "输入要找的内容后，相关条目会在哪里展开？",
+          "options": [
+            "下方",
+            "另一个网站",
+            "最上方"
+          ],
+          "correct_index": 0,
+          "explanation": "说明中说：“相关条目会在下方展开。”",
+          "evidence_segment_ids": [
+            "commons-zh-wikipedia-tutorial-1:002"
+          ],
+          "evidence_text": "相关条目会在下方展开"
+        },
+        {
+          "id": "zh-technology-search-wikipedia:q2",
+          "prompt": "按哪个按钮可以直接找输入的条目？",
+          "options": [
+            "放大镜",
+            "首页",
+            "语言选项"
+          ],
+          "correct_index": 0,
+          "explanation": "说明中说：“按「放大镜」可以直接找你输入的条目”。",
+          "evidence_segment_ids": [
+            "commons-zh-wikipedia-tutorial-1:004"
+          ],
+          "evidence_text": "按「放大镜」可以直接找你输入的条目"
+        }
       ]
     }
   ]

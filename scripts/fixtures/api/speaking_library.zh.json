@@ -1,0 +1,41 @@
+{
+  "language": "zh",
+  "items": [
+    {
+      "id": "media:zh-daily-what-is-this",
+      "source": "listening",
+      "practice_type": "clip",
+      "title": "这是什么？",
+      "language": "zh",
+      "level": "HSK1",
+      "line_count": 1,
+      "duration_ms": 12098,
+      "artwork": "conversations",
+      "thumbnail_url": ""
+    },
+    {
+      "id": "media:zh-culture-nationalities",
+      "source": "listening",
+      "practice_type": "clip",
+      "title": "他们是谁？",
+      "language": "zh",
+      "level": "HSK2",
+      "line_count": 2,
+      "duration_ms": 8385,
+      "artwork": "culture",
+      "thumbnail_url": ""
+    },
+    {
+      "id": "media:zh-culture-where-are-you-from",
+      "source": "listening",
+      "practice_type": "clip",
+      "title": "你是哪国人？",
+      "language": "zh",
+      "level": "HSK2",
+      "line_count": 3,
+      "duration_ms": 11101,
+      "artwork": "culture",
+      "thumbnail_url": ""
+    }
+  ]
+}

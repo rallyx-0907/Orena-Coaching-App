@@ -1,0 +1,59 @@
+/* Legal pages (legal/page.js, D-128): a plain reading column of the kit's own type and colour tokens.
+   The page header and section headings are kit pieces; this only sets the column and the body text. */
+.o-legal {
+  box-sizing: border-box;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 22px 16px 64px;
+  color: var(--text);
+}
+.o-legal__body {
+  margin-top: 24px;
+}
+.o-legal__section {
+  margin-top: 32px;
+}
+.o-legal__p,
+.o-legal__list {
+  margin: 12px 0 0;
+  font-size: 16px;
+  line-height: 26px;
+  overflow-wrap: anywhere;
+}
+.o-legal__list {
+  padding-left: 22px;
+}
+.o-legal__list li + li {
+  margin-top: 6px;
+}
+.o-legal code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+}
+/* A wide table scrolls in its own box on a phone; the page itself never scrolls sideways. */
+.o-legal__table {
+  margin-top: 12px;
+  overflow-x: auto;
+  border-radius: 16px;
+  background: var(--surface2);
+}
+.o-legal__table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 22px;
+}
+.o-legal__table th,
+.o-legal__table td {
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+.o-legal__table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.o-legal__table tr:last-child td {
+  border-bottom: 0;
+}

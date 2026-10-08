@@ -22,11 +22,29 @@ from writing_coach.ai.capabilities import all_capabilities
 from writing_coach.ai.config import CapabilityConfig
 from writing_coach.ai.control_plane import AIControlPlane
 from writing_coach.ai.pricing import PRICING_CATALOG_VERSION, estimate_token_cost
-from writing_coach.ai.providers import OllamaProvider, OpenAICompatibleProvider
+from writing_coach.ai.providers import OllamaProvider, OpenAICompatibleProvider, build_providers
 from writing_coach.persistence.platform_repository import (
     AISelectionRecord,
     CapabilityConfigRecord,
 )
+
+
+@pytest.mark.parametrize("method", ["generate_json", "generate_json_once"])
+@pytest.mark.parametrize("provider_id,sends_seed", [("gemini", False), ("deepseek", False), ("openai", True)])
+def test_adapter_sends_seed_only_when_its_transport_supports_it(monkeypatch, method, provider_id, sends_seed):
+    provider = build_providers({provider_id: {"api_key": "synthetic-test-key"}})[provider_id]
+    bodies = []
+
+    def post(body):
+        bodies.append(body)
+        return {"choices": [{"message": {"content": '{"ok": true}'}}]}
+
+    monkeypatch.setattr(provider, "_post_chat", post)
+    result = getattr(provider, method)(messages=[{"role": "user", "content": "test"}],
+        schema={"type": "object"}, model="test-model", max_output_tokens=40, temperature=0.0, seed=42)
+    assert result.data == {"ok": True}
+    assert len(bodies) == 1
+    assert ("seed" in bodies[0]) is sends_seed
 
 
 def capability_config(**overrides: Any) -> CapabilityConfig:
@@ -770,6 +788,39 @@ def test_gemini_live_discovery_uses_configured_openai_compatible_models_api(
         "Authorization": "Bearer credential-present",
         "Content-Type": "application/json",
     }
+
+
+def test_gemini_openai_compatible_catalog_resource_names_are_read_as_model_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The live compatible endpoint answers with "models/<id>"; every model was filtered out."""
+    monkeypatch.setenv("TEST_GEMINI_KEY", "credential-present")
+    provider = OpenAICompatibleProvider(
+        provider_id="gemini",
+        name="Gemini API",
+        api_key_env="TEST_GEMINI_KEY",
+        base_url_env="TEST_GEMINI_URL",
+        default_base_url="https://generativelanguage.googleapis.com/v1beta/openai",
+        models_env="TEST_GEMINI_MODELS",
+        model_filter="gemini-text",
+    )
+
+    def get(url: str, **kwargs: Any) -> ProviderResponse:
+        return ProviderResponse(
+            {
+                "data": [
+                    {"id": "models/gemini-2.5-flash"},
+                    {"id": "models/gemini-3.1-flash-lite"},
+                    {"id": "models/gemini-2.5-flash-preview-tts"},
+                    {"id": "models/text-embedding-004"},
+                ]
+            }
+        )
+
+    monkeypatch.setattr(requests, "get", get)
+
+    assert provider.discover_models_live() == ["gemini-2.5-flash", "gemini-3.1-flash-lite"]
+    assert provider.list_models() == ["gemini-2.5-flash", "gemini-3.1-flash-lite"]
 
 
 def test_gemini_live_discovery_falls_back_to_native_catalog(

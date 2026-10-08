@@ -1,0 +1,274 @@
+/* One line's dictation practice (dictation/line-practice.js): the answer box, the hint ladder and its live
+   strip, the comparison after Check and its actions. The Listening workspace hosts it in its Dictation mode
+   (LEX-034); the room around it - media, line navigation, layout - is the workspace's (listening.css). */
+
+.s-dict__input {
+  flex: none;
+  width: 100%;
+  resize: none;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.5;
+  padding: 18px;
+  outline: 0;
+  font-family: inherit;
+}
+.s-dict__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* The frame's "Live check" strip (`dLiveOn`): on while a hint is in use and the line is unchecked.
+   Chip states are the design's `dLive` bindings, tokens as the design draws them. */
+.s-dict__live {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface2);
+}
+.s-dict__live[hidden] {
+  display: none;
+}
+.s-dict__livehead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.s-dict__livelabel {
+  font-weight: 600;
+}
+.s-dict__livecount {
+  color: var(--muted);
+}
+.s-dict__livechips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.s-dict__livechip {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1.5px dashed var(--border2);
+  background: var(--surface);
+  color: var(--text3);
+}
+.s-dict__livechip .ic {
+  display: block;
+  flex: none;
+}
+.s-dict__livechip--ok {
+  background: var(--green-soft);
+  color: var(--green);
+  border: 1.5px solid transparent;
+  font-family: inherit;
+}
+.s-dict__livechip--wrong {
+  background: var(--red-soft);
+  color: var(--red);
+  border-color: var(--red);
+}
+.s-dict__livechip--partial {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.s-dict__hintrow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.s-dict__hint {
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.s-dict__hint:hover:not(:disabled) {
+  background: var(--surface2);
+}
+
+.s-dict__hintnote {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-dict__spacer {
+  flex: 1;
+}
+.o-btn.s-dict__check {
+  padding: 13px 24px;
+  border-radius: 16px;
+  min-height: 44px;
+  font-size: 15px;
+}
+
+.s-dict__result {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: rise 0.25s ease;
+}
+.s-dict__scorerow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.s-dict__score {
+  font-size: 22px;
+  font-weight: 600;
+}
+.s-dict__scorenote {
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-dict__hintbadge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--amber);
+}
+
+.s-dict__chiplabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.s-dict__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  font-size: 17px;
+  line-height: 1.6;
+}
+.s-dict__chip {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text);
+}
+.s-dict__chip--mine-bad {
+  background: var(--red-soft);
+  color: var(--red);
+  text-decoration: underline wavy var(--red);
+}
+.s-dict__chip--src-fix {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.s-dict__chipempty {
+  color: var(--muted);
+  font-style: italic;
+}
+.s-dict__support {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.s-dict__actions {
+  /* The frame keeps this row inside the result block (14px gap), not the card's 18px. */
+  margin-top: -4px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.s-dict__navbtn.s-dict__retry {
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
+.s-dict__ai {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--ai-line);
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.o-btn.s-dict__next {
+  padding: 13px 24px;
+  border-radius: 16px;
+  min-height: 44px;
+  font-size: 15px;
+}
+.s-dict__navbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.s-dict__navbtn:hover:not(:disabled) {
+  background: var(--surface2);
+}
+
+/* Put the hint away or bring it back (LEX-033): a quiet text control beside the hint, not a second hint. */
+.s-dict__hinttoggle {
+  border: 0;
+  background: none;
+  padding: 6px 4px;
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-dict__hinttoggle[hidden] { display: none; }
+
+/* An attempt that did not reach the server (LEX-040): said in the result, with an alert mark, never over the
+   result's actions and never as a success. */
+.s-dict__savenote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--amber);
+}
+.s-dict__saveretry {
+  border: 0;
+  background: none;
+  padding: 2px 0;
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-dict__scoreunit { font-size: 13px; color: var(--muted); margin-left: -6px; }
+.s-dict__retry { display: inline-flex; align-items: center; gap: 6px; }
+.s-dict__savenote > svg { flex: none; margin-top: 2px; }
+.s-dict__savenote > span { flex: 1 1 auto; min-width: 0; }

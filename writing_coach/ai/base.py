@@ -66,6 +66,42 @@ class AIProviderUnsupportedOperation(AICapabilityUnsupported):
     """A known provider cannot perform a capability's declared operation."""
 
 
+@dataclass(frozen=True)
+class ChatTextDelta:
+    """A piece of streamed assistant text."""
+
+    text: str
+
+
+@dataclass(frozen=True)
+class ChatToolCall:
+    """A complete native tool call; `arguments` is the provider's JSON text.
+
+    `extra` is what the provider attached to the call for itself (Gemini's
+    `extra_content` holds a thought signature) and requires back, verbatim, when
+    the call is sent in the next round. It is opaque: never parsed, never shown.
+    """
+
+    id: str
+    name: str
+    arguments: str
+    extra: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class ChatFinished:
+    """The end of one streamed round, with whatever usage the provider reported."""
+
+    finish_reason: str
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    cached_tokens: int | None = None
+    rate_limit: dict[str, int | None] | None = None
+
+
+ChatStreamEvent = ChatTextDelta | ChatToolCall | ChatFinished
+
+
 @dataclass
 class AIResult:
     data: dict[str, Any]
@@ -78,17 +114,21 @@ class AIResult:
         return f"{self.provider}:{self.model}"
 
 
-def normalized_usage(runtime: object) -> dict[str, int | None]:
+def normalized_usage(runtime: object) -> dict[str, int | float | None]:
     """Keep provider usage honest: malformed or absent counts remain unknown."""
 
     source = runtime if isinstance(runtime, dict) else {}
-    result: dict[str, int | None] = {}
+    result: dict[str, int | float | None] = {}
     for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
         value = source.get(key)
         if type(value) is int and value >= 0:
             result[key] = value
         else:
             result[key] = None
+    # An audio request's length (speech recognition, pronunciation scoring): kept only when reported.
+    seconds = source.get("audio_seconds")
+    if type(seconds) in {int, float} and math.isfinite(float(seconds)) and 0 <= seconds < 86_400:
+        result["audio_seconds"] = round(float(seconds), 3)
     return result
 
 
@@ -142,7 +182,9 @@ def normalized_cost(value: object) -> dict[str, Any] | None:
     if not isinstance(reason, str) or not re.fullmatch(r"[a-z][a-z0-9_]{0,39}", reason):
         reason = None
     rates = {}
-    for key in ("input_per_million", "output_per_million"):
+    for key in ("input_per_million", "output_per_million", "per_hour"):
+        if key == "per_hour" and key not in provenance:
+            continue  # an audio rate only on an audio row: a token row keeps its shape
         rate = provenance.get(key)
         rates[key] = round(float(rate), 8) if type(rate) in {int, float} and math.isfinite(float(rate)) and rate >= 0 else None
     return {

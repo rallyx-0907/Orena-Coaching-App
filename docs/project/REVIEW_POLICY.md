@@ -80,6 +80,12 @@ Documentation-only work must not claim application behavior PASS merely
 because no application code changed. Validate document scope, links,
 consistency, versions, and diff hygiene instead.
 
+Learner-facing work additionally reports the fidelity gate in
+`docs/project/DESIGN_CONTRACT.md` ("Acceptance: the fidelity gate"), with the
+result per checked item. A surface that fails it is not `REVIEWABLE`. Missing
+artwork specification is reported as a gap against `assets/brand/orena/`, never
+closed by inventing a style for one surface.
+
 ## Stop behavior
 
 Stop and involve the human coordinator when repository evidence materially

@@ -1,0 +1,376 @@
+{
+  "schema_version": "0.4",
+  "id": "en.present_simple.third_person_s",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.habit_fact",
+  "level": {
+    "framework": "cefr",
+    "value": "A1",
+    "rank": 1
+  },
+  "prereqs": [],
+  "contrasts": [
+    "en.present_continuous.now"
+  ],
+  "error_tags": [
+    "agreement"
+  ],
+  "source_refs": {},
+  "point_type": "morphology",
+  "header": {
+    "title": {
+      "vi": "Thêm -s/-es với he/she/it",
+      "en": "Third person -s"
+    },
+    "native_title": "Third person -s",
+    "level": {
+      "framework": "cefr",
+      "value": "A1",
+      "rank": 1
+    },
+    "summary": {
+      "vi": "Thì hiện tại đơn với chủ ngữ he, she, it hoặc danh từ số ít: động từ thêm -s hoặc -es.",
+      "en": "In the present simple, verbs add -s or -es after he, she, it or a singular noun."
+    },
+    "sub": {
+      "vi": "he / she / it",
+      "en": "he / she / it"
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi chủ ngữ là he, she, it hoặc một danh từ số ít (my brother, the cat, this book)."
+    },
+    {
+      "vi": "Khi nói về thói quen lặp đi lặp lại: She walks to school every day."
+    },
+    {
+      "vi": "Khi nói về sự thật hiển nhiên hoặc điều luôn đúng: The sun rises in the east."
+    },
+    {
+      "vi": "Khi nói về lịch trình, thời gian biểu cố định: The train leaves at 7 a.m."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {
+          "vi": "chủ ngữ số ít"
+        }
+      },
+      {
+        "text": "V",
+        "role": "verb",
+        "label": {
+          "vi": "động từ"
+        }
+      },
+      {
+        "text": "-s/-es",
+        "role": "particle",
+        "label": {
+          "vi": "hậu tố -s/-es"
+        }
+      },
+      {
+        "text": "O",
+        "role": "object",
+        "label": {
+          "vi": "tân ngữ"
+        },
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {
+            "vi": "chủ ngữ số ít"
+          }
+        },
+        {
+          "text": "does not",
+          "role": "aux",
+          "label": {
+            "vi": "trợ động từ phủ định"
+          }
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {
+            "vi": "động từ nguyên mẫu"
+          }
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {
+            "vi": "tân ngữ"
+          },
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Does",
+          "role": "aux",
+          "label": {
+            "vi": "trợ động từ nghi vấn"
+          }
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {
+            "vi": "chủ ngữ số ít"
+          }
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {
+            "vi": "động từ nguyên mẫu"
+          }
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {
+            "vi": "tân ngữ"
+          },
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {
+      "kind": "morphology",
+      "morphology": [
+        {
+          "base": "read",
+          "affix": "-s",
+          "result": "reads"
+        },
+        {
+          "base": "watch",
+          "affix": "-es",
+          "result": "watches"
+        },
+        {
+          "base": "study",
+          "affix": "-ies",
+          "result": "studies"
+        },
+        {
+          "base": "go",
+          "affix": "-es",
+          "result": "goes"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "text": "She reads a book every evening.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 3,
+          "role": "subject"
+        },
+        {
+          "start": 4,
+          "end": 8,
+          "role": "verb"
+        },
+        {
+          "start": 8,
+          "end": 9,
+          "role": "particle"
+        },
+        {
+          "start": 10,
+          "end": 16,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Chủ ngữ số ít she → động từ read thêm -s thành reads."
+      },
+      "translation": {
+        "vi": "Cô ấy đọc một cuốn sách mỗi tối."
+      }
+    },
+    {
+      "text": "He does not like coffee.",
+      "form": "negative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 2,
+          "role": "subject"
+        },
+        {
+          "start": 3,
+          "end": 11,
+          "role": "aux"
+        },
+        {
+          "start": 12,
+          "end": 16,
+          "role": "verb"
+        },
+        {
+          "start": 17,
+          "end": 23,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Phủ định với does not: động từ chính trở về nguyên mẫu like, không thêm -s."
+      },
+      "translation": {
+        "vi": "Anh ấy không thích cà phê."
+      }
+    },
+    {
+      "text": "Does she live in Hanoi?",
+      "form": "question",
+      "spans": [
+        {
+          "start": 0,
+          "end": 4,
+          "role": "aux"
+        },
+        {
+          "start": 5,
+          "end": 8,
+          "role": "subject"
+        },
+        {
+          "start": 9,
+          "end": 13,
+          "role": "verb"
+        },
+        {
+          "start": 14,
+          "end": 22,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Câu hỏi với Does: động từ chính giữ nguyên mẫu live, không thêm -s."
+      },
+      "translation": {
+        "vi": "Cô ấy sống ở Hà Nội phải không?"
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "She read a book every evening.",
+      "right": "She reads a book every evening.",
+      "reason": {
+        "vi": "Người Việt thường không thêm -s vì tiếng Việt không biến đổi động từ theo chủ ngữ; nhưng trong tiếng Anh, chủ ngữ số ít ngôi thứ ba bắt buộc phải thêm -s/-es vào động từ ở thì hiện tại đơn."
+      },
+      "error_tag": "agreement",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "My brother ___ football every Sunday.",
+      "options": [
+        {
+          "text": "plays",
+          "error_tag": null
+        },
+        {
+          "text": "play",
+          "error_tag": "agreement"
+        },
+        {
+          "text": "playing",
+          "error_tag": "tense"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Chủ ngữ my brother là số ít ngôi thứ ba, nên động từ play thêm -s thành plays."
+      }
+    },
+    {
+      "q": "She ___ like fish.",
+      "options": [
+        {
+          "text": "does not",
+          "error_tag": null
+        },
+        {
+          "text": "do not",
+          "error_tag": "agreement"
+        },
+        {
+          "text": "not",
+          "error_tag": "sentence_structure"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Với chủ ngữ she, dùng does not; do not dùng cho I, you, we, they."
+      }
+    },
+    {
+      "q": "___ he work in a bank?",
+      "options": [
+        {
+          "text": "Does",
+          "error_tag": null
+        },
+        {
+          "text": "Do",
+          "error_tag": "agreement"
+        },
+        {
+          "text": "Is",
+          "error_tag": "tense"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi với chủ ngữ he dùng Does; Do dùng cho I, you, we, they."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về thói quen của một người khác (he hoặc she).",
+      "en": "Write a sentence about another person's habit (he or she)."
+    },
+    "placeholder": "She ... every day.",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "particle",
+          "regex": "\\b(?:he|she|it)\\s+(?:\\w+\\s+)?\\w+(?:s|es)\\b"
+        }
+      ]
+    },
+    "sample": {
+      "text": "She works in a bank."
+    }
+  }
+}

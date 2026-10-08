@@ -11,6 +11,12 @@ services:
       OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-180}
       WRITING_DB: /data/writing.db
       ALLOW_FALLBACK: ${ALLOW_FALLBACK:-false}
+      # Account work (drafts, conversations, notes, private imports) kept with the account. Off unless an
+      # operator turns it on, after the D4 migrations and the human's gate (D-104 H-11).
+      ORENA_ACCOUNT_BACKBONE: ${ORENA_ACCOUNT_BACKBONE:-off}
+      # Persisted Speaking practice session identity (D-142). Off unless an operator applies migration
+      # 20261007_0029 and turns it on, after the human's gate.
+      ORENA_PRACTICE_SESSION: ${ORENA_PRACTICE_SESSION:-off}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       APP_ENV: ${APP_ENV:-development}
@@ -23,6 +29,22 @@ services:
       USER_DATA_ROOT: /data/users
       PLATFORM_DB: /data/platform.db
       PRODUCT_DB: /data/product.db
+      # Content an operator imported lives on the same persistent volume as
+      # everything else the deployment owns. The application's defaults are
+      # repo-relative, which is right for a checkout and wrong for a container:
+      # an image with the code mounted read-only cannot write them, and one
+      # without a volume loses the index, the transcripts and the lifecycle
+      # state on the next recreate. Naming them here is the contract.
+      MEDIA_LIBRARY_ROOT: /data/media_library
+      MEDIA_LIBRARY_ASSET_ROOT: /data/media_library_assets
+      READING_LIBRARY_ASSET_ROOT: /data/reading_library_assets
+      # Word recordings (with their licences) and explained words: on the volume too, or a recreate loses them.
+      WORD_AUDIO_ASSET_ROOT: /data/word_audio
+      WORD_DEEP_ASSET_ROOT: /data/word_deep
+      # The key that encrypts saved provider credentials. Passed through from
+      # the environment and never written here: without it the console refuses
+      # to save a key and says so, which is the correct closed state.
+      AI_PROVIDER_SECRETS_KEY: ${AI_PROVIDER_SECRETS_KEY:-}
       PERSISTENCE_BACKEND: ${PERSISTENCE_BACKEND:-postgresql}
       POSTGRES_RUNTIME_URL: ${POSTGRES_RUNTIME_URL:-postgresql+psycopg://becoming:becoming-local-dev@postgres:5432/becoming}
       POSTGRES_SHADOW_URL: ${POSTGRES_SHADOW_URL:-}
@@ -48,7 +70,7 @@ services:
       GROQ_ASR_MODEL: ${GROQ_ASR_MODEL:-whisper-large-v3-turbo}
       GROQ_ASR_TIMEOUT_SECONDS: ${GROQ_ASR_TIMEOUT_SECONDS:-120}
       GROQ_ASR_MAX_BYTES: ${GROQ_ASR_MAX_BYTES:-25165824}
-      PRONUNCIATION_PROVIDER: ${PRONUNCIATION_PROVIDER:-demo}
+      PRONUNCIATION_PROVIDER: ${PRONUNCIATION_PROVIDER:-}
       AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY:-}
       AZURE_SPEECH_REGION: ${AZURE_SPEECH_REGION:-}
       AZURE_PRONUNCIATION_EN_LOCALE: ${AZURE_PRONUNCIATION_EN_LOCALE:-en-US}
@@ -73,6 +95,30 @@ services:
       - "${APP_BIND_HOST:-0.0.0.0}:8000:8000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  # The Reading engine's worker (writing_coach/reading_worker.py): the process that takes a submitted
+  # text, address or file from the queue to a candidate or a published article (D-111). Without it,
+  # every Reading job an operator submits in Admin stays queued. Same image, same database and the same
+  # asset volume as the web service; no port, nothing learner-facing.
+  reading-worker:
+    image: ai-writing-coach:local
+    restart: unless-stopped
+    command: ["python", "-m", "writing_coach.reading_worker"]
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      PERSISTENCE_BACKEND: ${PERSISTENCE_BACKEND:-postgresql}
+      POSTGRES_RUNTIME_URL: ${POSTGRES_RUNTIME_URL:-postgresql+psycopg://becoming:becoming-local-dev@postgres:5432/becoming}
+      READING_LIBRARY_ASSET_ROOT: /data/reading_library_assets
+      READING_WORKER_CONCURRENCY: ${READING_WORKER_CONCURRENCY:-1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      writing-coach:
+        condition: service_started
+    volumes:
+      - writing_data:/data
+      - ./writing_coach:/app/writing_coach:ro
+      - ./VERSION:/app/VERSION:ro
 
   writing-coach-tests:
     profiles:

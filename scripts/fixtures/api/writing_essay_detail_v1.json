@@ -1,0 +1,389 @@
+{
+  "id": 1,
+  "created_at": "2026-09-29T03:23:36+07:00",
+  "prompt": "Write about your last weekend",
+  "text": "Last weekend I go to the beach with my family. We was very happy because the weather were nice. I like swim in the sea and eat fresh seafood. In the evening, we watched the sunset together, it was a wonderful memory.",
+  "word_count": 42,
+  "target_cefr": "B1",
+  "grammar": 48.0,
+  "vocabulary": 62.0,
+  "coherence": 66.0,
+  "task_achievement": 64.0,
+  "naturalness": 55.0,
+  "overall": 58.7,
+  "cefr_estimate": "B1",
+  "evaluator": "captured:fixed-answer",
+  "summary_vi": "Bài viết kể chuyện rõ ràng và dễ theo dõi, nhưng còn vài lỗi chia động từ làm câu văn kém tự nhiên.",
+  "series_id": 1,
+  "revision_no": 1,
+  "parent_id": null,
+  "language_code": "en",
+  "target_level": "B1",
+  "level_estimate": "B1",
+  "review_kept_at": null,
+  "strengths_vi": [
+    "Bạn kể theo trình tự thời gian rất rõ ràng."
+  ],
+  "strength_evidence": [
+    {
+      "id": "strength-1",
+      "category": "coherence",
+      "fragment": "In the evening, we watched the sunset together",
+      "quote": "In the evening, we watched the sunset together",
+      "span": {
+        "start": 142,
+        "end": 188
+      },
+      "explanation_vi": "Bạn dùng mở đầu chỉ thời gian để nối các ý tự nhiên.",
+      "confidence": 0.9
+    },
+    {
+      "id": "strength-2",
+      "category": "vocabulary",
+      "fragment": "a wonderful memory",
+      "quote": "a wonderful memory",
+      "span": {
+        "start": 197,
+        "end": 215
+      },
+      "explanation_vi": "Cụm danh từ này diễn tả cảm xúc chính xác và tự nhiên.",
+      "confidence": 0.9
+    }
+  ],
+  "priorities_vi": [
+    "Ôn lại cách chia động từ ở thì quá khứ đơn."
+  ],
+  "errors": [
+    {
+      "id": "issue-b8a30a1dcda2756e",
+      "category": "tense",
+      "fragment": "I go to the beach",
+      "quote": "I go to the beach",
+      "span": {
+        "start": 13,
+        "end": 30
+      },
+      "anchored": true,
+      "explanation_vi": "Câu kể về chuyến đi cuối tuần trước nên cần dùng thì quá khứ đơn.",
+      "suggestion": "I went to the beach",
+      "mini_rule_vi": "Sự việc đã xảy ra và đã kết thúc: dùng quá khứ đơn (went, not go).",
+      "example": "Yesterday I went to school.",
+      "confidence": 0.95
+    },
+    {
+      "id": "issue-f3c5700ad74dbc4c",
+      "category": "agreement",
+      "fragment": "We was very happy",
+      "quote": "We was very happy",
+      "span": {
+        "start": 47,
+        "end": 64
+      },
+      "anchored": true,
+      "explanation_vi": "Chủ ngữ 'we' đi với 'were', không đi với 'was'.",
+      "suggestion": "We were very happy",
+      "mini_rule_vi": "We / you / they + were; I / he / she / it + was.",
+      "example": "They were tired after the trip.",
+      "confidence": 0.9
+    },
+    {
+      "id": "issue-f1ae3c62ef079be2",
+      "category": "agreement",
+      "fragment": "the weather were nice",
+      "quote": "the weather were nice",
+      "span": {
+        "start": 73,
+        "end": 94
+      },
+      "anchored": true,
+      "explanation_vi": "'Weather' là danh từ không đếm được, số ít nên đi với 'was'.",
+      "suggestion": "the weather was nice",
+      "mini_rule_vi": "Danh từ không đếm được dùng động từ số ít.",
+      "example": "The news was good.",
+      "confidence": 0.85
+    },
+    {
+      "id": "issue-876d8dfef1f641a4",
+      "category": "word_form",
+      "fragment": "I like swim in the sea",
+      "quote": "I like swim in the sea",
+      "span": {
+        "start": 96,
+        "end": 118
+      },
+      "anchored": true,
+      "explanation_vi": "Sau 'like' để nói sở thích, dùng động từ dạng V-ing.",
+      "suggestion": "I like swimming in the sea",
+      "mini_rule_vi": "like + V-ing (sở thích chung).",
+      "example": "She likes cooking dinner.",
+      "confidence": 0.8
+    },
+    {
+      "id": "issue-0a9b6a5e89c47a56",
+      "category": "punctuation",
+      "fragment": "together, it was",
+      "quote": "together, it was",
+      "span": {
+        "start": 180,
+        "end": 196
+      },
+      "anchored": true,
+      "explanation_vi": "Hai mệnh đề độc lập không thể nối chỉ bằng dấu phẩy; hãy tách thành hai câu.",
+      "suggestion": "together. It was",
+      "mini_rule_vi": "Hai mệnh đề độc lập cần dấu chấm hoặc liên từ, không chỉ dấu phẩy.",
+      "example": "",
+      "confidence": 0.75
+    }
+  ],
+  "module_data": {
+    "practice": null,
+    "grammar_links": [
+      {
+        "issue_id": "issue-b8a30a1dcda2756e",
+        "category": "tense",
+        "grammar_id": "b1-ability-across-time",
+        "title": "Ability across time",
+        "level": "B1",
+        "reason": "Writing finding category: tense",
+        "evidence": "I go to the beach",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-b8a30a1dcda2756e",
+        "category": "tense",
+        "grammar_id": "b1-future-forms-in-context",
+        "title": "Future forms in context",
+        "level": "B1",
+        "reason": "Writing finding category: tense",
+        "evidence": "I go to the beach",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-f3c5700ad74dbc4c",
+        "category": "agreement",
+        "grammar_id": "a1-third-person-s-and-spelling",
+        "title": "Third-person -s and spelling",
+        "level": "A1",
+        "reason": "Writing finding category: agreement",
+        "evidence": "We was very happy",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-0a9b6a5e89c47a56",
+        "category": "punctuation",
+        "grammar_id": "b2-punctuation-with-complex-clauses",
+        "title": "Punctuation with complex clauses",
+        "level": "B2",
+        "reason": "Writing finding category: punctuation",
+        "evidence": "together, it was",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-0a9b6a5e89c47a56",
+        "category": "punctuation",
+        "grammar_id": "b2-review-reference-and-register-2",
+        "title": "B2 · Reference and register · Review 2",
+        "level": "B2",
+        "reason": "Writing finding category: punctuation",
+        "evidence": "together, it was",
+        "source": "static-grammar-kb"
+      }
+    ],
+    "review": {
+      "contract": "writing-evaluation-v2.6",
+      "learning_language": "en",
+      "support_language": "vi",
+      "target_level": "B1",
+      "text_hash": "dfc4cf183c688c3c92ef4524a649e2fddb1fab43275eed124763e964c377a221",
+      "prompt_hash": "0487e80d44e492156b7a281082341f10d1eaf09390117fd73dc01ef0b3e3cc61",
+      "fingerprint": "629cb3b646c0ca70301ba6ca6a43ee5eda571dd3961f695eb06ef081bf4e6f77"
+    }
+  },
+  "practice_context": null,
+  "grammar_links": [
+    {
+      "issue_id": "issue-b8a30a1dcda2756e",
+      "category": "tense",
+      "grammar_id": "b1-ability-across-time",
+      "title": "Ability across time",
+      "level": "B1",
+      "reason": "Writing finding category: tense",
+      "evidence": "I go to the beach",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-b8a30a1dcda2756e",
+      "category": "tense",
+      "grammar_id": "b1-future-forms-in-context",
+      "title": "Future forms in context",
+      "level": "B1",
+      "reason": "Writing finding category: tense",
+      "evidence": "I go to the beach",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-f3c5700ad74dbc4c",
+      "category": "agreement",
+      "grammar_id": "a1-third-person-s-and-spelling",
+      "title": "Third-person -s and spelling",
+      "level": "A1",
+      "reason": "Writing finding category: agreement",
+      "evidence": "We was very happy",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-0a9b6a5e89c47a56",
+      "category": "punctuation",
+      "grammar_id": "b2-punctuation-with-complex-clauses",
+      "title": "Punctuation with complex clauses",
+      "level": "B2",
+      "reason": "Writing finding category: punctuation",
+      "evidence": "together, it was",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-0a9b6a5e89c47a56",
+      "category": "punctuation",
+      "grammar_id": "b2-review-reference-and-register-2",
+      "title": "B2 · Reference and register · Review 2",
+      "level": "B2",
+      "reason": "Writing finding category: punctuation",
+      "evidence": "together, it was",
+      "source": "static-grammar-kb"
+    }
+  ],
+  "schema_version": "writing-evaluation-v2",
+  "text_hash": "96c24fe2198d239484170e7a6976d8f28c4c4e6ec149acdc0c15ddc6daae727d",
+  "summary": {
+    "headline": "Bạn kể theo trình tự thời gian rất rõ ràng.",
+    "interpretation": "Bài viết kể chuyện rõ ràng và dễ theo dõi, nhưng còn vài lỗi chia động từ làm câu văn kém tự nhiên."
+  },
+  "dimensions": {
+    "grammar": 48.0,
+    "vocabulary": 62.0,
+    "coherence": 66.0,
+    "task_achievement": 64.0,
+    "naturalness": 55.0
+  },
+  "issues": [
+    {
+      "id": "issue-b8a30a1dcda2756e",
+      "category": "tense",
+      "priority": "high",
+      "span": {
+        "start": 13,
+        "end": 30
+      },
+      "quote": "I go to the beach",
+      "why": "Câu kể về chuyến đi cuối tuần trước nên cần dùng thì quá khứ đơn.",
+      "how": "Sự việc đã xảy ra và đã kết thúc: dùng quá khứ đơn (went, not go).",
+      "suggestion": "I went to the beach",
+      "examples": [
+        "Yesterday I went to school."
+      ]
+    },
+    {
+      "id": "issue-f3c5700ad74dbc4c",
+      "category": "agreement",
+      "priority": "medium",
+      "span": {
+        "start": 47,
+        "end": 64
+      },
+      "quote": "We was very happy",
+      "why": "Chủ ngữ 'we' đi với 'were', không đi với 'was'.",
+      "how": "We / you / they + were; I / he / she / it + was.",
+      "suggestion": "We were very happy",
+      "examples": [
+        "They were tired after the trip."
+      ]
+    },
+    {
+      "id": "issue-f1ae3c62ef079be2",
+      "category": "agreement",
+      "priority": "medium",
+      "span": {
+        "start": 73,
+        "end": 94
+      },
+      "quote": "the weather were nice",
+      "why": "'Weather' là danh từ không đếm được, số ít nên đi với 'was'.",
+      "how": "Danh từ không đếm được dùng động từ số ít.",
+      "suggestion": "the weather was nice",
+      "examples": [
+        "The news was good."
+      ]
+    },
+    {
+      "id": "issue-876d8dfef1f641a4",
+      "category": "word_form",
+      "priority": "medium",
+      "span": {
+        "start": 96,
+        "end": 118
+      },
+      "quote": "I like swim in the sea",
+      "why": "Sau 'like' để nói sở thích, dùng động từ dạng V-ing.",
+      "how": "like + V-ing (sở thích chung).",
+      "suggestion": "I like swimming in the sea",
+      "examples": [
+        "She likes cooking dinner."
+      ]
+    },
+    {
+      "id": "issue-0a9b6a5e89c47a56",
+      "category": "punctuation",
+      "priority": "medium",
+      "span": {
+        "start": 180,
+        "end": 196
+      },
+      "quote": "together, it was",
+      "why": "Hai mệnh đề độc lập không thể nối chỉ bằng dấu phẩy; hãy tách thành hai câu.",
+      "how": "Hai mệnh đề độc lập cần dấu chấm hoặc liên từ, không chỉ dấu phẩy.",
+      "suggestion": "together. It was",
+      "examples": []
+    }
+  ],
+  "strengths": [
+    {
+      "id": "strength-1",
+      "category": "coherence",
+      "span": {
+        "start": 142,
+        "end": 188
+      },
+      "quote": "In the evening, we watched the sunset together",
+      "why": "Bạn dùng mở đầu chỉ thời gian để nối các ý tự nhiên."
+    },
+    {
+      "id": "strength-2",
+      "category": "vocabulary",
+      "span": {
+        "start": 197,
+        "end": 215
+      },
+      "quote": "a wonderful memory",
+      "why": "Cụm danh từ này diễn tả cảm xúc chính xác và tự nhiên."
+    }
+  ],
+  "next_actions": [
+    "Ôn lại cách chia động từ ở thì quá khứ đơn."
+  ],
+  "revisions": [
+    {
+      "id": 1,
+      "revision_no": 1,
+      "overall": 58.7,
+      "created_at": "2026-09-29T03:23:36+07:00"
+    },
+    {
+      "id": 2,
+      "revision_no": 2,
+      "overall": 68.5,
+      "created_at": "2026-09-29T03:23:36+07:00"
+    }
+  ],
+  "delta": {},
+  "app_cefr": "B1"
+}

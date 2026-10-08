@@ -122,6 +122,7 @@ def test_explain_media_text_uses_requested_support_language(monkeypatch) -> None
     def fake_run(capability_key, *, messages, schema, max_output_tokens):
         observed["capability_key"] = capability_key
         observed["system"] = messages[0]["content"]
+        observed["user"] = messages[1]["content"]
         return {
             "summary": "Cụm này diễn tả một thói quen.",
             "natural_translation": "Tôi thường đi bộ đến trường.",
@@ -152,6 +153,11 @@ def test_explain_media_text_uses_requested_support_language(monkeypatch) -> None
     assert "Explain in Vietnamese" in observed["system"]
     assert payload["target_language"] == "vi"
     assert payload["vocabulary"][0]["fragment"] == "usually"
+    # The last message names the answer language too, and names the fields a model
+    # otherwise leaves in the language of the text (the verdict's reason, the follow-ups).
+    assert "second person" in observed["system"] and "the learner'" in observed["system"]
+    assert observed["user"].rstrip().splitlines()[-1].startswith("Write every explanation in Vietnamese")
+    assert "judgement_reason" in observed["user"] and "follow_ups" in observed["user"]
 
 
 def test_contextual_dictionary_requires_visible_context_and_returns_grounded_claim(monkeypatch) -> None:

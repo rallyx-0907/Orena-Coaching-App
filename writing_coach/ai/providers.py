@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
@@ -16,6 +17,10 @@ from writing_coach.ai.base import (
     AIProviderResponseInvalid,
     AIProviderUnavailable,
     AIResult,
+    ChatFinished,
+    ChatStreamEvent,
+    ChatTextDelta,
+    ChatToolCall,
     extract_json_object,
 )
 from writing_coach.ai.capabilities import AIOperation
@@ -37,6 +42,9 @@ class ProviderDefinition:
 
 
 _STRUCTURED_TEXT_OPERATIONS = frozenset({AIOperation.STRUCTURED_TEXT_GENERATION})
+# The managed chat providers also stream agent turns with native tool calls
+# (Orena Intelligence, D-085). A local model never does (spec D2).
+_CLOUD_CHAT_OPERATIONS = _STRUCTURED_TEXT_OPERATIONS | {AIOperation.AGENT_TURN}
 
 _RATE_LIMIT_HEADER_KEYS = {
     "x-ratelimit-limit-requests": "requests_limit",
@@ -74,6 +82,8 @@ def _normalized_rate_limit_headers(headers: object) -> dict[str, int | None]:
 # must not claim it is independently supported yet.
 _TEXT_OPTION_KEYS = frozenset({"temperature"})
 _PROVIDER_DEFINITIONS = (
+    ProviderDefinition('azure-openai', 'Azure OpenAI', 'cloud', 'server-managed', _STRUCTURED_TEXT_OPERATIONS, _TEXT_OPTION_KEYS),
+    ProviderDefinition('azure-speech', 'Azure Speech', 'cloud', 'server-managed', frozenset({AIOperation.PRONUNCIATION_EVALUATION}), frozenset()),
     ProviderDefinition(
         id="ollama",
         name="Ollama",
@@ -87,7 +97,7 @@ _PROVIDER_DEFINITIONS = (
         name="OpenAI API",
         kind="cloud",
         secret_mode="server-managed",
-        supported_operations=_STRUCTURED_TEXT_OPERATIONS,
+        supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
     ),
     ProviderDefinition(
@@ -95,7 +105,7 @@ _PROVIDER_DEFINITIONS = (
         name="DeepSeek API",
         kind="cloud",
         secret_mode="server-managed",
-        supported_operations=_STRUCTURED_TEXT_OPERATIONS,
+        supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
     ),
     ProviderDefinition(
@@ -103,7 +113,7 @@ _PROVIDER_DEFINITIONS = (
         name="Groq API",
         kind="cloud",
         secret_mode="server-managed",
-        supported_operations=_STRUCTURED_TEXT_OPERATIONS,
+        supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
     ),
     ProviderDefinition(
@@ -111,7 +121,7 @@ _PROVIDER_DEFINITIONS = (
         name="Gemini API",
         kind="cloud",
         secret_mode="server-managed",
-        supported_operations=_STRUCTURED_TEXT_OPERATIONS,
+        supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
     ),
 )
@@ -360,6 +370,7 @@ class OpenAICompatibleProvider:
         models_env: str,
         default_models: tuple[str, ...] = (),
         model_filter: str = "",
+        supports_seed: bool = True,
         credential_override: dict[str, Any] | None = None,
     ) -> None:
         credential_override = credential_override or {}
@@ -379,6 +390,7 @@ class OpenAICompatibleProvider:
         self.default_models = list(default_models)
         self.default_model_override = str(credential_override.get("default_model") or "").strip()
         self.model_filter = model_filter
+        self.supports_seed = supports_seed
         self.timeout = int(os.getenv("CLOUD_AI_TIMEOUT", "180"))
         self._last_rate_limit = _normalized_rate_limit_headers(None)
 
@@ -394,6 +406,8 @@ class OpenAICompatibleProvider:
         return models[0] if models else ""
 
     def _headers(self) -> dict[str, str]:
+        if self.id == 'azure-openai':
+            return {'api-key': self.api_key, 'Content-Type': 'application/json'}
         return {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -446,7 +460,13 @@ class OpenAICompatibleProvider:
                 model.rsplit("/", 1)[-1]
                 for model in _model_catalog(envelope, container_key="models", model_key="name")
             ]
-        return _model_catalog(envelope, container_key="data", model_key="id")
+        models = _model_catalog(envelope, container_key="data", model_key="id")
+        if self.model_filter == "gemini-text":
+            # Gemini's OpenAI-compatible catalogue answers with resource names
+            # ("models/gemini-2.5-flash"); the chat endpoint and the filter take
+            # the bare model id, the same one the native catalogue yields.
+            return [model.rsplit("/", 1)[-1] for model in models]
+        return models
 
     def _accept_model(self, model: str) -> bool:
         if not model:
@@ -482,6 +502,9 @@ class OpenAICompatibleProvider:
             return sorted(dict.fromkeys(self.allowed_models))
         if self.default_models:
             return list(self.default_models)
+        if self.id == 'azure-openai':
+            # Resource model catalogues are not operator-created deployments.
+            return []
 
         try:
             response, native_gemini = self._model_catalog_request()
@@ -501,6 +524,8 @@ class OpenAICompatibleProvider:
             raise AIProviderNotConfigured(f"{self.name} is not configured on the server.")
         if self.allowed_models:
             return sorted(dict.fromkeys(self.allowed_models))
+        if self.id == 'azure-openai':
+            raise AIProviderNotConfigured('Enter an Azure OpenAI deployment name.')
 
         try:
             response, native_gemini = self._model_catalog_request()
@@ -530,14 +555,13 @@ class OpenAICompatibleProvider:
             headers=self._headers(),
             json=body,
             timeout=self.timeout,
+            **({'allow_redirects': False} if self.id == 'azure-openai' else {}),
         )
+        if self.id == 'azure-openai' and 300 <= response.status_code < 400:
+            raise AIProviderError('Azure OpenAI redirect refused.')
         self._last_rate_limit = _normalized_rate_limit_headers(getattr(response, "headers", None))
         if response.status_code >= 400:
-            detail = ""
-            try:
-                detail = str(response.json().get("error", {}).get("message") or "")
-            except Exception:
-                pass
+            detail = _error_detail(response)
             error = AIProviderError(
                 f"{self.name} returned HTTP {response.status_code}. {detail[:300]}".strip()
             )
@@ -577,7 +601,7 @@ class OpenAICompatibleProvider:
             "response_format": {"type": "json_object"},
             "temperature": temperature,
         }
-        if seed is not None:
+        if seed is not None and self.supports_seed:
             body["seed"] = seed
 
         try:
@@ -638,7 +662,7 @@ class OpenAICompatibleProvider:
             "response_format": {"type": "json_object"},
             "temperature": temperature,
         }
-        if seed is not None:
+        if seed is not None and self.supports_seed:
             body["seed"] = seed
         try:
             envelope = self._post_chat(body)
@@ -663,9 +687,203 @@ class OpenAICompatibleProvider:
         )
 
 
+    def stream_chat(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        model: str,
+        max_output_tokens: int,
+        temperature: float | None = None,
+        should_stop: Callable[[], bool] = lambda: False,
+        read_timeout: float | None = None,
+    ) -> Iterator[ChatStreamEvent]:
+        """One streamed chat round with native tool calls (Orena Intelligence, D-085).
+
+        The same chat/completions endpoint as `generate_json_once`, with
+        `stream: true` and the OpenAI `tools` array. Transport and HTTP
+        failures raise here, before anything streams; the returned iterator
+        yields text deltas, then each complete tool call, then one
+        `ChatFinished`, and stops early when `should_stop()` turns true.
+        `read_timeout` bounds each wait for the response and for every next
+        piece of it, so a silent provider cannot hold a worker thread for the
+        whole server timeout after the learner has gone.
+        """
+
+        if not self.configured:
+            raise AIProviderNotConfigured(f"{self.name} is not configured on the server.")
+        if not model:
+            raise AIProviderUnavailable(f"No model is selected for {self.name}.")
+        body: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "stream": True,
+            "max_tokens": max_output_tokens,
+        }
+        if tools:
+            body["tools"] = tools
+        if temperature is not None:
+            body["temperature"] = temperature
+        if self.id in _STREAM_USAGE_PROVIDERS:
+            # These report usage on a stream only when asked; an endpoint whose
+            # support is unverified is not sent a field it may reject, and its
+            # usage stays unknown rather than being guessed.
+            body["stream_options"] = {"include_usage": True}
+        wait = min(float(self.timeout), read_timeout) if read_timeout and read_timeout > 0 else float(self.timeout)
+        try:
+            response = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers=self._headers(),
+                json=body,
+                timeout=(min(10.0, wait), wait),
+                stream=True,
+            )
+        except requests.ConnectionError as exc:
+            raise AIProviderUnavailable(f"{self.name} is not reachable.") from exc
+        except requests.Timeout as exc:
+            raise AIProviderUnavailable(f"{self.name} timed out.") from exc
+        self._last_rate_limit = _normalized_rate_limit_headers(getattr(response, "headers", None))
+        if response.status_code >= 400:
+            try:
+                detail = _error_detail(response)
+            finally:
+                response.close()
+            error = AIProviderError(f"{self.name} returned HTTP {response.status_code}. {detail[:300]}".strip())
+            error.rate_limit = dict(self._last_rate_limit)
+            raise error
+        return self._read_chat_stream(response, should_stop)
+
+    def _read_chat_stream(
+        self, response: requests.Response, should_stop: Callable[[], bool]
+    ) -> Iterator[ChatStreamEvent]:
+        calls: dict[object, dict[str, Any]] = {}
+        order: list[object] = []
+        finish_reason = ""
+        usage: dict[str, Any] = {}
+        try:
+            for raw in response.iter_lines():
+                if should_stop():
+                    return
+                line = raw.decode("utf-8") if isinstance(raw, bytes) else str(raw or "")
+                if not line.startswith("data:"):
+                    continue  # blank keep-alives, comments, event names
+                data = line[len("data:"):].strip()
+                if data == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data)
+                except ValueError as exc:
+                    raise AIProviderResponseInvalid(f"{self.name} sent a malformed stream chunk.") from exc
+                if not isinstance(chunk, dict):
+                    raise AIProviderResponseInvalid(f"{self.name} sent a malformed stream chunk.")
+                if chunk.get("error"):
+                    raise AIProviderError(f"{self.name} reported an error while streaming.")
+                for container in (chunk, chunk.get("x_groq")):
+                    if isinstance(container, dict) and isinstance(container.get("usage"), dict):
+                        usage = container["usage"]
+                for choice in chunk.get("choices") or ():
+                    if not isinstance(choice, dict) or choice.get("index", 0) != 0:
+                        continue
+                    delta = choice.get("delta") if isinstance(choice.get("delta"), dict) else {}
+                    content = delta.get("content")
+                    if isinstance(content, str) and content:
+                        yield ChatTextDelta(content)
+                    for position, part in enumerate(delta.get("tool_calls") or ()):
+                        if not isinstance(part, dict):
+                            continue
+                        key = _tool_call_key(part, position, order)
+                        slot = calls.get(key)
+                        if slot is None:
+                            slot = calls[key] = {"id": "", "name": "", "arguments": [], "extra": None}
+                            order.append(key)
+                        if isinstance(part.get("id"), str) and part["id"]:
+                            slot["id"] = part["id"]
+                        if isinstance(part.get("extra_content"), dict):
+                            slot["extra"] = part["extra_content"]
+                        function = part.get("function") if isinstance(part.get("function"), dict) else {}
+                        if isinstance(function.get("name"), str) and function["name"]:
+                            slot["name"] = function["name"]
+                        if isinstance(function.get("arguments"), str):
+                            slot["arguments"].append(function["arguments"])
+                    if isinstance(choice.get("finish_reason"), str) and choice["finish_reason"]:
+                        finish_reason = choice["finish_reason"]
+        except requests.RequestException as exc:
+            raise AIProviderUnavailable(f"{self.name} stopped streaming.") from exc
+        finally:
+            response.close()
+        for number, key in enumerate(order):
+            slot = calls[key]
+            if not slot["name"]:
+                raise AIProviderResponseInvalid(f"{self.name} sent a tool call without a name.")
+            yield ChatToolCall(
+                id=slot["id"] or f"call_{number}",
+                name=slot["name"],
+                arguments="".join(slot["arguments"]),
+                extra=slot["extra"],
+            )
+        # The provider's own reason, never normalised to a normal stop (independent review 2026-10-04): tool calls with
+        # "stop" (Gemini's way) are a tool round; anything else - "length", a safety or content filter, or no reason
+        # at all (a stream cut short) - is passed on as it is, and the caller fails closed on it.
+        if order and finish_reason in ("tool_calls", "stop"):
+            reason = "tool_calls"
+        else:
+            reason = finish_reason or "missing"
+        details = usage.get("prompt_tokens_details") if isinstance(usage.get("prompt_tokens_details"), dict) else {}
+        yield ChatFinished(
+            finish_reason=reason,
+            prompt_tokens=_count(usage.get("prompt_tokens")),
+            completion_tokens=_count(usage.get("completion_tokens")),
+            cached_tokens=_count(details.get("cached_tokens")),
+            rate_limit=dict(self._last_rate_limit),
+        )
+
+
+def _error_detail(response: Any) -> str:
+    """The provider's own error message, or "". Gemini's OpenAI-compatible endpoint wraps it in a list."""
+
+    try:
+        payload = response.json()
+        if isinstance(payload, list) and payload and isinstance(payload[0], dict):
+            payload = payload[0]
+        return str(payload.get("error", {}).get("message") or "")
+    except Exception:
+        return ""
+
+
+# Endpoints that send a usage chunk on a stream when asked
+# (`stream_options.include_usage`). Groq reports it unasked (`x_groq.usage`).
+# Gemini's OpenAI-compatible endpoint: verified by the agent's live run, 2026-09-28.
+_STREAM_USAGE_PROVIDERS = frozenset({"openai", "deepseek", "gemini"})
+
+
+def _tool_call_key(part: dict[str, Any], position: int, order: list[object]) -> object:
+    """Which call a streamed fragment belongs to.
+
+    OpenAI numbers fragments with `index`; an endpoint that sends each call
+    whole may leave it out, so a fragment with a new id starts a new call and
+    one with neither continues the last.
+    """
+
+    if isinstance(part.get("index"), int):
+        return ("index", part["index"])
+    if isinstance(part.get("id"), str) and part["id"]:
+        return ("id", part["id"])
+    return order[-1] if order else ("position", position)
+
+
+def _count(value: object) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
+
+
 def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+    from writing_coach.ai.azure import AzureSpeechControlProvider
     provider_credentials = provider_credentials or {}
     return {
+        'azure-speech': AzureSpeechControlProvider(provider_credentials.get('azure-speech')),
+        'azure-openai': OpenAICompatibleProvider(
+            provider_id='azure-openai', name='Azure OpenAI', api_key_env='AZURE_OPENAI_API_KEY',
+            base_url_env='AZURE_OPENAI_BASE_URL', default_base_url='', models_env='AZURE_OPENAI_DEPLOYMENTS',
+            credential_override=provider_credentials.get('azure-openai')),
         "ollama": OllamaProvider(provider_credentials.get("ollama")),
         "openai": OpenAICompatibleProvider(
             provider_id="openai",
@@ -681,6 +899,7 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
         "deepseek": OpenAICompatibleProvider(
             provider_id="deepseek",
             name="DeepSeek API",
+            supports_seed=False,
             api_key_env="DEEPSEEK_API_KEY",
             base_url_env="DEEPSEEK_BASE_URL",
             default_base_url="https://api.deepseek.com",
@@ -711,6 +930,9 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
             models_env="GEMINI_MODELS",
             default_models=(),
             model_filter="gemini-text",
+            # Gemini's OpenAI compatibility transport does not accept seed.
+            # Adapt the first request rather than relying on a legacy retry.
+            supports_seed=False,
             credential_override=provider_credentials.get("gemini"),
         ),
     }

@@ -1,0 +1,21 @@
+{
+  "_usedBy": [
+    "VocabularyTemplate",
+    "VocabularyReviewTemplate"
+  ],
+  "id": "string",
+  "name": "string",
+  "language": "string",
+  "level": "string | null",
+  "tier": "string | null",
+  "wordTotal": "number",
+  "wordMastered": "number",
+  "coverHue": "number",
+  "words": [
+    {
+      "word": "string",
+      "pronunciation": "string",
+      "mastery": "0 | 1 | 2 | 3"
+    }
+  ]
+}

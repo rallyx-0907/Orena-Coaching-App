@@ -1,40 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark" data-device="desktop">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width,initial-scale=1,viewport-fit=cover"
-    />
-    <meta name="theme-color" content="#f6f1e7" />
-    <title>orena — a world worth entering</title>
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="/orena-assets/assets/mark.svg"
-    />
-    <script src="/orena-assets/theme.js"></script>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Orena</title>
+    <link rel="icon" type="image/svg+xml" href="/orena-brand/logo/orena-mark.svg" />
+    <!-- The learner UI (D-088): the only UI, served at / since the cutover (D-091, D-143). -->
+    <script src="/orena-assets/kit/boot.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito+Sans:wght@600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/orena-assets/theme.css" />
-    <link rel="stylesheet" href="/orena-assets/foundation.css" />
-    <link rel="stylesheet" href="/orena-assets/world.css" />
-    <link rel="stylesheet" href="/orena-assets/experiences.css" />
-    <link rel="stylesheet" href="/orena-assets/reference.css" />
-    <link rel="stylesheet" href="/orena-assets/rooms.css" />
-    <script type="module" src="/orena-assets/app.js"></script>
+    <link rel="stylesheet" href="/orena-assets/kit/tokens.css" />
+    <link rel="stylesheet" href="/orena-assets/kit/device.css" />
+    <link rel="stylesheet" href="/orena-assets/kit/base.css" />
+    <link rel="stylesheet" href="/orena-assets/kit/kit.css" />
+    <link rel="stylesheet" href="/orena-assets/kit/components.css" />
+    <link rel="stylesheet" href="/orena-assets/shell/shell.css" />
+    <script type="module" src="/orena-assets/main.js"></script>
   </head>
   <body>
-    <a class="skip" href="#main">Skip to content / 跳至内容</a>
-    <header id="shell"></header>
-    <main id="main" tabindex="-1">
-      <p role="status">Opening Orena / 正在打开 Orena…</p>
-    </main>
-    <footer id="footer"></footer>
-    <div id="announcement" role="status" aria-live="polite"></div>
+    <div id="app"></div>
   </body>
 </html>

@@ -39,7 +39,8 @@ def _roadmap_status(document: str, stage: str) -> str:
     return row[2]
 
 
-# R10/R12/R20 release-matrix tests were retired with the removed legacy wrappers.
+# R8/R10/R11/R12/R20 release-matrix tests were retired with the removed legacy
+# wrappers and frozen-native scope.
 # Current Orena capability contracts are covered by the active Node gates; the
 # frozen native lane is not a current Python release gate.
 
@@ -115,44 +116,10 @@ def test_m16_shared_media_shadowing_governance_closeout_is_truthful() -> None:
     assert "r11" in combined and "planned" in combined
 
 
-def test_r8_pre_public_matrix_keeps_release_gates_deferred() -> None:
-    report = (ROOT / "docs/project/R8_PRE_PUBLIC_MATRIX.json").read_text(encoding="utf-8")
-    assert '"matrix": "R8-pre-public-en-zh"' in report
-    assert '"writing_public": false' in report
-    assert '"speaking_public": false' in report
-    assert '"capability_activation": false' in report
-    assert '"inspected": [' in report
-    assert '"status": "static-inspection"' in report
-    for gate in ("provider_credentials", "postgres_migration", "public_promotion"):
-        assert f'"gate": "{gate}"' in report
-
-
-def test_r11_pre_public_listening_matrix_records_behavioral_and_deferred_evidence() -> None:
-    report = (ROOT / "docs/project/R11_PRE_PUBLIC_MATRIX.json").read_text(encoding="utf-8")
-    runner = (ROOT / "scripts/r11_release_matrix.mjs").read_text(encoding="utf-8")
-    roadmap = (ROOT / "docs/project/ROADMAP.md").read_text(encoding="utf-8")
-    normalized_roadmap = " ".join(roadmap.split())
-    r11_section = roadmap.split("## R11 \u2014 Listening Completion", 1)[1].split("## R12", 1)[0]
-    assert '"matrix": "R11-pre-public-en-zh-listening"' in report
-    assert '"scope": "behavioral"' in report
-    assert '"scope": "source-boundary"' in report
-    assert '"listening_public": false' in report
-    assert '"capability_activation": false' in report
-    for gate in ("postgres_migration", "capability_activation", "public_promotion"):
-        assert f'"gate": "{gate}"' in report
-    assert "test_r11_listening_progress.mjs" in runner
-    assert "test_r9_shadowing_feedback.mjs" in runner
-    assert "canonical R11 matrix report is stale" in runner
-    assert "if(output)" in runner
-    assert _roadmap_status(roadmap, "R11") == "PRE-PUBLIC MATRIX COMPLETE / HUMAN PROMOTION GATE"
-    assert "**PRE-PUBLIC MATRIX COMPLETE / HUMAN PROMOTION GATE.**" in r11_section
-    assert "The EN/ZH Active Listening reconstruction, Shadowing rounds, Shadowing-to-Speaking feedback continuity, and truthful restore/degraded states are locally accepted through the deterministic pre-public matrix." in normalized_roadmap
-    assert "Production migration, capability activation, and public Listening promotion remain explicit human gates." in normalized_roadmap
-
-
 def test_r13_local_admin_matrix_is_reproducible_and_runtime_safe() -> None:
+    # The R13/R14 matrix runners exercised the retired Admin console (static/admin.js) and were retired with it
+    # at the cutover (D-143, LEGACY_TOMBSTONES.md); their reports stay as the historical record.
     report = (ROOT / "docs/project/R13_LOCAL_ACCEPTANCE_MATRIX.json").read_text(encoding="utf-8")
-    runner = (ROOT / "scripts/r13_release_matrix.mjs").read_text(encoding="utf-8")
     project_state = (ROOT / "docs/project/PROJECT_STATE.md").read_text(encoding="utf-8")
     handoff = _historical_handoff()
     roadmap = (ROOT / "docs/project/ROADMAP.md").read_text(encoding="utf-8")
@@ -166,9 +133,6 @@ def test_r13_local_admin_matrix_is_reproducible_and_runtime_safe() -> None:
     assert '"scope": "source-and-test-boundary"' in report
     assert '"gate": "credentialed_provider_health"' in report
     assert '"gate": "learner_runtime_activation"' in report
-    assert "canonical R13 matrix report is stale" in runner
-    assert "test_r13_admin_capability_matrix.mjs" in runner
-    assert "config_provenance" in runner
     assert "R13 \u2014 Platform Admin Completion: COMPLETE / LOCAL ACCEPTANCE PASS" in project_state
     assert "R13 local acceptance is now closed" in handoff
     assert _roadmap_status(roadmap, "R13") == "COMPLETE / LOCAL ACCEPTANCE PASS"
@@ -184,10 +148,6 @@ def test_r17_local_foundation_closeout_records_verified_route_boundary() -> None
     handoff = _historical_handoff()
     roadmap = (ROOT / "docs/project/ROADMAP.md").read_text(encoding="utf-8")
     route_test = (ROOT / "tests/test_r17_admin_routes.py").read_text(encoding="utf-8")
-    activity_contract = (ROOT / "scripts/test_product_activity_contract.mjs").read_text(encoding="utf-8")
-    retention_contract = (ROOT / "scripts/test_r17_admin_retention.mjs").read_text(encoding="utf-8")
-    readiness_contract = (ROOT / "scripts/test_r17_readiness_contract.mjs").read_text(encoding="utf-8")
-    readiness_summary = (ROOT / "scripts/test_r17_readiness_summary.mjs").read_text(encoding="utf-8")
     r17_section = roadmap.split("## R17 \u2014 Product Analytics & Operational Observability", 1)[1].split("## R18", 1)[0]
     normalized_r17 = " ".join(r17_section.split())
     assert "R17 \u2014 Product Analytics & Operational Observability: **COMPLETE / LOCAL" in project_state
@@ -205,8 +165,8 @@ def test_r17_local_foundation_closeout_records_verified_route_boundary() -> None
     assert "authenticated Admin-only product-activity, retention, source-specific funnel" in normalized_r17
     assert "ready, degraded, insufficient, unavailable, and deferred states remain explicit" in normalized_r17
     assert "live PostgreSQL observation remains an explicit human gate." in normalized_r17
-    for contract in (activity_contract, retention_contract, readiness_contract, readiness_summary):
-        assert "PASS" in contract
+    # The R17 Admin UI contract scripts drove the retired console (static/admin.js) and were retired with it at
+    # the cutover (D-143, LEGACY_TOMBSTONES.md); the route boundary above is the pytest that still holds.
 
 
 def test_r18_reference_data_cache_contract_is_recorded() -> None:
@@ -273,7 +233,6 @@ def test_r14_local_operations_foundation_closeout_is_recorded() -> None:
     handoff = _historical_handoff()
     roadmap = (ROOT / "docs/project/ROADMAP.md").read_text(encoding="utf-8")
     report = (ROOT / "docs/project/R14_LOCAL_ACCEPTANCE_MATRIX.json").read_text(encoding="utf-8")
-    runner = (ROOT / "scripts/r14_release_matrix.mjs").read_text(encoding="utf-8")
     telemetry_tests = (ROOT / "tests/test_ai_telemetry.py").read_text(encoding="utf-8")
     control_plane_tests = (ROOT / "tests/test_ai_control_plane.py").read_text(encoding="utf-8")
     r14_section = roadmap.split("## R14 \u2014 AI Usage, Cost, Quota & Provider Operations", 1)[1].split("## R15", 1)[0]
@@ -305,8 +264,6 @@ def test_r14_local_operations_foundation_closeout_is_recorded() -> None:
         "production_postgresql_observation",
     ):
         assert f'"gate": "{gate}"' in report
-    assert "canonical R14 matrix report is stale" in runner
-    assert "test_r13_admin_capability_matrix.mjs" in runner
     for contract in (
         "test_success_telemetry_keeps_capability_provider_model_and_reported_usage",
         "test_admin_operations_aggregates_cost_by_catalog_and_trend",
@@ -368,7 +325,8 @@ def test_r15_local_account_state_closeout_is_recorded() -> None:
     project_state = (ROOT / "docs/project/PROJECT_STATE.md").read_text(encoding="utf-8")
     handoff = _historical_handoff()
     roadmap = (ROOT / "docs/project/ROADMAP.md").read_text(encoding="utf-8")
-    contract = (ROOT / "scripts/test_r15_account_state.mjs").read_text(encoding="utf-8")
+    product_api = (ROOT / "writing_coach/product/api.py").read_text(encoding="utf-8")
+    product_service = (ROOT / "writing_coach/product/service.py").read_text(encoding="utf-8")
     r15_section = roadmap.split("## R15 \u2014 SaaS Plans, Entitlements & Usage Policy", 1)[1].split("## R16", 1)[0]
     normalized_r15 = " ".join(r15_section.split())
 
@@ -379,15 +337,12 @@ def test_r15_local_account_state_closeout_is_recorded() -> None:
     assert "**COMPLETE / LOCAL ACCEPTANCE PASS.**" in r15_section
     assert "truthful known, unavailable, exhausted, unlimited, inactive, and unknown states" in normalized_r15
     assert "Billing integration, entitlement enforcement, production subscription mutation, and public release remain explicit human gates." in normalized_r15
-    for contract_token in (
-        "productMe",
-        "usage_state",
-        "renderAccountState",
-        "product_me",
-        "product_admin_account",
-        "unavailable",
-    ):
-        assert contract_token in contract
+    # The account-state contract lives in the backend; its old-UI half (scripts/test_r15_account_state.mjs,
+    # static/admin.js) was retired with that UI at the cutover (D-143, LEGACY_TOMBSTONES.md).
+    for contract_token in ("product_me", "product_admin_account", "require_admin"):
+        assert contract_token in product_api
+    for contract_token in ("usage_state", "unavailable"):
+        assert contract_token in product_service
 
 
 def test_r3_roadmap_status_matches_verified_local_closeout() -> None:

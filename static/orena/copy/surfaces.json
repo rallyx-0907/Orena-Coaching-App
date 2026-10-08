@@ -1,0 +1,293 @@
+{
+  "contract_version": 6,
+  "surfaces": {
+    "home": {
+      "name": {
+        "en": "Today",
+        "vi": "Hôm nay",
+        "zh-CN": "今天"
+      },
+      "purpose": {
+        "en": "Your next step today: due words, places to continue and one suggested practice",
+        "vi": "Bước tiếp theo hôm nay: từ đến hạn, bài đang dở và một gợi ý luyện tập",
+        "zh-CN": "今天的下一步：到期的词、未完成的内容和一个推荐练习"
+      }
+    },
+    "orena.home": {
+      "name": {
+        "en": "Orena",
+        "vi": "Orena",
+        "zh-CN": "Orena"
+      },
+      "purpose": {
+        "en": "Ask Orena about your learning, your mistakes and what to practise next",
+        "vi": "Hỏi Orena về việc học, lỗi của bạn và nên luyện gì tiếp theo",
+        "zh-CN": "向 Orena 询问你的学习、错误以及接下来练什么"
+      }
+    },
+    "library": {
+      "name": {
+        "en": "Discover",
+        "vi": "Khám phá",
+        "zh-CN": "发现"
+      },
+      "purpose": {
+        "en": "Find texts, videos and word lists at your level to learn from",
+        "vi": "Tìm bài đọc, video và bộ từ hợp trình độ để học",
+        "zh-CN": "按你的水平查找可以学习的文本、视频和词表"
+      }
+    },
+    "reading.library": {
+      "name": {
+        "en": "Discover",
+        "vi": "Khám phá",
+        "zh-CN": "发现"
+      },
+      "purpose": {
+        "en": "Choose a text at your level to read and learn words from",
+        "vi": "Chọn một bài đọc hợp trình độ để đọc và học từ",
+        "zh-CN": "选择一篇适合你水平的文章来阅读和学词"
+      }
+    },
+    "reading.workspace": {
+      "name": {
+        "en": "Reader",
+        "vi": "Đọc",
+        "zh-CN": "阅读"
+      },
+      "purpose": {
+        "en": "Read a text, tap any word for its meaning and keep the words you want",
+        "vi": "Đọc bài, chạm vào từ để xem nghĩa và lưu những từ bạn muốn",
+        "zh-CN": "阅读文章，点任意词看释义，保存想学的词"
+      }
+    },
+    "listening.library": {
+      "name": {
+        "en": "Discover",
+        "vi": "Khám phá",
+        "zh-CN": "发现"
+      },
+      "purpose": {
+        "en": "Choose a video or audio to listen to and practise with",
+        "vi": "Chọn video hoặc bài nghe để nghe và luyện tập",
+        "zh-CN": "选择一个视频或音频来听和练习"
+      }
+    },
+    "listening.workspace": {
+      "name": {
+        "en": "Listening",
+        "vi": "Nghe",
+        "zh-CN": "听力"
+      },
+      "purpose": {
+        "en": "Listen line by line with the transcript, meanings and replay",
+        "vi": "Nghe từng câu với lời thoại, nghĩa và nghe lại",
+        "zh-CN": "逐句听，配有字幕、释义和重播"
+      }
+    },
+    "listening.dictation": {
+      "name": {
+        "en": "Dictation",
+        "vi": "Chép chính tả",
+        "zh-CN": "听写"
+      },
+      "purpose": {
+        "en": "Write down what you hear, then check it word by word",
+        "vi": "Viết lại điều bạn nghe được rồi kiểm tra từng từ",
+        "zh-CN": "写下你听到的内容，再逐词核对"
+      }
+    },
+    "speaking.library": {
+      "name": {
+        "en": "Practice Hub",
+        "vi": "Luyện tập",
+        "zh-CN": "练习中心"
+      },
+      "purpose": {
+        "en": "Pick a speaking or listening practice: pronunciation, dictation, free talk",
+        "vi": "Chọn bài luyện nói hoặc nghe: phát âm, chép chính tả, nói tự do",
+        "zh-CN": "选择口语或听力练习：发音、听写、自由说"
+      }
+    },
+    "speaking.workspace": {
+      "name": {
+        "en": "Pronunciation",
+        "vi": "Phát âm",
+        "zh-CN": "发音"
+      },
+      "purpose": {
+        "en": "Hear a model line, record yourself and see which sounds to fix",
+        "vi": "Nghe câu mẫu, tự thu âm và xem âm nào cần sửa",
+        "zh-CN": "听示范句，录下自己的发音，看看哪些音要改"
+      }
+    },
+    "speaking.free_talk": {
+      "name": {
+        "en": "Free Talk",
+        "vi": "Nói tự do",
+        "zh-CN": "自由说"
+      },
+      "purpose": {
+        "en": "Talk freely about a topic and get feedback on what you said",
+        "vi": "Nói tự do về một chủ đề và nhận góp ý về điều bạn nói",
+        "zh-CN": "围绕一个话题自由说，并获得对你所说内容的反馈"
+      }
+    },
+    "speaking.word_detail": {
+      "name": {
+        "en": "Compare with model",
+        "vi": "So với mẫu",
+        "zh-CN": "与示范对比"
+      },
+      "purpose": {
+        "en": "See how each word of your take compared with the model",
+        "vi": "Xem từng từ trong lần nói của bạn so với mẫu thế nào",
+        "zh-CN": "查看你这次录音里每个词与示范的对比"
+      }
+    },
+    "speaking.compare": {
+      "name": {
+        "en": "Compare with model",
+        "vi": "So với mẫu",
+        "zh-CN": "与示范对比"
+      },
+      "purpose": {
+        "en": "Compare your recording with the model, line by line",
+        "vi": "So sánh bản thu của bạn với mẫu, từng câu",
+        "zh-CN": "逐句对比你的录音和示范"
+      }
+    },
+    "writing.workspace": {
+      "name": {
+        "en": "Writing",
+        "vi": "Viết",
+        "zh-CN": "写作"
+      },
+      "purpose": {
+        "en": "Write on a task and get a review with the fixes that matter most",
+        "vi": "Viết theo đề và nhận nhận xét với những chỗ cần sửa nhất",
+        "zh-CN": "按题目写作，并获得指出最重要修改的点评"
+      }
+    },
+    "writing.review": {
+      "name": {
+        "en": "Writing",
+        "vi": "Viết",
+        "zh-CN": "写作"
+      },
+      "purpose": {
+        "en": "Read the review of your writing and fix the first issue",
+        "vi": "Đọc nhận xét bài viết của bạn và sửa lỗi đầu tiên",
+        "zh-CN": "阅读你的作文点评，先改第一个问题"
+      }
+    },
+    "writing.revision": {
+      "name": {
+        "en": "Compare versions",
+        "vi": "So sánh phiên bản",
+        "zh-CN": "版本对比"
+      },
+      "purpose": {
+        "en": "Compare two versions of your writing and see what improved",
+        "vi": "So sánh hai phiên bản bài viết và xem điều gì đã tốt hơn",
+        "zh-CN": "对比你作文的两个版本，看看哪里进步了"
+      }
+    },
+    "vocabulary.my_language": {
+      "name": {
+        "en": "My Library",
+        "vi": "Thư viện của tôi",
+        "zh-CN": "我的书库"
+      },
+      "purpose": {
+        "en": "The words and texts you kept, with what is due for review",
+        "vi": "Các từ và bài bạn đã lưu, cùng những gì đến hạn ôn",
+        "zh-CN": "你保存的词和内容，以及到期需要复习的部分"
+      }
+    },
+    "vocabulary.word": {
+      "name": {
+        "en": "Word",
+        "vi": "Từ",
+        "zh-CN": "词语"
+      },
+      "purpose": {
+        "en": "One word: its meaning, pronunciation, examples and where you met it",
+        "vi": "Một từ: nghĩa, phát âm, ví dụ và nơi bạn đã gặp nó",
+        "zh-CN": "一个词：释义、发音、例句以及你在哪里遇到它"
+      }
+    },
+    "vocabulary.review_due": {
+      "name": {
+        "en": "Review",
+        "vi": "Ôn tập",
+        "zh-CN": "复习"
+      },
+      "purpose": {
+        "en": "Recall the words that are due, then mark how well you knew each",
+        "vi": "Nhớ lại các từ đến hạn rồi đánh dấu bạn nhớ từng từ đến đâu",
+        "zh-CN": "回忆到期的词，再标出每个词你记得多好"
+      }
+    },
+    "grammar.catalog": {
+      "name": {
+        "en": "Grammar",
+        "vi": "Ngữ pháp",
+        "zh-CN": "语法"
+      },
+      "purpose": {
+        "en": "Browse grammar points by level and open one to learn it",
+        "vi": "Xem các điểm ngữ pháp theo trình độ và mở một điểm để học",
+        "zh-CN": "按级别浏览语法点，打开一个来学习"
+      }
+    },
+    "grammar.point": {
+      "name": {
+        "en": "Grammar",
+        "vi": "Ngữ pháp",
+        "zh-CN": "语法"
+      },
+      "purpose": {
+        "en": "Learn one grammar point with examples, then try it yourself",
+        "vi": "Học một điểm ngữ pháp qua ví dụ rồi tự thử dùng",
+        "zh-CN": "通过例句学习一个语法点，然后自己试着用"
+      }
+    },
+    "progress": {
+      "name": {
+        "en": "Progress",
+        "vi": "Tiến độ",
+        "zh-CN": "进度"
+      },
+      "purpose": {
+        "en": "See what you practised, your results over time and what to work on",
+        "vi": "Xem bạn đã luyện gì, kết quả theo thời gian và nên luyện gì thêm",
+        "zh-CN": "查看你练了什么、随时间的成绩以及需要加强的地方"
+      }
+    },
+    "preferences": {
+      "name": {
+        "en": "Settings",
+        "vi": "Cài đặt",
+        "zh-CN": "设置"
+      },
+      "purpose": {
+        "en": "Set your languages, review limits, theme and privacy",
+        "vi": "Đặt ngôn ngữ, giới hạn ôn tập, giao diện và quyền riêng tư",
+        "zh-CN": "设置语言、复习上限、主题和隐私"
+      }
+    },
+    "preferences.agent_memory": {
+      "name": {
+        "en": "Settings",
+        "vi": "Cài đặt",
+        "zh-CN": "设置"
+      },
+      "purpose": {
+        "en": "See and delete what Orena remembers about your learning",
+        "vi": "Xem và xoá những gì Orena ghi nhớ về việc học của bạn",
+        "zh-CN": "查看并删除 Orena 记住的有关你学习的内容"
+      }
+    }
+  }
+}

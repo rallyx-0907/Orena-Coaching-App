@@ -31,6 +31,7 @@ from writing_coach.core.support_languages import (
     is_available,
     normalize_language_tag,
     resolve_support_language,
+    support_language_uses_cjk,
 )
 
 REPO = Path(__file__).resolve().parents[1]
@@ -99,15 +100,27 @@ def test_support_language_is_distinct_from_ui_locale() -> None:
     assert resolve_support_language("ja", "en") == "ja"
 
 
+def test_support_language_script_family_is_owned_by_the_registry() -> None:
+    assert support_language_uses_cjk("zh") is True
+    assert support_language_uses_cjk("ja") is True
+    assert support_language_uses_cjk("en") is False
+
+
 def test_no_vietnamese_default_survives_in_the_web_client() -> None:
     """The four defaults the audit named must stay gone."""
 
-    store = (REPO / "static/orena/app.js").read_text(encoding="utf-8")
     api = (REPO / "static/orena/infrastructure/api.js").read_text(encoding="utf-8")
-    assert "||'vi'" not in store and '|| "vi"' not in store
     assert "||'vi'" not in api and '|| "vi"' not in api
-    assert "['vi','en','zh']" not in store, "the three-language enum must not come back"
-    assert "languages.support_languages" in store
+    # The learner UI (D-143) has no app.js; the same defaults must stay gone from every module of it.
+    assert not (REPO / "static/orena/app.js").exists()
+    for path in (REPO / "static/orena").rglob("*.js"):
+        if "vendor" in path.parts:
+            continue
+        source = path.read_text(encoding="utf-8")
+        assert "||'vi'" not in source and '|| "vi"' not in source, path
+        assert "['vi','en','zh']" not in source, f"the three-language enum must not come back: {path}"
+    lang = (REPO / "static/orena/kit/lang.js").read_text(encoding="utf-8")
+    assert "support_languages" in lang
 
     listening_api = (REPO / "writing_coach/listening_api.py").read_text(encoding="utf-8")
     assert 'Query(default="vi"' not in listening_api

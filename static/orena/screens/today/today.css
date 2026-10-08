@@ -1,0 +1,449 @@
+/* Today (T1, frame 10-Today.html). Geometry and colour are the frame's own measured values
+   (Design Contract rule 42); every colour is a token (rule 30). The goal ring, streak and level
+   card render their rule-40 zero state (no cross-activity backend - docs/project/UI_BACKEND_GAPS.md). */
+
+/* .o-main already gives every screen its side gutters (var(--pad)) and bottom padding, and
+   .o-screen already plays the "rise" entrance - this only adds Today's own top gap and column
+   layout, exactly as the frame draws it relative to that shared shell padding. */
+.s-today {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-top: 28px;
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ---- Header: eyebrow (learner name) + title + real date pill ---- */
+.s-today-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.s-today-head__col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-today-eyebrow {
+  font-size: 15px;
+  color: var(--muted);
+}
+.s-today-h1 {
+  margin: 0;
+  font-size: var(--h1);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.s-today-sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 22px;
+}
+.s-today-date {
+  display: var(--hide-mobile);
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 38px;
+  flex: none;
+}
+
+/* ---- Progress row: goal ring + streak/level ---- */
+.s-today-progress {
+  display: grid;
+  grid-template-columns: var(--td-cols);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.s-today-progress--solo {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.s-today-goal {
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  container-type: inline-size;
+  padding: clamp(16px, 4cqi, 24px) clamp(14px, 5cqi, 28px);
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 5cqi, 28px);
+}
+.s-today-goal .c-ring,
+.s-today-goal .c-ring__svg {
+  width: clamp(92px, 28cqi, 152px);
+  height: clamp(92px, 28cqi, 152px);
+}
+.s-today-goal-pct {
+  font-size: clamp(24px, 7cqi, 40px);
+  font-weight: 700;
+}
+.s-today-goal-pct span {
+  font-size: clamp(12px, 3cqi, 18px);
+  font-weight: 600;
+}
+.s-today-goal-caption {
+  font-size: clamp(10px, 2.2cqi, 12px);
+  color: var(--muted);
+  margin-top: 5px;
+  text-align: center;
+}
+.s-today-goal-body {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 3cqi, 16px);
+  min-width: 0;
+  flex: 1;
+}
+.s-today-goal-label {
+  font-size: clamp(15px, 3.6cqi, 19px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.s-today-skills {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(6px, 2.4cqi, 18px);
+  max-width: 300px;
+}
+.s-today-skill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.s-today-skill .c-ring,
+.s-today-skill .c-ring__svg {
+  width: clamp(38px, 10cqi, 60px);
+  height: clamp(38px, 10cqi, 60px);
+}
+.s-today-skill-label {
+  font-size: clamp(10.5px, 2.2cqi, 12px);
+  font-weight: 500;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.s-today-goal-sub {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.s-today-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.s-today-streak {
+  border-radius: 24px;
+  background: var(--amber-soft);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-today-streak-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.s-today-streak-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--skill-read);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-today-streak-text {
+  font-size: 15px;
+  color: var(--text);
+}
+.s-today-streak-n {
+  font-size: 24px;
+}
+.s-today-streak-days {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+.s-today-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.s-today-day-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--surface3);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+.s-today-day-dot--done {
+  background: var(--skill-read);
+}
+.s-today-day-dot--today {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--skill-read);
+}
+.s-today-day-dot--future {
+  opacity: 0.55;
+}
+.s-today-day-letter {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.s-today-level {
+  flex: 1;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-today-level-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--ai);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-today-level-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-today-level-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+.s-today-level-row span {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.s-today-level-track {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--surface3);
+}
+.s-today-level-track > span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+}
+.s-today-level-next {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* ---- Recommended for today ---- */
+.s-today-rec {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.s-today-rec .c-section-head__action {
+  display: var(--hide-desktop);
+}
+.s-today-rec-grid {
+  display: grid;
+  grid-template-columns: var(--td-cols);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.s-today-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--tint2);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 200px;
+  text-align: left;
+  color: var(--text);
+  transition: transform 0.15s;
+}
+.s-today-hero:hover {
+  transform: translateY(-1px);
+}
+.s-today-hero__deco {
+  position: absolute;
+  border-radius: 999px;
+}
+/* The frame's two translucent-white decorative circles (.22 and .16), each its own token. */
+.s-today-hero__deco--a {
+  right: -50px;
+  top: -60px;
+  width: 180px;
+  height: 180px;
+  background: var(--deco-strong);
+}
+.s-today-hero__deco--b {
+  right: 40px;
+  bottom: -80px;
+  width: 140px;
+  height: 140px;
+  background: var(--deco-soft);
+}
+.s-today-hero__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.s-today-hero__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-today-hero__kind {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.s-today-hero__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-today-hero__title {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.s-today-hero__reason {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--muted);
+}
+.s-today-hero__cta {
+  position: relative;
+  margin-top: auto;
+  align-self: flex-start;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.s-today-rest {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+  align-content: start;
+}
+.s-today-rest-card {
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--sh1);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  color: var(--text);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.s-today-rest-card:hover {
+  box-shadow: var(--sh2);
+  transform: translateY(-1px);
+}
+.s-today-rest-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-today-rest-card__title {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.s-today-rest-card__meta {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* ---- For you rail ---- */
+.s-today-foryou {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.s-today-rail {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  margin: 0 calc(var(--pad) * -1);
+  padding: 4px var(--pad) 16px;
+  scroll-snap-type: x mandatory;
+  /* The first card snaps to the gutter, not to the scrollport's edge (LEX-073). */
+  scroll-padding-inline: var(--pad);
+}
+.s-today-rail .c-media {
+  flex: none;
+  width: 240px;
+  scroll-snap-align: start;
+}
+
+:root[data-device="mobile"] .s-today {
+  padding-top: 24px;
+}

@@ -19,7 +19,10 @@ from writing_coach.persistence.models import (
 class LearningRepository(Protocol):
     def get_essay(self, essay_id: int) -> dict[str, Any] | None: ...
     def classify_essay_scope(self, essay_id: int) -> str: ...
-    def list_essays(self, limit: int = 200, *, ascending: bool = False) -> list[dict[str, Any]]: ...
+    def list_essays(
+        self, limit: int = 200, *, ascending: bool = False, kept_only: bool = False
+    ) -> list[dict[str, Any]]: ...
+    def set_essay_review_kept(self, essay_id: int, kept: bool) -> dict[str, Any] | None: ...
     def list_latest_series(self) -> list[dict[str, Any]]: ...
     def list_series_revisions(self, series_id: int) -> list[dict[str, Any]]: ...
     def previous_revision(self, series_id: int, revision_no: int) -> dict[str, Any] | None: ...
@@ -30,9 +33,66 @@ class LearningRepository(Protocol):
     def grammar_completed(self, lesson_id: str) -> bool: ...
     def set_grammar_completed(self, lesson_id: str, completed_at: str) -> None: ...
     def unset_grammar_completed(self, lesson_id: str) -> bool: ...
+    def record_grammar_completion(
+        self, point_id: str, completed_at: str, quiz: dict[str, Any] | None = None
+    ) -> dict[str, Any]: ...
+    def get_grammar_progress(self, point_id: str, aliases: tuple[str, ...] = ()) -> dict[str, Any] | None: ...
     def list_saved_words(self) -> list[dict[str, Any]]: ...
     def upsert_saved_word(self, values: dict[str, Any]) -> None: ...
     def delete_saved_word(self, word: str) -> bool: ...
+
+
+def clean_quiz_result(quiz: dict[str, Any] | None) -> tuple[int, int] | None:
+    """A grammar quiz result as (correct, total), or a refusal (ValueError).
+
+    The same invariant as the PostgreSQL CHECK `ck_grammar_progress_quiz` (total >= 1 and
+    0 <= correct <= total), held here for both backends because SQLite cannot add a CHECK to an
+    existing table. The number is client-reported and is never read as evidence (EA section 1).
+    """
+    if quiz is None:
+        return None
+    correct, total = quiz.get("correct"), quiz.get("total")
+    for name, value in (("correct", correct), ("total", total)):
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(f"quiz {name} must be an integer")
+    if total < 1 or correct < 0 or correct > total:
+        raise ValueError("quiz result must satisfy 0 <= correct <= total and total >= 1")
+    return correct, total
+
+
+def _grammar_progress_payload(point_id: str, completed_at: str, correct, total, quiz_at, *, via: str = "id") -> dict[str, Any]:
+    return {
+        "point_id": point_id,
+        "completed_at": completed_at,
+        "last_quiz_correct": correct,
+        "last_quiz_total": total,
+        "last_quiz_at": quiz_at,
+        "via": via,
+    }
+
+
+def _essay_module_data(values: dict[str, Any]) -> dict[str, Any]:
+    """What travels in an essay's metadata bag, decided once for both backends.
+
+    The practice it came from, the grammar it touched, and - since reviews
+    became reusable - the identity of the review this row *is*: which words,
+    which two languages, which level, which evaluator contract. Kept here so
+    SQLite and PostgreSQL cannot drift into storing different things.
+    """
+    module_data: dict[str, Any] = {}
+    practice_context = values.get("practice_context")
+    grammar_links = values.get("grammar_links") or []
+    review_identity = values.get("review_identity") or None
+    prompt_ref = values.get("prompt_ref") or None
+    if practice_context is not None or grammar_links:
+        module_data["practice"] = practice_context
+        module_data["grammar_links"] = grammar_links
+    if review_identity:
+        module_data["review"] = review_identity
+    if prompt_ref:
+        # Which curated prompt the piece answered (D-103.6): a reference, never the prompt's text.
+        module_data["prompt_ref"] = {"source": str(prompt_ref.get("source", ""))[:40], "id": str(prompt_ref.get("id", ""))[:120]}
+    return module_data
 
 
 class LearningCacheRepository(Protocol):
@@ -110,6 +170,10 @@ class SQLiteLearningRepository:
                 conn.execute("ALTER TABLE essays ADD COLUMN module_data_json TEXT NOT NULL DEFAULT '{}'")
             if "strength_evidence_json" not in cols:
                 conn.execute("ALTER TABLE essays ADD COLUMN strength_evidence_json TEXT NOT NULL DEFAULT '[]'")
+            if "review_kept_at" not in cols:
+                # D-072.1, the same nullable column migration 20260922_0011 adds
+                # to PostgreSQL. NULL is "not kept".
+                conn.execute("ALTER TABLE essays ADD COLUMN review_kept_at TEXT")
             conn.execute("UPDATE essays SET language_code = 'en' WHERE language_code IS NULL OR language_code = ''")
             conn.execute("UPDATE essays SET target_level = target_cefr WHERE target_level IS NULL OR target_level = ''")
             conn.execute("UPDATE essays SET level_estimate = cefr_estimate WHERE level_estimate IS NULL OR level_estimate = ''")
@@ -152,6 +216,13 @@ class SQLiteLearningRepository:
                     completed_at TEXT NOT NULL
                 )"""
             )
+            # D4 (migration 0023 on PostgreSQL): the last quiz result beside the completion. Test
+            # backend parity only; the pair/range invariant is `clean_quiz_result`.
+            for column, ddl in (
+                ("last_quiz_correct", "INTEGER"), ("last_quiz_total", "INTEGER"), ("last_quiz_at", "TEXT"),
+            ):
+                if column not in self._column_names(conn, "grammar_progress"):
+                    conn.execute(f"ALTER TABLE grammar_progress ADD COLUMN {column} {ddl}")
             conn.execute(f"PRAGMA user_version = {int(schema_version)}")
             conn.commit()
 
@@ -172,15 +243,32 @@ class SQLiteLearningRepository:
             return "language_scope_mismatch"
         return "parent_essay_not_found"
 
-    def list_essays(self, limit: int = 200, *, ascending: bool = False) -> list[dict[str, Any]]:
+    def list_essays(
+        self, limit: int = 200, *, ascending: bool = False, kept_only: bool = False
+    ) -> list[dict[str, Any]]:
         order = "ASC" if ascending else "DESC"
-        sql = f"SELECT * FROM essays ORDER BY id {order}"
+        where = " WHERE review_kept_at IS NOT NULL" if kept_only else ""
+        sql = f"SELECT * FROM essays{where} ORDER BY id {order}"
         params: tuple[Any, ...] = ()
         if limit > 0:
             sql += " LIMIT ?"
             params = (limit,)
         with self.connect() as conn:
             return [dict(r) for r in conn.execute(sql, params).fetchall()]
+
+    def set_essay_review_kept(self, essay_id: int, kept: bool) -> dict[str, Any] | None:
+        """Idempotent: keeping a kept review does not move its timestamp."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connect() as conn:
+            row = conn.execute("SELECT review_kept_at FROM essays WHERE id = ?", (essay_id,)).fetchone()
+            if row is None:
+                return None
+            if kept and not row["review_kept_at"]:
+                conn.execute("UPDATE essays SET review_kept_at = ? WHERE id = ?", (now, essay_id))
+            elif not kept:
+                conn.execute("UPDATE essays SET review_kept_at = NULL WHERE id = ?", (essay_id,))
+            conn.commit()
+            return self._dict(conn.execute("SELECT * FROM essays WHERE id = ?", (essay_id,)).fetchone())
 
     def list_latest_series(self) -> list[dict[str, Any]]:
         with self.connect() as conn:
@@ -227,8 +315,6 @@ class SQLiteLearningRepository:
         return int(row[0])
 
     def create_essay(self, values: dict[str, Any]) -> dict[str, Any]:
-        practice_context = values.get("practice_context")
-        grammar_links = values.get("grammar_links") or []
         with self.connect() as conn:
             cur = conn.execute(
                 """
@@ -249,10 +335,11 @@ class SQLiteLearningRepository:
                 ),
             )
             essay_id = int(cur.lastrowid)
-            if practice_context is not None or grammar_links:
+            module_data = _essay_module_data(values)
+            if module_data:
                 conn.execute(
                     "UPDATE essays SET module_data_json = ? WHERE id = ?",
-                    (json.dumps({"practice": practice_context, "grammar_links": grammar_links}, ensure_ascii=False), essay_id),
+                    (json.dumps(module_data, ensure_ascii=False), essay_id),
                 )
             series_id = int(values.get("series_id") or essay_id)
             if values.get("series_id") is None:
@@ -265,6 +352,12 @@ class SQLiteLearningRepository:
             row = conn.execute("SELECT series_id FROM essays WHERE id = ?", (essay_id,)).fetchone()
             if not row:
                 return False
+            # SQLite does not enforce the history table's ON DELETE CASCADE unless foreign keys are on,
+            # so the history of the deleted essays goes with them explicitly (a learner deleting an
+            # essay deletes its history: the history is their own record of that essay).
+            ids = [int(r["id"]) for r in conn.execute("SELECT id FROM essays WHERE series_id = ?", (row["series_id"],)).fetchall()]
+            if ids and conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='essay_review_history'").fetchone():
+                conn.execute(f"DELETE FROM essay_review_history WHERE essay_id IN ({','.join('?' * len(ids))})", ids)
             conn.execute("DELETE FROM essays WHERE series_id = ?", (row["series_id"],))
             conn.commit()
         return True
@@ -292,6 +385,48 @@ class SQLiteLearningRepository:
             cur = conn.execute("DELETE FROM grammar_progress WHERE lesson_id = ?", (lesson_id,))
             conn.commit()
         return cur.rowcount > 0
+
+    def record_grammar_completion(
+        self, point_id: str, completed_at: str, quiz: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """Complete a point and store its quiz result in ONE statement (D-105 H-20).
+
+        A retake updates `last_quiz_*` and keeps the first `completed_at`; a completion without a quiz
+        leaves an earlier quiz result alone.
+        """
+        result = clean_quiz_result(quiz)
+        with self.connect() as conn:
+            if result is None:
+                conn.execute(
+                    "INSERT INTO grammar_progress(lesson_id, completed_at) VALUES (?, ?)"
+                    " ON CONFLICT(lesson_id) DO NOTHING",
+                    (point_id, completed_at),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO grammar_progress(lesson_id, completed_at, last_quiz_correct, last_quiz_total, last_quiz_at)"
+                    " VALUES (?, ?, ?, ?, ?)"
+                    " ON CONFLICT(lesson_id) DO UPDATE SET last_quiz_correct = excluded.last_quiz_correct,"
+                    " last_quiz_total = excluded.last_quiz_total, last_quiz_at = excluded.last_quiz_at",
+                    (point_id, completed_at, result[0], result[1], completed_at),
+                )
+            conn.commit()
+        return self.get_grammar_progress(point_id) or {}
+
+    def get_grammar_progress(self, point_id: str, aliases: tuple[str, ...] = ()) -> dict[str, Any] | None:
+        """The point's progress under its own id, else under one of its aliases (R5 ids); `via` says which."""
+        with self.connect() as conn:
+            for candidate, via in [(point_id, "id"), *[(alias, "alias") for alias in aliases]]:
+                row = conn.execute(
+                    "SELECT completed_at, last_quiz_correct, last_quiz_total, last_quiz_at FROM grammar_progress"
+                    " WHERE lesson_id = ?", (candidate,),
+                ).fetchone()
+                if row:
+                    return _grammar_progress_payload(
+                        candidate, row["completed_at"], row["last_quiz_correct"], row["last_quiz_total"],
+                        row["last_quiz_at"], via=via,
+                    )
+        return None
 
     def list_saved_words(self) -> list[dict[str, Any]]:
         with self.connect() as conn:
@@ -492,6 +627,7 @@ class PostgresLearningRepository:
             "level_estimate": essay.level_estimate,
             "module_data_json": json.dumps(essay.module_data, ensure_ascii=False),
             "strength_evidence_json": json.dumps(essay.strength_evidence, ensure_ascii=False),
+            "review_kept_at": essay.review_kept_at.isoformat() if essay.review_kept_at else None,
         }
 
     def _essay_rows(self, session: Session, *, ascending: bool = True) -> list[dict[str, Any]]:
@@ -525,10 +661,38 @@ class PostgresLearningRepository:
                 return "language_scope_mismatch"
             return "parent_essay_not_found"
 
-    def list_essays(self, limit: int = 200, *, ascending: bool = False) -> list[dict[str, Any]]:
+    def list_essays(
+        self, limit: int = 200, *, ascending: bool = False, kept_only: bool = False
+    ) -> list[dict[str, Any]]:
         with Session(self.engine) as session:
             rows = self._essay_rows(session, ascending=ascending)
+        if kept_only:
+            rows = [row for row in rows if row.get("review_kept_at")]
         return rows if limit <= 0 else rows[:limit]
+
+    def set_essay_review_kept(self, essay_id: int, kept: bool) -> dict[str, Any] | None:
+        """Owner-scoped through the existing `(user_id, language_code, legacy_id)`
+        lookup, so the endpoint cannot reach another learner's essay.
+
+        Idempotent: keeping a kept review does not move its timestamp.
+        """
+        uid, lang = self._scope()
+        with Session(self.engine) as session, session.begin():
+            essay = session.scalar(
+                select(Essay).where(
+                    Essay.user_id == uid, Essay.language_code == lang, Essay.legacy_id == essay_id
+                )
+            )
+            if essay is None:
+                return None
+            if kept:
+                if essay.review_kept_at is None:
+                    essay.review_kept_at = datetime.now(timezone.utc)
+            else:
+                essay.review_kept_at = None
+            revision = session.scalar(select(EssayRevision).where(EssayRevision.essay_id == essay.id))
+            session.flush()
+            return self._essay_payload(essay, revision)
 
     def list_latest_series(self) -> list[dict[str, Any]]:
         rows = self.list_essays(0, ascending=True)
@@ -581,7 +745,7 @@ class PostgresLearningRepository:
                 task_achievement=float(values["task_achievement"]), naturalness=float(values["naturalness"]), overall=float(values["overall"]),
                 level_estimate=values["cefr_estimate"], evaluator=values["evaluator"], summary_vi=values["summary_vi"],
                 strengths=json.loads(values["strengths_json"]), priorities=json.loads(values["priorities_json"]),
-                errors=json.loads(values["errors_json"]), module_data={"practice": values["practice_context"], "grammar_links": values.get("grammar_links") or []} if (values.get("practice_context") or values.get("grammar_links")) else {},
+                errors=json.loads(values["errors_json"]), module_data=_essay_module_data(values),
                 strength_evidence=json.loads(values["strength_evidence_json"]),
             )
             session.add(essay)
@@ -649,6 +813,65 @@ class PostgresLearningRepository:
                 session.add(GrammarProgress(id=gid, user_id=uid, language_code=lang, lesson_id=lesson_id, completed_at=self._dt(completed_at)))
             else:
                 row.completed_at = self._dt(completed_at)
+
+    def record_grammar_completion(
+        self, point_id: str, completed_at: str, quiz: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """Complete a point and store its quiz result in ONE INSERT ... ON CONFLICT (D-105 H-20).
+
+        A retake updates `last_quiz_*` and keeps the first `completed_at`; a completion without a quiz
+        leaves an earlier result alone. The CHECK `ck_grammar_progress_quiz` is the database's own
+        guard for the same invariant `clean_quiz_result` states.
+        """
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+        result = clean_quiz_result(quiz)
+        uid, lang = self._scope()
+        gid = stable_uuid("grammar", self._user_key_provider(), lang, point_id)
+        when = self._dt(completed_at)
+        values = {"id": gid, "user_id": uid, "language_code": lang, "lesson_id": point_id, "completed_at": when}
+        if result is None:
+            statement = pg_insert(GrammarProgress).values(**values).on_conflict_do_nothing(
+                constraint="uq_grammar_progress_scope"
+            )
+        else:
+            insert = pg_insert(GrammarProgress).values(
+                **values, last_quiz_correct=result[0], last_quiz_total=result[1], last_quiz_at=when
+            )
+            statement = insert.on_conflict_do_update(
+                constraint="uq_grammar_progress_scope",
+                set_={
+                    "last_quiz_correct": insert.excluded.last_quiz_correct,
+                    "last_quiz_total": insert.excluded.last_quiz_total,
+                    "last_quiz_at": insert.excluded.last_quiz_at,
+                },
+            )
+        with Session(self.engine) as session, session.begin():
+            session.execute(statement)
+        return self.get_grammar_progress(point_id) or {}
+
+    def get_grammar_progress(self, point_id: str, aliases: tuple[str, ...] = ()) -> dict[str, Any] | None:
+        uid, lang = self._scope()
+        candidates = [(point_id, "id"), *[(alias, "alias") for alias in aliases]]
+        with Session(self.engine) as session:
+            rows = {
+                row.lesson_id: row
+                for row in session.scalars(
+                    select(GrammarProgress).where(
+                        GrammarProgress.user_id == uid,
+                        GrammarProgress.language_code == lang,
+                        GrammarProgress.lesson_id.in_([name for name, _ in candidates]),
+                    )
+                ).all()
+            }
+        for name, via in candidates:
+            row = rows.get(name)
+            if row is not None:
+                return _grammar_progress_payload(
+                    name, row.completed_at.isoformat(), row.last_quiz_correct, row.last_quiz_total,
+                    row.last_quiz_at.isoformat() if row.last_quiz_at else None, via=via,
+                )
+        return None
 
     def unset_grammar_completed(self, lesson_id: str) -> bool:
         uid, lang = self._scope()

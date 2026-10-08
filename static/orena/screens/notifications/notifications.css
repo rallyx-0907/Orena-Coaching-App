@@ -1,0 +1,24 @@
+/* Frame 59 "Notifications", measured. The sheet shell, close button and row shape all come from
+   kit/kit.css and kit/components.js#listRow; this file only holds the sub-title line and the body's
+   own padding/gap, which differ from the sheet default (kit/kit.css's .o-sheet__body). No colour
+   literal: every value is a kit/tokens.css token. */
+
+.s-notifications__sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-notifications__body {
+  padding: 14px 24px 24px;
+  gap: 10px;
+}
+
+/* The action a group of rows shares, named once (LEX-079): a quiet label, never capitals. */
+.s-notifications__group {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.s-notifications__group:first-child {
+  margin-top: 0;
+}

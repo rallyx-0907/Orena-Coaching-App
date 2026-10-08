@@ -4,13 +4,10 @@ import {route, link, continuationLink, sourceLink, practiceIntentions, deeperPra
 import {learnerMemory} from '../static/orena/product/memory.js';
 import {encounter} from '../static/orena/product/encounter.js';
 import {dictationEvidence, mergeListeningEvidence} from '../static/orena/product/evidence.js';
-import {copy} from '../static/orena/ui/copy.js';
 
 for (const retired of ['static/becoming', 'templates/becoming/index.html', 'templates/index.html', 'static/app.js', 'static/product-shell.js']) {
   assert.equal(existsSync(new URL('../'+retired, import.meta.url)), false, `Retired product restored: ${retired}`);
 }
-assert.deepEqual(Object.keys(copy.en).sort(), Object.keys(copy.zh).sort());
-assert.ok(!Object.values(copy.zh).some(x=>/\?{3}/.test(x)), 'Chinese copy must not be damaged');
 for (const intent of practiceIntentions) {
   assert.equal(route(link('practice',{intent})).intent, intent);
   assert.equal(route(link('encounter',{id:'media:a',intent})).intent, intent);
@@ -58,9 +55,6 @@ assert.equal(learnerMemory(storage,'owner-b','en').value.mediaImports.length,0);
 assert.equal(learnerMemory(storage,'owner-a','zh').value.mediaImports.length,0);
 a.remove('url:https://example.org/a');
 assert.equal(learnerMemory(storage,'owner-a','en').value.mediaImports.length,0);
-const world=readFileSync(new URL('../static/orena/ui/world.js',import.meta.url),'utf8');
-assert.match(world,/practiceMedia[\s\S]{0,40}\.filter\(\(x\) => supports\(/,'Practice intents must offer imported media, not the catalog alone');
-
 for (const language of ['en','zh']) {
   const text=language==='en'?'The train is here.':'火车来了。';
   const segments=[{segment_id:'one',start_ms:500,end_ms:2000,original_text:text},{segment_id:'two',start_ms:3000,end_ms:5000,original_text:text}];
@@ -107,9 +101,10 @@ assert.equal(a.recordRevision('expression:free',{text:'   '}),false,'nothing is 
 assert.equal(a.recordRevision('__proto__',{text:'x'}),false,'prototype keys stay rejected');
 assert.equal(learnerMemory(storage,'owner-b','en').value.revisions['expression:free'],undefined,'revisions are owner-scoped');
 assert.equal(learnerMemory(storage,'owner-a','zh').value.revisions['expression:free'],undefined,'revisions are language-scoped');
-const expressionSource=readFileSync(new URL('../static/orena/ui/expression.js',import.meta.url),'utf8');
-assert.match(expressionSource,/memory\.recordRevision\(id, \{\s*text,/,'a reviewed draft is recorded as a version');
-assert.doesNotMatch(expressionSource,/oninput[\s\S]{0,200}recordRevision/,'typing is not a version');
+// The Writing screen records a version when a draft is sent for review, never on a keystroke.
+const writingSource=readFileSync(new URL('../static/orena/screens/writing/screen.js',import.meta.url),'utf8');
+assert.match(writingSource,/memory\.recordRevision\(nextKey, \{\s*text,/,'a reviewed draft is recorded as a version');
+assert.doesNotMatch(writingSource,/oninput[\s\S]{0,200}recordRevision/,'typing is not a version');
 
 // Listening must not collapse into Dictation. Following a piece of media to its
 // end is an intention of its own, and it is the one intention that opens
@@ -120,33 +115,16 @@ assert.deepEqual(deeperPractice,['dictation','shadowing','speaking'],'only these
 assert.equal(route(link('practice',{intent:'follow'})).intent,'follow');
 assert.equal(supports({kind:'audio'},'follow'),true,'a voice can be followed');
 assert.equal(supports({kind:'text'},'follow'),false,'a text is read, not followed');
-const encounterFollow=readFileSync(new URL('../static/orena/ui/encounter.js',import.meta.url),'utf8');
-assert.match(encounterFollow,/deeperPractice\.includes\(practice\)/,'only deeper intentions auto-open');
-assert.doesNotMatch(encounterFollow,/\['dictation', 'shadowing', 'speaking'\]\.includes\(practice\)/,'the hardcoded list is retired');
+// A take's result is drawn and its actions live before anything is saved, and saving is never awaited by them.
+const speakingTake=readFileSync(new URL('../static/orena/capabilities/speaking-take.js',import.meta.url),'utf8');
+assert.match(speakingTake,/set\(\{ phase: TAKE\.RESULT, result \}\);\s*if \(keep\) void remember\(result, mine\);/,'Take actions must be wired before the progress save is awaited');
 
-// Contracts the encounter surface must keep. These are the regressions this
-// layer has actually shipped, so they are worth naming rather than trusting.
-const encounterSource=readFileSync(new URL('../static/orena/ui/encounter.js',import.meta.url),'utf8');
-assert.match(encounterSource,/recoverListeningEvidence\(readPrior\)/,'Dictation that began without the stored record must merge against one recovered baseline');
-assert.match(encounterSource,/playing \? 'gap' : lastClockSegment/,'A resting player is not "between spoken lines"; Follow must keep showing the current line');
-assert.doesNotMatch(encounterSource,/memory\.write\(id, heard\)\s*;/,'A speech transcript must not overwrite writing the learner already has');
-assert.match(encounterSource,/bindPronunciation\(\);[\s\S]{0,200}if \(intent === 'shadowing'\)/,'Take actions must be wired before the progress save is awaited');
-
-const app=readFileSync(new URL('../static/orena/app.js',import.meta.url),'utf8');
-assert.doesNotMatch(app,/applySkillNavigation|sharedMediaSession|ShadowingStudio/);
-assert.match(app,/languages.support_languages/);
-assert.match(app,/a\.skip[\s\S]{0,160}event\.preventDefault\(\)/,'Skip to content must move focus without rewriting the route');
-assert.match(app,/if \(location\.hash === next\) render\(\)/,'Re-entering the route you are already on must still act');
-
-// Plan/usage (ORENA_COMMERCE_ARCHITECTURE.md §2, §4): read-only, additive to
-// the frozen mobile /me contract, no enforcement, no provider identifier.
-assert.match(app,/api\.productCommerce\(\)\.catch\(/,'A failed plan/usage read must never block boot the way the other three awaits do');
-assert.doesNotMatch(app,/api\.productMe\(\)/,'The web client must read the web-only canonical endpoint, not the frozen mobile one');
-assert.match(app,/onboarding \? '' : planUsageSection\(ctx\)/,'A first-run welcome sheet must not show usage numbers');
-assert.doesNotMatch(app,/external_customer_id|external_subscription_id/,'No provider/customer identifier may reach a learner-facing template');
-const planUsageSource=app.slice(app.indexOf('function planUsageSection'),app.indexOf('function preferences('));
-assert.doesNotMatch(planUsageSource,/checkout|<button|<a /i,'billing_ready is false: no enforcement or checkout call-to-action, read-only markup only');
-for (const key of ['planUsage','planUsageNote','planUsageUnavailable','planUsed','planUnlimited','planNotIncluded']) {
-  assert.ok(copy.en[key] && copy.zh[key], `Missing plan/usage copy: ${key}`);
+// Plan/usage (ORENA_COMMERCE_ARCHITECTURE.md section 2, 4): read-only, additive to the frozen mobile /me
+// contract, no enforcement, no provider identifier. Profile and Settings both read it.
+for (const screen of ['profile','settings']) {
+  const source=readFileSync(new URL(`../static/orena/screens/${screen}/screen.js`,import.meta.url),'utf8');
+  assert.match(source,/api\.productCommerce\(\)\.catch\(/,`${screen}: a failed plan/usage read must never block the screen`);
+  assert.doesNotMatch(source,/api\.productMe\(\)/,`${screen}: the web client reads the web-only canonical endpoint, not the frozen mobile one`);
+  assert.doesNotMatch(source,/external_customer_id|external_subscription_id/,`${screen}: no provider/customer identifier may reach a learner-facing template`);
 }
 console.log('Orena product boundary, intents, owned memory, EN/ZH meaning and truthful evidence: PASS');

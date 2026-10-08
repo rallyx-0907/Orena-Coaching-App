@@ -55,13 +55,16 @@ from datetime import datetime, UTC
 from typing import Any
 from urllib.parse import urlencode
 
-DOMAINS = ('language', 'reading', 'media', 'writing', 'speaking')
+from writing_coach.vocabulary_meaning import current_support_language, saved_word_meaning
+
+DOMAINS = ('language', 'reading', 'media', 'writing', 'speaking', 'grammar')
 KIND_OF = {
     'language': 'language',
     'reading': 'text',
     'media': 'media',
     'writing': 'work',
     'speaking': 'work',
+    'grammar': 'pattern',
 }
 MAX_LIMIT = 50
 DEFAULT_LIMIT = 20
@@ -134,12 +137,22 @@ class Owner:
 
     `read` is the owner's own bounded read; `bound` is that bound when the read
     has one, so a full read can be recognised as possibly incomplete.
+
+    `searches` says the owner can answer a search itself. It matters where an
+    owner holds more than its bound: the learner's saved language is thousands
+    of words and this query reads two hundred, so searching after the read
+    would search two hundred words and report "nothing found" for the rest.
+    Such an owner is handed the query and searches all of what it holds; the
+    bound then limits the matches, which is a page, not a blind spot. The
+    result is still filtered here afterwards, so an owner that searches more
+    loosely than this query declares cannot widen it.
     """
 
     domain: str
-    read: Callable[[], Sequence[Mapping[str, Any]]]
+    read: Callable[..., Sequence[Mapping[str, Any]]]
     to_entries: Callable[[Sequence[Mapping[str, Any]], str], list[CollectionEntry]]
     bound: int | None = None
+    searches: bool = False
 
 
 # --- Routes: the same strings `intent.js` link() builds -----------------------
@@ -176,6 +189,7 @@ def _clip(text: Any, size: int = SNIPPET) -> str:
 def language_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[CollectionEntry]:
     """Saved words, from the library owner. Review scheduling stays there."""
     entries = []
+    support = current_support_language()
     for row in rows:
         word = str(row.get('word') or '').strip()
         if not word:
@@ -184,36 +198,78 @@ def language_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[C
             domain='language',
             id=unicodedata.normalize('NFKC', word).casefold(),
             title=word,
-            snippet=_clip(row.get('definition') or row.get('source_fragment')),
+            # The word's sense in the learner's support language (D-124), not only
+            # what was copied into the saved row - a catalogue word saved without
+            # a copy still has its meaning here.
+            snippet=_clip(saved_word_meaning(row, support) or row.get('source_fragment')),
             learning_language=_language_of(row, language),
             relationship='saved',
             updated_at=str(row.get('added_at') or ''),
             action=_action('review_language', route('language')),
-            detail={'sourceKind': str(row.get('source_kind') or '')},
+            # What the owner already recorded about reviewing this word. The
+            # library's detail panel shows it; nothing here computes a measure
+            # or invents one for a kind that has no schedule.
+            detail={
+                'sourceKind': str(row.get('source_kind') or ''),
+                'successfulRecalls': int(row.get('successful_recalls') or 0),
+                'lastReviewedAt': str(row.get('last_reviewed_at') or ''),
+                'nextReviewAt': str(row.get('next_review_at') or ''),
+                'sourceFragment': _clip(row.get('source_fragment'), 280),
+            },
+        ))
+    return entries
+
+
+def grammar_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[CollectionEntry]:
+    """Patterns the learner marked complete, from the grammar owner.
+
+    The owner records completion, not a time and not a measure: marking a
+    pattern complete is the learner saying they have worked through it, which
+    `ORENA_STATUS` and the curriculum policy are explicit is not mastery. So an
+    entry carries what is recorded - the pattern and its level - and nothing
+    that would read as a score.
+    """
+    entries = []
+    for row in rows:
+        lesson = str(row.get('id') or row.get('lesson_id') or '').strip()
+        if not lesson:
+            continue
+        entries.append(CollectionEntry(
+            domain='grammar',
+            id=lesson,
+            title=str(row.get('title') or ''),
+            learning_language=_language_of(row, language),
+            relationship='completed',
+            updated_at=str(row.get('completed_at') or ''),
+            action=_action('open_source', route('practice', id=lesson, intent='grammar')),
+            detail={'level': str(row.get('level') or '')},
         ))
     return entries
 
 
 def reading_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[CollectionEntry]:
-    """Passages the learner asked for, from the reading owner."""
+    """Corpus articles the learner practiced, from canonical Reading evidence
+    (D-082): one entry per article, its latest attempt first. The archived
+    generated sessions are never read here."""
     entries = []
+    seen: set[str] = set()
     for row in rows:
-        if row.get('id') in (None, ''):
+        article_id = str(row.get('article_id') or '')
+        if not article_id or article_id in seen:
             continue
-        ident = str(int(row['id']))
+        seen.add(article_id)
         entries.append(CollectionEntry(
             domain='reading',
-            id=ident,
+            id=article_id,
             title=str(row.get('title') or ''),
             snippet=_clip(row.get('topic')),
             learning_language=_language_of(row, language),
-            relationship='started',
+            relationship='practised',
             updated_at=str(row.get('created_at') or ''),
-            action=_action('open_source', route('encounter', id=f'reading:{ident}', intent='reading')),
-            detail={'questionCount': int(row.get('question_count') or 0)},
+            action=_action('open_source', route('encounter', id=f'article:{article_id}', intent='reading')),
+            detail={'correct': int(row.get('correct_count') or 0), 'total': int(row.get('total') or 0)},
         ))
     return entries
-
 
 def writing_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[CollectionEntry]:
     """The latest revision of each essay series, from the Writing owner.
@@ -422,6 +478,7 @@ def query_collection(
     secret: bytes,
     query: str = '',
     kinds: Iterable[str] = (),
+    domains: Iterable[str] = (),
     cursor: str | None = None,
     limit: int = DEFAULT_LIMIT,
 ) -> dict[str, Any]:
@@ -437,6 +494,11 @@ def query_collection(
     unknown = [kind for kind in wanted if kind not in set(KIND_OF.values())]
     if unknown:
         raise CollectionQueryError('kind_unknown')
+    # A kind can hold two owners - writing and speaking are both work - and a
+    # surface that names them separately asks by owner instead.
+    owned = tuple(sorted({str(domain).strip() for domain in domains if str(domain).strip()}))
+    if [domain for domain in owned if domain not in DOMAINS]:
+        raise CollectionQueryError('domain_unknown')
     try:
         limit = int(limit)
     except (TypeError, ValueError):
@@ -452,8 +514,10 @@ def query_collection(
             raise CollectionQueryError('owner_unknown')
         if wanted and KIND_OF[owner.domain] not in wanted:
             continue
+        if owned and owner.domain not in owned:
+            continue
         try:
-            rows = list(owner.read())
+            rows = list(owner.read(query) if owner.searches else owner.read())
             entries = owner.to_entries(rows, scope.language.strip().casefold())
         except Exception as error:
             # Named in the result, never swallowed into an empty one - and in
@@ -471,7 +535,8 @@ def query_collection(
     scoped = [entry for entry in collected if entry.learning_language == language]
     found = sorted((entry for entry in scoped if matches(entry, query)), key=_order_key)
 
-    filters = {'query': normalise(query), 'kinds': list(wanted), 'sort': 'updated_desc', 'limit': limit}
+    filters = {'query': normalise(query), 'kinds': list(wanted), 'domains': list(owned),
+               'sort': 'updated_desc', 'limit': limit}
     binding = {'account': scope.account, 'incarnation': scope.incarnation, 'language': scope.language}
     snapshot = _digest({
         'binding': binding,
@@ -500,8 +565,19 @@ def query_collection(
         else None
     )
     complete = not unavailable and not truncated
+    # How many of each kind the same result holds, so a surface can label its
+    # kinds without asking once per kind. It counts what was read: a request
+    # that named kinds counted only those, and an owner that was unavailable or
+    # filled its bound makes these counts as partial as the total is.
+    kind_totals: dict[str, int] = {}
+    domain_totals: dict[str, int] = {}
+    for entry in found:
+        kind_totals[entry.kind] = kind_totals.get(entry.kind, 0) + 1
+        domain_totals[entry.domain] = domain_totals.get(entry.domain, 0) + 1
     return {
         'entries': [entry.as_dict() for entry in page],
+        'kindTotals': kind_totals,
+        'domainTotals': domain_totals,
         'nextCursor': next_cursor,
         'completeness': 'complete' if complete else 'partial',
         'unavailableOwners': unavailable,

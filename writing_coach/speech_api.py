@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timedelta
 import json
+import logging
 import math
-from typing import Any
+import os
+import time
+from typing import Annotated, Any
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
 from writing_coach.core.errors import orena_http_error
@@ -16,6 +19,7 @@ from writing_coach.core.request_context import current_language_code
 from writing_coach.speech_pronunciation import (
     SpeechPronunciationConversionFailed,
     SpeechPronunciationMalformed,
+    SpeechPronunciationNoSpeech,
     SpeechPronunciationPayloadTooLarge,
     SpeechPronunciationProvider,
     SpeechPronunciationRequestFailed,
@@ -35,9 +39,27 @@ from writing_coach.speaking_evaluator import (
 )
 
 
+logger = logging.getLogger(__name__)
+SINCE_MAX_DAYS = 7
+
+PRACTICE_SESSION_FLAG = "ORENA_PRACTICE_SESSION"
+
+
+def practice_session_enabled() -> bool:
+    """D-142: the persisted practice session identity. Off unless an operator turns it on (default off, so the
+    attempt routes behave exactly as before), and only after the 20261007_0029 revision is applied."""
+    return os.environ.get(PRACTICE_SESSION_FLAG, "").strip().casefold() in {"on", "1", "true", "yes"}
+
+
+def _server_now() -> datetime:
+    """The server's clock: the only time a practice session is judged by (D-142.1)."""
+    return datetime.now(UTC)
+
+
 router = APIRouter(prefix="/api/speech", tags=["speech"])
 _speech_asr_provider: SpeechAsrProvider | None = None
 _speech_pronunciation_provider: SpeechPronunciationProvider | None = None
+_speech_pronunciation_resolver: Any = None
 _speaking_attempt_repository: Any = None
 
 
@@ -46,9 +68,10 @@ def configure_speech_asr(provider: SpeechAsrProvider | None) -> None:
     _speech_asr_provider = provider
 
 
-def configure_speech_pronunciation(provider: SpeechPronunciationProvider | None) -> None:
-    global _speech_pronunciation_provider
+def configure_speech_pronunciation(provider: SpeechPronunciationProvider | None, *, resolver: Any = None) -> None:
+    global _speech_pronunciation_provider, _speech_pronunciation_resolver
     _speech_pronunciation_provider = provider
+    _speech_pronunciation_resolver = resolver
 
 
 def configure_speaking_attempt_repository(repository: Any) -> None:
@@ -68,13 +91,14 @@ def _provider() -> SpeechAsrProvider:
 
 
 def _pronunciation_provider() -> SpeechPronunciationProvider:
-    if _speech_pronunciation_provider is None:
+    provider = _speech_pronunciation_resolver() if _speech_pronunciation_resolver else _speech_pronunciation_provider
+    if provider is None:
         raise orena_http_error(
             503,
             "pronunciation_unconfigured",
             "Pronunciation assessment is not configured.",
         )
-    return _speech_pronunciation_provider
+    return provider
 
 
 _UPLOAD_READ_CHUNK_BYTES = 1024 * 1024
@@ -269,7 +293,7 @@ def _normalize_speaking_attempt(payload: SpeakingAttemptIn) -> dict[str, Any]:
     if len(encoded_evidence) > 100_000 or len(encoded_provenance) > 8_000:
         raise SpeakingEvaluationInvalid("evaluation evidence is too large.")
     return {
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": _server_now().isoformat(),
         "language": language,
         "take_id": take_id,
         "asset_id": asset_id,
@@ -301,13 +325,18 @@ async def _read_upload_limited(file: UploadFile, *, max_bytes: int) -> bytes:
 
 @router.get("/status")
 def speech_status() -> dict[str, Any]:
+    # Pronunciation is its own capability: a room that scores a line asks this
+    # before inviting a take. Which provider answers stays infrastructure.
+    current_pronunciation = _speech_pronunciation_resolver() if _speech_pronunciation_resolver else _speech_pronunciation_provider
+    pronunciation = {"configured": current_pronunciation is not None}
     provider = _speech_asr_provider
     if provider is None:
-        return {"configured": False, "provider": None, "model": None}
+        return {"configured": False, "provider": None, "model": None, "pronunciation": pronunciation}
     return {
         "configured": True,
         "provider": getattr(provider, "provider_id", "unknown"),
         "model": getattr(provider, "model", None),
+        "pronunciation": pronunciation,
     }
 
 
@@ -420,7 +449,10 @@ def save_speaking_attempt(payload: SpeakingAttemptIn) -> dict[str, Any]:
         )
     try:
         values = _normalize_speaking_attempt(payload)
-        saved = _speaking_attempt_repository.create_speaking_attempt_record(values)
+        if practice_session_enabled():
+            saved = _speaking_attempt_repository.create_speaking_attempt_record(values, assign_session=True)
+        else:
+            saved = _speaking_attempt_repository.create_speaking_attempt_record(values)
     except SpeakingEvaluationInvalid as exc:
         raise orena_http_error(422, "speaking_attempt_invalid", str(exc)) from exc
     return {"item": saved, "progress": _speaking_attempt_repository.speaking_progress()}
@@ -431,7 +463,12 @@ def list_speaking_attempts(
     limit: int = 20,
     asset_id: str | None = None,
     segment_id: str | None = None,
+    since: Annotated[str | None, Query(max_length=40)] = None,
+    session: Annotated[str | None, Query(max_length=16)] = None,
 ) -> dict[str, Any]:
+    """The learner's speaking attempts, newest first. `since` (an ISO instant) makes "this session" a
+    window the server keeps rather than a list the browser holds (D4 I7): it is clamped to the last
+    seven days and never to the future, and an unreadable value is refused."""
     if _speaking_attempt_repository is None:
         raise orena_http_error(
             503,
@@ -439,15 +476,40 @@ def list_speaking_attempts(
             "Speaking history is not configured on this environment.",
         )
     bounded_limit = max(1, min(int(limit), 100))
+    if session is not None:
+        # D-142.3: only the learner's current session; there is no reading a past one by id.
+        if session != "current":
+            raise orena_http_error(422, "session_invalid", "session must be 'current'.")
+        if since or asset_id or segment_id:
+            raise orena_http_error(422, "session_exclusive", "session=current cannot be combined with other filters.")
+        if not practice_session_enabled():
+            raise orena_http_error(404, "practice_session_disabled", "Practice sessions are not enabled on this environment.", retryable=False)
+        live = _speaking_attempt_repository.current_speaking_session(_server_now(), limit=bounded_limit)
+        items = live.pop("items") if live else []
+        return {
+            "items": items,
+            "session": live,
+            "progress": _speaking_attempt_repository.speaking_progress(),
+        }
+    window_start = None
+    if since:
+        try:
+            parsed = datetime.fromisoformat(since.replace("Z", "+00:00"))
+        except ValueError:
+            raise orena_http_error(422, "since_invalid", "since must be an ISO date and time.") from None
+        parsed = parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+        now = datetime.now(UTC)
+        window_start = min(now, max(parsed, now - timedelta(days=SINCE_MAX_DAYS)))
     scoped_asset = asset_id.strip() if isinstance(asset_id, str) and asset_id.strip() else None
     scoped_segment = segment_id.strip() if isinstance(segment_id, str) and segment_id.strip() else None
-    if scoped_asset is None and scoped_segment is None:
+    if scoped_asset is None and scoped_segment is None and window_start is None:
         items = _speaking_attempt_repository.list_speaking_attempt_records(bounded_limit)
     else:
         items = _speaking_attempt_repository.list_speaking_attempt_records(
             bounded_limit,
             asset_id=scoped_asset,
             segment_id=scoped_segment,
+            **({"since": window_start} if window_start is not None else {}),
         )
     return {
         "items": items,
@@ -483,6 +545,7 @@ async def assess_pronunciation(
     file: UploadFile = File(...),
     language: str = Form(default=""),
     reference_text: str = Form(default=""),
+    mode: str = Form(default="scripted"),
 ) -> dict[str, Any]:
     normalized_language = language.strip().casefold()
     if normalized_language not in {"en", "zh"}:
@@ -491,11 +554,16 @@ async def assess_pronunciation(
             "pronunciation_invalid_language",
             "Unsupported pronunciation language.",
         )
+    normalized_mode = mode.strip().casefold() or "scripted"
+    if normalized_mode not in {"scripted", "unscripted"}:
+        raise orena_http_error(422, "pronunciation_invalid_mode", "Unsupported pronunciation mode.")
+    unscripted = normalized_mode == "unscripted"
 
     provider = _pronunciation_provider()
-    reference = reference_text.strip()
+    # Free speech (free talk) is assessed with no reference line.
+    reference = "" if unscripted else reference_text.strip()
     max_reference_chars = int(getattr(provider, "max_reference_chars", 1200))
-    if not reference or len(reference) > max_reference_chars:
+    if not unscripted and (not reference or len(reference) > max_reference_chars):
         raise orena_http_error(
             422,
             "pronunciation_reference_invalid",
@@ -503,14 +571,103 @@ async def assess_pronunciation(
         )
 
     max_bytes = int(getattr(provider, "max_bytes", _DEFAULT_PRONUNCIATION_MAX_BYTES))
+    provider_id = str(getattr(provider, "provider_id", "unknown"))
+    started = time.monotonic()
+    outcome = "error"
+    size = 0
     try:
-        data = await _read_pronunciation_upload_limited(file, max_bytes=max_bytes)
-        result = provider.assess_bytes(
+        try:
+            data = await _read_pronunciation_upload_limited(file, max_bytes=max_bytes)
+        except SpeechPronunciationPayloadTooLarge as exc:
+            raise orena_http_error(
+                413,
+                "pronunciation_payload_too_large",
+                "Audio recording is too large.",
+                context={"max_bytes": max_bytes},
+            ) from exc
+        size = len(data)
+        if not data:
+            raise orena_http_error(
+                422,
+                "pronunciation_audio_empty",
+                "The recording is empty.",
+            )
+        result = _assess(provider, data, file, normalized_language, reference, unscripted)
+        outcome = result.score_kind
+    except HTTPException as exc:
+        detail = exc.detail if isinstance(exc.detail, dict) else {}
+        outcome = str(detail.get("category") or outcome)
+        raise
+    finally:
+        latency_ms = int(round((time.monotonic() - started) * 1000))
+        # Operations only: never the audio, the line, a key or a provider message.
+        logger.info(
+            "pronunciation assessment provider=%s language=%s outcome=%s bytes=%d latency_ms=%d",
+            provider_id,
+            normalized_language,
+            outcome,
+            size,
+            latency_ms,
+        )
+
+    return {
+        "provider": result.provider,
+        "score_kind": result.score_kind,
+        "mode": getattr(result, "mode", "scripted"),
+        "language": normalized_language,
+        "locale": result.locale,
+        "reference_text": reference,
+        "recognized_text": result.recognized_text,
+        "pron_score": result.pron_score,
+        "accuracy_score": result.accuracy_score,
+        "fluency_score": result.fluency_score,
+        "completeness_score": result.completeness_score,
+        "prosody_score": result.prosody_score,
+        "words": [
+            {
+                "word": word.word,
+                "accuracy_score": word.accuracy_score,
+                "error_type": word.error_type,
+                "offset_ms": word.offset_ms,
+                "duration_ms": word.duration_ms,
+                "syllables": [
+                    {"syllable": syllable.syllable, "accuracy_score": syllable.accuracy_score}
+                    for syllable in word.syllables
+                ],
+                "phonemes": [
+                    {
+                        "phoneme": phoneme.phoneme,
+                        "accuracy_score": phoneme.accuracy_score,
+                    }
+                    for phoneme in word.phonemes
+                ],
+            }
+            for word in result.words
+        ],
+        "latency_ms": latency_ms,
+    }
+
+
+def _assess(
+    provider: SpeechPronunciationProvider,
+    data: bytes,
+    file: UploadFile,
+    language: str,
+    reference: str,
+    unscripted: bool = False,
+) -> Any:
+    """Call the provider and turn each way it can fail into a learner-safe error.
+
+    No speech is the learner's outcome (say it again), not a provider failure;
+    everything else is the service's, and says so without provider detail."""
+    try:
+        return provider.assess_bytes(
             data,
             filename=file.filename or "recording.webm",
             content_type=file.content_type or "application/octet-stream",
-            language=normalized_language,
+            language=language,
             reference_text=reference,
+            unscripted=unscripted,
         )
     except SpeechPronunciationPayloadTooLarge as exc:
         raise orena_http_error(
@@ -518,11 +675,18 @@ async def assess_pronunciation(
             "pronunciation_payload_too_large",
             "Audio recording is too large.",
         ) from exc
+    except SpeechPronunciationNoSpeech as exc:
+        raise orena_http_error(
+            422,
+            "pronunciation_no_speech",
+            "No speech was heard in the recording.",
+        ) from exc
     except SpeechPronunciationTimedOut as exc:
         raise orena_http_error(
             504,
             "pronunciation_timeout",
             "Pronunciation assessment timed out.",
+            retryable=True,
         ) from exc
     except SpeechPronunciationConversionFailed as exc:
         raise orena_http_error(
@@ -554,32 +718,6 @@ async def assess_pronunciation(
             502,
             category,
             public_message,
+            retryable=category in {"pronunciation_rate_limited", "pronunciation_provider_failure"},
             context={"provider_status": provider_status},
         ) from exc
-
-    return {
-        "provider": result.provider,
-        "score_kind": result.score_kind,
-        "locale": result.locale,
-        "recognized_text": result.recognized_text,
-        "pron_score": result.pron_score,
-        "accuracy_score": result.accuracy_score,
-        "fluency_score": result.fluency_score,
-        "completeness_score": result.completeness_score,
-        "prosody_score": result.prosody_score,
-        "words": [
-            {
-                "word": word.word,
-                "accuracy_score": word.accuracy_score,
-                "error_type": word.error_type,
-                "phonemes": [
-                    {
-                        "phoneme": phoneme.phoneme,
-                        "accuracy_score": phoneme.accuracy_score,
-                    }
-                    for phoneme in word.phonemes
-                ],
-            }
-            for word in result.words
-        ],
-    }

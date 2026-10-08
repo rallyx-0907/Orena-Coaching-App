@@ -22,6 +22,31 @@ def contains_cjk(text: str) -> bool:
     return bool(_CJK_RE.search(text or ""))
 
 
+_LETTER_RE = re.compile(r"[^\W\d_]")
+
+
+def support_prose_admits(text: str, *, support_cjk: bool, target_cjk: bool) -> bool:
+    """Whether an explanation is written in the support language's script.
+
+    One rule for every language pair. Prose in a CJK support language may hold
+    CJK. Prose in any other support language may still *quote* the learning
+    language when that language is written in CJK - "dùng lượng từ 本 cho
+    sách" is a Vietnamese explanation of a Chinese error, and it cannot teach
+    the measure word without writing it. What is refused is an explanation
+    that is not support-language prose at all: CJK outweighs the support
+    script's own letters, or the learning language is not written in CJK so
+    there is nothing to quote.
+    """
+    if support_cjk or not contains_cjk(text):
+        return True
+    if not target_cjk:
+        return False
+    value = text or ""
+    cjk = len(_CJK_RE.findall(value))
+    other = sum(1 for char in _LETTER_RE.findall(value) if not _CJK_RE.match(char))
+    return other >= cjk
+
+
 def calculate_weighted_overall(
     result: Mapping[str, Any],
     rubric_weights: Mapping[str, float],
@@ -45,6 +70,7 @@ def normalize_writing_evaluation(
     allow_cjk: bool,
     learner_text: str,
     applicable_dimensions: Sequence[str] | None = None,
+    allow_explanation_cjk: bool | None = None,
 ) -> dict[str, Any]:
     """Normalize untrusted evaluator output using supplied language policy.
 
@@ -52,6 +78,7 @@ def normalize_writing_evaluation(
     routing, persistence, or web-framework behavior.  The caller supplies the
     current rubric, proficiency policy, and learner text explicitly.
     """
+    explanation_allow_cjk = allow_cjk if allow_explanation_cjk is None else allow_explanation_cjk
     text_hash = hashlib.sha256((learner_text or "").encode("utf-8")).hexdigest()
     dimension_keys = tuple(
         key for key in rubric_weights
@@ -77,19 +104,22 @@ def normalize_writing_evaluation(
         result["band_confidence"] = round(_normalized_confidence(raw["band_confidence"]), 2)
 
     summary = _bounded_text(raw.get("summary_vi", ""), 4000)
-    result["summary_vi"] = summary if allow_cjk or not contains_cjk(summary) else ""
-    result["strengths_vi"] = _clean_learner_list(raw.get("strengths_vi", []), allow_cjk=allow_cjk)
-    result["priorities_vi"] = _clean_learner_list(raw.get("priorities_vi", []), allow_cjk=allow_cjk)
+    admits = lambda value: support_prose_admits(value, support_cjk=explanation_allow_cjk, target_cjk=allow_cjk)  # noqa: E731
+    result["summary_vi"] = summary if admits(summary) else ""
+    result["strengths_vi"] = _clean_learner_list(raw.get("strengths_vi", []), admits=admits)
+    result["priorities_vi"] = _clean_learner_list(raw.get("priorities_vi", []), admits=admits)
     result["strength_evidence"] = _normalize_strength_evidence(
         raw.get("strength_evidence", []),
         rubric_categories=set(dimension_keys),
         allow_cjk=allow_cjk,
+        allow_explanation_cjk=explanation_allow_cjk,
         learner_text=learner_text,
     )
     result["errors"] = _normalize_errors(
         raw.get("errors", []),
         error_categories=set(error_categories),
         allow_cjk=allow_cjk,
+        allow_explanation_cjk=explanation_allow_cjk,
         learner_text=learner_text,
     )
     result["summary"] = {
@@ -172,14 +202,14 @@ def _clean_learner_list(
     items: Any,
     *,
     limit: int = MAX_LEARNER_LIST_ITEMS,
-    allow_cjk: bool,
+    admits: Callable[[str], bool],
 ) -> list[str]:
     if not isinstance(items, list):
         return []
     output: list[str] = []
     for item in items:
         value = _bounded_text(item, 1000)
-        if value and (allow_cjk or not contains_cjk(value)):
+        if value and admits(value):
             output.append(value)
         if len(output) >= limit:
             break
@@ -192,7 +222,9 @@ def _normalize_strength_evidence(
     rubric_categories: set[str],
     allow_cjk: bool,
     learner_text: str,
+    allow_explanation_cjk: bool | None = None,
 ) -> list[dict[str, Any]]:
+    explanation_allow_cjk = allow_cjk if allow_explanation_cjk is None else allow_explanation_cjk
     if not isinstance(items, list):
         return []
     output: list[dict[str, Any]] = []
@@ -208,7 +240,7 @@ def _normalize_strength_evidence(
             continue
         if not fragment or fragment not in learner_text or not explanation:
             continue
-        if not allow_cjk and contains_cjk(explanation):
+        if not support_prose_admits(explanation, support_cjk=explanation_allow_cjk, target_cjk=allow_cjk):
             continue
         identity = (category, fragment)
         if identity in seen:
@@ -235,7 +267,9 @@ def _normalize_errors(
     error_categories: set[str],
     allow_cjk: bool,
     learner_text: str,
+    allow_explanation_cjk: bool | None = None,
 ) -> list[dict[str, Any]]:
+    explanation_allow_cjk = allow_cjk if allow_explanation_cjk is None else allow_explanation_cjk
     if not isinstance(items, list):
         return []
     output: list[dict[str, Any]] = []
@@ -250,18 +284,36 @@ def _normalize_errors(
         explanation = _bounded_text(item.get("explanation_vi", ""), 2000)
         suggestion = _bounded_text(item.get("suggestion", ""), 1000)
         rule = _bounded_text(item.get("mini_rule_vi", ""), 1500)
+        example = _bounded_text(item.get("example", ""), 500)
         confidence = _normalized_confidence(item.get("confidence", 1.0))
+        # A finding that cannot be pointed at is still a finding.
+        #
+        # This used to drop any error whose fragment was not verbatim in the
+        # learner text, which is right for *highlighting* - pointing at the
+        # wrong words is worse than pointing at nothing - and wrong for
+        # keeping it: an evaluator that normalised an apostrophe or trimmed a
+        # word lost the whole correction, and the learner never heard that the
+        # verb form was wrong at all.
+        #
+        # So the two questions are separated. Is it trustworthy: confidence,
+        # explanation, rule, a suggestion that differs. Can it be anchored:
+        # whether the fragment occurs literally. An unanchored finding keeps
+        # everything except the span, and the surface shows it as guidance
+        # without offering to find it in the text.
+        anchored = bool(fragment) and fragment in learner_text
         if (
             confidence < CONFIDENCE_THRESHOLD
             or not fragment
-            or fragment not in learner_text
             or not explanation
             or not rule
         ):
             continue
-        if not allow_cjk and (
-            contains_cjk(explanation) or contains_cjk(rule) or contains_cjk(suggestion)
+        if not (
+            support_prose_admits(explanation, support_cjk=explanation_allow_cjk, target_cjk=allow_cjk)
+            and support_prose_admits(rule, support_cjk=explanation_allow_cjk, target_cjk=allow_cjk)
         ):
+            continue
+        if not allow_cjk and contains_cjk(suggestion):
             continue
         if not suggestion or _normalize_text(suggestion) == _normalize_text(fragment):
             continue
@@ -277,9 +329,11 @@ def _normalize_errors(
                 "fragment": fragment,
                 "quote": fragment,
                 "span": span,
+                "anchored": anchored,
                 "explanation_vi": explanation,
                 "suggestion": suggestion,
                 "mini_rule_vi": rule,
+                "example": example,
                 "confidence": round(confidence, 2),
             }
         )

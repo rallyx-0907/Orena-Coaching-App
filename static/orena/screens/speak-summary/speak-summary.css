@@ -1,0 +1,194 @@
+/* Speaking Summary (frame 42), measured against the pinned design. A focus route with no header
+   at all (the source draws none - confirmed, D5/E2 §7), so the whole column is the scroll region
+   (rule 49). Colours are tokens only; the hero icon uses `var(--skill-speak)`, never the source's
+   own hard-coded hex for it (a build-hygiene slip in the source itself, D5§7 - fixed here,
+   not reproduced). */
+
+.s-spsummary-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.s-spsummary-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px 0 24px;
+}
+
+.s-spsummary-hero {
+  flex: none;
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--tint2);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+.s-spsummary-hero__glow {
+  position: absolute;
+  top: -40px;
+  left: -40px;
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  background: var(--deco-strong);
+}
+.s-spsummary-icon {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--skill-speak);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--sh2);
+}
+.s-spsummary-eyebrow {
+  position: relative;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+.s-spsummary-count {
+  position: relative;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+}
+.s-spsummary-count span {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.s-spsummary-evidence {
+  position: relative;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.s-spsummary-card {
+  flex: 0 1 auto;
+  min-height: 0;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.s-spsummary-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.s-spsummary-tasks {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-spsummary-task {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface2);
+}
+.s-spsummary-check {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--badge-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-spsummary-task__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.s-spsummary-task__label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-spsummary-task__note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.s-spsummary-empty {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.s-spsummary-improve {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.s-spsummary-improve b {
+  color: var(--accent-text);
+}
+
+.s-spsummary-actions {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.s-spsummary-primary {
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 14px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 15px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.s-spsummary-primary:hover {
+  background: var(--accent-fill-hover);
+}
+.s-spsummary-secondary {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}

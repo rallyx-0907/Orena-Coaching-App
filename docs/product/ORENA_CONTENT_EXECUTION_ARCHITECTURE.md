@@ -59,6 +59,40 @@ without misattributing or unnecessarily erasing that response.
 
 ## 3. Expensive operation contract
 
+### Content materialization boundary (D-121)
+
+Content admission owns reusable source work. The canonical content-readiness
+contract is `ORENA_CONTENT_ARCHITECTURE.md` §7.1; retain the existing Shared Media
+Learning objects and existing artifact/cache owners, never a Speaking ingestion
+model. Learning APIs are reads of admitted artifacts, not implicit execution APIs.
+
+Use `(content identity, source revision/snapshot, derivative kind, relevant
+language/configuration)` as the result identity. Prerequisite materialization is
+idempotent: check durable results before reserving/dispatching; concurrent consumers
+join the same operation, and uncertain provider outcomes follow §3 rather than
+blind resubmission. Persist successful batches so a retry does not rebill them.
+No in-memory/session TTL or change of capability creates a new source operation.
+
+Preparation records which capabilities and language layers have ready prerequisites.
+Transcript/segment/playback and configured meanings/readings are reusable source
+artifacts. Optional source measurement is not a prerequisite of hearing/imitating
+an original segment; detailed comparison may only claim measurements that exist.
+If canonical seek/playback suffices, no extraction or TTS is required. When a
+separate segment artifact is genuinely necessary, preparation owns its bounded
+creation and persistence before that capability is offered.
+
+Invalidate only affected derivatives on a relevant source/configuration revision;
+rebuild through the content boundary once. Keep an unavailable capability outside
+the learning workspace, with preparation/recovery at the import/content boundary.
+Keep access, rights, revocation and deletion checks on every artifact read.
+Deterministic compatibility projections for previously admitted content cannot
+dispatch a provider or silently mark missing source measurements ready.
+
+New learner recordings, submitted responses and explicit Agent/context questions
+remain independently metered learner operations. These do not authorize source
+reprocessing. This rule adds no automatic provider activation, schema migration,
+source retention permission or competing job framework.
+
 The AI platform retains provider selection/configuration, domain services retain
 input validation and output interpretation. Deterministic workloads stay local.
 No silent paid fallback, provider substitution or runtime activation.
@@ -106,6 +140,57 @@ actual usage; never claim cancelled means unbilled. A disconnect only ends the
 subscription/poll, not the job. Account deletion invalidates authorization even
 if a worker still holds a lease. Polling rechecks scope and never reveals foreign
 job existence or payload.
+
+### 3.1 Job lifecycle decisions
+
+The states and rules above are decided by pure contract code, not by worker
+infrastructure: `writing_coach/job_contract.py`, exercised by
+`scripts/test_orena_job_contract.py` and `tests/test_backbone_i5_i6_contracts.py`.
+It extends this section rather than starting a second job framework: the
+publication fence is `reference_backbone.job_may_publish` and the reservation
+lifecycle is I3's `reference_backbone.release_decision`/`settle_decision`, both
+reused rather than restated. No storage, provider, lease, clock or transaction
+lives there, and no caller was wired to it by this contract.
+
+| Decision | Question it answers |
+| --- | --- |
+| `job_transition` | may this job leave its current state for that one |
+| `lease_acquire_decision` | may this worker hold the job, or is it already held, a crashed worker's, or unresolved |
+| `lease_renew_decision` | may this worker keep working |
+| `job_commit_decision` | may this result publish into the current source |
+| `cancellation_decision` | what recorded cancellation does to a job that may be mid-flight |
+| `recovery_decision` | what a live-but-unattended job may do |
+| `provider_outcome_state` | which application state a provider answer means |
+| `reconciliation_decision` | how an unresolved outcome is settled |
+| `retry_decision` | which failure may be retried at all |
+| `reservation_outcome_decision` | what the job owes its reservation |
+| `result_delivery_decision` | whether one result application is new |
+
+Invariants this contract holds, beyond the table above:
+
+- A lease generation fences writes. Lease expiry permits reconciliation; it never
+  proves the provider stopped. A stale worker's commit is refused as
+  `lease_lost`, while its real provider outcome still settles actual usage once.
+- `outcome_unknown` is resolved explicitly. There is no edge back to `running`,
+  and the same operation ID is never resubmitted automatically. A verified
+  provider absence resolves the job as not started: a resolution, not a repeat
+  billing.
+- Unknown cost is `retain_unknown_cost`: not a release, not a zero, not a TTL
+  expiry. Cancellation after dispatch suppresses publication and never implies
+  unbilled.
+- Missing source revision is unknown, and an unknown revision cannot publish.
+- Unregistered provider outcomes and failure classes fail truthfully; they can
+  never become success or a silent retry. A timeout after dispatch reconciles
+  instead of repeating a call that may already have been billed.
+- Duplicate execution is refused at the lease (same holder asking twice) and at
+  delivery (a replayed result reference is a duplicate, a different one is a
+  payload conflict).
+
+The I3 seam is deliberately one function: `reservation_outcome_decision` names
+`release`, `settle` or `retain_unknown_cost`, and the I3 adapter maps those onto
+the existing commerce decisions, which keep ownership of atomic bucket updates,
+the admitted bound and settlement idempotency. This contract neither implements
+nor modifies reservation, entitlement or quota behaviour.
 
 ## 4. Resource and scale boundary
 

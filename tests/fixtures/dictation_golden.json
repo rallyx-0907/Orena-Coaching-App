@@ -1,0 +1,961 @@
+{
+ "generated_by": "scripts/generate_dictation_golden.mjs (runs static/orena/capabilities/dictation-evaluator.js)",
+ "cases": [
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "Listen to this idea.",
+    "answer": "Listen to this idea."
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 4,
+    "answer_unit_count": 4,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "Listen to this idea.",
+    "answer": "LISTEN TO THIS IDEA"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 4,
+    "answer_unit_count": 4,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "Listen, to this idea!",
+    "answer": "Listen to this idea"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 4,
+    "answer_unit_count": 4,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "Listen to this complete idea",
+    "answer": "Listen to this idea"
+   },
+   "result": {
+    "accuracy_percent": 80,
+    "exact": false,
+    "expected_unit_count": 5,
+    "answer_unit_count": 4,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "Listen to this idea",
+    "answer": "Please listen to this idea"
+   },
+   "result": {
+    "accuracy_percent": 80,
+    "exact": false,
+    "expected_unit_count": 4,
+    "answer_unit_count": 5,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "Listen to this idea",
+    "answer": "Listen to that idea"
+   },
+   "result": {
+    "accuracy_percent": 75,
+    "exact": false,
+    "expected_unit_count": 4,
+    "answer_unit_count": 4,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "Don't stop listening",
+    "answer": "Dont stop listening"
+   },
+   "result": {
+    "accuracy_percent": 67,
+    "exact": false,
+    "expected_unit_count": 3,
+    "answer_unit_count": 3,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "Don’t stop listening",
+    "answer": "Don't stop listening"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 3,
+    "answer_unit_count": 3,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "Donʼs place",
+    "answer": "don's place"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "well-known facts",
+    "answer": "well known facts"
+   },
+   "result": {
+    "accuracy_percent": 33,
+    "exact": false,
+    "expected_unit_count": 2,
+    "answer_unit_count": 3,
+    "edit_distance": 2
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "well‐known facts",
+    "answer": "well-known facts"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "well−known facts",
+    "answer": "well-known facts"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "It costs 12 dollars",
+    "answer": "it costs twelve dollars"
+   },
+   "result": {
+    "accuracy_percent": 75,
+    "exact": false,
+    "expected_unit_count": 4,
+    "answer_unit_count": 4,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "Ｈｅｌｌｏ ｗｏｒｌｄ",
+    "answer": "hello world"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "café au lait",
+    "answer": "cafe au lait"
+   },
+   "result": {
+    "accuracy_percent": 67,
+    "exact": false,
+    "expected_unit_count": 3,
+    "answer_unit_count": 3,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "café au lait",
+    "answer": "café au lait"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 3,
+    "answer_unit_count": 3,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "ORDER   of\tthe\nday",
+    "answer": "order of the day"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 4,
+    "answer_unit_count": 4,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "A B　C",
+    "answer": "a b c"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 3,
+    "answer_unit_count": 3,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "straße",
+    "answer": "STRASSE"
+   },
+   "result": {
+    "accuracy_percent": 0,
+    "exact": false,
+    "expected_unit_count": 1,
+    "answer_unit_count": 1,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "ΑΣ",
+    "answer": "ας"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 1,
+    "answer_unit_count": 1,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "İstanbul",
+    "answer": "i̇stanbul"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "rock ’n’ roll",
+    "answer": "rock 'n' roll"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 3,
+    "answer_unit_count": 3,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "...",
+    "answer": "hello"
+   },
+   "error": "canonical_empty"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "hello",
+    "answer": "..."
+   },
+   "error": "answer_empty"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "hello",
+    "answer": ""
+   },
+   "error": "answer_empty"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "",
+    "answer": "hello"
+   },
+   "error": "canonical_empty"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "   ",
+    "answer": "hello"
+   },
+   "error": "canonical_empty"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "one two three four",
+    "answer": "one two three four five six seven"
+   },
+   "result": {
+    "accuracy_percent": 57,
+    "exact": false,
+    "expected_unit_count": 4,
+    "answer_unit_count": 7,
+    "edit_distance": 3
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "a b c d e f g h i j",
+    "answer": "j i h g f e d c b a"
+   },
+   "result": {
+    "accuracy_percent": 0,
+    "exact": false,
+    "expected_unit_count": 10,
+    "answer_unit_count": 10,
+    "edit_distance": 10
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "a",
+    "answer": "b"
+   },
+   "result": {
+    "accuracy_percent": 0,
+    "exact": false,
+    "expected_unit_count": 1,
+    "answer_unit_count": 1,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "one two three",
+    "answer": "one two four"
+   },
+   "result": {
+    "accuracy_percent": 67,
+    "exact": false,
+    "expected_unit_count": 3,
+    "answer_unit_count": 3,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "hello world",
+    "answer": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   "error": "answer_too_large"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "hello world",
+    "answer": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   "result": {
+    "accuracy_percent": 0,
+    "exact": false,
+    "expected_unit_count": 2,
+    "answer_unit_count": 1,
+    "edit_distance": 2
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "hello world",
+    "answer": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+   },
+   "error": "answer_too_large"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "hello world",
+    "answer": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+   },
+   "error": "answer_empty"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word",
+    "answer": "word"
+   },
+   "error": "evaluation_too_large"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "word",
+    "answer": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word"
+   },
+   "error": "answer_too_large"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word",
+    "answer": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word"
+   },
+   "error": "answer_too_large"
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "naïve café",
+    "answer": "naive cafe"
+   },
+   "result": {
+    "accuracy_percent": 0,
+    "exact": false,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 2
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "你好 world",
+    "answer": "你好 world"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "ab12 cd",
+    "answer": "ab12 cd"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "en",
+    "expected": "x² + y²",
+    "answer": "x2 + y2"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "我们一起练习听力。",
+    "answer": "我们一起练习听力。"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 8,
+    "answer_unit_count": 8,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "我们一起练习听力！",
+    "answer": "我们一起练习听力"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 8,
+    "answer_unit_count": 8,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "我 们 一 起 练 习",
+    "answer": "我们一起练习"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 6,
+    "answer_unit_count": 6,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "我们一起练习听力",
+    "answer": "我们一起练习"
+   },
+   "result": {
+    "accuracy_percent": 75,
+    "exact": false,
+    "expected_unit_count": 8,
+    "answer_unit_count": 6,
+    "edit_distance": 2
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "我们一起练习",
+    "answer": "我们一起练习听力"
+   },
+   "result": {
+    "accuracy_percent": 75,
+    "exact": false,
+    "expected_unit_count": 6,
+    "answer_unit_count": 8,
+    "edit_distance": 2
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "我们练习听力",
+    "answer": "你们练习听力"
+   },
+   "result": {
+    "accuracy_percent": 83,
+    "exact": false,
+    "expected_unit_count": 6,
+    "answer_unit_count": 6,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "我用 GPT-4 学习 123",
+    "answer": "我用 gpt-4 学习 123"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 6,
+    "answer_unit_count": 6,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "我用GPT-4学习",
+    "answer": "我用gpt4学习"
+   },
+   "result": {
+    "accuracy_percent": 80,
+    "exact": false,
+    "expected_unit_count": 5,
+    "answer_unit_count": 5,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "另外用MonoBook 、MySkin等版本也有相同功能",
+    "answer": "另外用MonoBook、MySkin等版本也有相同功能"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 14,
+    "answer_unit_count": 14,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "另外用MonoBook 、MySkin等版本也有相同功能",
+    "answer": "另外用MonoBook MySkin版本有相同功能"
+   },
+   "result": {
+    "accuracy_percent": 86,
+    "exact": false,
+    "expected_unit_count": 14,
+    "answer_unit_count": 12,
+    "edit_distance": 2
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "abc中文def",
+    "answer": "abc中文def"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 4,
+    "answer_unit_count": 4,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "I don't know不知道",
+    "answer": "I dont know不知道"
+   },
+   "result": {
+    "accuracy_percent": 83,
+    "exact": false,
+    "expected_unit_count": 6,
+    "answer_unit_count": 6,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "１２３块",
+    "answer": "123块"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "你好——世界",
+    "answer": "你好 世界"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 4,
+    "answer_unit_count": 4,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "〇一二三",
+    "answer": "〇一二三"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 4,
+    "answer_unit_count": 4,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "々人",
+    "answer": "人人"
+   },
+   "result": {
+    "accuracy_percent": 50,
+    "exact": false,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "。！？",
+    "answer": "你"
+   },
+   "error": "canonical_empty"
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "你",
+    "answer": ""
+   },
+   "error": "answer_empty"
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "",
+    "answer": "你"
+   },
+   "error": "canonical_empty"
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "你好",
+    "answer": "你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你"
+   },
+   "error": "answer_too_large"
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "你好",
+    "answer": "你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你"
+   },
+   "error": "evaluation_too_large"
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "你好",
+    "answer": "你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你"
+   },
+   "error": "evaluation_too_large"
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你",
+    "answer": "你"
+   },
+   "error": "evaluation_too_large"
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你",
+    "answer": "你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 500,
+    "answer_unit_count": 500,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "𠀀𪛖中",
+    "answer": "𠀀𪛖中"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 3,
+    "answer_unit_count": 3,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "豈中",
+    "answer": "豈中"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "⼀⺀",
+    "answer": "一⺀"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 2,
+    "answer_unit_count": 2,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "今天天气很好",
+    "answer": "今天天气很"
+   },
+   "result": {
+    "accuracy_percent": 83,
+    "exact": false,
+    "expected_unit_count": 6,
+    "answer_unit_count": 5,
+    "edit_distance": 1
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "我爱你",
+    "answer": "我爱你们们们"
+   },
+   "result": {
+    "accuracy_percent": 50,
+    "exact": false,
+    "expected_unit_count": 3,
+    "answer_unit_count": 6,
+    "edit_distance": 3
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "一二三四五六七",
+    "answer": "一二三"
+   },
+   "result": {
+    "accuracy_percent": 43,
+    "exact": false,
+    "expected_unit_count": 7,
+    "answer_unit_count": 3,
+    "edit_distance": 4
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "一二三四五六七八九十一",
+    "answer": "一二三"
+   },
+   "result": {
+    "accuracy_percent": 27,
+    "exact": false,
+    "expected_unit_count": 11,
+    "answer_unit_count": 3,
+    "edit_distance": 8
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "こんにちは",
+    "answer": "こんにちは"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 1,
+    "answer_unit_count": 1,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "zh",
+    "expected": "Café 你好",
+    "answer": "café 你好"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 3,
+    "answer_unit_count": 3,
+    "edit_distance": 0
+   }
+  },
+  {
+   "input": {
+    "source_language": "xx",
+    "expected": "Listen to this",
+    "answer": "listen to this"
+   },
+   "result": {
+    "accuracy_percent": 100,
+    "exact": true,
+    "expected_unit_count": 3,
+    "answer_unit_count": 3,
+    "edit_distance": 0
+   }
+  }
+ ]
+}

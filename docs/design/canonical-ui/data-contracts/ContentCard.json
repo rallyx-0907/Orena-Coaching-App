@@ -1,0 +1,18 @@
+{
+  "_usedBy": [
+    "HomeTemplate",
+    "LibraryTemplate",
+    "VocabularyTemplate"
+  ],
+  "id": "string",
+  "title": "string",
+  "type": "book | chapter | article | news | essay | story | dialogue | quote | generated | imported | podcast | interview | speech | video | situation | culture | collection",
+  "skill": "reading | listening | speaking | writing | vocabulary",
+  "coverHue": "number (0-360, cho recipe artwork)",
+  "coverDeg": "number",
+  "author": "string | null",
+  "level": "string | null (B1, HSK 2, A2…)",
+  "durationLabel": "string | null (\"8 phút\", \"14:22\", \"150 từ\")",
+  "progress": "number 0-100 | null",
+  "badge": "string | null (ĐANG LUYỆN, ĐÃ LƯU, TẠO RIÊNG, ĐÃ NHẬP)"
+}

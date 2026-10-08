@@ -55,6 +55,76 @@ operational state.
   production operations, store signing/credentials, billing, and public release
   remain deferred human gates and do not block non-production mobile development.
 
+## New learner UI migration (D-088 - D-095)
+
+- 2026-09-29, Wave B verification: `161d917`, local: each Wave B commit was checked on a clean export of HEAD plus the commit (all CI gate commands - 113 at the last, the browser ESM graph and the memory/architecture validators pass) and reviewed in the browser on the isolated stack (en/vi/zh, both themes, the four rule-49 sizes). Full pytest on a clean export (SQLite, CI backend): `2420 passed, 195 skipped` (`51522e4`). No CI pass is claimed. Visual-source gate: PINNED.
+- 2026-09-29, D-098: Japanese Writing-minimum row `c1393c9`; Writing countdown `1ac1e6f`; Lesson
+  complete from server-measured numbers `6a402af`; empty address to Welcome without a profile
+  `81ae4bb`; Compare Versions as the frame `b221909`; Import > File `2052cb7`; support-language
+  picker `3f2cc23`; draft count plurals `30c3d88`. Wave A review items in HEAD: `b4373e2`,
+  `755d65b`, `7574765`, `8de1863`.
+- 2026-09-29, D-099/D-100: Admin governance and map routes `e6c702a`; roadmap `ecec28a`; Orena
+  Admin pinned `16c1713`+`89ab6e1`; Chinese evaluator fix `871e2b9`; benchmark v2 `fa93601`;
+  R5 -> Grammar Lab `6c0db16`; H2 proposal and review `3b23c4b`; Grammar screens `b83142d`.
+
+Verified state of the migration on `codex/work`; the current step and next task
+live in `CURRENT_HANDOFF.md`.
+
+- Baseline: the unified `codex/work` (Admin + Speaking, PR #63 at `9c0fe31`,
+  integration HEAD `7565f6d`). 2026-09-26: full Linux pytest with PostgreSQL 16
+  `2472 passed, 3 skipped`; all 16 Alembic revisions reach head `20260924_0016`
+  on a throwaway database.
+- Design source (D-088): Claude Design project `e6dc1cb2`, revision
+  `1790473816124946`, read in full - DesignSync for files under 256 KiB, the
+  human's export for `Orena.dc.html` (its first 256 KiB byte-identical to the
+  DesignSync read) - and pinned in `docs/design/canonical-ui/screens/`
+  (`SYNC_2026-09-27.md`, `PINS.tsv`); governance in `e3f8ba2`. Themes follow the
+  OS (D-089), the design's logo and Orena Intelligence mark (D-090), built
+  beside the old UI and replacing it in one cutover (D-091), minimal AA
+  adjustments (D-093).
+- Foundation at `/next` (2026-09-27, local): all 69 CI `.mjs` gates, the browser
+  ESM graph, route tests and the memory/architecture validators pass; the shell
+  measured against the pinned frame at 1440x900, checked at 390x844, in en / vi
+  / zh and both themes. `test_orena_reading_library` and
+  `test_orena_writing_workspace` failed on Windows checkouts because the working
+  tree had CRLF against line-oriented gate patterns; `.gitattributes` keeps
+  source text LF in every checkout (`71e6235`); the gates are unchanged.
+- Agent contract: v2 (D-092) the Orena destination and the opening turn; v3
+  (D-094) interface-layer action labels and prompt intents; v4 (D-095, `5c2aeff`)
+  the HTTP status table and error classes. The UI side runs on the contract mock.
+- Copy engine: a 0 fills its placeholder (`bde3644`); plural forms follow each
+  language's rules, no English singular back-filled into vi/zh (`5c22f0e`);
+  gate `test_orena_copy_engine`.
+- Wave A destinations (`c922e37`, 2026-09-27, local): Today, Discover, Content
+  Detail, Practice Hub, My Library, Collection Detail, Word Detail (stroke
+  sheet), Grammar Library, Grammar Concept, Progress, Profile, Settings, Search,
+  the Import and Notifications sheets, on shared components
+  (`kit/components.js`). Each surface was built from its frame, measured,
+  checked in the browser against the isolated stack in en / vi / zh and both
+  themes, reviewed by an independent agent and fixed; an integration pass
+  removed the per-screen copy workarounds, closed the shared-kit fidelity gaps
+  and wired the bell, CI and docs. All 85 CI `.mjs` gates and the ESM graph (188
+  modules) pass. `test_orena_vocabulary_theme_tokens.mjs`, not run by CI, fails
+  identically on a clean `HEAD` (an old-UI gate for a retired vocabulary CSS
+  scope; replaced at the cutover, not deleted).
+- Wave B workspaces (`03c8aad` - `161d917`, 2026-09-29, local), one commit per
+  unit: the shared overlays, Check / Discussion / Reading Transfer, Dictation /
+  Shadowing, Free Talk / Conversation / Situation, Scripted Pronunciation /
+  Compare / Attempts / Speaking Summary, Review / Feed / From Your Errors, the
+  Reader, Onboarding, Orena (Home, panel, voice on the mock), Writing / Compare
+  Versions, and Listening / React / Respond. After interrupted parallel runs,
+  each unit ran only its unfinished steps (finish, independent review, fix), at
+  most three agents at a time. Each commit was checked on a clean export of HEAD
+  plus the commit with every CI gate command. Routes with no backend show the
+  design's Coming soon screen. The Grammar screens wait for the grammar content
+  contract. The kit gate now also fails on white ink over a solid
+  red/green/amber fill (`5692aeb`).
+- The isolated verification stack: containers `orena-next-verify-*`,
+  127.0.0.1:8021, PostgreSQL on tmpfs, no provider keys, three public-domain
+  articles, a learner seeded through the app's endpoints
+  (`scripts/seed_sandbox_learner.py --base http://127.0.0.1:8021 --rank 10`).
+  It is empty after every Docker restart.
+
 ## Orena UI/UX integration
 
 - Branch `codex/orena-ui-ux-integration` now includes every previously missing
@@ -332,6 +402,27 @@ capability-driven Chinese reading aids/Pinyin, and activity-evidence completion
 semantics are protected. Future skill integrations consume these contracts
 rather than duplicating or mass-rewriting Grammar.
 
+## Grammar Lab (merged into `codex/work` from `feature/grammar-lab`)
+
+Phase 0 of `docs/grammar_lab/SPEC.md` lives in `grammar_lab/` and
+`docs/grammar_lab/`, isolated from the app. It is an offline, file-based lab with
+its own `pyproject.toml`; it does not import app code, and the app does not
+import it. No app code, evaluator, migration or runtime was changed.
+
+- Contract: `grammar_lab/schema/grammar_set.schema.json` (v0.2),
+  `inventory.schema.json`, and `error_tags.json`, generated from the writing
+  evaluator's closed `ERROR_CATEGORIES` (13 English, 18 Chinese, no Japanese).
+- Content: the 10-point English sample upgraded to v0.2, one file per point,
+  all `draft_ai`. Its dotted error tags are not evaluator labels, so each
+  pitfall now carries a coarse evaluator label.
+- Verification (local execution, not CI): `validate --lang en` is clean, and
+  113 tests pass in the lab venv. The app CI does not collect these tests.
+- The lab's grammar point IDs are independent of the R5 Concept IDs. How they
+  join is an open human decision before integration (SPEC §8).
+
+Detail and open decisions: `docs/grammar_lab/PHASE0_DECISIONS.md`. Status: phase
+0 awaits human review. Phase 1 has not started.
+
 ## R6 Speaking Core
 
 R6 is **COMPLETE / LOCAL ACCEPTANCE PASS** at the prepared-media internal
@@ -441,11 +532,11 @@ The post-R5 roadmap uses one primary learner-visible lane.
   explicit. Completed evaluator envelopes now persist as audio-free,
   learner-scoped Speaking attempts with bounded history/progress retrieval;
   public activation and broader release remain deferred.
-- **R8 — Public Product Gate: Writing + Speaking EN/ZH: PRE-PUBLIC MATRIX
-  COMPLETE / HUMAN PROMOTION GATE.** The deterministic EN/ZH Writing and
-  Speaking matrix, degraded-state checks, and browser module graph pass locally;
-  persistence/runtime boundaries are recorded as static inspections alongside
-  separately executed backend contracts in `docs/project/R8_PRE_PUBLIC_MATRIX.json`.
+- **R8 — Public Product Gate: Writing + Speaking EN/ZH: PRE-PUBLIC / HUMAN
+  PROMOTION GATE.** The EN/ZH Writing and Speaking contracts, degraded-state
+  checks, and browser module graph pass locally. Persistence/runtime boundaries
+  remain explicit release evidence alongside separately executed backend
+  contracts.
   Provider credentialed validation, production migration, capability activation,
   and public promotion remain explicitly deferred.
 - **R9 — Speaking Advanced / Shadowing Studio: COMPLETE / LOCAL ACCEPTANCE PASS.**
@@ -459,17 +550,14 @@ The post-R5 roadmap uses one primary learner-visible lane.
   EN/ZH Reading contract verifies session creation, comprehension answers tied
   to exact passage evidence, learner-scoped history reopening, saved-word
   handoff to Library, and contextual dictionary lookup with explicit
-  unavailable states. The deterministic pre-public matrix is recorded in
-  `R10_PRE_PUBLIC_MATRIX.json`; provider credentials, production mutation, and
-  public Reading promotion remain deferred.
-- **R11 — Listening Completion: PRE-PUBLIC MATRIX COMPLETE / HUMAN PROMOTION
-  GATE.** The deterministic EN/ZH matrix covers mounted Active reconstruction
-  resume, Shadowing round resume, Shadowing-to-Speaking feedback continuity,
-  localized unavailable/failure states, and the browser module graph. Its
-  canonical report distinguishes behavioral passes from PostgreSQL-only,
-  language/asset/segment scope, and audio-free static inspections. Production
-  migration, capability activation, and public Listening promotion remain
-  deferred.
+  unavailable states. Provider credentials, production mutation, and public
+  Reading promotion remain deferred.
+- **R11 — Listening Completion: COMPLETE / LOCAL ACCEPTANCE PASS / HUMAN
+  PROMOTION GATE.** The EN/ZH Active reconstruction resume, Shadowing round
+  resume, Shadowing-to-Speaking feedback continuity, localized
+  unavailable/failure states, and browser module graph are locally accepted
+  through the existing capability contracts and checks. Production migration,
+  capability activation, and public Listening promotion remain deferred.
 - **R12 — Retention & Growth: COMPLETE / LOCAL ACCEPTANCE PASS.** Home now offers
   a localized return-to-Listening cue only for a recent language-scoped lesson;
   the handoff carries a source URL and bounded segment/mode context, and

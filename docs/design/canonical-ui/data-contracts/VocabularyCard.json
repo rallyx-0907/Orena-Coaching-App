@@ -1,0 +1,19 @@
+{
+  "_usedBy": [
+    "VocabularyReviewTemplate"
+  ],
+  "id": "string",
+  "word": "string",
+  "script": "latin | hanzi",
+  "pronunciation": "string",
+  "meaning": "string",
+  "exampleSentence": "string",
+  "mastery": "0 | 1 | 2 | 3",
+  "saved": "boolean",
+  "due": "string (ISO)",
+  "intervals": {
+    "again": "string",
+    "hard": "string",
+    "gotIt": "string"
+  }
+}

@@ -1,0 +1,379 @@
+/* Frame 30 "Conversation" (pinned design, focus route 'conv'), every value read from the frame's
+   own inline styles (SCRATCH/design-full/frames/30-Conversation.html) and re-measured against the
+   running frame: the "Signature A" header, the 720px column with an 18px gap, the 2-column
+   scenario grid, the 84% bubbles, the pill composer and the "Conversation complete" card.
+
+   It is the one frame in its set whose root is already height-locked and whose message list is its
+   own scroll region (E2 §3), so Design Contract rule 49 is met by the frame's own structure: the
+   header and composer stay put and only `.s-conv__list` scrolls. The setup card is the only other
+   region that can outgrow a short phone and scrolls in its own `data-scroll-region`. */
+.s-conv {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 14px;
+  /* The frame's own <main> keeps 32px under its content; the shell drops it for a workspace. */
+  padding-bottom: 32px;
+}
+
+/* ---- Header (Signature A) ---- */
+.s-conv__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-conv__headcol {
+  flex: 1;
+  min-width: 0;
+}
+.s-conv__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: normal;
+  letter-spacing: normal;
+}
+.s-conv__sub {
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s-conv__end {
+  flex: none;
+  padding: 0 8px;
+}
+
+/* ---- Setup ---- */
+.s-conv__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  margin: -6px -16px 0;
+  padding: 6px 16px 16px;
+}
+.s-conv__setup {
+  flex: none;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.s-conv__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-conv__scenarios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+.s-conv__scenario {
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  text-align: left;
+}
+.s-conv__scenario[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.s-conv__scenario-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-conv__scenario-cue {
+  font-size: 13px;
+  color: var(--muted);
+}
+/* The frame's own chip() pair, as Free Talk's duration pills: active is accent on accent-soft with
+   a tint2 ring, inactive is muted on surface with border2. */
+.s-conv__levels {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+.s-conv__level {
+  padding: 11px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-conv__level[aria-pressed='true'] {
+  border-color: var(--tint2);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.s-conv__start {
+  padding: 18px;
+  border-radius: 16px;
+  font-size: 16px;
+}
+
+/* ---- Chat ---- */
+.s-conv__list {
+  flex: 1;
+  min-height: 200px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 5px 2px;
+}
+.s-conv__msg {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-conv__msg--learner {
+  align-items: flex-end;
+}
+.s-conv__msg--partner {
+  align-items: flex-start;
+}
+.s-conv__bubble {
+  max-width: 84%;
+  padding: 13px 18px;
+  border-radius: 18px;
+  font-size: 16px;
+  line-height: 1.5;
+  border: 1px solid transparent;
+  color: var(--text);
+}
+.s-conv__msg--learner .s-conv__bubble {
+  background: var(--accent-soft);
+}
+.s-conv__msg--partner .s-conv__bubble {
+  background: var(--surface);
+  border-color: var(--border);
+}
+.s-conv__thinking {
+  flex: none;
+  align-self: flex-start;
+  padding: 12px 18px;
+  border-radius: 18px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 14px;
+  animation: pulse 1s infinite;
+}
+.s-conv__land {
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0;
+}
+
+/* Per-turn coaching, composed from the Free Talk result's own drawn patterns (green-soft
+   strength rows, surface fix cards with a struck-through original, accent-soft banner rows). The
+   frame opens the Orena panel here instead; see UI_BACKEND_GAPS "Speak more". */
+.s-conv__coach {
+  align-self: stretch;
+  max-width: 84%;
+  margin-left: auto;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-conv__coach-title {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-conv__coach-title--good {
+  color: var(--green);
+}
+.s-conv__coach-title--bad {
+  color: var(--red);
+}
+.s-conv__coach-strength {
+  margin: 0 0 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.s-conv__coach-fix {
+  padding: 12px 14px;
+  border-radius: 14px;
+  margin-bottom: 6px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+}
+.s-conv__coach-fix-change {
+  font-size: 14.5px;
+}
+.s-conv__coach-fix-change s {
+  color: var(--red);
+}
+.s-conv__coach-judge {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+.s-conv__coach-fix-why {
+  margin-top: 2px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.s-conv__coach-note {
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.s-conv__coach-note b {
+  color: var(--accent-text);
+}
+.s-conv__muted {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ---- Composer ---- */
+.s-conv__composer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 18px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+}
+.s-conv__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+}
+.s-conv__mic,
+.s-conv__send {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.15s;
+}
+.s-conv__mic {
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+}
+.s-conv__mic[aria-pressed='true'] {
+  background: var(--red);
+  color: var(--badge-ink);
+}
+.s-conv__send {
+  border-radius: 16px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+}
+.s-conv__send:hover {
+  background: var(--accent-fill-hover);
+}
+.s-conv__send:active {
+  background: var(--accent-fill-press);
+  transform: scale(0.97);
+}
+.s-conv__retry-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-conv__retry-btn {
+  padding: 12px 18px;
+  border-radius: 14px;
+}
+
+/* ---- Conversation complete ---- */
+.s-conv__ended {
+  flex: none;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 18px;
+  background: var(--tint2);
+  animation: rise 0.25s ease;
+}
+.s-conv__deco {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+.s-conv__deco--a {
+  right: -50px;
+  top: -60px;
+  width: 180px;
+  height: 180px;
+  background: var(--deco-strong);
+}
+.s-conv__deco--b {
+  left: -40px;
+  bottom: -70px;
+  width: 140px;
+  height: 140px;
+  background: var(--deco-soft);
+}
+.s-conv__ended-title {
+  position: relative;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.s-conv__ended-note {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.s-conv__ended-actions {
+  display: flex;
+  gap: 10px;
+}
+.s-conv__ended-actions .o-btn {
+  padding: 12px 18px;
+  border-radius: 12px;
+}
+
+.s-conv__muted[role="status"] {
+  animation: pulse 1s infinite;
+}

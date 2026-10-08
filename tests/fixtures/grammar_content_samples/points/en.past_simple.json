@@ -1,0 +1,379 @@
+{
+  "schema_version": "0.4",
+  "id": "en.past_simple",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.completed_past",
+  "level": {
+    "framework": "cefr",
+    "value": "A2",
+    "rank": 2
+  },
+  "prereqs": [],
+  "contrasts": [
+    "en.present_perfect.experience"
+  ],
+  "error_tags": [
+    "tense"
+  ],
+  "source_refs": {},
+  "point_type": "tense_aspect",
+  "header": {
+    "title": {
+      "vi": "Quá khứ đơn",
+      "en": "Past simple"
+    },
+    "native_title": "Past simple",
+    "level": {
+      "framework": "cefr",
+      "value": "A2",
+      "rank": 2
+    },
+    "summary": {
+      "vi": "Thì quá khứ đơn dùng để nói về một hành động đã xảy ra và kết thúc trong quá khứ.",
+      "en": "Talk about an action that happened and finished at a definite time in the past."
+    },
+    "sub": {
+      "vi": "việc đã xong",
+      "en": "finished past"
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Kể lại một sự việc đã xảy ra và kết thúc tại một thời điểm cụ thể trong quá khứ."
+    },
+    {
+      "vi": "Mô tả một chuỗi hành động liên tiếp trong quá khứ."
+    },
+    {
+      "vi": "Nói về thói quen hoặc trạng thái trong quá khứ nhưng nay không còn."
+    },
+    {
+      "vi": "Kể lại một sự kiện lịch sử hoặc một câu chuyện đã xảy ra."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "S",
+        "role": "subject",
+        "label": {
+          "vi": "chủ ngữ"
+        }
+      },
+      {
+        "text": "V2",
+        "role": "verb",
+        "label": {
+          "vi": "động từ quá khứ"
+        }
+      },
+      {
+        "text": "O",
+        "role": "object",
+        "label": {
+          "vi": "tân ngữ"
+        },
+        "optional": true
+      },
+      {
+        "text": "time",
+        "role": "time",
+        "label": {
+          "vi": "mốc thời gian"
+        },
+        "optional": true
+      }
+    ],
+    "variants": {
+      "negative": [
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {
+            "vi": "chủ ngữ"
+          }
+        },
+        {
+          "text": "did not",
+          "role": "aux",
+          "label": {
+            "vi": "trợ động từ phủ định"
+          }
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {
+            "vi": "động từ nguyên thể"
+          }
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {
+            "vi": "tân ngữ"
+          },
+          "optional": true
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {
+            "vi": "mốc thời gian"
+          },
+          "optional": true
+        }
+      ],
+      "question": [
+        {
+          "text": "Did",
+          "role": "aux",
+          "label": {
+            "vi": "trợ động từ nghi vấn"
+          }
+        },
+        {
+          "text": "S",
+          "role": "subject",
+          "label": {
+            "vi": "chủ ngữ"
+          }
+        },
+        {
+          "text": "V",
+          "role": "verb",
+          "label": {
+            "vi": "động từ nguyên thể"
+          }
+        },
+        {
+          "text": "O",
+          "role": "object",
+          "label": {
+            "vi": "tân ngữ"
+          },
+          "optional": true
+        },
+        {
+          "text": "time",
+          "role": "time",
+          "label": {
+            "vi": "mốc thời gian"
+          },
+          "optional": true
+        }
+      ]
+    },
+    "illustration": {
+      "kind": "timeline",
+      "timeline": {
+        "shape": "point_past"
+      }
+    }
+  },
+  "examples": [
+    {
+      "text": "I visited my grandmother yesterday.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 1,
+          "role": "subject"
+        },
+        {
+          "start": 2,
+          "end": 9,
+          "role": "verb"
+        },
+        {
+          "start": 10,
+          "end": 24,
+          "role": "object"
+        },
+        {
+          "start": 25,
+          "end": 34,
+          "role": "time"
+        }
+      ],
+      "annotation": {
+        "vi": "Hành động 'visited' đã xảy ra và kết thúc vào ngày hôm qua."
+      },
+      "translation": {
+        "vi": "Tôi đã thăm bà tôi ngày hôm qua."
+      }
+    },
+    {
+      "text": "She did not watch TV last night.",
+      "form": "negative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 3,
+          "role": "subject"
+        },
+        {
+          "start": 4,
+          "end": 11,
+          "role": "aux"
+        },
+        {
+          "start": 12,
+          "end": 17,
+          "role": "verb"
+        },
+        {
+          "start": 18,
+          "end": 20,
+          "role": "object"
+        },
+        {
+          "start": 21,
+          "end": 31,
+          "role": "time"
+        }
+      ],
+      "annotation": {
+        "vi": "Phủ định của quá khứ đơn dùng 'did not' + động từ nguyên thể."
+      },
+      "translation": {
+        "vi": "Cô ấy đã không xem TV tối qua."
+      }
+    },
+    {
+      "text": "Did you finish your homework?",
+      "form": "question",
+      "spans": [
+        {
+          "start": 0,
+          "end": 3,
+          "role": "aux"
+        },
+        {
+          "start": 4,
+          "end": 7,
+          "role": "subject"
+        },
+        {
+          "start": 8,
+          "end": 14,
+          "role": "verb"
+        },
+        {
+          "start": 15,
+          "end": 28,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Câu hỏi quá khứ đơn bắt đầu bằng 'Did' + chủ ngữ + động từ nguyên thể."
+      },
+      "translation": {
+        "vi": "Bạn đã làm xong bài tập về nhà chưa?"
+      }
+    }
+  ],
+  "compare": [],
+  "common_mistakes": [
+    {
+      "wrong": "I go to the market yesterday.",
+      "right": "I went to the market yesterday.",
+      "reason": {
+        "vi": "Người học dùng động từ hiện tại 'go' thay vì dạng quá khứ 'went' vì trong tiếng Việt không có biến đổi động từ theo thì."
+      },
+      "error_tag": "tense",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "They ___ to the beach last weekend.",
+      "options": [
+        {
+          "text": "went",
+          "error_tag": null
+        },
+        {
+          "text": "go",
+          "error_tag": "tense"
+        },
+        {
+          "text": "going",
+          "error_tag": "word_form"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Dùng 'went' vì đây là hành động đã xảy ra và kết thúc trong quá khứ (last weekend)."
+      }
+    },
+    {
+      "q": "She ___ not like the food at the party.",
+      "options": [
+        {
+          "text": "did",
+          "error_tag": null
+        },
+        {
+          "text": "does",
+          "error_tag": "tense"
+        },
+        {
+          "text": "do",
+          "error_tag": "tense"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Phủ định quá khứ đơn dùng 'did not' + động từ nguyên thể."
+      }
+    },
+    {
+      "q": "___ you see the movie last night?",
+      "options": [
+        {
+          "text": "Did",
+          "error_tag": null
+        },
+        {
+          "text": "Do",
+          "error_tag": "tense"
+        },
+        {
+          "text": "Does",
+          "error_tag": "tense"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Câu hỏi quá khứ đơn bắt đầu bằng 'Did' + chủ ngữ + động từ nguyên thể."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "sequence": 1,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về việc bạn đã làm vào cuối tuần trước.",
+      "en": "Write a sentence about something you did last weekend."
+    },
+    "placeholder": "Last weekend I ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "verb",
+          "regex": "\\b(?:\\w+ed|went|saw|ate|had|did|came|took|made|bought|got|gave|found|met|ran)\\b"
+        }
+      ]
+    },
+    "sample": {
+      "text": "I visited a museum last weekend."
+    }
+  }
+}

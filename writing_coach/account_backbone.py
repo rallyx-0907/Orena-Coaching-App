@@ -1,9 +1,9 @@
 """Whether the account backbone is switched on, and what it is when it is not.
 
-I2 wiring, deliberately inert. The adapters exist, the schema proposal exists,
-and neither is authorized to run against the runtime database. So the product
-needs to be able to hold both facts at once: the code is present and the
-feature is off, and "off" has to be a real answer rather than a crash or a
+I2 wiring. The schema is in the live chain and the sandbox runtime runs with
+the flag on (`active`); production and preview run without it (`disabled`).
+So the product has to hold both facts at once: the code is present and the
+feature may be off, and "off" has to be a real answer rather than a crash or a
 silent pretence that work was saved.
 
 Three states, and the difference between the last two matters:

@@ -97,7 +97,7 @@ class TheOperatorCommandIsTwoDifferentRisks(unittest.TestCase):
     them.
     """
 
-    def _run(self, argv, state, actual):
+    def _run(self, argv, state, actual, pending=None):
         import importlib.util
 
         path = Path(__file__).resolve().parent / 'bootstrap_runtime_schema.py'
@@ -107,13 +107,23 @@ class TheOperatorCommandIsTwoDifferentRisks(unittest.TestCase):
         applied = []
         original_inspect = module.inspect_runtime
         original_apply = module._apply
+        original_pending = module.pending_revisions
+        original_gated = module.gated_revision_between
         module.inspect_runtime = lambda: (state, 'head-new', actual)
-        module._apply = lambda label: applied.append(label) or 0
+        module._apply = lambda label, to='head': applied.append(label if to == 'head' else f'{label}->{to}') or 0
+        module.pending_revisions = lambda _actual, _expected: list(pending or [])
+        module.gated_revision_between = lambda _actual, target: (
+            next((r for r in (pending or []) if r in module.GATED_REVISIONS
+                  and (pending or []).index(r) <= (pending or []).index(target)), None)
+            if target in (pending or []) else None
+        )
         try:
             return module.main(argv), applied
         finally:
             module.inspect_runtime = original_inspect
             module._apply = original_apply
+            module.pending_revisions = original_pending
+            module.gated_revision_between = original_gated
 
     def test_a_ready_database_is_left_alone(self):
         code, applied = self._run([], 'ready', 'head-new')
@@ -158,6 +168,38 @@ class TheOperatorCommandIsTwoDifferentRisks(unittest.TestCase):
         code, applied = self._run(
             ['--upgrade', '--from', '', '--confirm'], 'empty', None
         )
+        self.assertEqual((code, applied), (1, []))
+
+    def test_plan_lists_every_pending_revision_and_marks_the_gated_one(self):
+        import contextlib
+        import io
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code, applied = self._run(['--plan'], 'mismatch', 'r14', pending=['r15', '20260924_0016', 'head-new'])
+        self.assertEqual((code, applied), (0, []), 'the plan changed something')
+        self.assertEqual(out.getvalue().splitlines(), [
+            'current: r14', 'head: head-new',
+            'pending: r15', 'pending: 20260924_0016 gated', 'pending: head-new',
+            'plan: 3 pending',
+        ])
+
+    def test_plan_on_an_unreachable_database_fails(self):
+        code, applied = self._run(['--plan'], 'unavailable', None)
+        self.assertEqual((code, applied), (1, []))
+
+    def test_upgrade_to_a_revision_before_the_gated_one_applies_only_that_far(self):
+        pending = ['r15', '20260924_0016', 'head-new']
+        code, applied = self._run(['--upgrade', '--from', 'r14', '--to', 'r15', '--confirm'], 'mismatch', 'r14', pending)
+        self.assertEqual((code, applied), (0, ['migration->r15']))
+
+    def test_upgrade_to_across_the_gated_revision_is_refused(self):
+        pending = ['r15', '20260924_0016', 'head-new']
+        code, applied = self._run(['--upgrade', '--from', 'r14', '--to', 'head-new', '--confirm'], 'mismatch', 'r14', pending)
+        self.assertEqual((code, applied), (1, []))
+
+    def test_upgrade_to_an_unknown_revision_is_refused(self):
+        code, applied = self._run(['--upgrade', '--from', 'r14', '--to', 'nope', '--confirm'], 'mismatch', 'r14', ['r15'])
         self.assertEqual((code, applied), (1, []))
 
     def test_an_unreachable_database_is_never_migrated(self):

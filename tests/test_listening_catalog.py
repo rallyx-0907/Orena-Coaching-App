@@ -1,7 +1,30 @@
 from __future__ import annotations
 
+import pytest
+
+from writing_coach import listening_api
 from writing_coach.listening_api import listening_library, open_listening_library_lesson
 from writing_coach.listening_catalog import CATALOG, CATALOG_SOURCES, catalog_lesson, catalog_lessons, lesson_metadata
+from writing_coach.media_library_store import FileMediaLibraryStore
+
+
+@pytest.fixture(autouse=True)
+def _curated_catalog_only(tmp_path):
+    """Read the curated catalog without whatever this machine has imported.
+
+    The library read now merges persisted imports beside the curated lessons, and
+    a curated-catalog test must not be a statement about a developer's sandbox:
+    with a populated library the shared items lead the response and the curated
+    rails stop being what these assertions are about. The store is pointed at an
+    empty directory for the duration and the deployment's own store is put back
+    afterwards, so this isolates the test rather than disabling the feature.
+    """
+    previous = listening_api._media_store
+    listening_api.configure_listening_media_library(FileMediaLibraryStore(tmp_path / "media_library"))
+    try:
+        yield
+    finally:
+        listening_api.configure_listening_media_library(previous)
 
 
 def test_library_lists_lightweight_en_and_zh_curated_lessons() -> None:
@@ -78,8 +101,8 @@ def test_one_source_can_publish_multiple_natural_excerpts_without_copying_transc
 
 
 def test_catalog_exposes_reviewed_level_evidence_and_verified_rights() -> None:
-    assert len(CATALOG_SOURCES) == 6
-    assert len(CATALOG) == 7
+    assert len(CATALOG_SOURCES) == 5
+    assert len(CATALOG) == 6
     metadata = listening_library(language="en", level="A1", topic=None, tag=None)["items"][0]
 
     assert metadata["level"] == metadata["reviewed_level"] == "A1"
@@ -227,3 +250,20 @@ def test_unknown_curated_lesson_is_not_fabricated() -> None:
         assert getattr(exc, "status_code", None) == 404
     else:
         raise AssertionError("missing lesson must be rejected")
+
+
+def test_every_lesson_carries_a_type_the_baseline_names_or_none() -> None:
+    """ContentCard.type (D-066): derived from playback, topic and tags, never guessed."""
+    from writing_coach.listening_catalog import CONTENT_TYPES, content_type
+
+    kinds = {lesson.lesson_id: content_type(lesson) for lesson in CATALOG}
+    assert set(kinds.values()) <= {*CONTENT_TYPES, None}
+    assert kinds["en-daily-pen-in-my-bag"] == "dialogue"
+    assert kinds["zh-culture-nationalities"] == "culture"
+    # Real playable video is a video whatever else its tags say.
+    assert kinds["en-science-cosmic-calendar"] == "video"
+    assert kinds["zh-technology-search-wikipedia"] == "video"
+    for lesson in CATALOG:
+        assert lesson_metadata(lesson)["content_type"] == kinds[lesson.lesson_id]
+    # The documented set is the baseline's: nothing here is a type the chips do not name.
+    assert set(CONTENT_TYPES) == {"video", "interview", "podcast", "speech", "culture", "dialogue", "story", "situation"}

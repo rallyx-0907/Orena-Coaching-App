@@ -1,0 +1,121 @@
+{
+  "source_language": "en",
+  "text": "She resorted to all her tricks, but she could not reach the three grapes.",
+  "annotations": [
+    {
+      "fragment": "She",
+      "start": 0,
+      "end": 3,
+      "pos": "pronoun",
+      "pronunciation": "",
+      "lemma": "she"
+    },
+    {
+      "fragment": "resorted",
+      "start": 4,
+      "end": 12,
+      "pos": "verb",
+      "pronunciation": "",
+      "lemma": "resorted"
+    },
+    {
+      "fragment": "to",
+      "start": 13,
+      "end": 15,
+      "pos": "particle",
+      "pronunciation": "",
+      "lemma": "to"
+    },
+    {
+      "fragment": "all",
+      "start": 16,
+      "end": 19,
+      "pos": "determiner",
+      "pronunciation": "",
+      "lemma": "all"
+    },
+    {
+      "fragment": "her",
+      "start": 20,
+      "end": 23,
+      "pos": "pronoun",
+      "pronunciation": "",
+      "lemma": "her"
+    },
+    {
+      "fragment": "tricks",
+      "start": 24,
+      "end": 30,
+      "pos": "noun",
+      "pronunciation": "",
+      "lemma": "trick"
+    },
+    {
+      "fragment": "but",
+      "start": 32,
+      "end": 35,
+      "pos": "conjunction",
+      "pronunciation": "",
+      "lemma": "but"
+    },
+    {
+      "fragment": "she",
+      "start": 36,
+      "end": 39,
+      "pos": "pronoun",
+      "pronunciation": "",
+      "lemma": "she"
+    },
+    {
+      "fragment": "could",
+      "start": 40,
+      "end": 45,
+      "pos": "auxiliary",
+      "pronunciation": "",
+      "lemma": "could"
+    },
+    {
+      "fragment": "not",
+      "start": 46,
+      "end": 49,
+      "pos": "adverb",
+      "pronunciation": "",
+      "lemma": "not"
+    },
+    {
+      "fragment": "reach",
+      "start": 50,
+      "end": 55,
+      "pos": "verb",
+      "pronunciation": "",
+      "lemma": "reach"
+    },
+    {
+      "fragment": "the",
+      "start": 56,
+      "end": 59,
+      "pos": "determiner",
+      "pronunciation": "",
+      "lemma": "the"
+    },
+    {
+      "fragment": "three",
+      "start": 60,
+      "end": 65,
+      "pos": "numeral",
+      "pronunciation": "",
+      "lemma": "three"
+    },
+    {
+      "fragment": "grapes",
+      "start": 66,
+      "end": 72,
+      "pos": "noun",
+      "pronunciation": "",
+      "lemma": "grape"
+    }
+  ],
+  "reading_aid": null,
+  "annotation_version": 1,
+  "claim": "interactive_transcript_learning_aid"
+}

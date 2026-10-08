@@ -160,9 +160,32 @@ const ARCHETYPE_RULES=[
   ['word_order',/(语序|词序|位置)/u],
 ];
 
+/* A learning_model text field is a plain string or the schema's own
+   locale-keyed map (writing_coach/grammar_learning_model.py `_text()` accepts
+   either). There is no learner locale in scope here - classification happens
+   before a learner's support language is known - so every locale a map
+   carries is folded in; any of them is valid signal for the regex rules
+   below. */
+function localeSignal(value){
+  if(typeof value==='string')return value;
+  if(value&&typeof value==='object')return Object.values(value).filter(v=>typeof v==='string').join(' ');
+  return '';
+}
+
 /* The signal is the concept's own identity and the words of its pattern - not
    the generated prose around them, which is close to identical across the
-   curriculum and would classify everything the same way. */
+   curriculum and would classify everything the same way.
+
+   The payload shape a pattern-stage block carries is keyed by `block.type`,
+   not `block.stage` (grammar_learning_model.py `_validate_payload`):
+   `formula` -> `parts`; `semantic_sentence`/`position`/`word_order`/
+   `insertion`/`particle_position`/`agreement_map` -> `segments`; but
+   `timeline` -> `{events:[{label,position,note}]}`, with no `parts`/
+   `segments` key at all. Nothing ties stage to type, so a pattern-stage block
+   can legally be timeline-shaped (confirmed live: `writing_coach/languages/
+   english/grammar_knowledge.json`'s "a2-present-perfect-vs-past-simple",
+   block "a2-time-view"). Reading only `parts`/`segments` silently dropped
+   that block's own wording - the event labels/notes - from the signal. */
 function archetypeSignal(concept={}){
   const model=concept.learning_model||{};
   const blocks=Array.isArray(model.blocks)?model.blocks:[];
@@ -170,8 +193,11 @@ function archetypeSignal(concept={}){
     .filter(block=>block?.stage==='pattern')
     .flatMap(block=>{
       const payload=block.payload||{};
-      const parts=[...(payload.parts||[]),...(payload.segments||[])];
-      return parts.map(part=>typeof part?.text==='string'?part.text:'');
+      const parts=[...(payload.parts||[]),...(payload.segments||[])]
+        .map(part=>typeof part?.text==='string'?part.text:'');
+      const events=(Array.isArray(payload.events)?payload.events:[])
+        .flatMap(event=>[localeSignal(event?.label),localeSignal(event?.note)]);
+      return [...parts,...events];
     })
     .join(' ');
   return [

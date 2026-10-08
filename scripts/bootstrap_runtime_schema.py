@@ -13,6 +13,13 @@ anything.
     python scripts/bootstrap_runtime_schema.py --upgrade --from <revision> --confirm
         migrate a database that already has data
 
+    python scripts/bootstrap_runtime_schema.py --plan
+        report the current revision, the head and every pending revision (a
+        gated one is marked), one per line, for an operator script to read
+
+    python scripts/bootstrap_runtime_schema.py --upgrade --from <revision> --to <revision> --confirm
+        migrate only as far as --to, e.g. up to the revision before a gated one
+
 The two modes are separate on purpose. Creating a schema where none exists and
 migrating a database with a learner's work in it are different risks, and the
 second one asks the operator to state which revision they believe the database
@@ -49,6 +56,43 @@ from writing_coach.runtime_schema import (  # noqa: E402
 )
 
 
+# Revisions this command never applies: each is non-additive and has its own
+# gated command, which checks the database and cluster on the connection it
+# migrates (D-083). Creating an empty schema is unaffected.
+GATED_REVISIONS = {
+    "20260924_0016": "python scripts/reading_canonical_cutover.py apply --confirm-sandbox <database> "
+                     "--expect-cluster <system identifier> --from 20260924_0015",
+}
+
+
+def gated_revision_between(actual: str | None, expected: str) -> str | None:
+    """The first gated revision an upgrade from `actual` to `expected` would
+    apply, or None."""
+    from alembic.script import ScriptDirectory
+    from alembic.script.revision import RevisionError
+
+    from writing_coach.persistence.runtime import _runtime_alembic_config
+
+    script = ScriptDirectory.from_config(_runtime_alembic_config())
+    try:
+        pending = [revision.revision for revision in script.iterate_revisions(expected, actual)]
+    except RevisionError:
+        # A revision this build's migrations do not know: Alembic cannot
+        # upgrade from it either, so there is no gated step to cross.
+        return None
+    return next((revision for revision in reversed(pending) if revision in GATED_REVISIONS), None)
+
+
+def pending_revisions(actual: str | None, expected: str) -> list[str]:
+    """The revisions an upgrade from `actual` to `expected` applies, oldest first."""
+    from alembic.script import ScriptDirectory
+
+    from writing_coach.persistence.runtime import _runtime_alembic_config
+
+    script = ScriptDirectory.from_config(_runtime_alembic_config())
+    return [revision.revision for revision in reversed(list(script.iterate_revisions(expected, actual)))]
+
+
 def inspect_runtime() -> tuple[str, str, str | None]:
     """(state, expected revision, actual revision) for the configured runtime."""
     from writing_coach.persistence.config import create_runtime_engine
@@ -62,15 +106,34 @@ def inspect_runtime() -> tuple[str, str, str | None]:
     return readiness(actual=actual, tables=tables, expected=expected), expected, actual
 
 
-def _apply(label: str) -> int:
+def _apply(label: str, to: str = "head") -> int:
     from alembic import command
 
     from writing_coach.persistence.runtime import _runtime_alembic_config
 
-    command.upgrade(_runtime_alembic_config(include_runtime_url=True), "head")
+    command.upgrade(_runtime_alembic_config(include_runtime_url=True), to)
     state, expected, actual = inspect_runtime()
     print(f"after {label}: {state} (expected {expected}, found {actual or 'no revision'})")
+    if to != "head":
+        return 0 if actual == to else 1
     return 0 if state == READY else 1
+
+
+def _plan(state: str, expected: str, actual: str | None) -> int:
+    """One fact per line, for `scripts/staging_update.ps1` to read without guessing."""
+    if state == UNAVAILABLE:
+        print("plan: unavailable")
+        return 1
+    print(f"current: {actual or 'none'}")
+    print(f"head: {expected}")
+    if state == EMPTY:
+        print("plan: empty")
+        return 0
+    pending = pending_revisions(actual, expected) if actual != expected else []
+    for revision in pending:
+        print(f"pending: {revision}{' gated' if revision in GATED_REVISIONS else ''}")
+    print(f"plan: {len(pending)} pending")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -91,9 +154,22 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="the revision you believe this database is at; required with --upgrade",
     )
+    parser.add_argument(
+        "--to",
+        dest="to_revision",
+        default="",
+        help="with --upgrade: migrate only as far as this revision, not the head",
+    )
+    parser.add_argument(
+        "--plan",
+        action="store_true",
+        help="report current, head and pending revisions one per line; changes nothing",
+    )
     args = parser.parse_args(argv)
 
     state, expected, actual = inspect_runtime()
+    if args.plan:
+        return _plan(state, expected, actual)
     print(f"runtime schema: {state} (expected {expected}, found {actual or 'no revision'})")
 
     if state == READY:
@@ -126,12 +202,30 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 1
+        target = args.to_revision or expected
+        if args.to_revision and args.to_revision not in pending_revisions(actual, expected):
+            print(
+                f"--to {args.to_revision} is not a revision between {actual} and {expected}.",
+                file=sys.stderr,
+            )
+            return 1
+        gated = gated_revision_between(actual, target)
+        if gated is not None:
+            print(
+                f"{actual} -> {target} applies {gated}, a non-additive cutover this "
+                "command does not run. Apply it with its own gated command, which checks "
+                f"the database on the connection it migrates:\n  {GATED_REVISIONS[gated]}",
+                file=sys.stderr,
+            )
+            return 1
         if not args.confirm:
             print(
-                f"Ready to migrate {actual} -> {expected}. Take a verified backup "
+                f"Ready to migrate {actual} -> {target}. Take a verified backup "
                 "first, then re-run with --confirm."
             )
             return 2
+        if args.to_revision:
+            return _apply("migration", to=args.to_revision)
         return _apply("migration")
 
     if state != EMPTY:

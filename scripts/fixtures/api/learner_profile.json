@@ -1,0 +1,45 @@
+{
+  "exists": true,
+  "language": "en",
+  "goal": "everyday",
+  "style": "guided",
+  "pinyin": "auto",
+  "declared_level": "",
+  "native_language": "en",
+  "support_language": "en",
+  "theme_preset": "editorial",
+  "updated_at": "2026-09-27T23:24:24+00:00",
+  "settings": {
+    "support_language": {
+      "value": "en",
+      "source": "saved",
+      "version": "2026-09-27T23:24:24+00:00"
+    },
+    "interface_language": {
+      "value": "en",
+      "source": "default",
+      "version": "2026-09-27T23:24:24+00:00"
+    },
+    "goal": {
+      "value": "everyday",
+      "source": "saved",
+      "version": "2026-09-27T23:24:24+00:00"
+    },
+    "style": {
+      "value": "guided",
+      "source": "saved",
+      "version": "2026-09-27T23:24:24+00:00"
+    },
+    "pinyin": {
+      "value": "auto",
+      "source": "saved",
+      "version": "2026-09-27T23:24:24+00:00"
+    },
+    "declared_level": {
+      "value": "",
+      "source": "default",
+      "version": "2026-09-27T23:24:24+00:00"
+    }
+  },
+  "version": "2026-09-27T23:24:24+00:00"
+}

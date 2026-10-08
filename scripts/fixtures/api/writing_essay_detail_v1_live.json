@@ -1,0 +1,272 @@
+{
+  "id": 8,
+  "created_at": "2026-09-28T20:18:40+00:00",
+  "prompt": "Write about your last weekend",
+  "text": "Last weekend I go to the beach with my family. We was very happy because the weather were nice. I like swim in the sea and eat fresh seafood. In the evening, we watched the sunset together, it was a wonderful memory.",
+  "word_count": 42,
+  "target_cefr": "B1",
+  "grammar": 55,
+  "vocabulary": 50,
+  "coherence": 50,
+  "task_achievement": 70,
+  "naturalness": 50,
+  "overall": 55.2,
+  "cefr_estimate": "",
+  "evaluator": "ollama:qwen3:8b",
+  "summary_vi": "Your text is a good start, but it needs more grammar and smoother sentences. You're on the right track, but let's work on making your writing clearer and more natural.",
+  "series_id": 8,
+  "revision_no": 1,
+  "parent_id": null,
+  "language_code": "en",
+  "target_level": "B1",
+  "level_estimate": "",
+  "review_kept_at": null,
+  "strengths_vi": [
+    "Last weekend I go to the beach with my family.",
+    "I like swim in the sea and eat fresh seafood."
+  ],
+  "strength_evidence": [
+    {
+      "id": "strength-1",
+      "category": "coherence",
+      "fragment": "Last weekend I go to the beach with my family.",
+      "quote": "Last weekend I go to the beach with my family.",
+      "span": {
+        "start": 0,
+        "end": 46
+      },
+      "explanation_vi": "This sentence clearly introduces the main event of your weekend, which is good for setting the scene. Keep this clear and direct approach in your next writing.",
+      "confidence": 0.9
+    },
+    {
+      "id": "strength-2",
+      "category": "vocabulary",
+      "fragment": "I like swim in the sea and eat fresh seafood.",
+      "quote": "I like swim in the sea and eat fresh seafood.",
+      "span": {
+        "start": 96,
+        "end": 141
+      },
+      "explanation_vi": "You use simple and clear vocabulary, which is good for a B1 level. Keep using words that are easy to understand and relevant to your topic.",
+      "confidence": 0.9
+    }
+  ],
+  "priorities_vi": [
+    "Focus on verb tenses: use past simple for actions that happened in the past.",
+    "Use articles correctly: for example, 'the weather' instead of 'weather' when referring to a specific weather condition.",
+    "Make your sentences more varied and natural by using different sentence structures."
+  ],
+  "errors": [
+    {
+      "id": "issue-a41044c86fb5f78b",
+      "category": "tense",
+      "fragment": "Last weekend I go to the beach with my family.",
+      "quote": "Last weekend I go to the beach with my family.",
+      "span": {
+        "start": 0,
+        "end": 46
+      },
+      "anchored": true,
+      "explanation_vi": "You used the present simple tense 'go' instead of the past simple 'went' for an action that happened in the past. Use 'went' to describe events that occurred last weekend.",
+      "suggestion": "Last weekend I went to the beach with my family.",
+      "mini_rule_vi": "Use the past simple tense for actions that happened in the past. For example, 'went', 'was', 'ate'.",
+      "example": "Last weekend I went to the beach with my family.",
+      "confidence": 0.95
+    },
+    {
+      "id": "issue-2012ddd63666aada",
+      "category": "tense",
+      "fragment": "We was very happy because the weather were nice.",
+      "quote": "We was very happy because the weather were nice.",
+      "span": {
+        "start": 47,
+        "end": 95
+      },
+      "anchored": true,
+      "explanation_vi": "You used the incorrect verb forms 'was' and 'were'. 'We' is plural, so use 'were' for the verb. Also, 'weather' is uncountable, so it doesn't take 'the' or 'were'. Use 'was' for 'the weather' and 'were' for 'we'.",
+      "suggestion": "We were very happy because the weather was nice.",
+      "mini_rule_vi": "Use 'were' for plural subjects like 'we', and 'was' for singular nouns like 'the weather'.",
+      "example": "We were very happy because the weather was nice.",
+      "confidence": 0.95
+    },
+    {
+      "id": "issue-f67b3b00c0e72177",
+      "category": "tense",
+      "fragment": "In the evening, we watched the sunset together, it was a wonderful memory.",
+      "quote": "In the evening, we watched the sunset together, it was a wonderful memory.",
+      "span": {
+        "start": 142,
+        "end": 216
+      },
+      "anchored": true,
+      "explanation_vi": "This sentence is missing a conjunction to connect the two clauses. Use 'and' or a comma with a conjunction to make the sentence flow better.",
+      "suggestion": "In the evening, we watched the sunset together, and it was a wonderful memory.",
+      "mini_rule_vi": "Use a conjunction like 'and' to connect two independent clauses in a sentence.",
+      "example": "In the evening, we watched the sunset together, and it was a wonderful memory.",
+      "confidence": 0.9
+    }
+  ],
+  "module_data": {
+    "practice": null,
+    "grammar_links": [
+      {
+        "issue_id": "issue-a41044c86fb5f78b",
+        "category": "tense",
+        "grammar_id": "b1-ability-across-time",
+        "title": "Ability across time",
+        "level": "B1",
+        "reason": "Writing finding category: tense",
+        "evidence": "Last weekend I go to the beach with my family.",
+        "source": "static-grammar-kb"
+      },
+      {
+        "issue_id": "issue-a41044c86fb5f78b",
+        "category": "tense",
+        "grammar_id": "b1-future-forms-in-context",
+        "title": "Future forms in context",
+        "level": "B1",
+        "reason": "Writing finding category: tense",
+        "evidence": "Last weekend I go to the beach with my family.",
+        "source": "static-grammar-kb"
+      }
+    ],
+    "review": {
+      "contract": "writing-evaluation-v2.6",
+      "learning_language": "en",
+      "support_language": "en",
+      "target_level": "B1",
+      "text_hash": "dfc4cf183c688c3c92ef4524a649e2fddb1fab43275eed124763e964c377a221",
+      "prompt_hash": "0487e80d44e492156b7a281082341f10d1eaf09390117fd73dc01ef0b3e3cc61",
+      "fingerprint": "88a6f14c4c4ba70a2d6bbf8a50dfc414d27757c6ee41254dc7ce6fb18f9d51cb"
+    }
+  },
+  "practice_context": null,
+  "grammar_links": [
+    {
+      "issue_id": "issue-a41044c86fb5f78b",
+      "category": "tense",
+      "grammar_id": "b1-ability-across-time",
+      "title": "Ability across time",
+      "level": "B1",
+      "reason": "Writing finding category: tense",
+      "evidence": "Last weekend I go to the beach with my family.",
+      "source": "static-grammar-kb"
+    },
+    {
+      "issue_id": "issue-a41044c86fb5f78b",
+      "category": "tense",
+      "grammar_id": "b1-future-forms-in-context",
+      "title": "Future forms in context",
+      "level": "B1",
+      "reason": "Writing finding category: tense",
+      "evidence": "Last weekend I go to the beach with my family.",
+      "source": "static-grammar-kb"
+    }
+  ],
+  "schema_version": "writing-evaluation-v2",
+  "text_hash": "96c24fe2198d239484170e7a6976d8f28c4c4e6ec149acdc0c15ddc6daae727d",
+  "summary": {
+    "headline": "Last weekend I go to the beach with my family.",
+    "interpretation": "Your text is a good start, but it needs more grammar and smoother sentences. You're on the right track, but let's work on making your writing clearer and more natural."
+  },
+  "dimensions": {
+    "grammar": 55,
+    "vocabulary": 50,
+    "coherence": 50,
+    "task_achievement": 70,
+    "naturalness": 50
+  },
+  "issues": [
+    {
+      "id": "issue-a41044c86fb5f78b",
+      "category": "tense",
+      "priority": "high",
+      "span": {
+        "start": 0,
+        "end": 46
+      },
+      "quote": "Last weekend I go to the beach with my family.",
+      "why": "You used the present simple tense 'go' instead of the past simple 'went' for an action that happened in the past. Use 'went' to describe events that occurred last weekend.",
+      "how": "Use the past simple tense for actions that happened in the past. For example, 'went', 'was', 'ate'.",
+      "suggestion": "Last weekend I went to the beach with my family.",
+      "examples": [
+        "Last weekend I went to the beach with my family."
+      ]
+    },
+    {
+      "id": "issue-2012ddd63666aada",
+      "category": "tense",
+      "priority": "medium",
+      "span": {
+        "start": 47,
+        "end": 95
+      },
+      "quote": "We was very happy because the weather were nice.",
+      "why": "You used the incorrect verb forms 'was' and 'were'. 'We' is plural, so use 'were' for the verb. Also, 'weather' is uncountable, so it doesn't take 'the' or 'were'. Use 'was' for 'the weather' and 'were' for 'we'.",
+      "how": "Use 'were' for plural subjects like 'we', and 'was' for singular nouns like 'the weather'.",
+      "suggestion": "We were very happy because the weather was nice.",
+      "examples": [
+        "We were very happy because the weather was nice."
+      ]
+    },
+    {
+      "id": "issue-f67b3b00c0e72177",
+      "category": "tense",
+      "priority": "medium",
+      "span": {
+        "start": 142,
+        "end": 216
+      },
+      "quote": "In the evening, we watched the sunset together, it was a wonderful memory.",
+      "why": "This sentence is missing a conjunction to connect the two clauses. Use 'and' or a comma with a conjunction to make the sentence flow better.",
+      "how": "Use a conjunction like 'and' to connect two independent clauses in a sentence.",
+      "suggestion": "In the evening, we watched the sunset together, and it was a wonderful memory.",
+      "examples": [
+        "In the evening, we watched the sunset together, and it was a wonderful memory."
+      ]
+    }
+  ],
+  "strengths": [
+    {
+      "id": "strength-1",
+      "category": "coherence",
+      "span": {
+        "start": 0,
+        "end": 46
+      },
+      "quote": "Last weekend I go to the beach with my family.",
+      "why": "This sentence clearly introduces the main event of your weekend, which is good for setting the scene. Keep this clear and direct approach in your next writing."
+    },
+    {
+      "id": "strength-2",
+      "category": "vocabulary",
+      "span": {
+        "start": 96,
+        "end": 141
+      },
+      "quote": "I like swim in the sea and eat fresh seafood.",
+      "why": "You use simple and clear vocabulary, which is good for a B1 level. Keep using words that are easy to understand and relevant to your topic."
+    }
+  ],
+  "next_actions": [
+    "Focus on verb tenses: use past simple for actions that happened in the past.",
+    "Use articles correctly: for example, 'the weather' instead of 'weather' when referring to a specific weather condition.",
+    "Make your sentences more varied and natural by using different sentence structures."
+  ],
+  "revisions": [
+    {
+      "id": 8,
+      "revision_no": 1,
+      "overall": 55.2,
+      "created_at": "2026-09-28T20:18:40+00:00"
+    },
+    {
+      "id": 9,
+      "revision_no": 2,
+      "overall": 67.2,
+      "created_at": "2026-09-28T20:19:23+00:00"
+    }
+  ],
+  "delta": {},
+  "app_cefr": "B1"
+}

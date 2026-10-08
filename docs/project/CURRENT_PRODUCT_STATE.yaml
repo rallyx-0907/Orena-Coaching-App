@@ -38,24 +38,29 @@
   ],
   "active_branch_or_lane": {
     "expected_development_branch": "codex/work",
-    "lane": "orena_golden_star_reference_architecture"
+    "lane": "unified_baseline_and_ui_lane"
   },
-  "last_verified_application_commit": "a97c4eab0406e5c5e0a291184d90d74973c1eb7e",
-  "last_verified_batch": "listening_l2_5_support_language_and_recovery_orchestration",
+  "last_verified_application_commit": "e74735b615bf37c3f44c75e86e6466bc14b38dd3",
+  "last_verified_batch": "vocabulary_localization_table_applied_8021",
   "current_program_stage": {
-    "id": "R21",
-    "name": "Mobile Release Readiness",
-    "status": "human_gate"
+    "id": "ORENA_PRODUCT_COMPLETION",
+    "name": "Coherent content-first web product completion",
+    "status": "in_progress"
   },
   "current_primary_workstream": {
-    "id": "orena_web_golden_star",
+    "id": "orena_product_completion_d110_d111",
     "status": "in_progress",
-    "next_task": "Complete Orena Golden Star under principal architecture ownership. A-D and Encounter WIP are completed by Opus. Read ORENA_REFERENCE_ARCHITECTURE.md, docs/project/ORENA_BACKBONE_EXECUTION.md and ORENA_BACKBONE_INTEGRATION_GATES.md. Backbone contracts cover account/profile, commerce/entitlements/quotas, Collection/My Content/My Language, execution, Growth/achievements and migration. Codex owns architecture and integration; Opus implements I1-I7 under these contracts. No deployed sync, billing activation or human product approval is implied. Preserve eleven destinations and all Opus WIP, especially theme/brand."
+    "next_task": "D-124: vocabulary is (sense, support language) localization, not AI enrichment; no paid provider in vocabulary ingestion/localization. Step 1 done locally: CC-CEDICT+Unihan vendored (cost plan P1), ZH import completion (pinyin, en meaning) and provider-free ZH lookup senses; focused 335 pass. Next: server-side per-card meaning for the support language and UI off translation_vi (no schema); localization source registry and validation; independent review of proposed 0025 localization table; provision free Marian pivot and sample quality; open-data choice for -> vi is human (VL-2). Grammar deferred; Agent gated; preserve accepted S1/S2/S3/S4/S6/S8 checkpoints."
   },
   "design": {
     "web_is_visual_source_of_truth": true,
     "native_strategy": "full_native_port",
-    "native_may_redesign_product": false
+    "native_may_redesign_product": false,
+    "visual_authority": "canonical_ui_design_d088",
+    "themes": [
+      "light",
+      "dark"
+    ]
   },
   "languages": {
     "first_class": [
@@ -189,12 +194,19 @@
   ],
   "current_p0": [],
   "current_p1": [
-    "platform_admin_host_remains_a_human_hold",
-    "grammar_breadth_remains_a_human_review_question",
+    "canonical_grammar_store_api_approved_d111_runtime_and_en_zh_content_not_yet_reviewable",
     "cross_device_continuity_design_specified_schema_and_sync_activation_gated",
     "startup_auto_alembic_conflicts_with_D002_requires_explicit_operator_migration",
     "reading_library_breadth_requires_rights_decisions_per_text",
-    "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native"
+    "zh_word_meanings_need_catalog_coverage_or_a_zh_translation_engine_shared_by_reader_and_listening",
+    "shared_reading_library_epub_pipeline_ships_without_rights_gate_per_d056_sandbox_only",
+    "historical_non_ci_matrices_reference_removed_wrappers_or_frozen_native",
+    "art_bible_rules_written_real_book_cover_and_audio_artwork_assets_still_absent",
+    "new_learner_ui_d088_at_next_until_the_d091_cutover_old_ui_at_root_is_replaced_not_preserved",
+    "grammar_contract_and_fixtures_integrated_screens_wait_for_store_api_and_published_content",
+    "eight_design_screens_are_coming_soon_until_a_backend_exists",
+    "platform_admin_moves_into_the_new_ui_d101_old_admin_untouched_until_cutover",
+    "vocabulary_localization_table_applied_on_8021_only_vi_sources_and_licences_page_in_progress_d124"
   ],
-  "last_verified_at": "2026-09-02"
+  "last_verified_at": "2026-10-04"
 }

@@ -5,6 +5,7 @@ import {
   dictationHint,
   hintTokens,
   confirmedWords,
+  wordProgress,
   MAX_HINT_LEVEL,
 } from '../static/orena/capabilities/dictation-hints.js';
 
@@ -150,7 +151,9 @@ for (const [name, expected, answer, want] of [
   ['one of a repeated pair wrong', 'the cat and the dog', 'the cat and teh dog', 'the cat and t*e dog'],
   // Characters missing, and characters too many: neither shifts the rest.
   ['missing characters', 'tomorrow morning', 'tomorow moring', 'tomor*ow mor*ing'],
-  ['extra characters', 'tomorrow morning', 'tommorrow moorning', 'tomorrow morning'],
+  // An extra letter still leaves the word wrong, so it is never shown whole: the place where the attempt
+  // parts from the word stays masked (the letters after it are still credited).
+  ['extra characters', 'tomorrow morning', 'tommorrow moorning', 'tom*rrow mo*ning'],
   // A contraction is one word whose apostrophe still has to be earned.
   ['contraction', "I don't think it's", 'I dont think its', "I don*t think it*s"],
   // Punctuation is structure, not something to guess.
@@ -168,7 +171,18 @@ assert.equal(mask('from the form', 'form the from'), '**** *** form');
 /* Chinese counts characters, because that is what a learner produces. There is
    no word length to reveal and none is invented. */
 assert.equal(mask('我昨天去了商店。', '', 'zh'), '*******。');
-assert.equal(mask('我昨天去了商店。', '我昨天去商店', 'zh'), '我昨天去*商店。');
+/* A learner who has written six characters has reached six characters of the
+   line, and the seventh stays masked until they write a seventh - even though
+   they have already typed the character it holds. That is the cost of the
+   reach, and the right side to err on: the alternative credits a character at
+   a position the learner has not got to, which is how the line used to give
+   itself away. One more keystroke resolves it. */
+assert.equal(mask('我昨天去了商店。', '我昨天去商店', 'zh'), '我昨天去*商*。');
+assert.equal(
+  mask('我昨天去了商店。', '我昨天去商店了', 'zh'),
+  '我昨天去*商店。',
+  'a seventh character reaches the seventh slot, wherever the learner put it',
+);
 assert.equal(
   mask('我昨天去了商店。', '我昨天去了商城', 'zh'),
   '我昨天去了商*。',
@@ -184,6 +198,96 @@ for (const answer of ['', 'U', 'Under', 'Under the', 'Undar the stors'])
         `"${answer}" was shown a character it never produced: ${STARS[index]}`,
       );
 
+/* --- Typing is not a hint ------------------------------------------------
+
+   The live reveal used to align the whole answer against the whole line with
+   a longest-common-subsequence. A subsequence keeps order but knows nothing
+   about position, so a word the learner typed could be credited to a later
+   identical word: one word of "the boy saw the dog" lit up a word at the end
+   they had never reached, and Dictation handed out its own answers.
+
+   A learner who has written N units has reached N units of the line. Nothing
+   beyond that is looked at, so confirming the unit at index i requires having
+   written at least i + 1 units - whatever those units happen to say. */
+const reached = (expected, answer, language = 'en') =>
+  wordProgress({ expected, answer, source_language: language }).map((entry) => entry.found);
+const attempted = (expected, answer, language = 'en') =>
+  wordProgress({ expected, answer, source_language: language }).map((entry) => entry.attempt);
+
+const REPEATS = 'the boy saw the dog';
+assert.deepEqual(
+  reached(REPEATS, 'the'),
+  [true, false, false, false, false],
+  'one word confirms the first occurrence and never the later one',
+);
+assert.deepEqual(
+  reached(REPEATS, 'the boy saw the'),
+  [true, true, true, true, false],
+  'the second occurrence is confirmed only once the learner reaches it',
+);
+assert.deepEqual(
+  reached(REPEATS, 'dog'),
+  [false, false, false, false, false],
+  'and a word from the end of the line confirms nothing at the start of it',
+);
+/* Identical adjacent words are the sharpest version of the same question. */
+assert.deepEqual(reached('had had', 'had'), [true, false], 'one "had" is one "had"');
+assert.deepEqual(reached('had had', 'had had'), [true, true], 'and two are two');
+
+/* A typo is not silently corrected, and it does not stop the next word from
+   being credited where it belongs. */
+const LINE = 'With the big bang starting the year';
+assert.deepEqual(
+  reached(LINE, 'Witg the'),
+  [false, true, false, false, false, false, false],
+  'the second token aligns to the second position; the later "the" stays hidden',
+);
+assert.equal(attempted(LINE, 'Witg the')[0], 'witg', 'and what they actually wrote is kept');
+assert.ok(
+  !mask(LINE, 'Witg the').includes('With'),
+  'a mistyped word is never completed for the learner',
+);
+
+/* Chinese repeats the same way, per unit rather than per space. */
+assert.deepEqual(
+  reached('我 要 去 我 家', '我', 'zh'),
+  [true, false, false, false, false],
+  'a repeated character confirms only where the learner has got to',
+);
+assert.deepEqual(
+  reached('我 要 去 我 家', '我要去我', 'zh'),
+  [true, true, true, true, false],
+  'and the second occurrence once they reach it',
+);
+
+/* Words that resemble each other at different positions must not swap. */
+assert.deepEqual(
+  reached('I saw the sea and the see', 'see'),
+  [false, false, false, false, false, false, false],
+  'a word that only appears later confirms nothing now',
+);
+
+/* The count a learner reads means sequentially confirmed units, which is what
+   the reach now guarantees - not occurrences matched anywhere in the line. */
+const earlyShape = dictationHint({ expected: REPEATS, answer: 'the', source_language: 'en' });
+assert.equal(earlyShape.anchors, 1, 'one unit reached is one anchor');
+assert.equal(earlyShape.total, 5);
+assert.equal(
+  dictationHint({ expected: REPEATS, answer: 'dog', source_language: 'en' }).anchors,
+  0,
+  'and a word from the end earns no anchor at the start',
+);
+
+/* A word typed with an extra letter is still wrong, and a hint never shows it whole: "breack" for "break"
+   lines up against every letter of the target, and the hint must keep the place they part masked. */
+for (const answer of ['Take a breack', 'Take a breaks', 'Take a bbreak']) {
+  const view = dictationHint({ expected: 'Take a break', answer, source_language: 'en' });
+  const last = view.slots.at(-1);
+  assert.ok(last.text.includes('*'), `"${answer}": the wrong word is not shown whole (${last.text})`);
+  assert.notEqual(last.text, 'break');
+}
+assert.equal(dictationHint({ expected: 'Take a break', answer: 'Take a breack', source_language: 'en' }).slots.at(-1).text, 'brea*');
+
 console.log(
-  'Dictation hints: structure, earned characters, EN/ZH slot shapes, and a ladder that never reaches the answer PASS',
+  'Dictation hints: structure, earned characters, EN/ZH slot shapes, positional reveal that never runs ahead of the learner, and a ladder that never reaches the answer PASS',
 );

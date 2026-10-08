@@ -1,0 +1,74 @@
+# Vocabulary source content schema review request
+
+Status: `APPLIED TO SANDBOX` (human schema/runtime authorization given
+2026-09-16; moved into `migrations/versions/20260916_0008_vocabulary_content_catalog.py`
+and applied together with its chain child `20260916_0009_reading_library.py`
+— see `migrations/proposed/README.md`'s ledger).
+
+Independent architecture review: `APPROVED` for commit
+`a1a90b7bfe8ebdd5f60e1a928f0b070f52cc3c8d`. See
+`docs/project/VOCABULARY_SOURCE_ARCHITECTURE_REVIEW.md`.
+
+This proposal supports the Vocabulary Source Import vertical slice. It is
+shared content persistence, not learner-owned state. Schema is now live on
+the sandbox runtime; whether any caller is wired/active is a separate,
+unaffected question this note does not decide.
+
+## Why static content is no longer sufficient
+
+The requested flow is Admin upload → mapping → validation → persistence →
+learner Library after refresh. A static catalog cannot retain an Admin upload,
+support repeated imports, or serve shared content independently of a deployed
+code release. Platform settings are not a content-domain store and would not
+provide the required collection/entry/membership scale.
+
+## Proposed shared tables
+
+- `vocabulary_collections`: stable learner-facing collection identity,
+  language/framework/level/topic, publication status, and collection
+  provenance.
+- `vocabulary_entries`: one language-neutral lexical entry with term,
+  language-aware pronunciations/readings, short meanings, detailed definitions,
+  examples, usage, orthography, level metadata, and field origin markers.
+- `vocabulary_collection_memberships`: many-to-many placement so one entry can
+  be present in Oxford/Common, TOEIC, and another collection without copied
+  lexical records.
+- `vocabulary_source_imports`: one audit/result row per source in a batch,
+  including mapping, hash, counts, warnings, and failure details.
+
+Publication is an admission decision, not a parser default.  Imports without
+an explicit publication request remain `pending_review`.  A published
+collection carries an admin attestation in provenance recording a verified
+rights status, complete-pack status, and the reviewer identity; the repository
+also rejects a direct published write without that admission.  Failed parse,
+mapping, normalization, and source-level persistence attempts retain a failed
+source receipt, even when no collection row exists yet.
+
+The identity key is language-aware: NFC is preserved, Latin case is folded,
+Chinese simplified/traditional forms are not silently collapsed, POS remains a
+dimension, and a supplied sense key or source meaning fingerprint separates
+homographs. This is intentionally a bounded MVP identity policy, not a full
+lexical database.
+
+## Deliberately out of scope
+
+No new SavedWord-equivalent table, learner progress table, review scheduler,
+AI enrichment pipeline, account sync, or generated-content writer is included.
+Learner save/review continues through the existing `saved_words` /
+`vocabulary_learning` path. Source values are retained as source values;
+future enrichment can add a separate origin without overwriting them.
+
+## Required gate before activation
+
+1. Independent architecture review of the model, identity constraints,
+   deletion behaviour, batch transaction boundary, and PostgreSQL indexes —
+   complete; see the recorded verdict above.
+2. Human authorization for the shared vocabulary schema/runtime migration.
+3. Rehearsal against a throwaway PostgreSQL database, then moving the proposal
+   into `migrations/versions/` and applying it to the named sandbox runtime.
+
+The repository checks the required table/column contract and the Alembic
+revision that introduced it (or a later linear descendant).  Until the
+reviewed migration is active, Admin preview is available but Admin import
+returns an explicit `503 vocabulary_schema_unavailable`; no upload is silently
+written to static files or platform settings.

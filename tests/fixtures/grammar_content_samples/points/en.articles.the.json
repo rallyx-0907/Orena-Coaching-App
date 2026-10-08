@@ -1,0 +1,261 @@
+{
+  "schema_version": "0.4",
+  "id": "en.articles.the",
+  "version": 1,
+  "target_lang": "en",
+  "function": "fn.reference",
+  "level": {
+    "framework": "cefr",
+    "value": "A2",
+    "rank": 2
+  },
+  "prereqs": [
+    "en.articles.a_an"
+  ],
+  "contrasts": [
+    "en.articles.a_an"
+  ],
+  "error_tags": [
+    "article"
+  ],
+  "source_refs": {},
+  "point_type": "other",
+  "header": {
+    "title": {
+      "vi": "Mạo từ xác định the",
+      "en": "The definite article: the"
+    },
+    "native_title": "The definite article: the",
+    "level": {
+      "framework": "cefr",
+      "value": "A2",
+      "rank": 2
+    },
+    "summary": {
+      "vi": "Mạo từ xác định \"the\" dùng để chỉ một người hoặc vật cụ thể mà cả người nói và người nghe đều đã biết.",
+      "en": "Use the for one specific person or thing that speaker and listener both know."
+    },
+    "sub": {
+      "vi": "xác định",
+      "en": "definite"
+    }
+  },
+  "when_to_use": [
+    {
+      "vi": "Khi người nghe đã biết bạn đang nói về người hoặc vật nào."
+    },
+    {
+      "vi": "Khi vật đó đã được nhắc đến trước đó trong câu chuyện."
+    },
+    {
+      "vi": "Khi chỉ có một vật hoặc người duy nhất trong tình huống đó."
+    },
+    {
+      "vi": "Khi nói về một nhóm hoặc loại nói chung với danh từ số ít."
+    }
+  ],
+  "pattern": {
+    "formula": [
+      {
+        "text": "the",
+        "role": "marker",
+        "label": {
+          "vi": "mạo từ xác định"
+        }
+      },
+      {
+        "text": "N",
+        "role": "object",
+        "label": {
+          "vi": "danh từ"
+        }
+      }
+    ],
+    "illustration": {
+      "kind": "none"
+    }
+  },
+  "examples": [
+    {
+      "text": "The book on the table is mine.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 0,
+          "end": 3,
+          "role": "marker"
+        },
+        {
+          "start": 4,
+          "end": 8,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Chỉ một quyển sách cụ thể mà người nghe đã biết."
+      },
+      "translation": {
+        "vi": "Quyển sách trên bàn là của tôi."
+      }
+    },
+    {
+      "text": "I saw a cat. The cat was black.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 13,
+          "end": 16,
+          "role": "marker"
+        },
+        {
+          "start": 17,
+          "end": 20,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Con mèo đã được nhắc đến ở câu trước nên dùng \"the\"."
+      },
+      "translation": {
+        "vi": "Tôi đã nhìn thấy một con mèo. Con mèo đó màu đen."
+      }
+    },
+    {
+      "text": "Please close the door.",
+      "form": "affirmative",
+      "spans": [
+        {
+          "start": 13,
+          "end": 16,
+          "role": "marker"
+        },
+        {
+          "start": 17,
+          "end": 21,
+          "role": "object"
+        }
+      ],
+      "annotation": {
+        "vi": "Cánh cửa duy nhất trong tình huống này."
+      },
+      "translation": {
+        "vi": "Làm ơn đóng cửa lại."
+      }
+    }
+  ],
+  "compare": [
+    {
+      "with": "en.articles.a_an",
+      "this_meaning": {
+        "vi": "Dùng khi người nghe đã biết chính xác người hoặc vật nào."
+      },
+      "this_example": "The car is fast.",
+      "other_meaning": {
+        "vi": "Dùng khi người nghe chưa biết, lần đầu nhắc đến."
+      },
+      "other_example": "I have a car."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "wrong": "I have the cat.",
+      "right": "I have a cat.",
+      "reason": {
+        "vi": "Người Việt thường bỏ qua mạo từ hoặc dùng \"the\" khi lần đầu nhắc đến vì tiếng Việt không có mạo từ."
+      },
+      "error_tag": "article",
+      "l1": [
+        "vi"
+      ]
+    }
+  ],
+  "quick_practice": [
+    {
+      "q": "I bought ___ new phone yesterday.",
+      "options": [
+        {
+          "text": "a",
+          "error_tag": null
+        },
+        {
+          "text": "the",
+          "error_tag": "article"
+        },
+        {
+          "text": "an",
+          "error_tag": "article"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Lần đầu nhắc đến chiếc điện thoại nên dùng \"a\"."
+      }
+    },
+    {
+      "q": "Can you pass me ___ salt, please?",
+      "options": [
+        {
+          "text": "the",
+          "error_tag": null
+        },
+        {
+          "text": "a",
+          "error_tag": "article"
+        },
+        {
+          "text": "an",
+          "error_tag": "article"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Lọ muối cụ thể trên bàn mà cả hai đều biết nên dùng \"the\"."
+      }
+    },
+    {
+      "q": "She is ___ best student in our class.",
+      "options": [
+        {
+          "text": "the",
+          "error_tag": null
+        },
+        {
+          "text": "a",
+          "error_tag": "article"
+        },
+        {
+          "text": "an",
+          "error_tag": "article"
+        }
+      ],
+      "answer": 0,
+      "explain": {
+        "vi": "Trước so sánh nhất \"best\" ta dùng \"the\"."
+      }
+    }
+  ],
+  "status": "draft_ai",
+  "sequence": 2,
+  "personal_production": {
+    "prompt": {
+      "vi": "Viết một câu về một vật cụ thể mà cả hai người đều biết (dùng the).",
+      "en": "Write a sentence about one specific thing you both know (use the)."
+    },
+    "placeholder": "The ... is ...",
+    "target_form": "affirmative",
+    "pattern_rule": {
+      "ordered": true,
+      "slots": [
+        {
+          "role": "marker",
+          "any_of": [
+            "the"
+          ]
+        }
+      ]
+    },
+    "sample": {
+      "text": "The dog is under the table."
+    }
+  }
+}

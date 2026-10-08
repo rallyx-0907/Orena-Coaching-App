@@ -143,3 +143,15 @@ def test_the_tagger_reaches_no_provider() -> None:
     )
     for forbidden in ("generate_structured", "ai_json", "capability_key", "requests."):
         assert forbidden not in text
+
+
+def test_curly_quotes_are_not_glued_to_the_word_and_offsets_index_the_source() -> None:
+    from writing_coach.linguistic_annotation import annotate
+
+    source = "\u201cI'm lonely,\u201d she said."
+    tokens = annotate("en", source)
+    fragments = [token["fragment"] for token in tokens]
+    assert "I" in fragments and "\u201cI" not in fragments
+    for token in tokens:
+        assert source[token["start"]:token["end"]] == token["fragment"]
+

@@ -1,0 +1,149 @@
+/* Frame 27 "Search", measured (docs/design/canonical-ui/screens/Orena.dc.html). A learning
+   workspace (route.focus, Design Contract rule 49): `.o-main` stops scrolling as a page, so this
+   fills the column itself and scrolls only inside `.s-search__body` (`data-scroll-region`). */
+.s-search {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 14px;
+}
+
+.s-search__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.s-search__field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  height: 48px;
+  border-radius: 16px;
+  background: var(--tint2);
+  color: var(--muted);
+  position: relative;
+  overflow: hidden;
+}
+.s-search__field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+}
+.s-search__field input::placeholder {
+  color: var(--muted);
+}
+.s-search__clear {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-search__clear[hidden] {
+  display: none;
+}
+
+.s-search__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.s-search__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.s-search__chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.s-search__chip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.s-search__chip:hover {
+  background: var(--surface2);
+}
+
+.s-search__count {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.s-search__group {
+  display: flex;
+  flex-direction: column;
+}
+.s-search__group .s-search__label {
+  margin-bottom: 8px;
+}
+.s-search__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.s-search__kind {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.s-search__none {
+  border-radius: 20px;
+  background: var(--surface2);
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.s-search__none-text {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--muted);
+  max-width: 360px;
+}
+
+.s-search__hint {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}

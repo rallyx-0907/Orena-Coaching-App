@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import math
 import os
+import re
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -56,6 +59,8 @@ class SpeechAsrResult:
     text: str
     segments: tuple[SpeechAsrSegment, ...]
     words: tuple[SpeechAsrWord, ...]
+    # The audio's length as the provider reported it, else the last timed segment's end; None when unknown.
+    duration_seconds: float | None = None
 
 
 class SpeechAsrProvider(Protocol):
@@ -158,6 +163,10 @@ def _parse_transcription_response(
                 continue
             words.append(SpeechAsrWord(word=word, start_ms=start_ms, end_ms=end_ms))
 
+    duration = payload.get("duration")
+    if not (type(duration) in {int, float} and duration >= 0):
+        ends = [segment.end_ms for segment in segments] + [word.end_ms for word in words]
+        duration = max(ends) / 1000 if ends else None
     return SpeechAsrResult(
         provider=provider,
         model=model,
@@ -165,6 +174,7 @@ def _parse_transcription_response(
         text=text.strip(),
         segments=tuple(segments),
         words=tuple(words),
+        duration_seconds=float(duration) if duration is not None else None,
     )
 
 
@@ -182,6 +192,10 @@ class GroqSpeechAsrProvider:
     ) -> None:
         if not isinstance(api_key, str) or not api_key.strip():
             raise ValueError("Groq API key is required.")
+        # The key goes into a header: printable ASCII with no space, refused otherwise by a message
+        # that never repeats it (a transport library would echo it in its own error).
+        if not re.fullmatch(r"[!-~]+", api_key.strip()):
+            raise ValueError("Groq API key has characters a request header cannot carry.")
         if timeout_seconds <= 0 or max_bytes <= 0:
             raise ValueError("Groq ASR limits must be positive.")
         self._api_key = api_key.strip()
@@ -198,6 +212,30 @@ class GroqSpeechAsrProvider:
     def max_bytes(self) -> int:
         return self._max_bytes
 
+    def transcribe_bytes(self, *args: Any, **kwargs: Any) -> SpeechAsrResult:
+        return self._metered(self._transcribe_bytes, *args, **kwargs)
+
+    def transcribe_url(self, *args: Any, **kwargs: Any) -> SpeechAsrResult:
+        return self._metered(self._transcribe_url, *args, **kwargs)
+
+    def _metered(self, call: Callable[..., SpeechAsrResult], *args: Any, **kwargs: Any) -> SpeechAsrResult:
+        """Every Groq request, from any caller, in the shared AI ledger (ai/audio_telemetry.py)."""
+
+        from writing_coach.ai.audio_telemetry import record_audio_operation
+
+        started = time.perf_counter()
+        try:
+            result = call(*args, **kwargs)
+        except Exception as exc:
+            record_audio_operation("speech_asr", provider=self.provider_id, model=self.model, outcome="failure",
+                                   latency_ms=int((time.perf_counter() - started) * 1000), audio_seconds=None,
+                                   error=exc)  # fmt: skip
+            raise
+        record_audio_operation("speech_asr", provider=self.provider_id, model=self.model, outcome="success",
+                               latency_ms=int((time.perf_counter() - started) * 1000),
+                               audio_seconds=result.duration_seconds)  # fmt: skip
+        return result
+
     @classmethod
     def from_env(cls) -> "GroqSpeechAsrProvider | None":
         api_key = os.getenv("GROQ_API_KEY", "").strip()
@@ -210,7 +248,7 @@ class GroqSpeechAsrProvider:
             max_bytes=int(os.getenv("GROQ_ASR_MAX_BYTES", str(24 * 1024 * 1024))),
         )
 
-    def transcribe_bytes(
+    def _transcribe_bytes(
         self,
         audio_bytes: bytes,
         *,
@@ -249,8 +287,12 @@ class GroqSpeechAsrProvider:
             )
         except requests.Timeout as exc:
             raise SpeechAsrTimedOut() from exc
-        except requests.RequestException as exc:
-            raise SpeechAsrRequestFailed() from exc
+        except requests.RequestException:
+            # Raised below, outside this block, so it carries no cause or context: some transport
+            # errors quote the request's headers, the key among them.
+            response = None
+        if response is None:
+            raise SpeechAsrRequestFailed()
 
         return _parse_transcription_response(
             response,
@@ -259,7 +301,7 @@ class GroqSpeechAsrProvider:
             model=self._model,
         )
 
-    def transcribe_url(
+    def _transcribe_url(
         self,
         audio_url: str,
         *,
@@ -299,8 +341,12 @@ class GroqSpeechAsrProvider:
             )
         except requests.Timeout as exc:
             raise SpeechAsrTimedOut() from exc
-        except requests.RequestException as exc:
-            raise SpeechAsrRequestFailed() from exc
+        except requests.RequestException:
+            # Raised below, outside this block, so it carries no cause or context: some transport
+            # errors quote the request's headers, the key among them.
+            response = None
+        if response is None:
+            raise SpeechAsrRequestFailed()
 
         return _parse_transcription_response(
             response,

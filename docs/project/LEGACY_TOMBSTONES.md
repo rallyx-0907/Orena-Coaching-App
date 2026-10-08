@@ -119,6 +119,66 @@ removed merely because current code conflicts with them.
   domain-count authority — `ORENA_CONTENT_ARCHITECTURE.md` and
   `ORENA_UNDERSTANDING_ENGINE.md` are.
 
+## The Ink / Paper design system (D-059) and the D-065 update
+
+- **Status:** RETIRED (D-066, explicit human instruction 2026-09-21). Removal
+  from the code is part of the migration and finishes when nothing depends on it.
+- **Current replacement:** the Canonical UI Baseline, one Dark Glass system
+  (`docs/design/canonical-ui/`).
+- **Why retired:** the human approved a frozen baseline as the single visual and
+  data authority; it lists the D-059/D-065 source documents as legacy.
+- **What may remain until migrated:** the Ink/Paper tokens, the theme registry,
+  the borderless-card block and the surfaces built on them, only as code that
+  has not yet been replaced. A surface is migrated to the baseline, then the old
+  pieces are deleted.
+- **What must not happen:** building anything new on Ink, Paper, the reader's
+  sepia block, borderless cards or the learning-surface opening sentence; a
+  hybrid of the two systems; Ink, Paper or any theme other than the current
+  design's returning as a setting; reading D-059 or D-065 as design authority.
+- **Amended by D-089 (2026-09-27):** the ban on "a light theme" no longer
+  applies to the light theme of the current learner design (Claude Design
+  project e6dc1cb2, D-088). That theme is the design's own - not Paper - and
+  ships with its dark theme, following the operating system. Ink, Paper, sepia
+  and any hybrid stay retired.
+
+## The Dark Glass baseline (D-066) and its design project 7a5604ca
+
+- **Status:** SUPERSEDED for learner surfaces (D-088, explicit human
+  instruction 2026-09-27). Removal from the code finishes at the new UI's
+  cutover (D-091).
+- **Current replacement:** the learner design in Claude Design project
+  `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0`, pinned in
+  `docs/design/canonical-ui/screens/` (`SYNC_2026-09-27.md`).
+- **Why retired:** the human approved a new design that changes the navigation,
+  the shell, the type, the icons, the colour system and nearly every component.
+- **What may remain until the cutover:** the old UI at `/` (`templates/orena/index.html`,
+  `static/orena/app.js`, `static/orena/ui/*.js` presentation, the old
+  stylesheets, `theme.js`) as the verified baseline while `/next` is built; the
+  old pins under `docs/design/canonical-ui/superseded/7a5604ca/`; the Admin
+  Control Center pin, which is still Admin's authority.
+- **What must not happen:** new learner work on the old UI, Dark Glass, Nunito,
+  Phosphor or the old five-item navigation; the new UI importing old `ui/*.js`
+  presentation or old stylesheets; a hybrid screen; citing the 7a5604ca frames
+  as design authority for a learner surface.
+
+## The UI rules before the baseline (D-046, D-051, D-057, D-060 measurements)
+
+- **Status:** RETIRED where they conflict with the design (D-067, explicit human
+  instruction 2026-09-21).
+- **Current replacement:** the Claude Design project read at its source, and
+  `DESIGN_CONTRACT.md` as rewritten by D-067.
+- **Why retired:** they described an older design language ("one design language,
+  distinct compositions", a shared icon toolbar, "the card wall is not a layout",
+  Discover not organised by skills, a compacting phone header, the core learning
+  viewport, a Practice group in the rail, dense phone scale) and were being used
+  to overrule the design.
+- **What may remain until migrated:** code built to them, only as code that has
+  not yet been replaced; the surface is migrated to the design and the old
+  implementation is deleted.
+- **What must not happen:** citing one of these rules against the design;
+  restyling an old interaction instead of removing it; adding UI the design does
+  not draw because an old rule asked for it.
+
 ## `writing_coach/becoming_*`
 
 - **Status:** LEGACY TECHNICAL NAMESPACE
@@ -129,3 +189,105 @@ removed merely because current code conflicts with them.
   persistence compatibility identifiers.
 - **What must not happen:** these symbols must not define current product
   identity, routing, architecture, or a separate learning system.
+
+## AI-generated Reading passages (`becoming_reading`, `/api/reading/session*`)
+
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-082, D-083).
+- **Current replacement:** one canonical Reading flow - Admin import -> review ->
+  publish into the Reading Corpus -> an Admin-reviewed comprehension set ->
+  the learner's canonical attempt (`reading_attempts`) -> ability -> the next
+  article (`writing_coach/reading_practice_api.py`,
+  `writing_coach/persistence/reading_evidence_repository.py`).
+- **Why retired:** an internal AI writing the source passage a learner reads,
+  with its own session and attempt shape, was a second Reading architecture
+  beside the published corpus. AI is a processor that runs after the source
+  exists; it never writes one.
+- **What may remain:** the read-only archive `reading_legacy_sessions` /
+  `reading_legacy_attempts` (renamed by `20260924_0016`, frozen by trigger,
+  deletable only by account deletion or an authorized reset after the archive
+  inventory); the AI capability key `reading_generator`, which now only writes
+  comprehension questions for a published passage.
+- **What must not happen:** a generated or AI-rewritten source passage served
+  to a learner; a session or attempt model beside the canonical one; reading
+  the archive as evidence, as a baseline for ability or progression, or as
+  "earlier practice" in Learner Summary; a deterministic or built-in fallback
+  that invents questions when no provider answers.
+
+## The pre-cutover learner UI at `/` (Dark Glass, D-066)
+
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-091 item 5, D-143).
+- **Current replacement:** the learner UI of D-088 - entry `static/orena/main.js`, served at `/` from
+  `templates/orena/index.html`; its colour owner is `static/orena/kit/tokens.css`. `/next`, `/login` and
+  the old hash addresses redirect into it (`static/orena/shell/former-addresses.js`).
+- **Removed:** `static/orena/app.js`, `static/orena/ui/*.js` (all presentation modules), `theme.js`,
+  `theme.css`, the root stylesheets (`components`, `dictation`, `experiences`, `foundation`, `home`,
+  `listening`, `media-library`, `quick-sheet`, `reader`, `reference`, `rooms`, `shell`, `speaking`,
+  `world`, `writing-entry`, `writing-feedback`, `writing`), the old-only domain modules
+  (`capabilities/{lexical,outcome,speech-comparison,voice-feedback}.js`,
+  `content/{brand-library,language-notes,patterns,reading-library,reading,texts}.js`,
+  `product/{collection-ref,grammar-shelf,legacy-routes,recall}.js`) and `assets/{last-train.png,mark.svg}`.
+- **Successor gates:** `test_orena_kit.mjs` (tokens, AA, no old UI imported), `test_orena_shell.mjs`,
+  `test_orena_former_addresses.mjs` (replaces `test_orena_legacy_routes.mjs`), `test_orena_foundation.mjs`
+  (retargeted), `test_orena_screen_*.mjs` for every screen, `test_orena_copy*.mjs`,
+  `validate_browser_esm_graph.mjs` (walks `main.js` and every screen), `validate_architecture.py`.
+  Gates deleted with their surface, each replaced by the learner-UI gate in this list:
+  `test_orena_close_look`, `listening_workspace`, `voice_evidence`, `voice_interaction` (-> `screen_listening`,
+  `speaking_workspace`, `audio_recorder`, `screen_conversation`), `discover_texts`, `shared_reading_library`,
+  `discover_layout`, `library`, `media_library`, `lookup_race`, `vocabulary_card`, `vocabulary_saved_card`,
+  `vocabulary_experience`, `vocabulary_library` (-> `screen_today`, `screen_discover`, `screen_content`,
+  `screen_library`, `screen_reader`, `screen_quick-sheet`, `screen_word`, `screen_feed`,
+  `collection_actions`, `vocabulary_meaning`), `legacy_routes` (-> `former_addresses`), `admin_console`
+  (-> `screen_admin`, `screen_admin_areas`). Gates that also guarded a shared module were kept and
+  retargeted to it. `test_orena_foundation.mjs` no longer pins the retired theme to the old baseline.
+- **What must not happen:** restoring a second visual system, a second shell or template, or any module
+  of the removed set; the learner UI importing `ui/` presentation; a gate deleted without a successor
+  that asserts the same behaviour of the learner UI.
+
+## The old Platform Admin console (`#/admin?id=`, `static/orena/admin/*`, `ui/admin.js`, `static/admin.js`)
+
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-101 E, D-143).
+- **Current replacement:** `static/orena/screens/admin/*` at `#/admin/<area>` (Overview, AI and Models,
+  Users, Content, Imports, Operations), sharing `static/orena/capabilities/admin-*.js`; the old section
+  addresses map through `shell/former-addresses.js`. The admin APIs and `require_admin` are unchanged.
+- **Successor gates:** `test_orena_screen_admin.mjs`, `test_orena_screen_admin_areas.mjs`,
+  `test_orena_admin_entry.mjs` (the learner's initial graph holds no admin module; the readiness API
+  boundary), `test_orena_former_addresses.mjs`. The old console's per-kind copy parity gate
+  (`test_orena_admin_console.mjs`) is replaced by these; its book-import error coverage was ported to
+  `test_orena_screen_admin_areas.mjs`.
+- **What must not happen:** a second admin backend, or a console outside `screens/admin`.
+
+## `templates/login.html`, `static/account.js` and `/static/account.js`
+
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-143).
+- **Current replacement:** sign-in is the learner UI's Welcome and Account steps; `/login` redirects to `/`
+  (`tests/test_learner_ui_sign_in.py`, `tests/test_orena_routes.py`).
+- **What must not happen:** a separate login page or a script route serving account code outside the learner UI.
+
+## Non-CI scripts and assets of the retired UI (cleanup after the cutover)
+
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-143, human decision 2026-10-08: no script may keep importing
+  deleted legacy files; behaviour that still belongs to the product is ported, the rest is retired).
+- **Ported** into `scripts/test_orena_vocabulary_contracts.mjs` (in CI), against the backend and the learner
+  UI modules that carry the behaviour now: `test_orena_deck_domain` (a Deck is Vocabulary's, a Collection My
+  Library's; no schedule or colour in a deck), `test_orena_review_states` (review answers given offline wait in
+  order, a refusal is dropped; `screens/review` uses `product/review-queue.js`), `test_orena_word_clips` (context
+  clips are real media; nothing synthesized; `screens/word` draws an honest empty state).
+- **Retired, with the surface they tested:** `test_orena_word_add`, `test_orena_word_deep`,
+  `test_orena_vocabulary_theme_tokens` (old Vocabulary room; successors `test_orena_screen_word`,
+  `test_orena_screen_library`, `test_orena_kit`); `test_speaking_evaluation` (`capabilities/speech-comparison.js`,
+  no current caller); `test_r13_admin_capability_matrix`, `test_r17_admin_retention`, `test_r17_readiness_summary`,
+  `r13_release_matrix`, `r14_release_matrix` (ran `static/admin.js`; the R13/R14 matrix reports stay as history,
+  `tests/test_governance_contract.py`); `test_r15_account_state`, `test_r16_contextual_dictionary`,
+  `test_r17_readiness_contract`, `test_product_activity_contract` (old UI halves; their backend contracts are
+  covered by pytest: `test_product_account_state.py`, `test_media_interaction.py`, `test_r17_admin_routes.py`,
+  `test_admin_authorization_matrix.py`).
+- **Also retired (they read paths tombstoned earlier):** `test_feedback_category_mapping.mjs`,
+  `becoming_release_gate.py`, `audit_grammar_learning_system.py` (`static/becoming`, `templates/becoming`);
+  `verify_writing_review_browser.mjs`, `verify_writing_workspace_browser.mjs` (drove the old UI's `#/expression`;
+  successors `test_orena_screen_writing*.mjs`, `test_orena_writing_workspace.mjs`).
+- **Kept and put in CI:** `test_orena_admin_control.mjs` (it already tested the learner UI's Admin).
+- **Assets removed:** `static/orena/assets/explore.png`, `exploring-world.png` (no reference anywhere) and
+  `master.png` (an unreferenced byte-identical copy of the canonical
+  `assets/brand/orena/references/00_MASTER_REFERENCE_APPROVED.png`, which is unchanged).
+- **What must not happen:** a script or gate that reads a deleted legacy path; a second copy of brand
+  artwork under `static/`.

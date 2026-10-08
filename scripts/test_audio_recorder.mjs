@@ -49,6 +49,42 @@ assert.equal(stoppedTracks,1);
 assert.equal(recorder.discard(),true);
 assert.deepEqual(revoked,['blob:local-speaking-take']);
 
+/* Leaving the room while recording must release the microphone.
+
+   A recorder that is still capturing when the learner navigates away leaves the
+   browser's recording indicator on and the device held open. `cleanup()` is the
+   teardown every room calls, and it has to stop the tracks whether or not the
+   take was ever finished. */
+{
+  let stopped=0;
+  // The shared FakeRecorder asserts it is handed the one known stream, so the
+  // teardown case reuses it and counts its own stops.
+  const liveStream=fakeStream;
+  const originalStop=liveStream.getTracks;
+  liveStream.getTracks=()=>[{stop(){stopped+=1;}}];
+  const devices={async getUserMedia(){return liveStream;}};
+  const mid=createLocalAudioRecorder({mediaDevices:devices,Recorder:FakeRecorder,URLApi});
+  assert.equal(await mid.start(),true);
+  assert.equal(mid.snapshot().status,'recording');
+  mid.cleanup();
+  assert.equal(stopped,1,'navigating away mid-recording stops the microphone track');
+  assert.equal(mid.snapshot().status,'idle','and the recorder is left in a clean state');
+  liveStream.getTracks=originalStop;
+}
+
+/* Every room that can record hands that teardown back to the route lifecycle. */
+{
+  const { readFileSync } = await import('node:fs');
+  const read=(path)=>readFileSync(new URL(`../${path}`, import.meta.url),'utf8');
+  for (const screen of ['conversation','free-talk']) {
+    const src=read(`static/orena/screens/${screen}/screen.js`);
+    assert.match(src,/createLocalAudioRecorder\(\)/,`${screen} records through the shared recorder`);
+    assert.match(src,/recorder\.cleanup\(\)/,`${screen} releases the microphone when it is torn down`);
+  }
+  const voice=read('static/orena/screens/orena/voice.js');
+  assert.match(voice,/recorder\.cleanup\(\)/,'the Orena voice screen releases the microphone when it is torn down');
+}
+
 const unsupported=createLocalAudioRecorder({mediaDevices:null,Recorder:null,URLApi});
 assert.equal(await unsupported.start(),false);
 assert.equal(unsupported.snapshot().status,'unsupported');

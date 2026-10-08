@@ -173,3 +173,27 @@ def explanation_kinds() -> frozenset[str]:
     """Return the stable four-way explanation vocabulary for card validators."""
 
     return _EXPLANATION_KINDS
+
+
+def orthography_for_word(word: str, language_code: str) -> dict[str, Any] | None:
+    """Backward-compatible projection for existing vocabulary-card callers."""
+
+    language = str(language_code or "").strip().casefold()
+    if language != "zh":
+        return None
+
+    # Lazy import keeps the shared orthography contract independent from the
+    # Chinese adapter during module import.
+    from writing_coach.languages.chinese import stroke_order
+
+    result = stroke_order.stroke_order_for(word)
+    characters = result["characters"]
+    if not characters:
+        return None
+
+    return {
+        "script": "han",
+        "characters": characters,
+        "source": result["source"],
+        "source_version": result["source_version"],
+    }

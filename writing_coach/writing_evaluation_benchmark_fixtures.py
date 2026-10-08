@@ -5,6 +5,7 @@ from __future__ import annotations
 from writing_coach.writing_evaluation_benchmark import (
     BenchmarkConstraints,
     BenchmarkKind,
+    ExpectedError,
     ScoreBand,
     WritingBenchmarkCase,
 )
@@ -162,6 +163,30 @@ ENGLISH_BENCHMARK_CASES = (
         rationale="Identical work should retain its demonstrated level under a higher target.",
         target_pair_id="en-target-stability",
     ),
+    WritingBenchmarkCase(
+        case_id="en-multi-error-paragraph",
+        language="en",
+        kind=BenchmarkKind.OBVIOUS_ERROR,
+        target_level="A2",
+        task_prompt="Write a few sentences about your weekend.",
+        learner_text=(
+            "Yesterday I go to the market with my sister. She have two brother. "
+            "I am agree with her plan. There is many people in the park. I like reading books."
+        ),
+        constraints=BenchmarkConstraints(
+            required_error_categories=frozenset({"tense", "agreement"}),
+            expected_errors=(
+                ExpectedError("I go", frozenset({"tense"}), "I went"),
+                ExpectedError("She have", frozenset({"agreement"}), "She has"),
+                ExpectedError("two brother", frozenset({"agreement", "word_form"}), "two brothers"),
+                ExpectedError("am agree", frozenset({"word_choice", "word_form", "sentence_structure", "other"}), "agree"),
+                ExpectedError("There is many", frozenset({"agreement"}), "There are many"),
+            ),
+            min_recall=0.6,
+            protected_correct_fragments=("I like reading books",),
+        ),
+        rationale="Recall is measured, not sampled: five seeded errors in one paragraph, one clean sentence.",
+    ),
 )
 
 
@@ -312,6 +337,30 @@ CHINESE_BENCHMARK_CASES = (
         rationale="Identical Chinese work should retain its demonstrated level under a higher target.",
         target_pair_id="zh-target-stability",
     ),
+    WritingBenchmarkCase(
+        case_id="zh-multi-error-paragraph",
+        language="zh",
+        kind=BenchmarkKind.OBVIOUS_ERROR,
+        target_level="HSK3",
+        task_prompt="请写几句话介绍你的周末。",
+        learner_text="我有三个书。我每天汉语学习。昨天我去过了北京。他比我很高。我做了一张重要的决定。我喜欢看书。",
+        constraints=BenchmarkConstraints(
+            required_error_categories=frozenset({"measure_word", "word_order"}),
+            expected_errors=(
+                ExpectedError("三个书", frozenset({"measure_word"}), "三本书"),
+                ExpectedError("每天汉语学习", frozenset({"word_order"}), "每天学习汉语"),
+                ExpectedError("去过了", frozenset({"aspect", "particle"}), "去了"),
+                ExpectedError("比我很高", frozenset({"word_order", "word_choice", "redundancy", "other"}), "比我高"),
+                ExpectedError("一张重要的决定", frozenset({"measure_word", "collocation"}), "一个重要的决定"),
+            ),
+            min_recall=0.6,
+            protected_correct_fragments=("我喜欢看书",),
+        ),
+        rationale=(
+            "Recall is measured, not sampled: five seeded errors a Chinese learner makes, "
+            "one clean sentence. Run with Vietnamese support, it is the case the Han-quote drop emptied."
+        ),
+    ),
 )
 
 
@@ -349,7 +398,21 @@ def known_passing_result(case: WritingBenchmarkCase) -> dict[str, object]:
         scores[band.dimension] = (band.minimum + band.maximum) / 2
 
     errors: list[dict[str, object]] = []
-    if case.constraints.required_error_categories:
+    if case.constraints.expected_errors:
+        # One finding per seeded error, explained in Vietnamese that quotes the
+        # learner's own words - the shape the Han-quote drop used to empty.
+        for seeded in case.constraints.expected_errors:
+            errors.append(
+                {
+                    "category": sorted(seeded.categories)[0],
+                    "fragment": seeded.fragment,
+                    "explanation_vi": f"Chỗ «{seeded.fragment}» cần sửa thành «{seeded.correction}».",
+                    "suggestion": seeded.correction,
+                    "mini_rule_vi": f"Ghi nhớ mẫu đúng: {seeded.correction}.",
+                    "confidence": 0.9,
+                }
+            )
+    elif case.constraints.required_error_categories:
         category = sorted(case.constraints.required_error_categories)[0]
         errors.append(
             {

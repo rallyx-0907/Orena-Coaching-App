@@ -1,0 +1,112 @@
+{
+  "draftId": "1",
+  "version": 1,
+  "wordCount": 42,
+  "summary": "Bài viết kể chuyện rõ ràng và dễ theo dõi, nhưng còn vài lỗi chia động từ làm câu văn kém tự nhiên.",
+  "strengths": "Bạn kể theo trình tự thời gian rất rõ ràng.",
+  "issues": [
+    {
+      "id": "issue-b8a30a1dcda2756e",
+      "fragment": "I go to the beach",
+      "correction": "I went to the beach",
+      "why": "Câu kể về chuyến đi cuối tuần trước nên cần dùng thì quá khứ đơn.",
+      "rule": "Sự việc đã xảy ra và đã kết thúc: dùng quá khứ đơn (went, not go).",
+      "grammarRef": "b1-ability-across-time",
+      "examples": [
+        "Yesterday I went to school."
+      ],
+      "kind": "grammar",
+      "anchored": true,
+      "span": {
+        "start": 13,
+        "end": 30
+      }
+    },
+    {
+      "id": "issue-f3c5700ad74dbc4c",
+      "fragment": "We was very happy",
+      "correction": "We were very happy",
+      "why": "Chủ ngữ 'we' đi với 'were', không đi với 'was'.",
+      "rule": "We / you / they + were; I / he / she / it + was.",
+      "grammarRef": "a1-third-person-s-and-spelling",
+      "examples": [
+        "They were tired after the trip."
+      ],
+      "kind": "grammar",
+      "anchored": true,
+      "span": {
+        "start": 47,
+        "end": 64
+      }
+    },
+    {
+      "id": "issue-f1ae3c62ef079be2",
+      "fragment": "the weather were nice",
+      "correction": "the weather was nice",
+      "why": "'Weather' là danh từ không đếm được, số ít nên đi với 'was'.",
+      "rule": "Danh từ không đếm được dùng động từ số ít.",
+      "grammarRef": null,
+      "examples": [
+        "The news was good."
+      ],
+      "kind": "grammar",
+      "anchored": true,
+      "span": {
+        "start": 73,
+        "end": 94
+      }
+    },
+    {
+      "id": "issue-876d8dfef1f641a4",
+      "fragment": "I like swim in the sea",
+      "correction": "I like swimming in the sea",
+      "why": "Sau 'like' để nói sở thích, dùng động từ dạng V-ing.",
+      "rule": "like + V-ing (sở thích chung).",
+      "grammarRef": null,
+      "examples": [
+        "She likes cooking dinner."
+      ],
+      "kind": "grammar",
+      "anchored": true,
+      "span": {
+        "start": 96,
+        "end": 118
+      }
+    },
+    {
+      "id": "issue-0a9b6a5e89c47a56",
+      "fragment": "together, it was",
+      "correction": "together. It was",
+      "why": "Hai mệnh đề độc lập không thể nối chỉ bằng dấu phẩy; hãy tách thành hai câu.",
+      "rule": "Hai mệnh đề độc lập cần dấu chấm hoặc liên từ, không chỉ dấu phẩy.",
+      "grammarRef": "b2-punctuation-with-complex-clauses",
+      "examples": [],
+      "kind": "punctuation",
+      "anchored": true,
+      "span": {
+        "start": 180,
+        "end": 196
+      }
+    }
+  ],
+  "dimensions": [
+    {
+      "name": "naturalness",
+      "value": 55.0
+    },
+    {
+      "name": "grammar",
+      "value": 48.0
+    },
+    {
+      "name": "vocabulary",
+      "value": 62.0
+    },
+    {
+      "name": "coherence",
+      "value": 66.0
+    }
+  ],
+  "id": 1,
+  "parentId": null
+}

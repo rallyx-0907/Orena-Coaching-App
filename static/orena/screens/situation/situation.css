@@ -1,0 +1,222 @@
+/* Frame 31 "Situation Reaction" (pinned design, focus route 'situation'), every value read from the
+   frame's own inline styles (SCRATCH/design-full/frames/31-Situation-Reaction.html) and
+   re-measured against the running frame: the "Signature A" header, the 720px column with a 20px
+   gap, Card-24 (padding 26, gap 18), the 24px scenario line, the 3-row textarea, the labelled mic
+   pill and the result rows.
+
+   Design Contract rule 49: this route is a learning workspace, so `.o-main` never scrolls; the root
+   fills the column and only `.s-sit__body` (the card, which grows with a long answer) scrolls,
+   inside its own `data-scroll-region`. */
+.s-sit {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 14px;
+  /* The frame's own <main> keeps 32px under its content; the shell drops it for a workspace. */
+  padding-bottom: 32px;
+}
+
+/* ---- Header (Signature A) ---- */
+.s-sit__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-sit__headcol {
+  flex: 1;
+  min-width: 0;
+}
+.s-sit__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: normal;
+  letter-spacing: normal;
+}
+.s-sit__sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.s-sit__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  margin: -6px -16px 0;
+  padding: 6px 16px 16px;
+}
+.s-sit__body--fit {
+  overflow: hidden;
+}
+.s-sit__body--fit .s-sit__card {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+.s-sit__card {
+  flex: none;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.s-sit__context {
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.s-sit__scenario {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.s-sit__textarea {
+  width: 100%;
+  resize: none;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.5;
+  padding: 18px;
+  outline: 0;
+  font-family: inherit;
+}
+.s-sit__textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.s-sit__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.s-sit__mic {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-sit__mic[aria-pressed='true'] {
+  background: var(--red);
+  color: var(--badge-ink);
+}
+.s-sit__spacer {
+  flex: 1;
+}
+.s-sit__submit {
+  padding: 13px 22px;
+  border-radius: 16px;
+  font-size: 15px;
+}
+
+/* ---- Result ---- */
+/* The learner's answer and the two feedback rows are the one region that scrolls; the scenario, the
+   error line and the action bar keep their place (rule 49). */
+.s-sit__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: -6px -14px -12px;
+  padding: 6px 14px 12px;
+}
+.s-sit__scroll > * {
+  flex: none;
+}
+.s-sit__answer {
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--surface2);
+  font-size: 16px;
+  line-height: 1.5;
+  font-style: italic;
+}
+.s-sit__judge {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.s-sit__jcard {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface2);
+}
+.s-sit__jcard--yes {
+  background: var(--green-soft);
+}
+.s-sit__jlabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-sit__jvalue {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--amber);
+}
+.s-sit__jcard--yes .s-sit__jvalue {
+  color: var(--green);
+}
+.s-sit__jvalue--plain {
+  color: inherit;
+}
+.s-sit__jnote {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.s-sit__improve {
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.s-sit__alt {
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.s-sit__alt b {
+  color: var(--accent-text);
+}
+.s-sit__error {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-sit__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.s-sit__actions .o-btn {
+  padding: 13px 18px;
+  border-radius: 14px;
+}

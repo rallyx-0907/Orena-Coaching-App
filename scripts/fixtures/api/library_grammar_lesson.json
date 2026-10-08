@@ -1,0 +1,365 @@
+{
+  "id": "a1-complete-sentences-and-basic-word-order",
+  "order": 1,
+  "level": "A1",
+  "kind": "lesson",
+  "module": "Sentence foundations",
+  "category": "Sentence foundations",
+  "title": "Complete sentences and basic word order",
+  "objective_vi": "Hiểu form, meaning, use, contrast và giới hạn của Complete sentences and basic word order; dùng được trong câu/đoạn phù hợp A1.",
+  "scope": [
+    "Authoritative target grammar point: Complete sentences and basic word order.",
+    "Required learner outcome: Hiểu form, meaning, use, contrast và giới hạn của Complete sentences and basic word order; dùng được trong câu/đoạn phù hợp A1.",
+    "Required contrast targets only: Be: am/is/are."
+  ],
+  "prerequisites": [],
+  "contrasts": [
+    "She likes coffee là trật tự Subject + Verb + Object; Coffee likes she đảo vai nghĩa và không phải trật tự câu khẳng định cơ bản.",
+    "I am tired dùng be + phần bổ nghĩa, không thêm một động từ thường ngay sau am trong cùng mẫu.",
+    "Một cụm từ như In the morning chưa phải câu hoàn chỉnh nếu thiếu mệnh đề chính trong bài cơ bản."
+  ],
+  "restrictions": [
+    "Stay inside this level's locked syllabus scope.",
+    "Teach usage constraints, not form alone.",
+    "Do not promote the lesson as an official one-to-one CEFR/HSK mapping."
+  ],
+  "common_traps": [
+    "Không học công thức tách khỏi meaning/context; đối chiếu form với chức năng thật.",
+    "Không coi một ví dụ đúng là bằng chứng đã thành thạo; cần production và transfer."
+  ],
+  "practice_blueprint": {
+    "recognition": 4,
+    "controlled": 6,
+    "contrast": 4,
+    "correction": 3,
+    "transformation": 3,
+    "production": 2,
+    "review_after_days": [
+      1,
+      7,
+      30
+    ]
+  },
+  "completion_policy": "lesson_plus_self_check_not_mastery",
+  "reference_basis": [
+    "CEFR-aligned Orena internal syllabus",
+    "Destination Grammar & Vocabulary: coverage/review-pattern reference only"
+  ],
+  "official_mapping": false,
+  "content_version": 2,
+  "module_scope": [
+    "Basic English clause order: subject before finite verb; complements follow the verb in ordinary statements.",
+    "Be, pronouns, possessives, noun number, articles, demonstratives and existential there as the minimum sentence-building system.",
+    "Affirmative, negative and basic question form must stay visibly distinct at beginner level."
+  ],
+  "explanation_vi": "Trong câu khẳng định cơ bản, tiếng Anh thường đặt chủ ngữ trước động từ. Nếu động từ cần tân ngữ, tân ngữ thường đứng sau động từ. Khác với tiếng Việt trong một số cách nói rút gọn theo ngữ cảnh, tiếng Anh chuẩn thường cần chủ ngữ được thể hiện rõ.",
+  "rules": [
+    "Basic statement: Subject + Verb: Birds fly. I work.",
+    "With an object: Subject + Verb + Object: She reads books. We like music.",
+    "With be: Subject + be + complement: He is tired. They are students."
+  ],
+  "exceptions": [
+    "Không bỏ chủ ngữ trong câu khẳng định tiếng Anh cơ bản: Is tired không thay cho He is tired.",
+    "Không đảo động từ lên trước chủ ngữ trong câu khẳng định thường; đảo trật tự thuộc các cấu trúc câu hỏi khác."
+  ],
+  "examples": [
+    {
+      "target": "I study English every day.",
+      "meaning_vi": "Tôi học tiếng Anh mỗi ngày.",
+      "pinyin": "",
+      "vi": "",
+      "note_vi": ""
+    },
+    {
+      "target": "My brother plays football.",
+      "meaning_vi": "Anh/em trai tôi chơi bóng đá.",
+      "pinyin": "",
+      "vi": "",
+      "note_vi": ""
+    },
+    {
+      "target": "We like this restaurant.",
+      "meaning_vi": "Chúng tôi thích nhà hàng này.",
+      "pinyin": "",
+      "vi": "",
+      "note_vi": ""
+    }
+  ],
+  "mistakes": [
+    {
+      "incorrect": "Like I this song.",
+      "why": "Trong câu khẳng định cơ bản, chủ ngữ I phải đứng trước động từ like và tân ngữ this song đứng sau động từ.",
+      "correct": "I like this song.",
+      "context": "Nói về sở thích."
+    },
+    {
+      "incorrect": "Is very cold today.",
+      "why": "Câu tiếng Anh cơ bản cần chủ ngữ hình thức it khi nói về thời tiết, nên không thể bắt đầu chỉ bằng is.",
+      "correct": "It is very cold today.",
+      "context": "Mô tả thời tiết."
+    }
+  ],
+  "guided_practice": [
+    {
+      "type": "reorder",
+      "prompt": "Sắp xếp thành câu: coffee / likes / Anna.",
+      "answer": "Anna likes coffee.",
+      "explanation": "Chủ ngữ Anna đứng trước động từ likes và tân ngữ coffee đứng sau."
+    },
+    {
+      "type": "build",
+      "prompt": "Dùng các phần I / read / books để tạo câu cơ bản.",
+      "answer": "I read books.",
+      "explanation": "Mẫu là Subject + Verb + Object."
+    },
+    {
+      "type": "correct",
+      "prompt": "Sửa câu: Plays football my friend.",
+      "answer": "My friend plays football.",
+      "explanation": "Câu khẳng định cơ bản đặt chủ ngữ trước động từ."
+    }
+  ],
+  "production_task_vi": "Viết 5 câu ngắn về bản thân hoặc gia đình; mỗi câu phải có chủ ngữ rõ, động từ rõ và ít nhất hai câu có tân ngữ.",
+  "writing_tip_vi": "Kiểm tra Subject → Verb → Object giúp tránh câu thiếu chủ ngữ hoặc đảo thứ tự khi viết.",
+  "quick_reference": {
+    "summary_vi": "Xây câu tiếng Anh cơ bản có chủ ngữ và động từ theo trật tự ổn định, để người nghe biết ai/cái gì thực hiện hành động và hành động hướng tới ai/cái gì.",
+    "aliases": [
+      "Complete sentences and basic word order"
+    ],
+    "contrasts": [
+      "She likes coffee là trật tự Subject + Verb + Object; Coffee likes she đảo vai nghĩa và không phải trật tự câu khẳng định cơ bản.",
+      "I am tired dùng be + phần bổ nghĩa, không thêm một động từ thường ngay sau am trong cùng mẫu.",
+      "Một cụm từ như In the morning chưa phải câu hoàn chỉnh nếu thiếu mệnh đề chính trong bài cơ bản."
+    ],
+    "restrictions": [
+      "Không bỏ chủ ngữ trong câu khẳng định tiếng Anh cơ bản: Is tired không thay cho He is tired.",
+      "Không đảo động từ lên trước chủ ngữ trong câu khẳng định thường; đảo trật tự thuộc các cấu trúc câu hỏi khác."
+    ],
+    "common_traps": [
+      "Trong câu khẳng định cơ bản, chủ ngữ I phải đứng trước động từ like và tân ngữ this song đứng sau động từ.",
+      "Câu tiếng Anh cơ bản cần chủ ngữ hình thức it khi nói về thời tiết, nên không thể bắt đầu chỉ bằng is."
+    ],
+    "lookup_tags": [
+      "Complete sentences and basic word order",
+      "Sentence foundations",
+      "A1"
+    ]
+  },
+  "cross_skill": {
+    "grammar_id": "a1-complete-sentences-and-basic-word-order",
+    "annotatable": true,
+    "lookup_terms": [
+      "Complete sentences and basic word order",
+      "Sentence foundations",
+      "A1"
+    ]
+  },
+  "learning_model": {
+    "schema_version": 2,
+    "flow": [
+      "notice",
+      "understand",
+      "pattern"
+    ],
+    "language_policy": {
+      "target_language": "en",
+      "explanation_languages": [
+        "vi"
+      ],
+      "translation_languages": [
+        "vi"
+      ],
+      "default_explanation_language": "vi"
+    },
+    "capabilities": [
+      "active-recall",
+      "common-mistake",
+      "context-scene"
+    ],
+    "hook": {
+      "eyebrow": {
+        "en": "NOTICE THE GRAMMAR SIGNAL",
+        "vi": "NHẬN RA DẤU HIỆU NGỮ PHÁP",
+        "zh": "发现语法信号"
+      },
+      "prompt": {
+        "vi": "Xây câu tiếng Anh cơ bản có chủ ngữ và động từ theo trật tự ổn định, để người nghe biết ai/cái gì thực hiện hành động và hành động hướng tới ai/cái gì.",
+        "default": "Xây câu tiếng Anh cơ bản có chủ ngữ và động từ theo trật tự ổn định, để người nghe biết ai/cái gì thực hiện hành động và hành động hướng tới ai/cái gì."
+      }
+    },
+    "meaning": {
+      "summary": {
+        "vi": "Xây câu tiếng Anh cơ bản có chủ ngữ và động từ theo trật tự ổn định, để người nghe biết ai/cái gì thực hiện hành động và hành động hướng tới ai/cái gì.",
+        "default": "Xây câu tiếng Anh cơ bản có chủ ngữ và động từ theo trật tự ổn định, để người nghe biết ai/cái gì thực hiện hành động và hành động hướng tới ai/cái gì."
+      },
+      "mental_model": {
+        "vi": "Basic statement: Subject + Verb: Birds fly. I work.",
+        "default": "Basic statement: Subject + Verb: Birds fly. I work."
+      },
+      "use_when": [
+        {
+          "vi": "She likes coffee là trật tự Subject + Verb + Object; Coffee likes she đảo vai nghĩa và không phải trật tự câu khẳng định cơ bản.",
+          "default": "She likes coffee là trật tự Subject + Verb + Object; Coffee likes she đảo vai nghĩa và không phải trật tự câu khẳng định cơ bản."
+        },
+        {
+          "vi": "Không bỏ chủ ngữ trong câu khẳng định tiếng Anh cơ bản: Is tired không thay cho He is tired.",
+          "default": "Không bỏ chủ ngữ trong câu khẳng định tiếng Anh cơ bản: Is tired không thay cho He is tired."
+        },
+        {
+          "vi": "Basic statement: Subject + Verb: Birds fly. I work.",
+          "default": "Basic statement: Subject + Verb: Birds fly. I work."
+        }
+      ]
+    },
+    "blocks": [
+      {
+        "id": "a1-complete-sentences-and-basic-word-order-pattern",
+        "type": "word_order",
+        "stage": "pattern",
+        "title": {
+          "en": "See the actual relationship",
+          "vi": "Nhìn đúng quan hệ ngữ pháp",
+          "zh": "看清真实语法关系"
+        },
+        "instruction": {
+          "vi": "Basic statement: Subject + Verb: Birds fly. I work.",
+          "default": "Basic statement: Subject + Verb: Birds fly. I work."
+        },
+        "payload": {
+          "segments": [
+            {
+              "text": "Subject",
+              "role": "marker",
+              "label": {
+                "en": "Part 1",
+                "vi": "Thành phần 1",
+                "zh": "成分 1"
+              }
+            },
+            {
+              "text": "Verb",
+              "role": "marker",
+              "label": {
+                "en": "Part 2",
+                "vi": "Thành phần 2",
+                "zh": "成分 2"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "a1-complete-sentences-and-basic-word-order-context",
+        "type": "scene",
+        "stage": "context",
+        "title": {
+          "en": "See it in real examples",
+          "vi": "Nhìn trong ví dụ thật",
+          "zh": "在真实例句中理解"
+        },
+        "instruction": {
+          "vi": "Xây câu tiếng Anh cơ bản có chủ ngữ và động từ theo trật tự ổn định, để người nghe biết ai/cái gì thực hiện hành động và hành động hướng tới ai/cái gì.",
+          "default": "Xây câu tiếng Anh cơ bản có chủ ngữ và động từ theo trật tự ổn định, để người nghe biết ai/cái gì thực hiện hành động và hành động hướng tới ai/cái gì."
+        },
+        "payload": {
+          "setup": {
+            "vi": "Basic statement: Subject + Verb: Birds fly. I work.",
+            "default": "Basic statement: Subject + Verb: Birds fly. I work."
+          },
+          "lines": [
+            {
+              "text": "I study English every day.",
+              "meaning": {
+                "vi": "Tôi học tiếng Anh mỗi ngày.",
+                "default": "Tôi học tiếng Anh mỗi ngày."
+              }
+            },
+            {
+              "text": "My brother plays football.",
+              "meaning": {
+                "vi": "Anh/em trai tôi chơi bóng đá.",
+                "default": "Anh/em trai tôi chơi bóng đá."
+              }
+            },
+            {
+              "text": "We like this restaurant.",
+              "meaning": {
+                "vi": "Chúng tôi thích nhà hàng này.",
+                "default": "Chúng tôi thích nhà hàng này."
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "a1-complete-sentences-and-basic-word-order-contrast",
+        "type": "contrast",
+        "stage": "compare",
+        "title": {
+          "en": "Distinguish nearby forms",
+          "vi": "Phân biệt cấu trúc gần",
+          "zh": "辨析相近结构"
+        },
+        "payload": {
+          "items": [
+            {
+              "label": {
+                "en": "Distinction 1",
+                "vi": "Phân biệt 1",
+                "zh": "辨析 1"
+              },
+              "text": "I study English every day.",
+              "note": {
+                "vi": "She likes coffee là trật tự Subject + Verb + Object; Coffee likes she đảo vai nghĩa và không phải trật tự câu khẳng định cơ bản.",
+                "default": "She likes coffee là trật tự Subject + Verb + Object; Coffee likes she đảo vai nghĩa và không phải trật tự câu khẳng định cơ bản."
+              }
+            },
+            {
+              "label": {
+                "en": "Distinction 2",
+                "vi": "Phân biệt 2",
+                "zh": "辨析 2"
+              },
+              "text": "My brother plays football.",
+              "note": {
+                "vi": "I am tired dùng be + phần bổ nghĩa, không thêm một động từ thường ngay sau am trong cùng mẫu.",
+                "default": "I am tired dùng be + phần bổ nghĩa, không thêm một động từ thường ngay sau am trong cùng mẫu."
+              }
+            },
+            {
+              "label": {
+                "en": "Distinction 3",
+                "vi": "Phân biệt 3",
+                "zh": "辨析 3"
+              },
+              "text": "We like this restaurant.",
+              "note": {
+                "vi": "Một cụm từ như In the morning chưa phải câu hoàn chỉnh nếu thiếu mệnh đề chính trong bài cơ bản.",
+                "default": "Một cụm từ như In the morning chưa phải câu hoàn chỉnh nếu thiếu mệnh đề chính trong bài cơ bản."
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "completion": {
+      "required_stages": [
+        "apply",
+        "recall",
+        "transfer"
+      ]
+    },
+    "authoring": {
+      "status": "source-backed-concept-specific",
+      "family": "basic_word_order",
+      "classification_version": 2,
+      "source_runtime_ai": false,
+      "human_expert_validation": "pending"
+    }
+  },
+  "content_status": "foundation",
+  "completed": false,
+  "source": "static-grammar-kb",
+  "language": "en",
+  "completion_claim": "activity_evidence_not_mastery"
+}

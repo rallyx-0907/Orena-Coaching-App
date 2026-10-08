@@ -1,10 +1,8 @@
 """I3 quota bucket/reservation concurrency proof. Real PostgreSQL, real races.
 
 Skips unless `ORENA_TEST_POSTGRES_URL` names a throwaway database. The
-migration this exercises is `migrations/proposed/20260912_0007` — awaiting
-review — so the fixture points Alembic's `version_locations` at both
-`versions/` and `proposed/` rather than plain `head`, the same technique
-`test_orena_commerce_persistence_postgres.py` already uses.
+migration this exercises is `migrations/versions/20260912_0007` (approved by
+delegated review); the fixture upgrades to the live chain's head.
 
     ORENA_TEST_POSTGRES_URL=postgresql+psycopg://user:pw@host/orena_i3_test \\
         python -m pytest tests/test_orena_quota_persistence_postgres.py
@@ -59,24 +57,11 @@ def op(name: str) -> str:
 
 @pytest.fixture(scope='module')
 def engine():
-    from pathlib import Path
-
     from alembic import command
     from writing_coach.persistence.runtime import _runtime_alembic_config
 
-    root = Path(__file__).resolve().parents[1]
     cfg = _runtime_alembic_config()
     cfg.set_main_option('sqlalchemy.url', URL.replace('%', '%%'))
-    # 'path_separator=os' means "split on os.pathsep" (':' on Linux, ';' on
-    # Windows) - not a literal space. See I2_ACTIVATION_RUNBOOK.md §7 and
-    # test_orena_commerce_persistence_postgres.py's identical fixture comment.
-    import os as _os
-
-    cfg.set_main_option(
-        'version_locations',
-        _os.pathsep.join([str(root / 'migrations' / 'versions'), str(root / 'migrations' / 'proposed')]),
-    )
-    cfg.set_main_option('path_separator', 'os')
     command.upgrade(cfg, 'head')
     engine = create_engine(URL, future=True, pool_size=20, max_overflow=5)
     yield engine

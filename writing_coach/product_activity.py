@@ -12,7 +12,9 @@ from typing import Any
 SKILLS = ("writing", "reading", "listening", "speaking")
 FUNNEL_SUPPORT = {
     "writing": {"started": False, "attempted": True, "completed": True},
-    "reading": {"started": True, "attempted": True, "completed": True},
+    # Canonical Reading has no "started" record: an attempt exists only once
+    # submitted (D-082), so the stage is unsupported, never counted as zero.
+    "reading": {"started": False, "attempted": True, "completed": True},
     "listening": {"started": False, "attempted": True, "completed": True},
     "speaking": {"started": False, "attempted": False, "completed": True},
 }

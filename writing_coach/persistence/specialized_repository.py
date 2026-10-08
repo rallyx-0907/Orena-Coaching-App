@@ -1,58 +1,293 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
+import re
 import sqlite3
-from datetime import datetime, timezone
+import threading
+import uuid
+from datetime import datetime, timedelta, timezone
+from contextlib import nullcontext
 from typing import Any, Callable, Protocol
 
-from sqlalchemy import Engine, func, select
+from sqlalchemy import Engine, func, inspect, select, text, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from writing_coach.core.request_context import current_language_code, current_user_key
+from writing_coach.listening_progress_policy import merge_progress
 from writing_coach.persistence.config import create_shadow_engine
 from writing_coach.persistence.ids import stable_uuid
 from writing_coach.persistence.models import (
     Essay,
+    EssayReviewHistory,
     EssayRevision,
     ReadingAttempt,
-    ReadingSession,
     ListeningProgress,
     ShadowingProgress,
     SavedWord,
     SpeakingAttempt,
     User,
     UserLanguageProfile,
+    VocabularyEntry,
+    VocabularySenseLocalization,
 )
+
+
+# Sentences end at one of these, in either writing system: a Chinese full stop
+# is not a dot, and a learner writing Chinese never types one.
+_SENTENCE_END = re.compile(r"(?<=[.!?。！？；;])\s*")
+
+
+def _like(value: str) -> str:
+    """A LIKE pattern's literal text: the wildcards are ours, not the word's."""
+
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _sentences_from(rows: list[dict[str, Any]], word: str, limit: int) -> list[dict[str, Any]]:
+    """The sentences inside these pieces of writing that use the word.
+
+    A piece of writing is not a sentence: matching the essay is how the
+    database narrows the search, and this is what the learner is actually
+    shown - the sentence they wrote, not the paragraph it sits in.
+    """
+
+    wanted = word.casefold()
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in rows:
+        for sentence in _SENTENCE_END.split(str(row.get("text") or "")):
+            line = " ".join(sentence.split())
+            if not line or wanted not in line.casefold() or line.casefold() in seen:
+                continue
+            seen.add(line.casefold())
+            out.append(
+                {
+                    "text": line[:400],
+                    "written_on": str(row.get("created_at") or ""),
+                    "checked": bool(row.get("checked")),
+                }
+            )
+            if len(out) >= limit:
+                return out
+    return out
+
+
+def _json_or_none(value: Any) -> Any:
+    """A stored JSON text (SQLite) or an already-decoded value (PostgreSQL) as a value, or None."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, (dict, list)):
+        return value
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _hint_level(values: dict[str, Any]) -> int:
+    """The Dictation hint level of a progress record: an integer 0-3, or a refusal (a ValueError, so a route answers 422)."""
+    level = values.get("last_hint_level", 0)
+    if isinstance(level, bool) or not isinstance(level, int) or not 0 <= level <= 3:
+        raise ValueError("last_hint_level must be an integer from 0 to 3")
+    return level
+
+"""Paging and counting the learner's saved words, in the database.
+
+A screen that needs a number asks for the number; a screen that needs a page
+asks for a page. Nothing reads the whole vocabulary to count it, to search it,
+or to take three words off the top of it - that cost grew with everything the
+learner had ever saved, and Vocabulary, Tiến độ and Hồ sơ all paid it.
+
+The page is keyset-paged, not offset-paged, so a word saved while the learner
+is reading page two cannot push a word from page one onto page three. The key
+is (sort value, word): a word is unique per learner and language, so the pair
+is a total order and a cursor can never land between two equal rows.
+"""
+
+LIBRARY_PAGE_DEFAULT = 50
+# How many words to ask about at once when a screen wants the saved state of
+# a set it already has. SQLite counts its bound variables; this stays well
+# under any version's limit.
+SAVED_ROWS_CHUNK = 400
+LIBRARY_PAGE_MAX = 200
+# Below this review stage a word is still being learned; at or above it, the
+# learner is counted as holding it. One definition, used by every count.
+LIBRARY_MASTERED_STAGE = 3
+
+
+CURSOR_SEPARATOR = chr(31)
+
+
+def _as_uuid(value: Any) -> uuid.UUID | None:
+    """A catalogue entry id as a UUID, or nothing if it is not one.
+
+    The service passes the id it read from the catalogue; a row that carries no
+    id, or one that is not a UUID, links to nothing rather than raising - the
+    word is still saved, which is the part the learner cares about.
+    """
+
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return uuid.UUID(text)
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def _library_fingerprint(*, search: str, status: str, focus: tuple[str, ...]) -> str:
+    """What the page was asked for, in eight characters.
+
+    A cursor is a place in one ordering of one filtered set. Carried into a
+    different question - a new search, another status, another book's notes -
+    it would point at a place that question never had, and the page after it
+    would be neither the next one nor an error. The fingerprint travels in the
+    cursor so a cursor from a different question is simply not used, and the
+    caller gets the first page of the question they actually asked.
+    """
+
+    material = "\u001e".join([
+        str(search or "").strip().casefold(),
+        _library_status(status),
+        "\u001d".join(sorted(str(item) for item in focus or ())),
+    ])
+    return hashlib.blake2s(material.encode("utf-8"), digest_size=4).hexdigest()
+
+
+def _library_cursor(order: str, fingerprint: str, sort_value: str, word: str) -> str:
+    raw = CURSOR_SEPARATOR.join([_library_order(order), fingerprint, sort_value, word])
+    return base64.urlsafe_b64encode(raw.encode("utf-8")).decode("ascii").rstrip("=")
+
+
+def _decode_library_cursor(cursor: str, order: str, fingerprint: str) -> tuple[str, str] | None:
+    """The place this cursor marks, or ``None`` if it is not this question's.
+
+    Also ``None`` for anything malformed: a cursor is opaque to the caller, so
+    a damaged one is a first page, never an error the learner has to read.
+    """
+
+    text = str(cursor or "").strip()
+    if not text:
+        return None
+    try:
+        padded = text + "=" * (-len(text) % 4)
+        raw = base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8")
+    except Exception:
+        return None
+    parts = raw.split(CURSOR_SEPARATOR)
+    if len(parts) != 4:
+        return None
+    cursor_order, cursor_fingerprint, sort_value, word = parts
+    if cursor_order != _library_order(order) or cursor_fingerprint != fingerprint:
+        return None
+    if not word:
+        return None
+    return sort_value, word
+
+
+def _library_status(status: str) -> str:
+    wanted = str(status or "").strip().casefold()
+    return wanted if wanted in {"learning", "mastered", "due"} else ""
+
+
+def _library_order(order: str) -> str:
+    """One of the three orders the database can hold: newest first, soonest
+    due first, or alphabetical. Anything else is the default."""
+
+    wanted = str(order or "").strip().casefold()
+    return wanted if wanted in {"due", "word"} else "recent"
+
+
+def _library_limit(limit: int) -> int:
+    try:
+        value = int(limit)
+    except (TypeError, ValueError):
+        value = LIBRARY_PAGE_DEFAULT
+    return max(1, min(value, LIBRARY_PAGE_MAX))
+
+
+class ProfileVersionConflict(Exception):
+    """A conditional profile write lost: the row moved (or appeared) since the writer read it."""
+
+
+# The D4 profile columns a caller may leave out of `values`. When the key is absent the stored value
+# is preserved (the frozen native PUT never names them); when present it is written.
+PROFILE_OPTIONAL_FIELDS = (
+    "declared_level",
+    "review_new_per_day",
+    "review_limit_per_day",
+    "review_modes",
+)
+
+
+# D-142.1: a practice session ends after this much inactivity (server time). One named value, not per learner.
+PRACTICE_SESSION_IDLE_MINUTES = 30
+PRACTICE_SESSION_IDLE = timedelta(minutes=PRACTICE_SESSION_IDLE_MINUTES)
+
+_SQLITE_SESSION_LOCK = threading.RLock()
 
 
 class SpecializedLearningRepository(Protocol):
     def get_profile_record(self) -> dict[str, Any] | None: ...
-    def upsert_profile_record(self, values: dict[str, Any]) -> None: ...
+    def upsert_profile_record(
+        self, values: dict[str, Any], *, expected_updated_at: str | None = None
+    ) -> None: ...
     def memory_essay_rows(self) -> list[dict[str, Any]]: ...
     def get_outcome_essay(self, essay_id: int) -> dict[str, Any] | None: ...
     def list_outcome_essays(self, limit: int) -> list[dict[str, Any]]: ...
     def list_library_records(self) -> list[dict[str, Any]]: ...
+    def library_counts(self, *, now: str) -> dict[str, int]: ...
+    def list_saved_words(self, *, words: tuple[str, ...] = ()) -> list[str]: ...
+    def list_saved_rows(self, words: tuple[str, ...]) -> list[dict[str, Any]]: ...
+    def list_library_page(
+        self,
+        *,
+        limit: int,
+        cursor: str = "",
+        search: str = "",
+        status: str = "",
+        order: str = "recent",
+        focus: tuple[str, ...] = (),
+        now: str = "",
+    ) -> dict[str, Any]: ...
     def save_library_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
+    def restore_library_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
+    def sentences_using(self, word: str, *, limit: int = 4) -> list[dict[str, Any]]: ...
     def get_library_progress(self, word: str) -> dict[str, Any] | None: ...
     def update_library_review(self, word: str, values: dict[str, Any]) -> dict[str, Any] | None: ...
     def delete_library_record(self, word: str) -> bool: ...
     def select_library_terms(self, limit: int = 3) -> list[str]: ...
-    def create_reading_session_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
-    def get_reading_session_record(self, session_id: int) -> dict[str, Any] | None: ...
-    def latest_reading_attempt(self, session_id: int) -> dict[str, Any] | None: ...
-    def list_reading_session_records(self, limit: int) -> list[dict[str, Any]]: ...
-    def create_reading_attempt_record(self, session_id: int, values: dict[str, Any]) -> None: ...
     def save_listening_progress_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
     def list_listening_progress_records(self, asset_id: str) -> list[dict[str, Any]]: ...
     def list_recent_listening_progress_records(self, limit: int = 20) -> list[dict[str, Any]]: ...
     def save_shadowing_progress_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
     def list_shadowing_progress_records(self, asset_id: str) -> list[dict[str, Any]]: ...
-    def create_speaking_attempt_record(self, values: dict[str, Any]) -> dict[str, Any]: ...
-    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None) -> list[dict[str, Any]]: ...
+    def create_speaking_attempt_record(self, values: dict[str, Any], *, assign_session: bool = False) -> dict[str, Any]: ...
+    def current_speaking_session(self, now: datetime, *, limit: int = 50) -> dict[str, Any] | None: ...
+    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None, since: datetime | None = None) -> list[dict[str, Any]]: ...
     def speaking_progress(self) -> dict[str, Any]: ...
+    def activity_timestamps(self, since: datetime) -> dict[str, list[datetime]]: ...
     def get_linguistic_essay(self, essay_id: int) -> dict[str, Any] | None: ...
     def update_essay_module_data(self, essay_id: int, module_data: dict[str, Any]) -> bool: ...
+    def merge_essay_module_data(self, essay_id: int, key: str, value: Any) -> bool: ...
+    def refresh_essay_review(
+        self,
+        essay_id: int,
+        expected_prior_fingerprint: str,
+        new_review: dict[str, Any],
+        new_identity: dict[str, str],
+        superseded_at: str,
+    ) -> dict[str, Any]: ...
+    def list_essay_review_history(self, essay_id: int) -> list[dict[str, Any]]: ...
     def list_product_activity_events(self, since: datetime) -> list[dict[str, Any]]: ...
+
+
+REFRESH_REASON = "evaluator_refresh"
+# The scored and written parts of a review that a refresh replaces and the history keeps whole.
+REVIEW_SCORE_FIELDS = ("grammar", "vocabulary", "coherence", "task_achievement", "naturalness", "overall")
 
 
 class SQLiteSpecializedLearningRepository:
@@ -61,6 +296,34 @@ class SQLiteSpecializedLearningRepository:
     The DB resolver already scopes one user + one language. Specialized services
     consume this contract and no longer own SQLite queries themselves.
     """
+
+    def sentences_using(self, word: str, *, limit: int = 4) -> list[dict[str, Any]]:
+        """The learner's own sentences that use this word, newest first."""
+
+        wanted = str(word or "").strip()
+        if not wanted:
+            return []
+        try:
+            with self._db() as conn:
+                rows = conn.execute(
+                    "SELECT id, text, created_at, overall FROM essays "
+                    "WHERE text LIKE ? ESCAPE '\\' ORDER BY created_at DESC LIMIT ?",
+                    (f"%{_like(wanted)}%", max(1, min(limit, 20)) * 3),
+                ).fetchall()
+        except sqlite3.Error:
+            return []
+        return _sentences_from(
+            [
+                {
+                    "text": str(row["text"] or ""),
+                    "created_at": str(row["created_at"] or ""),
+                    "checked": bool(row["overall"]),
+                }
+                for row in rows
+            ],
+            wanted,
+            limit,
+        )
 
     def __init__(self, db_factory: Callable[[], sqlite3.Connection]) -> None:
         self._db_factory = db_factory
@@ -103,6 +366,15 @@ class SQLiteSpecializedLearningRepository:
                     "ALTER TABLE learner_profile "
                     "ADD COLUMN theme_preset TEXT NOT NULL DEFAULT 'editorial'"
                 )
+            # D4 (migrations 0017 and 0019 on PostgreSQL): test-backend parity only.
+            for column, ddl in (
+                ("declared_level", "TEXT NOT NULL DEFAULT ''"),
+                ("review_new_per_day", "INTEGER"),
+                ("review_limit_per_day", "INTEGER"),
+                ("review_modes", "TEXT"),
+            ):
+                if column not in profile_columns:
+                    conn.execute(f"ALTER TABLE learner_profile ADD COLUMN {column} {ddl}")
 
             conn.execute(
                 """
@@ -137,45 +409,72 @@ class SQLiteSpecializedLearningRepository:
                 (now, now),
             )
 
+            # --- The indexes the vocabulary queries need -------------------
+            #
+            # Measured, not guessed: with ten thousand saved words, counting
+            # them took fourteen seconds, because `saved_words` joins
+            # `vocabulary_learning` on `lower(word)` and a function over a
+            # column cannot use the primary key - so every row was compared
+            # with every row. An expression index on the same expression makes
+            # the join a lookup. The other three serve the orders and filters
+            # the screens actually ask for: newest first, soonest due, and
+            # held-or-learning.
+            if self._has_table(conn, "saved_words"):
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_saved_words_word_folded"
+                    " ON saved_words(lower(word))"
+                )
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_saved_words_added_at"
+                    " ON saved_words(added_at DESC, word)"
+                )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vocabulary_learning_word_folded"
+                " ON vocabulary_learning(lower(word))"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vocabulary_learning_next_review"
+                " ON vocabulary_learning(next_review_at)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_vocabulary_learning_stage"
+                " ON vocabulary_learning(review_stage)"
+            )
+
+            # D4 I19 (migration 0021 on PostgreSQL): the immutable review history. Test backend parity;
+            # SQLite has no trigger and this class exposes insert and read only.
             conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS reading_sessions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    created_at TEXT NOT NULL,
-                    language_code TEXT NOT NULL,
-                    target_level TEXT NOT NULL,
-                    topic TEXT NOT NULL,
-                    learner_goal TEXT NOT NULL DEFAULT '',
-                    title TEXT NOT NULL,
-                    passage TEXT NOT NULL,
-                    questions_json TEXT NOT NULL,
-                    recycled_words_json TEXT NOT NULL DEFAULT '[]',
-                    generation_mode TEXT NOT NULL DEFAULT 'practice'
+                CREATE TABLE IF NOT EXISTS essay_review_history (
+                    id TEXT PRIMARY KEY,
+                    essay_id INTEGER NOT NULL REFERENCES essays(id) ON DELETE CASCADE,
+                    superseded_at TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    prior_fingerprint TEXT NOT NULL,
+                    prior_contract TEXT NOT NULL,
+                    replaced_by_fingerprint TEXT NOT NULL,
+                    review TEXT NOT NULL,
+                    UNIQUE (essay_id, prior_fingerprint)
                 )
                 """
             )
             conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS reading_attempts (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    session_id INTEGER NOT NULL,
-                    created_at TEXT NOT NULL,
-                    answers_json TEXT NOT NULL,
-                    correct_count INTEGER NOT NULL,
-                    total INTEGER NOT NULL,
-                    FOREIGN KEY(session_id) REFERENCES reading_sessions(id)
-                )
-                """
+                "CREATE INDEX IF NOT EXISTS ix_essay_review_history_essay"
+                " ON essay_review_history(essay_id, superseded_at)"
             )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reading_sessions_created "
-                "ON reading_sessions(created_at DESC)"
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_reading_attempts_session "
-                "ON reading_attempts(session_id, id DESC)"
-            )
+
+            # No reading tables: the generated-passage flow is retired (D-082),
+            # and canonical Reading evidence lives only in the PostgreSQL
+            # runtime. A local database that still has the old tables keeps
+            # them untouched; nothing here reads or writes them.
             conn.commit()
+
+    @staticmethod
+    def _has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
+        return any(
+            str(row["name"]) == column
+            for row in conn.execute(f"PRAGMA table_info({table})").fetchall()
+        )
 
     @staticmethod
     def _has_table(conn: sqlite3.Connection, table: str) -> bool:
@@ -193,25 +492,67 @@ class SQLiteSpecializedLearningRepository:
         try:
             with self._db() as conn:
                 row = conn.execute(
-                    "SELECT goal, style, pinyin, native_language, theme_preset, created_at, updated_at FROM learner_profile WHERE id=1"
+                    "SELECT goal, style, pinyin, native_language, theme_preset, created_at, updated_at,"
+                    " declared_level, review_new_per_day, review_limit_per_day, review_modes"
+                    " FROM learner_profile WHERE id=1"
                 ).fetchone()
         except sqlite3.Error:
             return None
-        return self._dict(row)
+        record = self._dict(row)
+        if record is not None:
+            record["review_modes"] = _json_or_none(record.get("review_modes"))
+        return record
 
-    def upsert_profile_record(self, values: dict[str, Any]) -> None:
+    def upsert_profile_record(
+        self, values: dict[str, Any], *, expected_updated_at: str | None = None
+    ) -> None:
+        """Write the profile. `expected_updated_at=None` is the unconditional whole write (PUT).
+
+        A string is a conditional write: '' means "the row must not exist yet" (a plain INSERT, so a
+        concurrent creation is a conflict rather than a silent overwrite); a token means
+        `UPDATE ... WHERE updated_at = :expected` and zero rows is a conflict (H2 review N1).
+        """
+        optional = {name: values[name] for name in PROFILE_OPTIONAL_FIELDS if name in values}
+        if optional.get("review_modes") is not None:
+            optional["review_modes"] = json.dumps(optional["review_modes"], sort_keys=True)
         with self._db() as conn:
             existing = conn.execute("SELECT created_at FROM learner_profile WHERE id=1").fetchone()
             created_at = str(existing["created_at"]) if existing else values["created_at"]
+            base = (values["goal"], values["style"], values["pinyin"], values["native_language"],
+                    values["theme_preset"])
+            columns = ["id", "goal", "style", "pinyin", "native_language", "theme_preset",
+                       "created_at", "updated_at", *optional]
+            if expected_updated_at is not None and not expected_updated_at:
+                try:
+                    conn.execute(
+                        f"INSERT INTO learner_profile({','.join(columns)}) "
+                        f"VALUES({','.join('?' * len(columns))})",
+                        (1, *base, created_at, values["updated_at"], *optional.values()),
+                    )
+                except sqlite3.IntegrityError as exc:
+                    raise ProfileVersionConflict("profile created concurrently") from exc
+                conn.commit()
+                return
+            if expected_updated_at:
+                assignments = ", ".join(
+                    ["goal=?", "style=?", "pinyin=?", "native_language=?", "theme_preset=?",
+                     "updated_at=?", *[f"{name}=?" for name in optional]]
+                )
+                cursor = conn.execute(
+                    f"UPDATE learner_profile SET {assignments} WHERE id=1 AND updated_at=?",
+                    (*base, values["updated_at"], *optional.values(), expected_updated_at),
+                )
+                conn.commit()
+                if cursor.rowcount != 1:
+                    raise ProfileVersionConflict("profile changed since it was read")
+                return
+            updates = ["goal=excluded.goal", "style=excluded.style", "pinyin=excluded.pinyin",
+                       "native_language=excluded.native_language", "theme_preset=excluded.theme_preset",
+                       "updated_at=excluded.updated_at", *[f"{n}=excluded.{n}" for n in optional]]
             conn.execute(
-                """INSERT INTO learner_profile(id,goal,style,pinyin,native_language,theme_preset,created_at,updated_at)
-                   VALUES(1,?,?,?,?,?,?,?)
-                   ON CONFLICT(id) DO UPDATE SET
-                     goal=excluded.goal, style=excluded.style, pinyin=excluded.pinyin,
-                     native_language=excluded.native_language, theme_preset=excluded.theme_preset,
-                     updated_at=excluded.updated_at""",
-                (values["goal"], values["style"], values["pinyin"], values["native_language"],
-                 values["theme_preset"], created_at, values["updated_at"]),
+                f"INSERT INTO learner_profile({','.join(columns)}) VALUES({','.join('?' * len(columns))}) "
+                f"ON CONFLICT(id) DO UPDATE SET {', '.join(updates)}",
+                (1, *base, created_at, values["updated_at"], *optional.values()),
             )
             conn.commit()
 
@@ -251,12 +592,22 @@ class SQLiteSpecializedLearningRepository:
             ).fetchall()
         return [dict(r) for r in rows]
 
-    @staticmethod
-    def _library_select() -> str:
-        return """SELECT s.word,s.phonetic,s.part_of_speech,s.definition,s.translation_vi,s.added_at,
-                         v.source_essay_id,v.source_fragment,v.source_kind,v.focus_note,v.review_stage,
-                         v.successful_recalls,v.lapse_count,v.last_reviewed_at,v.next_review_at
-                  FROM saved_words s LEFT JOIN vocabulary_learning v ON lower(v.word)=lower(s.word)"""
+    _LIBRARY_COLUMNS = (
+        "SELECT s.word,s.phonetic,s.part_of_speech,s.definition,s.translation_vi,s.added_at,"
+        "v.source_essay_id,v.source_fragment,v.source_kind,v.focus_note,v.review_stage,"
+        "v.successful_recalls,v.lapse_count,v.last_reviewed_at,v.next_review_at"
+    )
+    _LIBRARY_FROM = " FROM saved_words s LEFT JOIN vocabulary_learning v ON lower(v.word)=lower(s.word)"
+
+    @classmethod
+    def _library_select(cls) -> str:
+        """The learner's saved words with their review state.
+
+        A caller that pages puts a sort value between the columns and the
+        FROM, which is why the two halves are kept apart.
+        """
+
+        return cls._LIBRARY_COLUMNS + cls._LIBRARY_FROM
 
     def list_library_records(self) -> list[dict[str, Any]]:
         with self._db() as conn:
@@ -280,8 +631,230 @@ class SQLiteSpecializedLearningRepository:
                 ).fetchall()
         return [dict(r) for r in rows]
 
+    # --- Counting and paging, in SQL (see the module docstring) ----------
+    # `datetime(...)` normalises an ISO string with an offset to UTC, so two
+    # words scheduled in different timezones still order and compare
+    # correctly; a bare string comparison would not.
+    _DUE_EXPR = "datetime(COALESCE(NULLIF(v.next_review_at,''),'0001-01-01T00:00:00+00:00'))"
+    _STAGE_EXPR = "COALESCE(v.review_stage,0)"
+
+    def library_counts(self, *, now: str) -> dict[str, int]:
+        with self._db() as conn:
+            if not self._has_table(conn, "saved_words"):
+                return {"saved": 0, "mastered": 0, "learning": 0, "due": 0, "due_next_day": 0}
+            if not self._has_table(conn, "vocabulary_learning"):
+                total = int(conn.execute("SELECT COUNT(*) AS n FROM saved_words").fetchone()["n"])
+                # Without the Active Recall table every saved word is new, and
+                # a word that has never been scheduled is due now.
+                return {"saved": total, "mastered": 0, "learning": total, "due": total, "due_next_day": 0}
+            row = conn.execute(
+                "SELECT COUNT(*) AS saved,"
+                f" SUM(CASE WHEN {self._STAGE_EXPR} >= ? THEN 1 ELSE 0 END) AS mastered,"
+                f" SUM(CASE WHEN {self._DUE_EXPR} <= datetime(?) THEN 1 ELSE 0 END) AS due,"
+                # What the end of a review session says is coming back: cards
+                # that are not due now but fall due within a day.
+                f" SUM(CASE WHEN {self._DUE_EXPR} > datetime(?)"
+                f" AND {self._DUE_EXPR} <= datetime(?, '+1 day') THEN 1 ELSE 0 END) AS due_next_day"
+                + self._LIBRARY_FROM,
+                (LIBRARY_MASTERED_STAGE, now, now, now),
+            ).fetchone()
+            saved = int(row["saved"] or 0)
+            mastered = int(row["mastered"] or 0)
+            return {
+                "saved": saved,
+                "mastered": mastered,
+                "learning": max(0, saved - mastered),
+                "due": int(row["due"] or 0),
+                "due_next_day": int(row["due_next_day"] or 0),
+            }
+
+    def list_saved_rows(self, words: tuple[str, ...]) -> list[dict[str, Any]]:
+        """The saved rows for these words, with their review state.
+
+        For a screen that draws a set of words it already has - a collection's
+        cards, a feed - and needs to know which of them the learner keeps and
+        how far along they are. Bounded by what is being drawn, never by how
+        much the learner has saved.
+        """
+
+        folded = [str(word or "").casefold() for word in words if str(word or "").strip()]
+        if not folded:
+            return []
+        rows: list[dict[str, Any]] = []
+        with self._db() as conn:
+            if not self._has_table(conn, "saved_words"):
+                return []
+            has_learning = self._has_table(conn, "vocabulary_learning")
+            # SQLite counts bound variables, and a catalogue page can be long.
+            for start in range(0, len(folded), SAVED_ROWS_CHUNK):
+                chunk = folded[start:start + SAVED_ROWS_CHUNK]
+                placeholders = ",".join("?" for _ in chunk)
+                if has_learning:
+                    query = (
+                        self._LIBRARY_COLUMNS + self._LIBRARY_FROM
+                        + f" WHERE lower(s.word) IN ({placeholders})"
+                    )
+                else:
+                    query = (
+                        "SELECT s.word,s.phonetic,s.part_of_speech,s.definition,"
+                        "COALESCE(s.translation_vi,'') AS translation_vi,s.added_at,"
+                        "NULL AS source_essay_id,'' AS source_fragment,'manual' AS source_kind,"
+                        "'' AS focus_note,0 AS review_stage,0 AS successful_recalls,"
+                        "0 AS lapse_count,'' AS last_reviewed_at,'' AS next_review_at"
+                        f" FROM saved_words s WHERE lower(s.word) IN ({placeholders})"
+                    )
+                rows.extend(dict(row) for row in conn.execute(query, tuple(chunk)).fetchall())
+        return rows
+
+    def list_saved_words(self, *, words: tuple[str, ...] = ()) -> list[str]:
+        """The saved words themselves - one column, no review state, no catalogue.
+
+        For "is this word saved?", which is a question about a handful of
+        candidates. Given those candidates it asks about them; given none it
+        returns the index, which is still only words.
+        """
+
+        with self._db() as conn:
+            if not self._has_table(conn, "saved_words"):
+                return []
+            if words:
+                folded = [str(word or "").casefold() for word in words if str(word or "").strip()]
+                if not folded:
+                    return []
+                rows = conn.execute(
+                    "SELECT word FROM saved_words WHERE lower(word) IN ("
+                    + ",".join("?" for _ in folded)
+                    + ")",
+                    tuple(folded),
+                ).fetchall()
+            else:
+                rows = conn.execute("SELECT word FROM saved_words").fetchall()
+        return [str(row["word"]) for row in rows if str(row["word"] or "").strip()]
+
+    def _library_filters(
+        self, *, search: str, status: str, focus: tuple[str, ...], now: str
+    ) -> tuple[list[str], list[Any]]:
+        clauses: list[str] = []
+        params: list[Any] = []
+        needle = str(search or "").strip().casefold()
+        if needle:
+            clauses.append(
+                "(lower(s.word) LIKE ? OR lower(COALESCE(s.translation_vi,'')) LIKE ?"
+                " OR lower(COALESCE(s.definition,'')) LIKE ?)"
+            )
+            pattern = "%" + needle + "%"
+            params.extend([pattern, pattern, pattern])
+        wanted = _library_status(status)
+        if wanted == "mastered":
+            clauses.append(self._STAGE_EXPR + " >= ?")
+            params.append(LIBRARY_MASTERED_STAGE)
+        elif wanted == "learning":
+            clauses.append(self._STAGE_EXPR + " < ?")
+            params.append(LIBRARY_MASTERED_STAGE)
+        elif wanted == "due":
+            clauses.append(self._DUE_EXPR + " <= datetime(?)")
+            params.append(now)
+        if focus:
+            clauses.append("COALESCE(v.focus_note,'') IN (" + ",".join("?" for _ in focus) + ")")
+            params.extend(list(focus))
+        return clauses, params
+
+    def list_library_page(
+        self,
+        *,
+        limit: int,
+        cursor: str = "",
+        search: str = "",
+        status: str = "",
+        order: str = "recent",
+        focus: tuple[str, ...] = (),
+        now: str = "",
+    ) -> dict[str, Any]:
+        bounded = _library_limit(limit)
+        wanted_order = _library_order(order)
+        with self._db() as conn:
+            if not self._has_table(conn, "saved_words"):
+                return {"rows": [], "next_cursor": None, "total": 0}
+            if not self._has_table(conn, "vocabulary_learning"):
+                # Legacy language database: the saved words are durable, the
+                # review state has never existed. Page the words themselves.
+                rows = conn.execute(
+                    "SELECT s.word,s.phonetic,s.part_of_speech,s.definition,"
+                    "COALESCE(s.translation_vi,'') AS translation_vi,s.added_at,"
+                    "NULL AS source_essay_id,'' AS source_fragment,'manual' AS source_kind,"
+                    "'' AS focus_note,0 AS review_stage,0 AS successful_recalls,"
+                    "0 AS lapse_count,'' AS last_reviewed_at,'' AS next_review_at,"
+                    "s.added_at AS sort_value"
+                    " FROM saved_words s ORDER BY s.added_at DESC, s.word ASC LIMIT ?",
+                    (bounded + 1,),
+                ).fetchall()
+                total = int(conn.execute("SELECT COUNT(*) AS n FROM saved_words").fetchone()["n"])
+                page = [dict(row) for row in rows[:bounded]]
+                next_cursor = None
+                if len(rows) > bounded and page:
+                    next_cursor = _library_cursor(
+                        "recent",
+                        _library_fingerprint(search=search, status=status, focus=focus),
+                        str(page[-1]["sort_value"] or ""),
+                        str(page[-1]["word"]),
+                    )
+                for item in page:
+                    item.pop("sort_value", None)
+                return {"rows": page, "next_cursor": next_cursor, "total": total}
+
+            if wanted_order == "due":
+                # Soonest first: what is due leads, because it already is.
+                sort_expr = self._DUE_EXPR
+                keyset = "(" + sort_expr + " > ? OR (" + sort_expr + " = ? AND s.word > ?))"
+                order_by = "ORDER BY " + sort_expr + " ASC, s.word ASC"
+            elif wanted_order == "word":
+                # The word is both the key and the order; a tie in the folded
+                # form is broken by the word as it was saved, so the comparison
+                # keeps the same shape as the other two.
+                sort_expr = "lower(s.word)"
+                keyset = "(" + sort_expr + " > ? OR (" + sort_expr + " = ? AND s.word > ?))"
+                order_by = "ORDER BY " + sort_expr + " ASC, s.word ASC"
+            else:
+                sort_expr = "s.added_at"
+                keyset = "(" + sort_expr + " < ? OR (" + sort_expr + " = ? AND s.word > ?))"
+                order_by = "ORDER BY " + sort_expr + " DESC, s.word ASC"
+
+            clauses, params = self._library_filters(search=search, status=status, focus=focus, now=now)
+            fingerprint = _library_fingerprint(search=search, status=status, focus=focus)
+            page_clauses = list(clauses)
+            page_params = list(params)
+            after = _decode_library_cursor(cursor, wanted_order, fingerprint)
+            if after is not None:
+                page_clauses.append(keyset)
+                page_params.extend([after[0], after[0], after[1]])
+            page_where = (" WHERE " + " AND ".join(page_clauses)) if page_clauses else ""
+            rows = conn.execute(
+                self._LIBRARY_COLUMNS + ", " + sort_expr + " AS sort_value" + self._LIBRARY_FROM
+                + page_where + " " + order_by + " LIMIT ?",
+                (*page_params, bounded + 1),
+            ).fetchall()
+            count_where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+            total = int(
+                conn.execute(
+                    "SELECT COUNT(*) AS n" + self._LIBRARY_FROM + count_where,
+                    tuple(params),
+                ).fetchone()["n"]
+            )
+        page = [dict(row) for row in rows[:bounded]]
+        next_cursor = None
+        if len(rows) > bounded and page:
+            next_cursor = _library_cursor(
+                wanted_order, fingerprint, str(page[-1]["sort_value"] or ""), str(page[-1]["word"])
+            )
+        for item in page:
+            item.pop("sort_value", None)
+        return {"rows": page, "next_cursor": next_cursor, "total": total}
+
     def save_library_record(self, values: dict[str, Any]) -> dict[str, Any]:
         term=values["word"]; now=values["now"]
+        identity=str(values.get("entry_identity_key") or "")
+        entry_id=str(values.get("entry_id") or "")
+        reading=str(values.get("reading_key") or "")
         with self._db() as conn:
             existing=conn.execute("SELECT word FROM saved_words WHERE lower(word)=lower(?) LIMIT 1",(term,)).fetchone()
             canonical=str(existing["word"]) if existing else term
@@ -299,6 +872,14 @@ class SQLiteSpecializedLearningRepository:
             else:
                 conn.execute("INSERT INTO saved_words(word,phonetic,part_of_speech,definition,added_at,translation_vi) VALUES(?,?,?,?,?,?)",
                              (canonical,values["phonetic"],values["part_of_speech"],values["definition"],now,values["translation_vi"]))
+            # The entry a word points at is filled in once and not re-pointed
+            # by a later save that knows less, the same rule PostgreSQL keeps.
+            if identity and self._has_column(conn,"saved_words","entry_identity_key"):
+                conn.execute(
+                    "UPDATE saved_words SET entry_id=?, entry_identity_key=?, reading_key=?"
+                    " WHERE lower(word)=lower(?) AND COALESCE(entry_identity_key,'')=''",
+                    (entry_id,identity,reading,canonical),
+                )
             learning=conn.execute("SELECT word FROM vocabulary_learning WHERE lower(word)=lower(?) LIMIT 1",(canonical,)).fetchone()
             if learning and existing:
                 conn.execute(
@@ -326,6 +907,40 @@ class SQLiteSpecializedLearningRepository:
                 )
             conn.commit()
             row=conn.execute(self._library_select()+" WHERE lower(s.word)=lower(?) LIMIT 1",(canonical,)).fetchone()
+        return dict(row)
+
+    def restore_library_record(self, values: dict[str, Any]) -> dict[str, Any]:
+        """Put a deleted word back as it was, review progress included.
+
+        Not `save_library_record` with extra fields: saving is what a learner
+        does when they meet a word, and it starts the schedule. This is undo,
+        and undo that reset the schedule would be a different word wearing the
+        same spelling.
+        """
+
+        term = values["word"]
+        with self._db() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO saved_words(word,phonetic,part_of_speech,definition,added_at,translation_vi)"
+                " VALUES(?,?,?,?,?,?)",
+                (term, values.get("phonetic", ""), values.get("part_of_speech", ""),
+                 values.get("definition", ""), values.get("added_at") or values["now"],
+                 values.get("translation_vi", "")),
+            )
+            conn.execute(
+                "INSERT OR REPLACE INTO vocabulary_learning(word,source_essay_id,source_fragment,source_kind,"
+                "focus_note,review_stage,successful_recalls,lapse_count,last_reviewed_at,next_review_at,updated_at)"
+                " VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                (term, values.get("source_essay_id"), values.get("source_fragment", ""),
+                 values.get("source_kind", "manual"), values.get("focus_note", ""),
+                 int(values.get("review_stage") or 0), int(values.get("successful_recalls") or 0),
+                 int(values.get("lapse_count") or 0), values.get("last_reviewed_at", "") or "",
+                 values.get("next_review_at") or values["now"], values["now"]),
+            )
+            conn.commit()
+            row = conn.execute(
+                self._library_select() + " WHERE lower(s.word)=lower(?) LIMIT 1", (term,)
+            ).fetchone()
         return dict(row)
 
     def get_library_progress(self, word: str) -> dict[str, Any] | None:
@@ -369,52 +984,6 @@ class SQLiteSpecializedLearningRepository:
                 ).fetchall()
         return [str(r["word"]) for r in rows if str(r["word"] or "").strip()]
 
-    def create_reading_session_record(self, values: dict[str, Any]) -> dict[str, Any]:
-        with self._db() as conn:
-            cur=conn.execute(
-                """INSERT INTO reading_sessions(created_at,language_code,target_level,topic,learner_goal,title,passage,questions_json,recycled_words_json,generation_mode)
-                   VALUES(?,?,?,?,?,?,?,?,?,?)""",
-                (values["created_at"],values["language_code"],values["target_level"],values["topic"],values["learner_goal"],values["title"],values["passage"],
-                 json.dumps(values["questions"],ensure_ascii=False),json.dumps(values["recycled_words"],ensure_ascii=False),values["generation_mode"]),
-            )
-            sid=int(cur.lastrowid); conn.commit(); row=conn.execute("SELECT * FROM reading_sessions WHERE id=?",(sid,)).fetchone()
-        return dict(row)
-
-    def get_reading_session_record(self, session_id: int) -> dict[str, Any] | None:
-        with self._db() as conn: row=conn.execute("SELECT * FROM reading_sessions WHERE id=?",(session_id,)).fetchone()
-        return self._dict(row)
-
-    def latest_reading_attempt(self, session_id: int) -> dict[str, Any] | None:
-        with self._db() as conn:
-            row=conn.execute("SELECT correct_count,total,created_at FROM reading_attempts WHERE session_id=? ORDER BY id DESC LIMIT 1",(session_id,)).fetchone()
-        return self._dict(row)
-
-    def list_reading_session_records(self, limit: int) -> list[dict[str, Any]]:
-        with self._db() as conn:
-            if not self._has_table(conn, "reading_sessions"):
-                return []
-            if self._has_table(conn, "reading_attempts"):
-                rows = conn.execute(
-                    """SELECT s.*,
-                       (SELECT correct_count FROM reading_attempts a WHERE a.session_id=s.id ORDER BY a.id DESC LIMIT 1) AS last_correct,
-                       (SELECT total FROM reading_attempts a WHERE a.session_id=s.id ORDER BY a.id DESC LIMIT 1) AS last_total
-                       FROM reading_sessions s ORDER BY s.id DESC LIMIT ?""",
-                    (limit,),
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    """SELECT s.*, NULL AS last_correct, NULL AS last_total
-                       FROM reading_sessions s ORDER BY s.id DESC LIMIT ?""",
-                    (limit,),
-                ).fetchall()
-        return [dict(r) for r in rows]
-
-    def create_reading_attempt_record(self, session_id: int, values: dict[str, Any]) -> None:
-        with self._db() as conn:
-            conn.execute("INSERT INTO reading_attempts(session_id,created_at,answers_json,correct_count,total) VALUES(?,?,?,?,?)",
-                         (session_id,values["created_at"],json.dumps(values["answers"]),values["correct_count"],values["total"]))
-            conn.commit()
-
     def save_listening_progress_record(self, values: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Durable Active Listening progress requires the PostgreSQL runtime.")
 
@@ -430,11 +999,36 @@ class SQLiteSpecializedLearningRepository:
     def list_shadowing_progress_records(self, asset_id: str) -> list[dict[str, Any]]:
         raise RuntimeError("Durable Shadowing progress requires the PostgreSQL runtime.")
 
-    def create_speaking_attempt_record(self, values: dict[str, Any]) -> dict[str, Any]:
+    def create_speaking_attempt_record(self, values: dict[str, Any], *, assign_session: bool = False) -> dict[str, Any]:
         raise RuntimeError("Durable Speaking attempts require the PostgreSQL runtime.")
 
-    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None) -> list[dict[str, Any]]:
+    def current_speaking_session(self, now: datetime, *, limit: int = 50) -> dict[str, Any] | None:
         raise RuntimeError("Durable Speaking attempts require the PostgreSQL runtime.")
+
+    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None, since: datetime | None = None) -> list[dict[str, Any]]:
+        raise RuntimeError("Durable Speaking attempts require the PostgreSQL runtime.")
+
+    def activity_timestamps(self, since: datetime) -> dict[str, list[datetime]]:
+        """The instants of this learner's completed, server-written records (D4 I14).
+
+        The hermetic backend only holds essays; Speaking and Reading evidence live in the PostgreSQL
+        runtime, so their sources are empty here rather than absent.
+        """
+        found: list[datetime] = []
+        try:
+            with self._db() as conn:
+                rows = conn.execute("SELECT created_at FROM essays").fetchall()
+        except sqlite3.Error:
+            rows = []
+        for row in rows:
+            try:
+                parsed = datetime.fromisoformat(str(row["created_at"]).replace("Z", "+00:00"))
+            except ValueError:
+                continue
+            parsed = parsed if parsed.tzinfo else parsed.astimezone()
+            if parsed >= since:
+                found.append(parsed)
+        return {"essays": found, "speaking_attempts": [], "reading_attempts": []}
 
     def speaking_progress(self) -> dict[str, Any]:
         raise RuntimeError("Durable Speaking attempts require the PostgreSQL runtime.")
@@ -450,12 +1044,152 @@ class SQLiteSpecializedLearningRepository:
             conn.commit()
         return cur.rowcount > 0
 
+    def merge_essay_module_data(self, essay_id: int, key: str, value: Any) -> bool:
+        """Set ONE key of the essay's metadata bag, under the write lock, leaving every other key alone.
+
+        The whole-dict write above lets two writers erase each other (a review refresh and a
+        linguistic cache write); this reads and writes inside one `BEGIN IMMEDIATE`.
+        """
+        with self._db() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute("SELECT module_data_json FROM essays WHERE id=?", (essay_id,)).fetchone()
+            if row is None:
+                conn.rollback()
+                return False
+            bag = _json_or_none(row["module_data_json"])
+            bag = dict(bag) if isinstance(bag, dict) else {}
+            bag[key] = value
+            conn.execute("UPDATE essays SET module_data_json=? WHERE id=?", (json.dumps(bag, ensure_ascii=False), essay_id))
+            conn.commit()
+        return True
+
+    def refresh_essay_review(
+        self,
+        essay_id: int,
+        expected_prior_fingerprint: str,
+        new_review: dict[str, Any],
+        new_identity: dict[str, str],
+        superseded_at: str,
+    ) -> dict[str, Any]:
+        """Replace an essay's current review with a new one and keep the old as immutable history.
+
+        One transaction under `BEGIN IMMEDIATE` (SQLite's write lock is the row lock here): the stored
+        fingerprint is re-checked, and if it is no longer `expected_prior_fingerprint` another writer
+        got there first and this result is discarded (`already_current`). The metadata bag is merged by
+        key, so `practice`, `grammar_links` and `prompt_ref` survive.
+        """
+        with self._db() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute("SELECT * FROM essays WHERE id=?", (essay_id,)).fetchone()
+            if row is None:
+                conn.rollback()
+                return {"status": "not_found", "history_id": None}
+            bag = _json_or_none(row["module_data_json"])
+            bag = dict(bag) if isinstance(bag, dict) else {}
+            identity = bag.get("review") if isinstance(bag.get("review"), dict) else {}
+            prior = str(identity.get("fingerprint") or "")
+            if not prior or prior != expected_prior_fingerprint or prior == new_identity.get("fingerprint"):
+                conn.rollback()
+                return {"status": "already_current", "history_id": None}
+            snapshot = {
+                **{name: row[name] for name in REVIEW_SCORE_FIELDS},
+                "level_estimate": row["level_estimate"] or row["cefr_estimate"],
+                "evaluator": row["evaluator"],
+                "summary_vi": row["summary_vi"],
+                "strengths": _json_or_none(row["strengths_json"]) or [],
+                "strength_evidence": _json_or_none(row["strength_evidence_json"]) or [],
+                "priorities": _json_or_none(row["priorities_json"]) or [],
+                "errors": _json_or_none(row["errors_json"]) or [],
+                "grammar_links": bag.get("grammar_links") if isinstance(bag.get("grammar_links"), list) else [],
+                "identity": identity,
+            }
+            history_id = str(uuid.uuid4())
+            try:
+                conn.execute(
+                    "INSERT INTO essay_review_history(id, essay_id, superseded_at, reason, prior_fingerprint,"
+                    " prior_contract, replaced_by_fingerprint, review) VALUES (?,?,?,?,?,?,?,?)",
+                    (history_id, essay_id, superseded_at, REFRESH_REASON, prior, str(identity.get("contract") or ""),
+                     str(new_identity["fingerprint"]), json.dumps(snapshot, ensure_ascii=False)),
+                )
+            except sqlite3.IntegrityError:
+                conn.rollback()
+                return {"status": "already_current", "history_id": None}
+            bag["review"] = dict(new_identity)
+            conn.execute(
+                "UPDATE essays SET grammar=?, vocabulary=?, coherence=?, task_achievement=?, naturalness=?, overall=?,"
+                " cefr_estimate=?, level_estimate=?, evaluator=?, summary_vi=?, strengths_json=?, strength_evidence_json=?,"
+                " priorities_json=?, errors_json=?, module_data_json=? WHERE id=?",
+                (*[new_review[name] for name in REVIEW_SCORE_FIELDS], new_review["cefr_estimate"], new_review["cefr_estimate"],
+                 new_review["evaluator"], new_review["summary_vi"],
+                 json.dumps(new_review["strengths"], ensure_ascii=False),
+                 json.dumps(new_review["strength_evidence"], ensure_ascii=False),
+                 json.dumps(new_review["priorities"], ensure_ascii=False),
+                 json.dumps(new_review["errors"], ensure_ascii=False),
+                 json.dumps(bag, ensure_ascii=False), essay_id),
+            )
+            conn.commit()
+        return {"status": "refreshed", "history_id": history_id}
+
+    def list_essay_review_history(self, essay_id: int) -> list[dict[str, Any]]:
+        """The essay's review history, newest first. The caller has already loaded the scope-checked essay."""
+        with self._db() as conn:
+            rows = conn.execute(
+                "SELECT id, superseded_at, reason, prior_fingerprint, prior_contract, replaced_by_fingerprint, review"
+                " FROM essay_review_history WHERE essay_id=? ORDER BY superseded_at DESC, rowid DESC", (essay_id,),
+            ).fetchall()
+        return [
+            {**{key: row[key] for key in ("id", "superseded_at", "reason", "prior_fingerprint", "prior_contract", "replaced_by_fingerprint")},
+             "review": _json_or_none(row["review"]) or {}}
+            for row in rows
+        ]
+
     def list_product_activity_events(self, since: datetime) -> list[dict[str, Any]]:
         raise RuntimeError("Product activity analytics requires the PostgreSQL runtime.")
 
 
 class PostgresSpecializedLearningRepository:
     """SQLAlchemy implementation ready for a later explicit runtime cutover."""
+
+    def _has_localizations(self) -> bool:
+        cached = getattr(self, "_localizations_present", None)
+        if cached is None:
+            try:
+                cached = "vocabulary_sense_localizations" in set(inspect(self.engine).get_table_names())
+            except Exception:  # noqa: BLE001 - an unreadable catalogue only narrows the search
+                cached = False
+            self._localizations_present = cached
+        return cached
+
+    def sentences_using(self, word: str, *, limit: int = 4) -> list[dict[str, Any]]:
+        """The learner's own sentences that use this word, newest first."""
+
+        wanted = str(word or "").strip()
+        if not wanted:
+            return []
+        uid, lang = self._scope()
+        with Session(self.engine) as session:
+            rows = session.execute(
+                select(Essay.text, Essay.created_at, Essay.overall)
+                .where(
+                    Essay.user_id == uid,
+                    Essay.language_code == lang,
+                    Essay.text.contains(wanted),
+                )
+                .order_by(Essay.created_at.desc())
+                .limit(max(1, min(limit, 20)) * 3)
+            ).all()
+        return _sentences_from(
+            [
+                {
+                    "text": str(row[0] or ""),
+                    "created_at": self._iso(row[1]),
+                    "checked": bool(row[2]),
+                }
+                for row in rows
+            ],
+            wanted,
+            limit,
+        )
 
     def __init__(self, engine: Engine | None = None, *, url: str | None = None,
                  user_key_provider: Callable[[], str] = current_user_key,
@@ -484,19 +1218,40 @@ class PostgresSpecializedLearningRepository:
             r=s.scalar(select(UserLanguageProfile).where(UserLanguageProfile.user_id==uid,UserLanguageProfile.language_code==lang))
             if r is None: return None
             return {"goal":r.goal,"style":r.style,"pinyin":r.pinyin,"native_language":r.native_language,"theme_preset":r.theme_preset,
-                    "created_at":self._iso(r.created_at),"updated_at":self._iso(r.updated_at)}
+                    "created_at":self._iso(r.created_at),"updated_at":self._iso(r.updated_at),
+                    "declared_level":r.declared_level or "","review_new_per_day":r.review_new_per_day,
+                    "review_limit_per_day":r.review_limit_per_day,"review_modes":_json_or_none(r.review_modes)}
 
-    def upsert_profile_record(self, values: dict[str, Any]) -> None:
+    def upsert_profile_record(self, values: dict[str, Any], *, expected_updated_at: str | None = None) -> None:
+        """See the SQLite twin: None is the unconditional PUT, '' creates, a token updates conditionally (H2 N1)."""
         uid,lang=self._scope(); pid=stable_uuid("profile",self._key(),lang)
-        with Session(self.engine) as s, s.begin():
-            if s.get(User,uid) is None: raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
-            r=s.get(UserLanguageProfile,pid)
-            if r is None:
-                s.add(UserLanguageProfile(id=pid,user_id=uid,language_code=lang,goal=values["goal"],style=values["style"],pinyin=values["pinyin"],
-                                          native_language=values["native_language"],theme_preset=values["theme_preset"],created_at=self._dt(values["created_at"]),updated_at=self._dt(values["updated_at"])))
-            else:
-                r.goal=values["goal"]; r.style=values["style"]; r.pinyin=values["pinyin"]; r.native_language=values["native_language"]
-                r.theme_preset=values["theme_preset"]; r.updated_at=self._dt(values["updated_at"])
+        optional={name:values[name] for name in PROFILE_OPTIONAL_FIELDS if name in values}
+        fixed=dict(goal=values["goal"],style=values["style"],pinyin=values["pinyin"],
+                   native_language=values["native_language"],theme_preset=values["theme_preset"])
+        updated=self._dt(values["updated_at"])
+        try:
+            with Session(self.engine) as s, s.begin():
+                if s.get(User,uid) is None: raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
+                if expected_updated_at is None:
+                    r=s.get(UserLanguageProfile,pid)
+                    if r is None:
+                        s.add(UserLanguageProfile(id=pid,user_id=uid,language_code=lang,created_at=self._dt(values["created_at"]),updated_at=updated,**fixed,**optional))
+                    else:
+                        for k,v in {**fixed,**optional}.items(): setattr(r,k,v)
+                        r.updated_at=updated
+                    return
+                if not expected_updated_at:
+                    # Creation: a plain INSERT; the unique key turns a concurrent creation into IntegrityError.
+                    s.add(UserLanguageProfile(id=pid,user_id=uid,language_code=lang,created_at=self._dt(values["created_at"]),updated_at=updated,**fixed,**optional))
+                    s.flush()
+                    return
+                result=s.execute(update(UserLanguageProfile)
+                                 .where(UserLanguageProfile.id==pid,UserLanguageProfile.updated_at==self._dt(expected_updated_at))
+                                 .values(**fixed,**optional,updated_at=updated)
+                                 .execution_options(synchronize_session=False))
+                if result.rowcount!=1: raise ProfileVersionConflict("profile changed since it was read")
+        except IntegrityError as exc:
+            raise ProfileVersionConflict("profile created concurrently") from exc
 
     def _essay_rows(self, *, desc: bool=False) -> list[dict[str, Any]]:
         uid,lang=self._scope(); order=Essay.legacy_id.desc() if desc else Essay.legacy_id.asc()
@@ -525,15 +1280,183 @@ class PostgresSpecializedLearningRepository:
             rows=s.scalars(select(SavedWord).where(SavedWord.user_id==uid,SavedWord.language_code==lang).order_by(SavedWord.added_at.desc())).all()
             return [self._saved_payload(r) for r in rows]
 
+    def library_counts(self, *, now: str) -> dict[str, int]:
+        uid, lang = self._scope()
+        scope = (SavedWord.user_id == uid, SavedWord.language_code == lang)
+        moment = self._dt(now) if now else datetime.now(timezone.utc)
+        with Session(self.engine) as session:
+            row = session.execute(
+                select(
+                    func.count(SavedWord.id),
+                    func.count(SavedWord.id).filter(SavedWord.review_stage >= LIBRARY_MASTERED_STAGE),
+                    func.count(SavedWord.id).filter(
+                        (SavedWord.next_review_at.is_(None)) | (SavedWord.next_review_at <= moment)
+                    ),
+                    func.count(SavedWord.id).filter(
+                        SavedWord.next_review_at > moment,
+                        SavedWord.next_review_at <= moment + timedelta(days=1),
+                    ),
+                ).where(*scope)
+            ).one()
+        saved, mastered, due = int(row[0] or 0), int(row[1] or 0), int(row[2] or 0)
+        return {
+            "saved": saved,
+            "mastered": mastered,
+            "learning": max(0, saved - mastered),
+            "due": due,
+            "due_next_day": int(row[3] or 0),
+        }
+
+    def list_saved_rows(self, words: tuple[str, ...]) -> list[dict[str, Any]]:
+        folded = [str(word or "").casefold() for word in words if str(word or "").strip()]
+        if not folded:
+            return []
+        uid, lang = self._scope()
+        rows: list[dict[str, Any]] = []
+        with Session(self.engine) as session:
+            for start in range(0, len(folded), SAVED_ROWS_CHUNK):
+                chunk = folded[start:start + SAVED_ROWS_CHUNK]
+                found = session.scalars(
+                    select(SavedWord).where(
+                        SavedWord.user_id == uid,
+                        SavedWord.language_code == lang,
+                        SavedWord.normalized_word.in_(chunk),
+                    )
+                ).all()
+                rows.extend(self._saved_payload_from_session(session, row) for row in found)
+        return rows
+
+    def list_saved_words(self, *, words: tuple[str, ...] = ()) -> list[str]:
+        uid, lang = self._scope()
+        conditions = [SavedWord.user_id == uid, SavedWord.language_code == lang]
+        if words:
+            folded = [str(word or "").casefold() for word in words if str(word or "").strip()]
+            if not folded:
+                return []
+            conditions.append(SavedWord.normalized_word.in_(folded))
+        with Session(self.engine) as session:
+            return [
+                str(word)
+                for word in session.scalars(select(SavedWord.word).where(*conditions)).all()
+                if str(word or "").strip()
+            ]
+
+    def list_library_page(
+        self,
+        *,
+        limit: int,
+        cursor: str = "",
+        search: str = "",
+        status: str = "",
+        order: str = "recent",
+        focus: tuple[str, ...] = (),
+        now: str = "",
+    ) -> dict[str, Any]:
+        bounded = _library_limit(limit)
+        wanted_order = _library_order(order)
+        wanted_status = _library_status(status)
+        uid, lang = self._scope()
+        moment = self._dt(now) if now else datetime.now(timezone.utc)
+        conditions = [SavedWord.user_id == uid, SavedWord.language_code == lang]
+        needle = str(search or "").strip().casefold()
+        if needle:
+            pattern = "%" + needle + "%"
+            matches = (
+                func.lower(SavedWord.word).like(pattern)
+                | func.lower(func.coalesce(SavedWord.translation_vi, "")).like(pattern)
+                | func.lower(func.coalesce(SavedWord.definition, "")).like(pattern)
+            )
+            if self._has_localizations():
+                # A word saved from the catalogue carries no copy of its meaning
+                # (D-124); its sense's localizations are searched instead.
+                matches = matches | SavedWord.normalized_word.in_(
+                    select(VocabularyEntry.normalized_term)
+                    .join(VocabularySenseLocalization, VocabularySenseLocalization.entry_id == VocabularyEntry.id)
+                    .where(
+                        VocabularyEntry.language_code == lang,
+                        func.lower(VocabularySenseLocalization.gloss).like(pattern),
+                    )
+                )
+            conditions.append(matches)
+        if wanted_status == "mastered":
+            conditions.append(SavedWord.review_stage >= LIBRARY_MASTERED_STAGE)
+        elif wanted_status == "learning":
+            conditions.append(SavedWord.review_stage < LIBRARY_MASTERED_STAGE)
+        elif wanted_status == "due":
+            conditions.append((SavedWord.next_review_at.is_(None)) | (SavedWord.next_review_at <= moment))
+        if focus:
+            conditions.append(func.coalesce(SavedWord.focus_note, "").in_(list(focus)))
+
+        # A word never scheduled is due now, so it sorts where "now" sorts.
+        due_sort = func.coalesce(SavedWord.next_review_at, datetime(1, 1, 1, tzinfo=timezone.utc))
+        fingerprint = _library_fingerprint(search=search, status=status, focus=focus)
+        after = _decode_library_cursor(cursor, wanted_order, fingerprint)
+        page_conditions = list(conditions)
+        if after is not None:
+            if wanted_order == "word":
+                folded = after[0].casefold()
+                page_conditions.append(
+                    (func.lower(SavedWord.word) > folded)
+                    | ((func.lower(SavedWord.word) == folded) & (SavedWord.word > after[1]))
+                )
+            elif wanted_order == "due":
+                boundary = self._dt(after[0]) if after[0] else datetime(1, 1, 1, tzinfo=timezone.utc)
+                page_conditions.append(
+                    (due_sort > boundary) | ((due_sort == boundary) & (SavedWord.word > after[1]))
+                )
+            else:
+                boundary = self._dt(after[0]) if after[0] else datetime(1, 1, 1, tzinfo=timezone.utc)
+                page_conditions.append(
+                    (SavedWord.added_at < boundary)
+                    | ((SavedWord.added_at == boundary) & (SavedWord.word > after[1]))
+                )
+        if wanted_order == "due":
+            ordering = (due_sort.asc(), SavedWord.word.asc())
+        elif wanted_order == "word":
+            ordering = (func.lower(SavedWord.word).asc(), SavedWord.word.asc())
+        else:
+            ordering = (SavedWord.added_at.desc(), SavedWord.word.asc())
+        with Session(self.engine) as session:
+            rows = session.scalars(
+                select(SavedWord).where(*page_conditions).order_by(*ordering).limit(bounded + 1)
+            ).all()
+            total = int(session.scalar(select(func.count(SavedWord.id)).where(*conditions)) or 0)
+            page = list(rows[:bounded])
+            payloads = [self._saved_payload_from_session(session, row) for row in page]
+        next_cursor = None
+        if len(rows) > bounded and page:
+            last = page[-1]
+            if wanted_order == "due":
+                sort_value = self._iso(last.next_review_at)
+            elif wanted_order == "word":
+                sort_value = last.word
+            else:
+                sort_value = self._iso(last.added_at)
+            next_cursor = _library_cursor(wanted_order, fingerprint, sort_value, last.word)
+        return {"rows": payloads, "next_cursor": next_cursor, "total": total}
+
+    def _served_fragment(self, s: Session, r: SavedWord) -> str:
+        """The sentence a kept word may serve. It is withheld (empty) when EVERY place the word was met is a deleted
+        import (provenance `unavailable`): a stored excerpt is never used to bring deleted content back (D-108.2). One
+        choke point for every reader - library list and detail, word cards, collection snippet, review cloze, word
+        deep dive (which therefore never sends it to the AI provider)."""
+        fragment = r.source_fragment
+        if not fragment:
+            return fragment
+        if not hasattr(self, "_provenance_table"):
+            self._provenance_table = inspect(self.engine).has_table("language_provenance")
+        if not self._provenance_table:
+            return fragment
+        gone = s.execute(
+            text("SELECT 1 FROM language_provenance WHERE saved_word_id = :id AND availability = 'unavailable' "
+                 "AND NOT EXISTS (SELECT 1 FROM language_provenance WHERE saved_word_id = :id AND availability <> 'unavailable') LIMIT 1"),
+            {"id": r.id},
+        ).first()
+        return "" if gone else fragment
+
     def _saved_payload(self,r: SavedWord) -> dict[str,Any]:
-        source_legacy=None
-        if r.source_essay_id:
-            with Session(self.engine) as s:
-                e=s.get(Essay,r.source_essay_id); source_legacy=e.legacy_id if e else None
-        return {"word":r.word,"phonetic":r.phonetic,"part_of_speech":r.part_of_speech,"definition":r.definition,"translation_vi":r.translation_vi,
-                "added_at":self._iso(r.added_at),"source_essay_id":source_legacy,"source_fragment":r.source_fragment,"source_kind":r.source_kind,
-                "focus_note":r.focus_note,"review_stage":r.review_stage,"successful_recalls":r.successful_recalls,"lapse_count":r.lapse_count,
-                "last_reviewed_at":self._iso(r.last_reviewed_at),"next_review_at":self._iso(r.next_review_at)}
+        with Session(self.engine) as s:
+            return self._saved_payload_from_session(s, r)
 
     def _saved(self,s: Session,word: str) -> SavedWord | None:
         uid,lang=self._scope(); return s.scalar(select(SavedWord).where(SavedWord.user_id==uid,SavedWord.language_code==lang,SavedWord.normalized_word==word.casefold()))
@@ -546,11 +1469,21 @@ class PostgresSpecializedLearningRepository:
             if values.get("source_essay_id"):
                 e=s.scalar(select(Essay).where(Essay.user_id==uid,Essay.language_code==lang,Essay.legacy_id==int(values["source_essay_id"])))
                 source_uuid=e.id if e else None
+            # Which catalogue entry, and which reading of it, the caller
+            # resolved (20260923_0013). The service decides whether there is a
+            # link at all - an ambiguous entry with no reading is left
+            # unlinked rather than guessed - so this only records what it was
+            # given, and only ever fills a blank in: a word already linked is
+            # not re-pointed by a later save that knows less.
+            entry_uuid=_as_uuid(values.get("entry_id"))
+            identity=str(values.get("entry_identity_key") or "")
+            reading=str(values.get("reading_key") or "")
             if r is None:
                 r=SavedWord(id=sid,user_id=uid,language_code=lang,word=values["word"],normalized_word=normalized,phonetic=values["phonetic"],
                             part_of_speech=values["part_of_speech"],definition=values["definition"],translation_vi=values["translation_vi"],added_at=now,
                             source_essay_id=source_uuid,source_fragment=values["source_fragment"],source_kind=values["source_kind"],focus_note=values["focus_note"],
-                            review_stage=0,successful_recalls=0,lapse_count=0,last_reviewed_at=None,next_review_at=now,updated_at=now); s.add(r)
+                            review_stage=0,successful_recalls=0,lapse_count=0,last_reviewed_at=None,next_review_at=now,updated_at=now,
+                            entry_id=entry_uuid if identity else None,entry_identity_key=identity,reading_key=reading); s.add(r)
             else:
                 if values["phonetic"]: r.phonetic=values["phonetic"]
                 if values["part_of_speech"]: r.part_of_speech=values["part_of_speech"]
@@ -560,6 +1493,10 @@ class PostgresSpecializedLearningRepository:
                 if values["source_fragment"]: r.source_fragment=values["source_fragment"]
                 if values["source_kind"]: r.source_kind=values["source_kind"]
                 if values["focus_note"]: r.focus_note=values["focus_note"]
+                if identity and not r.entry_identity_key:
+                    r.entry_identity_key=identity
+                    r.entry_id=entry_uuid
+                    r.reading_key=reading
                 r.updated_at=now
             s.flush(); payload=self._saved_payload_from_session(s,r)
         return payload
@@ -569,9 +1506,50 @@ class PostgresSpecializedLearningRepository:
         if r.source_essay_id:
             e=s.get(Essay,r.source_essay_id); source_legacy=e.legacy_id if e else None
         return {"word":r.word,"phonetic":r.phonetic,"part_of_speech":r.part_of_speech,"definition":r.definition,"translation_vi":r.translation_vi,
-                "added_at":self._iso(r.added_at),"source_essay_id":source_legacy,"source_fragment":r.source_fragment,"source_kind":r.source_kind,"focus_note":r.focus_note,
+                "added_at":self._iso(r.added_at),"source_essay_id":source_legacy,"source_fragment":self._served_fragment(s,r),"source_kind":r.source_kind,"focus_note":r.focus_note,
                 "review_stage":r.review_stage,"successful_recalls":r.successful_recalls,"lapse_count":r.lapse_count,"last_reviewed_at":self._iso(r.last_reviewed_at),
-                "next_review_at":self._iso(r.next_review_at)}
+                "next_review_at":self._iso(r.next_review_at),
+                "entry_identity_key":r.entry_identity_key,"reading_key":r.reading_key}
+
+    def restore_library_record(self, values: dict[str, Any]) -> dict[str, Any]:
+        """Put a deleted word back as it was, review progress included."""
+
+        uid, lang = self._scope()
+        normalized = values["word"].casefold()
+        sid = stable_uuid("saved-word", self._key(), lang, normalized)
+        now = self._dt(values["now"])
+        with Session(self.engine) as s, s.begin():
+            r = s.get(SavedWord, sid)
+            if r is None:
+                r = SavedWord(id=sid, user_id=uid, language_code=lang, word=values["word"],
+                              normalized_word=normalized, added_at=now, updated_at=now)
+                s.add(r)
+            source_uuid = None
+            if values.get("source_essay_id"):
+                e = s.scalar(select(Essay).where(Essay.user_id == uid, Essay.language_code == lang,
+                                                 Essay.legacy_id == int(values["source_essay_id"])))
+                source_uuid = e.id if e else None
+            r.word = values["word"]
+            r.phonetic = values.get("phonetic", "") or ""
+            r.part_of_speech = values.get("part_of_speech", "") or ""
+            r.definition = values.get("definition", "") or ""
+            r.translation_vi = values.get("translation_vi", "") or ""
+            r.added_at = self._dt(values["added_at"]) if values.get("added_at") else now
+            r.source_essay_id = source_uuid
+            r.source_fragment = values.get("source_fragment", "") or ""
+            r.source_kind = values.get("source_kind", "manual") or "manual"
+            r.focus_note = values.get("focus_note", "") or ""
+            r.review_stage = int(values.get("review_stage") or 0)
+            r.successful_recalls = int(values.get("successful_recalls") or 0)
+            r.lapse_count = int(values.get("lapse_count") or 0)
+            r.last_reviewed_at = self._dt(values["last_reviewed_at"]) if values.get("last_reviewed_at") else None
+            r.next_review_at = self._dt(values["next_review_at"]) if values.get("next_review_at") else now
+            r.entry_identity_key = values.get("entry_identity_key", "") or ""
+            r.entry_id = _as_uuid(values.get("entry_id")) if values.get("entry_identity_key") else None
+            r.reading_key = values.get("reading_key", "") or ""
+            r.updated_at = now
+            s.flush()
+            return self._saved_payload_from_session(s, r)
 
     def get_library_progress(self, word: str) -> dict[str, Any] | None:
         with Session(self.engine) as s:
@@ -593,55 +1571,14 @@ class PostgresSpecializedLearningRepository:
             s.delete(r); return True
 
     def select_library_terms(self, limit: int = 3) -> list[str]:
-        rows=self.list_library_records()
-        rows.sort(key=lambda r:(0 if int(r["review_stage"] or 0)<3 else 1,r["next_review_at"] or r["added_at"],r["word"].casefold()))
-        return [str(r["word"]) for r in rows[:limit]]
+        """The few words a generated text should recycle - asked for as a few.
 
-    def create_reading_session_record(self, values: dict[str, Any]) -> dict[str, Any]:
-        uid,lang=self._scope()
-        with Session(self.engine) as s, s.begin():
-            max_id=s.scalar(select(func.max(ReadingSession.legacy_id)).where(ReadingSession.user_id==uid,ReadingSession.language_code==lang))
-            legacy=int(max_id or 0)+1; sid=stable_uuid("reading-session",self._key(),lang,legacy)
-            r=ReadingSession(id=sid,user_id=uid,language_code=lang,legacy_id=legacy,created_at=self._dt(values["created_at"]),target_level=values["target_level"],
-                             topic=values["topic"],learner_goal=values["learner_goal"],title=values["title"],passage=values["passage"],questions=values["questions"],
-                             recycled_words=values["recycled_words"],generation_mode=values["generation_mode"]); s.add(r); s.flush(); return self._reading_payload(r)
+        This used to read every saved word, sort them in Python and take the
+        first three.
+        """
 
-    def _reading_payload(self,r:ReadingSession)->dict[str,Any]:
-        return {"id":r.legacy_id,"created_at":self._iso(r.created_at),"language_code":r.language_code,"target_level":r.target_level,"topic":r.topic,
-                "learner_goal":r.learner_goal,"title":r.title,"passage":r.passage,"questions_json":json.dumps(r.questions,ensure_ascii=False),
-                "recycled_words_json":json.dumps(r.recycled_words,ensure_ascii=False),"generation_mode":r.generation_mode}
-
-    def _reading(self,s:Session,session_id:int)->ReadingSession|None:
-        uid,lang=self._scope(); return s.scalar(select(ReadingSession).where(ReadingSession.user_id==uid,ReadingSession.language_code==lang,ReadingSession.legacy_id==session_id))
-
-    def get_reading_session_record(self, session_id: int) -> dict[str, Any] | None:
-        with Session(self.engine) as s:
-            r=self._reading(s,session_id); return self._reading_payload(r) if r else None
-
-    def latest_reading_attempt(self, session_id: int) -> dict[str, Any] | None:
-        with Session(self.engine) as s:
-            r=self._reading(s,session_id)
-            if r is None: return None
-            a=s.scalar(select(ReadingAttempt).where(ReadingAttempt.session_id==r.id).order_by(ReadingAttempt.legacy_id.desc()).limit(1))
-            return None if a is None else {"correct_count":a.correct_count,"total":a.total,"created_at":self._iso(a.created_at)}
-
-    def list_reading_session_records(self, limit: int) -> list[dict[str, Any]]:
-        uid,lang=self._scope()
-        with Session(self.engine) as s:
-            rows=s.scalars(select(ReadingSession).where(ReadingSession.user_id==uid,ReadingSession.language_code==lang).order_by(ReadingSession.legacy_id.desc()).limit(limit)).all()
-            out=[]
-            for r in rows:
-                item=self._reading_payload(r); a=s.scalar(select(ReadingAttempt).where(ReadingAttempt.session_id==r.id).order_by(ReadingAttempt.legacy_id.desc()).limit(1))
-                item["last_correct"]=a.correct_count if a else None; item["last_total"]=a.total if a else None; out.append(item)
-            return out
-
-    def create_reading_attempt_record(self, session_id: int, values: dict[str, Any]) -> None:
-        with Session(self.engine) as s, s.begin():
-            r=self._reading(s,session_id)
-            if r is None: raise ValueError("Reading session not found")
-            max_id=s.scalar(select(func.max(ReadingAttempt.legacy_id))); legacy=int(max_id or 0)+1
-            s.add(ReadingAttempt(id=stable_uuid("reading-attempt",self._key(),self._language_provider().casefold(),legacy),session_id=r.id,legacy_id=legacy,
-                                 created_at=self._dt(values["created_at"]),answers=list(values["answers"]),correct_count=int(values["correct_count"]),total=int(values["total"])))
+        page = self.list_library_page(limit=max(1, int(limit)), order="due")
+        return [str(row["word"]) for row in page["rows"] if str(row["word"] or "").strip()]
 
     def _listening_progress_payload(self, row: Any) -> dict[str, Any]:
         return {
@@ -655,10 +1592,16 @@ class PostgresSpecializedLearningRepository:
             "best_accuracy_percent": row.best_accuracy_percent,
             "best_exact": bool(row.best_exact),
             "last_answer": row.last_answer,
+            "last_used_hint": bool(row.last_used_hint),
+            "last_hint_level": int(row.last_hint_level or 0),
+            "score_source": row.score_source or "client",
             "updated_at": self._iso(row.updated_at),
         }
 
     def save_listening_progress_record(self, values: dict[str, Any]) -> dict[str, Any]:
+        """Store one Dictation write. The evidence fields are the SERVER's (`merge_progress`), applied
+        under a row lock so two simultaneous checks cannot lose one; `values["score"]` is the route's
+        server-side evaluation of a checked answer, absent for every other write."""
         uid, lang = self._scope()
         asset_id = str(values["asset_id"])
         segment_id = str(values["segment_id"])
@@ -666,25 +1609,37 @@ class PostgresSpecializedLearningRepository:
         with Session(self.engine) as s, s.begin():
             if s.get(User, uid) is None:
                 raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
-            row = s.get(ListeningProgress, progress_id)
+            # FOR UPDATE locks nothing that does not exist yet, so the row is created first (a no-op when it is
+            # there) and only then locked: two simultaneous first checks of a segment both proceed, one after the
+            # other, and neither loses its score to a unique-key error.
+            from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+            s.execute(
+                pg_insert(ListeningProgress)
+                .values(id=progress_id, user_id=uid, language_code=lang, asset_id=asset_id, segment_id=segment_id,
+                        presentation="prompt", revealed=False, checked_attempt_count=0, best_exact=False, last_answer="",
+                        last_used_hint=False, last_hint_level=0, score_source="client",
+                        updated_at=self._dt(values["updated_at"]))
+                .on_conflict_do_nothing(constraint="uq_listening_progress_scope_segment")
+            )
+            row = s.scalar(select(ListeningProgress).where(ListeningProgress.id == progress_id).with_for_update())
+            stored = {
+                "best_accuracy_percent": row.best_accuracy_percent, "best_exact": row.best_exact,
+                "checked_attempt_count": row.checked_attempt_count, "score_source": row.score_source,
+            }
+            evidence = merge_progress(stored, values, values.get("score"))
             fields = {
                 "presentation": values.get("presentation", "prompt"),
                 "revealed": bool(values.get("revealed", False)),
-                "checked_attempt_count": int(values.get("checked_attempt_count", 0)),
-                "best_accuracy_percent": values.get("best_accuracy_percent"),
-                "best_exact": bool(values.get("best_exact", False)),
                 "last_answer": str(values.get("last_answer", "")),
+                # The flag is the level, never a second opinion about it.
+                "last_used_hint": _hint_level(values) > 0,
+                "last_hint_level": _hint_level(values),
                 "updated_at": self._dt(values["updated_at"]),
+                **evidence,
             }
-            if row is None:
-                row = ListeningProgress(
-                    id=progress_id, user_id=uid, language_code=lang,
-                    asset_id=asset_id, segment_id=segment_id, **fields,
-                )
-                s.add(row)
-            else:
-                for key, value in fields.items():
-                    setattr(row, key, value)
+            for key, value in fields.items():
+                setattr(row, key, value)
             s.flush()
             return self._listening_progress_payload(row)
 
@@ -766,6 +1721,14 @@ class PostgresSpecializedLearningRepository:
 
     @staticmethod
     def _speaking_payload(row: Any) -> dict[str, Any]:
+        payload = PostgresSpecializedLearningRepository._speaking_fields(row)
+        # Only a row that has an identity carries the key, so a flag-off or legacy payload is unchanged.
+        if getattr(row, "practice_session_id", None) is not None:
+            payload["practice_session_id"] = str(row.practice_session_id)
+        return payload
+
+    @staticmethod
+    def _speaking_fields(row: Any) -> dict[str, Any]:
         return {
             "id": str(row.id),
             "created_at": PostgresSpecializedLearningRepository._iso(row.created_at),
@@ -780,21 +1743,32 @@ class PostgresSpecializedLearningRepository:
             "evidence": dict(row.evidence or {}),
         }
 
-    def create_speaking_attempt_record(self, values: dict[str, Any]) -> dict[str, Any]:
+    def create_speaking_attempt_record(self, values: dict[str, Any], *, assign_session: bool = False) -> dict[str, Any]:
+        """Write one take. With `assign_session` (flag ORENA_PRACTICE_SESSION) a NEW row joins the learner's live
+        practice session or starts one (D-142.1); an existing row (a replay) keeps the identity it was given."""
         uid, lang = self._scope()
         attempt_id = stable_uuid("speaking-attempt", self._key(), lang, values["take_id"])
-        with Session(self.engine) as s, s.begin():
+        # PostgreSQL serialises with a transaction advisory lock below; the SQLite test engine has none, so a
+        # process lock stands in for it for the whole write.
+        process_lock = _SQLITE_SESSION_LOCK if assign_session and self.engine.dialect.name != "postgresql" else nullcontext()
+        with process_lock, Session(self.engine) as s, s.begin():
             if s.get(User, uid) is None:
                 raise RuntimeError("PostgreSQL scope user missing; shadow/import must run first.")
+            if assign_session and self.engine.dialect.name == "postgresql":
+                s.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"),
+                          {"k": f"practice-session:{uid}:{lang}"})
             row = s.get(SpeakingAttempt, attempt_id)
             if row is None:
+                created_at = self._dt(values["created_at"])
+                session_id = self._session_for_new_take(s, uid, lang, created_at) if assign_session else None
                 row = SpeakingAttempt(
                     id=attempt_id, user_id=uid, language_code=lang,
                     take_id=values["take_id"],
                     asset_id=values.get("asset_id", ""), segment_id=values.get("segment_id", ""),
                     reference_text=values["reference_text"], transcript_text=values["transcript_text"],
                     dimensions=dict(values.get("dimensions", {})), provenance=dict(values.get("provenance", {})),
-                    evidence=dict(values.get("evidence", {})), created_at=self._dt(values["created_at"]),
+                    evidence=dict(values.get("evidence", {})), created_at=created_at,
+                    practice_session_id=session_id,
                 )
                 s.add(row)
             else:
@@ -809,10 +1783,64 @@ class PostgresSpecializedLearningRepository:
             s.flush()
             return self._speaking_payload(row)
 
-    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None) -> list[dict[str, Any]]:
+    @staticmethod
+    def _session_for_new_take(s: Session, uid: Any, lang: str, now: datetime) -> uuid.UUID:
+        """Reuse the latest attempt's session while it is within the idle window of `now` (server time), else mint."""
+        latest = s.execute(
+            select(SpeakingAttempt.created_at, SpeakingAttempt.practice_session_id)
+            .where(SpeakingAttempt.user_id == uid, SpeakingAttempt.language_code == lang)
+            .order_by(SpeakingAttempt.created_at.desc())
+            .limit(1)
+        ).first()
+        if latest is not None and latest[1] is not None:
+            last = PostgresSpecializedLearningRepository._dt(latest[0])
+            if now - last < PRACTICE_SESSION_IDLE:  # active while elapsed < 30 min (D-142); a slightly earlier `now` still joins
+                return latest[1]
+        return uuid.uuid4()
+
+    def current_speaking_session(self, now: datetime, *, limit: int = 50) -> dict[str, Any] | None:
+        """The live practice session of this account and language, or None once 30 minutes have passed (elapsed >= 30:00) since its
+        last activity (or when the latest attempt has no identity). Reads only; never starts or extends one."""
+        uid, lang = self._scope()
+        now = self._dt(now)
+        with Session(self.engine) as s:
+            latest = s.execute(
+                select(SpeakingAttempt.created_at, SpeakingAttempt.practice_session_id)
+                .where(SpeakingAttempt.user_id == uid, SpeakingAttempt.language_code == lang)
+                .order_by(SpeakingAttempt.created_at.desc())
+                .limit(1)
+            ).first()
+            if latest is None or latest[1] is None:
+                return None
+            if now - self._dt(latest[0]) >= PRACTICE_SESSION_IDLE:  # expired at exactly 30:00 (D-142)
+                return None
+            sid = latest[1]
+            scope = (SpeakingAttempt.user_id == uid, SpeakingAttempt.language_code == lang,
+                     SpeakingAttempt.practice_session_id == sid)
+            started, last, count = s.execute(
+                select(func.min(SpeakingAttempt.created_at), func.max(SpeakingAttempt.created_at), func.count())
+                .where(*scope)
+            ).one()
+            rows = s.scalars(
+                select(SpeakingAttempt).where(*scope).order_by(SpeakingAttempt.created_at.desc())
+                .limit(max(1, min(int(limit), 100)))
+            ).all()
+            last = self._dt(last)
+            return {
+                "id": str(sid),
+                "started_at": self._iso(self._dt(started)),
+                "last_activity_at": self._iso(last),
+                "expires_at": self._iso(last + PRACTICE_SESSION_IDLE),
+                "count": int(count),
+                "items": [self._speaking_payload(row) for row in rows],
+            }
+
+    def list_speaking_attempt_records(self, limit: int = 50, *, asset_id: str | None = None, segment_id: str | None = None, since: datetime | None = None) -> list[dict[str, Any]]:
         uid, lang = self._scope()
         with Session(self.engine) as s:
             filters = [SpeakingAttempt.user_id == uid, SpeakingAttempt.language_code == lang]
+            if since is not None:
+                filters.append(SpeakingAttempt.created_at >= since)
             if asset_id is not None:
                 filters.append(SpeakingAttempt.asset_id == asset_id)
             if segment_id is not None:
@@ -824,6 +1852,25 @@ class PostgresSpecializedLearningRepository:
                 .limit(max(1, min(int(limit), 100)))
             ).all()
             return [self._speaking_payload(row) for row in rows]
+
+    def activity_timestamps(self, since: datetime) -> dict[str, list[datetime]]:
+        """The instants of this learner's completed, server-written records in this language (D4 I14).
+
+        Each row is one submitted piece of evidence with a creation time that no later write changes:
+        an essay version, a speaking attempt, a Reading attempt.
+        """
+        uid, lang = self._scope()
+        with Session(self.engine) as s:
+            def instants(column, user, language):
+                return [self._dt(value) for value in s.scalars(
+                    select(column).where(user == uid, language == lang, column >= since)
+                ).all()]
+
+            return {
+                "essays": instants(Essay.created_at, Essay.user_id, Essay.language_code),
+                "speaking_attempts": instants(SpeakingAttempt.created_at, SpeakingAttempt.user_id, SpeakingAttempt.language_code),
+                "reading_attempts": instants(ReadingAttempt.created_at, ReadingAttempt.user_id, ReadingAttempt.language_code),
+            }
 
     def speaking_progress(self) -> dict[str, Any]:
         items = self.list_speaking_attempt_records(100)
@@ -852,6 +1899,58 @@ class PostgresSpecializedLearningRepository:
             if e is None: return False
             e.module_data=module_data; return True
 
+    def merge_essay_module_data(self, essay_id: int, key: str, value: Any) -> bool:
+        """Set ONE key of the essay's metadata bag under the row lock, leaving every other key alone."""
+        uid,lang=self._scope()
+        with Session(self.engine) as s, s.begin():
+            e=s.scalar(select(Essay).where(Essay.user_id==uid,Essay.language_code==lang,Essay.legacy_id==essay_id).with_for_update())
+            if e is None: return False
+            bag=dict(e.module_data or {}); bag[key]=value; e.module_data=bag; return True
+
+    def refresh_essay_review(self, essay_id: int, expected_prior_fingerprint: str, new_review: dict[str, Any],
+                             new_identity: dict[str, str], superseded_at: str) -> dict[str, Any]:
+        """See the SQLite twin. The row lock is `SELECT ... FOR UPDATE`; the history key is UNIQUE (essay, prior)
+        so a second process that lost the race is refused by the database as well as by the re-check."""
+        uid,lang=self._scope()
+        try:
+            with Session(self.engine) as s, s.begin():
+                e=s.scalar(select(Essay).where(Essay.user_id==uid,Essay.language_code==lang,Essay.legacy_id==essay_id).with_for_update())
+                if e is None: return {"status":"not_found","history_id":None}
+                bag=dict(e.module_data or {})
+                identity=bag.get("review") if isinstance(bag.get("review"),dict) else {}
+                prior=str(identity.get("fingerprint") or "")
+                if not prior or prior!=expected_prior_fingerprint or prior==new_identity.get("fingerprint"):
+                    return {"status":"already_current","history_id":None}
+                snapshot={**{name:getattr(e,name) for name in REVIEW_SCORE_FIELDS},
+                          "level_estimate":e.level_estimate,"evaluator":e.evaluator,"summary_vi":e.summary_vi,
+                          "strengths":list(e.strengths or []),"strength_evidence":list(e.strength_evidence or []),
+                          "priorities":list(e.priorities or []),"errors":list(e.errors or []),
+                          "grammar_links":bag.get("grammar_links") if isinstance(bag.get("grammar_links"),list) else [],
+                          "identity":identity}
+                history_id=uuid.uuid4()
+                s.add(EssayReviewHistory(id=history_id,essay_id=e.id,superseded_at=self._dt(superseded_at),reason=REFRESH_REASON,
+                                         prior_fingerprint=prior,prior_contract=str(identity.get("contract") or ""),
+                                         replaced_by_fingerprint=str(new_identity["fingerprint"]),review=snapshot))
+                s.flush()
+                for name in REVIEW_SCORE_FIELDS: setattr(e,name,new_review[name])
+                e.level_estimate=new_review["cefr_estimate"]; e.evaluator=new_review["evaluator"]; e.summary_vi=new_review["summary_vi"]
+                e.strengths=list(new_review["strengths"]); e.strength_evidence=list(new_review["strength_evidence"])
+                e.priorities=list(new_review["priorities"]); e.errors=list(new_review["errors"])
+                bag["review"]=dict(new_identity); e.module_data=bag
+                return {"status":"refreshed","history_id":str(history_id)}
+        except IntegrityError:
+            return {"status":"already_current","history_id":None}
+
+    def list_essay_review_history(self, essay_id: int) -> list[dict[str, Any]]:
+        """History of one essay, resolved through the scope-checked essay: another account's or language's id reads nothing."""
+        uid,lang=self._scope()
+        with Session(self.engine) as s:
+            e=s.scalar(select(Essay).where(Essay.user_id==uid,Essay.language_code==lang,Essay.legacy_id==essay_id))
+            if e is None: return []
+            rows=s.scalars(select(EssayReviewHistory).where(EssayReviewHistory.essay_id==e.id).order_by(EssayReviewHistory.superseded_at.desc())).all()
+            return [{"id":str(r.id),"superseded_at":self._iso(r.superseded_at),"reason":r.reason,"prior_fingerprint":r.prior_fingerprint,
+                     "prior_contract":r.prior_contract,"replaced_by_fingerprint":r.replaced_by_fingerprint,"review":dict(r.review or {})} for r in rows]
+
     def list_product_activity_events(self, since: datetime) -> list[dict[str, Any]]:
         """Read aggregate inputs across learners without selecting raw content."""
         with Session(self.engine) as s:
@@ -859,14 +1958,14 @@ class PostgresSpecializedLearningRepository:
             for essay_id, occurred, uid in s.execute(select(Essay.id, Essay.created_at, Essay.user_id).where(Essay.created_at >= since)).all():
                 events.append({"skill": "writing", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": True})
                 events.extend({"skill": "writing", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": stage, "funnel_key": str(essay_id), "funnel_only": True} for stage in ("attempted", "completed"))
-            for session_id, occurred, uid in s.execute(select(ReadingSession.id, ReadingSession.created_at, ReadingSession.user_id).where(ReadingSession.created_at >= since)).all():
-                events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": "started", "funnel_key": str(session_id), "funnel_only": True})
-            for session_id, occurred, uid, total in s.execute(select(ReadingAttempt.session_id, ReadingAttempt.created_at, ReadingSession.user_id, ReadingAttempt.total).join(ReadingSession, ReadingAttempt.session_id == ReadingSession.id).where(ReadingAttempt.created_at >= since)).all():
-                completed = isinstance(total, int) and total > 0
-                events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": completed})
-                events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": "attempted", "funnel_key": str(session_id), "funnel_only": True})
-                if completed:
-                    events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": "completed", "funnel_key": str(session_id), "funnel_only": True})
+            # Reading reads the canonical evidence only (D-082): one submitted
+            # attempt per row, so it is attempted and completed at once. There
+            # is no "started" record - a row exists only once submitted - and
+            # the funnel says so rather than inventing one.
+            for attempt_id, occurred, uid in s.execute(select(ReadingAttempt.id, ReadingAttempt.created_at, ReadingAttempt.user_id).where(ReadingAttempt.created_at >= since)).all():
+                events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": True})
+                for stage in ("attempted", "completed"):
+                    events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": stage, "funnel_key": str(attempt_id), "funnel_only": True})
             for asset_id, segment_id, occurred, uid, revealed, checked in s.execute(select(ListeningProgress.asset_id, ListeningProgress.segment_id, ListeningProgress.updated_at, ListeningProgress.user_id, ListeningProgress.revealed, ListeningProgress.checked_attempt_count).where(ListeningProgress.updated_at >= since)).all():
                 completed = bool(revealed or (checked or 0) > 0)
                 events.append({"skill": "listening", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": completed})

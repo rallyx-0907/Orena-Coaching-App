@@ -1,0 +1,917 @@
+/* Orena Home (frame 11), the Contextual panel (frame 55), full-screen voice (frame 56) and the
+   coach-notes sheet - measured against D1 §6 / E5 §6-7 and the pinned source. Every colour is the
+   semantic tokens of kit/tokens.css: the voice controls, the gradient composer's shadow and the
+   immersive voice screen (frame 56, which ignores body[data-theme] by construction, E5 §7.2) read
+   the fixed --sh-composer/--mark-glow-hero/--voice-* tokens kit/tokens.css now defines beside its
+   other purpose-named literals (--photo-chip, --hero-*, --sh-hero, the D-091 pattern) - moved
+   there from this file's own KIT REQUEST block, each value unchanged and still measured against
+   D1 §6 / E5 §7.2 / orena-script.js's voiceDot/voiceMainBg/voiceSpeakBg maps, never guessed.
+   Classes are prefixed s-orena-<surface>. */
+
+/* ---------------------------------------------------------------------------- Home (route) --- */
+/* Orena is a browsing place (shell/routes.js `focus:false`, the rail/top bar stay), but the frame
+   still gives its thread its own internal scroll region while the header and composer stay put
+   (`ref homeRef; flex:1;min-height:0;overflow:auto`) - so .o-screen is made to fill .o-main's
+   height here, the same mechanism a focus workspace uses, without touching the shared route flag
+   or shell.css (`:has()` already used this way in admin.css). */
+.o-screen:has(.s-orena-home) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.s-orena-home {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+}
+.s-orena-home__head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 0 20px;
+  flex: none;
+}
+.s-orena-home__headtext {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.s-orena-home__h1 {
+  margin: 0;
+  font-size: var(--h1);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.s-orena-home__sub {
+  font-size: 15px;
+  color: var(--muted);
+}
+.s-orena-home__thread {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 8px 2px;
+}
+.s-orena-home .o-mark,
+.s-orena-panel .o-mark,
+.s-orena-vrow .o-mark {
+  box-shadow: none;
+}
+.s-orena-home .s-orena-home__head .o-mark {
+  box-shadow: var(--mark-glow-hero);
+}
+.s-orena-home__empty {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 4px 0;
+}
+.s-orena-home__empty-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-orena-home__empty-title {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+.s-orena-home__empty-sub {
+  font-size: 14px;
+  color: var(--text3);
+}
+.s-orena-home__row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-orena-home__row--learner {
+  align-items: flex-end;
+}
+.s-orena-home__row--orena {
+  align-items: flex-start;
+}
+.s-orena-home__msg {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  max-width: 88%;
+}
+.s-orena-home__bubble {
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.s-orena-home__bubble--learner {
+  padding: 12px 18px;
+  background: var(--accent-soft);
+}
+.s-orena-home__bubble--orena {
+  padding: 2px 0 0;
+  background: transparent;
+}
+.s-orena-home__ref,
+.s-orena-panel__ref {
+  font-family: 'Noto Serif SC', Literata, Georgia, serif;
+}
+.s-orena-home__cards {
+  display: grid;
+  grid-template-columns: var(--cols-ip);
+  gap: 12px;
+  width: 100%;
+}
+.s-orena-home__buttons,
+.s-orena-panel__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.s-orena-home__sources,
+.s-orena-panel__sources {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 520px;
+}
+.s-orena-home__error,
+.s-orena-panel__error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: 14px;
+}
+.s-orena-home__retry,
+.s-orena-panel__retry {
+  border: 0;
+  background: none;
+  color: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: underline;
+}
+.s-orena-home__thinking,
+.s-orena-panel__thinking {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 8px;
+  border-radius: 18px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 14px;
+}
+.s-orena-home__composer {
+  flex: none;
+  padding: 12px 0 18px;
+}
+.s-orena-home__card {
+  border-radius: 22px;
+  border: 1.5px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--ai) border-box;
+  box-shadow: var(--sh-composer);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.s-orena-home__typing {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.s-orena-home__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 17px;
+}
+.s-orena-home__voicebtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--ai-line);
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-orena-home__voicebtn:hover {
+  border-color: var(--accent);
+}
+.s-orena-home__send {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-orena-home__send:hover {
+  background: var(--accent-fill-hover);
+}
+.s-orena-home__starters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: var(--wrap-starters);
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+.s-orena-home__starter {
+  flex: none;
+  white-space: nowrap;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* -------------------------------------------------------------------- Contextual panel (55) --- */
+.s-orena-panel {
+  padding: 0;
+}
+.s-orena-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  flex: none;
+}
+.s-orena-panel__who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.s-orena-panel__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-orena-panel__ctxwrap {
+  flex: none;
+  padding: 12px 24px 0;
+}
+.s-orena-panel__ctx {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface2);
+  color: var(--text);
+}
+.s-orena-panel__ctx svg {
+  flex: none;
+}
+.s-orena-panel__ctxlabel {
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
+  font-size: 14.5px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.s-orena-panel__thread {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-orena-panel__row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-orena-panel__row--learner {
+  align-items: flex-end;
+}
+.s-orena-panel__row--orena {
+  align-items: flex-start;
+}
+.s-orena-panel__msg {
+  max-width: 88%;
+}
+.s-orena-panel__bubble {
+  padding: 13px 18px;
+  border-radius: 18px;
+  border: 1px solid transparent;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.s-orena-panel__bubble--learner {
+  background: var(--accent-soft);
+}
+.s-orena-panel__bubble--orena {
+  background: transparent;
+}
+.s-orena-panel__cards {
+  display: grid;
+  grid-template-columns: var(--cols-ip);
+  gap: 12px;
+  width: 100%;
+}
+.s-orena-panel__starters {
+  flex: none;
+  padding: 0 24px 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s-orena-panel__starter {
+  height: 30px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+.s-orena-panel__foot {
+  flex: none;
+  padding: 14px 24px 24px;
+}
+.s-orena-panel__typing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 6px 0 20px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--ai) border-box;
+}
+.s-orena-panel__voicepill {
+  padding: 6px 6px 6px 8px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--ai) border-box;
+}
+.s-orena-panel__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+}
+.s-orena-panel__voicebtn {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid var(--ai-line);
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-orena-panel__voicebtn:hover {
+  border-color: var(--accent);
+}
+.s-orena-panel__send {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-orena-panel__send:hover {
+  background: var(--accent-fill-hover);
+}
+
+/* ------------------------------------------------------------- Action card / source card --- */
+.s-orena-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 0;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  color: var(--text);
+  text-align: left;
+}
+.s-orena-action:hover {
+  box-shadow: var(--sh2);
+}
+.s-orena-action--bare {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 12px;
+}
+.s-orena-action--bare:hover {
+  box-shadow: none;
+}
+.s-orena-action[disabled] {
+  opacity: 0.55;
+  cursor: default;
+}
+.s-orena-action__body {
+  flex: 1;
+  min-width: 0;
+}
+.s-orena-action__eyebrow {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+.s-orena-action__title {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.s-orena-action__reason {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.s-orena-action__cta {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 14px;
+  font-weight: 600;
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+.s-orena-action:hover .s-orena-action__cta {
+  background: var(--accent-fill-hover);
+}
+.s-orena-source {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  color: var(--text);
+}
+.s-orena-source__body {
+  flex: 1;
+  min-width: 0;
+}
+.s-orena-source__kind {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-orena-source__title {
+  font-size: 14.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-orena-evidence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.s-orena-evidence svg {
+  flex: none;
+}
+.s-orena-evidence__label {
+  font-weight: 600;
+  color: var(--text3);
+}
+
+/* -------------------------------------------------------------------------- Voice controls --- */
+/* The phase dot: the source's own four colours (voiceDot), on the row and on the voice screen. */
+.s-orena-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--voice-dot-idle);
+}
+.s-orena-dot--listening {
+  background: var(--voice-dot-listening);
+}
+.s-orena-dot--thinking {
+  background: var(--voice-dot-thinking);
+}
+.s-orena-dot--speaking {
+  background: var(--voice-dot-speaking);
+}
+/* The main mic / stop button (voiceMainBg): red while listening, the brand gradient otherwise. */
+.s-orena-voice-main {
+  border: 0;
+  border-radius: 999px;
+  color: var(--accent-ink);
+  background: var(--voice-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-orena-voice-main--listening {
+  background: var(--voice-main-listening);
+}
+.s-orena-voice-main svg rect {
+  fill: currentColor;
+}
+/* The button's own disabled look (base.css) must not flatten the phase colours. */
+.s-orena-voice-main:disabled {
+  background: var(--voice-main) !important;
+  color: var(--accent-ink) !important;
+}
+
+/* The inline row inside the gradient-ring card (Home) or pill (panel). */
+.s-orena-vrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+}
+.s-orena-vrow--in {
+  animation: fade 0.2s ease;
+}
+.s-orena-vrow__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.s-orena-vrow__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-orena-vrow__line {
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-orena-vrow__speak {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--ai-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-orena-vrow__speak--off {
+  color: var(--muted);
+}
+.s-orena-vrow__main {
+  width: 44px;
+  height: 44px;
+}
+.s-orena-vrow__close {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+/* --------------------------------------------------------------------- Full-screen voice (56) --- *
+   The source frame ignores data-theme: the same fixed dark screen on the light and dark toggles
+   (E5 §7.2), from kit/tokens.css's fixed --voice-* tokens (moved there from this file - see the
+   file header). It sits in the shell's overlay layer under the sheets (z 9 < the scrim's 10), so
+   the microphone sheet a first recording needs opens above it. */
+.s-orena-voicefull-root {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+}
+.s-orena-voicefull {
+  position: absolute;
+  inset: 0;
+  background: var(--voice-bg);
+  color: var(--voice-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px var(--pad) 28px;
+  overflow: auto;
+}
+.s-orena-voicefull--in {
+  animation: fade 0.2s ease;
+}
+.s-orena-voicefull__head {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+}
+.s-orena-voicefull__title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-orena-voicefull__close {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--voice-line);
+  background: var(--voice-fill);
+  color: var(--voice-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-orena-voicefull__spacer {
+  flex: 1;
+  min-height: 24px;
+}
+.s-orena-voicefull__orb {
+  width: min(200px, 48vw, 26vh);
+  aspect-ratio: 1;
+  border-radius: 26%;
+  background: var(--mark-disc);
+  box-shadow: var(--mark-ring), 0 20px 60px var(--voice-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-orena-voicefull__orb svg {
+  width: 72%;
+  height: 72%;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 0 12px var(--voice-glow-strong));
+}
+.s-orena-voicefull__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--voice-mute);
+}
+.s-orena-voicefull__status .s-orena-dot {
+  width: 8px;
+  height: 8px;
+}
+.s-orena-voicefull__talk {
+  /* What was heard and Orena's reply can be as long as it gets: they scroll here, so the orb, the
+     status and the controls stay in the frame (rule 49). */
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  max-width: 620px;
+  width: 100%;
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
+}
+.s-orena-voicefull__heard {
+  font-size: clamp(20px, 4.6vw, 26px);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+.s-orena-voicefull__reply {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--voice-ink-soft);
+  text-wrap: pretty;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--voice-fill-faint);
+  border: 1px solid var(--voice-line-soft);
+  text-align: left;
+}
+.s-orena-voicefull__chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 620px;
+  margin-bottom: 22px;
+}
+.s-orena-voicefull__chip {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--voice-line);
+  background: var(--voice-fill);
+  color: var(--voice-ink);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.s-orena-voicefull__controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: none;
+}
+.s-orena-voicefull__ghost {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--voice-line);
+  background: transparent;
+  color: var(--voice-ink-soft);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-orena-voicefull__ghost--on {
+  background: var(--voice-fill-on);
+}
+.s-orena-voicefull__main {
+  width: 76px;
+  height: 76px;
+  box-shadow: var(--voice-main-shadow);
+}
+.s-orena-voicefull__hint {
+  font-size: 12.5px;
+  color: var(--voice-mute-soft);
+  margin-top: 14px;
+}
+/* The voice screen's controls are the source's own light-on-dark pills; base.css's disabled and
+   focus treatments are drawn for the themed surfaces. */
+.s-orena-voicefull :focus-visible {
+  outline-color: var(--voice-ink);
+}
+
+/* --------------------------------------------------------------------------- Memory sheet --- */
+.s-orena-mem__body {
+  gap: 16px;
+}
+.s-orena-mem__intro {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.s-orena-mem__empty {
+  border-radius: 16px;
+  background: var(--surface2);
+  padding: 18px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-orena-mem__row {
+  border-radius: 16px;
+  background: var(--surface2);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-orena-mem__row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.s-orena-mem__kind {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+.s-orena-mem__del {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-orena-mem__del:hover {
+  background: var(--surface3);
+  color: var(--text);
+}
+.s-orena-mem__text {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.s-orena-mem__hint {
+  font-size: 12.5px;
+  color: var(--text3);
+}
+
+/* The live conversation carried onto another route (voice-dock.js): a small pill above everything, out of the
+   way of the page's own controls; Stop ends the conversation. */
+.s-orena-dock {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 60;
+}
+.s-orena-dock__pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--ai-line);
+  box-shadow: var(--sh2);
+}
+.s-orena-dock__status {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ai-ink);
+  white-space: nowrap;
+}
+.s-orena-dock__stop {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+:root[data-device="mobile"] .s-orena-dock { bottom: calc(78px + max(18px, calc(env(safe-area-inset-bottom, 0px) - 10px))); }
+:root[data-device="mobile"][data-focus='1'] .s-orena-dock { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); right: 12px; left: auto; transform: none; }
+
+/* iOS Safari zooms the page when a text field under 16px takes focus (and leaves it zoomed): on a phone the field is 16px. */
+:root[data-device='mobile'] .s-orena-panel__input { font-size: 16px; }

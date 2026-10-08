@@ -1,0 +1,31 @@
+{
+  "_usedBy": [
+    "ProgressTemplate"
+  ],
+  "improving": [
+    {
+      "name": "string",
+      "from": "string",
+      "to": "string",
+      "spark": [
+        "number"
+      ]
+    }
+  ],
+  "difficulties": [
+    {
+      "title": "string",
+      "detail": "string",
+      "count": "number",
+      "where": "string"
+    }
+  ],
+  "basedOn": [
+    "string"
+  ],
+  "nextAction": {
+    "title": "string",
+    "detail": "string",
+    "skill": "string"
+  }
+}

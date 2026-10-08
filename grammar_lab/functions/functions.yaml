@@ -1,0 +1,110 @@
+# Communicative functions shared by every target language (SPEC §3).
+schema_version: '0.2'
+functions:
+- id: fn.habit_fact
+  title:
+    vi: Nói về thói quen, sự thật
+    en: Habits and facts
+  realizations:
+    en:
+    - en.present_simple.third_person_s
+  planned:
+    ja:
+    - ja.masu_form.present
+- id: fn.existence
+  title:
+    vi: Nói cái gì đó có ở đâu
+    en: Existence
+  realizations:
+    en:
+    - en.there_is_are
+  planned:
+    zh-Hans:
+    - zh.you_existence
+    ja:
+    - ja.aru_iru
+- id: fn.quantity
+  title:
+    vi: Số lượng, số nhiều
+    en: Quantity and plurality
+  realizations:
+    en:
+    - en.plural_nouns.regular
+    - en.countable_uncountable.much_many
+  planned:
+    zh-Hans:
+    - zh.measure_words
+    ja:
+    - ja.counters
+- id: fn.reference
+  title:
+    vi: Chỉ định người/vật (đã biết hay chưa)
+    en: Reference
+  realizations:
+    en:
+    - en.articles.a_an_the
+  planned:
+    zh-Hans:
+    - zh.zhe_na_measure
+    ja:
+    - ja.wa_ga
+- id: fn.ongoing_now
+  title:
+    vi: Việc đang diễn ra
+    en: Ongoing action
+  realizations:
+    en:
+    - en.present_continuous.now
+  planned:
+    zh-Hans:
+    - zh.zai_progressive
+    ja:
+    - ja.te_iru.progressive
+- id: fn.completed_past
+  title:
+    vi: Việc đã xong trong quá khứ
+    en: Completed past action
+  realizations:
+    en:
+    - en.past_simple
+  planned:
+    zh-Hans:
+    - zh.le_completion
+    ja:
+    - ja.ta_form
+- id: fn.past_experience
+  title:
+    vi: Trải nghiệm đã từng
+    en: Past experience
+  realizations:
+    en:
+    - en.present_perfect.experience
+  planned:
+    zh-Hans:
+    - zh.guo_experience
+    ja:
+    - ja.ta_koto_ga_aru
+- id: fn.comparison
+  title:
+    vi: So sánh hơn
+    en: Comparison
+  realizations:
+    en:
+    - en.comparatives
+  planned:
+    zh-Hans:
+    - zh.bi_comparison
+    ja:
+    - ja.yori_comparison
+- id: fn.condition_real
+  title:
+    vi: Điều kiện có thể xảy ra
+    en: Real condition
+  realizations:
+    en:
+    - en.conditional_first
+  planned:
+    zh-Hans:
+    - zh.ruguo_jiu
+    ja:
+    - ja.tara_ba

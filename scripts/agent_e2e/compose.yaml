@@ -1,0 +1,80 @@
+# The agent's E2E stack (INTELLIGENCE_RECONCILIATION_D4.md section 5): a compose project of its own, never the app's
+# `ai-writing-coach` project, never :8000/:8010/:8011/:8012/:8021, a throwaway PostgreSQL on tmpfs and no named
+# volume - `down` leaves nothing behind. No provider is reached: no key is needed, none is read.
+#
+#   python scripts/agent_e2e/run.py
+#
+# The runner owns the whole life: it clears any leftover of this project, starts it, runs the passes and takes it
+# down however it ends.
+name: orena-agent-e2e
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: e2e
+      POSTGRES_PASSWORD: e2e-throwaway
+      POSTGRES_DB: agent_e2e
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e2e -d agent_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # No automatic startup Alembic (ARCHITECTURE_INVARIANTS): the schema is applied here, once, to the throwaway
+  # database only.
+  migrate:
+    image: ai-writing-coach:local
+    working_dir: /app
+    command: ["python", "scripts/agent_e2e/migrate.py"]
+    environment:
+      POSTGRES_RUNTIME_URL: postgresql+psycopg://e2e:e2e-throwaway@db:5432/agent_e2e
+    volumes: &code
+      - ../../app.py:/app/app.py:ro
+      - ../../auth_support.py:/app/auth_support.py:ro
+      - ../../grammar_course.py:/app/grammar_course.py:ro
+      - ../../writing_coach:/app/writing_coach:ro
+      - ../../migrations:/app/migrations:ro
+      - ../../alembic.ini:/app/alembic.ini:ro
+      - ../../scripts/agent_live:/app/scripts/agent_live:ro
+      - ../../scripts/agent_e2e:/app/scripts/agent_e2e:ro
+      - ../../VERSION:/app/VERSION:ro
+      - ../../static:/app/static:ro
+      - ../../templates:/app/templates:ro
+      - ../../data:/app/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: ai-writing-coach:local
+    working_dir: /app
+    environment:
+      APP_ENV: development
+      PUBLIC_BASE_URL: http://127.0.0.1:${AGENT_E2E_PORT:-8016}
+      AGENT_ENABLED: ${AGENT_ENABLED:-true}
+      ORENA_ACCOUNT_BACKBONE: ${ORENA_ACCOUNT_BACKBONE:-}
+      PERSISTENCE_BACKEND: postgresql
+      POSTGRES_RUNTIME_URL: postgresql+psycopg://e2e:e2e-throwaway@db:5432/agent_e2e
+      # No sign-in: the one development learner of this throwaway database is the test account.
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      GOOGLE_REDIRECT_URI: ""
+      # No provider: nothing local is reachable and no key is set.
+      OLLAMA_URL: http://127.0.0.1:9
+      GEMINI_API_KEY: ""
+      WRITING_DB: /data/writing.db
+      AUTH_DB: /data/auth.db
+      PLATFORM_DB: /data/platform.db
+      PRODUCT_DB: /data/product.db
+      USER_DATA_ROOT: /data/users
+    tmpfs:
+      - /data
+    volumes: *code
+    ports:
+      - "127.0.0.1:${AGENT_E2E_PORT:-8016}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully

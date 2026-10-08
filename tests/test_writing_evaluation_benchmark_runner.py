@@ -66,9 +66,9 @@ def test_full_valid_replay_runs_all_cases_and_comparisons():
 
     assert report["mode"] == "replay"
     assert report["scope"] == "full"
-    assert report["selected_case_count"] == 24
+    assert report["selected_case_count"] == 26
     assert report["missing_case_count"] == 0
-    assert report["passed_case_count"] == 24
+    assert report["passed_case_count"] == 26
     assert report["failed_case_count"] == 0
     assert report["comparison_count"] == 4
     assert report["not_executed_comparison_count"] == 0
@@ -187,7 +187,7 @@ def test_partial_case_selection_is_explicit_and_missing_pair_is_not_pass():
 
     assert report["scope"] == "partial"
     assert report["selected_case_count"] == 1
-    assert report["missing_case_count"] == 23
+    assert report["missing_case_count"] == 25
     assert report["passed"] is True
     assert report["full_corpus_certified"] is False
     assert report["comparison_total_count"] == 1
@@ -200,8 +200,8 @@ def test_partial_case_selection_is_explicit_and_missing_pair_is_not_pass():
 def test_language_selection_is_partial_and_never_full_certification():
     report = run_replay(_document(), language="zh", timestamp=TIMESTAMP).report
     assert report["scope"] == "partial"
-    assert report["selected_case_count"] == 12
-    assert report["missing_case_count"] == 12
+    assert report["selected_case_count"] == 13
+    assert report["missing_case_count"] == 13
     assert report["passed"] is True
     assert report["full_corpus_certified"] is False
 

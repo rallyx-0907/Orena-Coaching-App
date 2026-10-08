@@ -120,6 +120,7 @@ class CuratedListeningLesson:
     sections: tuple[str, ...]
     vocabulary: tuple[str, ...] = ()
     artwork: str = "listen"
+    comprehension: tuple[Mapping[str, Any], ...] = ()
 
     @property
     def duration_ms(self) -> int:
@@ -186,6 +187,38 @@ def _required_text(value: Any, field: str) -> str:
     if not cleaned:
         raise ValueError(f"Listening catalog {field} must not be empty.")
     return cleaned
+
+
+def validate_comprehension(value: Any, segments: Any) -> tuple[Mapping[str, Any], ...]:
+    """Admit authored questions only against the persisted canonical excerpt.
+
+    No generation or provider invocation occurs here. Exact evidence invalidates
+    this derivative when a relevant source transcript revision changes.
+    """
+    if not isinstance(value, list):
+        raise ValueError("Listening comprehension must be a list")
+    by_id = {segment.segment_id: segment.original_text for segment in segments}
+    questions = []
+    seen = set()
+    for raw in value:
+        if not isinstance(raw, Mapping):
+            raise ValueError("Invalid Listening question")
+        question_id = _required_text(raw.get("id"), "question id")
+        options = _string_tuple(raw.get("options"), "question options")
+        correct = raw.get("correct_index")
+        evidence = _string_tuple(raw.get("evidence_segment_ids"), "question evidence")
+        if (question_id in seen or not 2 <= len(options) <= 6 or type(correct) is not int
+                or not 0 <= correct < len(options) or not evidence or not set(evidence).issubset(by_id)):
+            raise ValueError("Invalid Listening question answer or evidence")
+        evidence_text = _required_text(raw.get("evidence_text"), "question evidence text")
+        if evidence_text != "\n".join(by_id[segment_id] for segment_id in evidence):
+            raise ValueError("Listening question needs review after source revision")
+        questions.append({"id": question_id, "prompt": _required_text(raw.get("prompt"), "question prompt"),
+                          "options": list(options), "correct_index": correct,
+                          "explanation": _required_text(raw.get("explanation"), "question explanation"),
+                          "evidence_segment_ids": list(evidence), "evidence_text": evidence_text})
+        seen.add(question_id)
+    return tuple(questions)
 
 
 def _string_tuple(value: Any, field: str) -> tuple[str, ...]:
@@ -305,6 +338,37 @@ def discovery_sections(lesson: CuratedListeningLesson) -> tuple[str, ...]:
     return tuple(sections)
 
 
+# The kinds of listening content the Canonical UI Baseline names as its type
+# chips (ContentCard.type, D-066). Like the discovery rails, the type is DERIVED from
+# what the lesson already says about itself - its playback, topic and tags - so the
+# bulk importer does not need an editor to classify each lesson by hand. The order
+# is the precedence: the first row that matches wins. A lesson that matches none has
+# no type, and the card says none rather than guessing; "imported" is a learner's
+# own media and is never a catalogue type.
+CONTENT_TYPE_RULES: tuple[tuple[str, frozenset[str]], ...] = (
+    ("interview", frozenset({"interview", "interviews"})),
+    ("podcast", frozenset({"podcast"})),
+    ("speech", frozenset({"speech", "talk", "lecture"})),
+    ("culture", frozenset({"culture", "history"})),
+    ("dialogue", frozenset({"conversation", "conversations", "dialogue"})),
+    ("story", frozenset({"story", "stories", "narrative", "storytelling"})),
+    ("situation", frozenset({"travel", "work", "how-to", "situation"})),
+)
+CONTENT_TYPES: tuple[str, ...] = ("video", *(kind for kind, _ in CONTENT_TYPE_RULES))
+
+
+def content_type(lesson: CuratedListeningLesson) -> str | None:
+    """The one type a lesson is shown as, or None when its metadata does not say."""
+
+    if lesson.playback.kind == "video":
+        return "video"
+    vocabulary = {lesson.topic, *lesson.subtopics, *lesson.content_tags}
+    for kind, matches in CONTENT_TYPE_RULES:
+        if vocabulary & matches:
+            return kind
+    return None
+
+
 def is_real_media(lesson: CuratedListeningLesson) -> bool:
     """Real playable video with a real poster, as the spec means it in 3.5."""
 
@@ -419,10 +483,12 @@ def load_catalog_manifest(
         if not tags:
             raise ValueError(f"Listening lesson {lesson_id} needs at least one discovery tag.")
         title = _required_text(raw_lesson.get("title"), "title")
+        media_object = _media_object(source, title, start_ms, end_ms)
+        comprehension = validate_comprehension(raw_lesson.get("comprehension", []), media_object.transcript.segments)
         lesson = CuratedListeningLesson(
             lesson_id=lesson_id,
             source=source,
-            media_object=_media_object(source, title, start_ms, end_ms),
+            media_object=media_object,
             playback=source.playback,
             excerpt_start_ms=start_ms,
             excerpt_end_ms=end_ms,
@@ -439,6 +505,7 @@ def load_catalog_manifest(
             sections=_string_tuple(raw_lesson.get("sections"), "sections"),
             vocabulary=_string_tuple(raw_lesson.get("vocabulary"), "vocabulary"),
             artwork=_required_text(raw_lesson.get("artwork"), "artwork"),
+            comprehension=comprehension,
         )
         lessons.append(lesson)
     return sources, tuple(lessons)
@@ -570,6 +637,8 @@ def lesson_metadata(lesson: CuratedListeningLesson) -> dict[str, object]:
     return {
         "spoken_text_by_segment": {str(item["segment_id"]): str(item["spoken_text"]) for item in source.segments if item.get("spoken_text")},
         "lesson_id": lesson.lesson_id,
+        "comprehension_count": len(lesson.comprehension),
+        "comprehension": list(lesson.comprehension),
         "media_object_id": source.source_media_id,
         "title": lesson.media_object.asset.title,
         "description": lesson.description,
@@ -591,6 +660,7 @@ def lesson_metadata(lesson: CuratedListeningLesson) -> dict[str, object]:
         "artwork": lesson.artwork,
         "poster_url": source.poster_url,
         "playback_kind": source.playback.kind,
+        "content_type": content_type(lesson),
         "published_state": lesson.content_status.casefold(),
         "curation_state": lesson.curation_state,
         "is_development_candidate": lesson.content_status == DEV_CONTENT_STATUS,

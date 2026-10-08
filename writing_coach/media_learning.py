@@ -61,6 +61,7 @@ class MediaLearningAsset:
     duration_ms: int | None = None
     transcript_available: bool = False
     translation_available: bool = False
+    thumbnail_ref: str = ""
 
     def __post_init__(self) -> None:
         _require_stable_id(self.asset_id, "asset_id")
@@ -104,6 +105,27 @@ class MediaLearningAsset:
             raise MediaLearningContractError(
                 "translation availability requires transcript availability."
             )
+        if not isinstance(self.thumbnail_ref, str) or self.thumbnail_ref != self.thumbnail_ref.strip():
+            raise MediaLearningContractError("thumbnail_ref must be empty, an HTTPS URL, or an asset key.")
+        if self.thumbnail_ref:
+            if self.thumbnail_ref.startswith("asset:"):
+                _require_stable_id(self.thumbnail_ref.removeprefix("asset:"), "thumbnail_ref")
+            else:
+                try:
+                    thumbnail_url = urlsplit(self.thumbnail_ref)
+                except ValueError as exc:
+                    raise MediaLearningContractError(
+                        "thumbnail_ref must be empty, an HTTPS URL, or an asset key."
+                    ) from exc
+                if (
+                    thumbnail_url.scheme != "https"
+                    or not thumbnail_url.hostname
+                    or thumbnail_url.username is not None
+                    or thumbnail_url.password is not None
+                ):
+                    raise MediaLearningContractError(
+                        "thumbnail_ref must be empty, an HTTPS URL, or an asset key."
+                    )
 
 
 @dataclass(frozen=True)

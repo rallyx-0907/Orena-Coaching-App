@@ -1,0 +1,40 @@
+{
+  "_usedBy": [
+    "WritingRevisionTemplate"
+  ],
+  "previous": {
+    "version": "number",
+    "wordCount": "number",
+    "text": "string"
+  },
+  "current": {
+    "version": "number",
+    "wordCount": "number",
+    "text": "string"
+  },
+  "fixed": [
+    {
+      "title": "string",
+      "detail": "string"
+    }
+  ],
+  "remaining": [
+    {
+      "title": "string",
+      "detail": "string"
+    }
+  ],
+  "added": [
+    {
+      "title": "string",
+      "detail": "string"
+    }
+  ],
+  "dimensionDeltas": [
+    {
+      "name": "string",
+      "from": "number",
+      "to": "number"
+    }
+  ]
+}

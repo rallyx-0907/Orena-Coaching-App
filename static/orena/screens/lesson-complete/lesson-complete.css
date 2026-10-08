@@ -1,0 +1,112 @@
+/* Lesson complete (frame 63, E3 §7): a centred celebration card on both devices - not the docked
+   side-panel/bottom-sheet every other overlay in this app is. `kit/overlay.js#openSheet` still
+   supplies the shared scrim/Escape/focus-trap/single-overlay machinery (`.o-sheet`, applied
+   alongside `.s-lc`); the four device variables it reads are redeclared here, on the same element,
+   to turn the docked shell into a full-bleed flex box that centres the card - no `!important`, no
+   second overlay implementation, and no width media query (rule 49's own device-variable
+   convention, just pointed at different values than the docked sheets use). */
+.s-lc {
+  --sheet-inset: 0;
+  --sheet-w: auto;
+  --sheet-r: 0;
+  --sheet-maxh: 100%;
+  background: transparent;
+  border-left: 0;
+  box-shadow: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.s-lc__card {
+  width: 100%;
+  max-width: 360px;
+  border-radius: 24px;
+  background: var(--tint2);
+  padding: 26px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--sh3);
+}
+/* The frame's own decorative blob is a hardcoded `rgba(255,255,255,.22)` with no token of its own;
+   `--toast-chip` (a theme-invariant translucent white, already defined once outside the per-theme
+   blocks for exactly this "white on a tinted surface" shape) is the nearest existing token -
+   recorded as a kit request, not a literal. */
+.s-lc__blob {
+  position: absolute;
+  left: -40px;
+  top: -40px;
+  width: 130px;
+  height: 130px;
+  border-radius: 999px;
+  background: var(--toast-chip);
+  pointer-events: none;
+}
+.s-lc__icon {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--sh2);
+}
+.s-lc__eyebrow {
+  position: relative;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.s-lc__title {
+  position: relative;
+  font-size: 14px;
+  color: var(--muted);
+}
+/* The frame's percentage: 40/700 text, its % sign 18/500 muted - drawn only when measured. */
+.s-lc__score {
+  position: relative;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+.s-lc__score span {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.s-lc__score-label {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.s-lc__facts {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+.s-lc__facts b {
+  color: var(--text);
+}
+.s-lc__continue {
+  position: relative;
+  width: 100%;
+  margin-top: 6px;
+}
+.s-lc__continue:active {
+  transform: scale(0.98);
+}

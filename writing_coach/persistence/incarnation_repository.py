@@ -1,8 +1,10 @@
 """Resolving an account's incarnation. The one place that reads the row.
 
-DEPLOYED, INACTIVE — the table this reads is in
-`migrations/versions/20260908_0005`, applied to the sandbox runtime. The
-`ORENA_ACCOUNT_BACKBONE` flag is off, so no caller is wired to it.
+LIVE ON THE SANDBOX ONLY — the table this reads is in
+`migrations/versions/20260908_0005`. The sandbox runtime runs with
+`ORENA_ACCOUNT_BACKBONE=on`, and `work_api` resolves each request's
+incarnation through `ensure_active`; production and preview do not run it.
+`mark_deleted`/`register_new` have no runtime caller (D-055 gate).
 
 I1 built scope from an incarnation derived in the pure decision layer, out of
 the account's id and creation time. Review finding 3: that made a module with

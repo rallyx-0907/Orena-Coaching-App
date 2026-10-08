@@ -4,11 +4,11 @@ import json
 import sqlite3
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine, delete, select, text
 from sqlalchemy.orm import Session
 
 from writing_coach.ai.config import (
@@ -20,7 +20,7 @@ from writing_coach.ai.config import (
 )
 from writing_coach.ai.base import AICapabilityConfigInvalid
 from writing_coach.persistence.config import create_shadow_engine
-from writing_coach.persistence.models import AuditLog, PlatformSetting
+from writing_coach.persistence.models import AuditLog, PlatformSetting, User
 
 
 @dataclass(frozen=True)
@@ -73,6 +73,16 @@ class PlatformRepository(Protocol):
     def delete_provider_credential(self, provider_id: str) -> None: ...
     def record_ai_operation(self, telemetry: dict) -> None: ...
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]: ...
+    def record_admin_event(
+        self,
+        action: str,
+        *,
+        actor: str,
+        entity_type: str = "",
+        entity_id: str = "",
+        payload: dict | None = None,
+    ) -> None: ...
+    def delete_agent_turns_before(self, before: datetime, *, limit: int) -> int: ...
 
 
 class SQLitePlatformRepository:
@@ -277,8 +287,46 @@ class SQLitePlatformRepository:
         # SQLite is frozen archive/rollback storage; telemetry is PostgreSQL-only.
         return None
 
+    def record_admin_event(
+        self,
+        action: str,
+        *,
+        actor: str,
+        entity_type: str = "",
+        entity_id: str = "",
+        payload: dict | None = None,
+    ) -> None:
+        # Like telemetry, the administrator audit is PostgreSQL-only; the frozen
+        # archive store neither gains an audit table nor fails a change for it.
+        return None
+
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         return []
+
+    def delete_agent_turns_before(self, before: datetime, *, limit: int) -> int:
+        # No audit table in the frozen archive store: nothing was recorded, so nothing is swept.
+        return 0
+
+    def ai_spend_since(self, since: datetime) -> tuple[float, int]:
+        # No AI ledger here (telemetry is PostgreSQL-only): a spend cap must refuse, not read zero.
+        raise NotImplementedError("the AI spend ledger is PostgreSQL-only")
+
+    def ai_cost_rows(self, since: datetime) -> list[dict]:
+        # Telemetry is PostgreSQL-only: nothing to report from the archive store.
+        return []
+
+    def ai_spend_for_capability(self, capability: str) -> float:
+        # No ledger here: a spend cap must refuse, not read zero.
+        raise NotImplementedError("the AI spend ledger is PostgreSQL-only")
+
+    def record_ai_cost(self, user_key: str, event: dict) -> bool:
+        return False
+
+    def delete_ai_costs_before(self, before: datetime, *, limit: int) -> int:
+        return 0
+
+    def ai_costs_by_account(self, since: datetime, *, limit: int = 100) -> list[dict] | None:
+        return None
 
 
 class PostgresPlatformRepository:
@@ -443,6 +491,84 @@ class PostgresPlatformRepository:
                 )
             )
 
+    def record_admin_event(
+        self,
+        action: str,
+        *,
+        actor: str,
+        entity_type: str = "",
+        entity_id: str = "",
+        payload: dict | None = None,
+    ) -> None:
+        """Record one administrator change to the AI platform in `audit_logs`.
+
+        The same table AI operation telemetry uses. The actor is linked to its
+        account row when there is one; a development administrator without one
+        is named in the payload instead. Callers pass only non-secret facts.
+        """
+        body = dict(payload or {})
+        now = datetime.now(UTC)
+        with Session(self.engine) as session, session.begin():
+            user_id = session.scalar(select(User.id).where(User.user_key == actor)) if actor else None
+            if user_id is None:
+                body["actor"] = str(actor or "unknown")
+            session.add(
+                AuditLog(
+                    id=uuid.uuid4(),
+                    user_id=user_id,
+                    action=str(action)[:160],
+                    entity_type=str(entity_type)[:120],
+                    entity_id=str(entity_id)[:255],
+                    payload=body,
+                    created_at=now,
+                )
+            )
+
+    def delete_agent_turns_before(self, before: datetime, *, limit: int) -> int:
+        """The agent.turn retention sweep (agent/retention.py): delete at most `limit` `agent.turn` rows created
+        before `before`, the oldest first, and say how many went. Only that action: no other audit row - an
+        administrator's change, AI operation telemetry - is ever touched by it."""
+
+        bounded = max(1, min(int(limit), 50_000))
+        oldest = (
+            select(AuditLog.id)
+            .where(AuditLog.action == "agent.turn", AuditLog.created_at < before)
+            .order_by(AuditLog.created_at)
+            .limit(bounded)
+            .scalar_subquery()
+        )
+        with Session(self.engine) as session, session.begin():
+            result = session.execute(
+                delete(AuditLog)
+                .where(AuditLog.action == "agent.turn", AuditLog.id.in_(oldest))
+                .execution_options(synchronize_session=False)
+            )
+            return int(result.rowcount or 0)
+    def ai_spend_since(self, since: datetime) -> tuple[float, int]:
+        """Today's shared AI ledger (agent/budget.py): the estimated USD of priced calls since `since`, and how many
+        provider calls succeeded without a price."""
+
+        query = text(
+            "SELECT COALESCE(SUM((payload::jsonb -> 'cost' ->> 'amount')::numeric), 0), "
+            "COUNT(*) FILTER (WHERE payload::jsonb ->> 'outcome' = 'success' "
+            "AND payload::jsonb ->> 'provider' IS NOT NULL "
+            "AND COALESCE(payload::jsonb -> 'cost' ->> 'state', '') <> 'estimated') "
+            "FROM audit_logs WHERE action = 'ai.operation' AND created_at >= :since"
+        )
+        with self.engine.connect() as connection:
+            usd, unpriced = connection.execute(query, {"since": since}).one()
+        return float(usd or 0), int(unpriced or 0)
+
+    def ai_spend_for_capability(self, capability: str) -> float:
+        """All the estimated USD one capability has spent, ever (a lifetime cap, e.g. word TTS's 5 USD)."""
+
+        query = text(
+            "SELECT COALESCE(SUM((payload::jsonb -> 'cost' ->> 'amount')::numeric), 0) FROM audit_logs "
+            "WHERE action = 'ai.operation' AND payload::jsonb ->> 'capability' = :capability"
+        )
+        with self.engine.connect() as connection:
+            return float(connection.execute(query, {"capability": str(capability)}).scalar_one() or 0)
+
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         bounded = max(1, min(int(limit), 500))
         with Session(self.engine) as session:
@@ -462,3 +588,107 @@ class PostgresPlatformRepository:
             safe["created_at"] = row.created_at.isoformat()
             events.append(safe)
         return events
+
+    def ai_cost_rows(self, since: datetime) -> list[dict]:
+        """The AI ledger grouped by UTC day, capability, provider and model (cost report, 2026-10-04).
+
+        Sums only what the rows recorded: estimated USD, priced and unpriced calls, tokens and audio seconds.
+        No learner is named: the operation telemetry is anonymous by design.
+        """
+
+        query = text(
+            "WITH ops AS (SELECT created_at, payload::jsonb AS p FROM audit_logs "
+            "WHERE action = 'ai.operation' AND created_at >= :since) "
+            "SELECT to_char(date_trunc('day', created_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day, "
+            "p ->> 'capability' AS capability, p ->> 'provider' AS provider, p ->> 'model' AS model, "
+            "COUNT(*) AS calls, COUNT(*) FILTER (WHERE p ->> 'outcome' = 'failure') AS failures, "
+            "COUNT(*) FILTER (WHERE p -> 'cost' ->> 'state' = 'estimated') AS priced_calls, "
+            "COUNT(*) FILTER (WHERE p ->> 'outcome' = 'success' AND p ->> 'provider' IS NOT NULL "
+            "AND COALESCE(p -> 'cost' ->> 'state', '') <> 'estimated') AS unpriced_calls, "
+            "COALESCE(SUM((p -> 'cost' ->> 'amount')::numeric), 0) AS usd, "
+            "COALESCE(SUM((p -> 'usage' ->> 'prompt_tokens')::bigint), 0) AS prompt_tokens, "
+            "COALESCE(SUM((p -> 'usage' ->> 'completion_tokens')::bigint), 0) AS completion_tokens, "
+            "COALESCE(SUM((p -> 'usage' ->> 'audio_seconds')::numeric), 0) AS audio_seconds, "
+            "AVG((p ->> 'latency_ms')::numeric) AS avg_latency_ms "
+            "FROM ops GROUP BY 1, 2, 3, 4 ORDER BY 1 DESC, usd DESC"
+        )
+        with self.engine.connect() as connection:
+            rows = connection.execute(query, {"since": since}).mappings().all()
+        return [
+            {
+                "day": row["day"], "capability": row["capability"], "provider": row["provider"], "model": row["model"],
+                "calls": int(row["calls"]), "failures": int(row["failures"]), "priced_calls": int(row["priced_calls"]),
+                "unpriced_calls": int(row["unpriced_calls"]), "usd": round(float(row["usd"]), 8),
+                "prompt_tokens": int(row["prompt_tokens"]), "completion_tokens": int(row["completion_tokens"]),
+                "audio_seconds": round(float(row["audio_seconds"]), 3),
+                "avg_latency_ms": round(float(row["avg_latency_ms"])) if row["avg_latency_ms"] is not None else None,
+            }
+            for row in rows
+        ]
+
+    # ---- AI cost per account (AC-2; proposed migration 20261005_0026) -------------------------------------
+
+    def record_ai_cost(self, user_key: str, event: dict) -> bool:
+        """One priced call for a signed-in account: account, feature, provider, model, cost and units - no learner
+        words. One statement in the learner's request, bounded by short timeouts so a slow database delays a learner
+        by at most a fraction of a second. False (nothing written) for a key with no account row; an error (the
+        table not there yet, a timeout) is the caller's to absorb."""
+
+        cost = event.get("cost") if isinstance(event.get("cost"), dict) else {}
+        usage = event.get("usage") if isinstance(event.get("usage"), dict) else {}
+        values = {
+            "id": uuid.uuid4(), "user_key": user_key, "occurred_at": datetime.now(UTC),
+            "feature": str(event.get("capability") or "")[:80], "provider": str(event.get("provider") or "")[:40],
+            "model": str(event.get("model") or "")[:160], "cost_state": str(cost.get("state") or "unknown"),
+            "cost_usd": cost.get("amount"), "input_tokens": usage.get("prompt_tokens"),
+            "output_tokens": usage.get("completion_tokens"), "audio_seconds": usage.get("audio_seconds"),
+        }  # fmt: skip
+        statement = text(
+            "INSERT INTO ai_cost_records (id, account_id, occurred_at, feature, provider, model, cost_state, cost_usd, "
+            "input_tokens, output_tokens, audio_seconds) "
+            "SELECT :id, users.id, :occurred_at, :feature, :provider, :model, :cost_state, :cost_usd, :input_tokens, "
+            ":output_tokens, :audio_seconds FROM users WHERE users.user_key = :user_key"
+        )
+        with self.engine.begin() as connection:
+            connection.execute(text("SET LOCAL statement_timeout = 500"))
+            connection.execute(text("SET LOCAL lock_timeout = 200"))
+            return int(connection.execute(statement, values).rowcount or 0) == 1
+
+    def delete_ai_costs_before(self, before: datetime, *, limit: int) -> int:
+        """The 13-month sweep (ai/account_costs.py): at most `limit` cost records older than `before`, oldest first.
+        Only that table."""
+
+        from writing_coach.persistence.models import AICostRecord
+
+        bounded = max(1, min(int(limit), 50_000))
+        oldest = (select(AICostRecord.id).where(AICostRecord.occurred_at < before)
+                  .order_by(AICostRecord.occurred_at).limit(bounded).scalar_subquery())  # fmt: skip
+        with Session(self.engine) as session, session.begin():
+            result = session.execute(delete(AICostRecord).where(AICostRecord.id.in_(oldest))
+                                     .execution_options(synchronize_session=False))  # fmt: skip
+            return int(result.rowcount or 0)
+
+    def ai_costs_by_account(self, since: datetime, *, limit: int = 100) -> list[dict] | None:
+        """Cost per account since `since`, the most expensive first, at most `limit` accounts, for an
+        administrator. None before the table."""
+
+        from sqlalchemy import func
+        from sqlalchemy.exc import ProgrammingError
+
+        from writing_coach.persistence.models import AICostRecord
+
+        query = (
+            select(User.email, User.name, func.count(AICostRecord.id), func.coalesce(func.sum(AICostRecord.cost_usd), 0))
+            .join(User, User.id == AICostRecord.account_id)
+            .where(AICostRecord.occurred_at >= since)
+            .group_by(User.id, User.email, User.name)
+            .order_by(func.coalesce(func.sum(AICostRecord.cost_usd), 0).desc())
+            .limit(max(1, min(int(limit), 1000)))
+        )
+        try:
+            with Session(self.engine) as session:
+                rows = session.execute(query).all()
+        except ProgrammingError:
+            return None
+        return [{"email": email, "name": name, "calls": int(calls), "usd": round(float(usd or 0), 8)}
+                for email, name, calls, usd in rows]

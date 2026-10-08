@@ -114,6 +114,9 @@ def resolve_deployment_config(env: Mapping[str, str] | None = None) -> Deploymen
             raise RuntimeError("Google authentication must be configured when APP_ENV=production.")
         if not str(values.get("SESSION_SECRET", "")).strip():
             raise RuntimeError("SESSION_SECRET is required when APP_ENV=production.")
+        if len(str(values.get("SESSION_SECRET", "")).strip()) < 32:
+            # A short secret lets anyone forge a session cookie, an administrator's included.
+            raise RuntimeError("SESSION_SECRET must be at least 32 characters when APP_ENV=production.")
     elif auth_enabled and not str(values.get("SESSION_SECRET", "")).strip():
         raise RuntimeError("SESSION_SECRET is required when Google authentication is enabled.")
 

@@ -3,6 +3,17 @@ export function translationRequest(payload,target_language) {
   return {target_language,asset:pick(payload.asset,['asset_id','source_url','source_provider','source_type','title','source_language','processing_state','duration_ms','transcript_available']),transcript:{asset_id:payload.transcript.asset_id,source_language:payload.transcript.source_language,segments:payload.transcript.segments.map(x=>pick(x,['segment_id','order','start_ms','end_ms','original_text']))}};
 }
 export async function acquireMedia({api,url,target,owner,language,alive=()=>true,onProgress=()=>{},storage}) {
+  if(api.prepareMedia) {
+    let prepared=await api.prepareMedia({source_url:url,target_language:target});
+    for(let attempt=0;alive()&&prepared?.asset?.processing_state==='processing'&&attempt<60;attempt++) {
+      onProgress(prepared);
+      await new Promise(resolve=>setTimeout(resolve,1000));
+      if(!alive())return null;
+      const mediaId=prepared.media_id;
+      prepared={...await api.mediaMy(mediaId,target),media_id:mediaId};
+    }
+    return prepared;
+  }
   if(!storage){try{storage=globalThis.localStorage;}catch{storage={getItem(){return null;},setItem(){},removeItem(){}};}}
   const key=`orena.acquisition.v1:${encodeURIComponent(owner)}:${language}:${encodeURIComponent(url)}`;
   let handle=null;try{handle=JSON.parse(storage.getItem(key)||'null');}catch{}

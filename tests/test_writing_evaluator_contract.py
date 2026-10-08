@@ -175,8 +175,13 @@ def test_request_contract_is_explicit_about_evidence_and_target_level_semantics(
     assert "genuine strength visible in its exact fragment" in request
     assert "genuine problem visible in its exact fragment" in request
     assert "suggestion must meaningfully differ" in request
-    assert "If uncertain whether something is wrong, omit it" in request
-    assert "Fewer high-confidence findings" in request
+    # Uncertainty is still a reason to say nothing - but being the fifth true
+    # thing is not. "Fewer high-confidence findings are preferable" is what a
+    # small model obeyed by returning one correction for five mistakes.
+    assert "If uncertain whether something is wrong, still omit it" in request
+    assert "Fewer high-confidence findings" not in request
+    assert "EVERY genuine error" in request
+    assert "highest `confidence` to the errors that matter most" in request
     assert "confidence >= 0.75" in request
     assert "TARGET LEVEL (LEARNING CONTEXT ONLY)" in request
     assert "actual demonstrated performance" in request
@@ -219,6 +224,20 @@ def test_journal_request_has_no_task_adherence_or_prompt_penalty() -> None:
     assert "Do not score prompt adherence" in request
     assert "<WRITING_TASK>" not in request
     assert "TARGET LEVEL" not in request
+
+
+def test_request_contract_declares_the_resolved_support_language() -> None:
+    request = build_writing_evaluator_request(
+        language_name="English",
+        support_language_name="Japanese",
+        target_level="B2",
+        task_prompt="Describe a useful habit.",
+        learner_text="I write every day.",
+        free_writing_context="Free English writing.",
+    )
+
+    assert "SUPPORT LANGUAGE: Japanese" in request
+    assert "Write explanations, summaries, strengths, priorities and reusable rules in Japanese." in request
 
 
 def test_journal_schema_omits_task_score_and_allows_insufficient_band() -> None:
@@ -274,8 +293,8 @@ def test_language_specific_error_categories_and_explanation_policies_are_preserv
     )
     assert "other" in ENGLISH_ERROR_CATEGORIES
     assert "other" in CHINESE_ERROR_CATEGORIES
-    assert "Vietnamese using the Latin alphabet" in ENGLISH_SYSTEM_PROMPT
-    assert "primarily in Vietnamese" in CHINESE_SYSTEM_PROMPT
+    assert "SUPPORT LANGUAGE specified by the application" in ENGLISH_SYSTEM_PROMPT
+    assert "SUPPORT LANGUAGE specified by the application" in CHINESE_SYSTEM_PROMPT
     assert "INTERNAL learning estimate" in CHINESE_SYSTEM_PROMPT
     assert "not an official HSK exam score" in CHINESE_SYSTEM_PROMPT
 
@@ -362,3 +381,17 @@ def test_app_uses_shared_builders_once_and_preserves_normalizer_and_capability(
         "_ai_model",
     }
     assert result["_ai_provider"] == "test-provider"
+
+
+def test_the_review_is_addressed_to_the_person_not_written_about_them() -> None:
+    """Feedback that calls its reader "the learner" reads like a report on someone else."""
+    request = build_writing_evaluator_request(
+        language_name="English",
+        support_language_name="Vietnamese",
+        target_level=None,
+        task_prompt="A note",
+        learner_text="I go to shop.",
+        free_writing_context="",
+    )
+    assert request.count("second person") == 2, "said once with the policy and again at the end, where it wins"
+    assert "bạn" in request and "'the learner'" in request

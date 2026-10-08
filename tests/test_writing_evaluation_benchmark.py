@@ -54,9 +54,9 @@ def _checks(evaluation) -> set[str]:
 
 
 def test_corpus_contract_is_versioned_immutable_balanced_and_complete():
-    assert WRITING_BENCHMARK_VERSION == 1
-    assert len(ENGLISH_BENCHMARK_CASES) == 12
-    assert len(CHINESE_BENCHMARK_CASES) == 12
+    assert WRITING_BENCHMARK_VERSION == 2
+    assert len(ENGLISH_BENCHMARK_CASES) == 13
+    assert len(CHINESE_BENCHMARK_CASES) == 13
     assert len({case.case_id for case in WRITING_BENCHMARK_CASES}) == len(WRITING_BENCHMARK_CASES)
     assert {case.kind for case in WRITING_BENCHMARK_CASES} == set(BenchmarkKind)
 
@@ -70,6 +70,9 @@ def test_corpus_contract_is_versioned_immutable_balanced_and_complete():
         assert case.learner_text.strip()
         assert case.rationale.strip()
         assert case.constraints.required_error_categories <= categories[case.language]
+        for seeded in case.constraints.expected_errors:
+            assert seeded.fragment in case.learner_text, (case.case_id, seeded.fragment)
+            assert seeded.categories <= categories[case.language], (case.case_id, seeded.categories)
         assert all(band.dimension in RUBRIC_DIMENSIONS for band in case.constraints.score_bands)
         assert all(0 <= band.minimum <= band.maximum <= 100 for band in case.constraints.score_bands)
 
@@ -411,7 +414,7 @@ def test_report_is_json_serializable_versioned_reproducible_and_secret_field_saf
         evaluation=evaluation,
     )
     encoded = json.dumps(report, ensure_ascii=False, sort_keys=True)
-    assert report["benchmark_version"] == 1
+    assert report["benchmark_version"] == 2
     assert report["timestamp"] == "2026-08-13T10:00:00Z"
     assert report["evaluator_label"] == "fixture:known-pass-v1"
     assert report["case"]["case_id"] == case.case_id
@@ -445,3 +448,57 @@ def test_report_rejects_credential_shaped_evaluator_label():
             normalized_result=result,
             evaluation=evaluation,
         )
+
+
+# --- Recall, measured (v2) ----------------------------------------------------
+
+_SUPPORT_VI = {"en": False, "zh": False}  # Vietnamese support is not written in CJK
+
+
+@pytest.mark.parametrize("case_id", ["en-multi-error-paragraph", "zh-multi-error-paragraph"])
+def test_recall_is_the_share_of_seeded_errors_found(case_id):
+    case = benchmark_case(case_id)
+    passing = _evaluate(case, known_passing_result(case))
+    metrics = dict(passing.metrics)
+    assert passing.passed, passing.to_dict()
+    assert metrics["recall"] == 1.0
+    assert metrics["expected_error_count"] == len(case.constraints.expected_errors) == 5
+
+    thinned = known_passing_result(case)
+    thinned["errors"] = thinned["errors"][:2]
+    evaluation = _evaluate(case, thinned)
+    assert dict(evaluation.metrics)["recall"] == 0.4
+    assert "error_recall" in _checks(evaluation), "one right category is no longer enough"
+
+
+def test_a_seeded_error_found_under_a_category_it_may_not_have_does_not_count():
+    case = benchmark_case("zh-multi-error-paragraph")
+    result = known_passing_result(case)
+    for error in result["errors"]:
+        error["category"] = "punctuation"
+    assert dict(_evaluate(case, result).metrics)["recall"] == 0.0
+
+
+@pytest.mark.parametrize("case_id", ["en-multi-error-paragraph", "zh-multi-error-paragraph"])
+def test_vietnamese_explanations_quoting_the_learner_survive_normalization(case_id):
+    """The benchmark sees what the learner would: the result after normalization.
+
+    Chinese with Vietnamese support is the pair the Han-quote drop emptied (fixed in
+    871e2b9); English is held to the same path so the two stay symmetric.
+    """
+    case = benchmark_case(case_id)
+    raw = known_passing_result(case)
+    zh = case.language == "zh"
+    normalized = normalize_writing_evaluation(
+        raw,
+        rubric_weights=CHINESE_RUBRIC_WEIGHTS if zh else ENGLISH_RUBRIC_WEIGHTS,
+        allowed_levels=(CHINESE_PROFILE if zh else ENGLISH_PROFILE).levels,
+        score_to_level=chinese_score_to_level if zh else english_score_to_level,
+        allow_cjk=zh,
+        learner_text=case.learner_text,
+        error_categories=_categories(case.language),
+        allow_explanation_cjk=_SUPPORT_VI[case.language],
+    )
+    evaluation = _evaluate(case, normalized)
+    assert dict(evaluation.metrics)["recall"] == 1.0, evaluation.to_dict()
+

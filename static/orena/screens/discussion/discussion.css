@@ -1,0 +1,168 @@
+/* Discussion (design route `discussion`, frame 46, D-091). A learning workspace (rule 49): the
+   root is the one frame in this build's reading-flow family that sets `height:100%` itself and
+   scrolls only its own message list (`data-scroll-region`) - header and input bar stay
+   `flex:none`, so the column never grows past the viewport at any of the four sizes even with a
+   very long thread. Header reuses `kit/components.js#pageHeader({compact:true})` (its own CSS
+   lives in components.css). Colours are tokens only; sizes copied from the frame's own inline
+   styles (SCRATCH inventory E3 §5).
+
+   Fix (independent review, 2026-09-28): `.s-discussion { height:100% }`'s containing block is the
+   router's own `.o-screen` wrapper (shell/router.js's `element`), which carries no height rule of
+   its own (shell/shell.css:366 gives it only the entrance animation) - a percentage height only
+   resolves against an ancestor with an explicit, non-auto height, so it silently computed as auto
+   and the whole column grew past the viewport instead of clipping/scrolling internally (confirmed
+   live by the session's own check-sweep-discussion-long-* screenshots: the composer and starter
+   chips were off-screen at every size). Giving `.o-screen` real height - scoped with `:has`, the
+   way the Orena home does, and never touching shell.css - only once this screen has mounted
+   keeps an element that is still empty (the thread loads first) or was left empty by a failed
+   load from taking room the router's loading skeleton and load error (appended after it) need. */
+.o-screen:has(> .s-discussion) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.s-discussion {
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 20px;
+  height: 100%;
+  min-height: 0;
+}
+
+.s-discussion__thread {
+  flex: 1;
+  min-height: 220px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 2px;
+}
+
+.s-discussion__row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  max-width: 88%;
+}
+.s-discussion__row[data-role='assistant'] {
+  align-self: flex-start;
+}
+.s-discussion__row[data-role='learner'] {
+  align-self: flex-end;
+}
+
+/* The kit's Intelligence chip carries a glow (`--mark-glow-strong`); this frame's 28px and 30px
+   avatars are the bare gradient disc with no shadow (measured against the pinned frame). */
+.s-discussion .o-mark--intel {
+  box-shadow: none;
+}
+
+.s-discussion__bubble {
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.s-discussion__row[data-role='learner'] .s-discussion__bubble {
+  padding: 12px 16px;
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.s-discussion__row[data-role='assistant'] .s-discussion__bubble {
+  padding: 2px 0 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.s-discussion__thinking {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 8px;
+  border-radius: 18px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.s-discussion__foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 12px;
+}
+
+.s-discussion__starters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.s-discussion__starter {
+  flex: none;
+  white-space: nowrap;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.s-discussion__inputbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 6px 0 18px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--ai) border-box;
+  box-shadow: var(--sh2);
+}
+.s-discussion__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+}
+.s-discussion__input::placeholder {
+  color: var(--muted);
+}
+.s-discussion__send {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-discussion__send:hover {
+  background: var(--accent-fill-hover);
+}
+.s-discussion__send:disabled {
+  opacity: 0.5;
+}
+
+/* iOS Safari zooms the page when a text field under 16px takes focus (and leaves it zoomed): on a phone the field is 16px. */
+:root[data-device='mobile'] .s-discussion__input { font-size: 16px; }

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orena-grammar-lab"
+version = "0.2.0"
+description = "Orena Grammar Lab: offline generation, validation and review of grammar content."
+requires-python = ">=3.11"
+# Independent of the Orena app: never add these to the app's requirements.txt, never import app code.
+dependencies = [
+    "jsonschema>=4.20",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+    "opencc-python-reimplemented>=0.1.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools]
+package-dir = {"grammar_lab" = "."}
+packages = ["grammar_lab", "grammar_lab.pipeline", "grammar_lab.rules"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"

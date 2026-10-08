@@ -534,6 +534,7 @@ def _serialize_asset(media_object: MediaLearningObject) -> dict[str, Any]:
         "duration_ms": asset.duration_ms,
         "transcript_available": asset.transcript_available,
         "translation_available": asset.translation_available,
+        "thumbnail_url": asset.thumbnail_ref,
     }
 
 

@@ -17,7 +17,8 @@ function normalizedText(value){
 export function listeningUnits(value,sourceLanguage){
   const normalized=normalizedText(value);
   if(sourceLanguage==='zh'){
-    return (normalized.match(/\p{Script=Han}|[\p{L}\p{N}]+(?:['-][\p{L}\p{N}]+)*/gu)||[])
+    // A Latin word inside a Chinese line ends where the Han text begins (LEX-041): "MySkin等版本" is MySkin, 等, 版, 本.
+    return (normalized.match(/\p{Script=Han}|(?:(?!\p{Script=Han})[\p{L}\p{N}])+(?:['-](?:(?!\p{Script=Han})[\p{L}\p{N}])+)*/gu)||[])
       .map(unit=>/^\p{Script=Han}$/u.test(unit)?unit:unit.toLocaleLowerCase('en'));
   }
   return (normalized.toLocaleLowerCase('en').match(/[\p{L}\p{N}]+(?:['-][\p{L}\p{N}]+)*/gu)||[]);

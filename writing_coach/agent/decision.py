@@ -1,0 +1,78 @@
+"""Where the turn's decisions are made (spec §7, §20; D16).
+
+Before tools run, a turn asks a few questions: which capability applies here,
+whether tools are needed, whether the learner is asking who Orena is, whether
+the request is one the learner may make. A `DecisionProvider` answers only the
+questions asked. V1 answers with rules and the model; a decision model may
+replace it after V1 (D16) without touching the turn.
+
+`RuleDecisionProvider` answers two questions by rule. The capability
+question comes from the surface and target language and needs no message. The
+identity question (spec §35) comes from the message alone, by the strict rules
+in `identity.py`; a turn that is one is answered from copy before any model is
+asked. The rest stays neutral: the model decides whether to call tools, and
+the tool gateway enforces whose data is read.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import Protocol
+
+from writing_coach.agent.capability_registry import CapabilityRegistry
+from writing_coach.agent.context import Tier1Context, TurnInput
+from writing_coach.agent.identity import IdentityQuestion, identity_question
+from writing_coach.agent.evidence_questions import needs_learner_evidence
+from writing_coach.agent.screen_help import is_screen_help
+
+
+class DecisionQuestion(StrEnum):
+    CAPABILITY = "capability"
+    NEEDS_TOOLS = "needs_tools"
+    IDENTITY_QUESTION = "identity_question"
+    AUTHORIZATION = "authorization"
+    SCREEN_HELP = "screen_help"
+
+
+@dataclass(frozen=True)
+class Decisions:
+    capability_ids: tuple[str, ...] = ()
+    needs_tools: bool | None = None  # None: let the model decide
+    identity: IdentityQuestion | None = None  # the learner asked who, or which model, Orena is
+    authorized: bool = True
+    # The learner asks what this screen is for (F-13): answered from the screen's context with no tool offered.
+    screen_help: bool = False
+    reason: str | None = None
+
+
+@dataclass(frozen=True)
+class DecisionState:
+    turn: TurnInput
+    tier1: Tier1Context
+    registry: CapabilityRegistry
+
+
+class DecisionProvider(Protocol):
+    def decide(self, state: DecisionState, questions: frozenset[DecisionQuestion]) -> Decisions: ...
+
+
+class RuleDecisionProvider:
+    def decide(self, state: DecisionState, questions: frozenset[DecisionQuestion]) -> Decisions:
+        capability_ids: tuple[str, ...] = ()
+        if DecisionQuestion.CAPABILITY in questions:
+            target = state.tier1.contract_locale.target
+            capability_ids = tuple(entry.id for entry in state.registry.for_surface(state.tier1.surface, target))
+        identity = None
+        if DecisionQuestion.IDENTITY_QUESTION in questions:
+            identity = identity_question(state.turn.message)
+        screen_help = DecisionQuestion.SCREEN_HELP in questions and is_screen_help(state.turn.message)
+        # A conclusion about the learner's own learning must be read from their records (dogfood gate 3.1).
+        # A selection, an essay or an attempt in view makes the question about that piece, not the records; the
+        # ambient place (a content or lesson id) does not.
+        context = state.turn.context
+        in_view = bool(context.selected_item or context.essay_id or context.attempt_id)
+        needs_tools = True if (DecisionQuestion.NEEDS_TOOLS in questions and not screen_help
+                               and needs_learner_evidence(state.turn.message, in_view=in_view)) else None  # fmt: skip
+        return Decisions(capability_ids=capability_ids, identity=identity, screen_help=screen_help,
+                         needs_tools=needs_tools)  # fmt: skip

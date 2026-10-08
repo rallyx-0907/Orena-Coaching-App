@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import os
+from datetime import UTC, datetime, timedelta
 from time import perf_counter
 from enum import Enum
 from pathlib import Path
+from collections.abc import Iterator
 from typing import Any, Callable
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
@@ -22,13 +25,15 @@ from writing_coach.ai.base import (
     AIProviderResponseInvalid,
     AIProviderUnavailable,
     AIResult,
+    ChatFinished,
+    ChatStreamEvent,
     normalized_latency,
     normalized_rate_limit,
     normalized_usage,
     sanitize_telemetry,
     telemetry_error_class,
 )
-from writing_coach.ai.capabilities import require_capability
+from writing_coach.ai.capabilities import AIOperation, require_capability
 from writing_coach.ai.config import CapabilityConfig, validate_capability_config
 from writing_coach.ai.control_plane import (
     AIControlPlane,
@@ -41,12 +46,19 @@ from writing_coach.ai.credentials import (
     encrypt_credentials,
 )
 from writing_coach.ai.pricing import estimate_token_cost
-from writing_coach.ai.providers import build_providers, provider_definitions
+from writing_coach.ai.routing import (
+    Attempt,
+    ProviderTarget,
+    build_chain,
+    run_chain,
+)
+from writing_coach.ai.providers import build_providers, get_provider_definition, provider_definitions
 from writing_coach.persistence.platform_repository import PlatformRepository
 
 ROOT = Path(__file__).resolve().parents[2]
 PLATFORM_DB_PATH = Path(os.getenv("PLATFORM_DB", ROOT / "data" / "platform.db"))
 _admin_guard: Callable[[Request], dict[str, Any]] | None = None
+_logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/admin/ai", tags=["platform-admin"])
 
@@ -126,6 +138,8 @@ def providers() -> dict[str, Any]:
 
 
 _PROVIDER_CONFIG_META: dict[str, dict[str, str | None]] = {
+    'azure-openai': {'endpoint_env': 'AZURE_OPENAI_BASE_URL', 'credential_env': 'AZURE_OPENAI_API_KEY', 'model_env': None, 'models_env': 'AZURE_OPENAI_DEPLOYMENTS'},
+    'azure-speech': {'endpoint_env': 'AZURE_SPEECH_REGION', 'credential_env': 'AZURE_SPEECH_KEY', 'model_env': None, 'models_env': None},
     "ollama": {
         "endpoint_env": "OLLAMA_URL",
         "credential_env": None,
@@ -270,10 +284,169 @@ def _persist_operation_telemetry(telemetry: dict[str, Any]) -> None:
     if safe is None or not callable(recorder):
         return
     try:
+        from writing_coach.ai.account_costs import record_for_current_account
+
+        record_for_current_account(safe)  # AC-2: the same call, once more, for the signed-in account
+    except Exception:  # noqa: BLE001 - never changes the operation
+        pass
+    try:
         recorder(safe)
     except Exception:
         # Telemetry must never change learner/provider operation semantics.
         return
+
+
+def _record_attempt(capability_key: str | None) -> Callable[[Attempt], None]:
+    """Every rung is logged, not only the one that answered.
+
+    Without this a fallback is invisible: the operator sees one success and
+    never learns that the primary provider is down. The successful attempt is
+    logged by `finish()` with its usage and cost, so only the ones that did not
+    answer are recorded here.
+    """
+
+    def record(attempt: Attempt) -> None:
+        if attempt.outcome == "success":
+            return
+        model_display, model_redacted = safe_model_display(attempt.model)
+        # The telemetry vocabulary is success/failure; a provider skipped
+        # because it is cooling down did not succeed, and the error class says
+        # why it was never asked.
+        error_class = (
+            "ProviderCoolingDown" if attempt.outcome == "skipped_unhealthy" else attempt.error_class
+        )
+        _persist_operation_telemetry(
+            {
+                "capability": safe_capability_display(capability_key)
+                if capability_key
+                else "legacy",
+                "origin": "learner",
+                "provider": attempt.provider,
+                "model": model_display or None,
+                "model_redacted": model_redacted,
+                "outcome": "failure",
+                "error_class": error_class,
+                "latency_ms": normalized_latency(attempt.latency_ms)
+                if attempt.latency_ms is not None
+                else None,
+                "usage": normalized_usage(None),
+                "rate_limit": normalized_rate_limit(None),
+                "cost": estimate_token_cost(attempt.provider, model_display, None),
+                "quota_available": "unknown",
+            }
+        )
+
+    return record
+
+
+AGENT_TURN_CAPABILITY = "agent_turn_fast"
+
+
+def stream_agent_turn(
+    *,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    max_output_tokens: int,
+    temperature: float | None = None,
+    should_stop: Callable[[], bool] = lambda: False,
+    timeout_seconds: float | None = None,
+) -> Iterator[ChatStreamEvent]:
+    """Stream one Orena Intelligence round on the legacy active selection.
+
+    The agent routes the way every learner call routes until a reviewed
+    activation makes its capability keys configurable (human ruling
+    2026-09-27): the one provider and model selected in Admin › AI. It never
+    runs on a local model (spec D2) - the silent Ollama default of an unset
+    selection is refused, not used - and never switches provider on failure.
+    Each round is recorded in the anonymised AI operation telemetry under
+    `agent_turn_fast`, like `generate_structured` records its calls.
+    """
+
+    started = perf_counter()
+    provider_id: str | None = None
+    model: str | None = None
+
+    def record(
+        outcome: str,
+        *,
+        error: BaseException | None = None,
+        finished: ChatFinished | None = None,
+        error_class: str | None = None,
+    ) -> None:
+        model_display, model_redacted = safe_model_display(model)
+        runtime = {
+            "prompt_tokens": finished.prompt_tokens if finished else None,
+            "completion_tokens": finished.completion_tokens if finished else None,
+        }
+        usage = normalized_usage(runtime) if finished else normalized_usage(None)
+        rate_limit = finished.rate_limit if finished else getattr(error, "rate_limit", None)
+        _persist_operation_telemetry(
+            {
+                "capability": AGENT_TURN_CAPABILITY,
+                "origin": "learner",
+                "provider": provider_id,
+                "model": model_display or None,
+                "model_redacted": model_redacted,
+                "outcome": outcome,
+                "error_class": error_class or (telemetry_error_class(error) if error is not None else None),
+                "latency_ms": normalized_latency((perf_counter() - started) * 1000),
+                "usage": usage,
+                "rate_limit": normalized_rate_limit(rate_limit),
+                "cost": estimate_token_cost(provider_id, model_display, usage if finished else None),
+                "quota_available": "unknown",
+            }
+        )
+
+    try:
+        item, model = active_selection()
+        provider_id = str(getattr(item, "id", "") or "") or None
+        if getattr(item, "kind", "") != "cloud":
+            raise AIProviderUnavailable("The agent needs a managed provider selected in Admin > AI.")
+        if not item.configured:
+            raise AIProviderUnavailable(f"{item.name} is not configured.")
+        definition = get_provider_definition(item.id)
+        stream_chat = getattr(item, "stream_chat", None)
+        if definition is None or not definition.supports(AIOperation.AGENT_TURN) or not callable(stream_chat):
+            raise AIProviderUnavailable(f"{item.name} cannot stream agent turns.")
+        events = stream_chat(
+            messages=messages,
+            tools=tools,
+            model=model,
+            max_output_tokens=max_output_tokens,
+            temperature=temperature,
+            should_stop=should_stop,
+            read_timeout=timeout_seconds,
+        )
+    except (AICapabilityError, AIProviderError) as exc:
+        record("failure", error=exc)
+        raise
+
+    def recorded() -> Iterator[ChatStreamEvent]:
+        finished: ChatFinished | None = None
+        try:
+            for event in events:
+                if isinstance(event, ChatFinished):
+                    finished = event
+                yield event
+        except (AICapabilityError, AIProviderError) as exc:
+            record("failure", error=exc)
+            raise
+        except GeneratorExit:
+            # The learner left mid-round: the provider may already have been
+            # paid, so the round is recorded rather than lost.
+            if finished is not None:
+                record("success", finished=finished)
+            else:
+                record("failure", error_class="client_abandoned")
+            raise
+        if finished is not None:
+            # A round that did not end normally is a failure in the telemetry too, with its usage kept (it may be paid).
+            if finished.finish_reason in ("stop", "tool_calls"):
+                record("success", finished=finished)
+            else:
+                record("failure", finished=finished, error_class="abnormal_finish")
+
+    return recorded()
 
 
 def generate_structured(
@@ -347,20 +520,39 @@ def generate_structured(
             raise AICapabilityDisabled(f"AI capability {definition.key!r} is disabled.")
         validate_capability_config(definition.key, config)
 
-        item = providers().get(config.provider)
-        if item is None:
-            raise AICapabilityUnsupported(f"Unknown AI provider: {config.provider!r}.")
-        if not item.configured:
-            raise AIProviderUnavailable(f"{item.name} is not configured.")
-        generate_once = getattr(item, "generate_json_once", None) or item.generate_json
-        return finish(generate_once(
-            messages=messages,
-            schema=schema,
+        # The operator configured a backup pair; until now nothing used it, so
+        # one rate-limited provider stopped the capability. The chain asks each
+        # rung once - never twice, so a learner turn cannot be answered twice -
+        # and a malformed request still fails on the first rung, unchanged.
+        chain = build_chain(
+            provider=config.provider,
             model=config.model,
-            max_output_tokens=max_output_tokens,
-            temperature=config.temperature if config.temperature is not None else temperature,
-            seed=seed,
-        ))
+            backup_provider=config.backup_provider,
+            backup_model=config.backup_model,
+            timeout_seconds=config.timeout_seconds,
+        )
+
+        def _ask(target: ProviderTarget) -> AIResult:
+            nonlocal provider_id, model
+            provider_id, model = target.provider, target.model
+            item = providers().get(target.provider)
+            if item is None:
+                raise AIProviderUnavailable(f"Unknown AI provider: {target.provider!r}.")
+            if not item.configured:
+                raise AIProviderUnavailable(f"{item.name} is not configured.")
+            generate_once = getattr(item, "generate_json_once", None) or item.generate_json
+            return generate_once(
+                messages=messages,
+                schema=schema,
+                model=target.model,
+                max_output_tokens=max_output_tokens,
+                temperature=config.temperature if config.temperature is not None else temperature,
+                seed=seed,
+            )
+
+        routed = run_chain(chain, _ask, on_attempt=_record_attempt(capability_key))
+        provider_id, model = routed.target.provider, routed.target.model
+        return finish(routed.value)
     except (AICapabilityError, AIProviderError) as exc:
         model_display, model_redacted = safe_model_display(model)
         exc.telemetry = {
@@ -387,6 +579,36 @@ def _require_admin(request: Request) -> dict[str, Any]:
     return _admin_guard(request)
 
 
+def _record_admin_event(
+    admin: dict[str, Any],
+    action: str,
+    *,
+    entity_type: str,
+    entity_id: str,
+    payload: dict[str, Any],
+) -> None:
+    """Record who changed or tested the AI platform, and how it went.
+
+    Only non-secret facts are passed in: a credential change records that a
+    key was set, never the key. The change has already happened (or been
+    refused) when it is recorded, so a record that cannot be written is
+    logged by action name alone rather than turning the answer into an error.
+    """
+    recorder = getattr(_platform_repository, "record_admin_event", None)
+    if recorder is None:
+        return
+    try:
+        recorder(
+            action,
+            actor=str(admin.get("google_sub") or admin.get("email") or "admin"),
+            entity_type=entity_type,
+            entity_id=str(entity_id)[:120],
+            payload=payload,
+        )
+    except Exception as exc:  # noqa: BLE001 - reported, never allowed to undo or fail the change
+        _logger.warning("AI admin audit record failed for %s (%s)", action, type(exc).__name__)
+
+
 def _legacy_config_payload() -> dict[str, Any]:
     item, model = active_selection()
     displayed_model, model_redacted = safe_model_display(model)
@@ -411,7 +633,9 @@ def _legacy_config_payload() -> dict[str, Any]:
 def admin_ai_config(request: Request) -> dict[str, Any]:
     _require_admin(request)
     result = AIControlPlane(_installed_platform_repository()).inspect()
-    result["learner_runtime"] = {"mode": runtime_mode().value}
+    mode = runtime_mode()
+    result["learner_runtime"] = {"mode": mode.value}
+    result["policy"]["learner_runtime_uses_capability_config"] = mode is AIRuntimeMode.CAPABILITY
     return result
 
 
@@ -459,6 +683,7 @@ def _provider_credential_values(
     payload: ProviderCredentialIn,
     *,
     require_models: bool = True,
+    test_current: bool = False,
 ) -> dict[str, Any]:
     item = providers().get(provider_id)
     if item is None:
@@ -466,6 +691,10 @@ def _provider_credential_values(
     existing = _stored_provider_credentials(provider_id)
     supplied_key = payload.api_key.get_secret_value().strip() if payload.api_key is not None else ""
     api_key = supplied_key or str(existing.get("api_key") or "").strip()
+    # Test the current environment credential without returning or copying it
+    # into the store. A changed endpoint must never receive that credential.
+    if test_current and not api_key and not payload.base_url:
+        api_key = str(getattr(item, 'api_key', '') or '').strip()
     # Operators sometimes paste the value copied from an HTTP example as
     # ``Bearer <key>``. The provider adapters add the authentication scheme
     # themselves, so retain only the credential material before sending or
@@ -482,12 +711,25 @@ def _provider_credential_values(
     parsed = urlsplit(base_url)
     if parsed.username or parsed.password or parsed.scheme not in {"http", "https"} or not parsed.netloc:
         raise HTTPException(400, "Provider endpoint must be a valid URL without embedded credentials.")
+    if (item.secret_mode == "server-managed" or api_key) and parsed.scheme != "https":
+        raise HTTPException(400, "Provider credentials require an HTTPS endpoint.")
+    if provider_id == 'azure-speech':
+        from writing_coach.ai.azure import speech_region
+        try:
+            speech_region(base_url)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+    if provider_id == 'azure-openai' and (not parsed.hostname or not parsed.hostname.endswith(('.openai.azure.com', '.services.ai.azure.com')) or parsed.path.rstrip('/') != '/openai/v1' or parsed.query or parsed.fragment or parsed.port):
+        raise HTTPException(400, 'Use the Azure resource HTTPS /openai/v1 endpoint.')
     models = sorted({str(model).strip() for model in payload.models if str(model).strip()})
     if any(len(model) > 160 or any(ord(char) < 32 for char in model) for model in models):
         raise HTTPException(400, "Model names must be readable values of 160 characters or fewer.")
     if len(models) > 100:
         raise HTTPException(400, "A provider can have at most 100 configured models.")
-    default_model = payload.default_model.strip()
+    default_model = payload.default_model.strip() or (str(getattr(item, 'default_model', '') or '') if test_current else '')
+    if provider_id == 'azure-speech':
+        models = ['pronunciation-assessment']
+        default_model = models[0]
     if any(ord(char) < 32 for char in default_model):
         raise HTTPException(400, "The default model name is invalid.")
     if default_model and default_model not in models and require_models:
@@ -512,6 +754,15 @@ def _credential_test(provider_id: str, values: dict[str, Any]) -> list[str]:
     if item is None:
         raise HTTPException(404, "Unknown AI provider.")
     try:
+        if provider_id == 'azure-openai':
+            deployment = values.get('default_model')
+            if not deployment:
+                raise HTTPException(400, 'Enter your Azure OpenAI deployment name.')
+            result = item.generate_json_once(messages=[{'role': 'user', 'content': 'Return {"ok":true}.'}],
+                schema={'type': 'object'}, model=deployment, max_output_tokens=64, temperature=0)
+            if result.data.get('ok') is not True:
+                raise AIProviderResponseInvalid('Azure deployment test returned an invalid result.')
+            return [deployment]
         return item.discover_models_live()
     except (AIProviderNotConfigured, AIProviderUnavailable, AIProviderError, AIProviderResponseInvalid) as exc:
         # Provider adapters deliberately expose only sanitized failure classes
@@ -564,12 +815,19 @@ def admin_ai_provider_credential_test(
     request: Request,
     response: Response,
 ) -> dict[str, Any]:
-    _require_admin(request)
+    admin = _require_admin(request)
     _same_origin(request)
     provider_id = provider_id.strip().casefold()
-    values = _provider_credential_values(provider_id, payload, require_models=False)
-    response.headers["Cache-Control"] = "no-store"
-    models = _credential_test(provider_id, values)
+    try:
+        values = _provider_credential_values(provider_id, payload, require_models=False, test_current=True)
+        response.headers["Cache-Control"] = "no-store"
+        models = _credential_test(provider_id, values)
+    except HTTPException as exc:
+        _record_admin_event(admin, "admin.ai.provider.test", entity_type="ai_provider", entity_id=provider_id,
+                            payload={"outcome": "failed", "status": exc.status_code})
+        raise
+    _record_admin_event(admin, "admin.ai.provider.test", entity_type="ai_provider", entity_id=provider_id,
+                        payload={"outcome": "ok", "models": len(models)})
     return {
         "ok": True,
         "provider": provider_id,
@@ -588,22 +846,35 @@ def admin_ai_provider_credential_save(
     admin = _require_admin(request)
     _same_origin(request)
     provider_id = provider_id.strip().casefold()
-    values = _provider_credential_values(provider_id, payload)
-    live_models = _credential_test(provider_id, values)
-    live_model_set = set(live_models)
-    if not live_model_set:
-        raise HTTPException(502, "Provider returned no usable text models.")
-    if values["default_model"] not in live_model_set or not set(values["models"]).issubset(live_model_set):
-        raise HTTPException(400, "Choose the default and allowed models from the live provider catalog.")
     try:
-        encrypted = encrypt_credentials(provider_id, values)
-        _installed_platform_repository().set_provider_credential(
-            provider_id,
-            encrypted,
-            updated_by=str(admin.get("google_sub") or ""),
-        )
-    except ProviderCredentialStoreError as exc:
-        raise HTTPException(503, "Provider credential encryption is not configured on this server.") from exc
+        values = _provider_credential_values(provider_id, payload)
+        live_models = _credential_test(provider_id, values)
+        live_model_set = set(live_models)
+        if not live_model_set:
+            raise HTTPException(502, "Provider returned no usable text models.")
+        if values["default_model"] not in live_model_set or not set(values["models"]).issubset(live_model_set):
+            raise HTTPException(400, "Choose the default and allowed models from the live provider catalog.")
+        try:
+            encrypted = encrypt_credentials(provider_id, values)
+            _installed_platform_repository().set_provider_credential(
+                provider_id,
+                encrypted,
+                updated_by=str(admin.get("google_sub") or ""),
+            )
+        except ProviderCredentialStoreError as exc:
+            raise HTTPException(503, "Provider credential encryption is not configured on this server.") from exc
+    except HTTPException as exc:
+        _record_admin_event(admin, "admin.ai.credential.update", entity_type="ai_provider", entity_id=provider_id,
+                            payload={"credential_updated": False, "outcome": "failed", "status": exc.status_code})
+        raise
+    _record_admin_event(admin, "admin.ai.credential.update", entity_type="ai_provider", entity_id=provider_id,
+                        payload={
+                            "credential_updated": True,
+                            "outcome": "ok",
+                            "endpoint_set": bool(values["base_url"]),
+                            "models": len(values["models"]),
+                            "default_model": safe_model_display(values["default_model"])[0],
+                        })
     response.headers["Cache-Control"] = "no-store"
     stored = providers().get(provider_id)
     if stored is None:
@@ -626,8 +897,12 @@ def admin_ai_provider_credential_delete(
     _same_origin(request)
     provider_id = provider_id.strip().casefold()
     if provider_id not in providers():
+        _record_admin_event(admin, "admin.ai.credential.delete", entity_type="ai_provider", entity_id=provider_id,
+                            payload={"credential_deleted": False, "outcome": "refused", "status": 404})
         raise HTTPException(404, "Unknown AI provider.")
     _installed_platform_repository().delete_provider_credential(provider_id)
+    _record_admin_event(admin, "admin.ai.credential.delete", entity_type="ai_provider", entity_id=provider_id,
+                        payload={"credential_deleted": True, "outcome": "ok"})
     response.headers["Cache-Control"] = "no-store"
     return {"ok": True, "provider": provider_id, "secret_deleted": True, "secret_exposed": False}
 
@@ -638,6 +913,91 @@ def admin_ai_operations(request: Request, limit: int = 100) -> dict[str, Any]:
     return AIControlPlane(_installed_platform_repository()).operations(limit=limit)
 
 
+# Audio capabilities are reported per minute of audio; every other one per call.
+_PER_MINUTE = frozenset({"speech_asr"})
+# (code, English text): the Admin page words each code in the interface language.
+COST_REPORT_GAPS = (
+    ("per_learner", "Per learner: the operation telemetry is anonymous by design. Cost per account is recorded "
+     "separately once migration 20261005_0026 is applied (AC-2); before that, only Orena agent turns carry an "
+     "account."),
+    ("per_turn", "Per Orena turn: a turn is one to four agent_turn_fast rounds; the per-turn cost is in the "
+     "agent.turn timeline report, not here."),
+    ("infrastructure", "Infrastructure (hosting, database, storage, bandwidth) is not measured: unknown."),
+    ("audio_list_price", "Audio rates are provider list prices (ai/pricing.py); the Azure pronunciation rate is to "
+     "be checked against the Azure bill."),
+    ("audio_before", "Calls before 2026-10-04 for speech recognition and pronunciation scoring were never recorded."),
+)
+
+
+def cost_report(rows: list[dict[str, Any]], *, days: int, since: datetime) -> dict[str, Any]:
+    """The ledger rows as the cost report reads them: by day, and by feature x provider x model with a unit
+    cost - per priced call, or per audio minute for speech recognition. An average over nothing is null."""
+
+    by_day: dict[str, dict[str, Any]] = {}
+    by_feature: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for row in rows:
+        day = by_day.setdefault(row["day"], {"day": row["day"], "calls": 0, "usd": 0.0, "unpriced_calls": 0})
+        day["calls"] += row["calls"]
+        day["usd"] += row["usd"]
+        day["unpriced_calls"] += row["unpriced_calls"]
+        key = (row["capability"] or "", row["provider"] or "", row["model"] or "")
+        item = by_feature.setdefault(key, {"capability": key[0], "provider": key[1] or None, "model": key[2] or None,
+                                           "calls": 0, "failures": 0, "priced_calls": 0, "unpriced_calls": 0,
+                                           "usd": 0.0, "prompt_tokens": 0, "completion_tokens": 0,
+                                           "audio_seconds": 0.0})  # fmt: skip
+        for name in ("calls", "failures", "priced_calls", "unpriced_calls", "usd", "prompt_tokens",
+                     "completion_tokens", "audio_seconds"):  # fmt: skip
+            item[name] += row[name]
+    features = []
+    for item in by_feature.values():
+        item["usd"] = round(item["usd"], 8)
+        if item["capability"] in _PER_MINUTE:
+            minutes = item["audio_seconds"] / 60
+            item["unit"], item["usd_per_unit"] = "audio_minute", round(item["usd"] / minutes, 6) if minutes else None
+        else:
+            item["unit"] = "call"
+            item["usd_per_unit"] = round(item["usd"] / item["priced_calls"], 6) if item["priced_calls"] else None
+        features.append(item)
+    features.sort(key=lambda entry: -entry["usd"])
+    return {
+        "since": since.isoformat(), "days": days, "currency": "USD",
+        "by_day": [dict(day, usd=round(day["usd"], 8)) for day in sorted(by_day.values(), key=lambda d: d["day"], reverse=True)],
+        "by_feature": features, "gaps": [{"code": code, "text": text} for code, text in COST_REPORT_GAPS],
+    }
+
+
+@router.get("/costs")
+def admin_ai_costs(request: Request, days: int = 30) -> dict[str, Any]:
+    """AI cost by day and by feature, provider and model, from the shared ledger (no UI yet: UI_BACKEND_GAPS)."""
+
+    _require_admin(request)
+    bounded = max(1, min(int(days), 90))
+    now = datetime.now(UTC)
+    since = datetime(now.year, now.month, now.day, tzinfo=UTC) - timedelta(days=bounded - 1)
+    reader = getattr(_installed_platform_repository(), "ai_cost_rows", None)
+    rows = reader(since) if callable(reader) else []
+    return cost_report(rows, days=bounded, since=since)
+
+
+@router.get("/costs/accounts")
+def admin_ai_costs_by_account(request: Request, days: int = 30) -> dict[str, Any]:
+    """AI cost per account (AC-2), an administrator's view only; each look is itself recorded. The window is at
+    most 90 days, like the totals, though records are kept 13 months."""
+
+    admin = _require_admin(request)
+    bounded = max(1, min(int(days), 90))
+    now = datetime.now(UTC)
+    since = datetime(now.year, now.month, now.day, tzinfo=UTC) - timedelta(days=bounded - 1)
+    reader = getattr(_installed_platform_repository(), "ai_costs_by_account", None)
+    limit = 100
+    # One more than shown, to say whether the list was cut (the page shows the most expensive accounts only).
+    accounts = reader(since, limit=limit + 1) if callable(reader) else None
+    _record_admin_event(admin, "admin.ai.costs.accounts.view", entity_type="ai_costs", entity_id="accounts",
+                        payload={"days": bounded, "available": accounts is not None})
+    return {"since": since.isoformat(), "days": bounded, "currency": "USD", "available": accounts is not None,
+            "accounts": (accounts or [])[:limit], "truncated": len(accounts or []) > limit}
+
+
 @router.put("/config", deprecated=True)
 def admin_ai_config_update(payload: AIConfigIn, request: Request) -> dict[str, Any]:
     admin = _require_admin(request)
@@ -645,37 +1005,59 @@ def admin_ai_config_update(payload: AIConfigIn, request: Request) -> dict[str, A
     provider_id = payload.provider.strip().casefold()
     model = payload.model.strip()
     item = items.get(provider_id)
+    target = {"provider": provider_id[:40], "model": safe_model_display(model)[0]}
 
-    if not item:
-        raise HTTPException(400, "Unknown AI provider.")
-    if not item.configured:
-        raise HTTPException(409, f"{item.name} is not configured on the server.")
+    try:
+        if not item:
+            raise HTTPException(400, "Unknown AI provider.")
+        if not item.configured:
+            raise HTTPException(409, f"{item.name} is not configured on the server.")
+        if provider_id == 'azure-speech':
+            raise HTTPException(400, 'Azure Speech cannot be selected as a text model.')
 
-    models = item.list_models()
-    if models and model not in models:
-        raise HTTPException(400, "Selected model is not available for this provider.")
+        models = item.list_models()
+        if models and model not in models:
+            raise HTTPException(400, "Selected model is not available for this provider.")
 
-    _installed_platform_repository().set_ai_selection(
-        provider=provider_id,
-        model=model,
-        updated_by=str(admin.get("google_sub") or ""),
-    )
+        _installed_platform_repository().set_ai_selection(
+            provider=provider_id,
+            model=model,
+            updated_by=str(admin.get("google_sub") or ""),
+        )
+    except HTTPException as exc:
+        _record_admin_event(admin, "admin.ai.selection.update", entity_type="ai_selection", entity_id="learner_default",
+                            payload={**target, "outcome": "refused", "status": exc.status_code})
+        raise
+    _record_admin_event(admin, "admin.ai.selection.update", entity_type="ai_selection", entity_id="learner_default",
+                        payload={**target, "outcome": "ok"})
 
     return _legacy_config_payload()
 
 
 @router.post("/test", deprecated=True)
 def admin_ai_test(payload: AIConfigIn, request: Request) -> dict[str, Any]:
-    _require_admin(request)
+    admin = _require_admin(request)
     items = providers()
     provider_id = payload.provider.strip().casefold()
     model = payload.model.strip()
     item = items.get(provider_id)
+    target = {"provider": provider_id[:40], "model": safe_model_display(model)[0]}
 
     if not item:
+        _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
+                            payload={**target, "outcome": "refused", "status": 400})
         raise HTTPException(400, "Unknown AI provider.")
     if not item.configured:
+        _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
+                            payload={**target, "outcome": "refused", "status": 409})
         raise HTTPException(409, f"{item.name} is not configured.")
+    if provider_id == 'azure-speech':
+        started = perf_counter()
+        try:
+            item.discover_models_live()
+        except (AIProviderNotConfigured, AIProviderUnavailable, AIProviderError, AIProviderResponseInvalid) as exc:
+            raise HTTPException(502, f"Provider connection validation failed: {exc}") from exc
+        return {'ok': True, 'provider': provider_id, 'model': item.default_model, 'latency_ms': int((perf_counter() - started) * 1000)}
 
     schema = {
         "type": "object",
@@ -698,9 +1080,15 @@ def admin_ai_test(payload: AIConfigIn, request: Request) -> dict[str, Any]:
             temperature=0.0,
         )
     except AIProviderUnavailable as exc:
+        _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
+                            payload={**target, "outcome": "failed", "status": 503})
         raise HTTPException(503, "AI provider is unavailable.") from exc
     except AIProviderError as exc:
+        _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
+                            payload={**target, "outcome": "failed", "status": 502})
         raise HTTPException(502, "AI provider request failed.") from exc
+    _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
+                        payload={**target, "outcome": "ok"})
 
     displayed_model, model_redacted = safe_model_display(result.model)
 
@@ -734,13 +1122,18 @@ def admin_ai_capability_config_update(
 ) -> dict[str, Any]:
     admin = _require_admin(request)
     try:
-        return AIControlPlane(_installed_platform_repository()).set_config(
+        result = AIControlPlane(_installed_platform_repository()).set_config(
             capability_key,
             _capability_config(payload),
             updated_by=str(admin.get("google_sub") or ""),
         )
     except (AICapabilityConfigInvalid, AICapabilityUnsupported) as exc:
+        _record_admin_event(admin, "admin.ai.route.update", entity_type="ai_capability",
+                            entity_id=safe_capability_display(capability_key), payload={"outcome": "refused"})
         raise HTTPException(400, str(exc)) from exc
+    _record_admin_event(admin, "admin.ai.route.update", entity_type="ai_capability", entity_id=result["capability"],
+                        payload={**result["config"], "outcome": "ok"})
+    return result
 
 
 def _live_failure(
@@ -816,10 +1209,11 @@ def admin_ai_capability_test(
     request: Request,
     standby: bool = False,
 ) -> dict[str, Any]:
-    _require_admin(request)
+    admin = _require_admin(request)
     control_plane = AIControlPlane(_installed_platform_repository())
+    entity_id = safe_capability_display(capability_key)
     try:
-        return control_plane.live_test(capability_key, standby=standby)
+        result = control_plane.live_test(capability_key, standby=standby)
     except (
         AICapabilityConfigInvalid,
         AICapabilityDisabled,
@@ -827,7 +1221,13 @@ def admin_ai_capability_test(
         AICapabilityUnsupported,
         AIProviderError,
     ) as exc:
-        raise _live_failure(control_plane, capability_key, exc, standby=standby) from exc
+        failure = _live_failure(control_plane, capability_key, exc, standby=standby)
+        _record_admin_event(admin, "admin.ai.route.test", entity_type="ai_capability", entity_id=entity_id,
+                            payload={"standby": standby, "outcome": "failed", "error_class": failure.detail["error_class"]})
+        raise failure from exc
+    _record_admin_event(admin, "admin.ai.route.test", entity_type="ai_capability", entity_id=entity_id,
+                        payload={"standby": standby, "outcome": "ok"})
+    return result
 
 
 def install_platform_ai(

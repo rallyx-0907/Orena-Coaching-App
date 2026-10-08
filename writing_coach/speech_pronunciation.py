@@ -8,11 +8,14 @@ import os
 import re
 import subprocess
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from collections.abc import Callable
+from typing import Any, Protocol
 
 import requests
+from fastapi import HTTPException
 
 
 class SpeechPronunciationError(Exception):
@@ -42,6 +45,10 @@ class SpeechPronunciationConversionFailed(SpeechPronunciationError):
     pass
 
 
+class SpeechPronunciationNoSpeech(SpeechPronunciationError):
+    """The provider heard no speech in the take: a learner outcome, not a failure."""
+
+
 @dataclass(frozen=True)
 class PronunciationPhoneme:
     phoneme: str
@@ -49,15 +56,35 @@ class PronunciationPhoneme:
 
 
 @dataclass(frozen=True)
+class PronunciationSyllable:
+    """A syllable of the reference as the provider labels it (for zh-CN, the
+    pinyin of the reference with its tone digit). The label is what was
+    expected, never a measurement of the tone the learner produced."""
+
+    syllable: str
+    accuracy_score: float | None
+
+
+@dataclass(frozen=True)
 class PronunciationWord:
     word: str
     accuracy_score: float | None
+    # The provider's own miscue verdict ("None", "Mispronunciation",
+    # "Omission", "Insertion", ...). Orena sets no threshold of its own.
     error_type: str
     phonemes: tuple[PronunciationPhoneme, ...]
+    syllables: tuple[PronunciationSyllable, ...] = ()
+    # Where the word sits in the take; absent for a word that was not said.
+    offset_ms: int | None = None
+    duration_ms: int | None = None
 
 
 @dataclass(frozen=True)
 class SpeechPronunciationResult:
+    """One provider-neutral assessment. ``score_kind`` is ``measured`` for an
+    acoustic measurement and ``synthetic_demo`` for the development stand-in,
+    which a learner surface never draws as a score."""
+
     provider: str
     score_kind: str
     locale: str
@@ -68,6 +95,9 @@ class SpeechPronunciationResult:
     completeness_score: float | None
     prosody_score: float | None
     words: tuple[PronunciationWord, ...]
+    # "scripted": assessed against a reference line. "unscripted": free speech, no reference
+    # (free talk); miscues and completeness have no meaning there and are not reported.
+    mode: str = "scripted"
 
 
 class SpeechPronunciationProvider(Protocol):
@@ -87,6 +117,7 @@ class SpeechPronunciationProvider(Protocol):
         content_type: str,
         language: str,
         reference_text: str,
+        unscripted: bool = False,
     ) -> SpeechPronunciationResult: ...
 
 
@@ -109,6 +140,7 @@ def normalize_audio_to_pcm16_wav(
             completed = subprocess.run(
                 [
                     "ffmpeg",
+                    "-protocol_whitelist", "file,pipe",
                     "-hide_banner",
                     "-loglevel",
                     "error",
@@ -151,6 +183,19 @@ def _score(mapping: dict[str, Any], key: str) -> float | None:
     return round(max(0.0, min(100.0, float(value))), 1)
 
 
+# Azure reports offsets and durations in 100-nanosecond ticks.
+_TICKS_PER_MS = 10_000
+
+
+def _ticks_ms(value: Any) -> int | None:
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
+        return None
+    return int(round(float(value) / _TICKS_PER_MS))
+
+
+_NO_SPEECH_STATUSES = frozenset({"nomatch", "initialsilencetimeout", "babbletimeout"})
+
+
 def _assessment(mapping: dict[str, Any]) -> dict[str, Any]:
     nested = mapping.get("PronunciationAssessment")
     if isinstance(nested, dict):
@@ -161,6 +206,9 @@ def _assessment(mapping: dict[str, Any]) -> dict[str, Any]:
 class AzureSpeechPronunciationProvider:
     provider_id = "azure-speech"
     _REGION_RE = re.compile(r"^[a-z0-9-]+$")
+    # A key goes into an HTTP header: printable ASCII with no space. Anything else is refused here,
+    # by a message that never repeats it (a transport library would echo it in its own error).
+    _KEY_RE = re.compile(r"^[!-~]+$")
 
     def __init__(
         self,
@@ -178,6 +226,8 @@ class AzureSpeechPronunciationProvider:
     ) -> None:
         if not isinstance(api_key, str) or not api_key.strip():
             raise ValueError("Azure Speech key is required.")
+        if not self._KEY_RE.fullmatch(api_key.strip()):
+            raise ValueError("Azure Speech key has characters a request header cannot carry.")
         normalized_region = str(region or "").strip().lower()
         if not self._REGION_RE.fullmatch(normalized_region):
             raise ValueError("Azure Speech region is invalid.")
@@ -203,9 +253,19 @@ class AzureSpeechPronunciationProvider:
         return self._max_reference_chars
 
     @classmethod
-    def from_env(cls) -> "AzureSpeechPronunciationProvider | None":
+    def from_env(cls) -> AzureSpeechPronunciationProvider | None:
         api_key = os.getenv("AZURE_SPEECH_KEY", "").strip()
         region = os.getenv("AZURE_SPEECH_REGION", "").strip()
+        from writing_coach.ai.platform import _stored_provider_credentials
+        from writing_coach.ai.azure import speech_region
+        try:
+            stored = _stored_provider_credentials('azure-speech')
+        except HTTPException:
+            # An unreadable encrypted credential disables assessment, not app startup.
+            return None
+        if stored:
+            api_key = stored['api_key']
+            region = speech_region(stored['base_url'])
         if not api_key or not region:
             return None
         return cls(
@@ -228,14 +288,43 @@ class AzureSpeechPronunciationProvider:
             return self._zh_locale
         raise SpeechPronunciationMalformed()
 
-    def assess_bytes(
+    def phoneme_alphabet(self, language: str) -> str:
+        """IPA is supported for en-US; Chinese retains its SAPI labels."""
+        locale = self._locale(language).casefold()
+        return "IPA" if locale == "en-us" else "SAPI" if locale == "zh-cn" else ""
+
+    def assess_bytes(self, audio_bytes: bytes, **kwargs: Any) -> SpeechPronunciationResult:
+        """Every Azure request in the shared AI ledger (ai/audio_telemetry.py): the seconds Azure received, once it
+        answered 200 - a silent take it scored as nothing was still billed."""
+
+        from writing_coach.ai.audio_telemetry import record_audio_operation
+
+        meter: dict[str, float] = {}
+        started = time.perf_counter()
+        try:
+            result = self._assess(audio_bytes, meter=meter, **kwargs)
+        except Exception as exc:
+            billed = meter.get("seconds")
+            record_audio_operation("pronunciation_evaluator", provider=self.provider_id,
+                                   model="pronunciation-assessment", outcome="success" if billed is not None else "failure",
+                                   latency_ms=int((time.perf_counter() - started) * 1000), audio_seconds=billed,
+                                   error=None if billed is not None else exc)  # fmt: skip
+            raise
+        record_audio_operation("pronunciation_evaluator", provider=self.provider_id, model="pronunciation-assessment",
+                               outcome="success", latency_ms=int((time.perf_counter() - started) * 1000),
+                               audio_seconds=meter.get("seconds"))  # fmt: skip
+        return result
+
+    def _assess(
         self,
         audio_bytes: bytes,
         *,
+        meter: dict[str, float],
         filename: str,
         content_type: str,
         language: str,
         reference_text: str,
+        unscripted: bool = False,
     ) -> SpeechPronunciationResult:
         del filename, content_type
         if not audio_bytes:
@@ -243,8 +332,8 @@ class AzureSpeechPronunciationProvider:
         if len(audio_bytes) > self._max_bytes:
             raise SpeechPronunciationPayloadTooLarge()
 
-        reference = str(reference_text or "").strip()
-        if not reference or len(reference) > self._max_reference_chars:
+        reference = "" if unscripted else str(reference_text or "").strip()
+        if not unscripted and (not reference or len(reference) > self._max_reference_chars):
             raise SpeechPronunciationMalformed()
 
         locale = self._locale(language)
@@ -254,12 +343,17 @@ class AzureSpeechPronunciationProvider:
         )
 
         config: dict[str, Any] = {
-            "ReferenceText": reference,
             "GradingSystem": "HundredMark",
             "Granularity": "Phoneme",
             "Dimension": "Comprehensive",
-            "EnableMiscue": True,
+            # Miscues need a reference to be measured against.
+            "EnableMiscue": not unscripted,
         }
+        alphabet = self.phoneme_alphabet(language)
+        if alphabet:
+            config["PhonemeAlphabet"] = alphabet
+        if not unscripted:
+            config["ReferenceText"] = reference
         if locale.casefold() == "en-us" and self._enable_prosody:
             config["EnableProsodyAssessment"] = True
 
@@ -287,9 +381,16 @@ class AzureSpeechPronunciationProvider:
             )
         except requests.Timeout as exc:
             raise SpeechPronunciationTimedOut() from exc
-        except requests.RequestException as exc:
-            raise SpeechPronunciationRequestFailed() from exc
+        except requests.RequestException:
+            # Raised below, outside this block, so it carries no cause or context: some transport
+            # errors quote the request's headers, the key among them.
+            response = None
+        if response is None:
+            raise SpeechPronunciationRequestFailed()
 
+        if response.status_code == 200:
+            # 16 kHz mono 16-bit PCM after the 44-byte header: the seconds Azure processed and bills.
+            meter["seconds"] = max(0, len(normalized) - 44) / 32000
         if response.status_code == 413:
             raise SpeechPronunciationPayloadTooLarge()
         if response.status_code != 200:
@@ -317,6 +418,9 @@ class AzureSpeechPronunciationProvider:
             raise SpeechPronunciationMalformed() from exc
         if not isinstance(payload, dict):
             raise SpeechPronunciationMalformed()
+        status = str(payload.get("RecognitionStatus") or "").strip().casefold()
+        if status in _NO_SPEECH_STATUSES:
+            raise SpeechPronunciationNoSpeech()
 
         nbest = payload.get("NBest")
         if not isinstance(nbest, list) or not nbest or not isinstance(nbest[0], dict):
@@ -373,14 +477,41 @@ class AzureSpeechPronunciationProvider:
                                 accuracy_score=_score(phoneme_assessment, "AccuracyScore"),
                             )
                         )
+                syllables: list[PronunciationSyllable] = []
+                raw_syllables = item.get("Syllables")
+                if isinstance(raw_syllables, list):
+                    for syllable_item in raw_syllables:
+                        if not isinstance(syllable_item, dict):
+                            continue
+                        label = str(syllable_item.get("Syllable") or "").strip()
+                        if not label:
+                            continue
+                        syllables.append(
+                            PronunciationSyllable(
+                                syllable=label,
+                                accuracy_score=_score(_assessment(syllable_item), "AccuracyScore"),
+                            )
+                        )
+                said = error_type.casefold() != "omission"
                 words.append(
                     PronunciationWord(
                         word=word,
                         accuracy_score=accuracy,
                         error_type=error_type,
                         phonemes=tuple(phonemes),
+                        syllables=tuple(syllables),
+                        offset_ms=_ticks_ms(item.get("Offset")) if said else None,
+                        duration_ms=_ticks_ms(item.get("Duration")) if said else None,
                     )
                 )
+
+        # Azure answers a silent take with Success and every reference word omitted (measured
+        # 2026-09-23). Nothing was heard: that is the learner's outcome, not a score of 0.
+        reference_words = [word for word in words if word.error_type.casefold() != "insertion"]
+        if reference_words and all(word.error_type.casefold() == "omission" for word in reference_words):
+            raise SpeechPronunciationNoSpeech()
+        if unscripted and not words:
+            raise SpeechPronunciationNoSpeech()
 
         recognized_text = str(
             best.get("Display")
@@ -391,15 +522,16 @@ class AzureSpeechPronunciationProvider:
 
         return SpeechPronunciationResult(
             provider=self.provider_id,
-            score_kind="provider",
+            score_kind="measured",
             locale=locale,
             recognized_text=recognized_text,
             pron_score=pron_score,
             accuracy_score=accuracy_score,
             fluency_score=fluency_score,
-            completeness_score=completeness_score,
+            completeness_score=None if unscripted else completeness_score,
             prosody_score=prosody_score,
             words=tuple(words),
+            mode="unscripted" if unscripted else "scripted",
         )
 
 class DemoPronunciationProvider:
@@ -430,8 +562,12 @@ class DemoPronunciationProvider:
         content_type: str,
         language: str,
         reference_text: str,
+        unscripted: bool = False,
     ) -> SpeechPronunciationResult:
         del filename, content_type
+        if unscripted:
+            # The stand-in has nothing honest to say about free speech.
+            raise SpeechPronunciationMalformed()
         if not audio_bytes:
             raise SpeechPronunciationMalformed()
         if len(audio_bytes) > self._max_bytes:
@@ -478,9 +614,26 @@ class DemoPronunciationProvider:
 
 
 def build_speech_pronunciation_provider() -> SpeechPronunciationProvider | None:
+    """The one place a pronunciation provider is chosen.
+
+    ``PRONUNCIATION_PROVIDER`` names it (``azure``, ``demo``, ``none``). Unset,
+    Azure is used when its key and region are configured and nothing otherwise:
+    an unconfigured runtime says so rather than serving synthetic scores (D-066,
+    no fake pronunciation result). A second provider (for example a
+    Mandarin-tone specialist) is one more branch here and one more class
+    implementing ``SpeechPronunciationProvider``; no learner surface changes.
+    """
     app_env = os.getenv("APP_ENV", "development").strip().casefold()
     configured = os.getenv("PRONUNCIATION_PROVIDER", "").strip().casefold()
-    mode = configured or ("demo" if app_env in {"development", "test"} else "none")
+    azure_ready = bool(
+        os.getenv("AZURE_SPEECH_KEY", "").strip() and os.getenv("AZURE_SPEECH_REGION", "").strip()
+    )
+    from writing_coach.ai.platform import _stored_provider_credentials
+    try:
+        azure_ready = azure_ready or bool(_stored_provider_credentials('azure-speech'))
+    except HTTPException:
+        return None
+    mode = configured or ("azure" if azure_ready else "none")
 
     if mode in {"", "none", "off", "disabled"}:
         return None

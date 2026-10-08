@@ -1,0 +1,297 @@
+/* Reading Transfer (design route `rtransfer`, frame 39, D-091). A learning workspace (rule 49).
+
+   Sizes are frame 39's own inline values. Two recompositions, both for rule 49 (a workspace is the
+   viewport, never a page):
+   - the card hugs its content exactly as the frame draws it, but may shrink (`flex: 0 1 auto`,
+     `min-height: 0`) and then only its body scrolls (`data-scroll-region`); the action row
+     (mic / Check, or Retry / Another sentence / Finish) is `flex: none` inside the same card, so a
+     primary control is never scrolled out of the viewport;
+   - the result's two tiles hold the coaching endpoint's real lists (a quotation of the learner's own
+     words with its reason) instead of the frame's one-word verdicts, so on a phone they stack.
+   `.o-screen` carries no height rule (shell.css), so the route's own screen element is given real
+   height - but only once this screen has mounted its content (`:has`, the way the Orena home
+   does): an element still empty while the text loads, or left empty by a load that failed, must
+   take no room, or the router's loading skeleton and load error (appended after it) are pushed out
+   of the viewport. */
+.o-screen:has(> .s-reading-transfer) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.s-reading-transfer {
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 14px;
+}
+
+.s-reading-transfer__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-reading-transfer__head-body {
+  flex: 1;
+  min-width: 0;
+}
+.s-reading-transfer__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.s-reading-transfer__meta {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s-reading-transfer__modes {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+.s-reading-transfer__mode {
+  flex: 1;
+  min-width: 0;
+  padding: 11px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.s-reading-transfer__mode[aria-pressed='true'] {
+  border-color: var(--tint2);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.s-reading-transfer__card {
+  flex: 0 1 auto;
+  min-height: 0;
+  border-radius: 24px;
+  background: var(--surface);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: var(--sh1);
+}
+/* The 4px of padding and matching negative margin keep the textarea's 3px focus ring from being
+   clipped by the scroll region's own edge. */
+.s-reading-transfer__body {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 4px;
+  margin: -4px;
+}
+
+.s-reading-transfer__body:focus {
+  outline: 0;
+}
+.s-reading-transfer__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-reading-transfer__sentence {
+  font-size: 18px;
+  line-height: 1.5;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--surface2);
+  overflow-wrap: anywhere;
+}
+.s-reading-transfer__prompt {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.s-reading-transfer__textarea {
+  width: 100%;
+  resize: none;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.5;
+  padding: 18px;
+  outline: 0;
+  font-family: inherit;
+}
+.s-reading-transfer__textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.s-reading-transfer__foot {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.s-reading-transfer__foot--result {
+  align-items: stretch;
+}
+.s-reading-transfer__spacer {
+  flex: 1;
+}
+.s-reading-transfer__mic {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-reading-transfer__mic[aria-pressed='true'] {
+  background: var(--red);
+  color: var(--badge-ink);
+}
+.s-reading-transfer__primary {
+  padding: 13px 22px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 15px;
+  font-weight: 600;
+  min-height: 44px;
+  transition: background 0.15s, transform 0.15s;
+}
+/* A disabled button takes the kit's own global disabled look (kit/base.css `button:disabled`). */
+.s-reading-transfer__primary--finish {
+  padding: 13px 20px;
+  font-size: 14px;
+}
+.s-reading-transfer__primary:hover:not(:disabled) {
+  background: var(--accent-fill-hover);
+}
+.s-reading-transfer__primary:active:not(:disabled) {
+  background: var(--accent-fill-press);
+  transform: scale(0.97);
+}
+.s-reading-transfer__secondary {
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+}
+
+.s-reading-transfer__echo {
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--surface2);
+  font-size: 16px;
+  line-height: 1.5;
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+.s-reading-transfer__tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.s-reading-transfer__tiles--single {
+  grid-template-columns: 1fr;
+}
+.s-reading-transfer__tile {
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.s-reading-transfer__tile--carried {
+  background: var(--green-soft);
+}
+/* Frame 39's verdict tiles: the value under its label; "Yes" in green on green-soft, the others amber. */
+.s-reading-transfer__tile-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--amber);
+  overflow-wrap: anywhere;
+}
+.s-reading-transfer__tile-value--plain {
+  color: var(--text);
+}
+.s-reading-transfer__tile--kept {
+  background: var(--green-soft);
+}
+.s-reading-transfer__tile--kept .s-reading-transfer__tile-value {
+  color: var(--green);
+}
+.s-reading-transfer__tile-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.s-reading-transfer__point {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+/* The frame's tile is a label directly over its value; a second point in the same tile is
+   separated from the first, never the label from its own value. */
+.s-reading-transfer__point + .s-reading-transfer__point {
+  margin-top: 10px;
+}
+.s-reading-transfer__quote {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-reading-transfer__tile--carried .s-reading-transfer__quote {
+  color: var(--green);
+}
+.s-reading-transfer__why {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.s-reading-transfer__instead {
+  font-size: 13px;
+  line-height: 1.45;
+}
+.s-reading-transfer__callout {
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.s-reading-transfer__empty {
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.s-reading-transfer__blank {
+  margin-top: 8px;
+}

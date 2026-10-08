@@ -1,0 +1,83 @@
+/* Discover's own words (frame 04-Discover.html, 52-Filter-Sheet.html). Interface layer throughout
+   - every key here is a control, a state or a data label, never an explanation (D-079). The page
+   title itself reuses copy/shell.js's `discover` (the same word already carries the rail label and
+   the breadcrumb; rule 50 also drops the frame's decorative subtitle entirely, so there is no
+   separate title string to declare here). */
+import { defineCopy } from '../../copy/index.js';
+
+const KEYS = [
+  'choosePracticeMedia', 'practiceSearch',
+  'chooseDictationMedia', 'chooseListeningMedia',
+  'subtitle', 'searchPlaceholder', 'filters', 'importAction', 'clearFilters', 'emptyText',
+  'tabAll', 'tabRead', 'tabListen', 'tabCollections', 'tabImported',
+  'typeArticle', 'typeBook', 'typeVideo', 'typeAudio', 'typeCollection', 'typeText', 'typeUpload',
+  'durationMinRead', 'durationChapters', 'durationItems', 'collectionWordCount', 'progressPercent', 'progressLearnedOf',
+  'topic_daily_life', 'topic_travel', 'topic_conversations', 'topic_culture', 'topic_technology', 'topic_food', 'topic_work', 'topic_health', 'topic_education', 'topic_science', 'topic_nature', 'topic_society', 'topic_sports', 'topic_entertainment', 'topic_history', 'topic_business', 'topic_news', 'topic_relationships', 'topic_environment', 'topic_shopping', 'resultsLabel', 'groupLevel', 'groupTopic', 'groupType', 'clear', 'showResults',
+];
+
+export const t = defineCopy('discover', {
+  layers: Object.fromEntries(KEYS.map((key) => [key, 'interface'])),
+  en: {
+    chooseDictationMedia: 'Choose a clip to listen and type what you hear.',
+    chooseListeningMedia: 'Choose a lesson to listen and answer questions.',
+    choosePracticeMedia: 'Choose media to practise speaking.',
+    practiceSearch: 'Search practice content…',
+    subtitle: 'Find something worth learning from.',
+    searchPlaceholder: 'Search books, media, collections…',
+    filters: 'Filters', importAction: 'Import', clearFilters: 'Clear filters',
+    emptyText: 'Nothing matches these filters yet.',
+    tabAll: 'All', tabRead: 'Read', tabListen: 'Listen · Watch', tabCollections: 'Collections', tabImported: 'Imported',
+    typeArticle: 'Article', typeBook: 'Book', typeVideo: 'Video', typeAudio: 'Audio',
+    typeCollection: 'Collection', typeText: 'Text', typeUpload: 'Imported',
+    durationMinRead: '{n} min read', durationChapters_one: '{n} chapter', durationChapters_other: '{n} chapters',
+    durationItems_one: '{n} item', durationItems_other: '{n} items',
+    collectionWordCount_one: '{n} word', collectionWordCount_other: '{n} words',
+    progressPercent: '{pct}%', progressLearnedOf: '{learned} / {total} learned',
+    resultsLabel_one: '{n} result', resultsLabel_other: '{n} results',
+    topic_daily_life: 'Daily life', topic_travel: 'Travel', topic_conversations: 'Conversations', topic_culture: 'Culture', topic_technology: 'Technology', topic_food: 'Food', topic_work: 'Work', topic_health: 'Health', topic_education: 'Education', topic_science: 'Science', topic_nature: 'Nature', topic_society: 'Society', topic_sports: 'Sports', topic_entertainment: 'Entertainment', topic_history: 'History', topic_business: 'Business', topic_news: 'News', topic_relationships: 'Relationships', topic_environment: 'Environment', topic_shopping: 'Shopping',
+    groupLevel: 'Level', groupTopic: 'Topic', groupType: 'Content type', clear: 'Clear',
+    showResults_one: 'Show {n} result', showResults_other: 'Show {n} results',
+  },
+  vi: {
+    chooseDictationMedia: 'Chọn bài để nghe và gõ lại nội dung.',
+    chooseListeningMedia: 'Chọn bài để nghe và trả lời câu hỏi.',
+    choosePracticeMedia: 'Chọn media để luyện phát âm.',
+    practiceSearch: 'Tìm bài luyện…',
+    subtitle: 'Tìm thứ đáng để học.',
+    searchPlaceholder: 'Tìm sách, media, bộ sưu tập…',
+    filters: 'Bộ lọc', importAction: 'Nhập', clearFilters: 'Xóa bộ lọc',
+    emptyText: 'Chưa có gì khớp với các bộ lọc này.',
+    tabAll: 'Tất cả', tabRead: 'Đọc', tabListen: 'Nghe · Xem', tabCollections: 'Bộ sưu tập', tabImported: 'Đã nhập',
+    typeArticle: 'Bài viết', typeBook: 'Sách', typeVideo: 'Video', typeAudio: 'Âm thanh',
+    typeCollection: 'Bộ sưu tập', typeText: 'Văn bản', typeUpload: 'Đã nhập',
+    durationMinRead: '{n} phút đọc', durationChapters_other: '{n} chương',
+    durationItems_other: '{n} mục',
+    collectionWordCount_other: '{n} từ',
+    progressPercent: '{pct}%', progressLearnedOf: '{learned} / {total} đã học',
+    resultsLabel_other: '{n} kết quả',
+    topic_daily_life: 'Đời sống hằng ngày', topic_travel: 'Du lịch', topic_conversations: 'Hội thoại', topic_culture: 'Văn hóa', topic_technology: 'Công nghệ', topic_food: 'Ẩm thực', topic_work: 'Công việc', topic_health: 'Sức khỏe', topic_education: 'Giáo dục', topic_science: 'Khoa học', topic_nature: 'Thiên nhiên', topic_society: 'Xã hội', topic_sports: 'Thể thao', topic_entertainment: 'Giải trí', topic_history: 'Lịch sử', topic_business: 'Kinh doanh', topic_news: 'Tin tức', topic_relationships: 'Các mối quan hệ', topic_environment: 'Môi trường', topic_shopping: 'Mua sắm',
+    groupLevel: 'Trình độ', groupTopic: 'Chủ đề', groupType: 'Loại nội dung', clear: 'Xóa',
+    showResults_other: 'Xem {n} kết quả',
+  },
+  zh: {
+    chooseDictationMedia: '选择片段，听后写出内容。',
+    chooseListeningMedia: '选择课程，听后回答问题。',
+    choosePracticeMedia: '选择媒体，练习发音。',
+    practiceSearch: '搜索练习内容…',
+    subtitle: '找些值得学的内容。',
+    searchPlaceholder: '搜索书籍、媒体、合集…',
+    filters: '筛选', importAction: '导入', clearFilters: '清除筛选',
+    emptyText: '没有符合这些筛选条件的内容。',
+    tabAll: '全部', tabRead: '阅读', tabListen: '听 · 看', tabCollections: '合集', tabImported: '已导入',
+    typeArticle: '文章', typeBook: '书籍', typeVideo: '视频', typeAudio: '音频',
+    typeCollection: '合集', typeText: '文本', typeUpload: '已导入',
+    durationMinRead: '{n} 分钟阅读', durationChapters_other: '{n} 章',
+    durationItems_other: '{n} 项',
+    collectionWordCount_other: '{n} 个词',
+    progressPercent: '{pct}%', progressLearnedOf: '已学 {learned} / {total}',
+    resultsLabel_other: '{n} 个结果',
+    topic_daily_life: '日常生活', topic_travel: '旅行', topic_conversations: '对话', topic_culture: '文化', topic_technology: '科技', topic_food: '饮食', topic_work: '工作', topic_health: '健康', topic_education: '教育', topic_science: '科学', topic_nature: '自然', topic_society: '社会', topic_sports: '体育', topic_entertainment: '娱乐', topic_history: '历史', topic_business: '商业', topic_news: '新闻', topic_relationships: '人际关系', topic_environment: '环境', topic_shopping: '购物',
+    groupLevel: '级别', groupTopic: '主题', groupType: '内容类型', clear: '清除',
+    showResults_other: '查看 {n} 个结果',
+  },
+});

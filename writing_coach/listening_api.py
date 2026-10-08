@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from collections.abc import Mapping
 from typing import Any, Literal
+import re
+import json
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
 from writing_coach.core.errors import orena_http_error
-from writing_coach.core.request_context import current_language_code
+from writing_coach.dictation_evaluator import ListeningPracticeError, evaluate_listening_reconstruction
+from writing_coach.core.request_context import current_language_code, current_user_key
 from writing_coach.listening_catalog import (
     catalog_lesson,
     catalog_lessons,
@@ -18,11 +23,26 @@ from writing_coach.listening_catalog import (
     lesson_metadata,
     translated_media_object,
 )
+from writing_coach.media_library_store import MediaLibraryEntry, MediaLibraryStore, visible_to
+from writing_coach.media_source_import import (
+    PROVIDER_LABELS,
+    playback_for,
+    public_thumbnail_url,
+    source_label,
+)
 from writing_coach.becoming_memory import get_learner_profile
 from writing_coach.core.support_languages import resolve_support_language
 from writing_coach.media_meaning import pinyin_for_segments, resolve_segment_meanings
-from writing_coach.media_learning import MediaLearningObject, MediaTranscript
-from writing_coach.media_translation import MediaTranslationStatus
+from writing_coach.pinyin_alignment import align_readings
+from writing_coach.media_learning import (
+    MediaLearningAsset,
+    MediaLearningObject,
+    MediaProcessingState,
+    MediaTranscript,
+    SegmentTranslation,
+    TranscriptSegment,
+)
+from writing_coach.media_translation import MediaTranslationStatus, build_translation_batches
 from writing_coach.media_api import media_translation_service
 from writing_coach.media_api import serialize_media_acquisition
 from writing_coach.media_ingestion import MediaAcquisition
@@ -67,6 +87,9 @@ class ListeningProgressIn(BaseModel):
     best_accuracy_percent: int | None = Field(default=None, ge=0, le=100)
     best_exact: bool = False
     last_answer: str = Field(default="", max_length=2000)
+    # Whether the last checked attempt used a hint, and how far (D-068, DC-5): a fact about the attempt.
+    last_used_hint: bool = False
+    last_hint_level: int = Field(default=0, ge=0, le=3)
 
 
 class ShadowingProgressIn(BaseModel):
@@ -78,6 +101,269 @@ class ShadowingProgressIn(BaseModel):
 def configure_listening_progress(repository: SpecializedLearningRepository | None) -> None:
     global _repository
     _repository = repository
+
+
+# The persisted shared media library. `None` means this deployment has no store
+# configured, and every endpoint below keeps working from the curated catalog
+# alone rather than failing - an import nothing can remember is worse than a
+# library that shows what it has.
+_media_store: MediaLibraryStore | None = None
+
+
+def configure_listening_media_library(store: MediaLibraryStore | None) -> None:
+    global _media_store
+    _media_store = store
+
+
+def stored_media_entry(media_id: str) -> MediaLibraryEntry | None:
+    """One persisted entry, or None when nothing is stored under that id."""
+    if _media_store is None:
+        return None
+    cleaned = str(media_id or "").strip()
+    if not cleaned:
+        return None
+    try:
+        entry = _media_store.get(cleaned)
+        # A personal import is its owner's, in its own learning language: anyone
+        # else gets what an unknown id gets.
+        if entry is not None and not visible_to(
+            entry, user_key=current_user_key(), language=current_language_code()
+        ):
+            return None
+        return entry
+    except Exception:  # a broken index must not take the library down with it
+        return None
+
+
+def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, Any] | None:
+    """The learner-facing payload for one persisted entry.
+
+    Same shape `open_listening_library_lesson` answers with, because the
+    encounter must not care whether a moment came from the curated catalog or
+    from a source an administrator imported: `asset`, `playback`, `transcript`,
+    `translations` and a `catalog` block that carries what the card and the
+    practice modes need.
+    """
+    entry = stored_media_entry(media_id)
+    if entry is None:
+        return None
+    target = resolve_support_language(get_learner_profile().get("native_language"), target_language)
+    stored = (entry.lesson or {}).get("payload") if entry.lesson else None
+    processing = dict(entry.processing or {})
+    if isinstance(stored, Mapping) and processing.get("state", "ready") in {"ready", "held"}:
+        response = _stored_acquisition_response(entry, stored)
+        response["catalog"]["readings_by_segment"] = (stored.get("catalog") or {}).get("readings_by_segment") or {}
+        response["processing"] = processing
+        media_object = _media_object_from_stored(stored, entry)
+        meanings_outcome = resolve_segment_meanings(
+            asset_id=str(stored.get("asset", {}).get("asset_id") or entry.media_id),
+            segments=media_object.transcript.segments if media_object.transcript else (),
+            support_language=target,
+            source_language=media_object.asset.source_language,
+            preauthored=media_object.translations,
+            cache=_translation_cache,
+            translate=None,
+            provider_model=_translation_provider_model(),
+        )
+        if meanings_outcome.meanings:
+            response["translations"] = [
+                {
+                    "segment_id": meaning.segment_id,
+                    "target_language": meaning.target_language,
+                    "translated_meaning": meaning.translated_meaning,
+                    "provenance": meaning.provenance,
+                }
+                for meaning in meanings_outcome.meanings
+            ]
+        response["translation"] = {
+            "status": meanings_outcome.status,
+            "target_language": target,
+            "source": {
+                "capability_key": None,
+                "provider": "curated-editorial" if meanings_outcome.provider_calls == 0 else "media-translation",
+                "model": _translation_provider_model() if meanings_outcome.provider_calls else None,
+                "request_count": meanings_outcome.provider_calls,
+            },
+            "failure_kind": meanings_outcome.failure_kind,
+        }
+        # New prepared lessons own their reading artifact. Old admitted lessons
+        # retain the deterministic compatibility projection, with no provider.
+        pinyin = dict((stored.get("catalog") or {}).get("pinyin_by_segment") or {})
+        if not pinyin and media_object.transcript:
+            pinyin = dict(pinyin_for_segments(media_object.transcript.segments))
+        if media_object.asset.source_language.strip().casefold().startswith("zh") and pinyin:
+            response["catalog"]["pinyin_by_segment"] = pinyin
+            response["catalog"]["pinyin_chars_by_segment"] = (stored.get("catalog") or {}).get("pinyin_chars_by_segment") or align_readings(media_object.transcript.segments, pinyin)
+        elif media_object.asset.source_language.strip().casefold().startswith("en") and not response["catalog"].get("readings_by_segment"):
+            response["catalog"]["readings_by_segment"] = _cached_source_readings(media_object.transcript.segments)
+        response["catalog"]["model_clip_segments"] = _prepared_model_clips(entry=entry)
+        return response
+    # No transcript: an imported file or a direct media URL. The learner gets
+    # the player and the truth, which is the same 'source only' room a
+    # caption-less provider source already opens.
+    response = {
+        "asset": _stored_asset(entry),
+        "playback": playback_for(entry),
+        "transcript": None,
+        "translations": [],
+        "translation": {"status": "unavailable", "target_language": target, "source": None, "failure_kind": None},
+    }
+    response["catalog"] = stored_media_metadata(entry)
+    response["processing"] = processing
+    return response
+
+
+def _stored_acquisition_response(entry: MediaLibraryEntry, stored: Mapping[str, Any]) -> dict[str, Any]:
+    """The stored acquisition payload, with the card's identity on top of it.
+
+    Every existing key is kept exactly as it was persisted - the contract the
+    encounter already reads must not change shape - and the media-library fields
+    are added beside them.
+    """
+    response = {
+        "asset": {
+            **dict(stored.get("asset") or {}),
+            # The learning language this entry was filed under is the contract's
+            # language. A provider's regional tag ("en-GB" for a British
+            # conversation) is provenance, not identity: the encounter compares
+            # this field against the learner's current language, and a regional
+            # tag would refuse a lesson that is plainly in English.
+            "source_language": entry.language,
+            # Backfill a length the provider never reported from the catalog,
+            # where it was measured from the transcript's own boundaries.
+            "duration_ms": (stored.get("asset") or {}).get("duration_ms") or entry.duration_ms or None,
+            "thumbnail_url": public_thumbnail_url(entry),
+        },
+        "playback": playback_for(entry),
+        "transcript": stored.get("transcript"),
+        "translations": list(stored.get("translations") or []),
+        "transcript_origin": stored.get("transcript_origin"),
+    }
+    response["catalog"] = stored_media_metadata(entry)
+    return response
+
+
+def _stored_asset(entry: MediaLibraryEntry) -> dict[str, Any]:
+    return {
+        "asset_id": entry.media_id,
+        "source_url": entry.canonical_url,
+        "source_provider": entry.provider,
+        "source_type": entry.source.get("type", "imported-media"),
+        "title": entry.title,
+        "source_language": entry.language,
+        "processing_state": ("processing" if entry.status == "processing" else "failed") if entry.processing and entry.processing.get("state") != "ready" else MediaProcessingState.READY.value,
+        "duration_ms": entry.duration_ms or None,
+        "transcript_available": bool(entry.lesson) and (not entry.processing or entry.processing.get("state") in {"ready", "held"}),
+        "translation_available": False,
+        "thumbnail_url": public_thumbnail_url(entry),
+    }
+
+
+def stored_media_metadata(entry: MediaLibraryEntry) -> dict[str, Any]:
+    """Card metadata for a persisted entry, in the catalog's own vocabulary."""
+    lesson = entry.lesson or {}
+    payload = lesson.get("payload") or {}
+    transcript = payload.get("transcript") or {}
+    segments = transcript.get("segments") or []
+    # A source declaration is not a reviewed/estimated learner level.
+    pattern = r"\bHSK\s*([1-6])(?:\s*[-–—]\s*([1-6]))?\b" if entry.language == "zh" else r"\bCEFR\s*([ABC][12])\b"
+    declared = re.search(pattern, entry.title, re.IGNORECASE)
+    source_level = ""
+    if declared:
+        source_level = (f"HSK {declared[1]}" + (f"–{declared[2]}" if declared[2] else "")) if entry.language == "zh" else declared[1].upper()
+    return {
+        "lesson_id": entry.media_id,
+        "media_object_id": entry.media_id,
+        "title": entry.title,
+        "description": "",
+        "language": entry.language,
+        "topic": str(lesson.get("topic") or ""),
+        "subtopics": [],
+        "level": entry.level,
+        "source_declared_level": source_level,
+        "estimated_level": entry.level,
+        "reviewed_level": entry.level or None,
+        "level_source": "editorial-review" if entry.level else "not-estimated",
+        "level_evidence": {},
+        "duration_ms": entry.duration_ms,
+        "excerpt_start_ms": int((segments[0] or {}).get("start_ms") or 0) if segments else 0,
+        "excerpt_end_ms": int((segments[-1] or {}).get("end_ms") or entry.duration_ms) if segments else entry.duration_ms,
+        "available_modes": ["listen", "active", "dictation", "shadowing"] if segments else [],
+        "content_tags": list(lesson.get("tags") or []),
+        "vocabulary": [],
+        "speech_speed": None,
+        "artwork": str(lesson.get("topic") or "listen"),
+        "poster_url": public_thumbnail_url(entry),
+        "playback_kind": playback_for(entry)["kind"],
+        "published_state": entry.status,
+        "curation_state": str(lesson.get("curation") or "reviewed"),
+        "is_development_candidate": False,
+        "is_shared_import": entry.library == "shared",
+        "media_type": entry.media_type,
+        "provider": entry.provider,
+        "source_label": source_label(entry),
+        "source": {
+            "source_media_id": entry.media_id,
+            "provider": entry.provider,
+            "type": entry.source.get("type", "imported-media"),
+            "title": entry.title,
+            "creator": entry.creator,
+            "source_url": entry.canonical_url,
+            "provenance_url": entry.source.get("provenance_url", entry.canonical_url),
+            "license": entry.source.get("license", ""),
+            "license_url": "",
+            "allowed_usage_type": entry.source.get("type", "imported-media"),
+            "rights_review_status": entry.source.get("review_status", ""),
+        },
+    }
+
+
+def _media_object_from_stored(stored: Mapping[str, Any], entry: MediaLibraryEntry) -> MediaLearningObject:
+    """Rebuild the contract object from what was persisted.
+
+    Only used to resolve meanings: the shared translation path works on the
+    canonical object, and re-deriving it here is cheaper than a second
+    translation implementation that would have to be kept in step.
+    """
+    asset_raw = dict(stored.get("asset") or {})
+    transcript_raw = stored.get("transcript") or {}
+    segments = tuple(
+        TranscriptSegment(
+            str(segment["segment_id"]),
+            int(segment["order"]),
+            int(segment["start_ms"]),
+            int(segment["end_ms"]),
+            str(segment["original_text"]),
+        )
+        for segment in (transcript_raw.get("segments") or [])
+    )
+    translations = tuple(
+        SegmentTranslation(str(item["segment_id"]), str(item["target_language"]), str(item["translated_meaning"]))
+        for item in (stored.get("translations") or [])
+    )
+    duration = asset_raw.get("duration_ms") or entry.duration_ms
+    asset = MediaLearningAsset(
+        asset_id=str(asset_raw.get("asset_id") or entry.media_id),
+        source_url=str(asset_raw.get("source_url") or entry.canonical_url or "https://www.youtube.com/"),
+        source_provider=str(asset_raw.get("source_provider") or entry.provider),
+        source_type=str(asset_raw.get("source_type") or "imported-media"),
+        title=str(asset_raw.get("title") or entry.title),
+        source_language=str(asset_raw.get("source_language") or entry.language),
+        processing_state=MediaProcessingState.READY,
+        duration_ms=int(duration) if isinstance(duration, int) and duration > 0 else None,
+        transcript_available=bool(segments),
+        translation_available=bool(translations),
+    )
+    transcript = (
+        MediaTranscript(
+            asset_id=asset.asset_id,
+            source_language=asset.source_language,
+            segments=segments,
+        )
+        if segments
+        else None
+    )
+    return MediaLearningObject(asset=asset, transcript=transcript, translations=translations)
 
 
 def _installed() -> SpecializedLearningRepository:
@@ -104,20 +390,33 @@ def listening_library(
     topic: str | None = Query(default=None, min_length=1, max_length=64),
     tag: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> dict[str, Any]:
-    """Return lightweight discovery metadata; transcripts load per lesson."""
+    """Return lightweight discovery metadata; transcripts load per lesson.
+
+    Two sources, one library: the curated catalog and the media an administrator
+    imported. A learner browsing a media library should not be able to tell
+    which shelf something came from, and should not have to look in two places.
+    """
     selected_language = (language or current_language_code()).strip().casefold()
     items = catalog_lessons(language=selected_language, level=level, topic=topic, tag=tag)
     # Real poster-backed video leads every rail, so the first viewport is media
     # rather than seed audio (spec 3.5). The order is deterministic.
     ranked = sorted(items, key=discovery_rank)
-    item_metadata = [lesson_metadata(lesson) for lesson in ranked]
+    item_metadata = [_library_item(lesson) for lesson in ranked]
     membership = {lesson.lesson_id: discovery_sections(lesson) for lesson in ranked}
+    stored = _shared_entries(selected_language, level=level, topic=topic, tag=tag)
+    for entry in stored:
+        item_metadata.append(stored_media_metadata(entry))
+        # An import is new by definition, and a stored audio file belongs in the
+        # same audio rail as the seed audio it sits beside - nothing else is
+        # claimed, because there is no popularity or progress signal for it.
+        rails = ["new"] + (["audio-practice"] if entry.media_type == "audio" else [])
+        membership[entry.media_id] = tuple(rails)
     sections = [
         {
             "id": section_id,
             "item_ids": [
-                lesson.lesson_id for lesson in ranked
-                if section_id in membership[lesson.lesson_id]
+                entry_id for entry_id in membership
+                if section_id in membership[entry_id]
             ],
         }
         for section_id in _DISCOVERY_SECTION_ORDER
@@ -129,13 +428,59 @@ def listening_library(
         "tags": sorted({tag for lesson in items for tag in lesson.content_tags}),
         "filters": {
             "language": selected_language,
-            "levels": sorted({lesson.level for lesson in items}),
-            "topics": sorted({lesson.topic for lesson in items}),
-            "tags": sorted({tag for lesson in items for tag in lesson.content_tags}),
+            "levels": sorted({lesson.level for lesson in items} | {entry.level for entry in stored if entry.level}),
+            "topics": sorted({lesson.topic for lesson in items} | {str((entry.lesson or {}).get("topic") or "") for entry in stored} - {""}),
+            "tags": sorted({tag for lesson in items for tag in lesson.content_tags} | {tag for entry in stored for tag in (entry.lesson or {}).get("tags", [])}),
             "practice_modes": sorted({mode for lesson in items for mode in lesson.available_modes}),
+            "media_types": sorted({entry.media_type for entry in stored} | {"video", "audio"}),
+            "sources": sorted({entry.provider for entry in stored} | {lesson.source.source_provider for lesson in items}),
         },
         "personalization": "deterministic-curation",
     }
+
+
+def _library_item(lesson: Any) -> dict[str, Any]:
+    """Curated metadata plus the labels a media card needs.
+
+    Additive only: every key the existing surface reads is untouched, and the
+    media-library keys sit beside them.
+    """
+    metadata = lesson_metadata(lesson)
+    metadata["thumbnail_url"] = lesson.source.poster_url
+    metadata["media_type"] = "audio" if lesson.source.playback.kind == "audio" else "video"
+    metadata["provider"] = lesson.source.source_provider
+    metadata["source_label"] = PROVIDER_LABELS.get(lesson.source.source_provider, lesson.source.source_provider)
+    metadata["is_shared_import"] = False
+    return metadata
+
+
+def _shared_entries(
+    language: str,
+    *,
+    level: str | None = None,
+    topic: str | None = None,
+    tag: str | None = None,
+) -> list[MediaLibraryEntry]:
+    """Persisted shared imports, filtered the same way the catalog is."""
+    if _media_store is None:
+        return []
+    try:
+        entries = _media_store.list(language=language)
+    except Exception:  # a broken index must not empty the learner's library
+        return []
+    level_key = (level or "").strip().casefold()
+    topic_key = (topic or "").strip().casefold()
+    tag_key = (tag or "").strip().casefold()
+    from writing_coach.media_transcript_pipeline import usable_transcript
+    return [
+        entry
+        for entry in entries
+        if entry.library == "shared"
+        and usable_transcript(entry)[0]
+        and (not level_key or entry.level.casefold() == level_key)
+        and (not topic_key or str((entry.lesson or {}).get("topic") or "").casefold() == topic_key)
+        and (not tag_key or tag_key in {str(item).casefold() for item in (entry.lesson or {}).get("tags", [])})
+    ]
 
 
 _translation_cache: Any = None
@@ -146,6 +491,29 @@ def configure_listening_translation_cache(cache: Any) -> None:
 
     global _translation_cache
     _translation_cache = cache
+
+
+def _cached_source_readings(segments: Any) -> dict[str, Any]:
+    """Legacy IPA from persisted dictionary facts only; never a provider lookup."""
+    dictionary = getattr(_translation_cache, "get_dictionary", None)
+    if not dictionary:
+        return {}
+    facts = {}
+    positions = {}
+    for segment in segments or ():
+        projected = []
+        for match in re.finditer(r"[^\W_]+(?:['’-][^\W_]+)*", segment.original_text):
+            key = match.group().casefold()
+            if key not in facts:
+                try:
+                    row = dictionary(key)
+                    facts[key] = str(json.loads(row["payload_json"]).get("phonetic") or "") if row else ""
+                except Exception:  # optional persisted fact; failure must not acquire a replacement
+                    facts[key] = ""
+            if facts[key]:
+                projected.append({"text": match.group(), "start": match.start(), "end": match.end(), "reading": facts[key]})
+        positions[segment.segment_id] = projected
+    return positions
 
 
 def _translation_provider_model() -> str:
@@ -164,20 +532,49 @@ def _curated_translator(media_object: Any):
         return None
 
     def translate(segments: Any, target_language: str) -> dict[str, str]:
-        partial = MediaLearningObject(
-            asset=media_object.asset,
-            transcript=MediaTranscript(
-                media_object.asset.asset_id,
-                media_object.asset.source_language,
-                tuple(segments),
-            ),
-        )
-        result = service.translate(partial, target_language)
-        if result.status is not MediaTranslationStatus.READY:
+        batches = build_translation_batches(tuple(segments))
+        if batches is None:
             return {}
-        return {item.segment_id: item.translated_meaning for item in result.media_object.translations}
+        generated: dict[str, str] = {}
+        for batch in batches:
+            partial = MediaLearningObject(
+                asset=media_object.asset,
+                transcript=MediaTranscript(
+                    media_object.asset.asset_id,
+                    media_object.asset.source_language,
+                    tuple(batch),
+                ),
+            )
+            result = service.translate(partial, target_language)
+            if result.status is not MediaTranslationStatus.READY:
+                break
+            generated.update({item.segment_id: item.translated_meaning for item in result.media_object.translations})
+        # Preserve completed batches in the persistent segment cache even if
+        # a later provider request fails. The next open retries only missing lines.
+        return generated
 
     return translate
+
+
+def prepare_media_meanings(entry: MediaLibraryEntry, target_language: str):
+    """Materialize at the content boundary; learner GETs only read these rows.
+
+    The existing persisted cache owns revision/language/provider identity. Never
+    pay for a result when this runtime cannot persist it for the next capability.
+    This function needs no learner request context and is called by preparation.
+    """
+    stored = (entry.lesson or {}).get("payload") or {}
+    media_object = _media_object_from_stored(stored, entry)
+    return resolve_segment_meanings(
+        asset_id=media_object.asset.asset_id,
+        segments=media_object.transcript.segments if media_object.transcript else (),
+        support_language=target_language,
+        source_language=media_object.asset.source_language,
+        preauthored=media_object.translations,
+        cache=_translation_cache,
+        translate=_curated_translator(media_object) if _translation_cache is not None else None,
+        provider_model=_translation_provider_model(),
+    )
 
 
 @router.get("/library/{lesson_id}")
@@ -187,10 +584,19 @@ def open_listening_library_lesson(
     # learner's stored support language, then the configured neutral default.
     target_language: str = Query(default="", max_length=32),
 ) -> dict[str, Any]:
-    """Resolve a curated excerpt into the universal Media Learning payload."""
+    """Resolve a curated excerpt into the universal Media Learning payload.
+
+    An imported source answers through the same route: a card in the learner's
+    library carries the id of the entry it points at, and the encounter must not
+    need to know whether a moment came from the curated catalog or from
+    something an administrator published.
+    """
     lesson = catalog_lesson(lesson_id)
     if lesson is None:
-        raise orena_http_error(404, "listening_lesson_not_found", "This Listening lesson is unavailable.")
+        stored = stored_media_payload(lesson_id, target_language)
+        if stored is None:
+            raise orena_http_error(404, "listening_lesson_not_found", "This Listening lesson is unavailable.")
+        return stored
     target_language = resolve_support_language(
         get_learner_profile().get("native_language"), target_language
     )
@@ -209,7 +615,7 @@ def open_listening_library_lesson(
         source_language=media_object.asset.source_language,
         preauthored=media_object.translations,
         cache=_translation_cache,
-        translate=_curated_translator(media_object),
+        translate=None,
         provider_model=_translation_provider_model(),
     )
     if outcome.meanings:
@@ -243,8 +649,74 @@ def open_listening_library_lesson(
             if not pinyin.get(segment_id):
                 pinyin[segment_id] = reading
     metadata["pinyin_by_segment"] = pinyin
+    # One reading under each character, where the line and its reading agree (DC-3).
+    metadata["pinyin_chars_by_segment"] = align_readings(segments, pinyin)
+    if media_object.asset.source_language.strip().casefold().startswith("en"):
+        metadata["readings_by_segment"] = _cached_source_readings(segments)
+    metadata["model_clip_segments"] = _prepared_model_clips(lesson=lesson)
     response["catalog"] = metadata
     return response
+
+
+def _prepared_model_clips(*, lesson: Any = None, entry: Any = None) -> list[str]:
+    """Segments whose model clip was prepared at content readiness (D-140). Existence only; reading this
+    payload never cuts, fetches or prepares anything (D-121)."""
+    from writing_coach.speaking_library import prepared_clip_segments
+
+    try:
+        return prepared_clip_segments("", lesson=lesson, entry=entry)
+    except Exception:  # a clip index problem must not take the lesson down; the plot is simply unavailable
+        return []
+
+
+@dataclass(frozen=True)
+class ProgressLine:
+    """The canonical line a stored (asset, segment) pair points at: its language and Dictation target."""
+
+    language: str
+    text: str
+
+
+def _language_family(code: str) -> str:
+    return str(code or "").strip().casefold().replace("_", "-").split("-")[0]
+
+
+def resolve_progress_line(asset_id: str, segment_id: str) -> ProgressLine | None:
+    """Resolve a progress pair in what the app actually serves, or nothing (fail closed).
+
+    A curated lesson claims a segment only inside its excerpt (the same rule the collection resolver
+    uses); a learner's own imported media is looked up in the shared library by its id. Dictation's
+    target is `spoken_text || original_text`, exactly what the browser grades against.
+    """
+    for lesson in catalog_lessons():
+        if lesson.source.source_media_id != asset_id:
+            continue
+        for item in lesson.source.segments:
+            if str(item.get("segment_id")) != segment_id:
+                continue
+            if int(item["start_ms"]) >= lesson.excerpt_start_ms and int(item["end_ms"]) <= lesson.excerpt_end_ms:
+                text = str(item.get("spoken_text") or item.get("original_text") or "")
+                return ProgressLine(lesson.source.language, text)
+    entry = stored_media_entry(asset_id)
+    payload = ((entry.lesson or {}).get("payload") if entry is not None and entry.lesson else None) or {}
+    if isinstance(payload, Mapping):
+        language = str((payload.get("asset") or {}).get("source_language") or getattr(entry, "language", "") or "")
+        for segment in (payload.get("transcript") or {}).get("segments") or []:
+            if str(segment.get("segment_id")) == segment_id:
+                return ProgressLine(language, str(segment.get("original_text") or ""))
+    return None
+
+
+def _require_progress_line(asset_id: str, segment_id: str) -> ProgressLine:
+    """404 for an asset nothing serves, 422 for one in another language than the learner's scope (I16)."""
+    line = resolve_progress_line(asset_id, segment_id)
+    if line is None:
+        raise orena_http_error(404, "asset_not_found", "No Listening line is served for this asset and segment.")
+    if _language_family(line.language) != _language_family(current_language_code()):
+        raise orena_http_error(
+            422, "asset_language_mismatch", "This Listening line is not in the language you are learning."
+        )
+    return line
 
 
 @router.get("/progress")
@@ -269,7 +741,22 @@ def save_listening_progress(payload: ListeningProgressIn) -> dict[str, Any]:
         values["revealed"] = True
     if values["revealed"] and values["presentation"] == "prompt":
         values["presentation"] = "revealed"
-    values["updated_at"] = datetime.now(timezone.utc).isoformat()
+    # The flag is the level: the two can never disagree.
+    values["last_used_hint"] = values["last_hint_level"] > 0
+    values["updated_at"] = datetime.now(UTC).isoformat()
+    line = _require_progress_line(values["asset_id"], values["segment_id"])
+    # The stored score is the server's (D-103.2): the browser's best_* fields stay in the body for the
+    # frozen clients and are ignored. Only a checked answer is scored; every other write moves no score.
+    values["score"] = None
+    if values["presentation"] == "checked" and values["last_answer"].strip():
+        try:
+            values["score"] = evaluate_listening_reconstruction(
+                source_language=_language_family(line.language),
+                expected=line.text,
+                answer=values["last_answer"],
+            )
+        except ListeningPracticeError as exc:
+            raise orena_http_error(422, exc.code, str(exc)) from exc
     try:
         item = repository.save_listening_progress_record(values)
     except (RuntimeError, ValueError) as exc:
@@ -296,7 +783,8 @@ def save_shadowing_progress(payload: ShadowingProgressIn) -> dict[str, Any]:
     values = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
     values["asset_id"] = _clean_identity(values["asset_id"], "asset_id")
     values["segment_id"] = _clean_identity(values["segment_id"], "segment_id")
-    values["updated_at"] = datetime.now(timezone.utc).isoformat()
+    values["updated_at"] = datetime.now(UTC).isoformat()
+    _require_progress_line(values["asset_id"], values["segment_id"])
     try:
         item = repository.save_shadowing_progress_record(values)
     except (RuntimeError, ValueError) as exc:

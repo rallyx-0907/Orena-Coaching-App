@@ -2,159 +2,147 @@
 
 ## Governance
 
-Purpose: compact recovery context. Change when the active stage or verified
-facts change. Do not store secrets or unverified claims. Authority: current
-human instruction, Orena Constitution, Content Architecture, approved brand,
-D-046. No human approval or production readiness is implied.
+Purpose: execution position. Change when work/gates change. Do not store secrets or unverified claims.
+Authority: `PROJECT_MEMORY.md`. Local checks are not CI/product approval.
+
+Product completion covers the full approved UI/spec capability and flow inventory.
+
+Program: `ROADMAP.md` (D-113); R21/mobile/skill releases are historical.
 
 ## Current branch / lane
 
-`codex/work`, Orena WEB Golden Star plus real learning capabilities. Do not
-restore the deleted learner product. Native mobile / Expo / React Native is
-frozen. Human instruction authorizes full-stack WEB work on the capabilities
-themselves, not only on the foundation.
+`codex/work` is the baseline/UI lane (D-066, D-098) for either agent. `feature/orena-intelligence`
+builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
+D-095, D-096), which is edited only on `codex/work`. Verified history:
+`PROJECT_STATE.md` "New learner UI migration".
 
-## DONE
+Release (D-143): one UI; cutover done (`/` = learner UI, old UI deleted); schema via
+`proposals/PRODUCTION_MIGRATION_PACK.md`; backbone off, invite-only; no new runtime.
+Agent stays on the contract mock until Intelligence integration is authorized.
+Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
-D-046 and the product reset are committed; the shared media, transcript,
-dictation, recording, provider and evidence primitives survive, and the learner
-surfaces converge on static/orena. PostgreSQL APIs remain.
-
-Golden Star foundation: shared page intro, intention navigation, response
-composer, continuation shelf, draft status, progressReporter(). Tinted panels
-carry their own ink in both themes - the recurring defect is an ambient
-colour outranking a component's own pairing. ORENA_WEB_EXTENSION_GUIDE.md
-records what a surface inherits. `/orena-assets/*` revalidates by ETag; never
-`no-store`, which re-downloaded 3.2 MB per refresh.
-
-## Learning capabilities
-
-Preserved Opus implementation; ORENA_STATUS and GOLDEN_STAR_COMPLETION hold
-behavior and evidence. Current invariants/owners:
-
-- Listening: ui/encounter.js; pure Follow, synchronized excerpt, pause on inquiry.
-- Reading: content/reading.js readable contract; reading-library.js rights gate.
-- Writing: ui/writing-review.js; exact submitted snapshot and grounded revision.
-- Speaking: product/conversation.js; own turns, no absent-reference alignment.
-- Grammar/Vocabulary: canonical Concept IDs and shared contextual explanation.
-- Kept language: product/memory.js; provenance device sidecar after account save.
-- Recall: product/recall.js; hidden answer, explicit reveal/self-assessment.
-- Continue: ui/patterns.js and product/intent.js; actual work type and intention.
-- Understanding: ui/understanding.js; exact context and stale-answer rejection.
-- Presentation/brand: ORENA_WEB_EXTENSION_GUIDE; Opus owns theme/brand execution.
+- Foundation/Wave A/B: REVIEWABLE; inventory in IMPLEMENTATION_MAP.md.
+- QA :8021: durable PG volume `orena-next-verify-postgres`, schema `20261007_0029`. Media volume `orena-next-verify-media` at `/lanedata`; `/rundata` SQLite scratch
+  only. Worker stopped. `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name.
+- Wave B (`161d917`): REVIEWABLE; backend-less routes stay Coming soon,
+  Orena uses the mock; Grammar waits for its canonical runtime.
+- Orena agent LIVE on :8021 only (D-125, `AGENT_ENABLED=true`, Gemini flash-lite legacy
+  selection); the client follows capabilities (404 hides Orena). ORENA_AGENT_LIVE_8021_CHECKPOINT.md.
+- Grammar Lab replaces R5 (D-100, PR#66 `f86a2bf`); screens44/47 (`b83142d`)
+  wait for canonical fixtures behind grammar-source.js. G-1..G-9: UI_BACKEND_GAPS.
+  No false pattern-used claim. Store/API waits for architecture review.
 
 ## Last verified batch
 
-No CI/live-provider claim. 8011 browser verifies EN/ZH Write → Evaluate
-degraded paths (draft/target/task intact, working 503 retry). Writing
-regression: 123 pytest; Writing Review/Foundation/51-module ESM gates passed.
-Latest local suite: 901 passed/0 failures/104 skipped/5 warnings
-(GOLDEN_STAR_COMPLETION; local execution, not a CI claim).
+D-124 vocabulary localization: CC-CEDICT+Unihan vendored (cost plan P1); ZH imports gain
+pinyin/`en` meaning; read path by support language; source registry; zero provider calls.
+Design/review: `proposals/VOCABULARY_LOCALIZATION.md` (+ .REVIEW); gaps VL-1..5.
+S1 source admission (e74735b): READING_SOURCE_ADMISSION_CHECKPOINT.md; level/source breadth,
+enrichment/questions/fidelity open. Preserve S3 a8e7914: VOCABULARY_COLLECTION_CHECKPOINT.md. Grammar deferred.
 
-## Runtime / safety
+Grammar prerequisites (`0d5732c`): PR67/68 integrated, adapters verified; drafts
+unserved, no Store/API or migration. GRAMMAR_INTEGRATION_CHECKPOINT.md retains evidence.
 
-Only operate isolated `orena-foundation-web` at 127.0.0.1:8011 and its own
-`orena-foundation-postgres` / network. PGDATA is tmpfs: a reboot empties it;
-`scripts/start_orena_sandbox.ps1` restores it. Restart after Python changes -
-uvicorn does not reload. Do not operate production 8000/preview 8010/
-Cloudflare/volumes. Writing evaluation runs on local Ollama; ASR and
-pronunciation stay unconfigured. No microphone acceptance run.
+Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
+Azure/Skin (`7857d43`) local125/Node/review pass. Azure browser evidence/limits:
+AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md. Existing EPUB evidence unchanged.
 
-Dependency-heavy tests: `ai-writing-coach:local`, read-only repo, tmpfs /rundata,
-four *_DB vars there; command in AGENTS.md. SQLite is test-only, never runtime.
-Switch learning language in-page. Stage task files only, never visual references.
+S6 (`71ddcd4`): REVIEWABLE; EN/ZH rights/publish/lifecycle and390x844 evidence:
+S6_ADMIN_MEDIA_BROWSER_CHECKPOINT.md. QA archived; preserve this accepted slice.
 
-## NEXT EXACT TASK
+S2 (`637d0b2`, D-116): EN/ZH desktop/390x844, translation and skill returns verified;
+evidence/limits: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md. Listening `cab4773` preserved.
 
-Core lane: R3 evaluator REVIEWABLE (live quality needs the provider gate).
-D-051 UI foundation (DESIGN_CONTRACT rules): one-frame loop, symbol hints,
-compact activity openings, `workspaceFrames`; Writing, Speaking, Dictation,
-Grammar lesson, Recall migrated. D-052 phone space: compacting header
-(`--shell-offset`, `focusWork()`), phone density block in `rooms.css`, now
-covering comprehension, encounter practice, conversation, Discover/Collection;
-Follow is one fixed-height panel; Dictation fits one frame; phone scale D-053
-(`--tap`). Verified 1024-1920/800/390/360, EN/ZH. NEXT: human review.
+## DONE
 
-Parallel Backbone lane (Opus), D-054 delegated workflow, three review rounds
-(`I3_SCHEMA_REVIEW_REQUEST.md`): D-054 APPROVED; 0007 APPROVED; 0006 APPROVED
-WITH REQUIRED CHANGES, change made (`6c4131a`). Both still in `proposed/`:
-the move/apply and the sandbox flag switch were refused by the harness
-permission classifier and wait for the human. `/api/works` server half
-inert until the flag (`9b58618`). Deletion/re-registration gated by test
-(D-055). I4 `/api/collection`, I6 `/api/learner-summary` (ledger). Keep
-A-D, 11 destinations, Opus WIP; no I1-I7 claim implies human approval.
+Foundation/Wave A/B REVIEWABLE; history: PROJECT_STATE.md "New learner UI migration".
 
 ## IN PROGRESS
 
-Golden Star is IMPLEMENTING. The three capability findings are closed.
-The Encounter close-look WIP is finished and human-approved.
-
-Packages A-D of `ORENA_REFERENCE_ARCHITECTURE.md` are done: late-answer
-rejection, truthful capability outcomes, ten canonical journeys walked, and
-continuation that keeps the learner's intention and stays device-honest.
-Backbone contracts/pure policies are specified; runtime integration I1-I7 remains
-Opus implementation work. F is human review, not architecture completion.
-
-Multi-theme system implemented, awaiting visual review: Paper, Night Ink,
-Deep Forest, Sage Field; identity separate from appearance; colour owned
-solely by `theme.css`. Ember deferred; brand assets replaced, runtime remapped.
-
-Backbone runs against locked GPT-6 architecture at `27edeb0`, in
-`ORENA_BACKBONE_INTEGRATION_GATES.md` order. I1 done. I2's schema reviewed,
-approved, applied to the **sandbox only** at `20260908_0005`, flag `off`
-(trail: `I2_ACTIVATION_RUNBOOK.md` §6). Production/preview untouched.
-
-D-049/D-050 (2026-09-12): Content Architecture amended to five domains, a
-horizontal Understanding Engine (AI-first, context-grounded, optional support
-layer), Vocabulary Card + orthography. New: `ORENA_UNDERSTANDING_ENGINE.md`,
-`ORENA_VOCABULARY_ARCHITECTURE.md`; sequence in `ROADMAP.md`. Docs-only.
+- Product completion (D-110–D-113): `ROADMAP.md` owns order; `PRODUCT_COMPLETION_PLAN.md` supplies
+  audit/slice detail. S4 (`a15d3c2`) has testable server-backed Progress/Attempts/Summary/
+  Errors; evidence and remaining fidelity gates: `docs/reviews/S4_PROGRESS_BROWSER_CHECKPOINT.md`.
+  S2 media work is preserved. Full UI/spec + Intelligence (D-112) remain required.
+- Books storage: resolved by shared :8021 volume; old Alice assets lost.
+  S8a (`b7380b1`): body/count/Admin-link fixes; evidence: S8_BOOKS_BROWSER_CHECKPOINT.md.
+  Finish EN/ZH continuity/fidelity; no full Books completion claim.
+- Human review: Wave A/B.
+- Chinese writing evaluator recall (`ZH_WRITING_EVALUATOR_RECALL.md`): fix (1) landed
+  (`871e2b9`, v2.7), benchmark measures recall (`fa93601`); live run for (4) waits for the
+  human's go (provider cost).
+- H2 declared level: `proposals/DECLARED_LEVEL_STORAGE.md` reviewed APPROVE (`6c0db16`);
+  waits for the human's approval and three confirmations. No code or migration yet.
+- D4 (D-104/D-105): migrations 0017-0023, :8021 only; review APPROVE WITH CONDITIONS
+  (`f30044a`); flag-on QA round 2 (`9a7b190`) six flows PASS. Open for the human: delete for
+  an imported text, media-import bound. Before public release (D-143): ACCOUNT_RECORD_LIMITS, upload deletion/limits.
 
 ## PENDING
 
-Microphone hardware and live-provider validation remain pending; injected
-provider coverage does not establish live prompt quality.
+Human: none for :8011 (deferred, D-102);
+PR67/68 independently reviewed and integrated; canonical Grammar Store/API remains
+(D-111.4). Upstream GitHub PR state is unverified; integration is local only.
+Architecture approval is not evidence that the runtime already exists.
 
 ## BLOCKED
 
-I2 §6 step 9 (`ORENA_ACCOUNT_BACKBONE=on`) and every activation beyond it. Any
-deploy to production 8000 or preview 8010 is a separate human gate, was not
-authorized, and has not been asked for.
+- None for the UI lane. (:8011 stays at `20260923_0014`, deployment deferred by D-102.)
+- Every other shared runtime's Reading migration needs explicit human
+  authorization.
 
 ## OPEN P0
 
-None identified.
+None.
 
 ## OPEN P1
 
-- `#/language` renders "temporarily unavailable" only in long multi-room
-  sweeps at short dwell (4/4@700ms; 2/2@750ms); never isolated (0/130).
-  Self-recovers.
-- Platform Admin lost its host when templates/index.html was removed; APIs
-  and static/admin.js remain but admin.js bails at its #page-admin guard.
-  Preserve it without restoring the historical shell.
-- Grammar breadth: patterns joined by stable Concept ID, extended by
-  `grammar-shelf.js`, not a second syllabus.
-- Cross-device continuity: device memory current; I2 schema/sync activation
-  remains gated.
-- Reading/Vocabulary breadth: rights gate per text; D-049 sequence
-  (Vocabulary Card, orthography) not yet implemented.
-- Non-CI r8/r10/r11 matrices refer to deleted wrappers; r20 frozen native.
-- Language coherence: interface is en/zh; evaluator/grammar explanations follow
-  the support language (12; sandbox profile vi) - EN/ZH labels over VI text is a
-  product decision (more interface locales, or explain in UI language).
-
-## Baseline test evidence
-
-The 20 inherited Python failures in `test_governance_contract.py`,
-`test_media_ingestion.py`, and `test_media_learning.py` were reconciled against
-the current Orena architecture: 17 assertions now validate canonical documents
-and paths, while the three R10/R12/R20 matrix tests were retired with the
-removed legacy wrappers and frozen-native scope. The exact local suite now
-passes with `901 passed, 104 skipped, 5 warnings`; this is not a CI claim.
+See `ORENA_STATUS.md` and `UI_BACKEND_GAPS.md` section N.
 
 ## HUMAN GATES
 
-Final browser review; production, data, migration, provider, credential,
-OAuth/DNS/Cloudflare, billing and release operations; destructive history.
-Local web iteration and checkpoint commits are authorized. Only the human
-approves product direction.
+Web is active; native mobile is frozen. PostgreSQL is the authoritative
+runtime, SQLite only an isolated test or frozen rollback/archive backend.
+Production, preview, provider credentials, OAuth/DNS/Cloudflare, billing,
+deployment, destructive lifecycle, and new learner-owned persistence remain
+human gates. Never touch persistent volumes as cleanup.
+
+## NEXT EXACT TASK
+
+D-129: Reading APPROVED; Listening VERIFIED (461d471). Speaking, Writing, Vocabulary, places, cross-skill: audited,
+fixed, Reviewer-verified; human recording/AI/device check OK. Next: Onboarding (D-129 §2).
+
+D-124: → vi policy open-dsl → vi.wiktionary (strict) → English labelled; built, NOT enabled
+until the human grades docs/reviews/evidence/d124-vi. Licences page + THIRD_PARTY_NOTICES done.
+S1 loaded on :8021: 30 EN + 22 ZH published, per-text credits on Licences (7cab797/f6c0724).
+Next: comprehension sets (reading_generator unconfigured on :8021, needs human OK); S2 sources proposed.
+
+Grammar remains deferred. Human2026-10-04 accepts Reading -> vocabulary
+enrichment -> practice on publish -> Agent; Grammar later. Review bounded S1
+source admission, then S3 vocabulary/context enrichment through existing owners.
+Source/level breadth and S7 persisted questions remain open; no new learner schema.
+
+Preserve Admin/Azure (`2931823`/`7857d43`); OpenAI operator acceptance remains.
+
+Current phase: basic functional coverage first (human instruction, 2026-10-02).
+Preserve accepted Books/Progress; do not reopen them or restart a full-app audit.
+S2 basic Listening and S6 Admin media rights/publish are REVIEWABLE; stop deepening
+those paths. My Library accepted. D-119 shared Compare and D-121 readiness repair:
+retain their checkpoints. Prior EN86/ZH75 assessment retained; fresh take/full
+fidelity/model pitch remain open: COMPARE_MODEL_BROWSER_CHECKPOINT.md.
+Preserve S6/control plane. Azure review passes; mobile unverified.
+Basic coverage first; ASR within D-111.6 caps.
+
+Follow `ROADMAP.md` and D-110..D-114 for remaining coverage, evidence and gates.
+Agent remains gated; Grammar-specific capability needs its canonical runtime.
+
+QA: :8021 only. :8011 deferred; :8000 human-gated. No auto-merge
+to main; tests/records alone do not prove public readiness.
+
+Intelligence lane: D-085 against `AGENT_CONTRACT.md` v5; merge `codex/work` forward; its merged PR
+is what switches `AGENT_LIVE` on :8011 (D-101 G).
+
+## Grammar Lab (merged from `feature/grammar-lab`)
+
+Offline Phase 0: `docs/grammar_lab/SPEC.md`, `grammar_lab/` (separate tests).
+DEFERRED by human2026-10-04 (D-111.4): Store migration proposal/review/rehearsal, then Store/API
+and canonical HSK/GF generation/validation. Resolve proposed revision slot against
+media metadata 0024 before promotion. Legacy R5 is reference, never a fallback.

@@ -1,0 +1,824 @@
+/* Reader (design route `reader`, frame 14). A learning workspace (route.focus, Design Contract
+   rule 49): `.o-main` stops scrolling as a page, so this fills the column itself and scrolls only
+   inside `.s-reader__scroll` (`data-scroll-region`). Device split (grid -> one column, `--pad`) is
+   the shell's own vars (kit/device.css) - no width media query anywhere here. Colours are tokens
+   only; filled controls use `var(--accent-fill)`/`var(--accent-ink)` (D-093), never `--accent`
+   with white ink. Measured against the pinned frame (values below are the frame's own inline
+   styles). */
+
+/* `.o-screen` carries no height of its own (shell.css: entrance animation only), so the room asks
+   for the column here - router.js sets data-screen to the route id. */
+.o-screen[data-screen='reader'] {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.s-reader {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 14px;
+}
+
+.s-reader__top {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---- Toolbar ------------------------------------------------------------------------------- */
+
+.s-reader__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.s-reader__titleblock {
+  flex: 1;
+  min-width: 140px;
+  overflow: hidden;
+}
+.s-reader__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-reader__meta {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s-reader__tools {
+  display: flex;
+  gap: 8px;
+}
+
+/* One control family: the frame's `chip(on)` - off is muted on the surface, on is accent on the
+   accent-soft fill with a tint2 ring. */
+.s-reader__toggle,
+.s-reader__pill {
+  flex: none;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-reader__toggle {
+  width: 36px;
+  height: 36px;
+  font-weight: 400;
+}
+.s-reader__pill {
+  height: 34px;
+  padding: 0 13px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.s-reader__pill--aa {
+  font-size: 14px;
+}
+.s-reader__pill--aids {
+  gap: 5px;
+  padding: 0 10px;
+  min-width: 34px;
+}
+.s-reader__pill-count {
+  font-size: 13px;
+  line-height: 1;
+}
+.s-reader__pill--more {
+  width: 34px;
+  padding: 0;
+  font-size: 16px;
+}
+.s-reader__toggle[data-on="1"],
+.s-reader__pill[data-on="1"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--tint2);
+}
+/* The icon toggles keep the neutral ring whatever their state (frame 14: their border is the
+   fixed --border2, only Aa / Aids / more take the state's own). */
+.s-reader__toggle[data-on="1"] {
+  border-color: var(--border2);
+}
+
+/* ---- Menu flyout (Aa / Aids / More share one shell) ----------------------------------------- */
+
+.s-reader__menu {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  animation: rise 0.18s ease;
+}
+.s-reader__menu-item {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.s-reader__menu-item[data-on="1"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--tint2);
+}
+.s-reader__menu-item--flat {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+.s-reader__menu-item--note {
+  border-color: var(--border);
+}
+.s-reader__menu-spacer {
+  flex: 1;
+}
+.s-reader__menu-close {
+  padding: 1px 6px;
+  color: var(--muted);
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Progress bar --------------------------------------------------------------------------- */
+
+.s-reader__progress {
+  height: 4px;
+  border-radius: 99px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+.s-reader__progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+/* ---- Body / grid ----------------------------------------------------------------------------- */
+
+.s-reader__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 32px;
+  /* So the docked panel can be as tall as the reading region and no taller (see __aside). */
+  container-type: size;
+}
+
+.s-reader__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 720px);
+  gap: 26px;
+  align-items: start;
+  justify-content: center;
+}
+.s-reader__grid--split {
+  grid-template-columns: var(--ls-cols);
+}
+
+.s-reader__article {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
+  line-height: 1.8;
+  color: var(--text);
+}
+
+/* The text being read keeps the reading face whatever language the interface is in: base.css sets
+   Plus Jakarta Sans on every element that reads as Vietnamese (`:lang(vi)`), which includes the
+   wrapper of a paragraph in a Vietnamese interface - so the reading elements name their face. */
+.s-reader__paragraph,
+.s-reader__heading {
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
+}
+
+/* The learning language's own face (frame 14's `data-zhf`): Chinese body copy is set in a sans. */
+.s-reader__paragraph[data-tl="zh"] {
+  font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.s-reader__heading {
+  overflow-wrap: anywhere;
+  font-size: 1.15em;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+}
+.s-reader__break {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+.s-reader__poslegend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  font-weight: 600;
+}
+.s-reader__poslegend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+.s-reader__poslegend-hint {
+  color: var(--muted);
+}
+.s-reader__poslegend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--role);
+}
+
+/* Word roles: the design's six, on the app's own skill hues (see model.js#ROLES). */
+[data-role="noun"] { --role: var(--skill-grammar); }
+[data-role="verb"] { --role: var(--skill-listen); }
+[data-role="modifier"] { --role: var(--skill-read); }
+[data-role="connector"] { --role: var(--skill-write); }
+[data-role="pronoun"] { --role: var(--skill-speak); }
+[data-role="number"] { --role: var(--skill-vocab); }
+
+.s-reader__paragraph {
+  margin: 0;
+  /* Learner-imported text can hold a run with no break opportunity: it wraps rather than pushing
+     the reading column sideways. */
+  overflow-wrap: anywhere;
+}
+
+.s-reader__sentence {
+  border-radius: 4px;
+  padding: 2px 0;
+  cursor: pointer;
+}
+.s-reader__sentence:hover {
+  background: var(--surface2);
+}
+.s-reader__sentence.is-highlighted,
+.s-reader__hl {
+  background: var(--green-soft);
+  border-bottom: 2px solid var(--green);
+}
+/* With pinyin stacked above each character, a highlighted sentence marks its characters, not the column with
+   the pinyin row (LEX-013): the sentence box itself carries no fill there. */
+.s-reader__article[data-stacked="1"] .s-reader__sentence.is-highlighted {
+  background: none;
+  border-bottom: 0;
+}
+.s-reader__article[data-stacked="1"] .s-reader__sentence.is-highlighted .s-reader__hz {
+  background: var(--green-soft);
+  border-bottom: 2px solid var(--green);
+}
+/* A highlighted span inside a sentence (LEX-013): the sentence's own highlight look, on the learner's span. */
+.s-reader__hl {
+  color: inherit;
+  border-radius: 0;
+  padding: 0;
+}
+.s-reader__sentence.is-selected {
+  background: var(--tint2);
+  border-bottom: 0;
+  box-shadow: -2px 0 0 var(--accent), 2px 0 0 var(--accent);
+}
+
+.s-reader__w {
+  border-radius: 4px;
+}
+.s-reader__w:hover {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.s-reader__w[data-saved] {
+  background: color-mix(in oklab, var(--skill-vocab) 22%, transparent);
+}
+.s-reader__article[data-lens] .s-reader__w[data-saved] {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--skill-vocab);
+  text-underline-offset: 4px;
+}
+.s-reader__article[data-pos] .s-reader__w[data-role] {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in oklab, var(--role) 55%, transparent);
+  text-underline-offset: 4px;
+}
+.s-reader__w.is-picked[data-role] {
+  color: var(--role);
+  background: color-mix(in oklab, var(--role) 18%, transparent);
+  text-decoration-color: var(--role);
+}
+
+/* Pinyin above each Hanzi: the frame's `data-py` (500, muted), set smaller than the frame's max(12.5px, .64em) so
+   most syllables fit their character (LEX-019, D-134). */
+.s-reader__pystack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+.s-reader__py {
+  font: 500 max(10.5px, 0.58em) / 1.3 Outfit, 'Noto Sans SC', sans-serif;
+  color: var(--muted);
+  white-space: nowrap;
+  /* A reading aid, not the text: a drag across the characters does not take the pinyin with it (LEX-013). */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Never run into the next syllable (LEX-019, D-134): at least 3px between two syllables' letters. */
+  padding: 0 1.5px;
+}
+
+/* With pinyin stacked (LEX-019), as frame 14 builds it: a word is one inline-flex group, so its characters
+   never wrap apart; and every word cue - kept-word fill, key-word and word-type underline - sits on the
+   characters, the learning text, while the pinyin above stays a quiet aid. (A cue on the word itself cannot
+   reach characters inside their stacks, so it is moved to them.) */
+.s-reader__article[data-stacked="1"] .s-reader__w {
+  /* D-134 (LEX-019): a word is one grid whose columns share the widest syllable's width, so its characters stand
+     evenly spaced however long one reading is, each reading still over its own character; and words are set
+     apart by a small gap, so word boundaries read in both rows. */
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin-right: 0.3em;
+  vertical-align: bottom;
+}
+.s-reader__article[data-stacked="1"] .s-reader__w[data-saved] {
+  background: none;
+}
+.s-reader__article[data-stacked="1"] .s-reader__w[data-saved] .s-reader__hz {
+  background: color-mix(in oklab, var(--skill-vocab) 22%, transparent);
+}
+.s-reader__article[data-stacked="1"][data-lens] .s-reader__w[data-saved] .s-reader__hz {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--skill-vocab);
+  text-underline-offset: 4px;
+}
+.s-reader__article[data-stacked="1"][data-pos] .s-reader__w[data-role] .s-reader__hz {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in oklab, var(--role) 55%, transparent);
+  text-underline-offset: 4px;
+}
+.s-reader__article[data-stacked="1"] .s-reader__w.is-picked[data-role] {
+  background: none;
+}
+.s-reader__article[data-stacked="1"] .s-reader__w.is-picked[data-role] .s-reader__hz {
+  color: var(--role);
+  background: color-mix(in oklab, var(--role) 18%, transparent);
+  text-decoration-color: var(--role);
+}
+
+.s-reader__notemark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: super;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-family: Outfit, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 3px;
+  line-height: 1;
+  /* A button now (LEX-014): the number opens and folds its note. */
+  position: relative;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+/* The 18px number keeps a 44px touch target without growing the line. */
+.s-reader__notemark::after {
+  content: '';
+  position: absolute;
+  inset: -13px;
+}
+.s-reader__notemark[aria-expanded='true'] {
+  background: var(--amber);
+  color: var(--badge-ink);
+}
+
+.s-reader__article .s-reader__translation {
+  margin: 8px 0 0;
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
+  font-size: 0.82em;
+  line-height: 1.6;
+  color: var(--muted);
+}
+/* On-request translation (D-130): the paragraph's meaning slot shows the kit spinner while it is
+   asked for, or one short line with Retry when the provider failed. */
+.s-reader__article .s-reader__translation--state { display: flex; align-items: center; gap: 8px; font-family: Outfit, sans-serif; font-size: 13px; }
+.s-reader__retry { border: 0; background: none; padding: 0; color: var(--accent-text); font: inherit; font-weight: 600; cursor: pointer; }
+
+/* Notes attached to a paragraph (frame 14's amber cards, Outfit). */
+.s-reader__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  font-family: Outfit, sans-serif;
+}
+.s-reader__note {
+  border-radius: 14px;
+  background: var(--amber-soft);
+  color: var(--text);
+}
+.s-reader__note-head {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+.s-reader__note-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--amber);
+  color: var(--badge-ink);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-reader__note-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.s-reader__note-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--amber);
+}
+.s-reader__note-text {
+  font-size: 14px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.s-reader__note[data-expanded="1"] .s-reader__note-text {
+  -webkit-line-clamp: none;
+}
+.s-reader__note-chev {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: var(--amber);
+  transition: transform 0.2s;
+}
+.s-reader__note[data-expanded="1"] .s-reader__note-chev {
+  transform: rotate(180deg);
+}
+.s-reader__note-expanded {
+  padding: 0 14px 12px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: rise 0.2s ease;
+}
+.s-reader__note-src {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  padding-left: 10px;
+  border-left: 2px solid var(--amber);
+}
+.s-reader__note-edit {
+  align-self: flex-start;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* End of content */
+.s-reader__end {
+  border-top: 1px solid var(--border);
+  padding-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.s-reader__chapters-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.s-reader__chapters-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-reader__chapter {
+  height: 34px;
+  min-width: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-reader__chapter[aria-current="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--tint2);
+}
+.s-reader__endnote {
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-reader__cta-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.s-reader__cta-primary {
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 14px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-weight: 600;
+  font-size: 16px;
+  transition: background 0.15s, transform 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.s-reader__cta-primary:hover {
+  background: var(--accent-fill-hover);
+}
+.s-reader__cta-primary:active {
+  background: var(--accent-fill-press);
+  transform: scale(0.97);
+}
+.s-reader__cta-secondary {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-reader__cta-next {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Docked panel: Notes & highlights (frame 14's `<aside>`; on a phone the same content opens as the
+   design's bottom sheet instead - see screen.js). */
+.s-reader__aside {
+  border-radius: 20px;
+  background: var(--surface);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: rise 0.25s ease;
+  position: sticky;
+  top: 0;
+  box-shadow: var(--sh1);
+  max-height: 100cqh;
+  overflow: auto;
+}
+.s-reader__aside-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.s-reader__aside-empty {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.s-reader__notelist {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-reader__notelist-row {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  display: block;
+  width: 100%;
+}
+.s-reader__notelist-type {
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-reader__notelist-text {
+  font-size: 14.5px;
+  line-height: 1.45;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.s-reader__notelist-src {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-reader__sheetbody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ---- Selection toolbar (frame 14's `rdSelOpen`: floats at the bottom of the frame) ------------ */
+
+.s-reader__seltb {
+  position: fixed;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  bottom: var(--toast-b);
+  z-index: 9;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--sh3);
+  font-family: Outfit, sans-serif;
+  font-size: 14px;
+  line-height: 1;
+  animation: rise 0.18s ease;
+  overflow: hidden;
+}
+.s-reader__seltb-btn {
+  height: 40px;
+  padding: 0 var(--tb-pad);
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.s-reader__seltb-btn:hover {
+  background: var(--surface2);
+}
+.s-reader__seltb-label {
+  display: var(--tb-label);
+}
+.s-reader__seltb-ask {
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ai-soft);
+  color: var(--ai-ink);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.s-reader__seltb-ask svg {
+  margin: -2px 0;
+}
+.s-reader__seltb-close {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The Summary panel (frame 14, D-130): its head with the "Generated on request" tag, the bullets and
+   the closing line. */
+.s-reader__aside-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.s-reader__aside-tag { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 6px; background: var(--surface2); color: var(--muted); }
+.s-reader__summary { margin: 0; padding-left: 18px; font-size: 15px; line-height: 1.6; color: var(--text); }
+.s-reader__aside-foot { font-size: 13px; color: var(--muted); }
+
+/* LEX-004: the pending translation, in the slot it will fill - two kit bones, a short translation's height. */
+.s-reader__article .s-reader__translation--pending { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.s-reader__translation--pending .o-bone { display: block; height: 11px; border-radius: 6px; }
+.s-reader__translation--pending .o-bone:first-child { width: 92%; }
+.s-reader__translation--pending .o-bone:last-child { width: 64%; }
+
+/* Reading Aids as icon toggles (D-131, LEX-009): one row; a filled active state; a short caption under
+   each icon on every breakpoint, the full name as tooltip and accessible name. */
+.s-reader__aids { display: flex; gap: 8px; align-items: flex-start; flex-wrap: nowrap; min-width: 0; }
+.s-reader__aid {
+  min-width: 56px;
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: none;
+  padding: 0 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.s-reader__aid[data-on="1"] {
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+/* The same on every breakpoint (LEX-009 follow-up): the icon with its short caption under it; the full
+   name is the tooltip and the accessible name. */
+.s-reader__aid-caption {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.1;
+  white-space: nowrap;
+}

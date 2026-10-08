@@ -10,6 +10,7 @@ any language outside vi/en/zh reached the prompt as a bare code.
 from __future__ import annotations
 
 import json
+import pytest
 
 from writing_coach.media_translation import (
     DEFAULT_GROQ_MAX_COMPLETION_TOKENS,
@@ -145,6 +146,37 @@ def test_splitting_gives_up_truthfully_rather_than_looping(monkeypatch) -> None:
     else:
         raise AssertionError("an unsplittable oversized request must fail truthfully")
     assert len(recorder.bodies) < 40, "splitting must be bounded"
+
+
+@pytest.mark.parametrize("source,target", [("en", "vi"), ("zh", "en")])
+def test_json_generation_failure_splits_without_losing_lines(monkeypatch, source, target):
+    recorder = Recorder()
+    real = recorder.__call__
+
+    def post(url, **kwargs):
+        ids = [line.split("\t")[0] for line in kwargs["json"]["messages"][1]["content"].splitlines() if "\t" in line]
+        if len(ids) > 2:
+            recorder.bodies.append(kwargs["json"])
+            return FakeResponse(400, {"error": {"code": "json_validate_failed"}})
+        return real(url, **kwargs)
+
+    import writing_coach.media_translation as module
+    monkeypatch.setattr(module.requests, "post", post)
+    wanted = segments(8)
+    result = GroqTranslationProvider("test-key").translate_batch(source, target, wanted)
+    assert set(result) == {s.segment_id for s in wanted}
+    assert len(recorder.bodies) == 7
+
+
+def test_long_provenance_ids_return_to_the_correct_canonical_lines(monkeypatch):
+    from dataclasses import replace
+    recorder = Recorder()
+    engine = provider(monkeypatch, recorder)
+    wanted = tuple(replace(s, segment_id=f"source:segment:{'a' * 96}:{i}") for i, s in enumerate(segments(6)))
+    result = engine.translate_batch("en", "vi", wanted)
+    assert set(result) == {s.segment_id for s in wanted}
+    assert all(len(line.split("\t")[0]) < 64 for b in recorder.bodies
+               for line in b["messages"][1]["content"].splitlines() if "\t" in line)
 
 
 # --- the prompt names languages from the canonical registry -----------------

@@ -1,6 +1,10 @@
 .venv/
 __pycache__/
 data/*.db
+# Fetched pronunciation and its licence record: a cache of somebody else's
+# files, rebuilt on demand from Wikimedia. It is not source, and the licence
+# travels with the bytes rather than with the repository.
+data/word_audio/
 .env
 .env.*
 !.env.example

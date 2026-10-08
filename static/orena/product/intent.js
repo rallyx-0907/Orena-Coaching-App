@@ -29,22 +29,52 @@ export function route(hash = '') {
       'content',
       'language',
       'expression',
+      // The Writing skill's own library: the way in to a piece.
+      'writing',
       'preferences',
       'conversation',
       'continue',
       'collection',
+      'admin',
+      // D-059: Progress is a destination of its own, over the learner's
+      // recorded evidence (LearnerSummary). Additive; no route changed.
+      'progress',
+      // D-059 Phase 4: a book has its own address, so Library cards are links.
+      'book',
+      // Global search, with its query in the address so it survives a reload.
+      'search',
+      // The learner's last thirty days of work, read from the owners that hold it.
+      'history',
+      // The learner's own page: who they are, what they have set, and what
+      // their plan still allows (D-067, "Orena Hạn mức sử dụng").
+      'profile',
     ].includes(path)
       ? path
       : 'discover',
     id: q.get('id') || '',
+    /* Progress draws two screens behind one destination - Tổng quan and Xu
+       hướng - so which one is open belongs in the address and survives a
+       reload. */
+    tab: q.get('tab') || '',
     intent: practiceIntentions.includes(q.get('intent'))
       ? q.get('intent')
       : null,
+    q: q.get('q') || '',
+    rec: q.get('rec') || '',
+    /* The Speaking line a practice opens on survives reload. */
+    line: q.get('line') || '',
   };
 }
-export function link(page = 'discover', { id = '', intent = null } = {}) {
+export function link(page = 'discover', { id = '', intent = null, q = '', tab = '', rec = '', line = '' } = {}) {
   const query = new URLSearchParams();
   if (id) query.set('id', id);
+  // A signed recommendation from the Reading selection policy (D-082). Only the
+  // card that shows the recommendation carries it, so the same article opened
+  // any other way is the learner's own choice.
+  if (rec) query.set('rec', rec);
+  if (line) query.set('line', line);
+  if (tab) query.set('tab', tab);
+  if (q) query.set('q', q);
   if (practiceIntentions.includes(intent)) query.set('intent', intent);
   return `#/${page === 'discover' ? '' : page}${query.size ? '?' + query : ''}`;
 }
@@ -75,6 +105,25 @@ export function continuationLink(item) {
   if (item.id.startsWith('grammar:'))
     return link('practice', { id: item.id.slice(8), intent: 'grammar' });
   return link('encounter', { id: item.id, intent: item.intent });
+}
+
+/* A continuation belongs to the experience the learner was using, not to
+   whichever page happens to render the shared device memory. Prefixes remain
+   the routing truth; `intent` refines practice performed over source media. */
+export function continuationExperience(item = {}) {
+  const id = String(item.id || '');
+  const intent = item.intent || '';
+  if (id.startsWith('conversation:') || id.startsWith('voice:') || intent === 'speaking')
+    return 'speaking';
+  if (/^(expression|essay):/.test(id) || intent === 'writing') return 'writing';
+  if (id.startsWith('grammar:') || intent === 'grammar') return 'understanding';
+  if (intent === 'recall') return 'recall';
+  if (/^(media:|url:|upload:)/.test(id)) {
+    if (['dictation', 'shadowing'].includes(intent)) return 'practice';
+    return 'listening';
+  }
+  if (intent === 'dictation' || intent === 'shadowing') return 'practice';
+  return 'reading';
 }
 export function sourceLink(id) {
   if (id.startsWith('conversation:')) return link('conversation', { id });

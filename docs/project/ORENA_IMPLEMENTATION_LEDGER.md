@@ -428,6 +428,80 @@ a missing user row (7 passed). Full hermetic suite 877 passed / 20 inherited.
 
 ---
 
+### Write path, client half - the Writing room keeps its draft with the account
+
+Sandbox activation done (runbook §7): chain `20260912_0007`, flag on, backbone
+`active`. Then the first surface:
+
+- `GET/PUT /api/drafts/{piece}` (`work_api.py`) - the work id is
+  `stable_uuid('work', account, language, 'draft', piece)`, so the same piece
+  meets the same draft on every device and two accounts cannot touch each
+  other's; text 12,000 and task 240 characters, the room's own limits.
+- `static/orena/product/draft-sync.js` - decides by versions, not clocks: the
+  device remembers the version it last agreed with and a digest of that text.
+  Server empty → send what is in the box; device untouched since agreeing →
+  the server's text is the draft; device changed and server did not → send;
+  both moved → show the other version and let the learner choose. A retry of
+  the same words from the same version reuses its operation id (replay).
+- The draft status gains "Draft kept with your account" / "草稿已随你的账户保存",
+  shown only after an acknowledgment; any failure says "on this device". The
+  other-device notice offers "Use that version" (the words in the box are kept
+  as a version first) and "Keep this one" (they become the next version).
+
+Verified: `scripts/test_orena_draft_sync.mjs` (9 groups, in CI);
+`tests/test_work_api.py` 9 against scratch PostgreSQL; all 34 CI node gates;
+ESM graph 54 modules. In the browser against the sandbox, two contexts on one
+account: laptop typed → phone opened with it → phone added a line → the laptop's
+next keystrokes showed the notice (server unchanged until it chose) → "Keep
+this one" made v3 → the phone reloaded into v3 → at 390 the notice fits with no
+overflow, and "Use that version" kept the phone's words in its version list; ZH
+interface shows the ZH status.
+
+---
+
+### Review of `f52cf05` - required changes made
+
+A review of the client half found four required changes before human browser
+approval; all made.
+
+- **P1, the draft is {text, task}.** The server kept both but draft-sync
+  reconciled the text alone, so a second device could load words without their
+  task and then overwrite the task. Agreement, adoption, conflict and both
+  choices now carry the pair; the digest covers both (joined by a character
+  neither field can hold); the task field writes device memory and syncs on
+  input; the other-device notice shows the task. Never a draft under another
+  task.
+- **P1, the draft id is incarnation-scoped.** `_draft_work_id` omitted the
+  incarnation while `works.id` is global, so an explicit re-registration would
+  have derived the old incarnation's row. Now `stable_uuid('work', account,
+  incarnation, language, 'draft', piece)`. PostgreSQL counterexample: draft →
+  deletion barrier (403) → `register_new` → the piece is absent, version 1
+  created cleanly, the old row untouched (fails with the old id).
+- **P1, truthful status.** "Kept with your account" only after an
+  acknowledged save of that snapshot, or a read showing the server holds it. An
+  empty room over a 404 says "on this device"; a refused first save never says
+  "account"; every change is "on this device" until acknowledged.
+- **P2, a lost answer while typing on.** Sent-but-unanswered saves are
+  remembered on the device (base version and snapshot digests). A 409 - or a
+  reopen - that shows one of them at base + 1 is this device's own
+  predecessor: agreed on, and what was typed since is sent on top. No false
+  conflict, no second write of A, B never lost; a genuinely later write from
+  another device is still shown as one.
+- Stale docstrings updated: the I2 repositories and `account_backbone.py` no
+  longer say the flag is off or the schema awaits review.
+
+Local execution: `scripts/test_orena_draft_sync.mjs` 13 cases; all 34 CI node
+gates; ESM graph 54 modules; `tests/test_work_api.py` 10 and the backbone
+PostgreSQL suites 125 on a scratch database; hermetic suite 901 passed. Browser
+against the restarted sandbox, two contexts: empty room says "device"; task and
+words reach the phone together; a task-only change syncs; the notice shows the
+other pair; "Use that version" and "Keep this one" each keep a whole pair; the
+phone reloads into the laptop's pair; 390 without overflow; ZH. Drafts saved
+before this change used the old id and are not found by the new one (sandbox
+test data only).
+
+---
+
 ## I4 — My Content, My Language and Collection retrieval
 
 **Specification:** `ORENA_COLLECTION_ARCHITECTURE` §§2-5.
@@ -524,9 +598,11 @@ with its ZH title and the EN `essay:6` was refused; no overflow at 390.
 **Specification:** `ORENA_EVIDENCE_ARCHITECTURE` §§1-5.
 **Exit gate:** I2/I4; justified domain claims; commerce read decisions for any
 gated operation.
-**Status:** read step implemented - `LearnerSummary` over existing evidence,
-ungated and read-only. Projections, Growth trends and achievement policies not
-started (they need assistance-mode evidence and approved policies).
+**Status:** read step implemented and now surfaced - `LearnerSummary` over
+existing evidence, ungated and read-only, shown inside the existing
+preferences sheet (no new destination; 11 stays 11). Growth trends and
+achievement policies not started (they need assistance-mode evidence and
+approved policies) - the surface says so honestly rather than inventing them.
 
 ### What was built
 
@@ -550,9 +626,34 @@ kept language. No surface calls it yet.
   so each domain's growth is `unavailable` with its reason.
 - No approved achievement policy: the catalogue is `unavailable`, empty.
 
+### The surface - "Your growth" in the preferences sheet
+
+`static/orena/ui/growth-summary.js` renders `GET /api/learner-summary?window=
+all` (fetched best-effort at boot, same pattern as `productCommerce()`) inside
+the existing preferences dialog, beneath Plan & usage - no new nav destination.
+`all` rather than a default window: grammar completion carries no timestamp
+(`_grammar`'s `tally.add(None)`), so its whole count lives in `activity.undated`,
+and any bounded window would show it as `undated`-and-excluded, reading as "no
+activity" when there is some. Every domain sums `count + undated` for this
+reason. Renders exactly the states the read model can return - `unavailable`
+per domain (owner failed), `empty` (nothing recorded), a count with its
+activity label (English inflects "1 check answered" vs "5 checks answered";
+Chinese's count word does not, so its `_one` copy repeats the plural, kept only
+for EN/ZH key parity), `at_least` shown as a lower bound, the domain's own
+"why no trend yet" as a hint on its label, and achievements always
+`unavailable, no_approved_policy` - never an invented list. A partial outcome
+(any domain unavailable or truncated) adds one note; nothing else changes.
+
 ### Verified
 
-`tests/test_learner_summary.py`, 12 hermetic cases. Live on the sandbox (EN):
-`current`, writing 35 versions, reading one check `undated`, listening 5 lines,
-speaking 8 takes, grammar and language `empty`, achievements `unavailable`; an
-unknown window is refused 422 in the canonical envelope.
+`tests/test_learner_summary.py`, 12 hermetic cases. `scripts/test_orena_
+growth_summary.mjs` (in CI): every domain/activity-label/reason the surface
+can render is cross-checked against `learner_summary.py`'s own `DOMAINS`,
+activity labels and `GROWTH_UNAVAILABLE` so neither side can drift unnoticed,
+plus EN/ZH completeness, the singular/plural case, `at_least`, `unavailable`
+vs `empty`, a null fetch, and a partial outcome. Live on the sandbox (EN):
+`current`, writing 37 versions, reading 1 check, listening 5 lines, speaking 8
+takes, grammar and language `empty`; achievements `unavailable`; an unknown
+window is refused 422 in the canonical envelope. Walked in the browser at
+1280 and 390 (no overflow) and in ZH: all six domains, the hint tooltip, and
+the achievements line render correctly and match the fixtures above.

@@ -37,6 +37,78 @@ require approval and must remain consistent with `PROJECT_STATE.md` and
 
 ## Program status
 
+Current execution program is PRODUCT COMPLETION under D-109–D-113. This Roadmap
+owns sequencing; `PRODUCT_COMPLETION_PLAN.md` supplies audit evidence and bounded
+slice detail, not a competing product authority. `CURRENT_HANDOFF.md` locates active work.
+
+Public readiness requires the approved new UI as the actual learner product;
+Today / Discover / Orena / Practice Hub / My Library / Progress connect content,
+Reading / Listening / Speaking / Writing / Vocabulary / Grammar and learner evidence.
+Individual skill implementation or backend/test status does not establish readiness.
+
+Current sequence:
+
+Human sequencing update2026-10-04: Grammar deferred. Preserve the verified S3
+collection actions. Accepted next order: Reading content pipeline -> vocabulary
+enrichment -> practice on publication -> Agent -> Grammar later -> whole-product
+QA/release gates. Bounded S1 registered-source admission is implemented and
+browser-verified; source/level breadth and comprehension materialization remain
+open. Evidence: READING_SOURCE_ADMISSION_CHECKPOINT.md; status IMPLEMENTING.
+
+1. Preserve accepted Progress and Books work; do not reopen them for non-blocking completeness or fidelity.
+2. Finish preserved Listening/Media to basic browser-usable coverage: imports, usable transcripts, core line actions, Dictation, Shadowing and truthful unavailable states in EN/ZH.
+Current immediate priority (human, 2026-10-03): repair My Library overlap and
+prototype interactions, then complete basic Speaking. Preserve accepted slices.
+Azure operator acceptance remains open without blocking this UI work; Grammar
+and integrated Intelligence/Agent remain subsequent major basic gaps.
+
+3. Once Listening is basically usable, move to the next major basic gap: Admin control-center coverage, then canonical Grammar runtime and integrated Intelligence/Agent as their reviewed contracts permit.
+   Admin reconciliation preserves the completed credential and capability control
+   plane. Missing sandbox master key and deferred LEGACY activation are runtime
+   configuration issues, not missing implementation. :8021 now uses capability
+   routing; Overview/Users/Operations and import stage refresh are REVIEWABLE.
+   Finish bounded browser acceptance of supported operational journeys, then move
+   on. Unsupported speech routing is explicitly unavailable, not a working picker.
+   Azure Speech/OpenAI Admin integration is REVIEWABLE (`7857d43`): existing
+   pronunciation runtime and structured-text deployments are connected; live
+   OpenAI operator acceptance remains open. Visual Skin EN/ZH supplements own
+   palette/theme treatment, screen pins retain composition/interaction authority.
+   Production/public activation remains a human gate; it does not block this
+   authorized nonpublic Product Completion runtime. Evidence: ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md.
+4. Reconcile every remaining canonical screen/element/action/state/transition against real implementation:
+   connected learner capabilities, Profile/settings/imports, Intelligence + Agent, and Admin Overview,
+   Content, Imports, Operations, AI & Models and Users. Complete gaps as browser-visible slices.
+5. Populate a substantial validated real EN/ZH content world across levels/topics/types; validate whole learner
+   and Admin journeys before the new-UI cutover and public-release human gates.
+
+Intelligence reconciliation/integration is part of this program, using existing account/language-scoped
+learner authority and grounded evidence for recommendations, weaknesses, explanations and next actions.
+Agent is its contextual interface. No invented history, scores, timing, weakness or personalization;
+deleted source excerpts must not be reconstructed. Missing support is explicitly general/unavailable.
+EN/ZH and applicable desktop/mobile browser journeys, state transitions and persistence are required.
+Non-blocking hardening is secondary unless it affects data safety, ownership/security, normal learner/Admin
+operations or required continuity. Native remains frozen; `/next` is the current implementation location,
+not a permanent second product. The old `/` remains only until the governed single cutover.
+
+Current phase (explicit human instruction, 2026-10-02): complete basic functional coverage of the
+whole approved learner/Admin UI first. Deep fidelity, cross-device completeness, edge cases,
+performance and infrastructure refinement follow that coverage; they do not keep an already
+basically usable slice active. Historical Books/Progress review limitations remain evidence,
+not instructions to reopen those accepted slices. No fresh full-app audit is required to resume.
+
+Settled decisions: rights-cleared deterministic-valid content may auto-publish; unclear rights never publish;
+usable transcripts are required for learner media, captions first then ASR fallback; canonical Grammar
+pipeline → Store/API → learner runtime, never legacy fallback; Admin Overview is required; demo pollution
+may be archived; core Agent need not await every Grammar item, while Grammar-specific intelligence needs
+the canonical runtime; local-only state is incomplete where account continuity is expected.
+
+## Historical stage ledger — not current execution instructions
+
+The stage ledger below records historical
+acceptance and release gates; it does not establish that today's EN/ZH content
+library or normal learner/Admin journeys are complete. Non-blocking infrastructure
+hardening is secondary to those journeys. Native remains frozen.
+
 | Stage | Scope                                          | Status                                            |
 | ----- | ---------------------------------------------- | ------------------------------------------------- |
 | R0    | Product Release Architecture                   | CLOSED                                            |
@@ -51,7 +123,7 @@ require approval and must remain consistent with `PROJECT_STATE.md` and
 | R8    | Public Product Gate: Writing + Speaking EN/ZH  | PLANNED                                           |
 | R9    | Speaking Advanced / Shadowing Studio           | COMPLETE / LOCAL ACCEPTANCE PASS                  |
 | R10   | Reading Completion → separate public release   | COMPLETE / LOCAL ACCEPTANCE PASS                  |
-| R11   | Listening Completion → separate public release | PRE-PUBLIC MATRIX COMPLETE / HUMAN PROMOTION GATE |
+| R11   | Listening Completion → separate public release | COMPLETE / LOCAL ACCEPTANCE PASS / HUMAN PROMOTION GATE |
 | R12   | Retention & Growth                             | COMPLETE / LOCAL ACCEPTANCE PASS                  |
 | R13   | Platform Admin Completion                      | COMPLETE / LOCAL ACCEPTANCE PASS                  |
 | R14   | AI Usage, Cost, Quota & Provider Operations    | COMPLETE / LOCAL ACCEPTANCE PASS                  |
@@ -77,13 +149,13 @@ R2 production activation is an independent human gate and should be completed
 before it is required for public runtime behavior, but it must not block
 non-production product development.
 
-The next autonomous implementation path after the locally complete R12–R18
-foundations is:
+The historical autonomous implementation path after the locally complete R12–R18
+foundations was (superseded by D-113; native is frozen):
 
 `R19 Mobile Foundation → R20 Mobile Learning Parity → R21 Mobile Release Readiness`
 
 R8/R11 public-promotion decisions and R2 production activation remain deferred
-human gates and must not block R19/R20 non-production mobile implementation.
+historical human gates. They do not authorize current mobile implementation or separate skill releases.
 
 ## R0 — Product Release Architecture
 
@@ -286,7 +358,7 @@ Public release requires all four conditions:
 - Chinese PASS.
 
 In the revised sequence this means R3 + R4 Writing acceptance and R6 + R7
-Speaking acceptance must be closed, with a reviewed EN/ZH release matrix and
+Speaking acceptance must be closed, with reviewed EN/ZH acceptance evidence and
 production readiness. Only an explicit human-approved release-gate action may
 promote Writing and Speaking to PUBLIC.
 
@@ -313,11 +385,12 @@ public promotion remain explicit human gates.
 
 ## R11 — Listening Completion → separate public release
 
-**PRE-PUBLIC MATRIX COMPLETE / HUMAN PROMOTION GATE.**
+**COMPLETE / LOCAL ACCEPTANCE PASS / HUMAN PROMOTION GATE.**
 
 The EN/ZH Active Listening reconstruction, Shadowing rounds,
 Shadowing-to-Speaking feedback continuity, and truthful restore/degraded states
-are locally accepted through the deterministic pre-public matrix. Durable
+are locally accepted through the existing Listening and Shadowing contracts and
+browser module checks. Durable
 progress remains learner-scoped and audio-free, and imported media remains
 shared with Speaking Shadowing.
 

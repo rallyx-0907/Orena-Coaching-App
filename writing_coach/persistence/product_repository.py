@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import Engine, func, select
 from sqlalchemy.orm import Session
@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from writing_coach.persistence.config import create_shadow_engine
 from writing_coach.persistence.ids import stable_uuid
 from writing_coach.persistence.models import Subscription, UsageEvent, User
-from writing_coach.product.repository import ProductRepository, SubscriptionRecord
+from writing_coach.product.repository import ProductRepository, SubscriptionRecord, utc_day_bounds
 
 
 class PostgresProductRepository(ProductRepository):
@@ -90,6 +90,22 @@ class PostgresProductRepository(ProductRepository):
                     UsageEvent.user_id == uid,
                     UsageEvent.feature == feature,
                     UsageEvent.occurred_at >= month_start,
+                )
+            )
+        return int(total or 0)
+
+    def daily_usage(self, *, user_key: str, feature: str, day: date | None = None) -> int:
+        """The feature's usage on one UTC calendar day (today by default)."""
+
+        start, end = utc_day_bounds(day)
+        uid = self._user_id(user_key)
+        with Session(self.engine) as session:
+            total = session.scalar(
+                select(func.coalesce(func.sum(UsageEvent.amount), 0)).where(
+                    UsageEvent.user_id == uid,
+                    UsageEvent.feature == feature,
+                    UsageEvent.occurred_at >= start,
+                    UsageEvent.occurred_at < end,
                 )
             )
         return int(total or 0)

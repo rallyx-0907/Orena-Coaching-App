@@ -2,19 +2,28 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
+    Numeric,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
     Uuid,
+    event,
+    false,
+    text,
+    true,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -34,6 +43,20 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(40), default="user", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # D4 (migration 0018; D-104 H-18, H-17). Account-wide choices live on the account row, which
+    # survives account deletion, so the deletion workflow RESETS these (proposal 2.6).
+    # '' = never chosen. `settings_updated_at` is the version token of the three scalars: set only
+    # by the server, served to clients as the opaque string `settings_version`.
+    learning_language: Mapped[str] = mapped_column(
+        String(20), default="", server_default="", nullable=False
+    )
+    interface_language: Mapped[str] = mapped_column(
+        String(8), default="", server_default="", nullable=False
+    )
+    weekly_goal_days: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    settings_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class UserLanguageProfile(Base):
@@ -54,6 +77,16 @@ class UserLanguageProfile(Base):
     theme_preset: Mapped[str] = mapped_column(String(40), default="editorial", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # D4 (migration 0017): the learner's self-declared level for THIS learning language; '' = not
+    # declared. Validated against the language registry in the application, never inferred.
+    declared_level: Mapped[str] = mapped_column(
+        String(20), default="", server_default="", nullable=False
+    )
+    # D4 (migration 0019): review limits and modes, NULL = the client's defaults. `none_as_null`:
+    # Python None must be SQL NULL, not the JSON literal (delta review P2-3).
+    review_new_per_day: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    review_limit_per_day: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    review_modes: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
 
 
 class Essay(Base):
@@ -90,6 +123,37 @@ class Essay(Base):
     errors: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     module_data: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     strength_evidence: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    # D-072.1: the learner kept this review to read again. NULL is "not kept",
+    # which is the truth for every row written before the column existed.
+    review_kept_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+class EssayReviewHistory(Base):
+    """The review an essay had before an evaluator refresh replaced it (D4 I19; D-103.7).
+
+    Append-only: a PostgreSQL trigger refuses any UPDATE (0021), and the repository exposes insert
+    and read only. It has NO scope columns of its own: it hangs off its essay, every read loads the
+    scope-checked essay first, and a learner deleting the essay deletes its history (ON DELETE CASCADE).
+    """
+
+    __tablename__ = "essay_review_history"
+    __table_args__ = (
+        UniqueConstraint("essay_id", "prior_fingerprint", name="uq_essay_review_history_prior"),
+        Index("ix_essay_review_history_essay", "essay_id", "superseded_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    essay_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("essays.id", ondelete="CASCADE"), nullable=False
+    )
+    superseded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reason: Mapped[str] = mapped_column(String(40), nullable=False)
+    prior_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    prior_contract: Mapped[str] = mapped_column(String(40), nullable=False)
+    replaced_by_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    review: Mapped[dict] = mapped_column(JSON, nullable=False)
 
 
 class EssayRevision(Base):
@@ -138,6 +202,28 @@ class SavedWord(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "language_code", "normalized_word", name="uq_saved_word_scope"),
         Index("ix_saved_words_due", "user_id", "language_code", "next_review_at"),
+        # 20260923_0013. A linked word always carries the durable identity, so
+        # nothing can be linked but unidentifiable.
+        CheckConstraint(
+            "entry_id IS NULL OR entry_identity_key <> ''", name="ck_saved_words_entry_identity"
+        ),
+        # Declared for both dialects: a `postgresql_where` alone silently
+        # becomes a full index on SQLite, which would let a test pass against a
+        # constraint the runtime does not have.
+        Index(
+            "ix_saved_words_entry",
+            "entry_id",
+            postgresql_where=text("entry_id IS NOT NULL"),
+            sqlite_where=text("entry_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_saved_words_entry_identity",
+            "user_id",
+            "language_code",
+            "entry_identity_key",
+            postgresql_where=text("entry_identity_key <> ''"),
+            sqlite_where=text("entry_identity_key <> ''"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
@@ -164,12 +250,32 @@ class SavedWord(Base):
     last_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     next_review_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # Which catalogue entry this word is, and which reading of it (20260923_0013).
+    # The live link, `SET NULL` so retiring an entry never deletes a learner's
+    # word; the durable identity that a per-word audio record is keyed by; and
+    # the reading, which a join on normalised text can never recover - 行 is
+    # xíng or háng. `reading_key` is required when the entry has more than one
+    # reading; no portable constraint can read a JSON list, so that half is
+    # held by `becoming_library.save_library_vocabulary`, with a test.
+    entry_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vocabulary_entries.id", ondelete="SET NULL"), nullable=True
+    )
+    entry_identity_key: Mapped[str] = mapped_column(String(900), default="", nullable=False)
+    reading_key: Mapped[str] = mapped_column(String(240), default="", nullable=False)
 
 
 class GrammarProgress(Base):
     __tablename__ = "grammar_progress"
     __table_args__ = (
         UniqueConstraint("user_id", "language_code", "lesson_id", name="uq_grammar_progress_scope"),
+        # D4 I11 (migration 0023): the three quiz columns are all NULL or all set, with a sane range.
+        # Declared here so a fresh create_all and the schema-parity test agree with the migration.
+        CheckConstraint(
+            "(last_quiz_total IS NULL AND last_quiz_correct IS NULL AND last_quiz_at IS NULL)"
+            " OR (last_quiz_total IS NOT NULL AND last_quiz_correct IS NOT NULL AND last_quiz_at IS NOT NULL"
+            " AND last_quiz_total >= 1 AND last_quiz_correct >= 0 AND last_quiz_correct <= last_quiz_total)",
+            name="ck_grammar_progress_quiz",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
@@ -179,10 +285,23 @@ class GrammarProgress(Base):
     language_code: Mapped[str] = mapped_column(String(20), nullable=False)
     lesson_id: Mapped[str] = mapped_column(String(255), nullable=False)
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # D4 I11 (migration 0023; D-104 H-4, D-105 H-20): the last quiz result, stored WITH the completion
+    # in one upsert. Client-reported, labelled so, never read as evidence. `completed_at` keeps the
+    # first completion; a retake only moves these.
+    last_quiz_correct: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    last_quiz_total: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    last_quiz_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class ReadingSession(Base):
-    __tablename__ = "reading_sessions"
+class LegacyReadingSession(Base):
+    """An AI-generated passage from the retired generated-reading flow.
+
+    Archive only (D-082, D-083; migration `20260924_0016`): the table was
+    renamed from `reading_sessions` and is read-only by trigger. Nothing reads
+    it as evidence; it stays for the learner's record and account deletion.
+    """
+
+    __tablename__ = "reading_legacy_sessions"
     __table_args__ = (
         UniqueConstraint("user_id", "language_code", "legacy_id", name="uq_reading_session_legacy_scope"),
     )
@@ -204,13 +323,16 @@ class ReadingSession(Base):
     generation_mode: Mapped[str] = mapped_column(String(40), default="practice", nullable=False)
 
 
-class ReadingAttempt(Base):
-    __tablename__ = "reading_attempts"
+class LegacyReadingAttempt(Base):
+    """An answer to a generated passage - the read-only archive of the
+    retired flow, renamed from `reading_attempts` (see `LegacyReadingSession`)."""
+
+    __tablename__ = "reading_legacy_attempts"
     __table_args__ = (UniqueConstraint("session_id", "legacy_id", name="uq_reading_attempt_legacy"),)
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
     session_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("reading_sessions.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("reading_legacy_sessions.id", ondelete="CASCADE"), nullable=False
     )
     legacy_id: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -232,6 +354,8 @@ class ListeningProgress(Base):
             "ix_listening_progress_user_language_asset",
             "user_id", "language_code", "asset_id",
         ),
+        CheckConstraint("last_hint_level BETWEEN 0 AND 3", name="ck_listening_progress_hint_level"),
+        CheckConstraint("last_used_hint = (last_hint_level > 0)", name="ck_listening_progress_hint_flag"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
@@ -247,6 +371,13 @@ class ListeningProgress(Base):
     best_accuracy_percent: Mapped[int | None] = mapped_column(Integer, nullable=True)
     best_exact: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     last_answer: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    # The last checked attempt: whether a hint was used, and how far it went (0-3). A fact about the
+    # attempt, like last_answer; no scoring rule is inferred from it (D-068, DC-5).
+    last_used_hint: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+    last_hint_level: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    # D4 (migration 0020; D-103.2, D-104 H-14): where the best score came from. 'client' rows are the
+    # historical, unverifiable numbers; the next verified check supersedes them. Never rewritten.
+    score_source: Mapped[str] = mapped_column(String(12), default="client", server_default="client", nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
@@ -287,6 +418,7 @@ class SpeakingAttempt(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "language_code", "take_id", name="uq_speaking_attempt_scope_take"),
         Index("ix_speaking_attempts_user_language_created", "user_id", "language_code", "created_at"),
+        Index("ix_speaking_attempts_session", "user_id", "language_code", "practice_session_id", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
@@ -303,6 +435,8 @@ class SpeakingAttempt(Base):
     provenance: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     evidence: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # D-142 (migration 20261007_0029): minted by the server; NULL on legacy rows and while the flag is off.
+    practice_session_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
 
 
 class PlanRecord(Base):
@@ -376,3 +510,1067 @@ class AuditLog(Base):
     entity_id: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     payload: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularyCollection(Base):
+    """A shared, learner-facing vocabulary pack.
+
+    Collections are content, not learner state.  A collection can be imported
+    once and read by many learners; saved/review relationships remain in the
+    existing learner vocabulary tables.
+    """
+
+    __tablename__ = "vocabulary_collections"
+    __table_args__ = (
+        Index("ix_vocabulary_collections_language_status", "language_code", "catalog_status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(160), primary_key=True)
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    framework: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    level: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    level_range: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    topic: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    catalog_status: Mapped[str] = mapped_column(String(30), default="pending_review", nullable=False)
+    origin: Mapped[str] = mapped_column(String(40), default="imported", nullable=False)
+    provenance: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularyEntry(Base):
+    """A language-neutral lexical item shared across collection memberships."""
+
+    __tablename__ = "vocabulary_entries"
+    __table_args__ = (
+        UniqueConstraint("identity_key", name="uq_vocabulary_entry_identity"),
+        Index("ix_vocabulary_entries_language_term", "language_code", "normalized_term"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    term: Mapped[str] = mapped_column(String(500), nullable=False)
+    normalized_term: Mapped[str] = mapped_column(String(500), nullable=False)
+    identity_key: Mapped[str] = mapped_column(String(900), nullable=False)
+    sense_key: Mapped[str] = mapped_column(String(240), default="", nullable=False)
+    pronunciations: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    readings: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    short_meanings: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    detailed_definitions: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    part_of_speech: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    examples: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    usage_notes: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    orthography: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    level: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    framework: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    topic: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    content_origins: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    provenance: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularySourceImport(Base):
+    """One source attempt, retained for auditability and batch reporting."""
+
+    __tablename__ = "vocabulary_source_imports"
+    __table_args__ = (
+        Index("ix_vocabulary_source_imports_collection_created", "collection_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    collection_id: Mapped[str | None] = mapped_column(
+        ForeignKey("vocabulary_collections.id", ondelete="SET NULL"), nullable=True
+    )
+    filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    source_format: Mapped[str] = mapped_column(String(20), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    mapping: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), nullable=False)
+    imported_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    skipped_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    duplicate_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    warning_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    failed_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    warnings: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    errors: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    imported_by: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularyCollectionMembership(Base):
+    """Many-to-many placement of shared entries inside curated collections."""
+
+    __tablename__ = "vocabulary_collection_memberships"
+    __table_args__ = (
+        UniqueConstraint(
+            "collection_id", "entry_id", name="uq_vocabulary_collection_membership"
+        ),
+        Index("ix_vocabulary_memberships_collection_position", "collection_id", "position"),
+        Index("ix_vocabulary_memberships_entry", "entry_id"),
+        Index("ix_vocabulary_memberships_source_import", "source_import_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    collection_id: Mapped[str] = mapped_column(
+        ForeignKey("vocabulary_collections.id", ondelete="CASCADE"), nullable=False
+    )
+    entry_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vocabulary_entries.id", ondelete="CASCADE"), nullable=False
+    )
+    source_import_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vocabulary_source_imports.id", ondelete="SET NULL"), nullable=True
+    )
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    membership_metadata: Mapped[dict] = mapped_column(
+        "metadata", JSON, default=dict, nullable=False
+    )
+
+
+class AICostRecord(Base):
+    """One priced provider call made for a signed-in account (AC-2, proposed migration 20261005_0026).
+
+    The account, the feature, provider and model, the estimated cost and the units it was priced on - nothing the
+    learner wrote or said. Kept 13 months (writing_coach/ai/account_costs.py); deleted with the account."""
+
+    __tablename__ = "ai_cost_records"
+    __table_args__ = (
+        CheckConstraint("cost_state IN ('estimated', 'unpriced', 'partial', 'unknown')", name="ck_ai_cost_state"),
+        CheckConstraint("cost_usd IS NULL OR cost_usd >= 0", name="ck_ai_cost_nonnegative"),
+        Index("ix_ai_cost_records_account_time", "account_id", "occurred_at"),
+        Index("ix_ai_cost_records_time", "occurred_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    account_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    feature: Mapped[str] = mapped_column(String(80), nullable=False)
+    provider: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    model: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    cost_state: Mapped[str] = mapped_column(String(16), nullable=False)
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(14, 8), nullable=True)
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    audio_seconds: Mapped[Decimal | None] = mapped_column(Numeric(10, 3), nullable=True)
+
+
+class ReadingDerivedText(Base):
+    """What Reading generates on demand for PUBLISHED text, kept once (proposed migration 20261005_0028).
+
+    Content-addressed: the primary key is (kind, content_hash, target_language); the hash is of the normalized
+    text and its language (writing_coach/reading_derived.py). Nothing here belongs to an account and nothing
+    derived from a learner's own imported text is ever written."""
+
+    __tablename__ = "reading_derived_texts"
+    __table_args__ = (
+        CheckConstraint("kind IN ('translation', 'summary', 'gloss', 'explanation')", name="ck_reading_derived_kind"),
+        CheckConstraint("length(content_hash) = 64", name="ck_reading_derived_hash"),
+        Index("ix_reading_derived_texts_created", "created_at"),
+    )
+
+    kind: Mapped[str] = mapped_column(String(16), primary_key=True)
+    content_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    target_language: Mapped[str] = mapped_column(String(16), primary_key=True)
+    source_language: Mapped[str] = mapped_column(String(16), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    provider: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    model: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularySenseLocalization(Base):
+    """A sense's meaning in one support language, from one source (D-124, 20261004_0025).
+
+    Mirrors the migration so the hermetic suite creates the same table. A sense
+    exists once (`vocabulary_entries`); its localizations are separate rows, so
+    adding a support language mutates neither the sense nor a published
+    membership snapshot. One row per source; exactly one `selected` per
+    (sense, support language).
+    """
+
+    __tablename__ = "vocabulary_sense_localizations"
+    __table_args__ = (
+        UniqueConstraint(
+            "entry_id", "support_language", "source", name="uq_vocabulary_localization_source"
+        ),
+        Index(
+            "uq_vocabulary_localization_selected",
+            "entry_id",
+            "support_language",
+            unique=True,
+            postgresql_where=text("selected"),
+            sqlite_where=text("selected = 1"),
+        ),
+        CheckConstraint(
+            "support_language <> '' AND gloss <> '' AND source <> '' AND source_version <> ''",
+            name="ck_vocabulary_localization_identity",
+        ),
+        CheckConstraint(
+            "method IN ('source', 'curated', 'dictionary', 'pivot_translation', 'reviewed_batch')",
+            name="ck_vocabulary_localization_method",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    entry_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vocabulary_entries.id", ondelete="CASCADE", name="fk_vocabulary_localization_entry"),
+        nullable=False,
+    )
+    support_language: Mapped[str] = mapped_column(String(20), nullable=False)
+    gloss: Mapped[str] = mapped_column(Text, nullable=False)
+    source: Mapped[str] = mapped_column(String(80), nullable=False)
+    source_version: Mapped[str] = mapped_column(String(120), nullable=False)
+    method: Mapped[str] = mapped_column(String(40), nullable=False)
+    selected: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+    selection_reason: Mapped[str] = mapped_column(Text, default="", server_default="", nullable=False)
+    validation: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+# ---------------------------------------------------------------------------
+# Thu vien cua toi - what a learner kept, across every kind (20260923_0013).
+#
+# These three mirror `migrations/versions/20260923_0013_my_library_and_entry_
+# identity.py` so the hermetic suite creates the same tables from metadata. The
+# migration is the authority for the runtime; every partial index is declared
+# for both dialects, for the reason the Reading Content Engine block below
+# gives.
+#
+# `LibraryItem` is the Collection Architecture's `ContentMembership`: a
+# relationship, never a copy. No body, no title, no snippet - those stay with
+# the owner, reached through `source_id`, or through `saved_word_id` for a
+# word. It holds no review schedule: words are scheduled in `saved_words` and
+# stay there, and `pinned_at` is what the merged queue orders by.
+# ---------------------------------------------------------------------------
+
+LIBRARY_KINDS = ("word", "grammar", "reading", "listening", "note", "writing", "speaking", "book")
+_LIBRARY_KIND_LIST = ", ".join(f"'{kind}'" for kind in LIBRARY_KINDS)
+LIBRARY_RELATIONSHIPS = ("kept", "started", "imported")
+_LIBRARY_RELATIONSHIP_LIST = ", ".join(f"'{value}'" for value in LIBRARY_RELATIONSHIPS)
+LIBRARY_STATES = ("learning", "mastered")
+_LIBRARY_STATE_LIST = ", ".join(f"'{value}'" for value in LIBRARY_STATES)
+
+
+class LibraryItem(Base):
+    """One thing a learner kept, started or imported, of any kind."""
+
+    __tablename__ = "library_items"
+    __table_args__ = (
+        CheckConstraint(f"kind IN ({_LIBRARY_KIND_LIST})", name="ck_library_items_kind"),
+        CheckConstraint(
+            f"relationship IN ({_LIBRARY_RELATIONSHIP_LIST})", name="ck_library_items_relationship"
+        ),
+        CheckConstraint(
+            f"state IS NULL OR state IN ({_LIBRARY_STATE_LIST})", name="ck_library_items_state"
+        ),
+        # A word is named by its row, everything else by its routing identity,
+        # and neither can be filled in for the other.
+        CheckConstraint(
+            "(kind = 'word' AND saved_word_id IS NOT NULL)"
+            " OR (kind <> 'word' AND saved_word_id IS NULL)",
+            name="ck_library_items_word_link",
+        ),
+        CheckConstraint(
+            "(kind = 'word' AND source_id = '') OR (kind <> 'word' AND source_id <> '')",
+            name="ck_library_items_source",
+        ),
+        CheckConstraint("version >= 1", name="ck_library_items_version"),
+        # What `library_collection_members` references, so a membership cannot
+        # put an item of one kind in a collection of another.
+        UniqueConstraint("id", "kind", name="uq_library_items_id_kind"),
+        Index(
+            "ux_library_items_word",
+            "user_id",
+            "saved_word_id",
+            "relationship",
+            unique=True,
+            postgresql_where=text("saved_word_id IS NOT NULL"),
+            sqlite_where=text("saved_word_id IS NOT NULL"),
+        ),
+        Index(
+            "ux_library_items_source",
+            "user_id",
+            "language_code",
+            "kind",
+            "source_id",
+            "relationship",
+            unique=True,
+            postgresql_where=text("saved_word_id IS NULL"),
+            sqlite_where=text("saved_word_id IS NULL"),
+        ),
+        Index("ix_library_items_shelf", "user_id", "language_code", "kind", "updated_at"),
+        # D4 I4 (migration 0022): the learner's saved places, newest first. Partial, so a row that
+        # never had a place costs nothing.
+        Index(
+            "ix_library_items_place",
+            "user_id",
+            "language_code",
+            "place_at",
+            postgresql_where=text("place IS NOT NULL"),
+            sqlite_where=text("place IS NOT NULL"),
+        ),
+        Index(
+            "ix_library_items_pinned",
+            "user_id",
+            "language_code",
+            "pinned_at",
+            postgresql_where=text("pinned_at IS NOT NULL"),
+            sqlite_where=text("pinned_at IS NOT NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    saved_word_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("saved_words.id", ondelete="CASCADE"), nullable=True
+    )
+    source_id: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    relationship_kind: Mapped[str] = mapped_column(
+        "relationship", String(32), default="kept", nullable=False
+    )
+    # NULL means "whatever the owner says", which for a word is its review
+    # stage. Only a learner's own override is stored.
+    state: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    pinned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    # D4 I4 (migration 0022; D-104 H-12, Design B): where the learner is in this content. Navigation
+    # state, not evidence: written in place without touching `version` or `updated_at`, so a place
+    # write can never make a pin or note PATCH conflict. `none_as_null`: None is SQL NULL, never the
+    # JSON literal `null` (which would satisfy the partial index's `place IS NOT NULL`).
+    place: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    place_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# The covers a learner may choose for a study set. Names, not colours:
+# `theme.css` owns what each one looks like, and this column records only which
+# one was picked, so a stored value can never be a colour outside the theme.
+DECK_COVERS = ("sea", "violet", "ember", "moss", "amber", "rose")
+_DECK_COVER_LIST = ", ".join(f"'{name}'" for name in DECK_COVERS)
+
+
+class VocabularyDeck(Base):
+    """A learner's own study set - Vocabulary's, not My Library's.
+
+    The human's decision of 2026-09-23: a Deck and a My Library Collection are
+    two different things. A Deck is a learning/review set that belongs to
+    Vocabulary; a Collection only organises items inside My Library
+    (`ORENA_COLLECTION_ARCHITECTURE.md` §1 calls itself a projection layer).
+    `vocabulary_collections` is no home for one either - its own docstring says
+    collections there are content, read by many learners, and it has no owner.
+    """
+
+    __tablename__ = "vocabulary_decks"
+    __table_args__ = (
+        CheckConstraint("title <> ''", name="ck_vocabulary_decks_title"),
+        CheckConstraint("version >= 1", name="ck_vocabulary_decks_version"),
+        CheckConstraint(f"cover IN ({_DECK_COVER_LIST})", name="ck_vocabulary_decks_cover"),
+        UniqueConstraint("user_id", "language_code", "title", name="uq_vocabulary_deck_title"),
+        Index("ix_vocabulary_decks_scope", "user_id", "language_code", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(120), nullable=False)
+    cover: Mapped[str] = mapped_column(String(24), default="violet", nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VocabularyDeckMember(Base):
+    """Which of the learner's words are in a set.
+
+    `saved_word_id` cascades: a set is a set *of the learner's words*, and
+    there is no membership without the word.
+    """
+
+    __tablename__ = "vocabulary_deck_members"
+    __table_args__ = (
+        UniqueConstraint("deck_id", "saved_word_id", name="uq_vocabulary_deck_member"),
+        Index("ix_vocabulary_deck_members_deck", "deck_id", "position", "added_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    deck_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vocabulary_decks.id", ondelete="CASCADE"), nullable=False
+    )
+    saved_word_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("saved_words.id", ondelete="CASCADE"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LibraryCollection(Base):
+    """A learner's own set, of one kind - the frame's "one set, one kind"."""
+
+    __tablename__ = "library_collections"
+    __table_args__ = (
+        CheckConstraint(f"kind IN ({_LIBRARY_KIND_LIST})", name="ck_library_collections_kind"),
+        CheckConstraint("title <> ''", name="ck_library_collections_title"),
+        UniqueConstraint(
+            "user_id", "language_code", "kind", "title", name="uq_library_collection_title"
+        ),
+        UniqueConstraint("id", "kind", name="uq_library_collections_id_kind"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    title: Mapped[str] = mapped_column(String(120), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LibraryCollectionMember(Base):
+    """An item in a set.
+
+    `kind` is carried so both references are by (id, kind), which is what makes
+    "one collection, one kind" a database guarantee rather than a rule every
+    write path has to remember.
+    """
+
+    __tablename__ = "library_collection_members"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["collection_id", "kind"],
+            ["library_collections.id", "library_collections.kind"],
+            ondelete="CASCADE",
+            name="fk_library_member_collection",
+        ),
+        ForeignKeyConstraint(
+            ["item_id", "kind"],
+            ["library_items.id", "library_items.kind"],
+            ondelete="CASCADE",
+            name="fk_library_member_item",
+        ),
+        # `position` has no unique constraint - a reorder would have to
+        # renumber every member to keep one - so the ordered read breaks ties
+        # on `created_at`, and the index carries both.
+        Index("ix_library_collection_members_order", "collection_id", "position", "created_at"),
+    )
+
+    collection_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    item_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+# ---------------------------------------------------------------------------
+# Reading Content Engine - shared, admin-curated article content.
+#
+# These six mirror `migrations/versions/20260924_0015_reading_content_engine.py`
+# and exist so the hermetic suite can create the same tables from metadata, the
+# way the vocabulary catalog already does. Two rules when either side changes:
+# the migration is the authority for the runtime, and every partial index is
+# declared for *both* dialects - a `postgresql_where` alone silently becomes a
+# full index on SQLite, which would let a test pass against a constraint the
+# runtime does not have and, for the native-id key, forbid a second manual
+# paste the runtime allows.
+#
+# Nothing here is learner-owned: no account column, no foreign key into
+# `users`, no reading position or progress.
+# ---------------------------------------------------------------------------
+
+
+class ReadingSource(Base):
+    """Where content comes from, with its rights answers and polling state."""
+
+    __tablename__ = "reading_sources"
+    __table_args__ = (
+        UniqueConstraint("slug", name="uq_reading_source_slug"),
+        Index("ix_reading_sources_state", "state", "source_type"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    slug: Mapped[str] = mapped_column(String(120), nullable=False)
+    name: Mapped[str] = mapped_column(String(240), nullable=False)
+    source_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    base_url: Mapped[str] = mapped_column(String(600), default="", nullable=False)
+    state: Mapped[str] = mapped_column(String(20), default="needs_review", nullable=False)
+    languages: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    topic_hints: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    automation_allowed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    can_republish: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    can_adapt: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    attribution_required: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    license_note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    polling_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    polling_policy: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    polling_cursor: Mapped[str] = mapped_column(String(600), default="", nullable=False)
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    approved_by: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+class TextDiscussion(Base):
+    """One learner's thread about one whole text (D-072.2).
+
+    Keyed to the content identity the app routes on, not to a catalogue row:
+    Orena owns no table for every kind of text. `turn_count` is the atomic
+    reservation counter the turn endpoint takes its ordinals from, not a
+    cached aggregate to read for display.
+    """
+
+    __tablename__ = "text_discussions"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "language_code", "source_kind", "source_id", name="uq_text_discussion_scope"
+        ),
+        CheckConstraint(
+            "source_kind IN ('story','media','reading_session','book_chapter')",
+            name="ck_text_discussion_source_kind",
+        ),
+        # One-directional: a non-session kind may never carry a session id, but
+        # a session thread whose session was deleted (ON DELETE SET NULL) is a
+        # legitimate state. The biconditional would make that deletion fail.
+        CheckConstraint(
+            "source_kind = 'reading_session' OR reading_session_id IS NULL",
+            name="ck_text_discussion_session_kind",
+        ),
+        CheckConstraint(
+            "turn_count >= 0 AND turn_count <= 200", name="ck_text_discussion_turn_cap"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    source_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    reading_session_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("reading_legacy_sessions.id", ondelete="SET NULL"), nullable=True
+    )
+    turn_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingSourceItem(Base):
+    """The immutable original snapshot a candidate article is built from."""
+
+    __tablename__ = "reading_source_items"
+    __table_args__ = (
+        Index(
+            "uq_reading_source_items_native",
+            "source_id",
+            "source_native_id",
+            unique=True,
+            postgresql_where=text("source_native_id <> '' AND superseded_at IS NULL"),
+            sqlite_where=text("source_native_id <> '' AND superseded_at IS NULL"),
+        ),
+        Index("uq_reading_source_items_hash", "source_id", "content_hash", unique=True),
+        Index(
+            "ix_reading_source_items_canonical",
+            "canonical_url",
+            postgresql_where=text("canonical_url <> ''"),
+            sqlite_where=text("canonical_url <> ''"),
+        ),
+        Index("ix_reading_source_items_hash_any", "content_hash"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_sources.id", ondelete="RESTRICT"), nullable=False
+    )
+    source_native_id: Mapped[str] = mapped_column(String(400), default="", nullable=False)
+    canonical_url: Mapped[str] = mapped_column(String(1000), default="", nullable=False)
+    original_title: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    original_author: Mapped[str] = mapped_column(String(300), default="", nullable=False)
+    original_published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    original_language: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    original_content: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    rights_snapshot_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    supersedes_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("reading_source_items.id", ondelete="RESTRICT"), nullable=True
+    )
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingArticle(Base):
+    """The learner-oriented processed version, and its review lifecycle."""
+
+    __tablename__ = "reading_articles"
+    __table_args__ = (
+        UniqueConstraint("source_item_id", name="uq_reading_article_source_item"),
+        Index(
+            "ix_reading_articles_published",
+            "language",
+            "published_at",
+            "id",
+            postgresql_where=text("status = 'published'"),
+            sqlite_where=text("status = 'published'"),
+        ),
+        Index(
+            "ix_reading_articles_published_level",
+            "language",
+            "effective_level",
+            "published_at",
+            "id",
+            postgresql_where=text("status = 'published'"),
+            sqlite_where=text("status = 'published'"),
+        ),
+        Index(
+            "ix_reading_articles_published_topic",
+            "language",
+            "topic",
+            "published_at",
+            "id",
+            postgresql_where=text("status = 'published'"),
+            sqlite_where=text("status = 'published'"),
+        ),
+        Index("ix_reading_articles_queue", "status", "created_at"),
+        # The parent key a comprehension set's (article, language) references.
+        Index("uq_reading_article_language_scope", "id", "language", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    source_item_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_source_items.id", ondelete="RESTRICT"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    excerpt: Mapped[str] = mapped_column(String(400), default="", nullable=False)
+    language: Mapped[str] = mapped_column(String(20), nullable=False)
+    topic: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    subtopic: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    estimated_level: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    estimated_level_confidence: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    reviewed_level: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    effective_level: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    word_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    reading_time_seconds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_adapted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    adaptation_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    analysis_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="draft", nullable=False)
+    rejection_reason: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    content_revision: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    # What the learner is reading (D-083): the learner-facing content type,
+    # never an editorial category of the source.
+    # Column-level, as the migration adds it, so SQLite drops the check with
+    # the column on downgrade.
+    content_kind: Mapped[str] = mapped_column(
+        String(20),
+        CheckConstraint("content_kind IN ('article', 'news')", name="ck_reading_article_content_kind"),
+        default="article", server_default="article", nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    unpublished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ReadingArticleTarget(Base):
+    """One learning target: suggested by the machine, decided by an admin."""
+
+    __tablename__ = "reading_article_targets"
+    __table_args__ = (
+        Index(
+            "uq_reading_target_form",
+            "article_id",
+            "canonical_form",
+            unique=True,
+            postgresql_where=text("canonical_form <> ''"),
+            sqlite_where=text("canonical_form <> ''"),
+        ),
+        Index("ix_reading_targets_article", "article_id", "rank"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    article_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_articles.id", ondelete="CASCADE"), nullable=False
+    )
+    text: Mapped[str] = mapped_column(String(300), nullable=False)
+    canonical_form: Mapped[str] = mapped_column(String(300), default="", nullable=False)
+    target_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    context: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    meaning: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    estimated_level: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    rank: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    machine_suggested: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    admin_approved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    admin_rejected: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingReviewEvent(Base):
+    """What an admin did to an article, as the Review Queue renders it."""
+
+    __tablename__ = "reading_review_events"
+    __table_args__ = (Index("ix_reading_review_events_article", "article_id", "created_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    article_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_articles.id", ondelete="CASCADE"), nullable=False
+    )
+    actor: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    action: Mapped[str] = mapped_column(String(60), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    changes_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingIngestionJob(Base):
+    """One durable unit of ingestion work, claimed by a worker."""
+
+    __tablename__ = "reading_ingestion_jobs"
+    __table_args__ = (
+        Index(
+            "uq_reading_job_request_hash",
+            "request_hash",
+            unique=True,
+            postgresql_where=text("status IN ('queued', 'running')"),
+            sqlite_where=text("status IN ('queued', 'running')"),
+        ),
+        Index(
+            "ix_reading_jobs_claim",
+            "created_at",
+            "id",
+            postgresql_where=text("status = 'queued'"),
+            sqlite_where=text("status = 'queued'"),
+        ),
+        Index(
+            "ix_reading_jobs_stale",
+            "heartbeat_at",
+            postgresql_where=text("status = 'running'"),
+            sqlite_where=text("status = 'running'"),
+        ),
+        Index("ix_reading_jobs_recent", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    job_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_sources.id", ondelete="RESTRICT"), nullable=False
+    )
+    input_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    input_asset_key: Mapped[str] = mapped_column(String(400), default="", nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="queued", nullable=False)
+    stage: Mapped[str] = mapped_column(String(30), default="queued", nullable=False)
+    attempt: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    last_error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    last_error_code: Mapped[str] = mapped_column(String(80), default="", nullable=False)
+    next_retry_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    heartbeat_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    claimed_by: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    result_source_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("reading_source_items.id", ondelete="SET NULL"), nullable=True
+    )
+    result_article_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("reading_articles.id", ondelete="SET NULL"), nullable=True
+    )
+    result_kind: Mapped[str] = mapped_column(String(30), default="", nullable=False)
+    submitted_by: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+class TextDiscussionTurn(Base):
+    """One turn of that thread, ordered by `ordinal` and never by `created_at`,
+    which ties when both turns of an exchange are written in one request.
+
+    `request_id` is the client's idempotency key, carried by the learner turn
+    only; a partial unique index over the non-empty values is the endpoint's
+    dedup contract. Ordinals are not contiguous: a failed provider call or a
+    raced duplicate leaves its reserved pair unused, by design.
+    """
+
+    __tablename__ = "text_discussion_turns"
+    __table_args__ = (
+        UniqueConstraint("discussion_id", "ordinal", name="uq_text_discussion_turn_ordinal"),
+        CheckConstraint("role IN ('learner','assistant')", name="ck_text_discussion_turn_role"),
+        CheckConstraint("length(body) <= 4000", name="ck_text_discussion_turn_body"),
+        CheckConstraint("ordinal >= 1", name="ck_text_discussion_turn_ordinal_positive"),
+        Index("ix_text_discussion_turns_order", "discussion_id", "ordinal"),
+        Index(
+            "ux_text_discussion_turns_request",
+            "discussion_id",
+            "request_id",
+            unique=True,
+            postgresql_where=text("request_id <> ''"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    discussion_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("text_discussions.id", ondelete="CASCADE"), nullable=False
+    )
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    context: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    provider: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    model: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    request_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+
+# ---------------------------------------------------------------------------
+# Canonical Reading (D-082, D-083; migration `20260924_0016`). One flow: a
+# published corpus article -> an Admin-reviewed comprehension set -> a
+# learner's attempt -> a rebuildable ability projection. The CHECKs here mirror
+# the migration so the hermetic SQLite suite enforces what PostgreSQL does;
+# the lifecycle triggers are attached below from `reading_evidence_ddl`.
+# ---------------------------------------------------------------------------
+
+_HEX64 = "length({c}) = 64 AND ltrim({c}, '0123456789abcdef') = ''"
+_FINITE = "BETWEEN -1000000 AND 1000000"
+
+
+class ReadingComprehensionSet(Base):
+    """A reviewed set of questions for one published article, in one support
+    language, anchored to the SHA-256 of the exact body it was built from."""
+
+    __tablename__ = "reading_comprehension_sets"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["article_id", "language_code"],
+            ["reading_articles.id", "reading_articles.language"],
+            name="fk_reading_comprehension_set_article_scope",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("id", "language_code", name="uq_reading_comprehension_set_scope"),
+        Index(
+            "uq_reading_comprehension_set_approved",
+            "article_id",
+            "support_language",
+            unique=True,
+            postgresql_where=text("status = 'approved'"),
+            sqlite_where=text("status = 'approved'"),
+        ),
+        Index("ix_reading_comprehension_sets_article", "article_id", "created_at"),
+        CheckConstraint(
+            "status IN ('draft', 'needs_review', 'approved', 'rejected', 'stale', 'archived')",
+            name="ck_reading_comprehension_set_status",
+        ),
+        CheckConstraint(_HEX64.format(c="article_body_sha256"), name="ck_reading_comprehension_set_body_hash"),
+        CheckConstraint(
+            "language_code <> '' AND support_language <> '' AND generator_version <> ''",
+            name="ck_reading_comprehension_set_identity",
+        ),
+        CheckConstraint(
+            "status IN ('draft', 'needs_review') OR (reviewed_at IS NOT NULL AND reviewed_by <> '')",
+            name="ck_reading_comprehension_set_reviewed",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    article_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    support_language: Mapped[str] = mapped_column(String(20), nullable=False)
+    article_body_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="draft", server_default="draft", nullable=False)
+    generator_version: Mapped[str] = mapped_column(String(40), nullable=False)
+    model: Mapped[str] = mapped_column(String(128), default="", server_default="", nullable=False)
+    validation_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    reviewed_by: Mapped[str] = mapped_column(String(255), default="", server_default="", nullable=False)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_reason: Mapped[str] = mapped_column(Text, default="", server_default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingComprehensionQuestion(Base):
+    __tablename__ = "reading_comprehension_questions"
+    __table_args__ = (
+        Index("ix_reading_comprehension_questions_set", "set_id", "rank"),
+        CheckConstraint(
+            "question_type IN ('main_idea', 'detail', 'inference', 'vocabulary_in_context',"
+            " 'cause_effect', 'sequence', 'authors_purpose', 'reference')",
+            name="ck_reading_comprehension_question_type",
+        ),
+        CheckConstraint("rank >= 0", name="ck_reading_comprehension_question_rank"),
+        CheckConstraint("prompt <> '' AND explanation <> ''", name="ck_reading_comprehension_question_text"),
+        CheckConstraint(
+            "json_array_length(options_json) BETWEEN 2 AND 6", name="ck_reading_comprehension_question_options"
+        ),
+        CheckConstraint(
+            "correct_index >= 0 AND correct_index < json_array_length(options_json)",
+            name="ck_reading_comprehension_question_answer",
+        ),
+        CheckConstraint(
+            "(evidence_text IS NULL) = (evidence_start IS NULL)"
+            " AND (evidence_start IS NULL) = (evidence_end IS NULL)",
+            name="ck_reading_comprehension_question_evidence_complete",
+        ),
+        CheckConstraint(
+            "evidence_text IS NULL OR (evidence_text <> '' AND evidence_start >= 0"
+            " AND evidence_end - evidence_start = length(evidence_text))",
+            name="ck_reading_comprehension_question_evidence_span",
+        ),
+        CheckConstraint(
+            "question_type IN ('main_idea', 'authors_purpose') OR evidence_text IS NOT NULL",
+            name="ck_reading_comprehension_question_evidence_required",
+        ),
+        CheckConstraint("NOT (admin_approved AND admin_rejected)", name="ck_reading_comprehension_question_decision"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    set_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reading_comprehension_sets.id", ondelete="CASCADE"), nullable=False
+    )
+    rank: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    question_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    options_json: Mapped[list] = mapped_column(JSON, nullable=False)
+    correct_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    evidence_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    evidence_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    machine_suggested: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true(), nullable=False)
+    admin_approved: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+    admin_rejected: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingAttempt(Base):
+    """The one canonical Reading evidence model: a learner's submitted answers
+    to one approved set of one published article. Immutable; its own
+    idempotency receipt; the ability measurement all four or none."""
+
+    __tablename__ = "reading_attempts"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["set_id", "language_code"],
+            ["reading_comprehension_sets.id", "reading_comprehension_sets.language_code"],
+            name="fk_reading_attempt_set_scope",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint(
+            "language_code <> '' AND ordinal >= 1 AND operation_id <> ''"
+            " AND evaluator_version <> '' AND passage_level <> ''"
+            " AND (selection_policy_version IS NULL OR selection_policy_version <> '')",
+            name="ck_reading_attempt_identity",
+        ),
+        CheckConstraint(_HEX64.format(c="request_digest"), name="ck_reading_attempt_digest"),
+        CheckConstraint(
+            "total > 0 AND correct_count >= 0 AND correct_count <= total"
+            " AND json_array_length(answers) = total",
+            name="ck_reading_attempt_counts",
+        ),
+        CheckConstraint(
+            "(ability_policy_version IS NULL) = (passage_difficulty IS NULL)"
+            " AND (passage_difficulty IS NULL) = (ability_before IS NULL)"
+            " AND (ability_before IS NULL) = (ability_after IS NULL)",
+            name="ck_reading_attempt_ability_group",
+        ),
+        CheckConstraint(
+            "ability_policy_version IS NULL OR ("
+            f"ability_policy_version <> '' AND passage_difficulty {_FINITE}"
+            f" AND ability_before {_FINITE} AND ability_after {_FINITE})",
+            name="ck_reading_attempt_ability_values",
+        ),
+        UniqueConstraint("user_id", "operation_id", name="uq_reading_attempt_operation"),
+        UniqueConstraint("user_id", "language_code", "ordinal", name="uq_reading_attempt_ordinal"),
+        Index("ix_reading_attempts_set", "set_id", "language_code"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    set_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    operation_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    evaluator_version: Mapped[str] = mapped_column(String(40), nullable=False)
+    passage_level: Mapped[str] = mapped_column(String(20), nullable=False)
+    ability_policy_version: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    passage_difficulty: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ability_before: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ability_after: Mapped[float | None] = mapped_column(Float, nullable=True)
+    selection_policy_version: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    answers: Mapped[list] = mapped_column(JSON, nullable=False)
+    correct_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    total: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReadingAbilityProjection(Base):
+    """A discardable, rebuildable projection of an account's attempts under one
+    ability policy. The attempts are authoritative; this is the cached replay."""
+
+    __tablename__ = "reading_ability_projections"
+    __table_args__ = (
+        UniqueConstraint("user_id", "language_code", "policy_version", name="uq_reading_ability_scope"),
+        CheckConstraint(f"ability {_FINITE}", name="ck_reading_ability_finite"),
+        CheckConstraint("consumed_through_ordinal >= 0", name="ck_reading_ability_checkpoint"),
+        CheckConstraint("language_code <> '' AND policy_version <> ''", name="ck_reading_ability_identity"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    policy_version: Mapped[str] = mapped_column(String(40), nullable=False)
+    ability: Mapped[float] = mapped_column(Float, nullable=False)
+    consumed_through_ordinal: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    by_question_type_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+_READING_TRIGGER_TABLES = frozenset({
+    "reading_articles", "reading_comprehension_sets", "reading_comprehension_questions",
+    "reading_attempts", "reading_legacy_sessions", "reading_legacy_attempts",
+})
+
+
+@event.listens_for(Base.metadata, "after_create")
+def _reading_lifecycle_triggers(target, connection, **_kw) -> None:  # noqa: ANN001 - SQLAlchemy event signature
+    """The hermetic SQLite path gets the migration's lifecycle triggers too.
+
+    PostgreSQL gets them only from the migration, never from `create_all`:
+    the runtime is migrated, and a `create_all` PostgreSQL database is a test
+    fixture that must not pretend to be one.
+    """
+    if connection.dialect.name != "sqlite":
+        return
+    # `create_all(tables=[...])` builds a subset and still fires this event:
+    # the triggers go in only when every table they name is really there.
+    from sqlalchemy import inspect as _inspect
+
+    present = set(_inspect(connection).get_table_names())
+    if not _READING_TRIGGER_TABLES <= present:
+        return
+    from writing_coach.persistence.reading_evidence_ddl import SQLITE_TRIGGERS
+
+    # And `create_all` on a database already built fires it again: a trigger
+    # already there is left as it is.
+    existing = {row[0] for row in connection.exec_driver_sql(
+        "SELECT name FROM sqlite_master WHERE type = 'trigger'")}
+    for statement in SQLITE_TRIGGERS:
+        if statement.split(None, 3)[2] not in existing:
+            connection.exec_driver_sql(statement)

@@ -23,7 +23,7 @@ def test_production_https_callback_and_secure_cookie() -> None:
         "PUBLIC_BASE_URL": "https://becoming.example.com/",
         "GOOGLE_CLIENT_ID": "client-id",
         "GOOGLE_CLIENT_SECRET": "client-secret",
-        "SESSION_SECRET": "session-secret",
+        "SESSION_SECRET": "session-secret-for-tests-0123456789abcdef",
     })
     assert resolved.public_base_url == "https://becoming.example.com"
     assert resolved.google_redirect_uri == f"https://becoming.example.com{CALLBACK_PATH}"
@@ -74,7 +74,7 @@ def test_production_rejects_invalid_ports_and_unsafe_hosts(public_base_url: str)
             "PUBLIC_BASE_URL": public_base_url,
             "GOOGLE_CLIENT_ID": "client-id",
             "GOOGLE_CLIENT_SECRET": "client-secret",
-            "SESSION_SECRET": "session-secret",
+            "SESSION_SECRET": "session-secret-for-tests-0123456789abcdef",
         })
 
 
@@ -133,3 +133,40 @@ def test_environment_example_remains_a_usable_development_configuration() -> Non
     assert "SQLite is retained only for explicit tests" in example
     assert "Production-like staging additionally requires APP_BIND_HOST=127.0.0.1" in example
     assert (root / "VERSION").read_text(encoding="utf-8").strip() == "1.4.0"
+
+
+def test_the_reading_worker_runs_as_its_own_restarting_service_on_the_shared_data_volume():
+    root = Path(__file__).resolve().parents[1]
+    compose = (root / "compose.yaml").read_text(encoding="utf-8")
+    block = compose.split("\n  reading-worker:\n", 1)[1].split("\n\n  ", 1)[0]
+    assert 'command: ["python", "-m", "writing_coach.reading_worker"]' in block
+    assert "restart: unless-stopped" in block
+    assert "writing_data:/data" in block and "READING_LIBRARY_ASSET_ROOT: /data/reading_library_assets" in block
+    assert "ports:" not in block, "the worker serves nothing"
+
+
+def test_every_asset_root_the_app_writes_is_on_the_persistent_volume():
+    """A root left to its repo-relative default lands in the container's own layer and dies with a recreate."""
+
+    import re
+
+    root = Path(__file__).resolve().parents[1]
+    app_source = (root / "app.py").read_text(encoding="utf-8")
+    roots = set(re.findall(r'os\.getenv\("([A-Z_]*_ROOT)", str\(ROOT / "data"', app_source))
+    assert roots >= {"MEDIA_LIBRARY_ROOT", "WORD_AUDIO_ASSET_ROOT", "WORD_DEEP_ASSET_ROOT", "READING_LIBRARY_ASSET_ROOT"}
+    compose = (root / "compose.yaml").read_text(encoding="utf-8")
+    web = compose.split("\n  writing-coach:\n", 1)[1].split("\n  reading-worker:\n", 1)[0]
+    for name in sorted(roots):
+        assert re.search(rf"\n\s+{name}: /data/", web), f"{name} is not on the persistent volume"
+    assert "writing_data:/data" in web
+
+
+def test_the_product_backup_and_rehearsal_scripts_never_remove_a_volume_or_write_to_the_source():
+    root = Path(__file__).resolve().parents[1]
+    backup = (root / "scripts" / "product_backup.ps1").read_text(encoding="utf-8")
+    rehearsal = (root / "scripts" / "product_migration_rehearsal.ps1").read_text(encoding="utf-8")
+    for text in (backup, rehearsal):
+        assert "volume', 'rm'" not in text and "down -v" not in text and "'rm', '-f', '/backup" not in text
+    assert "${DataVolume}:/data:ro" in backup, "the data volume is read-only to the backup"
+    assert "'-d', '--rm'" in rehearsal, "the rehearsal's PostgreSQL removes itself with its anonymous volume"
+    assert "${Backup}:/backup:ro" in rehearsal and "${Repository}:/workspace:ro" in rehearsal

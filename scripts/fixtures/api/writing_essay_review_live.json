@@ -1,0 +1,97 @@
+{
+  "draftId": "8",
+  "version": 2,
+  "wordCount": 42,
+  "summary": "Bài viết của bạn mô tả một kỳ nghỉ cuối tuần rất vui vẻ và tích cực. Bạn đã thể hiện rõ sự vui vẻ và niềm vui khi đi biển cùng gia đình. Tuy nhiên, bài viết cần cải thiện về mặt ngữ pháp và từ vựng để trở nên tự nhiên và chính xác hơn.",
+  "strengths": "Câu 'Last weekend I went to the beach with my family.' thể hiện rõ sự kiện và người tham gia một cách đơn giản và dễ hiểu. Câu 'We were very happy because the weather was nice.' cho thấy bạn có thể sử dụng cấu trúc 'because' để liên kết lý do và kết quả một cách cơ bản.",
+  "issues": [
+    {
+      "id": "issue-a5075191fac0f952",
+      "fragment": "I like swim in the sea",
+      "correction": "I like swimming in the sea",
+      "why": "Bạn đã quên sử dụng động từ đúng dạng và thiếu giới từ 'in' trong câu. Câu nên là 'I like swimming in the sea'.",
+      "rule": "Khi nói về sở thích, bạn cần sử dụng động từ đúng dạng và kết hợp với giới từ phù hợp.",
+      "grammarRef": "b1-articles-beyond-basics",
+      "examples": [
+        "I like swimming in the sea"
+      ],
+      "kind": "grammar",
+      "anchored": true,
+      "span": {
+        "start": 98,
+        "end": 120
+      }
+    },
+    {
+      "id": "issue-51edfc1db2d0132e",
+      "fragment": "I like swim in the sea",
+      "correction": "I like swimming in the sea",
+      "why": "Bạn đã sử dụng động từ 'like' nhưng chưa kết hợp đúng với động từ 'swim' ở dạng đúng. Câu nên là 'I like swimming in the sea'.",
+      "rule": "Khi sử dụng động từ 'like', bạn cần kết hợp với động từ ở dạng V-ing để thể hiện sở thích.",
+      "grammarRef": "b1-ability-across-time",
+      "examples": [
+        "I like swimming in the sea"
+      ],
+      "kind": "grammar",
+      "anchored": true,
+      "span": {
+        "start": 98,
+        "end": 120
+      }
+    },
+    {
+      "id": "issue-b175166b3f2b2145",
+      "fragment": "I like eat fresh seafood",
+      "correction": "I like eating fresh seafood",
+      "why": "Bạn đã sử dụng động từ 'like' nhưng chưa kết hợp đúng với động từ 'eat' ở dạng đúng. Câu nên là 'I like eating fresh seafood'.",
+      "rule": "Khi sử dụng động từ 'like', bạn cần kết hợp với động từ ở dạng V-ing để thể hiện sở thích.",
+      "grammarRef": null,
+      "examples": [
+        "I like eating fresh seafood"
+      ],
+      "kind": "grammar",
+      "anchored": false,
+      "span": {
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "id": "issue-aa04f57afcadc282",
+      "fragment": "In the evening, we watched the sunset together, it was a wonderful memory.",
+      "correction": "In the evening, we watched the sunset together. It was a wonderful memory.",
+      "why": "Bạn đã quên sử dụng dấu chấm phẩy hoặc dấu chấm để tách hai câu. Câu nên là 'In the evening, we watched the sunset together. It was a wonderful memory.'",
+      "rule": "Khi có hai câu độc lập, bạn cần sử dụng dấu chấm hoặc dấu chấm phẩy để tách chúng.",
+      "grammarRef": "b2-punctuation-with-complex-clauses",
+      "examples": [
+        "In the evening, we watched the sunset together. It was a wonderful memory."
+      ],
+      "kind": "punctuation",
+      "anchored": true,
+      "span": {
+        "start": 144,
+        "end": 218
+      }
+    }
+  ],
+  "dimensions": [
+    {
+      "name": "naturalness",
+      "value": 60
+    },
+    {
+      "name": "grammar",
+      "value": 65
+    },
+    {
+      "name": "vocabulary",
+      "value": 60
+    },
+    {
+      "name": "coherence",
+      "value": 65
+    }
+  ],
+  "id": 9,
+  "parentId": 8
+}

@@ -1,0 +1,311 @@
+/* Profile (frames 24-25, measured against the pinned design). A browsing place - `focus:false` in
+   shell/routes.js - so it scrolls as a page like Discover or My Library; no device branch is
+   needed beyond the shell's own `--pad` (D8/E1: neither frame uses a device var or a
+   hide-mobile/hide-desktop class of its own, and both grids below are intrinsically responsive).
+
+   Colour: every value here is a token from kit/tokens.css. Two are reused rather than a colour
+   literal: `--mark-disc` for the hero and the avatar ring (its colours are pixel-identical to the
+   frame's `#2B2158`/`#150F2E`; only the gradient's shape parameters differ), and `--toast-ink` for
+   the hero's white ink (the same theme-independent token the toast and heroMedia already use for
+   "ink on a non-neutral surface regardless of theme"). The rest were kit requests as of the
+   primitives pass and are now purpose-named tokens (D-091 kit fidelity pass), each confirmed
+   against `25-Profile-Today-s-progress.html`'s own literal, unconditional (not theme-gated) style:
+   `--hero-chip` (the three plain hero tiles, rgba(255,255,255,.08) - lighter than `--toast-chip`'s
+   .14, so no longer reused from a token meant for the toast), `--hero-cta-ink` (the "Due review"
+   tile's own secondary CTA text, `#C9BFFF`), `--hero-cta-fill`/`--hero-cta-fill-ink` (the hero's
+   primary "Open Progress" CTA - a white pill with dark ink, not an accent fill), and `--sh-hero`
+   (the hero card's own elevation, `0 18px 40px rgba(60,40,140,.28)`, replacing the ordinary
+   `--sh2` placeholder). */
+
+.s-profile {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-top: 22px;
+  padding-bottom: 32px;
+}
+
+/* ---- Hero: "Your progress · today" ---- */
+.s-profile-hero {
+  border-radius: 28px;
+  background: var(--mark-disc);
+  color: var(--toast-ink);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: var(--sh-hero);
+}
+.s-profile-hero__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.s-profile-hero__eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+.s-profile-hero__headline {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 6px;
+  line-height: 1.15;
+  text-wrap: pretty;
+}
+/* The frame draws no hover colour change for this CTA at all (only a press-time
+   `transform:scale(.97)`, already `.o-btn--primary:active`'s own rule) - so hover/active stay
+   pinned to the same white fill instead of inheriting `.o-btn--primary`'s accent hover/press. */
+.s-profile-hero__cta {
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 12px;
+  gap: 6px;
+  flex: none;
+  background: var(--hero-cta-fill);
+  color: var(--hero-cta-fill-ink);
+}
+.s-profile-hero__cta:hover,
+.s-profile-hero__cta:active {
+  background: var(--hero-cta-fill);
+}
+.s-profile-hero__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.s-profile-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--hero-chip);
+  color: var(--toast-ink);
+}
+button.s-profile-tile {
+  border: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: filter 0.15s;
+}
+button.s-profile-tile:hover {
+  filter: brightness(1.15);
+}
+.s-profile-tile__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.s-profile-tile__label {
+  font-size: 13px;
+  opacity: 0.62;
+}
+.s-profile-tile__value {
+  font-size: 17px;
+  font-weight: 600;
+}
+.s-profile-tile__cta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hero-cta-ink);
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.s-profile-streak {
+  gap: 10px;
+}
+/* Daily-goal tile (E1 frame 25 §2.1: 60x60 ring around a 46px disc + label/value, measured live) -
+   the only hero tile whose own layout is a row (ring leading, label/value stacked beside it)
+   instead of the other tiles' plain column; kit/components.js's .c-ring supplies the ring itself
+   (loaded globally via kit/components.css, D-091 primitives pass), this only lays out its body. */
+.s-profile-daily {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+.s-profile-daily__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.s-profile-daily__min {
+  font-size: 18px;
+  font-weight: 700;
+}
+.s-profile-streak__days {
+  display: flex;
+  gap: 6px;
+}
+.s-profile-day {
+  flex: 1;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--toast-chip);
+  color: var(--toast-ink);
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+.s-profile-day--done {
+  background: var(--hero-day-done);
+  color: var(--hero-cta-fill-ink);
+  opacity: 1;
+}
+
+/* ---- Identity + stats row ---- */
+.s-profile-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.s-profile-identity,
+.s-profile-stats {
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.s-profile-stats {
+  gap: 14px;
+}
+.s-profile-identity__top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.s-profile-avatar-ring {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 999px;
+  background: var(--mark-disc);
+  padding: 3px;
+  flex: none;
+}
+.s-profile-avatar.o-avatar {
+  width: 100%;
+  height: 100%;
+  font-size: 28px;
+  border: 3px solid var(--surface);
+}
+.s-profile-badge {
+  position: absolute;
+  right: -4px;
+  bottom: 0;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  border: 2px solid var(--surface);
+}
+.s-profile-name {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+.s-profile-meta {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.s-profile-goal {
+  font-size: 14px;
+  margin-top: 6px;
+}
+.s-profile-weekly {
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-profile-weekly__head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.s-profile-weekly__head strong {
+  font-weight: 600;
+}
+.s-profile-weekly__head span {
+  color: var(--muted);
+}
+.s-profile-weekly__bars {
+  display: flex;
+  gap: 6px;
+}
+.s-profile-weekly__bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 9px;
+  background: var(--surface3);
+}
+.s-profile-weekly__bar--filled {
+  background: var(--accent);
+}
+
+.s-profile-stats__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.s-profile-stat {
+  background: var(--surface2);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.s-profile-stat__icon {
+  display: block;
+}
+.s-profile-stat__value {
+  font-size: 24px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+.s-profile-stat__value small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.s-profile-stat__label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- Actions list ---- */
+/* The rows themselves are the shared kit/components.js#listRow (`inlineSub`/`titleSize:16`
+   variant, D-091 kit fidelity pass) - this file only holds the list's own gap now that the row
+   shape/hover/border/chevron all live in the kit (bespoke `.s-profile-action*` CSS removed). */
+.s-profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

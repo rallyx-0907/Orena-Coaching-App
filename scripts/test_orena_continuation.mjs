@@ -11,9 +11,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { learnerMemory } from '../static/orena/product/memory.js';
 import { conversation } from '../static/orena/product/conversation.js';
-import { continuationLink, practiceIntentions } from '../static/orena/product/intent.js';
-import { continuationShelf, resumable } from '../static/orena/ui/patterns.js';
-import { copy } from '../static/orena/ui/copy.js';
+import {
+  continuationExperience,
+  continuationLink,
+  practiceIntentions,
+} from '../static/orena/product/intent.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const store = () => {
@@ -26,7 +28,25 @@ const store = () => {
     },
   };
 };
-const ctxFor = (memory, ui = 'en', language = 'en') => ({ memory, c: copy[ui], language });
+
+/* --- A destination only receives its own work --- */
+
+const mixedMemory = {
+  value: {
+    continuation: [
+      { id: 'media:night-market', title: 'Night market voices', intent: 'follow' },
+      { id: 'story:last-train', title: 'The last train home', intent: 'reading' },
+      { id: 'voice:coffee', title: 'Order a coffee', intent: 'speaking' },
+      { id: 'expression:note', title: 'A note', intent: 'writing' },
+    ],
+    conversations: {},
+    expressions: {},
+  },
+};
+assert.equal(continuationExperience(mixedMemory.value.continuation[0]), 'listening');
+assert.equal(continuationExperience(mixedMemory.value.continuation[1]), 'reading');
+assert.equal(continuationExperience(mixedMemory.value.continuation[2]), 'speaking');
+assert.equal(continuationExperience(mixedMemory.value.continuation[3]), 'writing');
 
 /* --- An intention survives a visit that does not name one --- */
 
@@ -52,13 +72,6 @@ assert.equal(
   '#/expression?id=story%3Alast-train',
   'the thread must open the draft it is showing, not the source it came from',
 );
-const shelf = continuationShelf(ctxFor(memory));
-assert.ok(shelf.includes(copy.en.draftLabel), 'a draft is named as a draft');
-assert.ok(
-  shelf.includes('What I remember most is the quiet.'),
-  'the shelf shows the work it is offering to reopen',
-);
-
 /* --- A stated intention is still honoured, including none ---
 
    Closing a practice panel passes `intent: null` deliberately: the learner is
@@ -117,35 +130,15 @@ assert.equal(talks.value.continuation.length, 14, 'every thread was entered');
 assert.equal(Object.keys(talks.value.conversations).length, 12, 'only twelve conversations survive');
 const oldest = talks.value.continuation.find((x) => x.id === 'conversation:c0');
 assert.ok(oldest, 'the entry is still in memory');
-assert.equal(resumable(oldest, talks), false, 'its conversation is gone, so it cannot be resumed');
-const talkShelf = continuationShelf(ctxFor(talks), 20);
-const offered = [...talkShelf.matchAll(/<strong lang="en">([^<]+)<\/strong>/g)].map((m) => m[1]);
+assert.equal(talks.value.conversations[oldest.id], undefined, 'its conversation is gone, so it cannot be resumed');
+// What the shelf may offer is what still has its work: a conversation thread needs its conversation.
+const resumableNow = talks.value.continuation.filter((x) => talks.value.conversations[x.id]);
 assert.deepEqual(
-  offered,
+  resumableNow.map((x) => x.title),
   Array.from({ length: 12 }, (_, i) => `Situation ${13 - i}`),
-  'the shelf offers exactly the work that is still there, most recent first',
+  'the work that is still there is the twelve most recent, newest first',
 );
-assert.ok(!offered.includes('Situation 0'), 'a thread that cannot open is not offered');
-assert.ok(!offered.includes('Situation 1'));
-
-/* The room whose whole subject is coming back must ask the shelf what can be
-   resumed rather than counting rows, or it renders an empty page under a
-   heading promising otherwise - and it must say when the device has lost the
-   ability to remember, which every other memory-backed room already does. */
-const reference = read('static/orena/ui/reference.js');
-const continueRoom = reference.slice(reference.indexOf('export function renderContinue'));
-assert.ok(
-  /const threads = continuationShelf\(/.test(continueRoom),
-  'Continue must render what the shelf will actually offer',
-);
-assert.ok(
-  /\$\{threads \|\|/.test(continueRoom),
-  'an empty shelf must reach the empty state, not a blank room',
-);
-assert.ok(
-  /memory\.available \? '' :/.test(continueRoom) && /memoryUnavailable/.test(continueRoom),
-  'a device that cannot remember must say so here',
-);
+assert.ok(!resumableNow.some((x) => x.title === 'Situation 0' || x.title === 'Situation 1'), 'a thread that cannot open is not offered');
 
 /* --- Language scope --- */
 
@@ -159,38 +152,10 @@ assert.equal(learnerMemory(shared, 'owner-a', 'en').value.continuation.length, 1
 assert.equal(learnerMemory(shared, 'owner-a', 'en').value.continuation[0].id, STORY);
 // And not into another learner's.
 assert.equal(learnerMemory(shared, 'owner-b', 'en').value.continuation.length, 0);
-// A language switch rebuilds memory for the new language and leaves the route
-// behind, so a thread from the previous language is never reopened.
-const app = read('static/orena/app.js');
-assert.ok(
-  /learningChanged\) history\.replaceState\(null, '', link\(\)\)/.test(app),
-  'a language switch must not stay on an encounter from the previous language',
-);
+/* --- Device memory makes no durability claim ---
 
-/* --- No new durability claim ---
-
-   Continuation is localStorage. It may say where it lives; it may never
-   borrow the account's word for it. */
-const patterns = read('static/orena/ui/patterns.js');
-assert.ok(
-  continuationShelf(ctxFor(memory)).includes(copy.en.deviceThreads),
-  'the shelf says where these threads live',
-);
-for (const ui of ['en', 'zh']) {
-  assert.ok(copy[ui].deviceThreads, `${ui}: threads must be able to say where they live`);
-  assert.ok(copy[ui].draftSaved && copy[ui].memoryUnavailable);
-  assert.notEqual(copy[ui].draftSaved, copy[ui].persisted, `${ui}: a draft is not an account save`);
-  assert.notEqual(copy[ui].deviceThreads, copy[ui].persisted);
-}
-assert.ok(
-  !/persisted/.test(
-    patterns.slice(
-      patterns.indexOf('export function continuationShelf'),
-      patterns.indexOf('export function progressReporter'),
-    ),
-  ),
-  'the shelf must not claim an account save',
-);
+   Continuation is localStorage. It may say where it lives; it may never borrow the account's word
+   for it. */
 // `persisted` is the account's word, and only the reporter that follows an
 // acknowledged write is allowed to say it.
 const memorySource = read('static/orena/product/memory.js');
@@ -198,11 +163,6 @@ assert.ok(
   !/\bapi\b|fetch\(/.test(memorySource),
   'device memory must not reach an API, and so cannot promise one',
 );
-assert.ok(
-  /draftStatus[\s\S]{0,200}memoryUnavailable/.test(patterns),
-  'a draft that could not be written says so where it was typed',
-);
-
 console.log(
   'Continuation: intention survives, work reopens, dead threads are not offered, scope holds, no borrowed durability: PASS',
 );

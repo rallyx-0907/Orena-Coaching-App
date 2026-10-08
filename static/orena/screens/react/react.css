@@ -1,0 +1,241 @@
+/* React / Reuse (frame 33, D-091). Rule-49 recomposition (docs/project/UI_BACKEND_GAPS.md N-6,
+   SCRATCH/reports/listening.md): the source has no scroll region of its own, so a long Understand
+   list or transcript would page-scroll on a short viewport. Here the card hugs its content as the
+   frame draws it, shrinks to what is left of the viewport, and only its body scrolls
+   ([data-scroll-region]); the header, the step tracker and the step's action row (Continue /
+   Reveal / Check / Retry / Finish) stay put, so the primary control is never pushed out of view. */
+
+.s-react {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  gap: 20px;
+  padding-top: 14px;
+  padding-bottom: 32px;
+}
+:root[data-device="mobile"] .s-react { padding-bottom: 16px; }
+.s-react__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-react__titles { flex: 1; min-width: 0; }
+.s-react__title { font-size: 16px; font-weight: 600; }
+.s-react__meta {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.s-react__steps { flex: none; display: flex; gap: 6px; }
+.s-react__step { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.s-react__step-bar { width: 100%; height: 5px; border-radius: 99px; background: var(--border); }
+.s-react__step.is-reached .s-react__step-bar { background: var(--accent); }
+.s-react__step-label {
+  max-width: 100%;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--muted);
+  /* Never break inside a word (X-06): a long single word such as "Understand" is centred and may overhang its
+     bar by a pixel or two at 360; several words wrap between words. */
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.s-react__step.is-current .s-react__step-label { color: var(--accent-text); }
+
+.s-react__card {
+  flex: 0 1 auto;
+  min-height: 0;
+  border-radius: 24px;
+  background: var(--surface);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: var(--sh1);
+}
+.s-react__body {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.s-react__body > * { flex: none; }
+.s-react__foot {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.s-react__foot:empty { display: none; }
+.s-react__spacer { flex: 1; }
+.s-react__cta { padding: 13px 20px; border-radius: 16px; font-size: 14px; line-height: 20px; } /* 46 high as the frame draws it (X-07) */
+/* The frame's "I've listened" is 15px with 22px padding (X-07). Its arrow is a block icon under the label there, a
+   prototype wrapping artefact (61px high); here it stays inline beside the label. */
+.s-react__cta--listen { padding: 13px 22px; font-size: 15px; line-height: 19px; }
+.s-react__ghost { padding: 13px 18px; border-radius: 14px; }
+.s-react__foot .o-btn--primary:hover { background: var(--accent-fill-hover); }
+
+/* Listen */
+.s-react__media { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.s-react__listen { display: flex; align-items: center; gap: 18px; }
+.s-react__play {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s, transform .15s;
+}
+.s-react__play svg polygon,
+.s-react__play svg rect { fill: currentColor; }
+.s-react__play:hover { background: var(--accent-fill-hover); }
+.s-react__play:active { background: var(--accent-fill-press); transform: scale(.97); }
+.s-react__wave {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 4px;
+  height: 34px;
+  align-items: center;
+  opacity: .25;
+  transition: opacity .2s;
+}
+.s-react__wave.is-playing { opacity: 1; }
+.s-react__wave span {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--accent);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Understand */
+.s-react__question { font-size: 18px; font-weight: 600; }
+.s-react__options { display: flex; flex-direction: column; gap: 10px; }
+.s-react__option {
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 15.5px;
+  text-align: left;
+  line-height: 1.45;
+  color: var(--text);
+}
+.s-react__option.is-correct { border-color: var(--green); background: var(--green-soft); }
+.s-react__option.is-wrong { border-color: var(--red); background: var(--red-soft); }
+.s-react__option:disabled { opacity: 1; color: var(--text); }
+.s-react__option { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.s-react__option-mark { display: inline-flex; align-items: center; gap: 4px; flex: none; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.s-react__option.is-correct .s-react__option-mark { color: var(--green); }
+.s-react__option.is-wrong .s-react__option-mark { color: var(--red); }
+.s-react__qrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.s-react__replay { flex: none; }
+/* The line stays on screen while the learner writes with it (LEX-084). */
+.s-react__source { font-size: 16px; line-height: 1.5; color: var(--muted); }
+.s-react__verdict { font-size: 14px; font-weight: 600; }
+.s-react__verdict.is-correct { color: var(--green); }
+.s-react__verdict.is-wrong { color: var(--red); }
+
+/* Reveal */
+.s-react__label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.s-react__transcript { font-size: 21px; line-height: 1.55; }
+.s-react__mark {
+  border-radius: 4px;
+  padding: 0 2px;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.s-react__vi {
+  font-size: 14.5px;
+  color: var(--support);
+  padding-left: 8px;
+  border-left: 2px solid var(--support-soft);
+}
+.s-react__callout {
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.s-react__callout b { color: var(--accent-text); }
+
+/* New context */
+.s-react__chip {
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.s-react__prompt { font-size: 20px; font-weight: 600; line-height: 1.45; }
+.s-react__textarea {
+  width: 100%;
+  resize: none;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.5;
+  padding: 18px;
+  outline: 0;
+  font-family: inherit;
+}
+.s-react__textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.s-react__mic {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.s-react__mic.is-recording { background: var(--red); color: var(--badge-ink); }
+
+/* Result */
+.s-react__echo {
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--surface2);
+  font-size: 16px;
+  line-height: 1.5;
+  font-style: italic;
+}
+.s-react__tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.s-react__tile { padding: 14px; border-radius: 16px; background: var(--surface2); min-width: 0; }
+.s-react__tile.is-good { background: var(--green-soft); }
+.s-react__tile-label { font-size: 13px; color: var(--muted); }
+.s-react__tile-value { font-size: 17px; font-weight: 600; }
+.s-react__tile-value.is-good { color: var(--green); }
+.s-react__tile-value.is-warn { color: var(--amber); }
+.s-react__field { display: flex; flex-direction: column; gap: 8px; }
+.s-react__field-title { font-size: 13px; font-weight: 600; color: var(--muted); }
+.s-react__quote { padding: 12px 14px; border-radius: 14px; background: var(--surface2); font-size: 15px; line-height: 1.5; }
+.s-react__quote b { font-weight: 600; }
+.s-react__quote-why { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.s-react__empty { color: var(--muted); font-size: 14.5px; }

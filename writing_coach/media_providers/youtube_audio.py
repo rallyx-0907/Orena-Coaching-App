@@ -16,6 +16,30 @@ from writing_coach.media_timing import (
 )
 
 
+def download_audio(source_url, work, *, max_seconds):
+    """Download one bounded provider audio file through the existing resolver."""
+    from pathlib import Path
+    from writing_coach.media_safe_fetch import download_bounded
+    from writing_coach.media_transcript_pipeline import PipelineStop
+    if not recognizes_youtube_url(source_url):
+        raise PipelineStop("audio_unavailable")
+    options = {
+        "quiet": True, "no_warnings": True, "skip_download": True,
+        "noplaylist": True, "socket_timeout": 15, "js_runtimes": {"node": {}},
+    }
+    with YoutubeDL(options) as ydl:
+        info = ydl.extract_info(source_url, download=False)
+    duration = info.get("duration") if isinstance(info, dict) else None
+    if not isinstance(duration, (int, float)) or duration <= 0:
+        raise PipelineStop("audio_unavailable")
+    if duration > max_seconds:
+        raise PipelineStop("too_long")
+    audio = YtDlpYouTubeAudioUrlResolver().resolve(source_url)
+    destination = Path(work) / "source.bin"
+    download_bounded(audio.url, destination)
+    return destination
+
+
 class YtDlpYouTubeAudioUrlResolver:
     """YouTube resolver with truthful segment-level timing degradation."""
 
@@ -43,6 +67,7 @@ class YtDlpYouTubeAudioUrlResolver:
             "skip_download": True,
             "noplaylist": True,
             "socket_timeout": self._timeout_seconds,
+            "js_runtimes": {"node": {}},
             # Groq accepts direct m4a/webm media URLs. Do not select HLS/DASH
             # manifests because those are not audio-file URLs.
             "format": (

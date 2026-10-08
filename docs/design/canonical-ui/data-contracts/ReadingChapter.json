@@ -1,0 +1,20 @@
+{
+  "_usedBy": [
+    "ReadingWorkspaceTemplate"
+  ],
+  "bookId": "string",
+  "chapterId": "string",
+  "title": "string",
+  "progress": "number 0-100",
+  "remainingLabel": "string",
+  "paragraphs": [
+    {
+      "text": "string",
+      "translation": "string | null"
+    }
+  ],
+  "bilingual": "boolean",
+  "savedWords": [
+    "string"
+  ]
+}

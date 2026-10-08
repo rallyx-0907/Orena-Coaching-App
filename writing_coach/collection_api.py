@@ -20,6 +20,7 @@ from writing_coach.collection_query import (
     LessonRef,
     Owner,
     QueryScope,
+    grammar_entries,
     language_entries,
     media_entries_with,
     query_collection,
@@ -37,6 +38,12 @@ router = APIRouter(prefix='/api', tags=['collection'])
 READING_BOUND = 30
 LISTENING_BOUND = 100
 SPEAKING_BOUND = 50
+# The saved language arrives a page at a time, so this read takes one bounded
+# page rather than the whole library. Asking for all of it is what made every
+# screen that touched vocabulary cost what the whole vocabulary costs; asking
+# without a bound would now silently take the first default page instead and
+# call it everything.
+LANGUAGE_BOUND = 200
 
 _owners: Callable[[], Sequence[Owner]] | None = None
 # Cursors are signed with the session secret when there is one. Without it they
@@ -76,20 +83,31 @@ def catalog_lesson_resolver() -> Callable[[str, str], LessonRef | None]:
     return resolve
 
 
-def runtime_owners(*, library: Callable[[], dict[str, Any]], reading: Callable[[int], dict[str, Any]],
-                   essays: Callable[[], Sequence[dict[str, Any]]], specialized: Any) -> Callable[[], list[Owner]]:
-    """The five owners, wired to the reads the app already serves."""
+def runtime_owners(*, library: Callable[[int, str], dict[str, Any]], reading: Callable[[int], dict[str, Any]],
+                   essays: Callable[[], Sequence[dict[str, Any]]], specialized: Any,
+                   grammar: Callable[[], Sequence[dict[str, Any]]]) -> Callable[[], list[Owner]]:
+    """The six owners, wired to the reads the app already serves.
+
+    Six of the eight kinds Thư viện của tôi draws. A note has no owner in this
+    repository at all, and a book is catalogue only - `reading_books` records
+    who imported it, not whose library it is - so neither is registered here:
+    an owner that does not exist is not the same as one that failed, and
+    `docs/project/MY_LIBRARY_DATA_CONTRACT_AUDIT.md` carries both as work for
+    the schema gate rather than something to invent a row for.
+    """
     resolve = catalog_lesson_resolver()
 
     def build() -> list[Owner]:
         return [
-            Owner('language', lambda: library().get('items', []), language_entries),
+            Owner('language', lambda query='': library(LANGUAGE_BOUND, query).get('items', []),
+                  language_entries, LANGUAGE_BOUND, searches=True),
             Owner('reading', lambda: reading(READING_BOUND).get('items', []), reading_entries, READING_BOUND),
             Owner('media', lambda: specialized.list_recent_listening_progress_records(LISTENING_BOUND),
                   media_entries_with(resolve), LISTENING_BOUND),
             Owner('writing', essays, writing_entries),
             Owner('speaking', lambda: specialized.list_speaking_attempt_records(SPEAKING_BOUND),
                   speaking_entries_with(resolve), SPEAKING_BOUND),
+            Owner('grammar', grammar, grammar_entries),
         ]
 
     return build
@@ -99,6 +117,7 @@ def runtime_owners(*, library: Callable[[], dict[str, Any]], reading: Callable[[
 def collection(
     query: str = Query('', max_length=240),
     kinds: str = Query('', max_length=120),
+    domains: str = Query('', max_length=120),
     cursor: str = Query('', max_length=2048),
     limit: int = Query(20),
 ) -> dict[str, Any]:
@@ -112,6 +131,7 @@ def collection(
             secret=_secret,
             query=query,
             kinds=[kind for kind in kinds.split(',') if kind],
+            domains=[domain for domain in domains.split(',') if domain],
             cursor=cursor or None,
             limit=limit,
         )

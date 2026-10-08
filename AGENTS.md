@@ -43,10 +43,11 @@ Domain owners:
 
 | Domain | Authority |
 | --- | --- |
-| Learner-facing product, UX, learning flow, AI behaviour | `docs/product/ORENA_PRODUCT_CONSTITUTION.md` |
+| How a learner surface looks, behaves and what data it shows | the Claude Design project at its source (D-067) |
+| Learner-facing product intent, learning flow, AI behaviour | `docs/product/ORENA_PRODUCT_CONSTITUTION.md` |
 | Content, discovery, import, learner content | `docs/product/ORENA_CONTENT_ARCHITECTURE.md` |
-| Durable learner-facing design rules, web and native | `docs/project/DESIGN_CONTRACT.md` |
-| What a web surface inherits and owes | `docs/product/ORENA_WEB_EXTENSION_GUIDE.md` |
+| Durable rules for building and judging a learner surface | `docs/project/DESIGN_CONTRACT.md` |
+| Where code lives in `static/orena` (descriptive only, sets no UI rule) | `docs/product/ORENA_WEB_EXTENSION_GUIDE.md` |
 | Brand, mascot, illustration, generated art | `assets/brand/orena/` |
 | Current capability behaviour and review state | `docs/product/ORENA_STATUS.md` |
 | Invariants that must not drift | `docs/project/ARCHITECTURE_INVARIANTS.md` |
@@ -62,6 +63,41 @@ Harness files — `CLAUDE.md` for Claude Code, and any future equivalent — car
 convenience commands and harness-specific tooling only. They are never
 authoritative for anything in the table above, and no agent should need to read
 another harness's file to work in this repository.
+
+## Learner-facing UI work: mandatory reads
+
+Before any learner-facing product, UX, UI, visual, content-discovery, Library,
+Reading, Listening, Speaking, Writing, Practice, Vocabulary / My Language or
+navigation task, read and obey:
+
+- **The Claude Design project, at its source** (D-088):
+  `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0`, pinned byte for byte at revision
+  `1790473816124946` in `docs/design/canonical-ui/screens/`. It is the visual,
+  interaction and data authority for every learner-facing surface.
+  `docs/project/DESIGN_CONTRACT.md` ("The authority") lists exactly what to read
+  from it; `docs/design/canonical-ui/IMPLEMENTATION_MAP.md` says where each of
+  its frames lives in code. A new revision is pinned and diffed before any
+  surface changes;
+- `docs/project/DESIGN_CONTRACT.md`, including its rules 42-50 (measured, not
+  invented, old interaction deleted; rule 49: a learning workspace is the
+  viewport, never a long page; rule 50: learning-first sparse copy) and the
+  fidelity gate;
+- `docs/product/ORENA_PRODUCT_CONSTITUTION.md` and
+  `docs/product/ORENA_CONTENT_ARCHITECTURE.md`: what Orena is for and how content
+  is organised (not how a surface looks);
+- `assets/brand/orena/` for artwork - it is the Art Bible and the only
+  art-direction authority;
+- the current verified state the cold start in §2 already requires.
+
+Precedence for these tasks: explicit current human instruction → the design at
+its source → the Design Contract → the Product Constitution → the Content
+Architecture → current verified product state → the task brief → existing
+implementation. Old UI, screenshots, code comments and any UI rule that
+pre-dates D-066 are evidence of what was built, never design authority, and a
+rule that conflicts with the design is void (D-067). If a requested change would
+violate the design, stop and surface the conflict before implementing it.
+
+The rules themselves live in those files and are not repeated here.
 
 ## Architecture review authority
 
@@ -135,6 +171,14 @@ Two agent lanes work this repository independently:
 
 - **Codex** — `codex/work`
 - **Claude** — `claude/<task>`
+
+One further lane builds a different layer, not a learner implementation:
+
+- **Orena Intelligence** — `feature/orena-intelligence` (D-085). It owns
+  `/api/agent/*` and the orchestration above the domain services, builds against
+  `docs/project/AGENT_CONTRACT.md` only, receives that contract and the new
+  learner UI by merging `codex/work` forward, and never edits the contract or
+  learner UI (D-086).
 
 `git worktree list` shows the lanes as separate checkouts. When a lane is
 assigned, work in it. Do not create another branch or worktree because a
@@ -219,30 +263,29 @@ IDs, environment-specific paths, migration records, API responses or temporary
 UI state. Prefer explicit contracts, configuration, repository abstractions,
 deterministic mappings, reusable primitives and root-cause fixes.
 
-**Theme.** Orena has a canonical multi-theme visual system, not a light/dark
-switch. A theme has an identity (`paper`, `night-ink`, `deep-forest`,
-`sage-field`) and, separately, an appearance (`light` or `dark`); never treat
-the two as the same thing, and never assume there are two of anything.
+**Theme.** The learner interface is the design of D-088, with its light and dark
+themes following the operating system (D-089). The cutover is done (D-091,
+D-143): the learner UI is the only UI and is served at `/`; `/next` and `/login`
+redirect to it. The old Dark Glass UI (D-066) is retired and deleted
+(`LEGACY_TOMBSTONES.md`). D-059's Ink and Paper themes stay retired; there is no
+hybrid screen and no second visual system.
 
-- Colour has one owner: `static/orena/theme.css`. A foundation layer names the
-  approved palette, grouped by family; a semantic block per theme says what
-  each colour is *for*. Components read only semantic tokens. Do not add a
-  second `:root` colour block anywhere - that is the defect this replaced.
-- Themes derive from approved palettes under `assets/brand/`. Do not invent a
-  colour skin, and do not recolour canonical mascot or brand artwork.
-  `pattern/color-pallate.png` is exploratory theme reference only: it is not
-  the canonical palette, and its gradients are not approved UI colours.
-- Orena Orange `#FF7A3D` is the brand colour and stays canonical. It measures
-  2.34 on Paper Ivory, so on light grounds it is fill and illustration only;
-  `--accent` carries the contrast-safe text and action role. Never change a
-  brand value to make one component pass contrast - assign it a decorative
-  role instead.
-- Every theme must pass AA for body text, secondary text, controls, links and
-  tinted panels. `scripts/test_orena_foundation.mjs` enforces this for every
-  registered theme.
-- A new approved theme is registered - a block in `theme.css`, an entry in
-  `theme.js`, a name and note in `ui/copy.js` for EN and ZH. It is never a new
-  component, a component fork, or a rewrite of the settings UI.
+- Colour has one owner: the learner UI reads only the semantic tokens of
+  `static/orena/kit/tokens.css`, holding both themes' values exactly as the
+  design gives them.
+  Do not add another colour block anywhere. Semantic colour is used as the
+  design draws it (ink, and the `-soft` fills it draws), never as the only
+  signal.
+- Do not invent a colour skin, and do not recolour canonical mascot or brand
+  artwork. Orena Orange `#FF7A3D` stays the mascot's and the artwork's colour.
+- Accessibility never redesigns the baseline. A token that fails AA is replaced
+  by the smallest technical change that keeps the visual intent, and the
+  deviation is documented. `scripts/test_orena_foundation.mjs` enforces AA.
+- Content artwork - covers, thumbnails, scenes, illustration - may be more
+  vivid than the interface, under the Art Bible. That licence is artwork's
+  alone and changes nothing above: it creates no second colour owner, exempts
+  no UI or text from AA, and no component invents colour outside the semantic
+  tokens. `DESIGN_CONTRACT.md` rule 16 governs the boundary (D-057).
 
 **Protected areas.** Journey, Review, Library / Active Recall UI, shared layout
 primitives, the shared CSS/JS design system, R5 Grammar contracts and Concept
@@ -264,15 +307,21 @@ These are open questions the human has reserved. Implement around them; do not
 resolve them.
 
 - **Learner-data persistence, schema and account sync.** GPT-6 will define the
-  canonical multi-user / account architecture for the ~100,000-user target. Do
-  not make new persistence, schema or account-sync decisions for learner-owned
-  data, and do not deepen local-device persistence as though it were final.
-  Kept-language provenance, conversations, drafts and continuation are device
-  memory *by design*, not by omission.
+  canonical multi-user / account architecture for the ~100,000-user target.
+  Learner-owned records the human has approved for the server (D-104: drafts,
+  conversations, continuation/place, notes/highlights/annotations,
+  learner-imported private content, and the provenance of learner content and
+  actions) are server records, built through the reviewed D4 proposal. Still
+  reserved, not decided by an agent: the general multi-device sync protocol,
+  receipt compaction, the account-deletion runtime, the export format, Orena
+  conversation/history persistence (unless the Agent Contract changes it), and
+  any other new persistence or schema decision for learner-owned data.
 - **Native mobile** — frozen (§5).
-- **Platform Admin** — its APIs and `static/admin.js` survive but are inert
-  since the historical shell was removed. Preserve it; do not restore the old
-  shell to give it a host.
+- **Platform Admin** — the admin console was merged into `codex/work` by PR #63
+  (D-085) and now runs in the learner UI at `/#/admin` (`screens/admin`) on the
+  pinned `Orena Admin.dc.html`, reusing its logic, APIs and `require_admin`
+  (D-101 E); there is no second admin backend. The old console and
+  `static/admin.js` are retired (D-143); the admin APIs are preserved.
 - **Reading library breadth** — the contract, rights fields and admission gate
   exist. Adding a text is a rights decision per text, not an implementation
   task.

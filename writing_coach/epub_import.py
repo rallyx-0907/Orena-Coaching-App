@@ -1,0 +1,760 @@
+"""EPUB -> Reading Library import adapter.
+
+Parses one EPUB file into a `ParsedBook`: title/author/language/description
+best-effort from Dublin Core metadata, an ordered chapter list (each a title
+plus typed document blocks and derived paragraph text), and an optional cover
+image.
+
+Only non-empty blocks/`title` are ever required for a chapter to count as usable
+content (the same minimum `readable()` itself enforces). Every other field is
+best-effort: a missing author, language or cover never fails the import by
+itself - `ParsedBook.language` may be `None` when the EPUB does not state one
+that the caller's language registry recognizes, and the caller decides the
+fallback (the admin's declared import language), not this module.
+
+Security posture (an admin-uploaded file, not anonymous public upload, but
+hardened regardless per the acceptance requirement this module exists to
+satisfy): every guard below is enforced during actual decompression/parsing,
+never only against a declared header a crafted archive could lie about.
+
+  - `MAX_EPUB_BYTES` / `MAX_ENTRIES` / `MAX_SINGLE_ENTRY_BYTES` /
+    `MAX_TOTAL_UNCOMPRESSED_BYTES` bound the archive itself (zip-bomb guard).
+  - Every zip entry name is checked for absolute paths and `..` segments
+    (zip-slip guard) before it is ever joined into an internal lookup.
+  - Every XML/XHTML fragment's prolog is read with expat before parsing and
+    the fragment is rejected if its DOCTYPE declares any entity (entity-
+    expansion / XXE guard) - however long the prolog, and without mistaking
+    body text or CDATA that merely mentions "<!ENTITY" for a declaration. An
+    ordinary `<!DOCTYPE html PUBLIC "..." "...">` reference, which many real
+    EPUB chapter files carry for XHTML validation, is left untouched -
+    `xml.etree.ElementTree` does not fetch external subsets during ordinary
+    parsing, so it needs no special handling here.
+  - A size limit reached while reading a chapter fails the whole archive as
+    `archive_too_large`; other chapter-level failures skip only that chapter.
+  - Chapter text is projected into headings, paragraphs and meaningful breaks;
+    raw child-element markup, and therefore any embedded `<script>`, is never
+    copied into a content block. Paragraphs are always returned as plain
+    strings, rendered later only through the existing `esc()`-escaped text
+    paths every other reading source already uses.
+  - A cover image is accepted only when its manifest media-type is one of
+    `COVER_CONTENT_TYPES` (jpeg/png/webp/gif) - never SVG, which can carry a
+    script payload of its own.
+"""
+from __future__ import annotations
+
+import io
+import posixpath
+import re
+import zipfile
+from dataclasses import dataclass, field
+from xml.etree import ElementTree
+from xml.parsers import expat
+
+MAX_EPUB_BYTES = 80 * 1024 * 1024
+MAX_ENTRIES = 4000
+MAX_SINGLE_ENTRY_BYTES = 40 * 1024 * 1024
+MAX_TOTAL_UNCOMPRESSED_BYTES = 250 * 1024 * 1024
+MAX_TITLE_CHARS = 240
+MAX_DESCRIPTION_CHARS = 4000
+MAX_CHAPTER_KEY_CHARS = 200
+_READ_CHUNK = 1024 * 1024
+
+COVER_CONTENT_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+
+_CONTAINER_PATH = "META-INF/container.xml"
+_TEXT_BLOCK_TAGS = {"p", "li", "blockquote", "td", "dd", "pre"}
+_HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
+_BLOCK_TAGS = _TEXT_BLOCK_TAGS | _HEADING_TAGS | {"div"}
+_STRUCTURAL_BLOCK_TAGS = _BLOCK_TAGS | {"hr"}
+_DC = "{http://purl.org/dc/elements/1.1/}"
+_OPF_NS_CANDIDATES = (
+    "{http://www.idpf.org/2007/opf}",
+    "",
+)
+
+
+class EpubImportError(Exception):
+    """A categorized, admin-safe import failure. Never a raw parser traceback."""
+
+    def __init__(self, category: str, detail: str = "") -> None:
+        self.category = category
+        self.detail = detail
+        super().__init__(f"{category}: {detail}" if detail else category)
+
+
+_CJK_CHARACTER = re.compile("[㐀-䶿一-鿿豈-﫿]")
+# Full-width and CJK punctuation is neither an ideograph nor a word.
+_CJK_PUNCTUATION = re.compile(r"[\u3000-\u303f\uff00-\uff0f\uff1a-\uff20\uff3b-\uff40\uff5b-\uff65]")
+
+
+def _reading_units(text: str) -> int:
+    return len(_CJK_CHARACTER.findall(text)) + len(
+        _CJK_PUNCTUATION.sub(" ", _CJK_CHARACTER.sub(" ", text)).split()
+    )
+
+
+def _metadata_identity(value: str) -> str:
+    return "".join(char for char in value.casefold() if char.isalnum())
+
+
+@dataclass(frozen=True)
+class ParsedChapter:
+    chapter_key: str
+    title: str
+    blocks: tuple[dict[str, object], ...]
+    paragraphs: tuple[str, ...]
+
+    @property
+    def word_count(self) -> int:
+        # Chinese has no spaces: each ideograph is one unit, and the rest of
+        # the text is counted in whitespace-separated words.
+        return sum(_reading_units(paragraph) for paragraph in self.paragraphs)
+
+
+@dataclass(frozen=True)
+class ParsedCover:
+    data: bytes
+    content_type: str
+
+
+@dataclass(frozen=True)
+class ParsedBook:
+    title: str
+    author: str
+    language: str | None
+    description: str
+    chapters: tuple[ParsedChapter, ...]
+    cover: ParsedCover | None = field(default=None)
+    provenance: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def word_count(self) -> int:
+        return sum(chapter.word_count for chapter in self.chapters)
+
+
+class _EntityDeclared(Exception):
+    """The prolog declares an entity."""
+
+
+class _RootReached(Exception):
+    """The prolog ended without declaring one."""
+
+
+def _reject_unsafe_xml(raw: bytes) -> None:
+    """Refuse a document whose DOCTYPE declares an entity.
+
+    Declarations live only in the DOCTYPE's internal subset, which a parser
+    reads before the root element. Reading the prolog with expat itself means
+    a long comment or processing instruction cannot push a declaration out of
+    view, and text or CDATA in the body that only mentions one is left alone.
+    Parsing stops at the root element's start tag.
+    """
+    parser = expat.ParserCreate()
+
+    def declared(*_args: object) -> None:
+        raise _EntityDeclared
+
+    def root(*_args: object) -> None:
+        raise _RootReached
+
+    parser.EntityDeclHandler = declared
+    parser.StartElementHandler = root
+    try:
+        parser.Parse(raw, True)
+    except _EntityDeclared:
+        raise EpubImportError("unsafe_xml_content", "custom XML entity declaration") from None
+    except (_RootReached, expat.ExpatError):
+        return  # the full parse reports anything malformed
+
+
+def _parse_xml(raw: bytes) -> ElementTree.Element:
+    _reject_unsafe_xml(raw)
+    try:
+        return ElementTree.fromstring(raw)
+    except ElementTree.ParseError as exc:
+        raise EpubImportError("malformed_xml", str(exc)) from exc
+
+
+def _local(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _read_entry(zf: zipfile.ZipFile, info: zipfile.ZipInfo, *, budget: list[int]) -> bytes:
+    """Decompress one entry with a hard cap enforced against the actual
+    bytes produced, never only against `info.file_size` (a crafted central
+    directory can misstate it)."""
+    if info.file_size > MAX_SINGLE_ENTRY_BYTES:
+        raise EpubImportError("archive_too_large", f"{info.filename} declares an oversized size")
+    chunks: list[bytes] = []
+    total = 0
+    with zf.open(info) as handle:
+        while True:
+            chunk = handle.read(_READ_CHUNK)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > MAX_SINGLE_ENTRY_BYTES:
+                raise EpubImportError("archive_too_large", f"{info.filename} exceeds the per-entry limit")
+            budget[0] += len(chunk)
+            if budget[0] > MAX_TOTAL_UNCOMPRESSED_BYTES:
+                raise EpubImportError("archive_too_large", "archive exceeds the total uncompressed limit")
+            chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _safe_member_name(name: str) -> str:
+    normalized = name.replace("\\", "/")
+    if normalized.startswith("/") or posixpath.isabs(normalized):
+        raise EpubImportError("unsafe_archive_entry", name)
+    parts = normalized.split("/")
+    # ZIP directories conventionally end in one slash. Only that final empty
+    # component is valid; empty interior components and traversal stay unsafe.
+    if normalized.endswith("/"):
+        parts = parts[:-1]
+    if any(part in ("", "..") for part in parts):
+        raise EpubImportError("unsafe_archive_entry", name)
+    return normalized
+
+
+def _resolve_href(base_dir: str, href: str) -> str:
+    href = href.split("#", 1)[0]
+    joined = posixpath.normpath(posixpath.join(base_dir, href))
+    if joined.startswith("..") or posixpath.isabs(joined):
+        raise EpubImportError("unsafe_archive_entry", href)
+    return joined
+
+
+def _open_zip(data: bytes) -> zipfile.ZipFile:
+    if len(data) > MAX_EPUB_BYTES:
+        raise EpubImportError("archive_too_large", "file exceeds the maximum EPUB size")
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(data))
+    except zipfile.BadZipFile as exc:
+        raise EpubImportError("malformed_archive", str(exc)) from exc
+    infos = zf.infolist()
+    if not infos:
+        raise EpubImportError("malformed_archive", "empty archive")
+    if len(infos) > MAX_ENTRIES:
+        raise EpubImportError("archive_too_large", "too many archive entries")
+    for info in infos:
+        _safe_member_name(info.filename)
+    return zf
+
+
+def _text_of(elements: list[ElementTree.Element]) -> str:
+    for element in elements:
+        text = "".join(element.itertext()).strip()
+        if text:
+            return text
+    return ""
+
+
+def _dc_metadata(metadata_el: ElementTree.Element) -> tuple[str, str, str | None, str]:
+    title = _text_of(metadata_el.findall(f"{_DC}title"))[:MAX_TITLE_CHARS]
+    author = _text_of(metadata_el.findall(f"{_DC}creator"))[:MAX_TITLE_CHARS]
+    language_raw = _text_of(metadata_el.findall(f"{_DC}language"))
+    language = language_raw.strip().casefold().split("-", 1)[0] or None
+    description = _text_of(metadata_el.findall(f"{_DC}description"))[:MAX_DESCRIPTION_CHARS]
+    return title, author, language, description
+
+
+def _attr(element: ElementTree.Element, local_name: str) -> str:
+    for name, value in element.attrib.items():
+        if name == local_name or _local(name) == local_name:
+            return value
+    return ""
+
+
+def _epub_types(element: ElementTree.Element) -> set[str]:
+    return {part.casefold() for part in _attr(element, "type").split()}
+
+
+def _normalise_text(raw: str) -> str:
+    lines = [" ".join(line.split()) for line in raw.splitlines()]
+    return "\n".join(line for line in lines if line)
+
+
+def _raw_text(element: ElementTree.Element, *, skip_nested_blocks: bool = False) -> str:
+    tag = _local(element.tag)
+    if tag in {"script", "style"}:
+        return ""
+    parts = [element.text or ""]
+    for child in element:
+        child_tag = _local(child.tag)
+        if not (skip_nested_blocks and child_tag in _STRUCTURAL_BLOCK_TAGS):
+            parts.append("\n" if child_tag == "br" else _raw_text(child, skip_nested_blocks=skip_nested_blocks))
+        parts.append(child.tail or "")
+    return "".join(parts)
+
+
+def _has_nested_block(element: ElementTree.Element) -> bool:
+    return any(_local(child.tag) in _STRUCTURAL_BLOCK_TAGS for child in element.iter() if child is not element)
+
+
+def _project_block_elements(
+    body: ElementTree.Element,
+) -> list[tuple[str, ElementTree.Element | None, str | None]]:
+    projected: list[tuple[str, ElementTree.Element | None, str | None]] = []
+
+    def emit_direct_text(parent: ElementTree.Element, raw: str) -> None:
+        text = _normalise_text(raw)
+        if text and _local(parent.tag) != "body":
+            kind = "heading" if _local(parent.tag) in _HEADING_TAGS else "paragraph"
+            projected.append((kind, parent, text))
+
+    def process_children(parent: ElementTree.Element) -> None:
+        pending = parent.text or ""
+        for element in parent:
+            tag = _local(element.tag)
+            if tag in _STRUCTURAL_BLOCK_TAGS or _has_nested_block(element):
+                emit_direct_text(parent, pending)
+                process(element)
+                pending = element.tail or ""
+            else:
+                pending += _raw_text(element)
+                pending += element.tail or ""
+        emit_direct_text(parent, pending)
+
+    def process(element: ElementTree.Element) -> None:
+        # Publisher-marked notices are not learning text. Keep the original
+        # EPUB and its rights metadata; omit only this marked subtree from the
+        # reader projection, including when it shares a file with a chapter.
+        if "pg-boilerplate" in (element.get("class") or "").split():
+            return
+        tag = _local(element.tag)
+        if tag == "hr":
+            projected.append(("break", None, None))
+        elif tag in _BLOCK_TAGS and not (tag == "div" or _has_nested_block(element)):
+            projected.append(("heading" if tag in _HEADING_TAGS else "paragraph", element, None))
+        else:
+            process_children(element)
+
+    process_children(body)
+    return projected
+
+
+def _blocks_of(document: ElementTree.Element) -> tuple[dict[str, object], ...]:
+    body = next((element for element in document.iter() if _local(element.tag) == "body"), None)
+    if body is None:
+        return ()
+    blocks: list[dict[str, object]] = []
+    for kind, element, text_override in _project_block_elements(body):
+        if kind == "break":
+            if blocks and blocks[-1]["type"] != "break":
+                blocks.append({"type": "break"})
+            continue
+        assert element is not None
+        text = text_override or _normalise_text(_raw_text(element))
+        if not text:
+            continue
+        if kind == "heading":
+            blocks.append({"type": "heading", "level": int(_local(element.tag)[1]), "text": text})
+        else:
+            blocks.append({"type": "paragraph", "text": text})
+    while blocks and blocks[-1]["type"] == "break":
+        blocks.pop()
+    while blocks and blocks[0]["type"] == "break":
+        blocks.pop(0)
+    return tuple(blocks)
+
+
+def _paragraphs_of(document: ElementTree.Element) -> list[str]:
+    return [str(block["text"]) for block in _blocks_of(document) if block["type"] == "paragraph"]
+
+
+def _is_url(value: str) -> bool:
+    return value.casefold().startswith(("http://", "https://"))
+
+
+def _metadata_provenance(metadata_el: ElementTree.Element | None) -> dict[str, str]:
+    values = {"source_url": "", "publisher": "", "rights": "", "date": ""}
+    if metadata_el is None:
+        return values
+    publishers = [_normalise_text(_raw_text(element)) for element in metadata_el if _local(element.tag) == "publisher"]
+    sources = [_normalise_text(_raw_text(element)) for element in metadata_el if _local(element.tag) == "source"]
+    rights = [_normalise_text(_raw_text(element)) for element in metadata_el if _local(element.tag) == "rights"]
+    dates = [_normalise_text(_raw_text(element)) for element in metadata_el if _local(element.tag) == "date"]
+    if publishers:
+        if _is_url(publishers[0]):
+            values["source_url"] = publishers[0]
+        else:
+            values["publisher"] = publishers[0]
+    if not values["source_url"]:
+        values["source_url"] = next((source for source in sources if _is_url(source)), "")
+    if rights:
+        values["rights"] = rights[0]
+    if dates:
+        values["date"] = dates[0]
+    return values
+
+
+def _cover_manifest_id(metadata_el: ElementTree.Element) -> str | None:
+    for meta in metadata_el:
+        if _local(meta.tag) == "meta" and meta.get("name") == "cover":
+            content = meta.get("content")
+            if content:
+                return content
+    return None
+
+
+def _resolved_optional_href(base_dir: str, href: str) -> str | None:
+    try:
+        return _resolve_href(base_dir, href)
+    except EpubImportError:
+        return None
+
+
+def _optional_xml(
+    zf: zipfile.ZipFile, names: set[str], href: str, *, budget: list[int]
+) -> ElementTree.Element | None:
+    if href not in names:
+        return None
+    try:
+        return _parse_xml(_read_entry(zf, zf.getinfo(href), budget=budget))
+    except (EpubImportError, KeyError, zipfile.BadZipFile):
+        return None
+
+
+def _navigation_signals(
+    *,
+    zf: zipfile.ZipFile,
+    names: set[str],
+    manifest: dict[str, tuple[str, str, str]],
+    spine_el: ElementTree.Element,
+    opf_dir: str,
+    opf: ElementTree.Element,
+    budget: list[int],
+) -> tuple[dict[str, str], set[str], dict[str, set[str]], set[str]]:
+    """Return first labels, all nav/NCX targets, explicit landmark/guide types,
+    and the EPUB 3 nav document href. Optional navigation is deliberately
+    best-effort: malformed nav files do not make an otherwise readable EPUB
+    fail its import.
+    """
+    labels: dict[str, str] = {}
+    referenced: set[str] = set()
+    explicit_types: dict[str, set[str]] = {}
+    nav_document_hrefs: set[str] = set()
+
+    def add_target(
+        target: str | None, label: str = "", kind: str | None = None, *, referenced_entry: bool = True
+    ) -> None:
+        if not target:
+            return
+        if referenced_entry:
+            referenced.add(target)
+        if label and target not in labels:
+            labels[target] = " ".join(_normalise_text(label).split())
+        if kind:
+            explicit_types.setdefault(target, set()).add(kind.casefold())
+
+    toc_id = spine_el.get("toc")
+    if toc_id and toc_id in manifest:
+        ncx_href = manifest[toc_id][0]
+        ncx = _optional_xml(zf, names, ncx_href, budget=budget)
+        if ncx is not None:
+            for point in ncx.iter():
+                if _local(point.tag) != "navPoint":
+                    continue
+                content = next((child for child in point.iter() if _local(child.tag) == "content"), None)
+                src = content.get("src") if content is not None else ""
+                target = _resolved_optional_href(posixpath.dirname(ncx_href), src or "")
+                label = next((
+                    _raw_text(child) for child in point.iter() if _local(child.tag) == "navLabel"
+                ), "")
+                add_target(target, label)
+
+    for _item_id, (href, _media_type, properties) in manifest.items():
+        if "nav" not in properties.split():
+            continue
+        nav_document_hrefs.add(href)
+        nav = _optional_xml(zf, names, href, budget=budget)
+        if nav is None:
+            continue
+        for nav_element in nav.iter():
+            nav_types = _epub_types(nav_element)
+            if "toc" not in nav_types and "landmarks" not in nav_types:
+                continue
+            landmark_types: dict[int, set[str]] = {}
+            if "landmarks" in nav_types:
+                def collect_landmark_types(
+                    element: ElementTree.Element,
+                    inherited: set[str],
+                    landmark_types: dict[int, set[str]] = landmark_types,
+                ) -> None:
+                    # Only strip the containing <nav>'s own "toc"/"landmarks"
+                    # marker; on the <a> itself that same token IS the
+                    # landmark's kind (e.g. epub:type="toc" marks the link to
+                    # the table of contents) and must survive.
+                    own_types = _epub_types(element)
+                    if _local(element.tag) != "a":
+                        own_types -= {"toc", "landmarks"}
+                    current = inherited | own_types
+                    if _local(element.tag) == "a":
+                        landmark_types[id(element)] = current
+                    for child in element:
+                        collect_landmark_types(child, current, landmark_types)
+
+                collect_landmark_types(nav_element, set())
+            for link in nav_element.iter():
+                if _local(link.tag) != "a":
+                    continue
+                target = _resolved_optional_href(posixpath.dirname(href), link.get("href") or "")
+                if "toc" in nav_types:
+                    add_target(target, _raw_text(link))
+                if "landmarks" in nav_types:
+                    for kind in landmark_types.get(id(link), set()):
+                        add_target(target, kind=kind)
+
+    guide = next((element for element in opf if _local(element.tag) == "guide"), None)
+    if guide is not None:
+        for reference in guide:
+            if _local(reference.tag) != "reference":
+                continue
+            target = _resolved_optional_href(opf_dir, reference.get("href") or "")
+            kind = (reference.get("type") or "").casefold()
+            if kind:
+                add_target(target, kind=kind, referenced_entry=False)
+
+    return labels, referenced, explicit_types, nav_document_hrefs
+
+
+def _link_block_ratio(
+    document: ElementTree.Element, *, document_href: str, spine_hrefs: set[str]
+) -> tuple[int, int]:
+    body = next((element for element in document.iter() if _local(element.tag) == "body"), None)
+    if body is None:
+        return 0, 0
+    total = linked = 0
+    for kind, element, _text_override in _project_block_elements(body):
+        if kind == "break" or element is None:
+            continue
+        total += 1
+        for link in element.iter():
+            if _local(link.tag) != "a":
+                continue
+            target = _resolved_optional_href(posixpath.dirname(document_href), link.get("href") or "")
+            if target in spine_hrefs and target != document_href:
+                linked += 1
+                break
+    return linked, total
+
+
+def _document_types(document: ElementTree.Element) -> set[str]:
+    body = next((element for element in document.iter() if _local(element.tag) == "body"), None)
+    if body is None:
+        return set()
+    types = _epub_types(body)
+    first_section = next((element for element in body.iter() if _local(element.tag) == "section"), None)
+    if first_section is not None:
+        types.update(_epub_types(first_section))
+    return types
+
+
+def parse_epub(data: bytes) -> ParsedBook:
+    zf = _open_zip(data)
+    budget = [0]
+    names = set(zf.namelist())
+
+    if _CONTAINER_PATH not in names:
+        raise EpubImportError("malformed_epub", "missing META-INF/container.xml")
+    container = _parse_xml(_read_entry(zf, zf.getinfo(_CONTAINER_PATH), budget=budget))
+    rootfile = next(
+        (el for el in container.iter() if _local(el.tag) == "rootfile"),
+        None,
+    )
+    opf_path = rootfile.get("full-path") if rootfile is not None else None
+    if not opf_path or opf_path not in names:
+        raise EpubImportError("malformed_epub", "container.xml names no readable OPF")
+
+    opf = _parse_xml(_read_entry(zf, zf.getinfo(opf_path), budget=budget))
+    opf_dir = posixpath.dirname(opf_path)
+
+    metadata_el = next((el for el in opf if _local(el.tag) == "metadata"), None)
+    manifest_el = next((el for el in opf if _local(el.tag) == "manifest"), None)
+    spine_el = next((el for el in opf if _local(el.tag) == "spine"), None)
+    if manifest_el is None or spine_el is None:
+        raise EpubImportError("malformed_epub", "OPF is missing manifest or spine")
+
+    title, author, language, description = (
+        _dc_metadata(metadata_el) if metadata_el is not None else ("", "", None, "")
+    )
+    provenance = _metadata_provenance(metadata_el)
+
+    manifest: dict[str, tuple[str, str, str]] = {}
+    for item in manifest_el:
+        if _local(item.tag) != "item":
+            continue
+        item_id = item.get("id")
+        href = item.get("href")
+        if not item_id or not href:
+            continue
+        manifest[item_id] = (
+            _resolve_href(opf_dir, href),
+            item.get("media-type") or "",
+            item.get("properties") or "",
+        )
+
+    cover_asset: ParsedCover | None = None
+    cover_id = _cover_manifest_id(metadata_el) if metadata_el is not None else None
+    if cover_id is None:
+        cover_id = next(
+            (item_id for item_id, (_, __, props) in manifest.items() if "cover-image" in props.split()),
+            None,
+        )
+    if cover_id and cover_id in manifest:
+        cover_href, cover_media_type, _props = manifest[cover_id]
+        if cover_media_type in COVER_CONTENT_TYPES and cover_href in names:
+            try:
+                cover_bytes = _read_entry(zf, zf.getinfo(cover_href), budget=budget)
+                cover_asset = ParsedCover(data=cover_bytes, content_type=cover_media_type)
+            except EpubImportError:
+                cover_asset = None  # a broken cover never fails the whole import
+
+    labels, referenced_hrefs, explicit_types, nav_document_hrefs = _navigation_signals(
+        zf=zf,
+        names=names,
+        manifest=manifest,
+        spine_el=spine_el,
+        opf_dir=opf_dir,
+        opf=opf,
+        budget=budget,
+    )
+
+    spine_documents: list[dict[str, object]] = []
+    for itemref in spine_el:
+        if _local(itemref.tag) != "itemref":
+            continue
+        idref = itemref.get("idref")
+        if not idref or idref not in manifest:
+            continue
+        href, media_type, _props = manifest[idref]
+        if "html" not in media_type and not href.endswith((".xhtml", ".html", ".htm")):
+            continue
+        if href not in names:
+            continue
+        try:
+            document = _parse_xml(_read_entry(zf, zf.getinfo(href), budget=budget))
+        except EpubImportError as exc:
+            if exc.category == "archive_too_large":
+                raise  # a size limit is the archive's failure, not one chapter's
+            continue  # one unreadable chapter is skipped, not a whole-book failure
+        blocks = _blocks_of(document)
+        spine_documents.append({
+            "idref": idref,
+            "href": href,
+            "document": document,
+            "blocks": blocks,
+            "types": _document_types(document),
+        })
+
+    spine_hrefs = {str(document["href"]) for document in spine_documents}
+    first_body_index = next(
+        (
+            index for index, document in enumerate(spine_documents)
+            if str(document["href"]) in referenced_hrefs
+            and str(document["href"]) not in nav_document_hrefs
+            and not explicit_types.get(str(document["href"]), set()) & {
+                "cover", "toc", "titlepage", "title-page", "copyright-page", "frontmatter",
+                "colophon", "backmatter",
+            }
+        ),
+        len(spine_documents),
+    )
+    classifications: list[str] = []
+    for index, document in enumerate(spine_documents):
+        href = str(document["href"])
+        blocks = document["blocks"]
+        types = set(document["types"]) | explicit_types.get(href, set())
+        words = sum(_reading_units(str(block.get("text", ""))) for block in blocks if block["type"] == "paragraph")
+        headings = [str(block["text"]) for block in blocks if block["type"] == "heading"]
+        # Use the EPUB's own title and author, not a chapter-name dictionary.
+        # Punctuation variants in publisher typography do not change identity.
+        metadata_title_page = (
+            index <= first_body_index and words < 150 and len(headings) >= 2
+            and bool(title and author) and _metadata_identity(headings[0]) == _metadata_identity(title)
+            and _metadata_identity(headings[1]) in {_metadata_identity(author), _metadata_identity("by " + author)}
+        )
+        linked, total = _link_block_ratio(document["document"], document_href=href, spine_hrefs=spine_hrefs)
+        classification = "chapter"
+        if not blocks:
+            classification = "cover"
+        elif "cover" in types:
+            classification = "cover"
+        elif href in nav_document_hrefs or "toc" in types or (total and linked / total >= 0.6):
+            classification = "toc"
+        elif "colophon" in types or ("copyright-page" in types and index > first_body_index):
+            classification = "back_matter"
+        elif types & {"titlepage", "title-page", "copyright-page", "frontmatter"}:
+            classification = "front_matter"
+        elif metadata_title_page:
+            classification = "front_matter"
+        elif blocks[0]["type"] == "heading" and re.fullmatch(
+            r"(?:the full )?project gutenberg(?:™)? license",
+            " ".join(str(blocks[0].get("text", "")).casefold().split()),
+        ):
+            classification = "back_matter"
+        elif referenced_hrefs and href not in referenced_hrefs and index < first_body_index and words < 150:
+            classification = "front_matter"
+        classifications.append(classification)
+
+    if not any(classification == "chapter" for classification in classifications):
+        classifications = [
+            "chapter" if document["blocks"] else classification
+            for document, classification in zip(spine_documents, classifications, strict=True)
+        ]
+
+    chapters: list[ParsedChapter] = []
+    for document, classification in zip(spine_documents, classifications, strict=True):
+        if classification != "chapter":
+            continue
+        blocks = tuple(document["blocks"])
+        if not blocks:
+            continue
+        heading = next((block for block in blocks if block["type"] == "heading"), None)
+        heading_title = " ".join(str(heading["text"]).split()) if heading else ""
+        href = str(document["href"])
+        chapter_title = labels.get(href) or heading_title or f"{title or 'Chapter'} {len(chapters) + 1}"
+        paragraphs = tuple(str(block["text"]) for block in blocks if block["type"] == "paragraph")
+        chapters.append(
+            ParsedChapter(
+                chapter_key=str(document["idref"])[:MAX_CHAPTER_KEY_CHARS],
+                title=" ".join(chapter_title.split())[:MAX_TITLE_CHARS],
+                blocks=blocks,
+                paragraphs=paragraphs,
+            )
+        )
+
+    if not provenance["source_url"]:
+        for document, classification in zip(spine_documents, classifications, strict=True):
+            if classification != "front_matter":
+                continue
+            for block in document["blocks"]:
+                for line in str(block.get("text", "")).splitlines():
+                    candidate = line.strip()
+                    if re.fullmatch(r"https?://[^\s]+", candidate, flags=re.IGNORECASE):
+                        provenance["source_url"] = candidate
+                        break
+                if provenance["source_url"]:
+                    break
+            if provenance["source_url"]:
+                break
+
+    if not chapters:
+        raise EpubImportError("no_readable_content", "no chapter with usable paragraphs")
+    if not title:
+        raise EpubImportError("missing_title", "EPUB names no dc:title")
+
+    return ParsedBook(
+        title=title,
+        author=author,
+        language=language,
+        description=description,
+        chapters=tuple(chapters),
+        cover=cover_asset,
+        provenance=provenance,
+    )

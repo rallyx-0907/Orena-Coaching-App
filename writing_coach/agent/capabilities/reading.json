@@ -1,0 +1,35 @@
+{
+  "capabilities": [
+    {
+      "id": "reading.passage",
+      "title": {
+        "en": "Reading a text",
+        "vi": "Đọc bài",
+        "zh-CN": "阅读文章"
+      },
+      "surfaces": [
+        "reading.library",
+        "reading.workspace"
+      ],
+      "status": "active",
+      "contexts": [
+        "content_id",
+        "selected_item"
+      ],
+      "actions": [
+        "navigate",
+        "save_word",
+        "add_word_to_collection"
+      ],
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "evidence_source": "reading.comprehension",
+      "tools": [
+        "get_current_reading_context",
+        "get_reading_progress"
+      ]
+    }
+  ]
+}

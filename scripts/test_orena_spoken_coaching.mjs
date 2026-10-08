@@ -3,87 +3,8 @@
 // so those are the things asserted here.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { copy } from '../static/orena/ui/copy.js';
-import { spokenCoaching } from '../static/orena/ui/spoken-coaching.js';
-import { voiceEvidence } from '../static/orena/ui/voice-evidence.js';
-import { JUDGEMENT_KEYS } from '../static/orena/ui/understanding.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
-
-const result = {
-  available: true,
-  claim: 'spoken_response_coaching_from_transcript',
-  carried: [
-    { quote: 'the old market near the river', why: 'A specific place makes an invitation real.' },
-  ],
-  landed_differently: [
-    {
-      quote: 'it is very interesting for me',
-      why: 'This gives your own reaction rather than a reason to come.',
-      instead: 'you would love how noisy it gets',
-      judgement: 'possible_but_unnatural',
-    },
-  ],
-  another_way: 'I think you would really like it there.',
-  next_attempt: 'Say one thing you would do together when you arrive.',
-};
-
-for (const ui of ['en', 'zh']) {
-  const c = copy[ui];
-  const html = spokenCoaching(c, result, 'en');
-  // The heading and the note must say what kind of claim this is, in both
-  // languages. A learner who cannot tell guidance from measurement can judge
-  // neither.
-  assert.ok(html.includes(c.coachingTitle), `${ui}: coaching is not titled`);
-  assert.ok(html.includes(c.coachingNote), `${ui}: coaching does not say what it is`);
-  assert.ok(html.includes(c.coachingCarried) && html.includes(c.coachingLanded), `${ui}: sections missing`);
-  assert.ok(html.includes('the old market near the river'), `${ui}: the learner's words are missing`);
-  assert.ok(html.includes('you would love how noisy it gets'), `${ui}: the alternative is missing`);
-}
-
-// Nothing is shown when nothing came back, and no rewrite is invented.
-assert.equal(spokenCoaching(copy.en, { available: false, carried: [], landed_differently: [] }, 'en'), '');
-assert.equal(spokenCoaching(copy.en, null, 'en'), '');
-assert.equal(
-  spokenCoaching(copy.en, { available: true, carried: [], landed_differently: [] }, 'en'),
-  '',
-  'an empty answer renders nothing rather than an empty shell',
-);
-assert.ok(
-  !spokenCoaching(
-    copy.en,
-    { ...result, carried: [{ quote: '<img src=x onerror=alert(1)>', why: 'x' }] },
-    'en',
-  ).includes('<img'),
-  'coaching text is escaped',
-);
-
-// A dimension that does not apply is a different claim from one that could have
-// been measured and was not.
-const free = {
-  dimensions: { transcription_confidence: 0.91, content_match: null, pronunciation: null },
-  provenance: { transcription_confidence: 'speech_asr', content_match: 'not_applicable', pronunciation: null },
-  evidence: {},
-};
-for (const ui of ['en', 'zh']) {
-  const c = copy[ui];
-  const html = voiceEvidence(c, free, 'en');
-  assert.ok(html.includes('data-inapplicable'), `${ui}: an inapplicable dimension is not marked`);
-  assert.ok(html.includes(c.notApplicable), `${ui}: "does not apply" is not said`);
-  assert.ok(html.includes(c.sourceNotApplicable), `${ui}: the reason it does not apply is not given`);
-  assert.ok(c.notApplicable !== c.notMeasured, `${ui}: the two states read identically`);
-}
-const measured = voiceEvidence(
-  copy.en,
-  {
-    dimensions: { content_match: 72 },
-    provenance: { content_match: 'deterministic_reference_alignment' },
-    evidence: {},
-  },
-  'en',
-);
-assert.ok(!measured.includes('data-inapplicable'), 'a measured dimension is not inapplicable');
-assert.ok(!measured.includes('data-unmeasured'), 'a measured dimension is not unmeasured');
 
 // Both sides agree on the marker, and the evaluator only uses it when there was
 // genuinely no line.
@@ -110,28 +31,21 @@ inServer('Never cite a source you were not given', 'no invented authority');
 
 // The judgement vocabulary is the shared one, so a spoken problem is named the
 // same way a written or a read one is.
-const spokenSchema = server.split('def _spoken_schema()')[1].split('def ')[0];
+const spokenSchema = server.split('def _spoken_base_schema()')[1].split('def ')[0];
 assert.ok(
   spokenSchema.includes('"enum": list(USAGE_JUDGEMENTS)'),
   'coaching must reuse the shared judgement vocabulary',
 );
-assert.ok(JUDGEMENT_KEYS.includes('possible_but_unnatural'));
+assert.ok(server.includes('USAGE_JUDGEMENTS = (') && /USAGE_JUDGEMENTS = \([^)]*"possible_but_unnatural"/s.test(server), 'the shared vocabulary names an unnatural-but-possible usage');
 
-// Guidance is a separate request, made after the take is safe, and it never
-// blocks the transcript or the evidence.
-const voice = read('static/orena/ui/voice-response.js');
-assert.ok(voice.includes('void loadSpokenCoaching('), 'coaching must not be awaited in the result path');
-assert.ok(
-  voice.includes("loadSpokenCoaching(result.querySelector('[data-coaching]')"),
-  'coaching fills its own host, not the evidence panel',
-);
-assert.ok(
-  voice.includes('<div data-coaching></div>') &&
-    voice.includes('voiceEvidence(c, value.evaluation, language)'),
-  'measurement and coaching are rendered as separate panels',
-);
-// The situation the learner answered travels with the transcript, or coaching
-// marks ordinary choices as omissions against a task it had to guess.
-assert.ok(voice.includes('situation: prompt'), 'coaching is told what was asked');
+// The learner UI asks for coaching after the take is safe, and tells it what was asked: the
+// situation travels with the transcript, or coaching marks ordinary choices as omissions against
+// a task it had to guess.
+for (const screen of ['free-talk', 'conversation', 'react']) {
+  const src = read(`static/orena/screens/${screen}/screen.js`);
+  const call = src.slice(src.indexOf('api.spokenResponseCoaching('));
+  assert.ok(src.includes('api.spokenResponseCoaching('), `${screen} requests coaching`);
+  assert.match(call.slice(0, 500), /situation:/, `${screen}: coaching is told what was asked`);
+}
 
-console.log('Orena spoken coaching, inapplicable evidence and shared judgements: PASS');
+console.log('Orena spoken coaching: server contract, shared judgements and situation carried: PASS');

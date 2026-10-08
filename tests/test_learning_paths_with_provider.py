@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-from writing_coach import becoming_reading, media_interaction
+from writing_coach import media_interaction
 
 
 @pytest.fixture(autouse=True)
@@ -253,99 +253,6 @@ def test_spoken_coaching_carries_the_situation_it_was_answering(monkeypatch) -> 
 
 
 # --------------------------------------------------------------------------
-# Generated reading passages
-# --------------------------------------------------------------------------
-
-PASSAGE = (
-    "Maya used to open several tabs before she had decided what to finish. "
-    "Last month she wrote one task on a card and worked on it for twenty-five "
-    "minutes without changing activities. The routine did not make hard work "
-    "easy, but it made distraction easier to notice."
-)
-
-
-def _question(index: int, evidence: str) -> dict[str, Any]:
-    return {
-        "question": f"Question {index}?",
-        "options": [f"a{index}", f"b{index}", f"c{index}", f"d{index}"],
-        "correct_index": 0,
-        "explanation_vi": "Giai thich.",
-        "evidence_fragment": evidence,
-    }
-
-
-def test_generated_reading_keeps_a_passage_whose_questions_are_answerable(monkeypatch) -> None:
-    generated = becoming_reading._validate_generated(
-        {
-            "title": "One Task Before Many Tabs",
-            "passage": PASSAGE,
-            "questions": [_question(i, "she wrote one task on a card") for i in range(1, 5)],
-        }
-    )
-
-    assert generated is not None
-    assert generated["title"] == "One Task Before Many Tabs"
-    assert [item["id"] for item in generated["questions"]] == [1, 2, 3, 4]
-    assert all(item["evidence_fragment"] in generated["passage"] for item in generated["questions"])
-
-
-def test_generated_reading_is_rejected_when_evidence_is_not_in_the_passage(monkeypatch) -> None:
-    """A question the passage cannot answer is worse than no question at all.
-
-    The learner is told the answer is in the text; if the evidence was never
-    there, they will look for something that does not exist.
-    """
-    questions = [_question(i, "she wrote one task on a card") for i in range(1, 5)]
-    questions[2]["evidence_fragment"] = "a sentence the passage does not contain"
-
-    assert becoming_reading._validate_generated(
-        {"title": "T", "passage": PASSAGE, "questions": questions}
-    ) is None
-
-
-@pytest.mark.parametrize(
-    "mutate,reason",
-    [
-        (lambda q: q.__setitem__("options", ["a", "b", "c"]), "three options is not four"),
-        (lambda q: q.__setitem__("options", ["same", "same", "c", "d"]), "duplicate options"),
-        (lambda q: q.__setitem__("correct_index", 9), "an answer outside the options"),
-        (lambda q: q.__setitem__("correct_index", None), "no answer at all"),
-        (lambda q: q.__setitem__("explanation_vi", "  "), "no explanation"),
-        (lambda q: q.__setitem__("question", ""), "no question"),
-    ],
-)
-def test_generated_reading_rejects_unusable_questions(mutate, reason) -> None:
-    questions = [_question(i, "she wrote one task on a card") for i in range(1, 5)]
-    mutate(questions[1])
-
-    assert becoming_reading._validate_generated(
-        {"title": "T", "passage": PASSAGE, "questions": questions}
-    ) is None, reason
-
-
-def test_generated_reading_rejects_a_passage_too_short_to_read() -> None:
-    assert becoming_reading._validate_generated(
-        {
-            "title": "T",
-            "passage": "Too short.",
-            "questions": [_question(i, "Too short.") for i in range(1, 5)],
-        }
-    ) is None
-
-
-def test_built_in_reading_answers_every_language_with_answerable_questions() -> None:
-    """The provider-free passage is what most runtimes actually serve."""
-    for language in ("en", "zh"):
-        fallback = becoming_reading._fallback(language, "B1", "daily_life")
-        assert fallback["title"] and len(fallback["passage"]) >= 120
-        assert len(fallback["questions"]) == 4
-        for question in fallback["questions"]:
-            assert question["evidence_fragment"] in fallback["passage"], language
-            assert len(question["options"]) == 4
-            assert question["correct_index"] in range(4)
-
-
-# --------------------------------------------------------------------------
 # Contextual understanding, the rich case
 # --------------------------------------------------------------------------
 
@@ -452,3 +359,109 @@ def test_explanation_prompt_refuses_authority_it_was_not_given(monkeypatch) -> N
     _explain()
 
     assert "explain from the language itself instead" in seen[0]["system"]
+
+
+def _say_again_payload(say_again: str) -> dict[str, Any]:
+    return {"carried": [], "landed_differently": [{"quote": "very interesting for me", "why": "x", "instead": "really interesting to me", "judgement": "unnatural"}], "another_way": "Bạn có thể nói ...", "next_attempt": "y", "say_again": say_again}
+
+
+def test_spoken_coaching_offers_one_line_to_say_again_in_the_learning_language(monkeypatch) -> None:
+    # The Speaking design's "say this again" is a line the learner can say, in the language they
+    # are learning - not advice in the support language (measured on real Gemini, 2026-09-23).
+    seen = _provider(monkeypatch, _say_again_payload("I would take you to the old market by the river."))
+    result = _coach()
+    assert result["say_again"] == "I would take you to the old market by the river."
+    assert "say_again" in seen[0]["schema"]["properties"]
+    assert "say_again" in seen[0]["schema"]["required"]
+
+
+@pytest.mark.parametrize("bad", ["Bạn có thể nói: I would go.", "你可以说：I would go.", "", "x" * 400])
+def test_a_line_to_say_again_that_is_not_the_learning_language_is_dropped(monkeypatch, bad) -> None:
+    _provider(monkeypatch, _say_again_payload(bad))
+    assert _coach()["say_again"] == ""
+
+
+def test_a_chinese_line_to_say_again_must_be_chinese(monkeypatch) -> None:
+    monkeypatch.setattr(media_interaction, "current_language_code", lambda: "zh")
+    payload = {"carried": [], "landed_differently": [], "another_way": "", "next_attempt": "", "say_again": "其实我是英国人。"}
+    _provider(monkeypatch, payload)
+    zh = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(transcript="不是，我是英国人。", source_language="zh", target_language="vi", situation=""))
+    assert zh["say_again"] == "其实我是英国人。"
+    _provider(monkeypatch, {**payload, "say_again": "Instead of 不是, say 其实我是英国人."})
+    zh = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(transcript="不是，我是英国人。", source_language="zh", target_language="vi", situation=""))
+    assert zh["say_again"] == ""
+
+
+def test_reading_transfer_asks_whether_the_meaning_came_through_only_with_a_source_sentence(monkeypatch) -> None:
+    """Frame 39's two verdicts (D-129 R-30): one call, only for a restated source sentence."""
+    answer = {
+        "carried": [], "landed_differently": [], "another_way": "", "next_attempt": "", "say_again": "",
+        "meaning_preserved": "partly", "missing_idea": "“tells us who we are”",
+    }
+    seen = _provider(monkeypatch, answer)
+    restated = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(
+        transcript="Routines shape our days.", source_language="en", target_language="vi",
+        situation="Paraphrase", source_text="It gives shape to days and tells us who we are."))
+    assert restated["meaning_preserved"] == "partly" and restated["missing_idea"] == "“tells us who we are”"
+    assert "meaning_preserved" in seen[-1]["schema"]["required"] and "THE SOURCE SENTENCE" in seen[-1]["user"]
+
+    spoken = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(
+        transcript="Routines shape our days.", source_language="en", target_language="vi", situation=""))
+    assert spoken["meaning_preserved"] is None and spoken["missing_idea"] == ""
+    assert "meaning_preserved" not in seen[-1]["schema"]["properties"]
+
+    _provider(monkeypatch, {**answer, "meaning_preserved": "excellent"})
+    odd = media_interaction.coach_spoken_response(media_interaction.SpokenResponseIn(
+        transcript="Routines shape our days.", source_language="en", target_language="vi",
+        situation="", source_text="It gives shape to days."))
+    assert odd["meaning_preserved"] is None  # outside the three verdicts: not shown
+
+
+def _situation_payload(**extra: Any) -> dict[str, Any]:
+    return {"carried": [], "landed_differently": [], "another_way": "", "next_attempt": "", **extra}
+
+
+def test_spoken_coaching_returns_intent_and_clarity_for_a_situation(monkeypatch) -> None:
+    seen = _provider(
+        monkeypatch,
+        _situation_payload(
+            intent_achieved={"verdict": "partly", "reason": "You greeted them but did not offer help."},
+            clarity={"verdict": "clear", "reason": "Each idea is easy to follow."},
+        ),
+    )
+
+    result = _coach(situation="A friend has just moved to your city.")
+
+    assert result["intent_achieved"] == {"verdict": "partly", "reason": "You greeted them but did not offer help."}
+    assert result["clarity"] == {"verdict": "clear", "reason": "Each idea is easy to follow."}
+    assert len(seen) == 1, "the judgements ride the same single call"
+    assert {"intent_achieved", "clarity"} <= set(seen[0]["schema"]["properties"])
+    assert "never how they sounded" in seen[0]["system"]
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"verdict": "maybe", "reason": "x"},
+        {"verdict": "yes", "reason": "  "},
+        {"verdict": "yes"},
+        "yes",
+        None,
+    ],
+)
+def test_spoken_coaching_omits_an_invalid_judgement(monkeypatch, bad) -> None:
+    _provider(monkeypatch, _situation_payload(intent_achieved=bad, clarity={"verdict": "unclear", "reason": "Hard to follow."}))
+
+    result = _coach(situation="A friend has just moved to your city.")
+
+    assert "intent_achieved" not in result
+    assert result["clarity"]["verdict"] == "unclear"
+
+
+def test_spoken_coaching_without_a_situation_asks_for_and_returns_no_judgement(monkeypatch) -> None:
+    seen = _provider(monkeypatch, _situation_payload(intent_achieved={"verdict": "yes", "reason": "ok"}))
+
+    result = _coach()
+
+    assert "intent_achieved" not in result and "clarity" not in result
+    assert "intent_achieved" not in seen[0]["schema"]["properties"]

@@ -56,6 +56,25 @@ The product should continuously create meaningful reasons to:
 - express;
 - return.
 
+## Clarity first. Curiosity next. Depth over time (D-057)
+
+Explicit human direction, 2026-09-17. The North Star above is ranked, not
+softened, by two sentences:
+
+> **Clarity first. Curiosity next. Depth over time.**
+
+> **Simple front door. Deep world behind it.**
+
+A learner who has never learned a language and never used a language-learning
+app must be able to begin without first understanding how Orena is built.
+Depth is what the product reveals as the learner accumulates history, saved
+language, interests and progress — never a precondition for the first session.
+
+Curiosity is never served by making the product harder to understand. Where
+clarity and expression pull against each other, clarity wins first, and
+curiosity is carried by content, artwork, composition, imagery, icons, colour,
+motion and interaction rather than by more elaborate wording.
+
 ---
 
 # 3. The learner is the protagonist
@@ -143,6 +162,33 @@ They may own:
 However, capabilities do not automatically define the learner-facing structure of the product.
 
 The learner should not need to continuously navigate between isolated skill modules to have a coherent learning experience.
+
+## Skill labels are valid navigation vocabulary (D-057)
+
+Capabilities staying beneath the experience has never meant hiding their names.
+Reading, Listening, Speaking, Writing, Vocabulary, Library and Practice are
+valid learner-facing labels and valid shortcuts whenever they help a learner
+understand where they are and what they can do. A learner who already knows
+they want to listen today is well served by a door named Listening.
+
+The rule is about architecture, not vocabulary:
+
+> **Skill labels are valid navigation vocabulary. A skill-module dashboard is
+> not the primary product architecture.**
+
+So Discover and Home must not be organised primarily as a list of skill
+modules, content must not be duplicated into per-skill silos, and a capability
+name must never be the only reason a learner has to enter something. This
+neither restores the historical skill dashboards, mode hierarchies or module
+shells retired by D-046, nor weakens that retirement.
+
+## Language of the interface
+
+Clear learner-facing terms are preferred over clever metaphors. A navigation
+label must never be replaced with poetic wording when comprehension gets worse.
+
+Personality belongs to content, artwork, composition, icons, colour, motion and
+interaction — not to making a destination harder to name.
 
 ---
 
@@ -305,6 +351,43 @@ The entry surface should not be designed primarily as a catalog of product featu
 
 Its purpose is to invite the learner into Orena.
 
+## Beginner-safe front door (D-057)
+
+A learner who has never learned a language and never used a language-learning
+app must be able to:
+
+- choose a language;
+- state or have inferred a starting level;
+- see one obvious primary action;
+- begin a short, appropriate first learning experience;
+
+without understanding Orena's internal architecture.
+
+> **Orena must never require a learner to learn how Orena works before they can
+> start learning a language.**
+
+A new learner always has one obvious next action. A returning learner always
+has an obvious way to continue. Neither may be pushed below the first viewport
+by copy, and a complete beginner is never dropped into a large catalogue with
+no path through it, nor into difficult content merely because it looks good.
+
+## Guided path and Explore
+
+Orena serves at least two learner intentions, and both must exist:
+
+**Guided path** — for the learner who thinks "I do not know what to learn.
+Lead me." The entry point is explicit (Start here, Start learning, Continue).
+No understanding of curriculum architecture is required.
+
+**Explore** — for the learner who thinks "I want to see what is here." Books,
+stories, video, audio, people, situations, themes and topics.
+
+These are two entry modes into the same content and learning system, never two
+products. Emphasis may adapt to learner state — a new learner leads with
+starting, a returning learner with continuing, an experienced learner with new
+content, recommendations and library — but exploration must never overwhelm or
+obscure the guided start, and the guided start must never remove exploration.
+
 ---
 
 # 11. World-building
@@ -327,6 +410,34 @@ World-building means the product has:
 Learners should gradually develop a relationship with Orena.
 
 The product should feel like a place they return to, not merely a utility they operate.
+
+## "World" is an internal principle (D-057)
+
+"World" is Orena's internal product and design vocabulary. It is not a concept
+the learner has to learn, and it never becomes learner-facing lore.
+
+"World" does **not** mean:
+
+- fantasy or lore;
+- calling the learner a traveller, explorer or adventurer by default;
+- fantasy naming for ordinary navigation;
+- a metaphor standing in place of a function;
+- slogans about the journey;
+- decorative landscapes with no content or navigational role;
+- turning the product into a game world at the cost of clarity.
+
+"World" means only:
+
+- there is a lot of real content to read, watch, hear and explore;
+- that content has imagery, sound and personality;
+- pieces of it relate to each other;
+- the product has more depth than a menu of functions.
+
+> **Never explain the Orena philosophy to the learner when the interface can
+> let them experience it.**
+
+Learner-facing product philosophy, manifesto copy and slogans that do not help
+the learner's current task do not belong on a learner surface.
 
 ---
 

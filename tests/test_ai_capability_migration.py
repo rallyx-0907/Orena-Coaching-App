@@ -58,7 +58,7 @@ def test_migration_dry_run_writes_nothing_and_lists_exact_current_rows() -> None
     report = migration.migrate_capability_configs(repository, dry_run=True)
     assert repository.writes == [] and repository.configs == {}
     # Seven configurable capabilities: writing_linguistic is deterministic.
-    assert len(report["would_create"]) == 7
+    assert len(report["would_create"]) == 8
     assert not {"reading_evaluator", "speech_asr", "pronunciation_evaluator", "speaking_evaluator"} & set(report["would_create"])
 
 
@@ -92,12 +92,12 @@ def test_migration_is_idempotent_and_does_not_overwrite_existing_rows() -> None:
     first = migration.migrate_capability_configs(repository, dry_run=False)
     assert repository.configs["writing_evaluator"] == existing
     assert "writing_evaluator" in first["skipped_existing"]
-    assert len(repository.writes) == 6
+    assert len(repository.writes) == 7
 
     second = migration.migrate_capability_configs(repository, dry_run=False)
     assert second["created"] == []
-    assert len(second["skipped_existing"]) == 7
-    assert len(repository.writes) == 6
+    assert len(second["skipped_existing"]) == 8
+    assert len(repository.writes) == 7
 
 
 def test_migration_seeds_only_approved_fallback_policies() -> None:
@@ -115,6 +115,7 @@ def test_migration_seeds_only_approved_fallback_policies() -> None:
     }
     assert set(repository.configs) - fallback == {
         "writing_evaluator",
+        "text_discussion",
         "writing_improver",
         "learner_dictionary",
         "learner_translation",
@@ -128,7 +129,7 @@ def test_preflight_requires_every_explicit_row_and_ignores_legacy_selection() ->
     migration.migrate_capability_configs(repository, dry_run=False)
     report = preflight.validate_persisted_capabilities(repository)
     # Seven, not eight: writing_linguistic is deterministic and has no row.
-    assert report["ok"] is True and report["explicit_row_count"] == 7
+    assert report["ok"] is True and report["explicit_row_count"] == 8
 
 
 @pytest.mark.parametrize(

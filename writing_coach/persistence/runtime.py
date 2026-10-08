@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
@@ -33,7 +33,18 @@ from writing_coach.persistence.specialized_repository import (
     SpecializedLearningRepository,
     SQLiteSpecializedLearningRepository,
 )
+from writing_coach.persistence.vocabulary_repository import (
+    SQLAlchemyVocabularyRepository,
+    VocabularyRepository,
+    sqlite_vocabulary_repository,
+    vocabulary_db_path,
+)
 from writing_coach.persistence.config import create_runtime_engine, runtime_url
+from writing_coach.persistence.discussion_repository import (
+    PostgresTextDiscussionRepository,
+    SQLiteTextDiscussionRepository,
+    TextDiscussionRepository,
+)
 from writing_coach.runtime_schema import (
     UNAVAILABLE,
     SchemaNotReady,
@@ -50,6 +61,8 @@ class PersistenceRuntime:
     product_repository: ProductRepository
     learning_repository: LearningRepository
     specialized_learning_repository: SpecializedLearningRepository
+    vocabulary_repository: VocabularyRepository
+    text_discussion_repository: TextDiscussionRepository
     engine: object | None = None
 
 
@@ -107,6 +120,7 @@ def build_runtime(
     product_db: Path,
     learning_path: Callable[[], Path],
     backend: str | None = None,
+    vocabulary_db: Path | None = None,
 ) -> PersistenceRuntime:
     selected = (
         backend if backend is not None else os.getenv("PERSISTENCE_BACKEND", "sqlite")
@@ -121,6 +135,8 @@ def build_runtime(
             PostgresProductRepository(engine),
             PostgresLearningRepository(engine),
             PostgresSpecializedLearningRepository(engine),
+            SQLAlchemyVocabularyRepository(engine),
+            PostgresTextDiscussionRepository(engine),
             engine,
         )
     if selected != "sqlite":
@@ -133,4 +149,6 @@ def build_runtime(
         SQLiteProductRepository(product_db),
         learning,
         SQLiteSpecializedLearningRepository(learning.connect),
+        sqlite_vocabulary_repository(vocabulary_db or vocabulary_db_path(product_db)),
+        SQLiteTextDiscussionRepository(),
     )
