@@ -29,7 +29,6 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re
-
           targets = [
               (Path("grammar_lab/inventory/canonical_v1/zh.yaml"), "title"),
               (Path("grammar_lab/inventory/seeds_zh.yaml"), "native_title"),
@@ -38,19 +37,16 @@ jobs:
           changed_total = 0
           for path, key in targets:
               lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-              out = []
-              changed = 0
+              out, changed = [], 0
               prefix_re = re.compile(rf"^(\s*{re.escape(key)}:\s*)(.*?)(\r?\n)?$")
               for line in lines:
                   m = prefix_re.match(line)
                   if not m:
-                      out.append(line)
-                      continue
+                      out.append(line); continue
                   prefix, raw, ending = m.group(1), m.group(2), m.group(3) or ""
                   stripped = raw.strip()
                   if not stripped or stripped in {"|", ">"}:
-                      out.append(line)
-                      continue
+                      out.append(line); continue
                   quote = stripped[0] if stripped[0] in {'\"', "'"} and stripped[-1:] == stripped[0] else ""
                   value = stripped[1:-1] if quote else stripped
                   if han.search(value) and any(ch.isspace() for ch in value):
@@ -78,7 +74,6 @@ jobs:
           from grammar_lab.pipeline.jsonio import write_json
           from grammar_lab.pipeline.seed import load_catalog
           from grammar_lab.pipeline.validate import LAB_ROOT
-
           changed = []
           for row in load_catalog("zh", LAB_ROOT):
               point_id = row["id"]
@@ -98,7 +93,21 @@ jobs:
           print(f"synchronized {len(changed)} ZH header(s)")
           PY
 
-      - name: Validate full Chinese corpus
+      - name: Update stale approved-corpus export test
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("grammar_lab/tests/test_export_package.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''# --- the real repository: nothing is approved yet, so nothing can be exported ------------------------\n\n\ndef test_the_real_lab_cannot_export_its_draft_points(tmp_path: Path) -> None:\n    from typer.testing import CliRunner\n\n    from grammar_lab.pipeline.cli import app\n\n    out = tmp_path / "pkg"\n    result = CliRunner().invoke(app, [\n        "export-package", "--lang", "en", "--ids", "en.present_continuous.now", "--out", str(out),\n        "--set-version", "t", "--source-commit", "0" * 40, "--allow-dirty",\n    ])\n    assert result.exit_code == 2 and "point.not_approved" in result.output and not out.exists()\n    plain = CliRunner().invoke(app, [\n        "export-package", "--lang", "zh", "--level", "HSK1", "--out", str(out), "--set-version", "t",\n        "--source-commit", "0" * 40, "--allow-dirty",\n    ])\n    assert plain.exit_code == 2 and not out.exists()  # default_safe / missing content / drafts: refused\n'''
+          new = '''# --- the real repository: the approved corpus can be exported -----------------------------------------\n\n\ndef test_the_real_lab_can_export_an_approved_point(tmp_path: Path) -> None:\n    from typer.testing import CliRunner\n\n    from grammar_lab.pipeline.cli import app\n\n    out = tmp_path / "pkg"\n    result = CliRunner().invoke(app, [\n        "export-package", "--lang", "en", "--ids", "en.present_continuous.now", "--out", str(out),\n        "--set-version", "t", "--source-commit", "0" * 40, "--allow-dirty",\n    ])\n    assert result.exit_code == 0, result.output\n    assert out.exists()\n    check = CliRunner().invoke(app, ["validate-package", "--path", str(out)])\n    assert check.exit_code == 0, check.output\n'''
+          if old not in text:
+              raise SystemExit("stale draft-corpus test block not found")
+          path.write_text(text.replace(old, new), encoding="utf-8", newline="\n")
+          PY
+
+      - name: Validate full Chinese corpus and export tests
         run: |
           python -m grammar_lab.pipeline.cli validate --lang zh
           python -m grammar_lab.pipeline.cli coverage --lang zh
@@ -118,7 +127,7 @@ jobs:
             --allow-dirty
           python -m grammar_lab.pipeline.cli validate-package --path /tmp/zh-complete
 
-      - name: Commit source and synchronized corpus repair
+      - name: Commit verified repair
         shell: bash
         run: |
           set -euo pipefail
@@ -128,7 +137,8 @@ jobs:
             grammar_lab/inventory/canonical_v1/zh.yaml \
             grammar_lab/inventory/seeds_zh.yaml \
             grammar_lab/inventory/catalog_zh.yaml \
-            grammar_lab/content/zh
+            grammar_lab/content/zh \
+            grammar_lab/tests/test_export_package.py
           git diff --cached --stat
           git diff --cached --quiet && exit 0
           git commit -m "fix(grammar): normalize zh export metadata"
