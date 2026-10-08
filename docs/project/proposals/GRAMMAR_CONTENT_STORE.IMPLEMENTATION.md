@@ -5,6 +5,8 @@ Issue #99, after the architecture gate. Revision 3a of `GRAMMAR_CONTENT_STORE.md
 authorized (2026-10-08): promote `0030` in source control only if its parent is still the real head; implement the
 non-UI store, validator, importer, Admin lifecycle, learner API and progress/R5; reuse the approved 595-point corpus;
 apply no migration to any runtime; touch no learner or Admin UI; stop and report when UI integration is next.
+The work lives on its own branch, `feature/grammar-content-store`, cut from `main` (human direction: no unrelated
+`codex/work` commits in the Grammar backend PR).
 
 ## What exists now
 
@@ -45,7 +47,9 @@ apply no migration to any runtime; touch no learner or Admin UI; stop and report
 | `scripts/rehearse_grammar_content_store.py` on the promoted chain | 65 PASS, 0 FAIL |
 | `scripts/rehearse_grammar_corpus_import.py` with the **real approved corpus** exported by Grammar Lab's own `export-package --zip --with-dropped` at `3579ece8` (EN 215, ZH 380; packages kept in the scratch area, never in the repository) | 23 PASS, 0 FAIL: both validate with 0 problems, import, accept, bulk-publish all 595, catalogue/levels/labels served, R5 redirect/composite/dropped, **R5 coverage complete in both languages (0 unresolved)** |
 | `scripts/check_grammar_export_contract.py` | 24 PASS, 0 FAIL |
-| Full `pytest -q test_app.py tests` (SQLite; and with `ORENA_TEST_POSTGRES_URL`) | see the PR description for the exact counts |
+| Full `pytest -q test_app.py tests` on `feature/grammar-content-store` (SQLite, as CI) | 4674 passed, 385 skipped, 0 failed |
+| The same with `ORENA_TEST_POSTGRES_URL` (throwaway PostgreSQL 16.15) | 5050 passed, 9 skipped, 0 failed. Watch item: `tests/test_reading_evidence_postgres.py::test_a_submit_waits_for_a_body_edit_and_then_sees_it` (a 5 s lock-wait timing test, not Grammar) failed in 2 earlier full PostgreSQL runs of this work on a loaded machine and passed alone and in later runs |
+| The 9 stdlib CI gates, the listening catalog check, the ESM graph and the 120 `.mjs` gates of `ci.yml` | all exit 0 |
 
 No migration was applied to :8000, :8010, :8011, :8021 or any persistent runtime.
 

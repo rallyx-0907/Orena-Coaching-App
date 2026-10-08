@@ -39,7 +39,7 @@ Design/review: `proposals/VOCABULARY_LOCALIZATION.md` (+ .REVIEW); gaps VL-1..5.
 S1 source admission (e74735b): READING_SOURCE_ADMISSION_CHECKPOINT.md; level/source breadth,
 enrichment/questions/fidelity open. Preserve S3 a8e7914: VOCABULARY_COLLECTION_CHECKPOINT.md. Grammar deferred.
 
-Grammar Store (#99): 0030 in versions, applied nowhere yet (:8021 blocked on it); backend+API on codex/work, real
+Grammar Store (#106, main 4086b935): 0030 applied on :8021 only; learner + Admin UI on codex/work, real
 595-point import rehearsed; UI wiring awaits the human. GRAMMAR_CONTENT_STORE.IMPLEMENTATION.md.
 
 Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
