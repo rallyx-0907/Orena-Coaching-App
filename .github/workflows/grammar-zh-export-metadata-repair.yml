@@ -1,0 +1,112 @@
+name: Grammar ZH Export Metadata Repair
+
+on:
+  push:
+    branches:
+      - codex/grammar-export-zh-seed-normalize
+    paths:
+      - ".github/workflows/grammar-zh-export-metadata-repair.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair-validate-export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: codex/grammar-export-zh-seed-normalize
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e "grammar_lab[dev]"
+
+      - name: Normalize authoritative ZH native titles
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          targets = [
+              (Path("grammar_lab/inventory/canonical_v1/zh.yaml"), "title"),
+              (Path("grammar_lab/inventory/seeds_zh.yaml"), "native_title"),
+          ]
+          han = re.compile(r"[\u3400-\u9fff]")
+          changed_total = 0
+          for path, key in targets:
+              lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+              out = []
+              changed = 0
+              prefix_re = re.compile(rf"^(\s*{re.escape(key)}:\s*)(.*?)(\r?\n)?$")
+              for line in lines:
+                  m = prefix_re.match(line)
+                  if not m:
+                      out.append(line)
+                      continue
+                  prefix, raw, ending = m.group(1), m.group(2), m.group(3) or ""
+                  stripped = raw.strip()
+                  if not stripped or stripped in {"|", ">"}:
+                      out.append(line)
+                      continue
+                  quote = stripped[0] if stripped[0] in {'\"', "'"} and stripped[-1:] == stripped[0] else ""
+                  value = stripped[1:-1] if quote else stripped
+                  if han.search(value) and any(ch.isspace() for ch in value):
+                      normalized = "".join(value.split())
+                      new_raw = f"{quote}{normalized}{quote}" if quote else normalized
+                      out.append(prefix + new_raw + ending)
+                      changed += 1
+                  else:
+                      out.append(line)
+              path.write_text("".join(out), encoding="utf-8", newline="")
+              changed_total += changed
+              print(f"{path}: normalized {changed} title(s)")
+          if changed_total == 0:
+              raise SystemExit("expected at least one ZH title normalization")
+          print(f"normalized total: {changed_total}")
+          PY
+
+      - name: Rebuild catalogue and synchronize derived metadata
+        run: |
+          python -m grammar_lab.pipeline.cli import-canonical --lang zh
+          python -m grammar_lab.pipeline.cli sync-metadata
+
+      - name: Validate full Chinese corpus
+        run: |
+          python -m grammar_lab.pipeline.cli validate --lang zh
+          python -m grammar_lab.pipeline.cli coverage --lang zh
+          python -m pytest grammar_lab/tests/test_export_zh_seed_metadata.py grammar_lab/tests/test_export_package.py
+
+      - name: Prove complete 380-point export
+        shell: bash
+        run: |
+          ZH_IDS="$(python -c "from grammar_lab.pipeline.seed import load_catalog; from grammar_lab.pipeline.validate import LAB_ROOT; print(','.join(x['id'] for x in load_catalog('zh', LAB_ROOT)))")"
+          test "$(printf '%s' "$ZH_IDS" | awk -F, '{print NF}')" = "380"
+          rm -rf /tmp/zh-complete
+          python -m grammar_lab.pipeline.cli export-package \
+            --lang zh \
+            --ids "$ZH_IDS" \
+            --out /tmp/zh-complete \
+            --set-version "ci.zh.complete" \
+            --allow-dirty
+          python -m grammar_lab.pipeline.cli validate-package --path /tmp/zh-complete
+
+      - name: Commit source and synchronized corpus repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            grammar_lab/inventory/canonical_v1/zh.yaml \
+            grammar_lab/inventory/seeds_zh.yaml \
+            grammar_lab/inventory/catalog_zh.yaml \
+            grammar_lab/content/zh \
+            grammar_lab/functions/functions.yaml \
+            grammar_lab/fixtures/ui
+          git diff --cached --stat
+          git diff --cached --quiet && exit 0
+          git commit -m "fix(grammar): normalize zh export metadata"
+          git push origin HEAD:codex/grammar-export-zh-seed-normalize
