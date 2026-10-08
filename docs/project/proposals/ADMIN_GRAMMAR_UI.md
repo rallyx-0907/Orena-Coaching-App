@@ -1,6 +1,9 @@
 # Proposal: Admin Grammar (import, review, publish) in the existing Admin
 
-Status: **PROPOSED, for the human's layout approval. No Admin UI code is written until it is approved.**
+Status: **APPROVED by the human 2026-10-08 and BUILT on `codex/work` (REVIEWABLE on :8021).** Decisions taken: HG-1 (a), HG-2 (b),
+HG-3 (a, default `orena_original`, one short confirmation per package), HG-4 (a), HG-5 (a, R5 coverage later), HG-6 (a).
+As built: queue tabs are To review / Accepted / Published / Rejected / Archived (an unpublished point returns to
+Accepted, ready to publish again); the admin list now names each point and its newest version (PR #106 `17540e73`).
 2026-10-08, `codex/work` 125fd013. Backend: Grammar Store (`writing_coach/grammar_admin_api.py`, 17 routes under
 `/api/admin/grammar/*`; PR #106 is the canonical backend/contract). Learner flow done first (Library, Concept, quiz
 completion on `/api/grammar/v1/*`).

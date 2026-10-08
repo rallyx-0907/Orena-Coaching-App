@@ -16,6 +16,7 @@ import { explain } from './reading.js';
 import { pageHead, skeleton } from './blocks.js';
 import { loadFailedBlock } from './reading-pages.js';
 import { booksPage, historyPage, hubPage, jobPage, jobsPage, mediaPage, packPage, sourceFormPage, vocabularyPage } from './imports-pages.js';
+import { importPage as grammarImportPage } from './grammar-pages.js';
 
 export async function mountImports(shell, ctx) {
   const routeId = ctx.route.id;
@@ -31,12 +32,13 @@ export async function mountImports(shell, ctx) {
       files: [], previews: [], mappings: {}, step: 0, showAll: false, running: false, previewing: false, errors: [], results: null,
       metadata: { title: '', language: learning, meaning_language: languages().support || '', framework: '', level: '', topic: '', collection_id: '', rights_status: '', completeness: 'unknown', publish: false, attested: false },
     },
+    grammar: { file: null, check: null, result: null, error: '', checking: false, importing: false, showAll: false, basis: 'orena_original', attestation: t('grImpAttestDefault') },
     pack: { kinds: 'all', languages: 'all', sourcePrefix: 'sample-', collectionPrefix: 'sample-', file: null, plan: null, result: null, error: '', exporting: false, planning: false, importing: false },
     source: { name: '', url: '', type: 'direct_url', language: learning, can_republish: false, can_adapt: false, attribution_required: true, license: '', error: '', running: false },
     jobFilter: ctx.query.get('status') === 'failed' ? 'failed' : 'all',
     history: { kind: 'all', status: ctx.query.get('status') === 'failed' ? 'failed' : 'all', offset: 0 },
   };
-  const data = { recent: { book: 0, media: 0, vocabulary: 0, total: 0 }, failedJobs: 0, jobs: [], cursor: null, job: null, history: null };
+  const data = { recent: { book: 0, media: 0, vocabulary: 0, grammar: null, total: 0 }, failedJobs: 0, jobs: [], cursor: null, job: null, history: null };
   let mediaTimer = 0;
   async function refreshMedia() {
     clearTimeout(mediaTimer);
@@ -65,6 +67,7 @@ export async function mountImports(shell, ctx) {
       case 'adminImportVocab': return vocabularyPage({ ...base, vocab: view.vocab });
       case 'adminImportSource': return sourceFormPage({ ...base, form: view.source });
       case 'adminImportPack': return packPage({ ...base, pack: view.pack });
+      case 'adminImportGrammar': return grammarImportPage({ ...base, grammar: view.grammar });
       case 'adminJobs': return jobsPage({ ...base, jobs: data.jobs, cursor: data.cursor, filter: view.jobFilter });
       case 'adminJob': return jobPage({ ...base, job: data.job });
       case 'adminHistory': return historyPage({ ...base, data: data.history, filters: view.history });
@@ -81,9 +84,9 @@ export async function mountImports(shell, ctx) {
     host.paint();
     try {
       if (routeId === 'adminImports') {
-        const [history, failed] = await Promise.all([loadHistory(api).catch(() => null), loadJobs(api, { status: 'failed', limit: 25 }).catch(() => ({ items: [] }))]);
+        const [history, failed, grammarBatches] = await Promise.all([loadHistory(api).catch(() => null), loadJobs(api, { status: 'failed', limit: 25 }).catch(() => ({ items: [] })), api.grammarBatches().catch(() => null)]);
         const rows = history?.items || [];
-        data.recent = { book: rows.filter((row) => row.kind === 'book').length, media: rows.filter((row) => row.kind === 'media').length, vocabulary: rows.filter((row) => row.kind === 'vocabulary').length, total: history?.total || rows.length };
+        data.recent = { book: rows.filter((row) => row.kind === 'book').length, media: rows.filter((row) => row.kind === 'media').length, vocabulary: rows.filter((row) => row.kind === 'vocabulary').length, grammar: grammarBatches ? (grammarBatches.batches || []).filter((batch) => batch.status === 'imported').length : null, total: history?.total || rows.length };
         data.failedJobs = (failed.items || []).length;
       } else if (routeId === 'adminJobs') {
         const page = await loadJobs(api, { status: jobStatus() });
@@ -135,6 +138,7 @@ export async function mountImports(shell, ctx) {
     if (id === 'mediaFiles') view.media.items = [...view.media.items.filter((item) => !item.file), ...files.map((file) => ({ file, name: file.name, size: file.size, state: 'to_import' }))];
     if (id === 'vfiles') { view.vocab.files = files; view.vocab.errors = []; }
     if (id === 'packFile') Object.assign(view.pack, { file: files[0] || null, plan: null, result: null, error: '' });
+    if (id === 'grammarFile') Object.assign(view.grammar, { file: files[0] || null, check: null, result: null, error: '', showAll: false });
     host.paint();
   });
   host.on('books-import', async () => {
@@ -232,6 +236,7 @@ export async function mountImports(shell, ctx) {
     } else if (routeId === 'adminImportVocab' && field.startsWith('meta:')) view.vocab.metadata[field.slice(5)] = value;
     else if (routeId === 'adminImportSource') view.source[field] = value;
     else if (routeId === 'adminImportPack') view.pack[field] = value;
+    else if (routeId === 'adminImportGrammar') view.grammar[field] = value;
     host.paint();
   });
   host.onInput((id, value) => {
@@ -248,6 +253,11 @@ export async function mountImports(shell, ctx) {
       }
     } else if (routeId === 'adminImportSource' && id in view.source) view.source[id] = value;
     else if (routeId === 'adminImportPack' && (id === 'sourcePrefix' || id === 'collectionPrefix')) view.pack[id] = value;
+    else if (routeId === 'adminImportGrammar' && id === 'attestation') {
+      const empty = !view.grammar.attestation.trim() !== !value.trim();
+      view.grammar.attestation = value;
+      if (empty) host.paint();
+    }
     if (routeId === 'adminImportMedia' && id === 'urls') host.paint();
   });
 
@@ -289,6 +299,32 @@ export async function mountImports(shell, ctx) {
     host.paint();
   });
 
+  /* ---- Grammar Lab packages (proposals/ADMIN_GRAMMAR_UI.md G2) ---- */
+  host.on('grammar-check', async () => {
+    const grammar = view.grammar;
+    Object.assign(grammar, { checking: true, error: '', check: null, result: null, showAll: false });
+    host.paint();
+    try { grammar.check = await api.grammarValidate(grammar.file); } catch (error) { grammar.error = explain(error); }
+    grammar.checking = false;
+    host.paint();
+  });
+  host.on('grammar-import', async () => {
+    const grammar = view.grammar;
+    if (!grammar.check?.package_hash || !grammar.attestation.trim()) return;
+    Object.assign(grammar, { importing: true, error: '' });
+    host.paint();
+    try {
+      const answer = await api.grammarImport(grammar.file, { packageHash: grammar.check.package_hash, basis: grammar.basis, attestation: grammar.attestation.trim() });
+      if (answer.already_imported) grammar.check = { ...grammar.check, already_imported: answer.batch };
+      else grammar.result = answer;
+    } catch (error) {
+      grammar.error = error?.category === 'grammar_package_rejected' ? t('grImpRejected') : explain(error);
+    }
+    grammar.importing = false;
+    host.paint();
+  });
+  host.on('grammar-show-all', () => { view.grammar.showAll = !view.grammar.showAll; host.paint(); });
+
   /* ---- register a source ---- */
   host.on('source-create', async () => {
     const form = view.source;
@@ -308,7 +344,7 @@ export async function mountImports(shell, ctx) {
     host.paint();
   });
 
-  if (['adminImportBooks', 'adminImportMedia', 'adminImportVocab', 'adminImportSource', 'adminImportPack'].includes(routeId)) {
+  if (['adminImportBooks', 'adminImportMedia', 'adminImportVocab', 'adminImportSource', 'adminImportPack', 'adminImportGrammar'].includes(routeId)) {
     view.loading = false;
     host.paint();
   } else {

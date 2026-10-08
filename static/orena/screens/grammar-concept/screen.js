@@ -148,6 +148,51 @@ function tryMarkup(tryIt, lang) {
     <div data-try-result></div>`;
 }
 
+/* The point card the learner reads: summary, pattern, illustration, examples, the common mistake. */
+function cardMarkup(view, lang) {
+  const { header } = view;
+  return [
+    header.summary ? html`<div class="s-gc__summary">${header.summary}</div>` : '',
+    view.pattern.length ? patternMarkup(view.pattern, lang) : '',
+    view.illustration ? illustrationMarkup(view.illustration, lang) : '',
+    view.examples.length ? html`${eyebrow(t('examples'))}<div class="s-gc__examples">${view.examples.map((example) => exampleMarkup(example, lang))}</div>` : '',
+    view.mistake ? mistakeMarkup(view.mistake, lang) : '',
+  ];
+}
+
+/* The learner's page for one point, read-only, for Admin's review (proposals/ADMIN_GRAMMAR_UI.md G4): the same header,
+   card and parts the learner meets, every quiz question in its answered state with the right option marked and its
+   explanation, and the Try-it prompt. Nothing here is interactive. */
+export function conceptPreviewMarkup(point, { support = 'en', native = '' } = {}) {
+  const view = conceptView(point, { support, native });
+  const { header } = view;
+  const lang = header.lang;
+  const quiz = view.quiz.length
+    ? html`<div class="o-card o-card--24 s-gc__card"><div class="s-gc__quizhead"><h2 class="s-gc__title">${t('quiz')}</h2><span class="s-gc__quizprog">${view.quiz.length}</span></div>
+        ${view.quiz.map((question) => html`<div class="s-gc__previewQ">
+          <div class="s-gc__qprompt" lang="${langAttr(lang)}">${material(question.q, question.qPinyin, lang)}</div>
+          <div class="s-gc__options">${question.options.map((option, i) => optionMarkup(option, i, question.answer, question, lang))}</div>
+          ${question.explain ? html`<div class="s-gc__why"><b>${t('why')}</b> ${question.explain}</div>` : ''}
+        </div>`)}</div>`
+    : '';
+  const tryIt = view.tryIt
+    ? html`<div class="o-card o-card--24 s-gc__card"><h2 class="s-gc__title">${t('tryIt')}</h2><div class="s-gc__tryPrompt">${view.tryIt.prompt}</div>${
+      view.tryIt.sample ? html`<div class="s-gc__tryResult"><span>${t('sample')}</span> <span lang="${langAttr(lang)}">${material(view.tryIt.sample, view.tryIt.samplePinyin, lang)}</span></div>` : ''}</div>`
+    : '';
+  return html`<div class="s-gc s-gc--preview">
+    <div class="s-gc__head">${pageHeader({
+      title: langSpan(material(header.title, header.titlePinyin, lang), lang),
+      meta: [shell('grammar'), header.level, header.sub].filter(Boolean).join(' · '),
+      compact: true,
+    })}</div>
+    <div class="s-gc__inner">
+      <div class="o-card o-card--24 s-gc__card">${cardMarkup(view, lang)}</div>
+      ${quiz}
+      ${tryIt}
+    </div>
+  </div>`;
+}
+
 function notFound(element, ctx) {
   mount(
     element,
@@ -178,13 +223,7 @@ export default async function grammarConcept(element, ctx) {
   const lang = header.lang;
   ctx.setCrumb(header.title);
 
-  const card = [
-    header.summary ? html`<div class="s-gc__summary">${header.summary}</div>` : '',
-    view.pattern.length ? patternMarkup(view.pattern, lang) : '',
-    view.illustration ? illustrationMarkup(view.illustration, lang) : '',
-    view.examples.length ? html`${eyebrow(t('examples'))}<div class="s-gc__examples">${view.examples.map((example) => exampleMarkup(example, lang))}</div>` : '',
-    view.mistake ? mistakeMarkup(view.mistake, lang) : '',
-  ];
+  const card = cardMarkup(view, lang);
 
   mount(
     element,

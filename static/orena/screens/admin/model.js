@@ -26,8 +26,9 @@ const ROUTES_OF = {
   operations: ['adminOperations', 'adminWorkers', 'adminPolling', 'adminErrors'],
   ai: ['adminAi', 'adminProvider', 'adminProviderKey', 'adminCapability', 'adminAiCosts'],
   content: ['adminContent', 'adminBooks', 'adminBook', 'adminMedia', 'adminMediaItem', 'adminVocab', 'adminCollection',
+    'adminGrammar', 'adminGrammarPoint',
     'adminReading', 'adminQueue', 'adminArticle', 'adminSet', 'adminAdd', 'adminSources', 'adminSource'],
-  imports: ['adminImports', 'adminImportBooks', 'adminImportMedia', 'adminImportVocab', 'adminImportPack', 'adminImportSource', 'adminJobs', 'adminJob', 'adminHistory'],
+  imports: ['adminImports', 'adminImportBooks', 'adminImportMedia', 'adminImportVocab', 'adminImportPack', 'adminImportGrammar', 'adminImportSource', 'adminJobs', 'adminJob', 'adminHistory'],
 };
 
 export function areaOf(routeId) {

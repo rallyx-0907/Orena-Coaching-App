@@ -38,6 +38,7 @@ export function homePage({ counts, t, ui, href }) {
         ${tile('book', t('ctBooks'), href('adminBooks'), [[t('ctBooksUnit'), value('book')]], t('ctBooksMeta'))}
         ${tile('media', t('ctMedia'), href('adminMedia'), [[t('ctMediaUnit'), value('media')]], t('ctMediaMeta'))}
         ${tile('vocabulary', t('ctVocab'), href('adminVocab'), [[t('ctVocabUnit'), value('vocabulary')]], t('ctVocabMeta'))}
+        ${tile('grammar', t('grTitle'), href('adminGrammar', {}, { tab: counts?.grammar?.review ? 'review' : 'published' }), [[t('grUnitPublished'), counts?.grammar ? num(counts.grammar.published, ui) : '—'], [t('grUnitReview'), counts?.grammar ? num(counts.grammar.review, ui) : '—']], t('grMeta'), counts?.grammar?.review ? t('grToReview', { n: num(counts.grammar.review, ui) }) : '')}
       </div>
     </section>`,
   };

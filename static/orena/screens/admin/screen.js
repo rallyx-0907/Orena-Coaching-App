@@ -23,9 +23,12 @@ const AREA_PAGES = {
     : import('./ai.js').then((module) => module.mountAi)),
   content: (routeId) => (READING_ROUTES.has(routeId)
     ? import('./reading.js').then((module) => module.mountReading)
-    : import('./content.js').then((module) => module.mountContent)),
+    : GRAMMAR_ROUTES.has(routeId)
+      ? import('./grammar.js').then((module) => module.mountGrammar)
+      : import('./content.js').then((module) => module.mountContent)),
   imports: () => import('./imports.js').then((module) => module.mountImports),
 };
+const GRAMMAR_ROUTES = new Set(['adminGrammar', 'adminGrammarPoint']);
 const READING_ROUTES = new Set(['adminReading', 'adminQueue', 'adminArticle', 'adminSet', 'adminAdd', 'adminSources', 'adminSource']);
 
 export default async function admin(element, ctx) {
