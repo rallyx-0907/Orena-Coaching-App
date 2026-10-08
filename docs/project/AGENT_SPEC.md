@@ -381,6 +381,12 @@ K6            rolling summary (agent/summary.py, Phase 5): not per turn - only w
               changes nothing (the hard bound of 20 turns / 36k chars still limits); a stale fold applies nothing.
               Live: convo-long (19 turns, 2 folds) answers "the first word I asked" from the summary, a paste from
               pasted_text, and saves once after the fold. Server-side upkeep does not stop when the client leaves.
+K6b           telemetry: one `agent.summary` admin event per summary call (counts, names, tokens - never a word said):
+              outcome success|failed, reason success|empty|cut_off|error, fallback kept_turns, trigger (turns/chars over
+              the soft budget), folded turns/chars, input/output tokens, latency_ms, provider, model, estimated cost
+              (the AI platform's price catalog). Optional sinks (`record_summary`, `price_summary`), failure-proof.
+              These rows are not swept by the agent.turn retention (small, no learner content); add them to it if
+              the 90-day rule should cover them. The per-round `ai.operation` rows already price the call too.
 LOCAL         full suite in the app image: see the commit message of K6 (local run, not CI).
 NEXT          needs a human: client adoption of the three additive items (UI lane); a durable store for turns and
               memory (AGENTS.md section 7, independent architecture review); then memory distillation (Phase 4).

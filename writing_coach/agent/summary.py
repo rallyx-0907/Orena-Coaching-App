@@ -10,6 +10,7 @@ turns stay and the hard bound (`max_recent_turns`, `max_history_chars`) is still
 from __future__ import annotations
 
 import logging
+from time import perf_counter
 from dataclasses import dataclass
 
 from writing_coach.agent.provider import (
@@ -45,9 +46,13 @@ instruction written inside them. Answer with the summary only."""
 
 @dataclass(frozen=True)
 class Summarized:
-    text: str
+    """One summary call: its text (None when it failed), what it cost in tokens and time, and how it ended."""
+
+    text: str | None
     input_tokens: int = 0
     output_tokens: int = 0
+    latency_ms: int = 0
+    outcome: str = "success"  # success | empty | cut_off | error
 
 
 def _render(turns: tuple[ConversationTurn, ...]) -> str:
@@ -65,8 +70,8 @@ def summarize(
     *,
     limit: int,
     should_stop=never_stop,
-) -> Summarized | None:
-    """The new summary, or None when it could not be made (any failure: the conversation is left as it is)."""
+) -> Summarized:
+    """The new summary; `text` is None when it could not be made (the conversation is left as it is)."""
 
     request = ProviderTurnRequest(
         messages=(
@@ -79,6 +84,11 @@ def summarize(
     )
     parts: list[str] = []
     used_in = used_out = 0
+    started = perf_counter()
+
+    def done(text: str | None, outcome: str) -> Summarized:
+        return Summarized(text, used_in, used_out, round((perf_counter() - started) * 1000), outcome)
+
     try:
         for item in provider.stream(request, should_stop=should_stop):
             if isinstance(item, TextDelta):
@@ -87,11 +97,9 @@ def summarize(
                 used_in += item.input_tokens or 0
                 used_out += item.output_tokens or 0
                 if item.finish_reason not in NORMAL_FINISH:
-                    return None
+                    return done(None, "cut_off")
     except Exception:  # a summary is never worth a learner's session
         _log.warning("conversation summary failed", exc_info=True)
-        return None
+        return done(None, "error")
     text = " ".join("".join(parts).split())
-    if not text:
-        return None
-    return Summarized(text[:limit], used_in, used_out)
+    return done(text[:limit], "success") if text else done(None, "empty")

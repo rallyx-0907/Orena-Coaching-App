@@ -207,6 +207,10 @@ class AgentRuntime:
     max_output_tokens: int = 1024
     # One record per turn (agent/timeline.py): where the time went, for the latency and cost baseline.
     record_turn: Callable[[str, dict], None] | None = None
+    # One record per rolling-summary call (agent/summary.py), and its price: (input, output tokens) ->
+    # {provider, model, cost}. Both optional; a summary behaves the same without them.
+    record_summary: Callable[[str, dict], None] | None = None
+    price_summary: Callable[[int, int], dict] | None = None
     # The staging daily spend cap (agent/budget.py): seconds until it resets when reached, else None.
     spend_guard: Callable[[], float | None] | None = None
     # Live voice, mode A (agent/voice_session.py, R28): None unless the server turns voice on.
@@ -943,15 +947,52 @@ class _Turn:
                 return
             old, folded = job
             made = summarize(self.rt.provider, old, folded, limit=self.rt.limits.max_summary_chars)
-            if made is None:
-                return
-            _log.warning("agent compaction: folded %d turns SUMMARY=%s", len(folded), made.text)
             self.usage_in += made.input_tokens
             self.usage_out += made.output_tokens
-            self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
-                                    lambda s: s.with_compacted(folded, made.text))  # fmt: skip
+            applied = made.text is not None
+            if applied:
+                _log.info("agent compaction: folded %d turns into %d characters", len(folded), len(made.text))
+                self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
+                                        lambda s: s.with_compacted(folded, made.text))  # fmt: skip
+            self._record_summary(state, folded, made, applied)
         except Exception:
             _log.warning("agent compaction failed", exc_info=True, extra={"trace_id": self.trace_id})
+
+    def _record_summary(self, state, folded, made, applied: bool) -> None:
+        """One `agent.summary` record per summary call: why it ran, what it cost, how it ended. Counts and names only,
+        never what was said. A failed summary is `fallback: kept_turns`: the conversation is left as it was."""
+
+        if self.rt.record_summary is None:
+            return
+        limits = self.rt.limits
+        turns, chars = len(state.recent_turns), sum(len(t.text) for t in state.recent_turns)
+        over = [name for name, hit in (("turns", turns > limits.compact_after_turns),
+                                       ("chars", chars > limits.compact_after_chars)) if hit]
+        record = {
+            "version": "agent-summary/1", "trace_id": self.trace_id, "outcome": "success" if applied else "failed",
+            "reason": made.outcome, "fallback": None if applied else "kept_turns",
+            "trigger": {"over": over, "turns": turns, "chars": chars, "after_turns": limits.compact_after_turns,
+                        "after_chars": limits.compact_after_chars, "keep_turns": limits.keep_verbatim_turns},
+            "folded_turns": len(folded), "folded_chars": sum(len(t.text) for t in folded),
+            "had_summary": bool(state.summary), "summary_chars": len(made.text or ""),
+            "input_tokens": made.input_tokens, "output_tokens": made.output_tokens, "latency_ms": made.latency_ms,
+            **self._price(made),
+        }
+        try:
+            self.rt.record_summary(self.learner.user_key, record)
+        except Exception:  # telemetry never costs the learner their session
+            _log.warning("agent summary not recorded", exc_info=True, extra={"trace_id": self.trace_id})
+
+    def _price(self, made) -> dict:
+        """Provider, model and the estimated cost of the call, from the platform's catalog; unknown when unavailable."""
+
+        none = {"provider": None, "model": None, "cost": None}
+        if self.rt.price_summary is None:
+            return none
+        try:
+            return self.rt.price_summary(made.input_tokens, made.output_tokens)
+        except Exception:
+            return none
 
     def _focus(self, state, turn: TurnInput):
         """The session's focus after this turn: what was selected, looked up or offered, and a long paste."""

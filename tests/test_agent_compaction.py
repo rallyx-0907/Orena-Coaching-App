@@ -210,3 +210,66 @@ def test_the_fold_still_happens_when_the_learner_has_already_left_after_the_answ
         for event in rt.run(request(f"q{n}", sid), VI, should_stop=gone):
             sid = sid or (event.session_id if event.name == "session" else None)
     assert router.summaries and state_of(rt, sid).summary
+
+
+# --- telemetry: one record per summary call ----------------------------------------------------------------------
+
+
+def with_sink(conversation, *, fail_summary=False, price=None, sink_raises=False):
+    limits = AgentLimits(compact_after_turns=4, keep_verbatim_turns=2)
+    rt, router = build(conversation, limits=limits, fail_summary=fail_summary)
+    records = []
+
+    def sink(user, record):
+        records.append((user, record))
+        if sink_raises:
+            raise RuntimeError("store down")
+
+    rt.record_summary = sink
+    rt.price_summary = price
+    return rt, router, records
+
+
+def test_each_summary_call_leaves_one_record_with_its_trigger_tokens_and_latency():
+    price = lambda i, o: {"provider": "gemini", "model": "m", "cost": {"state": "estimated", "tokens": (i, o)}}  # noqa: E731
+    rt, _, records = with_sink([reply(f"a{n}") for n in range(4)], price=price)
+    talk(rt, 3)
+    (user, record), = records
+    assert user == VI.user_key and record["version"] == "agent-summary/1"
+    assert record["outcome"] == "success" and record["reason"] == "success" and record["fallback"] is None
+    assert record["trigger"]["over"] == ["turns"] and record["trigger"]["turns"] == 6
+    assert record["trigger"]["after_turns"] == 4 and record["trigger"]["keep_turns"] == 2
+    assert (record["input_tokens"], record["output_tokens"]) == (50, 20) and record["latency_ms"] >= 0
+    assert record["folded_turns"] == 4 and record["had_summary"] is False and record["summary_chars"] > 0
+    assert (record["provider"], record["model"]) == ("gemini", "m") and record["cost"]["tokens"] == (50, 20)
+
+
+def test_a_failed_summary_is_recorded_as_a_fallback_and_changes_nothing():
+    rt, _, records = with_sink([reply(f"a{n}") for n in range(4)], fail_summary=True)
+    sid = talk(rt, 3)
+    assert records and all(r["outcome"] == "failed" and r["reason"] == "error" and r["fallback"] == "kept_turns"
+                           for _, r in records)
+    assert state_of(rt, sid).summary == "" and len(state_of(rt, sid).recent_turns) == 6
+
+
+def test_a_record_names_counts_and_tokens_never_what_was_said():
+    rt, _, records = with_sink([reply("secret answer"), reply("secret answer 2"), reply("secret answer 3")])
+    talk(rt, 3, prefix="private words ")
+    text = repr(records)
+    assert "private" not in text and "secret" not in text
+
+
+def test_telemetry_that_fails_or_is_absent_does_not_change_the_conversation():
+    rt, _, records = with_sink([reply(f"a{n}") for n in range(4)], sink_raises=True,
+                               price=lambda i, o: 1 / 0)  # a broken price hook and a broken sink
+    sid = talk(rt, 3)
+    assert records and state_of(rt, sid).summary.startswith("SUMMARY#") and len(state_of(rt, sid).recent_turns) == 2
+    quiet, _ = build([reply(f"a{n}") for n in range(4)], limits=AgentLimits(compact_after_turns=4, keep_verbatim_turns=2))
+    sid2 = talk(quiet, 3)  # no sink at all
+    assert quiet.record_summary is None and state_of(quiet, sid2).summary.startswith("SUMMARY#")
+
+
+def test_no_record_while_nothing_is_summarized():
+    rt, _, records = with_sink([reply(f"a{n}") for n in range(4)])
+    talk(rt, 2)
+    assert records == []
