@@ -137,6 +137,12 @@ def apply_seed(existing: dict[str, Any] | None, lang: str, point_id: str, root: 
         title=dict(seed["title"]), native_title=seed["native_title"], level=dict(point["level"]),
     )
     header.setdefault("summary", dict(seed["title"]))
+    # native_title is authoritative seed metadata. Its per-character pinyin is
+    # deterministic display data, so every apply_seed consumer (including the
+    # production exporter) must keep the pair in lockstep, not only sync-metadata.
+    if lang == "zh":
+        from grammar_lab.pipeline.generate import pinyin_from_pairs
+        header["native_title_pinyin"] = pinyin_from_pairs(header["native_title"])
     point["header"] = header
     return point
 
