@@ -3,9 +3,8 @@ import { navigationSignal } from './navigation.js';
 
 const JSON_HEADERS = {'Content-Type':'application/json'};
 
-/* What a 401 does. The old UI sends the learner to its sign-in page; the new UI installs its own
-   (main.js: Welcome), because the new UI has no /login. */
-let onUnauthorized=()=>{location.href='/login';};
+/* What a 401 does: main.js installs its own (Welcome). Before it has, the learner goes to Welcome too. */
+let onUnauthorized=()=>{location.href='/#/welcome';};
 export function setUnauthorizedHandler(handler){onUnauthorized=typeof handler==='function'?handler:()=>{};}
 
 export async function request(url, options={}){

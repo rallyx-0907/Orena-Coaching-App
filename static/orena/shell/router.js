@@ -20,6 +20,7 @@ import { loadingMarkup, errorMarkup } from '../kit/states.js';
 import { shellCopy as t } from '../copy/shell.js';
 import { PRIMARY, DEFAULT_ROUTE, entryRoute, match, href, byId } from './routes.js';
 import { SCREENS } from './screens.js';
+import { formerAddress } from './former-addresses.js';
 
 const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
 const STORY_ROUTES = ['reader', 'listening', 'dictation', 'checku', 'rtransfer', 'feed'];
@@ -120,6 +121,12 @@ export function createRouter({ frame, getContext }) {
     /* The empty address is an entry, not a place: it opens where `entryRoute` says (D-098). */
     if (!String(location.hash).replace(/^#\/?/, '').split('?')[0].replace(/\/+$/, '')) {
       go(href(entryRoute(getContext())), { replace: true });
+      return;
+    }
+    // An address of the UI `/` served before the cutover opens the place that does its job now (D-143).
+    const moved = formerAddress(location.hash);
+    if (moved) {
+      go(moved, { replace: true });
       return;
     }
     const found = match(location.hash);

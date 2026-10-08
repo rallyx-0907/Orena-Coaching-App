@@ -12,7 +12,7 @@ from collections.abc import Callable
 from urllib.parse import urlencode, urlparse
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2 import id_token as google_id_token
 from google_auth_oauthlib.flow import Flow
@@ -185,27 +185,35 @@ def maybe_claim_legacy_data(email: str, google_sub: str) -> bool:
     return True
 
 
-NEXT_UI_PREFIX = "/next"
+LEARNER_UI_ROOT = "/"
+# The new UI's address before the cutover (D-091, D-143). A return target still carrying it - a sign-in begun
+# before the cutover, an old bookmark - lands on the same place at `/`.
+FORMER_UI_PREFIX = "/next"
 _NEXT_TARGET_MAX = 512
 
 
-def safe_next_target(value: str | None, *, default: str = NEXT_UI_PREFIX) -> str:
-    """The only place a sign-in or sign-out may send the browser afterwards: the new learner UI.
+def safe_next_target(value: str | None, *, default: str = LEARNER_UI_ROOT) -> str:
+    """The only place a sign-in or sign-out may send the browser afterwards: the learner UI at `/`.
 
-    A strict allowlist, not a blocklist: the value must be a relative path that is `/next` itself or
-    continues with `/`, `?` or `#` (a hash route is how the new UI addresses its places). No scheme, no
-    host (so no `//`), no backslash (browsers read it as `/`), no control character or whitespace
-    (header injection, CRLF), nothing over 512 characters. Anything else is `default`. It is never
-    echoed unvalidated, so it cannot be an open redirect."""
+    A strict allowlist, not a blocklist: the value must be a relative path that is `/` itself or continues
+    with `?` or `#` (a hash route is how the learner UI addresses its places); `/next`, the UI's address
+    before the cutover, is read as `/`. No scheme, no host (so no `//`), no backslash (browsers read it as
+    `/`), no control character or whitespace (header injection, CRLF), nothing over 512 characters.
+    Anything else is `default`. It is never echoed unvalidated, so it cannot be an open redirect."""
     candidate = value if isinstance(value, str) else ""
     if not candidate or len(candidate) > _NEXT_TARGET_MAX:
         return default
     if any(ord(char) <= 0x20 or ord(char) == 0x7F for char in candidate) or "\\" in candidate:
         return default
-    if "//" in candidate or "://" in candidate or not candidate.startswith(NEXT_UI_PREFIX):
+    if "//" in candidate or "://" in candidate or not candidate.startswith("/"):
         return default
-    rest = candidate[len(NEXT_UI_PREFIX):]
-    if rest and rest[0] not in "/?#":
+    if candidate.startswith(FORMER_UI_PREFIX):
+        rest = candidate[len(FORMER_UI_PREFIX):]
+        if rest and rest[0] not in "/?#":
+            return default
+        candidate = LEARNER_UI_ROOT + rest.lstrip("/")
+    rest = candidate[len(LEARNER_UI_ROOT):]
+    if rest and rest[0] not in "?#":
         return default
     return candidate
 
@@ -278,15 +286,12 @@ def _native_session_cookie(user_sub: str) -> str:
 router = APIRouter()
 
 
-@router.get("/login", response_class=HTMLResponse)
+@router.get("/login")
 def login_page(request: Request):
-    if not AUTH_ENABLED:
-        return RedirectResponse("/", status_code=302)
-    if request.session.get("user_sub"):
-        return RedirectResponse("/", status_code=302)
-    template = (ROOT / "templates" / "login.html").read_text(encoding="utf-8")
-    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip() if (ROOT / "VERSION").exists() else "dev"
-    return HTMLResponse(template.replace("{{APP_VERSION}}", version))
+    # The learner UI signs in from its own Welcome screen (D-143); this address only sends there.
+    if not AUTH_ENABLED or request.session.get("user_sub"):
+        return RedirectResponse(LEARNER_UI_ROOT, status_code=302)
+    return RedirectResponse(f"{LEARNER_UI_ROOT}#/welcome", status_code=302)
 
 
 @router.get("/auth/google")
@@ -512,9 +517,10 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
 
         public = (
             path == "/login"
-            # The new learner UI's shell, so its Welcome screen can draw before anyone is signed in. It carries
+            # The learner UI's shell, so its Welcome screen can draw before anyone is signed in. It carries
             # no learner data: everything it then asks for is an /api route, and those stay protected.
-            or path == NEXT_UI_PREFIX
+            or path == LEARNER_UI_ROOT
+            or path == FORMER_UI_PREFIX
             or path.startswith("/orena-brand/")
             or path == "/api/health"
             or path == "/api/readiness"
@@ -554,7 +560,7 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
         if not user_sub:
             if path.startswith("/api/"):
                 return JSONResponse({"detail": "Authentication required"}, status_code=401)
-            return RedirectResponse("/login", status_code=302)
+            return RedirectResponse(f"{LEARNER_UI_ROOT}#/welcome", status_code=302)
 
         user_token = _user_key.set(user_sub)
         language_token = _language_key.set(requested_language)

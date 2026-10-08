@@ -1,6 +1,6 @@
 /* Signing in to and out of the new learner UI: the pure decisions (shell/session.js), the 401 handler of
    infrastructure/api.js, and the signed-out Welcome/Account markup contract of the onboarding screen.
-   The server half (the /next allowlist, the callback, the logout) is tests/test_next_sign_in.py. */
+   The server half (the / allowlist, the callback, the logout) is tests/test_next_sign_in.py. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -11,21 +11,21 @@ import { entryRoute, match } from '../static/orena/shell/routes.js';
 
 const source = (path) => readFileSync(fileURLToPath(new URL(path, import.meta.url)), 'utf8');
 
-/* --- the return target is always inside the server's allowlist (/next, then / ? #) ---------------- */
+/* --- the return target is always inside the server's allowlist (/, then ? or #) ---------------- */
 {
   for (const mode of ['signup', 'login', undefined, 'anything']) {
     const href = signInHref(mode);
     assert.ok(href.startsWith(`${SIGN_IN_PATH}?next=`), 'the Google start, with a return target');
     const next = decodeURIComponent(href.slice(href.indexOf('=') + 1));
-    assert.match(next, /^\/next([/?#]|$)/, `next stays under /next: ${next}`);
+    assert.match(next, /^\/([?#]|$)/, `next stays at /: ${next}`);
     assert.ok(!next.includes('//') && !next.includes('\\') && !/\s/.test(next), 'no scheme, host, backslash or whitespace');
     assert.ok(!href.includes('#'), 'the fragment is encoded, so it reaches the server as part of next');
   }
-  assert.equal(decodeURIComponent(signInHref('signup').split('=')[1]), '/next#/welcome?step=languages', 'a new learner returns into setup at Languages');
-  assert.equal(decodeURIComponent(signInHref('login').split('=')[1]), '/next#/', 'a returning learner returns to the entry rule');
+  assert.equal(decodeURIComponent(signInHref('signup').split('=')[1]), '/#/welcome?step=languages', 'a new learner returns into setup at Languages');
+  assert.equal(decodeURIComponent(signInHref('login').split('=')[1]), '/#/', 'a returning learner returns to the entry rule');
   assert.equal(signInHref(), signInHref('signup'), 'an unknown mode is the first-visit one');
-  assert.equal(signOutUrl(), '/auth/logout?next=%2Fnext');
-  assert.equal(SIGN_OUT_NEXT, '/next');
+  assert.equal(signOutUrl(), '/auth/logout?next=%2F');
+  assert.equal(SIGN_OUT_NEXT, '/');
 }
 
 /* --- the entry decision after returning ---------------------------------------------------------- */
@@ -54,13 +54,15 @@ const source = (path) => readFileSync(fileURLToPath(new URL(path, import.meta.ur
   assert.equal(unauthorizedRoute('#/welcome'), null, 'already there: no loop');
   assert.equal(unauthorizedRoute('#/welcome?step=languages'), null);
   assert.equal(unauthorizedRoute('#/legal/terms'), null, 'the legal pages are read signed out');
-  assert.equal(signedOutDestination({ ok: true, next: '/next#/welcome' }), '/next#/welcome');
-  assert.equal(signedOutDestination({ ok: true }), '/next');
-  assert.equal(signedOutDestination({ next: 'https://evil.example' }), '/next', 'only a /next target is followed');
-  assert.equal(signedOutDestination(null), '/next');
+  assert.equal(signedOutDestination({ ok: true, next: '/#/welcome' }), '/#/welcome');
+  assert.equal(signedOutDestination({ ok: true }), '/');
+  assert.equal(signedOutDestination({ next: 'https://evil.example' }), '/', 'only a / target is followed');
+  assert.equal(signedOutDestination({ next: '//evil.example' }), '/', 'a protocol-relative target is not followed');
+  assert.equal(signedOutDestination({ next: '/admin-x' }), '/', 'a path other than / is not followed');
+  assert.equal(signedOutDestination(null), '/');
 }
 
-/* --- infrastructure/api.js: 401 calls the installed handler; the old UI keeps /login ------------- */
+/* --- infrastructure/api.js: 401 calls the installed handler; before one is installed, Welcome ------ */
 {
   const location = { href: '' };
   globalThis.location = location;
@@ -75,14 +77,14 @@ const source = (path) => readFileSync(fileURLToPath(new URL(path, import.meta.ur
   const { request, setUnauthorizedHandler } = await import('../static/orena/infrastructure/api.js');
 
   await assert.rejects(() => request('/api/me'), (error) => error.status === 401);
-  assert.equal(location.href, '/login', 'by default (the old UI) a 401 still goes to /login');
+  assert.equal(location.href, '/#/welcome', 'by default a 401 goes to Welcome (there is no /login page)');
 
   location.href = '';
   let calls = 0;
   setUnauthorizedHandler(() => { calls += 1; });
   await assert.rejects(() => request('/api/me'), (error) => error.status === 401, 'the error still reaches the caller');
   assert.equal(calls, 1, 'the new UI handler runs once per 401');
-  assert.equal(location.href, '', 'and /login is not visited');
+  assert.equal(location.href, '', 'and the default is not used');
 
   status = 500;
   await assert.rejects(() => request('/api/me'));
@@ -107,8 +109,8 @@ const source = (path) => readFileSync(fileURLToPath(new URL(path, import.meta.ur
   assert.ok(!/type="(email|password)"/.test(screen), 'no email or password field is built (UI_BACKEND_GAPS: Email sign-in)');
 
   const profile = source('../static/orena/screens/profile/screen.js');
-  assert.match(profile, /api\.logout\(SIGN_OUT_NEXT\)/, 'Sign out asks the server to return to /next');
-  assert.ok(!profile.includes("'/login'"), 'the new UI never sends a learner to the old sign-in page');
+  assert.match(profile, /api\.logout\(SIGN_OUT_NEXT\)/, 'Sign out asks the server to return to /');
+  assert.ok(!profile.includes("'/login'"), 'the learner UI never sends a learner to the retired sign-in page');
 
   // Every copy key the signed-out frames use exists in all three languages.
   const keys = ['haveAccount', 'signupTitle', 'signupSub', 'loginTitle', 'loginSub', 'tabSignup', 'tabLogin', 'googleCta', 'googleBusy', 'terms'];

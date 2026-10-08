@@ -1,4 +1,4 @@
-/* Entry of the new learner UI (D-088, D-091), served at /next until it replaces the old UI at /.
+/* Entry of the learner UI (D-088), served at / since the cutover (D-091, D-143).
 
    Boot: theme and device are already on the root (kit/boot.js); load the brand sprite, draw the
    frame, read who the learner is (shell/context.js), then hand over to the router. The old UI's
@@ -143,7 +143,7 @@ async function boot() {
       await brand;
       await useStyles('screens/admin/admin.css');
       const { renderNoAccess } = await import('./screens/admin/no-access.js');
-      renderNoAccess(app, { email: learner.user?.email, name: learner.name, backHref: '/next' });
+      renderNoAccess(app, { email: learner.user?.email, name: learner.name, backHref: '/' });
       return;
     }
     mount(app, html`<div class="o-error"><div class="o-error__card"><div class="o-error__text">${t('limited')}</div><a class="o-btn o-btn--secondary o-btn--sm" href="/account">${t('account')}</a></div></div>`);

@@ -2,8 +2,8 @@
    (scripts/test_orena_session.mjs) can pin them.
 
    The server only knows Google (auth_support.py). `/auth/google?next=...` accepts a return target that
-   must be `/next` or continue with `/`, `?` or `#`; anything else it replaces with `/next`, so what is
-   built here is always inside that allowlist and never a place of its own choosing.
+   must be `/` or continue with `?` or `#`; anything else it replaces with `/`, so what is built here is
+   always inside that allowlist and never a place of its own choosing.
 
    - A first sign-in from "Get started" returns into onboarding at its Languages step.
    - A sign-in from "I already have an account" returns to the empty address: the entry rule
@@ -14,11 +14,11 @@
 
 export const SIGN_IN_PATH = '/auth/google';
 export const SIGN_OUT_PATH = '/auth/logout';
-export const SIGN_OUT_NEXT = '/next';
+export const SIGN_OUT_NEXT = '/';
 
 const RETURN_TARGET = Object.freeze({
-  signup: '/next#/welcome?step=languages',
-  login: '/next#/',
+  signup: '/#/welcome?step=languages',
+  login: '/#/',
 });
 
 /* `mode` is the design's own: 'signup' (Get started, "Create account") or 'login' ("I already have an account", "Log in"). */
@@ -49,8 +49,8 @@ export function unauthorizedRoute(hash = '') {
   return '#/welcome';
 }
 
-/* Where Sign out goes. A server that did not name one (an older build) still ends at the new UI. */
+/* Where Sign out goes. A server that did not name one (an older build) still ends at the learner UI. */
 export function signedOutDestination(body) {
   const next = body && typeof body === 'object' ? body.next : '';
-  return typeof next === 'string' && next.startsWith('/next') ? next : SIGN_OUT_NEXT;
+  return typeof next === 'string' && /^\/(?:[?#]|$)/.test(next) ? next : SIGN_OUT_NEXT;
 }
