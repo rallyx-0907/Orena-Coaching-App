@@ -50,12 +50,13 @@
   height: 40px;
   padding: 0 14px;
   border-radius: 12px;
-  border: 1px solid var(--border2);
+  border: 0;
+  box-shadow: var(--edge-light), var(--sh1);
   background: var(--surface);
   font-size: 14px;
   font-weight: 500;
   color: var(--muted);
-  line-height: 38px;
+  line-height: 40px;
   flex: none;
 }
 
@@ -301,9 +302,10 @@
   min-height: 200px;
   text-align: left;
   color: var(--text);
-  transition: transform 0.15s;
+  transition: box-shadow 0.15s, transform 0.15s;
 }
 .s-today-hero:hover {
+  box-shadow: var(--sh2);
   transform: translateY(-1px);
 }
 .s-today-hero__deco {
@@ -340,10 +342,12 @@
   align-items: center;
   justify-content: center;
 }
+/* The kind label on the hero's --tint2: the accent read 4.0:1 (light) / 3.8:1 (dark), under AA for 13px text
+   (design review 2026-10-08); taken one step toward the text so it clears 4.5:1 and keeps its hue. */
 .s-today-hero__kind {
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent);
+  color: color-mix(in oklch, var(--accent), var(--text) 35%);
 }
 .s-today-hero__body {
   position: relative;

@@ -238,11 +238,12 @@ button.s-profile-tile:hover {
 }
 .s-profile-weekly {
   border-radius: 18px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: var(--edge-light);
 }
 .s-profile-weekly__head {
   display: flex;

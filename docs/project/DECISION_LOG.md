@@ -4525,3 +4525,20 @@ Pronunciation bấm vào thay vì là vào nơi chọn nguồn phát âm thì l�
 2. In the speaking room the way to change source is a labelled header button, "Choose source", beside Attempt
    history - not an item in the "…" sheet. The "…" sheet keeps only the line list and "Listen".
 3. The header's text buttons take D-147's light edge instead of a border2 outline.
+
+## D-150 - Cards are flat like Practice Hub's tiles; the light edge is flat
+
+2026-10-08, explicit human decision. Human: "các border của phần ngữ pháp đang bị sai … nó đang tạo cảm giác 3d nổi lên.
+hãy làm giống với đặc tính của các card trong practice hub."
+
+1. A card or card-like control is flat at rest, as Practice Hub's tiles: the surface, no resting shadow, no outline.
+   Hover is `--sh2` with a 2px lift (Practice Hub's own), refining D-148's 1px; selection is fill (a selected
+   category card is a deeper wash of its hue, still flat).
+2. `--edge-light` (D-147) is a flat, even hairline of light (`inset 0 0 0 1px`, white at .6 in light, .06 in dark),
+   never a top highlight, which read as a raised 3D card.
+3. Applied: Grammar Library, and the D-147 sweep of the learner UI (kit, shell, every screen's CSS except Admin):
+   full grey borders on controls and cards became the light edge; violet/grey state borders became fills; field
+   focus is a neutral `--text3` edge with elevation instead of the violet border and `--ring` halo; violet marker
+   bars and rings on selected rows/options were removed (their fill stays). Kept: dividers (single-side borders),
+   fields' resting borders (UX_REVIEW_RULES: an input's edge is a legitimate special case), the spinner, the mic
+   pulse and the keyboard focus ring.

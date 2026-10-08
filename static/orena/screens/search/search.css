@@ -85,12 +85,13 @@
 .s-search__chip {
   padding: 10px 14px;
   border-radius: 999px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
   min-height: 44px;
+  box-shadow: var(--edge-light);
 }
 .s-search__chip:hover {
   background: var(--surface2);

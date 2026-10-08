@@ -53,13 +53,14 @@
   height: 44px;
   padding: 0 16px;
   border-radius: 12px;
-  border: 1px solid var(--accent);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--accent);
   font-size: 14px;
   font-weight: 600;
   flex: none;
   gap: 8px;
+  box-shadow: var(--edge-light);
 }
 .s-gc__ask:hover {
   background: var(--accent-soft);
@@ -242,10 +243,11 @@
 .s-gc__mistake {
   padding: 14px 16px;
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow: var(--edge-light);
 }
 .s-gc__mline {
   display: flex;
@@ -308,13 +310,14 @@
   gap: 12px;
   padding: 14px 16px;
   border-radius: 14px;
-  border: 1.5px solid var(--border2);
+  border: 1.5px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 15px;
   font-weight: 400;
   text-align: left;
   width: 100%;
+  box-shadow: var(--edge-light);
 }
 .s-gc__optText {
   flex: 1;
@@ -415,8 +418,8 @@
   outline: 0;
 }
 .s-gc__tryInput:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--ring);
+  border-color: var(--text3);
+  box-shadow: var(--sh2);
 }
 [data-try-result]:empty {
   display: none;

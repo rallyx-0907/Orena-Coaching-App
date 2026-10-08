@@ -49,11 +49,13 @@ function searchable(row) {
 
 /* `rows` the catalogue points, `functions` its functions, `progress` the progress API's list, `current` the learner's
    declared level code; `state` = {level, cat, all, q, st, sort}. */
-export function buildLibrary({ rows = [], functions = [], progress = [], current = '', state = {}, support = 'en', t = (key) => key } = {}) {
+export function buildLibrary({ rows = [], functions = [], progress = [], current = '', state = {}, support = 'en', ui = '', t = (key) => key } = {}) {
   const list = sortCatalog(Array.isArray(rows) ? rows : []);
   const done = new Map((progress || []).map((entry) => [String(entry.point_id), entry]));
   const fnOrder = (Array.isArray(functions) ? functions : []).map((fn) => fn.id);
-  const fnName = new Map((functions || []).map((fn) => [fn.id, contractText(fn.title, support) || fn.id]));
+  // A category is navigation, so its name follows the interface language; a topic's meaning stays in the support
+  // language (design review 2026-10-08, UX rule 26).
+  const fnName = new Map((functions || []).map((fn) => [fn.id, contractText(fn.title, ui || support) || fn.id]));
 
   const levels = [];
   for (const row of list) {

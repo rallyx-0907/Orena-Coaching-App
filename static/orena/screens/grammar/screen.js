@@ -136,7 +136,7 @@ export default async function grammarLibrary(element, ctx) {
 
   function render() {
     const view = buildLibrary({
-      rows: data.points, functions: data.functions, progress, current: ctx.context.level || '', state, support: languages().support, t,
+      rows: data.points, functions: data.functions, progress, current: ctx.context.level || '', state, support: languages().support, ui: languages().ui, t,
     });
     const level = view.level.key;
     const percent = view.stats.total ? (view.stats.learned / view.stats.total) * 100 : 0;
@@ -238,5 +238,10 @@ export default async function grammarLibrary(element, ctx) {
     remember();
     render();
     if (seeAll) element.querySelector('[data-all]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // The page re-renders under the header; the control the learner pressed keeps the focus (design review 2026-10-08).
+    const again = (attr, value) => body.querySelector(`[${attr}="${CSS.escape(value)}"]`);
+    const keep = level ? again('data-level', level.dataset.level) : cat ? again('data-cat', cat.dataset.cat)
+      : chip ? again('data-chip', chip.dataset.chip) : viewButton ? again('data-view', viewButton.dataset.view) : null;
+    keep?.focus({ preventScroll: true });
   });
 }

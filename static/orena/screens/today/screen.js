@@ -159,7 +159,12 @@ export default async function mountToday(element, ctx) {
           <span class="s-today-hero__deco s-today-hero__deco--b"></span>
           <span class="s-today-hero__head">
             <span class="s-today-hero__icon" style="background:${hero.tint}">${raw(icon(hero.icon, { size: 20 }))}</span>
-            <span class="s-today-hero__kind">${[hero.kind, hero.durationLabel].filter(Boolean).join(' · ')}</span>
+            ${(() => {
+              // A continuation's kind is "Continue", which the button already says (design review 2026-10-08,
+              // UX rule §13): the label keeps only what the button does not.
+              const kind = [hero.source === 'continue' ? '' : hero.kind, hero.durationLabel].filter(Boolean).join(' · ');
+              return kind ? html`<span class="s-today-hero__kind">${kind}</span>` : '';
+            })()}
           </span>
           <span class="s-today-hero__body">
             <span class="s-today-hero__title">${wordTitle(hero)}</span>

@@ -84,7 +84,7 @@
    (`--border2`) - a real, recorded difference (kit request), plus the frame's translateY hover
    (kit's shared outline row only changes the shadow). */
 .s-practice-tile {
-  border-color: var(--border);
+  border-color: transparent;
 }
 .s-practice-tile:hover {
   transform: translateY(-2px);
@@ -124,7 +124,7 @@
 }
 .s-practice-hubrow:hover {
   box-shadow: none;
-  border-color: var(--accent);
+  border-color: transparent;
 }
 /* Confirmed live against the design source (09-Skill-Hub.html): the back button is 40x40/radius
    14 with a 20px title, not Grammar Concept's 40x40/radius 12 that pageHeader's `compact` variant

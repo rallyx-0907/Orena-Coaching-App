@@ -29,7 +29,7 @@
   height: 40px;
   border-radius: 12px;
   border: 0;
-  box-shadow: var(--edge-light), var(--sh1);
+  box-shadow: var(--edge-light);
   background: var(--surface);
   color: var(--text);
   display: flex;
@@ -71,7 +71,6 @@
   height: 44px;
   border-radius: 14px;
   background: var(--surface);
-  box-shadow: var(--sh1);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -96,7 +95,6 @@
   border-radius: 14px;
   border: 0;
   background: var(--surface);
-  box-shadow: var(--sh1);
   color: var(--text);
   font-family: inherit;
   font-size: 14px;
@@ -217,7 +215,7 @@
   padding: 0 16px;
   border-radius: 14px;
   border: 0;
-  box-shadow: var(--edge-light), var(--sh1);
+  box-shadow: var(--edge-light);
   background: var(--surface);
   color: var(--muted);
   font-size: 15px;
@@ -352,7 +350,6 @@
   border-radius: 20px;
   border: 0;
   background: var(--surface);
-  box-shadow: var(--sh1);
   color: var(--text);
   text-align: left;
   min-width: 0;
@@ -394,7 +391,7 @@
   border-radius: 20px;
   border: 0;
   background: linear-gradient(135deg, color-mix(in srgb, var(--hue) 18%, transparent) 0%, var(--surface) 62%);
-  box-shadow: var(--edge-light), var(--sh1);
+  box-shadow: var(--edge-light);
   color: var(--text);
   text-align: left;
   min-width: 0;
@@ -405,7 +402,7 @@
 }
 .s-gl__cat[aria-pressed='true'] {
   background: linear-gradient(135deg, color-mix(in srgb, var(--hue) 34%, transparent) 0%, var(--surface) 72%);
-  box-shadow: var(--edge-light), var(--sh2);
+  box-shadow: var(--edge-light);
 }
 .s-gl__catBody {
   flex: 1;
@@ -443,7 +440,6 @@
 .s-gl__panel {
   border-radius: 26px;
   background: var(--surface);
-  box-shadow: var(--sh1);
   padding: clamp(16px, 2.4vw, 24px);
   display: flex;
   flex-direction: column;
@@ -564,7 +560,7 @@
   height: 40px;
   border-radius: 12px;
   border: 0;
-  box-shadow: var(--edge-light), var(--sh1);
+  box-shadow: var(--edge-light);
   background: var(--surface);
   color: var(--text);
   font-family: inherit;
@@ -612,7 +608,7 @@
   padding: 0 14px;
   border-radius: 999px;
   border: 0;
-  box-shadow: var(--edge-light), var(--sh1);
+  box-shadow: var(--edge-light);
   background: var(--surface);
   color: var(--muted);
   font-size: 13.5px;
@@ -636,7 +632,6 @@
   border-radius: 16px;
   border: 0;
   background: var(--surface);
-  box-shadow: var(--sh1);
   color: var(--text);
   text-align: left;
   cursor: pointer;
@@ -686,7 +681,7 @@
   padding: 0 14px;
   border-radius: 12px;
   border: 0;
-  box-shadow: var(--edge-light), var(--sh1);
+  box-shadow: var(--edge-light);
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
@@ -699,7 +694,6 @@
    wash is darkened so a yellow or green tag stays legible. The dark theme keeps the frame's values. */
 .s-gl__all .s-gl__topic {
   background: var(--surface);
-  box-shadow: var(--sh1);
 }
 .s-gl__all .s-gl__topic:hover {
   background: var(--surface);
@@ -707,11 +701,10 @@
 }
 .s-gl__allEmpty {
   background: var(--surface);
-  box-shadow: var(--sh1);
 }
 :root:not([data-theme='dark']) .s-gl__views {
   background: var(--surface);
-  box-shadow: var(--edge-light), var(--sh1);
+  box-shadow: var(--edge-light);
 }
 :root:not([data-theme='dark']) .s-gl__view[aria-pressed='true'] {
   background: var(--accent-soft);
@@ -734,8 +727,8 @@
   color: color-mix(in oklch, var(--hue), white 30%);
 }
 
-/* Hover as every other card in the app (kit .o-card--hover, Today's cards; human, 2026-10-08): elevation to --sh2
-   and a 1px lift over 0.15s. No border appears (D-147). The panel's grey topic cards keep their surface3 hover. */
+/* Cards behave as Practice Hub's tiles (human, 2026-10-08): flat at rest (surface, no resting shadow, no raised
+   edge); hover = --sh2 and a 2px lift over 0.15s. No border appears (D-147). The panel's grey topic cards keep their surface3 hover. */
 .s-gl__cont,
 .s-gl__cat,
 .s-gl__topic,
@@ -746,8 +739,50 @@
 .s-gl__cat:hover,
 .s-gl__topic:hover,
 .s-gl__row:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--sh2);
 }
 .s-gl__panel .s-gl__topic:hover {
   box-shadow: var(--sh2);
+}
+
+/* ---- Design/UX review 2026-10-08 ---- */
+/* The selected count on the dark accent sat at 4.54:1; one fill step deeper. */
+:root[data-theme='dark'] .s-gl__level[aria-pressed='true'] .s-gl__levelN {
+  background: var(--accent-fill-hover);
+}
+/* A mouse press on a select paints no violet ring (D-147); the keyboard focus ring stays. */
+.s-gl__sort:focus:not(:focus-visible),
+.s-gl__status:focus:not(:focus-visible) {
+  outline: 0;
+}
+/* The search field shows that it has focus: elevation and full ink on its icon, no outline. */
+.s-gl__search {
+  transition: box-shadow 0.15s;
+}
+.s-gl__search:focus-within {
+  box-shadow: var(--edge-light), var(--sh2);
+  color: var(--text);
+}
+/* Rows that scroll sideways say so: their right edge fades. */
+.s-gl__chips,
+:root[data-device='mobile'] .s-gl__levels {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  padding-right: 28px;
+}
+/* Phone: every control is at least 44px to the touch. */
+:root[data-device='mobile'] .s-gl__back,
+:root[data-device='mobile'] .s-gl__sort,
+:root[data-device='mobile'] .s-gl__chip,
+:root[data-device='mobile'] .s-gl__seeAll,
+:root[data-device='mobile'] .s-gl__clear {
+  min-height: 44px;
+}
+:root[data-device='mobile'] .s-gl__back {
+  width: 44px;
+}
+:root[data-device='mobile'] .s-gl__view {
+  width: 44px;
+  height: 40px;
 }

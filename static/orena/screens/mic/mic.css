@@ -67,8 +67,9 @@
 }
 .s-mic__action--secondary {
   background: var(--surface);
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   color: var(--text);
+  box-shadow: var(--edge-light);
 }
 .s-mic__action--secondary:hover {
   background: var(--surface2);

@@ -93,7 +93,7 @@
   height: 48px;
   padding: 0 22px;
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 15px;
@@ -103,6 +103,7 @@
   justify-content: center;
   gap: 8px;
   white-space: nowrap;
+  box-shadow: var(--edge-light);
 }
 .s-collection-save:hover {
   background: var(--surface2);
@@ -135,10 +136,11 @@
   width: 100%;
   padding: 14px 16px;
   border-radius: 16px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
+  box-shadow: var(--edge-light);
 }
 .s-collection-word__body {
   flex: 1;

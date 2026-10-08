@@ -94,7 +94,8 @@
   box-shadow: var(--sh1);
 }
 .c-row--outline {
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
+  box-shadow: var(--edge-light);
 }
 .c-row--shadow:hover,
 .c-row--outline:hover {

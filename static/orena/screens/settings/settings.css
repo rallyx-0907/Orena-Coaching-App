@@ -175,11 +175,12 @@
   flex: none;
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 13px;
   font-weight: 600;
+  box-shadow: var(--edge-light);
 }
 /* The picker's button (D-098): the row's action button, with the current value and a chevron. */
 .s-settings-picker {

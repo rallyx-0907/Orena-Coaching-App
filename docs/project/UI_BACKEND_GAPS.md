@@ -4340,6 +4340,14 @@ backend cannot yet serve:
     in the browser at 1920 and 390 (code scan 2026-10-08: speak-summary has "Back to Practice Hub", lesson-complete
     is a sheet; unbuilt routes fall to Coming soon, which has Back); fix any that only the menu can leave.
   - **D-147/D-148 across the app:** remove default thin borders and violet edges, one card hover, no press box.
+    **Done 2026-10-08 for the learner UI** (D-150 sweep: 43 CSS files; no violet border measured on Today,
+    Discover, Practice, Speak hub, Library, Settings, Grammar, Progress, Profile, Search in light and dark).
+    **Open:** Admin (`screens/admin/admin.css`, 20 occurrences) and the remaining card hovers that lift 1px
+    (Today, kit `.o-card--hover`) against Practice Hub's 2px (D-150).
+  - **From the design/UX review of 2026-10-08, not yet done:** For-you cards all tagged "Continue" even without
+    progress (model: kind vs source); the For-you rail's bleed and scrollbar misaligned with the content column;
+    Chinese line breaks inside a word (今天…享/受); "0 day streak" beside two ticked days reads contradictory; the
+    Grammar breadcrumb/rail follow the origin and differ across reloads; level-row roving tabindex.
 
 ## Current Admin reconciliation — 2026-10-03
 
