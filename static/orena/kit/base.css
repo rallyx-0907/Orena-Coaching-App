@@ -100,6 +100,16 @@ button:disabled {
   transform: none !important;
 }
 
+/* No box flashed on a press (human, 2026-10-08, D-147): touch browsers paint a tap-highlight rectangle on every
+   pressed control, read as a border appearing on the card. The keyboard focus ring below stays. */
+button,
+a,
+summary,
+label,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

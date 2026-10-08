@@ -4501,3 +4501,15 @@ thì vẫn phải loại trừ lỗi này ra."
 4. **Not affected:** the keyboard focus ring (accessibility); progress rings and tracks, which are drawings, not edges.
 5. First applied: Grammar Library (level tabs, category cards, chips, back, sort, clear, view toggle). Other surfaces
    are brought to this rule as they are touched; a reviewer scores a violet outline as P1.
+
+## D-148 - One hover behaviour for every card; no box on a press
+
+2026-10-08, explicit human rule ("nên nhất quán hành vi animation khi hover với card cũ").
+
+1. Every clickable card in the learner UI hovers the way the existing cards do (kit `.o-card--hover`, Today's
+   cards): `box-shadow` to `--sh2` and `transform: translateY(-1px)`, transitioned over 0.15s. A surface may add its
+   own background step (a grey card to `--surface3`) but never a border (D-147) and never a different motion.
+2. Pressing a card or control paints no box: touch browsers' tap-highlight is off for buttons, links, labels,
+   summaries and `[role=button]` (kit `base.css`). The keyboard focus ring stays.
+3. First applied: Grammar Library (continue, category, topic and list cards). Other surfaces follow as they are
+   touched; a reviewer scores a card with a different hover, or a box on press, as P2 (P1 if it is a violet edge).

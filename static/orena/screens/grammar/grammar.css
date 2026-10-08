@@ -733,3 +733,21 @@
 :root[data-theme='dark'] .s-gl__tag {
   color: color-mix(in oklch, var(--hue), white 30%);
 }
+
+/* Hover as every other card in the app (kit .o-card--hover, Today's cards; human, 2026-10-08): elevation to --sh2
+   and a 1px lift over 0.15s. No border appears (D-147). The panel's grey topic cards keep their surface3 hover. */
+.s-gl__cont,
+.s-gl__cat,
+.s-gl__topic,
+.s-gl__row {
+  transition: box-shadow 0.15s, transform 0.15s, background 0.15s;
+}
+.s-gl__cont:hover,
+.s-gl__cat:hover,
+.s-gl__topic:hover,
+.s-gl__row:hover {
+  transform: translateY(-1px);
+}
+.s-gl__panel .s-gl__topic:hover {
+  box-shadow: var(--sh2);
+}
