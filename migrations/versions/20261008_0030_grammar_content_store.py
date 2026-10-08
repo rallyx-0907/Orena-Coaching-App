@@ -42,12 +42,13 @@ Reversible: `downgrade()` drops the triggers, their functions and the eight tabl
 re-importable from the export packages; no learner row is touched. The R5 map is content too: dropping it loses
 old-id resolution until the packages are re-imported (proposal section 16).
 
-Review and gate. This file is a PROPOSAL: it lives in `migrations/proposed/`, which Alembic does not read, so it is not
-a head and triggers no startup refusal. It moves to `migrations/versions/` (one `git mv`) only after the independent
-architecture review of proposal revision 3 approves it and the human authorizes it; the PostgreSQL rehearsal is
-`scripts/rehearse_grammar_content_store.py`. Startup never applies it (D-002); only `scripts/bootstrap_runtime_schema.py`
-does, after a backup, on the runtime the human names. `migrations/proposed/20261005_0026_ai_cost_records.py` is also
-parented on 20261007_0029: whichever of the two is promoted second is re-parented on the first.
+Review and gate. Proposal revision 3a, independent architecture review APPROVE at `b3ee8f09`
+(`GRAMMAR_CONTENT_STORE.REV3.INDEPENDENT_REVIEW.md`), rehearsed on a throwaway PostgreSQL 16
+(`scripts/rehearse_grammar_content_store.py`, `GRAMMAR_CONTENT_STORE.REHEARSAL.md`). Promoted from
+`migrations/proposed/` on 2026-10-08 on the human's authorization, in source control only: it is applied to no runtime
+by this change. Startup never applies it (D-002); only `scripts/bootstrap_runtime_schema.py` does, after a backup, on
+the runtime the human names. A PostgreSQL runtime that takes code at or after this revision refuses to start until it
+is applied (the readiness check compares the database with this head).
 
 Revision ID: 20261008_0030
 Revises: 20261007_0029

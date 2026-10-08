@@ -67,7 +67,11 @@ from sqlalchemy.engine import make_url  # noqa: E402
 from rehearse_learner_records_schema import refuse_unless_empty, refuse_unless_throwaway  # noqa: E402
 
 VERSIONS = ROOT / "migrations" / "versions"
-PROPOSAL = ROOT / "migrations" / "proposed" / "20261008_0030_grammar_content_store.py"
+_NAME = "20261008_0030_grammar_content_store.py"
+# Promoted into migrations/versions/ on 2026-10-08 (after the independent review). The rehearsal still runs a
+# proposal copy from a temporary version location when the file is only in migrations/proposed/.
+PROMOTED = (VERSIONS / _NAME).exists()
+PROPOSAL = VERSIONS / _NAME if PROMOTED else ROOT / "migrations" / "proposed" / _NAME
 HEAD = "20261007_0029"
 REV = "20261008_0030"
 # Export profile 1 at the Grammar Lab commit issue #99 names; its canonical-JSON SHA-256 pins the file.
@@ -528,24 +532,31 @@ def main() -> int:
     with engine.connect() as conn:
         server = conn.execute(text("SHOW server_version")).scalar()
     print("server:", server)
-    proposal_dir = Path(tempfile.mkdtemp(prefix="grammar-store-proposal-"))
-    shutil.copy(PROPOSAL, proposal_dir / PROPOSAL.name)
+    proposal_dir = None
+    if not PROMOTED:
+        proposal_dir = Path(tempfile.mkdtemp(prefix="grammar-store-proposal-"))
+        shutil.copy(PROPOSAL, proposal_dir / PROPOSAL.name)
     try:
         return run(args, engine, proposal_dir, server, profile)
     finally:
-        shutil.rmtree(proposal_dir, ignore_errors=True)
+        if proposal_dir is not None:
+            shutil.rmtree(proposal_dir, ignore_errors=True)
 
 
-def run(args, engine, proposal_dir: Path, server: str, profile: Profile) -> int:
+def run(args, engine, proposal_dir: Path | None, server: str, profile: Profile) -> int:
     cfg_v, cfg_p = alembic_config(args.url, None), alembic_config(args.url, proposal_dir)
 
     # 1. chain -------------------------------------------------------------------------------------------------------
     heads_v = ScriptDirectory.from_config(cfg_v).get_heads()
     script_p = ScriptDirectory.from_config(cfg_p)
     heads_p = script_p.get_heads()
-    check("1 versions/ alone: single head 20261007_0029", heads_v == [HEAD], str(heads_v))
-    check("1 with the proposal: single head 20261008_0030, parented on the versions head",
-          heads_p == [REV] and script_p.get_revision(REV).down_revision == heads_v[0], f"{heads_p}")
+    if PROMOTED:
+        check("1 promoted: migrations/versions/ has the single head 20261008_0030, parented on 20261007_0029",
+              heads_v == [REV] and script_p.get_revision(REV).down_revision == HEAD, str(heads_v))
+    else:
+        check("1 versions/ alone: single head 20261007_0029", heads_v == [HEAD], str(heads_v))
+        check("1 with the proposal: single head 20261008_0030, parented on the versions head",
+              heads_p == [REV] and script_p.get_revision(REV).down_revision == heads_v[0], f"{heads_p}")
 
     # 2. 0029 + progress ----------------------------------------------------------------------------------------------
     timed("upgrade empty -> 0029 (real chain)", lambda: command.upgrade(cfg_v, HEAD))
@@ -944,8 +955,12 @@ def run(args, engine, proposal_dir: Path, server: str, profile: Profile) -> int:
     check("12 every version stored in this run was validated against export profile 1 before import; no body carries a"
           " non-contract key", profile.validated == stored and leaked == 0,
           f"validated={profile.validated} stored={stored}")
-    check("12 nothing applied outside this database: versions/ has no 0030 and its head stays 20261007_0029",
-          not list(VERSIONS.glob("*_0030_*")) and ScriptDirectory.from_config(cfg_v).get_heads() == [HEAD])
+    if PROMOTED:
+        check("12 the chain this rehearsal ran is the source chain: versions/ head 20261008_0030 on 20261007_0029",
+              ScriptDirectory.from_config(cfg_v).get_heads() == [REV])
+    else:
+        check("12 nothing applied outside this database: versions/ has no 0030 and its head stays 20261007_0029",
+              not list(VERSIONS.glob("*_0030_*")) and ScriptDirectory.from_config(cfg_v).get_heads() == [HEAD])
 
     # Final down: the rehearsal database returns to 0029 with progress intact.
     timed("final downgrade 0030 -> 0029 (with content loaded)", lambda: command.downgrade(cfg_p, HEAD))

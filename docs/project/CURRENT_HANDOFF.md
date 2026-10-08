@@ -41,8 +41,8 @@ Design/review: `proposals/VOCABULARY_LOCALIZATION.md` (+ .REVIEW); gaps VL-1..5.
 S1 source admission (e74735b): READING_SOURCE_ADMISSION_CHECKPOINT.md; level/source breadth,
 enrichment/questions/fidelity open. Preserve S3 a8e7914: VOCABULARY_COLLECTION_CHECKPOINT.md. Grammar deferred.
 
-Grammar prerequisites (`0d5732c`): PR67/68 integrated; no Store/API. Store rev3 +
-proposed 0030 await independent review (#99). GRAMMAR_INTEGRATION_CHECKPOINT.md evidence.
+Grammar Store (#99): 0030 promoted (applied nowhere); backend+API on codex/work, real
+595-point import rehearsed; UI wiring awaits the human. GRAMMAR_CONTENT_STORE.IMPLEMENTATION.md.
 
 Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
 Azure/Skin (`7857d43`) local125/Node/review pass. Azure browser evidence/limits:
@@ -80,7 +80,7 @@ Foundation/Wave A/B REVIEWABLE; history: PROJECT_STATE.md "New learner UI migrat
 ## PENDING
 
 Human: none for :8011 (deferred, D-102);
-PR67/68 independently reviewed and integrated; canonical Grammar Store/API remains
+PR67/68 independently reviewed and integrated; Grammar Store/API built, UI pending
 (D-111.4). Upstream GitHub PR state is unverified; integration is local only.
 Architecture approval is not evidence that the runtime already exists.
 

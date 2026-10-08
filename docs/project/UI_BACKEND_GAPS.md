@@ -4265,6 +4265,10 @@ backend cannot yet serve:
   `jsonschema` dependency (D-106.8). UI lane after that: a Grammar entry in the existing Imports flow (preview,
   confirm, receipt) - its layout is a human design decision since the pin draws none - and the two readers of
   `grammar-source.js` pointed at `/api/grammar/v1/*`; screens 44/47 do not change.
+  **Update 2026-10-08 (issue #99):** the backend side is BUILT on `codex/work` (migration 0030 promoted, applied to
+  no runtime; store, export-profile-1 validator/importer, `/api/admin/grammar/*`, `/api/grammar/v1/*`, progress/R5),
+  and the real 595-point corpus imports and publishes on a throwaway PostgreSQL. The UI side above is unchanged and
+  waits for the human's handoff decision: `proposals/GRAMMAR_CONTENT_STORE.IMPLEMENTATION.md`, "STOP".
 
 ## Current Admin reconciliation — 2026-10-03
 
