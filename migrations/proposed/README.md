@@ -18,12 +18,12 @@ after the review and authorization its own docstring names.
 **Open proposal:** `20261001_0024_media_entries.py` (MEDIA_METADATA_POSTGRES.md rev 2; APPROVE WITH CONDITIONS,
 awaiting the human's authorization). If it is promoted after 0025, re-parent it on `20261004_0025`.
 
-**Open proposal:** `20261008_0030_grammar_content_store.py` (GRAMMAR_CONTENT_STORE.md rev 3, issue #99; awaiting the
-independent architecture review of rev 3, then the human's authorization). Eight new shared-content tables, no existing
-table touched; parent `20261007_0029`. Rehearsed on a throwaway PostgreSQL 16 with
-`scripts/rehearse_grammar_content_store.py` (GRAMMAR_CONTENT_STORE.REHEARSAL.md); review scope in
-GRAMMAR_CONTENT_STORE.REV3_REVIEW_REQUEST.md. `20261005_0026_ai_cost_records.py`
-has the same parent: whichever is promoted second is re-parented on the first.
+**Promoted 2026-10-08:** `20261008_0030_grammar_content_store.py` (GRAMMAR_CONTENT_STORE.md rev 3a, issue #99;
+independent architecture review APPROVE at `b3ee8f09`, PR #100; rehearsed on a throwaway PostgreSQL 16 with
+`scripts/rehearse_grammar_content_store.py`). The human authorized the promotion in source control only: it is applied
+to no runtime by that change, and every PostgreSQL runtime that takes this code must apply it (operator step, after a
+backup, on the runtime the human names) before it starts. `20261005_0026_ai_cost_records.py` was re-parented on it
+(`down_revision = "20261008_0030"`), as the 0030 proposal said the second of the two would be.
 
 **Promoted 2026-10-04:** `20261004_0025_vocabulary_sense_localizations.py` (D-124, VOCABULARY_LOCALIZATION.md rev 2,
 independent review APPROVE WITH CONDITIONS, conditions closed, PostgreSQL 16 rehearsal at 100k entries). The human

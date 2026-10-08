@@ -31,7 +31,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PINNED = "3579ece887c226b31d03b759b720261b8fa1d31d"
-MIGRATION = ROOT / "migrations" / "proposed" / "20261008_0030_grammar_content_store.py"
+MIGRATION = ROOT / "migrations" / "versions" / "20261008_0030_grammar_content_store.py"
 RESULTS: list[tuple[str, bool, str]] = []
 
 # What revision 3 of the proposal specifies at the boundary (sections 5.1, 5.2, 9.2, 10, 11).
