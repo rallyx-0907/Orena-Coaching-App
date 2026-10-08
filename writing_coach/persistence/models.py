@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -1574,3 +1575,249 @@ def _reading_lifecycle_triggers(target, connection, **_kw) -> None:  # noqa: ANN
     for statement in SQLITE_TRIGGERS:
         if statement.split(None, 3)[2] not in existing:
             connection.exec_driver_sql(statement)
+
+
+# --- Grammar content store (migration 20261008_0030; GRAMMAR_CONTENT_STORE.md rev 3a, D-105.4, D-106) -------------------
+# Shared content, not learner data: no table here carries a learner, and none has a foreign key to a table outside
+# this group. The SQL of every CHECK and partial index is the migration's, verbatim, so `create_all` (the hermetic test
+# schema) and the chain agree; `tests/test_grammar_store_schema_parity.py` holds them together.
+
+_GRAMMAR_PUBLISHED_HAS_PROJECTION = (
+    "lifecycle <> 'published' OR (function_id IS NOT NULL AND level_framework IS NOT NULL AND level_value IS NOT NULL"
+    " AND level_rank IS NOT NULL AND sequence IS NOT NULL AND point_type IS NOT NULL AND native_title IS NOT NULL"
+    " AND published_at IS NOT NULL)"
+)
+
+
+class GrammarImportBatch(Base):
+    __tablename__ = "grammar_import_batches"
+    __table_args__ = (
+        CheckConstraint("status IN ('imported', 'rejected')", name="ck_grammar_import_batches_status"),
+        CheckConstraint(
+            "status <> 'imported' OR (language_code IS NOT NULL AND package_hash IS NOT NULL"
+            " AND export_profile IS NOT NULL AND profile_schema_hash IS NOT NULL AND schema_version IS NOT NULL"
+            " AND set_version IS NOT NULL AND source_commit IS NOT NULL AND exported_at IS NOT NULL"
+            " AND manifest IS NOT NULL)",
+            name="ck_grammar_import_batches_imported_complete",
+        ),
+        CheckConstraint(
+            "(rights_basis IS NULL AND rights_attestation IS NULL AND rights_attested_by IS NULL"
+            " AND rights_attested_at IS NULL)"
+            " OR (rights_basis IN ('orena_original', 'licensed', 'other') AND rights_attestation IS NOT NULL"
+            " AND rights_attested_by IS NOT NULL AND rights_attested_at IS NOT NULL AND status = 'imported')",
+            name="ck_grammar_import_batches_rights",
+        ),
+        CheckConstraint(
+            "new_count >= 0 AND changed_count >= 0 AND unchanged_count >= 0 AND refused_count >= 0"
+            " AND unlisted_count >= 0",
+            name="ck_grammar_import_batches_counts",
+        ),
+        Index(
+            "uq_grammar_import_batches_package", "package_hash", unique=True,
+            postgresql_where=text("status = 'imported'"), sqlite_where=text("status = 'imported'"),
+        ),
+        Index("ix_grammar_import_batches_recent", "created_at", "id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    language_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    package_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    export_profile: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    profile_schema_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    schema_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    set_version: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    source_commit: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    exported_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False, server_default="")
+    new_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    changed_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    unchanged_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    refused_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    unlisted_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    diff: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    refusals: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    manifest: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    rights_basis: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    rights_attestation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rights_attested_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    rights_attested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    imported_by: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GrammarFunction(Base):
+    __tablename__ = "grammar_functions"
+
+    id: Mapped[str] = mapped_column(String(120), primary_key=True)
+    title: Mapped[dict] = mapped_column(JSON, nullable=False)
+    batch_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("grammar_import_batches.id", ondelete="RESTRICT"), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GrammarPoint(Base):
+    __tablename__ = "grammar_points"
+    __table_args__ = (
+        CheckConstraint("lifecycle IN ('unpublished', 'published', 'archived')", name="ck_grammar_points_lifecycle"),
+        CheckConstraint(
+            "substr(id, 1, length(language_code) + 1) = language_code || '.'", name="ck_grammar_points_id_language"
+        ),
+        CheckConstraint(_GRAMMAR_PUBLISHED_HAS_PROJECTION, name="ck_grammar_points_published_projection"),
+        Index("ix_grammar_points_catalog", "language_code", "lifecycle", "level_rank", "function_id", "sequence"),
+    )
+
+    id: Mapped[str] = mapped_column(String(120), primary_key=True)
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    lifecycle: Mapped[str] = mapped_column(String(20), nullable=False, server_default="unpublished")
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    unpublished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    function_id: Mapped[str | None] = mapped_column(
+        ForeignKey("grammar_functions.id", ondelete="RESTRICT"), nullable=True
+    )
+    level_framework: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    level_value: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    level_rank: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    sequence: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    point_type: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    native_title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    native_title_pinyin: Mapped[list | None] = mapped_column(JSON, nullable=True)
+
+
+class GrammarPointVersion(Base):
+    """Immutable content. PostgreSQL enforces it by trigger (migration 0030); elsewhere the repository never updates
+    a content column (tested)."""
+
+    __tablename__ = "grammar_point_versions"
+    __table_args__ = (
+        UniqueConstraint("point_id", "version", name="uq_grammar_point_versions_version"),
+        UniqueConstraint("point_id", "content_hash", name="uq_grammar_point_versions_hash"),
+        CheckConstraint("version >= 1", name="ck_grammar_point_versions_version"),
+        CheckConstraint("length(content_hash) = 64", name="ck_grammar_point_versions_hash"),
+        CheckConstraint("source_status = 'approved'", name="ck_grammar_point_versions_source"),
+        CheckConstraint(
+            "review_status IN ('imported', 'accepted', 'rejected')", name="ck_grammar_point_versions_review"
+        ),
+        CheckConstraint(
+            "rights_status IN ('unknown', 'cleared', 'restricted')", name="ck_grammar_point_versions_rights"
+        ),
+        CheckConstraint(
+            "is_published = false OR (review_status = 'accepted' AND rights_status = 'cleared')",
+            name="ck_grammar_point_versions_publishable",
+        ),
+        CheckConstraint("is_published = false OR superseded_at IS NULL", name="ck_grammar_point_versions_superseded"),
+        Index(
+            "uq_grammar_point_versions_published", "point_id", unique=True,
+            postgresql_where=text("is_published"), sqlite_where=text("is_published"),
+        ),
+        Index("ix_grammar_point_versions_review", "review_status", "imported_at"),
+        Index("ix_grammar_point_versions_batch", "batch_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    point_id: Mapped[str] = mapped_column(ForeignKey("grammar_points.id", ondelete="RESTRICT"), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[dict] = mapped_column(JSON, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_status: Mapped[str] = mapped_column(String(20), nullable=False)
+    review_status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="imported")
+    is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rights_status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="unknown")
+    provenance: Mapped[dict] = mapped_column(JSON, nullable=False)
+    batch_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("grammar_import_batches.id", ondelete="RESTRICT"), nullable=False
+    )
+    imported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reviewed_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class GrammarR5Map(Base):
+    __tablename__ = "grammar_r5_map"
+    __table_args__ = (
+        CheckConstraint(
+            "disposition IN ('replaced', 'merged', 'split_primary', 'split_secondary', 'dropped')",
+            name="ck_grammar_r5_map_disposition",
+        ),
+        CheckConstraint(
+            "(disposition = 'dropped' AND point_id IS NULL) OR (disposition <> 'dropped' AND point_id IS NOT NULL)",
+            name="ck_grammar_r5_map_dropped",
+        ),
+        CheckConstraint(
+            "(is_primary = true AND disposition IN ('replaced', 'merged', 'split_primary'))"
+            " OR (is_primary = false AND disposition IN ('split_secondary', 'dropped'))",
+            name="ck_grammar_r5_map_primary",
+        ),
+        UniqueConstraint("language_code", "r5_id", "point_id", name="uq_grammar_r5_map_piece"),
+        Index(
+            "uq_grammar_r5_map_resolution", "language_code", "r5_id", unique=True,
+            postgresql_where=text("is_primary OR point_id IS NULL"),
+            sqlite_where=text("is_primary OR point_id IS NULL"),
+        ),
+        Index("ix_grammar_r5_map_point", "point_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    language_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    r5_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    point_id: Mapped[str | None] = mapped_column(ForeignKey("grammar_points.id", ondelete="RESTRICT"), nullable=True)
+    disposition: Mapped[str] = mapped_column(String(20), nullable=False)
+    is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    batch_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("grammar_import_batches.id", ondelete="RESTRICT"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GrammarPointErrorTag(Base):
+    __tablename__ = "grammar_point_error_tags"
+    __table_args__ = (Index("ix_grammar_point_error_tags_tag", "error_tag"),)
+
+    point_id: Mapped[str] = mapped_column(ForeignKey("grammar_points.id", ondelete="CASCADE"), primary_key=True)
+    error_tag: Mapped[str] = mapped_column(String(80), primary_key=True)
+    has_mistake: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
+
+
+class GrammarReviewEvent(Base):
+    """Append-only (PostgreSQL trigger, migration 0030); written in the same transaction as the change."""
+
+    __tablename__ = "grammar_review_events"
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('imported', 'accepted', 'rejected', 'rights_set', 'rights_attested', 'published',"
+            " 'unpublished', 'archived', 'restored', 'function_label_changed', 'r5_map_changed')",
+            name="ck_grammar_review_events_action",
+        ),
+        Index("ix_grammar_review_events_point", "point_id", "created_at"),
+        Index("ix_grammar_review_events_batch", "batch_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    point_id: Mapped[str | None] = mapped_column(ForeignKey("grammar_points.id", ondelete="RESTRICT"), nullable=True)
+    version_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("grammar_point_versions.id", ondelete="RESTRICT"), nullable=True
+    )
+    batch_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("grammar_import_batches.id", ondelete="RESTRICT"), nullable=True
+    )
+    actor: Mapped[str] = mapped_column(String(255), nullable=False)
+    action: Mapped[str] = mapped_column(String(40), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    changes: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GrammarCatalogState(Base):
+    """Per-language catalogue revision, the ETag source. No seed row: a missing language reads as revision 0."""
+
+    __tablename__ = "grammar_catalog_state"
+    __table_args__ = (CheckConstraint("revision >= 0", name="ck_grammar_catalog_state_revision"),)
+
+    language_code: Mapped[str] = mapped_column(String(20), primary_key=True)
+    revision: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

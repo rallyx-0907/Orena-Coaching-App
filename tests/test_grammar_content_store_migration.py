@@ -1,12 +1,14 @@
-"""The PROPOSED grammar content store migration (20261008_0030; GRAMMAR_CONTENT_STORE.md revision 3).
+"""The grammar content store migration (20261008_0030; GRAMMAR_CONTENT_STORE.md revision 3a).
 
 Hermetic, on SQLite (the CI backend): where the file lives and what it chains on, that it creates the eight content
-tables and nothing else, that its database-level rules hold on this dialect too, and that its downgrade returns the
-schema exactly. The PostgreSQL proof (triggers, locks, 100,000 progress rows, read plans, the ETag read order) is
+tables and nothing else, that its database-level rules hold on this dialect too, that its downgrade returns the
+schema exactly, and that the ORM models (`create_all`, the hermetic test schema) say what the migration says. The
+PostgreSQL proof (triggers, locks, 100,000 progress rows, read plans, the ETag read order) is
 `scripts/rehearse_grammar_content_store.py`, run by hand on a throwaway database.
 
-The gate (AGENTS section 1, issue #99): until the independent architecture review approves revision 3 and the human
-authorizes it, the migration stays in `migrations/proposed/` and no Store/API code exists. Two tests below hold that line.
+History: the migration was a proposal behind an architecture gate (issue #99) until the independent review approved
+revision 3a (PR #100) and the human authorized its promotion into `migrations/versions/` (2026-10-08, source control
+only; it is applied to no runtime by that change).
 """
 from __future__ import annotations
 
@@ -25,7 +27,7 @@ from alembic.script import ScriptDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 NAME = "20261008_0030_grammar_content_store.py"
-PROPOSAL = ROOT / "migrations" / "proposed" / NAME
+MIGRATION = ROOT / "migrations" / "versions" / NAME
 TABLES = {
     "grammar_import_batches", "grammar_functions", "grammar_points", "grammar_point_versions", "grammar_r5_map",
     "grammar_point_error_tags", "grammar_review_events", "grammar_catalog_state",
@@ -34,19 +36,17 @@ NOW = datetime(2026, 10, 8, tzinfo=UTC)
 
 
 def _migration():
-    spec = importlib.util.spec_from_file_location("proposed_0030", PROPOSAL)
+    spec = importlib.util.spec_from_file_location("migration_0030", MIGRATION)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-def _versions_head() -> str:
+def _script() -> ScriptDirectory:
     cfg = Config(str(ROOT / "alembic.ini"))
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
     cfg.set_main_option("path_separator", "os")
-    heads = ScriptDirectory.from_config(cfg).get_heads()
-    assert len(heads) == 1, heads
-    return heads[0]
+    return ScriptDirectory.from_config(cfg)
 
 
 def _apply(engine, step: str) -> None:
@@ -59,6 +59,12 @@ def _schema(engine) -> set[tuple]:
         return set(connection.execute(sa.text("SELECT type, name, tbl_name, sql FROM sqlite_master")).all())
 
 
+def _without_grammar(engine) -> None:
+    from writing_coach.persistence.models import Base
+
+    Base.metadata.create_all(engine, tables=[t for name, t in Base.metadata.tables.items() if name not in TABLES])
+
+
 @pytest.fixture()
 def store():
     engine = sa.create_engine("sqlite://", future=True)
@@ -67,37 +73,51 @@ def store():
     engine.dispose()
 
 
-def test_the_migration_is_a_proposal_not_in_the_chain():
-    assert PROPOSAL.exists()
-    assert not (ROOT / "migrations" / "versions" / NAME).exists()
-    assert not list((ROOT / "migrations" / "versions").glob("*_0030_*.py"))
-
-
-def test_it_is_parented_on_the_real_current_head_and_its_revision_slot_is_unique():
-    migration = _migration()
-    assert migration.revision == "20261008_0030"
-    assert migration.down_revision == _versions_head() == "20261007_0029"
+def test_the_migration_is_promoted_and_is_the_chain_head_on_0029():
+    assert MIGRATION.exists()
+    assert not (ROOT / "migrations" / "proposed" / NAME).exists()
+    script = _script()
+    assert script.get_heads() == ["20261008_0030"]
+    assert script.get_revision("20261008_0030").down_revision == "20261007_0029"
     revisions = [
         re.search(r'^revision = "([^"]+)"', path.read_text(encoding="utf-8"), re.M).group(1)
         for folder in ("versions", "proposed") for path in (ROOT / "migrations" / folder).glob("2*.py")
     ]
-    assert revisions.count("20261008_0030") == 1
     assert [rev for rev in revisions if rev.endswith("_0030")] == ["20261008_0030"]
 
 
-def test_no_store_code_exists_before_the_gate():
-    """Issue #99: no ORM model, repository or route for the content tables until the review approves."""
+def test_the_orm_says_what_the_migration_says():
+    """`create_all` (the hermetic schema every store test uses) and the migration build the same grammar tables:
+    columns, nullability, defaults, indexes (with their WHERE), CHECKs, uniques and foreign keys."""
     from writing_coach.persistence.models import Base
 
-    assert not TABLES & set(Base.metadata.tables)
-    for path in [ROOT / "app.py", *(ROOT / "writing_coach").rglob("*.py")]:
-        source = path.read_text(encoding="utf-8")
-        assert "/api/grammar/v1" not in source, path
-        assert "/api/admin/grammar" not in source, path
+    def grammar(engine) -> dict[str, tuple]:
+        inspector = sa.inspect(engine)
+        out = {}
+        for table in sorted(TABLES):
+            columns = tuple((c["name"], str(c["type"]), c["nullable"], str(c.get("default"))) for c in
+                            inspector.get_columns(table))
+            indexes = tuple(sorted((i["name"], tuple(i["column_names"]), bool(i["unique"]),
+                                    str(i.get("dialect_options", {}).get("sqlite_where"))) for i in
+                                   inspector.get_indexes(table)))
+            checks = tuple(sorted((c["name"], re.sub(r"\s+", " ", c["sqltext"])) for c in
+                                  inspector.get_check_constraints(table)))
+            uniques = tuple(sorted((u["name"], tuple(u["column_names"])) for u in inspector.get_unique_constraints(table)))
+            fks = tuple(sorted((tuple(f["constrained_columns"]), f["referred_table"], tuple(f["referred_columns"]),
+                                str(f.get("options", {}).get("ondelete"))) for f in inspector.get_foreign_keys(table)))
+            out[table] = (columns, indexes, checks, uniques, fks)
+        return out
+
+    by_migration = sa.create_engine("sqlite://", future=True)
+    _apply(by_migration, "upgrade")
+    by_orm = sa.create_engine("sqlite://", future=True)
+    Base.metadata.create_all(by_orm, tables=[Base.metadata.tables[name] for name in TABLES])
+    assert grammar(by_orm) == grammar(by_migration)
 
 
 def test_no_grammar_point_json_ships_with_the_source():
-    """D-105.4: content does not ship as JSON with the application source."""
+    """D-105.4: content does not ship as JSON with the application source. The vendored export-profile schema is a
+    schema, not content, and is the one grammar JSON file allowed under writing_coach/."""
     point_file = re.compile(r"^(en|zh)\.[a-z0-9_]+(\.[a-z0-9_]+)*\.json$")
     shipped = [
         path.relative_to(ROOT).as_posix()
@@ -106,13 +126,14 @@ def test_no_grammar_point_json_ships_with_the_source():
         if point_file.match(path.name)
     ]
     assert shipped == []
+    grammar_json = sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / "writing_coach").rglob("*.json")
+                          if "grammar_store" in p.as_posix())
+    assert grammar_json == ["writing_coach/grammar_store/schema/export_profile.schema.json"]
 
 
 def test_upgrade_adds_only_the_eight_tables_and_downgrade_restores_the_schema_exactly():
-    from writing_coach.persistence.models import Base
-
     engine = sa.create_engine("sqlite://", future=True)
-    Base.metadata.create_all(engine)
+    _without_grammar(engine)
     before = _schema(engine)
     _apply(engine, "upgrade")
     after = _schema(engine)
