@@ -266,6 +266,23 @@ def test_external_references_must_resolve_in_the_store(repo):
 
 # --- review, rights, publish -------------------------------------------------------------------------------------------
 
+def test_the_admin_list_names_each_point_and_its_newest_version(repo):
+    """The Admin review queue (proposals/ADMIN_GRAMMAR_UI.md G3) draws from the list alone."""
+    outcome = commit(repo, package([body("en.a"), body("en.b", sequence=2)]))
+    rows = repo.list_points()
+    assert rows and all(row["header"]["native_title"] for row in rows), "named before publish, from the version"
+    assert all(row["level"] and row["function"] for row in rows)
+    first = rows[0]
+    assert first["latest_version"]["version"] == 1
+    assert first["latest_version"]["review_status"] == "imported"
+    assert first["latest_version"]["rights_status"] == "unknown"
+    assert first["latest_version"]["is_published"] is False
+    assert first["latest_version"]["id"] == version_id(repo, first["id"])
+    accept_all(repo, outcome)
+    assert {row["latest_version"]["review_status"] for row in repo.list_points()} == {"accepted"}
+    assert {row["latest_version"]["rights_status"] for row in repo.list_points()} == {"cleared"}
+
+
 def test_the_publish_gate_needs_accept_and_cleared_and_the_attestation_may_come_after_import(repo):
     outcome = commit(repo, package([body("en.a")]))
     vid = version_id(repo, "en.a")
