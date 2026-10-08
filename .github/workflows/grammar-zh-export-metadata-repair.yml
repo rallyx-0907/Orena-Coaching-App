@@ -68,10 +68,35 @@ jobs:
           print(f"normalized total: {changed_total}")
           PY
 
-      - name: Rebuild catalogue and synchronize derived metadata
+      - name: Rebuild catalogue and synchronize affected headers
+        shell: bash
         run: |
           python -m grammar_lab.pipeline.cli import-canonical --lang zh
-          python -m grammar_lab.pipeline.cli sync-metadata
+          python - <<'PY'
+          from grammar_lab.pipeline.content_store import load_point, point_path
+          from grammar_lab.pipeline.generate import pinyin_from_pairs
+          from grammar_lab.pipeline.jsonio import write_json
+          from grammar_lab.pipeline.seed import load_catalog
+          from grammar_lab.pipeline.validate import LAB_ROOT
+
+          changed = []
+          for row in load_catalog("zh", LAB_ROOT):
+              point_id = row["id"]
+              point = load_point("zh", point_id, LAB_ROOT)
+              if point is None:
+                  continue
+              header = dict(point.get("header") or {})
+              native = row["native_title"]
+              desired_pinyin = pinyin_from_pairs(native)
+              if header.get("native_title") == native and header.get("native_title_pinyin") == desired_pinyin:
+                  continue
+              header["native_title"] = native
+              header["native_title_pinyin"] = desired_pinyin
+              point["header"] = header
+              write_json(point_path("zh", point_id, LAB_ROOT), point)
+              changed.append(point_id)
+          print(f"synchronized {len(changed)} ZH header(s)")
+          PY
 
       - name: Validate full Chinese corpus
         run: |
@@ -103,9 +128,7 @@ jobs:
             grammar_lab/inventory/canonical_v1/zh.yaml \
             grammar_lab/inventory/seeds_zh.yaml \
             grammar_lab/inventory/catalog_zh.yaml \
-            grammar_lab/content/zh \
-            grammar_lab/functions/functions.yaml \
-            grammar_lab/fixtures/ui
+            grammar_lab/content/zh
           git diff --cached --stat
           git diff --cached --quiet && exit 0
           git commit -m "fix(grammar): normalize zh export metadata"
