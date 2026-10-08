@@ -99,6 +99,7 @@ def _signed_in_setup(monkeypatch, nonce_echo=True):
     monkeypatch.setattr(auth_support, "ensure_user_db", lambda: None)
     monkeypatch.setattr(auth_support, "upsert_auth_user", lambda info: {"google_sub": "sub-1", "email": "a@example.com"})
     monkeypatch.setattr(auth_support, "maybe_claim_legacy_data", lambda email, sub: False)
+    monkeypatch.setattr(auth_support, "GOOGLE_REDIRECT_URI", "http://testserver/auth/google/callback")
 
     def verify(token, request, audience):
         return {"email_verified": True, "nonce": _FakeFlow.seen.get("nonce") if nonce_echo else "forged", "sub": "sub-1"}
@@ -323,3 +324,43 @@ def test_logout_clears_the_session_and_names_a_validated_target(monkeypatch):
     assert bodies[2] == {"ok": True, "next": "/#/welcome"}
     assert bodies[3] == {"ok": True, "next": "/#/welcome"}, "the former address is read as /"
     assert [b["next"] for b in bodies[4:]] == ["/", "/", "/"]
+
+
+# ---- sign-in starts on the host Google returns to ------------------------------------------------
+# Google always returns to GOOGLE_REDIRECT_URI. The state lives in the session cookie, which belongs to the host
+# the sign-in started on: started at http://localhost:8000 and returned to the public domain, the state is missing
+# and the callback answers "Invalid OAuth state." (:8000, 2026-10-08).
+
+
+def _start_on(monkeypatch, base_url, params):
+    _signed_in_setup(monkeypatch)
+    monkeypatch.setattr(auth_support, "GOOGLE_REDIRECT_URI", "https://orena.example/auth/google/callback")
+    _FakeFlow.seen = {}
+
+    async def go():
+        transport = httpx.ASGITransport(app=app_module.app)
+        async with httpx.AsyncClient(transport=transport, base_url=base_url) as client:
+            return await client.get("/auth/google", params=params)
+
+    return _run(go())
+
+
+def test_a_sign_in_started_on_another_host_moves_to_the_public_host_first(monkeypatch):
+    response = _start_on(monkeypatch, "http://localhost:8000", {"next": "/#/today"})
+    assert response.status_code == 302
+    assert response.headers["location"] == "https://orena.example/auth/google?next=%2F%23%2Ftoday&canonical=1"
+    assert _FakeFlow.seen == {}, "no state is created on the wrong host"
+    assert "set-cookie" not in response.headers, "nothing is written to the wrong host's session"
+
+
+def test_a_sign_in_on_the_public_host_goes_straight_to_google(monkeypatch):
+    response = _start_on(monkeypatch, "https://orena.example", {"next": "/#/today"})
+    assert response.status_code == 302
+    assert response.headers["location"].startswith("https://accounts.example/auth?state=")
+    assert _FakeFlow.seen["state"]
+
+
+def test_the_move_happens_at_most_once_so_a_proxy_that_rewrites_host_cannot_loop(monkeypatch):
+    response = _start_on(monkeypatch, "http://web-behind-proxy:8000", {"next": "/", "canonical": "1"})
+    assert response.status_code == 302
+    assert response.headers["location"].startswith("https://accounts.example/auth?state="), "falls back to today's flow"
