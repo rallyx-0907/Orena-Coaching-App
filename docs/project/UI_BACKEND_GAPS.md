@@ -4872,3 +4872,208 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   - The app now says so instead of offering a permission loop (BUG-01).
   - A trusted https address for :8021 needs Tailscale Serve, which must be enabled for the tailnet. That is an
     admin action the lane cannot take.
+
+## Speaking design audit (D-129), 2026-10-07
+
+- **S-24 Conversation: the partner cannot speak first. RESOLVED** (commit named in the log).
+  - `POST /api/dictionary/conversation-turn` takes `opening: true` with a scenario and optional level and no
+    learner turn, and returns the partner's first line and its meaning (`reply_to` null, `opening` true). Conversation
+    draws it as the first partner bubble (thinking state while it comes; the quiet "reply didn't come through" caption
+    with Retry on failure, no made-up line).
+  - Remaining limit: the opening line is not a stored turn. The account conversation record alternates learner,
+    partner from a learner first turn (`work_repository._append_turn`, D4), and changing that is a persistence
+    decision reserved for the human and an independent reviewer. The line is kept on the device with the
+    conversation and sent back as `opening_line` context; a conversation resumed on another device from the account
+    record shows the scenario text as its first bubble instead (as before this change).
+
+## Speaking Compare: reviewing a past attempt (D-139), 2026-10-07
+
+- **S-13a A stored attempt has no word timing and no audio.**
+  - What the account keeps per attempt (`POST /api/speech/attempts`, `evidence.pronunciation`): each word's text,
+    score, miscue type and sounds, plus accuracy, completeness, prosody and the heard text. It does not keep
+    each word's offset/duration, the line's pace against the model, or audio (D-076).
+  - Effect: an attempt only the account remembers opens in Compare with scores, word detail, sounds and the heard
+    text, but its pitch plots, Timing tab and pace chip show "unavailable", and Play has nothing to play of "you".
+    An attempt this tab still holds keeps all of it.
+  - Needed (backend, not done): offset/duration per word in the stored evidence if past attempts should show
+    timing. The UI draws nothing it does not have.
+- **S-13b "Clear" on the embedded Attempt history card.** The frame's card has a Clear button for the prototype's
+  browser-only history. Orena's attempts are the account's record and no delete route exists, so it is not drawn.
+- **S-13c Similarity / Intonation on Compare and the Attempt history card (D-139 HD-7 note, D-141). BUILT, client side.**
+  `product/pitch-match.js` measures a take against the prepared model clip (D-140): Intonation is the correlation of
+  the two pitch melodies over their voiced spans (negative counted as 0); Timing is how far each word's start and end
+  sit from the model's, each within its own speech span; Similarity is 0.6 x Intonation + 0.4 x Timing, only when
+  both exist. Figures appear only for a take this tab holds audio for, against a model with a measured contour; the
+  Timing part needs verified model word timing, so a model whose timing is estimated ("est.", D-140) gives
+  Intonation only and no Similarity. Otherwise nothing is shown and the card keeps Pronunciation / Accuracy /
+  Fluency. Not built: the frame's Chinese "Tones %" (a per-syllable tone-shape check; Chinese shows Intonation
+  and Similarity under the same labels) and "Pace" in the history rows. A past attempt only the account remembers
+  has no audio, so it has no figure (S-13a).
+- **S-10a IPA alphabet is implied, not returned.** English sounds are IPA because the provider is asked for
+  `PhonemeAlphabet: IPA` (en-US); the stored evidence does not carry the alphabet. A provider that labels sounds
+  differently would show those labels. The stress hint line has no provider source and is not drawn.
+- **S-15a "This session" is a client notion (D-139 HD-8).** The server keeps no session. Speaking Summary treats the
+  tasks this browser tab logged since it opened (`product/speaking-session.js`, session storage) as the session;
+  a new tab, or a task made on another device, is not in it, and the summary then shows the last 7 days. A
+  server session would need a session id on `POST /api/speech/attempts` (backend, not done). Proposed (D-141, awaiting
+  independent review and human authorization): `docs/project/proposals/PRACTICE_SESSION_IDENTITY.md`.
+- **S-01a Recommended for Speak names a real line, not a mode (D-139 HD-1).** There is no recommender service; the
+  card is the learner's weakest line by its latest verified attempt, opened only while its media is still readable.
+  Weakness by mode (Conversation, Free Talk) has no stored score and is not recommended.
+- **S-17 Free Talk Linking is a count (D-139 HD-9).** `screens/free-talk/linking.js` counts the linking words in the
+  transcript from a short authored list per language (English, Chinese; any other language uses the English list).
+  It counts devices, not their quality, and the lists are not exhaustive; a richer detector would be a backend/NLP
+  decision.
+- **S-20 Conversation level is per-conversation request data (D-139 HD-10).** `ConversationIn.level` (B1 / B2 / C1,
+  optional) sets the partner's language in `POST /api/dictionary/conversation-turn`. It is not persisted by the
+  account conversation record (`/api/conversations/*`, schema reserved by D-104), so a conversation resumed from
+  another device carries on at the level the chips open on. Learners whose declared level is not a CEFR B1-C1 code
+  (A-levels, HSK) open on B1; the chips cannot express a second scheme.
+- **S-26 Situation Reaction Intent / Clarity cards (D-139 HD-13). RESOLVED.** `POST /api/dictionary/spoken-response`
+  asks, in the same single call and only when a situation is given, for `intent_achieved` (yes / partly / no) and
+  `clarity` (clear / mostly / unclear), each with one short reason in the support language, judged from the
+  transcript's words (never how they sounded). The server returns each only when its verdict is in the vocabulary and
+  its reason is non-empty; otherwise the key is absent. Situation Reaction draws the frame's two cards only for a
+  judgement that is present. These are model judgements of the words, not measurements. The context chip is built
+  from each scenario's authored `context` (`content/voice-invitations.js`, English and Chinese, in the learning
+  language like the scenario); there is no support-language translation of scenario text to follow.
+- **S-27 YouTube sources have no prepared model clip yet (D-140). Cause found; fix not made.**
+  - Model clips are cut at content readiness from the admitted source (`writing_coach/model_clips.py`; backfill
+    `scripts/backfill_model_clips.py`). Curated catalogue media and stored uploads are prepared. A YouTube import has
+    no source file at rest (the transcript pipeline fetches its audio "for this step only"), so the backfill acquires
+    it through `media_providers.youtube_audio.download_audio`.
+  - Measured on :8021 (2026-10-07, one bounded attempt on `source-01637ff7...`, plus a dry run): the SSRF / unsafe
+    fetch guard is NOT what refuses. The resolved audio host (`*.googlevideo.com`) resolves to a public address,
+    `validate_public_http_url` passes and the connected peer is public. The message "The media address could not be
+    fetched." (an `UnsafeMediaFetch` only by class) wraps an HTTP 403 from the media host: the signed audio URL
+    (format 140, no `ratebypass`) answers a plain, un-ranged GET with 403 and answers a ranged GET
+    (`Range: bytes=0-1048575`) with 206, with either the app's or yt-dlp's own headers. `download_bounded` issues one
+    un-ranged GET.
+  - Needed (not done, the fix is in the shared fetch code `media_safe_fetch.download_bounded`, which this lane does not
+    change): a ranged, chunked download that sends each `Range` request through the same `_open` (re-validating the
+    address and the connected peer every time) and stops at the byte budget. The same defect should also stop the
+    transcript pipeline's audio fallback for YouTube sources whose captions are not good enough, so it is worth one
+    independent look. Until then those lessons keep an unavailable model plot; the read route answers 404 "not
+    prepared", Compare shows the plot as unavailable, and nothing cuts on open (D-121).
+  - **Owner: shared Media Learning / Codex lane (human decision 2026-10-07).** The Speaking lane stops at this
+    diagnosis and does not modify the shared YouTube acquisition transport. After the transport fix, the Speaking side
+    needs only a re-run of `scripts/backfill_model_clips.py` (bounded, idempotent) on the runtime that holds the
+    imports.
+
+
+## Writing design audit (D-129), 2026-10-07
+
+- **W-17 Respond to Content has no Write-hub entry.** The design lists "Respond to Content" ("From an article or video")
+  under Write > Respond and opens its Respond frame with a source. Its Respond frame draws no hand-off into the Writing
+  room, and the built Respond room (`#/respond/:id`) needs a content id (`media:<lesson>` or `<kind>:<id>`) that only
+  Listening's end / Reader's "More" menu supply. Nothing in the hubs can name "which content" without choosing for the
+  learner (a last-opened-content rule would be a product decision, like Speaking's last line, D-139 HD-3). So the hubs do
+  not list it (D-101 H9) and the Write hub's "Respond" group is absent. Needed: a decision on the source of the content
+  (recent content, or the content chooser as Pronunciation / Dictation use) before the entry can be drawn.
+- **W-03 Continue learning shows one card per unfinished scenario.** Each opening of the Conversation room starts a
+  conversation record of its own; the learner who leaves the same scenario unfinished twice has two records. Continue
+  offers the newest once; the others stay in "Recently opened". No backend change.
+- **Dismissed findings are per visit.** The design's toast says a dismissed finding "won't count as an open issue".
+  Orena has no server field for it, so the finding leaves the marks, the lists, the dimension counts and the Next bar
+  for the visit; a reload shows it again. Needed only if the human wants dismissal to persist (a learner record, D4).
+
+
+## Speaking review batch (LEX-050, LEX-051), 2026-10-07
+
+- **LEX-051 Free Talk has no per-topic phrase source.** The topic bank (`content/voice-invitations.js`) authors a title,
+  prompt, cue and context per topic, but no chunks or useful phrases. The only evidence the screen holds is the topic's
+  own words, so a saved library item is called "related to your topic" only when it appears inside them (a Chinese item
+  as a substring, an English item as a word of four letters or more); otherwise the learner's recent saved short items
+  are shown as "From your library", secondary, never as help for the topic. Needed for real topic scaffolds: authored
+  speaking chunks per topic and language in the content bank (a content decision, no AI call), or a server relevance
+  signal for the library.
+- **LEX-050 Provider tone is not measured.** The word's tones come from the lesson's own reading (pinyin), per syllable;
+  the provider returns pronunciation scores per syllable but no tone judgement, so the screen names the syllable the
+  assessment scored lowest (matched by its label, and only when exactly one syllable fits) and never says which tone the
+  learner produced. Owner of anything beyond that: the assessment/provider layer.
+
+## Places design audit (D-129), 2026-10-07
+
+- **P-06 No topic vocabulary in the content model.** `reading_articles.topic` and the listening/vocabulary topics are
+  open text, and internal or test tags ("sandbox-test") sit in the same field. Discover (`screens/discover/model.js`
+  `KNOWN_TOPICS`) now shows a topic only when it names one of 20 known topics (translated EN / VI / ZH in `copy.js`), on
+  cards and in the Filter Sheet; every other tag is hidden. Needed: a closed, authored topic taxonomy (or a tag
+  namespace, e.g. `topic:`) in the content model, with the translations owned by the content bank; Search's meta line
+  still prints the raw topic. Owner: content architecture.
+- **HP-2 Notifications have no typed events, unread state or Mark all read.** The bell lists what the device already
+  knows (due review; started items from the continuation, newest first). Finished items now leave the list and a row
+  shows "when" only when the server's place carries `place_at` (a device-made place has none). Still needed, reserved by
+  D-104: a typed notification record (Writing review ready, Media ready, System) with a time, and a per-account read
+  state behind Mark all read and the unread dot. No persistence was added.
+- **HP-6 Banners.** The offline banner has Retry (re-checks `navigator.onLine`; still offline says so). The design's
+  "Streak at risk", "Goal reached" and "Upload failed" banners stay absent: there is no measured daily goal (N-21) and no
+  upload-failure signal to base them on. The design's "Downloaded lessons still work" line is not drawn because offline
+  lessons do not exist.
+- **P-03, P-05, P-09 Covers.** Content without a cover draws a type-tinted tile (`kit/cover-visuals.js`); real covers
+  (a poster per article, a cover per collection) remain a content gap (N-19).
+- **P-19 Support language is 12 options.** The platform lists 12 support languages, more than a segmented control holds
+  (`SEGMENTED_MAX_OPTIONS`, D-098), so it stays a picker; its options are named by endonym (`kit/lang.js`
+  `SUPPORT_ENDONYMS`) in every interface language. The design's two-option segmented sample needs a decision on which
+  support languages Orena ships.
+- **P-18 Plan names.** The catalogue (`writing_coach/product/catalog.py`) returns English `name` and `description`; the
+  UI translates them by plan id (`copy/shell.js` `planName`, `planDescription`). A new plan needs its words there.
+
+## Vocabulary review batch (LEX-066 to LEX-071, 2026-10-07)
+
+- **LEX-066 Word page for a word not yet saved.** The word lookup (`POST /api/dictionary/word-detail`) is context-based and
+  returns no pinyin and a generic "meaning in this context" for a bare headword. The UI now carries the catalogue card's
+  `pronunciation` and `meanings[]` from the list that opened the word (`product/word-seed.js`) and asks
+  `/api/vocabulary/catalogue/search` for a direct link; the catalogue search has no pronunciation field (`readings` is
+  empty), so a directly opened unsaved Chinese word still has a meaning but no pinyin. Owner: BACKEND (readings on the
+  catalogue search row). With no meaning anywhere the page says so.
+- **LEX-067 Collections content.** Test collections ("QA Collection practice ZH", "QA dictionary localization ...",
+  "[Mau kiem thu] ...") are published with `provenance.label = test-sample` or QA names. The UI does not hide them: every
+  published collection in this environment is one, so hiding would empty the tab. Owner: CONTENT (replace or unpublish; a
+  learner list should filter `provenance.label = test-sample` server-side). Collections have no cover image field; they
+  draw the type tile. The collection description and "met in your sources" count do not exist; the count is no longer drawn
+  as 0.
+- **LEX-070 Saved language data.** Rows without a Vietnamese localization show the English meaning tagged "English";
+  a Han-script `definition` under a non-Chinese support language is tagged "Chinese". The saved entry
+  "相关条目会在下方展开" is an interface sentence saved as a word (learner data, not deleted); the Saved-content media entry
+  `asset:youtube-9xIf7Tb0ykU` has no title and `availability: unavailable` (the UI says "Untitled · No longer available").
+  Owner: CONTENT / BACKEND (localizations for the saved catalogue words; cleanup of the two records by the owner of the account).
+- **LEX-071 Icons and tab names.** The design gives Due Review and Daily feed one icon and Collections and Saved language
+  another; the build uses flame (Daily feed) and bookmark (Saved language) from lucide-static. "Active use" is the design's
+  tab name and is unchanged. Human decision.
+- **LEX-062 Earlier drafts** are device memory (the account holds the copies under `expression:parked:<n>` but no list), so
+  on another device the list is empty. Owner: CONTRACT (account draft list).
+- **LEX-072 Word lookup latency.** `POST /api/dictionary/word-detail` (depth full) is AI-backed and measured about 3.2 s on
+  the sandbox for an uncached word; the saved-record read and clips answer in about 25 ms. Word Detail now paints from the
+  list's seed and the saved record at once and fills the explanation, clips and deep word in when the lookup returns. A
+  word opened with no seed and no record still waits for the lookup. Owner: BACKEND (cache or precompute the catalogue
+  word's detail).
+- **LEX-075 Content description and related.** The Reading article list/detail carries no description and an empty
+  `topic`; D-130 forbids showing the first lines of the body as one, so the block stays hidden until an administrator
+  writes one. Related items are chosen by a shared topic, level or author; with nothing shared the section is hidden.
+  Related and Discover tiles for covers without artwork are the type tile (HP-3 A) and look alike. Owner: CONTENT.
+- **LEX-079 Plan and audio controls.** Plan "Manage" and "Delete audio" stay inert (no plan-change flow, no route that
+  deletes stored audio); the row now says why. Usage meters with no measure read "Not measured yet". Owner: BACKEND.
+- **LEX-081 Discover topics, Profile name.** Topic filter values come from the vetted vocabulary applied to the catalogue
+  (only Daily life and Science occur today): CONTENT. The design draws the streak twice on Profile (hero tile and stats
+  card); kept as drawn. A local session has no name (BUG-06).
+
+## Signing in to the new UI (2026-10-07)
+
+- **SIGN-1 Email sign-in.** Onboarding.dc.html draws the Account frame with Name, Email and Password fields, a submit
+  button and "or with email". The backend has Google only (`auth_support.py`), so the new UI draws the title and sub by
+  mode, the Create account / Log in switch, "Continue with Google" and the terms line, and **no email form**. The
+  design's name and password fields have no backend. Owner: BACKEND / human decision (an email-and-password or
+  magic-link provider is an authentication architecture change, reviewed independently, HO-2 b).
+- **SIGN-2 Terms line.** The design's second sentence ("Your recordings are only used to give you feedback.") is a
+  product claim the build does not make; the line reads "By continuing you agree to the Terms and Privacy Policy." with
+  no links. Owner: human (wording) and CONTENT (the legal pages exist at `#/legal/...`).
+- **SIGN-3 Claiming the lane's existing data.** `maybe_claim_legacy_data` copies only the SQLite English file
+  (`WRITING_DB`) to the first Google account whose email is `BOOTSTRAP_OWNER_EMAIL`, and only when that account has no
+  such file. Everything held in PostgreSQL under the local key `legacy` (account settings, the learner profile, D4
+  records, imports) is **not** moved: the first Google sign-in on :8021 starts an empty account, and the `legacy` data
+  stays where it is. A claim path for PostgreSQL rows is learner-data persistence, reserved (AGENTS section 7); not built.
+- **SIGN-4 Internal-review gate.** An account that is not an administrator still meets the plain "limited" notice after
+  signing in (`main.js`). The account that signs in to try the app must be `BOOTSTRAP_OWNER_EMAIL` or in
+  `PLATFORM_ADMIN_EMAILS`.
+- **SIGN-5 One origin per runtime.** `GOOGLE_REDIRECT_URI` must equal `PUBLIC_BASE_URL` + `/auth/google/callback`
+  (`deployment.py`), so one container signs in on one origin: `http://localhost:8021` or the tailnet name, not both.

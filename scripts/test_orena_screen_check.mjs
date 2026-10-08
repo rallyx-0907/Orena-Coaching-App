@@ -111,8 +111,8 @@ assert.equal('pct' in summary, false, "the headline is the source's fraction, no
 assert.equal(t('resultHeadline', { correct: summary.correctCount, total: summary.total }), 'You understood 1 / 3');
 // One chip per graded question, in order, "<type> · Correct|Missed" - the third (ungraded) question contributes none.
 assert.deepEqual(summary.chips, [
-  { label: typeLabel('main_idea', t), result: 'Correct', ok: true },
-  { label: typeLabel('inference', t), result: 'Missed', ok: false },
+  { label: typeLabel('main_idea', t), result: 'Correct', ok: true, index: 0 },
+  { label: typeLabel('inference', t), result: 'Missed', ok: false, index: 1 },
 ]);
 
 // Two questions of one type are two chips, never a merged tally.

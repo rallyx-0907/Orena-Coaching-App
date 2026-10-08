@@ -2,6 +2,7 @@
    boundaries come from the real source; dictionary readings are deterministic.
    Ephemeral projections reuse existing domain APIs, not a second data authority. */
 import { lineUnits, placeWords } from './speaking-line.js';
+import { decodeAudio, analyse } from '../capabilities/audio-analysis.js';
 import { toneOf } from '../capabilities/pronunciation-result.js';
 import { isRemovedContent, removedImportError, onRemovedImports } from './import-removed.js';
 
@@ -52,7 +53,10 @@ export function decorateComparison(view, source, reference) {
   if (!view) return view;
   const positions=placeWords(source.line.text,view.words || [],source.language);
   const words=(view.words || []).map((word,index)=>{
-    const reading=readingFor(word.text,reference,source.language,positions[index]?.start) || word.pinyin || '';
+    /* English: IPA is only what the assessment provider returned for this word (D-139 HD-5), never a
+       dictionary's; nothing returned, nothing shown. Chinese: the lesson's own pinyin. */
+    const reading=source.language === 'en' ? (word.phonemes || []).map(unit=>unit.label).join('')
+      : readingFor(word.text,reference,source.language,positions[index]?.start) || word.pinyin || '';
     return {...word,reading,...(source.language === 'zh' && reading ? {pinyin:reading,toneTarget:reading.split(/\s+/).map(toneOf).filter(n=>n!=null)} : {})};
   });
   const intervals=(reference?.words || []).filter(timed);
@@ -61,10 +65,33 @@ export function decorateComparison(view, source, reference) {
   return {...view,words,timing};
 }
 
-export async function loadComparisonReference(source, {onUpdate=()=>{}} = {}) {
+/* Where a model's words sit when no verified word timing exists (D-140, labelled "est." - D-137 L-13):
+   the voiced span of the measured contour, shared out by how much each word has to say - its letters
+   (English), one share per Han character and a Latin run by its letters (Chinese). A guess, flagged as
+   one, and only ever made when the contour has at least two voiced points. */
+export function estimateModelWords(text, language, model) {
+  const voiced=(model?.contour || []).filter(point=>point?.st!=null && finite(point.t));
+  if (voiced.length<2) return [];
+  const hop=model.contour.length>1 ? Math.max(0,model.contour[1].t-model.contour[0].t) : 0.01;
+  const from=voiced[0].t, to=voiced.at(-1).t+hop;
+  const units=lineUnits(text,language).filter(unit=>unit.unit);
+  const weight=unit=>language==='zh' && /^\p{Script=Han}$/u.test(unit.text) ? 1 : [...unit.text].filter(ch=>/[\p{L}\p{N}]/u.test(ch)).length;
+  const total=units.reduce((sum,unit)=>sum+weight(unit),0);
+  if (!units.length || total<=0 || to<=from) return [];
+  const span=(to-from)*1000;
+  let used=0;
+  return units.map(unit=>{
+    const offsetMs=Math.round(from*1000+span*used/total);
+    used+=weight(unit);
+    const end=Math.round(from*1000+span*used/total);
+    return {text:unit.text,offsetKnown:true,offsetMs,durationMs:Math.max(1,end-offsetMs),estimated:true};
+  });
+}
+
+export async function loadComparisonReference(source, {onUpdate=()=>{},fetchImpl=globalThis.fetch,decode=decodeAudio,analyse:measure=analyse} = {}) {
   // A workspace projects admitted source artifacts. It never prepares a source.
   const words=(source.line.wordTimings || []).filter(timed);
-  const state={readings:{},positionReadings:[...(source.line.positionReadings || [])],words,model:null,
+  const state={readings:{},positionReadings:[...(source.line.positionReadings || [])],words,model:null,timingEstimated:false,
     readingState:'unavailable',audioState:source.hasModelAudio?'ready':'unavailable',
     alignmentState:words.length?'ready':'unavailable'};
   // An authored Chinese reading has one syllable per Han character; a Latin word in the line has none (LEX-031).
@@ -75,6 +102,26 @@ export async function loadComparisonReference(source, {onUpdate=()=>{}} = {}) {
   });
   for (const word of words) if (word.ipa) state.readings[keyOf(word.text)]=word.ipa;
   state.readingState=state.positionReadings.length || Object.keys(state.readings).length?'ready':'unavailable';
+  // The one network read a reference makes: the clip prepared at content readiness, and only when the lesson
+  // says it exists (D-140). Absent a prepared clip nothing is fetched and the model plot is unavailable.
+  if (source.line.modelClipUrl) {
+    try {
+      const response=await fetchImpl(source.line.modelClipUrl,{credentials:'same-origin'});
+      if (!response.ok) throw Error('model_clip_unavailable');
+      state.model=measure(await decode(await response.blob()));
+      if (!words.length) {
+        const estimated=estimateModelWords(source.line.text,source.language,state.model);
+        if (estimated.length) {
+          state.words=estimated;
+          state.timingEstimated=true;
+          state.alignmentState='ready';
+        }
+      }
+    } catch {
+      state.model=null;
+      state.audioState='unavailable';
+    }
+  }
   onUpdate(state);
   return state;
 }

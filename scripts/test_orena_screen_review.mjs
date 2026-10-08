@@ -13,6 +13,7 @@ import {
   scheduleLabel,
   GRADES,
   initialStats,
+  nextDueLabel,
   tally,
   reviewCard,
   MODES,
@@ -165,5 +166,16 @@ assert.equal(countsForSession('kept'), true, 'an answer waiting on the device is
 assert.equal(countsForSession('failed'), false);
 assert.equal(countsForSession('missing'), false);
 assert.equal(countsForSession('aborted'), false);
+
+// --- HV-2 B (V-04): the Lesson complete modal's "next review" is the soonest measured time ---
+{
+  const plural = Object.assign((k) => k, { plural: (k, n) => `${k}:${n}` });
+  const now = Date.parse('2026-10-07T10:00:00Z');
+  assert.equal(nextDueLabel(['2026-10-07T10:10:00Z', '2026-10-09T10:00:00Z'], now, plural), 'scheduleMinutes:10', 'the soonest card decides');
+  assert.equal(nextDueLabel(['2026-10-07T13:00:00Z'], now, plural), 'scheduleHours:3');
+  assert.equal(nextDueLabel(['2026-10-10T10:00:00Z'], now, plural), 'scheduleDays:3');
+  assert.equal(nextDueLabel([], now, plural), '', 'nothing measured, nothing said');
+  assert.equal(nextDueLabel(['not a date'], now, plural), '');
+}
 
 console.log('test_orena_screen_review.mjs: Review Session data mapping - real scheduler contract, rule 40 throughout: PASS');

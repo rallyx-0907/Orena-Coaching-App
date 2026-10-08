@@ -9,11 +9,13 @@
    their own words, no model sentence"; and real coaching on the real answer,
    `POST /api/dictionary/spoken-response` (the same endpoint and shape as Free Talk/Conversation).
    The frame's own Intent-achieved / Clarity result grid has no real measurement to bind - dropped
-   (rule 40/D-076), not reproduced with a client-side word-count or regex heuristic. */
+   (rule 40/D-076), not reproduced with a client-side word-count or regex heuristic. It is drawn only
+   when the coaching response carries those judgements (D-139 HD-13); today's `spoken-response` shape
+   never does (UI_BACKEND_GAPS). Each scenario carries an authored `context`, the chip above it. */
 import { voiceInvitations } from '../../content/voice-invitations.js';
 
 export function scenarios(language) {
-  return voiceInvitations(language).map((item) => ({ key: item.key, title: item.title, scenario: item.prompt }));
+  return voiceInvitations(language).map((item) => ({ key: item.key, title: item.title, scenario: item.prompt, context: item.context }));
 }
 
 /* The frame's header subtitle states the mode's defining constraint and a real position in the
@@ -26,4 +28,16 @@ export function progressLabel(index, total) {
    instead, preferring the concrete `say_again` line over the looser `another_way` prose. */
 export function naturalAlternative(coaching) {
   return String(coaching?.say_again || coaching?.another_way || '').trim();
+}
+
+/* S-26: the two judgement cards of the result. The coaching response carries `intent_achieved` and `clarity`
+   ({ verdict, reason }) only when the provider returned a valid one; anything else is not drawn. */
+const INTENT = ['yes', 'partly', 'no'];
+const CLARITY = ['clear', 'mostly', 'unclear'];
+function judged(raw, verdicts) {
+  const reason = typeof raw?.reason === 'string' ? raw.reason.trim() : '';
+  return verdicts.includes(raw?.verdict) && reason ? { verdict: raw.verdict, reason } : null;
+}
+export function situationJudgements(coaching) {
+  return { intent: judged(coaching?.intent_achieved, INTENT), clarity: judged(coaching?.clarity, CLARITY) };
 }

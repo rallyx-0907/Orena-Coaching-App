@@ -6,7 +6,8 @@
    - not the Writing-only streak of /api/dashboard. */
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
-import { mediaCard, sectionHead } from '../../kit/components.js';
+import { mediaCard, sectionHead, settleCovers } from '../../kit/components.js';
+import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
@@ -19,6 +20,7 @@ import {
   buildForYou,
   usedRecommendationIds,
   buildStreak,
+  leadWithContinuation,
   todayDateLabel,
   buildGreeting,
   buildHeadSubtitle,
@@ -26,6 +28,10 @@ import {
 } from './model.js';
 
 const PROMPT_SKIPPED = 'orena.today.levelPromptSkipped';
+
+/* The tile a For-you card without a cover draws: by its route (a continued item) or its source. */
+const FOR_YOU_COVER = Object.freeze({ listening: 'listen', dictation: 'listen', shadow: 'listen', speak: 'speak', compare: 'speak', conv: 'speak', writingDraft: 'write', writing: 'write', gconcept: 'grammar', word: 'vocab', review: 'vocab', reader: 'read' });
+const forYouCover = (item) => COVER_VISUALS[FOR_YOU_COVER[item.routeId] || FOR_YOU_COVER[item.source]] || null;
 
 function promptSkipped(language) {
   try {
@@ -58,9 +64,9 @@ export default async function mountToday(element, ctx) {
   // first_due_word}. A rejected/aborted call is a rule-40 empty queue, never an invented one.
   const review = reviewResult.status === 'fulfilled' ? reviewResult.value : { due_count: 0, first_due_word: '' };
 
-  const pool = buildRecommendationPool({ reading, listening: listeningItems, speaking: speakingItems, review, language }, t);
-  const usedIds = usedRecommendationIds(pool);
   const continuation = Array.isArray(state.memory?.value?.continuation) ? state.memory.value.continuation : [];
+  const pool = leadWithContinuation(buildRecommendationPool({ reading, listening: listeningItems, speaking: speakingItems, review, language }, t), continuation, t, forYouCover);
+  const usedIds = usedRecommendationIds(pool);
   const forYou = buildForYou(
     {
       continuation,
@@ -126,7 +132,7 @@ export default async function mountToday(element, ctx) {
           <div class="s-today-streak-days">
             ${streak.days.map(
               (day) => html`<div class="s-today-day">
-                <span class="${day.done ? 's-today-day-dot s-today-day-dot--done' : 's-today-day-dot'}">${day.done ? raw(icon('check', { size: 12 })) : ''}</span>
+                <span class="${['s-today-day-dot', day.done && 's-today-day-dot--done', day.today && 's-today-day-dot--today', day.future && 's-today-day-dot--future'].filter(Boolean).join(' ')}"${day.today ? raw(' aria-current="date"') : ''}>${day.done ? raw(icon('check', { size: 12 })) : ''}</span>
                 <span class="s-today-day-letter">${day.letter}</span>
               </div>`,
             )}
@@ -155,7 +161,7 @@ export default async function mountToday(element, ctx) {
             <span class="s-today-hero__title">${wordTitle(hero)}</span>
             ${hero.reason ? html`<span class="s-today-hero__reason">${hero.reason}</span>` : ''}
           </span>
-          <span class="s-today-hero__cta">${t('startAction')} ${raw(icon('arrow-right', { size: 17 }))}</span>
+          <span class="s-today-hero__cta">${t(hero.source === 'continue' ? 'continueAction' : 'startAction')} ${raw(icon('arrow-right', { size: 17 }))}</span>
         </button>
         <div class="s-today-rest">
           ${rest.map(
@@ -178,6 +184,7 @@ export default async function mountToday(element, ctx) {
         ${forYou.map((item) =>
           mediaCard({
             image: item.image ? `url("${item.image}")` : '',
+            cover: forYouCover(item),
             imageHeight: 130,
             kind: item.kind,
             duration: item.durationLabel,
@@ -208,11 +215,12 @@ export default async function mountToday(element, ctx) {
       html`<div class="s-today">
         ${levelPromptMarkup()}
         ${headMarkup()}
-        ${progressMarkup()}
         ${recommendedMarkup()}
+        ${progressMarkup()}
         ${forYouMarkup()}
       </div>`,
     );
+    settleCovers(element);
     element.querySelector('[data-banner-action]')?.addEventListener('click', () => ctx.go(ctx.href('welcome', {}, { step: 'level' })));
     element.querySelector('[data-banner-close]')?.addEventListener('click', () => {
       try {

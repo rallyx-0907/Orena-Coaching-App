@@ -19,6 +19,7 @@ import { useStyles } from '../../kit/styles.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
+import { openLessonComplete } from '../lesson-complete/sheet.js';
 import { masteryBars } from '../../kit/components.js';
 import { langAttr } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
@@ -52,6 +53,7 @@ import {
   sourceLabelKey,
   gradeOutcome,
   countsForSession,
+  nextDueLabel,
 } from './model.js';
 
 /* The kit's small tag naming a meaning's language when it is not the support language (D-124). */
@@ -66,15 +68,15 @@ function posMarkup(pos) {
   return html`<span class="o-tag"${label.known ? '' : raw(` lang="${langAttr('en')}"`)}>${label.text}</span>`;
 }
 
-/* `n of total · mode`, the eyebrow the frame draws on the card in both of its states. */
-function eyebrowOf(row, counts) {
-  return `${t('progress', counts)} · ${t(cardMode(row) === 'cloze' ? 'modeCloze' : 'modeTarget')}`;
+/* The task the card asks, in plain words. The position in the session is shown once, in the header (LEX-064). */
+function eyebrowOf(row) {
+  return t(cardMode(row) === 'cloze' ? 'modeCloze' : 'modeTarget');
 }
 
 /* The revealed card: the eyebrow, then the same content Word Detail draws (D7 §4), review-scoped
    classes. The scroll region is the card's own, so a long definition or example scrolls in the card
    and the grades below it stay in view (rule 49). */
-function wordCardMarkup(card, eyebrow) {
+function wordCardMarkup(card) {
   const cardLang = cardLanguage(card.script);
   const meta = [
     card.ipa ? html`<span class="s-review-card__ipa">${card.ipa}</span>` : '',
@@ -90,7 +92,6 @@ function wordCardMarkup(card, eyebrow) {
   return html`<div class="s-review-face s-review-face--revealed">
     <span class="s-review-face__blob" aria-hidden="true"></span>
     <div class="s-review-face__scroll" data-scroll-region>
-    <span class="s-review-eyebrow">${eyebrow}</span>
     <div class="s-review-card">
     <div class="s-review-card__top">
       <div class="s-review-card__id">
@@ -115,23 +116,24 @@ function wordCardMarkup(card, eyebrow) {
    asked for, and "Tap to reveal". Target -> meaning asks the word and cues it with its reading and
    part of speech; a source-aware card asks the sentence the learner met the word in, the word taken
    out, and cues it with where the sentence came from (model.js#cardMode). */
-function hiddenFaceMarkup(card, row, counts, hintOn) {
+function hiddenFaceMarkup(card, row, hintOn) {
   const cloze = cardMode(row) === 'cloze' ? clozeFor(row) : null;
   const lang = langAttr(cardLanguage(card.script));
   const sourceKey = cloze ? sourceLabelKey(row.source_kind) : '';
   const cue = cloze
-    ? [t('cueCloze'), sourceKey ? t(sourceKey) : ''].filter(Boolean).join(' · ')
-    : [card.ipa, card.pos ? posLabel(card.pos, t).text : ''].filter(Boolean).join(' · ');
+    ? (sourceKey ? t(sourceKey) : '')
+    : '';
+  const reading = cloze ? '' : card.ipa;
+  const pos = cloze || !card.pos ? '' : posLabel(card.pos, t).text;
   const hint = hintOn ? hintFor(cloze ? 'cloze' : 'typing', card) : '';
   const promptText = cloze ? cloze.text : card.word;
   const size = promptText.length > 220 ? ' s-review-prompt--longest' : promptText.length > 90 ? ' s-review-prompt--long' : '';
   return html`<button type="button" class="s-review-face s-review-face--hidden" data-card-tap>
     <span class="s-review-face__blob" aria-hidden="true"></span>
-    <span class="s-review-eyebrow">${eyebrowOf(row, counts)}</span>
+    <span class="s-review-eyebrow">${eyebrowOf(row)}</span>
     <span class="s-review-prompt${size}" lang="${lang}"${cloze ? raw(' data-scroll-region') : ''}>${cloze ? cloze.parts.map((part) => (part.blank ? html`<span class="s-review-blank">${part.value}</span>` : part.value)) : promptText}</span>
-    ${cue ? html`<span class="s-review-cue">${cue}</span>` : ''}
+    ${reading || pos || cue ? html`<span class="s-review-cue">${reading ? html`<span class="s-review-cue__reading">${reading}</span>` : ''}${reading && pos ? ' · ' : ''}${pos}${cue}</span>` : ''}
     ${hint ? html`<span class="s-review-hint"${cloze ? raw(` lang="${lang}"`) : ''}>${hint}</span>` : ''}
-    <span class="s-review-affordance">${raw(icon('eye', { size: 16 }))}${t('tapToReveal')}</span>
   </button>`;
 }
 
@@ -199,7 +201,7 @@ export default async function mountReview(element, ctx) {
   }
   if (!ctx.isCurrent()) return undefined;
 
-  const state = { index: 0, revealed: false, hintOn: false, stats: initialStats(), grading: false, unsaved: new Set() };
+  const state = { index: 0, revealed: false, hintOn: false, stats: initialStats(), grading: false, unsaved: new Set(), nextTimes: [] };
   let audio = null;
 
   function currentRow() {
@@ -212,6 +214,7 @@ export default async function mountReview(element, ctx) {
     state.hintOn = false;
     state.stats = initialStats();
     state.unsaved = new Set();
+    state.nextTimes = [];
   }
 
   /* One place a grade goes. The outcome (model.js#gradeOutcome) says whether it counts toward the
@@ -225,6 +228,7 @@ export default async function mountReview(element, ctx) {
       error = caught;
     }
     const outcome = gradeOutcome({ result, error });
+    if (outcome === 'saved' && result?.item?.next_review_at) state.nextTimes.push(result.item.next_review_at);
     if (outcome === 'kept') {
       waiting = withWaiting(waiting, word, grade, new Date().toISOString());
       memory?.setReviewQueue?.(waiting);
@@ -232,6 +236,47 @@ export default async function mountReview(element, ctx) {
       drain().catch(() => {});
     }
     return outcome;
+  }
+
+  /* The design's Lesson complete modal after the last grade (V-04, HV-2 B), with measured facts only: the cards
+     reviewed, how each was graded, when the soonest comes back, and the Got it share. No XP, no minutes. */
+  /* Continue: the next batch when more cards are due, else back where the session began (LEX-065). A cleared
+     due list returns to Library's Due Review; a collection or a single word returns to its own page. */
+  async function continueAfter() {
+    if (scope.mode === 'due') {
+      const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 }).catch(() => null);
+      if (!ctx.isCurrent()) return;
+      const more = buildQueue(page?.items);
+      if (more.length) {
+        reset();
+        queue = more;
+        paint();
+        return;
+      }
+      ctx.go(ctx.href('library', {}, { tab: 'due' }));
+    } else {
+      ctx.back();
+    }
+  }
+
+  function finishSession() {
+    const given = state.stats.again + state.stats.unsure + state.stats.got_it;
+    if (!given) return;
+    const next = nextDueLabel(state.nextTimes, Date.now(), t);
+    setTimeout(() => {
+      if (!ctx.isCurrent()) return;
+      openLessonComplete(ctx, {
+        title: shellCopy('review'),
+        measured: { correct: state.stats.got_it, total: given },
+        // The page behind carries the Got it / Unsure / Again tiles; the sheet says what was done and what is next.
+        facts: [
+          { label: t.plural('lessonCards', given), value: given },
+          { label: t('statGotIt'), value: state.stats.got_it },
+          { label: t('lessonNext'), value: next },
+        ],
+        next: continueAfter,
+      });
+    }, 350);
   }
 
   function paint() {
@@ -281,7 +326,7 @@ export default async function mountReview(element, ctx) {
         }
         paint();
       });
-      element.querySelector('[data-to-library]').addEventListener('click', () => ctx.go(ctx.href('library')));
+      element.querySelector('[data-to-library]').addEventListener('click', () => ctx.go(ctx.href('library', {}, { tab: 'due' })));
       return;
     }
 
@@ -295,7 +340,7 @@ export default async function mountReview(element, ctx) {
       <div class="s-review-body">
         <div class="s-review-stack">
           <div class="s-review-stack__back" aria-hidden="true"></div>
-          ${state.revealed ? wordCardMarkup(card, eyebrowOf(row, counts)) : hiddenFaceMarkup(card, row, counts, state.hintOn)}
+          ${state.revealed ? wordCardMarkup(card) : hiddenFaceMarkup(card, row, state.hintOn)}
         </div>
         ${
           state.revealed
@@ -342,6 +387,7 @@ export default async function mountReview(element, ctx) {
         state.hintOn = false;
         state.grading = false;
         paint();
+        if (state.index >= total) finishSession();
       });
     });
 
@@ -394,7 +440,9 @@ export default async function mountReview(element, ctx) {
       }
     });
 
-    element.querySelector('[data-practise-strokes]')?.addEventListener('click', () => {
+    element.querySelector('[data-practise-strokes]')?.addEventListener('click', async () => {
+      // The sheet's own rules (.s-word-*) live in word.css, which only the Word screen loads (V-09).
+      await useStyles('screens/word/word.css');
       const titleWord = card.ipa ? `${card.word} · ${card.ipa}` : card.word;
       openSheet({
         label: t('strokePracticeTitle', { word: titleWord }),

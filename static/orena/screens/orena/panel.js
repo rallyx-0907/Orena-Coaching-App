@@ -34,11 +34,11 @@ import { refreshLearningLanguage } from './language-sync.js';
 import { setAgentHandler } from '../../shell/agent-bridge.js';
 import { t } from './copy.js';
 import { contextParts, latestSuggestions, thinkingText } from './model.js';
-import { messageMarkup } from './thread.js';
-import { runOffered } from './actions.js';
+import { messageMarkup, placeThread } from './thread.js';
+import { runOffered, openIfAsked } from './actions.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
-import { voiceSessionBody, voiceThread } from '../../agent/live-voice.js';
+import { voiceSessionBody, voiceThread, chosenVoice } from '../../agent/live-voice.js';
 import { builtScreens, createOrenaDispatcher, requestLanguages } from './dispatcher-setup.js';
 
 /* The context pill's label: the selected item's own text (marked with the language it is in) and
@@ -98,7 +98,7 @@ export async function openOrenaPanel(context = {}, carry = null) {
     voiceShown = voiceMode;
     bind();
     const thread = sheetEl.querySelector('[data-scroll-region]');
-    if (thread) thread.scrollTop = thread.scrollHeight;
+    placeThread(thread, 's-orena-panel'); // a long answer is read from its start (LEX-042)
   }
 
   function startersMarkup(state) {
@@ -155,7 +155,8 @@ export async function openOrenaPanel(context = {}, carry = null) {
     const text = String(input?.value || '').trim();
     if (!text || session.state().thinking) return;
     draft = '';
-    void runTurn('message', text);
+    // A typed "open …" opens the place the reply offers (§7 navigate-on-request).
+    void runTurn('message', text).then((reply) => openIfAsked({ message: text, reply, dispatcher, ranActions, repaint: paint }));
   }
 
   /* §4.1 `retry`: the last turn again as a new request, the learner's own tap. */
@@ -193,8 +194,13 @@ export async function openOrenaPanel(context = {}, carry = null) {
           client: { supported_actions: dispatcher.supported(), supported_intents: supportedIntents(builtScreens()) },
           notes: memory.requestNotes(),
           address: memory.addressFor(support),
-        }));
-        return { body, thread: voiceThread({ session, memory, notify: paint, lang: () => support }) };
+        }), { voice: chosenVoice() });
+        return {
+          body,
+          thread: voiceThread({ session, memory, notify: paint, lang: () => support }),
+          // A place the learner asked for by voice opens at once (R29), through the same runner as a tap.
+          open: (action) => runOffered({ dispatcher, action, ranActions, repaint: paint }),
+        };
       },
       abort: abortTurn,
       // The mic sheet took this panel's place; when it has been answered, the panel comes back.

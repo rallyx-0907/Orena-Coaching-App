@@ -53,6 +53,8 @@ export function wordRow(card = {}, support = '') {
     // principle mix scripts; this build's collections do not, but the per-word field is the more
     // precise source and costs nothing extra to read).
     lang: String(card.identity?.language || ''),
+    // The sense's reading (pinyin), when the catalogue carries one (LEX-066).
+    reading: String(card.pronunciation || card.readings?.[0]?.text || '').trim(),
     meaning: supportMeaning(card, support),
     // The meaning's language when it is not the support language (D-124): the row labels it.
     meaningLanguage: supportMeaningEntry(card, support).language,

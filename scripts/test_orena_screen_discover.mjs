@@ -24,7 +24,7 @@ import { practiceCandidates, practiceHref, preparedMediaEntry } from '../static/
 }
 import {
   progressFromContinuation, entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
-  entryFromTextImport, entryFromMediaImport, filterOptions, typeLabel, matchesFilters,
+  entryFromTextImport, entryFromMediaImport, filterOptions, topicKey, topicLabel, typeLabel, matchesFilters,
   hasAnyFilter, filterCount, visibleEntries, presentCard, hrefFor,
 } from '../static/orena/screens/discover/model.js';
 
@@ -37,6 +37,7 @@ function fill(text, params) {
 const LABELS = {
   typeArticle: 'Article', typeBook: 'Book', typeVideo: 'Video', typeAudio: 'Audio',
   typeCollection: 'Collection', typeText: 'Text', typeUpload: 'Imported',
+  topic_daily_life: 'Daily life', topic_culture: 'Culture',
   durationMinRead: '{n} min read', progressPercent: '{pct}%', progressLearnedOf: '{learned} / {total} learned',
 };
 function stubT() {
@@ -61,8 +62,10 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
 {
   assert.equal(progressFromContinuation([], 'article:1'), null, 'no continuation at all');
   assert.equal(progressFromContinuation([{ id: 'article:1', place: { index: 0, total: 5 } }], 'article:1'), null, 'index 0 is not started');
-  assert.equal(progressFromContinuation([{ id: 'article:1', place: { index: 2, total: 4 } }], 'article:1'), 50, 'exact-id match computes a percent');
-  assert.equal(progressFromContinuation([{ id: 'book:9:ch2', place: { index: 3, total: 3 } }], 'book:9', { idPrefix: 'book:9:' }), 100, 'prefix match finds a chapter row');
+  assert.equal(progressFromContinuation([{ id: 'article:1', place: { index: 2, total: 4 } }], 'article:1'), 25, 'exact-id match: item 2 of 4 means one whole item behind it (LEX-082)');
+  assert.equal(progressFromContinuation([{ id: 'article:1', place: { index: 1, total: 1 } }], 'article:1'), null, 'a 1 of 1 place with nothing measured is not 100% (LEX-082)');
+  assert.equal(progressFromContinuation([{ id: 'media:1', place: { index: 1, total: 1, within: 2 } }], 'media:1'), 2, 'a flat place reports how far in the learner is, never its 1/1 pair');
+  assert.equal(progressFromContinuation([{ id: 'book:9:ch2', place: { index: 3, total: 3 } }], 'book:9', { idPrefix: 'book:9:' }), 67, 'prefix match finds a chapter row (chapter 3 of 3 opened: two behind it)');
   assert.equal(progressFromContinuation([{ id: 'book:9:ch2', place: { index: 3, total: 3 } }], 'book:9', { idPrefix: 'book:10:' }), null, 'prefix match is exact to the book id, not a substring of another book');
 }
 
@@ -71,7 +74,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
 {
   const entry = entryFromArticle(
     { id: 'a1', title: 'Why We Love Routines', level: 'B2', topic: 'Daily life', reading_time_seconds: 340 },
-    [{ id: 'article:a1', place: { index: 1, total: 1 } }],
+    [{ id: 'article:a1', place: { index: 1, total: 1, within: 100 } }],
   );
   assert.equal(entry.id, 'article:a1');
   assert.equal(entry.kind, 'article');
@@ -97,7 +100,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal(withoutCover.image, '', 'no cover_asset_key draws no image, never a placeholder URL');
   const started = entryFromBook({ id: 'b3', title: 'x' }, [{ id: 'book:b3:ch4', place: { index: 4, total: 8 } }], '');
   assert.equal(started.started, true);
-  assert.equal(started.progressPct, 50);
+  assert.equal(started.progressPct, 38, 'chapter 4 of 8 opened: three chapters behind it');
   // languages-5 / finding A: a book's own field is `learning_language`, a different name than an
   // article's `language` - both mapped to the same `entry.language`.
   assert.equal(entryFromBook({ id: 'b4', title: 'x', learning_language: 'en' }, [], '').language, 'en');
@@ -231,12 +234,19 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal(presentCard({ id: 'article:1', kind: 'article', title: 'x', language: 'zh' }, t).titleLang, 'zh');
   assert.equal(presentCard({ id: 'text:1', kind: 'text', title: 'x' }, t).titleLang, '', 'a device-memory import carries no language field - left unmarked, never guessed');
 
-  // languages-4 (3) / finding B.3: the topic tag is real content metadata Discover cannot
-  // translate (an open, ever-growing taxonomy - see UI_BACKEND_GAPS.md N-35) - kept, marked
-  // lang="en", never silently unlabelled.
-  const withTopic = presentCard({ id: 'article:1', kind: 'article', title: 'x', topic: 'shipping' }, t);
-  const topicTag = withTopic.tags.find((tag) => tag.label === 'shipping');
-  assert.equal(topicTag.lang, 'en', 'the topic chip is marked as English content metadata, not translated');
+  // P-06: a topic reaches a learner only when the vocabulary names it, in the interface language; any other
+  // tag (internal, test, ungoverned) is dropped from the cards and the Filter Sheet.
+  const known = presentCard({ id: 'article:1', kind: 'article', title: 'x', topic: 'Daily life' }, t);
+  assert.ok(known.tags.some((tag) => tag.label === 'Daily life'), 'a known topic is a card tag, labelled by the copy table');
+  const raw = presentCard({ id: 'article:1', kind: 'article', title: 'x', topic: 'sandbox-test' }, t);
+  assert.ok(!raw.tags.some((tag) => /sandbox/.test(tag.label)), 'an internal tag never reaches a card');
+  assert.deepEqual(filterOptions([{ kind: 'article', level: '', topic: 'sandbox-test' }, { kind: 'article', level: '', topic: 'culture' }, { kind: 'article', level: '', topic: 'daily-life' }]).topic, ['culture', 'daily-life'], 'the Filter Sheet lists only known topics');
+  assert.equal(topicKey('Daily life'), 'daily_life');
+  assert.equal(topicKey('sandbox-test'), '');
+  assert.equal(topicLabel('culture', t), 'Culture');
+  // P-03: a card with no cover carries the tile of its type.
+  assert.equal(presentCard({ id: 'article:1', kind: 'article', title: 'x' }, t).cover.icon, 'book-open');
+  assert.equal(presentCard({ id: 'media:1', kind: 'media', mediaType: 'audio', title: 'x' }, t).cover.icon, 'headphones');
 }
 
 // 12. hrefFor: every kind but a collection opens Content Detail by its content id; a collection

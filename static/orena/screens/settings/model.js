@@ -9,7 +9,10 @@
    docs/project/UI_BACKEND_GAPS.md, not silently decided. */
 import { INTERFACE_ENDONYMS, INTERFACE_LOCALES, interfaceLanguageOptions as sharedInterfaceLanguageOptions } from '../../kit/lang.js';
 
-export const TABS = Object.freeze(['languages', 'learning', 'review', 'notifications', 'plan']);
+/* Appearance and Accent are how Orena looks on this device, not how a learner studies, so they have their own
+   tab (LEX-079); the frame draws neither, so no frame tab holds them. */
+export const TABS = Object.freeze(['languages', 'appearance', 'learning', 'review', 'notifications', 'plan']);
+const APPEARANCE_ROW_IDS = Object.freeze(['theme', 'palette']);
 
 export function tabFromQuery(raw) {
   const value = String(raw || '').trim().toLowerCase();
@@ -36,8 +39,7 @@ export function targetLanguageOptions(languages) {
 
 /* Support language: every one the platform lists (`support_languages[]`), labelled with the
    backend's own label exactly as static/orena/app.js's preferences dialog already renders it
-   (English language names, not translated per interface - a support language's own name is data,
-   not chrome; rule 26 governs Orena's interface strings, not a language's own name). */
+   (shown by endonym, kit/lang.js SUPPORT_ENDONYMS - a language's own name, the same in every interface language). */
 export function supportLanguageOptions(supportLanguages) {
   return (Array.isArray(supportLanguages) ? supportLanguages : [])
     .filter((item) => item && item.code && item.label)
@@ -49,7 +51,7 @@ export function supportLanguageOptions(supportLanguages) {
 export const SEGMENTED_MAX_OPTIONS = 4;
 
 export function usesPicker(row) {
-  return row?.id === 'support' && Array.isArray(row.options) && row.options.length > SEGMENTED_MAX_OPTIONS;
+  return ['support', 'orenaVoice'].includes(row?.id) && Array.isArray(row.options) && row.options.length > SEGMENTED_MAX_OPTIONS;
 }
 
 export function interfaceLanguageOptions(locales = INTERFACE_LOCALES) {
@@ -90,11 +92,21 @@ function appearanceValue(value) {
   return APPEARANCE_VALUES.includes(value) ? value : 'system';
 }
 
-export function learningRows({ sizeBucket, autoscroll, meaning, theme, palette }) {
+/* Orena's voice (human request 2026-10-06, R29): offered only when the server's live voice is on and lists its
+   voices; the value is the learner's stored choice, else the server's default. */
+function voiceRow(voices) {
+  const list = Array.isArray(voices?.voices) ? voices.voices.filter((v) => v && v.id) : [];
+  if (!list.length) return [];
+  const value = list.some((v) => v.id === voices.chosen) ? voices.chosen : (voices.default || list[0].id);
+  return [{ id: 'orenaVoice', kind: 'choice', options: list, value, disabled: false }];
+}
+
+export function learningRows({ sizeBucket, autoscroll, meaning, theme, palette, voices = null }) {
   return [
     { id: 'theme', kind: 'choice', options: APPEARANCE_VALUES, value: appearanceValue(theme), disabled: false },
     { id: 'palette', kind: 'choice', options: ['indigo', 'orchid', 'blue', 'rose'], value: ['indigo', 'orchid', 'blue', 'rose'].includes(palette) ? palette : 'indigo', disabled: false },
     { id: 'readerSize', kind: 'choice', options: ['S', 'M', 'L'], value: sizeBucket, disabled: false },
+    ...voiceRow(voices),
     { id: 'autoscroll', kind: 'toggle', value: Boolean(autoscroll), disabled: false },
     { id: 'meaning', kind: 'toggle', value: Boolean(meaning), disabled: false },
     // No real mechanism anywhere in the app measures or drives either of these two (grepped
@@ -130,7 +142,7 @@ export function notificationRows() {
 export function planRows({ plan, features, micOn, micState }) {
   const writingEvaluate = features && typeof features === 'object' ? features['writing.evaluate'] : null;
   return [
-    { id: 'plan', kind: 'action', disabled: true, planName: plan?.name || '', planDescription: plan?.description || '' },
+    { id: 'plan', kind: 'action', disabled: true, plan: plan || null, planName: plan?.name || '', planDescription: plan?.description || '' },
     // No entitlement key for AI-tutor messages or for pronunciation minutes exists in the plan
     // catalogue at all - UI_BACKEND_GAPS.md N-29/N-30.
     { id: 'messages', kind: 'bar', disabled: true, used: 0, limit: 0 },
@@ -153,7 +165,8 @@ export function planRows({ plan, features, micOn, micState }) {
 
 export function rowsForTab(tab, inputs) {
   if (tab === 'languages') return languageRows(inputs.languages);
-  if (tab === 'learning') return learningRows(inputs.learning);
+  if (tab === 'appearance') return learningRows(inputs.learning).filter((row) => APPEARANCE_ROW_IDS.includes(row.id));
+  if (tab === 'learning') return learningRows(inputs.learning).filter((row) => !APPEARANCE_ROW_IDS.includes(row.id));
   if (tab === 'review') return reviewRows(inputs.review);
   if (tab === 'notifications') return notificationRows();
   if (tab === 'plan') return planRows(inputs.plan);

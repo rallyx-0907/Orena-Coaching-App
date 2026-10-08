@@ -7,7 +7,6 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { langSpan } from '../../kit/lang.js';
 import { pageHeader } from '../../kit/components.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
@@ -59,14 +58,15 @@ export default async function mountAttemptHistory(element, ctx) {
         </span>
         <span class="s-attempts-meta">${t('metaLine', { when, acc: row.accuracy ?? '—', flu: row.hasFluency ? row.fluency : '—' })}</span>
       </span>`;
-    // An attempt only the account remembers has no recording to compare (audio is never kept): listed, not opened.
-    if (row.server) return html`<div class="s-attempts-row s-attempts-row--kept">${inner}</div>`;
+    // An attempt with no verified score has nothing to review: listed, not opened. Any other opens Compare
+    // for that attempt - without its recording when only the account remembers it (audio is never kept, D-076).
+    if (!row.reviewable) return html`<div class="s-attempts-row s-attempts-row--kept">${inner}</div>`;
     return html`<button type="button" class="s-attempts-row" data-open="${row.id}">${inner}<span class="s-attempts-chevron">${raw(icon('chevron-right', { size: 18 }))}</span></button>`;
   }
 
   mount(
     element,
-    html`${pageHeader({ back: { label: shellCopy('back'), dataset: { back: '1' } }, title: t('title'), meta: langSpan(source.title, source.language), compact: true })}
+    html`${pageHeader({ back: { label: shellCopy('back'), dataset: { back: '1' } }, title: t('title'), meta: t('subtitle'), compact: true })}
     <div class="s-attempts-scroll" data-scroll-region>
       <div class="s-attempts-stats">
         <div class="s-attempts-stat"><div class="s-attempts-stat__label">${t('statAttempts')}</div><div class="s-attempts-stat__value">${countLabel}</div></div>
@@ -74,7 +74,6 @@ export default async function mountAttemptHistory(element, ctx) {
         <div class="s-attempts-stat"><div class="s-attempts-stat__label">${t('statChange')}</div><div class="s-attempts-stat__value" style="color:var(--accent)">${deltaLabel(stats.delta)}</div></div>
       </div>
       <div class="s-attempts-rows">${rows.map(rowMarkup)}</div>
-      <p class="s-attempts-note">${t('historyScope')}</p>
       <p class="s-attempts-note">${t(keepRecent.value ? 'privacyNoteKept' : 'privacyNoteSession')}</p>
     </div>`,
   );

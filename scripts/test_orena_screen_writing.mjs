@@ -328,11 +328,12 @@ assert.equal(saveTone('device').color, 'var(--green)');
     vi: { tooShortWords: 'Viết ít nhất 2 từ để yêu cầu nhận xét.', tooShortHan: 'Viết ít nhất 2 chữ Hán để yêu cầu nhận xét.' },
     zh: { tooShortWords: '至少写 2 个词才能请求点评。', tooShortHan: '至少写 2 个汉字才能请求点评。' },
   };
-  for (const support of ['en', 'vi', 'zh']) {
-    copy.setLanguages({ ui: 'en', support });
-    for (const [key, sentence] of Object.entries(said[support])) {
-      assert.equal(t.plural(key, 2), sentence, `${support} ${key}`);
-      assert.ok(!/\b10\b/.test(t.plural(key, 2)), `${support} ${key} no longer says ten`);
+  // A system note follows the INTERFACE language, whatever the support language is (W-08, D-139 HD-14).
+  for (const ui of ['en', 'vi', 'zh']) {
+    copy.setLanguages({ ui, support: 'en' });
+    for (const [key, sentence] of Object.entries(said[ui])) {
+      assert.equal(t.plural(key, 2), sentence, `${ui} ${key}`);
+      assert.ok(!/10/.test(t.plural(key, 2)), `${ui} ${key} no longer says ten`);
     }
   }
   copy.setLanguages({ ui: 'en', support: 'en' });
@@ -359,6 +360,40 @@ assert.equal(saveTone('device').color, 'var(--green)');
   assert.equal(t('whyTab'), 'WHY');
   assert.equal(t('appliedCheck'), 'Applied ✓');
   assert.equal(t('appliedToast'), 'Applied — re-review to update the findings');
+}
+
+/* LEX-054/057/060: the intent kept with a draft, the draft set aside by "Start new draft", the one that waits. */
+{
+  const m = await import('../static/orena/screens/writing/model.js');
+  const ex = {
+    'expression:free': '', 'expression:free::parked': 'expression:parked:a,expression:parked:b',
+    'expression:parked:a': 'old words here', 'expression:parked:a::task': 'Old task',
+    'expression:parked:b': '', 'expression:parked:b::task': 'bare task',
+    'expression:parked:a::intent': m.intentRecord({ register: 'formal', target: 250, free: false }),
+  };
+  assert.deepEqual(m.parkedKeys(ex), ['expression:parked:a', 'expression:parked:b']);
+  const w = m.waitingDraft(ex, 'en');
+  assert.equal(w.key, 'expression:parked:a', 'a draft set aside waits when the current slot holds no words');
+  assert.equal(w.title, 'Old task');
+  assert.equal(w.n, 3);
+  assert.equal(m.waitingDraft({ ...ex, 'expression:free': 'now', 'expression:free::intent': m.intentRecord({ free: true }) }, 'en').free, true, 'the current draft wins and keeps its blank-page flag');
+  assert.deepEqual(m.readIntent(ex, 'expression:parked:a'), { register: 'formal', target: 250, level: '', free: false });
+  assert.deepEqual(m.readIntent({ 'k::intent': '{bad' }, 'k'), { register: '', target: 0, level: '', free: false }, 'a damaged record reads as no intent');
+  assert.equal(m.saveTone('saving').key, 'savingNow');
+  assert.equal(m.saveTone('account').key, 'savedAccount');
+  assert.equal(m.saveTone('device').key, 'savedDevice');
+}
+
+{
+  const ex = {
+    'expression:parked:a': 'one two', 'expression:parked:a::task': 'First',
+    'expression:parked:b': '我去了车站', 'expression:parked:b::intent': JSON.stringify({ free: true }),
+    'expression:free::parked': 'expression:parked:a,expression:parked:b',
+  };
+  const list = (await import('../static/orena/screens/writing/model.js')).earlierDrafts(ex, 'zh');
+  assert.deepEqual(list.map((d) => d.key), ['expression:parked:b', 'expression:parked:a']);
+  assert.equal(list[0].free, true);
+  assert.equal(list[1].title, 'First');
 }
 
 console.log('Orena Writing screen model: PASS');

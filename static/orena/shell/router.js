@@ -12,6 +12,7 @@
    - a lesson route shows the design's loading skeleton while it loads, and its load error with
      Back / Retry when it fails;
    - a route whose screen is not built yet shows the design's Coming soon screen. */
+import { setRouteView } from './view-context.js';
 import { beginNavigation } from '../infrastructure/navigation.js';
 import { mount } from '../kit/html.js';
 import { closeSheet } from '../kit/overlay.js';
@@ -19,9 +20,13 @@ import { loadingMarkup, errorMarkup } from '../kit/states.js';
 import { shellCopy as t } from '../copy/shell.js';
 import { PRIMARY, DEFAULT_ROUTE, entryRoute, match, href, byId } from './routes.js';
 import { SCREENS } from './screens.js';
+import { formerAddress } from './former-addresses.js';
 
 const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
 const STORY_ROUTES = ['reader', 'listening', 'dictation', 'checku', 'rtransfer', 'feed'];
+/* Speaking and Writing rooms belong to Practice Hub (rule 47): opened with no known origin (a direct
+   load, a reload in a new tab), the rail lights Practice Hub, not Today or Discover. */
+const PRACTICE_ROOMS = ['speak', 'compare', 'attempts', 'spsummary', 'freetalk', 'conv', 'situation', 'writing', 'writingDraft', 'wrcompare'];
 const ORIGIN_KEY = 'orena.next.navOrigin';
 const DEPTH_KEY = 'orena.next.depth';
 
@@ -37,8 +42,10 @@ function session(key, value) {
 
 export function createRouter({ frame, getContext }) {
   const root = document.documentElement;
-  let origin = session(ORIGIN_KEY) || DEFAULT_ROUTE;
+  const storedOrigin = session(ORIGIN_KEY);
+  let origin = storedOrigin || DEFAULT_ROUTE;
   let depth = Number(session(DEPTH_KEY)) || 0;
+  let originKnown = Boolean(storedOrigin);
   let cleanup = null;
   let generation = 0;
   let current = null;
@@ -46,7 +53,8 @@ export function createRouter({ frame, getContext }) {
 
   function state() {
     const route = current?.route;
-    const active = route && PRIMARY.includes(route.id) ? route.id : origin;
+    // Profile is its own place (the avatar, the rail's account row): the bar lights nothing there, never the place the learner came from (LEX-080).
+    const active = route && (PRIMARY.includes(route.id) || route.id === 'profile') ? route.id : origin;
     const section = route && !CRUMB_PRIMARY.includes(route.id) ? (route.id === 'progress' ? 'profile' : origin) : '';
     return {
       active,
@@ -95,6 +103,12 @@ export function createRouter({ frame, getContext }) {
     document.title = crumbOverride ? `${crumbOverride} · Orena` : document.title;
   }
 
+  /* The browser's own wording when a dynamically imported module could not be fetched (Chromium, Firefox, Safari). */
+  function moduleLoadFailed(error) {
+    return error instanceof TypeError
+      && /dynamically imported module|importing a module script failed|error loading dynamically imported module/i.test(String(error.message));
+  }
+
   async function loadScreen(route) {
     const loader = SCREENS[route.screen];
     if (loader) return (await loader()).default;
@@ -107,6 +121,12 @@ export function createRouter({ frame, getContext }) {
     /* The empty address is an entry, not a place: it opens where `entryRoute` says (D-098). */
     if (!String(location.hash).replace(/^#\/?/, '').split('?')[0].replace(/\/+$/, '')) {
       go(href(entryRoute(getContext())), { replace: true });
+      return;
+    }
+    // An address of the UI `/` served before the cutover opens the place that does its job now (D-143).
+    const moved = formerAddress(location.hash);
+    if (moved) {
+      go(moved, { replace: true });
       return;
     }
     const found = match(location.hash);
@@ -126,6 +146,13 @@ export function createRouter({ frame, getContext }) {
     crumbOverride = '';
     current = found;
     const { route } = found;
+    if (!originKnown && PRACTICE_ROOMS.includes(route.id)) origin = 'practice';
+    originKnown = true;
+    // A Skill Hub is a page of Practice Hub, whichever way the learner reached it: it always lights Practice.
+    if (route.id === 'skillhub') {
+      origin = 'practice';
+      session(ORIGIN_KEY, origin);
+    }
     if (PRIMARY.includes(route.id)) {
       origin = route.id;
       session(ORIGIN_KEY, origin);
@@ -162,6 +189,8 @@ export function createRouter({ frame, getContext }) {
       context: getContext(),
       go,
       back,
+      // Whether Back returns within the app (false when the room was opened directly, e.g. from a link).
+      hasHistory: () => depth > 0,
       href,
       setCrumb,
       setLoadingLabel: (label) => { loadingLabel = String(label); },
@@ -172,6 +201,9 @@ export function createRouter({ frame, getContext }) {
     try {
       const screen = await loadScreen(route);
       if (mine !== generation) return;
+      // What a running Orena conversation is told the learner now sees: the route first, so what the screen
+      // selects while it mounts (a remembered line) is added on top of it.
+      setRouteView(route, found.params);
       const result = await screen(element, ctx);
       if (mine !== generation) {
         if (typeof result === 'function') result();
@@ -181,7 +213,10 @@ export function createRouter({ frame, getContext }) {
     } catch (error) {
       if (mine !== generation || error?.name === 'AbortError') return;
       console.error('[Orena] screen failed', route.id, error);
-      showError(route, main, () => render());
+      // A room whose code failed to download stays failed for this page: the browser keeps a failed module for the
+      // page's life, so only a fresh load can fetch it again (LEX-092). Its Retry reloads; anything else re-renders.
+      const unloaded = moduleLoadFailed(error);
+      showError(route, main, unloaded ? () => location.reload() : () => render(), { connection: unloaded });
     } finally {
       clearTimeout(skeleton);
       if (mine === generation) main.querySelector('[data-state="loading"]')?.remove();
@@ -189,14 +224,15 @@ export function createRouter({ frame, getContext }) {
     if (mine === generation) main.focus({ preventScroll: true });
   }
 
-  function showError(route, main, retry) {
-    const offline = navigator.onLine === false;
+  function showError(route, main, retry, { connection = false } = {}) {
+    const offline = connection || navigator.onLine === false;
     const holder = document.createElement('div');
     holder.dataset.state = 'error';
     mount(
       holder,
       errorMarkup({
-        title: t(STORY_ROUTES.includes(route.id) ? 'errorStory' : 'errorLesson'),
+        // A browsing place is named for what it is (LEX-080); only a lesson-like route says "lesson" or "story".
+        title: route.lesson ? t(STORY_ROUTES.includes(route.id) ? 'errorStory' : 'errorLesson') : t('errorPlace', { place: t(route.crumb) }),
         text: t(offline ? 'errorOffline' : 'errorServer'),
         backLabel: t('back'),
         retryLabel: t('retry'),
@@ -205,6 +241,12 @@ export function createRouter({ frame, getContext }) {
     holder.querySelector('[data-error-back]').addEventListener('click', () => back());
     holder.querySelector('[data-error-retry]').addEventListener('click', () => retry());
     main.append(holder);
+    // A page that failed for want of a connection loads itself again when the connection returns (LEX-080).
+    if (offline) {
+      window.addEventListener('online', () => {
+        if (holder.isConnected) retry();
+      }, { once: true });
+    }
   }
 
   function onKey(event) {

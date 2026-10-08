@@ -93,6 +93,8 @@ export function entryFromServer(item) {
     source_url: '',
     excerpt: '',
     context: String(place.context || ''),
+    // When the server last saw this place; the Notifications row shows it (a device-made entry has none).
+    at: typeof item.place_at === 'string' ? item.place_at.slice(0, 40) : '',
     place: Number.isInteger(place.index) && Number.isInteger(place.total)
       ? { index: place.index, total: place.total, ...(Number.isFinite(place.within) ? { within: place.within } : {}) }
       : null,

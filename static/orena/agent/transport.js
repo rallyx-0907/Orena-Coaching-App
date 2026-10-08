@@ -94,7 +94,7 @@ function idleAfter(ms) {
 
 /* The live path. Exported with its fetch and clock injectable so the gate can drive every §2.1
    status. */
-export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch, sleep = pause, signedOut = () => location.assign('/login'), log = console.error, idleMs = TURN_IDLE_MS } = {}) {
+export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch, sleep = pause, signedOut = () => location.assign('/#/welcome'), log = console.error, idleMs = TURN_IDLE_MS } = {}) {
   for (;;) {
     let response;
     // The request is the client's own to stop: the caller's stop, or a server that goes quiet (LEX-028).

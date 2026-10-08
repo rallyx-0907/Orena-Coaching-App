@@ -16,14 +16,13 @@ builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
 D-095, D-096), which is edited only on `codex/work`. Verified history:
 `PROJECT_STATE.md` "New learner UI migration".
 
-New UI (D-088..D-091): `/next` replaces `/` in one cutover; both share domains.
+Release (D-143): one UI; cutover done (`/` = learner UI, old UI deleted); schema via
+`proposals/PRODUCTION_MIGRATION_PACK.md`; backbone off, invite-only; no new runtime.
 Agent stays on the contract mock until Intelligence integration is authorized.
 Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 - Foundation/Wave A/B: REVIEWABLE; inventory in IMPLEMENTATION_MAP.md.
-- QA :8021: durable PG volume `orena-next-verify-postgres`, schema `20261004_0025` (D-124
-  table applied 2026-10-04 after pg_dump+restore check; the promotion commit is not yet on
-  origin). Media volume `orena-next-verify-media` at `/lanedata`; `/rundata` SQLite scratch
+- QA :8021: durable PG volume `orena-next-verify-postgres`, schema `20261007_0029`. Media volume `orena-next-verify-media` at `/lanedata`; `/rundata` SQLite scratch
   only. Worker stopped. `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name.
 - Wave B (`161d917`): REVIEWABLE; backend-less routes stay Coming soon,
   Orena uses the mock; Grammar waits for its canonical runtime.
@@ -75,8 +74,7 @@ Foundation/Wave A/B REVIEWABLE; history: PROJECT_STATE.md "New learner UI migrat
   waits for the human's approval and three confirmations. No code or migration yet.
 - D4 (D-104/D-105): migrations 0017-0023, :8021 only; review APPROVE WITH CONDITIONS
   (`f30044a`); flag-on QA round 2 (`9a7b190`) six flows PASS. Open for the human: delete for
-  an imported text, media-import bound. Before :8000: ACCOUNT_RECORD_LIMITS rev 3 (not built),
-  upload media deletion (D-055(b)), code+schema one deployment unit.
+  an imported text, media-import bound. Before public release (D-143): ACCOUNT_RECORD_LIMITS, upload deletion/limits.
 
 ## PENDING
 
@@ -109,7 +107,8 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-D-129/D-136: Reading APPROVED; now Listening (+Dictation, Shadowing) to the design, then Reviewer + human.
+D-129: Reading APPROVED; Listening VERIFIED (461d471). Speaking, Writing, Vocabulary, places, cross-skill: audited,
+fixed, Reviewer-verified; human recording/AI/device check OK. Next: Onboarding (D-129 §2).
 
 D-124: → vi policy open-dsl → vi.wiktionary (strict) → English labelled; built, NOT enabled
 until the human grades docs/reviews/evidence/d124-vi. Licences page + THIRD_PARTY_NOTICES done.

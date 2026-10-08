@@ -4323,3 +4323,106 @@ server's offer copy (learner_copy offer.*) in the interface layer.
   a suggestion unlocks device speech for the visit.
 - **Recording format.** A recording's upload name follows the format the device recorded (an iPhone records mp4,
   not webm).
+
+## D-139 - Speaking flow decisions on the D-129 audit (HD-1 to HD-14)
+
+2026-10-07, explicit human decision on `docs/reviews/SPEAKING_DESIGN_AUDIT.md` ("theo đề xuất"), plus one
+addition for Attempt History.
+
+- **HD-1 Recommended (S-01).** Skill Hub Speak shows the Recommended card from the learner's weakest real attempt
+  (line or mode) with its real reason; no card without attempts.
+- **HD-2 hidden modes (S-04).** Of the modes the design draws and the app does not build, only Shadowing is
+  offered, opening the shared D-119 room through the media chooser. The rest stay hidden (D-101 H9).
+- **HD-3 Pronunciation entry (S-05).** Pronunciation opens the learner's last line directly; "Choose media" sits
+  behind "…". The chooser opens directly only when there is no last line.
+- **HD-4 source bar (S-08).** Previous / Next line at the bottom as frame 28; the line list and "Choose media" in
+  a sheet behind "…".
+- **HD-5 IPA and stress hint (S-10).** IPA from the assessment provider's phonemes where it returns them; the row
+  is hidden otherwise (no dashes). Chinese keeps pinyin.
+- **HD-6 translation line (S-11).** The meaning is revealed on tap, not shown by default.
+- **HD-7 Attempt history in Compare (S-13).** The embedded Attempt history card is added as drawn.
+- **Attempt History review (human addition).** Choosing an attempt in Attempt History opens Compare With Model for
+  that attempt, so the learner can review it.
+- **HD-8 Summary scope (S-15).** This session while it has tasks; the last 7 days when the session is empty.
+- **HD-9 Linking (S-17).** Linking words are counted from the transcript through a language adapter (English and
+  Chinese).
+- **HD-10 Conversation difficulty (S-20).** B1 / B2 / C1 chips, passed into the conversation-turn prompt.
+- **HD-11 End (S-22).** "End" sits in the composer row once at least one turn exists.
+- **HD-12 coaching (S-23).** Inline now; the Contextual Orena panel entry is added later with the Orena work.
+- **HD-13 Situation (S-25, S-26).** Each scenario carries an authored context field shown as the chip; the
+  Intent / Clarity cards appear only when the coaching response carries real judgements.
+- **HD-14 language layers (S-27).** Mic sheets and system notes are wholly in the interface language.
+
+## D-140 - Compare's model pitch and timing are prepared once at content readiness
+
+2026-10-07, explicit human decision ("mất đâu màn hình compare có biểu đồ so sánh từng từ và timing nữa", then
+"Chuẩn bị 1 lần"). Since D-121 the model is the original segment played from the source, so Compare had no model
+audio to measure and showed no model pitch or timing.
+
+- **Prepared once.** At content readiness the server cuts each line's model clip from the admitted source and
+  stores it as a source artifact, once per content revision, through the existing media asset store and execution
+  owners. No provider is called.
+- **Read on open.** Compare only reads the prepared clip and measures its pitch in the browser with the same
+  tracker as the learner's take. Opening or reopening a line never cuts, fetches the source or prepares anything
+  (D-121 stays in force); a line without a prepared clip shows the model plot as unavailable.
+- **Word timing.** Verified word timestamps win. Without them the model's words are placed by estimate over the
+  voiced part of the clip and labelled "est." (the D-137 L-13 rule).
+- **Existing content** is prepared by an explicit, bounded backfill, not on navigation.
+
+## D-141 - Speaking gaps: session identity proposed; historical timing and Clear deferred; close the basic slice
+
+2026-10-07, explicit human decisions on the Speaking gaps (UI_BACKEND_GAPS S-13a, S-13b, S-15a).
+
+- **Practice session identity: proposal approved.** Speaking Summary must count one practice session correctly across
+  tabs, reloads and devices, so a server-side practice session identity is proposed
+  (`docs/project/proposals/PRACTICE_SESSION_IDENTITY.md`). It is learner persistence: it goes through independent
+  architecture review, and any schema or migration waits for the human's authorization (AGENTS.md §7).
+- **Per-word timing for historical attempts: deferred.** The current take keeps its timing as now; learner
+  persistence is not widened in the Product Completion phase (S-13a stays a gap).
+- **Clear attempt history: deferred.** No destructive learner-data lifecycle in this Speaking batch (S-13b stays a
+  gap).
+- **Closing the slice.** Finish S-24, S-26, Similarity / Intonation and S-27, verify the real Speaking flow, send it
+  to independent review. If it passes, the basic Speaking slice is closed and work returns to functional coverage of
+  the whole of Orena; Speaking is not deepened further.
+
+## D-142 - Practice session identity: product decisions on the proposal
+
+2026-10-07, explicit human decisions on `docs/project/proposals/PRACTICE_SESSION_IDENTITY.md` (68cb2f2).
+
+1. A practice session ends after 30 minutes of inactivity; qualifying activity refreshes the window. Time is the
+   server's.
+2. No new learner persistence only to count text-only or non-recorded activities in this slice. They count only if an
+   existing durable server-side learner record already represents them, and never as pronunciation/audio attempts.
+3. Only the current session summary is needed now; no historical session browsing.
+4. No backfill: legacy attempts stay without a session identity; none is fabricated.
+5. Read-time 30-minute clustering is not the canonical model for new activity. It may later serve as a legacy,
+   read-only approximation; current cross-device correctness uses a persisted identity if the reviewed architecture
+   permits it.
+
+Review: the human reviews the architecture directly on the branch; the lane prepares a small proposal/implementation,
+commits it clearly and reports the branch, SHAs and scope. No other reviewer is sought unless the human asks. Any
+migration still waits for the human's authorization.
+
+## D-143 - Release to :8000: one UI, one schema chain, one artifact, one deploy path
+
+2026-10-08, explicit human decisions on `docs/project/RELEASE_8000_READINESS.md` (B1-B5), with the runtime policy and
+deployment artifact around them.
+
+1. **B5, release shape.** `/` and `/next` are not kept side by side. The new UI is the only UI; `/next` is a temporary
+   namespace. Before the :8000 release the cutover is finished so that `/` runs the new UI. An old path that is still
+   needed is PORTED or REDIRECTED; the rest is DELETED and tombstoned (`LEGACY_TOMBSTONES.md`). Supersedes the
+   readiness document's shapes A and C.
+2. **B1, migration 0016 and Reading data.** :8000 takes the canonical Reading migration `20260924_0016`. Old Reading
+   data is not converted or backfilled into the new model: legacy rows stay as they are, in the read-only archive the
+   revision creates. What is needed is a production-safe apply and rehearsal tool, not a script that turns old data
+   into new.
+3. **B2, the chain.** One production migration pack for the whole chain is prepared and reviewed on a restored copy of
+   :8000; not twenty separate architecture reviews. 0015/0016 and 0029 get their own attention (gate / delta review).
+   Nothing is applied to :8000 until the human has reviewed the evidence.
+4. **B3/B4, limits, deletion, public access.** The first release keeps `ORENA_ACCOUNT_BACKBONE=off` and :8000
+   restricted / invitation-only, not public. Account record limits, account deletion and upload limits therefore do
+   not block a controlled trial; they must be finished before a public release.
+5. **Runtime policy.** No further persistent Orena runtime is created. :8021 is dev/QA; :8000 is product-like
+   acceptance; migration rehearsal uses a disposable restored-copy environment that is removed afterwards.
+6. **Deployment artifact.** One UI, one schema chain, one release artifact, one deploy path. No agent opens a new port
+   or runtime, and none keeps two product paths in parallel.

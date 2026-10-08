@@ -258,3 +258,15 @@ assert.equal(speakableText({ done: true, metered: 'soft_limited', segments: [{ t
 assert.equal(speakableText({ done: true, metered: 'ok', segments: [{ text: 'Hello' }] }), 'Hello');
 
 console.log('Orena (Home/Contextual panel/voice/memory sheet): context label, real-suggestions-only starters, voice phase mapping, coach-notes sort, rule-40 subtitle, action/evidence real-fields-only rendering all hold: PASS');
+
+// §7: only an action the server marked open:true runs without a tap.
+{
+  const { openIfAsked } = await import('../static/orena/screens/orena/actions.js');
+  const ran = [];
+  const dispatcher = { run: async (action) => { ran.push(action.id); return { ok: true }; } };
+  await openIfAsked({ reply: { actions: [{ id: 'n0', type: 'navigate' }, { id: 'n2', type: 'navigate', open: true }] }, dispatcher, ranActions: new Set(), repaint: () => {} });
+  assert.deepEqual(ran, ['n2'], 'the marked action runs');
+  await openIfAsked({ reply: { actions: [{ id: 'n3', type: 'navigate' }] }, dispatcher, ranActions: new Set(), repaint: () => {} });
+  assert.deepEqual(ran, ['n2'], 'an unmarked offer waits for a tap');
+}
+

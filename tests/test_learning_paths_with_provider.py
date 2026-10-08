@@ -415,3 +415,53 @@ def test_reading_transfer_asks_whether_the_meaning_came_through_only_with_a_sour
         transcript="Routines shape our days.", source_language="en", target_language="vi",
         situation="", source_text="It gives shape to days."))
     assert odd["meaning_preserved"] is None  # outside the three verdicts: not shown
+
+
+def _situation_payload(**extra: Any) -> dict[str, Any]:
+    return {"carried": [], "landed_differently": [], "another_way": "", "next_attempt": "", **extra}
+
+
+def test_spoken_coaching_returns_intent_and_clarity_for_a_situation(monkeypatch) -> None:
+    seen = _provider(
+        monkeypatch,
+        _situation_payload(
+            intent_achieved={"verdict": "partly", "reason": "You greeted them but did not offer help."},
+            clarity={"verdict": "clear", "reason": "Each idea is easy to follow."},
+        ),
+    )
+
+    result = _coach(situation="A friend has just moved to your city.")
+
+    assert result["intent_achieved"] == {"verdict": "partly", "reason": "You greeted them but did not offer help."}
+    assert result["clarity"] == {"verdict": "clear", "reason": "Each idea is easy to follow."}
+    assert len(seen) == 1, "the judgements ride the same single call"
+    assert {"intent_achieved", "clarity"} <= set(seen[0]["schema"]["properties"])
+    assert "never how they sounded" in seen[0]["system"]
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"verdict": "maybe", "reason": "x"},
+        {"verdict": "yes", "reason": "  "},
+        {"verdict": "yes"},
+        "yes",
+        None,
+    ],
+)
+def test_spoken_coaching_omits_an_invalid_judgement(monkeypatch, bad) -> None:
+    _provider(monkeypatch, _situation_payload(intent_achieved=bad, clarity={"verdict": "unclear", "reason": "Hard to follow."}))
+
+    result = _coach(situation="A friend has just moved to your city.")
+
+    assert "intent_achieved" not in result
+    assert result["clarity"]["verdict"] == "unclear"
+
+
+def test_spoken_coaching_without_a_situation_asks_for_and_returns_no_judgement(monkeypatch) -> None:
+    seen = _provider(monkeypatch, _situation_payload(intent_achieved={"verdict": "yes", "reason": "ok"}))
+
+    result = _coach()
+
+    assert "intent_achieved" not in result and "clarity" not in result
+    assert "intent_achieved" not in seen[0]["schema"]["properties"]

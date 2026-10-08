@@ -11,8 +11,8 @@ import { defineCopy } from '../../copy/index.js';
 const KEYS = [
   'tabContent', 'tabLanguage', 'tabCollections', 'tabActive', 'tabDueCount',
   'typePhrase', 'newBadge', 'emptyLanguage',
-  'dueNow', 'dueItemsLabel', 'statWords', 'statPhrases', 'statSource', 'startReview', 'inThisSession',
-  'kindSpeaking',
+  'dueNow', 'dueItemsLabel', 'statWords', 'statPhrases', 'statSource', 'startReview', 'nothingDue', 'inThisSession',
+  'kindSpeaking', 'sourceReading', 'sourceFeedback',
   /* The four Active-use cards (design: `activeUse[]{stage, title, desc, dur, onOpen}`, a fixed
      shortcut list into Vocabulary's own Recall/Use/Transfer flows, not a backend-fetched row set -
      see model.js's `activeUseCards`). `dur` ("~3 min" in the design) is not carried: no route this
@@ -21,8 +21,8 @@ const KEYS = [
      match, not re-litigate per screen. */
   'activeDueTitle', 'activeDueDesc', 'activeTransferDesc', 'activeSituationTitle', 'activeSituationDesc',
   'activeTimedDesc', 'stageRecall', 'stageUse', 'stageTransfer', 'stageFast',
-  'collectionItems',
-  'more', 'deleteFromOrena', 'deletedFromOrena',
+  'collectionItems', 'emptyCollections',
+  'more', 'deleteFromOrena', 'deletedFromOrena', 'untitledContent', 'contentUnavailable',
 ];
 
 export const t = defineCopy('library', {
@@ -30,14 +30,16 @@ export const t = defineCopy('library', {
   en: {
     tabContent: 'Saved content', tabLanguage: 'Saved language', tabCollections: 'Collections', tabActive: 'Active use',
     tabDueCount: 'Due Review · {n}',
+    emptyCollections: 'No collections yet.',
     typePhrase: 'Phrase', newBadge: 'NEW', emptyLanguage: 'Nothing saved yet.',
     dueNow: 'Due now',
     dueItemsLabel_one: 'item', dueItemsLabel_other: 'items',
     statWords_one: 'word', statWords_other: 'words',
     statPhrases_one: 'phrase', statPhrases_other: 'phrases',
     statSource: 'source-aware',
-    startReview: 'Start review', inThisSession: 'In this session',
+    startReview: 'Start review', nothingDue: 'Nothing is due right now.', inThisSession: 'In this session',
     kindSpeaking: 'Speaking',
+    sourceReading: 'From your reading', sourceFeedback: 'From your writing feedback',
     activeDueTitle: 'Due review',
     activeDueDesc_one: 'Retrieve without seeing the answer · {n} item',
     activeDueDesc_other: 'Retrieve without seeing the answer · {n} items',
@@ -48,15 +50,18 @@ export const t = defineCopy('library', {
     stageRecall: 'Recall', stageUse: 'Use', stageTransfer: 'Transfer', stageFast: 'Fast retrieval',
     collectionItems_one: '{n} item', collectionItems_other: '{n} items',
     more: 'More', deleteFromOrena: 'Delete from Orena', deletedFromOrena: 'Deleted from Orena',
+    untitledContent: 'Untitled', contentUnavailable: 'No longer available',
   },
   vi: {
     tabContent: 'Nội dung đã lưu', tabLanguage: 'Từ & cụm đã lưu', tabCollections: 'Bộ sưu tập', tabActive: 'Vận dụng',
     tabDueCount: 'Cần ôn tập · {n}',
+    emptyCollections: 'Chưa có bộ sưu tập nào.',
     typePhrase: 'Cụm từ', newBadge: 'MỚI', emptyLanguage: 'Chưa lưu gì.',
     dueNow: 'Cần ôn ngay',
     dueItemsLabel_other: 'mục', statWords_other: 'từ', statPhrases_other: 'cụm từ', statSource: 'theo ngữ cảnh nguồn',
-    startReview: 'Bắt đầu ôn tập', inThisSession: 'Trong buổi này',
+    startReview: 'Bắt đầu ôn tập', nothingDue: 'Hiện chưa có mục nào đến hạn.', inThisSession: 'Trong buổi này',
     kindSpeaking: 'Nói',
+    sourceReading: 'Từ bài đọc của bạn', sourceFeedback: 'Từ phản hồi bài viết của bạn',
     activeDueTitle: 'Ôn đến hạn',
     activeDueDesc_other: 'Nhớ lại mà không xem đáp án · {n} mục',
     activeTransferDesc: 'Tạo ra từ từ một tình huống gợi ý; từ mục tiêu vẫn được giấu kín',
@@ -65,15 +70,18 @@ export const t = defineCopy('library', {
     stageRecall: 'Nhớ lại', stageUse: 'Vận dụng', stageTransfer: 'Chuyển ngữ cảnh', stageFast: 'Nhớ nhanh',
     collectionItems_other: '{n} mục',
     more: 'Thêm', deleteFromOrena: 'Xoá khỏi Orena', deletedFromOrena: 'Đã xoá khỏi Orena',
+    untitledContent: 'Chưa có tên', contentUnavailable: 'Không còn khả dụng',
   },
   zh: {
     tabContent: '已保存内容', tabLanguage: '已保存词语', tabCollections: '合集', tabActive: '运用',
     tabDueCount: '待复习 · {n}',
+    emptyCollections: '还没有合集。',
     typePhrase: '短语', newBadge: '新', emptyLanguage: '还没有保存内容。',
     dueNow: '现在待复习',
     dueItemsLabel_other: '项', statWords_other: '单词', statPhrases_other: '短语', statSource: '结合来源',
-    startReview: '开始复习', inThisSession: '本次复习',
+    startReview: '开始复习', nothingDue: '现在没有到期的内容。', inThisSession: '本次复习',
     kindSpeaking: '口语',
+    sourceReading: '来自你的阅读', sourceFeedback: '来自你的写作反馈',
     activeDueTitle: '待复习',
     activeDueDesc_other: '不看答案回忆 · {n} 项',
     activeTransferDesc: '根据情景提示说出该词；目标词保持隐藏',
@@ -82,5 +90,6 @@ export const t = defineCopy('library', {
     stageRecall: '回忆', stageUse: '运用', stageTransfer: '语境迁移', stageFast: '快速回忆',
     collectionItems_other: '{n} 项',
     more: '更多', deleteFromOrena: '从 Orena 删除', deletedFromOrena: '已从 Orena 删除',
+    untitledContent: '无标题', contentUnavailable: '已不可用',
   },
 });

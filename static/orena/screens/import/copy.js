@@ -14,12 +14,13 @@ const INTERFACE_KEYS = [
   'fieldTitleLabel', 'fieldTitlePlaceholder', 'fieldTextLabel', 'fieldTextPlaceholder',
   'fieldUrlLabel', 'fieldUrlPlaceholder',
   'importToReader', 'importAndProcess',
+  // Option descriptions, counts and the length note are system copy: the interface language (HP-1 A, D-139 HD-14).
+  'introUrl', 'introText', 'introFile', 'tooShort', 'noPercent', 'statsWords', 'statsCharacters',
   'statusImporting', 'stage_fetch', 'stage_transcribe', 'stage_segment', 'stage_translate', 'stage_ready',
 ];
 const SUPPORT_KEYS = [
   'aiTranscript', 'aiTranslation',
-  'introUrl', 'introText', 'introFile', 'tooShort', 'noPercent',
-  'statsWords', 'statsCharacters', 'urlInvalid',
+  'urlInvalid',
   'error_malformed_url', 'error_unsupported_provider', 'error_media_unavailable',
   'error_provider_timeout', 'error_provider_failure', 'error_malformed_transcript',
   'error_unsupported_source_language', 'error_invalid_target_language',

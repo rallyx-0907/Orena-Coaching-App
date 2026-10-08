@@ -44,7 +44,10 @@
   font-weight: 600;
   text-align: center;
   color: var(--muted);
-  overflow-wrap: anywhere;
+  /* Never break inside a word (X-06): a long single word such as "Understand" is centred and may overhang its
+     bar by a pixel or two at 360; several words wrap between words. */
+  overflow-wrap: normal;
+  word-break: normal;
 }
 .s-react__step.is-current .s-react__step-label { color: var(--accent-text); }
 
@@ -77,7 +80,10 @@
 }
 .s-react__foot:empty { display: none; }
 .s-react__spacer { flex: 1; }
-.s-react__cta { padding: 13px 22px; border-radius: 16px; font-size: 15px; }
+.s-react__cta { padding: 13px 20px; border-radius: 16px; font-size: 14px; line-height: 20px; } /* 46 high as the frame draws it (X-07) */
+/* The frame's "I've listened" is 15px with 22px padding (X-07). Its arrow is a block icon under the label there, a
+   prototype wrapping artefact (61px high); here it stays inline beside the label. */
+.s-react__cta--listen { padding: 13px 22px; font-size: 15px; line-height: 19px; }
 .s-react__ghost { padding: 13px 18px; border-radius: 14px; }
 .s-react__foot .o-btn--primary:hover { background: var(--accent-fill-hover); }
 
@@ -134,7 +140,15 @@
 }
 .s-react__option.is-correct { border-color: var(--green); background: var(--green-soft); }
 .s-react__option.is-wrong { border-color: var(--red); background: var(--red-soft); }
-.s-react__option:disabled { opacity: 1; }
+.s-react__option:disabled { opacity: 1; color: var(--text); }
+.s-react__option { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.s-react__option-mark { display: inline-flex; align-items: center; gap: 4px; flex: none; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.s-react__option.is-correct .s-react__option-mark { color: var(--green); }
+.s-react__option.is-wrong .s-react__option-mark { color: var(--red); }
+.s-react__qrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.s-react__replay { flex: none; }
+/* The line stays on screen while the learner writes with it (LEX-084). */
+.s-react__source { font-size: 16px; line-height: 1.5; color: var(--muted); }
 .s-react__verdict { font-size: 14px; font-weight: 600; }
 .s-react__verdict.is-correct { color: var(--green); }
 .s-react__verdict.is-wrong { color: var(--red); }

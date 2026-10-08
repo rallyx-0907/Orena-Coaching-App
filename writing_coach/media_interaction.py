@@ -668,10 +668,30 @@ def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
 
 
 MEANING_VERDICTS = ("preserved", "partly", "lost")
+# S-26: the Situation Reaction result's two judgement cards, read from the transcript like the rest of the coaching.
+INTENT_VERDICTS = ("yes", "partly", "no")
+CLARITY_VERDICTS = ("clear", "mostly", "unclear")
 
 
-def _spoken_schema(*, with_meaning: bool = False) -> dict[str, Any]:
+def _judged(raw: Any, verdicts: tuple[str, ...]) -> dict[str, str] | None:
+    """One verdict and its one short reason, or None: a verdict outside the vocabulary or without a reason is dropped,
+    never repaired."""
+    if not isinstance(raw, dict) or raw.get("verdict") not in verdicts:
+        return None
+    reason = str(raw.get("reason") or "").strip()
+    return {"verdict": raw["verdict"], "reason": reason[:240]} if reason else None
+
+
+def _spoken_schema(*, with_meaning: bool = False, with_situation_judgement: bool = False) -> dict[str, Any]:
     schema = _spoken_base_schema()
+    if with_situation_judgement and not with_meaning:
+        for key, verdicts in (("intent_achieved", INTENT_VERDICTS), ("clarity", CLARITY_VERDICTS)):
+            schema["properties"][key] = {
+                "type": "object",
+                "properties": {"verdict": {"type": "string", "enum": list(verdicts)}, "reason": {"type": "string"}},
+                "required": ["verdict", "reason"],
+            }
+            schema["required"] = [*schema["required"], key]
     if with_meaning:
         schema["properties"]["meaning_preserved"] = {"type": "string", "enum": list(MEANING_VERDICTS)}
         schema["properties"]["missing_idea"] = {"type": "string"}
@@ -776,6 +796,14 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
         f"only in {source_name}: no explanation, no quotation marks, no {target_name}. Do not "
         "score, grade or estimate a level. Never cite a source you were not given."
         + (
+            " THE SITUATION is what the learner was reacting to. In intent_achieved, say whether what they said "
+            "did what the situation called for (yes, partly or no) with one short reason. In clarity, say whether "
+            "the message is clear from the words alone (clear, mostly or unclear) with one short reason. Judge the "
+            f"words only, never how they sounded. Write both reasons in {target_name}."
+            if situation and not source_text
+            else ""
+        )
+        + (
             " The learner was restating THE SOURCE SENTENCE below. In meaning_preserved, say whether its "
             "meaning came through: preserved, partly or lost. In missing_idea, name in a few words the most "
             "important idea of the source sentence the learner left out, quoting the source's own words, or "
@@ -797,7 +825,7 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        schema=_spoken_schema(with_meaning=bool(source_text)),
+        schema=_spoken_schema(with_meaning=bool(source_text), with_situation_judgement=bool(situation)),
         max_output_tokens=1400,
     )
 
@@ -821,7 +849,14 @@ def coach_spoken_response(payload: SpokenResponseIn) -> dict[str, Any]:
 
     carried = _grounded(raw.get("carried"), with_alternative=False)
     landed = _grounded(raw.get("landed_differently"), with_alternative=True)
+    judged: dict[str, Any] = {}
+    if situation and not source_text:
+        for key, verdicts in (("intent_achieved", INTENT_VERDICTS), ("clarity", CLARITY_VERDICTS)):
+            entry = _judged(raw.get(key), verdicts)
+            if entry:
+                judged[key] = entry
     return {
+        **judged,
         "source_language": language,
         "target_language": target,
         "transcript": transcript,

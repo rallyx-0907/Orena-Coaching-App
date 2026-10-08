@@ -13,7 +13,7 @@ const layers = {
   phaseProcessing: 'interface',
   phaseResult: 'interface',
   startCta: 'interface',
-  headphonesNote: 'support',
+  headphonesNote: 'interface',
   recordingLabel: 'interface',
   statLag: 'interface',
   statMatch: 'interface',

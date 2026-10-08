@@ -220,6 +220,10 @@
   font-size: 14px;
   font-weight: 600;
 }
+/* The design draws this link as bare text (about 18px tall): on a phone its touch area reaches 44px without moving or
+   resizing anything drawn. */
+:root[data-device='mobile'] .c-section-head__action { position: relative; }
+:root[data-device='mobile'] .c-section-head__action::after { content: ''; position: absolute; inset: -13px -8px; }
 .c-section-head--sm .c-section-head__action {
   font-size: 13px;
   color: var(--accent-text);
@@ -297,6 +301,10 @@
 .c-hero {
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px 20px 18px;
   background-color: var(--toast-bg);
   background-size: cover;
   background-position: center;
@@ -307,10 +315,7 @@
   background: linear-gradient(to top, var(--scrim), transparent 60%);
 }
 .c-hero__content {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  bottom: 18px;
+  position: relative;
   color: var(--toast-ink);
 }
 .c-hero__pill {
@@ -425,3 +430,57 @@
 .o-stroke-tile .stroke-glyph__off { fill: var(--border2); }
 .o-stroke-tile .stroke-glyph__rad { fill: var(--hz-radical); }
 @media (prefers-reduced-motion: reduce) { .stroke-glyph__reveal { animation-duration: .01s; } }
+
+/* A card with no cover (HP-3 A): a --tint2 tile and the type's icon on its skill hue, as Today's hero draws it. */
+.c-media__img--blank {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 10px;
+  background-color: var(--tint2);
+}
+.c-media__cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.c-media__cover--sm {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+}
+.c-row__thumb--blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--tint2);
+}
+/* The hero's cover tile sits in the upper area, in the flow above the title block: it never covers the pill or
+   the title, however long they run. */
+.c-hero > .c-media__cover {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  margin-bottom: auto;
+}
+.c-hero > .c-media__cover + .c-hero__scrim + .c-hero__content { margin-top: 16px; }
+
+/* Phone hit areas (human review 2026-10-07): controls drawn smaller than ~44px keep their drawn size and answer a
+   ~44px touch area. The area grows only along the axis that is short, by no more than the gap to a neighbour, so
+   adjacent hit areas never overlap. */
+:root[data-device='mobile'] :is(.o-tab, .c-seg__opt, .s-progress-back, .s-progress-skill) { position: relative; }
+:root[data-device='mobile'] :is(.o-tab, .c-seg__opt, .s-progress-back, .s-progress-skill)::after {
+  content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px;
+}
+:root[data-device='mobile'] .s-progress-card__link { position: relative; }
+:root[data-device='mobile'] .s-progress-card__link::after { content: ''; position: absolute; inset: -14px -6px; }
+:root[data-device='mobile'] .s-collection-word__play { position: relative; }
+:root[data-device='mobile'] .s-collection-word__play::after { content: ''; position: absolute; inset: -9px; }
+/* The tab strip scrolls sideways, which also clips vertically: it gets 4px of room above and below (taken back with a
+   negative margin, so nothing moves) for the tabs' touch areas. */
+:root[data-device='mobile'] .o-tabs { padding-top: 4px; padding-bottom: 4px; margin-top: -4px; margin-bottom: -4px; }
+:root[data-device='mobile'] .s-progress-card__link { display: inline-block; z-index: 1; }

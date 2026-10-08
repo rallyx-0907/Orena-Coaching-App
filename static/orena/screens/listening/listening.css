@@ -785,7 +785,9 @@
 /* Typing with the phone keyboard open (mobile QA BUG-02): the room fits the visible area above the keyboard and
    keeps only the task - transport, answer, hint, Check. Video, seek bar and the line map return when typing ends. */
 :root[data-device="mobile"] .s-listening.is-typing {
-  height: var(--ls-visible-h, 100%);
+  /* The visible area above the keyboard, less the status-bar clearance the column already starts below: anything
+     taller makes iOS scroll the page and lift the answer out of sight. */
+  height: calc(var(--ls-visible-h, 100%) - env(safe-area-inset-top, 0px));
   padding-bottom: 8px;
 }
 /* The player stays rendered (Replay still plays it), only out of sight: a hidden iframe can stop its media. */
@@ -815,4 +817,154 @@
   padding: 2px 8px;
   border-radius: 8px;
   background: var(--scrim);
+}
+
+/* Longer interface languages (VI, mobile QA 2026-10-07): the Hint button and the Transcript title never break
+   inside a word; the mode hint gives way (one line, ellipsis) instead. */
+.s-listening__dict .s-dict__hint { flex: none; white-space: nowrap; }
+.s-listening__dict .s-dict__check { flex: none; white-space: nowrap; }
+.s-listening__transcript-title { flex: none; white-space: nowrap; }
+:root[data-device="mobile"] .s-listening__transcript-hint {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Line actions (LEX-037): on a desk all seven sit in the row as the frame draws them; on a phone the frequent
+   four come first in one tidy row and the other three open from ⋯, instead of four uneven rows. */
+.s-listening__selected-tools { display: flex; gap: 4px; }
+.s-listening__moreacts { display: none; }
+/* On a desk the selected line keeps the room its text and meaning need (LEX-086); the player gives way first, as it
+   already does (it keeps its 16:9 only while there is room). */
+:root[data-device="desktop"] .s-listening__selected:not(.s-listening__dict) { flex-shrink: 0; }
+:root[data-device="desktop"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-scroll { flex: none; max-height: 12em; }
+/* The practice paths are one named group under the line's own actions (LEX-086): what the learner does with this
+   line next, apart from what they do to it (play, save, look up, explain). */
+.s-listening__extra-acts {
+  flex: 1 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.s-listening__practise-label { flex: 1 0 100%; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.s-listening__practise-hint { flex: 1 0 100%; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.s-listening__moreacts-label { display: none; }
+:root[data-device="mobile"] .s-listening__moreacts { display: inline-flex; width: auto; gap: 6px; padding: 0 10px; align-items: center; }
+:root[data-device="mobile"] .s-listening__moreacts-label { display: inline; font-size: 13px; font-weight: 600; color: var(--text); }
+:root[data-device="mobile"] .s-listening__selected-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+:root[data-device="mobile"] .s-listening__selected-actions > *,
+:root[data-device="mobile"] .s-listening__extra-acts > * {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  height: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:root[data-device="mobile"] .s-listening__extra-acts { display: none; }
+:root[data-device="mobile"] .s-listening__extra-acts.is-open { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding-top: 4px; }
+:root[data-device="mobile"] .s-listening__extra-acts .o-btn, :root[data-device="mobile"] .s-listening__extra-acts .s-listening__pill { padding: 0 6px; font-size: 13px; }
+/* The phone keeps the group's name and drops the sentence under it: the room is for the line and its actions. */
+:root[data-device="mobile"] .s-listening__practise-hint { display: none; }
+:root[data-device="mobile"] .s-listening__practise-label,
+:root[data-device="mobile"] .s-listening__practise-hint { grid-column: 1 / -1; flex: none; width: auto; height: auto; text-align: left; white-space: normal; }
+
+/* Dictation result actions (LEX-037): one row - Retry and Explain as compact icon buttons on a phone, the next
+   step the one wide, filled action. */
+:root[data-device="mobile"] .s-listening__dict .s-dict__actions { flex-wrap: nowrap; gap: 8px; margin-top: 0; }
+:root[data-device="mobile"] .s-listening__dict .s-dict__actlabel {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+:root[data-device="mobile"] .s-listening__dict .s-dict__retry,
+:root[data-device="mobile"] .s-listening__dict .s-dict__ai {
+  flex: none; width: 46px; height: 46px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+}
+:root[data-device="mobile"] .s-listening__dict .s-dict__next { flex: 1 1 auto; height: 46px; min-width: 0; }
+
+
+/* The phone's transport row keeps its controls together at 360px in longer languages (LEX-037): a slightly tighter
+   gap, so More does not drop onto a row of its own. */
+:root[data-device="mobile"] .s-listening__controls { --ls-cgap: 6px; }
+@media (max-width: 389px) {
+  :root[data-device="mobile"] .s-listening__controls { --ls-cgap: 4px; }
+  :root[data-device="mobile"] .s-listening__controls .s-listening__pill--speed,
+  :root[data-device="mobile"] .s-listening__controls .s-listening__pill--toggle { padding: 0 10px; }
+}
+
+/* The transport icon is never the click target (LEX-045): a press anywhere on the round button is the button's. */
+.s-listening__playbtn svg { pointer-events: none; }
+
+/* The selected line's header tools (LEX-037): on a phone ⋯ and Close keep their 17px glyphs but each answers a
+   40px touch surface, 4px apart. The surface reaches up into the card's empty top padding only, never down over
+   the line below it (LEX-037). */
+:root[data-device="mobile"] .s-listening__selected-tools { display: inline-flex; align-items: center; gap: 4px; margin: -12px -11px 0 0; }
+:root[data-device="mobile"] .s-listening__selected-close { width: 40px; height: 40px; padding: 0; border-radius: 10px; }
+:root[data-device="mobile"] .s-listening__selected-close.s-listening__moreacts { width: auto; padding: 0 10px; }
+
+/* The selected line's card never runs under the Transcript (LEX-037): on a phone the card may shrink - its line and
+   meaning scroll in their own region - while its actions, the ⋯ row included, always keep their full height. */
+:root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) { flex: 0 1 auto; min-height: auto; }
+/* While ⋯ is open the learner is acting on the selected line: the Transcript gives up height (to its title and a strip of the line) so
+   the third action row fits whole. */
+:root[data-device="mobile"] .s-listening:has(.s-listening__extra-acts.is-open) .s-listening__transcript { min-height: 52px; }
+/* With the practice group open the line and its meaning scroll in their own strip, so the group's buttons fit whole at 360x740. */
+:root[data-device="mobile"] .s-listening__selected:has(.s-listening__extra-acts.is-open) .s-listening__selected-scroll { max-height: 5.4em; }
+:root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-scroll { flex: 0 1 auto; min-height: 40px; overflow-y: auto; }
+:root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-actions { flex: none; overflow: visible; }
+
+/* A short phone (375x667, 320x568) with a line selected (human review 2026-10-07): the room is recomposed, it never
+   scrolls the media column to reach a control. The poster/player is the non-essential visual and gives way first (a
+   compact strip that still plays and shows the time); transport and the selected line's actions stay in view; the
+   Transcript keeps its own bounded scroll region. */
+@media (max-height: 700px) {
+  :root[data-device="mobile"] .s-listening:has(.s-listening__selected) .s-listening__player { flex: none; height: 96px; min-height: 0; aspect-ratio: auto; }
+  :root[data-device="mobile"] .s-listening:has(.s-listening__selected) .s-listening__transcript { min-height: 72px; }
+  /* The line and its meaning keep a bounded region of their own; the actions under them never move out of view. */
+  :root[data-device="mobile"] .s-listening__selected:not(.s-listening__dict) .s-listening__selected-scroll { max-height: 4.6em; }
+}
+/* A very short phone (320x568): the picture itself gives way while a line is selected. The player stays rendered and
+   keeps playing (as in typing mode) - only its visual and the seek strip leave; transport stays in the row below. */
+/* On a short phone with the "Practise this line" group open the learner is acting on the line: the picture gives way
+   as on a very short phone, so the group's buttons are in view without scrolling. */
+@media (max-height: 700px) {
+  :root[data-device="mobile"] .s-listening:has(.s-listening__extra-acts.is-open) .s-listening__player {
+    position: absolute; width: 1px; height: 1px; min-height: 0; opacity: 0; pointer-events: none;
+  }
+  :root[data-device="mobile"] .s-listening:has(.s-listening__extra-acts.is-open) .s-listening__seek { display: none; }
+}
+@media (max-height: 600px) {
+  :root[data-device="mobile"] .s-listening:has(.s-listening__selected) .s-listening__player {
+    position: absolute; width: 1px; height: 1px; min-height: 0; opacity: 0; pointer-events: none;
+  }
+  :root[data-device="mobile"] .s-listening:has(.s-listening__selected) .s-listening__seek { display: none; }
+}
+
+/* The completed panel's actions on a phone (LEX-037): two even columns, each label on one line with room around
+   it, instead of four squeezed cells where one wraps. With three actions the primary takes the full row. */
+:root[data-device="mobile"] .s-listening__end-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+:root[data-device="mobile"] .s-listening__end-actions .o-btn {
+  min-width: 0; min-height: 44px; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+:root[data-device="mobile"] .s-listening__end-actions .o-btn:nth-child(odd):last-child { grid-column: 1 / -1; }
+
+/* The open "Practise this line" group is a child of the action row but not one of its 40px buttons (LEX-086): it takes
+   its own height so its buttons are never clipped. On the phone the header button already names the group, so the
+   group's own label is not repeated, and that button's label stays on one line. */
+:root[data-device="mobile"] .s-listening__selected-actions > .s-listening__extra-acts.is-open { height: auto; overflow: visible; }
+:root[data-device="mobile"] .s-listening__extra-acts .s-listening__practise-label { display: none; }
+:root[data-device="mobile"] .s-listening__moreacts-label { white-space: nowrap; }
+/* The smallest phones (320x568) with the group open: the line's own region narrows to about two lines (it scrolls
+   inside), so the three practise buttons stay in view. */
+@media (max-height: 600px) {
+  :root[data-device="mobile"] .s-listening__selected:has(.s-listening__extra-acts.is-open) .s-listening__selected-scroll { max-height: 2.9em; }
 }

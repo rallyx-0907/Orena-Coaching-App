@@ -7,9 +7,9 @@
    pinyin or meaning, and a line is revealed only once it has been checked in this session. */
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
-import { toast } from '../../kit/toast.js';
 import { markGlyph } from '../../kit/brand.js';
 import { langAttr } from '../../kit/lang.js';
+import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { dictationEvidence, recoverListeningEvidence } from '../../product/evidence.js';
@@ -24,12 +24,15 @@ function setText(target, value) {
 
 /* `lesson` is dictation/model.js#mapLesson's shape; `priorRead` may be a function. `byId` is the stored progress per segment; the
    factory adds this session's own checks to it. */
-export function createLinePractice({ lesson, byId, priorRead = true, memory = null, onChange = () => {}, onNext = () => {}, onCheck = () => {} }) {
+export function createLinePractice({ lesson, byId, priorRead = true, memory = null, onChange = () => {}, onNext = () => {}, onCheck = () => {}, onRetry = () => {} }) {
   // Whether the stored progress was read: a value, or a question asked at check time when it loads later.
   const readPrior = typeof priorRead === 'function' ? priorRead : () => priorRead;
   const localById = new Map(); // this session's latest real check per segment
   const revealedIds = new Set(); // lines checked in this session: their answer may now be drawn
   const results = new Map(); // each checked line keeps its own answer and result (id -> state)
+  // Whether this line's attempt reached the server (LEX-040): '' | 'failed' | 'language' | 'unread'. Shown in the
+  // result itself, never as a toast over its actions, and never as a success mark.
+  const saveStates = new Map();
   let seg = null;
   let stageEl = null;
   let dockEl = null;
@@ -142,9 +145,11 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
     mount(stageEl, html`<div class="s-dict__result">
       <div class="s-dict__scorerow">
         <span class="s-dict__score">${score.correct}/${score.total}</span>
+        ${lesson.language === 'zh' ? html`<span class="s-dict__scoreunit">${t('scoreUnitHan')}</span>` : ''}
         <span class="s-dict__scorenote">${t(scoreNoteKey(score.tier))}</span>
         ${hintLevel > 0 ? html`<span class="s-dict__hintbadge">${t('usedHintBadge')}</span>` : ''}
       </div>
+      ${saveNoteMarkup()}
       <div class="s-dict__chipblock">
         <div class="s-dict__chiplabel">${t('youWrote')}</div>
         <div class="s-dict__chips" lang="${langAttr(lesson.language)}">
@@ -157,22 +162,32 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
         <div class="s-dict__chips" lang="${langAttr(lesson.language)}">
           ${chips.src.map((chip) => html`<span class="s-dict__chip s-dict__chip--src-${chip.kind}">${chip.text}</span>`)}
         </div>
-        ${seg.support ? html`<div class="s-dict__support">${seg.support}</div>` : ''}
+        ${seg.support ? html`<div class="s-dict__support" lang="${langAttr(languages().support)}">${seg.support}</div>` : ''}
       </div>
     </div>`);
     mount(dockEl, html`<div class="s-dict__actions">
-      <button type="button" class="s-dict__navbtn s-dict__retry" data-retry>${t('retry')}</button>
-      <button type="button" class="s-dict__ai" data-explain>${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explainLine')}</button>
+      <button type="button" class="s-dict__navbtn s-dict__retry" data-retry aria-label="${t('retry')}" title="${t('retry')}">${raw(icon('rotate-ccw', { size: 16 }))}<span class="s-dict__actlabel">${t('retry')}</span></button>
+      <button type="button" class="s-dict__ai" data-explain aria-label="${t('explainLine')}" title="${t('explainLine')}">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}<span class="s-dict__actlabel">${t('explainLine')}</span></button>
       <span class="s-dict__spacer"></span>
       <button type="button" class="o-btn o-btn--primary s-dict__next" data-next>${nextLabel}</button>
     </div>`);
     q('[data-retry]').addEventListener('click', retry);
+    q('[data-save-retry]')?.addEventListener('click', () => {
+      const outgoing = pending.get(seg.id);
+      if (!outgoing) return;
+      pending.delete(seg.id);
+      saveStates.delete(seg.id);
+      paint();
+      void persist(seg, outgoing);
+    });
     q('[data-explain]').addEventListener('click', () => {
       askOrena({
         surface: 'listening.dictation',
         activity_type: 'listening',
         content_id: `media:${lesson.id}`,
         selected_item: { type: 'sentence', id: seg.id, text: seg.text, lang: lesson.language },
+        // Explain explains: the question goes at once, no choosing first (LEX-042).
+        ask: t('explainAsk'),
       });
     });
     q('[data-next]').addEventListener('click', () => onNext(seg));
@@ -183,6 +198,35 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
     if (checked) paintPost();
     else paintPre();
   }
+
+  function saveNoteMarkup() {
+    const state = saveStates.get(seg.id) || '';
+    if (!state) return '';
+    const key = { failed: 'saveFailed', language: 'saveLanguage', unread: 'progressUnread' }[state];
+    return html`<div class="s-dict__savenote" role="status">${raw(icon('circle-alert', { size: 15 }))}<span>${t(key)}</span>${
+      state === 'failed' ? html`<button type="button" class="s-dict__saveretry" data-save-retry>${t('saveRetry')}</button>` : ''}</div>`;
+  }
+
+  /* Save one checked attempt; a failure stays with the result, with a retry when retrying can help. */
+  async function persist(line, outgoing) {
+    try {
+      const saved = await api.saveListeningProgress(outgoing);
+      saveStates.delete(line.id);
+      if (saved?.item) {
+        // The stored score is the server's (D-103.2): once acknowledged it replaces the instant mark.
+        byId.set(line.id, saved.item);
+        localById.delete(line.id);
+      }
+    } catch (error) {
+      // A lesson outside the learner's learning language cannot be saved: saying so beats a retry that fails again.
+      const language = error?.status === 409 || error?.status === 422 || /language/.test(String(error?.category || error?.detail?.category || ''));
+      saveStates.set(line.id, language ? 'language' : 'failed');
+      if (!language) pending.set(line.id, outgoing);
+    }
+    if (seg?.id === line.id && checked) paint();
+    onChange();
+  }
+  const pending = new Map(); // the attempt a retry would send again
 
   async function check() {
     const line = seg;
@@ -203,21 +247,12 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
       try {
         outgoing = await recover(outgoing);
       } catch {
-        toast(t('progressUnread'));
+        saveStates.set(line.id, 'unread');
+        if (seg?.id === line.id && checked) paint();
         return;
       }
     }
-    try {
-      const saved = await api.saveListeningProgress(outgoing);
-      if (saved?.item) {
-        // The stored score is the server's (D-103.2): once acknowledged it replaces the instant mark.
-        byId.set(line.id, saved.item);
-        localById.delete(line.id);
-        onChange();
-      }
-    } catch {
-      toast(t('saveFailed'));
-    }
+    await persist(line, outgoing);
   }
 
   function retry() {
@@ -228,8 +263,11 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
     checked = false;
     lastResult = null;
     results.delete(seg.id);
+    // A new attempt is a real test again: the line's words go back into hiding until it is checked (LEX-038).
+    revealedIds.delete(seg.id);
     ensureEvidence();
     paint();
+    onRetry(seg);
     q('[data-input]')?.focus();
   }
 

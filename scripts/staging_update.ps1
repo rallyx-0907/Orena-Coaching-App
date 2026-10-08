@@ -223,7 +223,7 @@ if ($LASTEXITCODE -ne 0) { Die "the web container did not start. Previous contai
 
 Step "7. Health"
 $healthy = $true
-foreach ($route in @('/', '/next', '/api/me')) {
+foreach ($route in @('/', '/api/me')) {
     $code = 'ERR'
     foreach ($i in 1..90) {
         try { $code = (Invoke-WebRequest -Uri "$Url$route" -UseBasicParsing -TimeoutSec 3).StatusCode } catch {
@@ -245,5 +245,5 @@ if (-not $healthy) {
     & docker logs --tail 40 $Web
     Die "staging is not healthy. The previous container is kept (docker ps -a); the backup above was taken before any migration."
 }
-Write-Host "`n  Open $Url/next" -ForegroundColor Green
+Write-Host "`n  Open $Url/" -ForegroundColor Green
 exit 0

@@ -596,6 +596,11 @@
   font-weight: 700;
 }
 
+/* A phone sheet ends at the screen's bottom edge: its last row (the foot, or the body when there is no foot) keeps
+   clear of the home indicator. max() keeps the drawn padding where there is no inset (desk, Android, browsers). */
+:root[data-device='mobile'] .o-sheet__foot { padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); }
+:root[data-device='mobile'] .o-sheet__body:last-child { padding-bottom: max(22px, env(safe-area-inset-bottom, 0px)); }
+
 .o-toast {
   position: absolute;
   left: 0;
@@ -648,3 +653,6 @@
   width: 10px;
   flex: none;
 }
+
+/* iOS Safari zooms the page when a text field under 16px takes focus (and leaves it zoomed): on a phone the field is 16px. */
+:root[data-device='mobile'] .o-search input { font-size: 16px; }

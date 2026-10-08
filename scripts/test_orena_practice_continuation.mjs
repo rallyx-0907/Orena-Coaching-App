@@ -22,6 +22,12 @@ assert.equal(pendingRows({ continuation: [visits[2]], conversations: { [convo.id
 for (const state of [{ ...convo, ended: true }, { ...convo, turns: [] }, { ...convo, language: 'en' }]) {
   assert.equal(pendingRows({ continuation: [visits[2]], conversations: { [convo.id]: state } }, 'zh').length, 0);
 }
+{ // W-03: the same scenario left unfinished twice is one Continue card (the newest); another scenario is its own
+  const twice = (id, situation) => ({ id, language: 'zh', title: '对话', situation, ended: false, turns: [{ id: 't', role: 'learner', text: '你好' }] });
+  const rows = pendingRows({ continuation: ['conversation:new', 'conversation:old', 'conversation:other'].map((id) => ({ id, title: 'Conversation' })),
+    conversations: { 'conversation:new': twice('conversation:new', 'Say hello'), 'conversation:old': twice('conversation:old', 'Say hello'), 'conversation:other': twice('conversation:other', 'Order food') } }, 'zh');
+  assert.deepEqual(rows.map((row) => row.id), ['conversation:new', 'conversation:other']);
+}
 assert.equal(pendingRows({ continuation: [{ id: 'essay:2' }], expressions: { 'essay:2': 'Already submitted text' } }, 'en').length, 0);
 const facts = new Map([
   ['media:clip', { canonicalId: 'clip', segment: 's2', index: 2, total: 8 }],

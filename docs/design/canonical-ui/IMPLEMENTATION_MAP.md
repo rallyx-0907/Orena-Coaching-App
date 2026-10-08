@@ -32,13 +32,13 @@ Routes are hash routes of the new entry (`/next#/…` until the cutover, then
 | Banner · Loading · Load error | `kit/states.js` (offline banner in `main.js`) | `scripts/test_orena_kit.mjs` | reviewable |
 | Toast | `kit/toast.js` | `scripts/test_orena_kit.mjs` | building |
 | Sheet host (desk panel / phone bottom sheet, scrim) | `kit/overlay.js` | `scripts/test_orena_kit.mjs` | building |
-| Filter Sheet | `screens/discover/filter-sheet.js` | | planned |
+| Filter Sheet | `screens/discover/screen.js` (`paintSheetBody`), `screens/discover/model.js` (`filterOptions`, topic vocabulary) | `scripts/test_orena_screen_discover.mjs` | reviewable |
 | Word Quick Sheet · Sentence Quick Sheet | `screens/quick-sheet/` | `scripts/test_orena_screen_quick-sheet.mjs` | reviewable |
 | Vocabulary Focus | `screens/listening/vocab-sheet.js` | `scripts/test_orena_screen_listening.mjs` | reviewable |
 | Contextual Orena · Orena Voice | `screens/orena/panel.js`, `screens/orena/voice.js` | `scripts/test_orena_screen_orena.mjs`, `scripts/test_orena_agent.mjs` | reviewable |
 | Import | `screens/import/` (opened from Discover's "+ Import") | `scripts/test_orena_screen_sheets.mjs` | reviewable |
 | Notifications | `screens/notifications/` (opened from the shell bell, `shell/router.js`) | `scripts/test_orena_screen_sheets.mjs` | reviewable |
-| Stroke Practice | `screens/word/stroke-practice.js` | | planned |
+| Stroke Practice | `screens/word/stroke-sheet.js`, `screens/word/stroke-tiles.js` | `scripts/test_orena_screen_word.mjs` | reviewable (styled from Word and Review, browser-checked in the Vocabulary batch 1ce3b816) |
 | Prompt Setup (writing setup) | `screens/writing/` (its setup sheet) | `scripts/test_orena_screen_writing.mjs` | reviewable |
 | Mic state | `screens/mic/` | `scripts/test_orena_screen_mic.mjs` | reviewable |
 | Lesson complete | `screens/lesson-complete/` | `scripts/test_orena_screen_lesson-complete.mjs` | reviewable |
@@ -148,5 +148,13 @@ existing backend. The Practice generator still has no working backend and is una
 
 ## Retired by the cutover
 
-Filled in by the cutover slice: every old address, the surface that replaced it,
-and its `LEGACY_TOMBSTONES.md` entry.
+Cutover done (D-091 item 5, D-143). The learner UI is the only UI and is served at `/` from
+`templates/orena/index.html`; every retired surface is deleted and tombstoned in `LEGACY_TOMBSTONES.md`.
+
+| Retired | Now | Where it is recorded |
+| --- | --- | --- |
+| `/` as the old UI (`ui/*.js`, `app.js`, old stylesheets, `theme.js`/`theme.css`) | `/` = `main.js` + `screens/*` | "The pre-cutover learner UI at `/`" |
+| `/next`, `/login`, `/becoming` | redirect to `/` (hash kept) | same, and "`/becoming`" |
+| `#/practice`, `#/encounter?id=`, `#/expression`, `#/language`, `#/history`, `#/preferences`, `#/continue` and the other old hashes | `shell/former-addresses.js` maps each to its place | `test_orena_former_addresses.mjs` |
+| `#/admin?id=<section>` old console (`admin/*`, `ui/admin.js`, `static/admin.js`) | `#/admin/<area>` (`screens/admin`) | "The old Platform Admin console" |
+| `templates/login.html`, `static/account.js` | Welcome and Account steps | "`templates/login.html`, `static/account.js`" |

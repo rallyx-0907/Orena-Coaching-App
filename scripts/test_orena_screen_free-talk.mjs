@@ -67,7 +67,21 @@ assert.equal(pace('一二三四', 30_000, 'zh'), 8);
 {
   assert.deepEqual(resultStats('one two three four five six', 30_000, 'en'), { words: 6, pace: 12, linking: 0 });
   assert.deepEqual(resultStats('我今天很忙', 30_000, 'zh'), { words: 5, pace: 10, linking: 0 });
-  assert.deepEqual(resultStats('', 0, 'en'), { words: 0, pace: null, linking: 0 }, 'nothing measured: words 0, pace a dash, linking 0');
+  {
+  const { countLinkers } = await import('../static/orena/screens/free-talk/linking.js');
+  assert.equal(countLinkers('I was late because the bus broke down, so I walked. However, it was fine.', 'en'), 3);
+  assert.equal(countLinkers('First I woke up, and then I ate. For example, rice. Also tea, but finally coffee.', 'en'), 6);
+  assert.equal(countLinkers('She is also absolutely sober and thoughtful', 'en'), 1, 'whole words only: "so" inside "also"/"sober" is not a linker');
+  assert.equal(countLinkers('Because', 'en'), 1);
+  assert.equal(countLinkers('', 'en'), 0);
+  assert.equal(countLinkers('因为下雨，所以我没去。但是我很开心，然后我们回家了。', 'zh'), 4);
+  assert.equal(countLinkers('首先我吃饭，而且我喝茶。比如米饭。最后我睡觉。', 'zh'), 4);
+  assert.equal(countLinkers('我今天很忙', 'zh'), 0);
+  assert.equal(countLinkers('', 'zh'), 0);
+  assert.equal(resultStats('I ran but I was late.', 30_000, 'en').linking, 1);
+  assert.equal(resultStats('我很忙，但是我来了', 30_000, 'zh').linking, 1);
+}
+assert.deepEqual(resultStats('', 0, 'en'), { words: 0, pace: null, linking: 0 }, 'nothing measured: words 0, pace a dash, linking 0');
   const labels = { words: 'Words', pace: 'Pace', paceUnit: 'wpm' };
   assert.deepEqual(ledgerFacts({ words: 6, pace: 12, linking: 0 }, labels), [{ label: 'Words', value: '6' }, { label: 'Pace', value: '12 wpm' }]);
   assert.deepEqual(ledgerFacts({ words: 6, pace: null, linking: 0 }, labels), [{ label: 'Words', value: '6' }], 'no pace measured, none logged');
@@ -94,6 +108,7 @@ assert.equal(pace('一二三四', 30_000, 'zh'), 8);
   assert.deepEqual(phraseWords(page), ['buffer', 'linger', 'poised', 'candid'], 'capped at 4, a blank word dropped');
   assert.deepEqual(phraseWords(null), []);
   assert.deepEqual(phraseWords({ items: [] }), []);
+  assert.deepEqual(phraseWords({ items: [{ word: 'With the big bang starting the year and as cheering began, we left.' }, { word: 'take a break' }, { word: '重要' }] }), ['take a break', '重要'], 'a whole sentence is not a useful-phrase chip (S-18)');
 }
 
 // 8. headlineKind: the 3-way split the frame's own headline draws (none / one / many), against a
@@ -134,6 +149,20 @@ assert.equal(headlineKind(5), 'many');
   const screen = fs.readFileSync(new URL('../static/orena/screens/free-talk/screen.js', import.meta.url), 'utf8');
   assert.match(screen, /language === 'zh' \? \{ count: 'statChars', pace: 'statPaceUnitChars' \}/, 'the unit label follows the learning language');
   assert.doesNotMatch(screen, /t\('statWords'\)|t\('statPaceUnit'\)/, 'no tile names its unit without the learning language');
+}
+
+/* --- LEX-051: saved items are called what they are, and only called "related" with evidence --- */
+{
+  const { phrasesFor, relatesToTopic } = await import('../static/orena/screens/free-talk/model.js');
+  const page = { items: [{ word: '黄' }, { word: '城市' }, { word: '花生' }, { word: 'With the big bang starting the year and as cheering began, we left.' }, { word: 'commute' }] };
+  assert.deepEqual(phrasesFor(page, ''), { kind: 'library', items: ['黄', '城市', '花生', 'commute'] }, 'no topic: the library, sentences never');
+  assert.deepEqual(phrasesFor(page, '带一个人认识你的城市 一位朋友刚搬到你的城市'), { kind: 'topic', items: ['城市'] }, 'a Chinese item inside the topic is related');
+  assert.equal(phrasesFor(page, '换个角度看').kind, 'library', 'nothing overlaps: no relatedness is claimed');
+  assert.equal(relatesToTopic('commute', 'My daily commute to work'), true);
+  assert.equal(relatesToTopic('so', 'also so'), false, 'a short word proves nothing');
+  assert.equal(relatesToTopic('黄', '黄色的城市'), false, 'a single character proves nothing');
+  assert.equal(phrasesFor(null, '城市').items.length, 0);
+  assert.equal(phrasesFor(page, '').items.length <= 4, true);
 }
 
 console.log('Orena screen free-talk: model mapping (topics, clock, wave, counts, pace, result tiles, ledger facts, headline) and the real spoken-response captures: PASS');

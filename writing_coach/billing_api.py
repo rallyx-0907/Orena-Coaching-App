@@ -80,7 +80,7 @@ def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
     base = _public_base or str(request.base_url).rstrip("/")
     try:
         return service.start_checkout(incarnation_id=incarnation, price_key=payload.price, operation_id=payload.operation_id,
-                                      return_url=f"{base}/next#/profile", cancel_url=f"{base}/next#/profile")  # fmt: skip
+                                      return_url=f"{base}/#/profile", cancel_url=f"{base}/#/profile")  # fmt: skip
     except LookupError:
         raise orena_http_error(404, "price_not_offered", "This price is not offered.", retryable=False) from None
     except CheckoutRefused as refused:

@@ -250,3 +250,25 @@
   font-weight: 600;
 }
 .s-dict__hinttoggle[hidden] { display: none; }
+
+/* An attempt that did not reach the server (LEX-040): said in the result, with an alert mark, never over the
+   result's actions and never as a success. */
+.s-dict__savenote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--amber);
+}
+.s-dict__saveretry {
+  border: 0;
+  background: none;
+  padding: 2px 0;
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.s-dict__scoreunit { font-size: 13px; color: var(--muted); margin-left: -6px; }
+.s-dict__retry { display: inline-flex; align-items: center; gap: 6px; }
+.s-dict__savenote > svg { flex: none; margin-top: 2px; }
+.s-dict__savenote > span { flex: 1 1 auto; min-width: 0; }

@@ -13,11 +13,14 @@ const {
   libraryKindFor,
   primaryDestination,
   placeFor,
+  mediaPlaceFor,
+  segmentStarts,
   normalizeArticle,
   normalizeBook,
   normalizeMedia,
   normalizeText,
   pickRelated,
+  relatednessScore,
 } = await import('../static/orena/screens/content/model.js');
 
 // 1. The shared content-id scheme (article/book/media/upload/text; book carries an optional
@@ -80,16 +83,16 @@ assert.deepEqual(placeFor([{ id: 'other', place: { within: 50 } }], 'article:x')
 // or null, never a placeholder string or a guessed number.
 // D-130: the description is the article's own metadata; the body is never presented as one.
 assert.deepEqual(normalizeArticle({ title: 'Sông Hồng', attribution: { author: 'Báo X' }, level: 'B1', reading_time_seconds: 300, body: 'ngắn', description: 'Mô tả bài' }), {
-  title: 'Sông Hồng', language: '', source: 'Báo X', level: 'B1', minutes: 5, desc: 'Mô tả bài', image: '',
+  title: 'Sông Hồng', language: '', source: 'Báo X', level: 'B1', minutes: 5, topic: '', desc: 'Mô tả bài', image: '',
 });
-assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { title: 'No attribution', language: '', source: '', level: '', minutes: null, desc: '', image: '' });
+assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { title: 'No attribution', language: '', source: '', level: '', minutes: null, topic: '', desc: '', image: '' });
 // languages-5 / finding A: the article's own real language field
 // (reading_content_repository.py's `_article` projection), carried through untranslated.
 assert.equal(normalizeArticle({ title: 'x', body: '', language: 'zh' }).language, 'zh');
 assert.equal(normalizeArticle({ title: 'Long', body: 'x'.repeat(400) }).desc, '', 'no description metadata: the block is hidden');
 
 assert.deepEqual(normalizeBook({ id: 'b1', title: 'Truyện', author: 'Tác giả', description: 'Mô tả' }), {
-  title: 'Truyện', language: '', source: 'Tác giả', level: '', minutes: null, desc: 'Mô tả', image: '',
+  title: 'Truyện', language: '', source: 'Tác giả', level: '', minutes: null, desc: 'Mô tả', chapters: [], image: '',
 });
 // languages-5 / finding A: `learning_language`, a book's own field name (different from an
 // article's `language`).
@@ -119,7 +122,7 @@ assert.equal(normalizeMedia({ catalog: { language: 'zh' }, asset: {} }).language
 assert.equal(normalizeMedia({ asset: { source_language: 'en' } }).language, 'en');
 
 const upload = normalizeMedia({ asset: { title: 'Học viên tự tải lên', duration_ms: null }, playback: { kind: 'video' }, transcript: null });
-assert.deepEqual(upload, { title: 'Học viên tự tải lên', language: '', source: '', level: '', minutes: null, desc: '', image: '', playbackKind: 'video', transcriptOrigin: 'none', segments: [] });
+assert.deepEqual(upload, { title: 'Học viên tự tải lên', language: '', source: '', level: '', minutes: null, topic: '', desc: '', image: '', playbackKind: 'video', transcriptOrigin: 'none', segments: [] });
 
 const text = normalizeText({ title: 'Của tôi', text: 'ngắn' });
 assert.deepEqual(text, { title: 'Của tôi', source: '', level: '', minutes: null, desc: 'ngắn', image: '' });
@@ -145,4 +148,42 @@ assert.deepEqual(
   [{ id: 'm2', title: 'Kept' }],
 );
 
+// X-11: a media place carries a line, not a percent - it resumes at that line's start (the entry Today calls "Continue").
+{
+  const starts = segmentStarts({ transcript: { segments: [{ segment_id: 'm:1', start_ms: 0 }, { segment_id: 'm:2', start_ms: 44000 }, { segment_id: 'bad', start_ms: null }] } });
+  assert.deepEqual(starts, { 'm:1': 0, 'm:2': 44000 });
+  assert.deepEqual(mediaPlaceFor([{ id: 'media:a', segment: 'm:2' }], 'media:a', starts, 88000), { started: true, atMs: 44000, at: '0:44', percent: 50 });
+  assert.deepEqual(mediaPlaceFor([{ id: 'media:a', segment: 'm:2' }], 'media:a', starts, null), { started: true, atMs: 44000, at: '0:44', percent: null }, 'no duration, no percent');
+  assert.deepEqual(mediaPlaceFor([{ id: 'media:a', segment: 'gone' }], 'media:a', starts, 88000), { started: true, atMs: null, at: '', percent: null }, 'a place whose line is not in the transcript still continues, with no strip');
+  assert.equal(mediaPlaceFor([], 'media:a', starts, 88000).started, false);
+  assert.equal(mediaPlaceFor([{ id: 'media:b', segment: 'm:2' }], 'media:a', starts, 88000).started, false);
+}
+
 console.log('Orena Content Detail model: id scheme, rule-40 fallbacks, normalisation and related-list selection: PASS');
+
+// LEX-075: related means related. A score keeps only items that share a topic, a level or an author with the open
+// one, closest first; with nothing in common the section has no items (and is not drawn).
+const open = { topic: 'travel', level: 'B1', source: '' };
+const catalogue = [
+  { id: 'a', title: 'A', topic: 'food', level: 'B2' },
+  { id: 'b', title: 'B', topic: 'travel', level: 'B2' },
+  { id: 'c', title: 'C', topic: 'food', level: 'B1' },
+  { id: 'd', title: 'D', topic: 'travel', level: 'B1' },
+];
+assert.deepEqual(
+  pickRelated(catalogue, { excludeId: 'x', map: (item) => ({ id: item.id, title: item.title }), score: (item) => relatednessScore(open, item) }).map((item) => item.id),
+  ['d', 'b'],
+  'same topic and level first, then the topic; level alone is not relatedness (LEX-075 reopened), so c is not offered',
+);
+assert.deepEqual(pickRelated(catalogue, { excludeId: 'x', map: (item) => item, score: (item) => relatednessScore({ topic: '', level: '' }, item) }), [], 'an open item with no topic or level relates nothing');
+assert.equal(relatednessScore({ source: 'Aesop' }, { author: 'aesop' }), 2, 'the same author relates books');
+
+// LEX-082 / LEX-083: one place truth and a book's own place.
+import { placePercent, bookPlace } from '../static/orena/product/place-progress.js';
+assert.equal(placePercent({ index: 1, total: 1 }), null, 'a 1 of 1 place is not measured progress');
+assert.equal(placePercent({ index: 1, total: 1, within: 2 }), 2);
+assert.equal(placePercent({ index: 3, total: 9, within: 50 }), 28, 'two chapters and half of the third, of nine');
+const shelf = [{ id: 'book:b:c3', title: 'Chapter III', place: { index: 3, total: 9 } }, { id: 'book:b:c1', place: { index: 1, total: 9 } }];
+assert.equal(bookPlace(shelf, 'b').chapterId, 'c3', 'the furthest chapter is the place');
+assert.equal(bookPlace([{ id: 'book:b:c1', place: { index: 1, total: 9, within: 100 } }, { id: 'book:b:c3', place: { index: 3, total: 9 } }], 'b').chapterId, 'c3', 'reopening an earlier chapter does not move the place back');
+assert.equal(bookPlace(shelf, 'bb').started, false, 'another book id is not a prefix match');

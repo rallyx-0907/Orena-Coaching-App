@@ -93,6 +93,32 @@ export function placeFor(continuation, id) {
   return { started: true, percent: Math.max(0, Math.min(100, Math.round(within))) };
 }
 
+/* Start time (ms) of each transcript line, by the segment id a media place carries (X-11). */
+export function segmentStarts(payload) {
+  const out = {};
+  for (const segment of payload?.transcript?.segments || []) {
+    const start = Number(segment?.start_ms);
+    if (segment?.segment_id && segment.start_ms != null && Number.isFinite(start) && start >= 0) out[segment.segment_id] = start;
+  }
+  return out;
+}
+
+/* A media item's saved place. Media places carry the line the learner was on (`segment`), not a
+   percent, so a place with a line that is in this transcript resumes at that line's start - the
+   same entry Today calls "Continue". `started` is true for any saved place (the room reopens
+   it); `atMs` / `at` only when the line is found; `percent` only when the duration is known
+   (rule 40: nothing is invented). */
+export function mediaPlaceFor(continuation, id, starts, durationMs) {
+  const entry = Array.isArray(continuation) ? continuation.find((item) => item?.id === id) : null;
+  if (!entry) return { started: false, atMs: null, at: '', percent: null };
+  const atMs = starts && Object.hasOwn(starts, entry.segment) ? starts[entry.segment] : null;
+  const duration = Number(durationMs);
+  const percent = atMs != null && Number.isFinite(duration) && duration > 0
+    ? Math.max(0, Math.min(100, Math.round((atMs / duration) * 100)))
+    : null;
+  return { started: true, atMs, at: atMs == null ? '' : mmss(atMs), percent };
+}
+
 /* An article's list/detail JSON -> this screen's own fields. `desc` is the article's own
    description metadata when an administrator gave one (D-130): the block is hidden without it, and
    the first lines of the body are never shown as a description. */
@@ -105,6 +131,7 @@ export function normalizeArticle(article) {
     source: String(article?.attribution?.author || ''),
     level: String(article?.level || ''),
     minutes: minutesFrom(article?.reading_time_seconds),
+    topic: String(article?.topic || ''),
     desc: String(article?.description || article?.summary || '').trim(),
     image: '',
   };
@@ -120,6 +147,8 @@ export function normalizeBook(book) {
     level: '',
     minutes: null,
     desc: String(book?.description || ''),
+    // The chapter ids in reading order, so a finished chapter can resume at the next one (LEX-083).
+    chapters: [...(Array.isArray(book?.chapters) ? book.chapters : [])].sort((a, b) => (a?.position ?? 0) - (b?.position ?? 0)).map((chapter) => String(chapter?.id || '')).filter(Boolean),
     image: book?.cover_asset_key ? `url("/api/reading/library/books/${encodeURIComponent(book.id)}/cover")` : '',
   };
 }
@@ -143,6 +172,7 @@ export function normalizeMedia(payload) {
     source: String(catalog?.source?.creator || asset.source_provider || ''),
     level: String(catalog?.level || ''),
     minutes: minutesFrom(catalog?.duration_ms ?? asset.duration_ms, { unitMs: true }),
+    topic: String(catalog?.topic || ''),
     desc: String(catalog?.description || ''),
     image: asset.thumbnail_url ? `url("${asset.thumbnail_url}")` : catalog?.poster_url ? `url("${catalog.poster_url}")` : '',
     playbackKind: String(payload?.playback?.kind || ''),
@@ -168,17 +198,34 @@ export function normalizeText(record) {
 /* Up to `limit` items from a raw listing, mapped by `map`, with the current item excluded (by
    the raw item's own id/lesson_id, before `map` renames it to a content route id) and any item
    `map` could not honestly build (no title) dropped rather than shown blank. */
-export function pickRelated(items, { excludeId, map, limit = 3 }) {
+export function pickRelated(items, { excludeId, map, limit = 3, score = null }) {
   const list = Array.isArray(items) ? items : [];
   const out = [];
-  for (const raw of list) {
-    if (out.length >= limit) break;
+  for (const [order, raw] of list.entries()) {
     const rawId = String(raw?.id ?? raw?.lesson_id ?? '');
     if (!rawId || rawId === excludeId) continue;
+    // Related means related (LEX-075): with a `score`, an item that shares nothing with the open one is not
+    // offered, and the closest come first; without one the caller has no relatedness signal and gets the list.
+    const points = score ? Number(score(raw)) || 0 : 1;
+    if (score && points <= 0) continue;
     const mapped = map(raw);
-    if (mapped && mapped.title) out.push(mapped);
+    if (mapped && mapped.title) out.push({ mapped, points, order });
   }
-  return out;
+  out.sort((a, b) => b.points - a.points || a.order - b.order);
+  return out.slice(0, limit).map((entry) => entry.mapped);
+}
+
+/* How close a catalogue item is to the open one by the fields the catalogue really has: the same topic or the
+   same author. Level alone is NOT relatedness (LEX-075, LEX-088): two unrelated B2 stories share nothing the
+   learner cares about, so level only orders items that already share a topic or author. A field the open item
+   does not have cannot relate anything, so a text with no topic and no author has no related items. */
+export function relatednessScore(current, candidate) {
+  const norm = (value) => String(value || '').trim().toLowerCase();
+  let points = 0;
+  if (norm(current?.topic) && norm(current.topic) === norm(candidate?.topic)) points += 2;
+  if (norm(current?.source) && norm(current.source) === norm(candidate?.author || candidate?.source?.creator)) points += 2;
+  if (points > 0 && norm(current?.level) && norm(current.level) === norm(candidate?.level)) points += 1;
+  return points;
 }
 
 /* The stored media id inside a content route's `upload` id. Discover and Search open a device

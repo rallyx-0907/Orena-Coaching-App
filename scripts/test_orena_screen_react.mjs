@@ -12,7 +12,7 @@
    produce on demand (an empty answer). */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { usefulPhrase, buildUnderstandCheck, mapCoaching, phraseReused, waveBars, promptKey } from '../static/orena/screens/react/model.js';
+import { usefulPhrase, buildUnderstandCheck, mapCoaching, phraseReused, resultTiles, waveBars, promptKey } from '../static/orena/screens/react/model.js';
 
 function fixture(name) {
   return JSON.parse(readFileSync(new URL(`./fixtures/api/${name}`, import.meta.url)));
@@ -152,6 +152,16 @@ const zh = fixture('listening_library_lesson.zh.json');
   assert.deepEqual(mapped.carried, []);
   assert.deepEqual(mapped.landedDifferently, []);
   assert.equal(mapped.anotherWay, '');
+}
+
+/* --- X-03 / HX-2 A: a result tile is drawn only with a real measurement, never as a bare 0 --- */
+{
+  assert.deepEqual(resultTiles(null, null), []);
+  assert.deepEqual(resultTiles(true, null), [{ key: 'phraseReused', good: true, valueKey: 'yes' }]);
+  assert.deepEqual(resultTiles(false, { verdict: 'partly' }).map((tile) => tile.key), ['intentAchieved', 'phraseReused']);
+  assert.equal(mapCoaching({ available: true, intent_achieved: { verdict: 'yes', reason: 'It answered.' } }).intent.verdict, 'yes');
+  assert.equal(mapCoaching({ available: true, intent_achieved: { verdict: 'maybe', reason: 'x' } }).intent, null, 'an unknown verdict is not drawn');
+  assert.equal(mapCoaching({ available: true }).intent, null);
 }
 
 console.log('test_orena_screen_react.mjs: React / Reuse data mapping - real GET /api/listening/library/{id} captures (en+zh) + POST /api/dictionary/spoken-response serializer shape, rule 40 throughout: PASS');

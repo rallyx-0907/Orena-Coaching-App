@@ -85,8 +85,8 @@ in the same batch. Per rule 47, the desktop rail is always present; the
 desktop top bar, and the phone header and bar, exist only on the browsing
 places rule 47 lists. Every route in the design's focus list is a learning
 workspace without the top bar, phone header and phone bar (the rail stays):
-check the room you touch is on the right side of that line. Until the cutover
-(D-091) the new UI is at `/next`; `/` is the old UI.
+check the room you touch is on the right side of that line. The cutover is
+done (D-143): the learner UI is the only UI, at `/`.
 
 **6b. The workspace is the viewport (Design Contract rule 49, D-078).** A learning workspace
 never scrolls as a page: measure it at 1920x1080, 1366x768, 390x844 and 360x740 with content as

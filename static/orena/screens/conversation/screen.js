@@ -5,11 +5,12 @@
 
    Real deviations from the frame, recorded rather than silently resolved (UI_BACKEND_GAPS "Speak
    more"):
-   - The frame's `cvStart` seeds a fixed opening line from a scripted partner. The real contract
-     cannot do that: `ConversationIn` (`writing_coach/conversation.py`) requires at least one turn
-     and that the last turn be the learner's pending one. The chat therefore opens with the
-     situation the learner is answering (drawn as the frame's partner bubble, never sent as a turn)
-     and the learner speaks first.
+   - The frame's `cvStart` seeds a fixed opening line from a scripted partner. Here the partner's first
+     line is asked of the real partner (`ConversationIn.opening`, S-24) and drawn as the frame's first
+     partner bubble with the thinking state while it comes; on failure the quiet caption with Retry
+     stands in, never a made-up line. The line is not a stored turn (the account record alternates
+     learner, partner from a learner first turn): it is kept beside the turns and sent back as context.
+     A conversation saved before this opening existed still shows its situation as the first bubble.
    - The frame ends a chat only when its 4-line script runs out. An open-ended AI partner needs a
      learner-driven end, so the header carries one "End" text button (where a page's own action
      sits in the design); it and the 24-turn cap both lead to the frame's "Conversation complete".
@@ -34,10 +35,10 @@ import { logSpeakingTask } from '../../product/speaking-session.js';
 import { appendConversationTurn, loadConversation } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import {
-  conversation, learnerTurn, partnerTurn, pendingTurn, conversationRequest, restoreConversation, MAX_CONVERSATION_TURNS,
+  conversation, learnerTurn, partnerTurn, pendingTurn, conversationRequest, restoreConversation, needsOpening, conversationOpeningRequest, withOpening, MAX_CONVERSATION_TURNS, CONVERSATION_LEVELS,
 } from '../../product/conversation.js';
 import { t } from './copy.js';
-import { situations, turnSituation, learnerTurnCount, fixesOf, strengthsOf } from './model.js';
+import { situations, defaultLevel, turnSituation, learnerTurnCount, fixesOf, strengthsOf } from './model.js';
 
 function judgementLabel(judgement) {
   return t.has(`judge_${judgement}`) ? t(`judge_${judgement}`) : '';
@@ -57,6 +58,7 @@ export default async function conversationScreen(element, ctx) {
 
   const bank = situations(language);
   let pickedKey = bank[0]?.key || ''; // the frame opens with its first scenario chosen
+  let level = defaultLevel(ctx.context.level); // the Difficulty chip: B1 / B2 / C1, opening on the learner's level
   let convo = null; // the product/conversation.js state, once started
   let busy = false;
   let recording = false;
@@ -91,18 +93,20 @@ export default async function conversationScreen(element, ctx) {
     if (!alive()) return null;
     const restored = raw ? restoreConversation(raw, language) : null;
     if (restored && !local) memory.conversation(restored);
-    return restored;
+    /* A conversation saved without a level (older, or from the account) carries on at the level the
+       chips open on, so every further turn still says which level to speak at. */
+    return restored ? { ...restored, level: restored.level || level } : null;
   }
 
   const isOver = () => Boolean(convo) && (convo.ended || convo.turns.length >= MAX_CONVERSATION_TURNS);
 
   function headMarkup() {
     const item = convo ? bank.find((entry) => entry.title === convo.title) : null;
-    const sub = convo ? (item ? `${item.title} · ${item.cue}` : convo.title) : '';
+    const sub = convo ? [item ? item.title : convo.title, item?.cue, convo.level].filter(Boolean).join(' · ') : '';
+    const subline = convo ? (sub ? html`<div class="s-conv__sub" lang="${lang}">${sub}</div>` : '') : html`<div class="s-conv__sub">${t('setupSubtitle')}</div>`;
     return html`<div class="s-conv__head">
       <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${ts('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
-      <div class="s-conv__headcol"><h1 class="s-conv__title">${ts('conversation')}</h1>${sub ? html`<div class="s-conv__sub" lang="${lang}">${sub}</div>` : ''}</div>
-      ${convo && !isOver() ? html`<button type="button" class="o-btn o-btn--text s-conv__end" data-end>${t('endConversation')}</button>` : ''}
+      <div class="s-conv__headcol"><h1 class="s-conv__title">${ts('conversation')}</h1>${subline}</div>
     </div>`;
   }
 
@@ -118,6 +122,10 @@ export default async function conversationScreen(element, ctx) {
       <div>
         <div class="s-conv__label">${t('situationLabel')}</div>
         <div class="s-conv__scenarios">${bank.map(scenarioMarkup)}</div>
+      </div>
+      <div>
+        <div class="s-conv__label">${t('difficultyLabel')}</div>
+        <div class="s-conv__levels">${CONVERSATION_LEVELS.map((item) => html`<button type="button" class="s-conv__level" aria-pressed="${item === level ? 'true' : 'false'}" data-level="${item}">${item}</button>`)}</div>
       </div>
       <button type="button" class="o-btn o-btn--primary o-btn--block s-conv__start" data-start>${t('startCta')}</button>
     </section></div>`;
@@ -173,24 +181,29 @@ export default async function conversationScreen(element, ctx) {
 
   function listMarkup() {
     return html`<div class="s-conv__list" data-scroll-region data-list>
-      <div class="s-conv__msg s-conv__msg--partner"><div class="s-conv__bubble" lang="${lang}">${convo.situation}</div></div>
+      ${convo.opening ? html`<div class="s-conv__msg s-conv__msg--partner"><div class="s-conv__bubble" lang="${lang}">${convo.opening.text}</div></div>`
+        : convo.turns.length ? html`<div class="s-conv__msg s-conv__msg--partner"><div class="s-conv__bubble" lang="${lang}">${convo.situation}</div></div>` : ''}
       ${convo.turns.map(messageMarkup)}
       ${busy ? html`<div class="s-conv__thinking" role="status" aria-label="${t('thinking')}">…</div>` : ''}
       ${isOver() ? endedMarkup() : ''}
     </div>`;
   }
 
+  /* "End" sits in the composer row once at least one turn exists (D-139 HD-11). */
+  const endButton = () => (convo.turns.length ? html`<button type="button" class="o-btn o-btn--text s-conv__end" data-end>${t('endConversation')}</button>` : '');
+
   function composerMarkup() {
     if (isOver()) return '';
-    const failed = Boolean(pendingTurn(convo)) && !busy; // the reply was requested and the request itself failed
+    const failed = (Boolean(pendingTurn(convo)) || needsOpening(convo)) && !busy; // the opening or the reply was requested and the request itself failed
     if (failed) {
-      return html`<div class="s-conv__composer"><span class="s-conv__retry-text" role="alert">${t('replyFailed')}</span><button type="button" class="o-btn o-btn--secondary s-conv__retry-btn" data-retry>${t('retryCta')}</button></div>`;
+      return html`<div class="s-conv__composer"><span class="s-conv__retry-text" role="alert">${t('replyFailed')}</span><button type="button" class="o-btn o-btn--secondary s-conv__retry-btn" data-retry>${t('retryCta')}</button>${endButton()}</div>`;
     }
     const locked = busy || transcribing;
     return html`<form class="s-conv__composer" data-reply>
       <input type="text" class="s-conv__input" data-input placeholder="${transcribing ? t('transcribing') : t('replyPlaceholder')}" value="${draft}" lang="${lang}" autocomplete="off" ${locked ? 'disabled' : ''}>
       <button type="button" class="s-conv__mic" data-mic aria-pressed="${recording ? 'true' : 'false'}" aria-label="${recording ? t('micStop') : t('mic')}" ${locked ? 'disabled' : ''}>${raw(icon('mic', { size: 18 }))}</button>
       <button type="submit" class="s-conv__send" aria-label="${t('send')}" ${locked ? 'disabled' : ''}>${raw(icon('arrow-right', { size: 18 }))}</button>
+      ${endButton()}
     </form>`;
   }
 
@@ -213,6 +226,9 @@ export default async function conversationScreen(element, ctx) {
     if (!convo) {
       element.querySelectorAll('[data-situation]').forEach((button) => {
         button.onclick = () => { pickedKey = button.dataset.situation; paint(); };
+      });
+      element.querySelectorAll('[data-level]').forEach((button) => {
+        button.onclick = () => { level = button.dataset.level; paint(); };
       });
       element.querySelector('[data-start]').onclick = () => startConversation();
       return;
@@ -237,7 +253,7 @@ export default async function conversationScreen(element, ctx) {
     element.querySelector('[data-new]')?.addEventListener('click', () => { convo = null; draft = ''; coaching.clear(); paint(); });
     element.querySelector('[data-finish]')?.addEventListener('click', finish);
     element.querySelector('[data-end]')?.addEventListener('click', () => { convo = { ...convo, ended: true }; remember(); paint({ scroll: 'bottom' }); });
-    element.querySelector('[data-retry]')?.addEventListener('click', () => void requestReply());
+    element.querySelector('[data-retry]')?.addEventListener('click', () => void (needsOpening(convo) ? requestOpening() : requestReply()));
   }
 
   function finish() {
@@ -249,11 +265,31 @@ export default async function conversationScreen(element, ctx) {
   function startConversation() {
     const picked = bank.find((item) => item.key === pickedKey);
     if (!picked) return;
-    convo = conversation({ id: `conversation:${crypto.randomUUID()}`, language, title: picked.title, situation: picked.prompt });
+    convo = conversation({ id: `conversation:${crypto.randomUUID()}`, language, title: picked.title, situation: picked.prompt, level });
     coaching.clear();
     draft = '';
     remember();
     paint();
+    void requestOpening();
+  }
+
+  /* S-24: the partner's first line. A failure leaves the conversation without one and the composer is
+     replaced with Retry; nothing stands in for the line. */
+  async function requestOpening() {
+    if (!needsOpening(convo)) return;
+    busy = true;
+    paint({ scroll: 'bottom' });
+    try {
+      const reply = await api.conversationTurn(conversationOpeningRequest(convo, support));
+      if (!alive()) return;
+      convo = withOpening(convo, reply);
+      remember();
+    } catch {
+      // still without an opening; the retry control asks again.
+    } finally {
+      busy = false;
+      if (alive()) paint({ scroll: 'bottom' });
+    }
   }
 
   async function sendTurn(text, origin) {
@@ -364,6 +400,7 @@ export default async function conversationScreen(element, ctx) {
   const wanted = ctx.query?.get?.('id') || '';
   if (wanted) convo = await resume(wanted);
   paint({ scroll: 'bottom' });
+  if (convo && needsOpening(convo)) void requestOpening();
 
   return () => {
     disposed = true;

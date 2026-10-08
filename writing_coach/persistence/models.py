@@ -418,6 +418,7 @@ class SpeakingAttempt(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "language_code", "take_id", name="uq_speaking_attempt_scope_take"),
         Index("ix_speaking_attempts_user_language_created", "user_id", "language_code", "created_at"),
+        Index("ix_speaking_attempts_session", "user_id", "language_code", "practice_session_id", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
@@ -434,6 +435,8 @@ class SpeakingAttempt(Base):
     provenance: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     evidence: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # D-142 (migration 20261007_0029): minted by the server; NULL on legacy rows and while the flag is off.
+    practice_session_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
 
 
 class PlanRecord(Base):

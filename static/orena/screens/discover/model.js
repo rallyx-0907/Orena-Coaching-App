@@ -16,6 +16,8 @@
    card entirely, exactly as kit/components.js#mediaCard() already does for an absent parameter. */
 
 import { duration } from '../../product/duration.js';
+import { placePercent } from '../../product/place-progress.js';
+import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 
 export const TABS = Object.freeze(['all', 'read', 'listen', 'collections', 'imported']);
 
@@ -36,10 +38,8 @@ export function progressFromContinuation(continuation, id, { idPrefix = '' } = {
   const entry = idPrefix
     ? list.find((item) => String(item?.id || '').startsWith(idPrefix))
     : list.find((item) => String(item?.id || '') === id);
-  const index = Number(entry?.place?.index) || 0;
-  const total = Number(entry?.place?.total) || 0;
-  if (!entry || index < 1 || total < 1) return null;
-  return Math.max(1, Math.min(100, Math.round((index / total) * 100)));
+  // The one shared rule (product/place-progress.js): a "1 of 1" place is not 100%.
+  return entry ? placePercent(entry.place) : null;
 }
 
 /* GET /api/reading/articles item -> entry. No image field exists for an article today (a real
@@ -178,6 +178,26 @@ export function entryFromMediaImport(item, continuation) {
   };
 }
 
+/* Topics (P-06). A content tag is open metadata and holds internal and test values ("sandbox-test"), so a
+   topic reaches a learner only when it names one of the topics below, written out in the learner's language
+   (copy.js `topic_<key>`). Any other tag is left out of the Filter Sheet and off the cards - an explicit rule,
+   not a list of bad strings. The vocabulary is Discover's own until the content model carries one
+   (docs/project/UI_BACKEND_GAPS.md). A tag's key is its lower-case words joined by "_". */
+export const KNOWN_TOPICS = Object.freeze([
+  'daily_life', 'travel', 'conversations', 'culture', 'technology', 'food', 'work', 'health', 'education', 'science',
+  'nature', 'society', 'sports', 'entertainment', 'history', 'business', 'news', 'relationships', 'environment', 'shopping',
+]);
+
+export function topicKey(topic) {
+  const key = String(topic || '').trim().toLowerCase().replace(/[\s_-]+/g, '_');
+  return KNOWN_TOPICS.includes(key) ? key : '';
+}
+
+export function topicLabel(topic, t) {
+  const key = topicKey(topic);
+  return key ? t(`topic_${key}`) : '';
+}
+
 /* The three Filter Sheet groups, derived from whatever is actually loaded (E1 "Data the backend
    must provide": a real content taxonomy, not the old fixed FILTERS constant) rather than a
    catalogue Discover does not own. Each option's `value` is what a card is matched against. */
@@ -187,7 +207,7 @@ export function filterOptions(entries) {
   const kinds = new Set();
   for (const entry of entries) {
     if (entry.level) levels.add(entry.level);
-    if (entry.topic) topics.add(entry.topic);
+    if (topicKey(entry.topic)) topics.add(entry.topic);
     kinds.add(entry.kind === 'media' ? `media-${entry.mediaType}` : entry.kind);
   }
   const sortAlpha = (set) => [...set].sort((a, b) => a.localeCompare(b));
@@ -210,6 +230,11 @@ const TYPE_LABEL_KEY = Object.freeze({
   collection: 'typeCollection',
   text: 'typeText',
   upload: 'typeUpload',
+});
+
+/* Which tile a card without a cover draws, by its content type (kit COVER_VISUALS). */
+const COVER_OF_TYPE = Object.freeze({
+  article: 'read', book: 'read', 'media-video': 'watch', 'media-audio': 'listen', collection: 'collection', text: 'write', upload: 'upload',
 });
 
 /* The Content-type filter group's chip label for one derived type value, and `presentCard`'s own
@@ -273,13 +298,8 @@ export function presentCard(entry, t) {
   if (entry.kind === 'collection' && entry.itemCount != null) meta = t.plural('collectionWordCount', entry.itemCount);
   const tags = [];
   if (entry.level) tags.push({ label: entry.level, tone: 'accent' });
-  // languages-4 (3) / finding B.3, docs/project/UI_BACKEND_GAPS.md N-35: `entry.topic` is open,
-  // ever-growing content metadata (reading_articles.topic/vocabulary topic, no closed taxonomy to
-  // map through copy.js the way typeLabel() maps the closed `kind` enum) - it cannot be honestly
-  // translated. Kept, rather than dropped, because it is real information about the card; marked
-  // `lang="en"` so it is honest content metadata, not silently unlabelled English inside a vi/zh
-  // sentence.
-  if (entry.topic) tags.push({ label: entry.topic, lang: 'en' });
+  // N-35: only a topic the vocabulary above names is shown, in the interface language (P-06).
+  if (topicKey(entry.topic)) tags.push({ label: topicLabel(entry.topic, t) });
   if (entry.started) {
     const label =
       entry.kind === 'collection' && entry.progressLearned != null
@@ -289,6 +309,7 @@ export function presentCard(entry, t) {
   }
   return {
     image: entry.image || '',
+    cover: COVER_VISUALS[COVER_OF_TYPE[typeOf(entry)]] || null,
     kind: typeLabel(typeOf(entry), t),
     duration: durationLabel,
     progress: entry.started ? entry.progressPct : null,

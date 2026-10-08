@@ -11,6 +11,8 @@ import { useStyles } from '../../kit/styles.js';
 import { loadingMarkup, emptyMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { heroMedia, masteryBars } from '../../kit/components.js';
+import { COVER_VISUALS } from '../../kit/cover-visuals.js';
+import { rememberWordSeed } from '../../product/word-seed.js';
 import { langAttr, langSpan } from '../../kit/lang.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
@@ -40,8 +42,10 @@ function wordRowMarkup(word) {
     : masteryBars({ filled: word.filled, total: word.total, color: 'var(--green)' });
   return html`<div class="s-collection-word" role="button" tabindex="0" data-word-open data-word="${word.id}">
     <span class="s-collection-word__body">
-      <span class="s-collection-word__title" lang="${langAttr(word.lang)}">${word.word}</span>
-      <span class="s-collection-word__meaning"><span lang="${langAttr(word.meaningLanguage || languages().support)}">${word.meaning}</span>${meaningTag(word.meaningLanguage)}</span>
+      <span class="s-collection-word__title" lang="${langAttr(word.lang)}">${word.word}${word.reading ? html` <span class="s-collection-word__reading">${word.reading}</span>` : ''}</span>
+      <span class="s-collection-word__meaning">${word.meaning
+        ? html`<span lang="${langAttr(word.meaningLanguage || languages().support)}">${word.meaning}</span>${meaningTag(word.meaningLanguage)}`
+        : t('collectionNoMeaning')}</span>
     </span>
     ${badge}
     <button type="button" class="s-collection-word__play" data-word-play data-word="${word.id}" aria-label="${t('collectionPlay')}">${raw(icon('volume-2', { size: 18 }))}</button>
@@ -50,8 +54,10 @@ function wordRowMarkup(word) {
 
 function screenMarkup(model) {
   const pill = model.level ? t('collectionPillLevel', { level: model.level }) : t('collectionPillPlain');
-  const meta = `${t.plural('collectionWordCount', model.wordCount)} · ${t('collectionMetInSources', { n: model.metInSources })}`;
+  // "n met in your sources" is only drawn when something was measured; the backend has no such count yet.
+  const meta = [t.plural('collectionWordCount', model.wordCount), model.metInSources ? t('collectionMetInSources', { n: model.metInSources }) : ''].filter(Boolean).join(' · ');
   const hero = heroMedia({
+    cover: COVER_VISUALS.collection,
     image: '', // rule 40: VocabularyCollection carries no cover-image field (backend gap)
     height: 'auto',
     titleSize: 26,
@@ -67,9 +73,10 @@ function screenMarkup(model) {
         ${hero}
         <div class="s-collection-bar"><span style="width:${model.percent}%"></span></div>
         <div class="s-collection-actions">
-          <button type="button" class="s-collection-cta" data-review${model.savedCount ? '' : raw(' disabled')}>${t.plural('collectionStartReview', model.savedCount)}</button>
+          <button type="button" class="s-collection-cta" data-review${model.savedCount ? '' : raw(' disabled aria-describedby="col-review-why"')}>${t.plural('collectionStartReview', model.savedCount)}</button>
           <button type="button" class="s-collection-save" data-save${model.missingCount ? '' : raw(' disabled')}>${t(model.missingCount ? 'collectionSave' : 'collectionSaved')}</button>
         </div>
+        ${model.savedCount ? '' : html`<p class="s-collection-why" id="col-review-why">${t(model.missingCount ? 'collectionReviewWhy' : 'collectionReviewNone')}</p>`}
         ${model.description ? html`<p class="s-collection-desc">${model.description}</p>` : ''}
       </div>
       <div class="s-collection-words">
@@ -115,6 +122,7 @@ export default async function collectionScreen(element, ctx) {
   }
 
   paint();
+  for (const card of data.items || []) rememberWordSeed(card);
   let saving = false;
   const click = async (event) => {
     const target = event.target.closest('button, [data-word-open]');

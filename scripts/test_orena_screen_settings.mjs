@@ -31,7 +31,7 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   assert.equal(tabFromQuery(''), TABS[0], 'empty falls back to the first tab');
   assert.equal(tabFromQuery('nope'), TABS[0], 'an unknown slug falls back, never throws');
   assert.equal(tabFromQuery(undefined), TABS[0]);
-  assert.deepEqual(TABS, ['languages', 'learning', 'review', 'notifications', 'plan']);
+  assert.deepEqual(TABS, ['languages', 'appearance', 'learning', 'review', 'notifications', 'plan']);
 }
 
 /* --- Language option builders --------------------------------------------- */
@@ -199,7 +199,8 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
     plan: { plan: null, features: {}, micOn: false, micState: 'prompt' },
   };
   assert.equal(rowsForTab('languages', inputs).length, 3);
-  assert.equal(rowsForTab('learning', inputs).length, 7);
+  assert.equal(rowsForTab('learning', inputs).length, 5, 'learning tab: the study rows only');
+  assert.deepEqual(rowsForTab('appearance', inputs).map((row) => row.id), ['theme', 'palette'], 'Appearance and Accent have their own tab (LEX-079)');
   assert.equal(rowsForTab('review', inputs).length, 4);
   assert.equal(rowsForTab('notifications', inputs).length, 4);
   assert.equal(rowsForTab('plan', inputs).length, 8, 'plan tab: the seven rows plus Licences and data sources (D-124)');
@@ -355,7 +356,8 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   }
 
   const supportOpts = __internal.choiceOptions({ id: 'support', value: 'vi', options: [{ code: 'vi', label: 'Vietnamese' }, { code: 'ja', label: 'Japanese' }] });
-  assert.deepEqual(supportOpts.map((o) => o.label), ['Vietnamese', 'Japanese'], 'support options keep the backend\'s own English label, untranslated (rule 26 governs Orena\'s chrome, not a language\'s own name)');
+  assert.deepEqual(supportOpts.map((o) => o.label), ['Tiếng Việt', '日本語'], 'support options are named in their own language (endonyms, P-19), whatever the interface language');
+  assert.equal(__internal.choiceOptions({ id: 'support', value: 'xx', options: [{ code: 'xx', label: 'Klingon' }] })[0].label, 'Klingon', 'a code with no endonym keeps the platform label');
 
   const sizeOpts = __internal.choiceOptions({ id: 'readerSize', value: 'M', options: ['S', 'M', 'L'] });
   assert.deepEqual(sizeOpts.map((o) => o.label), [t('sizeS'), t('sizeM'), t('sizeL')]);
@@ -381,3 +383,16 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
 }
 
 console.log('Settings: rows built from real data, every backend gap disabled and recorded, EN/VI/ZH covered: PASS');
+
+/* --- Orena's voice (R29): offered only when the server lists voices; the stored choice, else the default --- */
+{
+  const { learningRows: rows, usesPicker: picker } = await import('../static/orena/screens/settings/model.js');
+  assert.equal(rows({}).some((r) => r.id === 'orenaVoice'), false, 'voice off on this server: no row');
+  const voices = { default: 'f-clear', voices: [{ id: 'f-clear', label: 'Clear' }, { id: 'm-calm', label: 'Calm' }, { id: 'f-warm', label: 'Warm' }, { id: 'f-soft', label: 'Soft' }, { id: 'm-steady', label: 'Steady' }] };
+  const row = rows({ voices }).find((r) => r.id === 'orenaVoice');
+  assert.equal(row.value, 'f-clear', 'nothing chosen: the server default');
+  assert.equal(rows({ voices: { ...voices, chosen: 'm-calm' } }).find((r) => r.id === 'orenaVoice').value, 'm-calm');
+  assert.equal(rows({ voices: { ...voices, chosen: 'gone' } }).find((r) => r.id === 'orenaVoice').value, 'f-clear', 'a choice the server no longer offers falls back');
+  assert.equal(picker(row), true, 'ten voices are a picker, not a segmented control');
+}
+

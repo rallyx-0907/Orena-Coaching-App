@@ -10,6 +10,7 @@
 
 import { placeFor } from '../content/model.js';
 import { vocabularyMeaning } from '../../product/vocabulary-meaning.js';
+import { buildQueue, cardMode, sourceLabelKey } from '../review/model.js';
 
 /* ---- Content tab: reading + media entries from GET /api/collection?domains=reading,media ---- */
 
@@ -46,6 +47,7 @@ export function contentRows(entries = [], continuation = []) {
         domain: entry.ref.domain,
         title: entry.title || '',
         source: entry.snippet || '',
+        unavailable: entry.availability === 'unavailable',
         pct: placeFor(continuation, contentId).percent,
       };
     });
@@ -79,19 +81,24 @@ export function masteryFilled(item = {}, total = 4) {
    the learner's own note, then the sense in another language (product/vocabulary-meaning.js,
    D-124), and only then the sentence the word was met in. No language is named here. */
 export function wordMeaning(item = {}, supportLanguage = 'en') {
-  return vocabularyMeaning(item, supportLanguage)?.text || String(item.source_fragment || '').trim();
+  const meaning = vocabularyMeaning(item, supportLanguage)?.text;
+  if (meaning) return meaning;
+  // A phrase's source sentence is often the phrase itself: a line that only repeats the row says nothing (V-15).
+  const fragment = String(item.source_fragment || '').trim();
+  return fragment.toLowerCase() === String(item.word || '').trim().toLowerCase() ? '' : fragment;
 }
 
 /* The language of that meaning when it is the sense's meaning in another language (D-124). */
 export function wordMeaningLanguage(item = {}, supportLanguage = 'en') {
   const meaning = vocabularyMeaning(item, supportLanguage);
-  return meaning?.source === 'other_language' ? meaning.language : '';
+  return meaning?.language && meaning.language !== String(supportLanguage || '').toLowerCase() ? meaning.language : '';
 }
 
 export function languageRows(items = [], supportLanguage = 'en') {
   return (items || []).map((item) => ({
     word: item.word || '',
     kind: wordKindOf(item.word),
+    reading: String(item.phonetic || '').trim(),
     sub: wordMeaning(item, supportLanguage),
     subLanguage: wordMeaningLanguage(item, supportLanguage),
     isNew: isNewWord(item),
@@ -124,8 +131,18 @@ export function deckRows(decks = []) {
   }));
 }
 
-export function collectionsAndDecks(collections = [], decks = []) {
-  return [...libraryCollectionRows(collections), ...deckRows(decks)];
+/* Published curated collections for the content language (GET /api/vocabulary/library/collections, the same list
+   Discover draws; HV-5 A, V-13). They open the collection's own screen. */
+export function curatedRows(items = []) {
+  return (items || []).filter((item) => item && item.id).map((item) => ({
+    collectionId: `curated:${item.id}`,
+    title: item.title || '',
+    size: Number(item.item_count) || 0,
+  }));
+}
+
+export function collectionsAndDecks(collections = [], decks = [], curated = []) {
+  return [...curatedRows(curated), ...libraryCollectionRows(collections), ...deckRows(decks)];
 }
 
 /* ---- Due-Review tab: GET /api/library/review-queue ----
@@ -175,4 +192,20 @@ export function dueListRows(queue = {}) {
     text: item.word || '',
     kindKey: pinnedKindKey(item),
   }));
+}
+
+/* "In this session" (V-12, HV-4 A): the due words Review will ask, from the same queue it builds
+   (`GET /api/library/vocabulary?status=due&order=due`, review/model.js#buildQueue), each with where its sentence
+   came from when that is known. `sourceKey` is review copy's own key (sourceReading / sourceFeedback). */
+export function sessionRows(items = []) {
+  return buildQueue(items).map((row) => ({
+    text: String(row.word || '').trim(),
+    sourceKey: sourceLabelKey(row.source_kind),
+    cloze: cardMode(row) === 'cloze',
+  }));
+}
+
+/* The "source-aware" count of the session: the cards that ask the sentence the word was met in. */
+export function sessionSourceCount(rows = []) {
+  return rows.filter((row) => row.cloze).length;
 }

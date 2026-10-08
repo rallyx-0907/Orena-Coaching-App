@@ -31,12 +31,27 @@ import {
 import { mountStrokeSheet } from './stroke-sheet.js';
 import { createStrokeTiles } from './stroke-tiles.js';
 import { speakOnDevice } from '../../kit/device-voice.js';
+import { wordSeed } from '../../product/word-seed.js';
+import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
 
 async function fetchItem(word) {
   try {
     const page = await api.libraryVocabulary({ query: word, limit: 5, order: 'word' });
     const norm = String(word).trim().toLowerCase();
     return (page?.items || []).find((row) => String(row.word || '').trim().toLowerCase() === norm) || null;
+  } catch {
+    return null;
+  }
+}
+
+/* The catalogue's own answer for a word opened without a list before it (a direct link, a reload):
+   its localizations are the sense's meanings, read-only, no provider (D-124). */
+async function catalogueSeed(word, language) {
+  try {
+    const found = await api.vocabularyCatalogueSearch(word, language, 5);
+    const norm = String(word).trim().toLowerCase();
+    const hit = (found?.items || []).find((row) => String(row.normalized_word || row.word || '').trim().toLowerCase() === norm);
+    return hit ? { pronunciation: String(hit.readings?.[0]?.text || '').trim(), short_meanings: hit.short_meanings || [], identity: { language } } : null;
   } catch {
     return null;
   }
@@ -100,6 +115,12 @@ function posMarkup(pos) {
   return html`<span class="o-tag"${label.known ? '' : raw(` lang="${langAttr('en')}"`)}>${label.text}</span>`;
 }
 
+/* A meaning that is not in the learner's support language says which language it is in (D-124). */
+function meaningTag(language) {
+  const label = language ? meaningLanguageLabel(language, languages().support, languages().ui) : '';
+  return label ? html` <span class="o-tag">${label}</span>` : '';
+}
+
 function cardMarkup(card, strokeTiles) {
   const cardLang = cardLanguage(card.script);
   const meta = [
@@ -126,8 +147,8 @@ function cardMarkup(card, strokeTiles) {
     </div>
     ${
       card.hasMeaning
-        ? html`<div class="s-word-card__meaning"><div class="s-word-card__meaning-text">${card.meaning}</div>${card.hasSupport ? html`<div class="s-word-card__support">${card.support}</div>` : ''}</div>`
-        : ''
+        ? html`<div class="s-word-card__meaning"><div class="s-word-card__meaning-text">${card.meaning}${meaningTag(card.meaningLanguage)}</div>${card.hasSupport ? html`<div class="s-word-card__support">${card.support}</div>` : ''}</div>`
+        : html`<div class="s-word-card__meaning"><div class="s-word-card__support" data-no-meaning>${t('meaningUnavailable')}</div></div>`
     }
     ${
       card.hasExample
@@ -156,20 +177,34 @@ export default async function mountWordDetail(element, ctx) {
   element.classList.add('s-word-root');
   element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
 
+  // The list the learner came from already knows the reading and the meaning (the seed), and the saved
+  // record is a local read: paint from those at once (LEX-072). The AI-backed lookup and the clips refine the
+  // page when they return; only a page with nothing at all to show waits for the lookup.
   let item = await fetchItem(word);
   if (!ctx.isCurrent()) return undefined;
-  const context = contextFor(word, item);
-  const [detail, clipsPayload] = await Promise.all([
-    api.wordDetail({ depth: 'full', text: word, context, source_language: language, target_language: languages().support }).catch(() => null),
-    api.wordClips(word, 6).catch(() => null),
-  ]);
+  let seed = wordSeed(word);
+  if (!item && !seed) seed = await catalogueSeed(word, language);
   if (!ctx.isCurrent()) return undefined;
 
-  if (!detail && !item) throw new Error(`Word Detail: no lookup and no saved record for "${word}"`);
+  let detail = null;
+  let clips = [];
+  let clipsReady = false;
+  const pending = Promise.all([
+    api.wordDetail({ depth: 'full', text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch(() => null),
+    api.wordClips(word, 6).catch(() => null),
+  ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
+  const hasSomethingToShow = Boolean(item || seed);
+  if (!hasSomethingToShow) {
+    const { found, clipsPayload } = await pending;
+    if (!ctx.isCurrent()) return undefined;
+    if (!found) throw new Error(`Word Detail: no lookup and no saved record for "${word}"`);
+    detail = found;
+    clips = mapClips(clipsPayload);
+    clipsReady = true;
+  }
 
-  let card = mapWordCard(word, { detail, item, supportLanguage: languages().support });
-  const deepRows = mapDeepWord(detail);
-  const clips = mapClips(clipsPayload);
+  let card = mapWordCard(word, { detail, item, supportLanguage: languages().support, seed });
+  let deepRows = mapDeepWord(detail);
 
   ctx.setCrumb(card.word);
 
@@ -215,7 +250,7 @@ export default async function mountWordDetail(element, ctx) {
       </div>`
         : '';
 
-    const clipsPanel = html`<div class="s-word-panel">
+    const clipsPanel = !clipsReady ? '' : html`<div class="s-word-panel">
       <div class="s-word-panel__head"><div class="s-word-panel__title">${t('contextClipsTitle', { n: clips.length })}</div></div>
       ${clips.length ? clips.map((clip, index) => clipRow(clip, index)) : html`<div class="s-word-empty">${t('contextClipsEmpty')}</div>`}
     </div>`;
@@ -275,7 +310,7 @@ export default async function mountWordDetail(element, ctx) {
           // it with the delete we just confirmed, the one signal `mapWordCard` cannot get right
           // on its own for this transition (rule 40 - don't let a stale snapshot outrank a real
           // action that just happened).
-          card = mapWordCard(word, { detail: detail ? { ...detail, saved: false } : detail, item, supportLanguage: languages().support });
+          card = mapWordCard(word, { detail: detail ? { ...detail, saved: false } : detail, item, supportLanguage: languages().support, seed });
           await paint();
           toast(
             t('removedToast'),
@@ -284,7 +319,7 @@ export default async function mountWordDetail(element, ctx) {
                   undo: async () => {
                     const restored = await api.restoreLibraryVocabulary(payload).catch(() => null);
                     item = restored?.item || item;
-                    card = mapWordCard(word, { detail, item, supportLanguage: languages().support });
+                    card = mapWordCard(word, { detail, item, supportLanguage: languages().support, seed });
                     await paint();
                   },
                   undoLabel: shellCopy('undo'),
@@ -294,7 +329,7 @@ export default async function mountWordDetail(element, ctx) {
         } else {
           const saved = await api.saveLibraryVocabulary(savePayload(card));
           item = saved?.item || item;
-          card = mapWordCard(word, { detail, item, supportLanguage: languages().support });
+          card = mapWordCard(word, { detail, item, supportLanguage: languages().support, seed });
           await paint();
           toast(t('savedToast'));
         }
@@ -333,6 +368,18 @@ export default async function mountWordDetail(element, ctx) {
   }
 
   await paint();
+
+  if (hasSomethingToShow) {
+    pending.then(async ({ found, clipsPayload }) => {
+      if (!ctx.isCurrent()) return;
+      detail = found;
+      clips = mapClips(clipsPayload);
+      clipsReady = true;
+      deepRows = mapDeepWord(detail);
+      card = mapWordCard(word, { detail, item, supportLanguage: languages().support, seed });
+      await paint();
+    });
+  }
 
   return () => {
     audio?.pause();

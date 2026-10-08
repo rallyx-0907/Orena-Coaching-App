@@ -1711,40 +1711,28 @@ def startup() -> None:
 
 @app.get("/", response_class=HTMLResponse)
 def home() -> HTMLResponse:
-    # The shell carries the list of stylesheets and modules the app loads, so a
-    # cached copy of it keeps loading yesterday's asset list - a stylesheet
-    # added since is simply never requested, and the screen renders unstyled.
-    # It is small, so it stays uncached outright; the assets it names revalidate
-    # instead, which is the same freshness for a fraction of the bytes.
+    # The learner UI (D-088), the only one since the cutover (D-091, D-143). The shell carries the list of
+    # stylesheets and modules the app loads, so a cached copy of it keeps loading yesterday's asset list - a
+    # stylesheet added since is simply never requested, and the screen renders unstyled. It is small, so it
+    # stays uncached outright; the assets it names revalidate instead.
     return HTMLResponse(
         (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8"),
         headers={"Cache-Control": "no-store, max-age=0"},
     )
 
 
-@app.get("/next", response_class=HTMLResponse)
-def next_learner_ui() -> HTMLResponse:
-    # The new learner UI (D-088), built beside the old one until it replaces it
-    # at `/` in one cutover (D-091). Same caching reason as `/`.
-    return HTMLResponse(
-        (ROOT / "templates" / "orena" / "next.html").read_text(encoding="utf-8"),
-        headers={"Cache-Control": "no-store, max-age=0"},
-    )
-
-
+@app.get("/next")
+@app.get("/next/")
+def former_learner_ui_address() -> RedirectResponse:
+    # The learner UI's address before the cutover. A browser keeps the hash across the redirect, so
+    # `/next#/listen/...` opens the same place at `/`.
+    return RedirectResponse("/", status_code=302)
 
 
 @app.get("/becoming", response_class=HTMLResponse)
 @app.get("/becoming/", response_class=HTMLResponse)
 def becoming_preview() -> RedirectResponse:
     return RedirectResponse("/", status_code=302)
-@app.get("/static/account.js")
-def account_script() -> HTMLResponse:
-    return HTMLResponse(
-        (ROOT / "static" / "account.js").read_text(encoding="utf-8"),
-        media_type="application/javascript",
-        headers={"Cache-Control": "no-cache"},
-    )
 
 
 def model_family(model_name: str) -> str:

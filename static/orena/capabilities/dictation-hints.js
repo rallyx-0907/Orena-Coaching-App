@@ -22,7 +22,7 @@ export function hintTokens(expected, sourceLanguage) {
   const line = String(expected ?? '');
   const pattern =
     sourceLanguage === 'zh'
-      ? /\p{Script=Han}|[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu
+      ? /\p{Script=Han}|(?:(?!\p{Script=Han})[\p{L}\p{N}])+(?:['’-](?:(?!\p{Script=Han})[\p{L}\p{N}])+)*/gu
       : /[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu;
   const tokens = [];
   let cursor = 0;

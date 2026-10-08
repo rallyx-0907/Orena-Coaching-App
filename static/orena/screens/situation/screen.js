@@ -3,11 +3,12 @@
    real ASR as Free Talk - then real coaching on that answer, `POST /api/dictionary/spoken-response`.
 
    Rule 40/D-076: the frame's own Intent-achieved/Clarity result grid is a regex-hit-count and a
-   word-count bucket in the source (E2 §4), not a real judgement - not reproduced. "One useful
+   word-count bucket in the source (E2 §4). S-26: it is drawn when, and only when, the coaching response carries a
+   real `intent_achieved` / `clarity` judgement (a verdict and its reason, in the support language). "One useful
    improvement" and "Natural alternative" instead bind to the real coaching's own `next_attempt`
    and `say_again`/`another_way` (model.js's header comment). "Try another context" has no real
    content behind it either (the frame's own `.variant` sub-object does not exist in real content)
-   and is dropped, as is the context pill (no real delivery-mode field). Finish logs one entry to
+   and is dropped. The context pill is drawn from each scenario's authored `context` (D-139 HD-13). Finish logs one entry to
    the session's speaking ledger (`product/speaking-session.js`) and opens Speaking Summary, like
    the source's `spFinish`.
 
@@ -25,7 +26,7 @@ import { logSpeakingTask } from '../../product/speaking-session.js';
 import { saveResponse } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { t } from './copy.js';
-import { scenarios, progressLabel, naturalAlternative } from './model.js';
+import { scenarios, progressLabel, naturalAlternative, situationJudgements } from './model.js';
 
 export default async function situation(element, ctx) {
   await useStyles('screens/situation/situation.css');
@@ -59,9 +60,13 @@ export default async function situation(element, ctx) {
     </div>`;
   }
 
+  /* The frame's context chip above the scenario: the scenario's authored delivery context. */
+  const contextChip = () => (current()?.context ? html`<span class="s-sit__context" lang="${lang}">${current().context}</span>` : '');
+
   function inputMarkup() {
     const busy = state !== 'input';
     return html`<section class="o-card o-card--24 s-sit__card">
+      ${contextChip()}
       <div class="s-sit__scenario" lang="${lang}">${current()?.scenario || ''}</div>
       <textarea class="s-sit__textarea" rows="3" lang="${lang}" placeholder="${t('answerPlaceholder')}" data-answer ${busy ? 'disabled' : ''}>${answer}</textarea>
       <div class="s-sit__row">
@@ -75,10 +80,16 @@ export default async function situation(element, ctx) {
   function resultMarkup() {
     const improve = String(coaching?.next_attempt || '').trim();
     const alt = naturalAlternative(coaching);
+    const { intent, clarity } = situationJudgements(coaching);
     return html`<section class="o-card o-card--24 s-sit__card">
+      ${contextChip()}
       <div class="s-sit__scenario" lang="${lang}">${current()?.scenario || ''}</div>
       <div class="s-sit__scroll" data-scroll-region>
         <div class="s-sit__answer" lang="${lang}">“${answer}”</div>
+        ${intent || clarity ? html`<div class="s-sit__judge">
+          ${intent ? html`<div class="s-sit__jcard s-sit__jcard--${intent.verdict === 'yes' ? 'yes' : 'other'}"><div class="s-sit__jlabel">${t('intentLabel')}</div><div class="s-sit__jvalue">${t(`intent_${intent.verdict}`)}</div><div class="s-sit__jnote" lang="${supportLang}">${intent.reason}</div></div>` : ''}
+          ${clarity ? html`<div class="s-sit__jcard"><div class="s-sit__jlabel">${t('clarityLabel')}</div><div class="s-sit__jvalue s-sit__jvalue--plain">${t(`clarity_${clarity.verdict}`)}</div><div class="s-sit__jnote" lang="${supportLang}">${clarity.reason}</div></div>` : ''}
+        </div>` : ''}
         ${improve ? html`<div class="o-card s-sit__improve"><b>${t('improvement')}</b> · <span lang="${supportLang}">${improve}</span></div>` : ''}
         ${alt ? html`<div class="s-sit__alt"><b>${t('naturalAlternative')}</b> · <span lang="${lang}">${alt}</span></div>` : ''}
       </div>

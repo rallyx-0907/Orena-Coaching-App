@@ -25,7 +25,7 @@ import { useStyles } from '../../kit/styles.js';
 import { listRow, sectionHead, segmentedControl, pageHeader } from '../../kit/components.js';
 import { toast } from '../../kit/toast.js';
 import { api } from '../../infrastructure/api.js';
-import { shellCopy } from '../../copy/shell.js';
+import { shellCopy, planName, planDescription } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
 import { adoptLearningLanguage, updateContext } from '../../shell/context.js';
 import { saveAccountSettings, saveReviewSettings, selectLearningLanguage } from '../../product/account-settings.js';
@@ -34,11 +34,13 @@ import { readStage, writeStage, transcriptDefaults } from '../../product/transcr
 import { readReviewSettings } from '../../product/recall-modes.js';
 import { MIC_STATES, watchMicrophone } from '../../capabilities/mic-readiness.js';
 import { appearance, setAppearance, palette, setPalette } from '../../kit/device.js';
-import { appendNativeName } from '../../kit/lang.js';
+import { appendNativeName, supportLanguageLabel } from '../../kit/lang.js';
 import { t } from './copy.js';
 import { TABS, tabFromQuery, rowsForTab, barPercent, usesPicker } from './model.js';
+import { listVoices, chosenVoice, chooseVoice } from '../../agent/live-voice.js';
+import { toContractLang } from '../../agent/contract.js';
 
-const TAB_LABEL_KEY = { languages: 'tabLanguages', learning: 'tabLearning', review: 'tabReview', notifications: 'tabNotifications', plan: 'tabPlan' };
+const TAB_LABEL_KEY = { languages: 'tabLanguages', appearance: 'tabAppearance', learning: 'tabLearning', review: 'tabReview', notifications: 'tabNotifications', plan: 'tabPlan' };
 /* Every row's sub reads t(`${id}Sub`) except these two: "Plan" has no chrome sub at all (its sub
    is the real plan name/description, assembled from data, not copy - see planSub() below), and
    "Writing reviews" shares the same "This month" text "Pronunciation minutes" already has its own
@@ -58,7 +60,9 @@ function rowLabel(row) {
 }
 
 function planSub(row) {
-  const parts = [row.planName, row.planDescription].filter(Boolean);
+  const parts = [row.plan ? planName(row.plan) : row.planName, row.plan ? planDescription(row.plan) : row.planDescription].filter(Boolean);
+  // Manage is inert until plans can be changed: the row says so rather than leaving a grey button unexplained (LEX-079).
+  if (row.disabled) parts.push(t('manageUnavailable'));
   return parts.join(' · ');
 }
 
@@ -89,11 +93,13 @@ const THEME_LABEL_KEY = { light: 'themeLight', dark: 'themeDark', system: 'theme
 
 function choiceOptions(row) {
   if (row.id === 'target') return row.options.map((opt) => ({ value: opt.code, label: targetOptionLabel(opt), selected: opt.code === row.value }));
-  if (row.id === 'support') return row.options.map((opt) => ({ value: opt.code, label: opt.label, selected: opt.code === row.value }));
+  if (row.id === 'support') return row.options.map((opt) => ({ value: opt.code, label: supportLanguageLabel(opt.code, opt.label), selected: opt.code === row.value }));
   if (row.id === 'interface') return row.options.map((opt) => ({ value: opt.code, label: opt.label, selected: opt.code === row.value }));
   if (row.id === 'theme') return row.options.map((value) => ({ value, label: t(THEME_LABEL_KEY[value]), selected: value === row.value }));
   if (row.id === 'palette') return row.options.map((value) => ({ value, label: t(`palette_${value}`), selected: value === row.value }));
   if (row.id === 'readerSize') return row.options.map((size) => ({ value: size, label: t(`size${size}`), selected: size === row.value }));
+  // The server labels its voices in the interface language; no vendor name reaches the learner.
+  if (row.id === 'orenaVoice') return row.options.map((voice) => ({ value: voice.id, label: voice.label || voice.id, selected: voice.id === row.value }));
   // sessionLength: plain numerals, identical in every locale.
   return row.options.map((value) => ({ value, label: value, selected: value === row.value }));
 }
@@ -116,6 +122,8 @@ function choiceControl(row) {
 }
 
 function barControl(row) {
+  // A meter with nothing behind it says so, never "0 ... 0" (LEX-079).
+  if (row.disabled && !Number(row.limit)) return html`<div class="s-settings-bar"><div class="s-settings-bar__labels"><span>${t('notMeasured')}</span></div><div class="s-settings-bar__track"><div class="s-settings-bar__fill" style="width:0%"></div></div></div>`;
   const pct = barPercent(row.used, row.limit);
   return html`<div class="s-settings-bar"><div class="s-settings-bar__labels"><span>${row.used}</span><span>${row.limit}</span></div><div class="s-settings-bar__track"><div class="s-settings-bar__fill" style="width:${pct}%"></div></div></div>`;
 }
@@ -133,7 +141,14 @@ function controlMarkup(row) {
   return '';
 }
 
+/* Licences and data sources (HP-4 A): a legal pointer, not a setting, so a quiet link under the rows rather
+   than a row the design does not draw. */
+function licencesLink(row) {
+  return html`<button type="button" class="s-settings-link" data-action-row="${row.id}">${t('licencesLabel')}</button>`;
+}
+
 function rowMarkup(row) {
+  if (row.id === 'licences') return licencesLink(row);
   return listRow({
     tag: 'div',
     radius: 16,
@@ -168,15 +183,17 @@ export default async function settingsScreen(element, ctx) {
     }
   }
 
-  const [languagesData, commerce, mic] = await Promise.all([
+  const [languagesData, commerce, mic, voices] = await Promise.all([
     api.languages().catch(() => null),
     api.productCommerce().catch(() => null),
     readMicState(),
+    listVoices(toContractLang(copyLanguages().ui)),
   ]);
   if (!ctx.isCurrent()) return undefined;
   state.languagesData = languagesData;
   state.commerce = commerce;
   state.mic = mic;
+  state.voices = voices;
 
   function buildInputs() {
     const context = ctx.context;
@@ -204,6 +221,7 @@ export default async function settingsScreen(element, ctx) {
         meaning: stage.meaning,
         theme: appearance(),
         palette: palette(),
+        voices: state.voices ? { ...state.voices, chosen: chosenVoice() } : null,
       },
       review: { modes: reviewSettings?.modes },
       plan: {
@@ -323,6 +341,7 @@ export default async function settingsScreen(element, ctx) {
     if (rowId === 'theme') return onThemePick(value);
     if (rowId === 'palette') { setPalette(value); paintTab(); return; }
     if (rowId === 'readerSize') return onReaderSizePick(value);
+    if (rowId === 'orenaVoice') { chooseVoice(value); paintTab(); return; }
     // sessionLength is always disabled today (model.js) - nothing to wire.
   }
 

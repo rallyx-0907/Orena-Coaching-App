@@ -8,6 +8,7 @@
    verdict about the audio (D-076): a word's status is the assessment's own score and miscue flag,
    and a pitch line is only ever drawn, never described. */
 import { contourPolylines } from '../../capabilities/audio-analysis.js';
+import { toneOf } from '../../capabilities/pronunciation-result.js';
 
 /* ---- The component's own colour rules (read from its script, not unified with frame 15's) ---- */
 
@@ -91,12 +92,38 @@ export function wordDetailFor(view, index) {
     weakest: word.weakest,
     status,
     tone: statusTone(status),
-    toneTarget: word.toneTarget?.length ? word.toneTarget[0] : null,
+    /* One tone only for a one-syllable word; a compound's tones live on `toneSyllables`, each with its own
+       character and syllable (LEX-050) - never one tone standing for the whole word. */
+    toneTarget: word.toneTarget?.length === 1 ? word.toneTarget[0] : null,
+    toneSyllables: toneSyllables(word.text, word.pinyin, word.weakest, sounds),
     sounds,
     offsetMs: word.offsetMs,
     durationMs: word.durationMs,
     offsetKnown: Boolean(word.offsetKnown),
   };
+}
+
+const plainSyllable = (text) => String(text || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/* A Chinese word's tone, syllable by syllable: [{ char, syllable, tone, focus }] from the lesson's own reading
+   (`pinyin` is the syllables, space-separated), `char` the Han character it belongs to when the counts agree.
+   `focus` marks the one syllable the assessment's weakest sound names - found by the provider's own label
+   ("ren 2": letters, then the tone when it gives one) and only when exactly one syllable fits; when the label
+   fits none or several, no syllable is singled out rather than guessed. `null` without a reading. */
+export function toneSyllables(text, pinyin, weakest = null, sounds = []) {
+  const syllables = String(pinyin || '').split(/\s+/).filter(Boolean);
+  if (!syllables.length) return null;
+  const chars = [...String(text || '')].filter((ch) => /\p{Script=Han}/u.test(ch));
+  const paired = chars.length === syllables.length;
+  const items = syllables.map((syllable, at) => ({ char: paired ? chars[at] : '', syllable, tone: toneOf(syllable), focus: false }));
+  const label = String(weakest?.label || '').trim().toLowerCase().match(/^([a-zü]+)\s*([1-5])?$/);
+  if (label && items.length > 1) {
+    const fits = items.map((item, at) => (plainSyllable(item.syllable).replace(/ü/g, 'u') === label[1].replace(/ü/g, 'u') && (!label[2] || Number(label[2]) === item.tone) ? at : -1)).filter((at) => at >= 0);
+    // Two identical syllables: the provider's own list order says which one, when it has one entry per syllable.
+    const at = fits.length === 1 ? fits[0] : fits.length > 1 && sounds.length === items.length ? sounds.findIndex((sound) => sound.label === weakest.label && sound.score === weakest.score) : -1;
+    if (at >= 0 && fits.includes(at)) items[at].focus = true;
+  }
+  return items;
 }
 
 /* The first word that is not fine is opened by default (there is something to look at); with
@@ -131,9 +158,12 @@ export function chipsFor(view) {
 
 /* The line under the chips (`metricLine`): the assessment's own three numbers, each only when it
    is known, plus the seconds of speech when the provider timed the words. */
-export function metricLineFor(view) {
+export function metricLineFor(view, match = null) {
   if (!view?.measured) return { parts: [], speechS: null };
   const parts = [];
+  // Measured against the model's pitch (product/pitch-match.js): only the figures that exist.
+  if (match?.similarity != null) parts.push({ key: 'metricSimilarity', value: match.similarity });
+  if (match?.intonation != null) parts.push({ key: 'metricIntonation', value: match.intonation });
   if (view.accuracy != null) parts.push({ key: 'metricAccuracy', value: view.accuracy });
   if (view.fluencyMeasured) parts.push({ key: 'metricFluency', value: view.fluency });
   if (view.completeness != null) parts.push({ key: 'metricCompleteness', value: view.completeness });
@@ -222,6 +252,22 @@ export function playPlan(mode, { hasTake, hasWords }) {
   return hasTake ? ['model', 'you'] : ['model'];
 }
 
+/* Which playback modes can play for this attempt. A mode that plays the learner's voice needs a retained
+   recording of it; an attempt only the account remembers (D-076) has none, and is never offered a mode that
+   would play something else under that name (LEX-049). */
+export function modeAvailable(mode, { hasTake, hasModel }) {
+  if (mode === 'model_only') return Boolean(hasModel);
+  if (mode === 'model_then_you') return Boolean(hasTake && hasModel);
+  return Boolean(hasTake); // word_by_word, you_only
+}
+
+/* The mode that plays now: the learner's pick when it can play, otherwise the one that can - the model when
+   there is no recording of the learner, the learner's own when there is no model. */
+export function effectiveMode(mode, caps) {
+  if (modeAvailable(mode, caps)) return mode;
+  return ['model_only', 'you_only', 'model_then_you', 'word_by_word'].find((item) => modeAvailable(item, caps)) || mode;
+}
+
 /* The attempt pills (oldest first, "Attempt 1" the first one made) and the crown: the best overall
    score, only when there is more than one attempt to be best of. */
 export function pillsFor(takes, selectedId) {
@@ -238,3 +284,102 @@ export function pillsFor(takes, selectedId) {
 /* The tone name key for a pinyin tone number (1-4, 5 neutral): a fact about the reading, not about
    the audio. */
 export const toneKey = (tone) => `tone${tone >= 1 && tone <= 5 ? tone : 5}`;
+
+/* ---- IPA (D-139 HD-5) ---- */
+
+/* A word's IPA is only ever what the assessment provider returned for it: the word's sounds, in order
+   (English sounds come back as IPA, `PhonemeAlphabet: IPA`). Nothing else - no dictionary, no guess. */
+export const ipaOf = (word) => (word?.phonemes || []).map((unit) => unit.label).join('');
+
+/* English only (a Chinese line keeps its pinyin): where each word of the line has IPA, taken from the
+   newest attempt of this line whose assessment carried sounds. `views` are the line's attempts, newest
+   first, as `pronunciationView()`-shaped objects; `place(text, words)` is `placeWords` for the line.
+   Empty when no attempt has any - the row is then not drawn at all (no dashes). */
+export function ipaByStart(views, lineText, language, place) {
+  const found = new Map();
+  if (language !== 'en') return found;
+  const view = (views || []).find((item) => item?.words?.some((word) => ipaOf(word)));
+  if (!view) return found;
+  const where = place(lineText, view.words, language);
+  view.words.forEach((word, at) => {
+    const ipa = ipaOf(word);
+    if (ipa && where[at]) found.set(where[at].start, ipa);
+  });
+  return found;
+}
+
+/* ---- The embedded Attempt history card (frame 16's component, D-139 HD-7) ---- */
+
+/* The plain change from one number to the previous attempt's: "+4", "−2", "±0"; nothing for the first
+   attempt or a number either side did not measure. */
+export function deltaOf(current, previous) {
+  if (current == null || previous == null) return { text: '', tone: 'var(--muted)', zero: false };
+  const value = Math.round(current - previous);
+  if (value === 0) return { text: '', tone: 'var(--muted)', zero: true };
+  return { text: `${value > 0 ? '+' : '−'}${Math.abs(value)}`, tone: value > 0 ? 'var(--green)' : 'var(--red)', zero: false };
+}
+
+/* The first word the provider did not pass in an attempt: its one-line focus. */
+export function focusWordOf(view) {
+  const word = (view?.words || []).find((item) => item.flagged);
+  return word ? word.text : null;
+}
+
+/* The card's own figures, oldest first and then reversed for display (newest on top, as the frame):
+   one row per attempt this line has, each with the three numbers the assessment measured and the
+   change from the attempt before it. `viewOf(take)` is the screen's reader of one attempt. */
+export function historyFor(takes, selectedId, viewOf, matchOf = () => null) {
+  const ordered = [...takes].reverse();
+  const scored = ordered.filter((item) => item.overall != null);
+  const best = scored.length > 1 ? scored.reduce((top, item) => (item.overall > top.overall ? item : top)) : null;
+  const matches = new Map(ordered.map((item) => [item.id, matchOf(item)]));
+  const anyMatch = ordered.some((item) => matches.get(item.id)?.similarity != null || matches.get(item.id)?.intonation != null);
+  const rows = ordered.map((item, at) => {
+    const previous = ordered[at - 1];
+    const mine = matches.get(item.id);
+    const before = previous ? matches.get(previous.id) : null;
+    return {
+      id: item.id,
+      n: at + 1,
+      at: item.at,
+      active: item.id === selectedId,
+      isBest: Boolean(best) && best.id === item.id,
+      hasAudio: Boolean(item.url),
+      focus: focusWordOf(viewOf(item)),
+      /* The frame's columns (Similarity, Intonation, Pronunciation) when any attempt was measured against the
+         model's pitch - an attempt without it shows "—"; otherwise the assessment's own three. */
+      metrics: anyMatch
+        ? [
+            { key: 'histSimilarity', value: mine?.similarity ?? null, delta: deltaOf(mine?.similarity, before?.similarity) },
+            { key: 'metricIntonation', value: mine?.intonation ?? null, delta: deltaOf(mine?.intonation, before?.intonation) },
+            { key: 'histPron', value: item.overall, delta: deltaOf(item.overall, previous?.overall) },
+          ]
+        : [
+            { key: 'histPron', value: item.overall, delta: deltaOf(item.overall, previous?.overall) },
+            { key: 'metricAccuracy', value: item.accuracy ?? null, delta: deltaOf(item.accuracy, previous?.accuracy) },
+            { key: 'metricFluency', value: item.fluency ?? null, delta: deltaOf(item.fluency, previous?.fluency) },
+          ],
+    };
+  });
+  const firstScored = scored[0], lastScored = scored.at(-1);
+  return {
+    count: ordered.length,
+    first: firstScored?.overall ?? null,
+    last: lastScored?.overall ?? null,
+    best: best ? best.overall : null,
+    bestN: best ? rows.find((row) => row.id === best.id).n : null,
+    scoredCount: scored.length,
+    rows: rows.reverse(),
+    spark: sparkPoints(scored),
+  };
+}
+
+/* The sparkline's own geometry (180 x 40, the component's): one point per scored attempt. */
+function sparkPoints(scored) {
+  const W = 180, H = 40;
+  return scored.map((item, at) => ({
+    id: item.id,
+    cx: scored.length < 2 ? W / 2 : 6 + at * ((W - 12) / (scored.length - 1)),
+    cy: H - 4 - (item.overall / 100) * (H - 8),
+  }));
+}

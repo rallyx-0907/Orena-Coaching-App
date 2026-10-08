@@ -125,6 +125,74 @@ export function draftKeyFor(essay) {
   return essay ? `essay:${essay.seriesId}` : NEW_DRAFT_KEY;
 }
 
+/* The learner's intent for a draft - register, target length, the level they picked, and whether it is a
+   blank page ("Free writing", no task) - is device memory under the draft's own key, beside its words
+   (`<key>::intent`, JSON). The account holds only words and task (`product/draft-sync.js`; no new server
+   persistence), so on another device a draft opens without it. Defaults are the design's own (Informal,
+   ~150 words). */
+export const DEFAULT_REGISTER = 'informal';
+export const DEFAULT_TARGET = 150;
+export const intentKey = (key) => `${key}::intent`;
+
+export function readIntent(expressions, key) {
+  let raw = {};
+  try {
+    raw = JSON.parse(String(expressions?.[intentKey(key)] || '{}')) || {};
+  } catch {
+    raw = {};
+  }
+  const registers = ['informal', 'neutral', 'formal'];
+  const targets = [100, 150, 250];
+  return {
+    register: registers.includes(raw.register) ? raw.register : '',
+    target: targets.includes(Number(raw.target)) ? Number(raw.target) : 0,
+    level: typeof raw.level === 'string' ? raw.level : '',
+    free: raw.free === true,
+  };
+}
+
+export function intentRecord({ register = '', target = 0, level = '', free = false } = {}) {
+  return JSON.stringify({ register, target, level, free });
+}
+
+/* Drafts a learner has set aside to start a new one ("Start new draft"): the newest last, kept on the device
+   under `expression:parked:<n>` (the words also go to the account under that key). The room opens the newest
+   again when the current slot is empty, so a draft set aside is waiting, never gone. */
+export const PARKED_PREFIX = 'expression:parked:';
+export const PARKED_INDEX = `${NEW_DRAFT_KEY}::parked`;
+
+export function parkedKeys(expressions) {
+  return String(expressions?.[PARKED_INDEX] || '')
+    .split(',')
+    .filter((id) => id.startsWith(PARKED_PREFIX) && (String(expressions?.[id] || '').trim() || String(expressions?.[`${id}::task`] || '').trim()));
+}
+
+/* The draft that is waiting: the current slot's if it holds words, else the newest set aside. */
+export function waitingDraft(expressions, language) {
+  const keys = [NEW_DRAFT_KEY, ...parkedKeys(expressions).reverse()];
+  for (const id of keys) {
+    const body = String(expressions?.[id] || '').trim();
+    if (!body) continue;
+    return {
+      key: id,
+      title: String(expressions?.[`${id}::task`] || '').trim(),
+      free: readIntent(expressions, id).free,
+      n: wordCountOf(body, language),
+    };
+  }
+  return null;
+}
+
+/* The drafts set aside, newest first, each as the room names it - for the "Earlier drafts" list (LEX-062). */
+export function earlierDrafts(expressions, language) {
+  return parkedKeys(expressions).reverse().map((id) => ({
+    key: id,
+    title: String(expressions?.[`${id}::task`] || '').trim(),
+    free: readIntent(expressions, id).free,
+    n: wordCountOf(String(expressions?.[id] || ''), language),
+  }));
+}
+
 /* The revision to open for a piece: the latest of its series. `revisions` is the detail's own list
    (`id`, `revision_no`, oldest first). */
 export function latestRevisionId(detail) {
@@ -345,7 +413,10 @@ export function whenLabel(iso, locale, now = new Date()) {
   return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
 }
 
-/* Both saved states are saved: the dot is the frame's green, the words say where. */
+/* Where the words are: with the account, on this device, or an edit the account has not answered yet.
+   The two saved states are saved - the dot is the frame's green, the words say where; a save still in
+   flight is the muted dot and "Saving". */
 export function saveTone(where) {
+  if (where === 'saving') return { color: 'var(--muted)', key: 'savingNow' };
   return { color: 'var(--green)', key: where === 'account' ? 'savedAccount' : 'savedDevice' };
 }

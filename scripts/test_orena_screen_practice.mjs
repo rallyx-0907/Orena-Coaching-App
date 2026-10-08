@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import {
   SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS,
-  speakModes, writeModes, listenModes, vocabularyModes, grammarModes, readingModes, buildSkillSections,
+  speakModes, writeModes, listenModes, vocabularyModes, grammarModes, readingModes, buildSkillSections, weakestLines, vocabularyRecommendation,
   continuationTarget, continuationRows, writeRecommendation,
 } from '../static/orena/screens/practice/model.js';
 
@@ -28,8 +28,8 @@ import {
 // with the Coming-soon screens, so no entry to them is offered.
 {
   const bare = speakModes([]);
-  assert.equal(bare.length, 4, 'Pronunciation has a real content/import chooser even without public catalogue items');
-  assert.deepEqual(bare.map((m) => m.key), ['freetalk', 'conv', 'situation', 'speak']);
+  assert.equal(bare.length, 5, 'Pronunciation has a real content/import chooser even without public catalogue items');
+  assert.deepEqual(bare.map((m) => m.key), ['situation', 'conv', 'freetalk', 'speak', 'shadow'], 'D-139 HD-2: Shadowing is the one extra mode offered');
   for (const m of bare) assert.equal(m.params, undefined, 'a parameterless route carries no params object');
 
   const withItems = speakModes([
@@ -38,25 +38,54 @@ import {
     { id: 22, practice_type: 'retell', level: 'A2' },
     { id: 33, practice_type: 'sentences', level: 'C1' }, // a later duplicate type must not replace the first
   ]);
-  assert.equal(withItems.length, 4, 'Pronunciation and media Shadowing share one entry');
+  assert.equal(withItems.length, 5, 'Pronunciation and Shadowing are two entries (D-139 HD-2)');
   const speak = withItems.find((m) => m.key === 'speak');
   assert.equal(speak.routeId, 'discover', 'Pronunciation starts with content choice');
   assert.equal(speak.labelRouteId, 'speak');
   assert.deepEqual(speak.query, { tab: 'listen', practice: 'pronunciation' });
   assert.equal(speak.params, undefined, 'no arbitrary first lesson is selected');
   const shadow = withItems.find((m) => m.key === 'shadow');
-  assert.equal(shadow, undefined, 'no duplicate Shadowing card');
+  assert.equal(shadow.routeId, 'discover', 'Shadowing opens the shared room through the media chooser (its route needs a media id)');
+  assert.deepEqual(shadow.query, { tab: 'listen', practice: 'shadowing' });
+  assert.equal(shadow.params, undefined, 'no arbitrary first lesson is selected');
   assert.equal(withItems.find((m) => m.key === 'retell'), undefined, 'Retell is deferred (H9) even when the library has an item');
 
+  const resumed = speakModes([], { params: { id: 'media:lesson-en' }, query: { segment: 's2' } }).find((m) => m.key === 'speak');
+  assert.equal(resumed.routeId, 'speak', 'D-139 HD-3: with a last line, Pronunciation opens it directly');
+  assert.deepEqual(resumed.params, { id: 'media:lesson-en' });
+  assert.deepEqual(resumed.query, { segment: 's2' });
   assert.deepEqual(speakModes(), speakModes([]), 'a missing list behaves like an empty one');
   assert.deepEqual(speakModes(null), speakModes([]), 'a non-array list behaves like an empty one, never a crash');
 }
 
-// --- Write: Writing only in this release (Context Rewrite, Timed Writing deferred, H9) ------------
+// --- D-139 HD-1: Skill Hub Speak's Recommended card, from the learner's weakest real attempt ----
 {
-  const modes = writeModes();
-  assert.deepEqual(modes.map((m) => m.key), ['writing']);
-  for (const m of modes) assert.equal(m.params, undefined);
+  const row = (assetId, segmentId, at, overall, words, verified = true) => ({ verified, overall, assetId, segmentId, at, evidence: words ? { words } : null });
+  assert.deepEqual(weakestLines([]), [], 'no attempts, no candidate');
+  assert.deepEqual(weakestLines([row('a', '1', 1, null, null, false)]), [], 'an unverified attempt has no score to be weak by');
+  const found = weakestLines([
+    row('a', '1', 1, 40, null), // improved since: its latest attempt (below) is what counts
+    row('a', '1', 5, 90, null),
+    row('b', '2', 2, 62, [{ text: 'tram', score: 31 }, { text: 'stop', score: 70 }, { text: 'x', score: null }]),
+    row('c', '3', 3, 75, null),
+  ]);
+  assert.deepEqual(found.map((c) => c.assetId), ['b', 'c', 'a'], 'weakest line first, each by its latest attempt');
+  assert.deepEqual(found[0].word, { text: 'tram', score: 31 }, 'the reason names the lowest-scoring word the account kept');
+  assert.equal(found[1].word, null, 'no kept words, no word claimed');
+}
+
+// --- Write: the design's "Write freely" group, the built modes only (HW-1 B, D-101 H9) -----------
+{
+  assert.deepEqual(writeModes().map((m) => m.key), ['prompt', 'free', 'topic'], 'no waiting draft: no Continue draft');
+  const modes = writeModes({ title: 'Weekend', n: 142 });
+  assert.deepEqual(modes.map((m) => m.key), ['continue', 'prompt', 'free', 'topic']);
+  assert.ok(modes.every((m) => m.group === 'free' && m.routeId === 'writing'), 'Respond, Context Rewrite and Timed Writing are not listed: not built / no content id');
+  assert.deepEqual(modes.find((m) => m.key === 'prompt').query, { setup: 'prompt' }, 'Prompt opens Prompt Setup first (HW-2 B)');
+  assert.deepEqual(modes.find((m) => m.key === 'topic').query, { setup: 'topic' });
+  assert.deepEqual(modes.find((m) => m.key === 'free').query, { entry: 'free' });
+  assert.equal(modes.find((m) => m.key === 'continue').query, undefined);
+  assert.equal(writeModes({ title: 'x', n: 0 }).some((m) => m.key === 'continue'), false);
+  for (const m of modes) assert.ok(SKILL_ICONS.write[m.key], `${m.key} has the design's icon`);
 }
 
 // --- Vocabulary: Due Review carries the real due count, clamped and coerced -------------------
@@ -66,7 +95,12 @@ import {
   assert.equal(vocabularyModes(-4).find((m) => m.key === 'review').due, 0, 'a negative count floors at 0 rather than showing nonsense');
   assert.equal(vocabularyModes(undefined).find((m) => m.key === 'review').due, 0, 'a missing count is the rule-40 zero, not an absent field');
   assert.equal(vocabularyModes('not-a-number').find((m) => m.key === 'review').due, 0);
-  assert.deepEqual(vocabularyModes().map((m) => m.key), ['review', 'feed'], 'Timed Recall and Context Transfer are deferred (H9)');
+  assert.deepEqual(vocabularyModes().map((m) => m.key), ['review', 'feed', 'collections', 'language'], 'the built modes only: Timed Recall and Context Transfer are deferred (H9); Collections and Saved language are the Library tabs (HV-1 B)');
+  assert.deepEqual(vocabularyModes().map((m) => m.group), ['recall', 'browse', 'browse', 'browse'], 'the Recall and Browse groups of the design');
+  assert.deepEqual(vocabularyModes().filter((m) => m.routeId === 'library').map((m) => m.query.tab), ['collections', 'language']);
+  assert.deepEqual(vocabularyRecommendation(6), { n: 6 }, 'the Recommended card comes from the real due count');
+  assert.equal(vocabularyRecommendation(0), null, 'nothing due, nothing recommended');
+  assert.equal(vocabularyRecommendation(undefined), null);
 }
 
 // --- Listen: two content-gated modes, one per available_modes value ----------------------------
@@ -195,6 +229,14 @@ import {
   assert.ok(!('dur' in rec) && !('duration' in rec), 'no duration field ever appears - the backend never measures one, so the eyebrow never fabricates a "~N min"');
   const noReason = writeRecommendation({ focus_label: 'X' });
   assert.equal(noReason.reason, '', 'a missing reason is an honest empty string, not omitted or invented');
+}
+
+/* X-01 / HX-1 A: React / Reuse only with a real last listened line */
+{
+  assert.ok(!listenModes([]).some((m) => m.key === 'react'));
+  const last = { params: { id: 'lesson-en' }, query: { seg: 'lesson-en:003' } };
+  const react = listenModes([], last).find((m) => m.key === 'react');
+  assert.deepEqual([react.routeId, react.params, react.query], ['react', last.params, last.query]);
 }
 
 console.log('Orena Practice Hub / Skill Hub screen: skill/mode mapping, continuation resolution, rule-40 zeros and drops, no invented data: PASS');

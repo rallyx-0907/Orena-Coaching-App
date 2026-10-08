@@ -24,6 +24,7 @@ const {
   buildGoalSummary,
   buildSkillRings,
   buildStreak,
+  leadWithContinuation,
   buildLevel,
   todayDateLabel,
   greetingPeriod,
@@ -324,4 +325,38 @@ assert.deepEqual(usedRecommendationIds([{ id: 'a' }, { id: 'b' }, { id: null }])
   assert.equal(needsLevelPrompt(null), false, 'an unreadable profile is not a missing level');
 }
 
+// LEX-073: the learner's unfinished work leads Recommended, is taken out of For you, and the week strip marks today.
+{
+  const pool = [{ source: 'listening', id: 'les1', routeParams: { id: 'les1' }, kind: 'Listen' }, { source: 'reading', id: 'art1', routeParams: { id: 'art1' }, kind: 'Read' }];
+  const continuation = [{ id: 'media:les1', title: 'Cosmic', context: 'Continue listening', intent: 'listening' }];
+  const led = leadWithContinuation(pool, continuation, t, () => ({ icon: 'headphones', tint: 'var(--skill-listen)' }));
+  assert.equal(led[0].source, 'continue');
+  assert.equal(led[0].reason, 'Continue listening');
+  assert.deepEqual(led.map((item) => item.id), ['media:les1', 'art1'], 'the same lesson from the catalogue is not offered twice');
+  assert.ok(usedRecommendationIds(led).has('les1'), 'the lesson id is used, so For you drops it too');
+  assert.deepEqual(leadWithContinuation(pool, [], t, () => null), pool, 'nothing unfinished: the pool is unchanged');
+  const strip = buildStreak(t, { streak: { days: 0 }, today: '2026-10-07', week: { days: ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'].map((date, i) => ({ date, active: i === 0, future: i > 2 })) } });
+  assert.deepEqual(strip.days.map((day) => day.today), [false, false, true, false, false, false, false], 'today is marked');
+  assert.deepEqual(strip.days.map((day) => day.done), [true, false, false, false, false, false, false], 'only a really active day is ticked');
+  assert.deepEqual(strip.days.map((day) => day.future), [false, false, false, true, true, true, true]);
+}
+
 console.log('Orena Today: recommendation pool, continuation mapping, For-you rail, the rule-40 zero-fallback (goal ring, streak, level) and the real-data header greeting/subtitle all hold: PASS');
+
+// LEX-073 / LEX-090: one card per title, the place when it is measured, a half-read text can be continued.
+{
+  const { buildForYou, usedRecommendationIds } = await import('../static/orena/screens/today/model.js');
+  const placed = mapContinuationEntry({ id: 'media:l1', title: 'Cosmic calendar', context: 'Science', place: { index: 1, total: 1, within: 40 } }, t);
+  assert.equal(placed.meta, 'Science · 40% done', 'the measured place follows the context');
+  assert.equal(mapContinuationEntry({ id: 'media:l1', title: 'x', place: { index: 1, total: 1 } }, t).meta, '', 'a 1 of 1 place with nothing measured says nothing');
+  const reading = mapContinuationEntry({ id: 'book:b1:c3', title: 'THE CRY IN THE CORRIDOR', context: 'The Secret Garden', place: { index: 3, total: 9 } }, t);
+  assert.equal(reading.routeId, 'reader');
+  assert.deepEqual(reading.routeParams, { id: 'book:b1:c3' });
+  assert.equal(reading.title, 'The Cry in the Corridor', 'a title stored in capitals is not shouted');
+  assert.equal(mapContinuationEntry({ id: 'article:a1', title: 'x', place: { index: 1, total: 1, within: 100 } }, t), null, 'a finished text is not continued');
+  const speakingItems = [{ id: 's1', title: 'Make room for someone' }, { id: 's2', title: 'Make room for someone' }, { id: 's3', title: 'Order coffee' }];
+  const rail = buildForYou({ continuation: [], listening: [], speaking: speakingItems, feed: [], usedIds: new Set() }, t);
+  assert.deepEqual(rail.map((item) => item.title), ['Make room for someone', 'Order coffee'], 'the same title is one card');
+  const used = usedRecommendationIds([{ id: 'x', title: 'Order coffee', routeParams: { id: 's3' } }]);
+  assert.deepEqual(buildForYou({ continuation: [], listening: [], speaking: speakingItems, feed: [], usedIds: used }, t).map((item) => item.title), ['Make room for someone'], 'a title the hero already shows is not repeated below');
+}

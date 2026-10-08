@@ -11,6 +11,7 @@ const KEYS = [
   'collectionSave', 'collectionSaved', 'collectionSaving', 'collectionAdded',
   'collectionSaveFailed', 'collectionActionFailed', 'collectionAudioUnavailable',
   'collectionWordsHeading', 'collectionNewBadge', 'collectionEmptyWords', 'collectionPlay',
+  'collectionNoMeaning', 'collectionReviewWhy', 'collectionReviewNone',
 ];
 
 export const t = defineCopy('collection', {
@@ -36,6 +37,9 @@ export const t = defineCopy('collection', {
     collectionNewBadge: 'NEW',
     collectionEmptyWords: 'This collection has no words yet.',
     collectionPlay: 'Play pronunciation',
+    collectionNoMeaning: 'No meaning available yet',
+    collectionReviewWhy: 'Add these words to your words first, then you can review them.',
+    collectionReviewNone: 'There is nothing to review in this collection yet.',
   },
   vi: {
     collectionLoading: 'Đang tải bộ sưu tập…',
@@ -55,6 +59,9 @@ export const t = defineCopy('collection', {
     collectionNewBadge: 'MỚI',
     collectionEmptyWords: 'Bộ sưu tập này chưa có từ nào.',
     collectionPlay: 'Nghe phát âm',
+    collectionNoMeaning: 'Chưa có nghĩa',
+    collectionReviewWhy: 'Hãy thêm các từ này vào từ của bạn trước, rồi mới ôn tập được.',
+    collectionReviewNone: 'Bộ sưu tập này chưa có gì để ôn tập.',
   },
   zh: {
     collectionLoading: '正在加载合集…',
@@ -74,5 +81,8 @@ export const t = defineCopy('collection', {
     collectionNewBadge: '新',
     collectionEmptyWords: '这个合集还没有词语。',
     collectionPlay: '播放发音',
+    collectionNoMeaning: '暂无释义',
+    collectionReviewWhy: '请先把这些词加入我的词汇，才能开始复习。',
+    collectionReviewNone: '这个合集暂时没有可复习的内容。',
   },
 });

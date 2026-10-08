@@ -28,6 +28,9 @@
    with height:'auto' so this is the only rule that decides the box height. */
 .c-hero[data-hero='collection'] {
   aspect-ratio: 16 / 8;
+  /* overflow:hidden (a scroll container) zeroes the automatic minimum, so a long title was cut off at the
+     ratio's height; overflow:clip still rounds the corners but keeps it, making the ratio a floor. */
+  overflow: clip;
 }
 
 /* Hero title line-height: the shared `.c-hero__title` (kit/components.css) sets
@@ -179,4 +182,18 @@
 .s-collection-word__play[aria-disabled='true'] {
   opacity: 0.5;
   cursor: default;
+}
+
+/* The pinyin after a word, and the line that says why Start review is off (LEX-066). */
+.s-collection-word__reading {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.s-collection-why {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
 }

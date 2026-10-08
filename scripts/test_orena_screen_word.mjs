@@ -246,6 +246,10 @@ assert.equal(cardLanguage('latin'), 'en', 'a Latin-script card is real English, 
 const fakeT = (key) => `[${key}]`;
 assert.deepEqual(posLabel('pronoun', fakeT), { text: '[posPronoun]', known: true });
 assert.deepEqual(posLabel('PROPER_NOUN', fakeT), { text: '[posProperNoun]', known: true }, 'case-insensitive against the backend value');
+// V-19: a combined value is translated part by part and joined by the language's own join; a part outside the set keeps the whole raw.
+assert.deepEqual(posLabel('noun/verb', Object.assign((k) => (k === 'posJoin' ? ' + ' : `[${k}]`), {})), { text: '[posNoun] + [posVerb]', known: true });
+assert.deepEqual(posLabel('Noun, Verb', (k) => (k === 'posJoin' ? '/' : `[${k}]`)).text, '[posNoun]/[posVerb]');
+assert.deepEqual(posLabel('noun/gizmo', fakeT), { text: 'noun/gizmo', known: false }, 'never half-translated');
 assert.deepEqual(posLabel('transitive verb phrase', fakeT), { text: 'transitive verb phrase', known: false }, 'an unrecognised value is shown as-is, never guessed into one of the fifteen');
 assert.deepEqual(posLabel('', fakeT), { text: '', known: false }, 'no part of speech at all is not a translated label either');
 
@@ -271,5 +275,13 @@ assert.ok(
   loadingCallIndex < fetchItemCallIndex && fetchItemCallIndex < promiseAllIndex,
   'the loading skeleton is mounted before the item lookup and before the AI-backed wordDetail/wordClips fetch, so the main column is never blank while either is pending',
 );
+
+/* LEX-066: a word opened from a list with no saved record and no lookup answer still shows the list's reading
+   and meaning (the seed), tagged when it is not in the support language; with nothing at all there is no meaning. */
+const seeded = mapWordCard('车站', { detail: null, item: null, supportLanguage: 'vi', seed: { pronunciation: 'chēzhàn', short_meanings: [{ language: 'en', text: 'rail station; bus stop' }], identity: { language: 'zh' } } });
+assert.equal(seeded.ipa, 'chēzhàn');
+assert.equal(seeded.meaning, 'rail station; bus stop');
+assert.equal(seeded.meaningLanguage, 'en');
+assert.equal(mapWordCard('车站', { detail: null, item: null, supportLanguage: 'vi' }).hasMeaning, false);
 
 console.log('test_orena_screen_word.mjs: Word Detail data mapping - real backend contracts, rule 40 throughout: PASS');

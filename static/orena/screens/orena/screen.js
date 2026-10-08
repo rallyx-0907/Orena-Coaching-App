@@ -15,8 +15,9 @@ import { onContext } from '../../shell/context.js';
 import { orenaPresent, onOrenaPresence } from '../../agent/presence.js';
 import { t } from './copy.js';
 import { homeSubtitle, latestSuggestions, thinkingText } from './model.js';
-import { messageMarkup } from './thread.js';
-import { runOffered } from './actions.js';
+import { messageMarkup, placeThread } from './thread.js';
+import { runOffered, openIfAsked } from './actions.js';
+import { dockVoice, undockVoice } from './voice-dock.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
 import { subscribeHome, homeState, homeDispatcher, ensureOpening, sendHomeMessage, sendHomeTurn, retryHome, abortHome, takeComposerFocus, homeLiveVoice } from './home-session.js';
@@ -97,7 +98,7 @@ export default async function mountOrena(element, ctx) {
     voiceShown = voiceMode;
     bind();
     const thread = element.querySelector('[data-scroll-region]');
-    if (thread) thread.scrollTop = thread.scrollHeight;
+    placeThread(thread, 's-orena-home'); // a long answer is read from its start (LEX-042)
     // The router moves focus to the main region once a screen has mounted, so the cursor goes in
     // the box after that (a macrotask), not during the mount.
     if (takeComposerFocus()) setTimeout(() => element.querySelector('[data-input]')?.focus({ preventScroll: true }), 0);
@@ -133,7 +134,17 @@ export default async function mountOrena(element, ctx) {
     const text = String(input?.value || '').trim();
     if (!text || homeState().thinking) return;
     draft = '';
-    sendHomeMessage(text);
+    // A typed "open …" opens the place the reply offers (§7 navigate-on-request).
+    void sendHomeTurn(text).then((reply) => openIfAsked({ message: text, reply, dispatcher, ranActions, repaint: () => paint(homeState()) }));
+  }
+
+  // Coming back to Orena takes back a conversation the dock carried.
+  const carried = undockVoice();
+  if (carried) {
+    voiceEngine = carried;
+    voiceMode = true;
+    voiceShown = true;
+    carried.setOnChange(() => paint(homeState()));
   }
 
   function endVoice() {
@@ -148,7 +159,8 @@ export default async function mountOrena(element, ctx) {
     voiceEngine = createVoiceEngine({
       ctx,
       send: sendHomeTurn,
-      liveVoice: homeLiveVoice,
+      // A place the learner asked for by voice opens at once (R29), through the same runner as a tap.
+      liveVoice: () => ({ ...homeLiveVoice(), open: (action) => runOffered({ dispatcher, action, ranActions, repaint: () => paint(homeState()) }) }),
       abort: abortHome,
       onTextOnly: endVoice,
       onChange: () => paint(homeState()),
@@ -199,7 +211,8 @@ export default async function mountOrena(element, ctx) {
     unsubscribe();
     unsubscribePresence();
     unsubscribeContext();
-    voiceEngine?.dispose();
+    // A live conversation goes on after Orena opens a place: the dock carries it (human request 2026-10-06).
+    if (!dockVoice(voiceEngine)) voiceEngine?.dispose();
     // §2.1 429: leaving while Orena waits out a rate limit is the learner's cancel of that wait.
     if (homeState().waiting) abortHome();
   };

@@ -3,6 +3,10 @@ import { navigationSignal } from './navigation.js';
 
 const JSON_HEADERS = {'Content-Type':'application/json'};
 
+/* What a 401 does: main.js installs its own (Welcome). Before it has, the learner goes to Welcome too. */
+let onUnauthorized=()=>{location.href='/#/welcome';};
+export function setUnauthorizedHandler(handler){onUnauthorized=typeof handler==='function'?handler:()=>{};}
+
 export async function request(url, options={}){
   const response = await fetch(url,{
     credentials:'same-origin',
@@ -20,7 +24,7 @@ export async function request(url, options={}){
   }
 
   if(!response.ok){
-    if(response.status===401)location.href='/login';
+    if(response.status===401)onUnauthorized();
     const detail=payload && typeof payload==='object' ? payload.detail : payload;
     const structured=detail && typeof detail==='object';
     const rawMessage=structured ? detail.message : detail;
@@ -466,6 +470,8 @@ export const api={
     if(since)params.set('since',String(since));
     return request(`/api/speech/attempts?${params.toString()}`);
   },
+  /* D-142: the learner's live practice session as the server keeps it (404 while ORENA_PRACTICE_SESSION is off). */
+  speakingCurrentSession:(limit=100)=>request(`/api/speech/attempts?session=current&limit=${encodeURIComponent(String(limit))}`),
   listeningProgress:(assetId)=>request(`/api/listening/progress?asset_id=${encodeURIComponent(assetId||'')}`),
   saveListeningProgress:(payload)=>request('/api/listening/progress',{
     method:'POST',
@@ -504,7 +510,7 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload),
   }),
-  logout:()=>request('/auth/logout',{method:'POST'}),
+  logout:(next)=>request(next?`/auth/logout?next=${encodeURIComponent(next)}`:'/auth/logout',{method:'POST'}),
   // Whether this deployment keeps work with the account (I2): active,
   // disabled or unavailable. Drafts stay on the device unless active.
   accountBackbone:()=>request('/api/account-backbone'),

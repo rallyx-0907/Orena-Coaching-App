@@ -1,4 +1,4 @@
-/* Entry of the new learner UI (D-088, D-091), served at /next until it replaces the old UI at /.
+/* Entry of the learner UI (D-088), served at / since the cutover (D-091, D-143).
 
    Boot: theme and device are already on the root (kit/boot.js); load the brand sprite, draw the
    frame, read who the learner is (shell/context.js), then hand over to the router. The old UI's
@@ -11,13 +11,15 @@ import { html, mount, raw } from './kit/html.js';
 import { icon } from './kit/icons.js';
 import { loadBrand } from './kit/brand.js';
 import { setOverlayLayer } from './kit/overlay.js';
-import { setToastLayer } from './kit/toast.js';
+import { setToastLayer, toast } from './kit/toast.js';
 import { bannerMarkup } from './kit/states.js';
 import { useStyles } from './kit/styles.js';
 import { isAdminHash } from './shell/routes.js';
 import { drawFrame } from './shell/frame.js';
 import { createRouter } from './shell/router.js';
 import { context, loadContext, onContext } from './shell/context.js';
+import { setUnauthorizedHandler } from './infrastructure/api.js';
+import { bootOutcome, unauthorizedRoute } from './shell/session.js';
 
 const app = document.getElementById('app');
 
@@ -27,7 +29,9 @@ function offlineBanner(holder) {
       holder.replaceChildren();
       return;
     }
-    mount(holder, bannerMarkup({ kind: 'warn', title: t('offlineTitle'), dismissLabel: t('dismiss') }));
+    mount(holder, bannerMarkup({ kind: 'warn', title: t('offlineTitle'), actionLabel: t('retry'), dismissLabel: t('dismiss') }));
+    // Retry re-checks the connection: still offline says so, back online clears the banner (the design's own rule).
+    holder.querySelector('[data-banner-action]')?.addEventListener('click', () => (navigator.onLine === false ? toast(t('stillOffline')) : paint()));
     holder.querySelector('[data-banner-close]')?.addEventListener('click', () => holder.replaceChildren());
   };
   window.addEventListener('online', paint);
@@ -64,16 +68,74 @@ async function legalPages() {
   return true;
 }
 
+/* Nobody is signed in (the first read answered 401): the Welcome screen, drawn on its own. There is no
+   learner to read, so it asks for nothing but the platform's public language list, and it offers the
+   one way in there is - Google (screens/onboarding). Its only places are Welcome and Account; any other
+   address is Welcome. */
+async function bootSignedOut(brand) {
+  await brand;
+  const root = document.documentElement;
+  root.dataset.focus = '0';
+  root.dataset.bare = '1';
+  root.dataset.route = 'welcome';
+  mount(app, html`<div class="o-frame"><div class="o-column"><main class="o-main" id="main" tabindex="-1"></main></div><div class="o-layer" data-part="layer"></div></div>`);
+  const layer = app.querySelector('[data-part="layer"]');
+  setOverlayLayer(layer);
+  setToastLayer(layer);
+  const main = app.querySelector('#main');
+  const { default: onboarding } = await import('./screens/onboarding/screen.js');
+  let cleanup = null;
+  let mine = 0;
+  const draw = async () => {
+    mine += 1;
+    const generation = mine;
+    cleanup?.();
+    cleanup = null;
+    const element = document.createElement('section');
+    element.className = 'o-screen';
+    element.dataset.screen = 'welcome';
+    main.replaceChildren(element);
+    const result = await onboarding(element, {
+      route: { id: 'welcome' },
+      params: {},
+      query: new URLSearchParams(),
+      context: { signedOut: true, user: null, name: '', language: 'en', languageOptions: [], profile: null, level: '' },
+      isCurrent: () => generation === mine,
+      go: () => {},
+      href: () => '#/welcome',
+    });
+    if (generation === mine) cleanup = typeof result === 'function' ? result : null;
+  };
+  onLanguageChange(() => void draw());
+  await draw();
+  main.focus({ preventScroll: true });
+}
+
 async function boot() {
   if (/^#\/?legal\//.test(location.hash) && (await legalPages())) return;
   const brand = loadBrand();
+  // While the app starts, a 401 is the boot's own to read (below); afterwards it is the session ending.
+  setUnauthorizedHandler(() => {});
   let learner;
   try {
     learner = await loadContext();
   } catch (error) {
+    if (bootOutcome(error) === 'signed-out') {
+      if (location.hash !== '#/welcome') history.replaceState(null, '', `${location.pathname}${location.search}#/welcome`);
+      await bootSignedOut(brand);
+      return;
+    }
     failed(error);
     return;
   }
+  /* A session that ends while the app is open (the cookie expired, another tab signed out): Welcome, with
+     a fresh start so nothing of the signed-in learner stays on screen. */
+  setUnauthorizedHandler(() => {
+    const target = unauthorizedRoute(location.hash);
+    if (!target) return;
+    location.replace(`${location.pathname}${location.search}${target}`);
+    location.reload();
+  });
   if (!learner.isAdmin) {
     /* An account that is not an admin, at an admin address: the design's No access frame, drawn
        before any admin request exists. Anywhere else the internal-review notice stands. */
@@ -81,7 +143,7 @@ async function boot() {
       await brand;
       await useStyles('screens/admin/admin.css');
       const { renderNoAccess } = await import('./screens/admin/no-access.js');
-      renderNoAccess(app, { email: learner.user?.email, name: learner.name, backHref: '/next' });
+      renderNoAccess(app, { email: learner.user?.email, name: learner.name, backHref: '/' });
       return;
     }
     mount(app, html`<div class="o-error"><div class="o-error__card"><div class="o-error__text">${t('limited')}</div><a class="o-btn o-btn--secondary o-btn--sm" href="/account">${t('account')}</a></div></div>`);

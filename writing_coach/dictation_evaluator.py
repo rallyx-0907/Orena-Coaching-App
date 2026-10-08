@@ -78,18 +78,21 @@ def normalized_text(value: object) -> str:
     return _collapse_and_trim(text)
 
 
-def _word_run(text: str, start: int) -> int:
-    """End of `[\\p{L}\\p{N}]+(?:['-][\\p{L}\\p{N}]+)*` starting at `start` (which must begin a run)."""
+def _word_run(text: str, start: int, *, stop_at_han: bool = False) -> int:
+    """End of a letter/number run with inner apostrophes or hyphens, starting at `start` (which must begin one).
+
+    In a Chinese line the run is a Latin word and ends where the Han text begins (LEX-041): "MySkin等版本" is
+    MySkin, 等, 版, 本 - the browser evaluator's same rule."""
+
+    def part(char: str) -> bool:
+        return _is_letter_or_number(char) and not (stop_at_han and _is_han(char))
+
     end = start
-    while end < len(text) and _is_letter_or_number(text[end]):
+    while end < len(text) and part(text[end]):
         end += 1
-    while (
-        end + 1 < len(text)
-        and text[end] in ("'", "-")
-        and _is_letter_or_number(text[end + 1])
-    ):
+    while end + 1 < len(text) and text[end] in ("'", "-") and part(text[end + 1]):
         end += 1
-        while end < len(text) and _is_letter_or_number(text[end]):
+        while end < len(text) and part(text[end]):
             end += 1
     return end
 
@@ -106,7 +109,7 @@ def listening_units(value: object, source_language: str) -> list[str]:
             units.append(char)
             position += 1
         elif _is_letter_or_number(char):
-            end = _word_run(text, position)
+            end = _word_run(text, position, stop_at_han=zh)
             unit = text[position:end]
             units.append(unit if len(unit) == 1 and _is_han(unit) else unit.lower())
             position = end

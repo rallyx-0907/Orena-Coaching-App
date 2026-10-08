@@ -12,6 +12,7 @@
    returns - the same endpoint and shape the current Free Talk's own `coach()` already uses,
    `ui/speaking-free.js:251-267`). */
 import { voiceInvitations } from '../../content/voice-invitations.js';
+import { countLinkers } from './linking.js';
 
 /* The frame draws three duration pills (E2: "1/2/3 min"); each is also the real cap the recorder
    auto-stops at, so choosing one has a real effect, not a cosmetic label. */
@@ -66,10 +67,10 @@ export function pace(text, ms, language) {
 }
 
 /* The frame's three result tiles. Words and Pace are measured from the real transcript and the
-   real elapsed time; Linking has no detector anywhere in this build, so it is the layout's 0
-   (Design Contract rule 40) - a fallback for the component, never a score. */
+   real elapsed time; Linking counts the linking words in the transcript through the language
+   adapter in linking.js (D-139 HD-9) - a count, never a score. */
 export function resultStats(text, ms, language) {
-  return { words: unitCount(text, language), pace: pace(text, ms, language), linking: 0 };
+  return { words: unitCount(text, language), pace: pace(text, ms, language), linking: countLinkers(text, language) };
 }
 
 /* What Finish writes to the session's speaking ledger (`product/speaking-session.js`): only what
@@ -95,12 +96,43 @@ export function strengthsOf(coaching) {
   return (coaching?.carried || []).filter((item) => item?.quote).slice(0, 3);
 }
 
-/* The frame's "Useful phrases - from your library" pills: up to 4 of the learner's own saved
-   words (E2: "real personalised data", `s.saved` in the source). `GET /api/library/vocabulary`
-   is the real equivalent; recency order needs no separate ranking decision. */
-export function phraseWords(page) {
+/* Short phrases and words only: a whole sentence saved to the library is not a "useful phrase"
+   chip (S-18). Capped by unit count (6 words, or 12 Han characters) and length. */
+const shortPhrase = (text) => {
+  if (text.length > 40 || /[.!?。！？]\s*\S/u.test(text)) return false;
+  const han = (text.match(/\p{Script=Han}/gu) || []).length;
+  return han ? han <= 12 : text.split(/\s+/).length <= 6;
+};
+
+/* The learner's own saved short words, newest first (E2: "real personalised data", `s.saved` in the
+   source; `GET /api/library/vocabulary` is the real equivalent). */
+export function phraseWords(page, limit = 4) {
   const items = Array.isArray(page?.items) ? page.items : [];
-  return items.map((item) => String(item?.word || '').trim()).filter(Boolean).slice(0, 4);
+  return items.map((item) => String(item?.word || '').trim()).filter((text) => text && shortPhrase(text)).slice(0, limit);
+}
+
+/* Whether a saved item can be said to belong to a topic (LEX-051). Only evidence the screen holds: the item
+   appears inside the topic's own words (a Chinese item as a substring - there are no spaces to split on),
+   or an English/Vietnamese item equals one of the topic's words of four letters or more. No guess beyond
+   that: nothing here is a semantic match, and a topic nothing overlaps with gets no "related" claim. */
+export function relatesToTopic(item, topic) {
+  const word = String(item || '').trim().toLocaleLowerCase();
+  const text = String(topic || '').trim().toLocaleLowerCase();
+  if (!word || !text) return false;
+  if (/\p{Script=Han}/u.test(word)) return [...word].length >= 2 && text.includes(word);
+  const tokens = new Set(text.split(/[^\p{L}\p{N}]+/u).filter((token) => token.length >= 4));
+  return word.split(/\s+/).some((token) => token.length >= 4 && tokens.has(token));
+}
+
+/* What the setup card shows under "Duration": the saved items that relate to the chosen topic when any do
+   (`kind: 'topic'`), otherwise the learner's own recent saved items labelled for what they are
+   (`kind: 'library'`), which the screen draws as secondary. `topic` is every string that names the topic
+   (its title, the typed text, the authored situation). */
+export function phrasesFor(page, topic, limit = 4) {
+  const all = phraseWords(page, Infinity);
+  const related = all.filter((item) => relatesToTopic(item, topic));
+  if (related.length) return { kind: 'topic', items: related.slice(0, limit) };
+  return { kind: 'library', items: all.slice(0, limit) };
 }
 
 /* 0 fixes -> "headlineNone"; 1 -> "headlineOne" (frame's singular wording); 2+ -> the plural key,

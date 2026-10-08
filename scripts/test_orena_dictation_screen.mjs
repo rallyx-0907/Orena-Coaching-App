@@ -1,11 +1,11 @@
-/* The Dictation screen's contract (D-066): `DictationResult` from the Canonical UI Baseline,
+/* The Dictation result contract (D-066): `DictationResult` from the Canonical UI Baseline,
    held to the pinned JSON and to the baseline's own worked example.
 
-   The screen (ui/dictation-screen.js) and the numbers under it (capabilities/dictation-result.js)
-   add nothing to the comparison: the score, the units and the words the learner has earned are
-   the evaluator's and the hint module's. What is held here is the shape, and the promises the
-   baseline makes: a hint never shows the whole line, a reading sits under each character, a
-   substitution is one mistake, and nothing a learner typed reaches the page as markup. */
+   The numbers (capabilities/dictation-result.js, used by screens/dictation/model.js) add nothing
+   to the comparison: the score, the units and the words the learner has earned are the
+   evaluator's and the hint module's. What is held here is the shape, and the promises the
+   baseline makes: a hint never shows the whole line, a reading sits under each character, and a
+   substitution is one mistake. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
@@ -18,9 +18,6 @@ import {
   revealedCount,
   verdictOf,
 } from '../static/orena/capabilities/dictation-result.js';
-import { progressHtml, resultHtml, rightLineHtml, screenHtml, shapeHtml, typedHtml } from '../static/orena/ui/dictation-screen.js';
-import { copy } from '../static/orena/ui/copy.js';
-import { referenceCopy } from '../static/orena/ui/reference.js';
 
 const contract = JSON.parse(
   readFileSync(new URL('../docs/design/canonical-ui/data-contracts/DictationResult.json', import.meta.url), 'utf8'),
@@ -83,10 +80,6 @@ const view = dictationHintView({ expected: LINE, answer: '', language: 'zh', lev
 assert.deepEqual(view.cells.slice(0, 5).map((cell) => cell.reading), ['p0', 'p1', 'p2', 'p3', 'p4']);
 assert.ok(view.cells.slice(5).every((cell) => cell.kind === 'hidden' && cell.text === '＊' && cell.reading === ''));
 assert.equal(view.charTotal, 11, 'punctuation is the shape of the line, not a character to find');
-assert.match(shapeHtml(view, 'zh', referenceCopy.vi), /<small>p0<\/small>/);
-assert.match(shapeHtml(view, 'zh', referenceCopy.vi), /5 \/ 11 ký tự/);
-assert.match(shapeHtml(view, 'zh', referenceCopy.vi), /Đã dùng gợi ý\./, 'a used hint is said, and only that: the streak is not claimed');
-assert.match(shapeHtml(dictationHintView({ expected: LINE, answer: '', language: 'zh', level: 0 }), 'zh', referenceCopy.vi), /Không bao giờ hiện cả câu\./);
 
 /* What the learner has earned by typing is shown at level 0, and only what they have earned. */
 const earned = dictationHintView({ expected: 'I have a pen.', answer: 'I have', language: 'en', level: 0 });
@@ -112,39 +105,4 @@ const marks = diffMarks([
 ]);
 assert.deepEqual(marks.map((m) => m.kind), ['correct', 'wrong', 'wrong'], 'each adjacent missing and extra pair is one wrong place');
 
-/* The screen: nothing typed reaches it as markup, and each mark is reachable. */
-const hostile = '<img src=x onerror=alert(1)>';
-const attack = dictationResult({ lineIndex: 1, lineTotal: 1, expected: 'a pen', answer: hostile, language: 'en' });
-const html = resultHtml({ result: attack, language: 'en', r: referenceCopy.vi, meaning: hostile });
-assert.doesNotMatch(html, /<img/, 'typed text and a translation are escaped');
-assert.equal((html.match(/data-mark=/g) || []).length, attack.marks.filter((m) => m.kind !== 'correct').length, 'every place is a control');
-assert.match(typedHtml(result, 'zh', referenceCopy.zh), /class="dz-mark dz-mark--missing"/);
-assert.match(rightLineHtml(LINE, result, 'zh'), /<mark class="dz-fix">想<\/mark>/);
-assert.match(rightLineHtml(LINE, result, 'zh'), /<mark class="dz-fix">的<\/mark>/);
-assert.match(rightLineHtml(LINE, result, 'zh'), /。/, 'punctuation stays where the line has it');
-assert.match(progressHtml(2, 5), /aria-valuenow="2"/);
-assert.equal((progressHtml(2, 5).match(/data-done/g) || []).length, 2);
-
-const screen = screenHtml({
-  title: 'Lesson', level: 'HSK 2', index: 2, total: 5, kind: 'video', range: '01:12 – 01:19', poster: '', rate: 0.75, r: referenceCopy.vi, c: copy.vi, ask: referenceCopy.vi.dictAsk,
-});
-for (const hook of ['data-exit-practice', 'data-hint-panel', 'data-hint', 'data-dz-rate', 'data-listen', 'data-evidence-status', 'id="reconstruction"', 'data-dz-result']) {
-  assert.ok(screen.includes(hook), `the screen carries ${hook}, which the encounter binds`);
-}
-assert.match(screen, /<b>0<\/b>/, 'the streak is not measured, so the pill shows 0');
-assert.match(screen, /HSK 2 · dòng 2 \/ 5/);
-
-/* Copy: every string the screen speaks exists in every interface language. */
-const KEYS = Object.keys(referenceCopy.en).filter((key) => /^dict(Name|Line|Ask|Video|Audio|Speed|HintLevel|MoreHint|Check|Placeholder|ResultHere|CharactersOf|Assisted|NeverAll|Missing|Extra|Verdict|Detail|Count|TapToUnderstand|NextLine|TryAgain|Keep|Replay|YouTyped|Correct)/.test(key));
-assert.ok(KEYS.length >= 25);
-for (const locale of ['zh', 'vi']) for (const key of KEYS) assert.ok(referenceCopy[locale][key], `${locale} has ${key}`);
-
-/* The whole task is one screen on a desk and on a phone, whatever the length of the line (bugs 10 and 15). */
-const dictationCss = readFileSync(new URL('../static/orena/dictation.css', import.meta.url), 'utf8');
-const desk = dictationCss.slice(dictationCss.indexOf('@media (min-width: 901px) {'));
-assert.match(desk, /\.dz-cols \{[^}]*block-size: calc\(100dvh - 84px\);/s, 'a desk: the columns are the height under the 84px bar');
-assert.match(desk, /\.dz-cells \{[^}]*max-block-size: clamp\([^}]*overflow-y: auto;/s, 'a long line scrolls in its own pane');
-assert.match(desk, /\.dz-media \{[^}]*block-size: clamp\(/s, 'the picture takes what the height allows');
-assert.match(dictationCss, /max-block-size: 118px;\s*overflow-y: auto;/, 'a phone: the line has its own scrolling pane too');
-
-console.log('Dictation screen: DictationResult contract, hint bounds, readings, marks, escaping, EN/ZH/VI copy: PASS');
+console.log('Dictation screen: DictationResult contract, hint bounds, readings and marks: PASS');

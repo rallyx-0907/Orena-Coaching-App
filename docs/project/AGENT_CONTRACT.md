@@ -346,6 +346,12 @@ Rules:
 - `label` is in the `interface` language (`context.locale.interface`), ≤ 24 characters: a button is interface layer (D-080). The text an action's card explains (`display.reason`) stays in the `support` language.
 - An action with an unknown `type`, or not in `supported_actions`, is ignored and logged by the client.
 - An action is shown as a button; the client never runs it without a learner tap, except `navigate` when the learner's message was itself the request ("đưa tôi tới…").
+  - The server marks such an action with `"open": true` in its own data, in text turns and in voice (§9). The
+    client runs exactly the actions so marked, at once, and keeps their buttons in the thread.
+  - In text turns only `navigate` is ever marked. In voice, any low-risk action the learner asked for may be (R30).
+  - A CONFIRM-risk action marked `open` still goes through the UI's own confirmation.
+  - A short "open it" right after an offer ("mở giúp tôi", "open it", "打开它") is answered by the server with the
+    offered `navigate`, marked `open`, and a one-line "opening it now" reply in the support language.
 - A segment that comes with an action **offers** it: it never says or implies the action was done ("Mình lưu …", "Saved it for you", "我帮你保存了"). The learner does it by tapping or confirming. A `memory_update` is different: the device applies it without a tap, so a reply may say it is applied (S14).
 - A reply that names the button uses its `label` as the learner sees it (interface language), and does not describe the button or the interface: "Bấm Lưu từ để thêm 我 vào từ vựng của bạn." The sentence around the label - an offer, including the server's own offer copy - is in the `support` language like the rest of the reply; only the quoted label stays as the button reads (D-135).
 - A `navigate` to the learner's My Library about a word is offered only when that word is actually in their library (a tool read says so); a word not saved gets no My Library button and no offer to open it (D-135).
@@ -409,7 +415,42 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
      `memory_update`.
    - An action is a button the learner taps. Buttons come only through the server.
    - 404 `voice_session_not_found` means the session is over.
-5. **End.**
+   - R29, opening on request: when the learner's own words asked to open, play, listen to, watch or read a
+     place, the answer carries a top-level `open: "<action id>"`. The client runs that action at once, without a
+     tap (the §7 navigate-on-request precedent); the action event still arrives and its button stays in the
+     thread. With no `open`, only the button is drawn.
+   - The read tool `find_content` finds content in the learning language: the listening library and published
+     reading. `offer_button` can offer `open_content`, which navigates to `listening.workspace` for `media:`
+     content and to `reading.workspace` for `article:` or `book:` content. The content id always comes from a
+     tool read. The session body lists both intents in `client.supported_intents`.
+   - R30, one generic tool: `do_action` replaces `offer_button`.
+     - Arguments: `type` from `client.supported_actions`, `intent` from `client.supported_intents`, and the optional
+       ids and fields of §7.
+     - The server fills in what is in view, builds the §7 payload and judges it like `propose_action`.
+     - A low-risk action the learner's own words asked for comes with `open` and runs at once. A CONFIRM action
+       (for example `unsave_word`) runs through the app's own confirm dialog, never silently. An action nobody
+       asked for is a button only.
+   - R30, context during a session.
+     - The client posts `POST /api/agent/voice/context { voice_session_id, context }` on every route change and
+       every line or word selection while the session runs, settled about 350 ms. `context` is the §3 context
+       without `locale`.
+     - The answer is `{ voice_session_id, note }`; 404 `voice_session_not_found`, 422 for a context that is not a
+       valid object.
+     - The client sends `note` on the socket as
+       `{ clientContent: { turns: [{ role: "user", parts: [{ text: note }] }], turnComplete: false } }`, so Orena
+       takes it in without answering it.
+     - Ids in view become ids actions may name.
+   - R30, recognition: the locked setup carries the session's support and target languages for input
+     transcription. Unclear or wrong-language input is answered "say it again", never acted on.
+5. **Voices (R29).**
+   - `GET /api/agent/voice/voices?interface=<en|vi|zh-CN>` answers
+     `{ default, voices: [{ id, gender: "female"|"male", label }] }`.
+   - There are ten voices: `f-clear`, `f-bright`, `f-warm`, `f-soft`, `f-young`, `f-gentle`, `m-calm`, `m-lively`,
+     `m-friendly`, `m-steady`. Labels are in the interface language, and no vendor name appears.
+   - The route has the same gates as `/voice/tool`.
+   - The client keeps the learner's choice on the device and sends it as an optional `"voice": "<id>"` in the
+     session body. The server locks it into the token; an unknown or missing id uses the default.
+6. **End.**
    - `POST /api/agent/voice/end { voice_session_id }` answers `{ voice_session_id, seconds }`. The client sends it
      when the learner stops, leaves (sendBeacon on pagehide), the socket closes, or `max_seconds` pass.
    - The server bills the session time into the shared ledger. A session never ended is billed at its cap.

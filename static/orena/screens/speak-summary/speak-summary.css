@@ -82,7 +82,7 @@
 }
 
 .s-spsummary-card {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
   border-radius: 24px;
   background: var(--surface);
@@ -98,7 +98,7 @@
 }
 
 .s-spsummary-tasks {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
   overflow-y: auto;
   display: flex;

@@ -8,7 +8,7 @@
    session while the device's thread is empty), coach-note upserts from `memory_update`, and the
    one dispatcher every Orena action button runs through. */
 import { createSession, buildRequest } from '../../agent/session.js';
-import { voiceSessionBody, voiceThread } from '../../agent/live-voice.js';
+import { voiceSessionBody, voiceThread, chosenVoice } from '../../agent/live-voice.js';
 import { turn } from '../../agent/transport.js';
 import { sharedMemory } from './memory-store.js';
 import { supportedIntents } from '../../agent/intents.js';
@@ -194,7 +194,7 @@ export function homeLiveVoice() {
     client: { supported_actions: inst.dispatcher.supported(), supported_intents: supportedIntents(builtScreens()) },
     notes: inst.memory.requestNotes(),
     address: inst.memory.addressFor(support),
-  }));
+  }), { voice: chosenVoice() });
   const thread = voiceThread({ session: inst.session, memory: inst.memory, notify, persist: syncPersistence, lang: () => support });
   return { body, thread };
 }

@@ -1,6 +1,7 @@
 /* Reading Complete (design route `rcomplete`, frame 40): pure data mapping, DOM-free so
    scripts/test_orena_screen_reader-complete.mjs can test it without a browser. */
 import { contentIdFor } from '../reader/model.js';
+import { relatednessScore } from '../content/model.js';
 
 /* The shell's own place titles (copy/shell.js shellCopy) for the six primary routes
    (shell/routes.js PRIMARY) - the real navigation-origin id the router remembers in
@@ -39,8 +40,8 @@ export function comprehensionLabel(evidence, articleId) {
 
 /* The "Next" row's target. Real things only: a book chapter's own next chapter; else another
    published article of the same language the learner has not finished (the catalogue's own order -
-   the backend has no relatedness signal, so the frame's "same theme" claim is not made); else the
-   frame's own row, which sends the learner to Discover to choose. */
+   the backend has no relatedness signal, so the frame's "same theme" claim is not made); else no suggestion at all
+   ({kind: 'discover'}: the screen draws no Next row). */
 export function nextPick({ doc, articles, continuation }) {
   if (doc.isBook && doc.neighbours?.next) {
     const next = doc.neighbours.next;
@@ -52,10 +53,16 @@ export function nextPick({ doc, articles, continuation }) {
       return Number.isFinite(entry?.place?.within) && entry.place.within >= 100;
     };
     const open = (Array.isArray(articles) ? articles : []).filter((item) => item?.id && String(item.id) !== String(doc.id) && item.title && !done(item.id));
-    // The frame offers the next text "· same theme": one on the same topic first, any other after.
-    const sameTheme = doc.topic ? open.find((item) => item.topic === doc.topic) : null;
-    const pick = sameTheme || open[0];
-    if (pick) return { kind: 'article', title: String(pick.title), id: contentIdFor('article', pick.id), sameTheme: Boolean(sameTheme) };
+    // Only a text that really relates to this one is suggested (LEX-088): the same topic or author, by the same
+    // rule as Content Detail's Related (level alone is not relatedness). Otherwise there is no suggestion and the
+    // row is not drawn - Discover is already the primary exit.
+    const current = { topic: doc.topic, level: doc.level, source: doc.author };
+    const ranked = open
+      .map((item, order) => ({ item, order, points: relatednessScore(current, item) }))
+      .filter((entry) => entry.points > 0)
+      .sort((a, b) => b.points - a.points || a.order - b.order);
+    const pick = ranked[0]?.item;
+    if (pick) return { kind: 'article', title: String(pick.title), id: contentIdFor('article', pick.id), sameTheme: true };
   }
   return { kind: 'discover', title: '', id: '' };
 }

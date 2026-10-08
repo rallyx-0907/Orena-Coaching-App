@@ -5,7 +5,7 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { mediaCard, headlineTitle } from '../../kit/components.js';
+import { mediaCard, headlineTitle, settleCovers } from '../../kit/components.js';
 import { langSpan, langAttr } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
@@ -19,7 +19,7 @@ import { t } from './copy.js';
 import {
   entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
   entryFromTextImport, entryFromMediaImport, filterOptions, visibleEntries,
-  presentCard, hrefFor, typeLabel, hasAnyFilter, filterCount, practiceCandidates, practiceHref, preparedMediaEntry,
+  presentCard, hrefFor, typeLabel, topicLabel, hasAnyFilter, filterCount, practiceCandidates, practiceHref, preparedMediaEntry,
 } from './model.js';
 
 const TAB_LABEL_KEY = { all: 'tabAll', read: 'tabRead', listen: 'tabListen', collections: 'tabCollections', imported: 'tabImported' };
@@ -43,8 +43,10 @@ export default async function discover(element, ctx) {
   const support = languages().support;
   const memory = learner.memory;
   const continuation = memory?.value?.continuation || [];
-  const practice = ['pronunciation','dictation','listening'].includes(ctx.query.get('practice')) ? ctx.query.get('practice') : '';
+  const practice = ['pronunciation','shadowing','dictation','listening'].includes(ctx.query.get('practice')) ? ctx.query.get('practice') : '';
   const pronunciation = practice === 'pronunciation';
+  // Shadowing (D-139 HD-2) chooses media for the same room; only media with a model recording, never an authored sentence.
+  const speakingPractice = pronunciation || practice === 'shadowing';
   const practiceLabel = pronunciation ? 'pronunciation' : practice === 'listening' ? 'listeningComprehension' : practice;
   if (practice) ctx.setCrumb(ts(practiceLabel));
   const practicePlace = { source: ctx.query.get('source'), segment: ctx.query.get('segment'), intent: practice };
@@ -66,7 +68,7 @@ export default async function discover(element, ctx) {
         ${raw(icon('search', { size: 18 }))}
         <input type="search" autocomplete="off" placeholder="${t(practice ? 'practiceSearch' : 'searchPlaceholder')}" data-query>
       </div>
-      ${practice ? html`<p class="o-muted">${t(pronunciation ? 'choosePracticeMedia' : practice === 'dictation' ? 'chooseDictationMedia' : 'chooseListeningMedia')}</p>` : ''}
+      ${practice ? html`<p class="o-muted">${t(speakingPractice ? 'choosePracticeMedia' : practice === 'dictation' ? 'chooseDictationMedia' : 'chooseListeningMedia')}</p>` : ''}
       <div class="o-tabs" data-tabs ${practice ? raw('hidden') : ''}></div>
       <div class="s-discover__results" data-results-row></div>
       <div data-results></div>
@@ -112,12 +114,12 @@ export default async function discover(element, ctx) {
     const tabSuffix = state.tab === 'all' ? '' : ` · ${t(TAB_LABEL_KEY[state.tab])}`;
     mount(
       resultsRowEl,
-      html`<div>${t.plural('resultsLabel', list.length)}${tabSuffix}</div>${hasFilters ? html`<button type="button" class="o-btn o-btn--link" data-clear>${t('clearFilters')}</button>` : ''}`,
+      html`<div>${t.plural('resultsLabel', list.length)}${tabSuffix}</div>${hasFilters && list.length ? html`<button type="button" class="o-btn o-btn--link" data-clear>${t('clearFilters')}</button>` : ''}`,
     );
     resultsRowEl.querySelector('[data-clear]')?.addEventListener('click', clearFilters);
 
     if (!list.length && !state.loading) {
-      mount(resultsEl, emptyMarkup({ text: t('emptyText'), actionLabel: t('clearFilters'), iconName: 'inbox' }));
+      mount(resultsEl, emptyMarkup({ text: t('emptyText'), actionLabel: hasFilters || state.query.trim() ? t('clearFilters') : '', iconName: 'inbox' }));
       resultsEl.querySelector('[data-empty-action]')?.addEventListener('click', clearFilters);
     } else {
       mount(
@@ -129,6 +131,7 @@ export default async function discover(element, ctx) {
         })}</div>`,
       );
     }
+    settleCovers(resultsEl);
     paintFilterBadge();
     if (sheetHandle) paintSheetBody(sheetHandle.element);
   }
@@ -157,12 +160,11 @@ export default async function discover(element, ctx) {
             <div class="s-discover-fgroup__chips">
               ${groups[group.key].map((value) => {
                 const pressed = state.filters[group.key].has(value);
-                const label = group.key === 'type' ? typeLabel(value, t) : value;
+                const label = group.key === 'type' ? typeLabel(value, t) : group.key === 'topic' ? topicLabel(value, t) : value;
                 // languages-4 (3) / finding B.3: the topic group's own chip is the same open,
                 // untranslatable content metadata as the card's own topic tag (presentCard above) -
                 // marked lang="en" for the same reason, never silently unlabelled.
-                const lang = group.key === 'topic' ? langAttr('en') : '';
-                return html`<button type="button" class="o-chip" aria-pressed="${pressed ? 'true' : 'false'}" lang="${lang}" data-fgroup="${group.key}" data-fvalue="${value}">${label}</button>`;
+                return html`<button type="button" class="o-chip" aria-pressed="${pressed ? 'true' : 'false'}" data-fgroup="${group.key}" data-fvalue="${value}">${label}</button>`;
               })}
             </div>
           </div>`,
@@ -170,7 +172,7 @@ export default async function discover(element, ctx) {
       </div>
       <div class="o-sheet__foot">
         <button type="button" class="o-btn o-btn--secondary" data-sheet-clear>${t('clear')}</button>
-        <button type="button" class="o-btn o-btn--primary" data-sheet-close>${t.plural('showResults', visible().length)}</button>
+        <button type="button" class="o-btn o-btn--primary" data-sheet-close${visible().length ? '' : raw(' disabled')}>${t.plural('showResults', visible().length)}</button>
       </div>`;
     /* fillSheet (kit/overlay.js) mounts the markup and wires every [data-sheet-close] to
        handle.close() itself (bindClose) - the header X and the "Show N results" footer button
@@ -197,7 +199,7 @@ export default async function discover(element, ctx) {
 
   root.querySelector('[data-import]')?.addEventListener('click', () => {
     import('../import/sheet.js')
-      .then((module) => module.openImport(ctx, { mediaRoute: pronunciation ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' }))
+      .then((module) => module.openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' }))
       .catch((error) => console.error('[Orena] Import is not available yet', error));
   });
 

@@ -1,10 +1,15 @@
 /* Thư viện của tôi: a relationship store, not a second library.
 
-   The room lists what the learner kept over the owners that already hold it,
-   and writes only the learner's own relationship to those things - kept,
-   marked, filed. These assertions exist to stop the three ways that quietly
-   stops being true: a second copy of somebody else's data, a second review
-   scheduler, and a number nobody measured.
+   The library lists what the learner kept over the owners that already hold
+   it, and writes only the learner's own relationship to those things - kept,
+   marked, filed. These assertions stop the quiet ways that stops being true:
+   a second review scheduler, an unversioned write, a set that mixes kinds.
+
+   The pre-cutover room (ui/collection.js) went with the retired UI (D-143);
+   the learner UI's Collection screen is gated by
+   test_orena_screen_collection.mjs and test_orena_collection_actions.mjs.
+   What stays here is the server contract, which is unchanged and still
+   serves any client.
 
    Schema and decision: `migrations/versions/20260923_0013_my_library_and_
    entry_identity.py`, D-074, reviewed by independent architecture review. */
@@ -12,29 +17,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
-const room = read('static/orena/ui/collection.js');
 const api = read('static/orena/infrastructure/api.js');
 const routes = read('writing_coach/library_api.py');
 const repository = read('writing_coach/persistence/library_repository.py');
 
 /* --- One read for the page, not one per row ---------------------------- */
-assert.match(room, /api\.collection\(\{/, 'the rows come from the typed query over the owners');
-assert.match(room, /api\.libraryItems\(\{ kind: 'word', words \}\)/, "and the learner's own state comes in one lookup");
-assert.doesNotMatch(
-  room,
-  /for \([^)]*\) \{[^}]*await api\.libraryItem\(/s,
-  'never one request per row',
-);
 assert.match(api, /libraryItems:\(\{kind='',words=\[\],sources=\[\]\}/, 'the lookup takes the whole page at once');
 
-/* --- The room holds no copy of what an owner owns ---------------------- */
-for (const forbidden of ['localStorage', 'indexedDB', 'sessionStorage'])
-  assert.doesNotMatch(room, new RegExp(forbidden), `the room keeps no ${forbidden} store of its own`);
-assert.doesNotMatch(room, /state\.entries\s*=\s*\[\.\.\.state\.entries\]\s*\.map\([^)]*title:/s, 'and rewrites no owner row');
-
 /* --- Every write carries the version it read --------------------------- */
-assert.match(room, /expected_version: item\.version/, 'a change is made against the version it read');
-assert.match(routes, /expected_version: int = Field\(ge=1\)/, 'and the route requires one');
+assert.match(routes, /expected_version: int = Field\(ge=1\)/, 'the route requires a version');
 assert.match(
   repository,
   /if int\(item\.version\) != int\(expected_version\):\s*\n\s*raise LibraryConflict\("version_conflict"\)/,
@@ -45,22 +36,6 @@ assert.match(
 /* Words are scheduled in `saved_words`. The library orders the queue by the
    pin and by that schedule; it never computes an interval of its own. */
 assert.doesNotMatch(repository, /next_review_at\s*=/, 'the library writes no review date');
-/* The room computes no schedule of its own. It does carry the owner's own
-   numbers back when undoing a deletion - that is restoring what was there,
-   not inventing it - so every review field that appears in the room must be
-   part of that one payload, and nothing may be derived. */
-assert.doesNotMatch(room, /REVIEW_STAGE|AGAIN_MINUTES|addDays|Date\.now\(\) \+/,
-  'the room works out no interval');
-const reviewFields = room.match(
-  new RegExp(String.raw`(next_review_at|last_reviewed_at|review_stage|successful_recalls|lapse_count):[^,\r\n]*`, 'g'),
-) || [];
-assert.deepEqual(reviewFields, [
-  "review_stage: Number(detail.reviewStage || 0)",
-  "successful_recalls: Number(detail.successfulRecalls || 0)",
-  "lapse_count: Number(detail.lapseCount || 0)",
-  "last_reviewed_at: detail.lastReviewedAt || ''",
-  "next_review_at: detail.nextReviewAt || ''",
-], 'and the only review fields it names are the ones an undo puts back');
 assert.match(
   repository,
   /\.order_by\(LibraryItem\.pinned_at\)/,
@@ -69,59 +44,9 @@ assert.match(
 assert.match(repository, /SavedWord\.next_review_at <= moment/, 'then what the words owner says is due');
 
 /* --- One collection, one kind ------------------------------------------ */
-assert.match(room, /state\.collections\.filter\(\(set\) => set\.kind === wanted\)/,
-  'the picker offers only sets of the item\'s own kind');
-assert.match(repository, /if item\.kind != collection\.kind:/, 'and the repository refuses the rest');
-
-/* --- Nothing a learner sees is invented -------------------------------- */
-/* The history is the owner's record. Only saved language has one, so only a
-   word shows it - three dashes on a passage would be three measures nobody
-   took (Design Contract rule 4). */
-assert.match(room, /const isWord = entry\.ref\.domain === 'language';/, 'the history belongs to a word');
-assert.match(room, /isWord\s*\n?\s*\?\s*`<div class="my-library-detail__history">/, 'and is drawn only for one');
-
-/* --- No browser dialog -------------------------------------------------- */
-/* A prompt or a confirm stops the page and is not something the design
-   draws; naming a set happens in a field in the room. */
-for (const dialog of ['window.prompt', 'window.confirm', 'window.alert'])
-  assert.doesNotMatch(room, new RegExp(dialog.replace('.', '\\.')), `no ${dialog}`);
-assert.match(room, /data-library-name-form/, 'a set is named in the room');
-
-/* --- The two kinds without an owner are absent, not faked -------------- */
-const kinds = room.slice(room.indexOf('const KINDS = ['), room.indexOf('const ITEM_KIND'));
-for (const absent of ['note', 'book'])
-  assert.doesNotMatch(kinds, new RegExp(`id: '${absent}'`), `${absent} has no owner, so it is not a chip`);
-assert.equal((kinds.match(/\{ id: /g) || []).length, 6, 'six kinds have owners today');
+assert.match(repository, /if item\.kind != collection\.kind:/, 'the repository refuses a set of another kind');
 
 /* --- Marking says so when it cannot be stored -------------------------- */
 assert.match(routes, /library_unavailable/, 'a runtime without the tables says so');
-assert.match(room, /state\.unavailable = true/, 'and the room stops offering to mark');
-assert.match(room, /myLibraryUnavailable/, 'in words the learner can read');
 
-/* --- Hearing a word ------------------------------------------------------
-   The pill is the frame's own ("Vocabulary review mobile hidden"), it lives
-   in the review card, and it carries the attribution the licence obliges
-   until the human decides where that is shown. */
-const recall = read('static/orena/ui/expression.js');
-assert.match(recall, /class="vocab-listen"/, "the frame's pill is the control");
-assert.match(recall, /api\.wordAudio\(current\.word, current\.reading_key \|\| ''\)/,
-  'asked for by word and the reading it was kept at');
-assert.match(recall, /event\.stopPropagation\(\);/, 'hearing a word does not flip its card');
-assert.match(recall, /title="\$\{esc\(found\.attribution\)\}"/,
-  'and the clip says who recorded it and under what');
-/* No pill without a clip: the room draws it from an answer, never hopefully. */
-assert.match(recall, /const found = item \? heard\.get\(item\.word\) : null;[\s\S]{0,40}if \(!found\) return '';/,
-  'a pill is drawn only for a word that has one');
-/* My Library's frames draw no speaker, so it plays nothing - and it is where
-   the human decided (2026-09-23) a Commons recording is credited: author,
-   licence and a reachable source, in the word's own detail panel. */
-assert.doesNotMatch(room, /icon\('speaker|vocab-listen|new Audio\(/,
-  'My Library plays nothing, because its frames draw no speaker');
-assert.match(room, /api\.wordAudio\(entry\.title, entry\.detail\?\.readingKey \|\| ''\)/,
-  'it asks what the recording may be played under');
-assert.match(room, /class="my-library-detail__credit"/, 'and credits it in the word panel');
-assert.match(room, /\$\{esc\(found\.attribution\)\}/, 'with the author and the licence');
-assert.match(room, /href="\$\{esc\(found\.source\)\}"/, 'and a source that can be opened');
-assert.match(room, /entry\.ref\.domain !== 'language'/, 'only a word has one');
-
-console.log('Thư viện của tôi: one read per page, versioned writes, one scheduler, nothing invented: PASS');
+console.log('Thư viện của tôi: versioned writes, one scheduler, one kind per set: PASS');

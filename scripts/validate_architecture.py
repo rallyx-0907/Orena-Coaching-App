@@ -26,8 +26,12 @@ require("languages.english.grammar_course import" not in app, "English grammar c
 require("GRAMMAR_LIBRARY = [" not in app, "Dead embedded GRAMMAR_LIBRARY must not return")
 require('translation_vi = excluded.translation_vi,\n              translation_vi' not in app, "Duplicate vocabulary SQL assignment exists")
 require("<script>\nconst $=" not in index, "Large inline app JavaScript must stay extracted")
-require('/orena-assets/app.js' in index, 'Root must load the Orena product')
-require('/orena-assets/world.css' in index, 'Root must load the shared presentation foundation')
+require('/orena-assets/main.js' in index, 'Root must load the learner UI entry (D-143)')
+require('/orena-assets/kit/tokens.css' in index, 'Root must load the learner UI colour tokens, the one colour owner')
+for retired in ('app.js', 'theme.css', 'theme.js', 'world.css'):
+    require(f'/orena-assets/{retired}' not in index, f'Root must not load the retired UI asset {retired} (D-143)')
+for retired_path in ('static/orena/app.js', 'static/orena/ui', 'static/orena/theme.css', 'templates/login.html', 'static/admin.js'):
+    require(not (ROOT / retired_path).exists(), f'Retired pre-cutover UI must stay physically absent: {retired_path}')
 require(not (ROOT / 'static/becoming').exists(), 'Retired learner product must stay physically absent')
 require('/orena-assets/' in auth, 'New product assets must pass the auth asset boundary')
 require("LANGUAGE_CODE_CTX" in auth, "Auth middleware must set language context")

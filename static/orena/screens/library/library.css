@@ -298,3 +298,33 @@
   font-size: 13px;
   color: var(--muted);
 }
+
+/* The pinyin / IPA of a saved word, after the word (LEX-070). */
+.s-library-lang-row__reading {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* LEX-068: the tab strip scrolls on a phone; a fade on the edge that has more tabs says so. */
+.s-library .o-tabs[data-more-right] {
+  -webkit-mask-image: linear-gradient(to right, var(--text) calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to right, var(--text) calc(100% - 36px), transparent);
+}
+.s-library .o-tabs[data-more-left] {
+  -webkit-mask-image: linear-gradient(to left, var(--text) calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to left, var(--text) calc(100% - 36px), transparent);
+}
+.s-library .o-tabs[data-more-left][data-more-right] {
+  -webkit-mask-image: linear-gradient(to right, transparent, var(--text) 36px, var(--text) calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to right, transparent, var(--text) 36px, var(--text) calc(100% - 36px), transparent);
+}
+
+.s-library-due-hero__reason {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-library-due-list[hidden] {
+  display: none;
+}

@@ -76,12 +76,13 @@ assert.deepEqual(revoked,['blob:local-speaking-take']);
 {
   const { readFileSync } = await import('node:fs');
   const read=(path)=>readFileSync(new URL(`../${path}`, import.meta.url),'utf8');
-  const encounter=read('static/orena/ui/encounter.js');
-  assert.match(encounter,/return \(\) => \{[\s\S]{0,400}recorder\.cleanup\(\)/,
-    'the listening room releases the microphone when it is torn down');
-  const voice=read('static/orena/ui/voice-response.js');
-  assert.match(voice,/recorder\.cleanup\(\)/,
-    'the voice response releases the microphone when it is torn down');
+  for (const screen of ['conversation','free-talk']) {
+    const src=read(`static/orena/screens/${screen}/screen.js`);
+    assert.match(src,/createLocalAudioRecorder\(\)/,`${screen} records through the shared recorder`);
+    assert.match(src,/recorder\.cleanup\(\)/,`${screen} releases the microphone when it is torn down`);
+  }
+  const voice=read('static/orena/screens/orena/voice.js');
+  assert.match(voice,/recorder\.cleanup\(\)/,'the Orena voice screen releases the microphone when it is torn down');
 }
 
 const unsupported=createLocalAudioRecorder({mediaDevices:null,Recorder:null,URLApi});

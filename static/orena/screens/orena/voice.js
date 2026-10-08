@@ -25,13 +25,15 @@ import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { micUnavailableReason } from '../mic/model.js';
 import { openVoiceSession, connectLiveVoice } from '../../agent/live-voice.js';
+import { onViewContext } from '../../shell/view-context.js';
 import { refreshLearningLanguage } from './language-sync.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { href } from '../../shell/routes.js';
 import { t } from './copy.js';
 import { voicePhaseMarkState, voicePhaseStatusKey, voicePhaseHintKey, speakableText, latestSuggestions, endsVoice, errorText } from './model.js';
-import { sendHomeTurn, abortHome, ensureOpening, subscribeHome, homeState, requestComposerFocus } from './home-session.js';
+import { sendHomeTurn, abortHome, ensureOpening, subscribeHome, homeState, requestComposerFocus, homeLiveVoice, homeDispatcher } from './home-session.js';
+import { runOffered } from './actions.js';
 
 const TTS_TAG = { en: 'en-US', vi: 'vi-VN', zh: 'zh-CN' };
 
@@ -127,6 +129,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
   // fallback - when voice is off on this server (404), unavailable (503) or the session fails (§9: never another vendor).
   let link = null;
   let audio = null;
+  let stopView = () => {};
   let liveOff = !liveVoice;
 
   function closeAudio() {
@@ -144,7 +147,16 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       return false;
     }
     try {
-      audio = { input: new Ctor(), output: new Ctor() };
+      // The microphone context runs at 16 kHz, so the browser itself resamples the voice with its proper
+      // low-pass filter (a crude average let higher sounds fold back as noise, and recognition heard nonsense).
+      // A browser that refuses the rate gets its own, and the worklet averages it down as before.
+      let input;
+      try {
+        input = new Ctor({ sampleRate: 16000 });
+      } catch {
+        input = new Ctor();
+      }
+      audio = { input, output: new Ctor() };
       void audio.input.resume?.();
       void audio.output.resume?.();
     } catch {
@@ -163,7 +175,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
 
   async function connect() {
     if (disposed) return closeAudio();
-    const { body, thread } = liveVoice();
+    const { body, thread, open } = liveVoice();
     let session;
     try {
       session = await openVoiceSession(body);
@@ -180,6 +192,16 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     }
     if (disposed) return closeAudio();
     let turnHeard = '';
+    // While the session runs, Orena is told what the learner is looking at (R30): every route change and
+    // selection, settled for a moment so a burst of changes is one update.
+    let viewTimer = 0;
+    stopView();
+    stopView = onViewContext((view) => {
+      clearTimeout(viewTimer);
+      viewTimer = setTimeout(() => link?.sendContext(view), 350);
+    });
+    const unview = stopView;
+    stopView = () => { clearTimeout(viewTimer); unview(); };
     link = connectLiveVoice(session, {
       audio,
       onState: (next) => {
@@ -191,7 +213,12 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
         emit();
       },
       onOrena: (text) => thread.text(turnHeard, text),
-      onEvents: (events) => thread.events(turnHeard, events),
+      onEvents: (events, openId) => {
+        thread.events(turnHeard, events);
+        // The learner asked to open it: the offered action runs now; its button stays in the thread (R29).
+        const action = events.find((item) => item?.event === 'action' && (item.data?.open === true || (openId && item.data?.id === openId)))?.data || null;
+        if (action && typeof open === 'function') void open(action);
+      },
       onTurnComplete: ({ heard: said, said: answer }) => {
         thread.text(said || turnHeard, answer);
         thread.done();
@@ -199,6 +226,8 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       },
       onClosed: (reason) => {
         link = null;
+        stopView();
+        stopView = () => {};
         closeAudio();
         if (disposed) return;
         setPhase('idle');
@@ -217,8 +246,9 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
 
   const snapshot = () => ({ phase, heard, reply, speakOn, session: Boolean(link) });
 
+  let notify = onChange; // the surface drawing this engine: its screen, or the voice dock after a navigation
   function emit() {
-    if (!disposed) onChange?.(snapshot());
+    if (!disposed) notify?.(snapshot());
   }
 
   function setPhase(next) {
@@ -398,6 +428,10 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       emit();
     },
     state: snapshot,
+    /* A live conversation moves to another surface (voice-dock.js) without ending. */
+    setOnChange(next) {
+      notify = next;
+    },
     dispose() {
       disposed = true;
       live = false;
@@ -509,9 +543,12 @@ export async function openVoiceFull() {
   root.setAttribute('aria-modal', 'true');
   root.setAttribute('aria-label', t('fullVoiceTitle'));
 
+  const fullRan = new Set();
   const engine = createVoiceEngine({
     send: (text) => sendHomeTurn(text),
     abort: abortHome,
+    // The rail's full-screen voice talks in the Home thread; an asked-for place opens at once (R29).
+    liveVoice: () => ({ ...homeLiveVoice(), open: (action) => runOffered({ dispatcher: homeDispatcher(), action, ranActions: fullRan, repaint: () => {} }) }),
     onTextOnly: () => {
       close();
       requestComposerFocus();

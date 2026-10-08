@@ -13,6 +13,16 @@
    validation). */
 import { voiceInvitations } from '../../content/voice-invitations.js';
 
+/* The level the Difficulty chips open on: the learner's declared level when it is one of the chips
+   (B1 / B2 / C1), else the nearest the design offers - C2 to C1; a level scheme the chips cannot
+   express (A-levels, HSK) or no level at all opens on B1, the frame's own first chip. */
+export function defaultLevel(declared) {
+  const value = String(declared || '').trim().toUpperCase();
+  if (['B1', 'B2', 'C1'].includes(value)) return value;
+  if (value === 'C2') return 'C1';
+  return 'B1';
+}
+
 export function situations(language) {
   return voiceInvitations(language).map((item) => ({ key: item.key, title: item.title, prompt: item.prompt, cue: item.cue }));
 }

@@ -7,11 +7,11 @@ import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { readSpeakingSession } from '../../product/speaking-session.js';
-import { loadAttemptsSince } from '../../product/speaking-history.js';
+import { loadAttemptsSince, loadCurrentSession } from '../../product/speaking-history.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
 import { t } from './copy.js';
-import { tasksFor, keyImprovement } from './model.js';
+import { tasksFor, tasksForServerSession, sessionScope, keyImprovement } from './model.js';
 
 /* Every room that logs to the session ledger, by the kind it logs: Scripted Pronunciation's label
    is this screen's own; the other rooms are named as the shell names them. */
@@ -26,12 +26,29 @@ export default async function mountSpeakingSummary(element, ctx) {
   await useStyles('screens/speak-summary/speak-summary.css');
   element.classList.add('s-spsummary-root');
 
-  /* A returning learner sees the recent account record, not an empty new-tab session. */
-  const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const server = await loadAttemptsSince(api, new Date(since).toISOString());
+  /* This session (D-139 HD-8): the tasks this tab finished since it opened (`product/speaking-session.js`, a
+     client session - no server notion of one exists). While it has any, only those are shown; with none, the
+     last 7 days from the account, and the scope label says so. */
+  const sessionTasks = readSpeakingSession();
+  /* D-142: when the server keeps the practice session (ORENA_PRACTICE_SESSION on) and one is live, it is the session -
+     the same on every tab and device. Otherwise (flag off, nothing live, unreadable) everything below is unchanged. */
+  const current = await loadCurrentSession(api);
+  if (!ctx.isCurrent()) return undefined;
+  /* Feature on (`current` is not null): the server answer is authoritative, including `session: null` (none live). The
+     tab ledger is then never read as the session, so it cannot revive an expired one; the seven-day view shows instead.
+     Only the explicit feature-off answer (`current === null`) keeps the client ledger. */
+  const { serverSession, useLedger } = sessionScope(current, sessionTasks);
+  const inSession = serverSession ? true : useLedger;
+  const since = useLedger ? Math.min(...sessionTasks.map((entry) => entry.at || Date.now())) - 60 * 1000 : Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const server = serverSession ? serverSession.rows : await loadAttemptsSince(api, new Date(since).toISOString());
   if (!ctx.isCurrent()) return undefined;
   if (server === null) throw new Error('speaking_history_unavailable');
-  const tasks = tasksFor(readSpeakingSession().filter((entry) => entry.at >= since), server || [], { accuracy: t('metricAccuracy'), fluency: t('metricFluency') });
+  const labels = { accuracy: t('metricAccuracy'), fluency: t('metricFluency') };
+  const tasks = serverSession
+    ? tasksForServerSession(sessionTasks, serverSession, labels)
+    : inSession
+      ? tasksFor(sessionTasks, server || [], labels, { sessionOnly: true })
+      : tasksFor([], server || [], labels);
   const improvement = keyImprovement(tasks);
 
   mount(
@@ -40,8 +57,8 @@ export default async function mountSpeakingSummary(element, ctx) {
       <div class="s-spsummary-hero">
         <span class="s-spsummary-hero__glow" aria-hidden="true"></span>
         <div class="s-spsummary-icon">${raw(icon('mic', { size: 28 }))}</div>
-        <div class="s-spsummary-eyebrow">${t('eyebrow')}</div>
-        <div class="s-spsummary-count">${tasks.length}${server.length >= 100 ? '+' : ''}<span> ${t('tasksSuffix')}</span></div>
+        <div class="s-spsummary-eyebrow">${t(inSession ? 'eyebrowSession' : 'eyebrow')}</div>
+        <div class="s-spsummary-count">${tasks.length}${!inSession && server.length >= 100 ? '+' : ''}<span> ${t('tasksSuffix')}</span></div>
         ${tasks.length ? html`<div class="s-spsummary-evidence">${t('recordedInProgress')}</div>` : ''}
       </div>
       <div class="s-spsummary-card">

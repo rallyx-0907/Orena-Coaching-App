@@ -43,16 +43,47 @@ async function post(path, body, fetchImpl) {
     data = null;
   }
   if (!response.ok) {
-    const category = String(data?.detail?.category || data?.category || '');
+    // The voice routes answer a category object, or the category as the plain detail string (/voice/context).
+    const category = String(data?.detail?.category || data?.category || (typeof data?.detail === 'string' ? data.detail : ''));
     throw new VoiceSessionError(response.status, category, Number(response.headers?.get?.('Retry-After')) || 0);
   }
   return data;
 }
 
-/* The session body is a turn body without a message (§9). */
-export function voiceSessionBody(turnRequest) {
+/* Orena's voice, the learner's choice (§9, R29): kept on this device, sent with each session; the server locks it
+   into the session and uses its default for an unknown or missing id. */
+const VOICE_KEY = 'orena.voice.v1';
+export function chosenVoice(storage = globalThis.localStorage) {
+  try {
+    return String(storage?.getItem(VOICE_KEY) || '');
+  } catch {
+    return '';
+  }
+}
+export function chooseVoice(id, storage = globalThis.localStorage) {
+  try {
+    storage?.setItem(VOICE_KEY, String(id || ''));
+  } catch {
+    /* kept for this visit only */
+  }
+}
+
+/* The voices the server offers, labelled in the interface language. Null while voice is off (404). */
+export async function listVoices(interfaceLang, { fetchImpl = globalThis.fetch } = {}) {
+  try {
+    const response = await fetchImpl(`/api/agent/voice/voices?interface=${encodeURIComponent(interfaceLang || 'en')}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return Array.isArray(data?.voices) && data.voices.length ? { default: String(data.default || ''), voices: data.voices } : null;
+  } catch {
+    return null;
+  }
+}
+
+/* The session body is a turn body without a message (§9), with the learner's voice when they chose one. */
+export function voiceSessionBody(turnRequest, { voice = '' } = {}) {
   const { trigger, message, ...rest } = turnRequest || {};
-  return { contract_version: CONTRACT_VERSION, ...rest };
+  return { contract_version: CONTRACT_VERSION, ...rest, ...(voice ? { voice } : {}) };
 }
 
 export function openVoiceSession(body, { fetchImpl = globalThis.fetch } = {}) {
@@ -91,6 +122,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   let worklet = null;
   let source = null;
   let heard = ''; // what the learner has said in the current turn
+  let lastHeard = ''; // the learner's latest words, kept past the turn's end
   let said = ''; // what Orena has said in the current turn
   let playAt = 0;
   const playing = new Set();
@@ -103,9 +135,18 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   async function startMic() {
     stream = await mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } });
     if (closed) return stopMic();
+    try {
+      source = audio.input.createMediaStreamSource(stream);
+    } catch {
+      // A browser that cannot feed a 16 kHz context from its microphone gets one at its own rate; the worklet
+      // averages it down instead.
+      try { await audio.input.close(); } catch { /* closed */ }
+      audio.input = new (globalThis.AudioContext || globalThis.webkitAudioContext)();
+      await audio.input.resume?.();
+      source = audio.input.createMediaStreamSource(stream);
+    }
     await audio.input.audioWorklet.addModule(WORKLET_URL);
     if (closed) return stopMic();
-    source = audio.input.createMediaStreamSource(stream);
     worklet = new AudioWorkletNode(audio.input, 'orena-pcm16-capture');
     worklet.port.onmessage = (event) => {
       if (ready && !closed) send({ realtimeInput: { audio: { data: toBase64(echoGate(event.data)), mimeType: 'audio/pcm;rate=16000' } } });
@@ -128,13 +169,29 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
      During that window only a clearly louder voice - the learner talking over Orena, which is barge-in - is sent;
      quieter frames go as silence, so the stream stays continuous and the vendor's VAD sees no speech. */
   const ECHO_TAIL_S = 0.45;
-  const BARGE_IN_RMS = 0.12;
+  // How loud the learner must be to talk over Orena. A fixed 0.12 sat above a phone microphone's normal speech
+  // level, so a learner speaking over Orena or a playing lesson was cut into fragments the recognizer turned into
+  // nonsense. It now follows the echo: a frame passes when it is clearly louder than what the microphone has been
+  // picking up of Orena's or the lesson's audio.
+  let echoLevel = 0.02;
+  const BARGE_IN_RATIO = 2.5;
+  // The lesson's own media is the same problem: a video playing on the page reaches the microphone, and Orena
+  // would take it for the learner. Every player in the app reports its clock on the document (media-player.js).
+  let mediaUntil = 0;
+  const onMediaClock = (event) => {
+    mediaUntil = event.detail?.player_state === 1 ? Date.now() + 700 : 0;
+  };
+  document.addEventListener('orena:media-time', onMediaClock);
+
   function echoGate(buffer) {
-    if (!playing.size && audio.output.currentTime > playAt + ECHO_TAIL_S) return buffer;
+    if (!playing.size && audio.output.currentTime > playAt + ECHO_TAIL_S && Date.now() > mediaUntil) return buffer;
     const frame = new Int16Array(buffer);
     let sum = 0;
     for (let i = 0; i < frame.length; i += 1) sum += (frame[i] / 0x8000) ** 2;
-    return Math.sqrt(sum / frame.length) >= BARGE_IN_RMS ? buffer : new Int16Array(frame.length).buffer;
+    const rms = Math.sqrt(sum / frame.length);
+    if (rms >= Math.max(0.03, echoLevel * BARGE_IN_RATIO)) return buffer; // the learner, over the echo
+    echoLevel = echoLevel * 0.8 + rms * 0.2; // what the echo sounds like right now
+    return new Int16Array(frame.length).buffer;
   }
 
   function play(base64) {
@@ -169,13 +226,17 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   async function runTools(calls) {
     let answer = null;
     try {
-      answer = await post('/api/agent/voice/tool', { voice_session_id: id, calls, heard }, fetchImpl);
+      // The vendor's input transcript can arrive after its tool call: the learner's latest words go instead of an
+      // empty string, which the server would read as "they said nothing" and lose the open-on-request (R29).
+      const words = heard.trim() || lastHeard;
+      answer = await post('/api/agent/voice/tool', { voice_session_id: id, calls, ...(words ? { heard: words } : {}) }, fetchImpl);
     } catch (error) {
       if (error?.status === 404) return end('server');
       answer = { responses: calls.map((call) => ({ id: call.id, name: call.name, response: { error: 'unavailable' } })), events: [] };
     }
     if (closed) return;
-    if (Array.isArray(answer?.events) && answer.events.length) onEvents(answer.events);
+    // `open`: the learner asked in their own words to open this place - its action runs now, without a tap (R29).
+    if (Array.isArray(answer?.events) && answer.events.length) onEvents(answer.events, String(answer.open || ''));
     send({ toolResponse: { functionResponses: answer?.responses || [] } });
   }
 
@@ -209,6 +270,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     }
     if (content.inputTranscription?.text) {
       heard += content.inputTranscription.text;
+      if (heard.trim()) lastHeard = heard.trim();
       onLearner(heard);
     }
     if (content.outputTranscription?.text) {
@@ -239,6 +301,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     closed = true;
     clearTimeout(capTimer);
     window.removeEventListener('pagehide', beacon);
+    document.removeEventListener('orena:media-time', onMediaClock);
     silence();
     stopMic();
     try { socket.close(); } catch { /* closed */ }
@@ -246,7 +309,24 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     onClosed(reason);
   }
 
-  return { end, interrupt: silence };
+  /* The learner's view changed (R30): the server learns it and returns a "[context] …" note, which the model is
+     given without answering it (turnComplete false). */
+  async function sendContext(context) {
+    if (closed || !context || typeof context !== 'object') return;
+    let answer;
+    try {
+      answer = await post('/api/agent/voice/context', { voice_session_id: id, context }, fetchImpl);
+    } catch (error) {
+      // Only the server saying this session is over ends it; a server without this route (404 without that
+      // category) just is not told about the view.
+      if (error?.status === 404 && error.category === 'voice_session_not_found') end('server');
+      return;
+    }
+    const note = String(answer?.note || '').trim();
+    if (note && ready && !closed) send({ clientContent: { turns: [{ role: 'user', parts: [{ text: note }] }], turnComplete: false } });
+  }
+
+  return { end, interrupt: silence, sendContext };
 }
 
 /* A live voice turn written into a conversation thread (the Home thread or a Contextual panel's), through the

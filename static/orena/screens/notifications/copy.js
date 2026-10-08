@@ -18,6 +18,8 @@ import { defineCopy } from '../../copy/index.js';
 
 export const t = defineCopy('notifications', {
   layers: {
+    // The sheet holds what to do next (words due, unfinished work), not a feed of events (LEX-079), so it is named so.
+    title: 'interface',
     subtitle: 'interface',
     reviewKind: 'interface',
     continueReadingKind: 'interface',
@@ -28,10 +30,12 @@ export const t = defineCopy('notifications', {
     // not support (their profile's support language, a different setting the bell has no reason
     // to follow).
     dueTitle: 'interface',
-    percentComplete: 'support',
-    empty: 'support',
+    // System copy follows the interface language (HP-1 A, as D-139 HD-14).
+    percentComplete: 'interface',
+    empty: 'interface',
   },
   en: {
+    title: 'Up next',
     subtitle: 'Tap one to open the exact result',
     reviewKind: 'Review',
     continueReadingKind: 'Continue reading', continueListeningKind: 'Continue listening', continueWritingKind: 'Continue writing',
@@ -40,6 +44,7 @@ export const t = defineCopy('notifications', {
     empty: 'You’re all caught up.',
   },
   vi: {
+    title: 'Tiếp theo',
     subtitle: 'Nhấn vào một mục để mở đúng kết quả',
     reviewKind: 'Ôn tập',
     continueReadingKind: 'Tiếp tục đọc', continueListeningKind: 'Tiếp tục nghe', continueWritingKind: 'Tiếp tục viết',
@@ -48,6 +53,7 @@ export const t = defineCopy('notifications', {
     empty: 'Bạn đã hoàn tất mọi việc.',
   },
   zh: {
+    title: '接下来',
     subtitle: '点击即可打开对应内容',
     reviewKind: '复习',
     continueReadingKind: '继续阅读', continueListeningKind: '继续听力', continueWritingKind: '继续写作',

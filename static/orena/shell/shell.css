@@ -367,6 +367,12 @@
   padding: 0 var(--pad) 32px;
   position: relative;
 }
+/* On a phone a learning workspace (and Welcome) has no header to clear the status bar: the column starts below it.
+   The browsing places get the same clearance from the phone header's own padding. */
+:root[data-device='mobile'][data-focus='1'] .o-main,
+:root[data-device='mobile'][data-bare='1'] .o-main {
+  padding-top: env(safe-area-inset-top, 0px);
+}
 /* A learning workspace owns the whole column and never scrolls as a page (rule 49); its own
    long regions scroll inside it. */
 :root[data-focus='1'] .o-main {
@@ -383,7 +389,9 @@
   align-items: center;
   justify-content: space-around;
   height: 72px;
-  margin: 0 12px calc(18px + env(safe-area-inset-bottom, 0px));
+  /* The design's 18px is drawn on a phone frame with no home indicator. On a phone that has one, the bar sits just
+     above it rather than adding both (18 + ~34pt left the bar floating high on an iPhone). */
+  margin: 0 12px max(18px, calc(env(safe-area-inset-bottom, 0px) - 10px));
   padding: 0 4px;
   border-radius: 24px;
   background: var(--surface);

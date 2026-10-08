@@ -5,6 +5,7 @@ import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { mediaCard, masteryBars } from '../../kit/components.js';
+import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langAttr, langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { api } from '../../infrastructure/api.js';
@@ -19,7 +20,7 @@ import { t } from './copy.js';
 import { placeFor } from '../content/model.js';
 import { isDeferred } from '../../shell/routes.js';
 import {
-  contentRows, languageRows, collectionsAndDecks, dueStats, dueListRows,
+  contentRows, languageRows, collectionsAndDecks, dueStats, dueListRows, sessionRows, sessionSourceCount,
 } from './model.js';
 
 /* Five tabs, the live design script's own order (`orena-script.js` LIBT) - not the four the
@@ -54,8 +55,8 @@ function contentRow(row, language) {
   return html`<button type="button" class="s-library-content-row" data-content="${row.contentId}">
     <span class="s-library-content-row__body">
       <span class="s-library-content-row__type">${row.domain === 'media' ? sc('listening') : sc('content')}</span>
-      <span class="s-library-content-row__title">${langSpan(row.title, language)}</span>
-      ${row.source ? html`<span class="s-library-content-row__source">${row.source}</span>` : ''}
+      <span class="s-library-content-row__title">${row.title ? langSpan(row.title, language) : t('untitledContent')}</span>
+      ${row.source || row.unavailable ? html`<span class="s-library-content-row__source">${row.source || t('contentUnavailable')}</span>` : ''}
       <span class="s-library-content-row__progress"><span class="o-progress"><span style="width:${row.pct}%"></span></span><span class="s-library-content-row__pct">${row.pct}%</span></span>
     </span>
     <span class="s-library-content-row__chevron">${raw(icon('chevron-right', { size: 20 }))}</span>
@@ -90,7 +91,7 @@ function contentPanel(rows, language, menuFor) {
 function languageRow(row, language) {
   return html`<div class="s-library-lang-row">
     <span class="s-library-chip">${row.kind === 'phrase' ? t('typePhrase') : sc('word')}</span>
-    <button type="button" class="s-library-lang-row__text" data-word-open="${row.word}"><span class="s-library-lang-row__word" lang="${langAttr(language)}">${row.word}</span>${row.sub ? html`<span class="s-library-lang-row__sub">${row.sub}${meaningTag(row.subLanguage)}</span>` : ''}</button>
+    <button type="button" class="s-library-lang-row__text" data-word-open="${row.word}"><span class="s-library-lang-row__word" lang="${langAttr(language)}">${row.word}${row.reading ? html` <span class="s-library-lang-row__reading">${row.reading}</span>` : ''}</span>${row.sub ? html`<span class="s-library-lang-row__sub">${row.sub}${meaningTag(row.subLanguage)}</span>` : ''}</button>
     ${row.isNew ? html`<span class="${cls('s-library-chip', 's-library-chip--new')}">${t('newBadge')}</span>` : html`${masteryBars({ filled: row.filled })}`}
     <button type="button" class="s-library-lang-row__play" data-play="${row.word}" aria-label="${sc('pronunciation')}">${raw(icon('volume-2', { size: 18 }))}</button>
   </div>`;
@@ -108,9 +109,10 @@ function itemCountLabel(n) {
 }
 
 function collectionsPanel(rows) {
-  if (!rows.length) return html``;
+  if (!rows.length) return html`<div class="s-library-lang-empty">${emptyMarkup({ text: t('emptyCollections'), iconName: 'inbox' })}</div>`;
   return html`<div class="s-library-collections-grid">${rows.map((row) => mediaCard({
     title: row.title,
+    cover: COVER_VISUALS.collection,
     meta: itemCountLabel(row.size),
     dataset: { collection: row.collectionId },
   }))}</div>`;
@@ -166,11 +168,12 @@ function duePanel(stats, list) {
         <span><b>${stats.duePhrases}</b> ${t.plural('statPhrases', stats.duePhrases)}</span>
         <span><b>${stats.dueSource}</b> ${t('statSource')}</span>
       </div>
-      <button type="button" class="o-btn o-btn--primary s-library-due-cta" data-start-review>${t('startReview')}</button>
+      <button type="button" class="o-btn o-btn--primary s-library-due-cta" data-start-review${stats.dueCount ? '' : raw(' disabled')}>${t('startReview')}</button>
+      ${stats.dueCount ? '' : html`<div class="s-library-due-hero__reason">${t('nothingDue')}</div>`}
     </div>
-    <div class="s-library-due-list">
+    <div class="s-library-due-list"${list.length ? '' : raw(' hidden')}>
       <div class="s-library-due-list__title">${t('inThisSession')}</div>
-      ${list.map((row) => html`<div class="s-library-due-row"><span class="s-library-due-row__text">${row.text || kindFallbackLabel(row.kindKey)}</span><span class="s-library-due-row__meta">${row.text ? kindFallbackLabel(row.kindKey) : ''}</span></div>`)}
+      ${list.map((row) => html`<div class="s-library-due-row"><span class="s-library-due-row__text">${row.text || kindFallbackLabel(row.kindKey)}</span><span class="s-library-due-row__meta">${row.sourceKey ? t(row.sourceKey) : row.text && row.kindKey ? kindFallbackLabel(row.kindKey) : ''}</span></div>`)}
     </div>
   </div>`;
 }
@@ -194,12 +197,14 @@ export default async function library(element, ctx) {
   // The account's view of the imports first, so a deletion made on another device is not shown here.
   await syncImports(ctx.context.memory, language).catch(() => false);
 
-  const [collection, vocabulary, collections, decks, queue] = await Promise.all([
+  const [collection, vocabulary, collections, decks, queue, dueItems, curated] = await Promise.all([
     api.collection({ domains: ['reading', 'media'], limit: 24 }),
     api.libraryVocabulary({ limit: 24 }),
     safe(api.libraryCollections(), { collections: [] }),
     safe(api.vocabularyDecks(), { items: [] }),
     safe(api.libraryReviewQueue(), { pinned: [], pinned_count: 0, due_count: 0, total: 0 }),
+    safe(api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 }), null),
+    safe(api.vocabularyLibraryCollections(language), { items: [] }),
   ]);
 
   const ownRows = () => {
@@ -212,10 +217,13 @@ export default async function library(element, ctx) {
   const rows = {
     content: contentRows(collection.entries || [], ctx.context.memory?.value?.continuation || []),
     language: languageRows(vocabulary.items || [], support),
-    collections: collectionsAndDecks(collections.collections || [], decks.items || []),
+    collections: collectionsAndDecks(collections.collections || [], decks.items || [], curated.items || []),
   };
   const stats = dueStats(queue);
-  const dueRows = dueListRows(queue);
+  /* "In this session" lists the due words Review will ask (V-12, HV-4 A), and the source-aware count is that
+     session's. When that list cannot be read, the pinned items stand in as before. */
+  const dueRows = dueItems ? sessionRows(dueItems.items) : dueListRows(queue);
+  if (dueItems) stats.dueSource = sessionSourceCount(dueRows);
 
   function panelFor(id) {
     if (id === 'content') return contentPanel([...ownRows(), ...rows.content], language, menuFor);
@@ -235,6 +243,25 @@ export default async function library(element, ctx) {
       </div>`,
     );
     bind();
+    cueTabs();
+  }
+
+  /* The strip scrolls on a phone (LEX-068): the chosen tab is brought into view, and an edge fade shows that
+     more tabs wait on that side. */
+  function cueTabs() {
+    const strip = element.querySelector('.o-tabs');
+    if (!strip) return;
+    const chosen = strip.querySelector('[aria-selected="true"]');
+    if (chosen && strip.scrollWidth > strip.clientWidth) {
+      strip.scrollLeft = Math.max(0, chosen.offsetLeft - (strip.clientWidth - chosen.offsetWidth) / 2);
+    }
+    const mark = () => {
+      const more = strip.scrollWidth - strip.clientWidth > 2;
+      strip.toggleAttribute('data-more-right', more && strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 2);
+      strip.toggleAttribute('data-more-left', more && strip.scrollLeft > 2);
+    };
+    strip.addEventListener('scroll', mark, { passive: true });
+    mark();
   }
 
   function bind() {
@@ -279,7 +306,9 @@ export default async function library(element, ctx) {
        both concepts are a kind of ("Collection"/"Bộ sưu tập"/"合集") rather than inventing new copy
        for either concept (`copy/shell.js` is not this screen's file to add a key to). */
     for (const button of element.querySelectorAll('[data-collection]')) {
-      button.addEventListener('click', () => ctx.go(ctx.href('coming', { key: 'collection' })));
+      const id = button.dataset.collection;
+      // A curated collection has its own screen; a library collection and a deck have none yet (N-23).
+      button.addEventListener('click', () => ctx.go(id.startsWith('curated:') ? ctx.href('collection', { id: id.slice('curated:'.length) }) : ctx.href('coming', { key: 'collection' })));
     }
     element.querySelector('[data-start-review]')?.addEventListener('click', () => ctx.go(ctx.href('review')));
     for (const button of element.querySelectorAll('[data-active]')) {

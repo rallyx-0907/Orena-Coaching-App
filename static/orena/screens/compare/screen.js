@@ -21,18 +21,22 @@ import { api } from '../../infrastructure/api.js';
 import { registerActionHandler } from '../../agent/dispatcher.js';
 import { originalSegmentPlayer } from '../../product/original-segment-player.js';
 import { loadSpeakingSource, segmentOf } from '../../product/speaking-source.js';
-import { lineUnits } from '../../product/speaking-line.js';
+import { lineUnits, placeWords } from '../../product/speaking-line.js';
 import { comparisonReference, decorateComparison, pairWord, pairedTiming, readingFor } from '../../product/compare-reference.js';
+import { matchOf } from '../../product/pitch-match.js';
 import { toneOf } from '../../capabilities/pronunciation-result.js';
 import { decodeAudio, analyse } from '../../capabilities/audio-analysis.js';
 import { createSpeakingRecorder, TAKE } from '../../product/speaking-recorder.js';
-import { lineKey, listTakes, viewOfTake } from '../../product/take-store.js';
+import { lineKey, listTakes, viewOfTake, attemptIdOf } from '../../product/take-store.js';
+import { loadLineAttempts, reviewableAttempts } from '../../product/speaking-history.js';
+import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { micStateFor } from '../speak/model.js';
 import { openMicState, micGate } from '../mic/sheet.js';
 import { t } from './copy.js';
 import {
   ringColor, scoreLabelKey, headlineKey, wordStatus, pronunciationStatusKey, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
-  chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordPitchLines, wordPages, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey,
+  chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordPitchLines, wordPages, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey, modeAvailable, effectiveMode,
+  ipaByStart, historyFor,
 } from './model.js';
 
 const filled = (name, size) => raw(icon(name, { size }).replace('fill="none"', 'fill="currentColor"'));
@@ -72,19 +76,30 @@ export default async function mountCompareWithModel(element, ctx) {
     intent:'speaking_compare', segment:source.line.lineId});
 
   const key = lineKey(source.sourceId, source.line.lineId);
-  let takes = await listTakes(key);
+  /* This tab's takes (audio and the full assessment) and what the account holds for this line: a fresh
+     browser still has every verified attempt, without its audio (D-076), and each one can be reviewed. */
+  const [tabTakes, serverRows] = await Promise.all([
+    listTakes(key),
+    loadLineAttempts(api, { assetId: source.assetId, segmentId: source.line.lineId }).then((rows) => rows || []),
+  ]);
   if (!ctx.isCurrent()) return undefined;
+  let tabList = tabTakes;
+  const withAccount = (list) => reviewableAttempts(list.map((take) => ({ ...take, attemptId: take.attemptId || attemptIdOf(take.id) })), serverRows);
+  let takes = withAccount(tabList);
   mount(element,'');
   const renderRoot=document.createElement('div');
   renderRoot.className='s-compare-body';
   element.append(renderRoot);
 
   const requested = ctx.query.get('attempt');
-  let selectedId = takes.some((item) => item.id === requested) ? requested : takes[0]?.id || '';
+  /* A named attempt opens as asked (Attempt History); otherwise this tab's newest take (its audio and word timing
+     draw the full comparison), else the account's newest attempt - the room never hides a result it has. */
+  let selectedId = takes.some((item) => item.id === requested) ? requested : tabList[0]?.id || takes[0]?.id || '';
   let wordSel = null;
   let tab = 'pitch';
   let mode = source.hasModelAudio ? PLAYBACK_MODES[0] : 'you_only';
   let speed = 1;
+  let modesOpen = false; // the phone's playback-mode list, opened from the bar
   let errorText = '';
   let rec = { phase: TAKE.IDLE, levels: new Array(40).fill(0), elapsedMs: 0 };
   const contours = new Map(); // take id -> { you } once measured
@@ -92,6 +107,7 @@ export default async function mountCompareWithModel(element, ctx) {
   let modelPreview = false;
   let playWord = null; // the word being played in "Word by word"
   let playToken = 0;
+  let meaningOpen = false; // the support-language meaning is revealed on tap (D-139 HD-6)
   let audioEl = null;
   let finishAudio = null;
   let revealSelection = true; // the first paint, and every change of attempt, brings the selection into view
@@ -101,10 +117,31 @@ export default async function mountCompareWithModel(element, ctx) {
   const originalPlayer = originalSegmentPlayer(source);
 
 
+  /* How the take follows the model's pitch (product/pitch-match.js), or null until both contours are measured.
+     Word timing counts only when it is verified: an estimated model timing (D-140) is not used for a figure. */
+  function matchFor(take) {
+    const you = take ? contours.get(take.id)?.you : null;
+    const model = reference?.model;
+    if (!you || !model) return null;
+    let pairs = [];
+    if (reference.alignmentState === 'ready' && !reference.timingEstimated) {
+      const words = decorateComparison(viewOfTake(take), source, reference)?.words || [];
+      pairs = words.flatMap((word, index) => {
+        const modelWord = pairWord(source.line.text, words, index, reference.words || [], language);
+        return word.offsetKnown && modelWord ? [{ you: word, model: modelWord }] : [];
+      });
+    }
+    return matchOf({ you, model, pairs });
+  }
+
   const q = (selector) => element.querySelector(selector);
+  /* What can play for this attempt: the learner's own mode needs a retained recording (LEX-049). */
+  const playCaps = () => ({ hasTake: Boolean(selectedTake()?.url), hasModel: source.hasModelAudio });
+  const modeNow = () => effectiveMode(mode, playCaps());
   const takeOf = (id) => takes.find((item) => item.id === id) || null;
   const selectedTake = () => takeOf(selectedId);
   const viewNow = () => decorateComparison(viewOfTake(selectedTake()), source, reference);
+  const estimateNote = () => (reference?.timingEstimated ? html`<span class="s-compare-muted" data-timing-estimated>${t('timingEstimated')}</span>` : '');
   const modelWordFor = (word) => pairWord(source.line.text, viewNow()?.words || [], word?.index, reference?.words || [], language);
   async function readReference() {
     reference=await comparisonReference(source,{owner:ctx.context.owner || 'local',support});
@@ -143,7 +180,8 @@ export default async function mountCompareWithModel(element, ctx) {
         if (!ctx.isCurrent()) return;
         const finished = next.latest;
         if (finished?.take_ref && finished.take_ref !== selectedId && next.phase === TAKE.RESULT) {
-          takes = finished.list;
+          tabList = finished.list;
+          takes = withAccount(tabList);
           revealSelection = true;
           selectedId = finished.take_ref;
           wordSel = defaultWordIndex(viewOfTake(takeOf(selectedId)));
@@ -179,7 +217,12 @@ export default async function mountCompareWithModel(element, ctx) {
   function record() {
     if (recorder.busy) return;
     stopPlay();
-    micGate(ctx, () => recorder.start(), { textFallback: false }); // pronunciation has no typed fallback
+    /* The analysis stays where the learner left it while the consent sheet is open (LEX-053); it moves to the top
+       only once recording really starts and the record card takes its place. */
+    micGate(ctx, () => {
+      q('[data-scroll-region]')?.scrollTo({ top: 0 });
+      recorder.start();
+    }, { textFallback: false }); // pronunciation has no typed fallback
   }
 
   /* ---- Measuring the audio (browser side) ---- */
@@ -191,6 +234,15 @@ export default async function mountCompareWithModel(element, ctx) {
       contours.set(id, { you });
     }
     if (ctx.isCurrent() && selectedId === id) paint();
+  }
+
+  /* Every attempt this tab still has audio for is measured once, so the history card can show its figures. */
+  async function measureAll() {
+    for (const item of takes) {
+      if (!item.blob || contours.has(item.id)) continue;
+      await measure(item.id);
+      if (ctx.isCurrent() && selectedId !== item.id) paint();
+    }
   }
 
   /* ---- Playback ---- */
@@ -262,9 +314,11 @@ export default async function mountCompareWithModel(element, ctx) {
     const take = selectedTake();
     const view = viewNow();
     const hasTake = Boolean(take?.url);
-    if (mode !== 'model_only' && !hasTake) toast(t('noTakeAudio'));
-    const plan = playPlan(mode, { hasTake, hasWords: Boolean(view?.words?.some((word) => word.offsetKnown)) });
-    if (!plan.length) return;
+    const plan = playPlan(modeNow(), { hasTake, hasWords: Boolean(view?.words?.some((word) => word.offsetKnown)) });
+    if (!plan.length) {
+      toast(t('noTakeAudio'));
+      return;
+    }
     const token = ++playToken;
     playing = true;
     paint();
@@ -325,31 +379,80 @@ export default async function mountCompareWithModel(element, ctx) {
     const han = (unit) => /\p{Script=Han}/u.test(unit.text);
     const aligned = language === 'zh' && syllables.length === units.filter((unit) => unit.unit && han(unit)).length;
     let spokenAt = 0;
-    return units.map((unit) => {
-      if (!unit.unit || (language === 'zh' && !han(unit))) return unit.text.trim() ? html`<span class="s-compare-token"><span class="s-compare-token__sub" aria-hidden="true">${raw('&nbsp;')}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${unit.text}</span></span>` : '';
-      const reading = aligned ? syllables[spokenAt++] : readingFor(unit.text, reference, language, unit.start);
+    /* English IPA is the assessment provider's own sounds for the word, from the newest attempt that has
+       them (D-139 HD-5); with none, the reading row is not drawn at all - no dashes. Chinese keeps pinyin. */
+    const ipa = ipaByStart(takes.map(viewOfTake), source.line.text, language, placeWords);
+    const readingRow = language === 'zh' || ipa.size > 0;
+    /* Punctuation stays on its word (design: "stop," is one token): a closing mark joins the word
+       before it, an opening quote or bracket the word after it. */
+    const marks = (text) => /^[\p{P}\p{S}]+$/u.test(text.trim());
+    const opening = (text) => /^[\p{Ps}\p{Pi}]+$/u.test(text.trim());
+    const items = [];
+    let lead = '';
+    for (const unit of units) {
+      const text = unit.text;
+      if (!unit.unit && marks(text)) {
+        if (opening(text)) lead += text.trim();
+        else if (items.length && !items[items.length - 1].plain) items[items.length - 1].tail += text.trim();
+        else items.push({ unit, plain: true, lead: '', tail: '' });
+        continue;
+      }
+      items.push({ unit, plain: false, lead, tail: '' });
+      lead = '';
+    }
+    return items.map(({ unit, plain, lead: head, tail }) => {
+      const shown = `${head}${unit.text}${tail}`;
+      if (plain || !unit.unit || (language === 'zh' && !han(unit))) return shown.trim() ? html`<span class="s-compare-token">${readingRow ? html`<span class="s-compare-token__sub" aria-hidden="true">${raw('&nbsp;')}</span>` : ''}<span class="s-compare-token__word" lang="${langAttr(language)}">${shown}</span></span>` : '';
+      const reading = language === 'en' ? ipa.get(unit.start) || '' : aligned ? syllables[spokenAt++] : readingFor(unit.text, reference, language, unit.start);
       const tone = language === 'zh' && reading ? toneOf(reading) : null;
-      return html`<span class="s-compare-token"><span class="s-compare-token__sub" title="${reading ? '' : t('readingUnavailable')}" style="color:${tone && tone < 5 ? `var(--tone${tone})` : 'var(--text3)'}">${reading || '—'}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${unit.text}</span></span>`;
+      if (!readingRow) return html`<span class="s-compare-token"><span class="s-compare-token__word" lang="${langAttr(language)}">${shown}</span></span>`;
+      return html`<span class="s-compare-token"><span class="s-compare-token__sub" title="${reading || language !== 'zh' ? '' : t('readingUnavailable')}" style="color:${tone && tone < 5 ? `var(--tone${tone})` : 'var(--text3)'}">${reading || (language === 'zh' ? '—' : raw('&nbsp;'))}</span><span class="s-compare-token__word" lang="${langAttr(language)}">${shown}</span></span>`;
     });
   }
 
-  function sourceNavigation() {
-    if (!source.lessonId) return '';
-    const at = lines.findIndex(line=>line.lineId===source.line.lineId);
-    const busy = [TAKE.RECORDING,TAKE.PROCESSING].includes(rec.phase);
-    return html`<div class="s-compare-source">
-      <div class="s-compare-source__media"><div class="s-compare-source__title" lang="${langAttr(language)}">${source.title}</div>
-        <button type="button" class="s-compare-ghost" data-choose-media ${busy ? raw('disabled') : ''}>${t('chooseMedia')}</button></div>
-      <div class="s-compare-source__actions">
-        <button type="button" class="s-compare-ghost" data-listen-source ${busy ? raw('disabled') : ''}>${t('listenSource')}</button>
-        <button type="button" class="o-iconbtn" data-source-line="${lines[at-1]?.lineId || ''}" aria-label="${t('previousLine')}" ${busy || at<=0 ? raw('disabled') : ''}>${raw(icon('chevron-left',{size:18}))}</button>
-        <select class="s-compare-source__select" aria-label="${t('chooseLine')}" data-source-select ${busy ? raw('disabled') : ''}>
-          ${lines.map(line=>html`<option value="${line.lineId}" ${line.lineId===source.line.lineId ? raw('selected') : ''}>${line.ordinal}. ${line.text}</option>`)}
-        </select>
-        <button type="button" class="o-iconbtn" data-source-line="${lines[at+1]?.lineId || ''}" aria-label="${t('nextLine')}" ${busy || at>=lines.length-1 ? raw('disabled') : ''}>${raw(icon('chevron-right',{size:18}))}</button>
-        <span class="s-compare-note">${t('linePosition',{n:at+1,total:lines.length})}</span>
-      </div>
+  const lineAt = () => lines.findIndex((line) => line.lineId === source.line.lineId);
+  const busyNow = () => [TAKE.RECORDING, TAKE.PROCESSING].includes(rec.phase);
+
+  /* Previous / Next line at the bottom of the room, as frame 28 draws them (D-139 HD-4). On a phone the
+     result state already spends the bottom on the playback bar, so the pair gives way to it (rule 49):
+     the line list behind "..." still moves to any line, and Try again returns to the pair. */
+  function lineNavigation(withBar = false) {
+    if (!source.lessonId || lines.length < 2) return '';
+    const at = lineAt();
+    const busy = busyNow();
+    return html`<div class="${cls('s-compare-linenav', withBar && 's-compare-linenav--with-bar')}">
+      <button type="button" class="s-compare-linenav__btn" data-fk="line-prev" data-source-line="${lines[at - 1]?.lineId || ''}" ${busy || at <= 0 ? raw('disabled') : ''}>${raw('&larr;')} ${t('previousLine')}</button>
+      <button type="button" class="s-compare-linenav__btn" data-fk="line-next" data-source-line="${lines[at + 1]?.lineId || ''}" ${busy || at >= lines.length - 1 ? raw('disabled') : ''}>${t('nextLine')}${raw(icon('arrow-right', { size: 16 }))}</button>
     </div>`;
+  }
+
+  /* The line list and "Choose media" live in a sheet behind "..." (D-139 HD-4); Listen returns to this
+     exact line in Listening. */
+  function openMore() {
+    const at = lineAt();
+    openSheet({
+      label: t('lineAndMedia'),
+      render(sheet, handle) {
+        fillSheet(sheet, handle, html`${sheetHead({ title: t('lineAndMedia'), closeLabel: shellCopy('close') })}
+          <div class="s-compare-more">
+            <div class="s-compare-more__media" lang="${langAttr(language)}">${source.title}</div>
+            <div class="s-compare-more__lines">${lines.map((line, index) => html`<button type="button" class="s-compare-more__line" data-source-line="${line.lineId}" aria-current="${index === at}"><span class="s-compare-more__n">${line.ordinal}</span><span lang="${langAttr(language)}">${line.text}</span></button>`)}</div>
+            <div class="s-compare-more__actions">
+              <button type="button" class="s-compare-ghost" data-listen-source>${t('listenSource')}</button>
+              <button type="button" class="s-compare-ghost" data-choose-media>${t('chooseMedia')}</button>
+            </div>
+          </div>`);
+        sheet.querySelectorAll('[data-source-line]').forEach((button) => button.addEventListener('click', () => goLine(button.dataset.sourceLine)));
+        sheet.querySelector('[data-listen-source]').addEventListener('click', () => ctx.go(ctx.href('listening', { id: source.lessonId }, lineQuery)));
+        sheet.querySelector('[data-choose-media]').addEventListener('click', () => ctx.go(ctx.href('discover', {}, { tab: 'listen', practice: 'pronunciation', source: source.lessonId, segment: source.line.lineId })));
+      },
+    });
+  }
+
+  function goLine(id) {
+    if (!id || recorder.busy) return;
+    stopPlay();
+    ctx.go(ctx.href('compare', { id: source.sourceId }, { segment: id }));
   }
 
   function liveLine() {
@@ -370,7 +473,7 @@ export default async function mountCompareWithModel(element, ctx) {
         </div>
       </div>
       <div class="s-compare-record__content"><div class="s-compare-tokens">${tokensMarkup()}</div>
-      ${support !== language ? html`<p class="s-compare-note" lang="${langAttr(support)}">${source.line.meaning || t('meaningUnavailable')}</p>` : ''}
+      ${support !== language ? html`<div class="s-compare-meaning"><button type="button" class="s-compare-reveal" data-fk="meaning" data-meaning aria-expanded="${meaningOpen}">${t(meaningOpen ? 'hideMeaning' : 'showMeaning')}</button>${meaningOpen ? html`<p class="s-compare-note" lang="${langAttr(support)}">${source.line.meaning || t('meaningUnavailable')}</p>` : ''}</div>` : ''}
       ${source.hasModelAudio ? '' : html`<p class="s-compare-note">${t('modelUnavailable')}</p>`}
       </div>
       <div class="s-compare-recrow">
@@ -382,6 +485,21 @@ export default async function mountCompareWithModel(element, ctx) {
           ${recording ? html`<svg viewBox="0 0 300 60" class="s-compare-live" aria-hidden="true"><polyline data-live points="${liveLine()}" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>` : ''}
         </div>
       </div>
+    </div>`;
+  }
+
+  /* What this result is about (LEX-048): the whole line as its learner reads it, the source it comes from and
+     where in it, and the word the detail below is open on marked in the line. */
+  function anchorMarkup(view) {
+    const own = !selectedTake()?.url; // the account remembers this attempt, the recording is not kept (D-076)
+    const text = source.line.text;
+    const at = openWord();
+    const span = at == null ? null : placeWords(text, view.words || [], language)[at];
+    const position = lines.length > 1 && lineAt() >= 0 ? t('linePosition', { n: lineAt() + 1, total: lines.length }) : '';
+    return html`<div class="s-compare-anchor" data-anchor>
+      ${source.title || position ? html`<div class="s-compare-anchor__src">${source.title ? html`<span class="s-compare-anchor__title" lang="${langAttr(language)}">${source.title}</span>` : ''}${position ? html`<span class="s-compare-anchor__pos">${position}</span>` : ''}</div>` : ''}
+      <div class="s-compare-anchor__line" lang="${langAttr(language)}">${span ? html`${text.slice(0, span.start)}<mark class="s-compare-anchor__hit">${text.slice(span.start, span.end)}</mark>${text.slice(span.end)}` : text}</div>
+    ${own ? html`<p class="s-compare-anchor__note" role="status" data-own-audio-note>${t('noTakeAudio')}</p>` : ''}
     </div>`;
   }
 
@@ -446,7 +564,7 @@ export default async function mountCompareWithModel(element, ctx) {
   function summaryMarkup(view, take) {
     const score = view.overall;
     const chips = chipsFor(view);
-    const line = metricLineFor(view);
+    const line = metricLineFor(view, matchFor(take));
     const axis = axisFor(view);
     const metricText = [
       ...line.parts.map((part) => `${t(part.key)} ${part.value}`),
@@ -465,6 +583,7 @@ export default async function mountCompareWithModel(element, ctx) {
         <div class="s-compare-legend">
           <span><i style="background:var(--accent)"></i>${t('legendModel')}</span>
           <span><i style="background:var(--green)"></i>${t('legendYou')}</span>
+          ${estimateNote()}
         </div>
         <div class="s-compare-legend s-compare-legend--small">
           <span><i class="s-compare-swatch s-compare-swatch--close"></i>${t('legendClose')}</span>
@@ -480,8 +599,9 @@ export default async function mountCompareWithModel(element, ctx) {
     const analysis = contours.get(take.id);
     if (!analysis || analysis === 'loading' || !reference || reference.alignmentState === 'processing') return html`<div class="s-compare-chart s-compare-chart--wait" role="status" aria-label="${t('referenceAlignment')}"><span class="o-spinner"></span></div>`;
     const pair=pitchPair(detail,take,CHART.width);
-    if (!pair.model.length && !pair.you.length) return html`<p class="s-compare-note">${t('pitchUnavailable')}</p>`;
-    return html`${chartMarkup(pair)}${!pair.you.length ? html`<p class="s-compare-note">${t('yourLineUnavailable')}</p>` : ''}`;
+    if (!pair.model.length && !pair.you.length) return html`<p class="s-compare-note">${t(take.url ? 'pitchUnavailable' : 'pitchNotKept')}</p>`;
+    // An attempt without a retained recording (D-076) says so; a take with audio that had too little voice says that.
+    return html`${chartMarkup(pair)}${!pair.you.length ? html`<p class="s-compare-note">${t(take.url ? 'yourLineUnavailable' : 'pitchNotKept')}</p>` : ''}`;
   }
 
   function panelMarkup(detail, take) {
@@ -498,7 +618,7 @@ export default async function mountCompareWithModel(element, ctx) {
         </div>
         <div class="s-compare-panel__body">${spanText(timing.model,'legendModel')}${spanText(timing.you,'legendYou')}
           ${delta==null ? '' : html`<span>${t(delta===0?'timingSame':delta>0?'timingLonger':'timingShorter',{s:(Math.abs(delta)/1000).toFixed(2)})}</span>`}
-          <span class="s-compare-muted">${t('timingCompared')}</span>
+          <span class="s-compare-muted">${t('timingCompared')}</span>${estimateNote()}
         </div>
       </div>`;
     }
@@ -519,11 +639,16 @@ export default async function mountCompareWithModel(element, ctx) {
         ${heard ? html`<div class="s-compare-panel__heard">${t('pronHeard', { text: heard })}</div>` : ''}
       </div>`;
     }
-    const toneTitle = language === 'zh' && detail.toneTarget != null && detail.pinyin;
+    const syllables = language === 'zh' ? detail.toneSyllables : null;
+    const compound = syllables?.length > 1;
+    const focus = compound ? syllables.find((item) => item.focus && item.tone != null) : null;
+    const toneTitle = syllables?.length === 1 && detail.toneTarget != null && detail.pinyin;
     return html`<div class="s-compare-panel">
-      <div class="s-compare-panel__title">${toneTitle ? t('toneTitle', { word: detail.text, pinyin: detail.pinyin, n: detail.toneTarget, name: t(toneKey(detail.toneTarget)) }) : t('pitchTitle', { word: detail.text })}</div>
+      <div class="s-compare-panel__title">${compound ? t('toneSyllablesTitle', { word: detail.text }) : toneTitle ? t('toneTitle', { word: detail.text, pinyin: detail.pinyin, n: detail.toneTarget, name: t(toneKey(detail.toneTarget)) }) : t('pitchTitle', { word: detail.text })}</div>
+      ${compound ? html`<div class="s-compare-tonechips" data-tone-syllables>${syllables.map((item) => html`<span class="${cls('s-compare-tonechip', item.focus && 's-compare-tonechip--focus')}" ${item.focus ? raw('data-focus') : ''}>${item.char ? html`<span class="s-compare-tonechip__char" lang="${langAttr(language)}">${item.char}</span>` : ''}<span class="s-compare-tonechip__py">${item.syllable}</span>${item.tone != null ? html`<b style="color:${item.tone < 5 ? `var(--tone${item.tone})` : 'var(--text3)'}">${item.tone}</b>` : ''}</span>`)}</div>
+      ${focus ? html`<p class="s-compare-note s-compare-tonefocus">${t('toneFocus', { syllable: focus.syllable, n: focus.tone, name: t(toneKey(focus.tone)) })}</p>` : ''}` : ''}
       ${wordChart(detail, take)}
-      <div class="s-compare-legend"><span><i style="background:var(--accent)"></i>${t('legendModel')}</span><span><i style="background:var(--green)"></i>${t('legendYou')}</span></div>
+      <div class="s-compare-legend"><span><i style="background:var(--accent)"></i>${t('legendModel')}</span><span><i style="background:var(--green)"></i>${t('legendYou')}</span>${estimateNote()}</div>
       ${modelWordFor(detail) ? '' : html`<p class="s-compare-note">${t('modelWordUnavailable')}</p>`}
     </div>`;
   }
@@ -540,7 +665,8 @@ export default async function mountCompareWithModel(element, ctx) {
     const weak = detail.weakest && detail.weakest.score < 85 ? t('weakestOf', { u: detail.weakest.label, n: detail.weakest.score }) : '';
     const finding = detail.flagged || weak ? [detail.flagged ? errorLabel(detail.errorType) : '', weak].filter(Boolean).join(' · ') : '';
     const rows = [
-      ...(language === 'zh' && detail.toneTarget != null ? [{ label: t('rowTone'), value: `${detail.toneTarget} · ${t(toneKey(detail.toneTarget))}`, ink: 'var(--text)', kind: '' }] : []),
+      ...(language === 'zh' && detail.toneSyllables?.length === 1 && detail.toneTarget != null ? [{ label: t('rowTone'), value: `${detail.toneTarget} · ${t(toneKey(detail.toneTarget))}`, ink: 'var(--text)', kind: '' }] : []),
+      ...(language === 'zh' && detail.toneSyllables?.length > 1 ? [{ label: t('rowTone'), value: detail.toneSyllables.map((item) => `${item.syllable}${item.tone != null ? ` ${item.tone}` : ''}`).join(' · '), ink: 'var(--text)', kind: '' }] : []),
       ...(detail.offsetKnown ? [{ label: t('rowStart'), value: `${seconds(detail.offsetMs)} s`, ink: 'var(--text)', kind: '' }, { label: t('rowLength'), value: `${seconds(detail.durationMs)} s`, ink: 'var(--text)', kind: '' }] : []),
       { label: t('rowPron'), value: t(pronunciationStatusKey(detail)), ink: detail.status === 'ok' ? 'var(--green)' : 'var(--red)', kind: detail.status === 'ok' ? 'ok' : 'bad' },
     ];
@@ -567,18 +693,78 @@ export default async function mountCompareWithModel(element, ctx) {
         <div class="s-compare-rows">${rows.map((row) => html`<div class="s-compare-row"><span class="s-compare-muted">${row.label}</span><span class="s-compare-row__value" style="color:${row.ink}">${row.kind ? glyph(row.kind) : ''}${row.value}</span></div>`)}</div>
         <div class="s-compare-detail__buttons">
           <button type="button" class="s-compare-ghost" data-fk="hear-word-2" data-hear-word>${raw(icon('volume-2', { size: 18 }))}${t('hearWord')}</button>
-          <button type="button" class="s-compare-ghost" data-fk="hear-yours" data-hear-yours>${raw(icon('mic', { size: 18 }))}${t('hearYours')}</button>
+          <button type="button" class="s-compare-ghost" data-fk="hear-yours" data-hear-yours ${take.url ? '' : raw('disabled')} title="${take.url ? '' : t('noTakeAudio')}">${raw(icon('mic', { size: 18 }))}${t('hearYours')}</button>
         </div>
       </div>
     </div>`;
   }
 
+  /* The playback bar. One compact group (LEX-052): Play, speed and Try again on top; below, Previous line, the
+     playback mode and Next line. On a phone the modes are one button that shows the chosen mode and opens the
+     list over the analysis, so the bar does not grow; wide, the four modes sit inline as the frame draws them
+     and the line pair stays at the bottom of the room. */
   function barMarkup() {
-    return html`<div class="s-compare-bar">
-      <button type="button" class="s-compare-bar__play" data-fk="play" data-play aria-label="${playing ? t('stop') : t('play')}"><span class="s-compare-bar__disc">${playing ? filled('pause', 14) : filled('play', 14)}</span><span data-pb-label>${playing ? t('stop') : t('play')}</span></button>
-      <div class="s-compare-bar__modes" data-pb-modes>${PLAYBACK_MODES.map((m) => html`<button type="button" class="${cls('s-compare-bar__mode', mode === m && 's-compare-bar__mode--on')}" data-mode="${m}" data-fk="mode-${m}" ${!source.hasModelAudio && ['model_only','model_then_you'].includes(m) ? raw('disabled') : ''} aria-pressed="${mode === m}">${t(MODE_KEY[m])}</button>`)}</div>
-      <button type="button" class="s-compare-bar__speed" data-fk="speed-bar" data-speed><span data-pb-label class="s-compare-muted">${t('speed')} </span>${t('speedUnit', { n: speed })}</button>
-      <button type="button" class="s-compare-bar__again" data-fk="again" data-again>${raw(icon('rotate-cw', { size: 18, stroke: 2.2 }))}${t('tryAgain')}</button>
+    const caps = playCaps();
+    const active = modeNow();
+    const at = lineAt();
+    const pair = source.lessonId && lines.length > 1;
+    const navButton = (dir) => {
+      const target = lines[at + dir];
+      return html`<button type="button" class="s-compare-bar__nav" data-fk="bar-line-${dir < 0 ? 'prev' : 'next'}" data-source-line="${target?.lineId || ''}" aria-label="${t(dir < 0 ? 'previousLine' : 'nextLine')}" ${busyNow() || !target ? raw('disabled') : ''}>${raw(icon(dir < 0 ? 'chevron-left' : 'chevron-right', { size: 20 }))}</button>`;
+    };
+    return html`<div class="s-compare-bar" data-bar>
+      <div class="s-compare-bar__main">
+        <button type="button" class="s-compare-bar__play" data-fk="play" data-play aria-label="${playing ? t('stop') : t('play')}"><span class="s-compare-bar__disc">${playing ? filled('pause', 14) : filled('play', 14)}</span><span data-pb-label>${playing ? t('stop') : t('play')}</span></button>
+        <button type="button" class="s-compare-bar__speed" data-fk="speed-bar" data-speed><span data-pb-label class="s-compare-muted">${t('speed')} </span>${t('speedUnit', { n: speed })}</button>
+        <button type="button" class="s-compare-bar__again" data-fk="again" data-again>${raw(icon('rotate-cw', { size: 18, stroke: 2.2 }))}${t('tryAgain')}</button>
+      </div>
+      <div class="s-compare-bar__sub">
+        ${pair ? navButton(-1) : ''}
+        <div class="s-compare-bar__modewrap" data-modewrap>
+          <button type="button" class="s-compare-bar__modebtn" data-fk="modes-toggle" data-modes-toggle aria-expanded="${String(modesOpen)}" aria-label="${t('playbackMode')}: ${t(MODE_KEY[active])}"><span class="s-compare-muted">${t('playbackMode')}</span><b>${t(MODE_KEY[active])}</b>${raw(icon('chevron-up', { size: 16 }))}</button>
+          <div class="${cls('s-compare-bar__modes', modesOpen && 'is-open')}" data-pb-modes role="group" aria-label="${t('playbackMode')}">${PLAYBACK_MODES.map((m) => html`<button type="button" class="${cls('s-compare-bar__mode', active === m && 's-compare-bar__mode--on')}" data-mode="${m}" data-fk="mode-${m}" ${modeAvailable(m, caps) ? '' : raw('disabled')} aria-pressed="${active === m}">${t(MODE_KEY[m])}</button>`)}</div>
+        </div>
+        ${pair ? navButton(1) : ''}
+      </div>
+    </div>`;
+  }
+
+  /* The component's own Attempt history card (frame 16, D-139 HD-7): every attempt this line has, the
+     sparkline of their scores, and for each the three numbers the assessment measured with the change
+     from the attempt before. Tapping one opens its analysis above - for an attempt only the account
+     remembers, without audio (D-076). The frame's "Clear" is not drawn: the account's record is not
+     deleted from here. */
+  function historyMarkup() {
+    const history = historyFor(takes, selectedId, viewOfTake, matchFor);
+    if (!history.count) return '';
+    const dots = history.spark;
+    const line = dots.map((dot) => `${dot.cx.toFixed(1)},${dot.cy.toFixed(1)}`).join(' ');
+    const summary = history.scoredCount < 2
+      ? (history.count < 2 ? t('histSummaryFirst') : '')
+      : t('histSummary', { first: history.first, last: history.last, n: history.scoredCount, best: history.best, bestN: history.bestN });
+    const when = (at) => new Date(at).toLocaleString(ui, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return html`<div class="s-compare-card s-compare-hist">
+      <div class="s-compare-hist__top">
+        <div class="s-compare-hist__head">
+          <div class="s-compare-hist__title"><span>${t('attemptHistory')}</span><span class="s-compare-hist__count">${history.count}</span></div>
+          ${summary ? html`<div class="s-compare-hist__summary">${summary}</div>` : ''}
+        </div>
+        ${dots.length ? html`<svg viewBox="0 0 180 40" class="s-compare-hist__spark" aria-hidden="true"><line x1="0" y1="36" x2="180" y2="36" stroke="var(--border)" stroke-width="1"></line><polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>${dots.map((dot) => html`<circle cx="${dot.cx.toFixed(1)}" cy="${dot.cy.toFixed(1)}" r="${dot.id === selectedId ? 4.5 : 3}" fill="${dot.id === selectedId ? 'var(--accent)' : 'var(--surface)'}" stroke="var(--accent)" stroke-width="2"></circle>`)}</svg>` : ''}
+      </div>
+      <div class="s-compare-hist__rows">${history.rows.map((row) => html`<div class="${cls('s-compare-hist__row', row.active && 's-compare-hist__row--on')}">
+        <button type="button" class="s-compare-hist__open" data-fk="hist-${row.n}" data-hist-select="${row.id}" aria-pressed="${row.active}">
+          <span class="s-compare-hist__who">
+            <span class="s-compare-hist__n">#${row.n}</span>
+            <span class="s-compare-hist__what">
+              <span class="s-compare-hist__when"><span>${when(row.at)}</span>${row.isBest ? html`<span class="s-compare-hist__best">${t('histBest')}</span>` : ''}</span>
+              <span class="s-compare-hist__focus">${row.focus ? t('histFocusWord', { word: row.focus }) : t('histFocusNone')}</span>
+            </span>
+          </span>
+          <span class="s-compare-hist__metrics">${row.metrics.map((metric) => html`<span class="s-compare-hist__metric"><span class="s-compare-hist__label">${t(metric.key)}</span><span class="s-compare-hist__value"><b>${metric.value ?? '—'}</b>${metric.delta.zero ? html`<i style="color:var(--muted)">${t('histSame')}</i>` : metric.delta.text ? html`<i style="color:${metric.delta.tone}">${metric.delta.text}</i>` : ''}</span></span>`)}</span>
+        </button>
+        ${row.hasAudio ? html`<button type="button" class="s-compare-hist__play" data-hist-play="${row.id}" aria-label="${t('histPlay')}" title="${t('histPlay')}">${filled('play', 14)}</button>` : ''}
+      </div>`)}</div>
+      <div class="s-compare-hist__note">${t('histNote')}</div>
     </div>`;
   }
 
@@ -614,17 +800,20 @@ export default async function mountCompareWithModel(element, ctx) {
         <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
         <div class="s-compare-title-block"><div class="s-compare-title">${source.lessonId ? t('practiceTitle') : t('title')}</div><div class="s-compare-note s-compare-subtitle">${t('subtitle')}</div></div>
         ${takes.length ? pillsMarkup() : ''}
-        <button type="button" class="s-compare-history" data-attempts aria-label="${t('attemptHistory')}">${raw(icon('clock',{size:18}))}<span>${t('attemptHistory')}</span></button>
+        <button type="button" class="s-compare-history" data-attempts aria-label="${t('attemptHistory')}"><span>${t('attemptHistory')}</span></button>
+        ${source.lessonId ? html`<button type="button" class="o-iconbtn s-compare-more-btn" data-more aria-label="${t('more')}" title="${t('more')}" ${busyNow() ? raw('disabled') : ''}>${raw(icon('ellipsis', { size: 18 }))}</button>` : ''}
       </div>
-      ${sourceNavigation()}
       <div class="s-compare-scroll${showRecord ? ' s-compare-scroll--record' : ''}" data-scroll-region>
         ${source.playback?.kind === 'embed' ? html`<div class="s-compare-model-preview${modelPreview ? ' is-model-playing' : ''}" data-original-player></div>` : ''}
+        ${result && !showRecord ? anchorMarkup(view) : ''}
         ${showRecord ? recordCard() : ''}
         ${errorText ? html`<div class="s-compare-error"><b>${t('errorTitle')}</b> ${errorText}</div>` : ''}
         ${result ? summaryMarkup(view, take) : ''}
         ${result && view.words.length ? detailMarkup(view, take) : ''}
+        ${result && !showRecord ? historyMarkup() : ''}
       </div>
-      ${result ? barMarkup() : ''}`,
+      ${result ? barMarkup() : ''}
+      ${lineNavigation(result)}`,
     );
     if (originalPlayer) {
       if(source.playback.kind === 'embed') originalPlayer.attach(q('[data-original-player]'));
@@ -664,15 +853,25 @@ export default async function mountCompareWithModel(element, ctx) {
   }
 
   function bind() {
-    const goLine = id => {
-      if (!id || recorder.busy) return;
+    element.querySelectorAll('[data-source-line]').forEach((button) => button.addEventListener('click', () => goLine(button.dataset.sourceLine)));
+    q('[data-more]')?.addEventListener('click', openMore);
+    q('[data-meaning]')?.addEventListener('click', () => {
+      meaningOpen = !meaningOpen;
+      paint();
+    });
+    element.querySelectorAll('[data-hist-select]').forEach((button) => button.addEventListener('click', () => {
+      select(button.dataset.histSelect);
+      q('[data-scroll-region]')?.scrollTo({ top: 0, behavior: 'smooth' });
+    }));
+    element.querySelectorAll('[data-hist-play]').forEach((button) => button.addEventListener('click', () => {
+      const url = takeOf(button.dataset.histPlay)?.url;
+      if (!url) {
+        toast(t('noTakeAudio'));
+        return;
+      }
       stopPlay();
-      ctx.go(ctx.href('compare',{id:source.sourceId},{segment:id}));
-    };
-    element.querySelectorAll('[data-source-line]').forEach(button=>button.addEventListener('click',()=>goLine(button.dataset.sourceLine)));
-    q('[data-source-select]')?.addEventListener('change',event=>goLine(event.target.value));
-    q('[data-listen-source]')?.addEventListener('click',()=>ctx.go(ctx.href('listening',{id:source.lessonId},lineQuery)));
-    q('[data-choose-media]')?.addEventListener('click',()=>ctx.go(ctx.href('discover',{}, {tab:'listen',practice:'pronunciation',source:source.lessonId,segment:source.line.lineId})));
+      void playFile(url, playToken);
+    }));
     q('[data-back]').addEventListener('click', () => ctx.back());
     q('[data-attempts]').addEventListener('click', () => ctx.go(ctx.href('attempts', { id: ctx.params.id }, { ...lineQuery, attempt: selectedId })));
     element.querySelectorAll('[data-select]').forEach((button) => button.addEventListener('click', () => select(button.dataset.select)));
@@ -707,18 +906,21 @@ export default async function mountCompareWithModel(element, ctx) {
       button.addEventListener('click', () => {
         stopPlay();
         mode = button.dataset.mode;
+        modesOpen = false;
         paint();
       });
     });
-    q('[data-again]')?.addEventListener('click', () => {
-      q('[data-scroll-region]')?.scrollTo({ top: 0, behavior: 'smooth' });
-      record();
+    q('[data-modes-toggle]')?.addEventListener('click', () => {
+      modesOpen = !modesOpen;
+      q('[data-pb-modes]')?.classList.toggle('is-open', modesOpen);
+      q('[data-modes-toggle]')?.setAttribute('aria-expanded', String(modesOpen));
     });
+    q('[data-again]')?.addEventListener('click', record);
   }
 
   wordSel = takes.length ? defaultWordIndex(viewNow()) : null;
   paint();
-  if (selectedId) void measure(selectedId);
+  if (selectedId) void measure(selectedId).then(measureAll);
   sizing = new ResizeObserver(() => {
     const measured = Math.max(1, q('.s-compare-tiles__row')?.clientWidth || element.clientWidth - 48);
     if (Math.abs(measured - tileWidth) < 1 || !ctx.isCurrent()) return;
@@ -729,7 +931,21 @@ export default async function mountCompareWithModel(element, ctx) {
   sizing.observe(q('[data-scroll-region]'));
   void readReference();
 
+  /* The phone's mode list closes on a press anywhere else and on Escape, focus back on its button. */
+  const closeModes = (event) => {
+    if (!modesOpen) return;
+    if (event.type === 'keydown' && event.key !== 'Escape') return;
+    if (event.type === 'pointerdown' && event.target.closest?.('[data-modewrap]')) return;
+    modesOpen = false;
+    q('[data-pb-modes]')?.classList.remove('is-open');
+    q('[data-modes-toggle]')?.setAttribute('aria-expanded', 'false');
+    if (event.type === 'keydown') q('[data-modes-toggle]')?.focus({ preventScroll: true });
+  };
+  document.addEventListener('pointerdown', closeModes);
+  document.addEventListener('keydown', closeModes);
+
   const releasers = [
+    () => { document.removeEventListener('pointerdown', closeModes); document.removeEventListener('keydown', closeModes); },
     registerActionHandler('play_model', () => {
       if (!source.hasModelAudio) return { ok: false, reason: 'model_unavailable' };
       stopPlay();

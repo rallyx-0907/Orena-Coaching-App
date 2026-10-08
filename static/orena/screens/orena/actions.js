@@ -22,3 +22,11 @@ export async function runOffered({ dispatcher, action, ranActions, repaint }) {
   if (key) toast(t(key), { iconName: 'circle-alert' });
   return result;
 }
+
+/* §7: an action runs without a tap only when the server marked it `open: true` - the learner's own words asked for
+   it. The button stays in the thread; a CONFIRM-risk action still goes through the dispatcher's own confirmation. */
+export function openIfAsked({ reply, dispatcher, ranActions, repaint }) {
+  if (!reply || reply.error) return null;
+  const marked = (reply.actions || []).find((action) => action?.open === true);
+  return marked ? runOffered({ dispatcher, action: marked, ranActions, repaint }) : null;
+}

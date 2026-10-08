@@ -22,7 +22,8 @@ import { useStyles } from '../../kit/styles.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { href } from '../../shell/routes.js';
 import { t } from './copy.js';
-import { notificationRows } from './model.js';
+import { notificationRows, whenLabel } from './model.js';
+import { languages } from '../../copy/index.js';
 
 const KIND_LABEL = { reading: 'continueReadingKind', listening: 'continueListeningKind', writing: 'continueWritingKind' };
 
@@ -46,21 +47,34 @@ export async function openNotifications(ctx = {}) {
       const title = t.plural('dueTitle', row.due);
       return listRow({ variant: 'outline', pad: '14px 18px', kind: t('reviewKind'), title, dataset: { row: 'due' } });
     }
-    const sub = row.percent != null ? t('percentComplete', { n: row.percent }) : '';
+    const sub = [row.context, row.percent != null ? t('percentComplete', { n: row.percent }) : ''].filter(Boolean).join(' · ');
     // languages-5 / finding A: `row.title` is the real content this continuation entry resumes -
     // always in the learner's active learning language (kit/lang.js's "the learner's learning
     // language the screen already read" source; no per-entry field exists on device memory).
-    return listRow({ variant: 'outline', pad: '14px 18px', kind: t(KIND_LABEL[row.kind]), title: langSpan(row.title, context.language), sub, dataset: { row: 'continue', route: row.routeId, id: row.id } });
+    return listRow({ variant: 'outline', pad: '14px 18px', kind: whenLabel(row.at, languages().ui), title: langSpan(row.title, context.language), sub, dataset: { row: 'continue', route: row.routeId, id: row.id } });
   }
 
   function bodyMarkup() {
     if (!rows.length) return emptyMarkup({ text: t('empty'), iconName: 'inbox' });
-    return html`${rows.map(rowMarkup)}`;
+    /* One action named once per group, then the items under it (LEX-079): "Continue reading" is not repeated on
+       every row. Rows stay in recency order inside a group; groups follow the first row's position. */
+    const out = [];
+    const groups = new Map();
+    for (const row of rows) {
+      const key = row.type === 'due' ? 'due' : row.kind;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(row);
+    }
+    for (const [key, list] of groups) {
+      if (key !== 'due') out.push(html`<div class="s-notifications__group">${t(KIND_LABEL[key])}</div>`);
+      out.push(...list.map(rowMarkup));
+    }
+    return html`${out}`;
   }
 
   const markup = html`<div class="o-sheet__head">
     <div>
-      <div class="o-sheet__title">${s('notifications')}</div>
+      <div class="o-sheet__title">${t('title')}</div>
       <div class="s-notifications__sub">${t('subtitle')}</div>
     </div>
     <button type="button" class="o-iconbtn o-iconbtn--close" data-sheet-close aria-label="${s('close')}">${raw(icon('x', { size: 17 }))}</button>
@@ -68,7 +82,7 @@ export async function openNotifications(ctx = {}) {
   <div class="o-sheet__body s-notifications__body">${bodyMarkup()}</div>`;
 
   const handle = openSheet({
-    label: s('notifications'),
+    label: t('title'),
     className: 's-notifications',
     render(sheet, sheetHandle) {
       fillSheet(sheet, sheetHandle, markup);

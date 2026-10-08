@@ -32,20 +32,26 @@ export const SKILL_ORDER = ['speak', 'write', 'listen', 'vocabulary', 'grammar',
 const SPEAK_ICONS = {
   freetalk: 'mic',
   conv: 'messages-square',
-  situation: 'puzzle',
+  situation: 'rotate-ccw',
   timedreact: 'timer',
   mock: 'square-check-big',
   sound: 'audio-lines',
-  speak: 'whole-word',
+  speak: 'audio-lines',
   shadow: 'repeat',
   retell: 'rotate-ccw',
 };
-const WRITE_ICONS = { writing: 'pen-line', rewrite: 'repeat', timedwr: 'timer' };
+/* The design's PH_MAP: "Continue draft" and "Prompt" are `pen` (Lucide pen-line), "Free Writing" and "Your
+   Topic" are `note` (Lucide notebook-pen). */
+const WRITE_ICONS = { continue: 'pen-line', prompt: 'pen-line', free: 'notebook-pen', topic: 'notebook-pen', earlier: 'history' };
 /* 'keyboard' (design PH_MAP "Dictation":"kbd") and 'repeat' (design PH_MAP "Shadowing":"repeat",
    the same icon Speak's own Shadowing mode already uses) - both already present in kit/icons.js,
    no sync needed. */
-const LISTEN_ICONS = { dictation: 'keyboard', listening: 'headphones' };
-const VOCAB_ICONS = { review: 'bookmark-check', timed: 'timer', transfer: 'arrow-left-right', feed: 'flame' };
+const LISTEN_ICONS = { dictation: 'keyboard', listening: 'headphones', react: 'arrow-left-right' };
+/* The design's PH_MAP: Due review is `cards` (Lucide panels-top-left), Collections `lib` (Lucide library-big), Timed
+   Recall `zap`, Context Transfer `target`. The design gives Daily Feed `cards` and Saved language `lib` as well, so two
+   tiles of one group read as the same place; Daily Feed (flame) and Saved language (bookmark) have their own Lucide
+   icons here (LEX-071, a deviation recorded for the human). */
+const VOCAB_ICONS = { review: 'panels-top-left', timed: 'zap', transfer: 'target', feed: 'flame', collections: 'library-big', language: 'bookmark' };
 const GRAMMAR_ICONS = { grammarlib: 'book-open' };
 /* 'book-open' (design PH_MAP "Start Reading Practice":"book" - the same path as Lucide's
    book-open, already reused by Grammar library above). */
@@ -87,19 +93,32 @@ function firstOfType(items, type) {
 
 /* Generic Pronunciation opens the shared content chooser, including personal imports;
    it never silently assigns the first catalogue item. Deferred modes remain excluded. */
-export function speakModes(items = []) {
+/* The design's own order and groups for Speak (S1 `SK.Speak.groups`): Situation Reaction,
+   Conversation, Free Talk under "Speak naturally"; Pronunciation, Shadowing, Sound / Tone under
+   "Improve pronunciation"; Timed Reaction, Retell, Mock Interview under "Challenge yourself". Only
+   the modes this build offers are drawn (D-101 H9); a group with none is simply absent. */
+export const SPEAK_GROUPS = ['natural', 'pronounce', 'challenge'];
+
+export function speakModes(items = [], last = null) {
   const list = Array.isArray(items) ? items : [];
   const modes = [
-    { key: 'freetalk', routeId: 'freetalk' },
-    { key: 'conv', routeId: 'conv' },
-    { key: 'situation', routeId: 'situation' },
-    { key: 'timedreact', routeId: 'timedreact' },
-    { key: 'mock', routeId: 'mock' },
-    { key: 'sound', routeId: 'sound' },
+    { key: 'situation', group: 'natural', routeId: 'situation' },
+    { key: 'conv', group: 'natural', routeId: 'conv' },
+    { key: 'freetalk', group: 'natural', routeId: 'freetalk' },
+    /* Pronunciation opens the learner's last line at once; the chooser ("Choose media") is behind "..." in
+       the room. Only with no last line does the chooser open directly (D-139 HD-3). */
+    last?.params?.id
+      ? { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'speak', params: last.params, query: last.query }
+      : { key: 'speak', group: 'pronounce', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } },
+    /* Shadowing opens the shared room (D-119) through the media chooser: its route needs a media id, which only
+       the learner's choice supplies (D-139 HD-2). */
+    { key: 'shadow', group: 'pronounce', labelRouteId: 'shadow', routeId: 'discover', query: { tab: 'listen', practice: 'shadowing' } },
+    { key: 'sound', group: 'pronounce', routeId: 'sound' },
+    { key: 'timedreact', group: 'challenge', routeId: 'timedreact' },
   ];
-  modes.push({ key: 'speak', labelRouteId: 'speak', routeId: 'discover', query: { tab: 'listen', practice: 'pronunciation' } });
   const retell = firstOfType(list, 'retell');
-  if (retell) modes.push({ key: 'retell', routeId: 'retell', params: { id: retell.id }, level: retell.level || '' });
+  if (retell) modes.push({ key: 'retell', group: 'challenge', routeId: 'retell', params: { id: retell.id }, level: retell.level || '' });
+  modes.push({ key: 'mock', group: 'challenge', routeId: 'mock' });
   return shown(modes);
 }
 
@@ -108,25 +127,41 @@ function shown(modes) {
   return modes.filter((mode) => !isDeferred(mode.routeId));
 }
 
-/* Write's three modes are all parameterless routes; Writing's own entry setup (free / from a
-   prompt / a reply) is that screen's own concern once it is built, not a Practice Hub fork. */
-export function writeModes() {
-  return shown([
-    { key: 'writing', routeId: 'writing' },
-    { key: 'rewrite', routeId: 'rewrite' },
-    { key: 'timedwr', routeId: 'timedwr' },
-  ]);
+/* The design's own groups for Write (S1 `SK.Write.groups`): Continue draft, Prompt, Free Writing and Your
+   Topic under "Write freely"; Respond to Content and Context Rewrite under "Respond"; Timed Writing under
+   "Under pressure". Only what this build can open for real is drawn (D-101 H9, HW-1 B): Context Rewrite and
+   Timed Writing are not built; Respond to Content needs a content id nothing here supplies (W-17,
+   UI_BACKEND_GAPS). So only "Write freely" is present. Prompt and Your Topic open the room with Prompt
+   Setup already open (HW-2 B); Free Writing opens the room named "Free writing". Continue draft is listed
+   only while a draft is waiting. `draft` is { title, n } for it. */
+export const WRITE_GROUPS = ['free', 'respond', 'pressure'];
+
+export function writeModes(draft = null, earlier = 0) {
+  const modes = [];
+  if (draft && draft.n > 0) modes.push({ key: 'continue', group: 'free', routeId: 'writing', draft });
+  modes.push(
+    { key: 'prompt', group: 'free', routeId: 'writing', query: { setup: 'prompt' } },
+    { key: 'free', group: 'free', routeId: 'writing', query: { entry: 'free' } },
+    { key: 'topic', group: 'free', routeId: 'writing', query: { setup: 'topic' } },
+  );
+  // The drafts "Start new draft" set aside stay reachable (LEX-062): one row opens their list.
+  if (earlier > 0) modes.push({ key: 'earlier', group: 'free', routeId: 'writing', action: 'earlier', count: earlier });
+  return shown(modes);
 }
+
 
 /* Human correction: listening comprehension and dictation are separate choices,
    both choose content before practice. Speaking owns the single pronunciation /
    shadowing entry. Only lessons with materialized questions admit comprehension. */
-export function listenModes(items = []) {
+export function listenModes(items = [], last = null) {
   const list = Array.isArray(items) ? items : [];
   const modes = [];
   if (list.some(item => item?.comprehension_count > 0)) modes.push({ key: 'listening', labelRouteId: 'listenQuestions', routeId: 'discover', query: { tab: 'listen', practice: 'listening' } });
   // Personal prepared imports also support dictation; the chooser owns admission.
   modes.push({ key: 'dictation', labelRouteId: 'dictation', routeId: 'discover', query: { tab: 'listen', practice: 'dictation' } });
+  /* React / Reuse opens the learner's last listened line (X-01, HX-1 A; the Pronunciation pattern, D-139 HD-3). With
+     no such line the tile is not drawn: its route needs a media id and a line only the learner's own history supplies. */
+  if (last?.params?.id) modes.push({ key: 'react', routeId: 'react', params: last.params, query: last.query });
   return modes;
 }
 
@@ -148,18 +183,33 @@ export function readingModes(reading) {
   return [mode];
 }
 
-/* Vocabulary's Due Review carries the learner's real due count (context().due, rule 40: 0 is a
-   real answer, not an absence). Collections / Saved language are My Library's own tabs, not a
-   route this screen can address without inventing a query contract, so they stay out. */
+/* The design's groups for Vocabulary (S1 `SK.Vocabulary.groups`): Due Review and Timed Recall under "Recall",
+   Context Transfer under "Use", Daily Feed, Collections and Saved language under "Browse". Only what this build
+   opens for real is drawn (D-101 H9, HV-1 B): Timed Recall and Context Transfer are deferred, so only Recall (Due
+   Review) and Browse are present. Due Review carries the learner's real due count (context().due, rule 40: 0 is a
+   real answer, not an absence). Collections and Saved language are My Library's own tabs (`?tab=`). */
+export const VOCABULARY_GROUPS = ['recall', 'use', 'browse'];
+
 export function vocabularyModes(due = 0) {
   const n = Number.isFinite(Number(due)) ? Math.max(0, Number(due)) : 0;
   return shown([
-    { key: 'review', routeId: 'review', due: n },
-    { key: 'timed', routeId: 'timed' },
-    { key: 'transfer', routeId: 'transfer' },
-    { key: 'feed', routeId: 'feed' },
+    { key: 'review', group: 'recall', routeId: 'review', due: n },
+    { key: 'timed', group: 'recall', routeId: 'timed' },
+    { key: 'transfer', group: 'use', routeId: 'transfer' },
+    { key: 'feed', group: 'browse', routeId: 'feed' },
+    { key: 'collections', group: 'browse', routeId: 'library', query: { tab: 'collections' } },
+    { key: 'language', group: 'browse', routeId: 'library', query: { tab: 'language' } },
   ]);
 }
+
+/* Skill Hub Vocabulary's Recommended card, only from real data: the due count. Nothing is due, nothing is
+   recommended (HV-1 B). */
+export function vocabularyRecommendation(due = 0) {
+  const n = Number.isFinite(Number(due)) ? Math.max(0, Math.trunc(Number(due))) : 0;
+  return n > 0 ? { n } : null;
+}
+
+export const SKILL_GROUPS = { speak: SPEAK_GROUPS, write: WRITE_GROUPS, vocabulary: VOCABULARY_GROUPS };
 
 /* Grammar library is the one entry point this round wires for real; a "next concept"/"quick quiz"
    tile would need a recommended-lesson id nothing here derives without inventing a selection. */
@@ -168,9 +218,9 @@ export function grammarModes() {
 }
 
 export const SKILL_BUILDERS = {
-  speak: (data) => speakModes(data.speakingItems),
-  write: () => writeModes(),
-  listen: (data) => listenModes(data.listeningItems),
+  speak: (data) => speakModes(data.speakingItems, data.lastSpeakingLine),
+  write: (data) => writeModes(data.draft, data.earlier),
+  listen: (data) => listenModes(data.listeningItems, data.lastListenedLine),
   vocabulary: (data) => vocabularyModes(data.due),
   grammar: () => grammarModes(),
   reading: (data) => readingModes(data.reading),
@@ -264,4 +314,27 @@ export function writeRecommendation(rec) {
   const title = String(rec.focus_label || '').trim();
   if (!title) return null;
   return { title, reason: String(rec.reason || '').trim(), actionLabel: String(rec.action_label || '').trim() };
+}
+
+/* Skill Hub Speak's Recommended card (D-139 HD-1): the line the learner's real attempts say is weakest.
+   `rows` are the account's speaking attempts (`product/speaking-history.js#attemptRow`); only a VERIFIED score counts
+   (an unverified attempt has no score to be weak by). Each line is judged by its LATEST verified attempt, so a line
+   the learner has since improved is not recommended again. Returns up to `limit` candidates, weakest first, each with
+   the real evidence for its reason line: the line's score and its lowest-scoring word, when the account kept words.
+   No attempts, no candidate (no card). */
+export function weakestLines(rows = [], limit = 3) {
+  const latest = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!row?.verified || row.overall == null || !row.assetId || !row.segmentId) continue;
+    const key = `${row.assetId}\u0000${row.segmentId}`;
+    if (!latest.has(key) || (row.at || 0) >= (latest.get(key).at || 0)) latest.set(key, row);
+  }
+  return [...latest.values()]
+    .sort((a, b) => a.overall - b.overall || (b.at || 0) - (a.at || 0))
+    .slice(0, limit)
+    .map((row) => {
+      const words = (row.evidence?.words || []).filter((word) => word.score != null && word.text);
+      const weakest = words.reduce((low, word) => (low && low.score <= word.score ? low : word), null);
+      return { assetId: row.assetId, segmentId: row.segmentId, overall: row.overall, word: weakest ? { text: weakest.text, score: weakest.score } : null };
+    });
 }

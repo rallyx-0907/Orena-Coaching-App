@@ -66,6 +66,7 @@ export function buildProfileModel({ context, vocabulary, commerce } = {}) {
     rankNumber: rankKnown ? rank.rank : 0,
     planKnown,
     planName: planKnown ? String(plan.name || '') : '',
+    planId: planKnown ? String(plan.id || '') : '',
     goalKey: goalCopyKey(context?.profile?.goal),
     due,
     savedCount: Math.max(0, Number(rank.saved) || 0),

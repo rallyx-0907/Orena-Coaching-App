@@ -17,8 +17,6 @@ import {
   readAgreement,
   snapshotDigest,
 } from '../static/orena/product/draft-sync.js';
-import { draftStatus, refreshDraftStatus } from '../static/orena/ui/patterns.js';
-import { copy } from '../static/orena/ui/copy.js';
 
 const store = () => {
   const data = {};
@@ -250,20 +248,6 @@ async function run() {
   assert.equal(d.seen.elsewhere.at(-1)?.text, 'Phone');
   assert.equal(server.drafts['essay:6'].text, 'Phone', 'the other device is not overwritten');
 
-  // 9. The status says where, in both interface languages.
-  for (const ui of ['en', 'zh']) {
-    const ctx = { c: copy[ui], memory: fresh() };
-    const html = draftStatus(ctx);
-    assert.match(html, /data-where="device"/);
-    assert.ok(html.includes(copy[ui].draftSaved));
-    const node = { dataset: { state: 'saved', where: 'device' }, innerHTML: '' };
-    refreshDraftStatus(node, ctx, 'account');
-    assert.ok(node.innerHTML.includes(copy[ui].draftKeptAccount));
-    refreshDraftStatus(node, ctx, 'device');
-    assert.ok(node.innerHTML.includes(copy[ui].draftSaved));
-    for (const key of ['draftKeptAccount', 'draftElsewhere', 'draftUseElsewhere', 'draftKeepHere', 'writingTask'])
-      assert.ok(copy[ui][key], `${ui}.${key}`);
-  }
   console.log('draft sync: 13 cases passed');
 }
 

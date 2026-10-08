@@ -109,7 +109,7 @@ export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
       ${state.textError ? html`<div class="s-import__error">${state.textError}</div>` : ''}
       <div class="s-import__footer">
         <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-back="type">${s('back')}</button>
-        <button type="button" class="o-btn o-btn--primary s-import__cta" data-submit="text">${t('importToReader')}</button>
+        <button type="button" class="o-btn o-btn--primary s-import__cta" data-submit="text" ${stats.tooShort ? 'disabled' : ''}>${t('importToReader')}</button>
       </div>
     `;
   }
@@ -196,6 +196,8 @@ export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
         const stats = textStats(state.text);
         if (statsEl) statsEl.textContent = stats.unit === 'characters' ? t('statsCharacters', { count: stats.count, sentences: stats.sentences }) : t('statsWords', { count: stats.count, sentences: stats.sentences });
         if (warnEl) warnEl.hidden = !stats.tooShort;
+        // Not offered until there is enough to import; the line above says why (LEX-081).
+        if (submitBtn) submitBtn.disabled = stats.tooShort;
       });
       submitBtn?.addEventListener('click', submitText);
     }

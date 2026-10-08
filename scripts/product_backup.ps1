@@ -43,6 +43,8 @@ $inside = "/tmp/orena-backup-$stamp.dump"
 
 Write-Host "Reading database $DbName in container $Postgres and volume $DataVolume (read-only)."
 $revision = (Invoke-Docker @('exec', $Postgres, 'psql', '-U', $DbUser, '-d', $DbName, '-At', '-c', 'select version_num from alembic_version') | Out-String).Trim()
+# The cluster's system identifier pins the production migration pack to this exact cluster (product_migration_pack.py).
+$cluster = (& docker.exe exec $Postgres psql -U $DbUser -d $DbName -At -c 'select system_identifier from pg_control_system()' 2>$null | Out-String).Trim()
 $countSql = "select table_name || '=' || (xpath('/row/c/text()', query_to_xml('select count(*) as c from public.' || quote_ident(table_name), false, true, '')))[1]::text from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE' order by table_name"
 $counts = [ordered]@{}
 foreach ($line in (Invoke-Docker @('exec', $Postgres, 'psql', '-U', $DbUser, '-d', $DbName, '-At', '-c', $countSql))) {
@@ -61,8 +63,8 @@ Invoke-Docker @('run', '--rm', '-v', "${DataVolume}:/data:ro", '-v', "${folder}:
 $fileCount = (Invoke-Docker @('run', '--rm', '-v', "${folder}:/backup:ro", $ToolImage, 'tar', 'tzf', '/backup/files.tar.gz')).Count
 
 $manifest = [ordered]@{
-    format = 'orena-runtime-backup'; version = 1; created_at = (Get-Date).ToUniversalTime().ToString('o')
-    postgres_container = $Postgres; database = $DbName; data_volume = $DataVolume
+    format = 'orena-runtime-backup'; version = 2; created_at = (Get-Date).ToUniversalTime().ToString('o')
+    postgres_container = $Postgres; database = $DbName; cluster = $cluster; data_volume = $DataVolume
     schema_revision = $revision; table_counts = $counts; dump_entries = $entries; archived_files = $fileCount
     files = @(
         foreach ($name in 'database.dump', 'files.tar.gz') {
@@ -73,6 +75,6 @@ $manifest = [ordered]@{
 }
 $manifest | ConvertTo-Json -Depth 5 | Out-File -Encoding utf8 (Join-Path $folder 'manifest.json')
 
-Write-Host "Schema revision: $revision; tables: $($counts.Count); dump entries: $entries; archived files: $fileCount"
+Write-Host "Schema revision: $revision; cluster: $(if ($cluster) { $cluster } else { '(not readable)' }); tables: $($counts.Count); dump entries: $entries; archived files: $fileCount"
 foreach ($file in $manifest.files) { Write-Host ("{0}: {1:N0} bytes, sha256 {2}" -f $file.name, $file.bytes, $file.sha256) }
 Write-Host "BACKUP=$folder"

@@ -14,6 +14,9 @@ services:
       # Account work (drafts, conversations, notes, private imports) kept with the account. Off unless an
       # operator turns it on, after the D4 migrations and the human's gate (D-104 H-11).
       ORENA_ACCOUNT_BACKBONE: ${ORENA_ACCOUNT_BACKBONE:-off}
+      # Persisted Speaking practice session identity (D-142). Off unless an operator applies migration
+      # 20261007_0029 and turns it on, after the human's gate.
+      ORENA_PRACTICE_SESSION: ${ORENA_PRACTICE_SESSION:-off}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       APP_ENV: ${APP_ENV:-development}

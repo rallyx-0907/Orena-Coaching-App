@@ -24,6 +24,7 @@ import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { askOrena } from '../../shell/agent-bridge.js';
+import { setViewSelection } from '../../shell/view-context.js';
 import { registerActionHandler } from '../../agent/dispatcher.js';
 import {
   connectMediaPlayer, disconnectMediaPlayer, mediaPlayer, playbackAvailable, posterUrl,
@@ -36,6 +37,8 @@ import { openMedia, rememberMedia } from '../../product/media-source.js';
 import { processingProgressMarkup } from '../../kit/states.js';
 import { openWordSheet } from '../quick-sheet/sheet.js';
 import { openVocabFocus } from './vocab-sheet.js';
+import { topicLabel } from '../discover/model.js';
+import { t as discoverT } from '../discover/copy.js';
 import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { mapLesson as dictationLesson, progressBySegment } from '../dictation/model.js';
@@ -107,6 +110,7 @@ export default async function listening(element, ctx) {
   let autoScroll = defaults.autoscroll;
   let wordHighlight = stageRaw.wordhl !== false;
   let moreOpen = false;
+  let moreActs = false; // the phone's secondary line actions (Dictation, Shadowing, React) are shown
   let selectedId = null;
   const explicitSegment = ctx.query.get('segment') || ctx.query.get('seg');
   const requestedSegment = explicitSegment || place.segmentId;
@@ -150,6 +154,11 @@ export default async function listening(element, ctx) {
       paintRows();
       scrollRowIntoView(line.id);
     },
+    // Retry hides the line again (LEX-038): its row and the picture are veiled until the new attempt is checked.
+    onRetry: () => {
+      paintVeil();
+      paintRows();
+    },
     onNext: (line) => {
       const at = indexOf(line.id);
       if (at >= segments.length - 1) { onMode('follow'); return; }
@@ -182,8 +191,17 @@ export default async function listening(element, ctx) {
   function rememberPlace(force = false) {
     if (!force && currentId === rememberedId) return;
     rememberedId = currentId;
+    // The line in view, for an Orena conversation already running ("explain this sentence"). In Dictation the
+    // line's words are the answer, so only its id is shared, never its text.
+    const line = segOf(currentId);
+    if (line && mode !== 'dictation') setViewSelection({ type: 'sentence', id: line.segment_id, text: line.original_text });
     try {
-      c.memory?.enter({ id: contentId, title: lesson.title, segment: currentId || '', intent: null });
+      /* How far into the clip this line is, so a card and the detail page say the same percent (LEX-082). Only
+         with a real line start and a real duration; otherwise the place carries none. */
+      const startMs = Number(line?.start_ms);
+      const total = Number(lesson.durationMs);
+      const within = line && Number.isFinite(startMs) && startMs >= 0 && total > 0 ? Math.min(100, Math.round((startMs / total) * 100)) : null;
+      c.memory?.enter({ id: contentId, title: lesson.title, segment: currentId || '', intent: null, ...(within != null && within >= 0 ? { place: { index: 1, total: 1, within } } : {}) });
     } catch {
       /* Device memory unavailable (private window): the session still works, it just does not
          resume next time. */
@@ -231,7 +249,19 @@ export default async function listening(element, ctx) {
   const selectedSlot = element.querySelector('[data-selected-slot]');
   const endSlot = element.querySelector('[data-end-slot]');
 
-  element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
+  /* Back (LEX-043): while the learner is typing an answer it only closes the keyboard - the lesson, the line and
+     the draft stay. Otherwise it leaves the lesson for where the learner came from, or, opened directly, for the
+     lesson's own page rather than an unrelated Today. */
+  element.querySelector('[data-back]').addEventListener('click', () => {
+    if (element.classList.contains('is-typing') || document.activeElement?.matches?.('.s-dict__input')) {
+      document.activeElement?.blur?.();
+      element.classList.remove('is-typing');
+      element.style.removeProperty('--ls-visible-h');
+      return;
+    }
+    if (ctx.hasHistory?.() === false) ctx.replace(ctx.href('content', { id: contentId }));
+    else ctx.back();
+  });
 
   /* ---------------------------------------------------------------- modes ---- */
   function modesMarkup() {
@@ -249,6 +279,16 @@ export default async function listening(element, ctx) {
     holder.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => onMode(button.dataset.mode)));
     mount(element.querySelector('[data-mode-hint]'), html`${t(modeHintKey(mode))}`);
   }
+  /* The address carries the mode (LEX-044): a reload - a phone tab brought back, a rotation or device switch that
+     reloads - reopens Dictation on its line with the answer still hidden, never the Listening transcript. */
+  function keepModeInUrl() {
+    const { mode: _named, ...rest } = Object.fromEntries(ctx.query);
+    try {
+      history.replaceState(history.state, '', ctx.href(mode === 'dictation' ? 'dictation' : 'listening', ctx.params, rest));
+    } catch {
+      /* An address the route table cannot build: the mode still works, it just does not survive a reload. */
+    }
+  }
   function onMode(id) {
     if (id === mode) return;
     // Switching never plays on: the learner is on the same line, paused, in either mode.
@@ -257,6 +297,7 @@ export default async function listening(element, ctx) {
     if (id === 'dictation') {
       mode = 'dictation';
       selectedId = null;
+      keepModeInUrl();
       paintModes();
       paintControls();
       paintRows();
@@ -267,6 +308,7 @@ export default async function listening(element, ctx) {
     mode = id;
     selectedId = selectionAfterModeChange(id, currentId);
     bounded = false;
+    keepModeInUrl();
     paintModes();
     paintControls();
     paintRows();
@@ -278,8 +320,13 @@ export default async function listening(element, ctx) {
     element.querySelector('.s-listening__player')?.classList.toggle('is-playing', playing);
     if (timeEl) timeEl.textContent = timeLabel(timeMs, lesson.excerptStartMs, clipEndMs);
     if (seekFillEl) seekFillEl.style.width = `${progressPercent(timeMs, lesson.excerptStartMs, clipEndMs)}%`;
+    // Redrawn only when play/pause flips (LEX-045): replacing the icon on every clock tick swapped the node under a
+    // press on the button's centre, and the browser dropped that click - only the rim answered.
     const glyph = element.querySelector('[data-play]');
-    if (glyph) mount(glyph, raw(icon(playing ? 'pause' : 'play', { size: 24 })));
+    if (glyph && glyph.dataset.glyph !== String(playing)) {
+      glyph.dataset.glyph = String(playing);
+      mount(glyph, raw(icon(playing ? 'pause' : 'play', { size: 24 })));
+    }
   }
 
   let chromeTimer = null;
@@ -362,9 +409,30 @@ export default async function listening(element, ctx) {
     const box = row.getBoundingClientRect();
     const top = box.top - region.top + rowsEl.scrollTop;
     const bottom = top + box.height;
-    if (top < rowsEl.scrollTop + 8) rowsEl.scrollTop = Math.max(0, top - 8);
-    else if (bottom > rowsEl.scrollTop + rowsEl.clientHeight - 8) rowsEl.scrollTop = Math.min(top - 8, bottom - rowsEl.clientHeight + 8);
+    const view = rowsEl.clientHeight;
+    // The current line is the focus (LEX-047): whole, in the upper part of the pane, with a short strip of the
+    // previous line above it as context - never parked at the bottom edge under a centred past line. A line taller
+    // than the pane starts at its top and the learner scrolls for the rest.
+    const clipped = top < rowsEl.scrollTop + 8 || bottom > rowsEl.scrollTop + view - 8;
+    const low = top - rowsEl.scrollTop > view * 0.45;
+    if (!clipped && !low) return;
+    const context = Math.max(0, Math.min(Math.round(view * 0.18), view - box.height - 16));
+    rowsEl.scrollTop = Math.max(0, top - 8 - context);
   }
+  // A pane that changes size (a panel opened or closed, a rotation, the keyboard) frames the current line again,
+  // unless the learner has just scrolled the transcript themselves.
+  let userScrollAt = 0;
+  const markUserScroll = () => { userScrollAt = Date.now(); };
+  rowsEl.addEventListener('wheel', markUserScroll, { passive: true });
+  rowsEl.addEventListener('touchmove', markUserScroll, { passive: true });
+  let lastPaneHeight = 0;
+  const paneObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {
+    const height = rowsEl.clientHeight;
+    if (!height || height === lastPaneHeight) return;
+    lastPaneHeight = height;
+    if (autoScroll && Date.now() - userScrollAt > 3000 && currentId) scrollRowIntoView(currentId);
+  }) : null;
+  paneObserver?.observe(rowsEl);
 
   /* The frame's `playSeg`: from the line's start to its end, then stop. */
   function playLine(id) {
@@ -485,7 +553,7 @@ export default async function listening(element, ctx) {
         <span class="s-listening__row-time">${mmss(seg.start_ms) ?? ''}</span>
         <span class="s-listening__row-main">
           <span class="s-listening__row-text" data-zhf="${isZh ? '1' : '0'}" data-text>${rowTextMarkup(seg)}</span>
-          ${meaning ? html`<span class="s-listening__row-vi" style="display:block">${meaning}</span>` : ''}
+          ${meaning ? html`<span class="s-listening__row-vi" style="display:block" lang="${langAttr(support)}">${meaning}</span>` : ''}
         </span>
       </button>`;
     });
@@ -573,20 +641,27 @@ export default async function listening(element, ctx) {
     return html`<div class="s-listening__selected">
       <div class="s-listening__selected-head">
         <span class="s-listening__selected-label">${t('selectedSegment', { time: mmss(seg.start_ms) ?? '' })}</span>
-        <button type="button" class="s-listening__selected-close" data-act="clear" aria-label="${s('close')}">${raw(icon('x', { size: 17 }))}</button>
+        <span class="s-listening__selected-tools">
+          <button type="button" class="s-listening__selected-close s-listening__moreacts" data-act="more-acts" aria-expanded="${String(moreActs)}" aria-label="${t('practiseLine')}" title="${t('practiseLine')}">${raw(icon('ellipsis', { size: 17 }))}<span class="s-listening__moreacts-label">${t('practiseLine')}</span></button>
+          <button type="button" class="s-listening__selected-close" data-act="clear" aria-label="${s('close')}">${raw(icon('x', { size: 17 }))}</button>
+        </span>
       </div>
       <div class="s-listening__selected-scroll" data-scroll-region>
         <div class="s-listening__selected-text" lang="${langAttr(language)}">${seg.original_text}</div>
-        ${meaning ? html`<div class="s-listening__selected-vi">${meaning}</div>` : ''}
+        ${meaning ? html`<div class="s-listening__selected-vi" lang="${langAttr(support)}">${meaning}</div>` : ''}
       </div>
       <div class="s-listening__selected-actions" data-scroll-region>
         ${playbackOk ? pill({ id: 'play-seg', label: t('playSegment'), iconName: 'play', variant: 'primary' }) : ''}
         <button type="button" class="s-listening__pill${saved ? ' s-listening__pill--saved' : ''}" data-act="save-phrase" aria-pressed="${String(saved)}">${phraseLabelFor(seg)}</button>
         ${pill({ id: 'vocab', label: t('vocabularyFocus') })}
-        ${lesson.modes.dictation ? pill({ id: 'dictation', label: s('dictation') }) : ''}
         <button type="button" class="s-listening__pill--ai" data-act="explain">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explain')}</button>
-        ${lesson.modes.shadowing ? pill({ id: 'shadowing', label: s('shadowing') }) : ''}
-        ${pill({ id: 'react', label: s('reactReuse') })}
+        <span class="s-listening__extra-acts${moreActs ? ' is-open' : ''}" role="group" aria-label="${t('practiseLine')}">
+          <span class="s-listening__practise-label">${t('practiseLine')}</span>
+          ${lesson.modes.dictation ? pill({ id: 'dictation', label: s('dictation') }) : ''}
+          ${lesson.modes.shadowing ? pill({ id: 'shadowing', label: s('shadowing') }) : ''}
+          ${pill({ id: 'react', label: s('reactReuse'), title: `${s('reactReuse')}: ${t('reactHint')}` })}
+          <span class="s-listening__practise-hint">${s('reactReuse')} · ${t('reactHint')}</span>
+        </span>
       </div>
     </div>`;
   }
@@ -599,7 +674,7 @@ export default async function listening(element, ctx) {
         <button type="button" class="s-listening__nowplaying-pick" data-act="pick">${t('workOnThisLine')}</button>
       </div>
       <div class="s-listening__nowplaying-text" lang="${langAttr(language)}">${cur.original_text}</div>
-      ${meaning ? html`<div class="s-listening__nowplaying-vi">${meaning}</div>` : ''}
+      ${meaning ? html`<div class="s-listening__nowplaying-vi" lang="${langAttr(support)}">${meaning}</div>` : ''}
     </div>`;
   }
 
@@ -765,6 +840,8 @@ export default async function listening(element, ctx) {
     const id = selectedId || currentId;
     const seg = segOf(id);
     if (action === 'clear') { selectedId = null; paintRows(); paintSelected(); return; }
+    // The phone shows the frequent line actions and keeps the rest one tap away (LEX-037).
+    if (action === 'more-acts') { moreActs = !moreActs; paintSelected(); return; }
     if (!seg) return;
     if (action === 'play-seg') return playLine(id);
     if (action === 'save-phrase') return togglePhrase(seg);
@@ -781,6 +858,8 @@ export default async function listening(element, ctx) {
         // The contract's one namespace (§6.1, F-9): `media:<id>`, never the bare route id.
         content_id: contentId,
         selected_item: { type: 'sentence', id, text: seg.original_text, lang: language },
+        // Explain explains: the question goes at once, no choosing first (LEX-042).
+        ask: dictT('explainAsk'),
       });
       return;
     }
@@ -813,7 +892,7 @@ export default async function listening(element, ctx) {
           ${nextRec ? html`<button type="button" class="s-listening__end-next" data-act="next">
             <span class="s-listening__end-next-thumb" style="${nextRec.posterUrl ? `background-image:url('${posterUrl(nextRec.posterUrl)}')` : ''}"></span>
             <span class="s-listening__end-next-body">
-              <span class="s-listening__end-next-eyebrow">${nextRec.topic ? t('nextBecause', { topic: String(nextRec.topic).replace(/-/g, ' ') }) : t('nextPlain')}</span>
+              <span class="s-listening__end-next-eyebrow">${topicLabel(nextRec.topic, discoverT) ? t('nextBecause', { topic: topicLabel(nextRec.topic, discoverT) }) : t('nextPlain')}</span>
               <span class="s-listening__end-next-title">${metaLine([nextRec.title, nextMinutes])}</span>
             </span>
             ${raw(icon('chevron-right', { size: 20 }))}
@@ -902,6 +981,7 @@ export default async function listening(element, ctx) {
     playerEl.removeEventListener('pointerdown', revealPlayerChrome);
     clearTimeout(processingTimer);
     releasePlayModel();
+    paneObserver?.disconnect();
     if (playbackOk) {
       playerEl.removeEventListener('orena:media-time', onMediaTime);
       disconnectMediaPlayer(playerEl);

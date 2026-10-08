@@ -208,6 +208,12 @@
 .s-today-day-dot--done {
   background: var(--skill-read);
 }
+.s-today-day-dot--today {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--skill-read);
+}
+.s-today-day-dot--future {
+  opacity: 0.55;
+}
 .s-today-day-letter {
   font-size: 12px;
   font-weight: 500;
@@ -429,6 +435,8 @@
   margin: 0 calc(var(--pad) * -1);
   padding: 4px var(--pad) 16px;
   scroll-snap-type: x mandatory;
+  /* The first card snaps to the gutter, not to the scrollport's edge (LEX-073). */
+  scroll-padding-inline: var(--pad);
 }
 .s-today-rail .c-media {
   flex: none;

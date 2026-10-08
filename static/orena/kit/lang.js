@@ -43,6 +43,17 @@ export const INTERFACE_LOCALES = Object.freeze(['en', 'vi', 'zh']);
 /* A locale's own endonym - invariant across which interface language is currently active. */
 export const INTERFACE_ENDONYMS = Object.freeze({ en: 'English', vi: 'Tiếng Việt', zh: '中文' });
 
+/* A support language's own endonym, by the platform's `support_languages[].code` - invariant across the
+   interface language, as INTERFACE_ENDONYMS is. A code this table does not hold keeps the platform's own label. */
+export const SUPPORT_ENDONYMS = Object.freeze({
+  en: 'English', vi: 'Tiếng Việt', zh: '中文 (简体)', ja: '日本語', ko: '한국어', es: 'Español', fr: 'Français',
+  de: 'Deutsch', pt: 'Português', ru: 'Русский', id: 'Bahasa Indonesia', th: 'ไทย',
+});
+
+export function supportLanguageLabel(code, fallback = '') {
+  return SUPPORT_ENDONYMS[code] || fallback || String(code || '');
+}
+
 /* The interface-language picker's options: every supported locale, named in itself. `selected` is
    left for the caller to overlay when it wants one (Onboarding marks the active pick inline;
    Settings computes its own `selected` downstream against the row's live value), so this stays the

@@ -49,4 +49,8 @@ assert.equal(reviewCard('松树', saved, 'vi').meaningLanguage, 'en');
 assert.equal(languageRows([saved], 'vi')[0].subLanguage, 'en');
 assert.equal(languageRows([{ ...saved, short_meanings: [{ language: 'vi', text: 'cây thông' }] }], 'vi')[0].subLanguage, '');
 
+// LEX-070: a Han-script note under a non-Chinese support language says which language it is in.
+assert.deepEqual(vocabularyMeaning({ definition: '一种常绿的树。' }, 'vi'), { text: '一种常绿的树。', language: 'zh', source: 'note' });
+assert.equal(vocabularyMeaning({ definition: '一种常绿的树。' }, 'zh').language, '');
+
 console.log('Vocabulary meaning: one sense, localized per support language, no fixed language: PASS');
