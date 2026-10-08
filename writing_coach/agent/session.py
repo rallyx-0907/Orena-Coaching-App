@@ -50,6 +50,17 @@ class ConversationTurn:
     text: str
 
 
+def _bounded(turns: tuple[ConversationTurn, ...], limits: AgentLimits) -> tuple[ConversationTurn, ...]:
+    """The oldest whole exchanges go first when the history holds more than `max_recent_turns` turns or
+    `max_history_chars` characters. The newest exchange stays."""
+
+    while len(turns) > 2 and (
+        len(turns) > limits.max_recent_turns or sum(len(t.text) for t in turns) > limits.max_history_chars
+    ):
+        turns = turns[2:]
+    return turns
+
+
 @dataclass(frozen=True)
 class AgentSessionState:
     agent_session_id: str
@@ -126,11 +137,38 @@ class AgentSessionState:
 
         cap = limits.max_turn_chars
         turns = (*self.recent_turns, *(ConversationTurn(t.role, t.text[:cap]) for t in added))
-        while len(turns) > 2 and (
-            len(turns) > limits.max_recent_turns or sum(len(t.text) for t in turns) > limits.max_history_chars
-        ):
-            turns = turns[2:]
-        return replace(self, recent_turns=turns)
+        return replace(self, recent_turns=_bounded(turns, limits))
+
+    def with_transcript(self, transcript: tuple[ConversationTurn, ...], heard: frozenset[str],
+                        limits: AgentLimits) -> AgentSessionState:
+        """A voice session's transcript, in the order it was said. A learner turn the server already heard stays where
+        it is and the replies after it are placed right behind it; one it did not hear is placed where the transcript
+        has it. `heard` are the learner turns the server heard (stripped). Each learner turn that was not heard is a turn of the conversation, as a typed one is."""
+
+        cap = limits.max_turn_chars
+        turns = list(self.recent_turns)
+        cursor: int | None = None  # where the next turn goes: right after the last one placed
+        leading: list[ConversationTurn] = []  # turns before the first one the server heard: placed in front of it
+        unheard = 0
+        for item in transcript:
+            text = item.text[:cap]
+            if item.role == "user":
+                at = None
+                if text.strip() in heard:
+                    at = next((i for i in range(cursor or 0, len(turns))
+                               if turns[i].role == "user" and turns[i].text.strip() == text.strip()), None)  # fmt: skip
+                if at is not None:
+                    turns[at:at] = leading
+                    cursor, leading = at + len(leading) + 1, []
+                    continue
+                unheard += 1
+            if cursor is None:
+                leading.append(ConversationTurn(item.role, text))
+            else:
+                turns.insert(cursor, ConversationTurn(item.role, text))
+                cursor += 1
+        turns.extend(leading)  # nothing in it was heard: it follows the conversation
+        return replace(self, recent_turns=_bounded(tuple(turns), limits), turn_count=self.turn_count + unheard)
 
     def compaction_job(self, limits: AgentLimits) -> tuple[str, tuple[ConversationTurn, ...]] | None:
         """(old summary, the turns to fold) once the recent turns pass the soft budget, else None. The last

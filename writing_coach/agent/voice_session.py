@@ -34,7 +34,7 @@ from writing_coach.agent.context import TurnInput, build_tier1
 from writing_coach.agent.contract import SURFACES, WORD_ACTIONS, actions_for_version, intents_for_version
 from writing_coach.agent.events import Event, ToolCallEvent, ToolResultEvent, EvidenceEvent, Display
 from writing_coach.agent.focus import focus_after, lookup_word
-from writing_coach.agent.pending import COMPLETED, CONFIRM, action_key
+from writing_coach.agent.pending import CANCELLED, COMPLETED, CONFIRM, action_key
 from writing_coach.agent.session import ConversationTurn
 from writing_coach.agent.outputs import (
     FORGET_NOTE,
@@ -42,6 +42,7 @@ from writing_coach.agent.outputs import (
     OFFER_ADDRESS,
     PROPOSE_ACTION,
     REMEMBER_NOTE,
+    RESOLVE_PENDING,
     SET_ADDRESS,
     ReplyOutputs,
     asked_for,
@@ -105,7 +106,7 @@ def vendor_voice(choice: object) -> str:
 SESSION_SECONDS = 15 * 60  # §9: a voice session is capped at fifteen minutes
 # The reply tools a spoken turn may use besides do_action: a coach note, the address. Evidence ids, styles,
 # references and suggestions are a text thread's; the voice says what it read.
-VOICE_REPLY_TOOLS = frozenset({REMEMBER_NOTE, FORGET_NOTE, SET_ADDRESS, OFFER_ADDRESS})
+VOICE_REPLY_TOOLS = frozenset({REMEMBER_NOTE, FORGET_NOTE, SET_ADDRESS, OFFER_ADDRESS, RESOLVE_PENDING})
 
 # One tool for everything the app can do (R30, 2026-10-06: "an agent that can operate anything in the app"): every
 # §7 action the client declares, with flat arguments - the live run showed the voice model never filling
@@ -177,7 +178,8 @@ formatting rule above.
   sentence, and stop. Never repeat yourself or ask the same thing again.
 - The conversation so far is in the context below, whether it was typed or spoken: carry on from it. When
   context.pending_interaction is open and the learner accepts it in any words, call do_action with that same
-  action and requested true; if they decline or ask something else, do not.
+  action and requested true; if they decline it, call resolve_pending with that offer's id and decision cancel; if
+  they ask something else, do nothing about it.
 - A line starting "[context]" tells you where the learner is now; use it, never answer it.
 - If the learner interrupts, stop and listen; answer what they said next."""
 
@@ -449,7 +451,7 @@ class VoiceService:
 
     def _tool_specs(self, request: TurnRequest, learner: LearnerScope) -> list[ProviderToolSpec]:
         reads = [ProviderToolSpec.from_tool(t) for t in self.runtime.tools.tools() if learner.contract_language in t.languages]
-        replies = [s for s in reply_tool_specs(request.client, request.context.locale.target, version=request.version)
+        replies = [s for s in reply_tool_specs(request.client, request.context.locale.target, version=request.version, pending=True)
                    if s.name in VOICE_REPLY_TOOLS]  # fmt: skip
         actions = request.client.allowed_actions & actions_for_version(request.version)
         intents = request.client.allowed_intents & intents_for_version(request.version)
@@ -555,10 +557,13 @@ class VoiceService:
                 responses.append({"id": call_id, "name": name, "response": {"result": answer}})
                 continue
             if name in VOICE_REPLY_TOOLS:
-                before = (len(session.outputs.actions), len(session.outputs.memory_updates))
+                seen = (list(session.outputs.actions), len(session.outputs.memory_updates))
                 answer = session.outputs.handle(name, args, known_evidence=frozenset())
-                events.extend(session.outputs.actions[before[0]:])
-                events.extend(session.outputs.memory_updates[before[1]:])
+                added = [a for a in session.outputs.actions if not any(a is old for old in seen[0])]  # a confirmed offer is put first
+                events.extend(added)
+                events.extend(session.outputs.memory_updates[seen[1]:])
+                if added and added[0].open:  # accepting the open offer by its id: it runs now, once
+                    opened = added[0].id
                 result: dict[str, Any] = {"result": answer}
             else:
                 if (word := lookup_word(name, args)) is not None:
@@ -650,7 +655,8 @@ class VoiceService:
         offered = next((a for a in actions if not a.open), None)
         outputs = session.outputs
         live = outputs.pending
-        settle = COMPLETED if outputs.resolution == CONFIRM and live is not None else None
+        settle = None if live is None or outputs.resolution is None else (
+            COMPLETED if outputs.resolution == CONFIRM else CANCELLED)
         words += [(a.payload["text"], a.payload.get("lang")) for a in actions
                   if a.type in WORD_ACTIONS and isinstance(a.payload.get("text"), str)]
         same_offer = (offered is not None and live is not None
@@ -662,8 +668,8 @@ class VoiceService:
         limits = self.runtime.limits
 
         def change(state):
-            if heard is not None:
-                state = state.with_spoken((ConversationTurn("user", heard),), limits)
+            if heard is not None:  # a spoken utterance is a turn of the conversation, as a typed one is
+                state = state.with_turn().with_spoken((ConversationTurn("user", heard),), limits)
             state = state.with_outcome(live=live, settle=settle, new_offer=new_offer, ran=ran)
             return state.with_focus(focus_after(state.focus, word=words[-1] if words else None))
 
@@ -684,14 +690,11 @@ class VoiceService:
             if role not in ("user", "assistant") or not isinstance(text, str) or not text.strip():
                 continue
             text = text.strip()[:TRANSCRIPT_TURN_CHARS]
-            if role == "user" and text[:2000] in session.recorded:
-                session.recorded.discard(text[:2000])  # already in the conversation, as it was heard
-                continue
             turns.append(ConversationTurn(role, text))
         if turns:
-            limits = self.runtime.limits
+            limits, heard = self.runtime.limits, frozenset(session.recorded)
             self.runtime.sessions.update(session.agent_session_id, session.user_key,
-                                         lambda state: state.with_spoken(tuple(turns), limits))
+                                         lambda state: state.with_transcript(tuple(turns), heard, limits))
 
     # -- close and bill ------------------------------------------------------------------------------------------
 

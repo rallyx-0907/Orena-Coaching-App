@@ -416,6 +416,7 @@ class _Turn:
         messages = opening_messages(
             replace(turn, message=tapped) if tapped else turn, tier1, [c for c in here if c], session,
             opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
+            budget_tokens=self.rt.limits.max_input_tokens_per_turn,
         )
         answering = self.live is not None or bool(session.recent_runs())  # an open offer, or one just sent
         if (self.focused and word_in_view and not answering

@@ -367,7 +367,11 @@ def opening_messages(
     opening: bool = False,
     snapshot: dict | None = None,
     screen_help: bool = False,
+    budget_tokens: int | None = None,
 ) -> list[ProviderMessage]:
+    """The messages of a turn. `budget_tokens` bounds the whole assembled prompt: what is added from the conversation
+    (the older turns, then the carried pasted text) gives way to the fixed parts, the summary and the learner's words."""
+
     context = json.dumps(context_document(turn, tier1, capabilities, session), ensure_ascii=False)
     messages = [
         ProviderMessage(role="system", content=INSTRUCTION),
@@ -387,16 +391,56 @@ def opening_messages(
         support_name = _language_name(tier1.contract_locale.support, target=False)
         messages.append(ProviderMessage(role="user", content=opening_trigger(support_name)))
     if session is not None and turn.message is not None and not opening:
-        pasted = session.focus.pasted
-        if pasted and any(t.role == "user" and pasted[:200] in t.text for t in session.recent_turns):
-            pasted = None  # still among the recent turns, word for word
-        carried = earlier_in_conversation(session.summary, pasted)
-        if carried:  # a turn of the conversation itself, not a system note: a small model reads it as what was said
-            messages.append(ProviderMessage(role="user", content=carried))
-            messages.append(ProviderMessage(role="assistant", content=CARRIED_ACK))
-        # The conversation so far, as it was said: what "that", "the one above" and "another" refer to.
-        for earlier in session.recent_turns:
-            messages.append(ProviderMessage(role=earlier.role, content=earlier.text))  # type: ignore[arg-type]
+        whole = session.focus.pasted
+        turns = list(session.recent_turns)
+        tail = _tail_messages(turn, tier1, session, opening=opening, screen_help=screen_help)
+        room: int | None = None  # characters of the pasted text that fit, once the budget makes it matter
+
+        def conversation(kept: list) -> list[ProviderMessage]:
+            pasted = whole
+            if pasted and any(t.role == "user" and pasted[:200] in t.text for t in kept):
+                pasted = None  # still among the recent turns, word for word
+            elif pasted and room is not None:
+                pasted = pasted[:room] + PASTED_CUT if room > 0 else None
+            out: list[ProviderMessage] = []
+            carried = earlier_in_conversation(session.summary, pasted)
+            if carried:  # a turn of the conversation itself, not a system note: a small model reads it as what was said
+                out += [ProviderMessage(role="user", content=carried), ProviderMessage(role="assistant", content=CARRIED_ACK)]
+            # The conversation so far, as it was said: what "that", "the one above" and "another" refer to.
+            return out + [ProviderMessage(role=t.role, content=t.text) for t in kept]  # type: ignore[arg-type]
+
+        if budget_tokens is not None:
+            def over(kept: list) -> int:
+                return _tokens([*messages, *conversation(kept), *tail]) - budget_tokens
+
+            while over(turns) > 0 and len(turns) > 2:  # the oldest turns first: the summary holds their gist
+                turns = turns[1:]
+                while len(turns) > 2 and turns[0].role != "user":
+                    turns = turns[1:]
+            if whole and over(turns) > 0:  # then the pasted text is cut to what is left, or dropped
+                room = 0
+                left = budget_tokens - _tokens([*messages, *conversation(turns), *tail])
+                room = left * 4 - len(PASTED_CUT) - 200
+                room = room if room > 500 else 0
+            while over(turns) > 0 and turns:
+                turns = turns[1:]
+        messages += conversation(turns)
+    messages += _tail_messages(turn, tier1, session, opening=opening, screen_help=screen_help)
+    return messages
+
+
+PASTED_CUT = "\n[... the rest of the text is left out: it does not fit]"
+
+
+def _tokens(messages: Sequence[ProviderMessage]) -> int:
+    return sum((len(m.content) + 3) // 4 for m in messages)
+
+
+def _tail_messages(turn: TurnInput, tier1: Tier1Context, session: AgentSessionState | None, *, opening: bool,
+                   screen_help: bool) -> list[ProviderMessage]:
+    """What follows the conversation: the style, the selection, the notes on the offer, and the learner's words."""
+
+    messages: list[ProviderMessage] = []
     style = style_for(tier1.contract_locale.support, tier1.address)
     if style and turn.message is not None:
         messages.append(ProviderMessage(role="system", content=style))
