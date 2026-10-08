@@ -13,7 +13,9 @@ Eight new tables, nothing else:
 - `grammar_points`          one row per point id: identity, lifecycle and the serving projection of the published
                             version (NULL until the first publish; a CHECK requires it while published).
 - `grammar_point_versions`  the immutable content, one row per (point, version). One published version per point is
-                            a partial unique index; "published only when accepted and cleared" is a CHECK.
+                            a partial unique index; "published only when accepted and cleared" is a CHECK. The review
+                            verdict (`imported | accepted | rejected`) is separate from serving state (`is_published`,
+                            `superseded_at`), so a superseded version stays `accepted` and can be republished (rollback).
 - `grammar_r5_map`          old R5 lesson id -> point, written at batch commit and independent of publish state.
                             One resolution (a primary row or a dropped row) per R5 id is a partial unique index.
 - `grammar_point_error_tags` the published version's error tags, the `by-error` read path.
@@ -29,8 +31,9 @@ Invariants:
 - **Foreign keys are cycle-free**: batches <- functions <- points <- versions/map/tags/events. No table points back.
 - **Immutability.** On PostgreSQL a row trigger rejects any UPDATE of a version's content columns (`point_id`,
   `version`, `content`, `content_hash`, `source_status`, `provenance`, `batch_id`, `imported_at`) and any DELETE of a
-  version; only `review_status`, `is_published`, `rights_status` and `reviewed_*` move. `grammar_review_events` is
-  append-only (UPDATE and DELETE rejected). Nothing cascades into either table, so a DELETE trigger blocks no cascade.
+  version; only `review_status`, `is_published`, `superseded_at`, `rights_status` and `reviewed_*` move.
+  `grammar_review_events` is append-only (UPDATE and DELETE rejected). Nothing cascades into either table, so a DELETE
+  trigger blocks no cascade.
   `content` and `provenance` are `json`, which has no equality operator: they are compared as `CAST(... AS text)`, the
   byte-identity semantics 20260924_0015 established (a rewrite with another key order is refused, by design). On any
   other dialect (SQLite, the hermetic test backend) the same rule is a repository invariant.
@@ -60,7 +63,7 @@ branch_labels = None
 depends_on = None
 
 LIFECYCLES = ("unpublished", "published", "archived")
-REVIEW_STATUSES = ("imported", "accepted", "rejected", "superseded")
+REVIEW_STATUSES = ("imported", "accepted", "rejected")  # the verdict; supersession is serving state, below
 RIGHTS_STATUSES = ("unknown", "cleared", "restricted")
 RIGHTS_BASES = ("orena_original", "licensed", "other")
 BATCH_STATUSES = ("imported", "rejected")
@@ -261,6 +264,8 @@ def upgrade() -> None:
         sa.Column("source_status", sa.String(20), nullable=False),
         sa.Column("review_status", sa.String(20), nullable=False, server_default="imported"),
         sa.Column("is_published", sa.Boolean(), nullable=False, server_default=sa.false()),
+        # When a later publish replaced this version; NULL while published or never published. Not a review verdict.
+        sa.Column("superseded_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("rights_status", sa.String(20), nullable=False, server_default="unknown"),
         sa.Column("provenance", sa.JSON(), nullable=False),
         sa.Column(
@@ -281,6 +286,9 @@ def upgrade() -> None:
         sa.CheckConstraint(
             "is_published = false OR (review_status = 'accepted' AND rights_status = 'cleared')",
             name="ck_grammar_point_versions_publishable",
+        ),
+        sa.CheckConstraint(
+            "is_published = false OR superseded_at IS NULL", name="ck_grammar_point_versions_superseded"
         ),
     )
     # One published version per point (review P2-2: no foreign key from the point to a version).

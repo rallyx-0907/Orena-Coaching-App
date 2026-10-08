@@ -8,8 +8,9 @@ only this one file, on top of the real `migrations/versions/` chain, so the shar
 
     python scripts/rehearse_grammar_content_store.py "$REHEARSAL_URL" [--points 1000] [--progress 100000] [--report out.md]
 
-The point bodies are SYNTHETIC (generated here, roughly 20 KB each, in the export-profile shape); no Grammar Lab corpus
-is read or copied. The import, accept, attest and publish transactions are written here in SQL, as the proposal
+The point bodies are SYNTHETIC (generated here, roughly 20 KB each) and every one is validated against export profile 1
+(read from Grammar Lab with `git show` at the pinned commit, its hash checked; `jsonschema` is required) plus the
+importer's cross checks before it is imported; no Grammar Lab corpus is read or copied. The import, accept, attest and publish transactions are written here in SQL, as the proposal
 specifies them, to exercise the schema; they are not the Store implementation, which waits for the review gate.
 
 Steps (each a PASS/FAIL row; non-zero exit on any FAIL):
@@ -29,7 +30,8 @@ Steps (each a PASS/FAIL row; non-zero exit on any FAIL):
  8. immutability: the trigger rejects UPDATE of every content column and DELETE of a version, allows the review
     columns; review events are append-only.
  9. a failed publish (CHECK at the gate; an injected fault after tag rebuild and revision bump; a concurrent second
-    publish of the same point) leaves versions, projection, tags, events and the catalogue revision unchanged.
+    publish of the same point; a rejected version) leaves versions, projection, tags, events and the catalogue revision
+    unchanged; rollback: a superseded version stays `accepted` and can be published again.
 10. read paths: EXPLAIN of the catalogue, point, by-error, R5 resolution and progress reads names the intended index.
 11. catalogue revision / ETag read order: revision-first never labels older content with a newer revision (scripted
     interleavings and a concurrent stress); the reversed order is shown to produce that hazard.
@@ -40,8 +42,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import random
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -66,6 +70,10 @@ VERSIONS = ROOT / "migrations" / "versions"
 PROPOSAL = ROOT / "migrations" / "proposed" / "20261008_0030_grammar_content_store.py"
 HEAD = "20261007_0029"
 REV = "20261008_0030"
+# Export profile 1 at the Grammar Lab commit issue #99 names; its canonical-JSON SHA-256 pins the file.
+GL_COMMIT = "3579ece887c226b31d03b759b720261b8fa1d31d"
+PROFILE_PATH = "grammar_lab/schema/export_profile.schema.json"
+PROFILE_HASH = "0671ac912967a230d6073a454f82d6e66e20af67a6adfe3bde95c03c9f06541f"
 TABLES = (
     "grammar_import_batches", "grammar_functions", "grammar_points", "grammar_point_versions", "grammar_r5_map",
     "grammar_point_error_tags", "grammar_review_events", "grammar_catalog_state",
@@ -117,7 +125,7 @@ def alembic_config(url: str, proposal_dir: Path | None) -> Config:
     cfg.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
     locations = [str(VERSIONS)] + ([str(proposal_dir)] if proposal_dir else [])
     cfg.set_main_option("path_separator", "os")
-    cfg.set_main_option("version_locations", __import__("os").pathsep.join(locations))
+    cfg.set_main_option("version_locations", os.pathsep.join(locations))
     return cfg
 
 
@@ -188,32 +196,121 @@ def canonical(value) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
 
 
-def synthetic_point(point_id: str, lang: str, n: int, function: str, *, version: int = 1, marker: int = 0,
+EN_LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
+VI = "Ví dụ tổng hợp có dấu tiếng Việt: hành động đã hoàn thành"
+ZH_EXAMPLE = "我昨天买了一本书。"
+ZH_PINYIN = ["wǒ", "zuó", "tiān", "mǎi", "le", "yī", "běn", "shū", ""]
+
+
+def _lm(en: str, zh: str | None = None) -> dict:
+    """A locale map: vi and en always (and different, so never an en placeholder), zh sometimes."""
+    return {"vi": f"{VI} ({en})", "en": en, **({"zh": zh} if zh else {})}
+
+
+def synthetic_point(point_id: str, lang: str, n: int, function: str, *, version: int = 1,
                     aliases: list[str] | None = None, split_of: list[str] | None = None) -> dict:
-    level = {"framework": "cefr", "value": ["A1", "A2", "B1", "B2", "C1", "C2"][n % 6], "rank": n % 6 + 1} \
-        if lang == "en" else {"framework": "hsk3", "value": str(n % 9 + 1), "rank": n % 9 + 1}
-    text_vi = "Ví dụ có dấu tiếng Việt: hành động đã hoàn thành, ộ ữ ư. " * 3
-    examples = [{
-        "text": f"Rehearsal example {k} for {point_id}." if lang == "en" else f"我昨天买了第{k}本书。",
-        "form": "affirmative",
-        "spans": [{"start": 0, "end": 1, "role": "subject"}],
-        "translation": {"vi": text_vi, "en": f"Example {k} translated."},
-    } for k in range(48)]
+    """One SYNTHETIC body that validates against export profile 1 and passes the cross checks of section 5.3.
+
+    Only contract fields: the rehearsal's own bookkeeping (which version is published) is read from `version`.
+    """
+    level = {"framework": "cefr", "value": EN_LEVELS[n % 6], "rank": n % 6 + 1} if lang == "en" \
+        else {"framework": "hsk3", "value": str(n % 9 + 1), "rank": n % 9 + 1}
+    tag, other_tag = f"tag_{n % 40}", f"tag_{(n + 7) % 40}"
+    if lang == "en":
+        def example(k: int) -> dict:
+            text_ = f"Learners finished example {k} yesterday."
+            return {"text": text_, "form": "affirmative",
+                    "spans": [{"start": 0, "end": 8, "role": "subject"}, {"start": 9, "end": 17, "role": "verb"}],
+                    "annotation": _lm(f"Annotation {k}"), "translation": _lm(f"Translation {k}")}
+        native_title, placeholder, sample = f"Rehearsal point {n}", "I ...", {"text": "I finished it."}
+    else:
+        def example(k: int) -> dict:
+            return {"text": ZH_EXAMPLE, "form": "affirmative", "pinyin": list(ZH_PINYIN),
+                    "spans": [{"start": 0, "end": 1, "role": "subject"}, {"start": 3, "end": 4, "role": "verb"}],
+                    "annotation": _lm(f"Annotation {k}", "注释"), "translation": _lm(f"Translation {k}", "翻译")}
+        native_title, placeholder = f"语法点{n}", "我……"
+        sample = {"text": ZH_EXAMPLE, "pinyin": list(ZH_PINYIN)}
     return {
         "id": point_id, "version": version, "status": "approved", "target_lang": lang, "function": function,
-        "level": level, "prereqs": [], "contrasts": [], "error_tags": [f"tag_{n % 40}", f"tag_{(n + 7) % 40}"],
-        "source_refs": {"egp": [f"egp-{n}"], **({"r5_split": split_of} if split_of else {})},
-        "point_type": "form", "sequence": n, "aliases": aliases or [],
-        "header": {"title": {"vi": f"Điểm {n}", "en": f"Point {n}"}, "native_title": f"Point {n} ({marker})",
-                   "sub": {"vi": text_vi, "en": "Subtitle."}},
-        "when_to_use": [{"vi": text_vi, "en": "When to use."} for _ in range(4)],
-        "pattern": {"formula": [{"role": "subject", "text": "S"}, {"role": "verb", "text": "V"}]},
-        "examples": examples, "compare": [],
-        "common_mistakes": [{"wrong": "x", "right": "y", "error_tag": f"tag_{n % 40}",
-                             "reason": {"vi": text_vi, "en": "Reason."}}],
-        "quick_practice": [{"q": f"Question {k}", "options": ["a", "b", "c"], "answer": k % 3} for k in range(5)],
-        "rehearsal_marker": marker,
+        "level": level, "prereqs": [], "contrasts": [], "error_tags": [tag, other_tag],
+        "source_refs": {"egp": [f"egp_{n}"], **({"r5_split": split_of} if split_of else {})},
+        "point_type": "tense_aspect", "sequence": n + 1, "aliases": aliases or [],
+        "header": {"title": _lm(f"Point {n}"), "native_title": native_title, "sub": _lm("Subtitle"),
+                   "level": dict(level), "summary": _lm("Summary")},
+        "when_to_use": [_lm(f"When to use {k}") for k in range(3)],
+        "pattern": {
+            "formula": [{"text": "S", "role": "subject", "label": _lm("Subject")},
+                        {"text": "V", "role": "verb", "label": _lm("Verb")}],
+            "illustration": {"kind": "timeline", "timeline": {"shape": "point_past", "relevance": _lm("Relevance")}},
+        },
+        "examples": [example(k) for k in range(36)],
+        "compare": [],
+        "common_mistakes": [{"wrong": "x", "right": "y", "reason": _lm("Reason"), "error_tag": tag, "l1": ["vi"]}],
+        "quick_practice": [{
+            "q": f"Question {k}",
+            "options": [{"text": "a", "error_tag": None}, {"text": "b", "error_tag": tag}, {"text": "c", "error_tag": None}],
+            "answer": k % 3, "explain": _lm(f"Because {k}"),
+        } for k in range(3)],
+        "personal_production": {
+            "prompt": _lm("Write one sentence."), "placeholder": placeholder, "target_form": "affirmative",
+            "pattern_rule": {"ordered": True, "slots": [{"role": "subject"}, {"role": "verb"}]}, "sample": sample,
+        },
     }
+
+
+def _locale_maps(node):
+    if isinstance(node, dict):
+        if "vi" in node and set(node) <= {"vi", "en", "zh"}:
+            yield node
+        for value in node.values():
+            yield from _locale_maps(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from _locale_maps(value)
+
+
+class Profile:
+    """Export profile 1, pinned by hash, read from Grammar Lab with `git show` (or a file); jsonschema is REQUIRED."""
+
+    def __init__(self, source: str) -> None:
+        try:
+            from jsonschema import Draft202012Validator
+        except ImportError:
+            sys.exit("REFUSED: jsonschema is required to validate the synthetic bodies (install it in the venv)")
+        path = Path(source)
+        raw = path.read_text(encoding="utf-8") if path.exists() else subprocess.run(
+            ["git", "show", f"{source}:{PROFILE_PATH}"], cwd=ROOT, check=True, capture_output=True, text=True,
+            encoding="utf-8").stdout
+        self.schema = json.loads(raw)
+        self.hash = hashlib.sha256(canonical(self.schema)).hexdigest()
+        if self.hash != PROFILE_HASH:
+            sys.exit(f"REFUSED: export profile hash {self.hash} is not the pinned {PROFILE_HASH}")
+        self.validator = Draft202012Validator(self.schema)
+        self.validated = 0
+
+    def problems(self, body: dict) -> list[str]:
+        """Closed-schema errors plus the cross checks the importer runs that a schema cannot express."""
+        found = [f"profile {'.'.join(map(str, e.path)) or '$'}: {e.message[:120]}" for e in self.validator.iter_errors(body)]
+        if found:
+            return found
+        if not body["id"].startswith(body["target_lang"] + "."):
+            found.append("id prefix differs from target_lang")
+        if body["header"]["level"] != body["level"]:
+            found.append("header.level differs from level")
+        found += ["locale.en_placeholder" for m in _locale_maps(body) if m["en"] == m["vi"]]
+        for example in body["examples"]:
+            found += [f"span {s} outside {example['text']!r}" for s in example["spans"]
+                      if not 0 <= s["start"] < s["end"] <= len(example["text"])]
+        found += [f"answer {q['answer']} out of range" for q in body["quick_practice"] if q["answer"] >= len(q["options"])]
+        found += [f"compare.with {c['with']} not in contrasts" for c in body["compare"] if c["with"] not in body["contrasts"]]
+        return found
+
+    def require(self, body: dict) -> dict:
+        problems = self.problems(body)
+        if problems:
+            raise ValueError(f"{body.get('id')}: synthetic body is not export-profile-1 valid: {problems[:3]}")
+        self.validated += 1
+        return body
 
 
 def build_package(points: int) -> dict:
@@ -325,9 +422,11 @@ def publish(conn, version_ids: list[uuid.UUID], actor: str = "rehearsal-admin", 
     points = [row.point_id for row in rows]
     conn.execute(text("SELECT id FROM grammar_points WHERE id = ANY(:p) ORDER BY id FOR UPDATE"), {"p": points})
     conn.execute(text(
-        "UPDATE grammar_point_versions SET is_published = false, review_status = 'superseded'"
-        " WHERE point_id = ANY(:p) AND is_published AND NOT (id = ANY(:ids))"), {"p": points, "ids": version_ids})
-    conn.execute(text("UPDATE grammar_point_versions SET is_published = true WHERE id = ANY(:ids)"), {"ids": version_ids})
+        "UPDATE grammar_point_versions SET is_published = false, superseded_at = :now"
+        " WHERE point_id = ANY(:p) AND is_published AND NOT (id = ANY(:ids))"),
+        {"p": points, "ids": version_ids, "now": now})
+    conn.execute(text("UPDATE grammar_point_versions SET is_published = true, superseded_at = NULL WHERE id = ANY(:ids)"),
+                 {"ids": version_ids})
     projection, tags = [], []
     for row in rows:
         body = json.loads(row.content)
@@ -367,7 +466,7 @@ def state_of(engine, point_id: str) -> tuple:
     with engine.connect() as conn:
         return (
             tuple(conn.execute(text(
-                "SELECT id::text, review_status, is_published, rights_status FROM grammar_point_versions"
+                "SELECT id::text, review_status, is_published, superseded_at, rights_status FROM grammar_point_versions"
                 " WHERE point_id = :p ORDER BY version"), {"p": point_id}).all()),
             tuple(conn.execute(text(
                 "SELECT lifecycle, native_title, published_at FROM grammar_points WHERE id = :p"), {"p": point_id}).one()),
@@ -379,11 +478,11 @@ def state_of(engine, point_id: str) -> tuple:
         )
 
 
-def new_version(engine, point_id: str, lang: str, version: int, marker: int, *, cleared: bool) -> uuid.UUID:
-    body = synthetic_point(point_id, lang, 7, "fn.rehearsal_0", version=version, marker=marker)
+def new_version(engine, profile: Profile, point_id: str, lang: str, version: int, *, cleared: bool) -> uuid.UUID:
+    body = profile.require(synthetic_point(point_id, lang, 7, "fn.rehearsal_0", version=version))
     with engine.begin() as conn:
         batch = import_batch(conn, lang, [], [body], [], package_hash=hashlib.sha256(
-            f"{point_id}:{version}:{marker}".encode()).hexdigest())
+            f"{point_id}:{version}".encode()).hexdigest())
         conn.execute(text(
             "UPDATE grammar_point_versions SET review_status = 'accepted', rights_status = :r WHERE batch_id = :b"),
             {"r": "cleared" if cleared else "unknown", "b": batch})
@@ -418,7 +517,10 @@ def main() -> int:
     parser.add_argument("--progress", type=int, default=100_000)
     parser.add_argument("--users", type=int, default=1000)
     parser.add_argument("--report", default="")
+    parser.add_argument("--profile", default=GL_COMMIT,
+                        help="a Grammar Lab commit (read with git show) or a path to export_profile.schema.json")
     args = parser.parse_args()
+    profile = Profile(args.profile)  # refuses before touching the database if jsonschema or the pinned profile is missing
 
     refuse_unless_throwaway(args.url)
     engine = create_engine(args.url, future=True, pool_size=16, max_overflow=16)
@@ -429,12 +531,12 @@ def main() -> int:
     proposal_dir = Path(tempfile.mkdtemp(prefix="grammar-store-proposal-"))
     shutil.copy(PROPOSAL, proposal_dir / PROPOSAL.name)
     try:
-        return run(args, engine, proposal_dir, server)
+        return run(args, engine, proposal_dir, server, profile)
     finally:
         shutil.rmtree(proposal_dir, ignore_errors=True)
 
 
-def run(args, engine, proposal_dir: Path, server: str) -> int:
+def run(args, engine, proposal_dir: Path, server: str, profile: Profile) -> int:
     cfg_v, cfg_p = alembic_config(args.url, None), alembic_config(args.url, proposal_dir)
 
     # 1. chain -------------------------------------------------------------------------------------------------------
@@ -507,6 +609,16 @@ def run(args, engine, proposal_dir: Path, server: str) -> int:
 
     # 6. synthetic import, attestation, accept, bulk publish -------------------------------------------------------------
     package = build_package(args.points)
+    bodies = [b for data in package["languages"].values() for b in data["bodies"]]
+    invalid = {b["id"]: profile.problems(b) for b in bodies}
+    invalid = {k: v for k, v in invalid.items() if v}
+    profile.validated += len(bodies) - len(invalid)
+    check(f"6 every synthetic body validates against export profile 1 (Draft 2020-12, profile hash {PROFILE_HASH[:12]})"
+          " and passes the importer's cross checks", not invalid and len(bodies) == args.points,
+          f"valid={len(bodies) - len(invalid)}/{len(bodies)} first={next(iter(invalid.items()), '')}")
+    leaky = dict(bodies[0], rehearsal_marker=1)
+    check("6 negative control: the same body with one non-contract key is rejected by the closed profile",
+          any("rehearsal_marker" in problem for problem in profile.problems(leaky)), str(profile.problems(leaky)[:1]))
     batches = {}
     size = 0
     for lang, data in package["languages"].items():
@@ -549,10 +661,10 @@ def run(args, engine, proposal_dir: Path, server: str) -> int:
     with engine.connect() as conn:
         v0 = conn.execute(text("SELECT id FROM grammar_point_versions WHERE point_id = :p"), {"p": p0}).scalar()
         b_en = batches["en"]
-    v_extra = new_version(engine, p0, "en", 2, 99, cleared=True)
+    v_extra = new_version(engine, profile, p0, "en", 2, cleared=True)
     check("7 a second published version of one point is refused (unique)",
           refused(engine, "UPDATE grammar_point_versions SET is_published = true WHERE id = :v", {"v": v_extra}) == "23505")
-    v_unknown = new_version(engine, p0, "en", 3, 98, cleared=False)
+    v_unknown = new_version(engine, profile, p0, "en", 3, cleared=False)
     check("7 publishing a version whose rights are not cleared is refused (CHECK)", refused(
         engine, "UPDATE grammar_point_versions SET is_published = true WHERE id = :v", {"v": v_unknown}) == "23514")
     check("7 restricting the rights of the published version is refused until it is unpublished (CHECK)", refused(
@@ -625,7 +737,7 @@ def run(args, engine, proposal_dir: Path, server: str) -> int:
     failed = attempt([v_extra], fault=boom)
     check("9 an injected fault after tag rebuild and revision bump rolls everything back", bool(failed)
           and state_of(engine, p0) == before, failed)
-    v_racer = new_version(engine, p0, "en", 4, 97, cleared=True)
+    v_racer = new_version(engine, profile, p0, "en", 4, cleared=True)
     before = state_of(engine, p0)
     gate = threading.Barrier(2)
     outcome: dict[str, str] = {}
@@ -658,6 +770,42 @@ def run(args, engine, proposal_dir: Path, server: str) -> int:
           " per committed publish", published_now == 1 and rev_after - rev_before == len(committed) and committed,
           f"outcome={outcome} revision {rev_before}->{rev_after}")
 
+    # Rollback (Codex review P1 on PR #100): the version a later publish superseded is still `accepted`, so publishing
+    # it again passes the gate; supersession is serving state (`superseded_at`), not a review verdict.
+    with engine.connect() as conn:
+        current_id, prior_id = conn.execute(text(
+            "SELECT (SELECT id FROM grammar_point_versions WHERE point_id = :p AND is_published),"
+            " (SELECT id FROM grammar_point_versions WHERE point_id = :p AND superseded_at IS NOT NULL"
+            "  ORDER BY superseded_at DESC LIMIT 1)"), {"p": p0}).one()
+        statuses = {r[0] for r in conn.execute(text("SELECT DISTINCT review_status FROM grammar_point_versions"))}
+        rev_before = revision_of(conn, "en")
+    check("9 publishing a newer version leaves the superseded one `accepted` (superseded_at set; no `superseded`"
+          " review status exists)", prior_id is not None and statuses <= {"imported", "accepted", "rejected"},
+          f"statuses={sorted(statuses)}")
+    rolled = attempt([prior_id])
+    with engine.connect() as conn:
+        rows = {r.id: r for r in conn.execute(text(
+            "SELECT id, is_published, superseded_at, review_status FROM grammar_point_versions WHERE id = ANY(:ids)"),
+            {"ids": [current_id, prior_id]})}
+        rev_after = revision_of(conn, "en")
+        published_now = conn.execute(text(
+            "SELECT count(*) FROM grammar_point_versions WHERE point_id = :p AND is_published"), {"p": p0}).scalar()
+    check("9 rollback: republishing the superseded version passes the gate; it is served again and the newer one is"
+          " superseded, one bump",
+          not rolled and rows[prior_id].is_published and rows[prior_id].superseded_at is None
+          and rows[prior_id].review_status == "accepted" and not rows[current_id].is_published
+          and rows[current_id].superseded_at is not None and rows[current_id].review_status == "accepted"
+          and published_now == 1 and rev_after == rev_before + 1, f"error={rolled or '-'} revision {rev_before}->{rev_after}")
+    check("9 the published version cannot carry superseded_at (CHECK)", refused(
+        engine, "UPDATE grammar_point_versions SET superseded_at = now() WHERE id = :v", {"v": prior_id}) == "23514")
+    v_rejected = new_version(engine, profile, p0, "en", 5, cleared=True)
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE grammar_point_versions SET review_status = 'rejected' WHERE id = :v"), {"v": v_rejected})
+    before = state_of(engine, p0)
+    failed = attempt([v_rejected])
+    check("9 a rejected version cannot be published (CHECK); nothing changed", bool(failed) and state_of(engine, p0) == before,
+          failed)
+
     # 10. read paths ---------------------------------------------------------------------------------------------------
     with engine.begin() as conn:
         conn.execute(text("ANALYZE"))
@@ -689,17 +837,19 @@ def run(args, engine, proposal_dir: Path, server: str) -> int:
     race_point = "en.rehearsal.point_0005"
 
     def published_marker(conn) -> int:
+        """The served body's own contract field `version` (no non-contract marker in any body)."""
         return conn.execute(text(
-            "SELECT CAST(content ->> 'rehearsal_marker' AS integer) FROM grammar_point_versions"
+            "SELECT CAST(content ->> 'version' AS integer) FROM grammar_point_versions"
             " WHERE point_id = :p AND is_published"), {"p": race_point}).scalar()
 
     def publish_marker(marker: int) -> int:
-        vid = new_version(engine, race_point, "en", 100 + marker, marker, cleared=True)
+        vid = new_version(engine, profile, race_point, "en", marker, cleared=True)
         with engine.begin() as conn:
             publish(conn, [vid])
             return revision_of(conn, "en")
 
-    # Make the marker equal the revision it was published under, so "content older than its label" is marker < label.
+    # Each publish carries a body whose `version` equals the catalogue revision it is published under (one publisher,
+    # one language), so "content older than its label" is exactly `version < label`.
     with engine.connect() as conn:
         base = revision_of(conn, "en")
     publish_marker(base + 1)
@@ -787,6 +937,13 @@ def run(args, engine, proposal_dir: Path, server: str) -> int:
     with engine.connect() as conn:
         kept = conn.execute(text("SELECT count(*) FROM grammar_progress WHERE lesson_id = :p"), {"p": race_point}).scalar()
     check("12 a learner's row under a point id survives archiving that point (no foreign key, no cascade)", kept == 1)
+    with engine.connect() as conn:
+        stored = conn.execute(text("SELECT count(*) FROM grammar_point_versions")).scalar()
+        leaked = conn.execute(text(
+            "SELECT count(*) FROM grammar_point_versions WHERE CAST(content AS text) LIKE '%rehearsal_marker%'")).scalar()
+    check("12 every version stored in this run was validated against export profile 1 before import; no body carries a"
+          " non-contract key", profile.validated == stored and leaked == 0,
+          f"validated={profile.validated} stored={stored}")
     check("12 nothing applied outside this database: versions/ has no 0030 and its head stays 20261007_0029",
           not list(VERSIONS.glob("*_0030_*")) and ScriptDirectory.from_config(cfg_v).get_heads() == [HEAD])
 
