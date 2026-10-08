@@ -37,6 +37,7 @@ UNREADABLE_MEDIA_URL = "ftp://media.example/clip.mp3"  # refused before any netw
 CSV = ("files", ("words.csv", b"term,meaning\nagenda,plan\n", "text/csv"))
 EPUB = ("files", ("book.epub", b"not an epub", "application/epub+zip"))
 MEDIA_FILE = ("file", ("clip.wav", b"not media at all", "audio/wav"))
+GRAMMAR_PACKAGE = ("upload", ("package.zip", b"not a zip", "application/zip"))
 ROUTE = {"enabled": True, "provider": "no-such-provider", "model": "m"}
 
 # (method, path template) -> (concrete path, request body, statuses an administrator may get)
@@ -158,6 +159,36 @@ MATRIX = {
         {404, 503}),
     ("POST", "/api/admin/reading/comprehension-sets/{set_id}/discard"): (
         f"/api/admin/reading/comprehension-sets/{ARTICLE}/discard", {}, {404, 503}),
+    # Grammar content store (GRAMMAR_CONTENT_STORE.md rev 3a, migration 0030). On the SQLite suite runtime the store
+    # is not configured (503); an unreadable upload or an unattested publish is refused (422) before it is needed.
+    ("POST", "/api/admin/grammar/imports/validate"): (
+        "/api/admin/grammar/imports/validate", {"files": [GRAMMAR_PACKAGE]}, {422, 503}),
+    ("POST", "/api/admin/grammar/imports"): (
+        "/api/admin/grammar/imports", {"files": [GRAMMAR_PACKAGE], "data": {"package_hash": "0" * 64}}, {422, 503}),
+    ("GET", "/api/admin/grammar/imports"): ("/api/admin/grammar/imports", {}, {200, 503}),
+    ("GET", "/api/admin/grammar/imports/{batch_id}"): (f"/api/admin/grammar/imports/{ARTICLE}", {}, {404, 503}),
+    ("POST", "/api/admin/grammar/imports/{batch_id}/rights"): (
+        f"/api/admin/grammar/imports/{ARTICLE}/rights", {"json": {"basis": "orena_original", "attestation": "x"}},
+        {404, 503}),
+    ("POST", "/api/admin/grammar/versions/{version_id}/review"): (
+        f"/api/admin/grammar/versions/{ARTICLE}/review", {"json": {"decision": "accept"}}, {404, 503}),
+    ("POST", "/api/admin/grammar/versions/{version_id}/rights"): (
+        f"/api/admin/grammar/versions/{ARTICLE}/rights", {"json": {"status": "restricted", "reason": "x"}},
+        {404, 503}),
+    ("GET", "/api/admin/grammar/versions/{version_id}/preview"): (
+        f"/api/admin/grammar/versions/{ARTICLE}/preview", {}, {404, 503}),
+    ("GET", "/api/admin/grammar/points"): ("/api/admin/grammar/points", {}, {200, 503}),
+    ("GET", "/api/admin/grammar/points/{point_id}"): ("/api/admin/grammar/points/en.matrix", {}, {404, 503}),
+    ("POST", "/api/admin/grammar/points/{point_id}/publish"): (
+        "/api/admin/grammar/points/en.matrix/publish", {"json": {"version_id": ARTICLE, "attested": True}},
+        {404, 503}),
+    ("POST", "/api/admin/grammar/publish"): (
+        "/api/admin/grammar/publish",
+        {"json": {"items": [{"point_id": "en.matrix", "version_id": ARTICLE}], "attested": True}}, {404, 503}),
+    ("POST", "/api/admin/grammar/points/{point_id}/status"): (
+        "/api/admin/grammar/points/en.matrix/status", {"json": {"action": "unpublish"}}, {404, 503}),
+    ("GET", "/api/admin/grammar/r5-map"): ("/api/admin/grammar/r5-map?language=en", {}, {200, 503}),
+    ("GET", "/api/admin/grammar/coverage"): ("/api/admin/grammar/coverage?language=en", {}, {200, 503}),
 }
 ADMIN_ONLY_WITHOUT_ADMIN_IN_PATH = {
     ("POST", "/api/reading/library/import"),
@@ -230,7 +261,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 68  # includes Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs and the billing refund record
+    assert len(routes) == 83  # includes Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record and the 15 grammar store routes
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")
