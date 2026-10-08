@@ -1,0 +1,24 @@
+name: ZH Title Regression
+
+on:
+  push:
+    branches:
+      - codex/zh-export-title-normalization
+    paths:
+      - "grammar_lab/tests/test_zh_seed_native_titles.py"
+      - "grammar_lab/tools/normalize_zh_seed_titles.py"
+      - "grammar_lab/inventory/seeds_zh.yaml"
+      - "grammar_lab/inventory/catalog_zh.yaml"
+      - "grammar_lab/content/zh/**"
+      - ".github/workflows/zh-title-regression.yml"
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e "grammar_lab[dev]"
+      - run: python -m pytest -q grammar_lab/tests/test_zh_seed_native_titles.py
