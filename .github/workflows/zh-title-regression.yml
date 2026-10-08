@@ -63,7 +63,7 @@ jobs:
             --out /tmp/zh-complete \
             --set-version "smoke.zh.complete" \
             --zip
-          python -m grammar_lab.pipeline.cli validate-package --path /tmp/zh-complete
+          python -m grammar_lab.pipeline.cli validate-package /tmp/zh-complete
 
       - name: Push verified fix
         shell: bash
