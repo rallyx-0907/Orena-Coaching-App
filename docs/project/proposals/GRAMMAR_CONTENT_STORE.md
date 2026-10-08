@@ -1,5 +1,9 @@
 # Proposal (D-105 point 4): the grammar content store, Admin import and `/api/grammar/v1/*`
 
+**Outcome (2026-10-08):** independent review APPROVE at `b3ee8f09` (PR #100, merged); migration `0030` promoted to
+`migrations/versions/` on the human's authorization (source control only); the non-UI implementation and its evidence
+are recorded in `GRAMMAR_CONTENT_STORE.IMPLEMENTATION.md`.
+
 Status: **PROPOSED, revision 3** (2026-10-08), refreshed against `main` after PR #98 (`a2342e62`, schema head
 `20261007_0029`) on `codex/work` (`379f83d6`, which is `main` plus three memory-only commits), for issue #99. Revision 2
 (2026-09-30, `72cd4cd`) was **APPROVED** by the independent review `GRAMMAR_CONTENT_STORE.REVIEW.md` (architecture only,

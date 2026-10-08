@@ -1236,6 +1236,33 @@ app.include_router(reading_admin_router)
 app.include_router(reading_articles_router)
 app.include_router(reading_practice_router)
 
+# Grammar content store (D-105.4, D-106; GRAMMAR_CONTENT_STORE.md rev 3a; migration 20261008_0030). Content arrives
+# only as an Admin-imported Grammar Lab export package and reaches learners only when an admin publishes it; learner
+# progress stays in `grammar_progress` through the learning repository. Without PostgreSQL (or before the migration
+# is applied) every route answers 503 grammar_store_unavailable.
+from writing_coach.grammar_admin_api import configure_grammar_admin  # noqa: E402
+from writing_coach.grammar_admin_api import router as grammar_admin_router  # noqa: E402
+from writing_coach.grammar_api import configure_grammar_api  # noqa: E402
+from writing_coach.grammar_api import router as grammar_router  # noqa: E402
+from writing_coach.persistence.grammar_store_repository import GrammarStoreRepository  # noqa: E402
+
+
+def configure_grammar_store_from_runtime() -> None:
+    engine = _persistence_runtime.engine
+    store = GrammarStoreRepository(engine) if engine is not None else None
+    audit_repository = AdminConsoleRepository(engine) if engine is not None else None
+    configure_grammar_admin(
+        admin_guard=require_admin,
+        store=store,
+        audit=audit_repository.record_event if audit_repository is not None else None,
+    )
+    configure_grammar_api(store, _learning_repository)
+
+
+configure_grammar_store_from_runtime()
+app.include_router(grammar_admin_router)
+app.include_router(grammar_router)
+
 def weighted_overall(result: dict[str, Any]) -> float:
     return calculate_weighted_overall(result, active_rubric_weights())
 
