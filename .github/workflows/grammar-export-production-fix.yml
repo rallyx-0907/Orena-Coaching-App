@@ -27,14 +27,51 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
+          import json
+          import re
           from pathlib import Path
-          path = Path('grammar_lab/inventory/seeds_zh.yaml')
-          text = path.read_text(encoding='utf-8')
-          old = 'native_title: "连动句“去/来 + 动词”"'
-          new = 'native_title: "连动句“去/来+动词”"'
-          if old not in text:
-              raise SystemExit('expected serial-verb seed title not found')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          import yaml
+
+          seed_path = Path('grammar_lab/inventory/seeds_zh.yaml')
+          rows = yaml.safe_load(seed_path.read_text(encoding='utf-8')) or []
+          replacements = {}
+          for row in rows:
+              point_id = row['id']
+              seed_title = str(row.get('native_title', ''))
+              content_path = Path('grammar_lab/content/zh') / f'{point_id}.json'
+              if not content_path.exists():
+                  continue
+              point = json.loads(content_path.read_text(encoding='utf-8'))
+              content_title = str((point.get('header') or {}).get('native_title', ''))
+              # Existing content already passes the deterministic zh validator.
+              # Only repair stale seed titles whose ASCII whitespace would be
+              # re-applied during export and invalidate that approved content.
+              if re.search(r'\s', seed_title) and seed_title != content_title and not re.search(r'\s', content_title):
+                  replacements[point_id] = content_title
+
+          if not replacements:
+              raise SystemExit('expected at least one stale zh seed title')
+
+          lines = seed_path.read_text(encoding='utf-8').splitlines()
+          current_id = None
+          changed = []
+          for index, line in enumerate(lines):
+              stripped = line.strip()
+              if stripped.startswith('- id: '):
+                  current_id = stripped[len('- id: '):].strip().strip('"\'')
+              elif current_id in replacements and stripped.startswith('native_title:'):
+                  indent = line[:len(line) - len(line.lstrip())]
+                  lines[index] = indent + 'native_title: ' + json.dumps(replacements[current_id], ensure_ascii=False)
+                  changed.append(current_id)
+                  current_id = None
+
+          missing = sorted(set(replacements) - set(changed))
+          if missing:
+              raise SystemExit(f'could not rewrite native_title for: {missing}')
+          seed_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          print(f'synced {len(changed)} stale zh seed title(s):')
+          for point_id in changed:
+              print(f'  {point_id}')
           PY
           python -m grammar_lab.pipeline.cli import-canonical --lang zh
 
@@ -75,5 +112,5 @@ jobs:
           git add grammar_lab/inventory/seeds_zh.yaml grammar_lab/inventory/catalog_zh.yaml
           git diff --cached --stat
           git diff --cached --quiet && exit 0
-          git commit -m "fix(grammar): make approved corpus exportable as full-language packages"
+          git commit -m "fix(grammar): sync validated zh titles into production catalogue"
           git push origin HEAD:codex/grammar-export-production-fix
