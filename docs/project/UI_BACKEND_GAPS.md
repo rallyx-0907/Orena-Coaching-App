@@ -4270,6 +4270,15 @@ backend cannot yet serve:
   and the real 595-point corpus imports and publishes on a throwaway PostgreSQL. The UI side above is unchanged and
   waits for the human's handoff decision: `proposals/GRAMMAR_CONTENT_STORE.IMPLEMENTATION.md`, "STOP".
 
+- **G-11 · learner-summary counts Grammar completions as undated (2026-10-08, owner: learner summary).** `learner_summary._grammar`
+  reads only `completed_grammar_ids` and tallies each with no instant, so `/api/learner-summary` reports
+  `patterns_marked_complete` `count: 0, undated: N` and a completion never enters a window. `grammar_progress` keeps
+  `completed_at` (written by `PUT /api/grammar/v1/progress/:id`); the reader should take it. Outside the Grammar Store
+  contract; no learner screen draws the Grammar domain today (the Progress frame has none).
+- **G-12 · Grammar Lab content: Chinese subtitles that show a raw slug (2026-10-08, owner: Grammar Lab).** Some ZH
+  points' `header.title` reads like "Ngữ pháp tiếng Trung: tai_le" (seen in the Library on :8021 after importing
+  `zh-complete.zip`). Fixed upstream in Grammar Lab and re-exported; never edited in the UI lane or the store.
+
 ## Current Admin reconciliation — 2026-10-03
 
 The dated slice records below remain historical evidence. Their staging-only

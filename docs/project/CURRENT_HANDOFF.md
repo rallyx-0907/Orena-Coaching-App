@@ -23,8 +23,8 @@ from :8021 (S1 samples unpublished 2026-10-08).
 Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 - Foundation/Wave A/B: REVIEWABLE; inventory in IMPLEMENTATION_MAP.md.
-- QA :8021: PG volume `orena-next-verify-postgres` at 0029; code head is 0030 (Grammar Store), so web
-  refuses to start until the human authorizes 0030 there. Media `/lanedata`; `/rundata` scratch.
+- QA :8021: image `orena-qa:8021-<sha>` (jsonschema), schema 0030; Grammar EN 215 / ZH 380 published
+  there (not on :8000). Media `/lanedata`; `/rundata` scratch.
 - Wave B (`161d917`): REVIEWABLE; backend-less routes stay Coming soon; Grammar UI awaits wiring.
 - Orena agent text LIVE on :8021 and :8000 (`AGENT_ENABLED`, D-146); voice on :8021 only.
 - Grammar Lab replaces R5 (D-100, PR#66 `f86a2bf`); screens44/47 (`b83142d`)
