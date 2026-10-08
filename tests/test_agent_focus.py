@@ -66,7 +66,7 @@ def test_a_pasted_text_stays_reachable_after_the_recent_turns_moved_on():
     talk(rt, sid, "đoạn thứ 3 lập luận có yếu không?")
     last = provider.requests[-1]
     shown = [m for m in last.messages if ARTICLE[:100] in m.content]
-    assert len(shown) == 1 and shown[0].role == "system"  # reachable once, not twice
+    assert len(shown) == 1 and shown[0].role == "user"  # reachable once, not twice, as part of the conversation
     assert context_of(last)["conversation_focus"]["referents"]["pasted_text"]["chars"] >= len(ARTICLE)
 
 

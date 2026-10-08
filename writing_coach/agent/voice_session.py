@@ -303,8 +303,9 @@ def _conversation_so_far(state: Any) -> str:
         lines.append({"who": "learner" if turn.role == "user" else "orena", "said": text})
     if not lines:
         return ""
+    earlier = f" Earlier, in short: {state.summary}" if state.summary else ""
     return ("The conversation so far (typed or spoken; carry on from it, never restart it): "
-            + json.dumps(list(reversed(lines)), ensure_ascii=False))
+            + json.dumps(list(reversed(lines)), ensure_ascii=False) + earlier)
 
 
 # --- sessions ----------------------------------------------------------------------------------------------------

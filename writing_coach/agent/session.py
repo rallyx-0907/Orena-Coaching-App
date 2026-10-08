@@ -77,6 +77,9 @@ class AgentSessionState:
     # The turns just before this one, verbatim and bounded (architecture target §4-5): the model sees them, so a
     # follow-up ("cho ví dụ khác", "đoạn thứ 3") has something to refer to. In this process only, like the rest.
     recent_turns: tuple[ConversationTurn, ...] = ()
+    # What came before the recent turns, folded (agent/summary.py): only the talk. The offer, the focus and the sent
+    # actions are kept apart and never depend on it.
+    summary: str = ""
 
     def for_target(self, target: str | None) -> AgentSessionState:
         """The session as a turn in `target` may see it (dogfood gate 3.3).
@@ -128,6 +131,26 @@ class AgentSessionState:
         ):
             turns = turns[2:]
         return replace(self, recent_turns=turns)
+
+    def compaction_job(self, limits: AgentLimits) -> tuple[str, tuple[ConversationTurn, ...]] | None:
+        """(old summary, the turns to fold) once the recent turns pass the soft budget, else None. The last
+        `keep_verbatim_turns` stay, and the kept part starts at a learner turn."""
+
+        turns = self.recent_turns
+        if len(turns) <= limits.compact_after_turns and sum(len(t.text) for t in turns) <= limits.compact_after_chars:
+            return None
+        cut = max(len(turns) - limits.keep_verbatim_turns, 0)
+        while cut > 0 and turns[cut].role != "user":
+            cut -= 1
+        return (self.summary, turns[:cut]) if cut else None
+
+    def with_compacted(self, folded: tuple[ConversationTurn, ...], summary: str) -> AgentSessionState:
+        """`folded` are now in `summary`. Applies only if they are still the oldest turns (a turn that finished
+        meanwhile only appended), so a stale summary never drops turns it does not hold."""
+
+        if not folded or self.recent_turns[: len(folded)] != folded:
+            return self
+        return replace(self, recent_turns=self.recent_turns[len(folded) :], summary=summary)
 
     def with_outcome(self, *, live: PendingInteraction | None, settle: str | None,
                      new_offer: tuple[str, str, dict] | None, ran: tuple[str, ...]) -> AgentSessionState:

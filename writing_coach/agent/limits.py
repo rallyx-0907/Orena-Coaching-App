@@ -25,6 +25,12 @@ class AgentLimits:
     max_recent_turns: int = 20
     max_history_chars: int = 36_000
     max_turn_chars: int = 20_000
+    # The soft budget (agent/summary.py): past either, the oldest turns are folded into a rolling summary and the
+    # last `keep_verbatim_turns` stay word for word. The hard bound above remains the limit if a summary fails.
+    compact_after_turns: int = 14
+    compact_after_chars: int = 16_000
+    keep_verbatim_turns: int = 6
+    max_summary_chars: int = 2_400
     voice_session_cap_seconds: float = 15 * 60
     # Requests one learner may make in a sliding window (spec §22), per process.
     rate_window_seconds: float = 60.0

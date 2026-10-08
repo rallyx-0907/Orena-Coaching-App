@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 
 from writing_coach.agent.fake_provider import call_tools, reply
+from writing_coach.agent.limits import AgentLimits
 from writing_coach.agent.provider import ToolCallRequest, TurnFinished
 from writing_coach.agent.schemas import TurnRequest
 from tests.test_agent_turn import VI, hermetic, names, run, runtime  # noqa: F401 - fixture
@@ -160,7 +161,7 @@ def test_a_stale_or_unknown_id_runs_nothing():
 
 
 def test_an_unanswered_offer_expires_after_a_few_turns():
-    rt, provider = runtime([*offer(), *[reply(f"a{i}") for i in range(1, 8)]])
+    rt, provider = runtime([*offer(), *[reply(f"a{i}") for i in range(1, 8)]], limits=AgentLimits(compact_after_turns=100))  # no fold in this talk
     first, _ = talk(rt, None, "abate nghĩa là gì?")
     sid = session_of(first)
     for i in range(7):

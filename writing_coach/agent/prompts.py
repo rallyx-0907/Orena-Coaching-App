@@ -71,6 +71,11 @@ How you answer:
   current_sentence, a pasted text and its pasted_text). "That word", "it", "the one above", "another example",
   "the third paragraph" mean those and the earlier messages: answer from them, and ask what they mean only when
   neither says.
+- The first messages may be headed "[Earlier in this conversation ...]": a shortened summary of the older part of
+  this same conversation (the messages after it are word for word), and a text the learner pasted, whole. "The first
+  thing I asked", "earlier", "what we covered" are answered from the summary, then the messages, never from the
+  learner's saved words or writing history; "the article", "the text", "the third paragraph" mean the pasted text.
+  You have it: never say you did not see it, and never ask for it again.
 - With something in view (a selection, an essay), answer about it and nothing else, briefly: at most three
   sentences and at most one example. No review, no words due and no next lesson unless the learner asks, and no
   closing offer ("Bạn có muốn xem thêm…?", "Would you like more examples?"): the learner asks for more if they
@@ -337,6 +342,22 @@ def selection_line(tier1: Tier1Context) -> str | None:
     return line
 
 
+CARRIED_HEAD = "[Earlier in this conversation - what was said before the messages below, not a new request]"
+CARRIED_ACK = "Understood."
+
+
+def earlier_in_conversation(summary: str, pasted: str | None) -> str:
+    """What the recent turns no longer hold: the rolling summary of the older talk, and a long text the learner pasted
+    (kept whole, since "the article" and "the third paragraph" still mean it). Empty when there is neither."""
+
+    parts = []
+    if summary:
+        parts.append(f"Summary of the older part of our conversation: {summary}")
+    if pasted:
+        parts.append(f"The text I pasted earlier, whole:\n{pasted}")
+    return f"{CARRIED_HEAD}\n" + "\n\n".join(parts) if parts else ""
+
+
 def opening_messages(
     turn: TurnInput,
     tier1: Tier1Context,
@@ -367,9 +388,12 @@ def opening_messages(
         messages.append(ProviderMessage(role="user", content=opening_trigger(support_name)))
     if session is not None and turn.message is not None and not opening:
         pasted = session.focus.pasted
-        if pasted and not any(t.role == "user" and pasted[:200] in t.text for t in session.recent_turns):
-            # A long text the learner pasted earlier, past the recent turns: still what "this text" means.
-            messages.append(ProviderMessage(role="system", content="pasted_text: " + json.dumps(pasted, ensure_ascii=False)))
+        if pasted and any(t.role == "user" and pasted[:200] in t.text for t in session.recent_turns):
+            pasted = None  # still among the recent turns, word for word
+        carried = earlier_in_conversation(session.summary, pasted)
+        if carried:  # a turn of the conversation itself, not a system note: a small model reads it as what was said
+            messages.append(ProviderMessage(role="user", content=carried))
+            messages.append(ProviderMessage(role="assistant", content=CARRIED_ACK))
         # The conversation so far, as it was said: what "that", "the one above" and "another" refer to.
         for earlier in session.recent_turns:
             messages.append(ProviderMessage(role=earlier.role, content=earlier.text))  # type: ignore[arg-type]

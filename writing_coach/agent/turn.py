@@ -55,6 +55,7 @@ from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, 
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
 from writing_coach.agent.focus import focus_after, lookup_word
+from writing_coach.agent.summary import summarize
 from writing_coach.agent.honesty import ClaimGate, asks_for_heading, nothing_done, offer, offer_instead
 from writing_coach.agent.notes import (
     CORRECT,
@@ -352,6 +353,7 @@ class _Turn:
                 yield self._error("internal_error")
             return
         self._keep(session, turn)
+        self._compact(session)
         self._meter()
 
     @property
@@ -925,6 +927,31 @@ class _Turn:
 
         # None when it expired meanwhile: the next turn opens a new one.
         self.rt.sessions.update(session.agent_session_id, self.learner.user_key, change)
+
+    def _compact(self, session) -> None:
+        """Past the soft budget, fold the oldest turns into the rolling summary. Outside the session lock, after the
+        answer; a failure leaves the conversation exactly as it is."""
+
+        # Not gated on `should_stop`: the learner leaves as soon as the answer is done, and this is upkeep of the
+        # session, not part of what they are waiting for.
+        if self.opening:
+            return
+        try:
+            state = self.rt.sessions.get(session.agent_session_id, self.learner.user_key)
+            job = state.compaction_job(self.rt.limits) if state is not None else None
+            if job is None:
+                return
+            old, folded = job
+            made = summarize(self.rt.provider, old, folded, limit=self.rt.limits.max_summary_chars)
+            if made is None:
+                return
+            _log.warning("agent compaction: folded %d turns SUMMARY=%s", len(folded), made.text)
+            self.usage_in += made.input_tokens
+            self.usage_out += made.output_tokens
+            self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
+                                    lambda s: s.with_compacted(folded, made.text))  # fmt: skip
+        except Exception:
+            _log.warning("agent compaction failed", exc_info=True, extra={"trace_id": self.trace_id})
 
     def _focus(self, state, turn: TurnInput):
         """The session's focus after this turn: what was selected, looked up or offered, and a long paste."""

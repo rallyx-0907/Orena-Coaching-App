@@ -481,6 +481,22 @@ FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
         ("en", "ask", VI, "mitigate nghĩa là gì?", {}),
         ("zh-CN", "switch", VI, "từ đó dịch sang tiếng Trung là gì?", {}),
     ],
+    # Phase 5 (agent/summary.py): a long conversation. By the fourth question after the first the oldest turns are
+    # folded into the rolling summary, so "the first word I asked" is answerable only from it; the pasted text and an
+    # offer made after the fold are kept apart from it. `conversation_verdict`.
+    "convo-long": [
+        ("en", "first", VI, "mitigate nghĩa là gì?", {}),
+        ("en", "paste", VI, ARTICLE_EN + "\n\nTóm lại tác giả phản đối điều gì?", {}),
+        *[("en", f"fill{n}", VI, text, {}) for n, text in enumerate([
+            "scarcity nghĩa là gì?", "cho ví dụ ngắn", "reluctant nghĩa là gì?", "ephemeral là gì?", "cho ví dụ ngắn",
+            "ubiquitous là gì?", "scrutinize nghĩa là gì?", "cho ví dụ ngắn", "candid nghĩa là gì?",
+            "cho ví dụ ngắn", "thorough nghĩa là gì?", "cho ví dụ ngắn"])],
+        ("en", "back", VI, "quay lại đầu cuộc trò chuyện: từ đầu tiên mình hỏi bạn là từ nào, nghĩa là gì?", {}),
+        ("en", "third", VI, "đoạn thứ 3 của bài mình dán lập luận có yếu không?", {}),
+        ("en", "ask", VI, "pragmatic nghĩa là gì? Mình có nên lưu từ này không?", SAVE),
+        ("en", "example", VI, "cho ví dụ nữa", SAVE),
+        ("en", "save", VI, "ừ lưu đi", SAVE),
+    ],
     "screens": [
         ("zh-CN", "vi", VI, "Màn này dùng để làm gì?", {"surface": "vocabulary.my_language"}),
         ("en", "zh", {"interface": "zh-CN", "support": "zh-CN"}, "这个页面是做什么的？", {"surface": "vocabulary.my_language"}),
@@ -683,6 +699,16 @@ def conversation_verdict(rows: list[dict]) -> dict:
         }
     if any(r.get("flow") == "convo-lang" for r in rows):
         verdict["convo-lang"] = {"kept_the_word_after_the_switch": says(row("convo-lang", "switch"), "缓解", "减轻", "减缓", "mitigate")}
+    if any(r.get("flow") == "convo-long" for r in rows):
+        saved = [a for a in row("convo-long", "save").get("actions", []) if a.get("type") == "save_word"]
+        verdict["convo-long"] = {
+            "first_word_from_the_summary": says(row("convo-long", "back"), "mitigate")
+            and not says(row("convo-long", "back"), *asks_again[:3]),
+            "pasted_text_still_answered": says(row("convo-long", "third"), "Ohio", "một nhà máy", "một nghiên cứu", "đào tạo lại")
+            and not says(row("convo-long", "third"), *asks_again[:4]),
+            "saved_pragmatic_once": len(saved) == 1 and saved[0]["payload"].get("text", "").lower() == "pragmatic"
+            and saved[0].get("open") is True,
+        }
     for checks in verdict.values():
         checks["pass"] = all(checks.values())
     return verdict
@@ -773,7 +799,8 @@ class Sandbox:
         except (OSError, subprocess.TimeoutExpired):
             return ["the web log could not be read"]
         lines = [line for line in log.splitlines()
-                 if "agent provider round" in line or "agent turn failed" in line or "agent notes:" in line]  # fmt: skip
+                 if "agent provider round" in line or "agent turn failed" in line or "agent notes:" in line
+                 or "conversation summary" in line or "agent compaction" in line]  # fmt: skip
         return [re.sub(r"(?i)(key=|bearer\s+|AIza)[\w\-.]+", r"\1<redacted>", line)[-600:] for line in lines]
 
     def down(self) -> None:

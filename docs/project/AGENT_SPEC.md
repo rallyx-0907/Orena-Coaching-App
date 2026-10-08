@@ -372,10 +372,18 @@ K5  303181df  text and voice are one conversation: a voice session opens inside 
               ran, the word) joins the same session; an optional transcript at voice/end adds the rest. Server only,
               no client change needed; client additions are PROPOSED in proposals/AGENT_KERNEL_CLIENT_ADDITIONS.md.
               Live voice not verified (needs a person speaking); covered by tests/test_agent_voice_kernel.py.
-LOCAL         full suite in the app image, 2026-10-08: 4334 passed, 380 skipped, 0 failed (local run, not CI).
+K6            rolling summary (agent/summary.py, Phase 5): not per turn - only when the recent turns pass the soft budget
+              (14 turns or 16k chars) the oldest are folded, the last 6 stay word for word: old summary + folded turns ->
+              new summary (<= 2.4k chars), by the turn's own provider after the answer, outside the session lock, and
+              counted in the turn's usage. The open offer, the focus and a pasted text are separate state and never
+              depend on it. It reaches the model as the conversation's first turn headed "[Earlier in this
+              conversation]" (a system note was ignored by the live model), and the voice instruction. A failed summary
+              changes nothing (the hard bound of 20 turns / 36k chars still limits); a stale fold applies nothing.
+              Live: convo-long (19 turns, 2 folds) answers "the first word I asked" from the summary, a paste from
+              pasted_text, and saves once after the fold. Server-side upkeep does not stop when the client leaves.
+LOCAL         full suite in the app image: see the commit message of K6 (local run, not CI).
 NEXT          needs a human: client adoption of the three additive items (UI lane); a durable store for turns and
-              memory (AGENTS.md section 7, independent architecture review). Intelligence-lane work left: rolling
-              summary and token budget (Phase 5), then memory distillation once a store is approved.
+              memory (AGENTS.md section 7, independent architecture review); then memory distillation (Phase 4).
 ```
 
 ## 1. Mục tiêu
