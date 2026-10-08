@@ -119,6 +119,9 @@ def test_learner_progress_on_postgres_reads_r5_composites_through_the_map(store,
     user = f"gram-{tag}"
     PostgresAuthRepository(pg_engine).upsert_user({"sub": user, "email": f"{user}@example.test", "name": user}, set())
     tokens = (USER_KEY_CTX.set(user), LANGUAGE_CODE_CTX.set("en"))
+    from writing_coach import grammar_api
+
+    saved = grammar_api._state
     try:
         repo = PostgresLearningRepository(pg_engine)
         repo.set_grammar_completed(f"en:grammar:v2:{r5a}", "2026-09-01T00:00:00+00:00")
@@ -133,9 +136,7 @@ def test_learner_progress_on_postgres_reads_r5_composites_through_the_map(store,
         saved = grammar_api.record_progress(pid, grammar_api.ProgressBody(answers=[0, 1, 0]))
         assert saved["last_quiz"]["correct"] == 3
     finally:
-        from writing_coach import grammar_api
-
-        grammar_api.configure_grammar_api(None)
+        grammar_api._state = saved
         LANGUAGE_CODE_CTX.reset(tokens[1])
         USER_KEY_CTX.reset(tokens[0])
 
