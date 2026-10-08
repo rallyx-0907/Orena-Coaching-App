@@ -17,7 +17,7 @@ class AgentLimits:
     max_tool_iterations_per_turn: int = 4
     max_tool_result_bytes: int = 8 * 1024
     turn_timeout_seconds: float = 60.0
-    max_input_tokens_per_turn: int = 12_000
+    max_input_tokens_per_turn: int = 48_000
     session_ttl_seconds: float = 30 * 60
     max_sessions: int = 10_000
     max_recent_tool_results: int = 8

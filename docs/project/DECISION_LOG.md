@@ -4446,3 +4446,20 @@ deployment artifact around them.
 
 Topology: `codex/work` (development + QA) -> release candidate -> restored-copy rehearsal -> human review -> CI / PR ->
 `main` -> exact SHA -> immutable image -> :8000 product-like acceptance -> the same artifact on the server.
+
+## D-145 - Voice utterances are turns; the input budget is a hard bound (contract v6)
+
+2026-10-08. Review of PR #92 and #96 by the architecture reviewer; the lane's work approved; explicit human instruction.
+
+1. **Contract v6.** Voice and text are one conversation, and each spoken utterance is one turn of it. The client numbers
+   utterances per voice session (`utterance`, never the words); `/voice/tool` carries it, the new `/voice/turn` closes it
+   at the vendor's turn end, `/voice/end` may carry a transcript tagged with it. The server counts each once and
+   reconciles the transcript by that identity only. Additions are optional; a client at v5 or below is served as before
+   (its spoken turns are not counted). `AGENT_CONTRACT.md` §9 and the version line carry it; no event, action or
+   text-turn request changed.
+2. **The input budget is a hard bound.** `agent/tokens.py` counts at most one token per UTF-8 byte (any language, any
+   tokenizer), the shipped instruction as prose, a frame per message and a reserve. Under it the old default of 12,000
+   left about 5.5 KB for history, summary and pasted text, so `AgentLimits.max_input_tokens_per_turn` is **48,000**, the
+   initial controlled-release value (not 60,000). It is a cost decision and is revisited with usage data.
+3. **Follow-ups, not blockers:** budgeting the voice instruction's own conversation history; retention for
+   `agent.summary` rows; physical and live-microphone QA of the voice client.

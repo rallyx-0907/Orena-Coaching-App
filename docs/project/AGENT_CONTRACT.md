@@ -6,7 +6,9 @@ Purpose: the single interface between the Orena Intelligence backend (lane `feat
 Authority: D-085, D-086, D-092, D-094, D-095, D-096. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
 Change when: a field, event, action, intent or rule below changes. Edit **only on `codex/work`** through a reviewed commit that bumps `contract_version` and records the change in DECISION_LOG.md; the intelligence lane receives it by merging `codex/work` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 5`
+`contract_version: 6`
+
+v6 (D-145, 2026-10-08): voice and text are one conversation, and every spoken utterance is one turn of it. The client numbers what the learner says per voice session (`utterance`, an opaque token such as `u1`, never the words); `POST /api/agent/voice/tool` carries it, the new `POST /api/agent/voice/turn` closes it at the vendor's turn end, and `POST /api/agent/voice/end` may carry a transcript whose items are tagged with it (§9). All additions are optional: a client that declares `contract_version` ≤ 5 sends none of them and is served as before, except that its spoken turns are not counted as turns of the conversation. No event, action or text-turn request changes.
 
 v5 (D-096, 2026-09-28): the learner's address - how Orena says "I" and "you" - travels as `context.address` and is kept as a coach note of kind `address` (§5.6), and the server's fixed copy follows it; a reply that comes with an action offers it and never reports it done, and no reply names a provider (§7, §10; S2 and S5 reworded); the UI publishes each surface's name and purpose for the server (§6.2); new canonical streams S14 and S15. A client that declares `contract_version` ≤ 4 sends no `address` and gets the language defaults; a server never sends an `address` note to it.
 
@@ -65,7 +67,7 @@ A `409` or `422` counts toward the learner's limit; only a refused `429` does no
 
 ```json
 {
-  "contract_version": 5,
+  "contract_version": 6,
   "session_id": "optional, from a previous session event",
   "trigger": "message",
   "message": "Tại sao tôi cứ sai từ này?",
@@ -308,7 +310,7 @@ The UI owns its places and says what they are, once. For every §6.1 id it publi
 - Written in the new UI's copy layer (`static/orena/copy/surfaces.js`) and published as generated data, `static/orena/copy/surfaces.json`:
 
   ```json
-  { "contract_version": 5,
+  { "contract_version": 6,
     "surfaces": {
       "vocabulary.my_language": {
         "name":    { "en": "…", "vi": "…", "zh-CN": "…" },
@@ -364,7 +366,7 @@ Rules:
 ## 8. Capabilities — `GET /api/agent/capabilities`
 
 ```json
-{ "contract_version": 5,
+{ "contract_version": 6,
   "capabilities": [
     { "id": "speaking.pronunciation.line", "title": "…", "surfaces": ["speaking.workspace"],
       "actions": ["play_model", "play_user", "say_again", "compare_with_model"],
@@ -409,7 +411,8 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    The provider's voice activity detection ends each utterance.
 4. **Tools.**
    - On `{ toolCall: { functionCalls: [{ id, name, args }] } }`, the client posts `POST /api/agent/voice/tool` with
-     `{ voice_session_id, calls, heard }`, where `heard` is the latest input transcription.
+     `{ voice_session_id, utterance, calls, heard }`, where `heard` is the latest input transcription of the
+     utterance in progress (absent while it has not arrived) and `utterance` is its identity (see Utterances below).
    - The answer is `{ responses, events }`. The client sends `{ toolResponse: { functionResponses: responses } }` on
      the socket and renders `events` as ordinary §4 events: `tool_call`, `tool_result`, `evidence`, `action`,
      `memory_update`.
@@ -440,6 +443,18 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
        `{ clientContent: { turns: [{ role: "user", parts: [{ text: note }] }], turnComplete: false } }`, so Orena
        takes it in without answering it.
      - Ids in view become ids actions may name.
+   - Utterances (v6).
+     - The client numbers what the learner says within the session (`u1`, `u2`, ...: an opaque token of at most 64
+       characters from `A-Za-z0-9._:-`; never the words, so the same words said twice are two utterances). An
+       utterance opens with the first thing that belongs to it (its input transcription or a tool call) and closes
+       at `serverContent.turnComplete`. A closed utterance is never reopened: a tool call that comes before the next
+       transcript belongs to the next utterance. A turn with no learner words, such as Orena's own greeting, has none.
+     - When the learner spoke, the client posts `POST /api/agent/voice/turn { voice_session_id, utterance, heard? }`
+       at `turnComplete`, whether or not a tool was called. The answer is `{ voice_session_id, counted }`; `counted`
+       is false when the utterance was already counted (by a tool call or an earlier post) or has no identity.
+     - The server counts each utterance once as one turn of the conversation (an open offer ages and expires, a sent
+       action leaves the duplicate window) and puts its words in once. 404 `voice_session_not_found` as above.
+     - A client that sends no `utterance` is served, but its spoken turns are not counted.
    - R30, recognition: the locked setup carries the session's support and target languages for input
      transcription. Unclear or wrong-language input is answered "say it again", never acted on.
 5. **Voices (R29).**
@@ -451,8 +466,13 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    - The client keeps the learner's choice on the device and sends it as an optional `"voice": "<id>"` in the
      session body. The server locks it into the token; an unknown or missing id uses the default.
 6. **End.**
-   - `POST /api/agent/voice/end { voice_session_id }` answers `{ voice_session_id, seconds }`. The client sends it
+   - `POST /api/agent/voice/end { voice_session_id, transcript? }` answers `{ voice_session_id, seconds }`. The client sends it
      when the learner stops, leaves (sendBeacon on pagehide), the socket closes, or `max_seconds` pass.
+   - `transcript` (v6, optional, at most 40 items) is `[{ role: "user" | "assistant", text, utterance }]` from the two
+     transcriptions, in order; a reply carries the `utterance` it answers. The server merges it into the
+     conversation by `utterance`, never by the words, so each reply sits behind the words it answers and a typed turn
+     or an earlier spoken one with the same words is never taken for it. An item that is not a turn is ignored; each
+     text is cut to 4,000 characters. The `pagehide` beacon carries none.
    - The server bills the session time into the shared ledger. A session never ended is billed at its cap.
 
 Rules:

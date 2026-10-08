@@ -394,9 +394,8 @@ K7            review fixes of PR #92: voice answers an open offer with resolve_p
               never matched); the input budget covers the whole text prompt - the oldest turns go first, then the
               carried pasted text is cut; summary and the learner's words stay - and it counts with a hard bound that
               holds for any language and tokenizer (agent/tokens.py: one token per UTF-8 byte, the shipped instruction as
-              prose, a frame per message and a reserve). Consequence: with max_input_tokens_per_turn 12000 the fixed
-              parts take about 6.4k, leaving about 5.5k bytes (roughly 5k English characters) for history, summary and
-              pasted text; a larger working set needs a larger limit (a cost decision, not made here).
+              prose, a frame per message and a reserve). Under it 12,000 left about 5.5k bytes for history, so the
+              default max_input_tokens_per_turn is 48,000 (D-145). Contract v6 carries the voice additions.
               A closed utterance is never reopened by the client (a tool call before the next transcript starts the
               next utterance).
               Follow-ups, not done: the voice instruction's own history budget; agent.summary retention.

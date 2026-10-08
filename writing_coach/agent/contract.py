@@ -33,7 +33,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
 
-CONTRACT_VERSION = 5
+CONTRACT_VERSION = 6
 
 
 def negotiated_version(client_version: int) -> int:
