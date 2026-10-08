@@ -140,84 +140,71 @@ const servedZh = {
 
 // --- Levels: CEFR A1-C2 and HSK 3.0 1-9 (contract §0) ----------------------------------------
 {
-  const { t: libraryT } = await import('../static/orena/screens/grammar/copy.js');
-  const copy = await import('../static/orena/copy/index.js');
-  const table = copy.registeredCopy().get('grammar');
   assert.equal(levelCode({ framework: 'cefr', value: 'B1', rank: 3 }), 'B1');
   assert.equal(levelCode({ framework: 'hsk3', value: 3, rank: 3 }), 'HSK 3');
   assert.equal(levelCode({}), '');
-  assert.equal(library.levelTile({ framework: 'hsk3', value: 7, rank: 7 }), 'HSK7', 'the 44px tile holds the short code');
-  for (let n = 1; n <= 9; n += 1) {
-    const key = library.levelNameKey({ framework: 'hsk3', value: n });
-    assert.equal(key, n <= 3 ? 'hskBand1' : n <= 6 ? 'hskBand2' : 'hskBand3', `HSK ${n} is in its HSK 3.0 band`);
-    for (const locale of ['en', 'vi', 'zh']) assert.ok(table.packs[locale][key], `${key} is written in ${locale}`);
-  }
-  assert.equal(library.levelNameKey({ framework: 'hsk3', value: 10 }), '', 'HSK 3.0 stops at 9');
-  for (const code of ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']) {
-    const key = library.levelNameKey({ framework: 'cefr', value: code });
-    assert.ok(key, `${code} has a name`);
-    for (const locale of ['en', 'vi', 'zh']) assert.ok(table.packs[locale][key], `${key} is written in ${locale}`);
-  }
-  assert.equal(library.levelHeading({ framework: 'hsk3', value: 3 }, libraryT), 'HSK 3 · Elementary');
-  assert.equal(library.levelHeading({ framework: 'cefr', value: 'B2' }, libraryT), 'B2 · Upper-intermediate');
-  assert.equal(library.levelHeading({ framework: 'cefr', value: 'X9' }, libraryT), 'X9', 'an unknown level shows its code, never a guessed name');
+  assert.equal(library.levelTile({ framework: 'hsk3', value: 7, rank: 7 }), 'HSK7', 'the level button and hero hold the short code');
 }
 
-// --- Grammar Library (frame 44, composed 2026-10-08): level filter, continue, topics, all by topic ----------------
+// --- Grammar Library (design export 2026-10-08: hero, levels, continue, categories, category panel, all topics) ------
 {
-  const t = (key, params) => (key === 'levelHeading' ? `${params.code} · ${params.name}` : key);
-  // The card: native_title, the support-language gloss under it.
+  const t = (key) => key;
+  // The card: native_title, its reading, the support-language gloss (header.sub, else header.title).
   const one = library.buildLibrary({ rows: catalogEn, support: 'vi', t });
-  assert.deepEqual(one.levels.map((level) => level.key), ['A1', 'A2'], 'one level per corpus level, in level.rank order');
+  assert.deepEqual(one.levels.map((level) => [level.key, level.count]), [['A1', 1], ['A2', 1]], 'one level per corpus level, in level.rank order, with its count');
   assert.equal(one.level.key, 'A1', 'with no declared level the first level is shown');
   const a2 = library.buildLibrary({ rows: catalogEn, support: 'vi', current: 'A2', t });
-  assert.equal(a2.level.key, 'A2', 'the learner\'s declared level is the one shown');
-  assert.ok(a2.levels.find((level) => level.key === 'A2').current);
+  assert.equal(a2.level.key, 'A2', "the learner's declared level is the one shown");
   const pp = a2.continue[0];
-  assert.equal(pp.title, 'Present perfect', 'the card title is header.native_title (§1), never header.title');
-  assert.notEqual(pp.title, catalogEn[0].header.title.vi);
-  assert.equal(pp.note, 'Hiện tại hoàn thành (trải nghiệm)', 'the line under it is header.title in the support language');
+  const ppRow = catalogEn.find((row) => row.id === pp.id);
+  assert.equal(pp.title, 'Present perfect', 'the title is header.native_title (§1), never header.title');
   assert.equal(pp.lang, 'en');
-  assert.equal(library.buildLibrary({ rows: catalogEn, support: 'zh', current: 'A2', t }).continue[0].note, 'Present perfect (experience)', 'a zh-support learner reads the en gloss, never the vi one');
+  assert.equal(pp.reading, '', 'an English point has no reading');
+  assert.equal(pp.mean, ppRow.header.sub?.vi || ppRow.header.title.vi, 'the meaning line is header.sub (else header.title) in the support language');
   assert.equal(library.buildLibrary({ rows: [], t }).level, null, 'no content is no level');
   assert.equal(library.buildLibrary({ t }).level, null);
-
   const zh = library.buildLibrary({ rows: catalogZh, support: 'vi', t });
-  assert.deepEqual(zh.levels.map((level) => level.heading), ['HSK 2 · hskBand1', 'HSK 3 · hskBand1'], 'a Chinese library offers HSK 3.0 levels');
+  assert.deepEqual(zh.levels.map((level) => level.key), ['HSK2', 'HSK3'], 'a Chinese library offers HSK 3.0 levels');
   assert.equal(zh.continue[0].title, '过');
-  assert.deepEqual(zh.continue[0].titlePinyin, ['guo'], 'native_title_pinyin travels with the Chinese title');
+  assert.equal(zh.continue[0].reading, 'guo', 'native_title_pinyin is the reading line');
   assert.equal(zh.continue[0].lang, 'zh');
 
-  // A synthetic level of five points over three topics (test-only rows).
+  // A synthetic level: five points over three functions (test-only rows).
   const lv = { framework: 'cefr', value: 'B1', rank: 3 };
-  const row = (id, fn, seq) => ({ id: `en.${id}`, level: lv, function: fn, sequence: seq, header: { native_title: id, title: { vi: id, en: id } } });
-  const rows = [row('a1', 'fn.time', 1), row('a2', 'fn.time', 2), row('a3', 'fn.time', 3), row('b1', 'fn.link', 1), row('c1', '', 1)];
-  const functions = [{ id: 'fn.time', title: { vi: 'Thời gian', en: 'Time' } }, { id: 'fn.link', title: { vi: 'Nối ý', en: 'Linking' } }];
+  const row = (id, fn, seq, sub) => ({ id: `en.${id}`, level: lv, function: fn, sequence: seq, header: { native_title: id, title: { vi: `t ${id}`, en: `t ${id}` }, sub: sub ? { vi: sub, en: sub } : undefined } });
+  const rows = [row('a1', 'fn.time', 1, 'past'), row('a2', 'fn.time', 2), row('a3', 'fn.time', 3), row('b1', 'fn.link', 1), row('c1', '', 1)];
+  const functions = [{ id: 'fn.link', title: { vi: 'Nối ý', en: 'Linking' } }, { id: 'fn.time', title: { vi: 'Thời gian', en: 'Time' } }];
   const progress = [{ point_id: 'en.a1', last_quiz: { correct: 2, total: 3 } }, { point_id: 'en.b1' }];
-  const view = library.buildLibrary({ rows, functions, progress, current: 'B1', support: 'vi', t });
-  assert.deepEqual(view.continue.map((item) => item.id), ['en.c1', 'en.a2', 'en.a3'], 'continue: the not-yet-completed points of the level, in the catalogue order (function, sequence)');
-  assert.deepEqual(view.topics.map((topic) => [topic.title, topic.count, topic.done]), [['Thời gian', 3, 1], ['Nối ý', 1, 1], ['otherTopic', 1, 0]], 'topics: the corpus functions by name in the support language, largest first, a point without one under "other"');
-  assert.deepEqual(view.sections.map((section) => section.title), ['Thời gian', 'Nối ý', 'otherTopic'], 'all grammar: a section per topic, in the topics\' order');
-  assert.equal(view.shown, 5);
-  const done = view.sections[0].items[0];
-  assert.deepEqual([done.done, done.score], [true, { correct: 2, total: 3 }], 'a completed point carries its last quiz score');
-  assert.deepEqual([view.sections[1].items[0].done, view.sections[1].items[0].score], [true, null], 'completed without a quiz: done, no score');
-  assert.equal(view.sections[0].items[1].done, false);
-  const time = library.buildLibrary({ rows, functions, progress, current: 'B1', topic: 'fn.time', support: 'vi', t });
-  assert.deepEqual([time.topic, time.sections.length, time.shown], ['fn.time', 1, 3], 'a chosen topic narrows all grammar to it');
-  assert.equal(library.buildLibrary({ rows, functions, current: 'B1', topic: 'fn.nope', t }).topic, '', 'an unknown topic in the address is ignored');
-  assert.equal(library.buildLibrary({ rows, functions, current: 'B1', selected: 'C9', t }).level.key, 'B1', 'an unknown level in the address falls back to the learner\'s');
-  const all = library.buildLibrary({ rows, functions, progress: rows.map((r) => ({ point_id: r.id })), current: 'B1', t });
-  assert.deepEqual([all.continue.length, all.levelComplete], [0, true], 'a completed level has nothing to continue');
-  const many = Array.from({ length: 9 }, (_, i) => row(`m${i}`, 'fn.time', i));
-  assert.equal(library.buildLibrary({ rows: many, current: 'B1', t }).continue.length, library.CONTINUE_LIMIT, 'continue is capped');
+  const base = { rows, functions, progress, current: 'B1', support: 'vi', t };
+  const view = library.buildLibrary(base);
+  assert.deepEqual(view.stats, { total: 5, learned: 2, notStarted: 3 }, 'the hero counts learned (completed) and not started; no "learning" state is invented');
+  assert.deepEqual(view.continue.map((item) => item.id), ['en.c1', 'en.a2', 'en.a3'], 'continue: the next not-yet-learned points of the level in catalogue order, at most three');
+  assert.deepEqual(view.categories.map((c) => [c.name, c.count, c.examples.join(',')]), [['Nối ý', 1, 'b1'], ['Thời gian', 3, 'a1,a2,a3'], ['otherTopic', 1, 'c1']], "categories: the level's functions, in the catalogue's functions order, with counts and examples");
+  assert.deepEqual(view.categories.map((c) => c.hue), ['var(--gcat-1)', 'var(--gcat-2)', 'var(--gcat-3)'], "a function takes the design hue of its place in the catalogue's list");
+  assert.equal(library.buildLibrary({ ...base, rows: rows.filter((r) => r.function === 'fn.time') }).categories[0].hue, 'var(--gcat-2)', 'so a function keeps its hue at every level');
+  assert.equal(view.panel.id, 'fn.link', 'the open category defaults to the first');
+  const learned = view.all.find((item) => item.id === 'en.a1');
+  assert.deepEqual([learned.learned, learned.score, learned.mean, learned.tag], [true, { correct: 2, total: 3 }, 'past', 'Thời gian']);
+  assert.equal(view.all.find((item) => item.id === 'en.a2').mean, 't a2', 'no header.sub: the title gloss');
+  const time = library.buildLibrary({ ...base, state: { cat: 'fn.time', all: 'fn.time' } });
+  assert.deepEqual([time.panel.id, time.panelItems.length, time.allCat, time.all.length], ['fn.time', 3, 'fn.time', 3], 'a chosen category opens in the panel; an "all" chip narrows all topics');
+  assert.deepEqual(library.buildLibrary({ ...base, state: { st: 'L' } }).all.map((i) => i.id).sort(), ['en.a1', 'en.b1'], 'status filter: learned');
+  assert.equal(library.buildLibrary({ ...base, state: { st: 'N' } }).all.length, 3, 'status filter: not started');
+  assert.deepEqual(library.buildLibrary({ ...base, state: { q: 'PAST' } }).all.map((i) => i.id), ['en.a1'], 'search reads title, reading and glosses, case-insensitively');
+  assert.deepEqual(library.buildLibrary({ ...base, state: { sort: 'st' } }).all.map((i) => i.learned), [false, false, false, true, true], 'sort by status: not started first');
+  assert.deepEqual(library.buildLibrary({ ...base, state: { sort: 'az' } }).all.map((i) => i.id), ['en.a1', 'en.a2', 'en.a3', 'en.b1', 'en.c1'], 'sort A-Z');
+  const none = library.buildLibrary({ ...base, state: { q: 'zzz' } });
+  assert.deepEqual([none.all.length, none.panelItems.length, none.filtering], [0, 0, true], 'filters that match nothing empty the panel and the list');
+  assert.equal(library.buildLibrary({ ...base, state: { cat: 'fn.nope', all: 'fn.nope', level: 'C9' } }).allCat, 'all', 'unknown address values fall back');
+  const all = library.buildLibrary({ ...base, progress: rows.map((r) => ({ point_id: r.id })) });
+  assert.equal(all.continue.length, 0, 'a learned level has nothing to continue');
 
   const src = fs.readFileSync('static/orena/screens/grammar/screen.js', 'utf8');
-  assert.match(src, /listRow\(\{[^}]*titleLineHeight:\s*20\b/, 'frame 44 draws the card title at line-height 20px');
-  assert.doesNotMatch(src, /s-grammar__tile/, 'cards inside a level carry no repeated level tile');
+  assert.doesNotMatch(src, /bookmark/i, 'no bookmark is drawn: nothing stores it (G-14)');
   const css = fs.readFileSync('static/orena/screens/grammar/grammar.css', 'utf8');
-  assert.match(css, /\.s-grammar__chip \{\s*height: 36px;\s*padding: 0 14px;\s*font-size: 13\.5px;/, 'the level chip is the design\'s Discover level chip');
-  assert.match(css, /\.s-grammar__shead \{[^}]*padding-bottom: 10px;\s*border-bottom: 1px solid var\(--border\);/, 'sections use the design\'s grouped heading');
+  assert.match(css, /\.s-gl \{\s*max-width: 1180px;/, 'the frame is 1180px wide');
+  assert.match(css, /\.s-gl__level \{[^}]*min-width: 96px;\s*height: 48px;/, "the level button is the frame's 48px tab");
+  assert.match(css, /\.s-gl__topicTitle \{\s*font-family: 'Noto Serif SC'[^}]*font-size: 21px;/, 'the topic title is Noto Serif SC 21');
 }
 
 // --- Grammar Concept (frame 47): an English timeline point ------------------------------------

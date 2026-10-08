@@ -4288,6 +4288,30 @@ backend cannot yet serve:
   Library IA follow-up (human, 2026-10-08) uses the new Discover Level chip and grouped heading as measured from that
   prefix. Needed: an export of the whole `Orena.dc.html` to pin the new revision (PINS.tsv, SYNC record) and re-diff
   Grammar.
+  **Update 2026-10-08:** the human supplied the export (`Downloads/Design interface with interaction (1)/`).
+  `Orena.dc.html` is 928080 bytes (sha256 `1abfa9cd1410…`), `Orena Admin.dc.html` 232508 (`a70b3baa57de…`);
+  `support.js`, `Onboarding`, `Compare With Model`, the briefs and the project `CLAUDE.md` are unchanged (the fidelity
+  rules differ only in CRLF). New frames: Feedback, Plan & usage, Pricing, Grammar category, Billing Sheet. Changed:
+  Discover, Reader, Profile · Today's progress, Settings, Grammar Library, Coming soon. The Grammar Library was
+  rebuilt on that export's frames ("Grammar Library", "Grammar category"). **Still open:** copying it into
+  `docs/design/canonical-ui/screens/` (PINS.tsv, a SYNC record, README and the revision named in AGENTS.md and
+  DESIGN_CONTRACT.md) was refused by the agent's permission policy; the human pins it or allows it.
+- **G-14 · Grammar Library: what the new frames draw and the corpus/progress cannot supply (2026-10-08, owner: human /
+  Grammar Lab / learner state).**
+  - **Categories:** the design draws six named categories per language, each with a hue and an icon
+    (`GLIB.*.cats`). The corpus has 38 functions (21 at HSK 3) with names in vi/en/zh and no grouping, hue or icon.
+    Built: a category is a function; it takes the design's six hues and icons (`--gcat-1…6`) by its place in the
+    catalogue's `functions` list, so its look is the same at every level. A grouping of functions into the design's
+    six categories would be a Grammar Lab content decision.
+  - **"Learning" status and the progress ring:** the design has learned, learning (with a percentage ring) and not
+    started. `/api/grammar/v1/progress` records completion only. Built: learned (with the last quiz score as the ring's
+    label) and not started; the "learning" stat, status option and partial ring are not drawn.
+  - **Continue learning:** the design lists in-progress topics. With no such state, it lists the next three
+    not-yet-learned points of the level in catalogue order, as the human asked for the section.
+  - **Bookmark (save a topic):** no store exists. Saved grammar would be new learner-owned persistence, an
+    architecture hold (AGENTS.md §7), so it is not drawn.
+  - **Category description** (`cat.sub`, e.g. "Linking two ideas in one sentence"): the corpus functions carry none,
+    so the panel's subline is only the count.
 
 ## Current Admin reconciliation — 2026-10-03
 

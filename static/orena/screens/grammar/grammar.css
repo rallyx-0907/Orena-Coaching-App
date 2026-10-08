@@ -1,227 +1,690 @@
-/* Frame "Grammar Library" (frame 44). Measured from SCRATCH/inventory/E5-grammar-quicksheets-orena.md
-   §1.2-1.3: root gap 28/padding-top 28/max-width 880; group gap 14; heading row gap 10 baseline;
-   h2 20/26/600; hint 13/var(--text3); grid gap 12, --cols-ip (1 col mobile, auto-fill 280px desktop).
-   Tokens only - no colour literal (Design Contract rule 30). */
-.s-grammar {
-  max-width: 880px;
+/* Frames "Grammar Library" and "Grammar category" (design export 2026-10-08), measured from the frame's own inline
+   styles. Tokens only (rule 30): category hues are --gcat-*, carried on each element as --hue; the hero's surface,
+   shadow and ink are --gl-hero-bg, --sh-hero and --gl-hero-*. */
+.s-gl {
+  max-width: 1180px;
   margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  padding-top: 28px;
+  gap: 30px;
+  padding-top: 20px;
+  padding-bottom: 24px;
+}
+.s-gl__body {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
 }
 
-.s-grammar__group {
+/* Header row: back, breadcrumb, search + status. */
+.s-gl__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.s-gl__back {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-gl__crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.s-gl__crumb .ic {
+  color: var(--text3);
+  flex: none;
+}
+.s-gl__crumbRoot {
+  color: var(--muted);
+}
+.s-gl__crumbHere {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-gl__find {
+  display: flex;
+  gap: 8px;
+  flex: 1 1 360px;
+  max-width: 520px;
+  min-width: 0;
+}
+.s-gl__search {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  color: var(--text3);
+}
+.s-gl__search .ic {
+  flex: none;
+}
+.s-gl__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+}
+.s-gl__status {
+  height: 44px;
+  border-radius: 14px;
+  border: 0;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 12px;
+  flex: none;
+  cursor: pointer;
+}
+
+/* Level hero and the level row. */
+.s-gl__levelGroup {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-
-.s-grammar__ghead {
+.s-gl__hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--gl-hero-bg);
+  color: var(--gl-hero-ink);
+  padding: clamp(22px, 3vw, 32px);
+  box-shadow: var(--sh-hero);
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  flex-direction: column;
+  gap: 20px;
 }
-
-.s-grammar__gname {
-  margin: 0;
-  font-size: 20px;
-  line-height: 26px;
+.s-gl__glyph {
+  position: absolute;
+  right: clamp(-20px, 1vw, 24px);
+  bottom: -0.32em;
+  font-family: 'Noto Serif SC', Literata, serif;
+  font-size: clamp(150px, 22vw, 250px);
+  line-height: 1;
   font-weight: 600;
+  color: var(--gl-hero-glyph);
+  pointer-events: none;
+  letter-spacing: -0.04em;
+}
+.s-gl__heroHead {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-gl__heroLevel {
+  font-size: clamp(38px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.s-gl__heroSub {
+  font-size: 16.5px;
+  color: var(--gl-hero-sub);
+}
+.s-gl__stats {
+  position: relative;
+  display: flex;
+  gap: clamp(20px, 4vw, 48px);
+  flex-wrap: wrap;
+}
+.s-gl__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.s-gl__statN {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.s-gl__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+.s-gl__dot--learned {
+  background: var(--gl-learned);
+}
+.s-gl__dot--new {
+  background: var(--gl-new);
+}
+.s-gl__statLabel {
+  font-size: 13.5px;
+  color: var(--gl-hero-label);
+  padding-left: 17px;
+}
+.s-gl__bar {
+  position: relative;
+  display: flex;
+  height: 6px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--gl-hero-track);
+  max-width: 520px;
+}
+.s-gl__bar > span {
+  background: var(--gl-learned);
+  transition: width 0.4s;
+}
+.s-gl__levels {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: none;
+}
+.s-gl__levels::-webkit-scrollbar {
+  display: none;
+}
+.s-gl__level {
+  flex: 1 0 auto;
+  min-width: 96px;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.s-gl__level:hover {
+  border-color: var(--accent);
+}
+.s-gl__level[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.s-gl__levelN {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--muted);
+}
+/* The design's white count on the accent: the D-093 AA fill. */
+.s-gl__level[aria-pressed='true'] .s-gl__levelN {
+  background: var(--accent-fill);
+  color: var(--accent-ink);
 }
 
-.s-grammar__ghint {
-  font-size: 13px;
-  color: var(--text3);
+/* Groups and the shared grid. */
+.s-gl__group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
-
-.s-grammar__grid {
+.s-gl__h2 {
+  margin: 0;
+  font-size: 21px;
+  line-height: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.s-gl__grid {
   display: grid;
   grid-template-columns: var(--cols-ip);
   gap: 12px;
 }
 
-/* The concept card's level tile (frame 44 §1.2: 44x44, radius 12, solid fill, white bold glyph -
-   the "solid hex fill" the frame draws is the design's own --skill-grammar hue, rule 32). It holds
-   the level value: "B1", or "HSK3" for an HSK 3.0 level (contract §0). */
-.s-grammar__tile {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--skill-grammar);
-  color: var(--accent-ink);
+/* A category tile: the hue, white glyph, the hue's own soft drop shadow. */
+.s-gl__tile {
+  background: var(--hue);
+  color: var(--gl-hero-ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
-  font-weight: 700;
   flex: none;
+  box-shadow: 0 6px 14px -6px var(--hue);
+}
+.s-gl__tile--44 {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+}
+.s-gl__tile--48 {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+}
+.s-gl__tile--38 {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
 }
 
-/* Header back button (rule 42): frame 44 draws border-radius:12px / 19x19 icon, identical to
-   frame 47's back button - but 47 gets that via pageHeader's compact:true path, which also
-   shrinks the title to a smaller fixed size that frame 44 does not draw (its h1 stays var(--h1)).
-   This screen can't use compact:true for that reason, so the button alone is overridden locally
-   to cancel kit/kit.css's .o-iconbtn--back modifier (14px radius / 21px icon, the shared
-   non-compact default) back down to the frame's own 12px/19px. */
-.s-grammar .o-iconbtn--back {
-  border-radius: 12px;
-}
-.s-grammar .o-iconbtn--back svg {
-  width: 19px;
-  height: 19px;
-}
-
-/* ---- The Library's sections (model.js buildLibrary, 2026-10-08). Every piece is the frame's own concept card - surface,
-   radius 20, --sh1 resting and --sh2 on hover, 16px padding, 14px gap - or its group heading; tokens only. */
-
-/* Level filter: the design's Discover filter row (revision of 2026-10): row gap 8, wrap; label 13/600 muted; chip 36px
-   high, 0 14px, pill, 13.5/600, unselected surface / border2 / muted, selected accent-soft / tint2 / accent (its chip()). */
-.s-grammar__filter {
+/* The status ring: learned is a full green ring with its check, not started the empty track. */
+.s-gl__ring {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: center;
+  color: var(--green);
 }
-/* Phone: one row that scrolls sideways (kit.css .o-chip: a chip row either wraps or scrolls), so nine HSK levels do
-   not stack three rows high above the content. */
-:root[data-device='mobile'] .s-grammar__filter {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  margin: 0 calc(var(--pad) * -1);
-  padding: 0 var(--pad);
-  scrollbar-width: none;
+.s-gl__ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--surface3);
+  mask: radial-gradient(circle, transparent 10px, currentColor 11px);
 }
-:root[data-device='mobile'] .s-grammar__filter::-webkit-scrollbar {
-  display: none;
+.s-gl__ring--done::before {
+  background: var(--green);
 }
-/* Phone: continue learning shows the next three, not a second screen of cards. */
-:root[data-device='mobile'] .s-grammar__continue > :nth-child(n + 4) {
-  display: none;
-}
-.s-grammar__flabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-}
-.s-grammar__chip {
-  height: 36px;
-  padding: 0 14px;
-  font-size: 13.5px;
-  color: var(--muted);
-}
-.s-grammar__chip[aria-pressed='true'] {
-  border-color: var(--tint2);
+.s-gl__ring .ic {
+  position: relative;
 }
 
-/* Topics: compact cards of the same family, two to four across. */
-.s-grammar__topics {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 12px;
+.s-gl__tag {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--hue) 15%, transparent);
+  color: var(--hue);
 }
-:root[data-device='mobile'] .s-grammar__topics {
-  grid-template-columns: 1fr 1fr;
+.s-gl__tag--cont {
+  align-self: flex-start;
+  margin-top: 8px;
 }
-.s-grammar__topic {
+.s-gl__tag--clip {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s-gl__tag--row {
+  display: var(--hide-mobile);
+  white-space: nowrap;
+}
+
+/* Continue learning card. */
+.s-gl__cont {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 14px 16px;
-  border: 0;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
   border-radius: 20px;
+  border: 0;
   background: var(--surface);
   box-shadow: var(--sh1);
   color: var(--text);
   text-align: left;
   min-width: 0;
 }
-.s-grammar__topic:hover {
+.s-gl__cont:hover {
   box-shadow: var(--sh2);
 }
-.s-grammar__topic[aria-pressed='true'] {
-  box-shadow: 0 0 0 2px var(--accent), var(--sh1);
+.s-gl__contBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-.s-grammar__topicName {
-  font-size: 15px;
+.s-gl__contTitle {
+  font-family: 'Noto Serif SC', Outfit, sans-serif;
+  font-size: 18px;
   font-weight: 600;
-  line-height: 20px;
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
-.s-grammar__topicMeta {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.s-grammar__more,
-.s-grammar__clear {
-  align-self: flex-start;
-  border: 1px solid var(--border2);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 14px;
-}
-.s-grammar__clear {
-  margin-left: auto;
-  padding: 6px 12px;
-}
-
-/* All grammar: a section per topic, with the design's grouped heading (Discover dGroups: groups 32 apart, 14 inside;
-   heading baseline row gap 10, 10px under a 1px border; name 20/700 -.01em, sub 13.5 muted). */
-.s-grammar__sections {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-.s-grammar__sections--under {
-  margin-top: 6px;
-}
-.s-grammar__section {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.s-grammar__shead {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
-}
-.s-grammar__sname {
-  margin: 0;
-  font-size: 20px;
-  line-height: 26px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-.s-grammar__ssub {
+.s-gl__contRd {
   font-size: 13.5px;
   color: var(--muted);
 }
+.s-gl__contMean {
+  font-size: 14px;
+  line-height: 1.4;
+  margin-top: 2px;
+}
 
-/* The card's tag: the frame's 12/600 status word - new in the accent, done in green with the last quiz score. */
-.s-grammar__tag {
-  font-size: 12px;
+/* Category card. */
+.s-gl__cat {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 16px;
+  border-radius: 20px;
+  border: 1.5px solid transparent;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--hue) 18%, transparent) 0%, var(--surface) 62%);
+  box-shadow: var(--sh1);
+  color: var(--text);
+  text-align: left;
+  min-width: 0;
+  transition: border-color 0.15s;
+}
+.s-gl__cat:hover {
+  border-color: var(--border2);
+}
+.s-gl__cat[aria-pressed='true'] {
+  border-color: var(--hue);
+}
+.s-gl__catBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.s-gl__catName {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.s-gl__catCount {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-gl__catEx {
+  font-family: 'Noto Serif SC', Outfit, sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-gl__chev {
+  flex: none;
+  align-self: center;
+  color: var(--text3);
+  display: flex;
+}
+
+/* The open category ("Grammar category" frame). */
+.s-gl__panel {
+  border-radius: 26px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: clamp(16px, 2.4vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.s-gl__panelHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.s-gl__panelText {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.s-gl__panelName {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.s-gl__panelSub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.s-gl__seeAll {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.s-gl__seeAll:hover {
+  background: var(--accent-soft);
+}
+.s-gl__panelEmpty {
+  padding: 22px;
+  border-radius: 18px;
+  background: var(--surface2);
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Topic card (panel and "all" grid). */
+.s-gl__topic {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 14px;
+  border-radius: 20px;
+  border: 0;
+  background: var(--surface2);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  transition: background 0.15s;
+}
+.s-gl__topic:hover {
+  background: var(--surface3);
+}
+.s-gl__topicHead {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.s-gl__topicTitle {
+  font-family: 'Noto Serif SC', Outfit, sans-serif;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.s-gl__topicRd {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.s-gl__topicMean {
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: var(--text);
+  text-wrap: pretty;
+}
+.s-gl__topicFoot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+/* All topics: head, chips, list rows, empty. */
+.s-gl__all {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-margin-top: 80px;
+}
+.s-gl__allHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.s-gl__allTitle {
+  flex: 1 1 220px;
+}
+.s-gl__sort {
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 10px;
+  cursor: pointer;
+}
+.s-gl__views {
+  display: flex;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--surface2);
+  gap: 2px;
+}
+.s-gl__view {
+  width: 36px;
+  height: 34px;
+  border-radius: 9px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-gl__view[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--sh1);
+}
+.s-gl__chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.s-gl__chips::-webkit-scrollbar {
+  display: none;
+}
+.s-gl__chip {
+  flex: none;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13.5px;
   font-weight: 600;
   white-space: nowrap;
 }
-.s-grammar__tag--new {
+.s-gl__chip[aria-pressed='true'] {
+  border-color: var(--tint2);
+  background: var(--accent-soft);
   color: var(--accent);
 }
-.s-grammar__tag--done {
-  color: var(--green);
+.s-gl__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-
-/* The frame's empty group: surface2, radius 20, 22px, 14/muted, centred. */
-.s-grammar__empty {
+.s-gl__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.s-gl__row:hover {
+  box-shadow: var(--sh2);
+}
+.s-gl__rowBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 4px 12px;
+  flex-wrap: wrap;
+}
+.s-gl__rowTitle {
+  font-family: 'Noto Serif SC', Outfit, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+}
+.s-gl__rowRd {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.s-gl__rowMean {
+  font-size: 14px;
+  color: var(--text);
+  flex-basis: 100%;
+}
+.s-gl__allEmpty {
+  padding: 28px;
   border-radius: 20px;
   background: var(--surface2);
-  padding: 22px;
-  font-size: 14px;
-  color: var(--muted);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.s-gl__allEmptyTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-gl__clear {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
 }

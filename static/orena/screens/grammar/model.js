@@ -1,146 +1,135 @@
-/* Pure data shaping for the Grammar Library (frame 44, route "grammarlib") on the grammar content
-   contract's catalogue projection (docs/project/GRAMMAR_CONTENT_CONTRACT.md §9; D-100). No DOM,
-   no fetch: scripts/test_orena_screen_grammar.mjs exercises this against a contract-shaped,
-   test-only fixture.
+/* Pure data shaping for the Grammar Library (route "grammarlib") on the grammar content contract's catalogue
+   projection (docs/project/GRAMMAR_CONTENT_CONTRACT.md §9; D-100). No DOM, no fetch:
+   scripts/test_orena_screen_grammar.mjs exercises this against contract-shaped, test-only rows.
 
-   What each card draws, from which field (frame 44's concept card):
-   - title   `header.native_title` (+ `native_title_pinyin` for Chinese), never `header.title`
-             (contract §1): the point's name in the language being learned;
-   - note    `header.title` in the support language - the gloss §1 names for "dòng phụ";
-   - tile    the level value (`level.value`, CEFR A1-C2 or HSK 1-9).
-   How the page is composed from them is buildLibrary below (§9: "đếm và nhóm theo function trong mỗi level là
-   việc của UI"). Not drawn, for want of a source: the frame's "recent errors" and "saved" groups. */
+   A topic's title is `header.native_title` (+ `native_title_pinyin` for Chinese), never `header.title` (contract §1):
+   the point's name in the language being learned. Counting and grouping by function within a level is the UI's job
+   (§9: "đếm và nhóm theo function trong mỗi level là việc của UI"). */
 import { contractText, levelCode, sortCatalog } from '../../product/grammar-source.js';
 
-/* Level names (interface copy, grammar/copy.js). CEFR by its six levels; HSK 3.0 by its three
-   bands (初等 1-3, 中等 4-6, 高等 7-9), the level number itself staying in the heading. */
-const CEFR_KEY = Object.freeze({ A1: 'cefrA1', A2: 'cefrA2', B1: 'cefrB1', B2: 'cefrB2', C1: 'cefrC1', C2: 'cefrC2' });
-
-export function levelNameKey(level) {
-  if (level?.framework === 'hsk3') {
-    const n = Number(level.value);
-    if (!Number.isInteger(n) || n < 1 || n > 9) return '';
-    return n <= 3 ? 'hskBand1' : n <= 6 ? 'hskBand2' : 'hskBand3';
-  }
-  if (level?.framework === 'cefr') return CEFR_KEY[String(level.value || '').toUpperCase()] || '';
-  return '';
-}
-
-/* "B1 · Intermediate", "HSK 3 · Elementary" - an unknown level shows its bare code, never a guessed
-   name. */
-export function levelHeading(level, t) {
-  const code = levelCode(level);
-  const key = levelNameKey(level);
-  return key ? t('levelHeading', { code, name: t(key) }) : code;
-}
-
-/* The 44x44 tile's text: the level value, "B1" or "HSK3" (the frame's tile holds a short code). */
+/* A level's short code, "B1" or "HSK3": the design's level button and hero title. */
 export function levelTile(level) {
   return levelCode(level).replace(/\s+/g, '');
 }
 
-/* ---- The Library's information architecture (human decision 2026-10-08, after the PR #107 review) -------------------
-   Frame 44 draws concept groups "by what matters for you right now" (recent errors, at your level, saved, recommended).
-   With 215 / 380 real points a group per level became one long flat grid, so the page is composed of the frame's own
-   group and card from the top down:
-   - levels: one card per level of the corpus - its points and how many the learner completed - the learner's level
-     marked; choosing one sets the level the rest of the page reads;
-   - continue: the next points not completed yet at that level, in curriculum order (function, sequence) - the frame's
-     "At your level" group;
-   - topics: the corpus's functions (the contract's topic layer, §9), with their counts at that level;
-   - all: every point of that level (and topic, when one is chosen), in sections by topic, at the end.
-   Inside a level-scoped section the level tile would repeat the same code on every card, so cards there carry none; a
-   card's tag is the learner's own state: done (with the last quiz score) or new. Nothing here is invented learner data:
-   completion comes from GET /api/grammar/v1/progress, the level from the profile's declared level. */
+/* ---- The Library (design export 2026-10-08, frames "Grammar Library" and "Grammar category"; state `glVals`) -----------
+   Composed for the corpus as it is:
+   - categories are the corpus's functions (the contract's topic layer, §9) that have points at the chosen level, in
+     the catalogue's `functions` order; each takes one of the design's six category hues and icons by its place in that
+     list, so a function keeps its look across levels (the corpus carries no hue or icon - UI_BACKEND_GAPS G-14);
+   - status is what the progress API knows: learned (a completed point, with its last quiz score) or not started.
+     The design's third state, "learning" with a percentage, and the bookmark have no source and are not drawn (G-14);
+   - continue learning: the design shows in-progress topics; with no such state it shows the next three not-yet-learned
+     points of the level in catalogue order (the human asked for the section, 2026-10-08).
+   The topic card's "meaning" line is `header.sub` in the support language (a short gloss, as the design's), falling
+   back to `header.title`; its reading is the pinyin of `native_title_pinyin`. */
 
-export const CONTINUE_LIMIT = 6;
-export const TOPIC_PREVIEW = 8;
+export const CATEGORY_LOOKS = Object.freeze([
+  { hue: 'var(--gcat-1)', icon: 'message-square' },
+  { hue: 'var(--gcat-2)', icon: 'zap' },
+  { hue: 'var(--gcat-3)', icon: 'link' },
+  { hue: 'var(--gcat-4)', icon: 'arrow-up-right' },
+  { hue: 'var(--gcat-5)', icon: 'star' },
+  { hue: 'var(--gcat-6)', icon: 'chart-column' },
+]);
+export const CONTINUE_LIMIT = 3;
+export const PANEL_LIMIT = 6;
+export const SORTS = Object.freeze(['def', 'st', 'az']);
+export const STATUSES = Object.freeze(['all', 'L', 'N']);
 
-function levelKey(level) {
-  return levelTile(level);
+function searchable(row) {
+  const header = row.header || {};
+  const parts = [header.native_title, ...(Array.isArray(header.native_title_pinyin) ? header.native_title_pinyin : [])];
+  for (const field of [header.title, header.sub]) {
+    if (field && typeof field === 'object') parts.push(...Object.values(field));
+    else if (field) parts.push(field);
+  }
+  return parts.filter(Boolean).join(' ').toLowerCase();
 }
 
-function itemOf(row, support, done) {
-  const header = row.header || row;
-  const state = done.get(String(row.id));
-  return {
-    id: String(row.id),
-    title: String(header.native_title || ''),
-    titlePinyin: Array.isArray(header.native_title_pinyin) ? header.native_title_pinyin : null,
-    lang: String(row.id).startsWith('zh.') ? 'zh' : 'en',
-    note: contractText(header.title, support),
-    done: Boolean(state),
-    score: state?.last_quiz && Number.isFinite(state.last_quiz.total) ? { correct: state.last_quiz.correct, total: state.last_quiz.total } : null,
-  };
-}
-
-/* `progress` is the progress API's list ({point_id, last_quiz}); `current` the profile's declared level code ("B1",
-   "HSK3"); `selected` the level the learner picked on this page; `topic` a function id or ''. */
-export function buildLibrary({ rows = [], functions = [], progress = [], current = '', selected = '', topic = '', support = 'en', t = (key) => key } = {}) {
+/* `rows` the catalogue points, `functions` its functions, `progress` the progress API's list, `current` the learner's
+   declared level code; `state` = {level, cat, all, q, st, sort}. */
+export function buildLibrary({ rows = [], functions = [], progress = [], current = '', state = {}, support = 'en', t = (key) => key } = {}) {
   const list = sortCatalog(Array.isArray(rows) ? rows : []);
   const done = new Map((progress || []).map((entry) => [String(entry.point_id), entry]));
+  const fnOrder = (Array.isArray(functions) ? functions : []).map((fn) => fn.id);
+  const fnName = new Map((functions || []).map((fn) => [fn.id, contractText(fn.title, support) || fn.id]));
+
   const levels = [];
   for (const row of list) {
-    const key = levelKey(row.level);
+    const key = levelTile(row.level);
     let level = levels.find((entry) => entry.key === key);
-    if (!level) {
-      level = { key, level: row.level, heading: levelHeading(row.level, t), count: 0, done: 0 };
-      levels.push(level);
-    }
+    if (!level) levels.push((level = { key, level: row.level, count: 0 }));
     level.count += 1;
-    if (done.has(String(row.id))) level.done += 1;
   }
-  const currentKey = levels.some((entry) => entry.key === current) ? current : '';
-  const chosen = levels.find((entry) => entry.key === selected) || levels.find((entry) => entry.key === currentKey) || levels[0] || null;
-  for (const level of levels) {
-    level.current = level.key === currentKey;
-    level.selected = Boolean(chosen) && level.key === chosen.key;
-  }
-  const atLevel = chosen ? list.filter((row) => levelKey(row.level) === chosen.key) : [];
-  const names = new Map(functions.map((fn) => [fn.id, contractText(fn.title, support) || fn.id]));
-  const topicName = (id) => (id ? names.get(id) || id : t('otherTopic'));
+  const selectedKey = [state.level, current].find((key) => levels.some((entry) => entry.key === key)) || levels[0]?.key || '';
+  for (const level of levels) level.selected = level.key === selectedKey;
+  const chosen = levels.find((entry) => entry.selected) || null;
+  const atLevel = chosen ? list.filter((row) => levelTile(row.level) === chosen.key) : [];
 
-  const continueItems = atLevel.filter((row) => !done.has(String(row.id))).slice(0, CONTINUE_LIMIT).map((row) => itemOf(row, support, done));
+  const catIds = [...new Set(atLevel.map((row) => row.function || ''))].sort((a, b) => {
+    const ia = fnOrder.indexOf(a), ib = fnOrder.indexOf(b);
+    return (ia < 0 ? 1e6 : ia) - (ib < 0 ? 1e6 : ib) || a.localeCompare(b);
+  });
+  const lookOf = (id) => {
+    const index = fnOrder.indexOf(id);
+    return CATEGORY_LOOKS[(index < 0 ? fnOrder.length : index) % CATEGORY_LOOKS.length];
+  };
+  const catName = (id) => (id ? fnName.get(id) || id : t('otherTopic'));
 
-  const topics = [];
-  for (const row of atLevel) {
-    const id = row.function || '';
-    let entry = topics.find((item) => item.id === id);
-    if (!entry) {
-      entry = { id, title: topicName(id), count: 0, done: 0 };
-      topics.push(entry);
-    }
-    entry.count += 1;
-    if (done.has(String(row.id))) entry.done += 1;
-  }
-  topics.sort((a, b) => b.count - a.count || a.title.localeCompare(b.title));
-  const activeTopic = topics.some((entry) => entry.id === topic) ? topic : '';
-  for (const entry of topics) entry.selected = entry.id === activeTopic;
+  const item = (row) => {
+    const header = row.header || {};
+    const state = done.get(String(row.id));
+    const cat = row.function || '';
+    return {
+      id: String(row.id),
+      title: String(header.native_title || ''),
+      reading: Array.isArray(header.native_title_pinyin) ? header.native_title_pinyin.join(' ') : '',
+      lang: String(row.id).startsWith('zh.') ? 'zh' : 'en',
+      mean: contractText(header.sub, support) || contractText(header.title, support),
+      cat,
+      tag: catName(cat),
+      ...lookOf(cat),
+      learned: Boolean(state),
+      score: state?.last_quiz && Number.isFinite(state.last_quiz.total) ? { correct: state.last_quiz.correct, total: state.last_quiz.total } : null,
+    };
+  };
+  const items = atLevel.map(item);
+  const q = String(state.q || '').trim().toLowerCase();
+  const st = STATUSES.includes(state.st) ? state.st : 'all';
+  const match = (entry, row) => (!q || searchable(row).includes(q)) && (st === 'all' || (st === 'L') === entry.learned);
+  const sort = SORTS.includes(state.sort) ? state.sort : 'def';
+  const sortList = (entries) => {
+    if (sort === 'st') return [...entries].sort((a, b) => Number(a.learned) - Number(b.learned));
+    if (sort === 'az') return [...entries].sort((a, b) => (a.reading || a.title).localeCompare(b.reading || b.title));
+    return entries;
+  };
+  const filtered = (keep) => sortList(items.filter((entry, i) => keep(entry) && match(entry, atLevel[i])));
 
-  const sections = [];
-  for (const row of atLevel) {
-    const id = row.function || '';
-    if (activeTopic && id !== activeTopic) continue;
-    let section = sections.find((item) => item.id === id);
-    if (!section) {
-      section = { id, title: topicName(id), items: [] };
-      sections.push(section);
-    }
-    section.items.push(itemOf(row, support, done));
-  }
-
-  // Sections follow the topics' order (largest first), so the page reads the same way down as across.
-  const order = new Map(topics.map((entry, index) => [entry.id, index]));
-  sections.sort((x, y) => order.get(x.id) - order.get(y.id));
+  const categories = catIds.map((id) => {
+    const members = items.filter((entry) => entry.cat === id);
+    return { id, name: catName(id), count: members.length, examples: members.slice(0, 3).map((entry) => entry.title), more: members.length > 3, ...lookOf(id) };
+  });
+  const catId = catIds.includes(state.cat) ? state.cat : catIds[0] ?? '';
+  for (const category of categories) category.selected = category.id === catId;
+  const panelAll = filtered((entry) => entry.cat === catId);
+  const allCat = catIds.includes(state.all) ? state.all : 'all';
+  const all = filtered((entry) => allCat === 'all' || entry.cat === allCat);
+  const learned = items.filter((entry) => entry.learned).length;
 
   return {
     levels,
     level: chosen,
-    continue: continueItems,
-    levelComplete: Boolean(chosen) && chosen.count > 0 && chosen.done === chosen.count,
-    topics,
-    topic: activeTopic,
-    sections,
-    shown: sections.reduce((n, section) => n + section.items.length, 0),
+    stats: { total: items.length, learned, notStarted: items.length - learned },
+    continue: items.filter((entry) => !entry.learned).slice(0, CONTINUE_LIMIT),
+    categories,
+    panel: categories.find((category) => category.selected) || null,
+    panelItems: panelAll.slice(0, PANEL_LIMIT),
+    allCat,
+    all,
+    filtering: Boolean(q) || st !== 'all',
+    q: String(state.q || ''),
+    st,
+    sort,
   };
 }

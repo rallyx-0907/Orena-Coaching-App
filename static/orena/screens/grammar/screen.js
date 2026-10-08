@@ -1,59 +1,96 @@
-/* Frame "Grammar Library" (pinned design, frame 44; route "grammarlib"). A browsing place (Design
-   Contract rule 47): shell drawn, rail/tab bar present.
+/* Frame "Grammar Library" with its "Grammar category" panel (design export 2026-10-08; route "grammarlib"). A browsing
+   place (Design Contract rule 47): shell drawn, rail/tab bar present.
 
    Data: the Grammar Store's catalogue for the learning language and the learner's completed points, through the one
-   seam product/grammar-source.js. The page is the frame's own group heading, hint and concept card, composed as the
-   human decided on 2026-10-08 (model.js buildLibrary): levels, continue learning, explore by topic, then all grammar
-   of the chosen level in sections by topic. The chosen level and topic live in the address (?level=&topic=), so
-   reload and Back from a point land where the learner was.
+   seam product/grammar-source.js; model.js buildLibrary shapes them as the frame's state script (`glVals`) does, for
+   the corpus as it is (see its notes for what the corpus cannot supply). The level, the open category, the "all" chip,
+   the status filter, the sort and the view live in the address, so reload and Back from a point keep them; the search
+   text does not.
 
-   Rule 50: the frame's subtitle under the "Grammar" heading only restates the group headings below it and is
-   dropped. */
-import { html, mount } from '../../kit/html.js';
+   The header row (back, breadcrumb, search, status) is drawn once and the rest of the page re-renders under it, so the
+   search field keeps its focus while the learner types. */
+import { html, mount, raw } from '../../kit/html.js';
 import { useStyles } from '../../kit/styles.js';
-import { pageHeader, listRow } from '../../kit/components.js';
+import { icon } from '../../kit/icons.js';
 import { langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { shellCopy as shell } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
-import { grammarLibraryData, grammarProgress, levelCode } from '../../product/grammar-source.js';
-import { TOPIC_PREVIEW, buildLibrary } from './model.js';
-import { hanziMarkup } from './hanzi.js';
+import { grammarLibraryData, grammarProgress } from '../../product/grammar-source.js';
+import { SORTS, STATUSES, buildLibrary } from './model.js';
 
-function cardTitle(item) {
-  return langSpan(item.lang === 'zh' ? hanziMarkup(item.title, item.titlePinyin) : item.title, item.lang);
+const GLYPH = Object.freeze({ zh: '语', en: 'Aa' });
+const QUERY_KEYS = Object.freeze(['level', 'cat', 'all', 'st', 'sort', 'view']);
+
+const hueStyle = (entry) => `--hue:${entry.hue}`;
+
+function tile(entry, size, iconSize) {
+  return html`<span class="s-gl__tile s-gl__tile--${size}" style="${hueStyle(entry)}">${raw(icon(entry.icon, { size: iconSize, stroke: 2.2 }))}</span>`;
 }
 
-function tag(item) {
-  if (item.done) {
-    const label = item.score ? `✓ ${t('tagScore', { correct: item.score.correct, total: item.score.total })}` : `✓ ${t('tagDone')}`;
-    return html`<span class="s-grammar__tag s-grammar__tag--done">${label}</span>`;
-  }
-  return html`<span class="s-grammar__tag s-grammar__tag--new">${t('tagNew')}</span>`;
+function ring(entry) {
+  const label = entry.learned
+    ? entry.score ? t('learnedScore', { correct: entry.score.correct, total: entry.score.total }) : t('status_L')
+    : t('status_N');
+  return html`<span class="s-gl__ring${entry.learned ? ' s-gl__ring--done' : ''}" role="img" aria-label="${label}">${entry.learned ? raw(icon('check', { size: 14, stroke: 3 })) : ''}</span>`;
 }
 
-function card(item) {
-  return listRow({ radius: 20, pad: '16px', title: cardTitle(item), titleLineHeight: 20, sub: item.note, trailing: tag(item), dataset: { open: item.id } });
+function tag(entry, extra = '') {
+  return html`<span class="s-gl__tag${extra}" style="${hueStyle(entry)}">${entry.tag}</span>`;
 }
 
-function groupHead(title, hint = '', extra = '') {
-  return html`<div class="s-grammar__ghead"><h2 class="s-grammar__gname">${title}</h2>${hint ? html`<span class="s-grammar__ghint">${hint}</span>` : ''}${extra}</div>`;
+function title(entry, cls) {
+  return html`<span class="${cls}">${langSpan(entry.title, entry.lang)}</span>`;
 }
 
-/* The design's Level chip row (Discover, design revision of 2026-10: label 13/600 muted, chips 36px pill 13.5/600, the
-   state script's chip(on) colours). */
-function levelChips(levels) {
-  return html`<div class="s-grammar__filter"><span class="s-grammar__flabel">${t('levelLabel')}</span>${levels.map(
-    (level) => html`<button type="button" class="o-chip s-grammar__chip" data-level="${level.key}" aria-pressed="${level.selected ? 'true' : 'false'}">${levelCode(level.level)}</button>`,
-  )}</div>`;
+function reading(entry, cls, pinyin) {
+  return entry.reading && pinyin ? html`<span class="${cls}">${entry.reading}</span>` : '';
 }
 
-function topicCard(topic) {
-  return html`<button type="button" class="s-grammar__topic" data-topic="${topic.id || '-'}" aria-pressed="${topic.selected ? 'true' : 'false'}">
-    <span class="s-grammar__topicName">${topic.title}</span>
-    <span class="s-grammar__topicMeta">${topic.done ? t('topicMeta', { n: topic.count, done: topic.done }) : t('levelPoints', { n: topic.count })}</span>
+function continueCard(entry, pinyin) {
+  return html`<button type="button" class="s-gl__cont" data-open="${entry.id}">
+    ${tile(entry, 44, 21)}
+    <span class="s-gl__contBody">
+      ${title(entry, 's-gl__contTitle')}${reading(entry, 's-gl__contRd', pinyin)}
+      <span class="s-gl__contMean">${entry.mean}</span>
+      ${tag(entry, ' s-gl__tag--cont')}
+    </span>
+    ${ring(entry)}
   </button>`;
+}
+
+function categoryCard(category) {
+  return html`<button type="button" class="s-gl__cat" data-cat="${category.id || '-'}" aria-pressed="${category.selected ? 'true' : 'false'}" style="${hueStyle(category)}">
+    ${tile(category, 48, 22)}
+    <span class="s-gl__catBody">
+      <span class="s-gl__catName">${category.name}</span>
+      <span class="s-gl__catCount">${t.plural('topics', category.count)}</span>
+      <span class="s-gl__catEx">${category.count ? `${category.examples.join(', ')}${category.more ? '…' : ''}` : t('noTopics')}</span>
+    </span>
+    <span class="s-gl__chev" aria-hidden="true">${raw(icon('chevron-right', { size: 18 }))}</span>
+  </button>`;
+}
+
+function topicCard(entry, pinyin) {
+  return html`<button type="button" class="s-gl__topic" data-open="${entry.id}">
+    <span class="s-gl__topicHead">${title(entry, 's-gl__topicTitle')}${reading(entry, 's-gl__topicRd', pinyin)}</span>
+    <span class="s-gl__topicMean">${entry.mean}</span>
+    <span class="s-gl__topicFoot">${tag(entry, ' s-gl__tag--clip')}${ring(entry)}</span>
+  </button>`;
+}
+
+function topicRow(entry, pinyin) {
+  return html`<button type="button" class="s-gl__row" data-open="${entry.id}">
+    ${tile(entry, 38, 18)}
+    <span class="s-gl__rowBody">${title(entry, 's-gl__rowTitle')}${reading(entry, 's-gl__rowRd', pinyin)}<span class="s-gl__rowMean">${entry.mean}</span></span>
+    ${tag(entry, ' s-gl__tag--row')}
+    ${ring(entry)}
+  </button>`;
+}
+
+function option(value, label, selected) {
+  return html`<option value="${value}"${selected ? raw(' selected') : ''}>${label}</option>`;
 }
 
 export default async function grammarLibrary(element, ctx) {
@@ -61,94 +98,145 @@ export default async function grammarLibrary(element, ctx) {
   const target = ctx.context.language === 'zh' ? 'zh' : 'en';
   const [data, progress] = await Promise.all([grammarLibraryData(target), grammarProgress()]);
   if (!ctx.isCurrent()) return;
-  const state = { level: ctx.query?.get?.('level') || '', topic: ctx.query?.get?.('topic') || '', allTopics: false };
+
+  const state = { q: '' };
+  for (const key of QUERY_KEYS) state[key] = ctx.query?.get?.(key) || '';
+  if (state.view !== 'list') state.view = '';
+  const pinyin = ctx.context.pinyin !== false;
+  const langTitle = t(`langTitle_${target}`);
+
+  if (!data.points.length) {
+    mount(element, html`<section class="s-gl">${emptyMarkup({ text: t('empty'), iconName: 'inbox' })}</section>`);
+    return;
+  }
+
+  mount(
+    element,
+    html`<section class="s-gl">
+      <div class="s-gl__top">
+        <button type="button" class="s-gl__back" data-back aria-label="${shell('back')}">${raw(icon('arrow-left', { size: 19 }))}</button>
+        <nav class="s-gl__crumb" aria-label="${t('title')}"><span class="s-gl__crumbRoot">${t('title')}</span>${raw(icon('chevron-right', { size: 14 }))}<span class="s-gl__crumbHere">${langTitle}</span></nav>
+        <div class="s-gl__find">
+          <label class="s-gl__search">${raw(icon('search', { size: 17 }))}<input type="search" data-q placeholder="${t('search')}" aria-label="${t('search')}" autocomplete="off" /></label>
+          <select class="s-gl__status" data-st aria-label="${t('status_all')}">${STATUSES.map((value) => option(value, t(`status_${value}`), value === (state.st || 'all')))}</select>
+        </div>
+      </div>
+      <div class="s-gl__body" data-body></div>
+    </section>`,
+  );
+  const body = element.querySelector('[data-body]');
+  const q = element.querySelector('[data-q]');
+  const st = element.querySelector('[data-st]');
+
+  function remember() {
+    const params = {};
+    for (const key of QUERY_KEYS) if (state[key]) params[key] = state[key];
+    history.replaceState(history.state, '', ctx.href('grammarlib', {}, params));
+  }
 
   function render() {
     const view = buildLibrary({
-      rows: data.points, functions: data.functions, progress, current: ctx.context.level || '',
-      selected: state.level, topic: state.topic, support: languages().support, t,
+      rows: data.points, functions: data.functions, progress, current: ctx.context.level || '', state, support: languages().support, t,
     });
-    if (!view.level) {
-      mount(element, html`<div class="s-grammar">${pageHeader({ back: { label: shell('back'), dataset: { back: '1' } }, title: t('title') })}${emptyMarkup({ text: t('empty'), iconName: 'inbox' })}</div>`);
-      return;
-    }
-    const code = levelCode(view.level.level);
-    const topics = state.allTopics ? view.topics : view.topics.slice(0, TOPIC_PREVIEW);
+    const level = view.level.key;
+    const percent = view.stats.total ? (view.stats.learned / view.stats.total) * 100 : 0;
+    const panel = view.panel;
+    const list = state.view === 'list';
     mount(
-      element,
-      html`<div class="s-grammar">
-        ${pageHeader({ back: { label: shell('back'), dataset: { back: '1' } }, title: t('title') })}
+      body,
+      html`<div class="s-gl__levelGroup">
+        <div class="s-gl__hero">
+          <span class="s-gl__glyph" aria-hidden="true">${GLYPH[target]}</span>
+          <div class="s-gl__heroHead"><div class="s-gl__heroLevel">${level}</div><div class="s-gl__heroSub">${langTitle} · ${t.plural('topics', view.stats.total)}</div></div>
+          <div class="s-gl__stats">
+            <div class="s-gl__stat"><span class="s-gl__statN"><span class="s-gl__dot s-gl__dot--learned"></span>${view.stats.learned}</span><span class="s-gl__statLabel">${t('learned')}</span></div>
+            <div class="s-gl__stat"><span class="s-gl__statN"><span class="s-gl__dot s-gl__dot--new"></span>${view.stats.notStarted}</span><span class="s-gl__statLabel">${t('notStarted')}</span></div>
+          </div>
+          <div class="s-gl__bar" aria-hidden="true"><span style="${`width:${percent}%`}"></span></div>
+        </div>
+        <div class="s-gl__levels">${view.levels.map((entry) => html`<button type="button" class="s-gl__level" data-level="${entry.key}" aria-pressed="${entry.selected ? 'true' : 'false'}">${entry.key}<span class="s-gl__levelN">${entry.count}</span></button>`)}</div>
+      </div>
 
-        ${levelChips(view.levels)}
+      ${view.continue.length
+        ? html`<div class="s-gl__group"><h2 class="s-gl__h2">${t('continueTitle')}</h2><div class="s-gl__grid">${view.continue.map((entry) => continueCard(entry, pinyin))}</div></div>`
+        : ''}
 
-        <section class="s-grammar__group">
-          ${groupHead(t('continueTitle'), t('continueHint', { level: code }))}
-          ${view.continue.length
-            ? html`<div class="s-grammar__grid s-grammar__continue">${view.continue.map(card)}</div>`
-            : html`<div class="s-grammar__empty">${t('levelComplete')}</div>`}
-        </section>
+      <div class="s-gl__group">
+        <h2 class="s-gl__h2">${t('categoriesTitle')}</h2>
+        <div class="s-gl__grid">${view.categories.map(categoryCard)}</div>
+      </div>
 
-        <section class="s-grammar__group">
-          ${groupHead(t('topicsTitle'), t('topicsHint', { n: view.topics.length, level: code }))}
-          <div class="s-grammar__topics">${topics.map(topicCard)}</div>
-          ${view.topics.length > TOPIC_PREVIEW
-            ? html`<button type="button" class="s-grammar__more" data-all-topics>${state.allTopics ? t('showFewerTopics') : t('showAllTopics', { n: view.topics.length })}</button>`
-            : ''}
-        </section>
+      ${panel
+        ? html`<div class="s-gl__panel">
+          <div class="s-gl__panelHead">
+            ${tile(panel, 48, 22)}
+            <div class="s-gl__panelText"><div class="s-gl__panelName">${panel.name}</div><div class="s-gl__panelSub">${t.plural('topics', panel.count)}</div></div>
+            <button type="button" class="s-gl__seeAll" data-see-all="${panel.id || '-'}">${t('seeAll')}${raw(icon('arrow-right', { size: 16 }))}</button>
+          </div>
+          ${view.panelItems.length
+            ? html`<div class="s-gl__grid">${view.panelItems.map((entry) => topicCard(entry, pinyin))}</div>`
+            : html`<div class="s-gl__panelEmpty">${view.filtering ? t('catEmptyFiltered') : t('catEmpty', { level })}</div>`}
+        </div>`
+        : ''}
 
-        <section class="s-grammar__group" data-all>
-          ${groupHead(t('allTitle'), t('allHint', { level: code, n: view.shown }), view.topic
-            ? html`<button type="button" class="s-grammar__clear" data-topic="">${t('clearTopic')} ×</button>`
-            : '')}
-          <div class="s-grammar__sections s-grammar__sections--under">${view.sections.map((section) => html`<div class="s-grammar__section">
-            <div class="s-grammar__shead"><h3 class="s-grammar__sname">${section.title}</h3><span class="s-grammar__ssub">${t('levelPoints', { n: section.items.length })}</span></div>
-            <div class="s-grammar__grid">${section.items.map(card)}</div>
-          </div>`)}</div>
-        </section>
+      <div class="s-gl__all" data-all>
+        <div class="s-gl__allHead">
+          <h2 class="s-gl__h2 s-gl__allTitle">${t('allTitle', { level, n: view.all.length })}</h2>
+          <select class="s-gl__sort" data-sort aria-label="${t('sortLabel')}">${SORTS.map((value) => option(value, t(`sort_${value}`), value === view.sort))}</select>
+          <div class="s-gl__views">${[['', 'layout-grid', t('viewGrid')], ['list', 'list', t('viewList')]].map(([value, name, aria]) => html`<button type="button" class="s-gl__view" data-view="${value || 'grid'}" aria-label="${aria}" aria-pressed="${(state.view || '') === value ? 'true' : 'false'}">${raw(icon(name, { size: 17 }))}</button>`)}</div>
+        </div>
+        <div class="s-gl__chips">${[{ id: 'all', name: t('chipAll') }, ...view.categories].map((entry) => html`<button type="button" class="s-gl__chip" data-chip="${entry.id || '-'}" aria-pressed="${entry.id === view.allCat ? 'true' : 'false'}">${entry.name}</button>`)}</div>
+        ${view.all.length
+          ? list
+            ? html`<div class="s-gl__list">${view.all.map((entry) => topicRow(entry, pinyin))}</div>`
+            : html`<div class="s-gl__grid">${view.all.map((entry) => topicCard(entry, pinyin))}</div>`
+          : html`<div class="s-gl__allEmpty"><div class="s-gl__allEmptyTitle">${t('emptyFiltered')}</div><button type="button" class="s-gl__clear" data-clear>${t('clearFilters')}</button></div>`}
       </div>`,
     );
   }
 
-  function remember() {
-    const query = {};
-    if (state.level) query.level = state.level;
-    if (state.topic) query.topic = state.topic;
-    // The address keeps the choice without a new render (as screens/library and listening do).
-    history.replaceState(history.state, '', ctx.href('grammarlib', {}, query));
-  }
-
   render();
+
+  q.addEventListener('input', () => {
+    state.q = q.value;
+    render();
+  });
+  element.addEventListener('change', (event) => {
+    if (event.target === st) state.st = st.value === 'all' ? '' : st.value;
+    else if (event.target.matches('[data-sort]')) state.sort = event.target.value === 'def' ? '' : event.target.value;
+    else return;
+    remember();
+    render();
+  });
   element.addEventListener('click', (event) => {
-    if (event.target.closest('[data-back]')) {
+    const hit = (selector) => event.target.closest(selector);
+    if (hit('[data-back]')) {
       ctx.back();
       return;
     }
-    const open = event.target.closest('[data-open]');
+    const open = hit('[data-open]');
     if (open) {
       ctx.go(ctx.href('gconcept', { id: open.dataset.open }));
       return;
     }
-    const level = event.target.closest('[data-level]');
-    if (level) {
-      state.level = level.dataset.level;
-      state.topic = '';
-      state.allTopics = false;
-      remember();
-      render();
-      return;
-    }
-    const topic = event.target.closest('[data-topic]');
-    if (topic) {
-      const id = topic.dataset.topic === '-' ? '' : topic.dataset.topic;
-      state.topic = state.topic === id ? '' : id;
-      remember();
-      render();
-      if (state.topic) element.querySelector('[data-all]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-    if (event.target.closest('[data-all-topics]')) {
-      state.allTopics = !state.allTopics;
-      render();
-    }
+    const level = hit('[data-level]');
+    const cat = hit('[data-cat]');
+    const seeAll = hit('[data-see-all]');
+    const chip = hit('[data-chip]');
+    const viewButton = hit('[data-view]');
+    const id = (value) => (value === '-' || value === 'all' ? '' : value);
+    if (level) Object.assign(state, { level: level.dataset.level, cat: '', all: '' });
+    else if (cat) state.cat = id(cat.dataset.cat);
+    else if (seeAll) state.all = id(seeAll.dataset.seeAll);
+    else if (chip) state.all = id(chip.dataset.chip);
+    else if (viewButton) state.view = viewButton.dataset.view === 'list' ? 'list' : '';
+    else if (hit('[data-clear]')) {
+      Object.assign(state, { q: '', st: '', all: '' });
+      q.value = '';
+      st.value = 'all';
+    } else return;
+    remember();
+    render();
+    if (seeAll) element.querySelector('[data-all]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 }
