@@ -4248,6 +4248,23 @@ backend cannot yet serve:
   radius, padding, gap and fill of every other element match. Browser-checked in en/vi/zh, both
   themes, at 1920x1080, 1366x768, 390x844 and 360x740 (touch): no page scroll or horizontal
   overflow on the Concept (the card column scrolls in its own region), no shell on it, no page error.
+- **G-10 · BACKEND_HANDOFF: Grammar Lab package -> Admin import -> learner Grammar (2026-10-08, `codex/work`
+  `9b223f80`).** Verdict **MISSING**. What exists: the package producer (`grammar_lab/pipeline/export_package.py`,
+  manifest `package.json` + `functions.json` + `points/<id>.json`, `package_hash` over the semantic content) only on
+  Grammar Lab branches (`origin/codex/grammar-export-production-fix` and siblings, base `f86a2bf`), not in
+  `codex/work` or `main`; the approved architecture (`proposals/GRAMMAR_CONTENT_STORE.md` rev 2, review APPROVE,
+  D-106, D-111 point 4). What does not: no grammar tables or migration, no `/api/admin/grammar/*`, no
+  `/api/grammar/v1/*`, no Grammar entry in Admin Imports (`screens/admin/imports*.js` handles books, media,
+  vocabulary and the reading/vocabulary pack only), and `Orena-Admin.dc.html` draws no grammar import. Learner
+  Grammar still reads the empty static seam of G-1. Owner: the backend/Grammar Store implementation, to the
+  approved contract, not a new format: the tables and migration of rev 2 section 3-4 (needs migration rehearsal and
+  human authorization; it extends the chain the :8000 release pack just rehearsed, so it lands after that release
+  or the release is re-rehearsed), `POST /api/admin/grammar/imports/validate` (dry run: language, set_version, point
+  count, package_hash, validator verdict, diff; writes nothing) and `POST /imports` (hash echo, rights attestation;
+  receipt imported / unchanged / rejected), review and publish (section 6), the learner API (section 7), the
+  `jsonschema` dependency (D-106.8). UI lane after that: a Grammar entry in the existing Imports flow (preview,
+  confirm, receipt) - its layout is a human design decision since the pin draws none - and the two readers of
+  `grammar-source.js` pointed at `/api/grammar/v1/*`; screens 44/47 do not change.
 
 ## Current Admin reconciliation — 2026-10-03
 
