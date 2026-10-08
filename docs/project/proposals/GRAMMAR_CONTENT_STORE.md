@@ -64,7 +64,7 @@ for this revision (section 20); **[I]** inferred, to verify at implementation. `
 | --- | --- | --- | --- |
 | 1 | Nature of the data | Shared **content**, not learner data. No learner-owned table or column; `grammar_progress` is reused unchanged. | 3, 8 |
 | 2 | Tables | `grammar_import_batches`, `grammar_functions`, `grammar_points`, `grammar_point_versions`, `grammar_r5_map`, `grammar_point_error_tags`, `grammar_review_events`, `grammar_catalog_state` | 3 |
-| 3 | Migration | `migrations/proposed/20261008_0030_grammar_content_store.py`, `down_revision = "20261007_0029"`; eight new tables, no existing table changed, no foreign key to an existing table, cycle-free; two PostgreSQL triggers; downgrade drops only these. Rehearsed on PostgreSQL 16 (59 PASS). | 4, 20 |
+| 3 | Migration | `migrations/proposed/20261008_0030_grammar_content_store.py`, `down_revision = "20261007_0029"`; eight new tables, no existing table changed, no foreign key to an existing table, cycle-free; two PostgreSQL triggers; downgrade drops only these. Rehearsed on PostgreSQL 16 (66 PASS, 0 FAIL). | 4, 20 |
 | 4 | Trust boundary | Export profile 1 only: vendored closed profile schema validated with `jsonschema` (Draft 2020-12), pinned profile id, schema version and profile hash; closed manifest; app-side cross checks; nothing self-attested is relied on. | 5 |
 | 5 | Import | One package; dry run returns a diff; commit idempotent by the recomputed semantic `package_hash`; only `approved` points; imported versions are not visible. | 5 |
 | 6 | R5 ids | The manifest's explicit `r5_map` (D-106.2); one primary or one drop per R5 id at the database; written at commit, independent of publish. | 9 |
