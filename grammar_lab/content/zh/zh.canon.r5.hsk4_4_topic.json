@@ -15,14 +15,14 @@
   "source_anchors": {"status": "unanchored", "items": []},
   "header": {
     "title": {"vi": "Ngữ pháp tiếng Trung: 与其⋯⋯ ，不如⋯⋯", "en": "Chinese grammar: 与其⋯⋯ ，不如⋯⋯"},
-    "native_title": "与其⋯⋯ ，不如⋯⋯",
+    "native_title": "与其⋯⋯，不如⋯⋯",
     "level": {"framework": "hsk3", "value": "4", "rank": 4},
     "summary": {
       "vi": "Cấu trúc 与其⋯⋯不如⋯⋯ dùng để so sánh hai lựa chọn và nêu rõ lựa chọn thứ hai (sau 不如) là phương án nên chọn.",
       "en": "The pattern 与其⋯⋯不如⋯⋯ compares two options and states that the second option (after 不如) is the one to prefer."
     },
     "sub": {"vi": "chọn B thay A", "en": "prefer B over A"},
-    "native_title_pinyin": ["yǔ", "qí", "", "", "", "", "bù", "rú", "", ""]
+    "native_title_pinyin": ["yǔ", "qí", "", "", "", "bù", "rú", "", ""]
   },
   "when_to_use": [
     {

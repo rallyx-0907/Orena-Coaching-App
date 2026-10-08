@@ -15,14 +15,14 @@
   "source_anchors": {"status": "unanchored", "items": []},
   "header": {
     "title": {"vi": "Câu phức: 固然⋯⋯ ，也⋯⋯", "en": "Complex sentences: 固然⋯⋯ ，也⋯⋯"},
-    "native_title": "固然⋯⋯ ，也⋯⋯",
+    "native_title": "固然⋯⋯，也⋯⋯",
     "level": {"framework": "hsk3", "value": "8", "rank": 8},
     "summary": {
       "vi": "Mẫu câu 固然⋯⋯，也⋯⋯ dùng để thừa nhận một sự thật rồi bổ sung một kết luận trái chiều hoặc bổ sung thêm.",
       "en": "The pattern 固然⋯⋯，也⋯⋯ concedes a fact and then adds a contrasting or additional point."
     },
     "sub": {"vi": "nhượng bộ rồi bổ sung", "en": "concede then add"},
-    "native_title_pinyin": ["gù", "rán", "", "", "", "", "yě", "", ""]
+    "native_title_pinyin": ["gù", "rán", "", "", "", "yě", "", ""]
   },
   "when_to_use": [
     {

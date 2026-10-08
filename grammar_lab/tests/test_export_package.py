@@ -562,10 +562,10 @@ def test_export_modules_do_not_import_any_provider_client() -> None:
     assert export_module.TOOL == "grammar_lab.export_package"
 
 
-# --- the real repository: nothing is approved yet, so nothing can be exported ------------------------
+# --- the real repository: the approved corpus can be exported -----------------------------------------
 
 
-def test_the_real_lab_cannot_export_its_draft_points(tmp_path: Path) -> None:
+def test_the_real_lab_can_export_an_approved_point(tmp_path: Path) -> None:
     from typer.testing import CliRunner
 
     from grammar_lab.pipeline.cli import app
@@ -575,12 +575,10 @@ def test_the_real_lab_cannot_export_its_draft_points(tmp_path: Path) -> None:
         "export-package", "--lang", "en", "--ids", "en.present_continuous.now", "--out", str(out),
         "--set-version", "t", "--source-commit", "0" * 40, "--allow-dirty",
     ])
-    assert result.exit_code == 2 and "point.not_approved" in result.output and not out.exists()
-    plain = CliRunner().invoke(app, [
-        "export-package", "--lang", "zh", "--level", "HSK1", "--out", str(out), "--set-version", "t",
-        "--source-commit", "0" * 40, "--allow-dirty",
-    ])
-    assert plain.exit_code == 2 and not out.exists()  # default_safe / missing content / drafts: refused
+    assert result.exit_code == 0, result.output
+    assert out.exists()
+    check = CliRunner().invoke(app, ["validate-package", str(out)])
+    assert check.exit_code == 0, check.output
 
 
 def test_cli_exports_and_validates_a_package(en_lab: Path, tmp_path: Path) -> None:

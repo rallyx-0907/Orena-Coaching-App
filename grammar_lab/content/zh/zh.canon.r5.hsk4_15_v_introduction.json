@@ -18,14 +18,14 @@
       "vi": "Ngữ pháp tiếng Trung: 所 + V: introduction",
       "en": "Chinese grammar: 所 + V: introduction"
     },
-    "native_title": "“所+ V”结构入门",
+    "native_title": "“所+V”结构入门",
     "level": {"framework": "hsk3", "value": "4", "rank": 4},
     "summary": {
       "vi": "所 + V là cấu trúc trang trọng dùng để biến cụm động từ thành định ngữ đứng trước danh từ, thường có 的 ở giữa.",
       "en": "所 + V is a formal structure that turns a verb phrase into a modifier before a noun, usually with 的 in between."
     },
     "sub": {"vi": "định ngữ trang trọng", "en": "formal relative"},
-    "native_title_pinyin": ["", "suǒ", "", "", "", "", "jié", "gòu", "rù", "mén"]
+    "native_title_pinyin": ["", "suǒ", "", "", "", "jié", "gòu", "rù", "mén"]
   },
   "when_to_use": [
     {

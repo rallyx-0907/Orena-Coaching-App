@@ -1523,7 +1523,7 @@
   level: '1'
   function: fn.sequence
   point_type: other
-  native_title: 连动句“去/来 + 动词”
+  native_title: 连动句“去/来+动词”
   title:
     vi: 'Ngữ pháp tiếng Trung: serial_verbs.qu_lai'
     en: 'Chinese grammar: serial_verbs.qu_lai'
@@ -3567,7 +3567,7 @@
   level: '2'
   function: fn.questions
   point_type: other
-  native_title: “多 + 形容词”疑问句
+  native_title: “多+形容词”疑问句
   title:
     vi: 'Ngữ pháp tiếng Trung: duo_adjective_question'
     en: 'Chinese grammar: duo_adjective_question'
@@ -5026,7 +5026,7 @@
   level: '3'
   function: fn.linking
   point_type: other
-  native_title: 不仅/不光 ，还/而且
+  native_title: 不仅/不光，还/而且
   title:
     vi: 'Ngữ pháp tiếng Trung: 不仅/不光 ，还/而且'
     en: 'Chinese grammar: 不仅/不光 ，还/而且'
@@ -5547,7 +5547,7 @@
   level: '3'
   function: fn.object_disposal
   point_type: other
-  native_title: 把字句 + 结果补语
+  native_title: 把字句+结果补语
   title:
     vi: 'Ngữ pháp tiếng Trung: 把 + bổ ngữ kết quả'
     en: 'Chinese grammar: 把 + bổ ngữ kết quả'
@@ -5575,7 +5575,7 @@
   level: '3'
   function: fn.object_disposal
   point_type: other
-  native_title: 把 + 在/给/成
+  native_title: 把+在/给/成
   title:
     vi: 'Ngữ pháp tiếng Trung: 把 + 在/给/成'
     en: 'Chinese grammar: 把 + 在/给/成'
@@ -5744,7 +5744,7 @@
   level: '3'
   function: fn.comparison
   point_type: other
-  native_title: 比较句 + 一点儿/得多
+  native_title: 比较句+一点儿/得多
   title:
     vi: 'Ngữ pháp tiếng Trung: bi_yidian_deduo'
     en: 'Chinese grammar: bi_yidian_deduo'
@@ -6035,7 +6035,7 @@
   level: '4'
   function: fn.contrast
   point_type: other
-  native_title: ⋯⋯X 是 X，就是/不过⋯⋯
+  native_title: ⋯⋯X是X，就是/不过⋯⋯
   title:
     vi: 'Ngữ pháp tiếng Trung: ⋯⋯X 是 X，就是/不过⋯⋯'
     en: 'Chinese grammar: ⋯⋯X 是 X，就是/不过⋯⋯'
@@ -7153,7 +7153,7 @@
   level: '4'
   function: fn.reason_result
   point_type: other
-  native_title: ⋯⋯ ，可见 ⋯⋯
+  native_title: ⋯⋯，可见⋯⋯
   title:
     vi: 'Câu phức: ⋯⋯ ，可见 ⋯⋯'
     en: 'Complex sentences: ⋯⋯ ，可见 ⋯⋯'
@@ -7190,7 +7190,7 @@
   level: '4'
   function: fn.linking
   point_type: other
-  native_title: 哪怕 ⋯⋯ ，也/还 ⋯⋯
+  native_title: 哪怕⋯⋯，也/还⋯⋯
   title:
     vi: 'Câu phức: 哪怕 ⋯⋯ ，也/还 ⋯⋯'
     en: 'Complex sentences: 哪怕 ⋯⋯ ，也/还 ⋯⋯'
@@ -7385,7 +7385,7 @@
   level: '4'
   function: fn.sentence_basics
   point_type: other
-  native_title: 用 \\"连⋯⋯也/都⋯⋯”表示强调
+  native_title: 用\\"连⋯⋯也/都⋯⋯”表示强调
   title:
     vi: 'Ngữ pháp tiếng Trung: 用 \\"连⋯⋯也/都⋯⋯”表示强调'
     en: 'Chinese grammar: 用 \\"连⋯⋯也/都⋯⋯”表示强调'
@@ -7629,7 +7629,7 @@
   level: '4'
   function: fn.contrast
   point_type: other
-  native_title: 与其⋯⋯ ，不如⋯⋯
+  native_title: 与其⋯⋯，不如⋯⋯
   title:
     vi: 'Ngữ pháp tiếng Trung: 与其⋯⋯ ，不如⋯⋯'
     en: 'Chinese grammar: 与其⋯⋯ ，不如⋯⋯'
@@ -7795,7 +7795,7 @@
   level: '4'
   function: fn.relative
   point_type: other
-  native_title: “所 + V”结构入门
+  native_title: “所+V”结构入门
   title:
     vi: 'Ngữ pháp tiếng Trung: 所 + V: introduction'
     en: 'Chinese grammar: 所 + V: introduction'
@@ -8569,7 +8569,7 @@
   level: '5'
   function: fn.linking
   point_type: other
-  native_title: 在 …… 看来
+  native_title: 在……看来
   title:
     vi: 'Cấu trúc cố định: 在 …… 看来'
     en: 'Fixed patterns: 在 …… 看来'
@@ -8677,7 +8677,7 @@
   level: '5'
   function: fn.time_expression
   point_type: other
-  native_title: 趋向补语 4：表示时间意义（引申用法）
+  native_title: 趋向补语4：表示时间意义（引申用法）
   title:
     vi: 'Bổ ngữ: 趋向补语 4：表示时间意义（引申用法）'
     en: 'Complements: 趋向补语 4：表示时间意义（引申用法）'
@@ -9357,7 +9357,7 @@
   level: '5'
   function: fn.sentence_basics
   point_type: other
-  native_title: 以⋯⋯ 为⋯⋯
+  native_title: 以⋯⋯为⋯⋯
   title:
     vi: 'Ngữ pháp tiếng Trung: 以⋯⋯ 为⋯⋯'
     en: 'Chinese grammar: 以⋯⋯ 为⋯⋯'
@@ -12934,7 +12934,7 @@
   level: '8'
   function: fn.linking
   point_type: other
-  native_title: 一面⋯⋯ ，一面⋯⋯
+  native_title: 一面⋯⋯，一面⋯⋯
   title:
     vi: 'Câu phức: 一面⋯⋯ ，一面⋯⋯'
     en: 'Complex sentences: 一面⋯⋯ ，一面⋯⋯'
@@ -12971,7 +12971,7 @@
   level: '8'
   function: fn.linking
   point_type: other
-  native_title: ⋯⋯ ，此后⋯⋯
+  native_title: ⋯⋯，此后⋯⋯
   title:
     vi: 'Câu phức: ⋯⋯ ，此后⋯⋯'
     en: 'Complex sentences: ⋯⋯ ，此后⋯⋯'
@@ -13057,7 +13057,7 @@
   level: '8'
   function: fn.linking
   point_type: other
-  native_title: ⋯⋯ ，且⋯⋯
+  native_title: ⋯⋯，且⋯⋯
   title:
     vi: 'Câu phức: ⋯⋯ ，且⋯⋯'
     en: 'Complex sentences: ⋯⋯ ，且⋯⋯'
@@ -13097,7 +13097,7 @@
   level: '8'
   function: fn.linking
   point_type: other
-  native_title: 或⋯⋯ ，或⋯⋯
+  native_title: 或⋯⋯，或⋯⋯
   title:
     vi: 'Câu phức: 或⋯⋯ ，或⋯⋯'
     en: 'Complex sentences: 或⋯⋯ ，或⋯⋯'
@@ -13140,7 +13140,7 @@
   level: '8'
   function: fn.contrast
   point_type: other
-  native_title: ⋯⋯，而 ⋯⋯（则）⋯⋯
+  native_title: ⋯⋯，而⋯⋯（则）⋯⋯
   title:
     vi: 'Câu phức: ⋯⋯，而 ⋯⋯（则）⋯⋯'
     en: 'Complex sentences: ⋯⋯，而 ⋯⋯（则）⋯⋯'
@@ -13223,7 +13223,7 @@
   level: '8'
   function: fn.contrast
   point_type: other
-  native_title: 别管⋯⋯ ，都⋯⋯
+  native_title: 别管⋯⋯，都⋯⋯
   title:
     vi: 'Câu phức: 别管⋯⋯ ，都⋯⋯'
     en: 'Complex sentences: 别管⋯⋯ ，都⋯⋯'
@@ -13263,7 +13263,7 @@
   level: '8'
   function: fn.reason_result
   point_type: other
-  native_title: （因）⋯⋯ ，故⋯⋯
+  native_title: （因）⋯⋯，故⋯⋯
   title:
     vi: 'Câu phức: （因）⋯⋯ ，故⋯⋯'
     en: 'Complex sentences: （因）⋯⋯ ，故⋯⋯'
@@ -13300,7 +13300,7 @@
   level: '8'
   function: fn.linking
   point_type: other
-  native_title: 固然⋯⋯ ，也⋯⋯
+  native_title: 固然⋯⋯，也⋯⋯
   title:
     vi: 'Câu phức: 固然⋯⋯ ，也⋯⋯'
     en: 'Complex sentences: 固然⋯⋯ ，也⋯⋯'
@@ -13343,7 +13343,7 @@
   level: '8'
   function: fn.linking
   point_type: other
-  native_title: ⋯⋯， 以⋯⋯
+  native_title: ⋯⋯，以⋯⋯
   title:
     vi: 'Câu phức: ⋯⋯， 以⋯⋯'
     en: 'Complex sentences: ⋯⋯， 以⋯⋯'
@@ -13501,7 +13501,7 @@
   level: '8'
   function: fn.questions
   point_type: other
-  native_title: 反问句3：何必/何苦⋯⋯ 呢？
+  native_title: 反问句3：何必/何苦⋯⋯呢？
   title:
     vi: 'Cách nhấn mạnh: 反问句3：何必/何苦⋯⋯ 呢？'
     en: 'Ways of emphasis: 反问句3：何必/何苦⋯⋯ 呢？'

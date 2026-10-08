@@ -15,14 +15,14 @@
   "source_anchors": {"status": "unanchored", "items": []},
   "header": {
     "title": {"vi": "Câu phức: ⋯⋯ ，可见 ⋯⋯", "en": "Complex sentences: ⋯⋯ ，可见 ⋯⋯"},
-    "native_title": "⋯⋯ ，可见⋯⋯",
+    "native_title": "⋯⋯，可见⋯⋯",
     "level": {"framework": "hsk3", "value": "4", "rank": 4},
     "summary": {
       "vi": "Mẫu câu '⋯⋯ ，可见 ⋯⋯' dùng để nêu một sự việc rồi rút ra kết luận hoặc suy luận từ sự việc đó.",
       "en": "The pattern '⋯⋯ ，可见 ⋯⋯' states a fact and then draws a conclusion or inference from it."
     },
     "sub": {"vi": "suy luận kết quả", "en": "drawing a conclusion"},
-    "native_title_pinyin": ["", "", "", "", "kě", "jiàn", "", ""]
+    "native_title_pinyin": ["", "", "", "kě", "jiàn", "", ""]
   },
   "when_to_use": [
     {

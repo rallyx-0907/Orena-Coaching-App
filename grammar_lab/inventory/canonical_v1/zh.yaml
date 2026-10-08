@@ -799,7 +799,7 @@ items:
     level: "HSK1"
     official_band: "HSK1"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "了 cuối câu: thay đổi trạng thái"
+    title: "了cuốicâu:thayđổitrạngthái"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -1982,7 +1982,7 @@ items:
     level: "HSK2"
     official_band: "HSK2"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "是...的 nhấn mạnh"
+    title: "是...的nhấnmạnh"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -2737,7 +2737,7 @@ items:
     level: "HSK3"
     official_band: "HSK3"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "趋向补语 nghĩa mở rộng"
+    title: "趋向补语nghĩamởrộng"
     origin: "r5_reused_with_gf0025_coverage"
     source_items:
       - "gf0025.hsk3.047"
@@ -3120,7 +3120,7 @@ items:
     level: "HSK3"
     official_band: "HSK3"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "把字句: nền tảng"
+    title: "把字句:nềntảng"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -3152,7 +3152,7 @@ items:
     level: "HSK3"
     official_band: "HSK3"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "Định ngữ dài với 的"
+    title: "Địnhngữdàivới的"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -3168,7 +3168,7 @@ items:
     level: "HSK3"
     official_band: "HSK3"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "把 + bổ ngữ kết quả"
+    title: "把+bổngữkếtquả"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -3184,7 +3184,7 @@ items:
     level: "HSK3"
     official_band: "HSK3"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "把 + 在/给/成"
+    title: "把+在/给/成"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -3200,7 +3200,7 @@ items:
     level: "HSK3"
     official_band: "HSK3"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "被字句: nền tảng"
+    title: "被字句:nềntảng"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -3216,7 +3216,7 @@ items:
     level: "HSK3"
     official_band: "HSK3"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "把 và 被 đối chiếu"
+    title: "把và被đốichiếu"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -3824,7 +3824,7 @@ items:
     level: "HSK4"
     official_band: "HSK4"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "由...组成 / 由...负责"
+    title: "由...组成/由...负责"
     origin: "r5_reused_with_gf0025_coverage"
     source_items:
       - "gf0025.hsk4.031"
@@ -4309,7 +4309,7 @@ items:
     level: "HSK4"
     official_band: "HSK4"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "程度补语 nâng cao"
+    title: "程度补语nângcao"
     origin: "r5_reused_with_gf0025_coverage"
     source_items:
       - "gf0025.hsk5.036"
@@ -4394,7 +4394,7 @@ items:
     level: "HSK4"
     official_band: "HSK4"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "把 với cấu trúc phức"
+    title: "把vớicấutrúcphức"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -4446,7 +4446,7 @@ items:
     level: "HSK4"
     official_band: "HSK4"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "所 + V: introduction"
+    title: "所+V:introduction"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -4466,7 +4466,7 @@ items:
     level: "HSK4"
     official_band: "HSK4"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "被 nâng cao"
+    title: "被nângcao"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -5350,7 +5350,7 @@ items:
     level: "HSK5"
     official_band: "HSK5"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "使/令/让 + kiêm ngữ"
+    title: "使/令/让+kiêmngữ"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -5409,7 +5409,7 @@ items:
     level: "HSK5"
     official_band: "HSK5"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "其/该/此/上述 reference"
+    title: "其/该/此/上述reference"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -5429,7 +5429,7 @@ items:
     level: "HSK5"
     official_band: "HSK5"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "长定语 nâng cao"
+    title: "长定语nângcao"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -5449,7 +5449,7 @@ items:
     level: "HSK5"
     official_band: "HSK5"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "名词化 tendencies"
+    title: "名词化tendencies"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -5469,7 +5469,7 @@ items:
     level: "HSK5"
     official_band: "HSK5"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "紧缩复句 introduction"
+    title: "紧缩复句introduction"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -5557,7 +5557,7 @@ items:
     level: "HSK5"
     official_band: "HSK5"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "仅/只/光/单 scope"
+    title: "仅/只/光/单scope"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -5639,7 +5639,7 @@ items:
     level: "HSK6"
     official_band: "HSK6"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "就...而言 / 从...来看"
+    title: "就...而言/从...来看"
     origin: "r5_reused_with_gf0025_coverage"
     source_items:
       - "gf0025.hsk5.026"
@@ -6451,7 +6451,7 @@ items:
     level: "HSK6"
     official_band: "HSK6"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "了/过/着 tương tác nâng cao"
+    title: "了/过/着tươngtácnângcao"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -6559,7 +6559,7 @@ items:
     level: "HSK6"
     official_band: "HSK6"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "由 + agent/source"
+    title: "由+agent/source"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -6575,7 +6575,7 @@ items:
     level: "HSK6"
     official_band: "HSK6"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "者 patterns"
+    title: "者patterns"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -6607,7 +6607,7 @@ items:
     level: "HSK6"
     official_band: "HSK6"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "之 patterns"
+    title: "之patterns"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -6623,7 +6623,7 @@ items:
     level: "HSK6"
     official_band: "HSK6"
     level_origin: "gf0025_or_r5_reviewed"
-    title: "难道/岂/何尝 rhetorical questions"
+    title: "难道/岂/何尝rhetoricalquestions"
     origin: "orena_r5_extension"
     source_items:
       []
@@ -8106,7 +8106,7 @@ items:
     level: "HSK9"
     official_band: "HSK7-9"
     level_origin: "orena_internal_sequence_within_official_hsk7_9"
-    title: "于/以/为/所/者/之 in modern formal prose"
+    title: "于/以/为/所/者/之inmodernformalprose"
     origin: "orena_r5_extension"
     source_items:
       []

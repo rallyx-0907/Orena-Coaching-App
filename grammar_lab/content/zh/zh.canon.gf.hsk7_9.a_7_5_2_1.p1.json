@@ -15,14 +15,14 @@
   "source_anchors": {"status": "unanchored", "items": []},
   "header": {
     "title": {"vi": "Câu phức: 一面⋯⋯ ，一面⋯⋯", "en": "Complex sentences: 一面⋯⋯ ，一面⋯⋯"},
-    "native_title": "一面⋯⋯ ，一面⋯⋯",
+    "native_title": "一面⋯⋯，一面⋯⋯",
     "level": {"framework": "hsk3", "value": "8", "rank": 8},
     "summary": {
       "vi": "Mẫu câu 一面⋯⋯，一面⋯⋯ dùng để nối hai hành động hoặc hai trạng thái diễn ra cùng lúc.",
       "en": "The pattern 一面⋯⋯，一面⋯⋯ links two actions or states that happen at the same time."
     },
     "sub": {"vi": "hai việc cùng lúc", "en": "two actions at once"},
-    "native_title_pinyin": ["yí", "miàn", "", "", "", "", "yí", "miàn", "", ""]
+    "native_title_pinyin": ["yí", "miàn", "", "", "", "yí", "miàn", "", ""]
   },
   "when_to_use": [
     {

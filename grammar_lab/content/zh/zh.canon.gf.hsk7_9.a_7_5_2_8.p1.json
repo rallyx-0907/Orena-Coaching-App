@@ -15,14 +15,14 @@
   "source_anchors": {"status": "unanchored", "items": []},
   "header": {
     "title": {"vi": "Câu phức: （因）⋯⋯ ，故⋯⋯", "en": "Complex sentences: （因）⋯⋯ ，故⋯⋯"},
-    "native_title": "（因）⋯⋯ ，故⋯⋯",
+    "native_title": "（因）⋯⋯，故⋯⋯",
     "level": {"framework": "hsk3", "value": "8", "rank": 8},
     "summary": {
       "vi": "Cấu trúc （因）……，故…… dùng để nêu nguyên nhân ở vế đầu và kết quả ở vế sau, với 故 mang nghĩa 'cho nên, vì vậy'.",
       "en": "The pattern （因）……，故…… states a cause in the first clause and a result in the second, with 故 meaning 'therefore, so'."
     },
     "sub": {"vi": "nguyên nhân – kết quả", "en": "cause and result"},
-    "native_title_pinyin": ["", "yīn", "", "", "", "", "", "gù", "", ""]
+    "native_title_pinyin": ["", "yīn", "", "", "", "", "gù", "", ""]
   },
   "when_to_use": [
     {
