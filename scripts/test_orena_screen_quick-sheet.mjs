@@ -252,4 +252,20 @@ assert.equal(noteTypeColorKey('reflection'), 'var(--accent-text)');
 assert.equal(noteTypeColorKey('factual'), 'var(--muted)');
 assert.equal(noteTypeColorKey('anything-else'), 'var(--muted)');
 
+/* The latest lookup wins (successor of the retired test_orena_lookup_race, D-143): a sheet that has been
+   replaced or closed ignores the answers its requests bring back later. Each sheet paints only while it is
+   alive, and its cleanup ends that. */
+{
+  const source = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');
+  for (const name of ['openWordSheet', 'openSentenceSheet']) {
+    const start = source.indexOf(`export async function ${name}`);
+    assert.ok(start >= 0, `${name} exists`);
+    const next = source.indexOf('export ', start + 10);
+    const body = source.slice(start, next === -1 ? undefined : next);
+    assert.match(body, /let alive = true;/, `${name}: a sheet starts alive`);
+    assert.match(body, /if \(!sheetEl \|\| !alive\) return;/, `${name}: a replaced or closed sheet never paints`);
+    assert.match(body, /return \(\) => \{\s*alive = false;/, `${name}: closing or replacing the sheet ends it`);
+  }
+}
+
 console.log('test_orena_screen_quick-sheet.mjs: Word/Sentence Quick Sheet data mapping - real backend contracts (captured + serializer-built), rule 40 throughout: PASS');
