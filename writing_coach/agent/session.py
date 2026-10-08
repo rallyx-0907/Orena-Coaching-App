@@ -2,9 +2,11 @@
 
 A session holds what the next turn needs to resolve "this word" or "the line
 before": the last context, the last selection, a goal the learner stated, a
-bounded list of recent tool results, a voice-session reference and a turn
-count. It holds no chain of thought and no conversation transcript - the
-transcript is device memory (AGENTS.md §7).
+bounded list of recent tool results, the last turns as said (bounded, so the
+model sees the conversation: ORENA_INTELLIGENCE_ARCHITECTURE §4-5), a
+voice-session reference and a turn count. It holds no chain of thought. The
+turns live in this process for the session's life and are not stored anywhere:
+the durable transcript stays device memory (AGENTS.md §7, contract §10).
 
 A session belongs to the learner who opened it. Asking for it as anyone else
 answers exactly as for an id that never existed, so the cache cannot be used to
@@ -21,11 +23,13 @@ import secrets
 import threading
 import time
 from collections import OrderedDict
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any
 
+from writing_coach.agent.focus import Focus
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
+from writing_coach.agent.pending import RUN_WINDOW_TURNS, RUNS_KEPT, SETTLED_KEPT, PendingInteraction
 from writing_coach.agent.schemas import AppContextSnapshot, SelectedItem
 
 
@@ -36,6 +40,14 @@ class ToolResultRecord:
     tool: str
     summary: str
     evidence_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ConversationTurn:
+    """One side of one exchange, as said: what the learner wrote (or said, once voice joins) or Orena answered."""
+
+    role: str  # "user" | "assistant"
+    text: str
 
 
 @dataclass(frozen=True)
@@ -52,18 +64,32 @@ class AgentSessionState:
     turn_count: int = 0
     address_asked: bool = False  # the learner was asked once, this session, about an address pair
     target_language: str | None = None  # the contract target the kept context belongs to
-    # The places offered in the last answer (type, label, payload): "mở giúp tôi" / "open it" right after an offer
-    # opens that offer (text phone test 2026-10-06), and the next turn's model sees what it offered.
-    last_offers: tuple[Mapping[str, Any], ...] = ()
+    # The offer the learner has not answered (agent/pending.py): one generic record for any action, kept until it is
+    # completed, cancelled, expired or replaced - a question in between does not clear it. `settled` is the last few
+    # that ended, as (id, status), so an answer that arrives twice finds nothing left to run twice.
+    pending: PendingInteraction | None = None
+    settled: tuple[tuple[str, str], ...] = ()
+    # The actions this session ran at the learner's word, as (learner turn, action key): the same words said twice
+    # in a row ("ok lưu", "ok lưu") run it once.
+    runs: tuple[tuple[int, str], ...] = ()
+    # What "that" and "it" refer to (agent/focus.py): the active topic, its referents, a long text the learner pasted.
+    focus: Focus = field(default_factory=Focus)
+    # The turns just before this one, verbatim and bounded (architecture target §4-5): the model sees them, so a
+    # follow-up ("cho ví dụ khác", "đoạn thứ 3") has something to refer to. In this process only, like the rest.
+    recent_turns: tuple[ConversationTurn, ...] = ()
+    # What came before the recent turns, folded (agent/summary.py): only the talk. The offer, the focus and the sent
+    # actions are kept apart and never depend on it.
+    summary: str = ""
 
     def for_target(self, target: str | None) -> AgentSessionState:
         """The session as a turn in `target` may see it (dogfood gate 3.3).
 
-        What was kept belongs to the language it was learned in: a selection, the
+        What was kept about the screen belongs to the language it was learned in: a selection, the
         tools' results, the app context, a goal and a voice session are dropped when
         the learner's target language changes, so nothing of an English context
-        reaches a Chinese turn. What does not depend on the target - who the session
-        belongs to, its turn count, whether an address was asked - stays.
+        reaches a Chinese turn. The conversation is not that: a language change is not a new
+        conversation, so the recent turns and the unanswered offer (a word names its own language)
+        stay, as do who the session belongs to, its turn count and whether an address was asked.
         """
 
         if target is None or self.target_language == target:
@@ -71,7 +97,7 @@ class AgentSessionState:
         if self.target_language is None and not self.turn_count:
             return replace(self, target_language=target)
         return replace(self, target_language=target, current_app_context=None, last_selected_entity=None,
-                       active_learning_goal=None, recent_tool_results=(), voice_session_ref=None, last_offers=())
+                       active_learning_goal=None, recent_tool_results=(), voice_session_ref=None)
 
     def with_context(self, context: AppContextSnapshot) -> AgentSessionState:
         selected = context.selected_item or self.last_selected_entity
@@ -89,10 +115,91 @@ class AgentSessionState:
     def with_turn(self) -> AgentSessionState:
         return replace(self, turn_count=self.turn_count + 1)
 
-    def with_offers(self, offers: tuple[Mapping[str, Any], ...]) -> AgentSessionState:
-        """The places the last answer offered; every answer replaces them (an answer with none clears them)."""
+    def with_exchange(self, user: str, assistant: str, limits: AgentLimits) -> AgentSessionState:
+        """The learner's words and Orena's answer, appended; the oldest whole exchanges go first when the history
+        holds more than `max_recent_turns` turns or `max_history_chars` characters. The newest exchange stays."""
 
-        return replace(self, last_offers=tuple(offers))
+        return self.with_spoken((ConversationTurn("user", user), ConversationTurn("assistant", assistant)), limits)
+
+    def with_spoken(self, added: tuple[ConversationTurn, ...], limits: AgentLimits) -> AgentSessionState:
+        """Turns appended as said - typed, or heard in a voice session - and the history bounded as above."""
+
+        cap = limits.max_turn_chars
+        turns = (*self.recent_turns, *(ConversationTurn(t.role, t.text[:cap]) for t in added))
+        while len(turns) > 2 and (
+            len(turns) > limits.max_recent_turns or sum(len(t.text) for t in turns) > limits.max_history_chars
+        ):
+            turns = turns[2:]
+        return replace(self, recent_turns=turns)
+
+    def compaction_job(self, limits: AgentLimits) -> tuple[str, tuple[ConversationTurn, ...]] | None:
+        """(old summary, the turns to fold) once the recent turns pass the soft budget, else None. The last
+        `keep_verbatim_turns` stay, and the kept part starts at a learner turn."""
+
+        turns = self.recent_turns
+        if len(turns) <= limits.compact_after_turns and sum(len(t.text) for t in turns) <= limits.compact_after_chars:
+            return None
+        cut = max(len(turns) - limits.keep_verbatim_turns, 0)
+        while cut > 0 and turns[cut].role != "user":
+            cut -= 1
+        return (self.summary, turns[:cut]) if cut else None
+
+    def with_compacted(self, folded: tuple[ConversationTurn, ...], summary: str) -> AgentSessionState:
+        """`folded` are now in `summary`. Applies only if they are still the oldest turns (a turn that finished
+        meanwhile only appended), so a stale summary never drops turns it does not hold."""
+
+        if not folded or self.recent_turns[: len(folded)] != folded:
+            return self
+        return replace(self, recent_turns=self.recent_turns[len(folded) :], summary=summary)
+
+    def with_outcome(self, *, live: PendingInteraction | None, settle: str | None,
+                     new_offer: tuple[str, str, dict] | None, ran: tuple[str, ...]) -> AgentSessionState:
+        """What an answer did to the offer and to the actions: the offer it answered ends as `settle`, one past its
+        turns expires, what it ran is remembered, and a newer offer takes the place of the old one - the same
+        whether the answer was typed or spoken."""
+
+        state = self.with_settled(live, settle) if live is not None and settle is not None else self
+        state = state.without_expired().with_runs(ran)
+        if new_offer is not None:
+            kind, label, payload = new_offer
+            state = state.with_offer(PendingInteraction.offer(kind, payload, label, turn=state.turn_count))
+        return state
+
+    def live_pending(self) -> PendingInteraction | None:
+        """The unanswered offer, unless it has been open past its turns."""
+
+        pending = self.pending
+        return pending if pending is not None and pending.live_at(self.turn_count) else None
+
+    def with_offer(self, pending: PendingInteraction) -> AgentSessionState:
+        """A new offer takes the place of the old one."""
+
+        state = self.with_settled(self.pending, "replaced") if self.pending is not None else self
+        return replace(state, pending=pending)
+
+    def with_settled(self, pending: PendingInteraction | None, status: str) -> AgentSessionState:
+        """`pending` ended as `status`: it is no longer open, and its id is remembered."""
+
+        if pending is None:
+            return self
+        kept = (*self.settled, (pending.id, status))[-SETTLED_KEPT:]
+        return replace(self, pending=None if self.pending is not None and self.pending.id == pending.id else self.pending,
+                       settled=kept)
+
+    def with_focus(self, focus: Focus) -> AgentSessionState:
+        return replace(self, focus=focus)
+
+    def recent_runs(self) -> frozenset[str]:
+        return frozenset(key for turn, key in self.runs if self.turn_count - turn < RUN_WINDOW_TURNS)
+
+    def with_runs(self, keys: tuple[str, ...]) -> AgentSessionState:
+        kept = (*self.runs, *((self.turn_count, key) for key in keys))[-RUNS_KEPT:]
+        return replace(self, runs=kept)
+
+    def without_expired(self) -> AgentSessionState:
+        if self.pending is not None and self.live_pending() is None:
+            return self.with_settled(self.pending, "expired")
+        return self
 
 
 class SessionCache:

@@ -80,6 +80,12 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
             CopyLayer.SUPPORT,
             {"en": "Opening it for you now.", "vi": "{self_cap} mở ngay cho {user}.", "zh-CN": "{self}现在就为{user}打开。"},
         ),
+        # The learner accepted an offer (agent/pending.py): it runs at once, so the sentence says so, and never that
+        # it is done - the app does it and the app says whether it worked.
+        "offer.now.action": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "Doing it for you now.", "vi": "{self_cap} làm ngay cho {user}.", "zh-CN": "{self}现在就为{user}办。"},
+        ),
         # Said when every sentence of an answer claimed Orena had changed something (agent/honesty.py).
         "honesty.nothing_done": _entry(
             CopyLayer.SUPPORT,

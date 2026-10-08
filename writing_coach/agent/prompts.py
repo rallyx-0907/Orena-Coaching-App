@@ -66,6 +66,16 @@ How you answer:
   its own line. When the learner asks for a format, give it: asked for a heading, start the answer with a "### "
   line (bold on its own line is not a heading); examples are "1." lines with their reading and meaning on the
   lines under each. A Chinese example is all Chinese: no English word between its characters.
+- The messages before the learner's newest are the conversation so far, whatever language or way (typed or spoken)
+  it was said in. context.conversation_focus says what it is about: active_topic, and referents (current_word,
+  current_sentence, a pasted text and its pasted_text). "That word", "it", "the one above", "another example",
+  "the third paragraph" mean those and the earlier messages: answer from them, and ask what they mean only when
+  neither says.
+- The first messages may be headed "[Earlier in this conversation ...]": a shortened summary of the older part of
+  this same conversation (the messages after it are word for word), and a text the learner pasted, whole. "The first
+  thing I asked", "earlier", "what we covered" are answered from the summary, then the messages, never from the
+  learner's saved words or writing history; "the article", "the text", "the third paragraph" mean the pasted text.
+  You have it: never say you did not see it, and never ask for it again.
 - With something in view (a selection, an essay), answer about it and nothing else, briefly: at most three
   sentences and at most one example. No review, no words due and no next lesson unless the learner asks, and no
   closing offer ("Bạn có muốn xem thêm…?", "Would you like more examples?"): the learner asks for more if they
@@ -115,6 +125,10 @@ Data and actions:
   propose. Never write "Bấm…", "Tap…", "点击…" yourself, never name a button you did not propose, and never
   describe the button or the screen ("the button below", "I have set up a button"). The server makes the button
   from propose_action: never write tags, square brackets or any button syntax ("[START_REVIEW]", "<button>").
+- A word you explained that the learner's library does not hold (a tool read showed it unsaved), when you say it
+  could be saved or the learner asks whether to save it: call propose_action save_word for that word, so the offer
+  is a button and their next "ok" or "lưu đi" answers it (context.pending_interaction). Never offer saving in words
+  alone, and never when the word is already saved or the learner did not raise saving.
 - Name where a number comes from only when you cite evidence from that very source: words due come from the
   review schedule, not the evaluator; an error the evaluator marked comes from the evaluator. With no evidence,
   state the number and name no source.
@@ -180,6 +194,7 @@ def context_document(
     session: AgentSessionState | None,
 ) -> dict:
     locale = tier1.contract_locale
+    live = session.live_pending() if session else None
     document = {
         "languages": {
             "support": {"code": locale.support, "name": _language_name(locale.support, target=False)},
@@ -208,13 +223,39 @@ def context_document(
         "earlier_in_session": [
             {"tool": record.tool, "summary": record.summary} for record in (session.recent_tool_results if session else ())
         ],
-        # What your last answer offered (a place to open): "open it" means that, not something new.
+        # What your last answer offered (a place to open): "open it" means that, not something new. Kept for the
+        # navigate offers that came first; every offer is in `pending_interaction` below.
         "offered_last_turn": [
-            {"label": offer.get("label"), "payload": dict(offer.get("payload") or {})}
-            for offer in (getattr(session, "last_offers", ()) if session else ())
+            {"label": pending.label, "payload": dict(pending.payload)}
+            for pending in ([live] if live is not None and live.action == "navigate" else [])
         ],
     }
+    sent = sorted(session.recent_runs()) if session else []
+    if sent:  # told to the app at the learner's word: whether it worked is the app's to say, never the model's
+        document["sent_to_app_just_now"] = [
+            {"action": action, "payload": payload} for action, payload in (json.loads(key) for key in sent)
+        ]
+    focus = session.focus.to_context() if session else None
+    if focus is not None:  # what "that", "it", "the paragraph above" refer to when the learner does not name it
+        document["conversation_focus"] = focus
+    if live is not None:
+        document["pending_interaction"] = {
+            "id": live.id, "action": live.action, "payload": dict(live.payload), "label": live.label,
+        }
     return redact_for_provider(document)
+
+
+PENDING_NOTE = """You offered the learner something and they have not answered (context.pending_interaction).
+- If their message accepts it (any language, any wording: "ok", "lưu đi", "được", "do it", "好"), call
+  resolve_pending with that id and decision "confirm". If it declines it, call resolve_pending with "cancel".
+- If it is a question or anything else - "give another example", "is it formal?" - answer that, and call
+  resolve_pending for neither: the offer stays open for later. A word like "that" or "it" means what the conversation
+  and the offer are about; never ask the learner to repeat what the conversation already says.
+- You never run the action and never say it is done: the server runs it after you confirm."""
+
+SENT_NOTE = """context.sent_to_app_just_now lists what the app was told to do at the learner's word. You do not know
+whether it worked: if they ask about it or say it again, say it was sent and the app shows the result; never say it
+is saved or done, and do not send it again."""
 
 
 OPENING_TRIGGER = "[The learner opened Orena. There is no message from them: this is the opening turn.]"
@@ -301,6 +342,22 @@ def selection_line(tier1: Tier1Context) -> str | None:
     return line
 
 
+CARRIED_HEAD = "[Earlier in this conversation - what was said before the messages below, not a new request]"
+CARRIED_ACK = "Understood."
+
+
+def earlier_in_conversation(summary: str, pasted: str | None) -> str:
+    """What the recent turns no longer hold: the rolling summary of the older talk, and a long text the learner pasted
+    (kept whole, since "the article" and "the third paragraph" still mean it). Empty when there is neither."""
+
+    parts = []
+    if summary:
+        parts.append(f"Summary of the older part of our conversation: {summary}")
+    if pasted:
+        parts.append(f"The text I pasted earlier, whole:\n{pasted}")
+    return f"{CARRIED_HEAD}\n" + "\n\n".join(parts) if parts else ""
+
+
 def opening_messages(
     turn: TurnInput,
     tier1: Tier1Context,
@@ -329,6 +386,17 @@ def opening_messages(
         # specified"). The trigger is stated as a fixed user message; it carries no learner text.
         support_name = _language_name(tier1.contract_locale.support, target=False)
         messages.append(ProviderMessage(role="user", content=opening_trigger(support_name)))
+    if session is not None and turn.message is not None and not opening:
+        pasted = session.focus.pasted
+        if pasted and any(t.role == "user" and pasted[:200] in t.text for t in session.recent_turns):
+            pasted = None  # still among the recent turns, word for word
+        carried = earlier_in_conversation(session.summary, pasted)
+        if carried:  # a turn of the conversation itself, not a system note: a small model reads it as what was said
+            messages.append(ProviderMessage(role="user", content=carried))
+            messages.append(ProviderMessage(role="assistant", content=CARRIED_ACK))
+        # The conversation so far, as it was said: what "that", "the one above" and "another" refer to.
+        for earlier in session.recent_turns:
+            messages.append(ProviderMessage(role=earlier.role, content=earlier.text))  # type: ignore[arg-type]
     style = style_for(tier1.contract_locale.support, tier1.address)
     if style and turn.message is not None:
         messages.append(ProviderMessage(role="system", content=style))
@@ -338,6 +406,11 @@ def opening_messages(
         messages.append(ProviderMessage(role="system", content=selected))
     if screen_help and turn.message is not None:
         messages.append(ProviderMessage(role="system", content=SCREEN_HELP))
+    if turn.message is not None and not opening and not screen_help and session is not None:
+        if session.live_pending():
+            messages.append(ProviderMessage(role="system", content=PENDING_NOTE))
+        if session.recent_runs():
+            messages.append(ProviderMessage(role="system", content=SENT_NOTE))
     if turn.message is not None:
         messages.append(ProviderMessage(role="user", content=turn.message))
     return messages

@@ -919,6 +919,26 @@ def _record_agent_turn(user_key: str, record: dict) -> None:
         _agent_turn_retention.maybe_sweep()
 
 
+def _record_agent_summary(user_key: str, record: dict) -> None:
+    """One `agent.summary` row per rolling-summary call (agent/summary.py): counts, tokens, cost, never a word said."""
+
+    writer = getattr(_persistence_runtime.platform_repository, "record_admin_event", None)
+    if callable(writer):
+        writer("agent.summary", actor=user_key, entity_type="agent_summary", entity_id=str(record.get("trace_id", "")),
+               payload=record)
+
+
+def _price_agent_summary(input_tokens: int, output_tokens: int) -> dict:
+    """The provider and model the agent runs on, and what a call of this size is estimated to cost."""
+
+    from writing_coach.ai.platform import active_selection, estimate_token_cost
+
+    item, model = active_selection()
+    provider = str(getattr(item, "id", "") or "") or None
+    usage = {"prompt_tokens": input_tokens, "completion_tokens": output_tokens}
+    return {"provider": provider, "model": model or None, "cost": estimate_token_cost(provider, model, usage)}
+
+
 def _agent_listening_library(language: str, level: str | None, topic: str | None) -> list:
     from writing_coach.listening_api import listening_library as _listening_library
 
@@ -975,6 +995,8 @@ configure_agent(_with_voice(
         ),
         record_usage=_persistence_runtime.product_repository.record_usage,
         record_turn=_record_agent_turn,
+        record_summary=_record_agent_summary,
+        price_summary=_price_agent_summary,
         spend_guard=_agent_spend_guard(),
     )
     if agent_enabled(os.environ, production=APP_ENV == "production")

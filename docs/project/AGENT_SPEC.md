@@ -237,6 +237,17 @@ R30 (2026-10-06, sau bài thử trên iPhone: "Orena phải là Agent toàn năn
     cho model); gợi ý ngôn ngữ nhận giọng (inputAudioTranscription.languageCodes: support + target, kiểm live được
     nhận); nghe không rõ thì xin nói lại. Kiểm live (≈ 0,03 USD; cả ngày ≈ 0,24 USD): mở tiến độ, mở luyện nói, bắt
     đầu ôn đều chạy ngay; sau cập nhật ngữ cảnh phát mẫu đúng bài và câu; giọng thật vi và en nhận đúng nguyên câu.
+R31 (2026-10-07, sau PR #85) Người chủ dự án tạm gác việc agent ("Tạm thời gác lại cái này"). Ghi lại để làm sau,
+    từ bài thử chat chữ: "tôi hỏi 1 nghĩa 1 từ thì agent trả lời nhưng không hiện thị nó 1 cách rõ ràng hay dạng md
+    cho đẹp, kèm câu muốn lưu không thì tôi nhắn là Ok lưu thì nó không lưu mà lại gửi lặp lại 'Dựa trên hồ sơ học
+    tập của bạn với bài đọc ...'":
+    1. Nghĩa của từ trả về chữ phẳng: không tiêu đề từ, không in đậm nghĩa, không danh sách ví dụ (client đã hiển
+       thị tập con Markdown §5.1; đây là định dạng của câu trả lời).
+    2. "Ok lưu" ngay sau câu hỏi "muốn lưu không" không lưu: cần đường ngắn như "open it" (R30/#85) cho lời đồng ý
+       ngắn sau một đề xuất - chạy (open: true) đúng action vừa đề xuất (save_word), không bao giờ quay về tóm tắt
+       hồ sơ. Lưu ý: ở chế độ chữ hiện chỉ mở màn chạy ngay; lưu từ chạy ngay cần người chủ dự án mở rộng R30 cho chữ.
+    3. Câu mở đầu lặp "Dựa trên hồ sơ học tập của bạn…" xuất hiện khi người học hỏi điều cụ thể.
+    Chưa làm gì cho tới khi người chủ dự án mở lại.
 ```
 
 Tiến độ lane (cập nhật mỗi slice):
@@ -332,6 +343,54 @@ Tiếp      Nhận lỗi test của người chủ dự án (R27); quota dùng c
 ```
 
 ---
+
+### Conversation kernel (ORENA_INTELLIGENCE_ARCHITECTURE.md, human direction 2026-10-07)
+
+```text
+K1  3b070a61  the model is shown the recent turns of the session (bounded: 20 turns / 36k chars, oldest whole
+              exchange dropped first; a long paste is kept whole up to 20k chars per turn).
+K2  6e2a703a  one generic PendingInteraction (agent/pending.py) replaces last_offers: stable id, ends only on
+              confirm | cancel | expiry (6 turns) | a newer offer. The model says what the learner meant with the
+              resolve_pending reply tool; the runtime runs the action once under the offer's id. A language change
+              keeps the conversation and the offer. Live runner flows: pending-save, pending-cancel, pending-between.
+LIMIT (temporary, by decision): turns and the pending offer live in the in-process session cache - lost after the
+              30-minute TTL, on restart, and on another worker. Nothing is stored; no schema, no contract change.
+              The record is plain data so a store can replace the cache without changing what reads it. Persistence
+              (conversation_sessions/turns/user_memories) waits for the human and an independent architecture review
+              (AGENTS.md §7; contract §10).
+K2b f29056a3  the model may mark a proposed action `requested` when the learner's own words ask for it: the app runs it
+              at once, once (not twice for "ok lưu" twice); what was only sent is not claimed as done.
+K3  e9731bc1  agent/focus.py: active_topic + referents (current_word, current_sentence, content in view, pasted text)
+              from facts (selection, a word a tool read, a word an action names, message length) - never parsed from
+              the learner's words. A long paste stays reachable past the recent-turn window. A language change keeps
+              the conversation (gate 3.3 now guards stale screen state only; human direction 2026-10-07).
+K4  fded301b  an answer to an open offer is never read as a status question ("ok lưu" with a word in view).
+LIVE          gemini-3.5-flash-lite, spend bound ~$0.04 per batch: pending-save/-cancel/-between, convo-refs,
+              convo-paste, convo-lang all pass (scripts/agent_live/run.py --flows ...).
+K5  303181df  text and voice are one conversation: a voice session opens inside the typed conversation and says
+              which session it is; what the server sees of a spoken turn (words heard, offer made or accepted, what
+              ran, the word) joins the same session; an optional transcript at voice/end adds the rest. Server only,
+              no client change needed; client additions are PROPOSED in proposals/AGENT_KERNEL_CLIENT_ADDITIONS.md.
+              Live voice not verified (needs a person speaking); covered by tests/test_agent_voice_kernel.py.
+K6            rolling summary (agent/summary.py, Phase 5): not per turn - only when the recent turns pass the soft budget
+              (14 turns or 16k chars) the oldest are folded, the last 6 stay word for word: old summary + folded turns ->
+              new summary (<= 2.4k chars), by the turn's own provider after the answer, outside the session lock, and
+              counted in the turn's usage. The open offer, the focus and a pasted text are separate state and never
+              depend on it. It reaches the model as the conversation's first turn headed "[Earlier in this
+              conversation]" (a system note was ignored by the live model), and the voice instruction. A failed summary
+              changes nothing (the hard bound of 20 turns / 36k chars still limits); a stale fold applies nothing.
+              Live: convo-long (19 turns, 2 folds) answers "the first word I asked" from the summary, a paste from
+              pasted_text, and saves once after the fold. Server-side upkeep does not stop when the client leaves.
+K6b           telemetry: one `agent.summary` admin event per summary call (counts, names, tokens - never a word said):
+              outcome success|failed, reason success|empty|cut_off|error, fallback kept_turns, trigger (turns/chars over
+              the soft budget), folded turns/chars, input/output tokens, latency_ms, provider, model, estimated cost
+              (the AI platform's price catalog). Optional sinks (`record_summary`, `price_summary`), failure-proof.
+              These rows are not swept by the agent.turn retention (small, no learner content); add them to it if
+              the 90-day rule should cover them. The per-round `ai.operation` rows already price the call too.
+LOCAL         full suite in the app image: see the commit message of K6 (local run, not CI).
+NEXT          needs a human: client adoption of the three additive items (UI lane); a durable store for turns and
+              memory (AGENTS.md section 7, independent architecture review); then memory distillation (Phase 4).
+```
 
 ## 1. Mục tiêu
 

@@ -54,6 +54,8 @@ from writing_coach.agent.errors import AgentError, ProviderUnavailable
 from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, default_address, mirrored_address
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
+from writing_coach.agent.focus import focus_after, lookup_word
+from writing_coach.agent.summary import summarize
 from writing_coach.agent.honesty import ClaimGate, asks_for_heading, nothing_done, offer, offer_instead
 from writing_coach.agent.notes import (
     CORRECT,
@@ -83,7 +85,7 @@ from writing_coach.agent.events import (
     make_action,
 )
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
-from writing_coach.agent.contract import OPENING_MAX_CHARS
+from writing_coach.agent.contract import OPENING_MAX_CHARS, WORD_ACTIONS
 from writing_coach.agent.events import Display
 from writing_coach.agent.outputs import (
     KEEP_NOTE_INTENT,
@@ -99,6 +101,7 @@ from writing_coach.agent.outputs import (
     selection_kind,
 )
 from writing_coach.agent.prompts import opening_messages
+from writing_coach.agent.pending import CANCELLED, COMPLETED, CONFIRM, PendingInteraction, action_key
 from writing_coach.agent.provider import (
     NORMAL_FINISH,
     AgentTurnProvider,
@@ -204,6 +207,10 @@ class AgentRuntime:
     max_output_tokens: int = 1024
     # One record per turn (agent/timeline.py): where the time went, for the latency and cost baseline.
     record_turn: Callable[[str, dict], None] | None = None
+    # One record per rolling-summary call (agent/summary.py), and its price: (input, output tokens) ->
+    # {provider, model, cost}. Both optional; a summary behaves the same without them.
+    record_summary: Callable[[str, dict], None] | None = None
+    price_summary: Callable[[int, int], dict] | None = None
     # The staging daily spend cap (agent/budget.py): seconds until it resets when reached, else None.
     spend_guard: Callable[[], float | None] | None = None
     # Live voice, mode A (agent/voice_session.py, R28): None unless the server turns voice on.
@@ -253,7 +260,14 @@ class _Turn:
         self.needs_evidence = False  # a conclusion about the learner's learning: read before answering (3.1)
         self.evidence_nudge = EVIDENCE_NUDGE  # what the model is asked when it answered without reading
         self.focused = False  # the turn is about what is in view (LEX-006, LEX-022)
-        self.offered: tuple[dict, ...] = ()  # the places this answer offered, kept for an "open it" next
+        self.heard: str | None = None  # what the model was given as the learner's words, kept as the turn's history
+        self.said = ""  # what the learner was shown as the answer, kept the same way
+        self.live: PendingInteraction | None = None  # the offer open when this turn began (agent/pending.py)
+        self.lookups: list[tuple[str, str | None]] = []  # words a tool read this turn (agent/focus.py)
+        self.outputs_actions: tuple[ActionEvent, ...] = ()  # the actions of this answer, for the focus
+        self.ran: tuple[str, ...] = ()  # keys of the actions this turn ran at the learner's word
+        self.settle: str | None = None  # how this turn ended it: completed | cancelled
+        self.new_offer: tuple[str, str, dict] | None = None  # (type, label, payload) this answer offers, if any
         self.read_attempted = False  # a read was started this turn, whatever came of it
         self.address_offered_now = False
         self.notes_asked: tuple[CoachNote, ...] = ()  # coach notes the message changes (agent/notes.py)
@@ -309,6 +323,7 @@ class _Turn:
             turn = TurnInput.from_request(self.request)
             # A changed target language starts from a clean context: nothing kept in the other one is read (3.3).
             session = session.for_target(self.locale.target)
+            self.live = None if self.opening else session.live_pending()
             tier1 = build_tier1(turn, session)
             self.address = tier1.address
             self.gate.address = tier1.address
@@ -342,6 +357,7 @@ class _Turn:
                 yield self._error("internal_error")
             return
         self._keep(session, turn)
+        self._compact(session)
         self._meter()
 
     @property
@@ -396,12 +412,16 @@ class _Turn:
         # so it answers in that one (LEX-006). Anything the learner typed reaches it as typed.
         tapped = None if self.opening else learner_copy.prompt_in_support(
             turn.message, interface=self.locale.interface, support=self.locale.support)  # fmt: skip
+        self.heard = tapped or turn.message
         messages = opening_messages(
             replace(turn, message=tapped) if tapped else turn, tier1, [c for c in here if c], session,
             opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
         )
-        if self.focused and word_in_view and (asks_about_status(turn.message) or asks_to_go(turn.message)):
-            # said next to the learner's words, like the selection line
+        answering = self.live is not None or bool(session.recent_runs())  # an open offer, or one just sent
+        if (self.focused and word_in_view and not answering
+                and (asks_about_status(turn.message) or asks_to_go(turn.message))):  # fmt: skip
+            # said next to the learner's words, like the selection line. Not while the learner is answering an offer
+            # ("ok lưu" is not a question about the library): the conversation is read, not the status words.
             messages.insert(len(messages) - 1, ProviderMessage(role="system", content=STATUS_ONLY))
         self.timeline.mark("context_built")
         outputs = ReplyOutputs(
@@ -426,6 +446,9 @@ class _Turn:
             and context.selected_item.type in ("word", "sentence"),
             selected_word=context.selected_item.text
             if context.selected_item is not None and context.selected_item.type == "word" else None,
+            pending=self.live,
+            settled=frozenset(done for done, _ in session.settled),
+            recent_runs=session.recent_runs(),
         )
         if mirrored is not None:
             outputs.memory_updates.append(MemoryUpdateEvent(op="upsert", note=mirrored))
@@ -466,6 +489,7 @@ class _Turn:
             f"identity.{question.value}", interface=self.locale.interface, support=self.locale.support,
             address=self.address,
         )
+        self.said = answer
         yield self.stream.emit(SegmentEnd(index=0, lang=lang, text=answer, voice_style="neutral_explain"))
         yield self.stream.emit(DoneEvent(usage=Usage(input_tokens=0, output_tokens=0), trace_id=self.trace_id))
 
@@ -498,7 +522,8 @@ class _Turn:
             if self.learner.contract_language in tool.languages
         )
         reply_specs = reply_tool_specs(
-            self.request.client, self.locale.target, version=self.stream.version, opening=self.opening
+            self.request.client, self.locale.target, version=self.stream.version, opening=self.opening,
+            pending=self.live is not None,
         )
         if self.screen_help:
             # Canonical stream S1 (contract §12): an answer, follow-up questions, nothing else.
@@ -666,6 +691,7 @@ class _Turn:
             return "refused: tools read only the signed-in learner's own data"
         label = learner_copy.text(f"tool.{tool.name}", interface=self.locale.interface, support=self.locale.support)[1]
         self.timeline.tools.append(tool.name)
+        self._note_lookup(tool.name, args)
         self.read_attempted = True
         self.timeline.mark("tool_start")
         yield self.stream.emit(ToolCallEvent(tool=tool.name, label=label))
@@ -685,6 +711,12 @@ class _Turn:
         outputs.learn_from(result.data, kind=kind)
         outputs.learn_from([dict(e.ref) for e in result.evidence], kind=kind)
         return self._tool_message(result, messages)
+
+    def _note_lookup(self, name: str, args: Mapping[str, Any]) -> None:
+        """A word a tool is asked about is what the talk is about now (agent/focus.py)."""
+
+        if (word := lookup_word(name, args)) is not None:
+            self.lookups.append((word, self.locale.target))
 
     def _report(self, name: str, result: ToolResult) -> Iterator[Event]:
         first = len(self.evidence_ids)
@@ -758,8 +790,19 @@ class _Turn:
                 outputs.actions[0] = first.model_copy(update={"open": True})
                 offer_lang, offer_text = learner_copy.text("offer.now.navigate", interface=self.locale.interface,
                                                            support=support, address=self.address)  # fmt: skip
-        self.offered = tuple({"type": a.type, "label": a.label, "payload": dict(a.payload)}
-                             for a in outputs.actions if a.type == "navigate")  # fmt: skip
+            elif first.open:  # asked for or accepted (agent/pending.py): it runs now, and is not "done"
+                now_key = f"offer.now.{first.type}" if f"offer.now.{first.type}" in learner_copy.CATALOG else "offer.now.action"
+                offer_lang, offer_text = learner_copy.text(now_key, interface=self.locale.interface, support=support,
+                                                           address=self.address)  # fmt: skip
+        self.outputs_actions = tuple(outputs.actions)
+        self.ran = tuple(action_key(a.type, a.payload) for a in outputs.actions if a.open)
+        if outputs.resolution is not None:
+            self.settle = COMPLETED if outputs.resolution == CONFIRM else CANCELLED
+        offered = next((a for a in outputs.actions if not a.open), None)  # what is only offered stays open for an answer
+        same_offer = (offered is not None and self.live is not None
+                      and action_key(offered.type, offered.payload) == action_key(self.live.action, self.live.payload))
+        if offered is not None and not self.opening and not same_offer:  # the same button again changes nothing
+            self.new_offer = (offered.type, offered.label, dict(offered.payload))
         inline = offer_text if offer_lang == support else None  # in the answer's own language, or apart
         apart = offer_text if inline is None else None
         nothing = nothing_done(self.locale.interface, support, self._address(support))
@@ -804,6 +847,7 @@ class _Turn:
             for chunk in finished:
                 yield self.stream.emit(SegmentDelta(index=0, lang=support, text_delta=chunk))
             text = self.gate.text
+        self.said = text
         # The device applies a memory_update without a tap, so it comes before the words that say it is
         # applied (S14: memory_update -> segment_end); coach notes and the address (§5.4, §5.6).
         for update in outputs.memory_updates:
@@ -840,16 +884,17 @@ class _Turn:
         """"Open it" right after an offer: the place the last answer offered, as an action this client may run -
         else None (then the model answers as usual)."""
 
-        if self.opening or not session.last_offers or not opens_the_offer(turn.message):
+        offer_ = self.live
+        if self.opening or offer_ is None or offer_.action != "navigate" or not opens_the_offer(turn.message):
             return None
-        offer_ = session.last_offers[0]
-        payload = dict(offer_.get("payload") or {})
+        payload = dict(offer_.payload)
         if "navigate" not in self.stream.allowed_actions or payload.get("intent") not in self.stream.allowed_intents:
             return None
         try:
-            action = make_action("a1", "navigate", str(offer_.get("label") or ""), payload)
+            action = make_action(offer_.id, "navigate", offer_.label, payload)
         except (ValueError, ValidationError):
             return None
+        self.settle = COMPLETED
         return action.model_copy(update={"open": True})
 
     def _open_offered(self, action: ActionEvent) -> Iterator[Event]:
@@ -857,7 +902,7 @@ class _Turn:
 
         lang, said = learner_copy.text("offer.now.navigate", interface=self.locale.interface,
                                        support=self.locale.support, address=self.address)  # fmt: skip
-        self.offered = ({"type": action.type, "label": action.label, "payload": dict(action.payload)},)
+        self.said = said
         self.timeline.mark("final_ready")
         self.timeline.facts.update(actions=[action.type], suggestions=0)
         yield self.stream.emit(SegmentDelta(index=0, lang=lang, text_delta=said))
@@ -872,16 +917,95 @@ class _Turn:
             state = state.for_target(self.locale.target).with_context(turn.context)
             if not self.opening:  # an opening turn is not a learner turn (§3.2)
                 state = state.with_turn()
+            if not self.opening and turn.message and self.said:  # the exchange, for the turns after it
+                state = state.with_exchange(self.heard or turn.message, self.said, self.rt.limits)
+            if not self.opening:
+                state = state.with_focus(self._focus(state, turn))
             if self.address_offered_now:
                 state = state.with_address_asked()
-            if not self.opening:  # what this answer offered, for an "open it" next (an answer with none clears it)
-                state = state.with_offers(self.offered)
+            if not self.opening:  # the offer this turn answered ends; one it expired on ends; a new one replaces
+                state = state.with_outcome(live=self.live, settle=self.settle, new_offer=self.new_offer, ran=self.ran)
             for record in self.records:
                 state = state.with_tool_result(record, limit=limit)
             return state
 
         # None when it expired meanwhile: the next turn opens a new one.
         self.rt.sessions.update(session.agent_session_id, self.learner.user_key, change)
+
+    def _compact(self, session) -> None:
+        """Past the soft budget, fold the oldest turns into the rolling summary. Outside the session lock, after the
+        answer; a failure leaves the conversation exactly as it is."""
+
+        # Not gated on `should_stop`: the learner leaves as soon as the answer is done, and this is upkeep of the
+        # session, not part of what they are waiting for.
+        if self.opening:
+            return
+        try:
+            state = self.rt.sessions.get(session.agent_session_id, self.learner.user_key)
+            job = state.compaction_job(self.rt.limits) if state is not None else None
+            if job is None:
+                return
+            old, folded = job
+            made = summarize(self.rt.provider, old, folded, limit=self.rt.limits.max_summary_chars)
+            self.usage_in += made.input_tokens
+            self.usage_out += made.output_tokens
+            applied = made.text is not None
+            if applied:
+                _log.info("agent compaction: folded %d turns into %d characters", len(folded), len(made.text))
+                self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
+                                        lambda s: s.with_compacted(folded, made.text))  # fmt: skip
+            self._record_summary(state, folded, made, applied)
+        except Exception:
+            _log.warning("agent compaction failed", exc_info=True, extra={"trace_id": self.trace_id})
+
+    def _record_summary(self, state, folded, made, applied: bool) -> None:
+        """One `agent.summary` record per summary call: why it ran, what it cost, how it ended. Counts and names only,
+        never what was said. A failed summary is `fallback: kept_turns`: the conversation is left as it was."""
+
+        if self.rt.record_summary is None:
+            return
+        limits = self.rt.limits
+        turns, chars = len(state.recent_turns), sum(len(t.text) for t in state.recent_turns)
+        over = [name for name, hit in (("turns", turns > limits.compact_after_turns),
+                                       ("chars", chars > limits.compact_after_chars)) if hit]
+        record = {
+            "version": "agent-summary/1", "trace_id": self.trace_id, "outcome": "success" if applied else "failed",
+            "reason": made.outcome, "fallback": None if applied else "kept_turns",
+            "trigger": {"over": over, "turns": turns, "chars": chars, "after_turns": limits.compact_after_turns,
+                        "after_chars": limits.compact_after_chars, "keep_turns": limits.keep_verbatim_turns},
+            "folded_turns": len(folded), "folded_chars": sum(len(t.text) for t in folded),
+            "had_summary": bool(state.summary), "summary_chars": len(made.text or ""),
+            "input_tokens": made.input_tokens, "output_tokens": made.output_tokens, "latency_ms": made.latency_ms,
+            **self._price(made),
+        }
+        try:
+            self.rt.record_summary(self.learner.user_key, record)
+        except Exception:  # telemetry never costs the learner their session
+            _log.warning("agent summary not recorded", exc_info=True, extra={"trace_id": self.trace_id})
+
+    def _price(self, made) -> dict:
+        """Provider, model and the estimated cost of the call, from the platform's catalog; unknown when unavailable."""
+
+        none = {"provider": None, "model": None, "cost": None}
+        if self.rt.price_summary is None:
+            return none
+        try:
+            return self.rt.price_summary(made.input_tokens, made.output_tokens)
+        except Exception:
+            return none
+
+    def _focus(self, state, turn: TurnInput):
+        """The session's focus after this turn: what was selected, looked up or offered, and a long paste."""
+
+        named = list(self.lookups)
+        named += [(a.payload["text"], a.payload.get("lang")) for a in self.outputs_actions
+                  if a.type in WORD_ACTIONS and isinstance(a.payload.get("text"), str)]
+        context = turn.context
+        ids = {k: getattr(context, k) for k in ("content_id", "lesson_id", "essay_id") if getattr(context, k, None)}
+        return focus_after(
+            state.focus, selected=context.selected_item, word=named[-1] if named else None, ids=ids,
+            pasted=turn.message, pasted_cap=self.rt.limits.max_turn_chars,
+        )
 
     def _meter(self) -> None:
         if self.rt.meter is None:

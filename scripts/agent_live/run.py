@@ -381,6 +381,23 @@ def plan() -> dict:
 # --- multi-turn flows: a session, and the coach notes the device would keep ------------------
 
 VI = {"interface": "vi", "support": "vi"}
+SAVE = {"actions": ["navigate", "save_word"]}  # a client that can run save_word
+ARTICLE_EN = (
+    "Automation is often described as a threat to jobs, but the evidence is more complicated than the headlines "
+    "suggest, and the debate has been conducted mostly in slogans. Economists have long noticed that new machines destroy some tasks while creating others, and the net "
+    "effect depends on how quickly workers can move from the old tasks to the new ones. Every earlier wave of "
+    "technology, from the loom to the spreadsheet, was feared in the same way before its benefits were understood. "
+    "The author argues that the loudest warnings come from people who confuse tasks with occupations. A bank "
+    "teller's job changed when cash machines arrived, yet the number of tellers grew for two decades because "
+    "branches became cheaper to open and banks opened more of them. The machine took over the counting; the people "
+    "took over the advice. The same pattern, the author says, appears in warehouses, in accounting firms and in "
+    "radiology departments, where software reads the scan and the doctor spends the time saved with the patient. "
+    "The strongest claim in the essay is that retraining programmes are a waste of public money. The author offers "
+    "a single study of one factory closure in Ohio and concludes from it that no retraining scheme anywhere has "
+    "ever worked. Nothing else is cited, and the essay does not say how the workers in that study were chosen. "
+    "Finally, the author proposes wage insurance instead: a payment that tops up the earnings of workers who "
+    "accept a lower-paid job after being laid off, so that they keep working while they learn new skills."
+)
 FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
     # name: [(target, step, locale, message, context extras)]
     "address": [
@@ -429,6 +446,57 @@ FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
         ("zh-CN", "forget", VI, "Quên ghi chú về ví dụ đó đi.", {}),
         ("zh-CN", "after", VI, "Cho mình một ví dụ với 朋友.", {}),
     ],
+    # Conversation kernel slice 2 (agent/pending.py): an offer survives a question in between, is run once on the
+    # learner's yes, dropped on a no, and not run twice. Each flow is one session; judged by `pending_verdict`.
+    "pending-save": [
+        ("en", "ask", VI, "abate nghĩa là gì? Mình có nên lưu từ này không?", SAVE),
+        ("en", "example", VI, "cho ví dụ nữa", SAVE),
+        ("en", "save", VI, "ừ lưu đi", SAVE),
+        ("en", "again", VI, "ok lưu", SAVE),
+    ],
+    "pending-cancel": [
+        ("en", "ask", VI, "abate nghĩa là gì? Mình có nên lưu từ này không?", SAVE),
+        ("en", "no", VI, "không", SAVE),
+        ("en", "after", VI, "từ đó có formal không?", SAVE),
+    ],
+    "pending-between": [
+        ("en", "ask", VI, "abate nghĩa là gì? Mình có nên lưu từ này không?", SAVE),
+        ("en", "between", VI, "từ đó có formal không?", SAVE),
+        ("en", "save", VI, "thôi lưu đi", SAVE),
+    ],
+    # Conversation kernel slices 3-4: references resolve from the conversation, a pasted text is asked about
+    # again without pasting it, and a change of learning language keeps the conversation. `conversation_verdict`.
+    "convo-refs": [
+        ("en", "ask", VI, "mitigate nghĩa là gì?", SAVE),
+        ("en", "example", VI, "cho ví dụ kiểu điện tử", SAVE),
+        ("en", "formal", VI, "formal không?", SAVE),
+        ("en", "save", VI, "từ đó lưu đi", SAVE),
+    ],
+    "convo-paste": [
+        ("en", "ask", VI, ARTICLE_EN + "\n\nTóm lại tác giả phản đối điều gì?", {}),
+        ("en", "third", VI, "đoạn thứ 3 lập luận có yếu không?", {}),
+        ("en", "first", VI, "còn đoạn đầu thì nói gì?", {}),
+    ],
+    "convo-lang": [
+        ("en", "ask", VI, "mitigate nghĩa là gì?", {}),
+        ("zh-CN", "switch", VI, "từ đó dịch sang tiếng Trung là gì?", {}),
+    ],
+    # Phase 5 (agent/summary.py): a long conversation. By the fourth question after the first the oldest turns are
+    # folded into the rolling summary, so "the first word I asked" is answerable only from it; the pasted text and an
+    # offer made after the fold are kept apart from it. `conversation_verdict`.
+    "convo-long": [
+        ("en", "first", VI, "mitigate nghĩa là gì?", {}),
+        ("en", "paste", VI, ARTICLE_EN + "\n\nTóm lại tác giả phản đối điều gì?", {}),
+        *[("en", f"fill{n}", VI, text, {}) for n, text in enumerate([
+            "scarcity nghĩa là gì?", "cho ví dụ ngắn", "reluctant nghĩa là gì?", "ephemeral là gì?", "cho ví dụ ngắn",
+            "ubiquitous là gì?", "scrutinize nghĩa là gì?", "cho ví dụ ngắn", "candid nghĩa là gì?",
+            "cho ví dụ ngắn", "thorough nghĩa là gì?", "cho ví dụ ngắn"])],
+        ("en", "back", VI, "quay lại đầu cuộc trò chuyện: từ đầu tiên mình hỏi bạn là từ nào, nghĩa là gì?", {}),
+        ("en", "third", VI, "đoạn thứ 3 của bài mình dán lập luận có yếu không?", {}),
+        ("en", "ask", VI, "pragmatic nghĩa là gì? Mình có nên lưu từ này không?", SAVE),
+        ("en", "example", VI, "cho ví dụ nữa", SAVE),
+        ("en", "save", VI, "ừ lưu đi", SAVE),
+    ],
     "screens": [
         ("zh-CN", "vi", VI, "Màn này dùng để làm gì?", {"surface": "vocabulary.my_language"}),
         ("en", "zh", {"interface": "zh-CN", "support": "zh-CN"}, "这个页面是做什么的？", {"surface": "vocabulary.my_language"}),
@@ -458,6 +526,7 @@ def run_flows(client: Client, version: int, names: list[str], cap: float, gap: f
             if extra.get("word"):
                 context["selected_item"] = {"type": "word", "text": extra["word"], "lang": target}
                 actions = ["save_word", "add_word_to_collection"]
+            actions = extra.get("actions", actions)
             if context["surface"] in {"home", "orena.home"}:
                 actions, intents = ALL_ACTIONS, ALL_INTENTS
             body = {
@@ -559,6 +628,92 @@ def notes_verdict(rows: list[dict]) -> dict:
     return verdict
 
 
+def pending_verdict(rows: list[dict]) -> dict:
+    """The pending-interaction flows, judged from the actions the device received: `pass` per flow only when the
+    save was offered, an interjected question ran nothing, a yes ran save_word(abate) exactly once and with `open`,
+    a second yes ran nothing, and a no ran nothing."""
+
+    def acts(flow: str, step: str) -> list[dict]:
+        row = next((r for r in rows if r.get("flow") == flow and r.get("step") == step), None)
+        return [a for a in (row or {}).get("actions", [])]
+
+    def saves(items: list[dict]) -> list[dict]:
+        return [a for a in items if a.get("type") == "save_word" and a.get("payload", {}).get("text", "").lower() == "abate"]
+
+    def ran(items: list[dict]) -> list[dict]:
+        return [a for a in saves(items) if a.get("open") is True]
+
+    verdict: dict = {}
+    if any(r.get("flow") == "pending-save" for r in rows):
+        verdict["pending-save"] = {
+            "offered": bool(saves(acts("pending-save", "ask"))) and not ran(acts("pending-save", "ask")),
+            "interjection_ran_nothing": not ran(acts("pending-save", "example")),
+            "save_ran_once": len(ran(acts("pending-save", "save"))) == 1,
+            "repeat_ran_nothing": not ran(acts("pending-save", "again")),
+        }
+    if any(r.get("flow") == "pending-cancel" for r in rows):
+        verdict["pending-cancel"] = {
+            "offered": bool(saves(acts("pending-cancel", "ask"))),
+            "no_ran_nothing": not ran(acts("pending-cancel", "no")) and not ran(acts("pending-cancel", "after")),
+        }
+    if any(r.get("flow") == "pending-between" for r in rows):
+        verdict["pending-between"] = {
+            "offered": bool(saves(acts("pending-between", "ask"))),
+            "question_ran_nothing": not ran(acts("pending-between", "between")),
+            "late_yes_ran_once": len(ran(acts("pending-between", "save"))) == 1,
+        }
+    for checks in verdict.values():
+        checks["pass"] = all(checks.values())
+    return verdict
+
+
+def conversation_verdict(rows: list[dict]) -> dict:
+    """The conversation flows, judged from the answers the device received: references resolved to the word named
+    earlier (an action or its text names it), a pasted text answered about without being pasted again, and a
+    language change that kept the topic. Keyword checks only; the answers are in the result for reading."""
+
+    def row(flow: str, step: str) -> dict:
+        return next((r for r in rows if r.get("flow") == flow and r.get("step") == step), {})
+
+    def says(r: dict, *words: str) -> bool:
+        text = (r.get("text") or "").casefold()
+        return any(w.casefold() in text for w in words)
+
+    asks_again = ("dán", "paste", "gửi lại", "cung cấp", "nội dung", "bạn muốn hỏi về", "đoạn nào")
+    verdict: dict = {}
+    if any(r.get("flow") == "convo-refs" for r in rows):
+        saved = [a for a in row("convo-refs", "save").get("actions", []) if a.get("type") == "save_word"]
+        verdict["convo-refs"] = {
+            "example_about_the_word": says(row("convo-refs", "example"), "mitigate"),
+            "formal_about_the_word": says(row("convo-refs", "formal"), "mitigate"),
+            "saved_mitigate_once": len(saved) == 1 and saved[0]["payload"].get("text", "").lower() == "mitigate"
+            and saved[0].get("open") is True,
+        }
+    if any(r.get("flow") == "convo-paste" for r in rows):
+        third, first = row("convo-paste", "third"), row("convo-paste", "first")
+        verdict["convo-paste"] = {
+            "third_answered_from_the_text": says(third, "Ohio", "một nhà máy", "một nghiên cứu", "đào tạo lại")
+            and not says(third, *asks_again[:4]),
+            "first_answered_from_the_text": says(first, "tự động hóa", "automation", "công việc", "nhiệm vụ")
+            and not says(first, *asks_again[:4]),
+        }
+    if any(r.get("flow") == "convo-lang" for r in rows):
+        verdict["convo-lang"] = {"kept_the_word_after_the_switch": says(row("convo-lang", "switch"), "缓解", "减轻", "减缓", "mitigate")}
+    if any(r.get("flow") == "convo-long" for r in rows):
+        saved = [a for a in row("convo-long", "save").get("actions", []) if a.get("type") == "save_word"]
+        verdict["convo-long"] = {
+            "first_word_from_the_summary": says(row("convo-long", "back"), "mitigate")
+            and not says(row("convo-long", "back"), *asks_again[:3]),
+            "pasted_text_still_answered": says(row("convo-long", "third"), "Ohio", "một nhà máy", "một nghiên cứu", "đào tạo lại")
+            and not says(row("convo-long", "third"), *asks_again[:4]),
+            "saved_pragmatic_once": len(saved) == 1 and saved[0]["payload"].get("text", "").lower() == "pragmatic"
+            and saved[0].get("open") is True,
+        }
+    for checks in verdict.values():
+        checks["pass"] = all(checks.values())
+    return verdict
+
+
 def notes_log(lines: list[str]) -> list[dict]:
     """The server's "agent notes:" lines, one entry per turn that changed or cancelled a note: whether the model
     was asked again, and the outcome (turn.py logs counts only)."""
@@ -644,7 +799,8 @@ class Sandbox:
         except (OSError, subprocess.TimeoutExpired):
             return ["the web log could not be read"]
         lines = [line for line in log.splitlines()
-                 if "agent provider round" in line or "agent turn failed" in line or "agent notes:" in line]  # fmt: skip
+                 if "agent provider round" in line or "agent turn failed" in line or "agent notes:" in line
+                 or "conversation summary" in line or "agent compaction" in line]  # fmt: skip
         return [re.sub(r"(?i)(key=|bearer\s+|AIza)[\w\-.]+", r"\1<redacted>", line)[-600:] for line in lines]
 
     def down(self) -> None:
@@ -884,12 +1040,17 @@ def finish(rows: list[dict], spent: float, out: str) -> int:
                     "capability_models": {"agent_turn_fast": MODEL, "agent_turn_deep": MODEL},
                     "spent_bound_usd": round(spent, 4), "price": [PRICE_IN, PRICE_OUT],
                     "lock": LOCK_NOTES, "notes_verdict": notes_verdict(rows) if any(r.get("flow") == "notes" for r in rows)
-                    else None, "timing": timing(rows), "turns": rows},
+                    else None, "pending_verdict": pending_verdict(rows) or None,
+                    "conversation_verdict": conversation_verdict(rows) or None, "timing": timing(rows), "turns": rows},
                    ensure_ascii=False, indent=2),  # fmt: skip
         encoding="utf-8",
     )
     if any(r.get("flow") == "notes" for r in rows):
         print(f"notes verdict: {notes_verdict(rows)}")
+    if any(str(r.get("flow", "")).startswith("convo") for r in rows):
+        print(f"conversation verdict: {conversation_verdict(rows)}")
+    if any(str(r.get("flow", "")).startswith("pending") for r in rows):
+        print(f"pending verdict: {pending_verdict(rows)}")
     print(f"timing: {timing(rows)}")
     print(f"results: {out}  (spend bound ${spent:.4f})")
     return 0
