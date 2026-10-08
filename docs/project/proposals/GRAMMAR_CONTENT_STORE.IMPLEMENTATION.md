@@ -5,6 +5,8 @@ Issue #99, after the architecture gate. Revision 3a of `GRAMMAR_CONTENT_STORE.md
 authorized (2026-10-08): promote `0030` in source control only if its parent is still the real head; implement the
 non-UI store, validator, importer, Admin lifecycle, learner API and progress/R5; reuse the approved 595-point corpus;
 apply no migration to any runtime; touch no learner or Admin UI; stop and report when UI integration is next.
+The work lives on its own branch, `feature/grammar-content-store`, cut from `main` (human direction: no unrelated
+`codex/work` commits in the Grammar backend PR).
 
 ## What exists now
 
