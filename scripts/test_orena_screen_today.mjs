@@ -122,7 +122,8 @@ assert.equal(pickMeaning([], 'en'), '', 'no meanings at all is empty, not invent
   const listen = mapContinuationEntry({ id: 'media:l1', title: 'Cosmic calendar', context: 'Science' }, t);
   assert.equal(listen.routeId, 'listening');
   assert.deepEqual(listen.routeParams, { id: 'l1' });
-  assert.equal(listen.meta, 'Science');
+  assert.equal(listen.meta, 'Continue · Science', '"Continue" leads the meta line (design/UX review 2026-10-08)');
+  assert.equal(listen.kind, 'Listen', 'the kind names the skill, not "Continue"');
 
   const dictation = mapContinuationEntry({ id: 'media:l1', title: 'x', intent: 'dictation' }, t);
   assert.equal(dictation.routeId, 'dictation', 'a dictation intent routes to Dictation, not plain Listening');
@@ -347,8 +348,8 @@ console.log('Orena Today: recommendation pool, continuation mapping, For-you rai
 {
   const { buildForYou, usedRecommendationIds } = await import('../static/orena/screens/today/model.js');
   const placed = mapContinuationEntry({ id: 'media:l1', title: 'Cosmic calendar', context: 'Science', place: { index: 1, total: 1, within: 40 } }, t);
-  assert.equal(placed.meta, 'Science · 40% done', 'the measured place follows the context');
-  assert.equal(mapContinuationEntry({ id: 'media:l1', title: 'x', place: { index: 1, total: 1 } }, t).meta, '', 'a 1 of 1 place with nothing measured says nothing');
+  assert.equal(placed.meta, 'Continue · Science · 40% done', 'the measured place follows the context');
+  assert.equal(mapContinuationEntry({ id: 'media:l1', title: 'x', place: { index: 1, total: 1 } }, t).meta, 'Continue', 'a 1 of 1 place with nothing measured says only that it continues');
   const reading = mapContinuationEntry({ id: 'book:b1:c3', title: 'THE CRY IN THE CORRIDOR', context: 'The Secret Garden', place: { index: 3, total: 9 } }, t);
   assert.equal(reading.routeId, 'reader');
   assert.deepEqual(reading.routeParams, { id: 'book:b1:c3' });

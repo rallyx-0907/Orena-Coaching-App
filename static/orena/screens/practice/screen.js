@@ -93,7 +93,7 @@ function tileMarkup(skill, mode) {
     leading: rowIconSwatch({ iconName: SKILL_ICONS[skill][mode.key] || 'target', tint: SKILL_TINT[skill] }),
     title: labelOf(skill, mode),
     sub: modeMeta(skill, mode),
-    className: 's-practice-tile',
+    className: `s-practice-tile s-practice-tile--${skill}`,
     dataset: modeDataset(mode),
   });
 }

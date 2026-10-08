@@ -44,6 +44,8 @@
   color: var(--muted);
   font-size: 15px;
   line-height: 22px;
+  /* No word split across the last line (享/受, UX rule 21 review 2026-10-08). */
+  text-wrap: pretty;
 }
 .s-today-date {
   display: var(--hide-mobile);
@@ -306,7 +308,7 @@
 }
 .s-today-hero:hover {
   box-shadow: var(--sh2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .s-today-hero__deco {
   position: absolute;
@@ -389,9 +391,10 @@
   align-content: start;
 }
 .s-today-rest-card {
-  background: var(--surface);
+  /* The Grammar category card's wash of the item's own skill hue (human, 2026-10-08, G-15). */
+  background: linear-gradient(135deg, color-mix(in srgb, var(--hue, transparent) 18%, transparent) 0%, var(--surface) 62%);
   border-radius: 20px;
-  box-shadow: var(--sh1);
+  box-shadow: var(--edge-light);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -402,7 +405,7 @@
 }
 .s-today-rest-card:hover {
   box-shadow: var(--sh2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .s-today-rest-card__icon {
   width: 40px;
@@ -447,4 +450,19 @@
 
 :root[data-device="mobile"] .s-today {
   padding-top: 24px;
+}
+
+/* Desk: the rail stays inside the 1080px column - its gutter bleed belongs to the phone, where the column is the
+   screen (design/UX review 2026-10-08: on a desk the bleed ran 32px past the column and the scrollbar started left
+   of it). No scrollbar; the right edge fades so the row reads as scrollable. */
+:root[data-device='desktop'] .s-today-rail {
+  margin: 0;
+  padding: 4px 0 16px;
+  scroll-padding-inline: 0;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 48px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 48px), transparent);
+}
+:root[data-device='desktop'] .s-today-rail::-webkit-scrollbar {
+  display: none;
 }

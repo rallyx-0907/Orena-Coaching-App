@@ -28,7 +28,7 @@
 }
 .s-library-content-row:hover {
   box-shadow: var(--sh2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .s-library-content-row__body {
   flex: 1;
@@ -203,7 +203,7 @@
 }
 .s-library-active-card:hover {
   box-shadow: var(--sh2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .s-library-active-card__top {
   display: flex;

@@ -85,7 +85,16 @@
    (kit's shared outline row only changes the shadow). */
 .s-practice-tile {
   border-color: transparent;
+  /* The Grammar category card's wash of its own hue into the surface (human, 2026-10-08, G-15), flat (D-150). */
+  background: linear-gradient(135deg, color-mix(in srgb, var(--hue, transparent) 18%, transparent) 0%, var(--surface) 62%);
+  transition: box-shadow 0.15s, transform 0.15s;
 }
+.s-practice-tile--speak { --hue: var(--skill-speak); }
+.s-practice-tile--write { --hue: var(--skill-write); }
+.s-practice-tile--listen { --hue: var(--skill-listen); }
+.s-practice-tile--vocabulary { --hue: var(--skill-vocab); }
+.s-practice-tile--grammar { --hue: var(--skill-grammar); }
+.s-practice-tile--reading { --hue: var(--skill-read); }
 .s-practice-tile:hover {
   transform: translateY(-2px);
 }

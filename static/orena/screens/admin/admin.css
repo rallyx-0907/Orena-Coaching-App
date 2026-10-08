@@ -366,13 +366,14 @@
   font-weight: 600;
   background: var(--surface);
   color: var(--text);
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   flex: none;
+  box-shadow: var(--edge-light);
 }
 .a-btn--sm {
   height: 36px;
@@ -917,17 +918,18 @@ a.a-btn--primary:hover {
   font-weight: 600;
   background: var(--surface);
   color: var(--text);
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   text-align: left;
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 1px;
+  box-shadow: var(--edge-light);
 }
 .a-seg__option[aria-pressed='true'] {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: var(--accent);
+  border-color: transparent;
 }
 .a-seg__option:disabled {
   opacity: 0.45;
@@ -1851,7 +1853,7 @@ a.a-btn--primary:hover {
   position: relative;
 }
 .a-file:focus-within {
-  border-color: var(--accent);
+  border-color: var(--text3);
 }
 .a-file__icon {
   width: 36px;
@@ -2262,10 +2264,11 @@ a.a-btn--primary:hover {
 }
 .a-filters .a-chipbtn {
   height: 34px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
+  box-shadow: var(--edge-light);
 }
 .a-filters .a-chipbtn[aria-pressed='true'] {
-  border-color: var(--accent);
+  border-color: transparent;
 }
 .a-hometile .a-row__tile {
   border-radius: 12px;

@@ -248,9 +248,10 @@
 .o-card--hover {
   transition: box-shadow 0.15s, transform 0.15s;
 }
+/* One card hover across the app: Practice Hub's (D-148, D-150). */
 .o-card--hover:hover {
   box-shadow: var(--sh2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .o-well {
   border-radius: 16px;

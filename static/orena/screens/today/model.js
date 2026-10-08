@@ -152,10 +152,16 @@ export function mapContinuationEntry(entry, t) {
   const id = String(entry?.id || '');
   /* Where the learner stopped, when it is measured (LEX-090): the same percent every other surface reads. */
   const pct = placePercent(entry?.place);
-  const where = (context) => [context || '', pct != null && pct < 100 ? t('placePercent', { pct }) : ''].filter(Boolean).join(' · ');
+  /* The card's kind is the skill the learner returns to; "Continue" leads its meta line (design/UX review 2026-10-08:
+     five cards all labelled "Continue" told the learner nothing about what each was). */
+  const lead = t('kindContinue');
+  const where = (context) => {
+    const said = String(context || '').toLocaleLowerCase().startsWith(lead.toLocaleLowerCase());
+    return [said ? '' : lead, context || '', pct != null && pct < 100 ? t('placePercent', { pct }) : ''].filter(Boolean).join(' · ');
+  };
   const speaking = speakingResumeTarget(entry);
   if (speaking) return {
-    source:'continue', id, kind:t('kindContinue'), title:tidyTitle(entry.title || ''),
+    source:'continue', id, kind:t('kindSpeak'), title:tidyTitle(entry.title || ''),
     meta:where(entry.context), tag:null, durationLabel:'', image:'',
     routeId:speaking.routeId, routeParams:speaking.params, routeQuery:speaking.query,
   };
@@ -167,7 +173,7 @@ export function mapContinuationEntry(entry, t) {
     return {
       source: 'continue',
       id,
-      kind: t('kindContinue'),
+      kind: t(shadowing ? 'kindSpeak' : 'kindListen'),
       title: tidyTitle(entry.title || ''),
       meta: where(entry.context),
       tag: null,
@@ -180,7 +186,7 @@ export function mapContinuationEntry(entry, t) {
   }
   if (/^(article|book):[^:]+(:[^:]+)?$/.test(id) && !(entry.place?.within >= 100)) {
     return {
-      source: 'continue', id, kind: t('kindContinue'), title: tidyTitle(entry.title || ''),
+      source: 'continue', id, kind: t('kindRead'), title: tidyTitle(entry.title || ''),
       meta: where(entry.context), tag: null, durationLabel: '', image: '',
       routeId: 'reader', routeParams: { id }, routeQuery: {},
     };
@@ -189,7 +195,7 @@ export function mapContinuationEntry(entry, t) {
     return {
       source: 'continue',
       id,
-      kind: t('kindContinue'),
+      kind: t('kindSpeak'),
       title: tidyTitle(entry.title || ''),
       meta: where(entry.context),
       tag: null,
@@ -206,7 +212,7 @@ export function mapContinuationEntry(entry, t) {
     return {
       source: 'continue',
       id,
-      kind: t('kindContinue'),
+      kind: t('kindGrammar'),
       title: tidyTitle(entry.title || ''),
       meta: where(entry.context),
       tag: null,
