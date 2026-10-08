@@ -4355,8 +4355,10 @@ backend cannot yet serve:
     not a ring; light-theme controls on white cards (Settings actions and picker, Library "⋯", Progress next) take
     `--surface2`; Writing's empty review well is a fill, not a dashed outline.
     **Still open:** Settings off-toggle track contrast 1.19:1 (pre-existing, WCAG 1.4.11 needs 3:1); Progress and
-    Profile entered from a Profile row have only the rail to go back; "0 day streak" beside ticked days; level-row
-    roving tabindex; resting shadows on cards outside Grammar/Practice/Today picks (D-150 not applied app-wide).
+    Profile entered from a Profile row have only the rail to go back; level-row roving tabindex; resting shadows on
+    cards outside Grammar/Practice/Today picks (D-150 not applied app-wide).
+    **Closed by the human (2026-10-09):** "0 day streak" beside ticked days stays as is - no "N days this week" line
+    (the design draws none).
 
 ## Current Admin reconciliation — 2026-10-03
 
