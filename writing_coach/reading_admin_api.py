@@ -1108,6 +1108,37 @@ def operations(request: Request, response: Response) -> dict[str, Any]:
 # copied as it was.
 
 _SOURCE_PACK_FIELDS = ("slug", "name", "source_type", "base_url", "languages")
+_PACK_QUESTION_FIELDS = ("question_type", "prompt", "options", "correct_index", "explanation", "evidence_text", "rank")
+# An approved set moves between environments as it is: the same questions, generator version, model and validation,
+# its approval carried as provenance. Arriving, it is neither generated, graded nor decided again: no provider call and
+# no automatic-approval rule. A pack without this marker (made before it) keeps the older re-validation path.
+LOSSLESS_SET_TRANSFER = "lossless-v1"
+
+
+def _pack_set(found: Mapping[str, Any]) -> dict[str, Any]:
+    """One approved set as it leaves: what makes it this set, and how it was approved - never its database ids or who
+    the reviewer was (a pack carries no personal data), only whether the approval was the automatic rule or a person."""
+    from writing_coach.content_packs import content_hash
+
+    questions = [{key: question.get(key) for key in _PACK_QUESTION_FIELDS}
+                 for question in found.get("questions", []) if question.get("admin_approved")]
+    body = {
+        "transfer": LOSSLESS_SET_TRANSFER,
+        "support_language": found.get("support_language"),
+        "generator_version": found.get("generator_version") or "",
+        "model": found.get("model") or "",
+        "article_body_sha256": found.get("article_body_sha256") or "",
+        "validation": dict(found.get("validation") or {}),
+        "created_at": found.get("created_at"),
+        "approval": {
+            "by": "automatic" if found.get("reviewed_by") == AUTO_APPROVAL_ACTOR else "administrator",
+            "at": found.get("reviewed_at"),
+            "reason": found.get("review_reason") or "",
+        },
+        "questions": questions,
+    }
+    return body | {"set_sha256": content_hash({key: body[key] for key in (
+        "support_language", "generator_version", "model", "article_body_sha256", "questions")})}
 
 
 def pack_reading_items(*, source_slug_prefix: str = "", languages: tuple[str, ...] = ()) -> list[Any]:
@@ -1127,14 +1158,10 @@ def pack_reading_items(*, source_slug_prefix: str = "", languages: tuple[str, ..
         sets = []
         if _state.evidence is not None:
             for found in _evidence().list_sets(article["origin_id"]):
-                if found.get("status") != "approved":
+                # Only a set still anchored to this exact body can arrive unchanged anywhere else.
+                if found.get("status") != "approved" or found.get("anchored") is False:
                     continue
-                sets.append({
-                    "support_language": found.get("support_language"), "model": found.get("model") or "",
-                    "questions": [{key: question.get(key) for key in ("question_type", "prompt", "options", "correct_index",
-                                                                       "explanation", "evidence_text", "rank")}
-                                  for question in found.get("questions", []) if question.get("admin_approved")],
-                })  # fmt: skip
+                sets.append(_pack_set(found))
         data = {**article, "comprehension_sets": sets}
         key = f"{article['source_slug']}:{content_fingerprint(article['body'])[:32]}"
         items.append(PackItem(kind="reading_article", natural_key=key, data=data))
@@ -1209,9 +1236,12 @@ def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str) ->
 
 def _attach_pack_set(admin: Mapping[str, Any], article_id: str, support: str, pack_set: Mapping[str, Any], *,
                      pack_id: str) -> dict[str, Any]:
-    """A pack's set is never imported as approved: it is re-created against this body, grounded again, and then
-    decided by the same automatic-approval rule as a freshly generated one (D-111)."""
+    """A lossless set (LOSSLESS_SET_TRANSFER) arrives as it was approved. A set from an older pack is re-created
+    against this body, grounded again, and decided by the same deterministic automatic-approval rule as a freshly
+    generated one (D-111); neither path calls a provider."""
 
+    if pack_set.get("transfer") == LOSSLESS_SET_TRANSFER:
+        return _transfer_pack_set(admin, article_id, support, pack_set, pack_id=pack_id)
     article = _content().get_article(article_id)
     try:
         created = _evidence().create_set(
@@ -1226,3 +1256,47 @@ def _attach_pack_set(admin: Mapping[str, Any], article_id: str, support: str, pa
         return {"support_language": support, "result": "draft"}
     decided = _approve_automatically(admin, created)
     return {"support_language": support, "result": decided.get("status"), "reasons": decided["automatic_approval"]["reasons"]}
+
+
+def _transfer_pack_set(admin: Mapping[str, Any], article_id: str, support: str, pack_set: Mapping[str, Any], *,
+                       pack_id: str) -> dict[str, Any]:
+    """An approved set, unchanged: only onto the identical body it was approved for, with its questions, generator
+    version, model and validation as they were, approved by this environment's importing administrator with the
+    source approval recorded beside it. Nothing is generated, graded or decided by a rule; a refusal leaves no draft."""
+
+    article = _content().get_article(article_id)
+    anchor = body_sha256(str((article or {}).get("body") or ""))
+    if anchor != str(pack_set.get("article_body_sha256") or ""):
+        return {"support_language": support, "result": "refused", "category": "reading_pack_set_body_differs"}
+    approval = dict(pack_set.get("approval") or {})
+    actor = _actor(admin)
+    created: dict[str, Any] | None = None
+    try:
+        created = _evidence().create_set(
+            article_id, support_language=support, generator_version=str(pack_set.get("generator_version") or "")[:40],
+            model=str(pack_set.get("model") or "")[:120], questions=question_inputs(pack_set["questions"]),
+            validation={**dict(pack_set.get("validation") or {}), "transferred": {
+                "transfer": LOSSLESS_SET_TRANSFER, "content_pack": pack_id, "set_sha256": pack_set.get("set_sha256"),
+                "source_created_at": pack_set.get("created_at"), "source_approval": approval}},
+            actor=actor, expected_body_sha256=anchor,
+        )  # fmt: skip
+        if len(created.get("questions") or []) != len(pack_set["questions"]):
+            raise ReadingEvidenceError("reading_pack_set_changed", "The set did not arrive whole.")
+        for question in created.get("questions") or []:
+            _evidence().decide_question(created["id"], question["id"], decision="approve", actor=actor)
+        _evidence().transition(created["id"], "needs_review", actor=actor)
+        reason = (f"Transferred unchanged by content pack {pack_id}: approved at the source "
+                  f"({approval.get('by') or 'unknown'}, {approval.get('at') or 'unknown'}); no provider call, "
+                  "no automatic re-decision.")
+        _evidence().transition(created["id"], "approved", actor=actor, reason=reason)
+    except ReadingEvidenceError as exc:
+        if created is not None:
+            try:
+                _evidence().discard_set(created["id"], actor=actor)
+            except ReadingEvidenceError:
+                pass
+        return {"support_language": support, "result": "refused", "category": exc.code}
+    _audit(admin, "admin.reading_comprehension_set_transferred", entity_type="reading_comprehension_set",
+           entity_id=created["id"], payload={"content_pack": pack_id, "support_language": support,
+                                             "set_sha256": pack_set.get("set_sha256"), "source_approval": approval})
+    return {"support_language": support, "result": "approved", "transfer": LOSSLESS_SET_TRANSFER}
