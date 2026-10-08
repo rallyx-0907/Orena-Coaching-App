@@ -1,7 +1,8 @@
 # Production migration pack: :8000 from its current revision to the chain head (D-143)
 
-Status: **IMPLEMENTED ON BRANCH, AWAITING HUMAN REVIEW.** Nothing has been applied to :8000 and nothing on :8000 has
-been read. Author: Claude lane, 2026-10-08. Decision: D-143 (2, 3, 5).
+Status: **APPLIED to :8000 on 2026-10-08** under the human's authorization: 0004 -> 0029 completed (section 4c). The
+tool and procedure below stay the way any later schema change reaches :8000. Author: Claude lane, 2026-10-08.
+Decisions: D-143 (2, 3, 5), D-144.
 
 ## 1. What it is
 
@@ -84,14 +85,14 @@ Regression tests: `tests/test_product_migration_pack.py` (`test_an_update_with_u
 `test_a_resumed_run_compares_contents_under_the_renames_over_the_backed_up_columns`,
 `test_the_execution_digest_covers_every_file_that_runs_a_migration`, and the rehearsal-binding cases).
 
-## 4b. Rehearsal of :8000 (2026-10-08, for human review; nothing applied to :8000)
+## 4b. Pre-merge rehearsal of :8000 (2026-10-08, candidate evidence; nothing was applied by it)
 
 - Release candidate: `codex/work` `328e49ef6cc3e8f2c2e694c3e0d20fcd441d746a`, rehearsed from a `git archive` of that
   commit. Chain digest `65044f6e470807106a5a892461c56342cdf8717ddbe2fc04203b5bbf85883ea3`, head `20261007_0029`.
 - Backup (read-only, `product_backup.ps1`): database `becoming`, cluster `7672581591402848290`, taken
   2026-10-08T01:17:40Z; `database.dump` 115,913 bytes, SHA-256 `b1b2b6c9...398bedf`; `files.tar.gz` (volume
   `ai-writing-coach-data`) 66,835 bytes, 32 entries. Kept outside the repository under
-  `%LOCALAPPDATA%\orena-productackups61008T011737Z-ai-writing-coach-postgres-1\` with `rehearsal.json`.
+  `%LOCALAPPDATA%\orena-product\backups\20261008T011737Z-ai-writing-coach-postgres-1\` with `rehearsal.json`.
 - **:8000 is at `20260828_0004`, not 0005**: the chain is **21 steps** (0005 ... 0029).
 - Rows before (non-empty tables): users 5, user_language_profiles 5, essays 25, essay_revisions 25, writing_errors 89,
   saved_words 5, grammar_progress 2, reading_sessions 14, reading_attempts 1, audit_logs 22, plans 2,
@@ -102,9 +103,35 @@ Regression tests: `tests/test_product_migration_pack.py` (`test_an_update_with_u
 - This rehearsal used a v2 backup (counts only) and predates the execution digest. It stays valid evidence for the
   candidate (human review 2026-10-08); it cannot itself authorize an apply: the final backup is v3 and is rehearsed
   with the merged code.
-- For the real apply (D-144 6-7): the pack requires a passed rehearsal of **the same dump**, so the final production
-  backup is rehearsed the same way (minutes) before `apply`; and the chain digest above must equal the one computed
-  on the merged `main` SHA (`python scripts/product_migration_pack.py digest`), else rehearse again.
+- For the real apply (D-144 6-7) the pack required a passed rehearsal of **the same dump**, so the final backup was
+  rehearsed again with the merged code before `apply` (section 4c).
+
+## 4c. Applied to :8000 (2026-10-08, human-authorized)
+
+The historical record of the one apply this pack has made. At that time :8000 was called production; it is now
+public staging (D-146).
+
+- Code: `main` `6d7ebff011157366db031d6845ff803a68f52b46` (PR #95), image `orena:main-6d7ebff0`, built from a `git
+  archive` of that SHA after its push-to-main CI passed.
+- Final backup, manifest v3 (counts, columns, content fingerprints): `20261008T042406Z-ai-writing-coach-postgres-1`,
+  database `becoming`, cluster `7672581591402848290`, revision `20260828_0004`, `database.dump` SHA-256
+  `d85ca761...e249`.
+- Rehearsal of that backup on a disposable restored copy with the merged code: `REHEARSAL=PASS`, contents match the
+  backup, 21 steps.
+- Human authorization of the apply for `main` 6d7ebff0 with that backup and that image.
+- Maintenance window: web stopped 04:36Z, no other database session, PostgreSQL kept running. `plan` passed every gate
+  (age, same dump, digests, database and cluster, counts and content fingerprints).
+- `apply`: **0004 -> 0029 completed**, 21 steps. Independent `verify_after`: revision `20261007_0029`, **ready**,
+  **rows kept** (no differences), legacy Reading archive **14 sessions / 1 attempt, 4 freeze triggers**.
+- Digests bound to that apply: chain `65044f6e470807106a5a892461c56342cdf8717ddbe2fc04203b5bbf85883ea3`, execution
+  **`d418c3528aa02e4f17c1db95f271671e3fe2f0ff22c2563ec587acced4aa7109`** (35 files).
+- The image then deployed was `orena:main-a2342e62` (PR #98 added the brand marks the 6d7ebff0 image lacked; no
+  migration-execution file changed). Access restored 05:20Z.
+
+**The execution digest has changed since.** PR #102 (D-146) edited `scripts/reading_canonical_cutover.py`, which is in
+the execution surface: on `main` 5045fe74 the execution digest is **`891dfa5f8807691edaef6f40eeb4142a74f26c4913d7ee124f369c795996ecbd`**
+(the chain digest is unchanged). The 2026-10-08 backup and rehearsal therefore cannot authorize anything again: any
+future migration of :8000 takes a fresh v3 backup and a fresh rehearsal with the then-current code and digests.
 
 ## 5. Revisions that need their own attention (D-143 3)
 
@@ -116,10 +143,10 @@ Regression tests: `tests/test_product_migration_pack.py` (`test_an_update_with_u
 | 0018 account settings | Adds 4 columns to `users`, the hottest table. | Step time; with writes stopped for the window there is no contention. |
 | 0005 account work backbone | :8000 is still at 0004, so this backbone revision is applied too (flag stays off, D-143 4). | Its tables appear empty; step time. |
 
-## 6. The human's procedure for :8000 (none of it is run by a lane)
+## 6. The procedure for a schema change on :8000 (each apply needs the human's authorization)
 
-Preconditions: D-143 release shape done (the cutover), CI green, `codex/work -> main` merged by the human, new image
-built, maintenance window, no other lane on Docker.
+Preconditions: CI green on the exact `main` SHA, merged by the human, image built from it, the human's authorization,
+maintenance window, no other lane on Docker. (Followed once, 2026-10-08: section 4c.)
 
 1. Stop the :8000 web and worker (writes stop; the pack refuses otherwise).
 2. `scripts\product_backup.ps1 -Postgres ai-writing-coach-postgres-1 -DbUser <user> -DbName <db> -DataVolume ai-writing-coach-data`
