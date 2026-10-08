@@ -169,6 +169,14 @@ today, so every validator and the D-111 rule run exactly as for a fresh import.
    body and `body_sha256` re-derived; the answer, grounding and duplicate validators run, and the set
    auto-approves only if all pass (D-111 item 1), else `needs_review`. If the body hash differs from the
    pack's `article_body_sha256` the set is dropped and reported.
+   **Superseded for packs carrying `transfer: lossless-v1` (human decision 2026-10-08):** an approved set moves
+   unchanged. The pack carries its approved questions, `generator_version`, `model`, `validation`,
+   `article_body_sha256`, `created_at`, a `set_sha256`, and its approval as provenance (`by`: `automatic` or
+   `administrator`, never the reviewer's identity; `at`; `reason`) - no database id. On import it attaches only to the
+   identical body (else refused, `reading_pack_set_body_differs`, and no draft is left), keeps those fields, records
+   the source approval under `validation.transferred`, and is approved by this environment's importing administrator
+   with a reason naming the pack. Nothing is generated, graded or decided by the automatic rule; no provider is
+   called. Packs without the marker keep the re-validation above (also provider-free).
 8. **Idempotency.** `pack_id` plus per-item content hash: re-running a commit on the same pack yields all
    `identical`. A `content_pack_imports` run record (see section 7 for where it lives) stores `pack_id`, plan
    hash, per-item result, actor, so a repeat returns the stored result.

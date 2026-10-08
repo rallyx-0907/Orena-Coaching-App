@@ -197,3 +197,111 @@ def test_every_pack_route_is_admin_only_and_same_origin(app):
         refused = asyncio.run(run(path, json={}, headers={"x-test-admin": "1", "origin": "https://evil.example"}))
         assert refused.status_code in {403, 422}, path
     assert json  # keep the import used by the parametrised tamper cases readable
+
+
+# ---- approved comprehension sets move unchanged (human decision 2026-10-08) ---------------------------------
+
+
+def _with_evidence(content, jobs, engine_service, *, generate=None):
+    from writing_coach.persistence.reading_evidence_repository import ReadingEvidenceRepository
+
+    evidence = ReadingEvidenceRepository(content.engine)
+    admin_api.configure_reading_admin(admin_guard=guard, content=content, jobs=jobs, engine=engine_service,
+                                      audit=lambda *a, **k: None, evidence=evidence, generate=generate)  # fmt: skip
+    content_pack_api.configure_content_packs()
+    return evidence
+
+
+def _approved_set(evidence, article_id):
+    from writing_coach.persistence.reading_evidence_repository import QuestionInput, body_sha256
+    from writing_coach.reading_comprehension import AUTO_APPROVAL_ACTOR
+
+    questions = [
+        QuestionInput(question_type="detail", prompt="When did the river rise?", options=["By morning", "At noon", "Never"],
+                      correct_index=0, explanation="It rose by morning.", evidence_text="The river rose by morning", rank=0),
+        QuestionInput(question_type="detail", prompt="Was anyone hurt?", options=["Yes", "No"], correct_index=1,
+                      explanation="Nobody was hurt.", evidence_text="nobody was hurt", rank=1),
+    ]  # fmt: skip
+    created = evidence.create_set(article_id, support_language="vi", generator_version="reading-comprehension/1",
+                                  model="model-at-the-source", questions=questions,
+                                  validation={"issues": [], "coverage": 1.0}, actor="admin",
+                                  expected_body_sha256=body_sha256(BODY))  # fmt: skip
+    for question in created["questions"]:
+        evidence.decide_question(created["id"], question["id"], decision="approve", actor=AUTO_APPROVAL_ACTOR)
+    evidence.transition(created["id"], "needs_review", actor=AUTO_APPROVAL_ACTOR)
+    return evidence.transition(created["id"], "approved", actor=AUTO_APPROVAL_ACTOR, reason="D-111 rule")
+
+
+def _arrive(app, raw, there):
+    content, jobs, engine_service = there
+    call(app, "POST", "/api/admin/content-packs/import", files={"file": ("p.orenapack", raw, "application/zip")})
+    created = next(s for s in content.list_sources() if s["slug"] == "sample-news")
+    content.set_source_state(created["id"], "active", actor="admin")
+    call(app, "POST", "/api/admin/content-packs/import", files={"file": ("p.orenapack", raw, "application/zip")})
+    article = content.get_article(engine_service.process(jobs.claim("worker-1"))["article_id"])
+    if article["status"] != "published":
+        content.set_status(article["id"], "published", actor="admin")
+    return article["id"]
+
+
+def guard_admin():
+    return {"email": "admin@example.com", "google_sub": "admin"}
+
+
+def _no_provider(*args, **kwargs):
+    raise AssertionError("a provider was called while moving an approved set")
+
+
+def test_an_approved_set_arrives_unchanged_with_its_provenance_and_no_provider_call(app):
+    here = _environment()
+    source_evidence = _with_evidence(*here)
+    original = _approved_set(source_evidence, _published_sample(*here))
+    raw = call(app, "POST", "/api/admin/content-packs/export", json={"kinds": ["reading"], "source_slug_prefix": "sample-"}).content
+    packed = next(item for item in read_pack(raw).items if item.kind == "reading_article").data["comprehension_sets"]
+    assert len(packed) == 1 and packed[0]["transfer"] == admin_api.LOSSLESS_SET_TRANSFER
+    assert packed[0]["approval"]["by"] == "automatic"
+    assert "reviewed_by" not in json.dumps(packed) and "id" not in packed[0], "no reviewer identity, no database id"
+
+    there = _environment()
+    evidence = _with_evidence(*there, generate=_no_provider)
+    article_id = _arrive(app, raw, there)
+    third = call(app, "POST", "/api/admin/content-packs/import", files={"file": ("p.orenapack", raw, "application/zip")}).json()
+    article_row = next(row for row in third["items"] if row["kind"] == "reading_article")
+    assert article_row["sets"] == [{"support_language": "vi", "result": "approved", "transfer": "lossless-v1"}]
+
+    arrived = next(s for s in evidence.list_sets(article_id) if s["status"] == "approved")
+    keep = ("question_type", "prompt", "options", "correct_index", "explanation", "evidence_text", "rank")
+    assert [{k: q[k] for k in keep} for q in arrived["questions"]] == [{k: q[k] for k in keep} for q in original["questions"]]
+    assert (arrived["generator_version"], arrived["model"]) == ("reading-comprehension/1", "model-at-the-source")
+    assert arrived["validation"]["coverage"] == 1.0, "the source validation is kept"
+    transferred = arrived["validation"]["transferred"]
+    assert transferred["source_approval"]["by"] == "automatic" and transferred["set_sha256"] == packed[0]["set_sha256"]
+    assert arrived["reviewed_by"] == admin_api._actor(guard_admin()), "approved here by the importing administrator, not by a rule"  # noqa: SLF001
+    assert "Transferred unchanged" in arrived["review_reason"]
+
+    again = call(app, "POST", "/api/admin/content-packs/import", files={"file": ("p.orenapack", raw, "application/zip")}).json()
+    assert next(row for row in again["items"] if row["kind"] == "reading_article")["sets"] == [], "never twice"
+    assert len(evidence.list_sets(article_id)) == 1
+
+
+def test_a_set_whose_body_hash_differs_is_refused_and_leaves_no_draft(app):
+    here = _environment()
+    _approved_set(_with_evidence(*here), _published_sample(*here))
+    raw = call(app, "POST", "/api/admin/content-packs/export", json={"kinds": ["reading"], "source_slug_prefix": "sample-"}).content
+    pack = read_pack(raw)
+    items = []
+    for item in pack.items:
+        data = dict(item.data)
+        if item.kind == "reading_article":
+            data["comprehension_sets"] = [{**data["comprehension_sets"][0], "article_body_sha256": "0" * 64}]
+        items.append(PackItem(kind=item.kind, natural_key=item.natural_key, data=data,
+                              exported_status=item.exported_status))  # fmt: skip
+    tampered = build_pack(items, created_by="admin", environment="test", app_version="t", filters={})
+
+    there = _environment()
+    evidence = _with_evidence(*there, generate=_no_provider)
+    article_id = _arrive(app, tampered, there)
+    third = call(app, "POST", "/api/admin/content-packs/import", files={"file": ("p.orenapack", tampered, "application/zip")}).json()
+    sets = next(row for row in third["items"] if row["kind"] == "reading_article")["sets"]
+    assert sets == [{"support_language": "vi", "result": "refused", "category": "reading_pack_set_body_differs"}]
+    assert evidence.list_sets(article_id) == [], "no draft is left behind"
