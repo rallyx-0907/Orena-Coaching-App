@@ -14,8 +14,9 @@ human sets it).
 = a learning workspace from the design script's focus list (Design Contract
 rules 47, 49).
 
-Routes are hash routes of the new entry (`/next#/…` until the cutover, then
-`/#/…`). Agent intents (`docs/project/AGENT_CONTRACT.md` §6) map to routes in
+Routes are hash routes of the learner UI at `/` (`/#/…`; the cutover is done, D-143, and `/next` redirects).
+The learner UI runs on :8021 (dev/QA, `codex/work`) and on :8000 (public product-like staging, `main`, D-146);
+:8000 content is promoted only by human approval. Agent intents (`docs/project/AGENT_CONTRACT.md` §6) map to routes in
 `static/orena/shell/intents.js`.
 
 ## Shell, primitives and overlays

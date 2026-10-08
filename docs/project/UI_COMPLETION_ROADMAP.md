@@ -4,6 +4,15 @@
 milestones and holds what planning found; where the two differ, D-101 wins. The first version
 of this roadmap (a proposal with H1-H10 open) is replaced in full. `ROADMAP.md` is untouched.
 
+## Current state (2026-10-08)
+
+The cutover is done (D-143): `/` is the learner UI, `/next` and `/login` redirect to it, the old UI is deleted. `main`
+runs on :8000 as public, product-like staging (D-146), deployed from an immutable image with
+`scripts/staging_8000_deploy.ps1`: schema 0029, Orena text agent live, account backbone, practice sessions, Reading
+worker and Reading practice submit on, capability AI routing, Azure pronunciation. :8000 content arrives only when the
+human approves it (content, metadata, level, rights, presentation), never automatically from :8021; the S1 samples
+promoted for the smoke are unpublished. Work continues on `codex/work` + :8021 (Product Completion).
+
 ## Goal (D-102)
 
 Finish the whole product on `codex/work`, QA it on the lane runtime (:8021 or another local port,
@@ -21,17 +30,17 @@ release: content breadth is its own gate (`CONTENT_SCALE_READY`).
 | D2 | P1: shared modules out of `ui/` into `capabilities/` or `kit/`; a gate against `/next` importing `ui/` | done: the new UI reached one `ui/` module (`ui/html.js` `esc`, via `capabilities/media-player.js`); both UIs now use `kit/html.js`'s; `test_orena_shell.mjs` walks `main.js`'s graph and fails on any `ui/` import. `capabilities/lexical.js` still imports `ui/` but `/next` does not load it: its reuse is a D3/D7 question | the gate is green, both UIs use one module, no behaviour change |
 | D3 | The matrix: every skill and flow × content / do / assess / store / come back | done: `D3_PRODUCT_MATRIX.md` (no skill complete; D4, E and D7 inputs listed; six decisions asked) | sent to the human once |
 | D4 | One persistence proposal (H2 included) → independent review → approval → rehearsed migrations | proposal reviewed (APPROVE rev 2, `proposals/LEARNER_RECORDS_D4.md`); waits for the human's decisions (H-12, H-17, H-18, H-11 ...) | approved and rehearsed; the human runs the migration |
-| E | Admin in the new UI, on the pinned `Orena Admin.dc.html`, existing logic and APIs | slice 1 done (`a069b59`: shell, access, AI & Models); next: Reading pipeline, Imports, Content | real content is imported, reviewed and published, and a learner learns with it on `/next`; the three access tests pass |
+| E | Admin in the new UI, on the pinned `Orena Admin.dc.html`, existing logic and APIs | slice 1 done (`a069b59`: shell, access, AI & Models); next: Reading pipeline, Imports, Content | real content is imported, reviewed and published, and a learner learns with it on `/`; the three access tests pass |
 | F | Grammar frames 44 and 47 on approved Grammar Lab content through Admin | frame built (`b83142d`) | approved points reach both screens by the Admin loop; `pattern_rule` after PR #67 |
 | D7 | Every `MISSING` cell in D3, by reuse | planned | no `MISSING` in a non-deferred row |
-| G | Orena Intelligence live (`AGENT_LIVE`), contract v5 checks, surface purposes | planned | the v5 checks pass on the lane runtime |
+| G | Orena Intelligence live (`AGENT_LIVE`), contract v5 checks, surface purposes | text agent live on :8021 and :8000 (D-125, D-146); voice on :8021 only | the v5 checks pass on the lane runtime |
 | QA | Integration QA on the HEAD of `codex/work`, EN and ZH, every non-deferred flow | planned | D3 has no `MISSING`; reload/new-session evidence recorded |
-| PR | `codex/work` -> `main` | planned | the human reviews and merges; then :8000 is updated with migrations under the human's gate |
-| H | Cutover, on the human's word | not started | see D-101 H |
+| PR | `codex/work` -> `main` | done (PR #95, 2026-10-08), then #98-#105 | the human reviews and merges; then :8000 is updated with migrations under the human's gate |
+| H | Cutover, on the human's word | done (D-143, `main` 6d7ebff0; :8000 staging since D-146) | see D-101 H |
 | C | Chinese evaluator: targeted re-grade, live benchmark (USD 0.50 cap) | waits for Docker to be free, after D3 | the approach is reported before any change; recall numbers reported |
 
 Deferred until after staging: the eight Coming-soon screens and E1 (H3-H7; their entries are
-hidden in `/next`, H9); Admin Overview, Operations, Users and the Practice generator.
+hidden in the learner UI, H9); Admin Overview, Operations, Users and the Practice generator.
 
 ## Found while planning (kept for the milestones)
 
