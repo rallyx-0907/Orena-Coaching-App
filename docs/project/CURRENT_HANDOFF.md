@@ -41,8 +41,8 @@ Design/review: `proposals/VOCABULARY_LOCALIZATION.md` (+ .REVIEW); gaps VL-1..5.
 S1 source admission (e74735b): READING_SOURCE_ADMISSION_CHECKPOINT.md; level/source breadth,
 enrichment/questions/fidelity open. Preserve S3 a8e7914: VOCABULARY_COLLECTION_CHECKPOINT.md. Grammar deferred.
 
-Grammar prerequisites (`0d5732c`): PR67/68 integrated, adapters verified; drafts
-unserved, no Store/API or migration. GRAMMAR_INTEGRATION_CHECKPOINT.md retains evidence.
+Grammar prerequisites (`0d5732c`): PR67/68 integrated; no Store/API. Store rev3 +
+proposed 0030 await independent review (#99). GRAMMAR_INTEGRATION_CHECKPOINT.md evidence.
 
 Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
 Azure/Skin (`7857d43`) local125/Node/review pass. Azure browser evidence/limits:
