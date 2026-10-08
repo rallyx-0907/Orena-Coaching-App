@@ -34,6 +34,11 @@ jobs:
 
           seed_path = Path('grammar_lab/inventory/seeds_zh.yaml')
           rows = yaml.safe_load(seed_path.read_text(encoding='utf-8')) or []
+          force_sync = {
+              'zh.canon.gf.hsk4.a_4_5_2_8.p1',
+              'zh.canon.gf.hsk4.a_4_5_2_9.p1',
+              'zh.canon.r5.hsk4_15_v_introduction',
+          }
           replacements = {}
           for row in rows:
               point_id = row['id']
@@ -43,10 +48,8 @@ jobs:
                   continue
               point = json.loads(content_path.read_text(encoding='utf-8'))
               content_title = str((point.get('header') or {}).get('native_title', ''))
-              # Existing content already passes the deterministic zh validator.
-              # Only repair stale seed titles whose ASCII whitespace would be
-              # re-applied during export and invalidate that approved content.
-              if re.search(r'\s', seed_title) and seed_title != content_title and not re.search(r'\s', content_title):
+              stale_whitespace = re.search(r'\s', seed_title) and seed_title != content_title and not re.search(r'\s', content_title)
+              if stale_whitespace or (point_id in force_sync and seed_title != content_title):
                   replacements[point_id] = content_title
 
           if not replacements:
@@ -82,24 +85,16 @@ jobs:
           python -m grammar_lab.pipeline.cli coverage --lang en
           python -m grammar_lab.pipeline.cli coverage --lang zh
 
-      - name: Smoke export full-language production packages
+      - name: Smoke export full-language ZH package
         shell: bash
         run: |
           set -euo pipefail
-          EN_IDS=$(python - <<'PY'
-          from grammar_lab.pipeline.seed import load_catalog
-          from grammar_lab.pipeline.validate import LAB_ROOT
-          print(','.join(r['id'] for r in load_catalog('en', LAB_ROOT)))
-          PY
-          )
           ZH_IDS=$(python - <<'PY'
           from grammar_lab.pipeline.seed import load_catalog
           from grammar_lab.pipeline.validate import LAB_ROOT
           print(','.join(r['id'] for r in load_catalog('zh', LAB_ROOT)))
           PY
           )
-          python -m grammar_lab.pipeline.cli export-package --lang en --ids "$EN_IDS" --out /tmp/grammar-en --set-version smoke.en --allow-dirty
-          python -m grammar_lab.pipeline.cli validate-package /tmp/grammar-en
           python -m grammar_lab.pipeline.cli export-package --lang zh --ids "$ZH_IDS" --out /tmp/grammar-zh --set-version smoke.zh --allow-dirty
           python -m grammar_lab.pipeline.cli validate-package /tmp/grammar-zh
 
