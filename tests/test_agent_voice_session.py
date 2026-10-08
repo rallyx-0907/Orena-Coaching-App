@@ -258,3 +258,13 @@ def test_a_mismatched_target_is_409_and_a_refused_token_503(client):
     configure_agent(_service(Post(status=403)).runtime)
     refused = client.post("/api/agent/voice/session", json=_body())
     assert refused.status_code == 503 and refused.json()["detail"] == "voice_unavailable"
+
+
+def test_the_boundary_route_counts_a_turn(client):
+    configure_agent(_service().runtime)
+    opened = client.post("/api/agent/voice/session", json=_body()).json()
+    sid = opened["voice_session_id"]
+    first = client.post("/api/agent/voice/turn", json={"voice_session_id": sid, "utterance": "u1", "heard": "hi"})
+    again = client.post("/api/agent/voice/turn", json={"voice_session_id": sid, "utterance": "u1", "heard": "hi"})
+    assert first.json()["counted"] is True and again.json()["counted"] is False
+    assert client.post("/api/agent/voice/turn", json={"voice_session_id": "nope", "utterance": "u1"}).status_code == 404

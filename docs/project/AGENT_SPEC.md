@@ -387,11 +387,14 @@ K6b           telemetry: one `agent.summary` admin event per summary call (count
               (the AI platform's price catalog). Optional sinks (`record_summary`, `price_summary`), failure-proof.
               These rows are not swept by the agent.turn retention (small, no learner content); add them to it if
               the 90-day rule should cover them. The per-round `ai.operation` rows already price the call too.
-K7            review fixes of PR #92: voice answers an open offer with resolve_pending (a decline ends it); a spoken
-              utterance advances the turn count like a typed one; the end-of-session transcript is merged in order (each
-              reply behind the words it answers); the input budget covers the whole text prompt - the oldest turns go
-              first, then the carried pasted text is cut; summary and the learner's words stay. The voice instruction's
-              own history is not budgeted here.
+K7            review fixes of PR #92: voice answers an open offer with resolve_pending (a decline ends it); every
+              spoken utterance is one turn, by the client's own utterance identity (POST /voice/turn at the vendor's turn
+              end, `utterance` on /voice/tool), never by its words; the end-of-session transcript is merged by that
+              identity (each reply behind the words it answers; typed or earlier spoken turns with the same words are
+              never matched); the input budget covers the whole text prompt - the oldest turns go first, then the
+              carried pasted text is cut; summary and the learner's words stay - and it counts tokens with a
+              conservative multilingual estimate (agent/tokens.py: a Han character is 2 tokens, not a quarter).
+              Follow-ups, not done: the voice instruction's own history budget; agent.summary retention.
 LOCAL         full suite in the app image: see the commit message of K6 (local run, not CI).
 NEXT          needs a human: client adoption of the three additive items (UI lane); a durable store for turns and
               memory (AGENTS.md section 7, independent architecture review); then memory distillation (Phase 4).

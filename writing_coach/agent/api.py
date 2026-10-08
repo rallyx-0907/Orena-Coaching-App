@@ -178,7 +178,22 @@ def agent_voice_tool(body: dict = Body(...), voice: VoiceService = Depends(_voic
     if not isinstance(calls, list) or not all(isinstance(c, dict) for c in calls) or len(calls) > 8:
         raise HTTPException(status_code=422, detail="calls must be a list of at most 8 function calls")
     heard = body.get("heard") if isinstance(body.get("heard"), str) else None
-    answer = voice.relay(str(body.get("voice_session_id") or ""), calls, LearnerScope.from_request_context(), heard)
+    utterance = body.get("utterance") if isinstance(body.get("utterance"), str) else None
+    answer = voice.relay(str(body.get("voice_session_id") or ""), calls, LearnerScope.from_request_context(), heard,
+                         utterance)
+    if answer is None:
+        raise HTTPException(status_code=404, detail="voice_session_not_found")
+    return answer
+
+
+@router.post("/voice/turn")
+def agent_voice_turn(body: dict = Body(...), voice: VoiceService = Depends(_voice_call_allowed)) -> dict:
+    """The end of one spoken utterance (the vendor's turn end), whatever tools it called: it is one turn of the
+    conversation. `utterance` is the client's own sequence token for the session, never the words."""
+
+    heard = body.get("heard") if isinstance(body.get("heard"), str) else None
+    utterance = body.get("utterance") if isinstance(body.get("utterance"), str) else None
+    answer = voice.utterance_turn(str(body.get("voice_session_id") or ""), utterance, heard, LearnerScope.from_request_context())
     if answer is None:
         raise HTTPException(status_code=404, detail="voice_session_not_found")
     return answer

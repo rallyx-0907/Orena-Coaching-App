@@ -100,6 +100,7 @@ from writing_coach.agent.outputs import (
     reply_tool_specs,
     selection_kind,
 )
+from writing_coach.agent.tokens import estimate_tokens
 from writing_coach.agent.prompts import opening_messages
 from writing_coach.agent.pending import CANCELLED, COMPLETED, CONFIRM, PendingInteraction, action_key
 from writing_coach.agent.provider import (
@@ -190,7 +191,7 @@ def _fit_greeting(text: str) -> str:
 
 
 def _estimate_tokens(messages: list[ProviderMessage]) -> int:
-    return sum((len(m.content) + 3) // 4 for m in messages)
+    return sum(estimate_tokens(m.content) for m in messages)
 
 
 @dataclass
@@ -755,7 +756,7 @@ class _Turn:
             ],
         }
         content = json.dumps(body, ensure_ascii=False, default=str)
-        if _estimate_tokens(messages) + (len(content) + 3) // 4 > self.rt.limits.max_input_tokens_per_turn:
+        if _estimate_tokens(messages) + estimate_tokens(content) > self.rt.limits.max_input_tokens_per_turn:
             return json.dumps({"summary": result.summary, "note": "details omitted: this turn's input budget is used"})
         return content
 

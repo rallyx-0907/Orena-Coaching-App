@@ -24,8 +24,12 @@ def state_of(rt, sid):
     return rt.sessions.get(sid, LEARNER.user_key)
 
 
-def relay(service, voice_id, name, args, heard):
-    return service.relay(voice_id, [{"id": "c1", "name": name, "args": args}], LEARNER, heard=heard)
+def relay(service, voice_id, name, args, heard, utterance=None):
+    return service.relay(voice_id, [{"id": "c1", "name": name, "args": args}], LEARNER, heard=heard, utterance=utterance)
+
+
+def end_with(service, voice_id, items):
+    return service.end(voice_id, LEARNER, transcript=items)
 
 
 # -- 1. declining by voice -------------------------------------------------------------------------------------------
@@ -76,29 +80,63 @@ def test_voice_confirming_by_id_runs_the_offer_once():
     assert state_of(rt, answer["session_id"]).live_pending() is None
 
 
-# -- 2. a spoken utterance is a turn ---------------------------------------------------------------------------------
+# -- 2. a spoken utterance is a turn, by its identity -----------------------------------------------------------------
 
 
-def test_each_spoken_utterance_is_one_turn_however_many_calls_it_makes():
+def turns_of(rt, answer):
+    return state_of(rt, answer["session_id"]).turn_count
+
+
+def test_an_utterance_is_one_turn_whatever_tools_it_called():
+    rt, _, service, _ = build([])
+    answer = open_voice(service)
+    voice_id, before = answer["voice_session_id"], turns_of(rt, answer)
+    relay(service, voice_id, "get_current_word_info", {}, "mitigate là gì", "u1")  # one tool...
+    relay(service, voice_id, "get_current_word_info", {}, "mitigate là gì", "u1")  # ...and another, same utterance
+    assert turns_of(rt, answer) == before + 1
+    service.utterance_turn(voice_id, "u1", "mitigate là gì", LEARNER)  # its boundary: already counted
+    assert turns_of(rt, answer) == before + 1
+    service.utterance_turn(voice_id, "u2", "chào bạn", LEARNER)  # no tool at all
+    assert turns_of(rt, answer) == before + 2
+
+
+def test_the_same_words_said_twice_are_two_turns_and_the_words_are_not_the_identity():
+    rt, _, service, _ = build([])
+    answer = open_voice(service)
+    voice_id, before = answer["voice_session_id"], turns_of(rt, answer)
+    service.utterance_turn(voice_id, "u1", "ừ", LEARNER)
+    service.utterance_turn(voice_id, "u2", "ừ", LEARNER)
+    assert turns_of(rt, answer) == before + 2
+    assert [t.text for t in state_of(rt, answer["session_id"]).recent_turns] == ["ừ", "ừ"]
+    service.utterance_turn(voice_id, "u2", "ừ", LEARNER)  # the client's retry of a boundary
+    assert turns_of(rt, answer) == before + 2
+
+
+def test_the_words_of_an_utterance_are_put_in_once():
     rt, _, service, _ = build([])
     answer = open_voice(service)
     voice_id = answer["voice_session_id"]
-    before = state_of(rt, answer["session_id"]).turn_count
-    relay(service, voice_id, "do_action", {"type": "save_word", "text": "mitigate"}, "mitigate là gì")
-    relay(service, voice_id, "do_action", {"type": "save_word", "text": "mitigate"}, "mitigate là gì")  # same utterance
-    assert state_of(rt, answer["session_id"]).turn_count == before + 1
-    relay(service, voice_id, "do_action", {"type": "save_word", "text": "mitigate"}, "còn từ khác thì sao")
-    assert state_of(rt, answer["session_id"]).turn_count == before + 2
+    relay(service, voice_id, "get_current_word_info", {}, "scarcity là gì", "u1")
+    service.utterance_turn(voice_id, "u1", "scarcity là gì", LEARNER)
+    assert [t.text for t in state_of(rt, answer["session_id"]).recent_turns] == ["scarcity là gì"]
 
 
-def test_an_offer_expires_in_a_voice_only_conversation():
+def test_a_boundary_with_no_identity_counts_nothing():
+    rt, _, service, _ = build([])
+    answer = open_voice(service)
+    before = turns_of(rt, answer)
+    assert service.utterance_turn(answer["voice_session_id"], None, "xin chào", LEARNER)["counted"] is False
+    assert turns_of(rt, answer) == before
+
+
+def test_an_offer_expires_in_a_voice_only_conversation_even_with_no_tool_calls():
     rt, _, service, _ = build([])
     answer = open_voice(service)
     voice_id = answer["voice_session_id"]
-    say(service, voice_id, "mitigate nghĩa là gì")
+    say(service, voice_id, "mitigate nghĩa là gì", "u0")
     assert state_of(rt, answer["session_id"]).live_pending() is not None
-    for n in range(DEFAULT_TTL_TURNS):
-        relay(service, voice_id, "get_current_word_info", {}, f"một câu khác số {n}")
+    for n in range(1, DEFAULT_TTL_TURNS + 1):
+        service.utterance_turn(voice_id, f"u{n}", "một câu khác", LEARNER)
     assert state_of(rt, answer["session_id"]).live_pending() is None
 
 
@@ -108,36 +146,89 @@ def test_a_run_by_voice_is_not_blocked_for_ever():
     rt, _, service, _ = build([])
     answer = open_voice(service)
     voice_id = answer["voice_session_id"]
-    say(service, voice_id, "lưu mitigate đi", requested=True)
+    say(service, voice_id, "lưu mitigate đi", "u0", requested=True)
     assert state_of(rt, answer["session_id"]).recent_runs()
-    for n in range(RUN_WINDOW_TURNS):
-        relay(service, voice_id, "get_current_word_info", {}, f"nói chuyện khác {n}")
+    for n in range(1, RUN_WINDOW_TURNS + 1):
+        service.utterance_turn(voice_id, f"u{n}", "nói chuyện khác", LEARNER)
     assert not state_of(rt, answer["session_id"]).recent_runs()
 
 
 def test_a_transcript_turn_the_server_never_heard_counts_as_a_turn_too():
     rt, _, service, _ = build([])
     answer = open_voice(service)
-    before = state_of(rt, answer["session_id"]).turn_count
-    service.end(answer["voice_session_id"], LEARNER, transcript=[
-        {"role": "user", "text": "xin chào"}, {"role": "assistant", "text": "Chào bạn."},
-        {"role": "user", "text": "hôm nay học gì"}, {"role": "assistant", "text": "Ôn từ vựng nhé."},
+    before = turns_of(rt, answer)
+    end_with(service, answer["voice_session_id"], [
+        {"role": "user", "text": "xin chào", "utterance": "u1"}, {"role": "assistant", "text": "Chào bạn.", "utterance": "u1"},
+        {"role": "user", "text": "hôm nay học gì", "utterance": "u2"},
+        {"role": "assistant", "text": "Ôn từ vựng nhé.", "utterance": "u2"},
     ])
-    assert state_of(rt, answer["session_id"]).turn_count == before + 2
+    assert turns_of(rt, answer) == before + 2
 
 
-# -- 3. transcript order ---------------------------------------------------------------------------------------------
+def test_an_utterance_counted_at_its_boundary_is_not_counted_again_by_the_transcript():
+    rt, _, service, _ = build([])
+    answer = open_voice(service)
+    voice_id = answer["voice_session_id"]
+    service.utterance_turn(voice_id, "u1", None, LEARNER)  # counted; its words had not arrived
+    before = turns_of(rt, answer)
+    end_with(service, voice_id, [{"role": "user", "text": "xin chào", "utterance": "u1"},
+                                 {"role": "assistant", "text": "Chào.", "utterance": "u1"}])
+    assert turns_of(rt, answer) == before
+    assert [(t.role, t.text) for t in state_of(rt, answer["session_id"]).recent_turns] == [
+        ("user", "xin chào"), ("assistant", "Chào.")]
+
+
+# -- 3. transcript reconciliation: occurrences of this voice session only ----------------------------------------------
+
+
+def test_a_typed_yes_before_voice_is_not_taken_for_the_spoken_yes():
+    rt, _, service, _ = build([reply("Ok.")])
+    sid = session_of(typed(rt, "yes"))  # typed "yes" first
+    answer = open_voice(service, sid)
+    voice_id = answer["voice_session_id"]
+    service.utterance_turn(voice_id, "u1", "yes", LEARNER)  # then spoken "yes"
+    end_with(service, voice_id, [{"role": "user", "text": "yes", "utterance": "u1"},
+                                 {"role": "assistant", "text": "Right.", "utterance": "u1"}])
+    turns = [(t.role, t.text) for t in state_of(rt, sid).recent_turns]
+    assert turns == [("user", "yes"), ("assistant", "Ok."), ("user", "yes"), ("assistant", "Right.")]
+
+
+def test_a_spoken_yes_never_heard_by_the_server_is_added_not_matched_to_a_typed_one():
+    rt, _, service, _ = build([reply("Ok.")])
+    sid = session_of(typed(rt, "yes"))
+    answer = open_voice(service, sid)
+    end_with(service, answer["voice_session_id"], [{"role": "user", "text": "yes", "utterance": "u1"},
+                                                   {"role": "assistant", "text": "Right.", "utterance": "u1"}])
+    turns = [(t.role, t.text) for t in state_of(rt, sid).recent_turns]
+    assert turns == [("user", "yes"), ("assistant", "Ok."), ("user", "yes"), ("assistant", "Right.")]
+
+
+def test_repeated_identical_spoken_turns_keep_their_own_replies():
+    rt, _, service, _ = build([])
+    answer = open_voice(service)
+    voice_id = answer["voice_session_id"]
+    for n in (1, 2, 3):
+        service.utterance_turn(voice_id, f"u{n}", "ừ", LEARNER)
+    items = []
+    for n in (1, 2, 3):
+        items += [{"role": "user", "text": "ừ", "utterance": f"u{n}"},
+                  {"role": "assistant", "text": f"trả lời {n}", "utterance": f"u{n}"}]
+    end_with(service, voice_id, items)
+    turns = [(t.role, t.text) for t in state_of(rt, answer["session_id"]).recent_turns]
+    assert turns == [("user", "ừ"), ("assistant", "trả lời 1"), ("user", "ừ"), ("assistant", "trả lời 2"),
+                     ("user", "ừ"), ("assistant", "trả lời 3")]
 
 
 def test_the_transcript_keeps_each_reply_behind_the_words_it_answers():
     rt, _, service, _ = build([])
     answer = open_voice(service)
     voice_id = answer["voice_session_id"]
-    relay(service, voice_id, "get_current_word_info", {}, "scarcity là gì")
-    relay(service, voice_id, "get_current_word_info", {}, "cho ví dụ điện")  # both heard through tool relays
-    service.end(voice_id, LEARNER, transcript=[
-        {"role": "user", "text": "scarcity là gì"}, {"role": "assistant", "text": "Khan hiếm."},
-        {"role": "user", "text": "cho ví dụ điện"}, {"role": "assistant", "text": "Điện khan hiếm vào mùa hè."},
+    relay(service, voice_id, "get_current_word_info", {}, "scarcity là gì", "u1")
+    relay(service, voice_id, "get_current_word_info", {}, "cho ví dụ điện", "u2")  # both heard through tool relays
+    end_with(service, voice_id, [
+        {"role": "user", "text": "scarcity là gì", "utterance": "u1"}, {"role": "assistant", "text": "Khan hiếm.", "utterance": "u1"},
+        {"role": "user", "text": "cho ví dụ điện", "utterance": "u2"},
+        {"role": "assistant", "text": "Điện khan hiếm vào mùa hè.", "utterance": "u2"},
     ])
     turns = [(t.role, t.text) for t in state_of(rt, answer["session_id"]).recent_turns]
     assert turns == [("user", "scarcity là gì"), ("assistant", "Khan hiếm."),
@@ -148,24 +239,20 @@ def test_a_transcript_mixing_heard_and_unheard_turns_keeps_the_order():
     rt, _, service, _ = build([])
     answer = open_voice(service)
     voice_id = answer["voice_session_id"]
-    relay(service, voice_id, "get_current_word_info", {}, "câu hai")  # only the second was heard through a tool
-    service.end(voice_id, LEARNER, transcript=[
-        {"role": "user", "text": "câu một"}, {"role": "assistant", "text": "trả lời một"},
-        {"role": "user", "text": "câu hai"}, {"role": "assistant", "text": "trả lời hai"},
+    relay(service, voice_id, "get_current_word_info", {}, "câu hai", "u2")  # only the second reached the server
+    end_with(service, voice_id, [
+        {"role": "user", "text": "câu một", "utterance": "u1"}, {"role": "assistant", "text": "trả lời một", "utterance": "u1"},
+        {"role": "user", "text": "câu hai", "utterance": "u2"}, {"role": "assistant", "text": "trả lời hai", "utterance": "u2"},
     ])
     turns = [(t.role, t.text) for t in state_of(rt, answer["session_id"]).recent_turns]
     assert turns == [("user", "câu một"), ("assistant", "trả lời một"), ("user", "câu hai"), ("assistant", "trả lời hai")]
 
 
-def test_the_same_words_said_twice_match_in_order():
+def test_the_voice_sessions_identity_is_part_of_the_turns_identity():
     limits = AgentLimits()
-    state = AgentSessionState("s", "u", 0.0, 0.0).with_spoken(
-        (ConversationTurn("user", "ừ"), ConversationTurn("user", "ừ")), limits)
-    done = state.with_transcript((ConversationTurn("user", "ừ"), ConversationTurn("assistant", "một"),
-                                  ConversationTurn("user", "ừ"), ConversationTurn("assistant", "hai")),
-                                 frozenset({"ừ"}), limits)
-    assert [(t.role, t.text) for t in done.recent_turns] == [("user", "ừ"), ("assistant", "một"), ("user", "ừ"),
-                                                             ("assistant", "hai")]
+    state = AgentSessionState("s", "u", 0.0, 0.0).with_spoken((ConversationTurn("user", "ừ", "voiceA:u1"),), limits)
+    done = state.with_transcript((ConversationTurn("user", "ừ", "voiceB:u1"), ConversationTurn("assistant", "r", "voiceB:u1")), limits)
+    assert [(t.role, t.ref) for t in done.recent_turns] == [("user", "voiceA:u1"), ("user", "voiceB:u1"), ("assistant", "voiceB:u1")]
 
 
 # -- 4. the budget covers the whole prompt ---------------------------------------------------------------------------
@@ -221,3 +308,37 @@ def test_within_the_budget_nothing_is_dropped():
     users = [m.content for m in sent.messages if m.role == "user"]
     assert PASTE in users or any(PASTE in m.content for m in sent.messages)  # nothing was cut
     assert sum(1 for m in sent.messages if m.content.startswith("câu hỏi dài")) == 5
+
+
+def real_tokens(text):
+    """An independent, still conservative count: a Han character is at least 1.5 tokens, other text 1 per 4 characters."""
+
+    cjk = sum(1 for c in text if "⺀" <= c <= "鿿" or "가" <= c <= "힯" or "＀" <= c <= "￯")
+    return cjk * 1.5 + (len(text) - cjk) / 4
+
+
+PASTE_ZH = "远程办公改变了人们的生活方式，也改变了公司管理团队的方法。" * 100  # about 3,000 characters
+
+
+def test_a_long_chinese_paste_stays_inside_the_budget_under_a_conservative_count():
+    budget = base_tokens() + 2_500
+    limits = AgentLimits(max_input_tokens_per_turn=budget, compact_after_turns=100, compact_after_chars=10**9)
+    rt, provider = runtime([reply("好的。" + "答" * 300) for n in range(10)], limits=limits)
+    sid = session_of(run(rt, request(PASTE_ZH)))
+    for n in range(4):
+        run(rt, request(f"第{n}个问题：" + "问" * 400, sid))
+    run(rt, request("第三段是不是太弱了？", sid))
+    sent = provider.requests[-1]
+    assert sent.messages[-1].content == "第三段是不是太弱了？"
+    total = sum(real_tokens(m.content) for m in sent.messages)
+    assert total <= budget, (total, budget)  # len/4 would call this about a third of what it is
+
+
+def test_the_estimate_never_undercounts_chinese():
+    from writing_coach.agent.tokens import estimate_tokens, fit_chars
+
+    text = "远程办公" * 500
+    assert estimate_tokens(text) >= len(text)  # a Han character is at least one token
+    assert estimate_tokens("hello world " * 100) <= len("hello world " * 100) // 3
+    kept = fit_chars(text, 1_000)
+    assert estimate_tokens(text[:kept]) <= 1_000 < estimate_tokens(text[: kept + 1]) + 2
