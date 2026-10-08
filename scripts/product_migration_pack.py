@@ -30,14 +30,18 @@ one-transaction command; legacy Reading rows are renamed into the read-only arch
 `apply` refuses unless every one of these holds; nothing is connected to for writing before they all do:
 
 * the backup's files match their recorded sizes and SHA-256, and the backup is younger than `--max-age-hours`;
-* `rehearsal.json` beside it passed, was made from this same dump (SHA-256) and with this same migration chain
-  (digest and head): what runs on :8000 is exactly what was rehearsed;
+* `rehearsal.json` beside it passed, was made from this same dump (SHA-256), with this same migration chain
+  (digest and head) and with this same migration-execution code (`execution_digest`: the Alembic environment, this
+  pack, the cutover and bootstrap commands, the runtime modules they import and the pinned dependencies), and it
+  verified table contents: what runs on :8000 is exactly what was rehearsed;
 * the server is the database the backup recorded, in the cluster the backup recorded, and both equal
   `--confirm-production` / `--expect-cluster`;
-* the database is still at the backup's revision and every table holds exactly the rows the backup counted: no
-  learner wrote since the backup, so restoring that backup loses nothing. (Stop the web and worker first.) A run
-  that stopped part-way is resumed by running it again: the revision is then one the chain passes, and the counts
-  are compared under the renames the applied steps made.
+* the database is still at the backup's revision, every table holds exactly the rows the backup counted, and
+  every table's content fingerprint (md5 over its rows, over the columns it had at backup time, settings pinned)
+  equals the backup's: an UPDATE, or a delete and insert that leave the count unchanged, is seen too. So no write
+  happened since the backup, and restoring it loses nothing. (Stop the web and worker first.) A run that stopped
+  part-way is resumed by running it again: the revision is then one the chain passes, and counts and fingerprints
+  are compared under the renames the applied steps made, over the backup's columns only.
 * `--authorization` names the human's decision record, which is printed in the log.
 
 Nothing here prints a secret: URLs are shown with the password redacted.
@@ -86,6 +90,46 @@ def chain_digest(versions: Path = VERSIONS) -> str:
     return digest.hexdigest()
 
 
+# Everything that decides what a migration run does, beyond the revision files themselves: the Alembic
+# environment, the commands that drive it, the runtime modules they import, and the pinned dependencies. A
+# rehearsal is bound to this exact set (human review 2026-10-08, finding 2).
+EXECUTION_SURFACE = (
+    "alembic.ini",
+    "migrations/env.py",
+    "migrations/versions/*.py",
+    "scripts/product_migration_pack.py",
+    "scripts/reading_canonical_cutover.py",
+    "scripts/bootstrap_runtime_schema.py",
+    "writing_coach/runtime_schema.py",
+    "writing_coach/persistence/runtime.py",
+    "writing_coach/persistence/config.py",
+    "writing_coach/persistence/models.py",
+    "requirements.txt",
+)
+
+
+def execution_files(root: Path = ROOT) -> list[str]:
+    """The files of the execution surface, as sorted repository-relative paths."""
+    found: set[str] = set()
+    for pattern in EXECUTION_SURFACE:
+        matches = sorted(root.glob(pattern))
+        if not matches:
+            raise Refused(f"the execution surface names {pattern}, which this checkout does not have")
+        found.update(path.relative_to(root).as_posix() for path in matches)
+    return sorted(found)
+
+
+def execution_digest(root: Path = ROOT) -> str:
+    """SHA-256 over every file of the execution surface, by path and content (line endings normalised)."""
+    digest = hashlib.sha256()
+    for name in execution_files(root):
+        digest.update(name.encode())
+        digest.update(b"\0")
+        digest.update((root / name).read_bytes().replace(b"\r\n", b"\n"))
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -124,7 +168,7 @@ def backup_age_hours(manifest: dict, now: datetime | None = None) -> float:
     return ((now or datetime.now(UTC)) - created).total_seconds() / 3600
 
 
-def check_rehearsal(rehearsal: dict | None, *, manifest: dict, digest: str, head: str) -> None:
+def check_rehearsal(rehearsal: dict | None, *, manifest: dict, digest: str, head: str, execution: str) -> None:
     if not rehearsal:
         raise Refused("rehearsal.json is missing beside the backup: rehearse this backup first")
     if rehearsal.get("passed") is not True:
@@ -133,16 +177,32 @@ def check_rehearsal(rehearsal: dict | None, *, manifest: dict, digest: str, head
         raise Refused("the rehearsal was made from a different dump than this backup's")
     if rehearsal.get("chain_digest") != digest or rehearsal.get("head") != head:
         raise Refused("the rehearsal ran a different migration chain than this checkout's: rehearse again")
+    if rehearsal.get("execution_digest") != execution:
+        raise Refused("the rehearsal ran different migration-execution code than this checkout's (pack, cutover, "
+                      "Alembic environment, runtime modules or dependencies): rehearse again")
+    if rehearsal.get("fingerprints_checked") is not True:
+        raise Refused("the rehearsal did not verify table contents (the backup has no content fingerprints): take a "
+                      "new backup with product_backup.ps1 and rehearse it")
+
+
+def renamed(recorded: dict, applied: list[str]) -> dict:
+    """A per-table record of the backup under the names the applied revisions gave the tables."""
+    values = {table: value for table, value in recorded.items() if table != "alembic_version"}
+    for revision in applied:
+        for old, new in RENAMES.get(revision, {}).items():
+            if old in values:
+                values[new] = values.pop(old)
+    return values
+
+
+def fingerprint_differences(expected: dict[str, str], found: dict[str, str]) -> list[str]:
+    """Tables whose content is not what the backup recorded (same columns, any row inserted, deleted or changed)."""
+    return sorted(table for table, value in expected.items() if found.get(table) != value)
 
 
 def expected_counts(recorded: dict[str, int], applied: list[str]) -> dict[str, int]:
     """The backup's row counts under the names the applied revisions gave the tables."""
-    counts = {table: count for table, count in recorded.items() if table != "alembic_version"}
-    for revision in applied:
-        for old, new in RENAMES.get(revision, {}).items():
-            if old in counts:
-                counts[new] = counts.pop(old)
-    return counts
+    return renamed(recorded, applied)
 
 
 def count_differences(expected: dict[str, int], found: dict[str, int]) -> list[str]:
@@ -183,6 +243,40 @@ def table_counts(connection) -> dict[str, int]:
             for name in sorted(names) if name != "alembic_version"}
 
 
+# The session settings every content fingerprint is computed under, here and in product_backup.ps1, so a value
+# renders as the same text wherever it is read (a timestamptz depends on TimeZone, a date on DateStyle).
+FINGERPRINT_SETTINGS = (
+    "SET LOCAL TimeZone = 'UTC'",
+    "SET LOCAL DateStyle = 'ISO, MDY'",
+    "SET LOCAL IntervalStyle = 'postgres'",
+    "SET LOCAL extra_float_digits = 1",
+    "SET LOCAL bytea_output = 'hex'",
+)
+
+
+def _identifier(name: str) -> str:
+    return '"' + str(name).replace('"', '""') + '"'
+
+
+def fingerprint_sql(table: str, columns: list[str]) -> str:
+    """md5 over the sorted md5 of each row, the row being exactly the given columns in the given order. The same
+    expression product_backup.ps1 builds for every table at backup time."""
+    row = ", ".join(f"t.{_identifier(column)}" for column in columns)
+    return (f"SELECT md5(coalesce(string_agg(h, '' ORDER BY h), '')) FROM "
+            f"(SELECT md5(ROW({row})::text) AS h FROM public.{_identifier(table)} t) s")
+
+
+def table_fingerprints(connection, columns: dict[str, list[str]]) -> dict[str, str]:
+    """The content fingerprint of each table that exists, over the columns the backup recorded for it."""
+    from sqlalchemy import inspect, text
+
+    present = set(inspect(connection).get_table_names())
+    for setting in FINGERPRINT_SETTINGS:
+        connection.execute(text(setting))
+    return {table: str(connection.execute(text(fingerprint_sql(table, cols))).scalar_one())
+            for table, cols in sorted(columns.items()) if table in present and cols}
+
+
 def revision_on(connection) -> str | None:
     from alembic.runtime.migration import MigrationContext
 
@@ -196,9 +290,10 @@ def applied_since(start: str | None, actual: str | None) -> list[str]:
     return chain[first:chain.index(actual) + 1] if actual else []
 
 
-def check_state(connection, *, manifest: dict) -> tuple[str | None, list[str]]:
+def check_state(connection, *, manifest: dict) -> tuple[str | None, list[str], bool]:
     """The database is at the backup's revision, or one the chain reaches from it, and holds exactly the rows the
-    backup counted. Returns (revision, steps still to run)."""
+    backup counted and, when the backup recorded them, exactly the contents. Returns (revision, steps still to run,
+    whether contents were checked)."""
     head = _head()
     start = manifest.get("schema_revision") or None
     actual = revision_on(connection)
@@ -214,7 +309,21 @@ def check_state(connection, *, manifest: dict) -> tuple[str | None, list[str]]:
     if differences:
         raise Refused("rows changed since the backup (stop the web and worker, take a new backup): "
                       + "; ".join(differences[:8]) + (" ..." if len(differences) > 8 else ""))
-    return actual, ([] if actual == head else _pending(actual, head))
+    # Row counts miss an UPDATE, or a delete and an insert that cancel out. The content fingerprint of every table,
+    # over the columns it had at backup time, does not (human review 2026-10-08, finding 1).
+    checked = False
+    recorded, columns = manifest.get("table_fingerprints"), manifest.get("table_columns")
+    if recorded and columns:
+        # PowerShell may write a one-column list as a bare string.
+        columns = {table: cols.split(",") if isinstance(cols, str) else list(cols) for table, cols in columns.items()}
+        applied = applied_since(start, actual)
+        changed = fingerprint_differences(renamed(recorded, applied),
+                                          table_fingerprints(connection, renamed(columns, applied)))
+        if changed:
+            raise Refused("table contents changed since the backup although row counts did not (stop the web and "
+                          "worker, take a new backup): " + ", ".join(changed[:8]) + (" ..." if len(changed) > 8 else ""))
+        checked = True
+    return actual, ([] if actual == head else _pending(actual, head)), checked
 
 
 def step(url: str, *, revision: str, before: str | None, database: str, cluster: str) -> float:
@@ -297,9 +406,11 @@ def run_chain(url: str, *, manifest: dict, database: str, cluster: str, log) -> 
     engine = _engine(url)
     try:
         with engine.connect() as connection:
-            actual, steps = check_state(connection, manifest=manifest)
+            actual, steps, checked = check_state(connection, manifest=manifest)
     finally:
         engine.dispose()
+    log(f"rows {'and contents ' if checked else ''}match the backup"
+        f"{'' if checked else ' (this backup records no content fingerprints)'}")
     log(f"database {database} in cluster {cluster} is at {actual or 'no revision'}; "
         f"{len(steps)} step(s) to {_head()}: {' '.join(steps) or 'none'}")
     timings = []
@@ -312,6 +423,7 @@ def run_chain(url: str, *, manifest: dict, database: str, cluster: str, log) -> 
     result = verify_after(url, manifest=manifest)
     result["steps"] = timings
     result["started_from"] = actual
+    result["fingerprints_checked"] = checked
     return result
 
 
@@ -325,6 +437,7 @@ def _log(message: str) -> None:
 def cmd_digest() -> int:
     print(f"HEAD={_head()}")
     print(f"DIGEST={chain_digest()}")
+    print(f"EXECUTION={execution_digest()}")
     return 0
 
 
@@ -347,10 +460,11 @@ def cmd_rehearse(url: str, folder: Path, confirmed: str) -> int:
         raise Refused(reason)
     result = run_chain(url, manifest=manifest, database=found["database"], cluster=found["cluster"], log=_log)
     report = {
-        "format": "orena-migration-rehearsal", "version": 2,
+        "format": "orena-migration-rehearsal", "version": 3,
         "finished_at": datetime.now(UTC).isoformat(),
         "dump_sha256": dump_sha(manifest), "backup_revision": manifest.get("schema_revision"),
         "head": _head(), "chain_digest": chain_digest(),
+        "execution_digest": execution_digest(), "execution_files": execution_files(),
         **result,
     }
     report["passed"] = bool(result["ready"] and result["rows_kept"] and result["legacy_frozen"])
@@ -366,7 +480,10 @@ def production_checks(url: str, folder: Path, *, confirmed: str, cluster: str, m
         raise Refused(f"the backup is {age:.1f} h old (limit {max_age} h): take a fresh one and rehearse it")
     rehearsal_path = folder / "rehearsal.json"
     rehearsal = json.loads(rehearsal_path.read_text(encoding="utf-8-sig")) if rehearsal_path.is_file() else None
-    check_rehearsal(rehearsal, manifest=manifest, digest=chain_digest(), head=_head())
+    if not manifest.get("table_fingerprints") or not manifest.get("table_columns"):
+        raise Refused("the backup records no content fingerprints, so a write since it could go unseen: take it "
+                      "again with product_backup.ps1 (manifest version 3) and rehearse it")
+    check_rehearsal(rehearsal, manifest=manifest, digest=chain_digest(), head=_head(), execution=execution_digest())
     if manifest.get("database") != confirmed:
         raise Refused(f"--confirm-production {confirmed!r} is not the backup's database {manifest.get('database')!r}")
     if not manifest.get("cluster") or str(manifest["cluster"]) != cluster.strip():
@@ -386,7 +503,7 @@ def cmd_plan(url: str, folder: Path, max_age: float) -> int:
     engine = _engine(url)
     try:
         with engine.connect() as connection:
-            actual, steps = check_state(connection, manifest=manifest)
+            actual, steps, _ = check_state(connection, manifest=manifest)
     finally:
         engine.dispose()
     print(f"database {found['database']} cluster {found['cluster']} at {actual}; rehearsed chain matches")

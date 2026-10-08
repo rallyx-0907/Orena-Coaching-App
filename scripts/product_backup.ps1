@@ -51,6 +51,23 @@ foreach ($line in (Invoke-Docker @('exec', $Postgres, 'psql', '-U', $DbUser, '-d
     $parts = "$line".Split('=')
     if ($parts.Count -eq 2) { $counts[$parts[0]] = [int64]$parts[1] }
 }
+# Each table's columns and a fingerprint of its contents (md5 over the sorted md5 of each row, over those columns),
+# under pinned session settings. product_migration_pack.py computes the same expression before it migrates: a row
+# changed, deleted or inserted since this backup - even with the count unchanged - is refused. The rehearsal checks
+# the restored copy against these too, which also proves the dump was taken at the same moment.
+$columnSql = "select c.table_name || '=' || string_agg(c.column_name, ',' order by c.ordinal_position) from information_schema.columns c join information_schema.tables b on b.table_schema = c.table_schema and b.table_name = c.table_name where c.table_schema = 'public' and b.table_type = 'BASE TABLE' and c.table_name <> 'alembic_version' group by c.table_name order by c.table_name"
+$columns = [ordered]@{}
+foreach ($line in (Invoke-Docker @('exec', $Postgres, 'psql', '-U', $DbUser, '-d', $DbName, '-At', '-c', $columnSql))) {
+    $parts = "$line".Split('=')
+    if ($parts.Count -eq 2) { $columns[$parts[0]] = @($parts[1].Split(',')) }
+}
+$fingerprintSql = "set TimeZone = 'UTC'; set DateStyle = 'ISO, MDY'; set IntervalStyle = 'postgres'; set extra_float_digits = 1; set bytea_output = 'hex'; select x.table_name || '=' || (xpath('/row/c/text()', query_to_xml(format('select md5(coalesce(string_agg(h, %L order by h), %L)) as c from (select md5(row(%s)::text) as h from public.%I t) s', '', '', x.cols, x.table_name), false, true, '')))[1]::text from (select c.table_name, string_agg('t.' || quote_ident(c.column_name), ', ' order by c.ordinal_position) as cols from information_schema.columns c join information_schema.tables b on b.table_schema = c.table_schema and b.table_name = c.table_name where c.table_schema = 'public' and b.table_type = 'BASE TABLE' and c.table_name <> 'alembic_version' group by c.table_name) x order by x.table_name"
+$fingerprints = [ordered]@{}
+foreach ($line in (Invoke-Docker @('exec', $Postgres, 'psql', '-U', $DbUser, '-d', $DbName, '-At', '-c', $fingerprintSql))) {
+    $parts = "$line".Split('=')
+    if ($parts.Count -eq 2 -and $parts[1] -match '^[0-9a-f]{32}$') { $fingerprints[$parts[0]] = $parts[1] }
+}
+if ($fingerprints.Count -ne $columns.Count) { Fail "content fingerprints for $($fingerprints.Count) of $($columns.Count) tables" }
 
 Invoke-Docker @('exec', $Postgres, 'pg_dump', '-U', $DbUser, '-d', $DbName, '-Fc', '-f', $inside) | Out-Null
 Invoke-Docker @('cp', "${Postgres}:$inside", (Join-Path $folder 'database.dump')) | Out-Null
@@ -63,9 +80,10 @@ Invoke-Docker @('run', '--rm', '-v', "${DataVolume}:/data:ro", '-v', "${folder}:
 $fileCount = (Invoke-Docker @('run', '--rm', '-v', "${folder}:/backup:ro", $ToolImage, 'tar', 'tzf', '/backup/files.tar.gz')).Count
 
 $manifest = [ordered]@{
-    format = 'orena-runtime-backup'; version = 2; created_at = (Get-Date).ToUniversalTime().ToString('o')
+    format = 'orena-runtime-backup'; version = 3; created_at = (Get-Date).ToUniversalTime().ToString('o')
     postgres_container = $Postgres; database = $DbName; cluster = $cluster; data_volume = $DataVolume
-    schema_revision = $revision; table_counts = $counts; dump_entries = $entries; archived_files = $fileCount
+    schema_revision = $revision; table_counts = $counts; table_columns = $columns; table_fingerprints = $fingerprints
+    dump_entries = $entries; archived_files = $fileCount
     files = @(
         foreach ($name in 'database.dump', 'files.tar.gz') {
             $path = Join-Path $folder $name

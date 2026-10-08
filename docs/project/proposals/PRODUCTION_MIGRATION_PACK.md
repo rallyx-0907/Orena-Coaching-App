@@ -10,7 +10,7 @@ the same steps on a disposable restored copy and on :8000:
 
 | Piece | File | Change |
 | --- | --- | --- |
-| Backup (reads only) | `scripts/product_backup.ps1` | Manifest v2 also records the PostgreSQL cluster's `system_identifier`. |
+| Backup (reads only) | `scripts/product_backup.ps1` | Manifest v3 records the PostgreSQL cluster's `system_identifier`, each table's columns and a content fingerprint per table (below). |
 | Rehearsal on a copy | `scripts/product_migration_rehearsal.ps1` | Runs the chain through the pack (was: one `upgrade head`, which skipped 0016's gate, timed nothing, and would have reported 0016's renames as lost rows). Waits for the image's init server to finish before restoring (a restore into the init server was silently lost) and checks `pg_restore`'s exit code. |
 | Chain runner and gates | `scripts/product_migration_pack.py` (new) | `digest`, `rehearse`, `plan`, `apply`. |
 | Gate tests | `tests/test_product_migration_pack.py` (new) | 14 cases, no database. |
@@ -40,13 +40,23 @@ there**, table by table, under the names the steps gave it; the legacy archive h
 
 - The backup's files match their recorded sizes and SHA-256, and the backup is younger than `--max-age-hours`
   (default 12).
-- `rehearsal.json` beside the backup **passed**, was made from **this dump** (SHA-256) and with **this chain**
-  (digest over `migrations/versions/*.py`, line endings normalised, and head). What runs on :8000 is what was rehearsed.
+- `rehearsal.json` beside the backup **passed**, was made from **this dump** (SHA-256), with **this chain** (digest
+  over `migrations/versions/*.py`, line endings normalised, and head) and with **this migration-execution code**:
+  `execution_digest` over `alembic.ini`, `migrations/env.py`, `migrations/versions/*.py`, the pack, the Reading cutover
+  and bootstrap commands, `writing_coach/runtime_schema.py`, `persistence/runtime.py`, `config.py`, `models.py` and
+  `requirements.txt` (35 files today; the list is in `rehearsal.json`). Any change to that surface means rehearse again.
+  The rehearsal must also have verified table contents (`fingerprints_checked`).
 - The server is the database and the cluster the backup recorded, and both equal `--confirm-production` and
   `--expect-cluster`. A rehearsal refuses the reverse: a server in the backup's own cluster is the source, not a copy.
 - **No learner wrote since the backup**: the database is at the backup's revision (or one the chain passed, when a
-  stopped run is resumed) and every table holds exactly the backed-up row count. So a restore of that backup loses
-  nothing, which is what makes it the rollback.
+  stopped run is resumed), every table holds exactly the backed-up row count, **and every table's content
+  fingerprint equals the backup's**: md5 over the sorted md5 of each row, over the columns the table had at backup
+  time, with TimeZone, DateStyle, IntervalStyle, extra_float_digits and bytea_output pinned so a value renders the same
+  in `psql` at backup time and in the pack. An UPDATE, or a delete and insert that leave the count unchanged, is
+  refused. A resumed run compares under the renames over the backed-up columns only (a revision that rewrote existing
+  values would make a resume refuse: restore and start again). A backup without fingerprints (manifest v2) cannot be
+  applied. So a restore of that backup loses nothing, which is what makes it the rollback.
+- Cost: one full read of every table at backup and at apply; seconds at :8000's size.
 - `--authorization` names the human's decision record; it is printed in the log and in `RESULT=`.
 
 ## 4. Evidence so far (local, synthetic; not :8000)
@@ -61,6 +71,18 @@ A disposable PostgreSQL 17 at `20260908_0005` with 2 users, 2 legacy Reading ses
   `reading_legacy_sessions` afterwards fails with "the legacy Reading archive is read-only".
 
 Step times on real data come from the rehearsal of :8000's backup, not from this.
+
+Gate demonstration after the 2026-10-08 review (synthetic, disposable, removed afterwards): a v3 backup at 0004 with a
+`timestamptz` written at +07:00; rehearsal `REHEARSAL=PASS` with `contents match the backup` and the execution digest
+recorded; then on the source:
+1. `UPDATE users SET name = ...` (count unchanged): refused, `users`.
+2. delete one `reading_attempts` row and insert another (count unchanged): refused, `reading_attempts`.
+3. `apply` from a tree whose `reading_canonical_cutover.py` differs by one comment: refused, "different
+   migration-execution code".
+4. data put back exactly: `rows and contents match the backup`, 21 steps, PASS.
+Regression tests: `tests/test_product_migration_pack.py` (`test_an_update_with_unchanged_row_counts_is_refused`,
+`test_a_resumed_run_compares_contents_under_the_renames_over_the_backed_up_columns`,
+`test_the_execution_digest_covers_every_file_that_runs_a_migration`, and the rehearsal-binding cases).
 
 ## 4b. Rehearsal of :8000 (2026-10-08, for human review; nothing applied to :8000)
 
@@ -77,6 +99,9 @@ Step times on real data come from the rehearsal of :8000's backup, not from this
 - Result: `REHEARSAL=PASS`. Restore reproduced the backup (19 tables, revision 0004); 21 steps, 6.1 s in total, the
   longest 0.37 s (0023); every backed-up row kept; 38 new tables; legacy Reading archive 14 sessions / 1 attempt with
   4 freeze triggers; files archive reads end to end. The disposable PostgreSQL and its network were removed.
+- This rehearsal used a v2 backup (counts only) and predates the execution digest. It stays valid evidence for the
+  candidate (human review 2026-10-08); it cannot itself authorize an apply: the final backup is v3 and is rehearsed
+  with the merged code.
 - For the real apply (D-144 6-7): the pack requires a passed rehearsal of **the same dump**, so the final production
   backup is rehearsed the same way (minutes) before `apply`; and the chain digest above must equal the one computed
   on the merged `main` SHA (`python scripts/product_migration_pack.py digest`), else rehearse again.

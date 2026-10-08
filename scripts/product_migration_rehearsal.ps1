@@ -105,12 +105,13 @@ foreach ($line in $migrated.out) { if ("$line" -notlike 'REPORT=*') { Write-Host
 $reportLine = ($migrated.out | Where-Object { "$_" -like 'REPORT=*' } | Select-Object -Last 1)
 if (-not $reportLine) { Note 'migration chain to head' $false 'the pack printed no report'; Finish 1 }
 $pack = ("$reportLine" -replace '^REPORT=', '') | ConvertFrom-Json
-foreach ($name in 'dump_sha256', 'backup_revision', 'head', 'chain_digest', 'revision', 'ready', 'rows_kept', 'row_differences', 'new_tables', 'legacy_reading', 'legacy_frozen', 'steps', 'started_from') { $report[$name] = $pack.$name }
-$report.format = 'orena-migration-rehearsal'; $report.version = 2
+foreach ($name in 'dump_sha256', 'backup_revision', 'head', 'chain_digest', 'execution_digest', 'execution_files', 'fingerprints_checked', 'revision', 'ready', 'rows_kept', 'row_differences', 'new_tables', 'legacy_reading', 'legacy_frozen', 'steps', 'started_from') { $report[$name] = $pack.$name }
+$report.format = 'orena-migration-rehearsal'; $report.version = 3
+Note 'contents match the backup' ($pack.fingerprints_checked -eq $true) $(if ($pack.fingerprints_checked) { 'every table''s content fingerprint equals the backup''s' } else { 'not checked: the backup records no fingerprints (apply will refuse it)' })
 Note 'migration chain to head' ($pack.ready -eq $true) "from $revisionBefore to $($pack.revision) in $(@($pack.steps).Count) step(s) (head $($pack.head))"
 Note 'no rows lost by the migration' ($pack.rows_kept -eq $true) $(if ($pack.rows_kept) { "new tables: $($pack.new_tables -join ', ')" } else { $pack.row_differences -join '; ' })
 Note 'legacy Reading archive frozen' ($pack.legacy_frozen -eq $true) $(if ($pack.legacy_reading) { "sessions $($pack.legacy_reading.sessions), attempts $($pack.legacy_reading.attempts), triggers $($pack.legacy_reading.freeze_triggers)" } else { 'no legacy Reading tables' })
-if (-not ($migrated.ok -and $pack.passed)) { Finish 1 }
+if (-not ($migrated.ok -and $pack.passed -and $pack.fingerprints_checked)) { Finish 1 }
 
 $listed = Invoke-Docker @('exec', $pg, 'tar', 'tzf', '/backup/files.tar.gz')
 Note 'files archive reads end to end' ($listed.ok -and $listed.out.Count -eq $manifest.archived_files) "$($listed.out.Count) entries (manifest $($manifest.archived_files))"

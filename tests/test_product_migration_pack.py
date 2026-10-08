@@ -22,16 +22,22 @@ def _load():
 pack = _load()
 
 
-def _backup(tmp_path: Path, *, created: datetime | None = None, cluster: str = "7000000000000000001") -> dict:
+FINGERPRINTS = {"users": "a" * 32, "reading_sessions": "b" * 32, "reading_attempts": "c" * 32}
+COLUMNS = {"users": ["id", "email"], "reading_sessions": ["id", "user_id"], "reading_attempts": ["id", "session_id"]}
+
+
+def _backup(tmp_path: Path, *, created: datetime | None = None, cluster: str = "7000000000000000001",
+            fingerprints: bool = True) -> dict:
     dump = tmp_path / "database.dump"
     dump.write_bytes(b"PGDMP fake dump")
     files = tmp_path / "files.tar.gz"
     files.write_bytes(b"fake archive")
     manifest = {
-        "format": "orena-runtime-backup", "version": 2,
+        "format": "orena-runtime-backup", "version": 3,
         "created_at": (created or datetime.now(UTC)).isoformat(),
         "database": "becoming", "cluster": cluster, "schema_revision": "20260908_0005",
         "table_counts": {"alembic_version": 1, "users": 3, "reading_sessions": 4, "reading_attempts": 9},
+        **({"table_fingerprints": FINGERPRINTS, "table_columns": COLUMNS} if fingerprints else {}),
         "files": [{"name": name, "bytes": path.stat().st_size, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
                   for name, path in (("database.dump", dump), ("files.tar.gz", files))],
     }
@@ -95,27 +101,131 @@ def test_backup_age_is_measured_from_its_creation(tmp_path):
     assert pack.backup_age_hours(manifest, now=datetime(2026, 10, 8, 13, 30, tzinfo=UTC)) == pytest.approx(13.5)
 
 
-def test_apply_needs_a_passed_rehearsal_of_this_dump_and_this_chain(tmp_path):
+def test_apply_needs_a_passed_rehearsal_of_this_dump_chain_and_execution_code(tmp_path):
     manifest = _backup(tmp_path)
-    good = {"passed": True, "dump_sha256": pack.dump_sha(manifest), "chain_digest": "d" * 64, "head": "20261007_0029"}
-    pack.check_rehearsal(good, manifest=manifest, digest="d" * 64, head="20261007_0029")
+    good = {"passed": True, "dump_sha256": pack.dump_sha(manifest), "chain_digest": "d" * 64, "head": "20261007_0029",
+            "execution_digest": "x" * 64, "fingerprints_checked": True}
+    gate = {"manifest": manifest, "digest": "d" * 64, "head": "20261007_0029", "execution": "x" * 64}
+    pack.check_rehearsal(good, **gate)
     cases = [
         (None, "missing"),
         ({**good, "passed": False}, "did not pass"),
         ({**good, "dump_sha256": "0" * 64}, "different dump"),
         ({**good, "chain_digest": "e" * 64}, "different migration chain"),
         ({**good, "head": "20261004_0025"}, "different migration chain"),
+        ({**good, "execution_digest": "y" * 64}, "different migration-execution code"),
+        ({k: v for k, v in good.items() if k != "execution_digest"}, "different migration-execution code"),
+        ({**good, "fingerprints_checked": False}, "did not verify table contents"),
     ]
     for rehearsal, reason in cases:
         with pytest.raises(pack.Refused, match=reason):
-            pack.check_rehearsal(rehearsal, manifest=manifest, digest="d" * 64, head="20261007_0029")
+            pack.check_rehearsal(rehearsal, **gate)
+
+
+def _surface(root: Path) -> None:
+    for pattern in pack.EXECUTION_SURFACE:
+        path = root / pattern.replace("*", "20260101_0001_x")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(f"# {pattern}\n".encode())
+
+
+def test_the_execution_digest_covers_every_file_that_runs_a_migration(tmp_path):
+    files = pack.execution_files()
+    for required in ("scripts/product_migration_pack.py", "scripts/reading_canonical_cutover.py",
+                     "scripts/bootstrap_runtime_schema.py", "migrations/env.py", "alembic.ini", "requirements.txt",
+                     "writing_coach/persistence/runtime.py", "migrations/versions/20260924_0016_adaptive_reading.py"):
+        assert required in files, required
+    _surface(tmp_path)
+    first = pack.execution_digest(tmp_path)
+    (tmp_path / "migrations/env.py").write_bytes(b"# migrations/env.py\r\n")
+    assert pack.execution_digest(tmp_path) == first, "line endings do not count"
+    for name in ("scripts/product_migration_pack.py", "scripts/reading_canonical_cutover.py", "requirements.txt"):
+        original = (tmp_path / name).read_bytes()
+        (tmp_path / name).write_bytes(original + b"changed = True\n")
+        assert pack.execution_digest(tmp_path) != first, f"a change to {name} changes the digest"
+        (tmp_path / name).write_bytes(original)
+    assert pack.execution_digest(tmp_path) == first
+    (tmp_path / "scripts/reading_canonical_cutover.py").unlink()
+    with pytest.raises(pack.Refused, match="does not have"):
+        pack.execution_digest(tmp_path)
+
+
+def test_fingerprints_follow_the_renames_and_see_a_changed_table():
+    applied = ["20260924_0015", "20260924_0016"]
+    expected = pack.renamed(FINGERPRINTS, applied)
+    assert expected == {"users": "a" * 32, "reading_legacy_sessions": "b" * 32, "reading_legacy_attempts": "c" * 32}
+    assert pack.renamed(COLUMNS, applied)["reading_legacy_sessions"] == ["id", "user_id"]
+    assert pack.fingerprint_differences(expected, dict(expected)) == []
+    assert pack.fingerprint_differences(expected, {**expected, "users": "f" * 32}) == ["users"]
+    assert pack.fingerprint_differences(expected, {"users": "a" * 32}) == ["reading_legacy_attempts",
+                                                                          "reading_legacy_sessions"]
+
+
+def test_the_fingerprint_reads_only_the_backed_up_columns_in_order():
+    sql = pack.fingerprint_sql("users", ["id", 'odd"name'])
+    assert 'ROW(t."id", t."odd""name")::text' in sql
+    assert 'FROM public."users" t' in sql
+    assert "string_agg(h, '' ORDER BY h)" in sql
+
+
+def _state(monkeypatch, manifest, *, counts, fingerprints, revision="20260908_0005"):
+    chain = ["20260908_0005", "20260911_0006", "20260924_0015", "20260924_0016", "20261007_0029"]
+    monkeypatch.setattr(pack, "_head", lambda: chain[-1])
+    monkeypatch.setattr(pack, "_chain", lambda: chain)
+    monkeypatch.setattr(pack, "_pending", lambda actual, head: chain[chain.index(actual) + 1:])
+    monkeypatch.setattr(pack, "revision_on", lambda connection: revision)
+    monkeypatch.setattr(pack, "table_counts", lambda connection: counts)
+    seen = {}
+
+    def fingerprints_of(connection, columns):
+        seen.update(columns)
+        return fingerprints
+
+    monkeypatch.setattr(pack, "table_fingerprints", fingerprints_of)
+    return pack.check_state(object(), manifest=manifest), seen
+
+
+def test_an_update_with_unchanged_row_counts_is_refused(tmp_path, monkeypatch):
+    """Regression (human review 2026-10-08, finding 1): counts alone miss an UPDATE or a delete+insert."""
+    manifest = _backup(tmp_path)
+    counts = {"users": 3, "reading_sessions": 4, "reading_attempts": 9}
+    (actual, steps, checked), _ = _state(monkeypatch, manifest, counts=counts, fingerprints=dict(FINGERPRINTS))
+    assert actual == "20260908_0005" and steps[0] == "20260911_0006" and checked is True
+    for changed in ("users", "reading_attempts"):
+        with pytest.raises(pack.Refused, match=f"contents changed since the backup although row counts did not.*{changed}"):
+            _state(monkeypatch, manifest, counts=counts, fingerprints={**FINGERPRINTS, changed: "0" * 32})
+
+
+def test_a_resumed_run_compares_contents_under_the_renames_over_the_backed_up_columns(tmp_path, monkeypatch):
+    manifest = _backup(tmp_path)
+    counts = {"users": 3, "reading_legacy_sessions": 4, "reading_legacy_attempts": 9, "reading_attempts": 0}
+    fingerprints = {"users": "a" * 32, "reading_legacy_sessions": "b" * 32, "reading_legacy_attempts": "c" * 32}
+    (actual, steps, checked), seen = _state(monkeypatch, manifest, counts=counts, fingerprints=fingerprints,
+                                            revision="20260924_0016")
+    assert (actual, steps, checked) == ("20260924_0016", ["20261007_0029"], True)
+    assert seen["reading_legacy_sessions"] == ["id", "user_id"], "only the columns the backup had"
+    with pytest.raises(pack.Refused, match="reading_legacy_sessions"):
+        _state(monkeypatch, manifest, counts=counts,
+               fingerprints={**fingerprints, "reading_legacy_sessions": "0" * 32}, revision="20260924_0016")
+
+
+def test_a_backup_without_fingerprints_is_only_count_checked_and_cannot_be_applied(tmp_path, monkeypatch):
+    manifest = _backup(tmp_path, fingerprints=False)
+    counts = {"users": 3, "reading_sessions": 4, "reading_attempts": 9}
+    (_, _, checked), _ = _state(monkeypatch, manifest, counts=counts, fingerprints={})
+    assert checked is False
+    (tmp_path / "rehearsal.json").write_text(json.dumps({"passed": True}), encoding="utf-8")
+    monkeypatch.setattr(pack, "identity", lambda url: {"database": "becoming", "cluster": "7000000000000000001"})
+    with pytest.raises(pack.Refused, match="records no content fingerprints"):
+        pack.production_checks("postgresql+psycopg://u:p@h/becoming", tmp_path, confirmed="becoming",
+                               cluster="7000000000000000001", max_age=12)
 
 
 def _gate(tmp_path, monkeypatch, *, confirmed="becoming", cluster="7000000000000000001", age=None, server=None):
     created = datetime.now(UTC) - timedelta(hours=age) if age is not None else None
     manifest = _backup(tmp_path, created=created)
     rehearsal = {"passed": True, "dump_sha256": pack.dump_sha(manifest), "chain_digest": pack.chain_digest(),
-                 "head": "HEAD"}
+                 "head": "HEAD", "execution_digest": pack.execution_digest(), "fingerprints_checked": True}
     (tmp_path / "rehearsal.json").write_text(json.dumps(rehearsal), encoding="utf-8")
     monkeypatch.setattr(pack, "_head", lambda: "HEAD")
     monkeypatch.setattr(pack, "identity", lambda url: server or {"database": "becoming", "cluster": "7000000000000000001"})
