@@ -101,7 +101,7 @@ jobs:
           path = Path("grammar_lab/tests/test_export_package.py")
           text = path.read_text(encoding="utf-8")
           old = '''# --- the real repository: nothing is approved yet, so nothing can be exported ------------------------\n\n\ndef test_the_real_lab_cannot_export_its_draft_points(tmp_path: Path) -> None:\n    from typer.testing import CliRunner\n\n    from grammar_lab.pipeline.cli import app\n\n    out = tmp_path / "pkg"\n    result = CliRunner().invoke(app, [\n        "export-package", "--lang", "en", "--ids", "en.present_continuous.now", "--out", str(out),\n        "--set-version", "t", "--source-commit", "0" * 40, "--allow-dirty",\n    ])\n    assert result.exit_code == 2 and "point.not_approved" in result.output and not out.exists()\n    plain = CliRunner().invoke(app, [\n        "export-package", "--lang", "zh", "--level", "HSK1", "--out", str(out), "--set-version", "t",\n        "--source-commit", "0" * 40, "--allow-dirty",\n    ])\n    assert plain.exit_code == 2 and not out.exists()  # default_safe / missing content / drafts: refused\n'''
-          new = '''# --- the real repository: the approved corpus can be exported -----------------------------------------\n\n\ndef test_the_real_lab_can_export_an_approved_point(tmp_path: Path) -> None:\n    from typer.testing import CliRunner\n\n    from grammar_lab.pipeline.cli import app\n\n    out = tmp_path / "pkg"\n    result = CliRunner().invoke(app, [\n        "export-package", "--lang", "en", "--ids", "en.present_continuous.now", "--out", str(out),\n        "--set-version", "t", "--source-commit", "0" * 40, "--allow-dirty",\n    ])\n    assert result.exit_code == 0, result.output\n    assert out.exists()\n    check = CliRunner().invoke(app, ["validate-package", "--path", str(out)])\n    assert check.exit_code == 0, check.output\n'''
+          new = '''# --- the real repository: the approved corpus can be exported -----------------------------------------\n\n\ndef test_the_real_lab_can_export_an_approved_point(tmp_path: Path) -> None:\n    from typer.testing import CliRunner\n\n    from grammar_lab.pipeline.cli import app\n\n    out = tmp_path / "pkg"\n    result = CliRunner().invoke(app, [\n        "export-package", "--lang", "en", "--ids", "en.present_continuous.now", "--out", str(out),\n        "--set-version", "t", "--source-commit", "0" * 40, "--allow-dirty",\n    ])\n    assert result.exit_code == 0, result.output\n    assert out.exists()\n    check = CliRunner().invoke(app, ["validate-package", str(out)])\n    assert check.exit_code == 0, check.output\n'''
           if old not in text:
               raise SystemExit("stale draft-corpus test block not found")
           path.write_text(text.replace(old, new), encoding="utf-8", newline="\n")
@@ -125,7 +125,7 @@ jobs:
             --out /tmp/zh-complete \
             --set-version "ci.zh.complete" \
             --allow-dirty
-          python -m grammar_lab.pipeline.cli validate-package --path /tmp/zh-complete
+          python -m grammar_lab.pipeline.cli validate-package /tmp/zh-complete
 
       - name: Commit verified repair
         shell: bash
