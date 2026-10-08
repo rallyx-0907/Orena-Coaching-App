@@ -15,14 +15,14 @@
   "source_anchors": {"status": "unanchored", "items": []},
   "header": {
     "title": {"vi": "Câu phức: ⋯⋯ ，且⋯⋯", "en": "Complex sentences: ⋯⋯ ，且⋯⋯"},
-    "native_title": "⋯⋯ ，且⋯⋯",
+    "native_title": "⋯⋯，且⋯⋯",
     "level": {"framework": "hsk3", "value": "8", "rank": 8},
     "summary": {
       "vi": "Liên từ 且 nối hai vế câu có quan hệ bổ sung, thường dùng trong văn viết trang trọng.",
       "en": "The conjunction 且 links two clauses that add information, and it is mostly used in formal writing."
     },
     "sub": {"vi": "liên từ bổ sung", "en": "additive connector"},
-    "native_title_pinyin": ["", "", "", "", "qiě", "", ""]
+    "native_title_pinyin": ["", "", "", "qiě", "", ""]
   },
   "when_to_use": [
     {

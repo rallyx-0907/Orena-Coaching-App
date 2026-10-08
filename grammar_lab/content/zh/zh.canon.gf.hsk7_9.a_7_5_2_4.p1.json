@@ -15,14 +15,14 @@
   "source_anchors": {"status": "unanchored", "items": []},
   "header": {
     "title": {"vi": "Câu phức: 或⋯⋯ ，或⋯⋯", "en": "Complex sentences: 或⋯⋯ ，或⋯⋯"},
-    "native_title": "或⋯⋯ ，或⋯⋯",
+    "native_title": "或⋯⋯，或⋯⋯",
     "level": {"framework": "hsk3", "value": "8", "rank": 8},
     "summary": {
       "vi": "Cấu trúc 或⋯⋯，或⋯⋯ dùng để liệt kê hai hoặc nhiều khả năng, lựa chọn hoặc tình huống thay thế trong cùng một câu.",
       "en": "The pattern 或⋯⋯，或⋯⋯ lists two or more alternatives, choices, or possible situations within one sentence."
     },
     "sub": {"vi": "lựa chọn song song", "en": "parallel alternatives"},
-    "native_title_pinyin": ["huò", "", "", "", "", "huò", "", ""]
+    "native_title_pinyin": ["huò", "", "", "", "huò", "", ""]
   },
   "when_to_use": [
     {

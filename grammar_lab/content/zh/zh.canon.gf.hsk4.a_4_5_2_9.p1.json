@@ -15,14 +15,14 @@
   "source_anchors": {"status": "unanchored", "items": []},
   "header": {
     "title": {"vi": "Câu phức: 哪怕 ⋯⋯ ，也/还 ⋯⋯", "en": "Complex sentences: 哪怕 ⋯⋯ ，也/还 ⋯⋯"},
-    "native_title": "哪怕⋯⋯ ，也/还⋯⋯",
+    "native_title": "哪怕⋯⋯，也/还⋯⋯",
     "level": {"framework": "hsk3", "value": "4", "rank": 4},
     "summary": {
       "vi": "Mẫu câu 哪怕……也/还…… dùng để nhấn mạnh rằng kết quả ở vế sau vẫn giữ nguyên, bất kể điều kiện ở vế trước có cực đoan đến đâu.",
       "en": "The pattern 哪怕……也/还…… stresses that the result in the second clause stays the same no matter how extreme the condition in the first clause is."
     },
     "sub": {"vi": "nhượng bộ cực đoan", "en": "extreme concession"},
-    "native_title_pinyin": ["nǎ", "pà", "", "", "", "", "yě", "", "hái", "", ""]
+    "native_title_pinyin": ["nǎ", "pà", "", "", "", "yě", "", "hái", "", ""]
   },
   "when_to_use": [
     {

@@ -15,14 +15,14 @@
   "source_anchors": {"status": "unanchored", "items": []},
   "header": {
     "title": {"vi": "Câu phức: 别管⋯⋯ ，都⋯⋯", "en": "Complex sentences: 别管⋯⋯ ，都⋯⋯"},
-    "native_title": "别管⋯⋯ ，都⋯⋯",
+    "native_title": "别管⋯⋯，都⋯⋯",
     "level": {"framework": "hsk3", "value": "8", "rank": 8},
     "summary": {
       "vi": "Mẫu câu phức 别管⋯⋯，都⋯⋯ dùng để nói rằng dù cho tình huống nào xảy ra, kết quả ở vế sau vẫn không thay đổi.",
       "en": "The complex pattern 别管⋯⋯，都⋯⋯ states that no matter what situation occurs, the result in the second clause stays the same."
     },
     "sub": {"vi": "bất kể… đều…", "en": "no matter… still…"},
-    "native_title_pinyin": ["bié", "guǎn", "", "", "", "", "dōu", "", ""]
+    "native_title_pinyin": ["bié", "guǎn", "", "", "", "dōu", "", ""]
   },
   "when_to_use": [
     {

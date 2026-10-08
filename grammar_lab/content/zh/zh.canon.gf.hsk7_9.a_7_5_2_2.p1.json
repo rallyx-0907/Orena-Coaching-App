@@ -15,14 +15,14 @@
   "source_anchors": {"status": "unanchored", "items": []},
   "header": {
     "title": {"vi": "Câu phức: ⋯⋯ ，此后⋯⋯", "en": "Complex sentences: ⋯⋯ ，此后⋯⋯"},
-    "native_title": "⋯⋯ ，此后⋯⋯",
+    "native_title": "⋯⋯，此后⋯⋯",
     "level": {"framework": "hsk3", "value": "8", "rank": 8},
     "summary": {
       "vi": "Dùng 「此后」 sau một mệnh đề để nối sang một sự việc xảy ra sau đó, nghĩa là \"sau đó, kể từ đó\".",
       "en": "Use 「此后」 after one clause to link to what happened next, meaning \"after that, from then on\"."
     },
     "sub": {"vi": "nối sự việc sau đó", "en": "linking what follows"},
-    "native_title_pinyin": ["", "", "", "", "cǐ", "hòu", "", ""]
+    "native_title_pinyin": ["", "", "", "cǐ", "hòu", "", ""]
   },
   "when_to_use": [
     {
