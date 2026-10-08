@@ -62,6 +62,25 @@ A disposable PostgreSQL 17 at `20260908_0005` with 2 users, 2 legacy Reading ses
 
 Step times on real data come from the rehearsal of :8000's backup, not from this.
 
+## 4b. Rehearsal of :8000 (2026-10-08, for human review; nothing applied to :8000)
+
+- Release candidate: `codex/work` `328e49ef6cc3e8f2c2e694c3e0d20fcd441d746a`, rehearsed from a `git archive` of that
+  commit. Chain digest `65044f6e470807106a5a892461c56342cdf8717ddbe2fc04203b5bbf85883ea3`, head `20261007_0029`.
+- Backup (read-only, `product_backup.ps1`): database `becoming`, cluster `7672581591402848290`, taken
+  2026-10-08T01:17:40Z; `database.dump` 115,913 bytes, SHA-256 `b1b2b6c9...398bedf`; `files.tar.gz` (volume
+  `ai-writing-coach-data`) 66,835 bytes, 32 entries. Kept outside the repository under
+  `%LOCALAPPDATA%\orena-productackups61008T011737Z-ai-writing-coach-postgres-1\` with `rehearsal.json`.
+- **:8000 is at `20260828_0004`, not 0005**: the chain is **21 steps** (0005 ... 0029).
+- Rows before (non-empty tables): users 5, user_language_profiles 5, essays 25, essay_revisions 25, writing_errors 89,
+  saved_words 5, grammar_progress 2, reading_sessions 14, reading_attempts 1, audit_logs 22, plans 2,
+  plan_entitlements 18.
+- Result: `REHEARSAL=PASS`. Restore reproduced the backup (19 tables, revision 0004); 21 steps, 6.1 s in total, the
+  longest 0.37 s (0023); every backed-up row kept; 38 new tables; legacy Reading archive 14 sessions / 1 attempt with
+  4 freeze triggers; files archive reads end to end. The disposable PostgreSQL and its network were removed.
+- For the real apply (D-144 6-7): the pack requires a passed rehearsal of **the same dump**, so the final production
+  backup is rehearsed the same way (minutes) before `apply`; and the chain digest above must equal the one computed
+  on the merged `main` SHA (`python scripts/product_migration_pack.py digest`), else rehearse again.
+
 ## 5. Revisions that need their own attention (D-143 3)
 
 | Rev | Why | What the reviewer checks in the rehearsal report |
@@ -70,6 +89,7 @@ Step times on real data come from the rehearsal of :8000's backup, not from this
 | 0016 adaptive reading | Non-additive. Renames the legacy tables and freezes them; old code writing them fails, so code and schema ship as one unit. | `legacy_reading.sessions/attempts` equal the backup's `reading_sessions/attempts`; `freeze_triggers` > 0; the canonical `reading_attempts` is new and empty. |
 | 0029 practice session id | Approved for :8021 only (D-142). Adds a nullable column and an index on `speaking_attempts`. | Step time against the real `speaking_attempts` size (the index build holds its lock for that long); no backfill. |
 | 0018 account settings | Adds 4 columns to `users`, the hottest table. | Step time; with writes stopped for the window there is no contention. |
+| 0005 account work backbone | :8000 is still at 0004, so this backbone revision is applied too (flag stays off, D-143 4). | Its tables appear empty; step time. |
 
 ## 6. The human's procedure for :8000 (none of it is run by a lane)
 

@@ -20,6 +20,13 @@ The human decided B1-B5; sections below are the analysis they were decided on an
   synthetic evidence only; waiting for a :8000 backup taken by the human, its rehearsal, and the human's review.
 - **First release:** `ORENA_ACCOUNT_BACKBONE=off`, :8000 invitation-only. B3/B4 do not block the controlled trial;
   they block a public release.
+- **Release path (D-144):** candidate on `codex/work` -> restored-copy rehearsal -> human review -> PR, CI green ->
+  `main` -> image from the exact `main` SHA -> final backup, rehearsal of it, authorized apply on :8000 -> smoke.
+- **Rehearsal of :8000 done 2026-10-08 (PASS, evidence in `PRODUCTION_MIGRATION_PACK.md` 4b):** :8000 is at
+  `20260828_0004` (not 0005 as section 1 assumed), so the chain is 21 revisions.
+- **Observed on :8000 (read only):** its web container runs code bind-mounted from the `...-claudecode` worktree
+  (`app.py`, `static/`, `templates/`, `writing_coach/` ...) on image `ai-writing-coach:local`. D-144 replaces this
+  with an image built from the exact `main` SHA, with no source mounts.
 - **Runtime policy:** no new persistent runtime; :8021 dev/QA, :8000 product-like acceptance, rehearsal disposable.
 - **Correction (2026-10-08 inventory):** the Admin console already exists in the new UI (`#/admin/*`, `screens/admin/*`,
   on `Orena Admin.dc.html`); sections 4 and 7 saying it is old-UI only are stale. Old `#/admin?id=<section>` links need a
