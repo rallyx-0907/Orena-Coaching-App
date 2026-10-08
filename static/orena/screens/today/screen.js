@@ -120,26 +120,30 @@ export default async function mountToday(element, ctx) {
     </div>`;
   }
 
-  function progressMarkup() {
+  // The streak card (the design's side column: streak over the level card). With no goal card and no level card to
+  // stand beside (D-103.4, N-21) it is not a full-width row: on a desk it sits in the Recommended row's right column
+  // under the smaller picks, where the design keeps it in the 1fr column; with no recommendations it keeps that width.
+  function streakMarkup() {
     if (!streak.known) return '';
-    return html`<div class="s-today-progress s-today-progress--solo">
-      <div class="s-today-side">
-        <div class="s-today-streak">
-          <div class="s-today-streak-head">
-            <span class="s-today-streak-icon">${raw(icon('flame', { size: 22 }))}</span>
-            <span class="s-today-streak-text">${streak.before}<b class="s-today-streak-n">${streak.n}</b>${streak.after}</span>
-          </div>
-          <div class="s-today-streak-days">
-            ${streak.days.map(
-              (day) => html`<div class="s-today-day">
-                <span class="${['s-today-day-dot', day.done && 's-today-day-dot--done', day.today && 's-today-day-dot--today', day.future && 's-today-day-dot--future'].filter(Boolean).join(' ')}"${day.today ? raw(' aria-current="date"') : ''}>${day.done ? raw(icon('check', { size: 12 })) : ''}</span>
-                <span class="s-today-day-letter">${day.letter}</span>
-              </div>`,
-            )}
-          </div>
-        </div>
+    return html`<div class="s-today-streak">
+      <div class="s-today-streak-head">
+        <span class="s-today-streak-icon">${raw(icon('flame', { size: 22 }))}</span>
+        <span class="s-today-streak-text">${streak.before}<b class="s-today-streak-n">${streak.n}</b>${streak.after}</span>
+      </div>
+      <div class="s-today-streak-days">
+        ${streak.days.map(
+          (day) => html`<div class="s-today-day">
+            <span class="${['s-today-day-dot', day.done && 's-today-day-dot--done', day.today && 's-today-day-dot--today', day.future && 's-today-day-dot--future'].filter(Boolean).join(' ')}"${day.today ? raw(' aria-current="date"') : ''}>${day.done ? raw(icon('check', { size: 12 })) : ''}</span>
+            <span class="s-today-day-letter">${day.letter}</span>
+          </div>`,
+        )}
       </div>
     </div>`;
+  }
+
+  function progressMarkup() {
+    if (pool.length || !streak.known) return '';
+    return html`<div class="s-today-progress"><div></div><div class="s-today-side">${streakMarkup()}</div></div>`;
   }
 
   function recommendedMarkup() {
@@ -163,6 +167,7 @@ export default async function mountToday(element, ctx) {
           </span>
           <span class="s-today-hero__cta">${t(hero.source === 'continue' ? 'continueAction' : 'startAction')} ${raw(icon('arrow-right', { size: 17 }))}</span>
         </button>
+        <div class="s-today-side">
         <div class="s-today-rest">
           ${rest.map(
             (item) => html`<button type="button" class="s-today-rest-card" data-go="${goAttr(item)}">
@@ -171,6 +176,8 @@ export default async function mountToday(element, ctx) {
               <span class="s-today-rest-card__meta">${[item.kind, item.durationLabel].filter(Boolean).join(' · ')}</span>
             </button>`,
           )}
+        </div>
+        ${streakMarkup()}
         </div>
       </div>
     </div>`;

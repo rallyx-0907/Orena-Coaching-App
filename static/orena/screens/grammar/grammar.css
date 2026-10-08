@@ -705,22 +705,27 @@
   background: var(--surface);
   box-shadow: var(--sh1);
 }
-:root[data-theme='light'] .s-gl__views {
+:root:not([data-theme='dark']) .s-gl__views {
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--border2);
 }
-:root[data-theme='light'] .s-gl__view[aria-pressed='true'] {
+:root:not([data-theme='dark']) .s-gl__view[aria-pressed='true'] {
   background: var(--accent-soft);
   color: var(--accent);
   box-shadow: none;
 }
-:root[data-theme='light'] .s-gl__ring:not(.s-gl__ring--done)::before {
+:root:not([data-theme='dark']) .s-gl__ring:not(.s-gl__ring--done)::before {
   background: var(--border2);
 }
-:root[data-theme='light'] .s-gl__tag {
+:root:not([data-theme='dark']) .s-gl__tag {
   color: color-mix(in oklch, var(--hue), black 40%);
   background: color-mix(in srgb, var(--hue) 18%, transparent);
 }
-:root[data-theme='light'] .s-gl__levelN {
+:root:not([data-theme='dark']) .s-gl__level:not([aria-pressed='true']) .s-gl__levelN {
   background: var(--surface3);
+}
+/* Dark: the design's hue as small text on its own 15% wash falls under AA for the violet and rose hues (3.6 and
+   4.3:1, design review 2026-10-08); lightened by the smallest step that clears 4.5:1 on every hue. */
+:root[data-theme='dark'] .s-gl__tag {
+  color: color-mix(in oklch, var(--hue), white 30%);
 }

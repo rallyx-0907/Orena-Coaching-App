@@ -67,9 +67,6 @@
   align-items: stretch;
 }
 
-.s-today-progress--solo {
-  grid-template-columns: minmax(0, 1fr);
-}
 
 .s-today-goal {
   border-radius: 24px;

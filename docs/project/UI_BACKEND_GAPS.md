@@ -221,6 +221,17 @@ backend at all:
   A real daily goal, per-skill percent, cross-activity streak and level/XP
   system are each a product-and-schema decision (Architecture holds §7), not
   something this surface can measure.
+  **Update 2026-10-08 (human: "phần today của thiết kế có today's goal mà trên UI chưa có, card streak bị kéo dài
+  cả màn trông thô"):** the streak is now real (`GET /api/learner-activity`, D4 I14) and drawn; the goal card and
+  the level card still are not, so the streak stood alone as a full-width row under Recommended. Recomposed: on a
+  desk the streak card sits in the Recommended row's right column under the smaller picks (the design keeps it in
+  the 1fr side column); on a phone it stacks after them; with no recommendations it keeps the side column's width.
+  **Still open (human decision, then backend):** the "Today's goal" card. It needs (1) a definition of the daily
+  goal - a learner-set target (new persisted learner data, §7 hold) or a fixed plan such as "one activity in each
+  of the counted skills"; (2) a per-skill "today" read. (2) is derivable without schema from the same records
+  `learner_activity.py` already reads (essays, speaking attempts, Reading attempts; Dictation, Shadowing,
+  vocabulary review and Grammar completion are `PENDING_SOURCES`), but it is a Python change that needs a :8021
+  restart, which only the human does. The level/XP card stays undrawn (no level/XP system).
 
 (This screen's own hit of the `copy/index.js` `fill()`-drops-zero bug - the
 streak count, skill percents and XP value - is consolidated into **N-34**.)
@@ -4316,7 +4327,9 @@ backend cannot yet serve:
     Outside the white category panel, topic cards and the empty block take `--surface` + `--sh1` instead of the
     frame's `--surface2`; in light only, the view toggle has a `--border2` edge and an accent-soft pressed state, the
     not-started ring track is `--border2`, the level count pill is `--surface3`, and tag text is its hue darkened 40%
-    (AA: 5.7-9.1:1 measured on each hue's wash). Dark keeps the frame's values.
+    (AA: 5.7-9.1:1 measured on each hue's wash). Dark keeps the frame's values, except tag text, which the design
+    review (2026-10-08) measured under AA on the violet and rose washes (3.6 and 4.3:1): lightened 30% toward white
+    (5.8-8.8:1). The selected level's count stays the design's white on the accent fill (5.5:1 light, 4.5:1 dark).
 
 ## Current Admin reconciliation — 2026-10-03
 
