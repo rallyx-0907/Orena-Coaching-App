@@ -62,9 +62,9 @@ jobs:
           PY
           )
           python -m grammar_lab.pipeline.cli export-package --lang en --ids "$EN_IDS" --out /tmp/grammar-en --set-version smoke.en --allow-dirty
-          python -m grammar_lab.pipeline.cli validate-package --path /tmp/grammar-en
+          python -m grammar_lab.pipeline.cli validate-package /tmp/grammar-en
           python -m grammar_lab.pipeline.cli export-package --lang zh --ids "$ZH_IDS" --out /tmp/grammar-zh --set-version smoke.zh --allow-dirty
-          python -m grammar_lab.pipeline.cli validate-package --path /tmp/grammar-zh
+          python -m grammar_lab.pipeline.cli validate-package /tmp/grammar-zh
 
       - name: Commit source metadata fix
         shell: bash
