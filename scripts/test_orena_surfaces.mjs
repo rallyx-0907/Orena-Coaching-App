@@ -25,7 +25,7 @@ assert.equal(
 );
 assert.ok(!committed.includes('\r\n'), 'static/orena/copy/surfaces.json uses LF line endings');
 assert.equal(committed.slice(-1), '\n', 'static/orena/copy/surfaces.json ends with a trailing newline');
-assert.equal(doc.contract_version, 5, 'surfaces.json carries the contract version');
+assert.equal(doc.contract_version, 6, 'surfaces.json carries the contract version');
 
 // Every §6.1 id, and only a §6.1 id - read from the contract text itself (docs/project/AGENT_CONTRACT.md
 // §6.1), the same block scripts/test_orena_agent.mjs reads.
