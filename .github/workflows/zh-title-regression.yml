@@ -12,13 +12,64 @@ on:
       - "grammar_lab/content/zh/**"
       - ".github/workflows/zh-title-regression.yml"
 
+permissions:
+  contents: write
+
 jobs:
   regression:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: codex/zh-export-title-normalization
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: python -m pip install -e "grammar_lab[dev]"
-      - run: python -m pytest -q grammar_lab/tests/test_zh_seed_native_titles.py
+
+      - name: Normalize source metadata and sync derived files
+        run: |
+          python grammar_lab/tools/normalize_zh_seed_titles.py
+          python -m grammar_lab.pipeline.cli import-canonical --lang zh
+          python -m grammar_lab.pipeline.cli sync-metadata
+
+      - name: Regression and deterministic validation
+        run: |
+          python -m pytest -q grammar_lab/tests/test_zh_seed_native_titles.py
+          python -m grammar_lab.pipeline.cli validate --lang zh
+          python -m grammar_lab.pipeline.cli coverage --lang zh
+
+      - name: Commit normalized source and derived metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            grammar_lab/inventory/seeds_zh.yaml \
+            grammar_lab/inventory/catalog_zh.yaml \
+            grammar_lab/content/zh \
+            grammar_lab/functions/functions.yaml \
+            grammar_lab/fixtures/ui
+          git diff --cached --stat
+          if ! git diff --cached --quiet; then
+            git commit -m "content(grammar): sync normalized zh native titles"
+          fi
+
+      - name: Smoke export complete ZH package
+        shell: bash
+        run: |
+          set -euo pipefail
+          IDS=$(python -c "from grammar_lab.pipeline.seed import load_catalog; from grammar_lab.pipeline.validate import LAB_ROOT; print(','.join(x['id'] for x in load_catalog('zh', LAB_ROOT)))")
+          python -m grammar_lab.pipeline.cli export-package \
+            --lang zh \
+            --ids "$IDS" \
+            --out /tmp/zh-complete \
+            --set-version "smoke.zh.complete" \
+            --zip
+          python -m grammar_lab.pipeline.cli validate-package --path /tmp/zh-complete
+
+      - name: Push normalized metadata
+        shell: bash
+        run: git push origin HEAD:codex/zh-export-title-normalization
