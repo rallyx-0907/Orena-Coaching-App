@@ -9,7 +9,6 @@ on:
       - "grammar_lab/tools/normalize_zh_seed_titles.py"
       - "grammar_lab/inventory/seeds_zh.yaml"
       - "grammar_lab/inventory/catalog_zh.yaml"
-      - "grammar_lab/content/zh/**"
       - ".github/workflows/zh-title-regression.yml"
 
 permissions:
@@ -28,11 +27,10 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -e "grammar_lab[dev]"
 
-      - name: Normalize source metadata and sync derived files
+      - name: Normalize source metadata and rebuild catalogue
         run: |
           python grammar_lab/tools/normalize_zh_seed_titles.py
           python -m grammar_lab.pipeline.cli import-canonical --lang zh
-          python -m grammar_lab.pipeline.cli sync-metadata
 
       - name: Regression and deterministic validation
         run: |
@@ -40,21 +38,16 @@ jobs:
           python -m grammar_lab.pipeline.cli validate --lang zh
           python -m grammar_lab.pipeline.cli coverage --lang zh
 
-      - name: Commit normalized source and derived metadata
+      - name: Commit normalized source and catalogue
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            grammar_lab/inventory/seeds_zh.yaml \
-            grammar_lab/inventory/catalog_zh.yaml \
-            grammar_lab/content/zh \
-            grammar_lab/functions/functions.yaml \
-            grammar_lab/fixtures/ui
+          git add grammar_lab/inventory/seeds_zh.yaml grammar_lab/inventory/catalog_zh.yaml
           git diff --cached --stat
           if ! git diff --cached --quiet; then
-            git commit -m "content(grammar): sync normalized zh native titles"
+            git commit -m "content(grammar): normalize zh native titles"
           fi
 
       - name: Smoke export complete ZH package
