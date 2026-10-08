@@ -299,6 +299,25 @@ def login_page(request: Request):
     return RedirectResponse(f"{LEARNER_UI_ROOT}#/welcome", status_code=302)
 
 
+SIGN_IN_HOST_MOVED = "canonical"
+
+
+def _move_to_sign_in_host(request: Request) -> RedirectResponse | None:
+    """Google returns to GOOGLE_REDIRECT_URI, and the OAuth state lives in the session cookie of the host the
+    sign-in started on. Started anywhere else (http://localhost:8000 on the server itself), the callback finds no
+    state. So the start moves to the redirect URI's host first, with nothing written to the session. It moves at
+    most once: a proxy that rewrites Host would otherwise loop, and then the start proceeds as before."""
+    target = urlparse(GOOGLE_REDIRECT_URI)
+    here = str(request.headers.get("host") or "").casefold()
+    if not target.netloc or not here or here == target.netloc.casefold():
+        return None
+    if request.query_params.get(SIGN_IN_HOST_MOVED) is not None:
+        return None
+    query = [(key, value) for key, value in request.query_params.multi_items() if key != SIGN_IN_HOST_MOVED]
+    query.append((SIGN_IN_HOST_MOVED, "1"))
+    return RedirectResponse(f"{target.scheme}://{target.netloc}/auth/google?{urlencode(query)}", status_code=302)
+
+
 @router.get("/auth/google")
 def auth_google(
     request: Request,
@@ -308,6 +327,9 @@ def auth_google(
 ):
     if not AUTH_ENABLED:
         raise HTTPException(503, "Google authentication is not configured.")
+    moved = _move_to_sign_in_host(request)
+    if moved is not None:
+        return moved
     # Where the new UI wants to land after a successful sign-in. Validated here and stored in the signed
     # session, never read back from the callback's query, so a forged callback cannot choose it.
     if next:
