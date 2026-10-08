@@ -30,8 +30,8 @@ jobs:
           from pathlib import Path
           path = Path('grammar_lab/inventory/seeds_zh.yaml')
           text = path.read_text(encoding='utf-8')
-          old = 'native_title: \\"连动句“去/来 + 动词”\\"'
-          new = 'native_title: \\"连动句“去/来+动词”\\"'
+          old = 'native_title: "连动句“去/来 + 动词”"'
+          new = 'native_title: "连动句“去/来+动词”"'
           if old not in text:
               raise SystemExit('expected serial-verb seed title not found')
           path.write_text(text.replace(old, new, 1), encoding='utf-8')
