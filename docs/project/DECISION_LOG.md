@@ -4482,3 +4482,22 @@ Topology: `codex/work` (development + QA) -> release candidate -> restored-copy 
    only for developer diagnostics, test fixtures, and work not yet reviewed and merged to `main`.
 5. **:8000 env (to apply after review, not before):** `APP_ENV=staging`, `AGENT_ENABLED=true`,
    `AGENT_VOICE_ENABLED=false`. No schema change.
+
+## D-147 - No violet outlines; an edge is a thin strip of light (overrides the design)
+
+2026-10-08, explicit human rule, repeated after earlier reviews (D-133 LEX-016 "no default purple-outline control";
+`docs/UX_REVIEW_RULES.md` "viền bo tím/filled card kiểu SaaS không mặc nhiên hợp lệ"). Human: "màu tím đây là thứ đã
+nhắn bao nhiêu lần là luật không được dùng … nếu cần border thì nó phải có dạng như 1 dải sáng mảnh. Dù UI design có
+thì vẫn phải loại trừ lỗi này ra."
+
+1. **No violet/purple border, outline or ring** on any learner or Admin control or card - at rest, on hover, when
+   selected or active. This holds **even where the Claude Design frame draws one** (`border:1px solid var(--accent)`,
+   `var(--tint2)`, a hue-coloured 1.5px outline, …); it is a recorded exception to D-067's "the design is the
+   standard" and to the fidelity gate, not a deviation to report.
+2. **An edge, where one is needed at all, is a thin strip of light:** `--edge-light` in `kit/tokens.css` (a 1px top
+   highlight plus a near-invisible 1px inset, per theme), never a grey or coloured outline and never a thick border.
+3. **State without outlines:** hover is elevation (`--sh2`); selection is fill and ink (e.g. `--accent-soft` with the
+   text colour); a selected category is a deeper wash of its own hue.
+4. **Not affected:** the keyboard focus ring (accessibility); progress rings and tracks, which are drawings, not edges.
+5. First applied: Grammar Library (level tabs, category cards, chips, back, sort, clear, view toggle). Other surfaces
+   are brought to this rule as they are touched; a reviewer scores a violet outline as P1.

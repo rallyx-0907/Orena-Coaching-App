@@ -63,5 +63,5 @@ MATRIX (which of desktop/phone × en/vi/zh × light/dark were checked, with pass
 TESTS (local execution: command → result)
 ```
 
-A measured mismatch the user can see is P1 unless it is recorded as a human decision. An invented element is P1. Wrong
+Standing human rule D-147 overrides the design: any violet/purple border, outline or ring (rest, hover, selected), a thick or grey outline, or a hover that adds a border is P1 even when the frame draws it; an edge must be the thin light strip `--edge-light`, hover is elevation, selection is fill and ink (the keyboard focus ring is exempt). A measured mismatch the user can see is P1 unless it is recorded as a human decision. An invented element is P1. Wrong
 or fabricated learner data is P0. Once nothing at P0/P1 remains, APPROVE and stop.

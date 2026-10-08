@@ -250,3 +250,14 @@
   --voice-glow: rgba(111, 214, 255, .12);
   --voice-glow-strong: rgba(111, 214, 255, .4);
 }
+
+/* Edges (human rule, 2026-10-08, D-147): an edge, where one is needed at all, is a thin strip of light, never a
+   coloured outline. No violet/purple border or ring on any control or card, at rest, on hover or when selected,
+   even where the design draws one; selection is carried by fill and ink, hover by elevation. Keyboard focus keeps
+   its own visible ring (accessibility), which is not an edge. */
+:root[data-theme='dark'] {
+  --edge-light: inset 0 1px 0 rgba(255, 255, 255, .10), inset 0 0 0 1px rgba(255, 255, 255, .05);
+}
+:root:not([data-theme='dark']) {
+  --edge-light: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(23, 23, 50, .05);
+}
