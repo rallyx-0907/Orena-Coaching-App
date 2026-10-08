@@ -262,3 +262,32 @@ removed merely because current code conflicts with them.
 - **Current replacement:** sign-in is the learner UI's Welcome and Account steps; `/login` redirects to `/`
   (`tests/test_learner_ui_sign_in.py`, `tests/test_orena_routes.py`).
 - **What must not happen:** a separate login page or a script route serving account code outside the learner UI.
+
+## Non-CI scripts and assets of the retired UI (cleanup after the cutover)
+
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-143, human decision 2026-10-08: no script may keep importing
+  deleted legacy files; behaviour that still belongs to the product is ported, the rest is retired).
+- **Ported** into `scripts/test_orena_vocabulary_contracts.mjs` (in CI), against the backend and the learner
+  UI modules that carry the behaviour now: `test_orena_deck_domain` (a Deck is Vocabulary's, a Collection My
+  Library's; no schedule or colour in a deck), `test_orena_review_states` (review answers given offline wait in
+  order, a refusal is dropped; `screens/review` uses `product/review-queue.js`), `test_orena_word_clips` (context
+  clips are real media; nothing synthesized; `screens/word` draws an honest empty state).
+- **Retired, with the surface they tested:** `test_orena_word_add`, `test_orena_word_deep`,
+  `test_orena_vocabulary_theme_tokens` (old Vocabulary room; successors `test_orena_screen_word`,
+  `test_orena_screen_library`, `test_orena_kit`); `test_speaking_evaluation` (`capabilities/speech-comparison.js`,
+  no current caller); `test_r13_admin_capability_matrix`, `test_r17_admin_retention`, `test_r17_readiness_summary`,
+  `r13_release_matrix`, `r14_release_matrix` (ran `static/admin.js`; the R13/R14 matrix reports stay as history,
+  `tests/test_governance_contract.py`); `test_r15_account_state`, `test_r16_contextual_dictionary`,
+  `test_r17_readiness_contract`, `test_product_activity_contract` (old UI halves; their backend contracts are
+  covered by pytest: `test_product_account_state.py`, `test_media_interaction.py`, `test_r17_admin_routes.py`,
+  `test_admin_authorization_matrix.py`).
+- **Also retired (they read paths tombstoned earlier):** `test_feedback_category_mapping.mjs`,
+  `becoming_release_gate.py`, `audit_grammar_learning_system.py` (`static/becoming`, `templates/becoming`);
+  `verify_writing_review_browser.mjs`, `verify_writing_workspace_browser.mjs` (drove the old UI's `#/expression`;
+  successors `test_orena_screen_writing*.mjs`, `test_orena_writing_workspace.mjs`).
+- **Kept and put in CI:** `test_orena_admin_control.mjs` (it already tested the learner UI's Admin).
+- **Assets removed:** `static/orena/assets/explore.png`, `exploring-world.png` (no reference anywhere) and
+  `master.png` (an unreferenced byte-identical copy of the canonical
+  `assets/brand/orena/references/00_MASTER_REFERENCE_APPROVED.png`, which is unchanged).
+- **What must not happen:** a script or gate that reads a deleted legacy path; a second copy of brand
+  artwork under `static/`.

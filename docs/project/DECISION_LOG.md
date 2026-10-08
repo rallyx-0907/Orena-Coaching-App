@@ -4426,3 +4426,23 @@ deployment artifact around them.
    acceptance; migration rehearsal uses a disposable restored-copy environment that is removed afterwards.
 6. **Deployment artifact.** One UI, one schema chain, one release artifact, one deploy path. No agent opens a new port
    or runtime, and none keeps two product paths in parallel.
+
+## D-144 - The release path to :8000 (completes D-143)
+
+2026-10-08, explicit human instruction.
+
+1. `codex/work` is the development and release-candidate branch; it is never deployed directly to :8000.
+2. Before the merge it is allowed and desired to take a read-only backup of :8000, restore it into a disposable
+   PostgreSQL environment, rehearse the full migration chain there with the exact release-candidate tree, and return
+   the evidence for human review. Migrations are not applied to :8000 at this stage.
+3. After the human approves the candidate and the rehearsal evidence: PR `codex/work -> main`, CI green, merge.
+4. The release artifact (image) is built from the exact resulting `main` SHA.
+5. The migration-pack chain digest and schema chain used in the rehearsal are checked against that SHA; if the merge
+   changed anything migration- or runtime-relevant, the rehearsal is repeated before any production apply.
+6. Only then: final production backup, the authorized migration chain applied to :8000, :8000 rebuilt/deployed from the
+   exact `main` release image, readiness and smoke verification.
+7. :8021 stays dev/QA only; it is never copied or moved to :8000. No further persistent Orena runtime; the rehearsal is
+   disposable. The same release artifact is later deployed to the server.
+
+Topology: `codex/work` (development + QA) -> release candidate -> restored-copy rehearsal -> human review -> CI / PR ->
+`main` -> exact SHA -> immutable image -> :8000 product-like acceptance -> the same artifact on the server.

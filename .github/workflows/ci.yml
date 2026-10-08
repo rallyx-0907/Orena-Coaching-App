@@ -107,6 +107,8 @@ jobs:
           node scripts/test_orena_shell.mjs
           node scripts/test_orena_session.mjs
           node scripts/test_orena_former_addresses.mjs
+          node scripts/test_orena_vocabulary_contracts.mjs
+          node scripts/test_orena_admin_control.mjs
           node scripts/test_orena_copy.mjs
           node scripts/test_orena_legal.mjs
           node scripts/test_orena_copy_engine.mjs
