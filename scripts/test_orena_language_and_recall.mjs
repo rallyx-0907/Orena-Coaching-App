@@ -1,250 +1,34 @@
-/* My Language and Recall: the language a learner kept, and meeting it again.
+/* My Language and Recall: one store, one scheduler.
 
-   Two rooms, one contract. My Language is where saved language lives; Recall
-   is the review loop over the part of it that is due. Neither owns a store of
-   its own - both read pages of `api.libraryVocabulary(...)` and grade through
-   `api.reviewLibraryVocabulary()`, which is also the scheduler. A second
-   vocabulary database or a second review algorithm is the failure these
-   assertions exist to prevent.
-
-   What else they guard: that the room opens on the learner's own language
-   rather than a count of it, that a saved word keeps the sentence it was met
-   in, that Chinese is a first-class citizen rather than English with a note,
-   and that nothing here invents a score, a streak or a mastery figure. */
+   The learner UI's Review screen reads pages of `api.libraryVocabulary(...)` and grades through
+   `api.reviewLibraryVocabulary()`, which is also the scheduler. A second vocabulary database or a
+   second review algorithm is the failure these assertions exist to prevent. The grades, the cloze,
+   the offline queue and the session tally are test_orena_screen_review.mjs; this keeps the contract
+   the screen stands on and the rule that it persists nothing of its own, and that nothing here
+   invents a score, a streak or a mastery figure. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { copy } from '../static/orena/ui/copy.js';
-import { renderVocabularyRow, vocabularyStatus } from '../static/orena/ui/vocabulary-experience.js';
-import { recallShape, gradable, blankContext } from '../static/orena/product/recall.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
-const expression = read('static/orena/ui/expression.js');
-const experience = read('static/orena/ui/vocabulary-experience.js');
-const rooms = read('static/orena/rooms.css');
 const api = read('static/orena/infrastructure/api.js');
+const review = read('static/orena/screens/review/screen.js');
 
 /* --- One store, one scheduler ------------------------------------------- */
-/* Both rooms read the same saved-language contract and grade through the same
-   endpoint. Nothing here keeps its own copy of a learner's vocabulary. */
 for (const contract of ['libraryVocabulary', 'saveLibraryVocabulary', 'reviewLibraryVocabulary', 'deleteLibraryVocabulary'])
   assert.match(api, new RegExp(`${contract}:`), `${contract} is the shared contract`);
-/* A page of the saved language, asked for as a page. Reading all of it was
-   what made Vocabulary, Tiến độ and Hồ sơ cost more with every saved word. */
-assert.match(expression, /api\.libraryVocabulary\(\{[^}]*limit:/, 'My Language reads a page of the saved language');
-assert.doesNotMatch(expression, /api\.libraryVocabulary\(\s*\)/, 'and never the whole of it');
-assert.match(expression, /status: 'due', order: 'due'/, 'and asks the server for what is due');
-const recallRoom = expression.slice(
-  expression.indexOf('async function renderRecallLanguage('),
-  expression.indexOf('export async function renderLanguage('),
-);
-assert.match(recallRoom, /api\.libraryVocabulary\(\{ status: 'due', order: 'due'/, 'and Recall asks for the due queue');
-assert.match(recallRoom, /const answer = button\.dataset\.grade;/,
-  'the grade is the one the learner pressed');
-/* Every grade goes through one place, whether the learner pressed it on a
-   flashcard or answered one of the four task cards - and that place is the
-   scheduler that already exists. With no network the answer waits on the
-   device; it is never invented and never lost. */
-assert.match(recallRoom, /const grade = \(\) => record\(current\.word, answer\);/,
-  'which grades through the one place every grade goes');
-assert.match(recallRoom, /await ctx\.mutate\(\(\) => api\.reviewLibraryVocabulary\(word, grade\)\);/,
-  'and that place is the scheduler that already exists');
-assert.match(recallRoom, /waiting = withWaiting\(waiting, word, grade, new Date\(\)\.toISOString\(\)\);/,
-  'an answer with no network waits rather than being lost');
-/* The end of a sitting only reports what the scheduler actually accepted: the
-   tally and the forgotten list are written after the grade is saved, inside
-   the refresh, never beside the button. */
-assert.match(recallRoom, /if \(answer in tally\) tally\[answer\] \+= 1;/,
-  'the summary counts a grade only once it is saved');
-assert.match(recallRoom, /class="review-done"/, 'and the sitting ends on the summary the design draws');
-/* Recall keeps no store of its own. Nothing is persisted anywhere, and the
-   one in-memory map it holds is `heard` - what the server answered about a
-   word's pronunciation, so the room asks once per word instead of once per
-   paint. It holds no word, no meaning and no review state, and it is named
-   here so a second map cannot arrive unnoticed. */
-assert.doesNotMatch(recallRoom, /localStorage|indexedDB|sessionStorage/, 'Recall persists nothing');
-const maps = recallRoom.match(/const (\w+) = new Map\(\)/g) || [];
-assert.deepEqual(maps, ['const heard = new Map()'], 'the only map is the audio answers');
-/* No second algorithm: what to ask and whether an attempt counts are decided
-   in `product/recall.js`, not re-derived in the room. */
-assert.match(recallRoom, /recallShape\(current, keptNow\)/, 'the question comes from the shared rule');
-assert.equal(gradable(false), false, 'seeing a card is not recall');
-assert.equal(gradable(true), true, 'committing to an answer is');
+/* A page of the saved language is asked for as a page, never the whole of it. */
+const reads = review.match(/api\.libraryVocabulary\([^)]*\)/g) || [];
+assert.ok(reads.length >= 3, 'the review screen reads the saved language');
+for (const call of reads) assert.match(call, /limit:/, `${call} asks for a page`);
+assert.match(review, /api\.libraryVocabulary\(\{ status: 'due', order: 'due'/, 'Review asks the server for what is due');
+/* Every grade goes through the scheduler that already exists, queued or live. */
+assert.match(review, /api\.reviewLibraryVocabulary\(word, grade\)/, 'a grade goes to the scheduler');
+assert.match(review, /flushQueue\(sent, \(item\) => api\.reviewLibraryVocabulary\(item\.word, item\.grade\)\)/, 'an answer with no network waits and is sent again');
+/* Review keeps no store of its own for words, meanings or review state. */
+assert.doesNotMatch(review, /indexedDB|sessionStorage/, 'Review keeps no database of its own');
 
-/* --- The room is the shared catalogue (D-067, "Vocabulary library") -----
-   The filter chips, then a grid of collections - a cover with its progress,
-   the name and one line saying what the pack is. Nothing else: Vocabulary is
-   the catalogue a learner takes words from, and their own words live in Thư
-   viện của tôi (D-074). The two rows that used to sit under the grid were
-   kept only while the design had no screen for a learner's own set; it has
-   one now, so they are deleted rather than restyled (rule 44). */
-assert.doesNotMatch(expression, /vocabulary-summary-metrics/, 'the four metric tiles are gone');
-/* The library and the two helpers that draw its covers are read together:
-   they are one composition. */
-const overview = expression.slice(
-  expression.indexOf('const collectionCover = (collection) => {'),
-  expression.indexOf('const libraryView = () => {'),
-);
-assert.match(overview, /class="vocab-library"/, 'the room is the library');
-assert.doesNotMatch(overview, /class="vocab-home"/, 'the old home panel is gone, not restyled');
-assert.match(overview, /class="vocab-chips"/, 'with the chips the frame draws');
-assert.match(overview, /class="vocab-packs"/, 'and the grid of collections');
-/* The learner's own rows are gone, and so are the ways into them: the room
-   draws the catalogue, and Thư viện của tôi holds what they kept. */
-for (const removed of ['vocab-own-rows', 'vocab-own', 'data-vocabulary-manage', 'data-vocabulary-continue'])
-  assert.doesNotMatch(expression, new RegExp(removed), `${removed} belongs to Thư viện của tôi now`);
-/* An empty catalogue says so rather than drawing covers for packs that do not
-   exist. */
-assert.match(overview, /vocabularyLibraryEmpty/, 'an empty catalogue says it is empty');
-assert.match(recallRoom, /const landing = due[.]length/, 'and so does the Recall landing');
-/* A cover is generated from the collection itself - no artwork to keep in
-   step, and no placeholder pretending to be one. */
-assert.match(overview, /const collectionCover = /, 'the cover is generated');
-assert.match(overview, /--cover-hue/, 'with a hue the collection decides');
+/* --- Real numbers only: no invented score, streak or mastery ------------ */
+for (const invention of ['streak', 'combo', 'confetti', 'mastery'])
+  assert.doesNotMatch(review, new RegExp(`\\b${invention}\\b`, 'i'), `no ${invention}`);
 
-/* The review, as "Vocabulary review" draws it: the card is the screen. One way
-   back, one segment per card, the count, the card itself, and - only once it is
-   open - three grades, each printing what it will do to this card.
-
-   The scheduler takes all three now, so nothing on this screen is disabled and
-   nothing is drawn that cannot be pressed (the two dead buttons and GAP-019
-   went with the old panel). */
-assert.match(recallRoom, /class="vocab-review"/, 'the session is the card composition');
-assert.match(recallRoom, /class="vocab-review__rail"/, 'with the segmented rail the source draws');
-assert.match(recallRoom, /class="vocab-card" data-flip/, 'and the card the learner turns');
-assert.doesNotMatch(recallRoom, /class="review-session"/, 'the old panel is gone, not restyled');
-assert.doesNotMatch(recallRoom, /vocabGradeUnavailable|vocabGradeHard|vocabGradeEasy/,
-  'and so are the grades the scheduler could not take');
-assert.deepEqual(
-  (recallRoom.match(/grade\('(\w+)'/g) || []).map((call) => call.slice(7, -1)),
-  ['again', 'unsure', 'got_it'],
-  'three grades, in the source\'s order',
-);
-/* The interval under each grade comes from the card, which carries the
-   scheduler's own answer - never a number written on the button. */
-assert.match(recallRoom, /current\?\.schedule\?\.\[key\]/, 'each grade reads its own interval');
-assert.doesNotMatch(recallRoom, /'<1m'|'4d'/, 'no interval is written into the room');
-
-/* --- A saved word keeps where it was met -------------------------------- */
-assert.match(experience, /function sourceLine\(/, 'a row can say where its word came from');
-assert.match(experience, /source_encounters \|\| \[\]/, 'from the encounters the record already carries');
-assert.match(expression, /where = String\(item\.focus_note/, 'the title comes from the saved record');
-assert.match(expression, /\[\{ kind, fragment, where \}\]/, 'and travels with the fragment');
-const card = {
-  identity: { language: 'en', normalized: 'cloak' },
-  headword: 'cloak',
-  pronunciation: '/kləʊk/',
-  meanings: [{ language: 'vi', text: 'áo choàng' }],
-  source_encounters: [{ kind: 'reading', fragment: 'He wrapped his cloak around him.', where: 'The North Wind and the Sun' }],
-  saved: true,
-};
-const row = renderVocabularyRow({ ...copy.vi, supportLanguage: 'vi' }, card, { index: 0 });
-assert.ok(row.includes('cloak'), 'the word is there');
-assert.ok(row.includes('/kləʊk/'), 'with how it is said');
-assert.ok(row.includes('áo choàng'), 'and what it means, in the support language');
-assert.ok(row.includes('The North Wind and the Sun'), 'and the piece it came from');
-assert.ok(row.includes('He wrapped his cloak around him.'), 'and the sentence it was met in');
-assert.ok(row.includes('<q lang="en">'), 'the sentence is the learning language, because it is content');
-/* A word with no recorded encounter simply has no source line - nothing is
-   invented to fill the space. */
-const bare = renderVocabularyRow({ ...copy.vi, supportLanguage: 'vi' }, { ...card, source_encounters: [] }, { index: 0 });
-assert.ok(!bare.includes('vocabulary-row__source'), 'no encounter, no source line');
-
-/* --- Chinese is a first-class citizen ----------------------------------- */
-const hanzi = renderVocabularyRow(
-  { ...copy.vi, supportLanguage: 'vi' },
-  {
-    identity: { language: 'zh', normalized: '图书馆' },
-    headword: '图书馆',
-    pronunciation: 'túshūguǎn',
-    meanings: [{ language: 'vi', text: 'thư viện' }],
-    source_encounters: [],
-    saved: true,
-  },
-  { index: 0 },
-);
-assert.ok(hanzi.includes('lang="zh"'), 'the word is marked as Chinese');
-assert.ok(hanzi.includes('图书馆'), 'the whole lexical unit, not its characters');
-assert.ok(hanzi.includes('túshūguǎn'), 'with tone-marked pinyin');
-assert.ok(hanzi.includes('thư viện'), 'and the support-language meaning');
-
-/* --- Recall: what is waiting, one item, what happened ------------------- */
-assert.match(recallRoom, /stage = 'landing'/, 'a session starts by saying what is waiting');
-assert.match(recallRoom, /class="recall-landing"/, 'as its own step');
-assert.match(recallRoom, /data-recall-start/, 'with one way in');
-/* One item at a time, then what happened - and the item is the flashcard
-   unless the card was set one of the four task frames' questions instead. */
-assert.match(recallRoom, /stage === 'landing' \? landing : current \? taskShell \|\| card : done/,
-  'then one item at a time, then what happened');
-assert.match(recallRoom, /reviewed \+= 1/, 'what was reviewed is counted');
-assert.match(recallRoom, /class="review-done"/, 'and said at the end, as the design draws it');
-assert.match(recallRoom, /String\(r\.reviewFinished\)\.replace\('\{n\}', String\(reviewed\)\)/,
-  'as a real count');
-/* What comes back is the database's number, not one the room works out. */
-assert.match(recallRoom, /counts\.summary\?\.due_next_day/, 'and what returns tomorrow is counted by the server');
-/* Real numbers only. No score, no streak, no mastery invented for the end of
-   a session. */
-for (const invention of ['XP', 'streak', 'accuracy', 'combo', 'confetti', 'mastery'])
-  assert.doesNotMatch(recallRoom, new RegExp(`\b${invention}\b`, 'i'), `no ${invention}`);
-assert.doesNotMatch(recallRoom, /Math\.round\([^)]*\/[^)]*\) *\+ *'%'/, 'and no percentage computed here');
-/* The wall of vocabulary cards that used to sit under the session is gone:
-   browsing saved language is My Language's job, and it was the same list
-   twice. */
-assert.doesNotMatch(expression, /language-cabinet/, 'Recall does not also browse the collection');
-
-/* --- One item, and it does not give itself away ------------------------- */
-/* The sentence is the best scaffold retrieval has, so it is shown - with the
-   phrase withheld at every occurrence until the learner commits. */
-const gap = blankContext('He wrapped his cloak around him, and the cloak held.', 'cloak');
-assert.ok(gap, 'a sentence containing the word can be blanked');
-assert.equal(gap.segments.length, 3, 'at every occurrence, not just the first');
-assert.ok(!gap.segments.join('').includes('cloak'), 'and the word is not left in it');
-assert.equal(recallShape({ source_fragment: 'a sentence with cloak in it', word: 'cloak' }, null), 'in_context',
-  'a word met in a sentence comes back inside it');
-assert.equal(recallShape({ word: 'cloak' }, null), 'meaning', 'one met without a sentence comes back by meaning');
-assert.equal(recallShape({ word: 'cloak' }, { why: 'from_speaking' }), 'say', 'something said comes back by saying it');
-/* The grades exist only once the card is open - the source says so on the
-   closed card itself ("the grades appear once the card is open"). */
-assert.match(recallRoom, /revealed \? grades : `<p class="vocab-review__hint">/,
-  'the grades belong to the open card, and the closed one says so');
-assert.doesNotMatch(recallRoom, /data-reveal>/, 'there is no separate reveal button: the card turns');
-
-/* --- Where it came from, after the answer, not before ------------------- */
-assert.match(recallRoom, /const back = [\s\S]*recall-where/, 'the back of the card says where the word was met');
-assert.match(recallRoom, /\$\{revealed \? back : front\}/, 'and the back is only shown once the card is open');
-/* The card draws no way to question the word: the source draws none there, so
-   the control and its handler went together (rule 44). The shared explanation
-   is still reached from the Quick Sheet and the reader, where the source does
-   draw it - recorded in UI_BACKEND_GAPS.md. */
-assert.doesNotMatch(recallRoom, /data-word-explain/, 'no control the source does not draw');
-assert.doesNotMatch(recallRoom, /openUnderstanding\(/, 'and no handler left bound to nothing');
-
-/* --- Support language owns every word Orena says ------------------------ */
-for (const ui of ['en', 'zh', 'vi'])
-  for (const key of ['vocabularyTitle', 'vocabularyDueState', 'vocabularyWordCount', 'vocabularyContinueReview',
-    'recallTitle', 'recallTruth', 'again', 'gotIt', 'allDone', 'allDoneNote', 'noWords', 'noWordsNote']) {
-    assert.equal(typeof copy[ui][key], 'string', `${ui}.${key} exists`);
-    assert.ok(copy[ui][key].trim(), `${ui}.${key} is not empty`);
-  }
-for (const key of ['vocabularyTitle', 'recallTitle', 'gotIt'])
-  assert.equal(new Set([copy.en[key], copy.zh[key], copy.vi[key]]).size, 3,
-    `${key} reads differently in each supported language`);
-/* Self-report is self-report: the grade line says so, and does not claim to be
-   a test score or a mastery figure. */
-assert.ok(copy.en.recallTruth.toLowerCase().includes('not a test score'), 'the truth is stated');
-
-/* --- The phone gets a composition, not a tower of cards ----------------- */
-assert.match(rooms, /\.recall-landing \{/, 'the Recall landing has a shape of its own');
-assert.match(rooms, /\.vocab-card \{/, 'and the card has the source\'s measurements');
-assert.match(rooms, /inline-size: 420px/, 'four hundred and twenty wide');
-assert.match(rooms, /block-size: 560px/, 'five hundred and sixty tall');
-assert.match(rooms, /\.language-due \{/, 'and so does what is due in My Language');
-assert.match(rooms, /\.vocabulary-row__source \{[^}]*grid-column: 1 \/ -1/,
-  'the source takes its own line in the row rather than a column of chips');
-
-/* --- The status a saved word is in is the scheduler's, not a guess ------ */
-assert.equal(vocabularyStatus({ saved: true, due: true }), 'due');
-assert.equal(vocabularyStatus({ saved: true, review_stage: 3 }), 'mastered');
-assert.equal(vocabularyStatus({ saved: true, review_stage: 1 }), 'learning');
-assert.equal(vocabularyStatus({}), 'new', 'nothing saved is nothing learned');
-
-console.log('My Language and Recall: one store, one scheduler, source kept, nothing invented, EN/ZH/VI: PASS');
+console.log('My Language and Recall: one store, one scheduler, nothing invented: PASS');

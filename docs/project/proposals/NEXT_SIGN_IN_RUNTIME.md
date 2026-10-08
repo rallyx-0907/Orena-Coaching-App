@@ -1,4 +1,4 @@
-# Trying "sign in and use the app" on :8021 (new UI, `/next`)
+# Trying "sign in and use the app" on :8021 (learner UI at `/`; D-143: `/next` now redirects to `/`, so read `/next` below as `/`)
 
 Status: code and tests are done; nothing is configured. OAuth credentials, redirect URIs and turning
 authentication on are human gates. With `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` unset the app behaves as it did.

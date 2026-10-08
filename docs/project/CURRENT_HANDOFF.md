@@ -16,7 +16,7 @@ builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
 D-095, D-096), which is edited only on `codex/work`. Verified history:
 `PROJECT_STATE.md` "New learner UI migration".
 
-Release (D-143): one UI; cutover (`/` = new UI) before :8000; schema via
+Release (D-143): one UI; cutover done (`/` = learner UI, old UI deleted); schema via
 `proposals/PRODUCTION_MIGRATION_PACK.md`; backbone off, invite-only; no new runtime.
 Agent stays on the contract mock until Intelligence integration is authorized.
 Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.

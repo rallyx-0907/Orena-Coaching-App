@@ -10,7 +10,7 @@ def test_root_serves_the_learner_ui() -> None:
     # D-091 item 5, D-143: since the cutover `/` serves the learner UI, from a template that loads none of
     # the retired UI's assets.
     body = home().body.decode("utf-8")
-    assert body == (ROOT / "templates" / "orena" / "next.html").read_text(encoding="utf-8")
+    assert body == (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8")
     assert "/orena-assets/main.js" in body
     assert "/orena-assets/kit/tokens.css" in body
     for old in ("/orena-assets/app.js", "/orena-assets/theme.css", "/orena-assets/theme.js", "/orena-assets/world.css"):

@@ -6,6 +6,7 @@
    the interface, or a reload or a stale cache moving one layer away from the others. */
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import {
   INTERFACE_KEY,
   interfaceLanguage,
@@ -15,11 +16,8 @@ import {
   guidanceLocale,
   matchLocale,
 } from '../static/orena/product/languages.js';
-import { supportedLocales } from '../static/orena/ui/copy.js';
-import { speakCopy, speakingCopy } from '../static/orena/ui/speaking-copy.js';
-import { SPEAKING_LAYERS } from '../static/orena/ui/copy-layers.js';
 
-const supported = supportedLocales;
+const supported = ['en', 'vi', 'zh']; // the locales copy/index.js ships (LOCALES)
 const resolve = ({ stored = '', browser = [], support = '', native = '', active = '' }) =>
   resolveLanguages({ stored, browser, supported, profile: { support_language: support, native_language: native }, active });
 
@@ -51,76 +49,35 @@ assert.equal(supportLanguage({}), 'en');
 assert.equal(learningLanguage(''), 'en');
 assert.equal(matchLocale('ZH-hans', supported), 'zh');
 
-// --- Reload and cache: the same sources give the same answer; a stale cache is not a source -------
+// --- Reload and cache: the same sources give the same answer ---------------------------------------
 {
   const first = resolve({ stored: 'en', browser: ['vi'], support: 'vi', active: 'zh' });
   const reload = resolve({ stored: 'en', browser: ['vi'], support: 'vi', active: 'zh' });
   assert.deepEqual(first, reload, 'a reload resolves the same three');
 }
-const app = readFileSync(new URL('../static/orena/app.js', import.meta.url), 'utf8');
-assert.equal(/orena\.support/.test(app), false, 'the old support cache is neither read nor written');
-assert.equal(/uiLocale/.test(app), false, 'the support-derived interface resolver is gone');
 assert.equal(INTERFACE_KEY, 'orena.interface');
-// Every assignment of a layer goes through its own resolver.
-for (const [layer, via] of [['ui', 'interfaceLanguage'], ['support', 'supportLanguage'], ['language', 'learningLanguage']]) {
-  const assignments = [...app.matchAll(new RegExp(`ctx\\.${layer} = ([^;]+);`, 'g'))].map((m) => m[1]);
-  assert.ok(assignments.length, `ctx.${layer} is assigned`);
-  for (const value of assignments) assert.match(value, new RegExp(`^${via}\\(`), `ctx.${layer} = ${value} must come from ${via}()`);
-}
-// Every way into the preferences opens them, including the rows a room draws after the shell (Profile's
-// Languages row once did nothing): one delegated listener, not per-button bindings made too early.
-assert.match(app, /document\.addEventListener\("click", \(event\) => \{\s*const opener = event\.target\.closest\?\.\("\[data-preference\]"\);/);
-assert.equal(/querySelectorAll\("(#shell )?\[data-preference\]"\)\s*\.forEach\(\(x\) => \(x\.onclick/.test(app), false, 'no early per-button binding');
-// The interface is chosen on its own in the preferences, and saved on the device under its own key.
-assert.match(app, /<select name="interface">/);
-assert.match(app, /storage\.setItem\(INTERFACE_KEY, ctx\.ui\)/);
-assert.match(app, /stored: storage\.getItem\(INTERFACE_KEY\)/);
-// The profile answers for support only: nothing near the profile read touches ctx.ui.
-{
-  const from = app.indexOf('ctx.profile = profile;');
-  const load = app.slice(from, app.indexOf('ctx.memory = learnerMemory(storage, ctx.owner, ctx.language);', from));
-  assert.ok(from > 0 && load.length > 0, 'the profile load is found');
-  assert.equal(/ctx\.ui\s*=[^=]/.test(load), false, 'loading the profile does not change the interface');
-  // It re-reads the copy by layer with the support language the profile just gave.
-  assert.match(load, /ctx\.c = layeredCopy\(copy, COPY_LAYERS, ctx\.ui, ctx\.support\);/);
-}
-// No learner surface picks its chrome copy by the support or the target language.
-const uiDir = new URL('../static/orena/ui/', import.meta.url);
-for (const file of readdirSync(uiDir).filter((name) => name.endsWith('.js'))) {
-  const src = readFileSync(new URL(file, uiDir), 'utf8');
-  assert.equal(/\b(copy|referenceCopy)\[\s*ctx\.(support|language)\s*\]/.test(src), false, `${file} reads chrome copy by a non-interface language`);
-}
 
-// --- Speaking: chrome in the interface language, guidance in the support language ------------------
-// Every Speaking key has a declared layer (the full audit is scripts/test_orena_copy_layers.mjs).
-for (const key of Object.keys(speakingCopy.en)) assert.ok(['interface', 'support'].includes(SPEAKING_LAYERS[key]), `speaking.${key} is declared`);
-{
-  const a = speakCopy('en', 'vi'); // CASE A
-  assert.equal(a.nextLine, speakingCopy.en.nextLine, 'A: a button is the interface language');
-  assert.equal(a.eachWord_zh, speakingCopy.en.eachWord_zh, 'A: a section label is the interface language');
-  assert.equal(a.tapWord_zh, speakingCopy.vi.tapWord_zh, 'A: a hint is the support language');
-  assert.equal(a.passed, speakingCopy.vi.passed, 'A: a verdict is the support language');
-  assert.equal(a.detailSaid, speakingCopy.vi.detailSaid, 'A: the sheet sentence is the support language');
-  assert.equal(a.langOf('nextLine'), 'en');
-  assert.equal(a.langOf('subTap'), 'vi');
-  assert.equal(a.room, 'Speaking', 'A: the shared room name is the interface language');
-  const c = speakCopy('zh', 'en'); // CASE C
-  assert.equal(c.nextLine, speakingCopy.zh.nextLine);
-  assert.equal(c.subTap, speakingCopy.en.subTap);
-  const b = speakCopy('vi', 'vi'); // CASE B
-  assert.equal(b.nextLine, speakingCopy.vi.nextLine);
-  assert.equal(b.subTap, speakingCopy.vi.subTap);
-  // A support language Orena has no written pack for reads its guidance in English, never in the interface's.
-  const ja = speakCopy('zh', 'ja');
-  assert.equal(ja.subTap, speakingCopy.en.subTap);
-  assert.equal(ja.nextLine, speakingCopy.zh.nextLine);
-  assert.equal(guidanceLocale('ja', Object.keys(speakingCopy)), 'en');
+// --- The learner UI reads each layer through its own resolver ------------------------------------
+const read = (path) => readFileSync(new URL(`../static/orena/${path}`, import.meta.url), 'utf8');
+const copyIndex = read('copy/index.js');
+assert.match(copyIndex, /interfaceLanguage\(\{ stored, browser: navigator\.languages/, 'the interface comes from interfaceLanguage()');
+assert.match(copyIndex, /setLanguages\(\{ support: supportLanguage\(profile\) \}\)/, 'support comes from supportLanguage(profile)');
+assert.match(copyIndex, /layeredCopy\(table\.packs, table\.layers, current\.ui, current\.support\)/, 'every table is read by layer');
+assert.match(copyIndex, /window\.localStorage\.setItem\(INTERFACE_KEY, code\)/, 'the interface is saved on the device under its own key');
+assert.equal(/orena\.support/.test(copyIndex), false, 'the old support cache is neither read nor written');
+assert.match(read('shell/context.js'), /state\.language = learningLanguage\(bootstrap\?\.language\?\.active\)/, 'the target comes from learningLanguage()');
+// No learner module picks its chrome copy by the support or the target language.
+function* walk(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) yield* walk(`${dir}/${entry.name}`);
+    else if (entry.name.endsWith('.js')) yield `${dir}/${entry.name}`;
+  }
 }
-for (const file of ['speaking-workspace.js', 'speaking-free.js', 'speaking.js']) {
-  const src = readFileSync(new URL(file, uiDir), 'utf8');
-  const calls = [...src.matchAll(/speakCopy\(([^)]*)\)/g)].map((m) => m[1]);
-  assert.ok(calls.length, `${file} uses the Speaking copy`);
-  for (const args of calls) assert.equal(args, 'ctx.ui, ctx.support', `${file}: speakCopy(${args}) must be given both layers`);
-}
+const uiRoot = fileURLToPath(new URL('../static/orena', import.meta.url));
+for (const dir of ['screens', 'shell', 'kit', 'copy'])
+  for (const file of walk(`${uiRoot}/${dir}`)) {
+    const src = readFileSync(file, 'utf8');
+    assert.equal(/(copy|referenceCopy)\[\s*(ctx|state)\.(support|language)\s*\]/.test(src), false, `${file} reads chrome copy by a non-interface language`);
+  }
 
-console.log('Language layers: interface, support and target resolved independently; Speaking splits chrome from guidance: PASS');
+console.log('Language layers: interface, support and target resolved independently: PASS');

@@ -1694,7 +1694,7 @@ def home() -> HTMLResponse:
     # stylesheet added since is simply never requested, and the screen renders unstyled. It is small, so it
     # stays uncached outright; the assets it names revalidate instead.
     return HTMLResponse(
-        (ROOT / "templates" / "orena" / "next.html").read_text(encoding="utf-8"),
+        (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8"),
         headers={"Cache-Control": "no-store, max-age=0"},
     )
 
@@ -1711,13 +1711,6 @@ def former_learner_ui_address() -> RedirectResponse:
 @app.get("/becoming/", response_class=HTMLResponse)
 def becoming_preview() -> RedirectResponse:
     return RedirectResponse("/", status_code=302)
-@app.get("/static/account.js")
-def account_script() -> HTMLResponse:
-    return HTMLResponse(
-        (ROOT / "static" / "account.js").read_text(encoding="utf-8"),
-        media_type="application/javascript",
-        headers={"Cache-Control": "no-cache"},
-    )
 
 
 def model_family(model_name: str) -> str:

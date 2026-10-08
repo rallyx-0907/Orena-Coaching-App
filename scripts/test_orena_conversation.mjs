@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { copy } from '../static/orena/ui/copy.js';
 import {
   conversation,
   learnerTurn,
@@ -94,26 +93,22 @@ for (const language of ['en', 'zh']) {
 /* The partner is instructed not to coach: a conversation where every reply
    corrects you is not a conversation. That instruction assumes a separate
    action exists, and it now does - on the learner's own turns only. */
-const conversationUi = readFileSync(
-  new URL('../static/orena/ui/conversation.js', import.meta.url),
+const conversationScreen = readFileSync(
+  new URL('../static/orena/screens/conversation/screen.js', import.meta.url),
   'utf8',
 );
 assert.ok(
-  conversationUi.includes("turn.role === 'learner' ? `<button class=\"quiet\" data-coach-turn="),
+  conversationScreen.includes("turn.role === 'learner' && !card ? html`<button type=\"button\" class=\"s-conv__land\""),
   'only a turn the learner produced can be coached',
 );
 assert.ok(
-  conversationUi.includes("if (turn?.role !== 'learner') return;"),
+  conversationScreen.includes("if (!turn || turn.role !== 'learner' || coaching.has(index)) return;"),
   'the handler refuses a partner turn even if the markup ever offered one',
-);
-assert.ok(
-  conversationUi.includes('loadSpokenCoaching('),
-  'coaching reuses the shared surface rather than a second one',
 );
 // What the learner was answering travels with the words: an ordinary reply to
 // a question should not be read as an incomplete thought.
 assert.ok(
-  conversationUi.includes('[state.situation, state.turns[index - 1]?.text]'),
+  conversationScreen.includes('situation: turnSituation(convo.situation, convo.turns, index)'),
   'coaching is told what the turn was answering',
 );
 // The backend keeps its side of the same bargain.
@@ -129,83 +124,6 @@ assert.ok(
   partner.includes('Never claim to be a real person'),
   'a simulated partner says it is simulated',
 );
-for (const ui of ['en', 'zh'])
-  assert.ok(copy[ui].conversationHowItLanded, `${ui}: no label for the coaching action`);
-
-/* The shelf must tell two threads apart. A conversation and a single take are
-   both Speaking about the same situation, and used to render identically -
-   the only way to tell them apart was to open one. */
-const patterns = readFileSync(
-  new URL('../static/orena/ui/patterns.js', import.meta.url),
-  'utf8',
-);
-assert.ok(
-  patterns.includes("item.id.startsWith('conversation:')"),
-  'the shelf names a thread by its shape, not only its intention',
-);
-assert.ok(
-  patterns.includes('memory.value.conversations?.[item.id]'),
-  'a conversation on the shelf reports its own state',
-);
-assert.ok(
-  patterns.includes('state.turns.length'),
-  'how far a conversation got is worth more than "there is more"',
-);
-for (const ui of ['en', 'zh']) {
-  assert.ok(copy[ui].conversationTurnsSoFar, `${ui}: no label for turns so far`);
-  // The shape label and the plain intention must not read the same, or the
-  // two threads collapse again.
-  assert.notEqual(
-    copy[ui].conversationTitle,
-    copy[ui].speakingName,
-    `${ui}: a conversation reads the same as a single take`,
-  );
-}
-
-/* --- Asking about a turn must send the turn the learner selected ---
-
-   The server refuses a context that does not contain the selection, so a
-   context budgeted from the start of the pair fails outright when the
-   preceding turn is long enough to fill the allowance on its own. The turn
-   holding the selection is never the part that gets trimmed. */
-const { turnContext, CONTEXT_LIMIT, SELECTION_LIMIT } = await import(
-  '../static/orena/ui/conversation.js'
-);
-
-const contains = (turns, index) => {
-  const selection = turns[index].text.slice(0, SELECTION_LIMIT);
-  const context = turnContext(turns, index);
-  assert.ok(context.length <= CONTEXT_LIMIT, `context over budget: ${context.length}`);
-  assert.ok(
-    context.toLowerCase().includes(selection.toLowerCase()),
-    'the server would reject this: the selection is not in its own context',
-  );
-  return context;
-};
-
-// The ordinary case still carries what came before.
-const short = [{ text: 'Where did you go?' }, { text: 'I went to the market.' }];
-assert.equal(turnContext(short, 1), ['Where did you go?', 'I went to the market.'].join('\n'));
-contains(short, 1);
-assert.equal(turnContext(short, 0), 'Where did you go?', 'the first turn has nothing before it');
-
-/* The finding's case: a preceding turn permitted to fill the entire budget.
-   Taking the first 2400 characters kept it and dropped the learner's own
-   sentence entirely. */
-const longPair = [{ text: 'x'.repeat(CONTEXT_LIMIT) }, { text: 'I meant it kindly.' }];
-const budgeted = contains(longPair, 1);
-assert.ok(budgeted.endsWith('I meant it kindly.'), 'the selected turn survives, whole');
-assert.ok(budgeted.startsWith('x'), 'the room that remains still goes to what came before');
-
-// A turn longer than the whole budget still yields a context holding its
-// selection, because the selection is capped below the context.
-const huge = [{ text: 'y'.repeat(50) }, { text: 'z'.repeat(CONTEXT_LIMIT * 2) }];
-contains(huge, 1);
-
-// Chinese counts the same way: characters, not bytes.
-const zh = [{ text: '很'.repeat(CONTEXT_LIMIT) }, { text: '我昨天去了商店。' }];
-const zhContext = contains(zh, 1);
-assert.ok(zhContext.endsWith('我昨天去了商店。'));
 
 /* S-24: the partner speaks first. The opening is not a turn: the alternation, the account record and the
    learner-first state machine stay as they were; the line rides along as context. */
@@ -231,5 +149,5 @@ for (const language of ['en', 'zh']) {
 }
 
 console.log(
-  'Conversation ledger, coaching on your own turns, distinguishable threads, and context that keeps its selection: PASS',
+  'Conversation ledger, coaching on your own turns and the partner opening: PASS',
 );

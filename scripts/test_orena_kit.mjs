@@ -187,9 +187,9 @@ for (const file of files) {
     assert.ok(!/(theme|foundation|world|rooms|experiences|reference|reader|listening|dictation|speaking|writing|home|shell)\.css$/.test(spec[1]) || spec[1].includes('/shell/') || spec[1].includes('screens/'), `${file} imports an old stylesheet ${spec[1]}`);
   }
 }
-const template = fs.readFileSync('templates/orena/next.html', 'utf8');
+const template = fs.readFileSync('templates/orena/index.html', 'utf8');
 for (const old of ['theme.css', 'theme.js', 'foundation.css', 'world.css', 'rooms.css', '/orena-assets/app.js']) {
-  assert.ok(!template.includes(`/orena-assets/${old}`), `next.html does not load the old ${old}`);
+  assert.ok(!template.includes(`/orena-assets/${old}`), `index.html does not load the old ${old}`);
 }
 
 // 7. Markup escapes by default.

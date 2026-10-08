@@ -53,6 +53,18 @@ const content = await import('../static/orena/capabilities/admin-content.js');
 const tray = await import('../static/orena/capabilities/admin-tray.js');
 const { adminApi } = await import('../static/orena/capabilities/admin-api.js');
 
+/* Every book-import failure the server can name has words in every interface language. The list is read
+   from the Python that produces it, so a new category cannot reach the console unlabelled (ported from the
+   retired console's copy gate, D-143). */
+{
+  const packs = copyIndex.registeredCopy().get('admin').packs;
+  const categories = [...fs.readFileSync('writing_coach/epub_import.py', 'utf8').matchAll(/EpubImportError\("([a-z_]+)"/g)].map((match) => match[1]);
+  assert.ok(categories.length >= 8, 'the EPUB error categories were read from epub_import.py');
+  for (const code of new Set([...categories, 'import_failed', 'storage_failed', 'reading_library_unavailable'])) {
+    for (const ui of ['en', 'vi', 'zh']) assert.ok(packs[ui][`impErr_${code}`], `${ui}: book import error "${code}" is explained`);
+  }
+}
+
 /* ---- fixtures ------------------------------------------------------------------------------------ */
 const NOW = '2026-09-28T15:06:04.870476+00:00';
 const target = (id, extra = {}) => ({ id, text: `target ${id}`, canonical_form: id, target_type: 'word', context: 'a sentence with the target', meaning: '', rank: 0, machine_suggested: true, admin_approved: false, admin_rejected: false, ...extra });
@@ -188,10 +200,6 @@ assert.equal(tray.items()[0].articleId, 'A', 'a finished job says which article 
 assert.equal(tray.inFlight(), 0);
 await tray.refresh({ readingJob: async () => ({ status: 'completed' }) }, 1000 + tray.SETTLED_MS + 1);
 assert.equal(tray.items().length, 0, 'a settled job leaves');
-const oldTray = await import('../static/orena/admin/tray.js');
-assert.equal(oldTray.watch, tray.watch, 'the old console shares the tray memory');
-assert.equal((await import('../static/orena/admin/imports.js')).runQueue, imports.runQueue, 'the old console shares the importer rules');
-assert.equal((await import('../static/orena/admin/content.js')).RIGHTS, content.RIGHTS);
 
 /* ---- 2. every page, every language ------------------------------------------------------------ */
 const problems = [];

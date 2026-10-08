@@ -264,15 +264,15 @@ UI state. Prefer explicit contracts, configuration, repository abstractions,
 deterministic mappings, reusable primitives and root-cause fixes.
 
 **Theme.** The learner interface is the design of D-088, with its light and dark
-themes following the operating system (D-089). It is being built as the new UI
-at `/next` and replaces the old UI at `/` in one cutover (D-091); until then the
-old UI (Dark Glass, D-066) is the verified baseline at `/`, work to replace, not
-authority to preserve. D-059's Ink and Paper themes stay retired; there is no
-hybrid screen and no second visual system inside either UI.
+themes following the operating system (D-089). The cutover is done (D-091,
+D-143): the learner UI is the only UI and is served at `/`; `/next` and `/login`
+redirect to it. The old Dark Glass UI (D-066) is retired and deleted
+(`LEGACY_TOMBSTONES.md`). D-059's Ink and Paper themes stay retired; there is no
+hybrid screen and no second visual system.
 
-- Colour has one owner per UI: the new UI reads only the semantic tokens of
+- Colour has one owner: the learner UI reads only the semantic tokens of
   `static/orena/kit/tokens.css`, holding both themes' values exactly as the
-  design gives them; the old UI's `static/orena/theme.css` goes at the cutover.
+  design gives them.
   Do not add another colour block anywhere. Semantic colour is used as the
   design draws it (ink, and the `-soft` fills it draws), never as the only
   signal.
@@ -318,10 +318,10 @@ resolve them.
   any other new persistence or schema decision for learner-owned data.
 - **Native mobile** — frozen (§5).
 - **Platform Admin** — the admin console was merged into `codex/work` by PR #63
-  (D-085) and runs at `/#/admin` in the old UI, untouched until the cutover. It
-  moves into the new UI on the pinned `Orena Admin.dc.html`, reusing its logic,
-  APIs and `require_admin` (D-101 E); there is no second admin backend. Its
-  APIs and `static/admin.js` are preserved.
+  (D-085) and now runs in the learner UI at `/#/admin` (`screens/admin`) on the
+  pinned `Orena Admin.dc.html`, reusing its logic, APIs and `require_admin`
+  (D-101 E); there is no second admin backend. The old console and
+  `static/admin.js` are retired (D-143); the admin APIs are preserved.
 - **Reading library breadth** — the contract, rights fields and admission gate
   exist. Adding a text is a rights decision per text, not an implementation
   task.

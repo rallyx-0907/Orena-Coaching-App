@@ -1,9 +1,8 @@
-/* The learning workspace, the progressive hint, and the motion rules.
+/* The progressive dictation hint, and the motion rule.
 
-   Consuming and producing want different shapes. Following a voice is content;
-   reconstructing a line is work, and work needs the thing being worked on and
-   the thing being worked from visible at once. These hold the parts of that
-   which are checkable without a browser. */
+   Reconstructing a line is work: what the learner has earned by typing comes back to them,
+   and a hint never hands over the answer. These hold the parts that are checkable without a
+   browser. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
@@ -86,69 +85,15 @@ assert.equal(progress[1].attempt, 'wnet', 'a wrong word keeps what was written')
 assert.equal(progress[0].found, true);
 assert.equal(progress[0].attempt, '', 'a correct word needs no attempt recorded');
 
-/* The workspace. Media and work side by side while practising, each scrolling
-   on its own, and the practice must be a sibling of the media rather than a
-   child of it or no layout can place them apart. */
-const encounter = read('static/orena/ui/encounter.js');
-assert.ok(
-  encounter.includes('</section><section class="practice-space" hidden>'),
-  'the practice panel is a workspace column, not nested inside the media stage',
-);
-assert.ok(
-  encounter.includes("window.matchMedia('(max-width: 1079px)')"),
-  'narrow screens bring the work to the learner instead of asking them to find it',
-);
-assert.ok(
-  encounter.includes("prefers-reduced-motion: reduce"),
-  'the scroll respects a learner who asked for less motion',
-);
+/* Motion says something or it is noise, and it is off for anyone who asked. The learner kit's
+   base stylesheet owns this for every screen. */
+const base = read('static/orena/kit/base.css');
+const reduced = base.slice(base.indexOf('@media (prefers-reduced-motion: reduce)'));
+assert.ok(base.includes('@media (prefers-reduced-motion: reduce)'), 'the platform preference is honoured');
+assert.match(reduced, /animation-duration: 0\.001ms !important;[\s\S]*?transition-duration: 0\.001ms !important;/,
+  'reduced motion removes animation and transition for every element');
+assert.match(base, /\[tabindex="-1"\]:focus-visible \{ outline: none; \}/,
+  'a region focused programmatically does not wear a keyboard focus ring');
+assert.match(base, /:focus-visible \{/, 'a keyboard focus ring exists');
 
-/* The hint is present from the moment the learner arrives. Asking for the
-   shape of the line before you can begin is a step that helps nobody, and a
-   hint that appears only on request is a hint most learners never see. */
-/* On the baseline's Dictation screen (D-066) the shape is always there - masks and whatever
-   the learner has earned by typing - and a hint level adds to it; level 0 is "no hint yet". */
-assert.ok(
-  /let hintLevel = 0;/.test(encounter),
-  'the shape of the line is there to begin with, before any hint is asked for',
-);
-assert.ok(
-  encounter.indexOf('paintHint();') <
-    encounter.indexOf("body.querySelectorAll('form button')"),
-  'the panel is painted on arrival, not only when the hint button is pressed',
-);
-
-const world = read('static/orena/world.css');
-const dictationCss = read('static/orena/dictation.css');
-assert.ok(
-  dictationCss.includes('.listen-workspace[data-dictation]'),
-  'the room re-composes when Dictation opens: the screen takes the whole room',
-);
-assert.ok(world.includes('@media (min-width: 1600px)'), 'wide screens get their own composition');
-assert.ok(
-  /@media \(min-width: 1600px\)[\s\S]{0,900}\.text-encounter/.test(world),
-  'reading keeps a comfortable measure instead of stretching with the window',
-);
-assert.match(
-  dictationCss,
-  /\.listen-workspace\[data-dictation\] > :not\(\.practice-space\) \{\s*display: none;/,
-  'Dictation hides the scrubbing and the transport it does not need: the player plays the line but is not on screen',
-);
-
-/* Motion says something or it is noise, and it is off for anyone who asked. */
-const foundation = read('static/orena/foundation.css');
-assert.ok(
-  foundation.includes('@media (prefers-reduced-motion: no-preference)'),
-  'motion is opt-out by the platform preference',
-);
-assert.ok(foundation.includes('@keyframes orena-settle'), 'one shared arrival motion');
-assert.ok(
-  !/animation:[^;]*infinite/.test(foundation),
-  'nothing loops: ambient movement is decoration, not communication',
-);
-assert.ok(
-  foundation.includes("[tabindex='-1']:focus:not(:focus-visible)"),
-  'a region focused for a screen reader does not wear a keyboard focus ring',
-);
-
-console.log('Workspace, progressive hints in EN/ZH, responsive composition and motion: PASS');
+console.log('Progressive dictation hints in EN/ZH and the kit reduced-motion rule: PASS');

@@ -212,3 +212,53 @@ removed merely because current code conflicts with them.
   the archive as evidence, as a baseline for ability or progression, or as
   "earlier practice" in Learner Summary; a deterministic or built-in fallback
   that invents questions when no provider answers.
+
+## The pre-cutover learner UI at `/` (Dark Glass, D-066)
+
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-091 item 5, D-143).
+- **Current replacement:** the learner UI of D-088 - entry `static/orena/main.js`, served at `/` from
+  `templates/orena/index.html`; its colour owner is `static/orena/kit/tokens.css`. `/next`, `/login` and
+  the old hash addresses redirect into it (`static/orena/shell/former-addresses.js`).
+- **Removed:** `static/orena/app.js`, `static/orena/ui/*.js` (all presentation modules), `theme.js`,
+  `theme.css`, the root stylesheets (`components`, `dictation`, `experiences`, `foundation`, `home`,
+  `listening`, `media-library`, `quick-sheet`, `reader`, `reference`, `rooms`, `shell`, `speaking`,
+  `world`, `writing-entry`, `writing-feedback`, `writing`), the old-only domain modules
+  (`capabilities/{lexical,outcome,speech-comparison,voice-feedback}.js`,
+  `content/{brand-library,language-notes,patterns,reading-library,reading,texts}.js`,
+  `product/{collection-ref,grammar-shelf,legacy-routes,recall}.js`) and `assets/{last-train.png,mark.svg}`.
+- **Successor gates:** `test_orena_kit.mjs` (tokens, AA, no old UI imported), `test_orena_shell.mjs`,
+  `test_orena_former_addresses.mjs` (replaces `test_orena_legacy_routes.mjs`), `test_orena_foundation.mjs`
+  (retargeted), `test_orena_screen_*.mjs` for every screen, `test_orena_copy*.mjs`,
+  `validate_browser_esm_graph.mjs` (walks `main.js` and every screen), `validate_architecture.py`.
+  Gates deleted with their surface, each replaced by the learner-UI gate in this list:
+  `test_orena_close_look`, `listening_workspace`, `voice_evidence`, `voice_interaction` (-> `screen_listening`,
+  `speaking_workspace`, `audio_recorder`, `screen_conversation`), `discover_texts`, `shared_reading_library`,
+  `discover_layout`, `library`, `media_library`, `lookup_race`, `vocabulary_card`, `vocabulary_saved_card`,
+  `vocabulary_experience`, `vocabulary_library` (-> `screen_today`, `screen_discover`, `screen_content`,
+  `screen_library`, `screen_reader`, `screen_quick-sheet`, `screen_word`, `screen_feed`,
+  `collection_actions`, `vocabulary_meaning`), `legacy_routes` (-> `former_addresses`), `admin_console`
+  (-> `screen_admin`, `screen_admin_areas`). Gates that also guarded a shared module were kept and
+  retargeted to it. `test_orena_foundation.mjs` no longer pins the retired theme to the old baseline.
+- **What must not happen:** restoring a second visual system, a second shell or template, or any module
+  of the removed set; the learner UI importing `ui/` presentation; a gate deleted without a successor
+  that asserts the same behaviour of the learner UI.
+
+## The old Platform Admin console (`#/admin?id=`, `static/orena/admin/*`, `ui/admin.js`, `static/admin.js`)
+
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-101 E, D-143).
+- **Current replacement:** `static/orena/screens/admin/*` at `#/admin/<area>` (Overview, AI and Models,
+  Users, Content, Imports, Operations), sharing `static/orena/capabilities/admin-*.js`; the old section
+  addresses map through `shell/former-addresses.js`. The admin APIs and `require_admin` are unchanged.
+- **Successor gates:** `test_orena_screen_admin.mjs`, `test_orena_screen_admin_areas.mjs`,
+  `test_orena_admin_entry.mjs` (the learner's initial graph holds no admin module; the readiness API
+  boundary), `test_orena_former_addresses.mjs`. The old console's per-kind copy parity gate
+  (`test_orena_admin_console.mjs`) is replaced by these; its book-import error coverage was ported to
+  `test_orena_screen_admin_areas.mjs`.
+- **What must not happen:** a second admin backend, or a console outside `screens/admin`.
+
+## `templates/login.html`, `static/account.js` and `/static/account.js`
+
+- **Status:** RETIRED AND PHYSICALLY REMOVED (D-143).
+- **Current replacement:** sign-in is the learner UI's Welcome and Account steps; `/login` redirects to `/`
+  (`tests/test_learner_ui_sign_in.py`, `tests/test_orena_routes.py`).
+- **What must not happen:** a separate login page or a script route serving account code outside the learner UI.

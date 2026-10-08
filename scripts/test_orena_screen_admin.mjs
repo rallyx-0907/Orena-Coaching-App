@@ -452,17 +452,7 @@ fixtureFor = (method, url) => {
   assert.equal(controller.state.providerTests.get('openai').state, 'failed');
 }
 
-/* ---- 6. the old console still reads the same shared code ---------------------------------------- */
-const oldAi = await import('../static/orena/admin/ai.js');
-assert.equal(oldAi.capabilityKind, shared.capabilityKind, 'one capabilityKind');
-assert.equal(oldAi.credentialState, shared.credentialState, 'one credentialState');
-assert.equal(oldAi.mergeProviders, shared.mergeProviders, 'one mergeProviders');
-const oldApi = await import('../static/orena/admin/api.js');
-assert.equal(oldApi.adminApi, (await import('../static/orena/capabilities/admin-api.js')).adminApi, 'one admin client');
-const oldFormat = await import('../static/orena/admin/format.js');
-assert.equal(oldFormat.latency, (await import('../static/orena/capabilities/admin-format.js')).latency, 'one formatter set');
-
-/* ---- 7. nothing here borrows the old UI, and every colour is a token ------------------------------ */
+/* ---- 6. nothing here borrows the old UI, and every colour is a token ------------------------------ */
 const root = path.resolve('static/orena/screens/admin');
 for (const file of fs.readdirSync(root)) {
   const source = fs.readFileSync(path.join(root, file), 'utf8');

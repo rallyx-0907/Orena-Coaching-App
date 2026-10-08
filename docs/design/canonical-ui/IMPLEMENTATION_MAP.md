@@ -148,5 +148,13 @@ existing backend. The Practice generator still has no working backend and is una
 
 ## Retired by the cutover
 
-Filled in by the cutover slice: every old address, the surface that replaced it,
-and its `LEGACY_TOMBSTONES.md` entry.
+Cutover done (D-091 item 5, D-143). The learner UI is the only UI and is served at `/` from
+`templates/orena/index.html`; every retired surface is deleted and tombstoned in `LEGACY_TOMBSTONES.md`.
+
+| Retired | Now | Where it is recorded |
+| --- | --- | --- |
+| `/` as the old UI (`ui/*.js`, `app.js`, old stylesheets, `theme.js`/`theme.css`) | `/` = `main.js` + `screens/*` | "The pre-cutover learner UI at `/`" |
+| `/next`, `/login`, `/becoming` | redirect to `/` (hash kept) | same, and "`/becoming`" |
+| `#/practice`, `#/encounter?id=`, `#/expression`, `#/language`, `#/history`, `#/preferences`, `#/continue` and the other old hashes | `shell/former-addresses.js` maps each to its place | `test_orena_former_addresses.mjs` |
+| `#/admin?id=<section>` old console (`admin/*`, `ui/admin.js`, `static/admin.js`) | `#/admin/<area>` (`screens/admin`) | "The old Platform Admin console" |
+| `templates/login.html`, `static/account.js` | Welcome and Account steps | "`templates/login.html`, `static/account.js`" |

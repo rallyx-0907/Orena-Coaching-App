@@ -7,25 +7,21 @@
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { STEPS, glyphSvg, stepsFor } from '../static/orena/ui/word-strokes.js';
+import { STEPS, glyphSvg, stepsFor } from '../static/orena/product/hanzi-strokes.js';
 import { tracedStroke, strokeTraced, heading } from '../static/orena/product/stroke-trace.js';
 
 const read = (path) => readFileSync(new URL(`../static/orena/${path}`, import.meta.url), 'utf8');
-const screen = read('ui/word-strokes.js');
-const room = read('ui/expression.js');
+const sheet = read('screens/word/stroke-sheet.js');
 const api = read('infrastructure/api.js');
-const css = read('rooms.css');
-const copy = read('ui/copy.js');
-const copyVi = read('ui/copy-vi.js');
 
 /* --- One stroke source, the one that was already here -------------------- */
 
 assert.match(api, /chineseStrokeOrder:\(word\)=>request\(`\/api\/chinese\/stroke-order/,
   'the client Orena already had');
-assert.match(room, /api\.chineseStrokeOrder\(wanted\)/, 'and the screen reads it');
-assert.doesNotMatch(screen, /fetch\(|import\(/, 'the screen fetches nothing of its own');
+assert.match(read('screens/word/screen.js'), /api\.chineseStrokeOrder\(/, 'and the Word screen reads it');
+assert.doesNotMatch(sheet, /fetch\(|import\(/, 'the stroke sheet fetches nothing of its own');
 for (const source of ['hanziwriter', 'cdn.jsdelivr', 'unpkg', 'graphics.txt', 'dictionary.txt'])
-  assert.ok(!screen.includes(source) && !room.includes(source), `no second stroke source (${source})`);
+  assert.ok(!sheet.includes(source), `no second stroke source (${source})`);
 
 /* --- The strip is the character being built ----------------------------- */
 
@@ -60,16 +56,6 @@ assert.deepEqual(heading([[0, 0], [10, 0]]), [1, 0]);
 const medians = [median, [[100, 400], [900, 400]]];
 assert.equal(strokeTraced(medians[1], medians), 1, 'the stroke they actually drew is found');
 assert.equal(strokeTraced([[0, 0], [5, 5]], medians), -1, 'a scribble matches nothing');
-assert.match(room, /strokeState\.wrongReason = other >= 0 \? 'order' : judged\.reason;/,
-  'and the two are recorded differently');
-
-/* --- What the frame draws ----------------------------------------------- */
-
-assert.match(screen, /if \(!surface\) return '';/, 'a part with no character is not a card');
-assert.match(screen, /const partsBlock = parts\.length/, 'and no parts at all is no section');
-assert.match(room, /const strokeParts = \(word\) => \{/, 'the parts come from the entry, not from the glyph');
-assert.match(room, /deepData\?\.orthography\?\.parts\?\.\[character\]/,
-  'through the orthography contract that already exists');
 
 /* And what it draws is decomposition, labelled as such. The architecture
    requires verified etymology, modern structural decomposition and a learner
@@ -84,24 +70,4 @@ assert.doesNotMatch(parts, /"etymology"/, 'and never claims etymology');
    measured against the verified pack, so a wrong one fails a test. */
 assert.match(parts, /tests\/test_character_parts\.py/, 'and names the test that checks it');
 
-for (const [what, rule] of [
-  ['a part card', /\.stroke-part \{[^}]*padding: 14px 8px;[^}]*border-radius: 14px;/s],
-  ['its character', /\.stroke-part__glyph \{[^}]*font-size: 30px;/s],
-  ['a step', /\.stroke-step \{\n  inline-size: 56px;[^}]*border-radius: 10px;/s],
-  ['the square', /\.stroke-square \{[^}]*block-size: 190px;[^}]*border-radius: 15px;/s],
-  ['the watch row', /\.stroke-watch \{[^}]*padding: 14px 15px;[^}]*border-radius: 15px;/s],
-  ['a foot action', /\.stroke-action \{[^}]*block-size: 50px;[^}]*border-radius: 15px;/s],
-  ["frame 26's column", /\.word-strokes__body, \.word-strokes__foot \{ max-inline-size: 640px; \}/],
-])
-  assert.match(css, rule, `${what} is the frame’s size`);
-
-/* Shaking is motion, and motion is a preference. */
-assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\n  \.stroke-square\[data-wrong='true'\]/,
-  'a learner who asked for less motion gets the warning without the shake');
-
-for (const key of ['strokesTitle', 'strokesCount', 'strokesParts', 'strokesOrder', 'strokesWatch', 'strokesTrace', 'strokesFree', 'strokesUnavailable']) {
-  assert.equal((copy.match(new RegExp(`\\b${key}:`, 'g')) || []).length, 2, `${key} in English and Chinese`);
-  assert.ok(copyVi.includes(`${key}:`), `${key} in Vietnamese`);
-}
-
-console.log('test_orena_word_strokes.mjs: frame 05 on the stroke capability that was already here');
+console.log('test_orena_word_strokes.mjs: one stroke source, tracing judged on direction and order, parts as decomposition');
