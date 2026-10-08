@@ -1,0 +1,79 @@
+name: Grammar export production fix
+
+on:
+  push:
+    branches:
+      - codex/grammar-export-production-fix
+    paths:
+      - ".github/workflows/grammar-export-production-fix.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: codex/grammar-export-production-fix
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e "grammar_lab[dev]"
+
+      - name: Fix reviewed seed metadata
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('grammar_lab/inventory/seeds_zh.yaml')
+          text = path.read_text(encoding='utf-8')
+          old = 'native_title: \\"连动句“去/来 + 动词”\\"'
+          new = 'native_title: \\"连动句“去/来+动词”\\"'
+          if old not in text:
+              raise SystemExit('expected serial-verb seed title not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          python -m grammar_lab.pipeline.cli import-canonical --lang zh
+
+      - name: Validate corpus
+        run: |
+          python -m grammar_lab.pipeline.cli validate --lang en
+          python -m grammar_lab.pipeline.cli validate --lang zh
+          python -m grammar_lab.pipeline.cli coverage --lang en
+          python -m grammar_lab.pipeline.cli coverage --lang zh
+
+      - name: Smoke export full-language production packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          EN_IDS=$(python - <<'PY'
+          from grammar_lab.pipeline.seed import load_catalog
+          from grammar_lab.pipeline.validate import LAB_ROOT
+          print(','.join(r['id'] for r in load_catalog('en', LAB_ROOT)))
+          PY
+          )
+          ZH_IDS=$(python - <<'PY'
+          from grammar_lab.pipeline.seed import load_catalog
+          from grammar_lab.pipeline.validate import LAB_ROOT
+          print(','.join(r['id'] for r in load_catalog('zh', LAB_ROOT)))
+          PY
+          )
+          python -m grammar_lab.pipeline.cli export-package --lang en --ids "$EN_IDS" --out /tmp/grammar-en --set-version smoke.en --allow-dirty
+          python -m grammar_lab.pipeline.cli validate-package --path /tmp/grammar-en
+          python -m grammar_lab.pipeline.cli export-package --lang zh --ids "$ZH_IDS" --out /tmp/grammar-zh --set-version smoke.zh --allow-dirty
+          python -m grammar_lab.pipeline.cli validate-package --path /tmp/grammar-zh
+
+      - name: Commit source metadata fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add grammar_lab/inventory/seeds_zh.yaml grammar_lab/inventory/catalog_zh.yaml
+          git diff --cached --stat
+          git diff --cached --quiet && exit 0
+          git commit -m "fix(grammar): make approved corpus exportable as full-language packages"
+          git push origin HEAD:codex/grammar-export-production-fix
