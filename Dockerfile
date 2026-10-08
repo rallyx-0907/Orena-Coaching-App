@@ -30,6 +30,9 @@ COPY migrations ./migrations
 COPY scripts ./scripts
 COPY templates ./templates
 COPY static ./static
+# The brand marks the learner UI draws (/orena-brand/logo/, app.py ORENA_BRAND_ROOT). Only what a page references
+# ships; tests/test_release_image_contents.py fails if a page references a brand file the image would not hold.
+COPY assets/brand/orena/logo ./assets/brand/orena/logo
 
 RUN mkdir -p /data
 
