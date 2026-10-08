@@ -688,3 +688,39 @@
   font-size: 14px;
   font-weight: 600;
 }
+
+/* Light-theme separation (human, 2026-10-08): on the light page gradient the frame's surface2 cards, the view toggle and
+   the empty block read as the page itself. Outside the white category panel they take the page's card surface and its
+   shadow, as every other card here; the ring's track and the toggle get a visible edge; small hue text on its own 15%
+   wash is darkened so a yellow or green tag stays legible. The dark theme keeps the frame's values. */
+.s-gl__all .s-gl__topic {
+  background: var(--surface);
+  box-shadow: var(--sh1);
+}
+.s-gl__all .s-gl__topic:hover {
+  background: var(--surface);
+  box-shadow: var(--sh2);
+}
+.s-gl__allEmpty {
+  background: var(--surface);
+  box-shadow: var(--sh1);
+}
+:root[data-theme='light'] .s-gl__views {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border2);
+}
+:root[data-theme='light'] .s-gl__view[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: none;
+}
+:root[data-theme='light'] .s-gl__ring:not(.s-gl__ring--done)::before {
+  background: var(--border2);
+}
+:root[data-theme='light'] .s-gl__tag {
+  color: color-mix(in oklch, var(--hue), black 40%);
+  background: color-mix(in srgb, var(--hue) 18%, transparent);
+}
+:root[data-theme='light'] .s-gl__levelN {
+  background: var(--surface3);
+}

@@ -4312,6 +4312,11 @@ backend cannot yet serve:
     architecture hold (AGENTS.md §7), so it is not drawn.
   - **Category description** (`cat.sub`, e.g. "Linking two ideas in one sentence"): the corpus functions carry none,
     so the panel's subline is only the count.
+  - **Human decision, light theme (2026-10-08):** "các element đang có màu gần với nền ở chế độ light … hãy fix nó".
+    Outside the white category panel, topic cards and the empty block take `--surface` + `--sh1` instead of the
+    frame's `--surface2`; in light only, the view toggle has a `--border2` edge and an accent-soft pressed state, the
+    not-started ring track is `--border2`, the level count pill is `--surface3`, and tag text is its hue darkened 40%
+    (AA: 5.7-9.1:1 measured on each hue's wash). Dark keeps the frame's values.
 
 ## Current Admin reconciliation — 2026-10-03
 
