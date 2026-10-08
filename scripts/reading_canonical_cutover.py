@@ -126,8 +126,10 @@ def refusal(*, url: str, app_url: str, environ: dict[str, str], confirmed: str =
     if confirmed != database_name(url):
         return (f"--confirm-sandbox names {confirmed!r} but the URL is database {database_name(url)!r}: "
                 "nothing was touched")
-    if str(environ.get("APP_ENV", "")).strip().casefold() == "production":
-        return "APP_ENV is production: this authorization is for the admin sandbox only (D-083)"
+    environment = str(environ.get("APP_ENV", "")).strip().casefold()
+    if environment in {"production", "prod", "public", "staging", "stage"}:
+        # Both public runtimes keep every gate (D-146): staging is :8000, real people's data.
+        return f"APP_ENV is {environment}: this authorization is for the admin sandbox only (D-083)"
     for name, value in (("PUBLIC_BASE_URL", environ.get("PUBLIC_BASE_URL", "")), ("--app-url", app_url)):
         if value and _port(value) in REFUSED_PORTS:
             return f"{name} is on port {_port(value)} - production (8000) and preview (8010) keep every gate"

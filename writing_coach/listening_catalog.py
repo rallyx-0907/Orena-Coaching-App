@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from writing_coach.core.deployment import is_public_environment
 from writing_coach.listening_dev_artifact import verify_manifest_integrity
 from writing_coach.media_ingestion import MediaPlayback
 from writing_coach.media_learning import (
@@ -522,13 +523,15 @@ def dev_catalog_enabled(env: Mapping[str, str] | None = None) -> bool:
     """Whether the generated development overlay may load.
 
     LISTENING_PRODUCT_SPEC 7: production defaults OFF and publication rules must
-    not be weakened. So the flag is opt-in only, and in production it is refused
-    outright rather than merely defaulted off - generated development content
-    must not be one environment variable away from a production learner.
+    not be weakened. So the flag is opt-in only, and on a public runtime (staging
+    or production) it is refused outright rather than merely defaulted off -
+    generated development content must not be one environment variable away
+    from a learner.
     """
 
     values = os.environ if env is None else env
-    if str(values.get("APP_ENV", "")).strip().casefold() == "production":
+    # Generated development content is developer tooling: never on a public runtime (staging or production, D-146).
+    if is_public_environment(values.get("APP_ENV")):
         return False
     return str(values.get(DEV_CATALOG_FLAG, "")).strip().casefold() in {"1", "true", "yes", "on"}
 

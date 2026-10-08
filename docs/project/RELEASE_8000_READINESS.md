@@ -8,6 +8,14 @@ The question: the :8000 container has run fine with its configuration; what is s
 to `main` and runs there? This document decides nothing. It lists what is true, what blocks, who owns each step and
 which human gate each step needs.
 
+## Decided 2026-10-08 (D-146) - :8000 is staging, not production
+
+:8000 and the public domain are **public, product-like staging** (`APP_ENV=staging`), for real-user testing; there is no
+final production runtime yet. Where this file says "production" about :8000 below, read "public staging": the public
+security requirements still apply, but no approved learner capability is held back because :8000 is public. Each
+capability follows its own flag; `AGENT_ENABLED` is the Orena Intelligence switch (the old "never in production" rule
+is retired). Proposed :8000 env: `APP_ENV=staging`, `AGENT_ENABLED=true`, `AGENT_VOICE_ENABLED=false`.
+
 ## Decided 2026-10-08 (D-143) - read this first
 
 The human decided B1-B5; sections below are the analysis they were decided on and are kept as written.
@@ -174,7 +182,7 @@ Names only. No value was read; `.env` was not opened. "First :8000 run" is a rec
 | `ORENA_ACCOUNT_BACKBONE` | `account_backbone.py:30,53`; `compose.yaml` | off | **off.** On requires D4 limits (B3) and the deletion position (B4). Off: drafts, notes, conversations and private imports stay on-device; settings columns still exist. |
 | `ORENA_PRACTICE_SESSION` | `speech_api.py:45-51`; compose | off | **off** (also an unauthorized revision, B2). Off: take writes NULL, `session=current` answers 404, Summary uses the 7-day fallback. |
 | `BILLING_ENABLED`, `BILLING_PRICES_FILE`, `POLAR_*`, `PAYOS_*` | `billing/service.py:43`, `app.py:1033` | off / unset | **unset.** 0027 does not exist; no learner screen draws plans (BL-1). |
-| `AGENT_ENABLED`, `AGENT_VOICE_ENABLED`, `AGENT_TURN_RETENTION_SWEEP` | `agent/api.py:45-48,128-130` | off | Leave off. `agent_enabled(..., production=True)` is false regardless, so `/api/agent/*` is never served when `APP_ENV=production`. Orena Intelligence is parked by the human; the new UI's Orena panel runs on the contract mock. |
+| `AGENT_ENABLED`, `AGENT_VOICE_ENABLED`, `AGENT_TURN_RETENTION_SWEEP` | `agent/api.py` | off | Superseded by D-146: `AGENT_ENABLED` alone decides, in every environment. :8000 staging: `AGENT_ENABLED=true`, `AGENT_VOICE_ENABLED=false`; the agent needs a provider credential and `AGENT_DAILY_SPEND_CAP_USD` set by the human. |
 | `AI_RUNTIME_MODE` | `ai/platform.py:74` | `legacy` | Keep what :8000 uses today. |
 | `MEDIA_MODEL_CLIPS` | `media_transcript_pipeline.py:443` | on (`"1"`) | on; model clips are cut at content readiness. Needs `ffmpeg` in the image (already). |
 | `MEDIA_PIPELINE_INLINE`, `MEDIA_TRANSCRIPT_FALLBACK` (`none`/`supadata`), `SUPADATA_*`, `MEDIA_TRANSLATION_PROVIDER`, `MEDIA_PRETRANSLATE_LANGUAGES`, `MEDIA_DAILY_CAP_USD`, `MEDIA_ASR_BATCH_CAP_USD`, `MEDIA_AI_BATCH_CAP_USD` | `app.py:517-551`, pipeline | `none` / unset | Keep paid fallbacks off until the human sets caps (paid providers are a human gate). |

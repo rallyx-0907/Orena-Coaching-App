@@ -46,7 +46,7 @@ from writing_coach.writing_evaluator_contract import (
 from writing_coach.writing_contract import project_review as project_writing_review, project_revision as project_revision_compare
 from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
-from auth_support import APP_ENV, AUTH_ENABLED, SESSION_SECRET, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
+from auth_support import APP_ENV, AUTH_ENABLED, DEPLOYMENT, SESSION_SECRET, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
 from writing_coach.product.api import router as product_router
 from writing_coach.media_api import (
     configure_media_fallback,
@@ -220,10 +220,11 @@ APP_VERSION = os.getenv(
 )
 SCHEMA_VERSION = 11
 
-_PRODUCTION = APP_ENV == "production"
+# Developer API docs are tooling: served in development only, never on a public runtime (staging, production).
+_DEVELOPER_DOCS = DEPLOYMENT.developer_docs
 # The schema browser is a developer tool: not served by a production deployment (security review 2026-10-04).
-app = FastAPI(title="Orena", version=APP_VERSION, docs_url=None if _PRODUCTION else "/docs",
-              redoc_url=None if _PRODUCTION else "/redoc", openapi_url=None if _PRODUCTION else "/openapi.json")
+app = FastAPI(title="Orena", version=APP_VERSION, docs_url="/docs" if _DEVELOPER_DOCS else None,
+              redoc_url="/redoc" if _DEVELOPER_DOCS else None, openapi_url="/openapi.json" if _DEVELOPER_DOCS else None)
 
 
 # One sliding window per route group, per account (writing_coach/core/http_security.py RATE_GROUPS).
@@ -999,7 +1000,7 @@ configure_agent(_with_voice(
         price_summary=_price_agent_summary,
         spend_guard=_agent_spend_guard(),
     )
-    if agent_enabled(os.environ, production=APP_ENV == "production")
+    if agent_enabled(os.environ)
     else None
 ))
 app.include_router(agent_router)

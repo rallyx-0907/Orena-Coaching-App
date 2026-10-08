@@ -31,12 +31,13 @@ def body(target="zh-CN", **overrides):
     return payload
 
 
-def test_the_flag_is_off_by_default_and_never_on_in_production():
-    assert not agent_enabled({}, production=False)
-    assert not agent_enabled({"AGENT_ENABLED": "false"}, production=False)
+def test_the_flag_is_off_by_default_and_is_the_only_switch():
+    # D-146: AGENT_ENABLED decides, in every environment; APP_ENV is not a feature switch.
+    assert not agent_enabled({})
+    assert not agent_enabled({"AGENT_ENABLED": "false"})
     for on in ("true", "1", "yes", "on", " TRUE "):
-        assert agent_enabled({"AGENT_ENABLED": on}, production=False)
-        assert not agent_enabled({"AGENT_ENABLED": on}, production=True)
+        for environment in ("development", "staging", "production"):
+            assert agent_enabled({"AGENT_ENABLED": on, "APP_ENV": environment})
 
 
 @pytest.fixture()

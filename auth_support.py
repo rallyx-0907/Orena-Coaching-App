@@ -121,11 +121,16 @@ def _local_admin_allowed(environ: Any = None) -> bool:
 
     With authentication off, every visitor used to be an administrator outside production. A deployment whose
     public address is not this machine's (a domain, a LAN address) - or one that only forgot APP_ENV - now
-    gets no admin at all, unless the operator says ALLOW_LOCAL_ADMIN=1 on purpose."""
+    gets no admin at all, unless the operator says ALLOW_LOCAL_ADMIN=1 on purpose. A public runtime (staging or
+    production, D-146) never has one, whatever ALLOW_LOCAL_ADMIN says."""
 
     from urllib.parse import urlsplit
 
+    from writing_coach.core.deployment import is_public_environment
+
     values = os.environ if environ is None else environ
+    if is_public_environment(values.get("APP_ENV")):
+        return False
     if str(values.get("ALLOW_LOCAL_ADMIN", "")).strip().casefold() in {"1", "true", "yes", "on"}:
         return True
     base = str(values.get("PUBLIC_BASE_URL", "")).strip()
@@ -138,8 +143,8 @@ LOCAL_ADMIN_ALLOWED = _local_admin_allowed()
 
 def require_admin(request: Request) -> dict[str, Any]:
     if not AUTH_ENABLED:
-        if DEPLOYMENT.production:
-            raise HTTPException(503, "Production authentication is not configured.")
+        if DEPLOYMENT.public:
+            raise HTTPException(503, "Authentication is not configured for this public deployment.")
         if not LOCAL_ADMIN_ALLOWED:
             raise HTTPException(503, "Authentication is not configured for this address.")
         return {"google_sub":"local-admin","email":"local","name":"Local developer","role":"admin"}

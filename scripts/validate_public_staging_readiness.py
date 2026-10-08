@@ -1,4 +1,4 @@
-"""Secret-safe validation for production-like Cloudflare staging."""
+"""Secret-safe validation for public, product-like Cloudflare staging (APP_ENV=staging, D-146)."""
 
 from __future__ import annotations
 
@@ -74,10 +74,10 @@ def validate_public_staging_readiness(
         deployment = None
         errors.append(str(exc))
     else:
-        if deployment.production:
-            passed.append("APP_ENV resolves to production")
+        if deployment.public:
+            passed.append(f"APP_ENV resolves to a public environment ({deployment.app_env})")
         else:
-            errors.append("APP_ENV must resolve to production for public staging.")
+            errors.append("APP_ENV must resolve to a public environment (staging or production) for public staging.")
         if deployment.auth_enabled:
             passed.append("Google OAuth configuration present")
         else:

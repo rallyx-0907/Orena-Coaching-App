@@ -1,9 +1,9 @@
 """`/api/agent/*` (contract §2): the turn stream and the capability registry.
 
-Off unless the server says otherwise. `AGENT_ENABLED` turns it on for a
-development or sandbox runtime; production never serves it, whatever the flag
-says - activating the agent for learners is a human gate (human ruling
-2026-09-27). While off, both routes answer 404.
+Off unless the server says otherwise. `AGENT_ENABLED` is the switch in every
+environment (D-146: the environment is not a feature switch); turning it on for
+a runtime learners use is the human's decision. While off, both routes answer
+404.
 
 The learner is the authenticated caller, read from the request context the
 auth middleware sets; the session language decides which learner data the
@@ -42,10 +42,10 @@ _TRUE = frozenset({"1", "true", "yes", "on"})
 _runtime: AgentRuntime | None = None
 
 
-def agent_enabled(env: Mapping[str, str], *, production: bool) -> bool:
-    """On only when the flag says so and the runtime is not production."""
+def agent_enabled(env: Mapping[str, str]) -> bool:
+    """AGENT_ENABLED is the switch, in every environment (D-146): the environment is not a feature switch."""
 
-    return not production and str(env.get("AGENT_ENABLED", "")).strip().casefold() in _TRUE
+    return str(env.get("AGENT_ENABLED", "")).strip().casefold() in _TRUE
 
 
 def configure_agent(runtime: AgentRuntime | None) -> None:
