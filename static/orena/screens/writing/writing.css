@@ -464,7 +464,8 @@
 .s-writing__noreview {
   padding: 28px;
   border-radius: 20px;
-  border: 1px dashed var(--border);
+  /* An empty-state well, not an outlined box (D-147; review 2026-10-08). */
+  background: var(--surface2);
   color: var(--muted);
   font-size: 15px;
   line-height: 1.55;

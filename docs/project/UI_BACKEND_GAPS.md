@@ -4348,6 +4348,15 @@ backend cannot yet serve:
     progress (model: kind vs source); the For-you rail's bleed and scrollbar misaligned with the content column;
     Chinese line breaks inside a word (今天…享/受); "0 day streak" beside two ticked days reads contradictory; the
     Grammar breadcrumb/rail follow the origin and differ across reloads; level-row roving tabindex.
+  - **Round 3 (2026-10-08), done:** hue wash on Practice Hub tiles and Today's smaller picks; one 2px card hover
+    (kit, Today, Library); Admin brought to D-147; For-you kinds name the skill ("Continue" leads the meta);
+    For-you rail inside the column on a desk; the Pronunciation chooser has Back; the speaking room's phone header
+    is two rows (Back · title · "…" / Choose source · Attempt history); word tiles and tone chips select by fill,
+    not a ring; light-theme controls on white cards (Settings actions and picker, Library "⋯", Progress next) take
+    `--surface2`; Writing's empty review well is a fill, not a dashed outline.
+    **Still open:** Settings off-toggle track contrast 1.19:1 (pre-existing, WCAG 1.4.11 needs 3:1); Progress and
+    Profile entered from a Profile row have only the rail to go back; "0 day streak" beside ticked days; level-row
+    roving tabindex; resting shadows on cards outside Grammar/Practice/Today picks (D-150 not applied app-wide).
 
 ## Current Admin reconciliation — 2026-10-03
 

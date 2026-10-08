@@ -58,7 +58,10 @@ export default async function discover(element, ctx) {
     element,
     html`<div class="s-discover">
       <div class="o-pagehead">
-        <div><h1 class="o-h1">${practice ? ts(practiceLabel) : ts('discover')}</h1>${practice ? '' : html`<p class="s-discover__sub">${t('subtitle')}</p>`}</div>
+        ${practice
+          // A practice chooser is entered from Practice Hub or a room, so it has its own way back (G-15, review 2026-10-08).
+          ? html`<div class="s-discover__practicehead"><button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${ts('back')}">${raw(icon('arrow-left', { size: 21 }))}</button><h1 class="o-h1">${ts(practiceLabel)}</h1></div>`
+          : html`<div><h1 class="o-h1">${ts('discover')}</h1><p class="s-discover__sub">${t('subtitle')}</p></div>`}
         <div class="s-discover__actions">
           <button type="button" class="o-btn o-btn--secondary" data-filters>${raw(icon('list-filter', { size: 16 }))}${t('filters')}<span data-filtercount></span></button>
           ${practice === 'listening' ? '' : html`<button type="button" class="o-btn o-btn--primary" data-import>+ ${t('importAction')}</button>`}
@@ -68,7 +71,7 @@ export default async function discover(element, ctx) {
         ${raw(icon('search', { size: 18 }))}
         <input type="search" autocomplete="off" placeholder="${t(practice ? 'practiceSearch' : 'searchPlaceholder')}" data-query>
       </div>
-      ${practice ? html`<p class="o-muted">${t(speakingPractice ? 'choosePracticeMedia' : practice === 'dictation' ? 'chooseDictationMedia' : 'chooseListeningMedia')}</p>` : ''}
+      ${practice ? html`<p class="o-muted s-discover__hint">${t(speakingPractice ? 'choosePracticeMedia' : practice === 'dictation' ? 'chooseDictationMedia' : 'chooseListeningMedia')}</p>` : ''}
       <div class="o-tabs" data-tabs ${practice ? raw('hidden') : ''}></div>
       <div class="s-discover__results" data-results-row></div>
       <div data-results></div>
@@ -184,6 +187,7 @@ export default async function discover(element, ctx) {
     sheet.querySelector('[data-sheet-clear]').addEventListener('click', clearFilters);
   }
 
+  root.querySelector('[data-back]')?.addEventListener('click', () => ctx.back());
   root.querySelector('[data-filters]').addEventListener('click', () => {
     openSheet({
       label: t('filters'),

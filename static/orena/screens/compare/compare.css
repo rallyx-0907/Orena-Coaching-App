@@ -27,8 +27,25 @@
 .s-compare-scroll--record .s-compare-recrow { flex-wrap: nowrap; }
 @media (max-width: 600px) {
   .s-compare-root { padding-top: 4px; }
-  .s-compare-root .s-compare-header { gap: 8px; padding-bottom: 12px; }
-  .s-compare-root .s-compare-title-block { flex-basis: 0; }
+  /* Phone header (design/UX review 2026-10-08): row 1 back, title, "…"; row 2 the two labelled buttons, equal. */
+  .s-compare-root .s-compare-header {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr) 44px;
+    grid-template-areas: "back title title more" "history history history history";
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+  .s-compare-root .s-compare-header:has(.s-compare-source) {
+    grid-template-areas: "back title title more" "source source history history";
+  }
+  .s-compare-root .s-compare-header > [data-back] { grid-area: back; }
+  .s-compare-root .s-compare-title-block { grid-area: title; flex-basis: auto; }
+  .s-compare-root .s-compare-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .s-compare-root .s-compare-header > [data-more] { grid-area: more; }
+  .s-compare-root .s-compare-header > .s-compare-source { grid-area: source; }
+  .s-compare-root .s-compare-header > [data-attempts] { grid-area: history; }
+  .s-compare-root .s-compare-header > .s-compare-pills { grid-column: 1 / -1; }
   .s-compare-root .s-compare-subtitle { display: none; }
   .s-compare-root .s-compare-history { height: 44px; padding: 0 12px; font-size: 13px; justify-content: center; }
   .s-compare-root .s-compare-pills { order: 3; width: 100%; }
@@ -1193,6 +1210,6 @@
 .s-compare-tonechip__char { font-size: 18px; font-weight: 600; color: var(--text); }
 .s-compare-tonechip__py { color: var(--muted); }
 .s-compare-tonechip b { font-weight: 700; }
-.s-compare-tonechip--focus { background: var(--amber-soft); box-shadow: inset 0 0 0 2px var(--amber); }
+.s-compare-tonechip--focus { background: color-mix(in srgb, var(--amber) 26%, var(--surface)); }
 .s-compare-tonechip--focus .s-compare-tonechip__py { color: var(--text); font-weight: 600; }
 .s-compare-tonefocus { margin: 0; }

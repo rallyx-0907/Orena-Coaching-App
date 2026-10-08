@@ -549,8 +549,9 @@ export default async function mountCompareWithModel(element, ctx) {
       const status = wordStatus(word);
       const tone = statusTone(status);
       const on = openWord() === word.index || playWord === word.index;
-      const ring = on ? `inset 0 0 0 2px ${playWord === word.index ? 'var(--accent)' : tone.stroke}` : 'none';
-      const bg = status === 'ok' && on ? 'var(--green-soft)' : tone.bg;
+      // Selected or playing is a deeper wash of the word's own verdict colour and elevation - no ring (D-147).
+      const ring = on ? 'var(--sh2)' : 'none';
+      const bg = on ? `color-mix(in srgb, ${tone.stroke} 26%, var(--surface))` : tone.bg;
       const sub = word.reading || word.pinyin || '';
       const pair = pitchPair(word,take);
       return html`<button type="button" class="s-compare-tile" data-word="${word.index}" data-fk="word-${word.index}" aria-pressed="${openWord() === word.index}" style="min-width:${Math.min(tileWidth, tileMinWidth(word.text, language))}px;flex-grow:${Math.max(1, word.durationMs || 0)};background:${bg};box-shadow:${ring}"><span class="s-compare-tile__word" lang="${langAttr(language)}" style="color:${tone.ink}">${word.text}</span><span class="s-compare-tile__sub" style="color:${tone.sub}">${sub || raw('&nbsp;')}</span><span class="s-compare-tile__pair">${miniPitch(pair.model, 'legendModel', t(pair.modelWord ? 'pitchUnavailable' : 'modelWordUnavailable'), !reference || reference.alignmentState==='processing')}<span class="s-compare-tile__divider"></span>${miniPitch(pair.you, 'legendYou', t('pitchUnavailable'), !analysis || analysis==='loading')}</span></button>`;

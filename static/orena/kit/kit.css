@@ -660,3 +660,16 @@
 
 /* iOS Safari zooms the page when a text field under 16px takes focus (and leaves it zoomed): on a phone the field is 16px. */
 :root[data-device='mobile'] .o-search input { font-size: 16px; }
+
+/* Light theme: a control on a white card has no edge to show it (D-147/D-150 removed the grey outline, and the flat
+   light edge is white on white). Such controls take the design's own --surface2 fill instead, as the Grammar level
+   pill does (G-14; design/UX review 2026-10-08, P1). Dark keeps the surface + edge. */
+:root:not([data-theme='dark']) .s-settings-action,
+:root:not([data-theme='dark']) .o-more:not([data-on="1"]),
+:root:not([data-theme='dark']) .s-progress-next {
+  background: var(--surface2);
+}
+:root:not([data-theme='dark']) .s-settings-action:hover:not(:disabled),
+:root:not([data-theme='dark']) .o-more:not([data-on="1"]):hover {
+  background: var(--surface3);
+}
