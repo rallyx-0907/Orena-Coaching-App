@@ -27,6 +27,17 @@ The human decided B1-B5; sections below are the analysis they were decided on an
 - **Observed on :8000 (read only):** its web container runs code bind-mounted from the `...-claudecode` worktree
   (`app.py`, `static/`, `templates/`, `writing_coach/` ...) on image `ai-writing-coach:local`. D-144 replaces this
   with an image built from the exact `main` SHA, with no source mounts.
+- **Released 2026-10-08 (human authorization):** final v3 backup `20261008T042406Z` rehearsed with `main` 6d7ebff0
+  (PASS), then in a maintenance window (web stopped 04:36Z, no other session) the pack's preflight passed and the
+  chain 0004 -> 0029 was applied: `verify_after` ready, rows kept, legacy Reading 14/1 frozen by 4 triggers, chain
+  `65044f6e...` and execution `d418c352...` digests. The smoke of image `orena:main-6d7ebff0` found
+  `/orena-brand/logo/*` 404 (the Dockerfile copied no `assets/`); fixed by PR #98, released as **`main` a2342e62,
+  image `orena:main-a2342e62`**, no source mounts, only the `ai-writing-coach-data` volume; backbone and practice
+  session `off`, billing/agent unset. Access restored 05:20Z. The old container is kept stopped as
+  `ai-writing-coach-writing-coach-1-before-6d7ebff0` (restart `no`; it cannot run on the new schema). Still the
+  operator's: `PRONUNCIATION_PROVIDER` is `demo` (section 3.1 says not to leave it); invitation-only is not in the
+  application (any verified Google account signs in), so it rests on the OAuth/Cloudflare configuration; no
+  `reading-worker` runs on :8000.
 - **Runtime policy:** no new persistent runtime; :8021 dev/QA, :8000 product-like acceptance, rehearsal disposable.
 - **Correction (2026-10-08 inventory):** the Admin console already exists in the new UI (`#/admin/*`, `screens/admin/*`,
   on `Orena Admin.dc.html`); sections 4 and 7 saying it is old-UI only are stale. Old `#/admin?id=<section>` links need a
