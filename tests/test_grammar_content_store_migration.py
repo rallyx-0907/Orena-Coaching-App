@@ -175,6 +175,39 @@ def test_one_published_version_per_point_and_only_when_accepted_and_cleared(stor
                            " '{}', :h, 'draft_ai', '{}', :b, :now)", {"h": "9" * 64, "b": batch.hex, "now": NOW})
 
 
+def test_a_superseded_version_stays_accepted_and_can_be_republished_for_rollback(store):
+    """Codex review P1 (PR #100): supersession is serving state, not a review verdict, so rollback passes the gate."""
+    assert _migration().REVIEW_STATUSES == ("imported", "accepted", "rejected")
+    supersede = ("UPDATE grammar_point_versions SET is_published = false, superseded_at = :now"
+                 " WHERE point_id = 'en.present_perfect' AND is_published AND id <> :new")
+    publish = "UPDATE grammar_point_versions SET is_published = true, superseded_at = NULL WHERE id = :new"
+
+    def swap(conn, new):  # the publish transaction's order: supersede, then publish (section 6)
+        conn.execute(sa.text(supersede), {"new": new, "now": NOW})
+        conn.execute(sa.text(publish), {"new": new})
+    with store.begin() as conn:
+        batch = _batch(conn)
+        _point(conn)
+        old, new = _version(conn, batch, 1), _version(conn, batch, 2)
+        conn.execute(sa.text("UPDATE grammar_point_versions SET is_published = true WHERE id = :v"), {"v": old})
+        swap(conn, new)  # publish v2: v1 is superseded, still accepted
+        swap(conn, old)  # roll back to v1
+        rows = dict(conn.execute(sa.text(
+            "SELECT id, review_status || ':' || is_published || ':' || (superseded_at IS NULL) FROM grammar_point_versions"
+        )).all())
+    assert rows == {old: "accepted:1:1", new: "accepted:0:0"}
+    assert _refused(store, "UPDATE grammar_point_versions SET superseded_at = :now WHERE id = :v", {"v": old, "now": NOW})
+    assert _refused(store, "UPDATE grammar_point_versions SET review_status = 'superseded' WHERE id = :v", {"v": new})
+
+
+def test_a_rejected_version_cannot_be_published(store):
+    with store.begin() as conn:
+        batch = _batch(conn)
+        _point(conn)
+        rejected = _version(conn, batch, 1, review="rejected")
+    assert _refused(store, "UPDATE grammar_point_versions SET is_published = true WHERE id = :v", {"v": rejected})
+
+
 def test_a_published_point_carries_its_projection_and_its_id_matches_its_language(store):
     with store.begin() as conn:
         _point(conn)

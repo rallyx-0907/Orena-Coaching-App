@@ -7,7 +7,10 @@ with P2 items N-1..N-6 to carry), and the human answered its ten decisions in **
 decision. It (a) corrects what `main` and the Grammar Lab export contract have since made stale (section 0a), (b) adds the
 migration as a **proposal** (`migrations/proposed/20261008_0030_grammar_content_store.py`), (c) adds its PostgreSQL
 rehearsal and a contract-boundary check with their evidence (sections 19-20, `GRAMMAR_CONTENT_STORE.REHEARSAL.md`), and
-(d) folds N-1..N-6 into the text (section 18).
+(d) folds N-1..N-6 into the text (section 18). **Revision 3a** (same day) answers the Codex review of PR #100 (two P1s,
+section 18a): supersession is serving state, not a review verdict, so a rollback can republish the previous version; the
+contract checker fails when a validator dependency is missing; and the rehearsal's synthetic bodies are validated against
+export profile 1 before import.
 
 Process (AGENTS section 1 "Architecture review authority", D-054, D-102, D-143/D-144): this revision and the migration
 file -> **independent architecture review of revision 3** -> the human's authorization -> `git mv` of the migration into
@@ -65,7 +68,7 @@ for this revision (section 20); **[I]** inferred, to verify at implementation. `
 | 4 | Trust boundary | Export profile 1 only: vendored closed profile schema validated with `jsonschema` (Draft 2020-12), pinned profile id, schema version and profile hash; closed manifest; app-side cross checks; nothing self-attested is relied on. | 5 |
 | 5 | Import | One package; dry run returns a diff; commit idempotent by the recomputed semantic `package_hash`; only `approved` points; imported versions are not visible. | 5 |
 | 6 | R5 ids | The manifest's explicit `r5_map` (D-106.2); one primary or one drop per R5 id at the database; written at commit, independent of publish. | 9 |
-| 7 | Lifecycle | Version `imported -> accepted/rejected -> superseded`; point `unpublished <-> published`, `archived`. Publish atomic, audited, rights-gated, reference-gated. | 6 |
+| 7 | Lifecycle | Version review verdict `imported -> accepted / rejected`; serving state `is_published` + `superseded_at` (a superseded version stays `accepted`, so rollback republishes it). Point `unpublished <-> published`, `archived`. Publish atomic, audited, rights-gated, reference-gated. | 6 |
 | 8 | Learner API | `GET /api/grammar/v1/points?level=`, `/points/{id}`, `/by-error`, `/progress`; `PUT/DELETE /progress/{id}`. Published only, whitelisted body. | 7 |
 | 9 | Progress | `grammar_progress` and the existing one-statement `record_grammar_completion`; the server re-checks answers; R5 composite keys read through the map; merged = all. | 8 |
 | 10 | Languages | `en`/`zh` at the boundary and in the store; no enum; `ja` is configuration and content, not a migration. | 10 |
@@ -121,18 +124,22 @@ index below.
 
 **`grammar_point_versions`** (immutable content). `id`; `point_id` FK; `version` (CHECK >= 1); `content` JSON (the point body as
 exported, validated, section 5); `content_hash` (64 hex, CHECK length); `source_status` (CHECK `= 'approved'`); `review_status`
-(`imported | accepted | rejected | superseded`); `is_published` (default false); `rights_status` (`unknown | cleared |
+(`imported | accepted | rejected`: the review verdict only); `is_published` (default false); `superseded_at` (set when a later
+publish replaced this version, cleared when it is published again; serving state, not a verdict); `rights_status` (`unknown | cleared |
 restricted`); `provenance` JSON (the manifest's per-point entry: reviewer, timings, run, model, prompt, `source_refs`,
 `source_anchors`, `r5_source`; never served); `batch_id` FK; `imported_at`; `reviewed_by`, `reviewed_at`, `review_note`. UNIQUE
 `(point_id, version)`, UNIQUE `(point_id, content_hash)`, **partial UNIQUE `(point_id) WHERE is_published`** (one published
 version per point), and **CHECK `is_published = false OR (review_status = 'accepted' AND rights_status = 'cleared')`**: the
-publish gate of D-105.5a/D-106.6 is a database fact. Consequence, stated for the reviewer: restricting the rights of the
+publish gate of D-105.5a/D-106.6 is a database fact; CHECK `is_published = false OR superseded_at IS NULL`. Because supersession
+does not change the verdict, the version a newer publish replaced is still `accepted` and passes the gate again: **rollback is a
+publish of the previous version** (Codex review P1, section 18a; revision 2's `superseded` review status made that impossible).
+Consequence, stated for the reviewer: restricting the rights of the
 **published** version is refused until it is unpublished (the admin route does both in one transaction). Indexes
 `(review_status, imported_at)` (the review queue) and `(batch_id)`.
 **Immutability (review P2-3; S-9).** A PostgreSQL `BEFORE UPDATE OR DELETE` row trigger refuses any change to `id`, `point_id`,
 `version`, `content`, `content_hash`, `source_status`, `provenance`, `batch_id`, `imported_at`, and any DELETE; `json` columns are
 compared as `CAST(... AS text)` (byte identity, the 20260924_0015 precedent: `json` has no equality operator). Only
-`review_status`, `is_published`, `rights_status` and `reviewed_*` move. SQLite holds the same rule as a repository invariant
+`review_status`, `is_published`, `superseded_at`, `rights_status` and `reviewed_*` move. SQLite holds the same rule as a repository invariant
 with a test. A fix is a new version from upstream (D-100.1, D-106.1).
 
 **`grammar_r5_map`** (section 9; independent of publish state). `id`; `language_code`; `r5_id` VARCHAR(255) (the bare R5 lesson
@@ -264,25 +271,31 @@ does not mention: reported, never unpublished), `r5_map` changes and function-la
 Unchanged from revision 2: the compressed upload is capped while reading (32 MiB [I]); zip limits enforced on produced bytes while
 decompressing (<= 2,000 members, <= 1 MiB each, <= 64 MiB total), no absolute or `..` names, no symlinks or duplicates, only
 `package.json`, `functions.json`, `points/*.json`; UTF-8; JSON parsed with depth and size bounds; synchronous within a 30 s budget
-[I]. The rehearsal's SQL part of a 1,000-point import (about 21 KB per body) took 1.2 s on PostgreSQL 16 [R]; parsing and validation
+[I]. The rehearsal's SQL part of a 1,000-point import (about 19 KB per profile-valid body) took 1.9 s on PostgreSQL 16 [R]; parsing and validation
 cost is measured when the importer exists. No request runs a model or fetches a URL.
 
 ## 6. Review and publish
 
-- **Version**: `imported -> accepted | rejected` (`POST /versions/{id}/review`, reason required to reject).
+- **Version**: `imported -> accepted | rejected` (`POST /versions/{id}/review`, reason required to reject). That verdict is final for
+  the version's content; publishing and superseding never change it.
 - **Rights (D-106.6, N-4)**: the batch attestation (`rights_basis`, text, actor, time) is given at commit or later through
   `POST /imports/{id}/rights`; until then the batch's versions stay `unknown`. An admin may set one version `restricted` (`rights_set`);
   for the published version that route first unpublishes it in the same transaction (the CHECK of section 3 requires it).
 - **Publish** (`POST /points/{id}/publish {version_id, attested: true}`), one transaction: lock the point row (`FOR UPDATE`, which
   serializes concurrent publishes of one point [R]); check the version is the point's, `accepted` and `cleared`, its function label is
-  complete, and its references resolve in the resulting state; supersede the previous published version; set `is_published`, the
+  complete, and its references resolve in the resulting state; supersede the previous published version (`is_published = false`,
+  `superseded_at = now`, verdict unchanged); set `is_published` (and clear `superseded_at`), the
   lifecycle and the projection; rebuild the point's tags; bump `grammar_catalog_state`; write the event. Any failure rolls all of it
   back: the rehearsal shows a gate failure after superseding, an injected fault after the tag rebuild and revision bump, and a
   concurrent second publish each leave versions, projection, tags, events and revision as they were, or exactly one published
-  version with one bump per committed publish [R]. The R5 map is not touched by publish.
+  version with one bump per committed publish [R]; a `rejected` version is refused by the CHECK [R]. The R5 map is not touched by
+  publish.
+- **Rollback of a bad publish**: publish the previous version again (it is still `accepted`; its rights are re-checked by the same
+  gate). The rehearsal republishes a superseded version: it is served again, the newer one becomes superseded, both stay `accepted`,
+  one revision bump [R].
 - **Dangling references (D-106.7)**: refused, evaluated against the resulting state; a single-point override needs
   `override_references: true` and leaves an event.
-- **Bulk publish**: up to N pairs, all-or-nothing in one transaction; the rehearsal published 1,000 points in 0.44 s [R].
+- **Bulk publish**: up to N pairs, all-or-nothing in one transaction; the rehearsal published 1,000 points in 0.9 s [R].
 - **Unpublish / archive / restore** (`POST /points/{id}/status`): unpublish clears `is_published`, empties the tags, bumps the
   revision; `archived -> unpublished` is the only way back. Nothing is deleted; R5 rows untouched; learner progress untouched.
 - Nothing in import, validation or any worker calls publish.
@@ -434,8 +447,10 @@ and sends completion with the picks to `PUT /progress/{id}`. The screens, models
   head and its slot is unique; **no Store code exists before the gate** (no ORM model for the eight tables, no `/api/grammar/v1` or
   `/api/admin/grammar` route); no grammar point JSON under `writing_coach/`, `static/`, `templates/` (D-105.4); on SQLite the upgrade
   adds exactly the eight tables over the full app schema and the downgrade restores it exactly; one published version and the publish
-  gate; projection and id/language CHECKs; one resolution per R5 id across batches; package-hash uniqueness for imported batches only.
-- `scripts/rehearse_grammar_content_store.py` (by hand, throwaway PostgreSQL): the twelve groups of section 20.
+  gate; a superseded version stays `accepted` and is republished (rollback); a rejected version cannot be published; projection and
+  id/language CHECKs; one resolution per R5 id across batches; package-hash uniqueness for imported batches only.
+- `scripts/rehearse_grammar_content_store.py` (by hand, throwaway PostgreSQL): the twelve groups of `GRAMMAR_CONTENT_STORE.REHEARSAL.md`,
+  with every synthetic body validated against export profile 1 before import.
 - `scripts/check_grammar_export_contract.py` (by hand, reads GL with `git show`): the boundary of sections 5, 9, 10, 11.
 
 **At implementation (revision 2's list, still required):** importer refusals for every hard-failure and per-point code of 5.3, with
@@ -467,7 +482,7 @@ authorization matrix; audit rows.
   unaffected and rows under point ids re-attach when the points return. The R5 map is content: step 9 must not run before `GET
   /coverage` verifies it.
 - **Bad batch**: versions are unpublished by default, so a bad import is rejected/unused; a bad publish is an unpublish, the previous
-  version stays `superseded` and re-publishable.
+  version is still `accepted` (only `superseded_at` is set) and is re-published by the same gated publish (section 6).
 
 ## 17. Decisions
 
@@ -484,6 +499,9 @@ or policy, the human) about the following, each with a proposed answer:
    asked to align its exporter. No corpus change (all 43 labels comply). *Proposed: yes.*
 5. **R3-5 Promotion order with `proposed/0026`**: either may go first; the second is re-parented. *Proposed: as stated.*
 6. **R3-6 Which runtime first receives 0030**: the human's (D-127, D-143/D-144). *Not proposed here.*
+7. **R3-7 Review verdict separate from serving state** (answers the Codex P1): `review_status` is `imported | accepted | rejected`;
+   supersession is `superseded_at`. This narrows revision 2's approved version lifecycle (`... -> superseded`) so that the rollback
+   revision 2 already promised works. *Proposed: yes.*
 
 ## 18. Review response (`GRAMMAR_CONTENT_STORE.REVIEW.md`, revision 2 APPROVE with N-1..N-6)
 
@@ -496,10 +514,19 @@ or policy, the human) about the following, each with a proposed answer:
 | N-5 Upsert syntax across backends | Already implemented on `main` with each backend's conflict target (`uq_grammar_progress_scope` on PostgreSQL, `lesson_id` on the per-user SQLite table) (8). |
 | N-6 Response shapes the screens do not know | D-106: the seam maps `unavailable` and `dropped` to `{point: null}`; no new landing (7, 13). |
 
+## 18a. Codex review of PR #100 (commit `3f971976`, two P1)
+
+| Finding | Resolution in revision 3a |
+| --- | --- |
+| **P1 Contract checker passes when dependencies are missing** (`scripts/check_grammar_export_contract.py`: an unexecuted schema check and function-label check were recorded as PASS) | A missing `jsonschema` or PyYAML is now a FAIL row with "NOT RUN" and a non-zero exit; the migration's constants are read with `ast`, so the script needs no Alembic. Shown by shadowing both modules: 22 PASS, 2 FAIL, exit 1 (section 19). |
+| **P1 Superseded versions cannot be republished** (the publish transaction set `review_status = 'superseded'`, the gate requires `accepted`, so the promised rollback could not pass it) | Review verdict and serving state are separated (R3-7): `review_status` is `imported | accepted | rejected`; supersession is `superseded_at` (CHECK: never on the published version). A rollback publishes the previous, still `accepted`, version through the same gate (sections 3, 6, 16). The migration, the SQLite test (`test_a_superseded_version_stays_accepted_and_can_be_republished_for_rollback`) and the rehearsal (group 9: rollback, `superseded_at` CHECK, rejected version refused) show it. |
+| Also asked by the human: the rehearsal's synthetic bodies carried a non-contract `rehearsal_marker` | Removed. Every synthetic body is generated in the export-profile-1 shape and validated before import against the profile read from GL at `3579ece8` (hash pinned) plus the importer's cross checks; `jsonschema` is required. A negative control shows the closed profile rejects the old key. The ETag race test now reads the served body's contract field `version` (each race publish carries `version` = the revision it is published under). |
+
 ## 19. Contract boundary verification (issue #99 point 4; GL `3579ece8`)
 
 `scripts/check_grammar_export_contract.py` read every upstream file with `git show` and parsed upstream Python with `ast` (nothing
-imported, nothing copied). Result: **24 PASS, 0 FAIL** [R].
+imported, nothing copied). It requires `jsonschema` and PyYAML; a missing one is a FAIL row, never a skipped PASS (Codex review
+P1; shown by shadowing both: 22 PASS, 2 FAIL, exit 1). Result with both installed: **24 PASS, 0 FAIL** [R].
 
 | Contract point | Upstream at `3579ece8` | This revision | Match |
 | --- | --- | --- | --- |
@@ -521,12 +548,13 @@ Run in this agent environment on 2026-10-08 (local execution, not CI):
 
 | Command | Result |
 | --- | --- |
-| `python scripts/rehearse_grammar_content_store.py <throwaway PostgreSQL 16.15 URL> --report ...` | **59 PASS, 0 FAIL** (1,000 synthetic points, 100,000 `grammar_progress` rows); full table in `GRAMMAR_CONTENT_STORE.REHEARSAL.md` |
-| `python scripts/check_grammar_export_contract.py` (GL `3579ece8`) | **24 PASS, 0 FAIL** |
-| `pytest -q tests/test_grammar_content_store_migration.py` (SQLite) | 10 passed |
-| `pytest -q test_app.py tests` (`PERSISTENCE_BACKEND=sqlite`), the stdlib validators, the ESM graph and the 120 `.mjs` gates of `ci.yml` | 4538 passed, 380 skipped; every other gate exit 0 (`GRAMMAR_CONTENT_STORE.REHEARSAL.md`) |
+| `python scripts/rehearse_grammar_content_store.py <throwaway PostgreSQL 16.15 URL> --report ...` | **66 PASS, 0 FAIL** (1,000 synthetic points, every stored version validated against export profile 1 before import, 100,000 `grammar_progress` rows); full table in `GRAMMAR_CONTENT_STORE.REHEARSAL.md` |
+| `python scripts/check_grammar_export_contract.py` (GL `3579ece8`) | **24 PASS, 0 FAIL**; with the two dependencies hidden: 22 PASS, 2 FAIL, exit 1 |
+| `pytest -q tests/test_grammar_content_store_migration.py` (SQLite) | 12 passed |
+| `pytest -q test_app.py tests` (`PERSISTENCE_BACKEND=sqlite`), the stdlib validators, the ESM graph and the 120 `.mjs` gates of `ci.yml` | 4540 passed, 380 skipped; validators exit 0 (`GRAMMAR_CONTENT_STORE.REHEARSAL.md`) |
 
-**Next gate, in order:** (1) **independent architecture review** of this revision, the migration file and the evidence, recorded in
-Git as `GRAMMAR_CONTENT_STORE.REVIEW.md` "Review of revision 3" (reviewer, commit, verdict); (2) the human's authorization; (3)
+**Next gate, in order:** (1) **independent architecture review** of this revision, the migration file and the evidence, by a
+reviewer who did not write them, scoped by `GRAMMAR_CONTENT_STORE.REV3_REVIEW_REQUEST.md` and recorded in Git as
+`GRAMMAR_CONTENT_STORE.REVIEW.md` "Review of revision 3" (reviewer, commit, verdict); (2) the human's authorization; (3)
 promote the migration (`git mv` into `migrations/versions/`, re-parent if 0026 went first) and apply it only where the human says,
 after a backup; (4) only then the Store/API implementation of steps 2 and 5. Until (1) and (2), nothing in step 2 or later is written.

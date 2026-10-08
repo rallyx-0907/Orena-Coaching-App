@@ -6,10 +6,12 @@ never imported or executed. Needs the commit in the local object store (`git fet
 
     python scripts/check_grammar_export_contract.py [--commit 3579ece887c226b31d03b759b720261b8fa1d31d]
 
+Requires `jsonschema` and `PyYAML`, which `requirements.txt` does not declare (install them in a throwaway virtualenv).
+A missing one is a FAIL row, never a skipped PASS: the run cannot report success without executing every check.
+
 Checks (each a PASS/FAIL row; non-zero exit on any FAIL):
  1. canonical JSON: the proposal's rule (section 11) reproduces the golden vector's exact bytes and SHA-256.
- 2. export profile 1 (`schema/export_profile.schema.json`): a valid Draft 2020-12 schema (when `jsonschema` is
-    installed), closed at every object except the two documented maps, single version, `status` const `approved`,
+ 2. export profile 1 (`schema/export_profile.schema.json`): a valid Draft 2020-12 schema, closed at every object except the two documented maps, single version, `status` const `approved`,
     `target_lang` en|zh, locale keys vi|en|zh with vi and en required, no internal field in a point body; its
     `profile_schema_hash` is printed so the vendored copy can be pinned.
  3. package manifest (`pipeline/export_package.py`): the closed key set, provenance keys, profile id, schema version,
@@ -23,7 +25,6 @@ from __future__ import annotations
 import argparse
 import ast
 import hashlib
-import importlib.util
 import json
 import subprocess
 from pathlib import Path
@@ -120,11 +121,11 @@ def main() -> int:
     profile = json.loads(show(commit, "grammar_lab/schema/export_profile.schema.json"))
     try:
         from jsonschema import Draft202012Validator
-
+    except ImportError:
+        check("2 export profile is a valid Draft 2020-12 schema", False, "NOT RUN: jsonschema is not installed")
+    else:
         Draft202012Validator.check_schema(profile)
         check("2 export profile is a valid Draft 2020-12 schema", True)
-    except ImportError:
-        check("2 export profile meta-schema check skipped (jsonschema not installed)", True, "not run")
     point = profile["$defs"]["grammar_point"]
     check("2 profile id", profile["$id"] == "urn:orena:grammar_lab:export_profile:1", profile["$id"])
     opened = sorted(set(open_objects(profile)))
@@ -170,10 +171,8 @@ def main() -> int:
 
     # 4. r5_map ----------------------------------------------------------------------------------------------------------
     r5 = show(commit, "grammar_lab/pipeline/r5_map.py")
-    spec = importlib.util.spec_from_file_location("proposed_0030", MIGRATION)
-    migration = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(migration)
-    check("4 r5_map dispositions equal the migration's", module_constants(r5).get("DISPOSITIONS") == migration.DISPOSITIONS,
+    migration_dispositions = module_constants(MIGRATION.read_text(encoding="utf-8")).get("DISPOSITIONS")
+    check("4 r5_map dispositions equal the migration's", module_constants(r5).get("DISPOSITIONS") == migration_dispositions,
           str(module_constants(r5).get("DISPOSITIONS")))
     check("4 r5_map rows have exactly r5_id, point_id, is_primary, disposition",
           '{"r5_id", "point_id", "is_primary", "disposition"}' in r5)
@@ -183,13 +182,13 @@ def main() -> int:
     # 5. function labels -------------------------------------------------------------------------------------------------
     try:
         import yaml
-
+    except ImportError:
+        check("5 function labels carry vi, en and zh-Hans (GCC)", False, "NOT RUN: PyYAML is not installed")
+    else:
         functions = yaml.safe_load(show(commit, "grammar_lab/functions/functions.yaml"))["functions"]
         missing = [f["id"] for f in functions if not all(f["title"].get(key) for key in ("vi", "en", "zh-Hans"))]
         check(f"5 all {len(functions)} function labels carry vi, en and zh-Hans (GCC); the exporter requires only vi"
               " and en, so the importer is the stricter side", not missing, str(missing))
-    except ImportError:
-        check("5 function labels skipped (PyYAML not installed)", True, "not run")
 
     # 6. the corpus, counted only ----------------------------------------------------------------------------------------
     counts = {}
