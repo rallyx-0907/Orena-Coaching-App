@@ -132,7 +132,7 @@ def test_signed_out_the_learner_ui_shell_is_reachable_and_the_api_is_not(monkeyp
     async def exercise():
         async with _client() as client:
             return {
-                "shell": await client.get("/"),
+                "shell": await client.get("/?app=1"),
                 "asset": await client.get("/orena-assets/main.js"),
                 "brand": await client.get("/orena-brand/logo/orena-mark.svg"),
                 "languages": await client.get("/api/platform/languages"),
@@ -157,7 +157,7 @@ def test_signed_out_the_learner_ui_shell_is_reachable_and_the_api_is_not(monkeyp
         assert r[name].status_code == 401, name
     # The former address and the retired sign-in page send to the learner UI; nothing else is public.
     assert r["former"].status_code == 302 and r["former"].headers["location"] == "/"
-    assert r["login"].status_code == 302 and r["login"].headers["location"] == "/#/welcome"
+    assert r["login"].status_code == 302 and r["login"].headers["location"] == "/?app=1#/welcome"
     for name in ("lookalike", "sub_path", "other"):
         assert r[name].status_code == 302 and r[name].headers["location"] == "/#/welcome", name
 

@@ -47,6 +47,7 @@ from writing_coach.writing_contract import project_review as project_writing_rev
 from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
 from auth_support import APP_ENV, AUTH_ENABLED, DEPLOYMENT, SESSION_SECRET, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
+import auth_support
 from writing_coach.product.api import router as product_router
 from writing_coach.media_api import (
     configure_media_fallback,
@@ -1759,16 +1760,40 @@ def _stop_feedback_retention() -> None:
         _feedback_retention.stop()
 
 
+def _page(*parts: str) -> HTMLResponse:
+    return HTMLResponse(
+        (ROOT / "templates" / "orena" / Path(*parts)).read_text(encoding="utf-8"),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
-def home() -> HTMLResponse:
+def home(request: Request) -> HTMLResponse:
+    # The front door. With sign-in on and nobody signed in, `/` is the public Landing; `/?app=1` is the learner
+    # shell for that visitor (the Landing's buttons point there, so Welcome can draw without a loop). A signed-in
+    # learner, and local mode with sign-in off, get the shell as ever.
+    if auth_support.AUTH_ENABLED and not request.session.get("user_sub") and not request.query_params.get("app"):
+        return _page("public", "landing.html")
     # The learner UI (D-088), the only one since the cutover (D-091, D-143). The shell carries the list of
     # stylesheets and modules the app loads, so a cached copy of it keeps loading yesterday's asset list - a
     # stylesheet added since is simply never requested, and the screen renders unstyled. It is small, so it
     # stays uncached outright; the assets it names revalidate instead.
-    return HTMLResponse(
-        (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8"),
-        headers={"Cache-Control": "no-store, max-age=0"},
-    )
+    return _page("index.html")
+
+
+@app.get("/landing", response_class=HTMLResponse)
+def landing_page() -> HTMLResponse:
+    return _page("public", "landing.html")
+
+
+@app.get("/terms", response_class=HTMLResponse)
+def terms_page() -> HTMLResponse:
+    return _page("public", "terms.html")
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+def privacy_page() -> HTMLResponse:
+    return _page("public", "privacy.html")
 
 
 @app.get("/next")

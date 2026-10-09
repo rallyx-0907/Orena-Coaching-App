@@ -5278,3 +5278,38 @@ The 2026-10-08 export's Feedback frame (`#/feedback`, reached from Profile) and 
 - **FBK-4 Retention (D-159).** Decided: deleted with the account and after 24 months. A periodic job (at start, then
   daily) enforces the 24 months. Its switch `FEEDBACK_RETENTION_SWEEP` is the activation step, and the
   account-deletion runtime must call `delete_feedback_for_account`.
+
+## Public entry (2026-10-10, D-160)
+
+The 2026-10-09 export's Landing, Terms and Privacy, and its Backdrop change.
+
+- **PUB-1 Pages run on the design's runtime.** The Landing is a scroll-choreographed page of ~1200 elements whose
+  layout, motion and copy are template bindings and a 60 KB state script. It is served as the design's own file
+  under the design's own runtime (`support.js`; the served copy differs from the pin only in the script URLs, below), not retyped: measured
+  against the pin at 1920x1080, 1366x768, 390x844 and 360x740 the computed styles and the text are identical. The
+  cost: the page needs JavaScript (a crawler without it sees no copy), it loads the runtime (69 KB) and React 18.3.1 (142 KB), both
+  from `/orena-assets/public/` (the runtime asked for unpkg.com; the served copy points at the same npm files, vendored with
+  their MIT licence, and the design's own SRI hashes match them; Babel, 3 MB, is for `.jsx` imports that these pages do not
+  use and is not shipped), and Google Fonts as the design references them, and the browser logs a few harmless SVG-attribute parse errors from the
+  template's unresolved bindings before the runtime renders it. A native port is possible later and is the human's
+  call. Re-pin: run `node scripts/build_public_pages.mjs`; the gate fails on drift.
+- **PUB-2 Terms and Privacy.** The legal text is the design's, verbatim (the gate compares every heading, date,
+  paragraph and list item). Vietnamese is the default, English by the toggle or `?lang=en`; the design has no Chinese,
+  so `?lang=zh` shows English (the only edit to the design's script). Not written or reviewed by an agent: the
+  text names no legal entity or address, and the payment partner and the AI providers are not named; a lawyer
+  should read it before launch. `#/legal/terms` and `#/legal/privacy` (the older in-app drafts) now redirect to
+  `/terms` and `/privacy`; `#/legal/refund` is not in the design and stays as it was.
+- **PUB-3 Donate (human decision).** The Terms and Privacy footers link to a Donate page ("Support us"/"Ung ho")
+  and Terms section 4 links "Support Orena". The pinned Donate page is Vietnamese-only with sample amounts and a
+  dummy bank account, so it is **not built**: the footer link is removed and section 4's link keeps its words as
+  plain text. Say when Donate should be built.
+- **PUB-4 Backdrop (pinned, not built).** The export adds an optional photographic Backdrop with glass chrome
+  (translucent rail, top bar and phone bar with blur) to the learner shell and to Admin, and a midnight photograph
+  behind Onboarding with a translucent aside. Not built: it is an app-wide change to the colour owner
+  (`kit/tokens.css`), needs a contrast review (the design lays the theme's own text colours over a dark photograph
+  in the light theme too, and the glass chrome must still pass AA) and a D-147 edge decision. It is the human's call
+  whether the app gets it.
+- **PUB-5 Front door.** For a visitor who is not signed in and with sign-in on, `/` is the Landing and `/?app=1` is
+  the shell (Welcome); the Landing's buttons and `/login` go to `/?app=1#/welcome`, so there is no loop. A mid-session
+  sign-out, or an unknown address, lands on the Landing. Local mode (sign-in off) is unchanged.
+- **PUB-6 Pricing plans.** The design's Pricing is the plan source of truth (D-153); the Landing draws none.
