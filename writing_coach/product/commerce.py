@@ -11,7 +11,9 @@ Identity note: canonical commerce is specified against an account incarnation
 incarnation from a request yet — I1's `account_profile.scope_of()` has no
 production caller. This adapter therefore keys off the same `user_key` the
 existing `/api/product/*` routes already use, and does not invent incarnation
-wiring as a side effect. See the plan doc for the full reasoning.
+wiring as a side effect. See the plan doc for the full reasoning. (D-160: quota
+enforcement resolves the incarnation in `writing_coach.product.quota`; the
+usage this adapter reports is read from the buckets that enforcement writes.)
 """
 from __future__ import annotations
 
@@ -119,11 +121,14 @@ def resolveEntitlement(
     """
     svc = service or product_service
     access = svc.feature_access(user_key=user_key, feature=feature)
-    quota = {"limit": access.monthly_limit, "used": access.used, "remaining": access.remaining}
+    quota = {"limit": access.limit, "used": access.used, "remaining": access.remaining}
     if access.entitlement_state == "unknown":
         return EntitlementDecision(feature, None, "usage_unavailable", access.entitlement_state, quota)
     if access.enabled:
-        reason = "unlimited" if access.monthly_limit is None else "within_quota"
+        if access.usage_state == "not_metered":
+            reason = "not_metered"
+        else:
+            reason = "unlimited" if access.limit is None else "within_quota"
         return EntitlementDecision(feature, True, reason, access.entitlement_state, quota)
     reason = _REASON_BY_ENTITLEMENT_STATE.get(access.entitlement_state, "denied")
     return EntitlementDecision(feature, False, reason, access.entitlement_state, quota)

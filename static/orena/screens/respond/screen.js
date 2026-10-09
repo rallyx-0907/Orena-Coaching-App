@@ -28,7 +28,8 @@ import { pageHeader } from '../../kit/components.js';
 import { toast } from '../../kit/toast.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
-import { api } from '../../infrastructure/api.js';
+import { api, newIdempotencyKey } from '../../infrastructure/api.js';
+import { isQuotaExhausted, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { sentenceSpans } from '../../product/reader-text.js';
 import { measureWriting, measureMinimum } from '../../capabilities/writing-limits.js';
@@ -252,12 +253,14 @@ export default async function respondToContent(element, ctx) {
         text,
         writing_context: { journal_context: `${t('sourceLabel', { kind: t(source.kindKey) })}: ${source.title}`.slice(0, 1000) },
         learning_language: language,
-      });
+      }, { idempotencyKey: newIdempotencyKey() });
       if (!ctx.isCurrent()) return;
       result = mapFeedback(raw);
-    } catch {
+    } catch (error) {
       if (!ctx.isCurrent()) return;
-      toast(t('feedbackError'));
+      // The plan's limit (D-160): the server's figures, with the way to the plans as the toast's action.
+      if (isQuotaExhausted(error)) toast(quotaMessage(error), { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
+      else toast(t('feedbackError'));
     } finally {
       checking = false;
       if (ctx.isCurrent()) paint();

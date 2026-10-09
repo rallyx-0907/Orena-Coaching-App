@@ -1062,6 +1062,47 @@ _account_backbone = build_backbone(_persistence_runtime.engine, _backbone_tables
 configure_work(_account_backbone)
 app.include_router(work_router)
 
+# D-160: plan quota enforcement. Switched off unless ORENA_QUOTA_ENFORCEMENT / the admin setting turn it on; where
+# it is on and this runtime has no quota store (SQLite, missing tables, account backbone off) every enforced meter
+# answers 503 instead of running unmetered.
+from writing_coach.product import quota as _quota  # noqa: E402
+from writing_coach.product.service import configure_product_usage, product_service as _product_service  # noqa: E402
+
+_QUOTA_TABLES = ("commerce_quota_buckets", "commerce_quota_reservations", "account_incarnations")
+
+
+def _quota_store() -> tuple[object | None, str]:
+    engine = _persistence_runtime.engine
+    if engine is None or _persistence_runtime.backend != "postgresql":
+        return None, "no_postgresql"
+    if not _account_backbone.is_active:
+        return None, f"account_backbone_{_account_backbone.state}"
+    from sqlalchemy import inspect as _inspect
+
+    try:
+        tables = set(_inspect(engine).get_table_names())
+    except Exception:  # unreadable is not absent, and still not a store to enforce against
+        logging.getLogger(__name__).warning("quota: could not read the runtime tables", exc_info=True)
+        return None, "tables_unreadable"
+    if not set(_QUOTA_TABLES) <= tables:
+        return None, "tables_missing"
+    from writing_coach.persistence.quota_repository import PostgresQuotaRepository
+
+    return PostgresQuotaRepository(engine), ""
+
+
+_quota_repository, _quota_reason = _quota_store()
+_quota.configure_quota(
+    repository=_quota_repository,
+    incarnations=_account_backbone.incarnations if _quota_repository is not None else None,
+    plan_for=_product_service.plan_for_user,
+    settings=_persistence_runtime.platform_repository,
+    reason=_quota_reason,
+)
+configure_product_usage(_quota.usage_for)
+app.add_middleware(_quota.QuotaRequestMiddleware)
+_quota_reconciler = _quota.QuotaReconcileSchedule(_quota_repository) if _quota_repository is not None else None
+
 
 def _billing_service():
     """Billing (completion plan item 4) exists only when switched on, on PostgreSQL, with the account backbone;
@@ -1751,12 +1792,16 @@ def startup() -> None:
     init_db()
     if _feedback_retention is not None:
         _feedback_retention.start()
+    if _quota_reconciler is not None:
+        _quota_reconciler.start()
 
 
 @app.on_event("shutdown")
 def _stop_feedback_retention() -> None:
     if _feedback_retention is not None:
         _feedback_retention.stop()
+    if _quota_reconciler is not None:
+        _quota_reconciler.stop()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -2455,12 +2500,18 @@ def api_improve(payload: ImproveIn) -> dict[str, Any]:
     _guard_writing_minimum(
         payload.text, active_grammar_language_code(), endpoint="/api/improve"
     )
-    try:
-        return improve_with_ai(payload)
-    except requests.RequestException as exc:
-        raise HTTPException(503, "AI engine is unavailable for writing improvement.") from exc
-    except Exception as exc:
-        raise HTTPException(502, "The improvement model returned invalid structured output.") from exc
+    # D-160: one AI improve that runs is one writing review. Admitted BEFORE the try, so a refusal (429/503) is
+    # never turned into this route's 502; an exhausted plan never reaches the provider. A failure settles 0.
+    with _quota.admit("writing.review", request_digest=_quota.request_digest(payload)) as ticket:
+        try:
+            ticket.dispatch("improve")
+            result = improve_with_ai(payload)
+        except requests.RequestException as exc:
+            raise HTTPException(503, "AI engine is unavailable for writing improvement.") from exc
+        except Exception as exc:
+            raise HTTPException(502, "The improvement model returned invalid structured output.") from exc
+        ticket.settle(1, "improve")
+        return result
 
 
 def _grammar_storage_key(lesson: dict[str, Any]) -> str:
@@ -2921,7 +2972,12 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         existing = _stored_review_for(identity)
         if existing is not None:
             return _review_payload(existing, previous)
-        return _run_review(payload, identity, previous, series_id, revision_no)
+        # D-160: a review that will run is one writing review, admitted only here - after both cache checks, so a
+        # stored identical review is never charged - and before any provider call. `_run_review` dispatches and
+        # settles through the ticket of this block.
+        digest = _quota.request_digest(f"{identity['fingerprint']}|{payload.parent_essay_id or ''}")
+        with _quota.admit("writing.review", request_digest=digest):
+            return _run_review(payload, identity, previous, series_id, revision_no)
 
 
 def _run_review(
@@ -2931,6 +2987,8 @@ def _run_review(
     series_id: int | None,
     revision_no: int,
 ) -> dict[str, Any]:
+    ticket = _quota.current_ticket()
+    ticket.dispatch(f"evaluate:{identity['fingerprint'][:32]}")
     result, evaluator = evaluate(payload)
     result = _bounded_review(result)
     result["grammar_links"] = grammar_links_for_issues(
@@ -2986,6 +3044,8 @@ def _run_review(
     })
     essay_id = int(created["id"])
     series_id = int(created["series_id"])
+    # The local heuristic is not an AI review: no AI ran, nothing is charged (D-160).
+    ticket.settle(0 if evaluator == "fallback-demo" else 1, f"essay:{essay_id}")
 
 
     current_for_delta = {**result, "overall": overall}
@@ -3102,6 +3162,8 @@ def essay_review_refresh(essay_id: int) -> dict[str, Any]:
     )
     if same_review(new_identity, stored):
         return _refresh_answer(essay_id, "current")
+    # Not metered (D-160, default pending the human): a refresh is Orena repairing its own contract change, at most
+    # one per essay per change - the learner did not ask for a new review.
     with _review_gate(f"refresh:{essay_id}:{prior}"):
         fresh = _learning_repository.get_essay(essay_id)
         if not fresh or identity_of_stored(row_to_dict(fresh, detail=True).get("module_data")).get("fingerprint") != prior:
