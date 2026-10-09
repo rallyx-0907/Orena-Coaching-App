@@ -4567,3 +4567,25 @@ hãy làm giống với đặc tính của các card trong practice hub."
    Light / Dark / System.
 4. Settings: the Languages tab's three choices are pickers, as Support language already was (D-098); each Accent
    option shows its own colour beside its name.
+
+## D-153 - Three plans with administrator-set prices and limits; Settings' Privacy tab; the new export pinned
+
+2026-10-09, explicit human decisions. Human: "Tạo 3 option plan như thiết kế không được để 2 gói", then "Đổi catalog
+thành 3 gói với giá và hạn mức tương tự thiết kế. Khi có kích hoạt billing thật thì có thể điều chỉnh sau. Nhưng phải
+có phần UI để điều chỉnh giá trong admin và các hạn mức … lật lại thì có thể sửa giá và các hạn mức đi kèm. Và có thể
+apply tính từ lúc thay đổi từ admin"; "Có theo thiết kế mới" (Settings); "Cho phép" (pin the export).
+
+1. The plan catalogue (`writing_coach/product/catalog.py`) is Free / Plus / Pro (ranks 0-2) with the design's monthly
+   and yearly prices in USD and VND. Limits use the existing feature keys: Free unchanged, Pro with Premium's former
+   limits, Plus between them. A stored `premium` subscription is Pro; the frozen native `/api/product/me` still
+   reports Plus and Pro as `premium` (its schema knows two ids).
+2. An administrator edits every price and monthly limit in Platform Admin (`#/admin/plans`, `GET`/`PUT
+   /api/product/admin/plans`, `require_admin`). The document is validated and stored as the `product.plan_catalog`
+   `platform_settings` row (no new table or migration) and applies from the moment it is saved; each save writes an
+   `audit_logs` row. A stored document that cannot be read is ignored, never half-applied.
+3. Billing stays off (`billing_ready: false`): a price is what the product shows, not a charge. The billing module's
+   price file is separate and must be aligned before billing is activated. This is an entitlement change: it needs
+   the independent architecture review AGENTS.md requires before it reaches `main`.
+4. Settings' "Plan & privacy" tab becomes Privacy, as the new design draws it.
+5. The 2026-10-09 export is pinned: `screens/Orena.dc.html` (928 080 bytes, sha256 1abfa9cd…) and
+   `screens/Orena-Admin.dc.html` (232 508 bytes, a70b3baa…); `PINS.tsv` updated, `SYNC_2026-10-09.md` records it.

@@ -425,3 +425,51 @@
   padding-inline: 14px;
   font-size: 13px;
 }
+
+/* Monthly / Yearly (the design's prCycles: 4px track on surface2, 42px buttons, the chosen one a raised surface;
+   the saving a green-soft pill). */
+.s-pricing__cycles {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 16px;
+  background: var(--surface2);
+  margin-top: 6px;
+}
+.s-pricing__cycle {
+  height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.s-pricing__cycle[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--sh1);
+}
+.s-pricing__save {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+.s-pricing-card__pricerow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.s-pricing-card__per {
+  font-size: 14px;
+  color: var(--muted);
+}

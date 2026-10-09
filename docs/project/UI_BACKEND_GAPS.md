@@ -4307,6 +4307,10 @@ backend cannot yet serve:
   rebuilt on that export's frames ("Grammar Library", "Grammar category"). **Still open:** copying it into
   `docs/design/canonical-ui/screens/` (PINS.tsv, a SYNC record, README and the revision named in AGENTS.md and
   DESIGN_CONTRACT.md) was refused by the agent's permission policy; the human pins it or allows it.
+  **CLOSED 2026-10-09 (human: "Cho phép"):** pinned - `SYNC_2026-10-09.md`, PINS.tsv, README, AGENTS.md and CLAUDE.md
+  updated. DESIGN_CONTRACT.md ("The authority") still names revision `1790473816124946`: it is left untouched because
+  the human's own uncommitted edit is in that file - the human updates that line with their edit. IMPLEMENTATION_MAP.md still carries the 2026-09-27 title and frame
+  numbers; the new frames are mapped in the gap entries until it is re-keyed.
 - **G-14 · Grammar Library: what the new frames draw and the corpus/progress cannot supply (2026-10-08, owner: human /
   Grammar Lab / learner state).**
   - **Categories:** the design draws six named categories per language, each with a hue and an icon
@@ -5240,10 +5244,13 @@ Real data: `GET /api/product/commerce` (plan, subscription state, per-feature mo
 `GET /api/product/plans` (Free and Premium with their entitlements; `api.productPlans` added). Everything below is a gap.
 Payments are a human gate: no checkout, provider call or simulated success exists in the UI.
 
-- **PLN-1 Tiers and prices.** The design draws Free / Plus / Pro at $0 / $9.99 / $19.99 (and 199.000d / 399.000d),
-  monthly and yearly (-33%). The catalogue has Free and Premium and `price_label` is a name, not an amount; there is no
-  billing cycle. Pricing draws the two real plans, the price as "Free" or a dash, "Pricing is not published yet", no
-  Monthly/Yearly switch and no "Most popular"/"Most capable" tags. Owner: human (plans, prices, cycles) then BACKEND.
+- **PLN-1 Tiers and prices. CLOSED 2026-10-09 (D-153):** the catalogue is Free / Plus / Pro with the design's monthly
+  and yearly prices in USD and VND, editable with every monthly limit in Platform Admin (`#/admin/plans`), applied from
+  the moment it is saved. Pricing draws the three tiers, the Monthly/Yearly switch with the saving computed from the
+  prices, and the currency of the interface (dong in Vietnamese, dollars otherwise). Still not drawn: the "Most
+  popular"/"Most capable" tags (no measure behind them). The price is display only while `billing_ready` is false;
+  the billing module's own price file (`BILLING_PRICES_FILE`, tests/test_billing.py) is separate and must be aligned
+  with the catalogue before billing is switched on. Owner: human (billing activation).
 - **PLN-2 Limits.** The design meters Orena messages (per day), writing reviews, pronunciation minutes, media-import
   minutes. The catalogue meters `writing.evaluate`, `writing.improve`, `dictionary.lookup`, `vocabulary.save` per
   month; there is no entitlement for Orena messages, pronunciation minutes or media import (same as N-29/N-30). Usage
@@ -5267,6 +5274,9 @@ Payments are a human gate: no checkout, provider call or simulated success exist
   audio, history). The app's Settings still has the "Plan & privacy" tab (plan row with an inert Manage, three meters,
   microphone, learner audio, history, licences), so Profile's Privacy row opens that tab and the plan rows there
   duplicate Plan & usage. Re-tabbing Settings is a separate change. Owner: UI (Settings).
+  **CLOSED 2026-10-09 (human: "Có theo thiết kế mới"):** Settings' last tab is Privacy (microphone, learner audio,
+  History, and the licences link); the plan row and its three meters are gone - Plan & usage owns them. An old
+  `?tab=plan` link opens Privacy.
 - **FBK-1 Feedback endpoint.** No route accepts or lists feedback (no `feedback` route in `app.py` or
   `writing_coach/`) and there is no store for it. The frame is drawn with its stars, areas and text working as an
   in-memory draft, Send inert with "Sending feedback is not available yet" beside it, and "Your feedback" at

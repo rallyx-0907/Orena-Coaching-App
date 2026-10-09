@@ -72,6 +72,8 @@ class PlatformRepository(Protocol):
     ) -> None: ...
     def delete_provider_credential(self, provider_id: str) -> None: ...
     def record_ai_operation(self, telemetry: dict) -> None: ...
+    def get_setting(self, key: str) -> dict | None: ...
+    def set_setting(self, key: str, value: dict, *, updated_by: str = "") -> dict: ...
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]: ...
     def record_admin_event(
         self,
@@ -283,6 +285,50 @@ class SQLitePlatformRepository:
                 conn.execute("DELETE FROM platform_settings WHERE key = ?", (key,))
                 conn.commit()
 
+    def get_setting(self, key: str) -> dict | None:
+        """One platform_settings document as {value, updated_at, updated_by}, or None."""
+        with self.connect() as conn:
+            if not self._has_platform_settings(conn):
+                return None
+            row = conn.execute(
+                "SELECT value_json, updated_at, updated_by FROM platform_settings WHERE key = ?",
+                (key,),
+            ).fetchone()
+        if row is None:
+            return None
+        try:
+            value = json.loads(row["value_json"])
+        except (TypeError, ValueError):
+            return None
+        return {"value": value, "updated_at": str(row["updated_at"]), "updated_by": str(row["updated_by"])}
+
+    def set_setting(self, key: str, value: dict, *, updated_by: str = "") -> dict:
+        now = datetime.now().astimezone().isoformat(timespec="seconds")
+        with self.connect() as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS platform_settings (
+                    key TEXT PRIMARY KEY,
+                    value_json TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    updated_by TEXT NOT NULL DEFAULT ''
+                )
+                """
+            )
+            conn.execute(
+                """
+                INSERT INTO platform_settings(key, value_json, updated_at, updated_by)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(key) DO UPDATE SET
+                  value_json = excluded.value_json,
+                  updated_at = excluded.updated_at,
+                  updated_by = excluded.updated_by
+                """,
+                (key, json.dumps(value, sort_keys=True), now, updated_by),
+            )
+            conn.commit()
+        return {"value": value, "updated_at": now, "updated_by": updated_by}
+
     def record_ai_operation(self, telemetry: dict) -> None:
         # SQLite is frozen archive/rollback storage; telemetry is PostgreSQL-only.
         return None
@@ -372,6 +418,26 @@ class PostgresPlatformRepository:
                 row.value = value
                 row.updated_at = now
                 row.updated_by = updated_by
+
+    def get_setting(self, key: str) -> dict | None:
+        """One platform_settings document as {value, updated_at, updated_by}, or None."""
+        with Session(self.engine) as session:
+            row = session.get(PlatformSetting, key)
+            if row is None:
+                return None
+            return {"value": row.value, "updated_at": row.updated_at.isoformat(), "updated_by": row.updated_by}
+
+    def set_setting(self, key: str, value: dict, *, updated_by: str = "") -> dict:
+        now = datetime.now(timezone.utc)
+        with Session(self.engine) as session, session.begin():
+            row = session.get(PlatformSetting, key)
+            if row is None:
+                session.add(PlatformSetting(key=key, value=value, updated_at=now, updated_by=updated_by))
+            else:
+                row.value = value
+                row.updated_at = now
+                row.updated_by = updated_by
+        return {"value": value, "updated_at": now.isoformat(), "updated_by": updated_by}
 
     def get_capability_config(self, capability_key: str) -> CapabilityConfigRecord | None:
         setting_key = capability_setting_key(capability_key)

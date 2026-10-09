@@ -2,9 +2,10 @@
    no network.
 
    The design draws three tiers (Free / Plus / Pro), two billing cycles, prices, a 14-day message
-   chart, a card, invoices and a payment flow. The backend knows two plans (Free, Premium) with
-   per-feature monthly limits and this month's use (GET /api/product/commerce, /api/product/plans),
-   `billing_ready: false`, and nothing else. Every figure here is read from those two answers;
+   chart, a card, invoices and a payment flow. The backend serves the three tiers with their monthly and
+   yearly prices in USD and VND and per-feature monthly limits, all editable in Platform Admin (D-153), and
+   this month's use (GET /api/product/commerce, /api/product/plans), `billing_ready: false`. Every figure
+   here is read from those two answers;
    what they cannot supply is not drawn or is drawn at its honest zero/unavailable state - see
    docs/project/UI_BACKEND_GAPS.md "New export frames: Plan, Pricing, Billing, Feedback". */
 
@@ -86,6 +87,8 @@ export function pricingPlans({ plans, commerce } = {}) {
       priceLabel: String(plan.price_label || ''),
       isFree: String(plan.id) === 'free',
       isCurrent: String(plan.id) === currentId,
+      rank: Number(plan.rank) || 0,
+      prices: plan.prices && typeof plan.prices === 'object' ? plan.prices : {},
       /* What the plan includes: every enabled feature, a metered one with its monthly limit. */
       features: FEATURE_ORDER.filter((key) => byKey[key] && byKey[key].enabled).map((key) => ({
         key,
@@ -110,13 +113,50 @@ export function compareRows(plans) {
   }));
 }
 
-/* The Billing sheet's CTA wording by relation to the current plan. There is no ranking in the
-   catalogue, so "upgrade" is decided by the plan being priced above Free (the only plan with
-   `isFree`); anything else from a paid plan is a switch. */
+/* The Billing sheet's CTA wording by relation to the current plan: a higher rank is an upgrade. */
 export function changeKind(target, current) {
   if (!target || target.isCurrent) return 'current';
-  if (current && current.isFree && !target.isFree) return 'upgrade';
+  if (!current || (Number(target.rank) || 0) > (Number(current.rank) || 0)) return 'upgrade';
   return 'switch';
+}
+
+/* The design shows dong to a Vietnamese interface and dollars otherwise (Orena.dc.html `money`). */
+export const CYCLES = Object.freeze(['monthly', 'yearly']);
+export function currencyFor(locale) {
+  return String(locale || '').toLowerCase().startsWith('vi') ? 'VND' : 'USD';
+}
+
+export function formatMoney(amount, currency, locale = 'en') {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) return '—';
+  const whole = currency === 'VND';
+  return new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 }).format(value);
+}
+
+/* A plan's price for a cycle: what the card shows large (a yearly plan as its monthly share, as the design
+   does), and the line under it. `null` amount: the catalogue has no price for this currency and cycle. */
+export function priceView(plan, cycle, locale = 'en') {
+  if (!plan || plan.isFree) return { free: true, price: '', billedKey: 'freeForever', billedAmount: '' };
+  const currency = currencyFor(locale);
+  const amount = Number(plan.prices?.[cycle]?.[currency]);
+  if (!Number.isFinite(amount)) return { free: false, price: '—', billedKey: '', billedAmount: '' };
+  if (cycle === 'yearly') {
+    const share = currency === 'VND' ? Math.round(amount / 12 / 1000) * 1000 : amount / 12;
+    return { free: false, price: formatMoney(share, currency, locale), billedKey: 'billedYearly', billedAmount: formatMoney(amount, currency, locale) };
+  }
+  return { free: false, price: formatMoney(amount, currency, locale), billedKey: 'billedMonthly', billedAmount: '' };
+}
+
+/* What paying yearly saves against twelve months, in whole percent - the smallest across the paid plans,
+   so the switch never promises more than every plan gives. 0 when nothing is saved or a price is missing. */
+export function yearlySaving(plans, locale = 'en') {
+  const currency = currencyFor(locale);
+  const savings = (plans || []).filter((plan) => !plan.isFree).map((plan) => {
+    const month = Number(plan.prices?.monthly?.[currency]);
+    const year = Number(plan.prices?.yearly?.[currency]);
+    return month > 0 && year > 0 ? Math.floor((1 - year / (12 * month)) * 100) : 0;
+  });
+  return savings.length ? Math.max(0, Math.min(...savings)) : 0;
 }
 
 /* Payments: the commerce read says so itself (`billing_ready`). */

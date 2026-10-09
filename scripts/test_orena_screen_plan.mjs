@@ -17,14 +17,22 @@ const { sheetMarkup } = await import('../static/orena/screens/plan/sheet.js');
 const copy = await import('../static/orena/copy/index.js');
 const { ROUTES, byId, match } = await import('../static/orena/shell/routes.js');
 
-const FREE = { id: 'free', name: 'Free', description: 'Core writing practice for everyday learning.', price_label: 'Free', entitlements: [
+const PRICES = (m, mv, y, yv) => ({ monthly: { USD: m, VND: mv }, yearly: { USD: y, VND: yv } });
+const FREE = { id: 'free', name: 'Free', description: 'Core writing practice for everyday learning.', price_label: 'Free', rank: 0, prices: PRICES(0, 0, 0, 0), entitlements: [
   { key: 'writing.evaluate', enabled: true, monthly_limit: 30 }, { key: 'writing.improve', enabled: true, monthly_limit: 10 },
   { key: 'library.grammar', enabled: true, monthly_limit: null }, { key: 'dictionary.lookup', enabled: true, monthly_limit: 120 },
   { key: 'vocabulary.save', enabled: true, monthly_limit: 100 }, { key: 'analytics.basic', enabled: true, monthly_limit: null },
   { key: 'analytics.advanced', enabled: false, monthly_limit: null }, { key: 'practice.personalized', enabled: false, monthly_limit: null },
   { key: 'export.report', enabled: false, monthly_limit: null },
 ] };
-const PREMIUM = { id: 'premium', name: 'Premium', description: 'Deeper feedback.', price_label: 'Premium', entitlements: [
+const PLUS = { id: 'plus', name: 'Plus', description: 'Steady learners.', price_label: 'Plus', rank: 1, prices: PRICES(9.99, 199000, 79.99, 1590000), entitlements: [
+  { key: 'writing.evaluate', enabled: true, monthly_limit: 150 }, { key: 'writing.improve', enabled: true, monthly_limit: 60 },
+  { key: 'library.grammar', enabled: true, monthly_limit: null }, { key: 'dictionary.lookup', enabled: true, monthly_limit: 800 },
+  { key: 'vocabulary.save', enabled: true, monthly_limit: 1000 }, { key: 'analytics.basic', enabled: true, monthly_limit: null },
+  { key: 'analytics.advanced', enabled: true, monthly_limit: null }, { key: 'practice.personalized', enabled: true, monthly_limit: null },
+  { key: 'export.report', enabled: false, monthly_limit: null },
+] };
+const PRO = { id: 'pro', name: 'Pro', description: 'Heavy practice.', price_label: 'Pro', rank: 2, prices: PRICES(19.99, 399000, 159.99, 3190000), entitlements: [
   { key: 'writing.evaluate', enabled: true, monthly_limit: 500 }, { key: 'writing.improve', enabled: true, monthly_limit: 250 },
   { key: 'library.grammar', enabled: true, monthly_limit: null }, { key: 'dictionary.lookup', enabled: true, monthly_limit: 2000 },
   { key: 'vocabulary.save', enabled: true, monthly_limit: 3000 }, { key: 'analytics.basic', enabled: true, monthly_limit: null },
@@ -82,8 +90,8 @@ const COMMERCE = {
 
 /* --- plans, compare, change kind -------------------------------------------------------------- */
 {
-  const plans = model.pricingPlans({ plans: [FREE, PREMIUM], commerce: COMMERCE });
-  assert.deepEqual(plans.map((p) => [p.id, p.isCurrent, p.isFree]), [['free', true, true], ['premium', false, false]]);
+  const plans = model.pricingPlans({ plans: [FREE, PLUS, PRO], commerce: COMMERCE });
+  assert.deepEqual(plans.map((p) => [p.id, p.isCurrent, p.isFree, p.rank]), [['free', true, true, 0], ['plus', false, false, 1], ['pro', false, false, 2]], 'three tiers (D-153)');
   assert.deepEqual(plans[0].features.map((f) => f.key), ['writing.evaluate', 'writing.improve', 'dictionary.lookup', 'vocabulary.save', 'library.grammar', 'analytics.basic'], 'only enabled features');
   assert.equal(plans[0].features[0].limit, 30);
   assert.equal(plans[0].features.at(-1).limit, null);
@@ -91,12 +99,28 @@ const COMMERCE = {
   assert.equal(model.pricingPlans({ plans: [{}, null] }).length, 0);
   const rows = model.compareRows(plans);
   assert.equal(rows.length, 9);
-  assert.deepEqual(rows[0].cells, [{ kind: 'limit', value: 30 }, { kind: 'limit', value: 500 }]);
-  assert.deepEqual(rows.find((r) => r.key === 'analytics.advanced').cells.map((c) => c.kind), ['no', 'yes']);
+  assert.deepEqual(rows[0].cells, [{ kind: 'limit', value: 30 }, { kind: 'limit', value: 150 }, { kind: 'limit', value: 500 }]);
+  assert.deepEqual(rows.find((r) => r.key === 'analytics.advanced').cells.map((c) => c.kind), ['no', 'yes', 'yes']);
   assert.equal(model.changeKind(plans[0], plans[0]), 'current');
   assert.equal(model.changeKind(plans[1], plans[0]), 'upgrade');
-  const onPremium = model.pricingPlans({ plans: [FREE, PREMIUM], commerce: { ...COMMERCE, plan: { id: 'premium' } } });
-  assert.equal(model.changeKind(onPremium[0], onPremium[1]), 'switch', 'leaving a paid plan is a switch, not an upgrade');
+  assert.equal(model.changeKind(plans[2], plans[1]), 'upgrade', 'a higher rank is an upgrade');
+  const onPro = model.pricingPlans({ plans: [FREE, PLUS, PRO], commerce: { ...COMMERCE, plan: { id: 'pro' } } });
+  assert.equal(model.changeKind(onPro[1], onPro[2]), 'switch', 'a lower rank is a switch, not an upgrade');
+  assert.equal(model.changeKind(onPro[0], onPro[2]), 'switch');
+  // Prices: dong to a Vietnamese interface, dollars otherwise; a yearly plan shows its monthly share.
+  assert.equal(model.currencyFor('vi'), 'VND');
+  assert.equal(model.currencyFor('zh'), 'USD');
+  assert.equal(model.priceView(plans[1], 'monthly', 'en').price, '$9.99');
+  assert.equal(model.priceView(plans[1], 'monthly', 'en').billedKey, 'billedMonthly');
+  const yearly = model.priceView(plans[1], 'yearly', 'en');
+  assert.equal(yearly.price, '$6.67');
+  assert.equal(yearly.billedAmount, '$79.99');
+  assert.match(model.priceView(plans[1], 'monthly', 'vi').price, /199\.000/);
+  assert.match(model.priceView(plans[1], 'yearly', 'vi').price, /133\.000/, 'the dong share rounds to a thousand');
+  assert.equal(model.priceView(plans[0], 'yearly', 'en').free, true);
+  assert.equal(model.priceView({ ...plans[1], prices: {} }, 'monthly', 'en').price, '—', 'a missing price is a dash, never invented');
+  assert.equal(model.yearlySaving(plans, 'en'), 33);
+  assert.equal(model.yearlySaving([plans[0]], 'en'), 0);
   assert.equal(model.featureCopyKey('writing.evaluate'), 'feature_writing_evaluate');
   assert.equal(model.formatNumber(2000, 'en'), '2,000');
 }
@@ -114,16 +138,25 @@ for (const ui of ['en', 'vi', 'zh']) {
   assert.match(none, /s-plan-empty/, `${ui}: no usage read is an honest line`);
   assert.doesNotMatch(none, /s-plan-usage__row/);
 
-  const plans = model.pricingPlans({ plans: [FREE, PREMIUM], commerce: COMMERCE });
-  const pricing = String(pricingMarkup({ plans: [FREE, PREMIUM], commerce: COMMERCE }));
-  assert.equal((pricing.match(/s-pricing-card__cta/g) || []).length >= 2, true);
+  const plans = model.pricingPlans({ plans: [FREE, PLUS, PRO], commerce: COMMERCE });
+  const pricing = String(pricingMarkup({ plans: [FREE, PLUS, PRO], commerce: COMMERCE }));
+  assert.equal((pricing.match(/class="s-plan-card s-pricing-card"/g) || []).length, 3, `${ui}: three plan cards`);
   assert.match(pricing, /s-pricing-card__cta" disabled/, `${ui}: the current plan's button is disabled`);
-  assert.match(pricing, /data-choose="premium"/, `${ui}: the other plan opens the sheet`);
+  assert.match(pricing, /data-choose="plus"/, `${ui}: Plus opens the sheet`);
+  assert.match(pricing, /data-choose="pro"/, `${ui}: Pro opens the sheet`);
   assert.doesNotMatch(pricing, /data-choose="free"/);
-  assert.doesNotMatch(pricing, /\$\d|Yearly|-33|Most popular/, `${ui}: no price, cycle or sample tag`);
-  assert.match(pricing, /style="--cols:2"/);
+  assert.equal((pricing.match(/data-cycle=/g) || []).length, 2, `${ui}: Monthly and Yearly`);
+  assert.match(pricing, /−33%/, `${ui}: the yearly saving is computed from the prices`);
+  assert.match(pricing, ui === 'vi' ? /199\.000/ : /\$9\.99/, `${ui}: the monthly price in the interface's currency`);
+  assert.doesNotMatch(pricing, /Most popular|Phổ biến nhất/, `${ui}: no invented popularity tag`);
+  assert.match(pricing, /style="--cols:3"/);
+  const yearlyPricing = String(pricingMarkup({ plans: [FREE, PLUS, PRO], commerce: COMMERCE, cycle: 'yearly' }));
+  assert.match(yearlyPricing, /data-cycle="yearly" aria-pressed="true"|aria-pressed="true" data-cycle="yearly"/);
+  assert.match(yearlyPricing, ui === 'vi' ? /1\.590\.000/ : /\$79\.99/, `${ui}: yearly states the yearly total`);
 
   const sheet = String(sheetMarkup({ target: plans[1], current: plans[0] }));
+  assert.match(sheet, ui === 'vi' ? /199\.000/ : /\$9\.99/, `${ui}: the sheet states the plan's price`);
+  assert.match(String(sheetMarkup({ target: plans[2], current: plans[0], cycle: 'yearly' })), ui === 'vi' ? /3\.190\.000/ : /\$159\.99/);
   assert.match(sheet, /o-btn--primary" disabled/, `${ui}: the sheet's confirm is inert`);
   assert.match(sheet, /data-sheet-close/);
   assert.doesNotMatch(sheet, /4242|processing/i);

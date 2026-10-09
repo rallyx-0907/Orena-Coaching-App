@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from writing_coach.product.catalog import DEFAULT_PLAN_ID, Plan, plan_by_id
+from writing_coach.product.catalog import DEFAULT_PLAN_ID, Plan, known_plan_id, plan_by_id
 from writing_coach.product.repository import ProductRepository
 
 
@@ -104,7 +104,7 @@ class ProductService:
         status = str(getattr(subscription, "status", "") or "").strip().casefold() if subscription else "inactive"
         active = status in {"active", "trialing"}
         raw_plan_id = str(getattr(subscription, "plan_id", "") or "").strip().casefold() if subscription else DEFAULT_PLAN_ID
-        plan_known = raw_plan_id in {"free", "premium"}
+        plan_known = known_plan_id(raw_plan_id)
         plan = plan_by_id(raw_plan_id if active and plan_known else DEFAULT_PLAN_ID)
         features = {
             item.key: self._feature_access_for_plan(user_key=user_key, feature=item.key, plan=plan).as_dict()

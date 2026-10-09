@@ -22,7 +22,7 @@ export const AREAS = Object.freeze([
 /* Which area each admin route belongs to, and the module that draws it. */
 const ROUTES_OF = {
   overview: ['adminOverview'],
-  users: ['adminUsers', 'adminUser'],
+  users: ['adminUsers', 'adminUser', 'adminPlans'],
   operations: ['adminOperations', 'adminWorkers', 'adminPolling', 'adminErrors'],
   ai: ['adminAi', 'adminProvider', 'adminProviderKey', 'adminCapability', 'adminAiCosts'],
   content: ['adminContent', 'adminBooks', 'adminBook', 'adminMedia', 'adminMediaItem', 'adminVocab', 'adminCollection',
