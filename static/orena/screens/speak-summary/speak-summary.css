@@ -182,7 +182,7 @@
   height: 44px;
   padding: 0 16px;
   border-radius: 12px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
@@ -191,4 +191,5 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-shadow: var(--edge-light);
 }

@@ -7,7 +7,7 @@ const KEYS = [
   'today', 'discover', 'orena', 'practiceHub', 'practiceShort', 'myLibrary', 'libraryShort', 'progress', 'profile',
   'askOrena', 'askOrenaSub', 'askAnything', 'talkToOrena', 'search', 'notifications', 'back', 'retry', 'close', 'undo', 'dismiss',
   'loadingLesson', 'errorLesson', 'errorStory', 'errorPlace', 'errorOffline', 'errorServer', 'comingSoon',
-  'limited', 'account', 'cantOpen', 'offlineTitle', 'stillOffline',
+  'cantOpen', 'offlineTitle', 'stillOffline',
   'lang_en', 'lang_zh', 'learningLabel', 'plan_free', 'plan_plus', 'plan_pro', 'planDesc_free', 'planDesc_plus', 'planDesc_pro',
   'content', 'listening', 'dictation', 'reader', 'pronunciation', 'compareWithModel', 'review', 'writing',
   'listeningComprehension',
@@ -15,7 +15,7 @@ const KEYS = [
   'conversation', 'situationReaction', 'retell', 'reactReuse', 'timedRecall', 'contextTransfer', 'dailyFeed',
   'contextRewrite', 'timedWriting', 'readingTransfer', 'readingComplete', 'attemptHistory', 'speakingSummary',
   'timedReaction', 'respondToContent', 'discussion', 'mockInterview', 'soundTone', 'fromYourErrors',
-  'welcome', 'admin', 'planUsage', 'plans',
+  'welcome', 'admin', 'themeToLight', 'themeToDark', 'planUsage', 'plans',
 ];
 
 export const shellCopy = defineCopy('shell', {
@@ -30,7 +30,6 @@ export const shellCopy = defineCopy('shell', {
     loadingLesson: 'Preparing your lesson', errorLesson: 'Couldn’t load this lesson', errorStory: 'Couldn’t load this story', errorPlace: 'Couldn’t load {place}',
     errorOffline: 'Check your connection and try again.', errorServer: 'The server didn’t respond. Nothing was lost.',
     comingSoon: 'Coming soon',
-    limited: 'This experience is available in the internal review environment.', account: 'Account',
     cantOpen: 'Can’t open this yet', offlineTitle: 'You’re offline.', stillOffline: 'Still offline',
     lang_en: 'English', lang_zh: 'Chinese', learningLabel: '{language} · {level}',
     plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', planDesc_free: 'Everything you need to start a daily habit.', planDesc_plus: 'For steady learners who use Orena every day.', planDesc_pro: 'For heavy speaking and writing practice.',
@@ -44,6 +43,7 @@ export const shellCopy = defineCopy('shell', {
     attemptHistory: 'Attempt history', speakingSummary: 'Speaking summary', timedReaction: 'Timed Reaction',
     respondToContent: 'Respond to content', discussion: 'Discussion', mockInterview: 'Mock Interview',
     soundTone: 'Sound / Tone', fromYourErrors: 'From your errors', welcome: 'Welcome', admin: 'Platform admin',
+    themeToLight: 'Switch to light theme', themeToDark: 'Switch to dark theme',
   },
   vi: {
     listeningComprehension: 'Nghe hiểu',
@@ -55,7 +55,6 @@ export const shellCopy = defineCopy('shell', {
     loadingLesson: 'Đang chuẩn bị bài học', errorLesson: 'Không tải được bài học này', errorStory: 'Không tải được bài đọc này', errorPlace: 'Không tải được {place}',
     errorOffline: 'Kiểm tra kết nối rồi thử lại.', errorServer: 'Máy chủ không phản hồi. Không có gì bị mất.',
     comingSoon: 'Sắp có',
-    limited: 'Trải nghiệm này chỉ có trong môi trường duyệt nội bộ.', account: 'Tài khoản',
     cantOpen: 'Chưa mở được', offlineTitle: 'Bạn đang ngoại tuyến.', stillOffline: 'Vẫn đang ngoại tuyến',
     lang_en: 'Tiếng Anh', lang_zh: 'Tiếng Trung', learningLabel: '{language} · {level}',
     plan_free: 'Miễn phí', plan_plus: 'Plus', plan_pro: 'Pro', planDesc_free: 'Đủ để bắt đầu thói quen học mỗi ngày.', planDesc_plus: 'Cho người học đều đặn, dùng Orena mỗi ngày.', planDesc_pro: 'Cho người luyện nói và viết nhiều.',
@@ -69,6 +68,7 @@ export const shellCopy = defineCopy('shell', {
     attemptHistory: 'Các lần thử', speakingSummary: 'Tổng kết buổi nói', timedReaction: 'Phản xạ có giờ',
     respondToContent: 'Phản hồi nội dung', discussion: 'Thảo luận', mockInterview: 'Phỏng vấn thử',
     soundTone: 'Âm và thanh điệu', fromYourErrors: 'Từ lỗi của bạn', welcome: 'Chào mừng', admin: 'Quản trị nền tảng',
+    themeToLight: 'Chuyển sang giao diện sáng', themeToDark: 'Chuyển sang giao diện tối',
   },
   zh: {
     listeningComprehension: '听力理解',
@@ -80,7 +80,6 @@ export const shellCopy = defineCopy('shell', {
     loadingLesson: '正在准备课程', errorLesson: '无法加载这节课', errorStory: '无法加载这篇文章', errorPlace: '无法加载{place}',
     errorOffline: '请检查网络后重试。', errorServer: '服务器没有响应。内容没有丢失。',
     comingSoon: '即将推出',
-    limited: '此体验仅在内部评审环境开放。', account: '账户',
     cantOpen: '暂时打不开', offlineTitle: '你已离线。', stillOffline: '仍处于离线状态',
     lang_en: '英语', lang_zh: '中文', learningLabel: '{language} · {level}',
     plan_free: '免费版', plan_plus: 'Plus', plan_pro: 'Pro', planDesc_free: '开始每日学习习惯所需的一切。', planDesc_plus: '适合每天都用 Orena 的稳定学习者。', planDesc_pro: '适合大量练习口语和写作的学习者。',
@@ -94,6 +93,7 @@ export const shellCopy = defineCopy('shell', {
     attemptHistory: '尝试记录', speakingSummary: '口语总结', timedReaction: '限时反应',
     respondToContent: '回应内容', discussion: '讨论', mockInterview: '模拟面试',
     soundTone: '音与声调', fromYourErrors: '从错误中练', welcome: '欢迎', admin: '平台管理',
+    themeToLight: '切换到浅色模式', themeToDark: '切换到深色模式',
   },
 });
 

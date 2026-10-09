@@ -102,9 +102,10 @@
   color: var(--ai-ink);
 }
 .s-content__secondary {
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
+  box-shadow: var(--edge-light);
 }
 .s-content__secondary:hover {
   background: var(--surface2);

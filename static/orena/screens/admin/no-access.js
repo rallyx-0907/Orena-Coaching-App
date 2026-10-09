@@ -2,7 +2,7 @@
    Admin access is required, who the account is and how to go back - and nothing about how access is
    decided. Drawn in place of the whole Admin, so a partial Admin is never exposed (brief §3), and
    drawn before any admin request exists. Used by the screen (a non-admin who reaches an admin
-   address in the shell) and by main.js (a non-admin at the internal-review gate). */
+   address in the shell) and by main.js (a non-admin at an admin address). */
 import { html, mount } from '../../kit/html.js';
 import { brandChip } from '../../kit/brand.js';
 import { t } from './copy.js';

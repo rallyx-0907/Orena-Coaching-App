@@ -110,7 +110,10 @@ const servedZh = {
   // Progress: read as an addition (a failure is no progress), written with the answers in quick_practice order.
   const progress = stubFetch({ [PROGRESS_URL]: { language: 'en', progress: [{ point_id: 'en.plural_nouns', completed_at: 't', last_quiz: { correct: 2, total: 3 }, via: 'point' }] } });
   assert.deepEqual((await grammarProgress(progress)).map((row) => row.point_id), ['en.plural_nouns']);
-  assert.deepEqual(await grammarProgress({ fetchJson: async () => { throw Object.assign(new Error('down'), { status: 503 }); } }), []);
+  // PR #108 review: an unreadable progress is unknown (null), never an authoritative empty history.
+  assert.equal(await grammarProgress({ fetchJson: async () => { throw Object.assign(new Error('down'), { status: 503 }); } }), null);
+  assert.equal(await grammarProgress({ fetchJson: async () => ({ unexpected: true }) }), null, 'an answer without a progress list is unknown too');
+  assert.deepEqual(await grammarProgress({ fetchJson: async () => ({ progress: [] }) }), [], 'only the server saying so is empty');
   const sent = [];
   await recordGrammarCompletion('en.plural_nouns', [1, null, 0], { send: async (url, body) => sent.push([url, body]) });
   assert.deepEqual(sent, [['/api/grammar/v1/progress/en.plural_nouns', { answers: [1, null, 0] }]], 'the answers are sent, never a score');
@@ -140,54 +143,71 @@ const servedZh = {
 
 // --- Levels: CEFR A1-C2 and HSK 3.0 1-9 (contract §0) ----------------------------------------
 {
-  const { t: libraryT } = await import('../static/orena/screens/grammar/copy.js');
-  const copy = await import('../static/orena/copy/index.js');
-  const table = copy.registeredCopy().get('grammar');
   assert.equal(levelCode({ framework: 'cefr', value: 'B1', rank: 3 }), 'B1');
   assert.equal(levelCode({ framework: 'hsk3', value: 3, rank: 3 }), 'HSK 3');
   assert.equal(levelCode({}), '');
-  assert.equal(library.levelTile({ framework: 'hsk3', value: 7, rank: 7 }), 'HSK7', 'the 44px tile holds the short code');
-  for (let n = 1; n <= 9; n += 1) {
-    const key = library.levelNameKey({ framework: 'hsk3', value: n });
-    assert.equal(key, n <= 3 ? 'hskBand1' : n <= 6 ? 'hskBand2' : 'hskBand3', `HSK ${n} is in its HSK 3.0 band`);
-    for (const locale of ['en', 'vi', 'zh']) assert.ok(table.packs[locale][key], `${key} is written in ${locale}`);
-  }
-  assert.equal(library.levelNameKey({ framework: 'hsk3', value: 10 }), '', 'HSK 3.0 stops at 9');
-  for (const code of ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']) {
-    const key = library.levelNameKey({ framework: 'cefr', value: code });
-    assert.ok(key, `${code} has a name`);
-    for (const locale of ['en', 'vi', 'zh']) assert.ok(table.packs[locale][key], `${key} is written in ${locale}`);
-  }
-  assert.equal(library.levelHeading({ framework: 'hsk3', value: 3 }, libraryT), 'HSK 3 · Elementary');
-  assert.equal(library.levelHeading({ framework: 'cefr', value: 'B2' }, libraryT), 'B2 · Upper-intermediate');
-  assert.equal(library.levelHeading({ framework: 'cefr', value: 'X9' }, libraryT), 'X9', 'an unknown level shows its code, never a guessed name');
+  assert.equal(library.levelTile({ framework: 'hsk3', value: 7, rank: 7 }), 'HSK7', 'the level button and hero hold the short code');
 }
 
-// --- Grammar Library (frame 44): native_title on the card, the support-language gloss under it -
+// --- Grammar Library (design export 2026-10-08: hero, levels, continue, categories, category panel, all topics) ------
 {
-  const t = (key, params) => (key === 'levelHeading' ? `${params.code} · ${params.name}` : key);
-  const groups = library.buildLibraryGroups(catalogEn, 'vi', t);
-  assert.deepEqual(groups.map((group) => group.heading), ['A1 · cefrA1', 'A2 · cefrA2'], 'one group per level, in level.rank order');
-  const pp = groups[1].items[0];
-  assert.equal(pp.title, 'Present perfect', 'the card title is header.native_title (§1), never header.title');
-  assert.notEqual(pp.title, catalogEn[0].header.title.vi);
-  assert.equal(pp.note, 'Hiện tại hoàn thành (trải nghiệm)', 'the line under it is header.title in the support language');
+  const t = (key) => key;
+  // The card: native_title, its reading, the support-language gloss (header.sub, else header.title).
+  const one = library.buildLibrary({ rows: catalogEn, support: 'vi', t });
+  assert.deepEqual(one.levels.map((level) => [level.key, level.count]), [['A1', 1], ['A2', 1]], 'one level per corpus level, in level.rank order, with its count');
+  assert.equal(one.level.key, 'A1', 'with no declared level the first level is shown');
+  const a2 = library.buildLibrary({ rows: catalogEn, support: 'vi', current: 'A2', t });
+  assert.equal(a2.level.key, 'A2', "the learner's declared level is the one shown");
+  const pp = a2.continue[0];
+  const ppRow = catalogEn.find((row) => row.id === pp.id);
+  assert.equal(pp.title, 'Present perfect', 'the title is header.native_title (§1), never header.title');
   assert.equal(pp.lang, 'en');
-  assert.equal(pp.tile, 'A2');
-  assert.equal(groups[1].topics, 1, 'topics counts the group\'s `function` values');
-  assert.equal(library.buildLibraryGroups(catalogEn, 'zh', t)[1].items[0].note, 'Present perfect (experience)', 'a zh-support learner reads the en gloss, never the vi one');
-  assert.deepEqual(library.buildLibraryGroups([], 'en', t), [], 'no content is no groups');
-  assert.deepEqual(library.buildLibraryGroups(undefined, 'en', t), []);
+  assert.equal(pp.reading, '', 'an English point has no reading');
+  assert.equal(pp.mean, ppRow.header.sub?.vi || ppRow.header.title.vi, 'the meaning line is header.sub (else header.title) in the support language');
+  assert.equal(library.buildLibrary({ rows: [], t }).level, null, 'no content is no level');
+  assert.equal(library.buildLibrary({ t }).level, null);
+  const zh = library.buildLibrary({ rows: catalogZh, support: 'vi', t });
+  assert.deepEqual(zh.levels.map((level) => level.key), ['HSK2', 'HSK3'], 'a Chinese library offers HSK 3.0 levels');
+  assert.equal(zh.continue[0].title, '过');
+  assert.equal(zh.continue[0].reading, 'guo', 'native_title_pinyin is the reading line');
+  assert.equal(zh.continue[0].lang, 'zh');
 
-  const zh = library.buildLibraryGroups(catalogZh, 'vi', t);
-  assert.deepEqual(zh.map((group) => group.heading), ['HSK 2 · hskBand1', 'HSK 3 · hskBand1'], 'a Chinese library groups by HSK 3.0 level');
-  assert.equal(zh[0].items[0].title, '过');
-  assert.deepEqual(zh[0].items[0].titlePinyin, ['guo'], 'native_title_pinyin travels with the Chinese title');
-  assert.equal(zh[0].items[0].lang, 'zh');
-  assert.equal(zh[1].items[0].tile, 'HSK3');
+  // A synthetic level: five points over three functions (test-only rows).
+  const lv = { framework: 'cefr', value: 'B1', rank: 3 };
+  const row = (id, fn, seq, sub) => ({ id: `en.${id}`, level: lv, function: fn, sequence: seq, header: { native_title: id, title: { vi: `t ${id}`, en: `t ${id}` }, sub: sub ? { vi: sub, en: sub } : undefined } });
+  const rows = [row('a1', 'fn.time', 1, 'past'), row('a2', 'fn.time', 2), row('a3', 'fn.time', 3), row('b1', 'fn.link', 1), row('c1', '', 1)];
+  const functions = [{ id: 'fn.link', title: { vi: 'Nối ý', en: 'Linking' } }, { id: 'fn.time', title: { vi: 'Thời gian', en: 'Time' } }];
+  const progress = [{ point_id: 'en.a1', last_quiz: { correct: 2, total: 3 } }, { point_id: 'en.b1' }];
+  const base = { rows, functions, progress, current: 'B1', support: 'vi', t };
+  const view = library.buildLibrary(base);
+  assert.deepEqual(view.stats, { total: 5, learned: 2, notStarted: 3 }, 'the hero counts learned (completed) and not started; no "learning" state is invented');
+  assert.deepEqual(view.continue.map((item) => item.id), ['en.c1', 'en.a2', 'en.a3'], 'continue: the next not-yet-learned points of the level in catalogue order, at most three');
+  assert.deepEqual(view.categories.map((c) => [c.name, c.count, c.examples.join(',')]), [['Nối ý', 1, 'b1'], ['Thời gian', 3, 'a1,a2,a3'], ['otherTopic', 1, 'c1']], "categories: the level's functions, in the catalogue's functions order, with counts and examples");
+  assert.deepEqual(view.categories.map((c) => c.hue), ['var(--gcat-1)', 'var(--gcat-2)', 'var(--gcat-3)'], "a function takes the design hue of its place in the catalogue's list");
+  assert.equal(library.buildLibrary({ ...base, rows: rows.filter((r) => r.function === 'fn.time') }).categories[0].hue, 'var(--gcat-2)', 'so a function keeps its hue at every level');
+  assert.equal(view.panel.id, 'fn.link', 'the open category defaults to the first');
+  const learned = view.all.find((item) => item.id === 'en.a1');
+  assert.deepEqual([learned.learned, learned.score, learned.mean, learned.tag], [true, { correct: 2, total: 3 }, 'past', 'Thời gian']);
+  assert.equal(view.all.find((item) => item.id === 'en.a2').mean, 't a2', 'no header.sub: the title gloss');
+  const time = library.buildLibrary({ ...base, state: { cat: 'fn.time', all: 'fn.time' } });
+  assert.deepEqual([time.panel.id, time.panelItems.length, time.allCat, time.all.length], ['fn.time', 3, 'fn.time', 3], 'a chosen category opens in the panel; an "all" chip narrows all topics');
+  assert.deepEqual(library.buildLibrary({ ...base, state: { st: 'L' } }).all.map((i) => i.id).sort(), ['en.a1', 'en.b1'], 'status filter: learned');
+  assert.equal(library.buildLibrary({ ...base, state: { st: 'N' } }).all.length, 3, 'status filter: not started');
+  assert.deepEqual(library.buildLibrary({ ...base, state: { q: 'PAST' } }).all.map((i) => i.id), ['en.a1'], 'search reads title, reading and glosses, case-insensitively');
+  assert.deepEqual(library.buildLibrary({ ...base, state: { sort: 'st' } }).all.map((i) => i.learned), [false, false, false, true, true], 'sort by status: not started first');
+  assert.deepEqual(library.buildLibrary({ ...base, state: { sort: 'az' } }).all.map((i) => i.id), ['en.a1', 'en.a2', 'en.a3', 'en.b1', 'en.c1'], 'sort A-Z');
+  const none = library.buildLibrary({ ...base, state: { q: 'zzz' } });
+  assert.deepEqual([none.all.length, none.panelItems.length, none.filtering], [0, 0, true], 'filters that match nothing empty the panel and the list');
+  assert.equal(library.buildLibrary({ ...base, state: { cat: 'fn.nope', all: 'fn.nope', level: 'C9' } }).allCat, 'all', 'unknown address values fall back');
+  const all = library.buildLibrary({ ...base, progress: rows.map((r) => ({ point_id: r.id })) });
+  assert.equal(all.continue.length, 0, 'a learned level has nothing to continue');
 
   const src = fs.readFileSync('static/orena/screens/grammar/screen.js', 'utf8');
-  assert.match(src, /listRow\(\{[^}]*titleLineHeight:\s*20\b/, 'frame 44 draws the card title at line-height 20px');
+  assert.doesNotMatch(src, /bookmark/i, 'no bookmark is drawn: nothing stores it (G-14)');
+  const css = fs.readFileSync('static/orena/screens/grammar/grammar.css', 'utf8');
+  assert.match(css, /\.s-gl \{\s*max-width: 1180px;/, 'the frame is 1180px wide');
+  assert.match(css, /\.s-gl__level \{[^}]*min-width: 96px;\s*height: 48px;/, "the level button is the frame's 48px tab");
+  assert.match(css, /\.s-gl__topicTitle \{\s*font-family: 'Noto Serif SC'[^}]*font-size: 21px;/, 'the topic title is Noto Serif SC 21');
 }
 
 // --- Grammar Concept (frame 47): an English timeline point ------------------------------------
@@ -263,6 +283,84 @@ const servedZh = {
   assert.equal(concept.roleBucket('nonsense'), 'k');
 }
 
+// --- Grammar Concept renders the corpus fields the API returns, in learning order --------------
+// The ZH point below is shaped like a real `/api/grammar/v1/points/zh.le_completion` body (pinyin
+// arrays, vi/en gloss maps, variants.negative/question, compare[] with `with`), cut down.
+{
+  const gloss = (vi, en) => ({ vi, en });
+  const cell = (text, role, label, pinyin) => ({ text, role, label, pinyin });
+  const pointLe = {
+    id: 'zh.le_completion', target_lang: 'zh', level: { framework: 'hsk3', value: '2', rank: 2 },
+    header: { native_title: '了', native_title_pinyin: ['le'], sub: gloss('hoàn thành', 'completion'), summary: gloss('了 báo hiệu việc đã xong.', '了 marks a finished action.') },
+    when_to_use: [gloss('Khi việc đã xong.', 'When the action is finished.'), gloss('Khi có kết quả cụ thể.', 'When there is a concrete result.')],
+    pattern: {
+      formula: [cell('主语', 'subject', gloss('chủ ngữ', 'subject'), ['zhǔ', 'yǔ']), cell('动词', 'verb', gloss('động từ', 'verb'), ['dòng', 'cí']), cell('了', 'particle', gloss('trợ từ', 'particle'), ['le'])],
+      variants: {
+        negative: [cell('主语', 'subject', gloss('chủ ngữ', 'subject'), ['zhǔ', 'yǔ']), cell('没有', 'aux', gloss('phủ định', 'negation'), ['méi', 'yǒu']), cell('动词', 'verb', gloss('động từ', 'verb'), ['dòng', 'cí'])],
+        question: [cell('主语', 'subject', gloss('chủ ngữ', 'subject'), ['zhǔ', 'yǔ']), cell('动词', 'verb', gloss('động từ', 'verb'), ['dòng', 'cí']), cell('了', 'particle', gloss('trợ từ', 'particle'), ['le']), cell('吗', 'particle', gloss('nghi vấn', 'question'), ['ma'])],
+      },
+      illustration: { kind: 'none' },
+    },
+    examples: [
+      { text: '我买了书。', form: 'affirmative', spans: [{ start: 0, end: 1, role: 'subject' }, { start: 1, end: 2, role: 'verb' }, { start: 2, end: 3, role: 'particle' }], pinyin: ['wǒ', 'mǎi', 'le', 'shū', ''], translation: gloss('Tôi đã mua sách.', 'I bought a book.'), annotation: gloss('Việc đã xong.', 'The action is done.') },
+      { text: '我没买书。', form: 'negative', spans: [], pinyin: ['wǒ', 'méi', 'mǎi', 'shū', ''], translation: gloss('Tôi chưa mua sách.', 'I did not buy a book.'), annotation: { vi: '', en: '' } },
+    ],
+    compare: [{ with: 'zh.guo_experience', this_meaning: gloss('了: đã xong.', '了: finished.'), this_example: '我买了书。', this_example_pinyin: ['wǒ', 'mǎi', 'le', 'shū', ''], other_meaning: gloss('过: từng.', '过: ever.'), other_example: '我去过北京。', other_example_pinyin: ['wǒ', 'qù', 'guo', 'běi', 'jīng', ''] }],
+    common_mistakes: [
+      { wrong: '我买书了了。', right: '我买了书。', reason: gloss('Một 了 là đủ.', 'One 了 is enough.'), l1: ['vi'], wrong_pinyin: null, right_pinyin: null },
+      { wrong: '我昨天没买了书。', right: '我昨天没买书。', reason: gloss('Phủ định bỏ 了.', 'Drop 了 after 没.'), l1: ['en'] },
+      { wrong: '', right: 'x', reason: gloss('bỏ', 'skip') },
+    ],
+    quick_practice: [{ q: '我买___书。', options: [{ text: '了', pinyin: ['le'] }, { text: '过', pinyin: ['guo'] }], answer: 0, explain: gloss('Việc đã xong dùng 了.', 'A finished action uses 了.') }],
+    personal_production: { prompt: gloss('Viết một câu có 了.', 'Write a sentence with 了.'), placeholder: '我买了……', sample: { text: '我吃了饭。', pinyin: ['wǒ', 'chī', 'le', 'fàn', ''] } },
+  };
+  const ORDER = ['overview', 'pattern', 'examples', 'mistakes', 'compare', 'quiz', 'tryIt'];
+  assert.deepEqual([...concept.SECTION_ORDER], ORDER, 'learning order: summary + when to use, pattern + variants, examples, mistakes, compare, quick practice, try it');
+
+  const vi = concept.conceptView(pointLe, { support: 'vi', native: 'vi' });
+  assert.deepEqual(concept.sectionsOf(vi), ORDER, 'a full point draws every section, in order');
+  assert.deepEqual(vi.whenToUse, ['Khi việc đã xong.', 'Khi có kết quả cụ thể.']);
+  assert.deepEqual(vi.variants.map((variant) => variant.form), ['negative', 'question'], 'only the forms the point declares');
+  assert.deepEqual(vi.variants[1].cells.map((c) => c.text), ['主语', '动词', '了', '吗']);
+  assert.equal(vi.examples[0].translation, 'Tôi đã mua sách.', 'translation in the support language');
+  assert.equal(vi.examples[0].annotation, 'Việc đã xong.');
+  assert.equal(vi.examples[1].annotation, '', 'an empty annotation is no line');
+  assert.deepEqual(vi.mistakes.map((m) => m.wrong), ['我买书了了。'], 'the mistakes aimed at the learner\'s L1; one without wrong/right is dropped');
+  assert.equal(vi.mistakes[0].reason, 'Một 了 là đủ.');
+  assert.equal(vi.compare[0].withId, 'zh.guo_experience');
+  assert.equal(vi.compare[0].thisMeaning, '了: đã xong.');
+  assert.equal(vi.compare[0].otherExample, '我去过北京。');
+  assert.deepEqual(vi.compare[0].otherExamplePinyin, ['wǒ', 'qù', 'guo', 'běi', 'jīng', '']);
+  assert.equal(vi.quiz[0].explain, 'Việc đã xong dùng 了.', 'quick_practice explain in the support language');
+  assert.equal(vi.tryIt.prompt, 'Viết một câu có 了.');
+
+  const en = concept.conceptView(pointLe, { support: 'en', native: 'fr' });
+  assert.deepEqual(en.mistakes.map((m) => m.wrong), ['我买书了了。', '我昨天没买了书。'], 'no mistake names the L1: all of them');
+  assert.equal(en.examples[0].translation, 'I bought a book.');
+  assert.equal(en.whenToUse[0], 'When the action is finished.');
+
+  // The same on an English point shaped like the API (the contract's own fixture).
+  const pp = concept.conceptView(pointPP, { support: 'en', native: 'en' });
+  assert.deepEqual(concept.sectionsOf(pp), ORDER.filter((key) => key !== 'compare' || pp.compare.length), 'the EN point draws the sections it has data for');
+  assert.ok(pp.examples.every((example) => example.translation), 'every EN example carries its translation');
+  assert.ok(pp.variants.length > 0 && pp.compare.length > 0, 'EN fixture: variants and compare are rendered (the fixture has no when_to_use, so that section is omitted)');
+  assert.ok(!concept.sectionsOf(pp).includes('overview') || pp.header.summary, 'overview needs a summary or a when_to_use line');
+
+  // Sections with no data disappear: no heading, no placeholder.
+  const bare = concept.conceptView({ id: 'x', target_lang: 'en', header: { native_title: 'X', summary: { en: 'Only a summary.' } } }, { support: 'en' });
+  assert.deepEqual(concept.sectionsOf(bare), ['overview']);
+  assert.deepEqual([bare.whenToUse, bare.variants, bare.examples, bare.mistakes, bare.compare, bare.quiz], [[], [], [], [], [], []]);
+  assert.deepEqual(concept.sectionsOf(concept.conceptView({ id: 'y', header: { native_title: 'Y' }, pattern: { formula: [], variants: { negative: [] } }, compare: [{ with: 'a' }], when_to_use: [{}, ''] })), [], 'empty arrays and entries with no content draw nothing');
+  assert.deepEqual(concept.sectionsOf(concept.conceptView({ id: 'z', header: { native_title: 'Z' }, when_to_use: [{ en: 'Only when to use.' }] })), ['overview']);
+  assert.deepEqual(concept.sectionsOf(concept.conceptView({ ...pointLe, compare: [], pattern: { formula: pointLe.pattern.formula }, when_to_use: [] })), ['overview', 'pattern', 'examples', 'mistakes', 'quiz', 'tryIt'], 'no variants, no compare, no when_to_use: the rest keeps its order');
+
+  // The screen reads these in this order and uses only kit tokens.
+  const screenSrc = fs.readFileSync('static/orena/screens/grammar-concept/screen.js', 'utf8');
+  assert.match(screenSrc, /sectionsOf\(view\)/, 'the screen draws what sectionsOf lists');
+  const cssSrc = fs.readFileSync('static/orena/screens/grammar-concept/grammar-concept.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.doesNotMatch(cssSrc, /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/, 'no colour literal in the Grammar Concept styles');
+}
+
 // --- Try it yourself never concludes the pattern was used (D-100 point 3) ----------------------
 {
   const src = fs.readFileSync('static/orena/screens/grammar-concept/screen.js', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -321,3 +419,54 @@ const servedZh = {
 }
 
 console.log('Orena Grammar surface (Library + Concept) on the Grammar Store learner API: catalogue, point, R5 redirect, progress; fixtures test-only: PASS');
+
+/* An example whose annotation repeats its translation word for word shows the line once (6 older EN points). */
+{
+  const { examplesOf } = await import('../static/orena/screens/grammar-concept/model.js');
+  const same = { vi: 'Every morning cho biết đây là thói quen.', en: 'Every morning marks a habit.' };
+  const [row] = examplesOf({ examples: [{ text: 'I drink coffee every morning.', translation: same, annotation: same }] }, 'vi');
+  assert.equal(row.translation, same.vi);
+  assert.equal(row.annotation, '', 'the repeated line is not drawn twice');
+  console.log('Grammar Concept: a repeated example note is drawn once: PASS');
+}
+
+/* PR #108 review (P1): progress that cannot be read never shows a learner as 0 learned, every topic as New, or
+   recommends a finished topic. */
+{
+  const { buildLibrary } = await import('../static/orena/screens/grammar/model.js');
+  const rows = [
+    { id: 'en.a', level: 'A1', function: 'f1', header: { native_title: 'A' } },
+    { id: 'en.b', level: 'A1', function: 'f1', header: { native_title: 'B' } },
+  ];
+  const known = buildLibrary({ rows, progress: [{ point_id: 'en.a' }], state: { st: 'L', sort: 'st' } });
+  assert.equal(known.progressKnown, true);
+  assert.deepEqual(known.stats, { total: 2, learned: 1, notStarted: 1 });
+  assert.deepEqual(known.continue.map((entry) => entry.id), ['en.b']);
+  assert.deepEqual(known.all.map((entry) => entry.id), ['en.a'], 'the status filter works when progress is known');
+
+  const unknown = buildLibrary({ rows, progress: null, state: { st: 'L', sort: 'st' } });
+  assert.equal(unknown.progressKnown, false);
+  assert.deepEqual(unknown.stats, { total: 2, learned: null, notStarted: null }, 'no invented zero');
+  assert.deepEqual(unknown.continue, [], 'no recommendation built on unknown progress');
+  assert.ok(unknown.all.every((entry) => entry.learned === null), 'no topic is marked New or Learned');
+  assert.equal(unknown.st, 'all', 'a status filter is not applied on a guess');
+  assert.equal(unknown.sort, 'def', 'a status sort is not applied on a guess');
+  assert.equal(unknown.all.length, 2, 'every topic still opens');
+  console.log('Grammar Library: unreadable progress stays unknown, never "nothing learned": PASS');
+}
+
+/* PR #108 review: an old status filter in the address (st=L) with unknown progress - the disabled control shows All,
+   the choice itself is kept and returns once progress loads (Retry). */
+{
+  const { buildLibrary, statusControl } = await import('../static/orena/screens/grammar/model.js');
+  const rows = [{ id: 'en.a', level: 'A1', function: 'f1', header: { native_title: 'A' } }, { id: 'en.b', level: 'A1', function: 'f1', header: { native_title: 'B' } }];
+  const state = { st: 'L' };
+  const off = statusControl(buildLibrary({ rows, progress: null, state }), state);
+  assert.deepEqual(off, { value: 'all', disabled: true }, 'the stale filter is not shown on a disabled control');
+  assert.equal(state.st, 'L', 'the choice is kept for restoration');
+  const back = buildLibrary({ rows, progress: [{ point_id: 'en.a' }], state });
+  assert.deepEqual(statusControl(back, state), { value: 'L', disabled: false }, 'after Retry the choice comes back');
+  assert.deepEqual(back.all.map((entry) => entry.id), ['en.a'], 'and filters again');
+  assert.deepEqual(statusControl(buildLibrary({ rows, progress: [], state: {} }), {}), { value: 'all', disabled: false });
+  console.log('Grammar Library: a disabled status control shows All and keeps the choice: PASS');
+}

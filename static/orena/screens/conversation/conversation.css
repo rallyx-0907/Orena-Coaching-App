@@ -82,13 +82,14 @@
 .s-conv__scenario {
   padding: 14px 18px;
   border-radius: 14px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   background: var(--bg);
   color: var(--text);
   text-align: left;
+  box-shadow: var(--edge-light);
 }
 .s-conv__scenario[aria-pressed='true'] {
-  border-color: var(--accent);
+  border-color: transparent;
   background: var(--accent-soft);
 }
 .s-conv__scenario-title {
@@ -109,14 +110,15 @@
 .s-conv__level {
   padding: 11px 18px;
   border-radius: 999px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--muted);
   font-size: 14px;
   font-weight: 600;
+  box-shadow: var(--edge-light);
 }
 .s-conv__level[aria-pressed='true'] {
-  border-color: var(--tint2);
+  border-color: transparent;
   background: var(--accent-soft);
   color: var(--accent);
 }
@@ -162,7 +164,7 @@
 }
 .s-conv__msg--partner .s-conv__bubble {
   background: var(--surface);
-  border-color: var(--border);
+  border-color: transparent;
 }
 .s-conv__thinking {
   flex: none;
@@ -291,9 +293,10 @@
 }
 .s-conv__mic {
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface2);
   color: var(--text);
+  box-shadow: var(--edge-light);
 }
 .s-conv__mic[aria-pressed='true'] {
   background: var(--red);

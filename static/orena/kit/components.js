@@ -48,6 +48,33 @@ export function coverTile(cover) {
   return html`<span class="c-media__cover" style="background:${cover.tint}">${raw(icon(cover.icon, { size: 22 }))}</span>`;
 }
 
+/* The first letter or character of a title - what a coverless card shows large (human, 2026-10-09: no blank,
+   single-colour tile). Skips opening quotes and punctuation; nothing when the title has no letter or digit. */
+export function posterGlyph(title) {
+  const text = String(title ?? '');
+  const match = text.match(/[\p{L}\p{N}]/u);
+  return match ? match[0].toLocaleUpperCase() : '';
+}
+
+/* A coverless card's poster: the kind's hue as a gradient, two light circles, the title's first letter large and the
+   kind's icon - drawn from data and tokens only, so every card without artwork still reads as its own. */
+/* A second hue per title, so a shelf of one kind is not one flat colour: the same title always gets the same one. */
+const POSTER_ACCENTS = ['var(--skill-listen)', 'var(--skill-speak)', 'var(--skill-read)', 'var(--skill-write)', 'var(--skill-vocab)', 'var(--skill-grammar)', 'var(--accent)'];
+export function posterAccent(title) {
+  let hash = 0;
+  for (const char of String(title ?? '')) hash = (hash * 31 + char.codePointAt(0)) >>> 0;
+  return POSTER_ACCENTS[hash % POSTER_ACCENTS.length];
+}
+
+export function posterMarkup(cover, title) {
+  if (!cover?.icon) return '';
+  const glyph = posterGlyph(title);
+  return html`<span class="c-poster" style="--hue:${cover.tint};--hue2:${posterAccent(title)}" aria-hidden="true">
+    <span class="c-poster__deco c-poster__deco--a"></span><span class="c-poster__deco c-poster__deco--b"></span>
+    ${glyph ? html`<span class="c-poster__glyph">${glyph}</span>` : ''}
+  </span><span class="c-media__cover c-poster__chip">${raw(icon(cover.icon, { size: 22 }))}</span>`;
+}
+
 /* A cover image that cannot be loaded (a remote thumbnail, offline or gone) leaves a blank box: the card draws
    the type's own tile instead, as it does for a card with no cover at all (LEX-073). Call after a paint. */
 export function settleCovers(root) {
@@ -57,7 +84,8 @@ export function settleCovers(root) {
       if (!box.isConnected) return;
       box.style.backgroundImage = '';
       box.classList.add('c-media__img--blank');
-      box.insertAdjacentHTML('afterbegin', `<span class="c-media__cover" style="background:${box.dataset.coverTint}">${icon(box.dataset.coverIcon, { size: 22 })}</span>`);
+      const glyph = box.dataset.coverGlyph ? `<span class="c-poster__glyph">${esc(box.dataset.coverGlyph)}</span>` : '';
+      box.insertAdjacentHTML('afterbegin', `<span class="c-poster" style="--hue:${box.dataset.coverTint};--hue2:${posterAccent(box.dataset.coverGlyph)}" aria-hidden="true"><span class="c-poster__deco c-poster__deco--a"></span><span class="c-poster__deco c-poster__deco--b"></span>${glyph}</span><span class="c-media__cover c-poster__chip">${icon(box.dataset.coverIcon, { size: 22 })}</span>`);
       box.removeAttribute('data-cover-url');
     };
     probe.src = box.dataset.coverUrl;
@@ -81,9 +109,10 @@ export function mediaCard({
   // The headline is held to two lines (LEX-036); the source's whole title stays one hover/long-press away.
   const full = String(fullTitle || '').trim();
   const imgRules = [image ? `background-image:${image}` : '', imageHeight ? `height:${px(imageHeight)}` : ''].filter(Boolean).join(';');
+  const posterTitle = full || (typeof title === 'string' ? title : '');
   return html`<button type="button" class="o-card o-card--hover c-media"${dataAttrs(dataset)}>
-    <span class="${cls('c-media__img', !image && cover?.icon && 'c-media__img--blank')}" style="${imgRules}"${image && cover?.icon ? raw(` data-cover-url="${esc(String(image).replace(/^url\(["']?|["']?\)$/g, ''))}" data-cover-icon="${esc(cover.icon)}" data-cover-tint="${esc(cover.tint)}"`) : ''}>
-      ${image ? '' : coverTile(cover)}
+    <span class="${cls('c-media__img', !image && cover?.icon && 'c-media__img--blank')}" style="${imgRules}"${image && cover?.icon ? raw(` data-cover-url="${esc(String(image).replace(/^url\(["']?|["']?\)$/g, ''))}" data-cover-icon="${esc(cover.icon)}" data-cover-tint="${esc(cover.tint)}" data-cover-glyph="${esc(posterGlyph(posterTitle))}"`) : ''}>
+      ${image ? '' : posterMarkup(cover, posterTitle)}
       ${kind ? html`<span class="o-overlay-pill c-media__badge c-media__badge--tl">${kind}</span>` : ''}
       ${duration ? html`<span class="o-overlay-pill c-media__badge c-media__badge--br">${duration}</span>` : ''}
       ${pct != null ? html`<span class="c-media__progress"><span style="width:${pct}%"></span></span>` : ''}

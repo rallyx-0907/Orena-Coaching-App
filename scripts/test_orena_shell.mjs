@@ -16,10 +16,10 @@ const { ROUTES, PRIMARY, entryRoute, match, href, byId } = await import('../stat
 const focusList = JSON.parse(script.match(/b\.dataset\.focus=(\[[^\]]+\])\.includes/)[1]);
 // The design's "grammar" (one fixed concept) and "gconcept" (any concept) are one screen here.
 const ALIASES = { grammar: 'gconcept' };
-/* The 2026-10-08 export adds Plan & usage (billing) and Pricing to the design's focus list; until the export is re-pinned
-   (its own PR) they are named here from that export's applyBody list. Remove when the pin lands. */
-const EXPORT_ADDED_FOCUS = ['billing', 'pricing'];
-const designFocus = new Set([...focusList, ...EXPORT_ADDED_FOCUS].map((key) => ALIASES[key] || key));
+/* Frames the 2026-10-08 pin draws whose screens arrive in their own PRs (split of #108): Feedback (feedback PR).
+   Plan & usage, Billing and Pricing are built here (plans PR). Remove an entry when its screen lands. */
+const PINNED_NOT_YET_BUILT = { feedback: 'Feedback' };
+const designFocus = new Set(focusList.filter((key) => !(key in PINNED_NOT_YET_BUILT)).map((key) => ALIASES[key] || key));
 // Onboarding (bare) comes from Onboarding.dc.html, not from Orena.dc.html's focus list.
 const ourFocus = new Set(ROUTES.filter((route) => route.focus && !route.bare).map((route) => route.design));
 assert.deepEqual([...ourFocus].sort(), [...designFocus].sort(), 'learning workspaces are the design focus list');
@@ -39,7 +39,7 @@ const ROUTE_OF_FLAG = {
   FreeTalk: 'freetalk', Conv: 'conv', Situation: 'situation', Retell: 'retell', React: 'react', Timed: 'timed', Transfer: 'transfer',
   Feed: 'feed', Rewrite: 'rewrite', TimedWr: 'timedwr', RTransfer: 'rtransfer', RComplete: 'rcomplete', Attempts: 'attempts',
   SpSummary: 'spsummary', TimedReact: 'timedreact', GrammarLib: 'grammarlib', Respond: 'respond', Discussion: 'discussion',
-  Mock: 'mock', Sound: 'sound', ErrFix: 'errfix', Coming: 'coming',
+  Mock: 'mock', Sound: 'sound', ErrFix: 'errfix', Coming: 'coming', Billing: 'billing', Pricing: 'pricing',
 };
 const designKeys = new Set(ROUTES.map((route) => route.design));
 assert.ok(
@@ -48,6 +48,7 @@ assert.ok(
 );
 assert.ok(ROUTES.filter((route) => route.admin).every((route) => route.bare && !route.focus), 'an admin place is bare and not a learning workspace');
 for (const flag of designRoutes) {
+  if (Object.values(PINNED_NOT_YET_BUILT).includes(flag)) continue;
   assert.ok(flag in ROUTE_OF_FLAG, `design screen flag is${flag} is mapped`);
   assert.ok(designKeys.has(ROUTE_OF_FLAG[flag]), `design screen ${flag} has a route`);
 }

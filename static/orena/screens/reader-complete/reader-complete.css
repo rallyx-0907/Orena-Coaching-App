@@ -93,13 +93,14 @@
 .s-rcomplete__next {
   padding: 14px 18px;
   border-radius: 16px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   text-align: left;
   display: flex;
   gap: 14px;
   align-items: center;
+  box-shadow: var(--edge-light);
 }
 .s-rcomplete__next-body {
   flex: 1;
@@ -135,9 +136,10 @@
 }
 .s-rcomplete__secondary {
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
+  box-shadow: var(--edge-light);
 }
 .s-rcomplete__primary {
   border-radius: 16px;

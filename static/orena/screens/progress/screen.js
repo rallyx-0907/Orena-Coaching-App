@@ -43,7 +43,7 @@ import {
 const TAB_COPY_KEY = { Overview: 'tabOverview', Trends: 'tabTrends', KU: 'tabKU', Evidence: 'tabEvidence', Rank: 'tabRank', History: 'tabHistory' };
 const RANGES = ['7d', '30d', '90d'];
 const RANGE_COPY_KEY = { '7d': 'range7d', '30d': 'range30d', '90d': 'range90d' };
-const EV_FILTERS = ['All', 'listening', 'speaking', 'review', 'reading', 'writing'];
+const EV_FILTERS = ['All', 'listening', 'speaking', 'reading', 'writing', 'review']; // D-152 skill order
 const EV_FILTER_COPY_KEY = { All: 'evFilter_All', listening: 'evFilter_listening', speaking: 'evFilter_speaking', review: 'evFilter_review', reading: 'evFilter_reading', writing: 'evFilter_writing' };
 /* Badge fill under white ink (--accent-ink): D-093 forbids --accent under white text, so
    "recognized" uses --accent-fill like every other filled control. The other four are not

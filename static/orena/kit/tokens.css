@@ -57,7 +57,7 @@
 :root[data-theme="light"] {
   color-scheme: light;
   --page: linear-gradient(160deg, #E9EEFB 0%, #EEEAFB 45%, #F4E8F5 100%);
-  --bg: #F5F5FA;
+  --bg: #ECEDF4; /* human 2026-10-09 (D-151): cards stand off the page (design #F5F5FA) */
   --surface: #FFFFFF;
   --surface2: #F4F4F9;
   --surface3: #EBEBF3;
@@ -65,7 +65,7 @@
   --border2: #DCDCE7;
   --text: #17171F;
   --muted: #5C5C6E;
-  --text3: #6E6E86; /* AA, D-093 (design #8E8EA2) */
+  --text3: #68687F; /* AA, D-093 (design #8E8EA2); one step darker for the D-151 page */
   --accent: #5A55E3;
   --accent-hover: #4C47D2;
   --accent-press: #403BBE;
@@ -91,7 +91,7 @@
   --ai-ink: #6A4FE0;
   --ai-line: #D6C8FD;
   --scrim: rgba(24, 22, 48, .38);
-  --sh1: 0 1px 2px rgba(23, 23, 50, .04), 0 2px 10px rgba(23, 23, 50, .04);
+  --sh1: 0 1px 2px rgba(23, 23, 50, .07), 0 3px 12px rgba(23, 23, 50, .07); /* D-151 (design .04/.04) */
   --sh2: 0 2px 6px rgba(40, 36, 110, .05), 0 12px 32px rgba(40, 36, 110, .10);
   --sh3: 0 24px 64px rgba(40, 36, 110, .20);
   --shadow: 0 24px 64px rgba(40, 36, 110, .20);
@@ -130,6 +130,8 @@
 /* Blue/rose source swatches need the darker step when used as small text. */
 :root[data-palette="blue"][data-theme="light"],
 :root[data-palette="rose"][data-theme="light"] { --accent: var(--accent-hover); }
+/* Each accent's own colour, shown beside its name in Settings so the choice is seen, not read (human, 2026-10-09). */
+:where(:root) { --swatch-indigo: #5A55E3; --swatch-orchid: #7B4FD8; --swatch-blue: #2F6FEB; --swatch-rose: #D9487A; }
 
 /* Theme-independent hues the design sets on body: tone marks for Chinese (1-4), and the skill
    hues that colour skill icons and small markers only (rule 32). */
@@ -144,6 +146,24 @@
   --skill-write: #7B4FD8;
   --skill-vocab: #F2B705;
   --skill-grammar: #4867EC;
+  /* Grammar Library (design export 2026-10-08, `GLIB.*.cats` and the level hero): the six category hues in the
+     design's order (sentence structures, adverbs, conjunctions, complements, emphasis, comparison) and the hero's
+     ink on the --mark-disc surface. Category hues mark a category tile, its card wash and its tag only (rule 32). */
+  --gcat-1: #FF7A3D;
+  --gcat-2: #8B5CF6;
+  --gcat-3: #1FB8B8;
+  --gcat-4: #22B573;
+  --gcat-5: #F2B705;
+  --gcat-6: #EE4F6C;
+  --gl-hero-bg: radial-gradient(120% 160% at 0% 0%, #2B2158 0%, #150F2E 72%);
+  --gl-hero-ink: #fff;
+  --gl-hero-sub: rgba(255, 255, 255, .72);
+  --gl-hero-label: rgba(255, 255, 255, .62);
+  --gl-hero-track: rgba(255, 255, 255, .12);
+  --gl-hero-glyph: rgba(255, 255, 255, .07);
+  --gl-learned: #3DD68C;
+  --gl-learning: #F5B544;
+  --gl-new: #F27BA6;
   /* A character's radical strokes in the stroke-order animation: the design's stroke writer `radicalColor`. */
   --hz-radical: #FF7A3D;
   /* The brand mark's disc, as the design draws it behind ol-mark / ol-intel (brand artwork,

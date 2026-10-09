@@ -51,7 +51,7 @@ const LAYERS = {
 export const t = defineCopy('compare', {
   layers: LAYERS,
   en: {
-    practiceTitle:'Shadowing / Pronunciation', chooseMedia:'Choose media', listenSource:'Listen', chooseLine:'Choose a line', previousLine:'Previous line', nextLine:'Next line', linePosition:'Line {n} / {total}', meaningUnavailable:'Support meaning is not available yet.',
+    practiceTitle:'Shadowing / Pronunciation', chooseMedia:'Choose source', listenSource:'Listen', chooseLine:'Choose a line', previousLine:'Previous line', nextLine:'Next line', linePosition:'Line {n} / {total}', meaningUnavailable:'Support meaning is not available yet.',
     retryReference:'Try again',
     referenceAudio:'Preparing the original audio…', referenceReading:'Preparing pronunciation…', referenceAlignment:'Orena AI is preparing your comparison…', referenceFailed:'This line is not ready for comparison yet. Try another line, or try again.',
     readySub:'Tap the mic, read the line, then press Stop.', recordingSub:'{s} s · Press Stop when you finish.', assessingSub:'Orena AI is assessing your recording.', readingUnavailable:'Pronunciation unavailable',
@@ -108,7 +108,7 @@ export const t = defineCopy('compare', {
     privacyNote: 'Pitch and timing are measured in your browser, from the model recording and your own take. Word scores come from the pronunciation assessment. A pitch line that could not be measured is left blank rather than guessed.',
   },
   vi: {
-    practiceTitle:'Shadowing / Phát âm', chooseMedia:'Chọn media', listenSource:'Nghe', chooseLine:'Chọn câu', previousLine:'Câu trước', nextLine:'Câu tiếp', linePosition:'Câu {n} / {total}', meaningUnavailable:'Chưa có nghĩa theo ngôn ngữ hỗ trợ.',
+    practiceTitle:'Shadowing / Phát âm', chooseMedia:'Chọn nguồn', listenSource:'Nghe', chooseLine:'Chọn câu', previousLine:'Câu trước', nextLine:'Câu tiếp', linePosition:'Câu {n} / {total}', meaningUnavailable:'Chưa có nghĩa theo ngôn ngữ hỗ trợ.',
     retryReference:'Thử lại',
     referenceAudio:'Đang chuẩn bị giọng gốc…', referenceReading:'Đang chuẩn bị phiên âm…', referenceAlignment:'AI của Orena đang chuẩn bị phần so sánh…', referenceFailed:'Câu này chưa sẵn sàng để so sánh. Bạn có thể chọn câu khác hoặc thử lại.',
     readySub:'Bấm micro, đọc câu rồi bấm Dừng.', recordingSub:'{s} giây · Bấm Dừng khi đọc xong.', assessingSub:'AI của Orena đang đánh giá bản ghi của bạn.', readingUnavailable:'Chưa có phiên âm',
@@ -165,7 +165,7 @@ export const t = defineCopy('compare', {
     privacyNote: 'Cao độ và thời gian được đo ngay trên trình duyệt của bạn, từ bản ghi mẫu và lần thử của bạn. Điểm từng từ đến từ bước chấm phát âm. Đường cao độ không đo được sẽ để trống thay vì đoán.',
   },
   zh: {
-    practiceTitle:'跟读 / 发音', chooseMedia:'选择媒体', listenSource:'听', chooseLine:'选择句子', previousLine:'上一句', nextLine:'下一句', linePosition:'第 {n} / {total} 句', meaningUnavailable:'暂无辅助语言释义。',
+    practiceTitle:'跟读 / 发音', chooseMedia:'选择来源', listenSource:'听', chooseLine:'选择句子', previousLine:'上一句', nextLine:'下一句', linePosition:'第 {n} / {total} 句', meaningUnavailable:'暂无辅助语言释义。',
     retryReference:'重试',
     referenceAudio:'正在准备原声…', referenceReading:'正在准备注音…', referenceAlignment:'Orena AI 正在准备对比…', referenceFailed:'这句话暂时无法对比。请选择其他句子或重试。',
     readySub:'点击麦克风，朗读句子，然后按停止。', recordingSub:'{s} 秒 · 读完后按停止。', assessingSub:'Orena AI 正在评估你的录音。', readingUnavailable:'暂无注音',

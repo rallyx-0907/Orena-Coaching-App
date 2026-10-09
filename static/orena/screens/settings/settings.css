@@ -150,11 +150,12 @@
   flex: none;
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 13px;
   font-weight: 600;
+  box-shadow: var(--edge-light);
 }
 /* The picker's button (D-098): the row's action button, with the current value and a chevron. */
 .s-settings-picker {
@@ -222,4 +223,30 @@
 }
 .s-settings-link:hover {
   color: var(--text);
+}
+
+/* Accent: each option carries its own colour (human, 2026-10-09). */
+.s-settings .c-seg[data-seg='palette'] .c-seg__opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.s-settings-swatch {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--sw);
+}
+/* The chosen accent's dot sits on its own colour: a white ring keeps it visible. */
+.c-seg__opt[aria-pressed='true'] .s-settings-swatch {
+  box-shadow: 0 0 0 2px var(--accent-ink);
+}
+/* Phone: the four accents are two even rows, not three and a stray one. */
+:root[data-device='mobile'] .s-settings .c-seg[data-seg='palette'] {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+:root[data-device='mobile'] .s-settings .c-seg[data-seg='palette'] .c-seg__opt {
+  justify-content: center;
 }

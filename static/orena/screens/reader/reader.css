@@ -73,13 +73,14 @@
 .s-reader__pill {
   flex: none;
   border-radius: 10px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--muted);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--edge-light);
 }
 .s-reader__toggle {
   width: 36px;
@@ -113,12 +114,12 @@
 .s-reader__pill[data-on="1"] {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: var(--tint2);
+  border-color: transparent;
 }
 /* The icon toggles keep the neutral ring whatever their state (frame 14: their border is the
    fixed --border2, only Aa / Aids / more take the state's own). */
 .s-reader__toggle[data-on="1"] {
-  border-color: var(--border2);
+  border-color: transparent;
 }
 
 /* ---- Menu flyout (Aa / Aids / More share one shell) ----------------------------------------- */
@@ -138,7 +139,7 @@
   height: 32px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--muted);
   font-size: 13.5px;
@@ -147,11 +148,12 @@
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
+  box-shadow: var(--edge-light);
 }
 .s-reader__menu-item[data-on="1"] {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: var(--tint2);
+  border-color: transparent;
 }
 .s-reader__menu-item--flat {
   border-color: transparent;
@@ -159,7 +161,7 @@
   color: var(--muted);
 }
 .s-reader__menu-item--note {
-  border-color: var(--border);
+  border-color: transparent;
 }
 .s-reader__menu-spacer {
   flex: 1;
@@ -318,8 +320,7 @@
 .s-reader__sentence.is-selected {
   background: var(--tint2);
   border-bottom: 0;
-  box-shadow: -2px 0 0 var(--accent), 2px 0 0 var(--accent);
-}
+  }
 
 .s-reader__w {
   border-radius: 4px;
@@ -414,7 +415,7 @@
   border-radius: 999px;
   background: var(--amber-soft);
   color: var(--amber);
-  font-family: Outfit, sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 700;
   margin-left: 3px;
@@ -445,7 +446,7 @@
 }
 /* On-request translation (D-130): the paragraph's meaning slot shows the kit spinner while it is
    asked for, or one short line with Retry when the provider failed. */
-.s-reader__article .s-reader__translation--state { display: flex; align-items: center; gap: 8px; font-family: Outfit, sans-serif; font-size: 13px; }
+.s-reader__article .s-reader__translation--state { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-size: 13px; }
 .s-reader__retry { border: 0; background: none; padding: 0; color: var(--accent-text); font: inherit; font-weight: 600; cursor: pointer; }
 
 /* Notes attached to a paragraph (frame 14's amber cards, Outfit). */
@@ -454,7 +455,7 @@
   flex-direction: column;
   gap: 8px;
   margin-top: 12px;
-  font-family: Outfit, sans-serif;
+  font-family: var(--font-ui);
 }
 .s-reader__note {
   border-radius: 14px;
@@ -542,11 +543,12 @@
   height: 32px;
   padding: 0 12px;
   border-radius: 999px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 12.5px;
   font-weight: 600;
+  box-shadow: var(--edge-light);
 }
 
 /* End of content */
@@ -574,16 +576,17 @@
   min-width: 34px;
   padding: 0 12px;
   border-radius: 999px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--muted);
   font-size: 13px;
   font-weight: 600;
+  box-shadow: var(--edge-light);
 }
 .s-reader__chapter[aria-current="true"] {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: var(--tint2);
+  border-color: transparent;
 }
 .s-reader__endnote {
   font-size: 14px;
@@ -629,11 +632,12 @@
   height: 44px;
   padding: 0 16px;
   border-radius: 12px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
+  box-shadow: var(--edge-light);
 }
 
 /* Docked panel: Notes & highlights (frame 14's `<aside>`; on a phone the same content opens as the
@@ -670,12 +674,13 @@
 .s-reader__notelist-row {
   padding: 12px 14px;
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   text-align: left;
   display: block;
   width: 100%;
+  box-shadow: var(--edge-light);
 }
 .s-reader__notelist-type {
   font-size: 13px;
@@ -721,7 +726,7 @@
   border-radius: 16px;
   background: var(--surface);
   box-shadow: var(--sh3);
-  font-family: Outfit, sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   line-height: 1;
   animation: rise 0.18s ease;
@@ -796,7 +801,7 @@
   min-width: 56px;
   height: 52px;
   border-radius: 12px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--muted);
   display: inline-flex;
@@ -807,6 +812,7 @@
   flex: none;
   padding: 0 8px;
   transition: background 0.15s, color 0.15s;
+  box-shadow: var(--edge-light);
 }
 .s-reader__aid[data-on="1"] {
   background: var(--accent-fill);

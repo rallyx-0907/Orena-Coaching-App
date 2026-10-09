@@ -65,6 +65,11 @@ export function rowList(list, empty = null) {
   })}</div>`;
 }
 
+/* Horizontal share bars: a label, a track filled to `pct`, a value (the design's BARS block). */
+export function bars(items, { labelWidth = '140px' } = {}) {
+  return html`<div class="a-bars" style="--a-bar-label:${labelWidth}">${items.map((item) => html`<div class="a-bar"><span class="a-bar__label">${item.label}</span><div class="a-bar__track"><div class="a-bar__fill" style="width:${Math.max(0, Math.min(100, item.pct))}%"></div></div><span class="a-bar__value">${item.value}</span></div>`)}</div>`;
+}
+
 /* Key / value pairs. `mono` sets the value in the mono face. */
 export function kv(items) {
   return html`<div class="a-kv">${items.map((item) => html`<div class="a-kv__item"><span class="a-kv__key">${item.key}</span><span class="a-kv__value${item.mono ? ' a-kv__value--mono' : ''}" data-tone="${item.tone || ''}">${item.value}</span></div>`)}</div>`;
