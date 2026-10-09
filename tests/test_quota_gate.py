@@ -234,13 +234,13 @@ def test_the_setting_switches_it_on_and_the_environment_wins_when_set():
 
 
 def test_only_wired_meters_can_be_listed():
-    assert set(quota.WIRED_METERS) == {"writing.review", "orena.message"}
-    assert quota.validate_switch_setting({"enabled": True, "meters": ["orena.message", "writing.review"]}) == {
-        "enabled": True, "meters": ["writing.review", "orena.message"]}
-    with pytest.raises(ValueError, match="pronunciation.audio"):
-        quota.validate_switch_setting({"enabled": True, "meters": ["pronunciation.audio"]})
+    assert set(quota.WIRED_METERS) == {"writing.review", "orena.message", "pronunciation.audio"}
+    assert quota.validate_switch_setting({"enabled": True, "meters": ["pronunciation.audio", "writing.review"]}) == {
+        "enabled": True, "meters": ["writing.review", "pronunciation.audio"]}
+    with pytest.raises(ValueError, match="media.import"):
+        quota.validate_switch_setting({"enabled": True, "meters": ["media.import"]})
     quota.configure_quota(settings=MemorySettings(),
-                          env={quota.FLAG: "on", quota.METERS_FLAG: "pronunciation.audio,writing.review"})
+                          env={quota.FLAG: "on", quota.METERS_FLAG: "media.import,writing.review"})
     assert quota.switch()["meters"] == ["writing.review"], "an unwired meter enforces nothing and is not listed"
 
 

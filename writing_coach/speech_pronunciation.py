@@ -9,7 +9,7 @@ import re
 import subprocess
 import tempfile
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from collections.abc import Callable
 from typing import Any, Protocol
@@ -18,8 +18,16 @@ import requests
 from fastapi import HTTPException
 
 
+# The longest take the service assesses: the normalizer cuts anything longer (`-t`), the learner surface stops
+# recording at the same limit, and it is the most one request can reserve of the `pronunciation.audio` meter.
+MAX_ASSESSED_SECONDS = 60
+
+
 class SpeechPronunciationError(Exception):
-    pass
+    # The seconds the provider processed (and bills) before this failed, when it got that far (its request was
+    # answered 200); None when the audio never reached it. The plan quota charges nothing for a failure except a
+    # take the provider heard no speech in (speech_api.NO_SPEECH_CHARGED).
+    billed_seconds: float | None = None
 
 
 class SpeechPronunciationTimedOut(SpeechPronunciationError):
@@ -98,6 +106,16 @@ class SpeechPronunciationResult:
     # "scripted": assessed against a reference line. "unscripted": free speech, no reference
     # (free talk); miscues and completeness have no meaning there and are not reported.
     mode: str = "scripted"
+    # The seconds of audio the provider processed and bills, when it says (the plan quota settles on it).
+    audio_seconds: float | None = None
+
+
+@dataclass(frozen=True)
+class PreparedAudio:
+    """The take as the provider will receive it, and its length: measured locally, before any paid call."""
+
+    data: bytes
+    seconds: float
 
 
 class SpeechPronunciationProvider(Protocol):
@@ -125,7 +143,7 @@ def normalize_audio_to_pcm16_wav(
     audio_bytes: bytes,
     *,
     timeout_seconds: float = 20.0,
-    max_duration_seconds: int = 60,
+    max_duration_seconds: int = MAX_ASSESSED_SECONDS,
 ) -> bytes:
     if not audio_bytes:
         raise SpeechPronunciationMalformed()
@@ -157,6 +175,11 @@ def normalize_audio_to_pcm16_wav(
                     "16000",
                     "-c:a",
                     "pcm_s16le",
+                    # Audio only goes to the provider: none of the client file's tags, no encoder string.
+                    "-map_metadata",
+                    "-1",
+                    "-fflags",
+                    "+bitexact",
                     str(output_path),
                 ],
                 capture_output=True,
@@ -174,6 +197,23 @@ def normalize_audio_to_pcm16_wav(
     if len(normalized) < 44 or normalized[:4] != b"RIFF" or normalized[8:12] != b"WAVE":
         raise SpeechPronunciationConversionFailed()
     return normalized
+
+
+_PCM16_MONO_16K_BYTES_PER_SECOND = 32000
+
+
+def wav_seconds(wav: bytes) -> float:
+    """The length of a 16 kHz mono 16-bit PCM WAV: its `data` chunk, else everything after a 44-byte header."""
+    position, size = 12, len(wav)
+    for _ in range(32):
+        if position + 8 > size:
+            break
+        chunk_id = wav[position:position + 4]
+        chunk_size = int.from_bytes(wav[position + 4:position + 8], "little")
+        if chunk_id == b"data":
+            return min(chunk_size, size - position - 8) / _PCM16_MONO_16K_BYTES_PER_SECOND
+        position += 8 + chunk_size + (chunk_size & 1)
+    return max(0, size - 44) / _PCM16_MONO_16K_BYTES_PER_SECOND
 
 
 def _score(mapping: dict[str, Any], key: str) -> float | None:
@@ -293,33 +333,57 @@ class AzureSpeechPronunciationProvider:
         locale = self._locale(language).casefold()
         return "IPA" if locale == "en-us" else "SAPI" if locale == "zh-cn" else ""
 
-    def assess_bytes(self, audio_bytes: bytes, **kwargs: Any) -> SpeechPronunciationResult:
-        """Every Azure request in the shared AI ledger (ai/audio_telemetry.py): the seconds Azure received, once it
-        answered 200 - a silent take it scored as nothing was still billed."""
+    def prepare_audio(self, audio_bytes: bytes) -> PreparedAudio:
+        """Decode the take locally (ffmpeg, no provider call) and measure it: the plan quota reserves exactly this
+        many seconds before the paid request is made. A failure here is recorded like any other failed request."""
 
+        started = time.perf_counter()
+        try:
+            if not audio_bytes:
+                raise SpeechPronunciationMalformed()
+            if len(audio_bytes) > self._max_bytes:
+                raise SpeechPronunciationPayloadTooLarge()
+            normalized = self._normalizer(audio_bytes, timeout_seconds=min(self._timeout_seconds, 20.0))
+        except Exception as exc:
+            self._record("failure", started, None, exc)
+            raise
+        return PreparedAudio(data=normalized, seconds=wav_seconds(normalized))
+
+    def _record(self, outcome: str, started: float, seconds: float | None, error: BaseException | None = None) -> None:
         from writing_coach.ai.audio_telemetry import record_audio_operation
+
+        record_audio_operation("pronunciation_evaluator", provider=self.provider_id, model="pronunciation-assessment",
+                               outcome=outcome, latency_ms=int((time.perf_counter() - started) * 1000),
+                               audio_seconds=seconds, error=error)  # fmt: skip
+
+    def assess_bytes(
+        self, audio_bytes: bytes, *, prepared: PreparedAudio | None = None, **kwargs: Any
+    ) -> SpeechPronunciationResult:
+        """Every Azure request in the shared AI ledger (ai/audio_telemetry.py): the seconds Azure received, once it
+        answered 200 - a silent take it scored as nothing was still billed. `prepared` is the take already decoded by
+        `prepare_audio` (the plan quota measured it before calling); the result and any failure carry the seconds
+        Azure billed (`audio_seconds`, `billed_seconds`)."""
 
         meter: dict[str, float] = {}
         started = time.perf_counter()
         try:
-            result = self._assess(audio_bytes, meter=meter, **kwargs)
+            result = self._assess(audio_bytes, meter=meter, prepared=prepared, **kwargs)
         except Exception as exc:
             billed = meter.get("seconds")
-            record_audio_operation("pronunciation_evaluator", provider=self.provider_id,
-                                   model="pronunciation-assessment", outcome="success" if billed is not None else "failure",
-                                   latency_ms=int((time.perf_counter() - started) * 1000), audio_seconds=billed,
-                                   error=None if billed is not None else exc)  # fmt: skip
+            if isinstance(exc, SpeechPronunciationError):
+                exc.billed_seconds = billed
+            self._record("success" if billed is not None else "failure", started, billed,
+                         None if billed is not None else exc)
             raise
-        record_audio_operation("pronunciation_evaluator", provider=self.provider_id, model="pronunciation-assessment",
-                               outcome="success", latency_ms=int((time.perf_counter() - started) * 1000),
-                               audio_seconds=meter.get("seconds"))  # fmt: skip
-        return result
+        self._record("success", started, meter.get("seconds"))
+        return replace(result, audio_seconds=meter.get("seconds"))
 
     def _assess(
         self,
         audio_bytes: bytes,
         *,
         meter: dict[str, float],
+        prepared: PreparedAudio | None = None,
         filename: str,
         content_type: str,
         language: str,
@@ -337,7 +401,7 @@ class AzureSpeechPronunciationProvider:
             raise SpeechPronunciationMalformed()
 
         locale = self._locale(language)
-        normalized = self._normalizer(
+        normalized = prepared.data if prepared is not None else self._normalizer(
             audio_bytes,
             timeout_seconds=min(self._timeout_seconds, 20.0),
         )
@@ -389,8 +453,8 @@ class AzureSpeechPronunciationProvider:
             raise SpeechPronunciationRequestFailed()
 
         if response.status_code == 200:
-            # 16 kHz mono 16-bit PCM after the 44-byte header: the seconds Azure processed and bills.
-            meter["seconds"] = max(0, len(normalized) - 44) / 32000
+            # 16 kHz mono 16-bit PCM: the seconds Azure processed and bills.
+            meter["seconds"] = wav_seconds(normalized)
         if response.status_code == 413:
             raise SpeechPronunciationPayloadTooLarge()
         if response.status_code != 200:

@@ -2,27 +2,36 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime, timedelta
+import functools
+import hashlib
 import json
 import logging
 import math
 import os
 import time
 from typing import Annotated, Any
+import weakref
 
+import anyio
+import anyio.to_thread
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code
+from writing_coach.product import quota
 
 from writing_coach.speech_pronunciation import (
+    MAX_ASSESSED_SECONDS,
+    PreparedAudio,
     SpeechPronunciationConversionFailed,
+    SpeechPronunciationError,
     SpeechPronunciationMalformed,
     SpeechPronunciationNoSpeech,
     SpeechPronunciationPayloadTooLarge,
     SpeechPronunciationProvider,
-    SpeechPronunciationRequestFailed,
     SpeechPronunciationTimedOut,
 )
 
@@ -592,7 +601,12 @@ async def assess_pronunciation(
                 "pronunciation_audio_empty",
                 "The recording is empty.",
             )
-        result = _assess(provider, data, file, normalized_language, reference, unscripted)
+        # Local decoding, the plan quota and the paid provider call run off the event loop (they block), on a
+        # limiter of their own so a burst of assessments cannot take every worker thread the other routes share.
+        result = await anyio.to_thread.run_sync(
+            functools.partial(_assess_metered, provider, data, file, normalized_language, reference, unscripted),
+            limiter=_pronunciation_limiter(),
+        )
         outcome = result.score_kind
     except HTTPException as exc:
         detail = exc.detail if isinstance(exc.detail, dict) else {}
@@ -648,6 +662,101 @@ async def assess_pronunciation(
     }
 
 
+PRONUNCIATION_WORKERS_ENV = "PRONUNCIATION_MAX_CONCURRENT"
+DEFAULT_PRONUNCIATION_WORKERS = 8
+_pronunciation_limiters: weakref.WeakKeyDictionary[Any, anyio.CapacityLimiter] = weakref.WeakKeyDictionary()
+
+
+def _pronunciation_limiter() -> anyio.CapacityLimiter:
+    """The worker threads assessments may hold at once (decode plus the provider request can take tens of seconds):
+    `PRONUNCIATION_MAX_CONCURRENT`, default 8, of the pool's 40 that every synchronous route shares. One limiter per
+    running event loop (a limiter belongs to the loop that created it)."""
+    loop = asyncio.get_running_loop()
+    limiter = _pronunciation_limiters.get(loop)
+    if limiter is None:
+        try:
+            size = int(os.getenv(PRONUNCIATION_WORKERS_ENV, "") or DEFAULT_PRONUNCIATION_WORKERS)
+        except ValueError:
+            size = DEFAULT_PRONUNCIATION_WORKERS
+        limiter = _pronunciation_limiters[loop] = anyio.CapacityLimiter(max(1, size))
+    return limiter
+
+
+PRONUNCIATION_METER = "pronunciation.audio"
+# [HUMAN, decided 2026-10-09: True for the beta] A take the provider heard no speech in was still processed, and billed, by it. True (default)
+# charges the seconds it processed against the plan - a silent clip is not free provider spend; False would charge
+# nothing, as for a provider failure. One line either way (D-165).
+NO_SPEECH_CHARGED = True
+
+
+def _seconds_to_units(seconds: float) -> int:
+    """Whole seconds, rounded up (a started second is a used second), after millisecond rounding so audio that is
+    a whole number of seconds is not charged one more for a float sliver: 7.4 s is 8, 7.0004 s is 7."""
+    return max(0, math.ceil(round(float(seconds), 3)))
+
+
+def _pronunciation_http_error(exc: SpeechPronunciationError) -> HTTPException:
+    """Each way the provider can fail, as a learner-safe error. No speech is the learner's outcome (say it again),
+    not a provider failure; everything else is the service's, and says so without provider detail."""
+    if isinstance(exc, SpeechPronunciationPayloadTooLarge):
+        return orena_http_error(413, "pronunciation_payload_too_large", "Audio recording is too large.")
+    if isinstance(exc, SpeechPronunciationNoSpeech):
+        return orena_http_error(422, "pronunciation_no_speech", "No speech was heard in the recording.")
+    if isinstance(exc, SpeechPronunciationTimedOut):
+        return orena_http_error(504, "pronunciation_timeout", "Pronunciation assessment timed out.", retryable=True)
+    if isinstance(exc, SpeechPronunciationConversionFailed):
+        return orena_http_error(
+            422,
+            "pronunciation_audio_unsupported",
+            "The recorded audio could not be prepared for pronunciation assessment.",
+        )
+    if isinstance(exc, SpeechPronunciationMalformed):
+        return orena_http_error(
+            502, "pronunciation_provider_malformed", "Pronunciation provider returned an unusable result."
+        )
+    provider_status = getattr(exc, "status_code", None)
+    category = {
+        400: "pronunciation_invalid_request",
+        401: "pronunciation_auth",
+        403: "pronunciation_forbidden",
+        429: "pronunciation_rate_limited",
+    }.get(provider_status, "pronunciation_provider_failure")
+    public_message = {
+        "pronunciation_invalid_request": "The pronunciation provider rejected this request.",
+        "pronunciation_auth": "Pronunciation credentials were rejected.",
+        "pronunciation_forbidden": "Pronunciation assessment is not permitted for this resource.",
+        "pronunciation_rate_limited": "Pronunciation assessment rate limit reached. Try again shortly.",
+    }.get(category, "Pronunciation assessment provider failed.")
+    return orena_http_error(
+        502,
+        category,
+        public_message,
+        retryable=category in {"pronunciation_rate_limited", "pronunciation_provider_failure"},
+        context={"provider_status": provider_status},
+    )
+
+
+def _call_provider(
+    provider: SpeechPronunciationProvider,
+    data: bytes,
+    file: UploadFile,
+    language: str,
+    reference: str,
+    unscripted: bool,
+    prepared: PreparedAudio | None = None,
+) -> Any:
+    extra = {"prepared": prepared} if prepared is not None else {}
+    return provider.assess_bytes(
+        data,
+        filename=file.filename or "recording.webm",
+        content_type=file.content_type or "application/octet-stream",
+        language=language,
+        reference_text=reference,
+        unscripted=unscripted,
+        **extra,
+    )
+
+
 def _assess(
     provider: SpeechPronunciationProvider,
     data: bytes,
@@ -655,69 +764,72 @@ def _assess(
     language: str,
     reference: str,
     unscripted: bool = False,
+    prepared: PreparedAudio | None = None,
 ) -> Any:
-    """Call the provider and turn each way it can fail into a learner-safe error.
-
-    No speech is the learner's outcome (say it again), not a provider failure;
-    everything else is the service's, and says so without provider detail."""
+    """Call the provider and turn each way it can fail into a learner-safe error."""
     try:
-        return provider.assess_bytes(
-            data,
-            filename=file.filename or "recording.webm",
-            content_type=file.content_type or "application/octet-stream",
-            language=language,
-            reference_text=reference,
-            unscripted=unscripted,
-        )
-    except SpeechPronunciationPayloadTooLarge as exc:
-        raise orena_http_error(
-            413,
-            "pronunciation_payload_too_large",
-            "Audio recording is too large.",
-        ) from exc
-    except SpeechPronunciationNoSpeech as exc:
-        raise orena_http_error(
-            422,
-            "pronunciation_no_speech",
-            "No speech was heard in the recording.",
-        ) from exc
-    except SpeechPronunciationTimedOut as exc:
-        raise orena_http_error(
-            504,
-            "pronunciation_timeout",
-            "Pronunciation assessment timed out.",
-            retryable=True,
-        ) from exc
-    except SpeechPronunciationConversionFailed as exc:
-        raise orena_http_error(
-            422,
-            "pronunciation_audio_unsupported",
-            "The recorded audio could not be prepared for pronunciation assessment.",
-        ) from exc
-    except SpeechPronunciationMalformed as exc:
-        raise orena_http_error(
-            502,
-            "pronunciation_provider_malformed",
-            "Pronunciation provider returned an unusable result.",
-        ) from exc
-    except SpeechPronunciationRequestFailed as exc:
-        provider_status = getattr(exc, "status_code", None)
-        category = {
-            400: "pronunciation_invalid_request",
-            401: "pronunciation_auth",
-            403: "pronunciation_forbidden",
-            429: "pronunciation_rate_limited",
-        }.get(provider_status, "pronunciation_provider_failure")
-        public_message = {
-            "pronunciation_invalid_request": "The pronunciation provider rejected this request.",
-            "pronunciation_auth": "Pronunciation credentials were rejected.",
-            "pronunciation_forbidden": "Pronunciation assessment is not permitted for this resource.",
-            "pronunciation_rate_limited": "Pronunciation assessment rate limit reached. Try again shortly.",
-        }.get(category, "Pronunciation assessment provider failed.")
-        raise orena_http_error(
-            502,
-            category,
-            public_message,
-            retryable=category in {"pronunciation_rate_limited", "pronunciation_provider_failure"},
-            context={"provider_status": provider_status},
-        ) from exc
+        return _call_provider(provider, data, file, language, reference, unscripted, prepared)
+    except SpeechPronunciationError as exc:
+        raise _pronunciation_http_error(exc) from exc
+
+
+def _charged_units(error: SpeechPronunciationError, reserved: int, prepared: PreparedAudio | None) -> int:
+    """What a failed assessment costs the learner: nothing, except a take the provider heard no speech in, charged
+    for the seconds it processed (`NO_SPEECH_CHARGED`). Provider work that failed or was unusable stays in the AI
+    cost telemetry, not in the learner's allowance (D-161 point 10)."""
+    if not (NO_SPEECH_CHARGED and isinstance(error, SpeechPronunciationNoSpeech)):
+        return 0
+    seconds = error.billed_seconds if error.billed_seconds is not None else (prepared.seconds if prepared else None)
+    return 0 if seconds is None else min(reserved, _seconds_to_units(seconds))  # unknown length: not guessed
+
+
+def _assess_metered(
+    provider: SpeechPronunciationProvider,
+    data: bytes,
+    file: UploadFile,
+    language: str,
+    reference: str,
+    unscripted: bool,
+) -> Any:
+    """One assessment, admitted by the plan's `pronunciation.audio` allowance (D-165) when that is enforced.
+
+    The meter is the take's real length, never the clicks. The take is decoded locally first (no provider call), so
+    the exact whole seconds are reserved before the paid request; a take that needs more than remains is refused
+    429 and nothing is sent. The reservation settles on the seconds the provider reports having processed (never
+    more than reserved; the rest is released), on 0 for any failure or unusable result, and on the seconds it heard
+    nothing in when NO_SPEECH_CHARGED. A provider that cannot measure ahead (no `prepare_audio`) reserves the
+    longest take and settles on what it reports. A retry of the same take (`Idempotency-Key` + the audio's digest)
+    is never charged twice. Not enforced: exactly the unmetered path."""
+    if not quota.require_ready(PRONUNCIATION_METER):
+        return _assess(provider, data, file, language, reference, unscripted)
+    prepared: PreparedAudio | None = None
+    prepare = getattr(provider, "prepare_audio", None)
+    if callable(prepare):
+        try:
+            prepared = prepare(data)
+        except SpeechPronunciationError as exc:
+            raise _pronunciation_http_error(exc) from exc
+        units = min(_seconds_to_units(prepared.seconds), MAX_ASSESSED_SECONDS)
+        if units <= 0:
+            raise orena_http_error(422, "pronunciation_audio_empty", "The recording is empty.")
+    else:
+        units = MAX_ASSESSED_SECONDS
+    digest = quota.request_digest({
+        "audio": hashlib.sha256(data).hexdigest(), "language": language, "reference": reference,
+        "mode": "unscripted" if unscripted else "scripted",
+    })
+    with quota.admit(PRONUNCIATION_METER, units=units, request_digest=digest) as ticket:
+        # Before the call, so a refusal at dispatch (503, 403) keeps its own status and the provider is not called.
+        ticket.dispatch("pronunciation")
+        try:
+            result = _call_provider(provider, data, file, language, reference, unscripted, prepared)
+        except SpeechPronunciationError as exc:
+            ticket.settle(_charged_units(exc, units, prepared), type(exc).__name__)
+            raise _pronunciation_http_error(exc) from exc
+        if getattr(result, "score_kind", "") != "measured":
+            ticket.settle(0, "not_measured")  # the development stand-in assessed nothing
+        elif getattr(result, "audio_seconds", None) is not None:
+            ticket.settle(min(units, _seconds_to_units(result.audio_seconds)), "assessed")
+        else:
+            ticket.settle(units, "assessed")  # a provider that cannot report the length: the reserved bound
+        return result
