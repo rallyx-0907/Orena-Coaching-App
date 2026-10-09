@@ -17,7 +17,7 @@ itself, not here.
 | `open-dsl-dict` | open-dsl-dict `en-vi-enwiktionary` (from English Wiktionary translation tables, 2015) | CC BY-SA 3.0 / GFDL | `writing_coach/localization_data/vi_glosses.json.gz` (subset) | Wiktionary contributors; Open DSL Dictionary Project |
 | `wiktionary-vi` | Vietnamese Wiktionary via kaikki.org (Wiktextract extraction of 2026-09-28) | CC BY-SA 4.0 (also GFDL) | same file (subset) | Wiktionary contributors; Tatu Ylonen's Wiktextract (kaikki.org) |
 | `lucide` | Lucide icons, lucide-static 0.525.0 | ISC | `static/orena/kit/icons.js` | Lucide contributors |
-| `google-fonts` | Fredoka, Outfit, Plus Jakarta Sans, Literata, JetBrains Mono, Noto Sans SC, Noto Serif SC (and the old UI's Nunito, Nunito Sans, DM Mono, Roboto Mono, Noto Serif) | SIL Open Font License 1.1 | loaded from Google Fonts | The fonts' authors |
+| `google-fonts` | Fredoka, Outfit, Plus Jakarta Sans, Literata, JetBrains Mono, Noto Sans SC, Noto Serif SC | SIL Open Font License 1.1 | `static/orena/fonts/` (self-hosted `woff2` files, fetched once by `scripts/fetch_self_hosted_fonts.py`; each family's licence text in `static/orena/fonts/licences/`) | The fonts' authors |
 | `nltk-tagger` | NLTK averaged perceptron tagger (English part-of-speech data) | Apache 2.0 | installed at build time | NLTK Project |
 
 Data under CC BY-SA remains under CC BY-SA after Orena's repackaging (share-alike); the repackaged

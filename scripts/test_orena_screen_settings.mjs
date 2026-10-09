@@ -147,9 +147,11 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
 
 /* --- privacyRows: the microphone, learner audio and History; the plan lives on Plan & usage -------------- */
 {
-  const rows = privacyRows({ micOn: true, micState: 'granted' });
+  const rows = privacyRows({ micOn: true, micState: 'granted', lang: 'vi' });
   const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
-  assert.deepEqual(rows.map((r) => r.id), ['mic', 'learnerAudio', 'history', 'licences'], 'the design\'s three rows, then the licences link (D-124)');
+  assert.deepEqual(rows.map((r) => r.id), ['mic', 'learnerAudio', 'history', 'licences', 'privacyPolicy', 'termsOfService', 'deleteAccount'], 'the design\'s three rows, then the licences link (D-124) and the legal links (D-162)');
+  assert.deepEqual(['privacyPolicy', 'termsOfService', 'deleteAccount'].map((id) => byId[id].href), ['/privacy?lang=vi', '/terms?lang=vi', '/account-deletion?lang=vi'], 'the legal links open the public pages in the interface language');
+  assert.equal(privacyRows({ lang: 'zh' }).find((r) => r.id === 'deleteAccount').href, '/account-deletion?lang=zh', 'Chinese is passed on; the public pages show English for it');
   assert.equal(byId.mic.value, true);
   assert.equal(byId.mic.disabled, false, 'requesting the permission is a real effect even when it cannot be revoked from script');
   assert.equal(byId.learnerAudio.disabled, true, 'no delete-audio route exists');
@@ -171,7 +173,7 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   assert.deepEqual(rowsForTab('appearance', inputs).map((row) => row.id), ['theme', 'palette'], 'Appearance and Accent have their own tab (LEX-079)');
   assert.equal(rowsForTab('review', inputs).length, 4);
   assert.equal(rowsForTab('notifications', inputs).length, 4);
-  assert.equal(rowsForTab('privacy', inputs).length, 4, 'privacy tab: three rows plus Licences and data sources (D-124)');
+  assert.equal(rowsForTab('privacy', inputs).length, 7, 'privacy tab: three rows, the Licences link (D-124) and the three legal links (D-162)');
   assert.deepEqual(rowsForTab('plan', inputs), [], 'the plan tab is gone');
   assert.deepEqual(rowsForTab('nonsense', inputs), [], 'an unknown tab id is empty, never throws');
 }

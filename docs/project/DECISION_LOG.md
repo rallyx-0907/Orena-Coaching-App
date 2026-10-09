@@ -4766,6 +4766,59 @@ Delegated Architecture Reviewer, REQUEST CHANGES on 4fbd15a2..40443ed1; fixes li
 
 If another branch (PR A) lands a D-161 first, this entry is renumbered to the next free number on merge.
 
+## D-162 - Truthful public legal text, a deletion page, self-hosted fonts
+
+2026-10-09, explicit human instructions (publish-readiness for Google Play: PUB-2). Supersedes D-160 item 3's
+"the design's legal text, verbatim" and PUB-1/PUB-2 in `UI_BACKEND_GAPS.md`. Layout stays the design's.
+
+1. **The repository owns the legal words** (human-authorised deviation from the pin). `docs/legal/public/` holds
+   Privacy, Terms and Delete-account text in Vietnamese and English and `facts.json`; `scripts/build_public_pages.mjs`
+   lays it out with the pinned design's markup; the gate compares the pages to it verbatim. Every changed sentence
+   and its evidence is in `docs/legal/PUBLIC_POLICY_CHANGES_2026-10.md`. Nothing claims what the code does not do.
+2. **Operator and contacts.** Operator/developer public name RallyX, Vietnam; no personal name, no address.
+   Contacts `orena.legal@chillpickle.org` (legal, privacy) and `orena.support@chillpickle.org` (support, deletion).
+3. **Account deletion.** A public page `/account-deletion` (no login): email the support address from the Google
+   account's email; what is deleted and kept; processed by hand within 30 days at most. There is no in-app
+   delete or export yet; the account-deletion runtime stays a later architecture task (AGENTS.md section 7).
+   `docs/project/ACCOUNT_DELETION_RUNBOOK.md` is the operator's manual procedure and needs independent
+   architecture review before first use (destructive).
+4. **No vendor names.** Public text describes AI and speech providers by function (content needed for a feature is
+   sent to service providers that process it on RallyX's behalf; the server does not keep learner audio). The
+   vendor list is internal, in `docs/legal/GOOGLE_PLAY_DATA_SAFETY.md`.
+5. **Facts.** Minimum age 13 (no technical age gate in the beta; Play target audience 13+, not Families). The two
+   retention jobs will be ON at deploy: Orena Intelligence turn records 90 days, learner feedback 24 months
+   (`AGENT_TURN_RETENTION_SWEEP=on`, `FEEDBACK_RETENTION_SWEEP=on` must be set before the policy is published).
+   Backup retention is unknown (`scripts/runtime_backup.py` has no rotation) and the publish date is not set: both
+   stay `null` and block `node scripts/build_public_pages.mjs --release`, which must pass before :8000.
+   `ORENA_ACCOUNT_BACKBONE=on` on :8000, so drafts, conversations, notes, highlights, place and private imports
+   are stored server-side for signed-in learners, and the policy says so.
+6. **Fonts are self-hosted.** The learner shell and the public pages no longer load Google Fonts: the same
+   families and weights are served from `static/orena/fonts/` (OFL licence texts committed, listed in
+   `THIRD_PARTY_NOTICES.md`; re-fetched by `scripts/fetch_self_hosted_fonts.py`). The policy therefore needs no
+   Google Fonts disclosure, and the public-pages gate forbids `fonts.googleapis.com` and `fonts.gstatic.com`.
+7. **Links.** The sign-in consent line links Terms and Privacy Policy; Settings → Privacy links Privacy Policy,
+   Terms and Delete account (new tab); the Landing footer gains "Delete account" in its own link style.
+8. **Static legal pages (human, 2026-10-09).** Terms, Privacy and Delete account are server-rendered static HTML
+   with the full text in the response and no JavaScript needed (crawlers and Play reviewers without JS read
+   everything): one file per language, Vietnamese by default, English for `?lang=en` and for `?lang=zh`, the
+   language switch is plain links, the design runtime and React are not loaded on them. The look is the design's
+   (measured: same element counts, 0 px delta, same computed styles at 1920x1080 and 390x844). The Landing stays
+   runtime-based (PUB-1, deferred). The gate checks the raw HTML of each language with scripts removed.
+9. **Age.** Minimum age 13 (not 12). The pages say the service is for people 13 and over, no date of birth is
+   collected, there is no technical age gate during the beta, and an account found to belong to someone under 13
+   is deleted. Play target audience 13+, not Families.
+10. **Backups: 30 days, enforced.** `scripts/runtime_backup.py rotate --dir <dir> --days 30 [--apply]` keeps the
+    backup directory to 30 days: dry run by default; touches only regular files named `orena-*.dump` directly
+    inside the given directory (never subfolders, symlinks, the deletion journal or anything else); removes a
+    dump when it is at least 30 days old (the older of its mtime and the timestamp in its name); keeps the newest
+    even if stale unless `--allow-empty`; logs every decision. Tested with a temporary directory (boundary at
+    exactly 30 days). Verified read-only against the real `%USERPROFILE%\.orena\backups`. `facts.json`
+    `retention.backup_days` is therefore 30. Applying it on the :8000 host (at least daily) is part of the
+    human-gated deploy.
+11. **Publish date.** `effective_date` stays null in the repository. The deploy step is `node
+    scripts/build_public_pages.mjs --release --effective-date YYYY-MM-DD` with the date of the policy's first public
+    deployment on :8000; the release check fails without it.
+
 
 ## D-163 - Orena messages enforced on the server: text turns and text discussion; voice refused until it is metered
 
