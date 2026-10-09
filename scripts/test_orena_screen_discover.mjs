@@ -2,6 +2,7 @@
    04-Discover.html, 52-Filter-Sheet.html). screens/discover/model.js is DOM-free - imported
    directly, no globals to stub. */
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { practiceCandidates, practiceHref, preparedMediaEntry } from '../static/orena/screens/discover/model.js';
 {
   for (const language of ['en', 'zh']) {
@@ -254,6 +255,89 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
 {
   assert.equal(hrefFor({ id: 'article:1', kind: 'article' }, href), '#/content/article:1');
   assert.equal(hrefFor({ id: 'collection:9', kind: 'collection' }, href), '#/collection/9');
+}
+
+// 13. The All tab is a sectioned overview (D-16V): Read, Listen - Watch, Collections, Imported, in that
+// order, each the first OVERVIEW_LIMIT entries of its own tab with a "See all" that opens that tab.
+{
+  const { overviewSections, OVERVIEW_TABS, OVERVIEW_LIMIT, TABS } = await import('../static/orena/screens/discover/model.js');
+  const { overviewMarkup } = await import('../static/orena/screens/discover/overview.js');
+  const { mediaCard } = await import('../static/orena/kit/components.js');
+  const { registeredCopy } = await import('../static/orena/copy/index.js');
+  await import('../static/orena/screens/discover/copy.js');
+  const packs = registeredCopy().get('discover').packs;
+
+  assert.deepEqual(OVERVIEW_TABS, ['read', 'listen', 'collections', 'imported'], 'the human decision names the four sections and their order');
+  for (const tab of OVERVIEW_TABS) assert.ok(TABS.includes(tab), `${tab} is a real tab, so its "See all" has somewhere to go`);
+  assert.ok(OVERVIEW_LIMIT >= 4 && OVERVIEW_LIMIT <= 6, 'a few representative items, one row');
+
+  const many = (n, make) => Array.from({ length: n }, (_, i) => make(i));
+  const entries = [
+    ...many(7, (i) => ({ id: `article:a${i}`, kind: 'article', title: `Article ${i}`, author: '', level: i % 2 ? 'B2' : 'A2', topic: '' })),
+    ...many(3, (i) => ({ id: `book:b${i}`, kind: 'book', title: `Book ${i}`, author: 'Author', level: '', topic: '' })),
+    ...many(8, (i) => ({ id: `media:m${i}`, kind: 'media', mediaType: i % 2 ? 'video' : 'audio', title: `Clip ${i}`, author: 'Src', level: '', topic: '' })),
+    ...many(2, (i) => ({ id: `collection:c${i}`, kind: 'collection', title: `Words ${i}`, level: '', topic: '', itemCount: 10 })),
+    { id: 'text:t0', kind: 'text', title: 'My text', author: '', level: '', topic: '' },
+    { id: 'upload:u0', kind: 'upload', title: 'My upload', author: 'host', level: '', topic: '' },
+  ];
+  const sections = overviewSections(entries);
+  assert.deepEqual(sections.map((section) => section.tab), OVERVIEW_TABS, 'four sections, in order');
+  const KINDS = { read: ['article', 'book'], listen: ['media'], collections: ['collection'], imported: ['text', 'upload'] };
+  for (const section of sections) {
+    assert.ok(section.entries.length <= OVERVIEW_LIMIT, `${section.tab}: at most ${OVERVIEW_LIMIT} items`);
+    assert.ok(section.entries.every((entry) => KINDS[section.tab].includes(entry.kind)), `${section.tab}: only its own type`);
+    // Representative items are the tab's own first N, in the tab's own order.
+    assert.deepEqual(section.entries, visibleEntries(entries, { tab: section.tab }).slice(0, OVERVIEW_LIMIT), `${section.tab}: the tab's own first items`);
+    assert.equal(section.total, visibleEntries(entries, { tab: section.tab }).length, `${section.tab}: total is the tab's full count`);
+  }
+  assert.equal(sections[0].entries.length, OVERVIEW_LIMIT);
+  assert.equal(sections[0].total, 10, 'Read is articles then books, exactly as the Read tab lists them');
+  assert.equal(sections[1].total, 8);
+  assert.equal(sections[3].entries.length, 2);
+
+  // An empty section is left out (the design draws no empty state for a section) - a new learner has no Imported.
+  const noImports = overviewSections(entries.filter((entry) => entry.kind !== 'text' && entry.kind !== 'upload'));
+  assert.deepEqual(noImports.map((section) => section.tab), ['read', 'listen', 'collections']);
+  assert.deepEqual(overviewSections([]), [], 'nothing loaded: no sections (the screen shows its empty state)');
+  assert.deepEqual(overviewSections(entries.filter((entry) => entry.kind === 'media')).map((section) => section.tab), ['listen'], 'a source that failed leaves only its own section out');
+
+  // Search and filters narrow every section alike.
+  assert.deepEqual(overviewSections(entries, { query: 'clip 3' }).map((section) => [section.tab, section.total]), [['listen', 1]]);
+  const b2 = overviewSections(entries, { filters: { level: new Set(['B2']), topic: new Set(), type: new Set() } });
+  assert.deepEqual(b2.map((section) => section.tab), ['read'], 'a Level filter keeps only sections that still have a match');
+
+  // Rendered, in each interface language: section headings are the tabs' own labels, each section has one
+  // "See all" aimed at its tab, and the cards open where the type's own tab opens them.
+  for (const ui of ['en', 'vi', 'zh']) {
+    const pack = packs[ui];
+    for (const key of ['seeAll', 'tabRead', 'tabListen', 'tabCollections', 'tabImported']) assert.ok(pack[key], `${ui}: ${key}`);
+    const tr = (key, params) => fill(pack[key] ?? key, params);
+    tr.plural = (key, n, params = {}) => fill(pack[`${key}_${n === 1 ? 'one' : 'other'}`] ?? pack[`${key}_other`] ?? key, { n, ...params });
+    const card = (entry) => {
+      const presented = presentCard(entry, tr);
+      return mediaCard({ ...presented, title: presented.title, fullTitle: presented.title, dataset: { go: hrefFor(entry, href) } });
+    };
+    const markup = String(overviewMarkup(sections, { card, t: tr }));
+    const found = [...markup.matchAll(/<section class="s-discover__section" data-section="(\w+)">([\s\S]*?)<\/section>/g)];
+    assert.deepEqual(found.map((match) => match[1]), OVERVIEW_TABS, `${ui}: four sections in order`);
+    const headings = [...markup.matchAll(/<h2 class="c-section-head__title">([^<]+)<\/h2>/g)].map((match) => match[1]);
+    assert.deepEqual(headings, [pack.tabRead, pack.tabListen, pack.tabCollections, pack.tabImported], `${ui}: each heading is its tab's own label`);
+    for (const [, tab, body] of found) {
+      assert.equal([...body.matchAll(/data-see-all="(\w+)"/g)].map((match) => match[1]).join(), tab, `${ui}: ${tab} has one See all, aimed at the ${tab} tab`);
+      assert.ok(body.includes(`${pack.seeAll}</button>`), `${ui}: See all is worded in the interface language`);
+      const cards = [...body.matchAll(/class="o-card o-card--hover c-media" data-go="([^"]+)"/g)].map((match) => match[1]);
+      assert.ok(cards.length >= 1 && cards.length <= OVERVIEW_LIMIT, `${ui}: ${tab} draws 1-${OVERVIEW_LIMIT} cards`);
+    }
+    assert.ok(found[2][2].includes('data-go="#/collection/c0"'), `${ui}: a collection card opens the collection route`);
+    assert.ok(found[0][2].includes('data-go="#/content/article:a0"'));
+  }
+
+  // The screen wires All to the overview and nothing else: the other tabs and the practice chooser keep the flat grid,
+  // and a section's "See all" is the tab bar's own switch.
+  const screenSource = fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8');
+  assert.match(screenSource, /const overview = !practice && state\.tab === 'all'/, 'only All, and never a practice chooser, is the overview');
+  assert.match(screenSource, /openTab\(button\.dataset\.seeAll\)/, 'See all opens the tab through the same openTab the tab bar uses');
+  assert.match(screenSource, /button\.addEventListener\('click', \(\) => openTab\(button\.dataset\.tab\)\)/, 'the tab bar keeps its own switch');
 }
 
 console.log('Orena Discover: data mapping, filters, tabs, search and presentation all pure, no invented data: PASS');

@@ -4927,3 +4927,31 @@ change to `main` and the Intelligence lane receives it by merging forward.
 5. **Gates.** `scripts/test_orena_agent.mjs` asserts the §2.1 rows (in order), their categories, the headers, §3.3 and the
    voice 503 against the contract text and drives the transport through each; `tests/test_agent_contract_tables.py` fails if
    the quota gate can answer a category the contract does not name, or the voice refusal drifts.
+
+## D-16V - Discover All is a sectioned overview
+
+2026-10-09, explicit human decision (product owner). The number is assigned at merge. `feat/discover-all-sections`.
+
+The decision, in the human's words: "Discover / All must not be one grid mixing every content type. All must be an
+overview page organised by clear sections, so the user immediately sees: Read; Listen · Watch; Collections; Imported.
+Each section shows only a few representative items and has 'See all'. The individual tabs are the full libraries of each
+type. Goal: the user understands the app's content structure without clicking each tab."
+
+1. **Supersedes the design's All.** `Orena.dc.html` (Discover frame, state script `tab:"All"`) draws All as one flat grid
+   of every type in "For you" order; its only grouped form is the Sort control's "By level" / "By type" groups. The
+   human's decision replaces that flat grid for the All tab (the design is the authority for look, the human for this
+   structure; D-067). The tabs, the card, the filters and search are unchanged.
+2. **Four sections, in this order:** Read, Listen · Watch, Collections, Imported (the tab bar keeps D-152's order, Listen
+   before Read; the human named the overview's order separately). A section's heading is its tab's own label.
+3. **Representative items = the tab's own first five**, in the order that tab lists them (`overviewSections` over
+   `visibleEntries`; no "featured" ordering exists in any source). Read is therefore articles first, then books, as its tab
+   lists them. Each section is one row: the cards that would wrap are `display:none` by the section's own width, and a
+   phone shows two.
+4. **Reuse, no new component.** The heading row is kit's `sectionHead` ("For you" / "See all", Today); the cards are
+   `mediaCard` through the same `cardFor` as every tab. "See all" opens that tab in place - the same change the tab bar
+   makes, no route, no history entry - and scrolls to the top of the page.
+5. **Search and filters narrow every section alike.** A section with nothing to show is omitted: the design draws no empty
+   state for a section, so a learner with nothing imported sees three sections, and a source that fails to load leaves only
+   its own section out. Each source is painted as it arrives. The practice choosers (`?practice=`) are not browsing and keep
+   their one flat list.
+6. **Gate.** `scripts/test_orena_screen_discover.mjs` section 13 renders the overview in English, Vietnamese and Chinese.

@@ -273,6 +273,24 @@ export function visibleEntries(entries, { tab = 'all', query = '', filters = nul
     .filter((entry) => !q || `${entry.title} ${entry.author}`.toLowerCase().includes(q));
 }
 
+/* The All tab is an overview, not a library (D-16V): four sections in this order, each the first
+   `OVERVIEW_LIMIT` entries of its own tab (the very list `visibleEntries` gives that tab, in its
+   order), and a "See all" that opens that tab. `tab` is both the section's identity and the tab it
+   leads to; its heading is that tab's own label. Search and filters narrow every section alike; a
+   section with nothing to show is left out rather than drawn empty (the design draws no empty
+   state for a section). `total` is the tab's full match count. */
+export const OVERVIEW_TABS = Object.freeze(['read', 'listen', 'collections', 'imported']);
+export const OVERVIEW_LIMIT = 5;
+
+export function overviewSections(entries, { query = '', filters = null, limit = OVERVIEW_LIMIT } = {}) {
+  return OVERVIEW_TABS
+    .map((tab) => {
+      const all = visibleEntries(entries, { tab, query, filters });
+      return { tab, total: all.length, entries: all.slice(0, limit) };
+    })
+    .filter((section) => section.total > 0);
+}
+
 /* entry -> kit/components.js#mediaCard() props. `t` is copy/discover.js's translate function
    (a plain function of (key, params) - this stays pure, nothing here touches the DOM). Any count
    this screen shows (minutes, chapters, words) comes from a real field on the entry; an entry with

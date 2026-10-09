@@ -5400,3 +5400,17 @@ the meters below.
   `opening: true`. Past the allowance a greeting is built from the snapshot with no model (never refused). Greeting spend per
   account is read from the `agent.turn` rows (`opening: true`, rounds, tokens); the AI capability vocabulary was not
   extended. Owner: BACKEND (review of #118, P1-1).
+
+## Discover All as a sectioned overview (D-16V), 2026-10-09
+
+- **DAS-1 An empty section is omitted, so a new learner does not see "Imported" on All.** The design draws no empty state or
+  import affordance for a section (its only empty state is the tab's "Nothing matches these filters yet."), so a section
+  with nothing to show is left out rather than invented. The header's "+ Import" and the Imported tab remain the way in. If
+  the human wants the four sections always visible, the design needs a drawn empty section (and, for Imported, its import
+  affordance). Owner: DESIGN / human.
+- **DAS-2 No "featured" ordering exists, so "representative" is the tab's first five.** Read lists every article before any
+  book, so on All the Read row shows articles until a learner's catalogue has fewer than five. A mix of articles and books
+  (or a recommendation order) needs a ranking the content model does not carry. Owner: BACKEND / human.
+- **DAS-3 The sections' loading and failure are silent.** Each source is painted as it arrives and a source that fails
+  leaves only its own section out; the design draws no per-section loading or error visual, so none is added. A learner
+  cannot tell a failed source from an empty one. Owner: DESIGN / human.
