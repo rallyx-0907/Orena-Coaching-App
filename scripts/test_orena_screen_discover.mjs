@@ -257,8 +257,9 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal(hrefFor({ id: 'collection:9', kind: 'collection' }, href), '#/collection/9');
 }
 
-// 13. The All tab is a sectioned overview (D-16V): Read, Listen - Watch, Collections, Imported, in that
-// order, each the first OVERVIEW_LIMIT entries of its own tab with a "See all" that opens that tab.
+// 13. The All tab is a sectioned overview (D-16V): Listen - Watch, Read, Collections, Imported (the skill
+// order, D-152), each the first OVERVIEW_LIMIT entries of its own tab with a "See all" that opens that tab;
+// Imported is always drawn, as an import call to action while nothing is imported.
 {
   const { overviewSections, OVERVIEW_TABS, OVERVIEW_LIMIT, TABS } = await import('../static/orena/screens/discover/model.js');
   const { overviewMarkup } = await import('../static/orena/screens/discover/overview.js');
@@ -267,7 +268,8 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   await import('../static/orena/screens/discover/copy.js');
   const packs = registeredCopy().get('discover').packs;
 
-  assert.deepEqual(OVERVIEW_TABS, ['read', 'listen', 'collections', 'imported'], 'the human decision names the four sections and their order');
+  assert.deepEqual(OVERVIEW_TABS, ['listen', 'read', 'collections', 'imported'], 'the skill order (D-152): Listen before Read');
+  assert.deepEqual(TABS, ['all', ...OVERVIEW_TABS], 'the tab bar and the overview sections share one order');
   for (const tab of OVERVIEW_TABS) assert.ok(TABS.includes(tab), `${tab} is a real tab, so its "See all" has somewhere to go`);
   assert.ok(OVERVIEW_LIMIT >= 4 && OVERVIEW_LIMIT <= 6, 'a few representative items, one row');
 
@@ -291,18 +293,23 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
     assert.equal(section.total, visibleEntries(entries, { tab: section.tab }).length, `${section.tab}: total is the tab's full count`);
   }
   assert.equal(sections[0].entries.length, OVERVIEW_LIMIT);
-  assert.equal(sections[0].total, 10, 'Read is articles then books, exactly as the Read tab lists them');
-  assert.equal(sections[1].total, 8);
+  assert.equal(sections[0].total, 8);
+  assert.equal(sections[1].total, 10, 'Read is articles then books, exactly as the Read tab lists them');
   assert.equal(sections[3].entries.length, 2);
+  assert.ok(sections.every((section) => !section.empty), 'with imports, no section is the empty call to action');
 
-  // An empty section is left out (the design draws no empty state for a section) - a new learner has no Imported.
+  // An empty section is left out (the design draws no empty state for a section) - except Imported, which is
+  // always drawn: with nothing imported it is the import call to action.
   const noImports = overviewSections(entries.filter((entry) => entry.kind !== 'text' && entry.kind !== 'upload'));
-  assert.deepEqual(noImports.map((section) => section.tab), ['read', 'listen', 'collections']);
-  assert.deepEqual(overviewSections([]), [], 'nothing loaded: no sections (the screen shows its empty state)');
-  assert.deepEqual(overviewSections(entries.filter((entry) => entry.kind === 'media')).map((section) => section.tab), ['listen'], 'a source that failed leaves only its own section out');
+  assert.deepEqual(noImports.map((section) => section.tab), OVERVIEW_TABS, 'Imported is always present');
+  assert.deepEqual(noImports.map((section) => section.empty), [false, false, false, true], 'and with nothing imported it is the empty one');
+  assert.equal(noImports[3].entries.length, 0);
+  assert.deepEqual(overviewSections([]).map((section) => [section.tab, section.empty]), [['imported', true]], 'a new learner with nothing loaded still sees Imported and its call to action');
+  assert.deepEqual(overviewSections(entries.filter((entry) => entry.kind === 'media')).map((section) => section.tab), ['listen', 'imported'], 'a source that failed leaves only its own section out');
 
-  // Search and filters narrow every section alike.
+  // Search and filters narrow every section alike; a narrowed page is not an invitation to import.
   assert.deepEqual(overviewSections(entries, { query: 'clip 3' }).map((section) => [section.tab, section.total]), [['listen', 1]]);
+  assert.deepEqual(overviewSections(entries.filter((entry) => entry.kind !== 'text' && entry.kind !== 'upload'), { query: 'zzz' }), [], 'nothing matches a search: no sections, never the import call to action');
   const b2 = overviewSections(entries, { filters: { level: new Set(['B2']), topic: new Set(), type: new Set() } });
   assert.deepEqual(b2.map((section) => section.tab), ['read'], 'a Level filter keeps only sections that still have a match');
 
@@ -310,7 +317,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   // "See all" aimed at its tab, and the cards open where the type's own tab opens them.
   for (const ui of ['en', 'vi', 'zh']) {
     const pack = packs[ui];
-    for (const key of ['seeAll', 'tabRead', 'tabListen', 'tabCollections', 'tabImported']) assert.ok(pack[key], `${ui}: ${key}`);
+    for (const key of ['seeAll', 'importCta', 'importAction', 'tabRead', 'tabListen', 'tabCollections', 'tabImported']) assert.ok(pack[key], `${ui}: ${key}`);
     const tr = (key, params) => fill(pack[key] ?? key, params);
     tr.plural = (key, n, params = {}) => fill(pack[`${key}_${n === 1 ? 'one' : 'other'}`] ?? pack[`${key}_other`] ?? key, { n, ...params });
     const card = (entry) => {
@@ -321,7 +328,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
     const found = [...markup.matchAll(/<section class="s-discover__section" data-section="(\w+)">([\s\S]*?)<\/section>/g)];
     assert.deepEqual(found.map((match) => match[1]), OVERVIEW_TABS, `${ui}: four sections in order`);
     const headings = [...markup.matchAll(/<h2 class="c-section-head__title">([^<]+)<\/h2>/g)].map((match) => match[1]);
-    assert.deepEqual(headings, [pack.tabRead, pack.tabListen, pack.tabCollections, pack.tabImported], `${ui}: each heading is its tab's own label`);
+    assert.deepEqual(headings, [pack.tabListen, pack.tabRead, pack.tabCollections, pack.tabImported], `${ui}: each heading is its tab's own label`);
     for (const [, tab, body] of found) {
       assert.equal([...body.matchAll(/data-see-all="(\w+)"/g)].map((match) => match[1]).join(), tab, `${ui}: ${tab} has one See all, aimed at the ${tab} tab`);
       assert.ok(body.includes(`${pack.seeAll}</button>`), `${ui}: See all is worded in the interface language`);
@@ -329,8 +336,40 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
       assert.ok(cards.length >= 1 && cards.length <= OVERVIEW_LIMIT, `${ui}: ${tab} draws 1-${OVERVIEW_LIMIT} cards`);
     }
     assert.ok(found[2][2].includes('data-go="#/collection/c0"'), `${ui}: a collection card opens the collection route`);
-    assert.ok(found[0][2].includes('data-go="#/content/article:a0"'));
+    assert.ok(found[1][2].includes('data-go="#/content/article:a0"'), `${ui}: Read opens its articles`);
+
+    // With nothing imported, Imported is the call to action: its own line, the "+ Import" control in the VIP look,
+    // no cards and no "See all" (there is nothing to see).
+    const bare = String(overviewMarkup(noImports, { card, t: tr }));
+    const bareFound = [...bare.matchAll(/<section class="s-discover__section" data-section="(\w+)">([\s\S]*?)<\/section>/g)];
+    assert.deepEqual(bareFound.map((match) => match[1]), OVERVIEW_TABS, `${ui}: Imported is drawn with nothing imported`);
+    const cta = bareFound[3][2];
+    assert.ok(cta.includes(pack.importCta), `${ui}: the call to action is worded in the interface language`);
+    assert.match(cta, /<button type="button" class="o-btn o-btn--primary s-discover__vip" data-import-cta>\+ /, `${ui}: the call to action is the VIP import control`);
+    assert.ok(cta.includes(`+ ${pack.importAction}`), `${ui}: and carries the page's own import label`);
+    assert.ok(!/c-media|data-see-all/.test(cta), `${ui}: an empty Imported draws no cards and no See all`);
+    assert.ok(bareFound.slice(0, 3).every((match) => /data-see-all/.test(match[2])), `${ui}: the other sections keep their See all`);
   }
+
+  // The VIP import control (human exception to D-147, 2026-10-09): on the header's "+ Import" and on the call to
+  // action, a rotating conic-gradient border around the accent fill; held still under reduced motion; no colour literal.
+  const css = fs.readFileSync('static/orena/screens/discover/discover.css', 'utf8');
+  const screenSrc = fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8');
+  assert.match(screenSrc, /class="o-btn o-btn--primary s-discover__vip" data-import>/, 'the header "+ Import" is the VIP control');
+  assert.match(css, /@property --vip-angle\s*\{[^}]*syntax:\s*'<angle>'/, 'the angle is a registered property, so it can animate');
+  assert.match(css, /conic-gradient\(\s*from var\(--vip-angle\)/, 'a conic-gradient border');
+  assert.match(css, /animation:\s*s-discover-vip-run[^;]*infinite/, 'it runs');
+  assert.match(css, /@keyframes s-discover-vip-run\s*\{\s*to\s*\{\s*--vip-angle:\s*360deg/, 'one full turn');
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.o-btn\.o-btn--primary\.s-discover__vip\s*\{\s*animation:\s*none/, 'reduced motion: a static border');
+  assert.match(css, /linear-gradient\(var\(--vip-fill\), var\(--vip-fill\)\) padding-box/, 'the fill stays the accent fill (label contrast unchanged)');
+  assert.match(css, /--vip-fill:\s*var\(--accent-fill\)/);
+  assert.match(css, /padding:\s*10px 16px;\s*border:\s*2px solid transparent/, 'the border is paid out of the padding: no layout shift');
+  assert.equal(css.replace(/\/\*[\s\S]*?\*\//g, '').match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/), null, 'colours come from tokens.css only');
+  for (const token of ['skill-speak', 'skill-read', 'skill-vocab', 'gcat-4', 'skill-listen', 'skill-grammar', 'skill-write']) {
+    assert.match(fs.readFileSync('static/orena/kit/tokens.css', 'utf8'), new RegExp(`--${token}:`), `the rainbow stop --${token} exists in tokens.css`);
+  }
+  // The exception is scoped: no other rule in the screen draws a rainbow.
+  assert.equal((css.match(/conic-gradient\(/g) || []).length, 1, 'the rainbow is drawn once');
 
   // The screen wires All to the overview and nothing else: the other tabs and the practice chooser keep the flat grid,
   // and a section's "See all" is the tab bar's own switch.
@@ -338,6 +377,9 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.match(screenSource, /const overview = !practice && state\.tab === 'all'/, 'only All, and never a practice chooser, is the overview');
   assert.match(screenSource, /openTab\(button\.dataset\.seeAll\)/, 'See all opens the tab through the same openTab the tab bar uses');
   assert.match(screenSource, /button\.addEventListener\('click', \(\) => openTab\(button\.dataset\.tab\)\)/, 'the tab bar keeps its own switch');
+  assert.match(screenSource, /TAB_LABEL_KEY = \{ all: 'tabAll', listen: 'tabListen', read: 'tabRead', collections: 'tabCollections', imported: 'tabImported' \}/, 'the tab bar runs in the skill order (D-152)');
+  assert.match(screenSource, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', openImportFlow\)/, 'the header "+ Import" opens the import flow');
+  assert.match(screenSource, /querySelector\('\[data-import-cta\]'\)\?\.addEventListener\('click', openImportFlow\)/, 'the call to action opens the same import flow');
 }
 
 console.log('Orena Discover: data mapping, filters, tabs, search and presentation all pure, no invented data: PASS');

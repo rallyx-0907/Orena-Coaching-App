@@ -77,6 +77,56 @@
   display: none;
 }
 
+/* Imported with nothing imported: one card holding a line and the import control. */
+.s-discover__importcta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  padding: 20px 22px;
+}
+.s-discover__importcta-text {
+  flex: 1 1 240px;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--text);
+}
+
+/* The VIP import control (human, 2026-10-09, D-16V): the header's "+ Import" and the Imported section's call to
+   action. A running rainbow border - a conic gradient (the skill and category hues from tokens.css, no colour of
+   its own) turned by an animated @property angle - around the unchanged accent fill, so the label keeps the
+   contrast the primary button has. This is the one explicit exception to D-147's no-coloured-outline rule; every
+   other control keeps it. The 2px border is paid for out of the padding, so the button is the size it was. */
+@property --vip-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.o-btn.o-btn--primary.s-discover__vip {
+  --vip-fill: var(--accent-fill);
+  padding: 10px 16px;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--vip-fill), var(--vip-fill)) padding-box,
+    conic-gradient(
+      from var(--vip-angle),
+      var(--skill-speak), var(--skill-read), var(--skill-vocab), var(--gcat-4),
+      var(--skill-listen), var(--skill-grammar), var(--skill-write), var(--skill-speak)
+    ) border-box;
+  animation: s-discover-vip-run 4s linear infinite;
+}
+.o-btn.o-btn--primary.s-discover__vip:hover { --vip-fill: var(--accent-fill-hover); }
+.o-btn.o-btn--primary.s-discover__vip:active { --vip-fill: var(--accent-fill-press); }
+@keyframes s-discover-vip-run {
+  to { --vip-angle: 360deg; }
+}
+/* Reduced motion: the same rainbow border, held still. */
+@media (prefers-reduced-motion: reduce) {
+  .o-btn.o-btn--primary.s-discover__vip { animation: none; }
+}
+
 /* Filter Sheet body (frame 52-Filter-Sheet.html): one block per group, a wrapped chip row. The
    sheet shell itself (position/inset/width/radius/header/footer) is kit.css's .o-sheet family. */
 .s-discover-fgroup__label {

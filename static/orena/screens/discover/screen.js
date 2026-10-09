@@ -23,7 +23,8 @@ import {
   presentCard, hrefFor, overviewSections, typeLabel, topicLabel, hasAnyFilter, filterCount, practiceCandidates, practiceHref, preparedMediaEntry,
 } from './model.js';
 
-const TAB_LABEL_KEY = { all: 'tabAll', read: 'tabRead', listen: 'tabListen', collections: 'tabCollections', imported: 'tabImported' };
+// The skill order (D-152): Listen before Read, on the tab bar and in the All overview alike.
+const TAB_LABEL_KEY = { all: 'tabAll', listen: 'tabListen', read: 'tabRead', collections: 'tabCollections', imported: 'tabImported' };
 const TABS = Object.keys(TAB_LABEL_KEY);
 const FILTER_GROUPS = [
   { key: 'level', labelKey: 'groupLevel' },
@@ -65,7 +66,7 @@ export default async function discover(element, ctx) {
           : html`<div><h1 class="o-h1">${ts('discover')}</h1><p class="s-discover__sub">${t('subtitle')}</p></div>`}
         <div class="s-discover__actions">
           <button type="button" class="o-btn o-btn--secondary" data-filters>${raw(icon('list-filter', { size: 16 }))}${t('filters')}<span data-filtercount></span></button>
-          ${practice === 'listening' ? '' : html`<button type="button" class="o-btn o-btn--primary" data-import>+ ${t('importAction')}</button>`}
+          ${practice === 'listening' ? '' : html`<button type="button" class="o-btn o-btn--primary s-discover__vip" data-import>+ ${t('importAction')}</button>`}
         </div>
       </div>
       <div class="o-search">
@@ -135,13 +136,16 @@ export default async function discover(element, ctx) {
 
     const overview = !practice && state.tab === 'all';
 
-    if (!list.length && !state.loading) {
+    // The overview always draws its Imported section, so an un-narrowed All is never "nothing matches".
+    const narrowed = hasFilters || Boolean(state.query.trim());
+    if (!list.length && !state.loading && !(overview && !narrowed)) {
       mount(resultsEl, emptyMarkup({ text: t('emptyText'), actionLabel: hasFilters || state.query.trim() ? t('clearFilters') : '', iconName: 'inbox' }));
       resultsEl.querySelector('[data-empty-action]')?.addEventListener('click', clearFilters);
     } else if (overview) {
       /* D-16V: All is an overview of four sections, never one grid of every type. Each section
          draws the same cards its own tab draws (cardFor) and a "See all" that opens that tab. */
       mount(resultsEl, overviewMarkup(overviewSections(state.entries, { query: state.query, filters: state.filters }), { card: cardFor, t }));
+      resultsEl.querySelector('[data-import-cta]')?.addEventListener('click', openImportFlow);
       resultsEl.querySelectorAll('[data-see-all]').forEach((button) => {
         button.addEventListener('click', () => {
           openTab(button.dataset.seeAll);
@@ -219,11 +223,13 @@ export default async function discover(element, ctx) {
     });
   });
 
-  root.querySelector('[data-import]')?.addEventListener('click', () => {
+  // The header's "+ Import" and the Imported section's call to action are one action.
+  function openImportFlow() {
     import('../import/sheet.js')
       .then((module) => module.openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' }))
       .catch((error) => console.error('[Orena] Import is not available yet', error));
-  });
+  }
+  root.querySelector('[data-import]')?.addEventListener('click', openImportFlow);
 
   let searchTimer = null;
   queryInput.addEventListener('input', () => {

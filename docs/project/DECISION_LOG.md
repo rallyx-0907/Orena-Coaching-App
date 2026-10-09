@@ -4941,17 +4941,29 @@ type. Goal: the user understands the app's content structure without clicking ea
    of every type in "For you" order; its only grouped form is the Sort control's "By level" / "By type" groups. The
    human's decision replaces that flat grid for the All tab (the design is the authority for look, the human for this
    structure; D-067). The tabs, the card, the filters and search are unchanged.
-2. **Four sections, in this order:** Read, Listen · Watch, Collections, Imported (the tab bar keeps D-152's order, Listen
-   before Read; the human named the overview's order separately). A section's heading is its tab's own label.
+2. **Four sections, in the skill order (D-152):** Listen · Watch, Read, Collections, Imported - and the tab bar the same:
+   All, Listen · Watch, Read, Collections, Imported. This supersedes the first wording of this decision (Read first), by
+   the human's later instruction the same day. A section's heading is its tab's own label.
 3. **Representative items = the tab's own first five**, in the order that tab lists them (`overviewSections` over
    `visibleEntries`; no "featured" ordering exists in any source). Read is therefore articles first, then books, as its tab
-   lists them. Each section is one row: the cards that would wrap are `display:none` by the section's own width, and a
+   lists them (Listen · Watch is the media library's own first five). Each section is one row: the cards that would wrap are `display:none` by the section's own width, and a
    phone shows two.
 4. **Reuse, no new component.** The heading row is kit's `sectionHead` ("For you" / "See all", Today); the cards are
    `mediaCard` through the same `cardFor` as every tab. "See all" opens that tab in place - the same change the tab bar
    makes, no route, no history entry - and scrolls to the top of the page.
-5. **Search and filters narrow every section alike.** A section with nothing to show is omitted: the design draws no empty
-   state for a section, so a learner with nothing imported sees three sections, and a source that fails to load leaves only
-   its own section out. Each source is painted as it arrives. The practice choosers (`?practice=`) are not browsing and keep
-   their one flat list.
-6. **Gate.** `scripts/test_orena_screen_discover.mjs` section 13 renders the overview in English, Vietnamese and Chinese.
+5. **Search and filters narrow every section alike.** A section with nothing to show is omitted, and a source that fails
+   to load leaves only its own section out - except Imported, below. Each source is painted as it arrives. The practice
+   choosers (`?practice=`) are not browsing and keep their one flat list.
+6. **Imported is always drawn on All** (human, later the same day). With nothing imported, its row is one call to action
+   ("Bring your own video, audio or text", en/vi/zh) with the same "+ Import" control as the page header, which opens the
+   existing import flow; it has no "See all" (nothing to see). While a search or a filter narrows the page and nothing
+   imported matches, the section is omitted like any other (a narrowed page is not an invitation to import).
+7. **The VIP import control - an explicit human exception to D-147.** The header's "+ Import" and that call to action
+   draw a running rainbow border: a conic gradient (the skill and category hues of `tokens.css`, no colour of its own)
+   turned by an animated `@property --vip-angle`, around the unchanged accent fill, so the label keeps its AA contrast.
+   The 2px border is taken out of the padding (no layout shift); under `prefers-reduced-motion` the border is held still;
+   the global keyboard focus ring is unchanged. D-147 (no violet or coloured outline) stands everywhere else; this
+   exception is these two controls only (`discover.css`, `s-discover__vip`).
+8. **Gate.** `scripts/test_orena_screen_discover.mjs` section 13 renders the overview in English, Vietnamese and Chinese,
+   and checks the order, the always-present Imported with its call to action, the VIP class on both import controls and the
+   reduced-motion rule.
