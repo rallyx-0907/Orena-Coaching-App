@@ -576,34 +576,40 @@ console.log(`Orena admin screen: routes, access (Profile entry, No access with z
 /* ---- 5e. Plans & pricing: the flip card, both faces, the PUT body, three languages ---------------- */
 {
   const plansPage = await import('../static/orena/screens/admin/plans.js');
-  const KEYS = ['writing.evaluate', 'dictionary.lookup', 'library.grammar'];
+  /* Catalogue v2 (D-161): the design's meters; minute meters are stored in seconds. */
+  const KEYS = ['writing.review', 'pronunciation.audio', 'orena.message'];
   const catalogue = {
     plans: ['free', 'plus', 'pro'].map((id, index) => ({
       id, name: id, description: `${id} plan`, price_label: id, rank: index,
       prices: { monthly: { USD: index * 9.99, VND: index * 249000 }, yearly: { USD: index * 99, VND: index * 2490000 } },
       entitlements: [
-        { key: KEYS[0], enabled: true, monthly_limit: 10 * (index + 1) },
-        { key: KEYS[1], enabled: index > 0, monthly_limit: index > 0 ? 200 : null },
-        { key: KEYS[2], enabled: true, monthly_limit: null },
+        { key: KEYS[0], enabled: true, limit: 10 * (index + 1), monthly_limit: 10 * (index + 1), window: 'month', unit: 'review', display_unit: 'review', scale: 1, params: {} },
+        { key: KEYS[1], enabled: index > 0, limit: 300 * (index + 1), monthly_limit: 300 * (index + 1), window: 'month', unit: 'second', display_unit: 'minute', scale: 60, params: {} },
+        { key: KEYS[2], enabled: true, limit: 20, monthly_limit: null, window: 'day', unit: 'message', display_unit: 'message', scale: 1, params: { voice_seconds_per_message: 60 } },
       ],
     })),
     features: KEYS, currencies: ['USD', 'VND'], periods: ['monthly', 'yearly'], source: 'stored', updated_at: '2026-10-09T08:30:00Z', updated_by: 'admin@x.io', billing_ready: false,
   };
   const drafts = Object.fromEntries(catalogue.plans.map((plan) => [plan.id, plansPage.draftOf(plan)]));
   const payload = plansPage.plansPayload(catalogue.plans.map((plan) => drafts[plan.id]));
-  assert.equal(payload.version, 1);
+  assert.equal(payload.version, 2);
   assert.deepEqual(payload.plans.map((plan) => plan.id), ['free', 'plus', 'pro'], 'the whole catalogue is sent');
   assert.deepEqual(payload.plans[1].prices, { monthly: { USD: 9.99, VND: 249000 }, yearly: { USD: 99, VND: 2490000 } });
   assert.deepEqual(payload.plans[1].entitlements, [
-    { key: KEYS[0], enabled: true, monthly_limit: 20 },
-    { key: KEYS[1], enabled: true, monthly_limit: 200 },
-    { key: KEYS[2], enabled: true, monthly_limit: null },
-  ], 'a feature without a limit carries none; a metered one carries a number');
+    { key: KEYS[0], enabled: true, limit: 20, params: {} },
+    { key: KEYS[1], enabled: true, limit: 600, params: {} },
+    { key: KEYS[2], enabled: true, limit: 20, params: { voice_seconds_per_message: 60 } },
+  ], 'every meter carries its limit in the stored unit, and its own parameters');
+  assert.equal(drafts.plus.entitlements[1].limit, '10', 'the operator edits minutes');
   drafts.plus.prices.monthly.USD = '12.5';
-  drafts.plus.entitlements[0].monthly_limit = 'many';
+  drafts.plus.entitlements[0].limit = 'many';
+  drafts.plus.entitlements[1].limit = '2.5';
+  drafts.plus.entitlements[2].params.voice_seconds_per_message = '30';
   const edited = plansPage.plansPayload(catalogue.plans.map((plan) => drafts[plan.id]));
   assert.equal(edited.plans[1].prices.monthly.USD, 12.5, 'typed prices become numbers');
-  assert.equal(edited.plans[1].entitlements[0].monthly_limit, 'many', 'what is not a number is sent as typed, for the server to name');
+  assert.equal(edited.plans[1].entitlements[0].limit, 'many', 'what is not a number is sent as typed, for the server to name');
+  assert.equal(edited.plans[1].entitlements[1].limit, 150, 'minutes are sent as seconds');
+  assert.equal(edited.plans[1].entitlements[2].params.voice_seconds_per_message, 30);
   drafts.free.prices.monthly.USD = '5';
   assert.deepEqual(plansPage.plansPayload([drafts.free]).plans[0].prices.monthly, { USD: 0, VND: 0 }, 'Free is always free');
   for (const ui of ['en', 'vi', 'zh']) {
@@ -614,8 +620,9 @@ console.log(`Orena admin screen: routes, access (Profile entry, No access with z
     assert.equal((markup.match(/is-flipped/g) || []).length, 1, `${ui}: only the card being edited is turned`);
     assert.match(markup, /data-a-input="price\|plus\|monthly\|USD"/, `${ui}: Plus has price inputs`);
     assert.doesNotMatch(markup, /data-a-input="price\|free\|/, `${ui}: Free has no price inputs`);
-    assert.doesNotMatch(markup, /data-a-input="limit\|plus\|library\.grammar"/, `${ui}: a feature without a limit has a toggle only`);
-    assert.match(markup, /data-a-input="limit\|plus\|writing\.evaluate"/, `${ui}: a metered feature has a limit input`);
+    assert.match(markup, /data-a-input="limit\|plus\|writing\.review"/, `${ui}: a meter has a limit input`);
+    assert.match(markup, /data-a-input="param\|plus\|orena\.message\|voice_seconds_per_message"/, `${ui}: the voice conversion is editable`);
+    assert.ok(markup.includes(`${packs[ui].plansUnit_minute} ${packs[ui].plansPer_month}`), `${ui}: unit and window beside the number`);
     assert.ok(markup.includes('USD price must have at most 2 decimals'), `${ui}: the server's message is shown on the back`);
     assert.ok(markup.includes(packs[ui].plansTitle.replace('&', '&amp;')) && markup.includes(packs[ui].plansBilling), `${ui}: title and billing line`);
     assert.ok(markup.includes(packs[ui].plansFree), `${ui}: Free is named`);

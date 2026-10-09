@@ -5232,6 +5232,9 @@ Payments are a human gate: no checkout, provider call or simulated success exist
   minutes. The catalogue meters `writing.evaluate`, `writing.improve`, `dictionary.lookup`, `vocabulary.save` per
   month; there is no entitlement for Orena messages, pronunciation minutes or media import (same as N-29/N-30). Usage
   and Compare plans draw the real keys only. Reset is "every month" (no reset date is returned). Owner: BACKEND.
+  **CLOSED for the catalogue 2026-10-09 (D-161):** the catalogue's meters are the design's five; Usage draws each
+  enforced meter's real use and reset (`resets_at`); see "Plan quota enforcement" (QTA-1 to QTA-9) for what is not yet
+  enforced.
 - **PLN-3 Usage history chart.** "Orena messages - last 14 days" (daily counts, the plan's daily limit line, average)
   has no source. Not drawn. Owner: BACKEND (a daily usage series).
 - **PLN-4 Renewal, banner, cancel.** No renewal date, billing period, pending change or cancellation exists
@@ -5313,3 +5316,44 @@ The 2026-10-09 export's Landing, Terms and Privacy, and its Backdrop change.
   the shell (Welcome); the Landing's buttons and `/login` go to `/?app=1#/welcome`, so there is no loop. A mid-session
   sign-out, or an unknown address, lands on the Landing. Local mode (sign-in off) is unchanged.
 - **PUB-6 Pricing plans.** The design's Pricing is the plan source of truth (D-153); the Landing draws none.
+
+
+## Plan quota enforcement (D-161), 2026-10-09
+
+`writing.review` is enforced on the server (`POST /api/evaluate`, `POST /api/improve`) when the switch is on. PLN-2
+above is **CLOSED for the catalogue** (the design's five meters are the plan entitlements, catalogue v2) and open for
+the meters below.
+
+- **QTA-1 In-room exhausted state.** The design draws no "limit reached" state in the Writing room or the Respond room.
+  The human asked for a truthful message, so the room shows the server's 429 in the place it already shows a failed
+  request: Writing's red failure strip reads "You have used 2 of 2 writing reviews this month." with a "See all plans"
+  button (to `#/plan/pricing`) instead of Retry; Respond's toast says the same with "See all plans" as its action.
+  Kit components and the plan's own words only, EN/VI/ZH. Owner: design (an exhausted state, if wanted).
+- **QTA-2 A meter nothing counts.** With enforcement off (or a meter not yet enforced) Plan & usage draws the row with
+  "—" used and "Not available" - never "0 used". The design draws no such state. Owner: design / human.
+- **QTA-3 Orena messages - NOT YET ENFORCED.** Catalogue only (20 / 200 / 1000 a day, `voice_seconds_per_message`).
+  Wiring `POST /api/agent/turn` (1 per text turn that calls a model; greeting and no-model answers free) is a later
+  slice; the agent's own per-process rate limit and daily USD cap remain. Owner: BACKEND (+ AGENT_CONTRACT routing for
+  the client's `quota_exhausted` vs `rate_limited`).
+- **QTA-4 Voice - NOT YET ENFORCED.** The voice token is still minted for the fixed session length; the human decided
+  it is minted for the remaining allowance (seconds / `voice_seconds_per_message`). Owner: BACKEND.
+- **QTA-5 Pronunciation minutes - NOT YET ENFORCED.** `POST /api/speech/pronunciation` (seconds known before the
+  provider call). Display rounding is a human decision. Owner: BACKEND.
+- **QTA-6 Media import minutes - NOT YET ENFORCED.** The learner import paths must be scoped first (async jobs settle
+  from the worker). Owner: BACKEND.
+- **QTA-7 Target languages - NOT YET ENFORCED.** A count cap where a learning language is added; a Free account that
+  already learns 2 languages keeps them (human). Owner: BACKEND + UI (Settings / onboarding refusal).
+- **QTA-8 The learner's timezone is not stored on the account.** Windows use the browser's zone sent with each metered
+  call, else the zone recorded on the learner's last quota window, else UTC (D-161 point 5). A stored account field
+  is a schema decision reserved to the human. Owner: human (schema), then BACKEND.
+- **QTA-9 Usage history chart (PLN-3).** Still not drawn; the buckets hold one row per window, not a daily series.
+- **QTA-10 Unusable provider output costs nothing (review of #116, P2-3).** An AI call that ran but whose output could
+  not be used (`AIProviderError`: the local heuristic answers, or a 502) settles 0 writing reviews, as the contract
+  says ("the learner got nothing"). The spend is bounded only by the per-process brake (`writing_ai`). A human
+  decision to confirm. Owner: human.
+- **QTA-11 Operations notes from the review (P3).** (a) `stale_dispatched` scans without a `(state, updated_at)`
+  index - a partial index needs a reviewed migration before reservations grow; (b) the quota store is resolved once at
+  start, so a database that is down at start keeps enforcement at 503 until a restart (fails closed, no self-recovery);
+  (c) deleting and re-registering an account starts a new incarnation with fresh buckets - the account-deletion
+  runtime (reserved) must decide whether usage carries over; (d) the reconciler is scoped to synchronous meters
+  (`SYNC_METERS`) and must stay so when media import (settled by its worker) is wired. Owner: BACKEND / human.

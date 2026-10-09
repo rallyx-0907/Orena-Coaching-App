@@ -2,7 +2,8 @@
    plans", the plan card's button). A focus route (shell/routes.js `pricing`).
 
    Real data only (rule 40): the plans are GET /api/product/plans (Free, Plus and Pro with their monthly
-   and yearly prices and entitlements, set in Platform Admin - D-153), the current one GET
+   and yearly prices and the design's meters with their limits, set in Platform Admin - D-153, D-161), the
+   current one GET
    /api/product/commerce. The Monthly/Yearly switch and its saving are computed from those prices; the
    currency follows the interface (dong in Vietnamese, dollars otherwise, as the design does). Not drawn,
    and why: the "Most popular"/"Most capable" tags (no such measure) and the Questions list (its answers
@@ -20,9 +21,13 @@ import { openBillingSheet } from './sheet.js';
 
 const number = (value) => formatNumber(value, languages().ui);
 
+/* One line per meter, worded as the design's plan cards are ("20 Orena messages a day", "5 min
+   pronunciation analysis", "1 target language"). */
 function featureLine(feature) {
-  const label = t(featureCopyKey(feature.key));
-  return feature.limit == null ? label : t('monthlyLimit', { label, n: number(feature.limit) });
+  const suffix = feature.key.replace(/\./g, '_');
+  if (feature.limit == null) return t(featureCopyKey(feature.key));
+  if (feature.key === 'languages.target') return t.plural('line_languages_target', Number(feature.limit), { n: number(feature.limit) });
+  return t(`line_${suffix}`, { n: number(feature.limit) });
 }
 
 function ctaMarkup(plan, current) {
@@ -46,7 +51,7 @@ function planCard(plan, current, cycle) {
 }
 
 function cellMarkup(cell) {
-  if (cell.kind === 'limit') return html`<span class="s-pricing-cell">${number(cell.value)}</span>`;
+  if (cell.kind === 'limit') return html`<span class="s-pricing-cell">${cell.unit === 'minute' ? t('amountMinutes', { n: number(cell.value) }) : number(cell.value)}</span>`;
   if (cell.kind === 'yes') return html`<span class="s-pricing-cell" role="img" aria-label="${t('featureIncluded')}">${raw(icon('check', { size: 17, stroke: 2.4 }))}</span>`;
   return html`<span class="s-pricing-cell s-pricing-cell--none" role="img" aria-label="${t('featureNotIncluded')}">—</span>`;
 }
@@ -67,7 +72,7 @@ export function pricingMarkup({ plans, commerce, cycle = 'monthly' }) {
       ${rows.length ? html`<section class="s-plan-card s-pricing-compare" style="--cols:${list.length}">
         <h2 class="s-plan-card__title">${t('comparePlans')}</h2>
         <div class="s-pricing-compare__row s-pricing-compare__row--head"><span></span>${list.map((plan) => html`<span class="${cls('s-pricing-compare__plan', plan.isCurrent && 's-pricing-compare__plan--current')}">${planName(plan)}</span>`)}</div>
-        ${rows.map((row) => html`<div class="s-pricing-compare__row"><span class="s-pricing-compare__label">${t(featureCopyKey(row.key))}</span>${row.cells.map(cellMarkup)}</div>`)}
+        ${rows.map((row) => html`<div class="s-pricing-compare__row"><span class="s-pricing-compare__label">${t(`compare_${row.key.replace(/\./g, '_')}`)}</span>${row.cells.map(cellMarkup)}</div>`)}
       </section>` : ''}
     </div>
   </div>`;

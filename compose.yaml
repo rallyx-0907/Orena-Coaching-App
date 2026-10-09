@@ -17,6 +17,10 @@ services:
       # Persisted Speaking practice session identity (D-142). Off unless an operator applies migration
       # 20261007_0029 and turns it on, after the human's gate.
       ORENA_PRACTICE_SESSION: ${ORENA_PRACTICE_SESSION:-off}
+      # Plan quota enforcement (D-160). Empty = the admin setting `product.quota_enforcement` decides (off until
+      # an administrator turns it on); `on`/`off` here override it. ORENA_QUOTA_METERS lists the meters enforced.
+      ORENA_QUOTA_ENFORCEMENT: ${ORENA_QUOTA_ENFORCEMENT:-}
+      ORENA_QUOTA_METERS: ${ORENA_QUOTA_METERS:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       APP_ENV: ${APP_ENV:-development}

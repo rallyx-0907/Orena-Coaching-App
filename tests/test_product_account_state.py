@@ -9,6 +9,15 @@ class Subscription:
     status: str
 
 
+def usage_of(values, *, fail=False):
+    """A usage reader (D-161: the quota buckets): `values` feature -> used, as enforcement would report it."""
+    def read(user_key, plan):
+        if fail:
+            raise RuntimeError("usage store unavailable")
+        return {key: {"state": "known", "used": used, "resets_at": "2026-11-01T00:00:00Z"} for key, used in values.items()}
+    return read
+
+
 class Repo:
     def __init__(self, subscription=None, usage=None, fail_usage=False, fail_subscription_after_first=False):
         self.subscription = subscription
@@ -39,14 +48,14 @@ def test_inactive_or_unknown_subscription_is_truthfully_defaulted():
 
 
 def test_exhausted_and_unlimited_usage_are_explicit():
-    state = ProductService(Repo(
-        Subscription("premium", "active"),
-        {"writing.evaluate": 500, "library.grammar": 999},
-    )).account_state("user-1")
-    assert state["features"]["writing.evaluate"]["remaining"] == 0
-    assert state["features"]["writing.evaluate"]["entitlement_state"] == "exhausted"
-    assert state["features"]["library.grammar"]["remaining"] is None
-    assert state["features"]["library.grammar"]["entitlement_state"] == "enabled"
+    state = ProductService(Repo(Subscription("premium", "active")), usage=usage_of({"writing.review": 50})).account_state("user-1")
+    assert state["features"]["writing.review"]["remaining"] == 0
+    assert state["features"]["writing.review"]["entitlement_state"] == "exhausted"
+    assert state["features"]["writing.review"]["resets_at"] == "2026-11-01T00:00:00Z"
+    # A meter nothing counts on this deployment is said so - never "0 used".
+    assert state["features"]["orena.message"]["usage_state"] == "not_metered"
+    assert state["features"]["orena.message"]["used"] is None
+    assert state["features"]["orena.message"]["entitlement_state"] == "enabled"
 
 
 def test_account_state_uses_one_normalized_subscription_snapshot():
@@ -54,13 +63,13 @@ def test_account_state_uses_one_normalized_subscription_snapshot():
     state = ProductService(repo).account_state("user-1")
     # A stored "premium" subscription is Pro, the plan with Premium's limits (D-153).
     assert state["plan"]["id"] == "pro"
-    assert state["features"]["writing.evaluate"]["monthly_limit"] == 500
+    assert state["features"]["writing.review"]["limit"] == 50
     assert repo.subscription_reads == 1
 
 
 def test_usage_failure_is_unavailable_not_zero():
-    state = ProductService(Repo(Subscription("premium", "active"), fail_usage=True)).account_state("user-1")
-    item = state["features"]["writing.evaluate"]
+    state = ProductService(Repo(Subscription("premium", "active")), usage=usage_of({}, fail=True)).account_state("user-1")
+    item = state["features"]["writing.review"]
     assert item["usage_state"] == "unavailable"
     assert item["remaining"] is None
     assert item["entitlement_state"] == "unknown"
@@ -137,3 +146,29 @@ def test_mobile_me_keeps_its_two_plan_ids():
         assert set(state["plan"]) == _mobile_plan_schema_fields()
     free = mobile_account_state(ProductService(Repo(None)).account_state("user-1"))
     assert free["plan"]["id"] == "free"
+
+
+def _mobile_feature_schema() -> tuple[set[str], set[str]]:
+    """Field names and usage_state values of the native client's strict feature schema."""
+    import pathlib
+    import re
+
+    source = (pathlib.Path(__file__).resolve().parents[1] / "mobile/src/api/contracts/product.ts").read_text(encoding="utf-8")
+    body = re.search(r"export const featureAccessSchema = z\.object\(\{(.*?)\}\)\.strict\(\);", source, re.DOTALL)
+    assert body
+    fields = set(re.findall(r"^\s{2}(\w+):", body.group(1), re.MULTILINE))
+    states = set(re.findall(r"'(\w+)'", re.search(r"usage_state: z\.enum\(\[(.*?)\]\)", body.group(1)).group(1)))
+    return fields, states
+
+
+def test_mobile_me_features_keep_the_frozen_feature_shape():
+    """D-161 added fields to a feature (limit, window, unit, resets_at, not_metered); /me projects them away."""
+    from writing_coach.product.api import mobile_account_state
+
+    fields, states = _mobile_feature_schema()
+    for usage in (usage_of({"writing.review": 3}), usage_of({}), usage_of({}, fail=True)):
+        state = mobile_account_state(ProductService(Repo(Subscription("plus", "active")), usage=usage).account_state("u"))
+        for item in state["features"].values():
+            assert set(item) == fields
+            assert item["usage_state"] in states
+            assert isinstance(item["used"], int) and item["used"] >= 0

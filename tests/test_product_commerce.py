@@ -11,6 +11,14 @@ from writing_coach.product.commerce import accountCommerce, resolveEntitlement
 from writing_coach.product.service import ProductService
 
 
+def usage_of(values, *, fail=False):
+    def read(user_key, plan):
+        if fail:
+            raise RuntimeError("usage store unavailable")
+        return {key: {"state": "known", "used": used} for key, used in values.items()}
+    return read
+
+
 @dataclass
 class Subscription:
     plan_id: str
@@ -97,23 +105,38 @@ def test_account_commerce_readiness_known_when_available():
 
 
 def test_resolve_entitlement_allowed_within_quota():
-    service = ProductService(Repo(Subscription("premium", "active"), {"writing.evaluate": 10}))
-    decision = resolveEntitlement("user-1", "writing.evaluate", service=service)
+    service = ProductService(Repo(Subscription("premium", "active")), usage=usage_of({"writing.review": 10}))
+    decision = resolveEntitlement("user-1", "writing.review", service=service)
     assert decision.allowed is True
     assert decision.entitlement_state == "enabled"
-    assert decision.quota == {"limit": 500, "used": 10, "remaining": 490}
+    assert decision.quota == {"limit": 50, "used": 10, "remaining": 40}
+
+
+def test_resolve_entitlement_says_not_metered_when_nothing_counts():
+    service = ProductService(Repo(Subscription("premium", "active")))
+    decision = resolveEntitlement("user-1", "writing.review", service=service)
+    assert decision.allowed is True
+    assert decision.reason == "not_metered"
+    assert decision.quota["used"] is None
 
 
 def test_resolve_entitlement_denied_when_exhausted():
-    service = ProductService(Repo(Subscription("premium", "active"), {"writing.evaluate": 500}))
-    decision = resolveEntitlement("user-1", "writing.evaluate", service=service)
+    service = ProductService(Repo(Subscription("premium", "active")), usage=usage_of({"writing.review": 50}))
+    decision = resolveEntitlement("user-1", "writing.review", service=service)
     assert decision.allowed is False
     assert decision.reason == "quota_exhausted"
 
 
 def test_resolve_entitlement_denied_when_not_in_plan():
+    from dataclasses import replace
+
+    from writing_coach.product import catalog
+
+    off = replace(catalog.FREE, entitlements=tuple(
+        replace(item, enabled=False) if item.key == "media.import" else item for item in catalog.FREE.entitlements))
     service = ProductService(Repo(Subscription("free", "active")))
-    decision = resolveEntitlement("user-1", "practice.personalized", service=service)
+    service.plan_for_user = lambda user_key, strict=False: off
+    decision = resolveEntitlement("user-1", "media.import", service=service)
     assert decision.allowed is False
     assert decision.reason == "disabled_for_plan"
 
@@ -126,8 +149,8 @@ def test_resolve_entitlement_unavailable_feature_is_denied_not_unknown():
 
 
 def test_resolve_entitlement_is_unknown_not_denied_when_usage_read_fails():
-    service = ProductService(Repo(Subscription("premium", "active"), fail_usage=True))
-    decision = resolveEntitlement("user-1", "writing.evaluate", service=service)
+    service = ProductService(Repo(Subscription("premium", "active")), usage=usage_of({}, fail=True))
+    decision = resolveEntitlement("user-1", "writing.review", service=service)
     assert decision.allowed is None
     assert decision.reason == "usage_unavailable"
 

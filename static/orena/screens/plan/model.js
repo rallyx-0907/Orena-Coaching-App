@@ -3,17 +3,38 @@
 
    The design draws three tiers (Free / Plus / Pro), two billing cycles, prices, a 14-day message
    chart, a card, invoices and a payment flow. The backend serves the three tiers with their monthly and
-   yearly prices in USD and VND and per-feature monthly limits, all editable in Platform Admin (D-153), and
-   this month's use (GET /api/product/commerce, /api/product/plans), `billing_ready: false`. Every figure
+   yearly prices in USD and VND and the design's meters with their limits, all editable in Platform Admin
+   (D-153, D-161), and each enforced meter's use in its current window (GET /api/product/commerce,
+   /api/product/plans), `billing_ready: false`. Every figure
    here is read from those two answers;
    what they cannot supply is not drawn or is drawn at its honest zero/unavailable state - see
    docs/project/UI_BACKEND_GAPS.md "New export frames: Plan, Pricing, Billing, Feedback". */
 
-/* The catalogue's feature keys (writing_coach/product/catalog.py), in the order they are listed. */
+/* The catalogue's meters (writing_coach/product/catalog.py METERS, catalogue v2 - D-161: the design's Pricing
+   meters), in the order the design lists them. `languages.target` is a count cap, not a windowed meter, so
+   it has no usage row. */
 export const FEATURE_ORDER = Object.freeze([
-  'writing.evaluate', 'writing.improve', 'dictionary.lookup', 'vocabulary.save',
-  'library.grammar', 'analytics.basic', 'analytics.advanced', 'practice.personalized', 'export.report',
+  'orena.message', 'writing.review', 'pronunciation.audio', 'media.import', 'languages.target',
 ]);
+export const USAGE_ORDER = Object.freeze(['orena.message', 'writing.review', 'pronunciation.audio', 'media.import']);
+
+/* An entitlement's limit (catalogue v2 `limit`, in its stored unit; v1 answers carried `monthly_limit`). */
+function limitOf(item) {
+  const value = item?.limit ?? item?.monthly_limit;
+  return value == null ? null : Number(value);
+}
+
+/* Stored units per displayed unit (60 seconds are one minute). */
+function scaleOf(item) {
+  const value = Number(item?.scale);
+  return Number.isFinite(value) && value > 0 ? value : 1;
+}
+
+/* A stored amount in the unit a learner reads: whole when it is whole, otherwise one decimal. */
+export function displayAmount(value, scale = 1) {
+  const amount = (Number(value) || 0) / (Number(scale) || 1);
+  return Number.isInteger(amount) ? amount : Math.round(amount * 10) / 10;
+}
 
 /* A feature key is copy-keyed as `feature_<key with . as _>`. */
 export function featureCopyKey(key) {
@@ -57,20 +78,34 @@ export function planView(commerce) {
   };
 }
 
-/* Usage rows: every metered feature of the current plan (a feature with a monthly limit), with the
-   month's use. `unknown` marks a feature whose use the server could not read. */
+/* Usage rows: every windowed meter of the current plan, with this window's use read from the quota
+   buckets enforcement writes (GET /api/product/commerce, D-161). `unknown` marks a meter whose use is not
+   known: the store could not be read (`unavailable`), or nothing counts it on this deployment
+   (`not_metered`) - never drawn as 0 used. Amounts are in the unit a learner reads (minutes, not seconds). */
 export function usageRows(commerce) {
   const features = commerce && commerce.features && typeof commerce.features === 'object' ? commerce.features : {};
-  return FEATURE_ORDER.filter((key) => {
+  return USAGE_ORDER.filter((key) => {
     const item = features[key];
-    return item && item.monthly_limit != null && Number(item.monthly_limit) > 0;
+    return item && limitOf(item) != null && limitOf(item) > 0;
   }).map((key) => {
     const item = features[key];
-    const unknown = item.entitlement_state === 'unknown' || item.usage_state === 'unavailable';
-    const used = unknown ? 0 : Math.max(0, Number(item.used) || 0);
-    const limit = Number(item.monthly_limit);
-    const percent = unknown ? 0 : usagePercent(used, limit);
-    return { key, used, limit, percent, tone: unknown ? 'ok' : usageTone(percent), unknown, left: Math.max(0, limit - used) };
+    const scale = scaleOf(item);
+    const unknown = item.entitlement_state === 'unknown' || item.usage_state !== 'known';
+    const rawUsed = unknown ? 0 : Math.max(0, Number(item.used) || 0);
+    const rawLimit = limitOf(item);
+    const percent = unknown ? 0 : usagePercent(rawUsed, rawLimit);
+    return {
+      key,
+      used: displayAmount(rawUsed, scale),
+      limit: displayAmount(rawLimit, scale),
+      percent,
+      tone: unknown ? 'ok' : usageTone(percent),
+      unknown,
+      left: displayAmount(Math.max(0, rawLimit - rawUsed), scale),
+      unit: String(item.display_unit || ''),
+      window: item.window || null,
+      resetsAt: unknown ? null : (item.resets_at || null),
+    };
   });
 }
 
@@ -89,10 +124,10 @@ export function pricingPlans({ plans, commerce } = {}) {
       isCurrent: String(plan.id) === currentId,
       rank: Number(plan.rank) || 0,
       prices: plan.prices && typeof plan.prices === 'object' ? plan.prices : {},
-      /* What the plan includes: every enabled feature, a metered one with its monthly limit. */
+      /* What the plan includes: every enabled meter with its limit, in the unit a learner reads. */
       features: FEATURE_ORDER.filter((key) => byKey[key] && byKey[key].enabled).map((key) => ({
         key,
-        limit: byKey[key].monthly_limit == null ? null : Number(byKey[key].monthly_limit),
+        limit: limitOf(byKey[key]) == null ? null : displayAmount(limitOf(byKey[key]), scaleOf(byKey[key])),
       })),
       byKey,
     };
@@ -107,8 +142,8 @@ export function compareRows(plans) {
     cells: plans.map((plan) => {
       const item = plan.byKey[key];
       if (!item || !item.enabled) return { kind: 'no' };
-      if (item.monthly_limit == null) return { kind: 'yes' };
-      return { kind: 'limit', value: Number(item.monthly_limit) };
+      if (limitOf(item) == null) return { kind: 'yes' };
+      return { kind: 'limit', value: displayAmount(limitOf(item), scaleOf(item)), unit: String(item.display_unit || '') };
     }),
   }));
 }
