@@ -173,3 +173,86 @@ Evidence after the fixes (local execution, not CI):
 - Full suite (`ai-writing-coach:local`, SQLite): 5206 tests, 0 failures, 0 errors, 409 skipped.
 - Node gates from ci.yml: 124/124 passed. The ten Python CI scripts are OK.
 
+## Re-review (2026-10-09)
+
+- **Reviewer:** claude-opus-5-5, still acting as the independent Delegated Architecture Reviewer. Read-only; one throwaway `postgres:17-alpine` container on a private network, removed afterwards.
+- **Reviewed HEAD:** `524a03df` on `feat/quota-core`. The fix commits are `fef64cd5`, `e919a6c6`, `9d014ba5` and `524a03df`; I reviewed `git diff 40443ed1..524a03df`.
+
+### VERDICT: APPROVE
+
+The P1 is fixed and proven on PostgreSQL. Both code P2s are fixed with tests, and P2-3 is recorded as a human decision (D-160 point 10, QTA-10). No P0, P1 or P2 remains. Three P3 notes follow below; none blocks.
+
+### Evidence (local runs, not CI)
+
+All runs used an ephemeral `ai-writing-coach:local` container with the worktree mounted read-only.
+
+- **My original reproduction, unmodified** (`qp/review_tests/test_review_zone_race.py`):
+  - The no-delay variant now admits **[2, 2, 2, 2, 2]** over 5 rounds, which is exactly the Free limit. It admitted [10, 10, 10, 10, 10] before the fix.
+  - The variant with my injected barrier now leaves **1 bucket and 1 admission**. Its other 9 calls answer 503, but only because of my test harness: my barrier waits for all 10 threads, and the retry re-reads fewer than 10, so it times out. The property under test holds.
+- **PostgreSQL and hermetic tests:** `tests/test_quota_gate_postgres.py`, `tests/test_orena_quota_persistence_postgres.py`, `tests/test_quota_gate.py` and the product and admin tests gave **409 passed**.
+- **Race tests repeated:** the race, transition, superseded and reconciler tests passed 3 times in a row (6 passed each time).
+
+### Each finding, verified
+
+**P1-1 is fixed.**
+
+What the fix does:
+- In `reserve(limit_policy='current')`, after the incarnation `FOR SHARE`, it takes `pg_advisory_xact_lock(hashtextextended('quota:<incarnation>:<meter>', 0))`.
+- Under that lock, it looks for any bucket of the same (incarnation, meter) with a different `window_id` that is open now or overlaps the requested window. If it finds one, it returns `window_superseded` and writes nothing.
+- The service then re-reads the latest bucket and retries, up to `WINDOW_RETRIES = 4` times.
+
+Why it is correct:
+- **The rival is always visible.** The rival query runs only after the advisory lock is granted, which happens after the bucket's creator has committed. So the loser always sees the winner's committed bucket, and its re-read finds that bucket open and reuses it. One retry is enough.
+- **Normal transitions are not affected.** A new window starts at or after the previous `window_end`, so the overlap test, `start < prev_end AND prev_start < end`, is false for a closed previous window. The closed-window transition race test passes.
+
+Lock order is now incarnation (SHARE) → advisory → bucket → reservation. I checked for cycles:
+- Only current-mode `reserve` takes the advisory lock, and it takes it before any bucket or reservation lock.
+- A transaction that is waiting for the advisory lock holds only a SHARE lock on the incarnation. SHARE locks are compatible with each other, and `mark_deleted` simply waits behind them.
+- `settle` and `release` take bucket → reservation, and `dispatch` takes incarnation → reservation. None of them takes the advisory lock.
+- Each transaction takes at most one advisory key, so a hash collision between two keys only serialises unrelated work; it cannot form a cycle.
+- A wait on the reservation's unique `operation_id` index is a wait on a transaction that is already past its advisory step and never waits on an advisory lock again.
+
+So there is no deadlock path. Frozen mode does not take the lock and is unchanged; its 28 existing tests pass.
+
+**P2-1 is fixed, and the switch no longer fails open anywhere I can find.** I traced every combination:
+
+| Environment | Meters | Setting read | Result |
+|---|---|---|---|
+| `off` | any | not consulted | off |
+| `on` | in the environment | not read | enforced, or 503 if there is no store |
+| `on` | not in the environment | succeeds, lists meters | enforced |
+| `on` | not in the environment | fails or lists none | 503 (`no_meters` or `switch_unreadable`) |
+| unset | any | fails, never read in this process | 503 for every wired meter |
+| unset | any | nothing stored | off |
+| unset | any | fails after an earlier good read | the last good value (the accepted default) |
+
+- `admit()` raises 503 before the store path whenever the state is `unavailable`.
+- `configure_quota` now resets the "ever read" state.
+- Six hermetic tests cover these cases.
+
+**P2-2 is fixed.** `ticket.dispatch("improve")` now runs before the `try`. A parametrized test proves the 503 and 403 refusals keep their own status and category.
+
+**P2-3 is recorded** as a human decision in D-160 point 10 and in `UI_BACKEND_GAPS.md` QTA-10.
+
+**P3-1 is fixed.** The reconciler is limited to `SYNC_METERS` through a bucket join. A new test shows that when the reconciler settles first, a late live settle writes nothing and nothing is double-counted. The missing index is documented.
+
+**P3-2 is fixed.** The limit and the policy label now come from one strict catalogue snapshot. A legacy "premium" plan id still resolves through `plan_by_id`'s alias.
+
+**P3-3 is fixed.** The `BucketWindow` docstring now describes both modes.
+
+**P3-4 is fixed.** `usage_for` reports `unavailable` when the strict catalogue read fails, or when the switch is `unavailable`.
+
+**P3-7 is fixed.** The exhausted path's `UPDATE` is skipped when nothing changed.
+
+**P3-8 is fixed.** The API fixture is on catalogue v2.
+
+**P3-5 and P3-6 are recorded** (QTA-11b and QTA-11c).
+
+### Remaining notes (P3, none blocking)
+
+- **R-1, pre-fix orphan buckets.** A runtime that ran `85444275` or `40443ed1` with enforcement on may hold overlapping buckets for some learner. The new rival check would then answer `window_superseded` on every retry, and that learner would get a 503 (`window`) until the orphan window closes. Before enabling enforcement on such a runtime, check that this query returns no rows:
+  `SELECT a.incarnation_id, a.meter FROM commerce_quota_buckets a JOIN commerce_quota_buckets b ON a.incarnation_id = b.incarnation_id AND a.meter = b.meter AND a.id < b.id AND a.window_start < b.window_end AND b.window_start < a.window_end`
+- **R-2, compose default.** Compose leaves `ORENA_QUOTA_ENFORCEMENT` empty. On a deployment that never meant to enforce, a settings read that fails in a fresh worker now answers 503 for `writing.review`. The impact is small because the setting lives in the same PostgreSQL store that `/api/evaluate` reads first. Still, until the human's GO, :8000 should pin `ORENA_QUOTA_ENFORCEMENT=off`, as D-160 already says it must.
+- **R-3, stale last good value.** After a good read, a failing setting store keeps the last value indefinitely, which may be off. This is the accepted human default. It is not fail-open in the "never known" sense.
+
+**Unchanged:** this review is not product approval and not an activation authorization. :8000 still needs the human's explicit GO.
