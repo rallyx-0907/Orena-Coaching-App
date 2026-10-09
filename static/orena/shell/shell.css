@@ -378,7 +378,6 @@
   overflow: auto;
   padding: 0 var(--pad) 32px;
   position: relative;
-  background: var(--bd-veil);
 }
 /* On a phone a learning workspace (and Welcome) has no header to clear the status bar: the column starts below it.
    The browsing places get the same clearance from the phone header's own padding. */
@@ -531,8 +530,8 @@
    ships on. The kill switch is a non-UI attribute only: <html data-backdrop="off">. Two layers behind the frame - the
    photo for the theme and device, and the design's scrim at its strength - then the rail, the desktop top bar and
    the phone bar as glass (--bd-chrome, edge from --edge-light, D-147). Cards, panels, sheets and every workspace's
-   reading and working surface keep their own solid tokens; only the page behind them changes, under a veil
-   (--bd-veil) that keeps text set straight on the page AA. Values: kit/tokens.css; measured in test_orena_kit.mjs. */
+   reading and working surface keep their own solid tokens; the photo shows fully, as the design draws it. AA is met
+   by scoped text tokens (--bd-chrome-*, --bd-page-*; kit/tokens.css), measured in test_orena_kit.mjs. */
 .o-frame,
 .a-shell {
   --bd-img: url('../public/bg/paper-wide.jpg');
@@ -572,6 +571,21 @@
   background: none;
 }
 
+/* The scoped text tokens (kit/tokens.css): only where the photo is behind the text, and only while it is drawn (not with
+   the kill switch, reduced transparency, or no backdrop-filter - then the base tokens stand). */
+@media not (prefers-reduced-transparency: reduce) {
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :root:not([data-backdrop='off']) :is(.o-rail, .o-topbar, .o-bnav, .a-rail, .a-top, .a-mnav) {
+      --text3: var(--bd-chrome-text3);
+      --accent: var(--bd-chrome-accent);
+    }
+    :root:not([data-backdrop='off']) :is(.o-main, .a-main) {
+      --muted: var(--bd-page-muted);
+      --text3: var(--bd-page-text3);
+    }
+  }
+}
+
 /* Solid chrome instead of glass: the kill switch, a browser without backdrop-filter, and a learner who asks for less
    transparency. The photo goes too, so nothing translucent remains. */
 :root[data-backdrop='off'] .o-frame::before,
@@ -583,7 +597,6 @@
 :root[data-backdrop='off'] {
   --bd-chrome: var(--surface);
   --bd-chrome-blur: none;
-  --bd-veil: transparent;
 }
 @media (prefers-reduced-transparency: reduce) {
   .o-frame::before,
@@ -595,13 +608,11 @@
   :root[data-theme] {
     --bd-chrome: var(--surface);
     --bd-chrome-blur: none;
-    --bd-veil: transparent;
   }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root[data-theme] {
     --bd-chrome: var(--surface);
-    --bd-veil: transparent;
   }
   .o-frame::before,
   .o-frame::after,

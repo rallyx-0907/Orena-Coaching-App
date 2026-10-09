@@ -46,6 +46,28 @@
 :root[data-theme='dark'][data-device='mobile'] .s-onboarding {
   --ob-img: url('../../public/bg/midnight-tall.jpg');
 }
+/* AA over the photo: the page text tokens kit/tokens.css scopes to where the photo is behind the text. Not with the kill
+   switch, reduced transparency or no backdrop-filter - then the screen is the plain --bg it was, and the base tokens stand. */
+@media not (prefers-reduced-transparency: reduce) {
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :root:not([data-backdrop='off']) .s-onboarding {
+      --muted: var(--bd-page-muted);
+      --text3: var(--bd-page-text3);
+    }
+  }
+}
+:root[data-backdrop='off'] .s-onboarding {
+  background: var(--bg);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .s-onboarding {
+    background: var(--bg);
+  }
+  .s-onboarding__aside {
+    background: var(--mark-disc);
+    backdrop-filter: none;
+  }
+}
 
 /* Every primary control the frame draws in this flow (Get started, the Continues, Go to Today) is
    52px tall, radius 16, 16px/600 - distinct from `.o-btn`'s 44px/14px default. */
@@ -214,18 +236,6 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  /* The content surface over the backdrop: opaque enough (--ob-panel, .96 dark, .99 light) that every word is AA over
-     any pixel of the photo, with the light edge instead of an outline (D-147). */
-  margin: 16px;
-  border-radius: 24px;
-  overflow: hidden;
-  background: var(--ob-panel);
-  backdrop-filter: var(--ob-panel-blur);
-  box-shadow: var(--edge-light);
-}
-:root[data-device='mobile'] .s-onboarding__main {
-  margin: 8px;
-  border-radius: 20px;
 }
 
 .s-onboarding__topbar {
@@ -319,7 +329,9 @@
   bottom: 0;
   flex: none;
   padding: 0 0 40px;
-  background: var(--bg);
+  /* The frame draws no ground behind the button; content that scrolls under it is blurred, not hidden by a solid
+     block, so the photo shows through. */
+  backdrop-filter: blur(8px);
 }
 :root[data-device='mobile'] .s-onboarding__cta {
   padding-bottom: 24px;

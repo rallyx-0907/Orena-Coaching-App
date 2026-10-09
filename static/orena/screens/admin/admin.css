@@ -239,7 +239,6 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: var(--bd-veil);
   padding: 24px var(--a-pad) 40px;
 }
 .a-main:focus {
