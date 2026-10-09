@@ -262,7 +262,7 @@
   --edge-light: inset 0 0 0 1px rgba(255, 255, 255, .6), var(--sh1);
 }
 
-/* The backdrop (PUB-4, D-16W), human 2026-10-09: "make it like the design". Orena.dc.html body[data-backdrop=on] draws a
+/* The backdrop (PUB-4, D-166), human 2026-10-09: "make it like the design". Orena.dc.html body[data-backdrop=on] draws a
    photo under a scrim and makes the rail, the desktop top bar and the phone bar glass; Onboarding.dc.html draws its own
    scrim and a translucent aside. The scrims, their strengths, the glass alpha (.62 dark, .66 light) and the blur are
    exactly the design's, and there is no veil: the photo shows fully.

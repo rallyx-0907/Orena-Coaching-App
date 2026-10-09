@@ -5327,7 +5327,7 @@ The 2026-10-09 export's Landing, Terms and Privacy, and its Backdrop change.
   and Terms section 4 links "Support Orena". The pinned Donate page is Vietnamese-only with sample amounts and a
   dummy bank account, so it is **not built**: the footer link is removed and section 4's link keeps its words as
   plain text. Say when Donate should be built.
-- **PUB-4 Backdrop (human decision, built like the design - D-16W).** The pinned Backdrop is built on the learner shell
+- **PUB-4 Backdrop (human decision, built like the design - D-166).** The pinned Backdrop is built on the learner shell
   (rail, desktop top bar, phone bar), the Admin shell (rail, header, phone chips) and Onboarding: the photo per theme and
   device (`midnight`/`paper`, `wide`/`tall`) under the design's own scrim at its 0.6 strength, the glass at the design's own
   alpha (.62 dark / .66 light) and 18px blur, Onboarding's own scrim and its translucent aside. **The photo shows fully: there

@@ -31,7 +31,7 @@
   color: var(--text);
   overflow: hidden;
 }
-/* The backdrop (PUB-4, D-16W): this screen only - never the shell, rail, bars or a learning
+/* The backdrop (PUB-4, D-166): this screen only - never the shell, rail, bars or a learning
    workspace. Dark is the design's midnight photo, light its paper; wide on the desktop, tall on the
    phone. A static background: it adds no motion and no layout, so reduced motion needs nothing. */
 .s-onboarding {

@@ -1,4 +1,4 @@
-/* Builds static/orena/shell/surfaces.css (PUB-4, D-16W): inside every solid surface the learner UI draws, the text tokens
+/* Builds static/orena/shell/surfaces.css (PUB-4, D-166): inside every solid surface the learner UI draws, the text tokens
    the backdrop adjusts for text that sits directly on the photo (--muted, --text3, --accent-on-photo) go back to the base
    tokens, because a card, panel, sheet, menu or input has its own opaque ground where the base tokens already pass AA.
 
@@ -105,7 +105,7 @@ export function buildSurfacesCss() {
 
    Inside a solid surface (a card, panel, sheet, menu, input: any element that sets its own opaque ground) the text tokens the
    backdrop adjusts for text set directly on the photo go back to the base tokens (kit/tokens.css), where they already pass AA
-   on that ground. Only text that sits on the photo or on the glass keeps the adjusted values (PUB-4, D-16W). */
+   on that ground. Only text that sits on the photo or on the glass keeps the adjusted values (PUB-4, D-166). */
 :root {
   --muted-base: var(--muted);
   --text3-base: var(--text3);

@@ -1,4 +1,4 @@
-"""Measure the lightest and darkest region of each backdrop photo as it appears in the app (PUB-4, D-16W).
+"""Measure the lightest and darkest region of each backdrop photo as it appears in the app (PUB-4, D-166).
 
 Writes scripts/fixtures/backdrop_extremes.json, which scripts/test_orena_kit.mjs reads to prove WCAG AA for
 every text token on the glass chrome, on the page and on Onboarding, in both themes. Needs Pillow (not a

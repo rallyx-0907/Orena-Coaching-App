@@ -214,7 +214,7 @@ assert.match(
   '.o-chip: never shrinks below its label (its row scrolls or wraps instead) - a shrunk chip clips its own text',
 );
 
-// BACKDROP (PUB-4, D-16W; Orena.dc.html body[data-backdrop=on], Orena-Admin.dc.html, Onboarding.dc.html). The learner shell, the
+// BACKDROP (PUB-4, D-166; Orena.dc.html body[data-backdrop=on], Orena-Admin.dc.html, Onboarding.dc.html). The learner shell, the
 // Admin shell and Onboarding draw the design's photo under the design's scrim; the rail, the desktop top bar and the phone bar
 // are glass at the design's alpha; the photo shows fully (no veil); every content surface stays solid. Accessibility never
 // redesigns the baseline, so AA over the photo is met by scoped TEXT tokens (kit/tokens.css: --bd-chrome-*, --bd-page-*) and,

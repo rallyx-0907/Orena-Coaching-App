@@ -525,7 +525,7 @@
   background: none;
 }
 
-/* ---- The backdrop (PUB-4, D-16W; Orena.dc.html body[data-backdrop=on], Orena-Admin.dc.html) ----
+/* ---- The backdrop (PUB-4, D-166; Orena.dc.html body[data-backdrop=on], Orena-Admin.dc.html) ----
    The design's default is ON and it has no learner control (its "Backdrop" button is the prototype strip), so this
    ships on. The kill switch is a non-UI attribute only: <html data-backdrop="off">. Two layers behind the frame - the
    photo for the theme and device, and the design's scrim at its strength - then the rail, the desktop top bar and

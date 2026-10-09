@@ -2,7 +2,7 @@
 
    Inside a solid surface (a card, panel, sheet, menu, input: any element that sets its own opaque ground) the text tokens the
    backdrop adjusts for text set directly on the photo go back to the base tokens (kit/tokens.css), where they already pass AA
-   on that ground. Only text that sits on the photo or on the glass keeps the adjusted values (PUB-4, D-16W). */
+   on that ground. Only text that sits on the photo or on the glass keeps the adjusted values (PUB-4, D-166). */
 :root {
   --muted-base: var(--muted);
   --text3-base: var(--text3);

@@ -4928,7 +4928,7 @@ change to `main` and the Intelligence lane receives it by merging forward.
    voice 503 against the contract text and drives the transport through each; `tests/test_agent_contract_tables.py` fails if
    the quota gate can answer a category the contract does not name, or the voice refusal drifts.
 
-## D-16W - Onboarding backdrop (PUB-4)
+## D-166 - Onboarding backdrop (PUB-4)
 
 Placeholder id; the number is assigned at merge. Human decision PUB-4 (2026-10-09), scope widened and then set to "make it like the design - the background shows fully, nothing blends into anything": the pinned Backdrop (photo per theme and device under the design's scrim, glass rail / top bar / phone bar at the design's alpha, Onboarding's own scrim and translucent aside) ships on the learner shell, the Admin shell and Onboarding, on by default with no learner control (non-UI kill switch `data-backdrop="off"`). No veil, no panel. Content surfaces stay solid; the chrome edge is `--edge-light` (D-147); a browser without `backdrop-filter` keeps the photo and gets a more opaque solid chrome.
 
