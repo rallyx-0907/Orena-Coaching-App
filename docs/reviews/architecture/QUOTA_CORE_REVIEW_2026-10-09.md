@@ -1,4 +1,4 @@
-# Architecture review: plan quota enforcement core (D-160)
+# Architecture review: plan quota enforcement core (D-161)
 
 Recorded in Git as AGENTS.md "Architecture review authority" requires. PR #116, branch `feat/quota-core`.
 
@@ -51,7 +51,7 @@ All runs used an ephemeral `ai-writing-coach:local` container with the worktree 
 - **Impact:**
   - The only cap is the per-process brake: `writing_ai` allows 30 requests per 600 s per worker. A Free account gets about 30 AI reviews per worker each month instead of 2, and can repeat this at every window transition.
   - This breaks the human's rule that a zone change must never reopen a window.
-  - It makes D-160's claim that "zone hopping cannot multiply windows" untrue under concurrency.
+  - It makes D-161's claim that "zone hopping cannot multiply windows" untrue under concurrency.
   - The approved Free → Plus → Free test and the "5 concurrent → 1 provider call" proof both start from an existing open bucket with no zone header, so neither covers this case.
 - **Required fix (no schema change):**
   1. In `reserve(limit_policy='current')`, after the incarnation `FOR SHARE` and before the bucket lookup or insert, take `pg_advisory_xact_lock` keyed on `(incarnation_id, meter)`.
@@ -62,7 +62,7 @@ All runs used an ephemeral `ai-writing-coach:local` container with the worktree 
   - N concurrent first uses in N zones.
   - N concurrent requests in N zones just after a closed window.
   - Both must admit no more than the limit and leave exactly one bucket open at `now`.
-  - Correct the D-160 wording until the fix is in.
+  - Correct the D-161 wording until the fix is in.
 
 ### P2-1: The switch fails open when its value lives in the admin setting
 
@@ -87,7 +87,7 @@ All runs used an ephemeral `ai-writing-coach:local` container with the worktree 
 
 - **Where:** `app.py:1533-1541` and `app.py:3048`. `AIProviderError` (the provider answered but the output could not be used) leads to `fallback-demo` or a 502, and the ticket settles 0.
 - **Assessment:** this is consistent with the approved contract ("learner got nothing"). However, provider spend that ends this way is bounded only by the per-process brake.
-- **Action:** record it as an explicit human decision in D-160, and keep the brake.
+- **Action:** record it as an explicit human decision in D-161, and keep the brake.
 
 ### P3 findings
 
@@ -149,11 +149,11 @@ All runs used an ephemeral `ai-writing-coach:local` container with the worktree 
 
 | Finding | Fix | Commit |
 |---|---|---|
-| P1-1 concurrent distinct-zone windows | `reserve(limit_policy='current')`: `pg_advisory_xact_lock(hashtextextended('quota:<incarnation>:<meter>', 0))` after the incarnation `FOR SHARE`, before any bucket; a window another bucket of the meter is open in at `now` or overlaps is refused as `window_superseded` (nothing written); the service treats it like `window_closed` (re-read the latest bucket, recompute, at most `WINDOW_RETRIES = 4`). Lock order incarnation -> advisory -> bucket -> reservation; settle/release (bucket -> reservation), dispatch (incarnation -> reservation), `mark_deleted` and frozen mode never take the advisory lock, so no cycle. D-160 wording corrected. | `fef64cd5` |
+| P1-1 concurrent distinct-zone windows | `reserve(limit_policy='current')`: `pg_advisory_xact_lock(hashtextextended('quota:<incarnation>:<meter>', 0))` after the incarnation `FOR SHARE`, before any bucket; a window another bucket of the meter is open in at `now` or overlaps is refused as `window_superseded` (nothing written); the service treats it like `window_closed` (re-read the latest bucket, recompute, at most `WINDOW_RETRIES = 4`). Lock order incarnation -> advisory -> bucket -> reservation; settle/release (bucket -> reservation), dispatch (incarnation -> reservation), `mark_deleted` and frozen mode never take the advisory lock, so no cycle. D-161 wording corrected. | `fef64cd5` |
 | P1-1 tests | PostgreSQL: the reviewer's reproduction (both variants, also run unmodified from the review's file), 10 zones at first use and 10 zones just after a closed window: admitted <= 2 and exactly one bucket open at `now`; a covered window is `window_superseded` with no bucket written. | `fef64cd5` |
-| P2-1 switch fails open | `=off` -> off; `=on` with no wired meter -> 503 `no_meters` (error logged); unset + setting unreadable in a process that never read it -> 503 `switch_unreadable`; a failure after a good read keeps the last value; nothing stored -> off. D-160 says :8000 must pin both environment variables. Hermetic tests for each case. | `e919a6c6` |
+| P2-1 switch fails open | `=off` -> off; `=on` with no wired meter -> 503 `no_meters` (error logged); unset + setting unreadable in a process that never read it -> 503 `switch_unreadable`; a failure after a good read keeps the last value; nothing stored -> off. D-161 says :8000 must pin both environment variables. Hermetic tests for each case. | `e919a6c6` |
 | P2-2 improve 502 | `ticket.dispatch("improve")` before the `try`; tests: dispatch `denied` -> 403 `account_deleted`, dispatch store error -> 503 `quota_unavailable`, provider not called, reservation released. | `e919a6c6` |
-| P2-3 unusable output settles 0 | Behaviour kept; recorded as a human decision to confirm in D-160 point 10 and `UI_BACKEND_GAPS.md` QTA-10. | docs commit |
+| P2-3 unusable output settles 0 | Behaviour kept; recorded as a human decision to confirm in D-161 point 10 and `UI_BACKEND_GAPS.md` QTA-10. | docs commit |
 | P3-1 reconciler scope / index | `stale_dispatched(..., meters=)` joins the bucket; the reconciler passes `SYNC_METERS`. The `(state, updated_at)` index needs a migration: recorded (QTA-11a), not added. | `fef64cd5` |
 | P3-2 plan vs revision | Plan limits and `policy_version` come from one `current_catalog(strict=True)` snapshot; the subscription read only names the plan. | `fef64cd5` |
 | P3-3 docstring | `BucketWindow` docstring describes both modes. | `fef64cd5` |
@@ -180,7 +180,7 @@ Evidence after the fixes (local execution, not CI):
 
 ### VERDICT: APPROVE
 
-The P1 is fixed and proven on PostgreSQL. Both code P2s are fixed with tests, and P2-3 is recorded as a human decision (D-160 point 10, QTA-10). No P0, P1 or P2 remains. Three P3 notes follow below; none blocks.
+The P1 is fixed and proven on PostgreSQL. Both code P2s are fixed with tests, and P2-3 is recorded as a human decision (D-161 point 10, QTA-10). No P0, P1 or P2 remains. Three P3 notes follow below; none blocks.
 
 ### Evidence (local runs, not CI)
 
@@ -232,7 +232,7 @@ So there is no deadlock path. Frozen mode does not take the lock and is unchange
 
 **P2-2 is fixed.** `ticket.dispatch("improve")` now runs before the `try`. A parametrized test proves the 503 and 403 refusals keep their own status and category.
 
-**P2-3 is recorded** as a human decision in D-160 point 10 and in `UI_BACKEND_GAPS.md` QTA-10.
+**P2-3 is recorded** as a human decision in D-161 point 10 and in `UI_BACKEND_GAPS.md` QTA-10.
 
 **P3-1 is fixed.** The reconciler is limited to `SYNC_METERS` through a bucket join. A new test shows that when the reconciler settles first, a late live settle writes nothing and nothing is double-counted. The missing index is documented.
 
@@ -252,7 +252,7 @@ So there is no deadlock path. Frozen mode does not take the lock and is unchange
 
 - **R-1, pre-fix orphan buckets.** A runtime that ran `85444275` or `40443ed1` with enforcement on may hold overlapping buckets for some learner. The new rival check would then answer `window_superseded` on every retry, and that learner would get a 503 (`window`) until the orphan window closes. Before enabling enforcement on such a runtime, check that this query returns no rows:
   `SELECT a.incarnation_id, a.meter FROM commerce_quota_buckets a JOIN commerce_quota_buckets b ON a.incarnation_id = b.incarnation_id AND a.meter = b.meter AND a.id < b.id AND a.window_start < b.window_end AND b.window_start < a.window_end`
-- **R-2, compose default.** Compose leaves `ORENA_QUOTA_ENFORCEMENT` empty. On a deployment that never meant to enforce, a settings read that fails in a fresh worker now answers 503 for `writing.review`. The impact is small because the setting lives in the same PostgreSQL store that `/api/evaluate` reads first. Still, until the human's GO, :8000 should pin `ORENA_QUOTA_ENFORCEMENT=off`, as D-160 already says it must.
+- **R-2, compose default.** Compose leaves `ORENA_QUOTA_ENFORCEMENT` empty. On a deployment that never meant to enforce, a settings read that fails in a fresh worker now answers 503 for `writing.review`. The impact is small because the setting lives in the same PostgreSQL store that `/api/evaluate` reads first. Still, until the human's GO, :8000 should pin `ORENA_QUOTA_ENFORCEMENT=off`, as D-161 already says it must.
 - **R-3, stale last good value.** After a good read, a failing setting store keeps the last value indefinitely, which may be off. This is the accepted human default. It is not fail-open in the "never known" sense.
 
 **Unchanged:** this review is not product approval and not an activation authorization. :8000 still needs the human's explicit GO.

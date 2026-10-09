@@ -75,7 +75,7 @@ def test_prices_follow_the_design_tiers():
 
 
 def test_the_meters_are_the_designs_pricing():
-    """D-160: the design's BILL_PLANS `lim` - messages/day, reviews/month, minutes (stored as seconds), languages."""
+    """D-161: the design's BILL_PLANS `lim` - messages/day, reviews/month, minutes (stored as seconds), languages."""
     free, plus, pro = (plan.entitlement_map() for plan in (FREE, PLUS, PRO))
     assert list(free) == ["orena.message", "writing.review", "pronunciation.audio", "media.import", "languages.target"]
     assert [m["orena.message"].limit for m in (free, plus, pro)] == [20, 200, 1000]

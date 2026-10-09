@@ -59,6 +59,12 @@ async function legalPages() {
   const { legalAddress, renderLegal } = await import('./legal/page.js');
   const address = legalAddress(location.hash);
   if (!address) return false;
+  /* Terms and Privacy live at /terms and /privacy (the design's own pages, public); an old address is sent
+     there. The refund page is not in the design and stays here. */
+  if (address.page === 'terms' || address.page === 'privacy') {
+    location.replace(`/${address.page}${address.lang === 'vi' || address.lang === 'en' ? `?lang=${address.lang}` : ''}`);
+    return true;
+  }
   await renderLegal(app, address);
   window.addEventListener('hashchange', () => {
     const next = legalAddress(location.hash);

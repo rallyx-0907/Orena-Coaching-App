@@ -19,7 +19,7 @@ const copy = await import('../static/orena/copy/index.js');
 const { ROUTES, byId, match } = await import('../static/orena/shell/routes.js');
 
 const PRICES = (m, mv, y, yv) => ({ monthly: { USD: m, VND: mv }, yearly: { USD: y, VND: yv } });
-/* Catalogue v2 (D-160): the design's Pricing meters. Minute meters are stored in seconds (scale 60). */
+/* Catalogue v2 (D-161): the design's Pricing meters. Minute meters are stored in seconds (scale 60). */
 const METER = {
   'orena.message': { window: 'day', unit: 'message', display_unit: 'message', scale: 1 },
   'writing.review': { window: 'month', unit: 'review', display_unit: 'review', scale: 1 },
@@ -183,7 +183,7 @@ assert.equal(resetLabel({ window: 'day', resetsAt: '2026-10-10T00:00:00Z' }, new
 assert.equal(resetLabel({ window: 'month', resetsAt: '2026-11-01T12:00:00Z' }), 'Resets Nov 1');
 assert.equal(resetLabel({ window: 'day', resetsAt: null }), 'Resets every day');
 
-/* --- the in-room exhausted message (D-160) ---------------------------------------------------- */
+/* --- the in-room exhausted message (D-161) ---------------------------------------------------- */
 {
   const notice = await import('../static/orena/screens/plan/quota-notice.js');
   const refusal = { status: 429, category: 'quota_exhausted', context: { feature: 'writing.review', used: 2, limit: 2, scale: 1 } };

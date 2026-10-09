@@ -1,4 +1,4 @@
-"""D-160 plan quota enforcement, hermetic (CI, SQLite): catalogue v2, the switch, windows, operation ids,
+"""D-161 plan quota enforcement, hermetic (CI, SQLite): catalogue v2, the switch, windows, operation ids,
 the 429/503 envelope and the two writing routes.
 
 The quota store here is an in-memory TEST DOUBLE of `PostgresQuotaRepository`'s protocol (reserve with

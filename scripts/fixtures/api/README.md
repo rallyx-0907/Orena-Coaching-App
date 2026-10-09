@@ -72,7 +72,7 @@ Rules:
 | `practice_outcomes.json` | `GET /api/practice-outcomes?limit=5` (empty, same reason: needs an essay) | 2026-09-28 |
 | `reading_practice_evidence.json` | `GET /api/reading/practice/evidence?limit=5` (empty - submission is off, `ORENA_READING_PRACTICE_SUBMIT` is unset) | 2026-09-28 |
 | `speech_attempts.json` | `GET /api/speech/attempts?limit=5` (empty - no speech provider in this sandbox) | 2026-09-28 |
-| `product_commerce.json` | `GET /api/product/commerce` | 2026-10-09 (catalogue v2, D-160) |
+| `product_commerce.json` | `GET /api/product/commerce` | 2026-10-09 (catalogue v2, D-161) |
 | `platform_languages.json` | `GET /api/platform/languages` | 2026-09-28 |
 | `library_grammar.json` | `GET /api/library/grammar` | 2026-09-28 |
 | `library_grammar_lesson.json` | `GET /api/library/grammar/{id}` | 2026-09-28 |

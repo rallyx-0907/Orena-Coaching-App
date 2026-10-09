@@ -1,6 +1,6 @@
 /* Admin > Users > Plans & pricing (the human's request 2026-10-09): each plan is drawn as the learner's
    Pricing card (screens/plan/pricing.js) and "Edit" FLIPS the card to a form on its back - the plan's
-   prices (monthly and yearly, USD and VND) and each meter of the design's Pricing (catalogue v2, D-160):
+   prices (monthly and yearly, USD and VND) and each meter of the design's Pricing (catalogue v2, D-161):
    enabled, its limit in the unit a learner reads (minutes for the minute meters, stored as seconds) with
    its window shown beside it, and a meter's own parameters (seconds of voice per Orena message). Windows
    and units are the code's, not editable. Save sends the WHOLE catalogue (PUT /api/product/admin/plans);

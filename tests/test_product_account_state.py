@@ -10,7 +10,7 @@ class Subscription:
 
 
 def usage_of(values, *, fail=False):
-    """A usage reader (D-160: the quota buckets): `values` feature -> used, as enforcement would report it."""
+    """A usage reader (D-161: the quota buckets): `values` feature -> used, as enforcement would report it."""
     def read(user_key, plan):
         if fail:
             raise RuntimeError("usage store unavailable")
@@ -162,7 +162,7 @@ def _mobile_feature_schema() -> tuple[set[str], set[str]]:
 
 
 def test_mobile_me_features_keep_the_frozen_feature_shape():
-    """D-160 added fields to a feature (limit, window, unit, resets_at, not_metered); /me projects them away."""
+    """D-161 added fields to a feature (limit, window, unit, resets_at, not_metered); /me projects them away."""
     from writing_coach.product.api import mobile_account_state
 
     fields, states = _mobile_feature_schema()

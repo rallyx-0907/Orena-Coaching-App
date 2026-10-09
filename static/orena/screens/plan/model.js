@@ -4,13 +4,13 @@
    The design draws three tiers (Free / Plus / Pro), two billing cycles, prices, a 14-day message
    chart, a card, invoices and a payment flow. The backend serves the three tiers with their monthly and
    yearly prices in USD and VND and the design's meters with their limits, all editable in Platform Admin
-   (D-153, D-160), and each enforced meter's use in its current window (GET /api/product/commerce,
+   (D-153, D-161), and each enforced meter's use in its current window (GET /api/product/commerce,
    /api/product/plans), `billing_ready: false`. Every figure
    here is read from those two answers;
    what they cannot supply is not drawn or is drawn at its honest zero/unavailable state - see
    docs/project/UI_BACKEND_GAPS.md "New export frames: Plan, Pricing, Billing, Feedback". */
 
-/* The catalogue's meters (writing_coach/product/catalog.py METERS, catalogue v2 - D-160: the design's Pricing
+/* The catalogue's meters (writing_coach/product/catalog.py METERS, catalogue v2 - D-161: the design's Pricing
    meters), in the order the design lists them. `languages.target` is a count cap, not a windowed meter, so
    it has no usage row. */
 export const FEATURE_ORDER = Object.freeze([
@@ -79,7 +79,7 @@ export function planView(commerce) {
 }
 
 /* Usage rows: every windowed meter of the current plan, with this window's use read from the quota
-   buckets enforcement writes (GET /api/product/commerce, D-160). `unknown` marks a meter whose use is not
+   buckets enforcement writes (GET /api/product/commerce, D-161). `unknown` marks a meter whose use is not
    known: the store could not be read (`unavailable`), or nothing counts it on this deployment
    (`not_metered`) - never drawn as 0 used. Amounts are in the unit a learner reads (minutes, not seconds). */
 export function usageRows(commerce) {

@@ -3,7 +3,7 @@ import { navigationSignal } from './navigation.js';
 
 const JSON_HEADERS = {'Content-Type':'application/json'};
 
-/* Plan quota (D-160): the learner's own timezone decides when a day or month of use resets, so a metered
+/* Plan quota (D-161): the learner's own timezone decides when a day or month of use resets, so a metered
    call and the usage read say which zone this device is in. */
 function deviceTimezone(){
   try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch{return 'UTC';}

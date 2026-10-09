@@ -576,7 +576,7 @@ console.log(`Orena admin screen: routes, access (Profile entry, No access with z
 /* ---- 5e. Plans & pricing: the flip card, both faces, the PUT body, three languages ---------------- */
 {
   const plansPage = await import('../static/orena/screens/admin/plans.js');
-  /* Catalogue v2 (D-160): the design's meters; minute meters are stored in seconds. */
+  /* Catalogue v2 (D-161): the design's meters; minute meters are stored in seconds. */
   const KEYS = ['writing.review', 'pronunciation.audio', 'orena.message'];
   const catalogue = {
     plans: ['free', 'plus', 'pro'].map((id, index) => ({

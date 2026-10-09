@@ -2,7 +2,7 @@
    plans", the plan card's button). A focus route (shell/routes.js `pricing`).
 
    Real data only (rule 40): the plans are GET /api/product/plans (Free, Plus and Pro with their monthly
-   and yearly prices and the design's meters with their limits, set in Platform Admin - D-153, D-160), the
+   and yearly prices and the design's meters with their limits, set in Platform Admin - D-153, D-161), the
    current one GET
    /api/product/commerce. The Monthly/Yearly switch and its saving are computed from those prices; the
    currency follows the interface (dong in Vietnamese, dollars otherwise, as the design does). Not drawn,

@@ -258,7 +258,7 @@ export default async function respondToContent(element, ctx) {
       result = mapFeedback(raw);
     } catch (error) {
       if (!ctx.isCurrent()) return;
-      // The plan's limit (D-160): the server's figures, with the way to the plans as the toast's action.
+      // The plan's limit (D-161): the server's figures, with the way to the plans as the toast's action.
       if (isQuotaExhausted(error)) toast(quotaMessage(error), { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
       else toast(t('feedbackError'));
     } finally {

@@ -1,4 +1,4 @@
-"""D-160 quota enforcement against real PostgreSQL: the service, the two writing routes and the usage read.
+"""D-161 quota enforcement against real PostgreSQL: the service, the two writing routes and the usage read.
 
 Skips unless `ORENA_TEST_POSTGRES_URL` names a THROWAWAY database (the fixture upgrades it to head, like
 `tests/test_orena_quota_persistence_postgres.py`). CI has no PostgreSQL service, so these run locally.

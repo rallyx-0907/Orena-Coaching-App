@@ -750,7 +750,7 @@ export default async function mountWriting(element, ctx) {
     paintHeader();
     if (hadFinding) paintDraft();
     paintReview();
-    // One key per press: a resend of this same review is never charged twice (D-160).
+    // One key per press: a resend of this same review is never charged twice (D-161).
     const idempotencyKey = newIdempotencyKey();
     const ask = (parentId) => api.evaluate(reviewPayload({ prompt: promptText, text, level, parentId, language }), { idempotencyKey });
     try {

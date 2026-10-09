@@ -1,5 +1,5 @@
 /* Admin > Users > Plans & pricing: the words of the page that edits the plan catalogue (prices and
-   the design's meters with their windows and units - D-160). Feature names are the learner plan screen's own (screens/plan/copy.js), so a plan
+   the design's meters with their windows and units - D-161). Feature names are the learner plan screen's own (screens/plan/copy.js), so a plan
    reads here exactly as a learner reads it. Interface layer (D-079). */
 export const en = {
   plansTitle: 'Plans & pricing',

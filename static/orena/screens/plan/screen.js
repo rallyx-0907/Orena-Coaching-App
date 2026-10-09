@@ -4,7 +4,7 @@
 
    Real data only (Design Contract rule 40): GET /api/product/commerce gives the plan, the
    subscription state and, for each meter enforcement counts, its use in the current window against the
-   plan's limit and when it resets (the quota buckets - D-160). A meter nothing counts on this
+   plan's limit and when it resets (the quota buckets - D-161). A meter nothing counts on this
    deployment, or whose use cannot be read, shows "—" and "Not available", never 0 used. The design's
    Plus/Pro tiers, prices and renewal date, the 14-day "Orena messages" chart, the card on file,
    the billing email, the invoices and the amber "cancels/changes" banner have no backend
@@ -40,7 +40,7 @@ function usageNote(row) {
 }
 
 /* When the window resets, from the server's own `resets_at` (the learner's local midnight, or local 00:00 on
-   the 1st - D-160): a day counts down ("Resets in 5h 12m"), a month names its date ("Resets Nov 1"). */
+   the 1st - D-161): a day counts down ("Resets in 5h 12m"), a month names its date ("Resets Nov 1"). */
 export function resetLabel(row, now = new Date()) {
   const at = row.resetsAt ? new Date(row.resetsAt) : null;
   if (!at || Number.isNaN(at.getTime())) return t(row.window === 'day' ? 'resetsDaily' : 'resetsMonthly');

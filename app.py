@@ -47,6 +47,7 @@ from writing_coach.writing_contract import project_review as project_writing_rev
 from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
 from auth_support import APP_ENV, AUTH_ENABLED, DEPLOYMENT, SESSION_SECRET, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
+import auth_support
 from writing_coach.product.api import router as product_router
 from writing_coach.media_api import (
     configure_media_fallback,
@@ -1062,7 +1063,7 @@ _account_backbone = build_backbone(_persistence_runtime.engine, _backbone_tables
 configure_work(_account_backbone)
 app.include_router(work_router)
 
-# D-160: plan quota enforcement. Switched off unless ORENA_QUOTA_ENFORCEMENT / the admin setting turn it on; where
+# D-161: plan quota enforcement. Switched off unless ORENA_QUOTA_ENFORCEMENT / the admin setting turn it on; where
 # it is on and this runtime has no quota store (SQLite, missing tables, account backbone off) every enforced meter
 # answers 503 instead of running unmetered.
 from writing_coach.product import quota as _quota  # noqa: E402
@@ -1804,16 +1805,40 @@ def _stop_feedback_retention() -> None:
         _quota_reconciler.stop()
 
 
+def _page(*parts: str) -> HTMLResponse:
+    return HTMLResponse(
+        (ROOT / "templates" / "orena" / Path(*parts)).read_text(encoding="utf-8"),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
-def home() -> HTMLResponse:
+def home(request: Request) -> HTMLResponse:
+    # The front door. With sign-in on and nobody signed in, `/` is the public Landing; `/?app=1` is the learner
+    # shell for that visitor (the Landing's buttons point there, so Welcome can draw without a loop). A signed-in
+    # learner, and local mode with sign-in off, get the shell as ever.
+    if auth_support.AUTH_ENABLED and not request.session.get("user_sub") and not request.query_params.get("app"):
+        return _page("public", "landing.html")
     # The learner UI (D-088), the only one since the cutover (D-091, D-143). The shell carries the list of
     # stylesheets and modules the app loads, so a cached copy of it keeps loading yesterday's asset list - a
     # stylesheet added since is simply never requested, and the screen renders unstyled. It is small, so it
     # stays uncached outright; the assets it names revalidate instead.
-    return HTMLResponse(
-        (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8"),
-        headers={"Cache-Control": "no-store, max-age=0"},
-    )
+    return _page("index.html")
+
+
+@app.get("/landing", response_class=HTMLResponse)
+def landing_page() -> HTMLResponse:
+    return _page("public", "landing.html")
+
+
+@app.get("/terms", response_class=HTMLResponse)
+def terms_page() -> HTMLResponse:
+    return _page("public", "terms.html")
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+def privacy_page() -> HTMLResponse:
+    return _page("public", "privacy.html")
 
 
 @app.get("/next")
@@ -2500,7 +2525,7 @@ def api_improve(payload: ImproveIn) -> dict[str, Any]:
     _guard_writing_minimum(
         payload.text, active_grammar_language_code(), endpoint="/api/improve"
     )
-    # D-160: one AI improve that runs is one writing review. Admitted BEFORE the try, so a refusal (429/503) is
+    # D-161: one AI improve that runs is one writing review. Admitted BEFORE the try, so a refusal (429/503) is
     # never turned into this route's 502; an exhausted plan never reaches the provider. A failure settles 0.
     with _quota.admit("writing.review", request_digest=_quota.request_digest(payload)) as ticket:
         # Before the try as well: a refusal at dispatch (503 quota_unavailable, 403 account_deleted) keeps its own
@@ -2974,7 +2999,7 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         existing = _stored_review_for(identity)
         if existing is not None:
             return _review_payload(existing, previous)
-        # D-160: a review that will run is one writing review, admitted only here - after both cache checks, so a
+        # D-161: a review that will run is one writing review, admitted only here - after both cache checks, so a
         # stored identical review is never charged - and before any provider call. `_run_review` dispatches and
         # settles through the ticket of this block.
         digest = _quota.request_digest(f"{identity['fingerprint']}|{payload.parent_essay_id or ''}")
@@ -3046,7 +3071,7 @@ def _run_review(
     })
     essay_id = int(created["id"])
     series_id = int(created["series_id"])
-    # The local heuristic is not an AI review: no AI ran, nothing is charged (D-160).
+    # The local heuristic is not an AI review: no AI ran, nothing is charged (D-161).
     ticket.settle(0 if evaluator == "fallback-demo" else 1, f"essay:{essay_id}")
 
 
@@ -3164,7 +3189,7 @@ def essay_review_refresh(essay_id: int) -> dict[str, Any]:
     )
     if same_review(new_identity, stored):
         return _refresh_answer(essay_id, "current")
-    # Not metered (D-160, default pending the human): a refresh is Orena repairing its own contract change, at most
+    # Not metered (D-161, default pending the human): a refresh is Orena repairing its own contract change, at most
     # one per essay per change - the learner did not ask for a new review.
     with _review_gate(f"refresh:{essay_id}:{prior}"):
         fresh = _learning_repository.get_essay(essay_id)

@@ -590,7 +590,7 @@ def test_reserve_retries_mixed_with_dispatch_settle_release_never_deadlock(engin
     assert errors == []
 
 
-# --- D-160: limit_policy='current' (quota enforcement) ---------------------
+# --- D-161: limit_policy='current' (quota enforcement) ---------------------
 
 def _current(limit, *, window_id='cur', policy='c-new'):
     start = datetime.now(UTC) - timedelta(minutes=1)

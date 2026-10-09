@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&amp;family=Outfit:wght@400;500;600;700&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400;1,7..72,500&amp;display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#0B0B12;color:#F3F3F8;font-family:Outfit,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
+button{font-family:inherit;cursor:pointer}
+input,textarea{font-family:inherit}
+input::placeholder,textarea::placeholder{color:#77778E}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes ring{0%{transform:scale(.7);opacity:.7}100%{transform:scale(1.8);opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><defs><radialGradient id="ol-g9" gradientUnits="userSpaceOnUse" cx="50" cy="50" r="46"><stop offset=".15" stop-color="#FF7AD9"></stop><stop offset=".6" stop-color="#9B7BFF"></stop><stop offset="1" stop-color="#6FD6FF"></stop></radialGradient><symbol id="ol-mark" viewBox="0 0 100 100" overflow="visible"><g><path d="M44.77 43.95 L45.62 41.18 L47 38.69 L48.81 36.5 L50.98 34.63 L53.48 33.1 L56.24 31.95 L59.23 31.19 L62.39 30.86 L65.66 30.96 L69 31.52 L72.34 32.55 L75.64 34.04 L78.83 36 L81.86 38.42 L84.67 41.27 L87.2 44.54 L89.41 48.2 L91.24 52.22 L92.65 56.56 L93.59 61.16 L93.33 62.13 L92.39 58.06 L91.08 54.26 L89.44 50.76 L87.52 47.6 L85.37 44.8 L83.03 42.36 L80.55 40.31 L77.98 38.64 L75.37 37.35 L72.76 36.43 L70.21 35.88 L67.74 35.68 L65.41 35.81 L63.25 36.24 L61.29 36.95 L59.55 37.92 L58.07 39.12 L56.86 40.52 L55.91 42.12 L55.23 43.95Z" fill="url(#ol-g9)" stroke="url(#ol-g9)" stroke-width="1" stroke-linejoin="round"></path><path d="M52.63 42.44 L55.45 41.8 L58.29 41.75 L61.09 42.22 L63.8 43.17 L66.37 44.57 L68.75 46.38 L70.9 48.59 L72.77 51.15 L74.32 54.04 L75.5 57.21 L76.28 60.62 L76.64 64.23 L76.54 67.97 L75.96 71.8 L74.89 75.66 L73.33 79.49 L71.26 83.23 L68.7 86.83 L65.65 90.21 L62.13 93.33 L61.16 93.59 L64.22 90.74 L66.85 87.7 L69.06 84.54 L70.84 81.3 L72.19 78.03 L73.13 74.79 L73.67 71.61 L73.83 68.55 L73.64 65.64 L73.13 62.93 L72.33 60.44 L71.27 58.21 L70 56.25 L68.54 54.59 L66.94 53.25 L65.24 52.23 L63.46 51.55 L61.64 51.2 L59.78 51.18 L57.86 51.5Z" fill="url(#ol-g9)" stroke="url(#ol-g9)" stroke-width="1" stroke-linejoin="round"></path><path d="M57.86 48.5 L59.83 50.62 L61.29 53.05 L62.29 55.71 L62.82 58.54 L62.89 61.46 L62.51 64.43 L61.67 67.4 L60.39 70.3 L58.66 73.08 L56.5 75.69 L53.94 78.07 L51 80.18 L47.71 81.97 L44.1 83.38 L40.23 84.39 L36.13 84.95 L31.85 85.03 L27.46 84.6 L23 83.66 L18.54 82.17 L17.83 81.46 L21.83 82.68 L25.77 83.45 L29.62 83.78 L33.31 83.69 L36.82 83.23 L40.1 82.42 L43.12 81.3 L45.85 79.91 L48.27 78.3 L50.37 76.5 L52.12 74.56 L53.53 72.53 L54.58 70.44 L55.29 68.35 L55.65 66.3 L55.68 64.31 L55.39 62.43 L54.78 60.68 L53.87 59.06 L52.63 57.56Z" fill="url(#ol-g9)" stroke="url(#ol-g9)" stroke-width="1" stroke-linejoin="round"></path><path d="M55.23 56.05 L54.38 58.82 L53 61.31 L51.19 63.5 L49.02 65.37 L46.52 66.9 L43.76 68.05 L40.77 68.81 L37.61 69.14 L34.34 69.04 L31 68.48 L27.66 67.45 L24.36 65.96 L21.17 64 L18.14 61.58 L15.33 58.73 L12.8 55.46 L10.59 51.8 L8.76 47.78 L7.35 43.44 L6.41 38.84 L6.67 37.87 L7.61 41.94 L8.92 45.74 L10.56 49.24 L12.48 52.4 L14.63 55.2 L16.97 57.64 L19.45 59.69 L22.02 61.36 L24.63 62.65 L27.24 63.57 L29.79 64.12 L32.26 64.32 L34.59 64.19 L36.75 63.76 L38.71 63.05 L40.45 62.08 L41.93 60.88 L43.14 59.48 L44.09 57.88 L44.77 56.05Z" fill="url(#ol-g9)" stroke="url(#ol-g9)" stroke-width="1" stroke-linejoin="round"></path><path d="M47.37 57.56 L44.55 58.2 L41.71 58.25 L38.91 57.78 L36.2 56.83 L33.63 55.43 L31.25 53.62 L29.1 51.41 L27.23 48.85 L25.68 45.96 L24.5 42.79 L23.72 39.38 L23.36 35.77 L23.46 32.03 L24.04 28.2 L25.11 24.34 L26.67 20.51 L28.74 16.77 L31.3 13.17 L34.35 9.79 L37.87 6.67 L38.84 6.41 L35.78 9.26 L33.15 12.3 L30.94 15.46 L29.16 18.7 L27.81 21.97 L26.87 25.21 L26.33 28.39 L26.17 31.45 L26.36 34.36 L26.87 37.07 L27.67 39.56 L28.73 41.79 L30 43.75 L31.46 45.41 L33.06 46.75 L34.76 47.77 L36.54 48.45 L38.36 48.8 L40.22 48.82 L42.14 48.5Z" fill="url(#ol-g9)" stroke="url(#ol-g9)" stroke-width="1" stroke-linejoin="round"></path><path d="M42.14 51.5 L40.17 49.38 L38.71 46.95 L37.71 44.29 L37.18 41.46 L37.11 38.54 L37.49 35.57 L38.33 32.6 L39.61 29.7 L41.34 26.92 L43.5 24.31 L46.06 21.93 L49 19.82 L52.29 18.03 L55.9 16.62 L59.77 15.61 L63.87 15.05 L68.15 14.97 L72.54 15.4 L77 16.34 L81.46 17.83 L82.17 18.54 L78.17 17.32 L74.23 16.55 L70.38 16.22 L66.69 16.31 L63.18 16.77 L59.9 17.58 L56.88 18.7 L54.15 20.09 L51.73 21.7 L49.63 23.5 L47.88 25.44 L46.47 27.47 L45.42 29.56 L44.71 31.65 L44.35 33.7 L44.32 35.69 L44.61 37.57 L45.22 39.32 L46.13 40.94 L47.37 42.44Z" fill="url(#ol-g9)" stroke="url(#ol-g9)" stroke-width="1" stroke-linejoin="round"></path></g><g><path d="M50 50 L50 37 Q50.78 42.15 53.59 43.77Z" fill="rgb(248,247,253)" stroke="rgb(248,247,253)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L53.59 43.77 Q56.41 45.4 61.26 43.5Z" fill="rgb(240,236,250)" stroke="rgb(240,236,250)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L61.26 43.5 Q57.19 46.75 57.19 50Z" fill="rgb(230,225,246)" stroke="rgb(230,225,246)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L57.19 50 Q57.19 53.25 61.26 56.5Z" fill="rgb(222,215,244)" stroke="rgb(222,215,244)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L61.26 56.5 Q56.41 54.6 53.59 56.23Z" fill="rgb(218,210,242)" stroke="rgb(218,210,242)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L53.59 56.23 Q50.78 57.85 50 63Z" fill="rgb(219,211,242)" stroke="rgb(219,211,242)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L50 63 Q49.22 57.85 46.41 56.23Z" fill="rgb(225,218,244)" stroke="rgb(225,218,244)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L46.41 56.23 Q43.59 54.6 38.74 56.5Z" fill="rgb(233,229,247)" stroke="rgb(233,229,247)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L38.74 56.5 Q42.81 53.25 42.81 50Z" fill="rgb(243,240,251)" stroke="rgb(243,240,251)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L42.81 50 Q42.81 46.75 38.74 43.5Z" fill="rgb(251,250,253)" stroke="rgb(251,250,253)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L38.74 43.5 Q43.59 45.4 46.41 43.77Z" fill="rgb(255,255,255)" stroke="rgb(255,255,255)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L46.41 43.77 Q49.22 42.15 50 37Z" fill="rgb(254,254,255)" stroke="rgb(254,254,255)" stroke-width="0.3" stroke-linejoin="round"></path></g></symbol><radialGradient id="ol-g12" gradientUnits="userSpaceOnUse" cx="50" cy="50" r="46"><stop offset=".15" stop-color="#6FD6FF"></stop><stop offset=".6" stop-color="#9B7BFF"></stop><stop offset="1" stop-color="#FF7AD9"></stop></radialGradient><symbol id="ol-intel" viewBox="0 0 100 100" overflow="visible"><g style="transform-origin:50px 50px;transform-box:view-box;animation:oi-spin 24s linear infinite"><path d="M44.77 43.95 L45.62 41.18 L47 38.69 L48.81 36.5 L50.98 34.63 L53.48 33.1 L56.24 31.95 L59.23 31.19 L62.39 30.86 L65.66 30.96 L69 31.52 L72.34 32.55 L75.64 34.04 L78.83 36 L81.86 38.42 L84.67 41.27 L87.2 44.54 L89.41 48.2 L91.24 52.22 L92.65 56.56 L93.59 61.16 L93.33 62.13 L92.39 58.06 L91.08 54.26 L89.44 50.76 L87.52 47.6 L85.37 44.8 L83.03 42.36 L80.55 40.31 L77.98 38.64 L75.37 37.35 L72.76 36.43 L70.21 35.88 L67.74 35.68 L65.41 35.81 L63.25 36.24 L61.29 36.95 L59.55 37.92 L58.07 39.12 L56.86 40.52 L55.91 42.12 L55.23 43.95Z" fill="url(#ol-g12)" stroke="url(#ol-g12)" stroke-width="1" stroke-linejoin="round"></path><path d="M52.63 42.44 L55.45 41.8 L58.29 41.75 L61.09 42.22 L63.8 43.17 L66.37 44.57 L68.75 46.38 L70.9 48.59 L72.77 51.15 L74.32 54.04 L75.5 57.21 L76.28 60.62 L76.64 64.23 L76.54 67.97 L75.96 71.8 L74.89 75.66 L73.33 79.49 L71.26 83.23 L68.7 86.83 L65.65 90.21 L62.13 93.33 L61.16 93.59 L64.22 90.74 L66.85 87.7 L69.06 84.54 L70.84 81.3 L72.19 78.03 L73.13 74.79 L73.67 71.61 L73.83 68.55 L73.64 65.64 L73.13 62.93 L72.33 60.44 L71.27 58.21 L70 56.25 L68.54 54.59 L66.94 53.25 L65.24 52.23 L63.46 51.55 L61.64 51.2 L59.78 51.18 L57.86 51.5Z" fill="url(#ol-g12)" stroke="url(#ol-g12)" stroke-width="1" stroke-linejoin="round"></path><path d="M57.86 48.5 L59.83 50.62 L61.29 53.05 L62.29 55.71 L62.82 58.54 L62.89 61.46 L62.51 64.43 L61.67 67.4 L60.39 70.3 L58.66 73.08 L56.5 75.69 L53.94 78.07 L51 80.18 L47.71 81.97 L44.1 83.38 L40.23 84.39 L36.13 84.95 L31.85 85.03 L27.46 84.6 L23 83.66 L18.54 82.17 L17.83 81.46 L21.83 82.68 L25.77 83.45 L29.62 83.78 L33.31 83.69 L36.82 83.23 L40.1 82.42 L43.12 81.3 L45.85 79.91 L48.27 78.3 L50.37 76.5 L52.12 74.56 L53.53 72.53 L54.58 70.44 L55.29 68.35 L55.65 66.3 L55.68 64.31 L55.39 62.43 L54.78 60.68 L53.87 59.06 L52.63 57.56Z" fill="url(#ol-g12)" stroke="url(#ol-g12)" stroke-width="1" stroke-linejoin="round"></path><path d="M55.23 56.05 L54.38 58.82 L53 61.31 L51.19 63.5 L49.02 65.37 L46.52 66.9 L43.76 68.05 L40.77 68.81 L37.61 69.14 L34.34 69.04 L31 68.48 L27.66 67.45 L24.36 65.96 L21.17 64 L18.14 61.58 L15.33 58.73 L12.8 55.46 L10.59 51.8 L8.76 47.78 L7.35 43.44 L6.41 38.84 L6.67 37.87 L7.61 41.94 L8.92 45.74 L10.56 49.24 L12.48 52.4 L14.63 55.2 L16.97 57.64 L19.45 59.69 L22.02 61.36 L24.63 62.65 L27.24 63.57 L29.79 64.12 L32.26 64.32 L34.59 64.19 L36.75 63.76 L38.71 63.05 L40.45 62.08 L41.93 60.88 L43.14 59.48 L44.09 57.88 L44.77 56.05Z" fill="url(#ol-g12)" stroke="url(#ol-g12)" stroke-width="1" stroke-linejoin="round"></path><path d="M47.37 57.56 L44.55 58.2 L41.71 58.25 L38.91 57.78 L36.2 56.83 L33.63 55.43 L31.25 53.62 L29.1 51.41 L27.23 48.85 L25.68 45.96 L24.5 42.79 L23.72 39.38 L23.36 35.77 L23.46 32.03 L24.04 28.2 L25.11 24.34 L26.67 20.51 L28.74 16.77 L31.3 13.17 L34.35 9.79 L37.87 6.67 L38.84 6.41 L35.78 9.26 L33.15 12.3 L30.94 15.46 L29.16 18.7 L27.81 21.97 L26.87 25.21 L26.33 28.39 L26.17 31.45 L26.36 34.36 L26.87 37.07 L27.67 39.56 L28.73 41.79 L30 43.75 L31.46 45.41 L33.06 46.75 L34.76 47.77 L36.54 48.45 L38.36 48.8 L40.22 48.82 L42.14 48.5Z" fill="url(#ol-g12)" stroke="url(#ol-g12)" stroke-width="1" stroke-linejoin="round"></path><path d="M42.14 51.5 L40.17 49.38 L38.71 46.95 L37.71 44.29 L37.18 41.46 L37.11 38.54 L37.49 35.57 L38.33 32.6 L39.61 29.7 L41.34 26.92 L43.5 24.31 L46.06 21.93 L49 19.82 L52.29 18.03 L55.9 16.62 L59.77 15.61 L63.87 15.05 L68.15 14.97 L72.54 15.4 L77 16.34 L81.46 17.83 L82.17 18.54 L78.17 17.32 L74.23 16.55 L70.38 16.22 L66.69 16.31 L63.18 16.77 L59.9 17.58 L56.88 18.7 L54.15 20.09 L51.73 21.7 L49.63 23.5 L47.88 25.44 L46.47 27.47 L45.42 29.56 L44.71 31.65 L44.35 33.7 L44.32 35.69 L44.61 37.57 L45.22 39.32 L46.13 40.94 L47.37 42.44Z" fill="url(#ol-g12)" stroke="url(#ol-g12)" stroke-width="1" stroke-linejoin="round"></path></g><g style="transform-origin:50px 50px;transform-box:view-box;animation:oi-breathe 3.2s ease-in-out infinite"><path d="M50 50 L50 37 Q50.78 42.15 53.59 43.77Z" fill="rgb(248,247,253)" stroke="rgb(248,247,253)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L53.59 43.77 Q56.41 45.4 61.26 43.5Z" fill="rgb(240,236,250)" stroke="rgb(240,236,250)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L61.26 43.5 Q57.19 46.75 57.19 50Z" fill="rgb(230,225,246)" stroke="rgb(230,225,246)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L57.19 50 Q57.19 53.25 61.26 56.5Z" fill="rgb(222,215,244)" stroke="rgb(222,215,244)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L61.26 56.5 Q56.41 54.6 53.59 56.23Z" fill="rgb(218,210,242)" stroke="rgb(218,210,242)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L53.59 56.23 Q50.78 57.85 50 63Z" fill="rgb(219,211,242)" stroke="rgb(219,211,242)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L50 63 Q49.22 57.85 46.41 56.23Z" fill="rgb(225,218,244)" stroke="rgb(225,218,244)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L46.41 56.23 Q43.59 54.6 38.74 56.5Z" fill="rgb(233,229,247)" stroke="rgb(233,229,247)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L38.74 56.5 Q42.81 53.25 42.81 50Z" fill="rgb(243,240,251)" stroke="rgb(243,240,251)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L42.81 50 Q42.81 46.75 38.74 43.5Z" fill="rgb(251,250,253)" stroke="rgb(251,250,253)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L38.74 43.5 Q43.59 45.4 46.41 43.77Z" fill="rgb(255,255,255)" stroke="rgb(255,255,255)" stroke-width="0.3" stroke-linejoin="round"></path><path d="M50 50 L46.41 43.77 Q49.22 42.15 50 37Z" fill="rgb(254,254,255)" stroke="rgb(254,254,255)" stroke-width="0.3" stroke-linejoin="round"></path></g></symbol></defs></svg>
+<div data-screen-label="Donate" style="--bg:#0E0E16;--surface:#171722;--surface2:#1E1E2B;--surface3:#272736;--border:#262634;--border2:#34344A;--text:#F3F3F8;--muted:#A9A9BC;--text3:#77778E;--accent:#7D78F5;--accent-soft:#24224A;--accent-text:#A9A5FF;--green:#3DD68C;--green-soft:#12291F;--amber:#F5B544;--amber-soft:#2E2412;--support:#7FB2FF;--ai-soft:#231D40;--ai-ink:#C3B3FF;--ai-line:#3A2F6B;min-height:100vh;background:linear-gradient(rgba(11,10,20,.74),rgba(11,10,20,.74)),url('assets/bg/midnight-wide.jpg') center/cover fixed,#0B0B12;overflow-x:clip">
+
+  <header style="position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;padding:0 clamp(16px,4vw,48px);background:#0E0E16;border-bottom:1px solid var(--border)">
+    <a href="Orena Landing.dc.html" style="display:flex;align-items:center;gap:10px;color:var(--text);flex:none">
+      <span style="width:34px;height:34px;border-radius:10px;background:radial-gradient(circle at 30% 20%,#2B2158,#150F2E 72%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 100 100" style="display:block;overflow:visible"><use href="#ol-mark"></use></svg></span>
+      <span style="font-family:Fredoka,sans-serif;font-size:22px;font-weight:600;letter-spacing:-.01em">Orena</span>
+    </a>
+    <div style="flex:1"></div>
+    <a href="#where" style="font-size:14.5px;font-weight:500;color:var(--muted);display:{{ navLinkDisplay }}" style-hover="color:var(--text)">Kế hoạch</a>
+    <a href="#wall" style="font-size:14.5px;font-weight:500;color:var(--muted);display:{{ navLinkDisplay }}" style-hover="color:var(--text)">Lời nhắn</a>
+    <a href="Orena.dc.html" style="height:40px;padding:0 16px;border-radius:12px;border:1px solid var(--border2);color:var(--text);font-size:14.5px;font-weight:600;display:flex;align-items:center;flex:none" style-hover="background:var(--surface2)">Mở Orena</a>
+  </header>
+
+  <section id="top" style="max-width:1200px;margin:0 auto;padding:clamp(40px,8vh,88px) clamp(16px,4vw,48px) clamp(48px,8vh,88px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:clamp(32px,5vw,72px);align-items:start">
+
+    <div style="display:flex;flex-direction:column;gap:28px;padding-top:8px">
+      <div style="position:relative;width:76px;height:76px">
+        <span style="position:absolute;inset:0;border-radius:24px;border:1px solid var(--ai-line);animation:ring 2.8s ease-out infinite"></span>
+        <span style="position:absolute;inset:0;border-radius:24px;background:radial-gradient(circle at 30% 20%,#2B2158,#150F2E 72%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center"><svg width="52" height="52" viewBox="0 0 100 100" style="display:block;overflow:visible;animation:breathe 4s ease-in-out infinite"><use href="#ol-mark"></use></svg></span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div style="font-size:15px;font-weight:500;color:var(--muted)">Orena là dự án độc lập</div>
+        <h1 style="margin:0;font-size:clamp(40px,5.6vw,68px);line-height:1.04;font-weight:700;letter-spacing:-.035em;text-wrap:balance">Cùng Orena làm việc học <span style="font-family:Literata,Georgia,serif;font-style:italic;font-weight:500;color:var(--accent-text);letter-spacing:-.02em">tuyệt vời hơn</span> mỗi ngày.</h1>
+        <p style="margin:0;font-size:clamp(17px,1.4vw,19px);line-height:1.6;color:var(--muted);max-width:540px;text-wrap:pretty">Orena được xây bởi một nhóm nhỏ yêu ngôn ngữ. Sự ủng hộ của bạn giúp chúng tôi mang đến nhiều câu chuyện hơn, giọng đọc tự nhiên hơn, một Orena Intelligence hiểu bạn hơn và những ngôn ngữ mới để khám phá.</p>
+      </div>
+
+      <sc-if value="{{ showGoal }}" hint-placeholder-val="{{ true }}">
+        <div style="background:var(--surface);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:16px;max-width:540px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+            <span style="font-size:14px;font-weight:600;color:var(--muted)">Mục tiêu tiếp theo · Mở khoá tiếng Nhật</span>
+            <span style="font-size:14px;color:var(--text3)">còn 24 ngày</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+            <span style="font-size:clamp(30px,3.4vw,40px);font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums">{{ raisedLabel }}</span>
+            <span style="font-size:16px;color:var(--muted)">trên {{ goalLabel }}</span>
+          </div>
+          <div style="height:12px;border-radius:99px;background:var(--surface3);overflow:hidden">
+            <div style="height:100%;width:{{ goalPct }};border-radius:99px;background:linear-gradient(90deg,#7D78F5,#C3B3FF);transition:width .6s cubic-bezier(.2,.8,.2,1)"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14.5px;color:var(--muted)">
+            <span><strong style="color:var(--text);font-weight:600">{{ backersLabel }}</strong> người ủng hộ</span>
+            <span><strong style="color:var(--text);font-weight:600">{{ pctLabel }}</strong> mục tiêu</span>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div id="give" style="background:var(--surface);border-radius:28px;box-shadow:0 1px 2px rgba(0,0,0,.3),0 24px 64px -24px rgba(125,120,245,.28);padding:clamp(20px,2.6vw,30px);display:flex;flex-direction:column;gap:22px;position:sticky;top:88px">
+
+      <sc-if value="{{ stepForm }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:22px;animation:rise .35s ease">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface2)">
+            <sc-for list="{{ freqTabs }}" as="f" hint-placeholder-count="2"><button onClick="{{ f.onClick }}" style="height:42px;border:0;border-radius:11px;background:{{ f.bg }};color:{{ f.color }};font-size:15px;font-weight:600;box-shadow:{{ f.shadow }};transition:background .2s">{{ f.label }}</button></sc-for>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+              <sc-for list="{{ amounts }}" as="a" hint-placeholder-count="4"><button onClick="{{ a.onClick }}" style="height:60px;border-radius:16px;border:1.5px solid {{ a.border }};background:{{ a.bg }};color:var(--text);font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .15s" style-hover="border-color:var(--accent)">{{ a.label }}<span style="font-size:14px;font-weight:500;color:var(--muted)">{{ a.suffix }}</span></button></sc-for>
+            </div>
+            <label style="height:56px;border-radius:16px;border:1.5px solid {{ customBorder }};background:var(--surface2);display:flex;align-items:center;gap:10px;padding:0 16px">
+              <span style="font-size:14.5px;color:var(--muted);flex:none">Số khác</span>
+              <input value="{{ custom }}" onChange="{{ onCustom }}" onFocus="{{ onCustomFocus }}" inputmode="numeric" placeholder="Nhập số tiền" style="flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text);font-size:17px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums">
+              <span style="font-size:16px;color:var(--muted);flex:none">đ</span>
+            </label>
+          </div>
+
+          <div style="border-radius:18px;background:var(--ai-soft);box-shadow:inset 0 0 0 1px var(--ai-line);padding:16px 18px;display:flex;gap:14px;align-items:flex-start">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C3B3FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><path d="M9.94 14.06 4 20M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"></path></svg>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+              <div style="font-size:15.5px;line-height:1.45;color:var(--text);text-wrap:pretty">{{ impactMain }}</div>
+              <div style="font-size:13.5px;line-height:1.45;color:var(--ai-ink)">{{ impactSub }}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text3)">Phương thức</div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+              <sc-for list="{{ methods }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.onClick }}" style="min-height:52px;padding:8px 6px;border-radius:14px;border:1.5px solid {{ m.border }};background:{{ m.bg }};color:{{ m.color }};font-size:14px;font-weight:600;line-height:1.2;transition:all .15s" style-hover="border-color:var(--accent)">{{ m.label }}</button></sc-for>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <input value="{{ name }}" onChange="{{ onName }}" placeholder="Tên hiển thị (không bắt buộc)" style="height:50px;border-radius:14px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:15px;padding:0 16px;outline:0" style-focus="border-color:var(--accent)">
+            <textarea value="{{ msg }}" onChange="{{ onMsg }}" rows="2" placeholder="Gửi một lời nhắn tới đội Orena" style="border-radius:14px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:15px;line-height:1.5;padding:13px 16px;outline:0;resize:none" style-focus="border-color:var(--accent)"></textarea>
+            <button onClick="{{ toggleAnon }}" style="border:0;background:none;padding:4px 0;display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14.5px;text-align:left">
+              <span style="width:20px;height:20px;border-radius:6px;border:1.5px solid {{ anonBorder }};background:{{ anonBg }};display:flex;align-items:center;justify-content:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:{{ anonCheck }}"><path d="M20 6 9 17l-5-5"></path></svg></span>
+              Ủng hộ ẩn danh trên bức tường cảm ơn
+            </button>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <button onClick="{{ goPay }}" disabled="{{ cantGive }}" style="height:58px;border:0;border-radius:18px;background:var(--accent);color:#fff;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;opacity:{{ giveOpacity }};box-shadow:0 10px 30px -10px rgba(125,120,245,.7);transition:transform .15s" style-hover="transform:translateY(-1px)" style-active="transform:translateY(1px)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.4 2.9 4.5 6.6 4.5c2.1 0 3.6 1.1 4.4 2.5.8-1.4 2.3-2.5 4.4-2.5 3.7 0 5.7 3.9 4.2 7.2C19.5 16.4 12 21 12 21z"></path></svg>
+              {{ giveLabel }}
+            </button>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--text3);text-align:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+              Ủng hộ không phải điều kiện để dùng Orena.
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ stepPay }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:20px;animation:rise .35s ease">
+          <div style="display:flex;align-items:center;gap:10px">
+            <button onClick="{{ backToForm }}" aria-label="Quay lại" style="width:40px;height:40px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--text);display:flex;align-items:center;justify-content:center;flex:none" style-hover="background:var(--surface2)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+            <div style="display:flex;flex-direction:column;min-width:0">
+              <span style="font-size:13px;color:var(--muted)">{{ methodLabel }}</span>
+              <span style="font-size:19px;font-weight:600">{{ payTitle }}</span>
+            </div>
+          </div>
+
+          <sc-if value="{{ showQr }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px;border-radius:22px;background:var(--surface2)">
+              <div style="width:220px;height:220px;border-radius:18px;background:#fff;padding:12px">
+                <image-slot id="donate-qr" shape="rounded" radius="10" fit="contain" placeholder="Thả mã QR thanh toán vào đây"></image-slot>
+              </div>
+              <div style="font-size:14px;color:var(--muted);text-align:center;max-width:300px;text-wrap:pretty">{{ qrHint }}</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showBank }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;border-radius:18px;border:1px solid var(--border);overflow:hidden">
+              <sc-for list="{{ bankRows }}" as="r" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:{{ r.borderTop }}">
+                  <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+                    <span style="font-size:12.5px;color:var(--text3)">{{ r.k }}</span>
+                    <span style="font-size:15.5px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere">{{ r.v }}</span>
+                  </div>
+                  <button onClick="{{ r.onCopy }}" style="height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:{{ r.copyColor }};font-size:13px;font-weight:600;flex:none" style-hover="background:var(--surface2)">{{ r.copyLabel }}</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showCard }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <input placeholder="Số thẻ" inputmode="numeric" style="height:52px;border-radius:14px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:16px;padding:0 16px;outline:0;letter-spacing:.04em" style-focus="border-color:var(--accent)">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <input placeholder="MM / YY" style="height:52px;border-radius:14px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:16px;padding:0 16px;outline:0;min-width:0" style-focus="border-color:var(--accent)">
+                <input placeholder="CVC" style="height:52px;border-radius:14px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:16px;padding:0 16px;outline:0;min-width:0" style-focus="border-color:var(--accent)">
+              </div>
+              <input placeholder="Email nhận biên nhận" style="height:52px;border-radius:14px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:16px;padding:0 16px;outline:0" style-focus="border-color:var(--accent)">
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isMonthly }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13.5px;line-height:1.5;color:var(--muted);padding:12px 14px;border-radius:14px;background:var(--surface2)">{{ monthlyNote }}</div>
+          </sc-if>
+
+          <button onClick="{{ confirmPay }}" style="height:58px;border:0;border-radius:18px;background:var(--accent);color:#fff;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px" style-hover="filter:brightness(1.08)">{{ confirmLabel }}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ stepDone }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px;padding:20px 0 6px;animation:rise .4s ease">
+          <div style="position:relative;width:104px;height:104px">
+            <span style="position:absolute;inset:0;border-radius:32px;border:1px solid var(--ai-line);animation:ring 2.2s ease-out infinite"></span>
+            <span style="position:absolute;inset:0;border-radius:32px;background:radial-gradient(circle at 30% 20%,#2B2158,#150F2E 72%);display:flex;align-items:center;justify-content:center;animation:pop .6s cubic-bezier(.2,.9,.3,1.3)"><svg width="72" height="72" viewBox="0 0 100 100" style="overflow:visible"><use href="#ol-mark"></use></svg></span>
+          </div>
+          <h2 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.02em">{{ thanksTitle }}</h2>
+          <p style="margin:0;font-size:16px;line-height:1.6;color:var(--muted);max-width:360px;text-wrap:pretty">{{ thanksBody }}</p>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px 12px 12px;border-radius:16px;background:var(--amber-soft);box-shadow:inset 0 0 0 1px rgba(245,181,68,.25)">
+            <span style="width:40px;height:40px;border-radius:12px;background:#3D2F14;display:flex;align-items:center;justify-content:center;flex:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5B544" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10M10 20c5.5-2.5.8-6.4 3-10"></path><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"></path><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"></path></svg></span>
+            <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+              <span style="font-size:15px;font-weight:600;color:#F7D08A">Người gieo hạt</span>
+              <span style="font-size:13px;color:var(--muted)">Huy hiệu đã thêm vào hồ sơ</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%">
+            <button onClick="{{ share }}" style="flex:1 1 150px;height:52px;border-radius:16px;border:1px solid var(--border2);background:transparent;color:var(--text);font-size:15.5px;font-weight:600" style-hover="background:var(--surface2)">{{ shareLabel }}</button>
+            <a href="Orena.dc.html" style="flex:1 1 150px;height:52px;border-radius:16px;background:var(--accent);color:#fff;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center" style-hover="color:#fff;filter:brightness(1.08)">Tiếp tục học</a>
+          </div>
+          <button onClick="{{ again }}" style="border:0;background:none;color:var(--muted);font-size:14px;padding:4px" style-hover="color:var(--text)">Ủng hộ thêm</button>
+        </div>
+      </sc-if>
+    </div>
+  </section>
+
+  <section id="where" data-screen-label="Allocation" style="max-width:1200px;margin:0 auto;padding:clamp(40px,7vh,72px) clamp(16px,4vw,48px)">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:clamp(28px,4vw,64px);align-items:end">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <h2 style="margin:0;font-size:clamp(30px,3.6vw,44px);line-height:1.1;font-weight:700;letter-spacing:-.03em;text-wrap:balance">Sự ủng hộ của bạn sẽ trở thành</h2>
+        <p style="margin:0;font-size:17px;line-height:1.6;color:var(--muted);max-width:460px;text-wrap:pretty">Những trải nghiệm đội Orena đang xây tiếp. Càng nhiều người đồng hành, chúng đến tay bạn càng sớm.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 24px">
+          <sc-for list="{{ alloc }}" as="al" hint-placeholder-count="4">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <span style="width:12px;height:12px;border-radius:4px;background:{{ al.color }};margin-top:5px;flex:none"></span>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:15.5px;font-weight:600">{{ al.label }}</span>
+                <span style="font-size:14px;line-height:1.45;color:var(--muted)">{{ al.desc }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <sc-if value="{{ showWall }}" hint-placeholder-val="{{ true }}">
+    <section id="wall" data-screen-label="Wall" style="max-width:1200px;margin:0 auto;padding:clamp(40px,7vh,72px) clamp(16px,4vw,48px)">
+      <div style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:28px">
+        <h2 style="margin:0;font-size:clamp(30px,3.6vw,44px);line-height:1.1;font-weight:700;letter-spacing:-.03em">Lời nhắn từ người ủng hộ</h2>
+        <a href="#give" style="font-size:15px;font-weight:600">Để lại lời nhắn của bạn</a>
+      </div>
+      <div style="columns:3 300px;column-gap:16px">
+        <sc-for list="{{ wall }}" as="w" hint-placeholder-count="6">
+          <div style="break-inside:avoid;margin-bottom:16px;background:var(--surface);border-radius:22px;padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:{{ w.ring }};animation:{{ w.anim }}">
+            <p style="margin:0;font-family:Literata,Georgia,serif;font-size:17px;line-height:1.55;color:var(--text);text-wrap:pretty">{{ w.msg }}</p>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:34px;height:34px;border-radius:99px;background:{{ w.avBg }};color:{{ w.avInk }};font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none">{{ w.initial }}</span>
+              <div style="display:flex;flex-direction:column;min-width:0;flex:1">
+                <span style="font-size:14.5px;font-weight:600">{{ w.name }}</span>
+                <span style="font-size:13px;color:var(--text3)">{{ w.meta }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </sc-if>
+
+  <section data-screen-label="FAQ" style="max-width:820px;margin:0 auto;padding:clamp(40px,7vh,72px) clamp(16px,4vw,48px) clamp(56px,10vh,110px)">
+    <h2 style="margin:0 0 24px;font-size:clamp(28px,3.2vw,38px);font-weight:700;letter-spacing:-.03em">Câu hỏi thường gặp</h2>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{ faqs }}" as="q" hint-placeholder-count="4">
+        <div style="background:var(--surface);border-radius:18px;overflow:hidden">
+          <button onClick="{{ q.onClick }}" style="width:100%;border:0;background:none;color:var(--text);padding:18px 20px;display:flex;align-items:center;gap:16px;text-align:left;font-size:16.5px;font-weight:600">
+            <span style="flex:1">{{ q.q }}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;color:var(--muted);transform:{{ q.rot }};transition:transform .2s"><path d="m6 9 6 6 6-6"></path></svg>
+          </button>
+          <sc-if value="{{ q.open }}" hint-placeholder-val="{{ false }}"><p style="margin:0;padding:0 20px 20px;font-size:15.5px;line-height:1.6;color:var(--muted);text-wrap:pretty;animation:rise .25s ease">{{ q.a }}</p></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <footer style="border-top:1px solid var(--border);padding:28px clamp(16px,4vw,48px);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--text3)">
+    <span>© 2026 Orena</span>
+    <div style="display:flex;gap:20px">
+      <a href="Orena Landing.dc.html" style="color:var(--muted)">Giới thiệu</a>
+      <a href="Orena.dc.html" style="color:var(--muted)">Ứng dụng</a>
+      <a href="Orena Privacy.dc.html" style="color:var(--muted)">Quyền riêng tư</a>
+      <a href="Orena Terms.dc.html" style="color:var(--muted)">Điều khoản</a>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultFrequency&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;once&quot;,&quot;monthly&quot;],&quot;default&quot;:&quot;once&quot;,&quot;tsType&quot;:&quot;'once'|'monthly'&quot;},&quot;showGoal&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showWall&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const GOAL = 30000000, RAISED = 18420000, BACKERS = 412;
+const PRESETS = { once: [50000, 100000, 200000, 500000], monthly: [30000, 50000, 100000, 200000] };
+const vnd = n => Math.round(n).toLocaleString('vi-VN') + 'đ';
+const short = n => n >= 1000000 ? (n / 1000000).toLocaleString('vi-VN') + 'tr' : (n / 1000) + 'k';
+const METHODS = [['momo', 'MoMo'], ['bank', 'Chuyển khoản'], ['card', 'Thẻ quốc tế']];
+const AV = [['#24224A', '#C3B3FF'], ['#12291F', '#3DD68C'], ['#2E2412', '#F5B544'], ['#1A2740', '#7FB2FF']];
+const SEED = [
+  { name: 'Minh Anh', amount: 100000, monthly: true, when: '2 giờ trước', msg: 'Nhờ phần đọc truyện song ngữ mà mình đọc hết cuốn sách tiếng Anh đầu tiên. Cảm ơn đội Orena.' },
+  { name: 'Ẩn danh', amount: 200000, when: 'hôm qua', msg: 'Luyện nói với Orena mỗi tối trước khi ngủ. Phát âm của mình khác hẳn sau hai tháng.' },
+  { name: 'Hoàng Long', amount: 50000, when: 'hôm qua', msg: 'Sinh viên nên chỉ ủng hộ được chút ít. Mong Orena ngày càng hay hơn.' },
+  { name: 'Thu Trang', amount: 500000, when: '3 ngày trước', msg: 'Học tiếng Trung với pinyin hiện ngay trên chữ thật sự dễ chịu. Rất đáng.' },
+  { name: 'Quốc Bảo', amount: 50000, monthly: true, when: '4 ngày trước', msg: 'Phần giải thích ngữ pháp rõ hơn mọi giáo trình mình từng dùng.' },
+  { name: 'Ẩn danh', amount: 100000, when: '1 tuần trước', msg: 'Đang chờ tiếng Nhật từng ngày. Cố lên đội Orena!' }
+];
+const ALLOC = [
+  ['Orena Intelligence thông minh hơn', 1, '#7D78F5', 'Giải thích sát trình độ, nhớ điều bạn hay nhầm'],
+  ['Giọng đọc tự nhiên', 1, '#7FB2FF', 'Nhiều giọng, nhiều vùng miền cho bài nghe và truyện'],
+  ['Thư viện lớn hơn', 1, '#3DD68C', 'Thêm sách, truyện ngắn và video theo từng cấp độ'],
+  ['Ngôn ngữ mới', 1, '#F5B544', 'Tiếng Nhật trước tiên, sau đó là tiếng Hàn']
+];
+const FAQS = [
+  ['Ủng hộ có bắt buộc không?', 'Không. Bạn vẫn học với Orena như bình thường. Ủng hộ là cách bạn giúp đội Orena đưa những trải nghiệm mới đến sớm hơn.'],
+  ['Ủng hộ hàng tháng có huỷ được không?', 'Có. Bạn huỷ bất cứ lúc nào trong Hồ sơ → Gói và sử dụng. Không có phí huỷ.'],
+  ['Tôi có nhận được gì khi ủng hộ?', 'Huy hiệu Người gieo hạt trong hồ sơ và tên của bạn trên bức tường cảm ơn nếu bạn muốn. Mọi người học vẫn dùng cùng một Orena.'],
+  ['Tôi có thể xin biên nhận không?', 'Thanh toán bằng thẻ sẽ gửi biên nhận qua email. Với MoMo và chuyển khoản, gửi ảnh giao dịch tới hotro@orena.app để nhận biên nhận.']
+];
+
+class Component extends DCLogic {
+  state = { freq: null, amount: null, custom: '', method: 'momo', step: 'form', name: '', msg: '', anon: false, shown: 0, extra: 0, extraBackers: 0, wall: SEED, faq: 0, copied: null, shared: false, fresh: false, w: 1200 };
+
+  componentDidMount() {
+    const t0 = performance.now();
+    const tick = t => { const p = Math.min(1, (t - t0) / 1400); this.setState({ shown: RAISED * (1 - Math.pow(1 - p, 3)) }); if (p < 1) this.raf = requestAnimationFrame(tick); };
+    this.raf = requestAnimationFrame(tick);
+    this.onResize = () => this.setState({ w: window.innerWidth });
+    this.onResize(); window.addEventListener('resize', this.onResize);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); window.removeEventListener('resize', this.onResize); clearTimeout(this.ct); }
+
+  freq() { return this.state.freq ?? this.props.defaultFrequency ?? 'once'; }
+  amt() { const s = this.state; if (s.custom) return parseInt(s.custom.replace(/\D/g, ''), 10) || 0; return s.amount ?? PRESETS[this.freq()][1]; }
+  copy(key, val) { try { navigator.clipboard.writeText(val); } catch (e) {} this.setState({ copied: key }); clearTimeout(this.ct); this.ct = setTimeout(() => this.setState({ copied: null }), 1600); }
+
+  renderVals() {
+    const s = this.state, freq = this.freq(), monthly = freq === 'monthly', a = this.amt();
+    const per = monthly ? ' mỗi tháng' : '';
+    const raised = s.shown + s.extra, pct = Math.min(100, raised / GOAL * 100);
+    const learners = Math.max(1, Math.floor(a / 20000));
+    const displayName = s.anon || !s.name.trim() ? 'Ẩn danh' : s.name.trim();
+    const mLabel = METHODS.find(m => m[0] === s.method)[1];
+    const ref = 'ORENA ' + (s.anon || !s.name.trim() ? 'UNGHO' : s.name.trim().toUpperCase());
+    const bank = [['Ngân hàng', 'Vietcombank'], ['Số tài khoản', '0123 456 789'], ['Chủ tài khoản', 'CONG TY ORENA'], ['Nội dung', ref]];
+    return {
+      navLinkDisplay: s.w < 640 ? 'none' : 'block',
+      showGoal: this.props.showGoal ?? true, showWall: this.props.showWall ?? true,
+      raisedLabel: vnd(raised), goalLabel: vnd(GOAL), goalPct: pct + '%', pctLabel: Math.round(pct) + '%',
+      backersLabel: (BACKERS + s.extraBackers).toLocaleString('vi-VN'),
+      stepForm: s.step === 'form', stepPay: s.step === 'pay', stepDone: s.step === 'done',
+      freqTabs: [['once', 'Một lần'], ['monthly', 'Hàng tháng']].map(([k, label]) => ({ label, bg: freq === k ? 'var(--surface3)' : 'transparent', color: freq === k ? 'var(--text)' : 'var(--muted)', shadow: freq === k ? '0 1px 2px rgba(0,0,0,.35)' : 'none', onClick: () => this.setState({ freq: k, amount: null, custom: '' }) })),
+      amounts: PRESETS[freq].map(v => { const on = !s.custom && v === a; return { label: short(v), suffix: monthly ? '/th' : '', border: on ? 'var(--accent)' : 'var(--border2)', bg: on ? 'var(--accent-soft)' : 'transparent', onClick: () => this.setState({ amount: v, custom: '' }) }; }),
+      custom: s.custom, customBorder: s.custom ? 'var(--accent)' : 'var(--border2)',
+      onCustom: e => { const d = e.target.value.replace(/\D/g, '').slice(0, 9); this.setState({ custom: d ? parseInt(d, 10).toLocaleString('vi-VN') : '' }); },
+      onCustomFocus: () => {},
+      impactMain: a <= 0 ? 'Nhập số tiền để xem bạn góp phần vào điều gì.' : a < 100000 ? 'Góp thêm những câu chuyện mới vào thư viện đọc của Orena.' : a < 200000 ? 'Giúp Orena có thêm giọng đọc tự nhiên cho bài nghe và truyện.' : a < 500000 ? 'Đưa tiếng Nhật đến với người học Orena sớm hơn.' : 'Đồng hành cùng đội Orena xây những trải nghiệm học lớn tiếp theo.',
+      impactSub: a <= 0 ? ' ' : monthly ? 'Ủng hộ đều đặn giúp đội Orena lên kế hoạch dài hơi.' : 'Mỗi lời nhắn đều được cả đội đọc.',
+      methods: METHODS.map(([k, label]) => ({ label, border: s.method === k ? 'var(--accent)' : 'var(--border2)', bg: s.method === k ? 'var(--accent-soft)' : 'transparent', color: s.method === k ? 'var(--text)' : 'var(--muted)', onClick: () => this.setState({ method: k }) })),
+      name: s.name, msg: s.msg,
+      onName: e => this.setState({ name: e.target.value.slice(0, 40) }), onMsg: e => this.setState({ msg: e.target.value.slice(0, 200) }),
+      toggleAnon: () => this.setState({ anon: !s.anon }),
+      anonBorder: s.anon ? 'var(--accent)' : 'var(--border2)', anonBg: s.anon ? 'var(--accent)' : 'transparent', anonCheck: s.anon ? 1 : 0,
+      cantGive: a < 10000, giveOpacity: a < 10000 ? .45 : 1,
+      giveLabel: a > 0 ? `Ủng hộ ${vnd(a)}${per}` : 'Ủng hộ Orena',
+      goPay: () => a >= 10000 && this.setState({ step: 'pay' }),
+      backToForm: () => this.setState({ step: 'form' }),
+      methodLabel: mLabel, payTitle: s.method === 'card' ? `Thanh toán ${vnd(a)}${per}` : `Quét mã để chuyển ${vnd(a)}`,
+      showQr: s.method !== 'card', showBank: s.method === 'bank', showCard: s.method === 'card',
+      qrHint: s.method === 'momo' ? 'Mở MoMo, chọn Quét mã. Số tiền đã được điền sẵn.' : 'Quét bằng ứng dụng ngân hàng bất kỳ hỗ trợ VietQR, hoặc chuyển theo thông tin bên dưới.',
+      bankRows: bank.map(([k, v], i) => ({ k, v, borderTop: i ? '1px solid var(--border)' : '0', copyLabel: s.copied === k ? 'Đã chép' : 'Sao chép', copyColor: s.copied === k ? 'var(--green)' : 'var(--text)', onCopy: () => this.copy(k, v) })),
+      isMonthly: monthly,
+      monthlyNote: s.method === 'card' ? 'Thẻ sẽ được trừ tự động vào ngày này mỗi tháng. Huỷ bất cứ lúc nào trong Hồ sơ.' : 'Với ' + mLabel + ', chúng tôi sẽ gửi nhắc nhở kèm mã QR vào đầu mỗi tháng.',
+      confirmLabel: s.method === 'card' ? `Thanh toán ${vnd(a)}` : 'Tôi đã chuyển khoản',
+      confirmPay: () => {
+        const entry = { name: displayName, amount: a, monthly, when: 'vừa xong', msg: s.msg.trim() || 'Chúc Orena đi thật xa.', fresh: true };
+        this.setState({ step: 'done', extra: s.extra + a, extraBackers: s.extraBackers + 1, wall: [entry, ...s.wall.map(w => ({ ...w, fresh: false }))], shared: false });
+      },
+      thanksTitle: displayName === 'Ẩn danh' ? 'Cảm ơn bạn!' : `Cảm ơn ${displayName}!`,
+      thanksBody: `Khoản ủng hộ ${vnd(a)}${per} đã được ghi nhận. Cảm ơn bạn đã cùng xây một Orena tuyệt vời hơn.`,
+      shareLabel: s.shared ? 'Đã sao chép liên kết' : 'Chia sẻ trang này',
+      share: () => { try { navigator.clipboard.writeText(location.href); } catch (e) {} this.setState({ shared: true }); },
+      again: () => this.setState({ step: 'form', msg: '', custom: '', amount: null }),
+      alloc: ALLOC.map(([label, p, color, desc]) => ({ label, flex: p, color, desc, amount: vnd(p * 1000) })),
+      wall: s.wall.map((w, i) => { const [bg, ink] = AV[(w.name.charCodeAt(0) + i) % AV.length]; return { msg: w.msg, name: w.name, initial: w.name === 'Ẩn danh' ? '?' : w.name.trim()[0].toUpperCase(), meta: `${vnd(w.amount)}${w.monthly ? '/tháng' : ''} · ${w.when}`, avBg: bg, avInk: ink, ring: w.fresh ? '0 0 0 1.5px #7D78F5' : 'none', anim: w.fresh ? 'pop .5s cubic-bezier(.2,.9,.3,1.3)' : 'none' }; }),
+      faqs: FAQS.map(([q, ans], i) => ({ q, a: ans, open: s.faq === i, rot: s.faq === i ? 'rotate(180deg)' : 'none', onClick: () => this.setState({ faq: s.faq === i ? -1 : i }) }))
+    };
+  }
+}
+</script>
+</body>
+</html>
