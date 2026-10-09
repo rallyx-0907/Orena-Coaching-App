@@ -16,9 +16,9 @@ const { ROUTES, PRIMARY, entryRoute, match, href, byId } = await import('../stat
 const focusList = JSON.parse(script.match(/b\.dataset\.focus=(\[[^\]]+\])\.includes/)[1]);
 // The design's "grammar" (one fixed concept) and "gconcept" (any concept) are one screen here.
 const ALIASES = { grammar: 'gconcept' };
-/* Frames the 2026-10-08 pin draws whose screens arrive in their own PRs (split of #108): Plan & usage and Pricing
-   (plans PR), Feedback (feedback PR). Named here, each with the PR that builds it; remove an entry when it lands. */
-const PINNED_NOT_YET_BUILT = { feedback: 'Feedback', billing: 'Billing', pricing: 'Pricing' };
+/* Frames the 2026-10-08 pin draws whose screens arrive in their own PRs (split of #108): Feedback (feedback PR).
+   Plan & usage, Billing and Pricing are built here (plans PR). Remove an entry when its screen lands. */
+const PINNED_NOT_YET_BUILT = { feedback: 'Feedback' };
 const designFocus = new Set(focusList.filter((key) => !(key in PINNED_NOT_YET_BUILT)).map((key) => ALIASES[key] || key));
 // Onboarding (bare) comes from Onboarding.dc.html, not from Orena.dc.html's focus list.
 const ourFocus = new Set(ROUTES.filter((route) => route.focus && !route.bare).map((route) => route.design));
@@ -39,7 +39,7 @@ const ROUTE_OF_FLAG = {
   FreeTalk: 'freetalk', Conv: 'conv', Situation: 'situation', Retell: 'retell', React: 'react', Timed: 'timed', Transfer: 'transfer',
   Feed: 'feed', Rewrite: 'rewrite', TimedWr: 'timedwr', RTransfer: 'rtransfer', RComplete: 'rcomplete', Attempts: 'attempts',
   SpSummary: 'spsummary', TimedReact: 'timedreact', GrammarLib: 'grammarlib', Respond: 'respond', Discussion: 'discussion',
-  Mock: 'mock', Sound: 'sound', ErrFix: 'errfix', Coming: 'coming',
+  Mock: 'mock', Sound: 'sound', ErrFix: 'errfix', Coming: 'coming', Billing: 'billing', Pricing: 'pricing',
 };
 const designKeys = new Set(ROUTES.map((route) => route.design));
 assert.ok(

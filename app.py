@@ -174,6 +174,7 @@ from writing_coach.ai.platform import active_ai_label, active_ai_status, admin_a
 from writing_coach.text_discussion import install_text_discussion
 from writing_coach.ai.control_plane import AIControlPlane
 from writing_coach.product.service import configure_product_repository
+from writing_coach.product.catalog import configure_plan_store
 from writing_coach.persistence.runtime import build_runtime
 from writing_coach.persistence.vocabulary_repository import VocabularyContentUnavailable
 from writing_coach.persistence.learning_repository import (
@@ -468,6 +469,8 @@ from writing_coach.ai import account_costs as _account_costs  # noqa: E402
 
 _account_costs.install(_persistence_runtime.platform_repository)
 configure_product_repository(_persistence_runtime.product_repository)
+# D-153: the administrator's plan prices and limits live in platform_settings and apply from when they are saved.
+configure_plan_store(_persistence_runtime.platform_repository)
 
 # PostgreSQL is the application runtime. In auth-disabled local development the
 # request scope still uses the stable user key "legacy"; seed that scope once so

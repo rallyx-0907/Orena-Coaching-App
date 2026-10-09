@@ -145,31 +145,6 @@
   pointer-events: none;
 }
 
-/* Bar (measured: 140px fixed width, 6px track, 4px gap to the labels). No text sits on the accent
-   fill, so this keeps the frame's own `--accent` (progressRing's default fill is the same token
-   for the same reason - D-093 only forbids white ink over a solid `--accent`). */
-.s-settings-bar {
-  flex: none;
-  width: 140px;
-}
-.s-settings-bar__labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: var(--muted);
-}
-.s-settings-bar__track {
-  height: 6px;
-  border-radius: 99px;
-  background: var(--surface2);
-  margin-top: 4px;
-}
-.s-settings-bar__fill {
-  height: 100%;
-  border-radius: 99px;
-  background: var(--accent);
-}
-
 /* Action (measured: padding 10px 14px, radius 10px). */
 .s-settings-action {
   flex: none;

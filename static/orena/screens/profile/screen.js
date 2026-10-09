@@ -153,24 +153,21 @@ const ACTION_LABEL = (id) => ({
   settings: shellCopy('settings'),
   history: t('actionHistory'),
   progress: shellCopy('progress'),
-  plan: t('actionPlanPrivacy'),
+  plan: t('actionPlan'),
+  privacy: t('actionPrivacy'),
   signout: t('actionSignOut'),
 }[id]);
 
-/* The design's own fixed sub-label per row (orena-script.js `profileActions`, read live - the
-   static export truncated before reaching this list). Four are plain fixed copy describing what
-   the destination holds, not learner data. "Plan & privacy" is the one row whose sub is part real
-   (the plan name, already resolved in model.js) and part the same fixed description - shown
-   without the plan segment when the plan read has not resolved, never a placeholder plan name. */
+/* The design's own fixed sub-label per row (orena-script.js `profileActions`): plain fixed copy
+   describing what the destination holds, not learner data. */
 function actionSub(action) {
-  if (action.id === 'plan') {
-    return action.sub ? t('actionPlanSubKnown', { plan: action.sub }) : t('actionPlanSubUnknown');
-  }
   return {
     admin: t('actionAdminSub'),
     settings: t('actionSettingsSub'),
     history: t('actionHistorySub'),
     progress: t('actionProgressSub'),
+    plan: t('actionPlanSub'),
+    privacy: t('actionPrivacySub'),
   }[action.id] || '';
 }
 
@@ -180,7 +177,9 @@ function actionHref(id, ctx) {
     settings: ctx.href('settings'),
     history: ctx.href('progress', {}, { tab: 'history' }),
     progress: ctx.href('progress'),
-    plan: ctx.href('settings', {}, { tab: 'plan' }),
+    plan: ctx.href('billing'),
+    // Settings' Plan & privacy tab holds the microphone and learner-audio rows (no separate Privacy tab yet).
+    privacy: ctx.href('settings', {}, { tab: 'privacy' }),
   }[id];
 }
 
@@ -221,7 +220,7 @@ export default async function profile(element, ctx) {
   if (!ctx.isCurrent()) return undefined;
 
   const model = buildProfileModel({ context, vocabulary, commerce });
-  const actions = profileActions({ isAdmin: model.isAdmin, planName: model.planKnown ? planName({ id: model.planId, name: model.planName }) : '' });
+  const actions = profileActions({ isAdmin: model.isAdmin });
 
   mount(
     element,

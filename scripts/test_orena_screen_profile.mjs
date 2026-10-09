@@ -89,16 +89,15 @@ const { dueTileValue, actionSub, streakDaysTileValue, heroMarkup, identityMarkup
 // 6. profileActions: Platform admin appears only for an admin, first, in the design's own order;
 // a non-admin never sees the row at all (not disabled, not hidden - absent).
 {
-  const admin = profileActions({ isAdmin: true, planName: 'Plus' });
-  assert.deepEqual(admin.map((a) => a.id), ['admin', 'settings', 'history', 'progress', 'plan', 'signout']);
+  const admin = profileActions({ isAdmin: true });
+  assert.deepEqual(admin.map((a) => a.id), ['admin', 'settings', 'history', 'progress', 'plan', 'privacy', 'signout']);
   assert.equal(admin[0].kind, 'nav', 'Platform admin opens the Admin inside this UI (D-101 E), not the old console');
   assert.equal('href' in admin[0], false, 'the row names no address of its own: the screen resolves it from the router');
-  assert.equal(admin.find((a) => a.id === 'plan').sub, 'Plus');
+  assert.equal('sub' in admin.find((a) => a.id === 'plan'), false, 'the row carries no plan name: its sub is fixed copy (2026-10-09 export)');
 
-  const learner = profileActions({ isAdmin: false, planName: '' });
-  assert.deepEqual(learner.map((a) => a.id), ['settings', 'history', 'progress', 'plan', 'signout']);
+  const learner = profileActions({ isAdmin: false });
+  assert.deepEqual(learner.map((a) => a.id), ['settings', 'history', 'progress', 'plan', 'privacy', 'signout']);
   assert.equal(learner.some((a) => a.id === 'admin'), false, 'a non-admin never gets the admin row');
-  assert.equal(learner.find((a) => a.id === 'plan').sub, '', 'no plan read yet - the row keeps its place with no sub, never an invented plan name');
   assert.equal(learner.find((a) => a.id === 'signout').kind, 'signout');
 }
 
@@ -119,8 +118,8 @@ const { dueTileValue, actionSub, streakDaysTileValue, heroMarkup, identityMarkup
   assert.equal(actionSub({ id: 'settings' }), 'languages, learning, review, notifications');
   assert.equal(actionSub({ id: 'history' }), 'everything recorded, by day');
   assert.equal(actionSub({ id: 'progress' }), 'skills, evidence, rank');
-  assert.equal(actionSub({ id: 'plan', sub: 'Plus' }), 'Plus · microphone · learner audio');
-  assert.equal(actionSub({ id: 'plan', sub: '' }), 'microphone · learner audio');
+  assert.equal(actionSub({ id: 'plan' }), 'plan, limits, invoices, pricing');
+  assert.equal(actionSub({ id: 'privacy' }), 'microphone · learner audio');
   assert.equal(actionSub({ id: 'signout' }), '');
 }
 
