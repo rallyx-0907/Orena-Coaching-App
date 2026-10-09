@@ -189,9 +189,10 @@
   transition: background 0.15s;
 }
 .s-review-btn--secondary {
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
+  box-shadow: var(--edge-light);
 }
 .s-review-btn--primary {
   flex: 1;

@@ -269,6 +269,10 @@ const live = {
   routeTests: new Map([['learner_dictionary', { state: 'ok', latency: 700 }]]),
 };
 const draft = shared.routeDraft(capabilities[0], providers);
+const usageReport = { by_feature: [
+  { capability: 'writing_evaluator', provider: 'openai', model: 'gpt-x', calls: 5, failures: 1, priced_calls: 4, unpriced_calls: 0, usd: 1.5, prompt_tokens: 3000, completion_tokens: 1000, audio_seconds: 0 },
+  { capability: 'speech_asr', provider: 'groq', model: 'whisper-x', calls: 2, failures: 0, priced_calls: 2, unpriced_calls: 0, usd: 0.02, prompt_tokens: 0, completion_tokens: 0, audio_seconds: 120 },
+], by_day: [] };
 for (const ui of ['en', 'vi', 'zh']) {
   copyIndex.setLanguages({ ui, support: 'en' });
   const common = { state: live, t, ui, href, now: Date.now() };
@@ -276,6 +280,9 @@ for (const ui of ['en', 'vi', 'zh']) {
     pages.listPage({ ...common, view: { tab: 'prov', query: '' } }),
     pages.listPage({ ...common, view: { tab: 'route', query: '' } }),
     pages.listPage({ ...common, view: { tab: 'prov', query: 'zzz-nothing' } }),
+    pages.listPage({ ...common, view: { tab: 'tok', query: '', usage: { days: 7, report: usageReport, failed: false } } }),
+    pages.listPage({ ...common, view: { tab: 'tok', query: '', usage: { days: 1, report: { by_feature: [], by_day: [] }, failed: false } } }),
+    pages.listPage({ ...common, view: { tab: 'tok', query: '', usage: { days: 30, report: null, failed: true } } }),
     pages.providerPage({ ...common, view: { id: 'openai' } }),
     pages.providerPage({ ...common, view: { id: 'groq' } }),
     pages.providerPage({ ...common, view: { id: 'gemini' } }),
@@ -300,17 +307,24 @@ for (const ui of ['en', 'vi', 'zh']) {
   assert.ok(routeTab.includes(`a-opstatus__dot" aria-hidden="true"></span>${packs[ui].runtimeLegacyStatus}`), `${ui}: and it is a status line, not a banner`);
   const liveConfig = { ...live, config: { ...configFixture, learner_runtime: { mode: 'capability' }, policy: { learner_runtime_uses_capability_config: true } } };
   assert.ok(!String(pages.listPage({ ...common, state: liveConfig, view: { tab: 'route', query: '' } }).markup).includes('a-opstatus'), `${ui}: it disappears once learners consume the configured route`);
+  /* Token usage: only what the ledger answers - no budget, no per-day chart, nothing estimated. */
+  const tokenTab = String(drawn[3].markup);
+  assert.ok(tokenTab.includes(packs[ui].tabTokens) && tokenTab.includes('data-tab="tok"'), `${ui}: the Token usage tab is drawn`);
+  assert.ok(tokenTab.includes('a-bar__fill') && tokenTab.includes('a-metric__value'), `${ui}: metrics and capability bars come from the report`);
+  assert.ok(tokenTab.includes('data-a="tk-period"'), `${ui}: the period is chosen in the tab`);
+  assert.doesNotMatch(tokenTab, /of budget|a-banner/, `${ui}: no budget or alert the backend cannot answer`);
+  assert.ok(String(drawn[4].markup).includes('a-state'), `${ui}: an empty ledger says so`);
   /* Listing: the provider rows say what the control plane knows, no more. */
   const list = String(drawn[0].markup);
   assert.ok(list.includes('OpenAI') && list.includes('Google Gemini'));
   assert.ok(list.includes('data-go="#/admin/ai/provider/openai"'), 'a provider row opens its detail');
   assert.doesNotMatch(list, /P95|updated .* ago/, 'no figure the control plane cannot answer');
   /* The key form is write-only: the stored key is not in the field, and a stored provider says so. */
-  const keyForm = String(drawn[6].markup);
+  const keyForm = String(drawn[9].markup);
   assert.match(keyForm, /type="password"[^>]*value=""/, 'the key field never carries a stored key');
   assert.doesNotMatch(keyForm, /value="sk-/);
   /* The remove dialog names the consequence and arms only on the typed name. */
-  assert.ok(String(drawn[10].markup).includes('data-a="dialog-confirm" disabled'), 'removal is armed by typing the provider name');
+  assert.ok(String(drawn[13].markup).includes('data-a="dialog-confirm" disabled'), 'removal is armed by typing the provider name');
 }
 copyIndex.setLanguages({ ui: 'en', support: 'en' });
 const removal = pages.removeDialog({ state: live, providerId: 'openai', typed: 'OpenAI', t });

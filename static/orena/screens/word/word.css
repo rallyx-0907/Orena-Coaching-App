@@ -197,13 +197,14 @@
   width: 32px;
   height: 32px;
   border-radius: 999px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--edge-light);
 }
 .s-word-clip__body {
   flex: 1;
@@ -222,12 +223,13 @@
 .s-word-clip__open {
   padding: 8px 12px;
   border-radius: 10px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 12px;
   font-weight: 600;
   flex: none;
+  box-shadow: var(--edge-light);
 }
 
 /* Deep Word */
@@ -390,9 +392,10 @@
   color: var(--accent-text);
 }
 .s-word-action--plain {
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
+  box-shadow: var(--edge-light);
 }
 .s-word-action--plain:hover {
   background: var(--surface2);

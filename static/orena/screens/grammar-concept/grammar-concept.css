@@ -53,13 +53,14 @@
   height: 44px;
   padding: 0 16px;
   border-radius: 12px;
-  border: 1px solid var(--accent);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--accent);
   font-size: 14px;
   font-weight: 600;
   flex: none;
   gap: 8px;
+  box-shadow: var(--edge-light);
 }
 .s-gc__ask:hover {
   background: var(--accent-soft);
@@ -213,7 +214,8 @@
 }
 
 /* Example rows (frame 47: padding 14/16, radius 14, surface2, 16/1.55; the words of each cell in
-   its colour: soft fill, ink, 600, radius 6, padding 1px 4px). */
+   its colour: soft fill, ink, 600, radius 6, padding 1px 4px). Under the sentence, its translation and
+   the note on it, both in the support language (corpus `translation`, `annotation`). */
 .s-gc__examples {
   display: flex;
   flex-direction: column;
@@ -223,8 +225,23 @@
   padding: 14px 16px;
   border-radius: 14px;
   background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-gc__exText {
   font-size: 16px;
   line-height: 1.55;
+}
+.s-gc__exTr {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.s-gc__exNote {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 .s-gc__hl {
   border-radius: 6px;
@@ -242,10 +259,11 @@
 .s-gc__mistake {
   padding: 14px 16px;
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow: var(--edge-light);
 }
 .s-gc__mline {
   display: flex;
@@ -275,6 +293,116 @@
   font-size: 13.5px;
   color: var(--muted);
   padding-left: 32px;
+}
+
+/* Section rhythm: the cards are separate, raised (edge-light carries the resting shadow), and a card's
+   own blocks sit 16px apart; an eyebrow that follows content gets a little more air. */
+.s-gc__card--overview .s-gc__summary {
+  font-size: 17px;
+  line-height: 1.6;
+}
+.s-gc__card > .s-gc__eyebrow:not(:first-child) {
+  margin-top: 8px;
+}
+
+/* When to use: one situation per row, each marked by a small accent dot. */
+.s-gc__when {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s-gc__when li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.s-gc__when li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+/* Variants: each form under a small label, chips as the formula's. */
+.s-gc__variants {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-gc__variant {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-gc__vlabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.s-gc__mistakes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Compare: this point and its neighbour side by side, stacked on a phone. */
+.s-gc__compare {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-gc__cpair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.s-gc__cside {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.s-gc__clabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent-text);
+}
+.s-gc__cex {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.s-gc__cmean {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+@media (max-width: 560px) {
+  .s-gc__cpair {
+    grid-template-columns: 1fr;
+  }
+  .s-gc__card {
+    padding: 20px;
+  }
+}
+
+/* An answer option lifts on hover like every raised control: --sh2 and 2px up. */
+.s-gc__opt:not(:disabled):hover {
+  box-shadow: var(--sh2);
+  transform: translateY(-2px);
 }
 
 /* Quick quiz (frame 47). */
@@ -308,13 +436,14 @@
   gap: 12px;
   padding: 14px 16px;
   border-radius: 14px;
-  border: 1.5px solid var(--border2);
+  border: 1.5px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 15px;
   font-weight: 400;
   text-align: left;
   width: 100%;
+  box-shadow: var(--edge-light);
 }
 .s-gc__optText {
   flex: 1;
@@ -415,8 +544,8 @@
   outline: 0;
 }
 .s-gc__tryInput:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--ring);
+  border-color: var(--text3);
+  box-shadow: var(--sh2);
 }
 [data-try-result]:empty {
   display: none;

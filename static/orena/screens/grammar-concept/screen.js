@@ -21,10 +21,10 @@ import { emptyMarkup } from '../../kit/states.js';
 import { shellCopy as shell } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
-import { grammarPoint, recordGrammarCompletion } from '../../product/grammar-source.js';
+import { grammarCatalog, grammarPoint, recordGrammarCompletion } from '../../product/grammar-source.js';
 import { toast } from '../../kit/toast.js';
 import { askOrena } from '../../shell/agent-bridge.js';
-import { conceptView } from './model.js';
+import { conceptView, sectionsOf } from './model.js';
 import { hanziMarkup } from '../grammar/hanzi.js';
 
 const HEADINGS = { timeline: 'timeline', word_order: 'wordOrder', morphology: 'wordForm' };
@@ -44,9 +44,20 @@ function joined(items, glyph = '+') {
   return items.map((item, i) => (i ? html`${joiner(glyph)}${item}` : item));
 }
 
-function patternMarkup(cells, lang) {
-  return html`${eyebrow(t('pattern'))}<div class="s-gc__chips" lang="${langAttr(lang)}">${joined(
+function chipsMarkup(cells, lang) {
+  return html`<div class="s-gc__chips" lang="${langAttr(lang)}">${joined(
     cells.map((cell) => html`<span class="${`s-gc__chip s-gc__chip--${cell.bucket}`}">${cell.text}</span>`),
+  )}</div>`;
+}
+
+function patternMarkup(cells, lang) {
+  return html`${eyebrow(t('pattern'))}${chipsMarkup(cells, lang)}`;
+}
+
+/* pattern.variants: the negative / question forms the point declares, each under its own small label. */
+function variantsMarkup(variants, lang) {
+  return html`${eyebrow(t('variants'))}<div class="s-gc__variants">${variants.map(
+    (variant) => html`<div class="s-gc__variant"><span class="s-gc__vlabel">${t(`form_${variant.form}`)}</span>${chipsMarkup(variant.cells, lang)}</div>`,
   )}</div>`;
 }
 
@@ -92,19 +103,39 @@ function illustrationMarkup(ill, lang) {
 }
 
 function exampleMarkup(example, lang) {
-  return html`<div class="s-gc__example" lang="${langAttr(lang)}">${example.parts.map((part) => {
-    const text = material(part.text, part.pinyin, lang);
-    return part.bucket ? html`<span class="${`s-gc__hl s-gc__hl--${part.bucket}`}">${text}</span>` : text;
-  })}</div>`;
+  return html`<div class="s-gc__example">
+    <div class="s-gc__exText" lang="${langAttr(lang)}">${example.parts.map((part) => {
+      const text = material(part.text, part.pinyin, lang);
+      return part.bucket ? html`<span class="${`s-gc__hl s-gc__hl--${part.bucket}`}">${text}</span>` : text;
+    })}</div>
+    ${example.translation ? html`<div class="s-gc__exTr">${example.translation}</div>` : ''}
+    ${example.annotation ? html`<div class="s-gc__exNote">${example.annotation}</div>` : ''}
+  </div>`;
 }
 
 function mistakeMarkup(mistake, lang) {
-  return html`${eyebrow(t('mistake'))}
-  <div class="s-gc__mistake">
+  return html`<div class="s-gc__mistake">
     <div class="s-gc__mline"><span class="s-gc__glyph s-gc__glyph--bad" aria-hidden="true">✕</span><s class="s-gc__mbad" lang="${langAttr(lang)}">${material(mistake.wrong, mistake.wrongPinyin, lang)}</s></div>
     <div class="s-gc__mline s-gc__mline--good"><span class="s-gc__glyph s-gc__glyph--good" aria-hidden="true">✓</span><span lang="${langAttr(lang)}">${material(mistake.right, mistake.rightPinyin, lang)}</span></div>
     ${mistake.reason ? html`<div class="s-gc__mwhy">${t('why')} ${mistake.reason}</div>` : ''}
   </div>`;
+}
+
+function compareSide(label, example, pinyin, meaning, lang, tone) {
+  return html`<div class="${`s-gc__cside s-gc__cside--${tone}`}">
+    ${label ? html`<div class="s-gc__clabel" lang="${langAttr(lang)}">${label}</div>` : ''}
+    ${example ? html`<div class="s-gc__cex" lang="${langAttr(lang)}">${material(example, pinyin, lang)}</div>` : ''}
+    ${meaning ? html`<div class="s-gc__cmean">${meaning}</div>` : ''}
+  </div>`;
+}
+
+/* compare[]: this point against a neighbouring one, side by side where there is room. `titles` maps a
+   point id to its native title when the catalogue could be read; an unresolved side carries no label. */
+function compareMarkup(entries, titles, ownTitle, lang) {
+  return html`<div class="s-gc__compare">${entries.map((entry) => {
+    const other = titles.get(entry.withId) || '';
+    return html`<div class="s-gc__cpair">${compareSide(ownTitle, entry.thisExample, entry.thisExamplePinyin, entry.thisMeaning, lang, 'this')}${compareSide(other, entry.otherExample, entry.otherExamplePinyin, entry.otherMeaning, lang, 'other')}</div>`;
+  })}</div>`;
 }
 
 function optionMarkup(option, index, pick, question, lang) {
@@ -148,16 +179,28 @@ function tryMarkup(tryIt, lang) {
     <div data-try-result></div>`;
 }
 
-/* The point card the learner reads: summary, pattern, illustration, examples, the common mistake. */
-function cardMarkup(view, lang) {
+/* The cards the learner reads, in learning order (model.js sectionsOf). The overview card holds the summary
+   and when to use; the pattern card the formula, its illustration and its variants. A card with no data is
+   not drawn. `quiz` and `tryIt` are given by the caller: live and interactive on the learner's page, static
+   in Admin's preview. */
+function sectionCards(view, lang, { titles = new Map(), quiz = null, tryIt = null } = {}) {
   const { header } = view;
-  return [
-    header.summary ? html`<div class="s-gc__summary">${header.summary}</div>` : '',
-    view.pattern.length ? patternMarkup(view.pattern, lang) : '',
-    view.illustration ? illustrationMarkup(view.illustration, lang) : '',
-    view.examples.length ? html`${eyebrow(t('examples'))}<div class="s-gc__examples">${view.examples.map((example) => exampleMarkup(example, lang))}</div>` : '',
-    view.mistake ? mistakeMarkup(view.mistake, lang) : '',
-  ];
+  const body = {
+    overview: () => html`${header.summary ? html`<div class="s-gc__summary">${header.summary}</div>` : ''}${
+      view.whenToUse.length ? html`${eyebrow(t('whenToUse'))}<ul class="s-gc__when">${view.whenToUse.map((line) => html`<li>${line}</li>`)}</ul>` : ''
+    }`,
+    pattern: () => html`${view.pattern.length ? patternMarkup(view.pattern, lang) : ''}${view.illustration ? illustrationMarkup(view.illustration, lang) : ''}${
+      view.variants.length ? variantsMarkup(view.variants, lang) : ''
+    }`,
+    examples: () => html`${eyebrow(t('examples'))}<div class="s-gc__examples">${view.examples.map((example) => exampleMarkup(example, lang))}</div>`,
+    mistakes: () => html`${eyebrow(t('mistake'))}<div class="s-gc__mistakes">${view.mistakes.map((mistake) => mistakeMarkup(mistake, lang))}</div>`,
+    compare: () => html`${eyebrow(t('compare'))}${compareMarkup(view.compare, titles, header.title, lang)}`,
+  };
+  return sectionsOf(view).map((key) => {
+    if (key === 'quiz') return quiz ? quiz() : '';
+    if (key === 'tryIt') return tryIt ? tryIt() : '';
+    return html`<section class="${`o-card o-card--24 s-gc__card s-gc__card--${key}`}">${body[key]()}</section>`;
+  });
 }
 
 /* The learner's page for one point, read-only, for Admin's review (proposals/ADMIN_GRAMMAR_UI.md G4): the same header,
@@ -167,29 +210,21 @@ export function conceptPreviewMarkup(point, { support = 'en', native = '' } = {}
   const view = conceptView(point, { support, native });
   const { header } = view;
   const lang = header.lang;
-  const quiz = view.quiz.length
-    ? html`<div class="o-card o-card--24 s-gc__card"><div class="s-gc__quizhead"><h2 class="s-gc__title">${t('quiz')}</h2><span class="s-gc__quizprog">${view.quiz.length}</span></div>
+  const quiz = () => html`<section class="o-card o-card--24 s-gc__card"><div class="s-gc__quizhead"><h2 class="s-gc__title">${t('quiz')}</h2><span class="s-gc__quizprog">${view.quiz.length}</span></div>
         ${view.quiz.map((question) => html`<div class="s-gc__previewQ">
           <div class="s-gc__qprompt" lang="${langAttr(lang)}">${material(question.q, question.qPinyin, lang)}</div>
           <div class="s-gc__options">${question.options.map((option, i) => optionMarkup(option, i, question.answer, question, lang))}</div>
           ${question.explain ? html`<div class="s-gc__why"><b>${t('why')}</b> ${question.explain}</div>` : ''}
-        </div>`)}</div>`
-    : '';
-  const tryIt = view.tryIt
-    ? html`<div class="o-card o-card--24 s-gc__card"><h2 class="s-gc__title">${t('tryIt')}</h2><div class="s-gc__tryPrompt">${view.tryIt.prompt}</div>${
-      view.tryIt.sample ? html`<div class="s-gc__tryResult"><span>${t('sample')}</span> <span lang="${langAttr(lang)}">${material(view.tryIt.sample, view.tryIt.samplePinyin, lang)}</span></div>` : ''}</div>`
-    : '';
+        </div>`)}</section>`;
+  const tryIt = () => html`<section class="o-card o-card--24 s-gc__card"><h2 class="s-gc__title">${t('tryIt')}</h2><div class="s-gc__tryPrompt">${view.tryIt.prompt}</div>${
+    view.tryIt.sample ? html`<div class="s-gc__tryResult"><span>${t('sample')}</span> <span lang="${langAttr(lang)}">${material(view.tryIt.sample, view.tryIt.samplePinyin, lang)}</span></div>` : ''}</section>`;
   return html`<div class="s-gc s-gc--preview">
     <div class="s-gc__head">${pageHeader({
       title: langSpan(material(header.title, header.titlePinyin, lang), lang),
       meta: [shell('grammar'), header.level, header.sub].filter(Boolean).join(' · '),
       compact: true,
     })}</div>
-    <div class="s-gc__inner">
-      <div class="o-card o-card--24 s-gc__card">${cardMarkup(view, lang)}</div>
-      ${quiz}
-      ${tryIt}
-    </div>
+    <div class="s-gc__inner">${sectionCards(view, lang, { quiz, tryIt })}</div>
   </div>`;
 }
 
@@ -223,7 +258,22 @@ export default async function grammarConcept(element, ctx) {
   const lang = header.lang;
   ctx.setCrumb(header.title);
 
-  const card = cardMarkup(view, lang);
+  /* compare[] names its neighbour by id; the catalogue says what it is called. A catalogue that cannot be read
+     leaves that side unlabelled - nothing is guessed. */
+  const titles = new Map();
+  if (view.compare.length) {
+    try {
+      (await grammarCatalog(lang)).forEach((row) => titles.set(row.id, String(row.header?.native_title || row.native_title || '')));
+    } catch {
+      /* unlabelled */
+    }
+    if (!ctx.isCurrent()) return;
+  }
+  const cards = sectionCards(view, lang, {
+    titles,
+    quiz: () => html`<section class="o-card o-card--24 s-gc__card" data-quiz></section>`,
+    tryIt: () => html`<section class="o-card o-card--24 s-gc__card" data-try></section>`,
+  });
 
   mount(
     element,
@@ -237,9 +287,7 @@ export default async function grammarConcept(element, ctx) {
       })}</div>
       <div class="s-gc__scroll" data-scroll-region>
         <div class="s-gc__inner">
-          <div class="o-card o-card--24 s-gc__card">${card}</div>
-          ${view.quiz.length ? html`<div class="o-card o-card--24 s-gc__card" data-quiz></div>` : ''}
-          ${view.tryIt ? html`<div class="o-card o-card--24 s-gc__card" data-try></div>` : ''}
+          ${cards}
         </div>
       </div>
     </div>`,
