@@ -348,7 +348,7 @@ export function buildGoalSummary({ domains } = {}, t) {
    entirely for this value. `name` is kept separately for the ring's `title` tooltip, matching the
    frame's own `title="Reading 0%"` attribute one level up (same fused text, native tooltip). */
 export function buildSkillRings(t) {
-  return ['reading', 'listening', 'speaking'].map((key) => {
+  return ['listening', 'speaking', 'reading'].map((key) => { // D-152 skill order
     const name = t(`skill${key[0].toUpperCase()}${key.slice(1)}`);
     const percent = 0;
     return {

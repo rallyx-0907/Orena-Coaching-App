@@ -416,3 +416,13 @@ const servedZh = {
 }
 
 console.log('Orena Grammar surface (Library + Concept) on the Grammar Store learner API: catalogue, point, R5 redirect, progress; fixtures test-only: PASS');
+
+/* An example whose annotation repeats its translation word for word shows the line once (6 older EN points). */
+{
+  const { examplesOf } = await import('../static/orena/screens/grammar-concept/model.js');
+  const same = { vi: 'Every morning cho biết đây là thói quen.', en: 'Every morning marks a habit.' };
+  const [row] = examplesOf({ examples: [{ text: 'I drink coffee every morning.', translation: same, annotation: same }] }, 'vi');
+  assert.equal(row.translation, same.vi);
+  assert.equal(row.annotation, '', 'the repeated line is not drawn twice');
+  console.log('Grammar Concept: a repeated example note is drawn once: PASS');
+}

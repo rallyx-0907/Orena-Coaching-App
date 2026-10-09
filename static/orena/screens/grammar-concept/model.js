@@ -146,11 +146,12 @@ export function exampleParts(example) {
 }
 
 export function examplesOf(point, support = 'en') {
-  return (Array.isArray(point?.examples) ? point.examples : []).filter((example) => example?.text).map((example) => ({
-    parts: exampleParts(example),
-    translation: contractText(example.translation, support),
-    annotation: contractText(example.annotation, support),
-  }));
+  return (Array.isArray(point?.examples) ? point.examples : []).filter((example) => example?.text).map((example) => {
+    const translation = contractText(example.translation, support);
+    const annotation = contractText(example.annotation, support);
+    // A few older points carry the same text in both fields (UI_BACKEND_GAPS, Grammar Concept): say it once.
+    return { parts: exampleParts(example), translation, annotation: annotation === translation ? '' : annotation };
+  });
 }
 
 /* §3: the situations the point is used in - one line each, in the support language. */

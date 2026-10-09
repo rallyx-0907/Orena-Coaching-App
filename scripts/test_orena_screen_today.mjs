@@ -194,11 +194,11 @@ assert.deepEqual(usedRecommendationIds([{ id: 'a' }, { id: 'b' }, { id: null }])
   const rings = buildSkillRings(t);
   assert.equal(rings.length, 3);
   for (const ring of rings) assert.equal(ring.percent, 0, `${ring.key}: no per-skill daily measure exists, so 0 - never an invented percent`);
-  assert.deepEqual(rings.map((r) => r.color), ['var(--skill-read)', 'var(--skill-listen)', 'var(--skill-speak)']);
-  assert.deepEqual(rings.map((r) => r.icon), ['book-open', 'headphones', 'mic']);
+  assert.deepEqual(rings.map((r) => r.color), ['var(--skill-listen)', 'var(--skill-speak)', 'var(--skill-read)'], 'D-152 skill order');
+  assert.deepEqual(rings.map((r) => r.icon), ['headphones', 'mic', 'book-open']);
   // The frame fuses the caption with the ring's own percent ("Reading 0%"), not the bare name.
-  assert.deepEqual(rings.map((r) => r.label), ['Reading 0%', 'Listening 0%', 'Speaking 0%']);
-  assert.deepEqual(rings.map((r) => r.name), ['Reading', 'Listening', 'Speaking'], 'the bare name is kept too, for the ring\'s title tooltip');
+  assert.deepEqual(rings.map((r) => r.label), ['Listening 0%', 'Speaking 0%', 'Reading 0%']);
+  assert.deepEqual(rings.map((r) => r.name), ['Listening', 'Speaking', 'Reading'], 'the bare name is kept too, for the ring\'s title tooltip');
 
   const streak = buildStreak(t);
   assert.equal(streak.known, false, 'no activity read: there is no streak to show, not 0 days');

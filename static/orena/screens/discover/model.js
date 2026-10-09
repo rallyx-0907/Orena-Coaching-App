@@ -19,7 +19,7 @@ import { duration } from '../../product/duration.js';
 import { placePercent } from '../../product/place-progress.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 
-export const TABS = Object.freeze(['all', 'read', 'listen', 'collections', 'imported']);
+export const TABS = Object.freeze(['all', 'listen', 'read', 'collections', 'imported']); // D-152: Listen before Read
 
 const TAB_OF_KIND = Object.freeze({
   article: 'read',
