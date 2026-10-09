@@ -43,7 +43,7 @@ DATASETS: tuple[Dataset, ...] = (
     Dataset("google-fonts",
             "Fonts: Fredoka, Outfit, Plus Jakarta Sans, Literata, JetBrains Mono, Noto Sans SC, Noto Serif SC",
             "SIL Open Font License 1.1", "https://openfontlicense.org", "https://fonts.google.com",
-            "The fonts' authors, via Google Fonts"),
+            "The fonts' authors; served from Orena, not from Google"),
     Dataset("nltk-tagger", "NLTK averaged perceptron tagger", "Apache 2.0",
             "https://www.apache.org/licenses/LICENSE-2.0", "https://www.nltk.org", "NLTK Project"),
 )

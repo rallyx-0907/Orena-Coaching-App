@@ -5293,15 +5293,36 @@ The 2026-10-09 export's Landing, Terms and Privacy, and its Backdrop change.
   cost: the page needs JavaScript (a crawler without it sees no copy), it loads the runtime (69 KB) and React 18.3.1 (142 KB), both
   from `/orena-assets/public/` (the runtime asked for unpkg.com; the served copy points at the same npm files, vendored with
   their MIT licence, and the design's own SRI hashes match them; Babel, 3 MB, is for `.jsx` imports that these pages do not
-  use and is not shipped), and Google Fonts as the design references them, and the browser logs a few harmless SVG-attribute parse errors from the
+  use and is not shipped), and the fonts, which are served from `/orena-assets/fonts/` since D-162 (the design asked Google Fonts for them), and the browser logs a few harmless SVG-attribute parse errors from the
   template's unresolved bindings before the runtime renders it. A native port is possible later and is the human's
   call. Re-pin: run `node scripts/build_public_pages.mjs`; the gate fails on drift.
-- **PUB-2 Terms and Privacy.** The legal text is the design's, verbatim (the gate compares every heading, date,
-  paragraph and list item). Vietnamese is the default, English by the toggle or `?lang=en`; the design has no Chinese,
-  so `?lang=zh` shows English (the only edit to the design's script). Not written or reviewed by an agent: the
-  text names no legal entity or address, and the payment partner and the AI providers are not named; a lawyer
-  should read it before launch. `#/legal/terms` and `#/legal/privacy` (the older in-app drafts) now redirect to
-  `/terms` and `/privacy`; `#/legal/refund` is not in the design and stays as it was.
+- **PUB-2 Terms and Privacy (D-162, supersedes the verbatim rule of D-160).** The design's legal TEXT claimed things
+  Orena does not do (in-app export and deletion, email and Apple sign-in, payments, donations, email, analytics and
+  crash reporting, provider contracts, encryption at rest, a 30/90-day deletion schedule, an unenforced under-16
+  rule). The human authorised replacing the words (2026-10-09); the layout, type and structure stay the design's.
+  The repository now owns the text: `docs/legal/public/<privacy|terms|account-deletion>.<vi|en>.json` plus the
+  facts in `docs/legal/public/facts.json`, laid out by `scripts/public_legal_text.mjs` with the design's own markup
+  and built by `scripts/build_public_pages.mjs`; `scripts/test_orena_public_pages.mjs` compares the pages to that
+  text verbatim. Every changed sentence is listed in `docs/legal/PUBLIC_POLICY_CHANGES_2026-10.md`. A fact the human
+  has not confirmed is `null` in `facts.json` and renders as a yellow `[pending: ...]` mark; `node
+  scripts/build_public_pages.mjs --release` fails while any is pending and must pass before the pages go to :8000.
+  Vietnamese is the default, English by the toggle or `?lang=en`; the design has no Chinese, so `?lang=zh` shows
+  English. AI and speech vendors are not named in public text (human decision); they are listed only in
+  `docs/legal/GOOGLE_PLAY_DATA_SAFETY.md`. Still for a lawyer: the liability cap, governing law and consumer
+  wording (Terms 10, 12) are the design's. Gaps this leaves: (a) there is no in-app account deletion or export
+  (the runtime is an architecture hold; `/account-deletion` and `docs/project/ACCOUNT_DELETION_RUNBOOK.md` are the
+  manual process); (b) the sign-in consent line and Settings → Privacy now link to the three pages (the consent
+  line's two links are underlined, the one affordance the design's plain text line lacks; the Settings links are
+  the Licences link's pattern); (c) the "Delete audio" row stays inert (device audio, N-31) and is not described as
+  working; (d) Terms, Privacy and Delete account are static HTML and CSS, one file per language
+  (`templates/orena/public/<page>.<vi|en>.html`, chosen by `?lang=`): the whole text is in the response and no
+  script is needed to read it (a crawler or a Play reviewer without JavaScript sees everything); the design's
+  runtime and React are not loaded on them, the language switch is two links, and a small optional script only
+  highlights the contents entry. Measured against the previous script-driven pages at 1920x1080 and 390x844 in
+  Vietnamese and English (154, 122 and 92 elements; same element counts, 0 px position and size delta, same
+  computed type, colour, spacing and radius, same document heights). The Landing stays runtime-based (PUB-1);
+  (e) the publish date is stamped at deploy: `node scripts/build_public_pages.mjs --release --effective-date
+  YYYY-MM-DD` (the repository keeps `effective_date` null).
 - **PUB-3 Donate (human decision).** The Terms and Privacy footers link to a Donate page ("Support us"/"Ung ho")
   and Terms section 4 links "Support Orena". The pinned Donate page is Vietnamese-only with sample amounts and a
   dummy bank account, so it is **not built**: the footer link is removed and section 4's link keeps its words as

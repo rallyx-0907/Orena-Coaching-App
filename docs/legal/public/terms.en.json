@@ -1,0 +1,125 @@
+{
+  "title": "Terms of Service · Orena",
+  "nav": [["privacy", "Privacy"], ["terms", "Terms of Service"], ["account-deletion", "Delete account"]],
+  "h1": ["Terms of ", "Service"],
+  "intro": "These terms are the agreement between you and Orena, operated by {{fact:operator.name}}, {{fact:operator.country}}, when you create an account and use Orena.",
+  "dates": ["Last updated: {{date}}", "Effective: {{date}}"],
+  "summary": {
+    "label": "At a glance",
+    "items": [
+      "You keep the rights to your writing, recordings and documents.",
+      "Paid plans are not live yet; during the beta an administrator may assign a plan to an account.",
+      "Orena Intelligence can be wrong; double-check anything important.",
+      "You can ask us to delete your account at any time, by email."
+    ]
+  },
+  "tocLabel": "Contents",
+  "sections": [
+    {
+      "h": "1. Accepting these terms",
+      "blocks": [
+        { "p": "By creating an account or using Orena, you agree to these Terms and our [Privacy Policy](/privacy?lang=en). If you do not agree, please stop using the service. Orena is for people aged {{fact:min_age}} and over: you must be at least {{fact:min_age}} years old to use it. Orena does not collect your date of birth and has no technical age check during the beta; if we learn that an account belongs to someone under {{fact:min_age}}, we will delete it." }
+      ]
+    },
+    {
+      "h": "2. Your account",
+      "blocks": [
+        {
+          "ul": [
+            "You sign in with a Google account. Keep it secure: you are responsible for all activity on your Orena account.",
+            "Each account is for one person. Do not share, sell or transfer your account.",
+            "Tell us right away if you suspect unauthorised access.",
+            "You can ask us to delete your account at any time; see [Delete account](/account-deletion?lang=en)."
+          ]
+        }
+      ]
+    },
+    {
+      "h": "3. Plans and payment",
+      "blocks": [
+        { "p": "Orena has a free plan. Paid plans are not available yet: Orena does not take payments, and nothing in Orena is a charge. Usage limits depend on your plan and are shown in the app. During the beta, an administrator may change the plan or limits of an account by hand." },
+        {
+          "cards": [
+            ["Payments", "Payments are not live. Orena does not collect payment details today."],
+            ["When paid plans launch", "We will update these Terms, and tell you the price, renewal, cancellation and refund rules, before you are charged anything."]
+          ]
+        }
+      ]
+    },
+    {
+      "h": "4. Donations",
+      "blocks": [
+        { "p": "Orena does not accept donations yet. If that changes, we will update these Terms first." }
+      ]
+    },
+    {
+      "h": "5. Acceptable use",
+      "blocks": [
+        { "lead": "When using Orena, you must not:" },
+        {
+          "ul": [
+            "Upload content that is unlawful or infringes others' intellectual property or privacy.",
+            "Use Orena Intelligence to create harmful, fraudulent, harassing or hateful content.",
+            "Scrape, probe or interfere with Orena's systems.",
+            "Try to bypass usage limits, reverse-engineer the app or resell the service.",
+            "Impersonate another person or the Orena team."
+          ]
+        }
+      ]
+    },
+    {
+      "h": "6. Your content",
+      "blocks": [
+        { "p": "You keep all rights to the writing, recordings, notes and documents you upload. You grant Orena a non-exclusive licence, limited to what is needed to store, process and display that content for you, including sending it to AI providers when you ask." },
+        { "p": "When you import books or documents, you confirm you have the right to use them for personal study. Imported material is visible only to you." }
+      ]
+    },
+    {
+      "h": "7. Orena content",
+      "blocks": [
+        { "p": "Readings, listening material, exercises, the interface, the logo and the Orena name belong to Orena or its licensors. You may use them for personal study, but not copy, redistribute or use them commercially without written permission." }
+      ]
+    },
+    {
+      "h": "8. Orena Intelligence",
+      "blocks": [
+        { "p": "Orena Intelligence uses AI models to explain, give feedback and make suggestions. Its answers may be inaccurate or incomplete. Pronunciation and writing scores are guidance for self-study and do not replace a teacher's assessment or official exam results such as IELTS or HSK." }
+      ]
+    },
+    {
+      "h": "9. Suspension and termination",
+      "blocks": [
+        { "p": "You can ask us to delete your account at any time by email, as described on [Delete account](/account-deletion?lang=en); we process requests by hand within 30 days. We may suspend or terminate accounts that breach these Terms after notifying you and giving you a chance to respond, except for serious violations or where the law requires." }
+      ]
+    },
+    {
+      "h": "10. Disclaimers and limitation of liability",
+      "blocks": [
+        { "p": "Orena is provided as is. We work to keep it reliable but do not promise it will be uninterrupted or error-free. To the extent permitted by law, Orena's liability for any claim related to the service is limited to the amount you paid Orena in the previous 12 months. Nothing here affects your consumer rights under Vietnamese law." }
+      ]
+    },
+    {
+      "h": "11. Changes to these terms",
+      "blocks": [
+        { "p": "We may update these Terms when the product or the law changes. For significant changes, we will publish the update on this page at least 14 days before it takes effect. Continuing to use Orena after that date means you accept the updated Terms." }
+      ]
+    },
+    {
+      "h": "12. Governing law",
+      "blocks": [
+        { "p": "These Terms are governed by the laws of Vietnam. Both parties will first try to resolve disputes through negotiation; if no agreement is reached within 30 days, the dispute will go to a competent court in Vietnam." }
+      ]
+    },
+    {
+      "h": "13. Contact",
+      "blocks": [
+        { "p": "Orena is operated by {{fact:operator.name}}, {{fact:operator.country}}. For questions about these Terms of Service, write to us:" },
+        { "contact": [["Legal", "orena.legal@chillpickle.org"], ["General support", "orena.support@chillpickle.org"]] }
+      ]
+    }
+  ],
+  "footer": {
+    "copy": "© 2026 Orena",
+    "links": [["landing", "About"], ["privacy", "Privacy"], ["terms", "Terms"], ["account-deletion", "Delete account"]]
+  }
+}

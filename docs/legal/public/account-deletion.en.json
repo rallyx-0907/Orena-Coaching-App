@@ -1,0 +1,79 @@
+{
+  "title": "Delete account · Orena",
+  "nav": [["privacy", "Privacy"], ["terms", "Terms of Service"], ["account-deletion", "Delete account"]],
+  "h1": ["Delete ", "account"],
+  "intro": "How to ask {{fact:operator.name}} to delete your Orena account and the data tied to it, what is deleted, and what is kept.",
+  "dates": ["Last updated: {{date}}", "Effective: {{date}}"],
+  "summary": {
+    "label": "At a glance",
+    "items": [
+      "Email orena.support@chillpickle.org from the email address of the Google account you use with Orena.",
+      "We process deletion requests by hand, within 30 days at most.",
+      "Your learning data and content are deleted; backups expire on a rolling schedule.",
+      "There is no delete-account button in the app yet."
+    ]
+  },
+  "tocLabel": "Contents",
+  "sections": [
+    {
+      "h": "1. How to request deletion",
+      "blocks": [
+        { "lead": "Orena has no in-app delete-account button yet, so deletion is a request by email:" },
+        {
+          "ul": [
+            "Write to [orena.support@chillpickle.org](mailto:orena.support@chillpickle.org) from the email address of the Google account you sign in to Orena with. Use the subject “Delete my Orena account”.",
+            "We check that the request comes from that address, and may reply to confirm. We cannot delete an account on a request that comes from a different address.",
+            "We process the request by hand and delete the account within 30 days at most, then confirm by reply."
+          ]
+        }
+      ]
+    },
+    {
+      "h": "2. What is deleted",
+      "blocks": [
+        { "lead": "When your account is deleted, we delete the data tied to it on our servers:" },
+        {
+          "ul": [
+            "Your profile and settings: your learning language, interface language, weekly goal and learning profile.",
+            "Your learning progress and history: reading, listening, speaking and grammar progress, attempts and scores, review history, saved words and vocabulary lists.",
+            "Your content: writing you submitted and its evaluations and revisions, drafts, notes and highlights, saved conversations and your place in texts, text discussions, and library items.",
+            "Books, documents and media you imported, including their stored files.",
+            "Feedback you sent, Orena Intelligence activity records, records of your plan and usage, and records of AI use and cost.",
+            "Your name, email address and profile picture link are removed or irreversibly anonymised. Your sign-in session ends."
+          ]
+        }
+      ]
+    },
+    {
+      "h": "3. What is kept, and for how long",
+      "blocks": [
+        {
+          "ul": [
+            "**A deletion record.** We keep an internal identifier, the opaque sign-in identifier Google gave your account, and the time of deletion, with no name, email or content, so that your deletion still holds if a backup is ever restored.",
+            "**Backups.** Backups made before the deletion can still contain your data. They are overwritten on a rolling schedule within {{fact:retention.backup_days}} days.",
+            "**Server and network logs.** Operational logs of our servers and of our hosting and network providers may still contain your IP address and request times.",
+            "**Data already sent to service providers.** Text or audio already sent to AI and speech providers to return a result is handled under their own retention, and we cannot delete it from their systems.",
+            "**Recordings on your device.** Anything Orena keeps in your own browser or device stays there until you clear your browser's site data."
+          ]
+        }
+      ]
+    },
+    {
+      "h": "4. Deleting without closing your account",
+      "blocks": [
+        { "p": "You can delete individual items yourself where the app offers it, for example essays, saved words, library items, text discussions and imported media, and you can clear data kept on your device by clearing your browser's site data. To close your account completely, use the request in section 1." }
+      ]
+    },
+    {
+      "h": "5. Contact",
+      "blocks": [
+        { "p": "Orena is operated by {{fact:operator.name}}, {{fact:operator.country}}. For deletion requests and support, write to us. For privacy questions, see the [Privacy Policy](/privacy?lang=en)." },
+        { "contact": [["Deletion requests and support", "orena.support@chillpickle.org"], ["Privacy", "orena.legal@chillpickle.org"]] }
+      ]
+    }
+  ],
+  "footer": {
+    "copy": "© 2026 Orena",
+    "links": [["landing", "About"], ["privacy", "Privacy"], ["terms", "Terms"], ["account-deletion", "Delete account"]]
+  }
+}

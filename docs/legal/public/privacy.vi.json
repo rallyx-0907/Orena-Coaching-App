@@ -1,0 +1,147 @@
+{
+  "title": "Chính sách quyền riêng tư · Orena",
+  "nav": [["privacy", "Quyền riêng tư"], ["terms", "Điều khoản dịch vụ"], ["account-deletion", "Xoá tài khoản"]],
+  "h1": ["Chính sách ", "quyền riêng tư"],
+  "intro": "Chính sách này giải thích Orena thu thập dữ liệu gì khi bạn học, dùng dữ liệu đó vào việc gì và bạn kiểm soát nó ra sao.",
+  "dates": ["Cập nhật lần cuối: {{date}}", "Hiệu lực từ: {{date}}"],
+  "summary": {
+    "label": "Tóm tắt nhanh",
+    "items": [
+      "Chúng tôi không bán dữ liệu cá nhân và không chạy quảng cáo.",
+      "Máy chủ Orena không giữ bản ghi giọng nói của bạn. Bản ghi nào được giữ để nghe lại đều nằm trên thiết bị của bạn.",
+      "Bạn có thể gửi email yêu cầu xoá tài khoản và dữ liệu: xem [Xoá tài khoản](/account-deletion).",
+      "Một số tính năng AI và giọng nói gửi nội dung bạn nhập hoặc ghi âm tới nhà cung cấp dịch vụ xử lý giúp chúng tôi để trả kết quả."
+    ]
+  },
+  "tocLabel": "Nội dung",
+  "sections": [
+    {
+      "h": "1. Phạm vi áp dụng",
+      "blocks": [
+        { "p": "Chính sách này áp dụng cho ứng dụng web Orena, mọi ứng dụng Orena kết nối với nó (ví dụ ứng dụng Android), trang web đăng tải chính sách này và mọi dịch vụ liên quan (gọi chung là “Orena”). Orena do {{fact:operator.name}}, {{fact:operator.country}} vận hành. Khi dùng Orena, bạn đồng ý với cách xử lý dữ liệu được mô tả dưới đây. Chính sách này đi kèm [Điều khoản dịch vụ](/terms)." }
+      ]
+    },
+    {
+      "h": "2. Dữ liệu chúng tôi thu thập",
+      "blocks": [
+        {
+          "cards": [
+            ["Thông tin tài khoản", "Orena chỉ đăng nhập bằng Google. Chúng tôi lưu mã tài khoản Google, địa chỉ email, tên hiển thị và đường dẫn ảnh đại diện của bạn, cùng ngôn ngữ giao diện, ngôn ngữ đang học, mục tiêu hằng tuần, loại tài khoản (người học hoặc quản trị viên), thời điểm đăng ký và lần đăng nhập gần nhất. Chúng tôi chỉ xin Google các quyền openid, email và profile. Chúng tôi không lưu mật khẩu."],
+            ["Dữ liệu học tập", "Ngôn ngữ đang học, kết quả kiểm tra trình độ, tiến độ đọc, từ vựng đã lưu, lịch ôn tập, điểm bài tập, chuỗi ngày học và mục tiêu hằng ngày. Dữ liệu này gồm cả tiến độ nghe, nói, ngữ pháp và lịch sử ôn tập của bạn."],
+            ["Nội dung bạn tạo", "Bài viết bạn gửi để nhận xét cùng phần đánh giá do AI tạo, câu trả lời, bản nháp, ghi chú và phần đánh dấu, các cuộc trò chuyện đã lưu và vị trí bạn đọc dở, các cuộc thảo luận văn bản với Orena Intelligence, cùng sách, tài liệu và media bạn nhập vào. Với người học đã đăng nhập, những nội dung này được lưu trên máy chủ của chúng tôi và gắn với tài khoản của bạn."],
+            ["Âm thanh giọng nói", "Đoạn âm thanh bạn ghi khi luyện nói hoặc chấm phát âm được gửi đi để xử lý và không được lưu trên máy chủ của chúng tôi. Xem mục 5."],
+            ["Gói và mức dùng", "Gói đang dùng và số lần bạn đã dùng. Thanh toán chưa hoạt động, nên Orena không giữ số thẻ, thông tin thanh toán hay lịch sử giao dịch. Nếu trong giai đoạn thử nghiệm quản trị viên gán thủ công một gói trả phí cho bạn, chỉ gói đó và giới hạn của nó được ghi lại."],
+            ["Bản ghi kỹ thuật", "Như mọi dịch vụ web, máy chủ của chúng tôi cùng nhà cung cấp lưu trữ và mạng thấy địa chỉ IP của bạn, nội dung bạn yêu cầu và thời điểm, và có thể giữ nhật ký vận hành. Chúng tôi cũng giữ các bản ghi gắn với tài khoản: khi bạn dùng Orena Intelligence (thời điểm và loại yêu cầu, không có nội dung tin nhắn), và phản hồi bạn gửi (số sao, các mục và nội dung tối đa 600 ký tự). Số lần dùng AI và chi phí được giữ mà không kèm nội dung của bạn. Orena không có dịch vụ quảng cáo, phân tích hay báo cáo lỗi."]
+          ]
+        }
+      ]
+    },
+    {
+      "h": "3. Mục đích sử dụng",
+      "blocks": [
+        { "lead": "Chúng tôi dùng dữ liệu để:" },
+        {
+          "ul": [
+            "Cung cấp các bài học, đồng bộ tiến độ giữa các thiết bị và lên lịch ôn tập phù hợp với bạn.",
+            "Cá nhân hoá gợi ý bài đọc, từ vựng và bài luyện theo trình độ và thói quen học.",
+            "Chạy Orena Intelligence: giải thích, chấm bài viết, chấm phát âm và trả lời câu hỏi.",
+            "Hiển thị gói của bạn và áp dụng giới hạn sử dụng của gói.",
+            "Phát hiện lỗi, gian lận và lạm dụng; cải thiện chất lượng sản phẩm dựa trên số liệu sử dụng tổng hợp của chính chúng tôi.",
+            "Thực hiện nghĩa vụ theo quy định pháp luật."
+          ]
+        },
+        { "lead": "Orena không gửi email quảng bá." }
+      ]
+    },
+    {
+      "h": "4. Orena Intelligence và nhà cung cấp AI",
+      "toc": "4. Orena Intelligence và AI",
+      "blocks": [
+        { "p": "Khi bạn dùng Orena Intelligence hoặc một tính năng AI khác (ví dụ nhận xét bài viết, dịch, từ điển, thảo luận văn bản hay chấm phát âm), đoạn văn bản hoặc âm thanh liên quan được gửi tới các nhà cung cấp dịch vụ AI và giọng nói, họ xử lý thay mặt chúng tôi để trả kết quả. Chúng tôi gửi phần tính năng đó cần, kèm theo trình độ và ngôn ngữ đang học. Với yêu cầu gửi tới Orena Intelligence, chúng tôi loại bỏ tên, địa chỉ email, ảnh đại diện và mã định danh tài khoản của bạn." },
+        { "p": "Các nhà cung cấp này có thể đặt máy chủ ngoài Việt Nam (xem mục 6) và chúng tôi không kiểm soát hệ thống của họ, vì vậy đừng gửi vào tính năng AI điều gì bạn không muốn được xử lý theo cách này. Câu trả lời do AI tạo có thể chưa chính xác; hãy xem Điều khoản dịch vụ để biết thêm." }
+      ]
+    },
+    {
+      "h": "5. Giọng nói và micro",
+      "blocks": [
+        { "p": "Orena chỉ dùng micro khi bạn bấm ghi âm. Bản ghi được gửi đi để chuyển thành văn bản hoặc chấm phát âm, và máy chủ Orena không giữ âm thanh; chỉ điểm số và nhận xét được lưu lại." },
+        { "p": "Các bản ghi bạn tạo để nghe lại chỉ nằm trong thẻ trình duyệt và mất khi bạn đóng thẻ. Ở những nơi Orena cho phép giữ các bản ghi gần đây, tối đa năm bản ghi mỗi câu nằm trên thiết bị của bạn và không bao giờ được tải lên Orena; tắt tuỳ chọn đó hoặc xoá dữ liệu trang web của trình duyệt sẽ xoá chúng." }
+      ]
+    },
+    {
+      "h": "6. Chia sẻ dữ liệu",
+      "blocks": [
+        { "lead": "Orena không bán hoặc cho thuê dữ liệu cá nhân. Chúng tôi chỉ chia sẻ dữ liệu với:" },
+        {
+          "ul": [
+            "**Nhà cung cấp dịch vụ** giúp vận hành Orena: nhà cung cấp lưu trữ và mạng của chúng tôi, cùng các nhà cung cấp AI và giọng nói nêu ở mục 4. Họ xử lý dữ liệu để cung cấp dịch vụ cho chúng tôi.",
+            "**Google**, khi bạn đăng nhập bằng tài khoản Google. Chính sách quyền riêng tư của Google áp dụng cho tài khoản Google của bạn.",
+            "**Các dịch vụ khác mà một tính năng cần.** Tra từ điển hoặc tra phát âm của từ sẽ gửi từ bạn tra (không kèm tên hay email) tới các nguồn từ điển và âm thanh công khai. Nếu bạn nhập video từ YouTube, chúng tôi gửi liên kết của video tới YouTube để lấy thông tin, phụ đề hoặc âm thanh, và trình duyệt của bạn tải trình phát cùng ảnh thu nhỏ của YouTube, nên YouTube nhận được địa chỉ IP của bạn. Một số tài liệu nghe và đọc được trình duyệt tải từ các máy chủ media công khai như Wikimedia, nơi này cũng thấy địa chỉ IP của bạn.",
+            "**Cơ quan có thẩm quyền** khi pháp luật yêu cầu, hoặc khi cần bảo vệ an toàn của người dùng và của Orena.",
+            "**Bên nhận chuyển nhượng** trong trường hợp sáp nhập hoặc mua lại; chúng tôi sẽ thông báo trước cho bạn."
+          ]
+        },
+        { "p": "Một số nhà cung cấp này đặt máy chủ ngoài Việt Nam. Khi chuyển dữ liệu ra nước ngoài, chúng tôi áp dụng các biện pháp bảo vệ theo quy định pháp luật về bảo vệ dữ liệu cá nhân." }
+      ]
+    },
+    {
+      "h": "7. Lưu trữ và xoá",
+      "blocks": [
+        { "p": "Chúng tôi giữ tài khoản và dữ liệu học tập của bạn trong thời gian tài khoản còn tồn tại. Orena chưa có nút xoá tài khoản: để xoá tài khoản, hãy gửi email tới [orena.support@chillpickle.org](mailto:orena.support@chillpickle.org) từ địa chỉ email của tài khoản Google, như hướng dẫn ở trang [Xoá tài khoản](/account-deletion). Chúng tôi xử lý các yêu cầu này thủ công trong vòng 30 ngày." },
+        { "p": "Một số bản ghi có thời hạn cố định: bản ghi hoạt động của Orena Intelligence (không có nội dung tin nhắn) bị xoá sau {{fact:retention.agent_turn_days}} ngày, phản hồi bạn gửi bị xoá sau {{fact:retention.feedback_months}} tháng, và bản ghi về lượt dùng AI và chi phí (không có nội dung của bạn) sau 13 tháng. Dữ liệu đã xoá khỏi hệ thống đang chạy có thể còn trong bản sao lưu tối đa {{fact:retention.backup_days}} ngày, cho đến khi bị ghi đè. Các bản ghi âm bạn chọn giữ vẫn nằm trên thiết bị của bạn cho đến khi bạn xoá." }
+      ]
+    },
+    {
+      "h": "8. Quyền của bạn",
+      "blocks": [
+        { "lead": "Bạn có quyền:" },
+        {
+          "ul": [
+            "Xem và chỉnh sửa cài đặt ngôn ngữ và mục tiêu hằng tuần trong ứng dụng. Tên, địa chỉ email và ảnh của bạn lấy từ tài khoản Google và được cập nhật khi bạn đăng nhập.",
+            "Hỏi chúng tôi qua email về dữ liệu cá nhân chúng tôi đang giữ về bạn. Hiện chưa có chức năng tự xuất dữ liệu.",
+            "Xoá từng mục ở những nơi ứng dụng cho phép (ví dụ bài viết, từ đã lưu, mục trong thư viện, thảo luận văn bản và media đã nhập), hoặc yêu cầu chúng tôi xoá toàn bộ tài khoản.",
+            "Xoá mọi thứ Orena lưu trên thiết bị của bạn bằng cách xoá dữ liệu trang web của trình duyệt, và thu hồi quyền dùng micro trong trình duyệt hoặc thiết bị bất cứ lúc nào.",
+            "Phản đối hoặc yêu cầu hạn chế một hoạt động xử lý cụ thể.",
+            "Khiếu nại tới cơ quan có thẩm quyền về bảo vệ dữ liệu cá nhân."
+          ]
+        },
+        { "p": "Với các yêu cầu ứng dụng chưa xử lý được, kể cả xoá tài khoản, hãy liên hệ chúng tôi theo mục 13; chúng tôi phản hồi trong vòng 30 ngày." }
+      ]
+    },
+    {
+      "h": "9. Bảo mật",
+      "blocks": [
+        { "p": "Dữ liệu được mã hoá khi truyền bằng HTTPS. Quyền truy cập công cụ quản trị chỉ dành cho tài khoản quản trị viên, và thao tác của quản trị viên được ghi nhật ký. Không có hệ thống nào an toàn tuyệt đối; nếu xảy ra sự cố ảnh hưởng tới dữ liệu của bạn, chúng tôi sẽ thông báo cho bạn và cơ quan có thẩm quyền theo thời hạn luật định." }
+      ]
+    },
+    {
+      "h": "10. Cookie và lưu trữ cục bộ",
+      "blocks": [
+        { "p": "Orena đặt một cookie duy nhất, là cookie phiên có chữ ký để giữ bạn đăng nhập (tối đa 14 ngày). Orena dùng bộ nhớ cục bộ của trình duyệt để ghi nhớ giao diện sáng hoặc tối và ngôn ngữ, và chỉ khi bạn chọn giữ thì mới lưu các bản ghi âm gần đây trên thiết bị. Trang và phông chữ của Orena được phục vụ từ chính Orena. Chúng tôi không dùng cookie phân tích hay cookie quảng cáo của bên thứ ba." }
+      ]
+    },
+    {
+      "h": "11. Trẻ em",
+      "blocks": [
+        { "p": "Orena dành cho người từ {{fact:min_age}} tuổi trở lên. Orena không thu thập ngày sinh của bạn và trong giai đoạn thử nghiệm chưa có cơ chế kỹ thuật kiểm tra tuổi; đăng nhập cần tài khoản Google, vốn có quy định độ tuổi riêng. Nếu phát hiện tài khoản thuộc về người dưới {{fact:min_age}} tuổi, chúng tôi sẽ xoá tài khoản và dữ liệu liên quan." }
+      ]
+    },
+    {
+      "h": "12. Thay đổi chính sách",
+      "blocks": [
+        { "p": "Chúng tôi đăng các thay đổi trên trang này. Với thay đổi quan trọng, chúng tôi cập nhật trang này ít nhất 14 ngày trước khi thay đổi có hiệu lực. Ngày cập nhật ở đầu trang luôn cho biết phiên bản hiện hành." }
+      ]
+    },
+    {
+      "h": "13. Liên hệ",
+      "blocks": [
+        { "p": "Orena do {{fact:operator.name}}, {{fact:operator.country}} vận hành. Nếu có câu hỏi hoặc yêu cầu về quyền riêng tư, hãy viết cho chúng tôi:" },
+        { "contact": [["Quyền riêng tư", "orena.legal@chillpickle.org"], ["Hỗ trợ chung", "orena.support@chillpickle.org"]] }
+      ]
+    }
+  ],
+  "footer": {
+    "copy": "© 2026 Orena",
+    "links": [["landing", "Giới thiệu"], ["privacy", "Quyền riêng tư"], ["terms", "Điều khoản"], ["account-deletion", "Xoá tài khoản"]]
+  }
+}

@@ -366,6 +366,10 @@ def orena_asset(asset_path: str, request: Request):
     # header.
     etag = _asset_etag(candidate)
     headers = {"Cache-Control": "no-cache", "ETag": etag}
+    if candidate.suffix == ".woff2" and candidate.parent.name == "fonts":
+        # Self-hosted font slices (D-162): a page loads a dozen of them and they change only when the fonts are
+        # re-fetched, so they are kept for a week rather than revalidated one by one (fonts.css still revalidates).
+        headers["Cache-Control"] = "public, max-age=604800"
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
     return FileResponse(candidate, headers=headers)
@@ -1831,14 +1835,27 @@ def landing_page() -> HTMLResponse:
     return _page("public", "landing.html")
 
 
+def _legal_page(name: str, request: Request) -> HTMLResponse:
+    """Terms, Privacy and Delete account are static HTML with the whole text in the response (no script needed to
+    read it): Vietnamese by default, English for `?lang=en`, and English for `?lang=zh` (there is no Chinese text)."""
+    lang = "en" if request.query_params.get("lang", "").lower() in {"en", "zh"} else "vi"
+    return _page("public", f"{name}.{lang}.html")
+
+
 @app.get("/terms", response_class=HTMLResponse)
-def terms_page() -> HTMLResponse:
-    return _page("public", "terms.html")
+def terms_page(request: Request) -> HTMLResponse:
+    return _legal_page("terms", request)
 
 
 @app.get("/privacy", response_class=HTMLResponse)
-def privacy_page() -> HTMLResponse:
-    return _page("public", "privacy.html")
+def privacy_page(request: Request) -> HTMLResponse:
+    return _legal_page("privacy", request)
+
+
+@app.get("/account-deletion", response_class=HTMLResponse)
+def account_deletion_page(request: Request) -> HTMLResponse:
+    # Public and signed-out by design: Google Play asks for a deletion page a person can reach without an account.
+    return _legal_page("account-deletion", request)
 
 
 @app.get("/next")
