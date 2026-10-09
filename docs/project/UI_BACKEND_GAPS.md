@@ -5210,3 +5210,12 @@ the metrics, By provider, Tokens by capability and By model from that report; no
   Owner: BACKEND.
 - **TOK-6 AI cost page.** The page "AI cost" (D-128, `costs.js`) still exists and overlaps this tab; the design draws
   no such page. Retire it once the human confirms the tab replaces it.
+
+## Grammar Concept rendering (2026-10-09)
+
+The concept screen now renders every learning field the API returns (summary, when_to_use, formula, variants, examples with translation and annotation, all relevant common_mistakes, compare, quick_practice explain, personal_production). Gaps found:
+
+- `compare[].with` is a point id only; the other point's title is not in the response. The screen resolves it from the catalogue (`GET /api/grammar/v1/points`) and leaves that side unlabelled when the catalogue cannot be read. A `with_title` in the compare entry would remove the second request.
+- `pattern.variants` is declared for `affirmative`, `negative` and `question`; the live ZH corpus carries only `negative` (53 of 380 points) and `question` (47). The affirmative form is the `formula` itself.
+- Examples carry `form` (affirmative / negative / question); the screen does not label it (not drawn, nothing invented).
+- The learner API answers only in the session's learning language, so an EN point cannot be read while the profile is ZH; the EN shape was checked against the contract and the test fixture, not a live EN body.

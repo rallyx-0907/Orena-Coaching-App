@@ -17,9 +17,12 @@
               screen says after a submission - it never concludes the pattern was used (D-100
               point 3) and writes no evidence.
 
-   Not drawn by frame 47 and left out, each recorded in docs/project/UI_BACKEND_GAPS.md:
-   `when_to_use` (§3), `compare` (§5), example `translation`/`annotation` (§4), the other
-   `common_mistakes`, `pattern.variants` as chips. */
+   Beyond frame 47 (human task 2026-10-09, "Grammar Concept rendering"): the corpus fields the frame does
+   not draw are rendered from the data the API already returns, in learning order - `header.summary`,
+   `when_to_use` (§3), `pattern.formula`, `pattern.variants` (§2), `examples[]` with `translation` and
+   `annotation` (§4), every relevant `common_mistakes[]` (§6), `compare[]` (§5), `quick_practice[]` with
+   `explain` (§7), `personal_production` (§7b). A section with no data has no entry here, so the screen
+   draws no heading for it. See `sectionsOf`. */
 import { contractText, levelCode } from '../../product/grammar-source.js';
 
 /* Contract roles (§2) -> the four chip colours frame 47 draws (a = accent, b = green, k = neutral,
@@ -142,8 +145,49 @@ export function exampleParts(example) {
   return parts;
 }
 
-export function examplesOf(point) {
-  return (Array.isArray(point?.examples) ? point.examples : []).filter((example) => example?.text).map((example) => ({ parts: exampleParts(example) }));
+export function examplesOf(point, support = 'en') {
+  return (Array.isArray(point?.examples) ? point.examples : []).filter((example) => example?.text).map((example) => ({
+    parts: exampleParts(example),
+    translation: contractText(example.translation, support),
+    annotation: contractText(example.annotation, support),
+  }));
+}
+
+/* §3: the situations the point is used in - one line each, in the support language. */
+export function whenToUseOf(point, support = 'en') {
+  return (Array.isArray(point?.when_to_use) ? point.when_to_use : []).map((item) => contractText(item, support)).filter(Boolean);
+}
+
+/* §2: `pattern.variants` holds the other forms of the formula, each a list of cells like `formula`.
+   Only the forms the point declares, in the order a learner meets them. */
+const VARIANT_FORMS = Object.freeze(['affirmative', 'negative', 'question']);
+
+export function variantsOf(point, support = 'en') {
+  const variants = point?.pattern?.variants;
+  if (!variants || typeof variants !== 'object') return [];
+  return VARIANT_FORMS
+    .map((form) => ({
+      form,
+      cells: Array.isArray(variants[form]) ? variants[form].filter((entry) => cellText(entry)).map((entry) => cell(entry, support)) : [],
+    }))
+    .filter((variant) => variant.cells.length);
+}
+
+/* §5: how this point differs from a neighbouring one. `with` is the other point's id; its title is
+   not in this point, so the screen resolves it from the catalogue when it can. An entry with nothing
+   to compare is left out. */
+export function comparesOf(point, support = 'en') {
+  return (Array.isArray(point?.compare) ? point.compare : [])
+    .map((entry) => ({
+      withId: String(entry?.with || ''),
+      thisMeaning: contractText(entry?.this_meaning, support),
+      thisExample: String(entry?.this_example || ''),
+      thisExamplePinyin: pinyinOf(entry?.this_example_pinyin),
+      otherMeaning: contractText(entry?.other_meaning, support),
+      otherExample: String(entry?.other_example || ''),
+      otherExamplePinyin: pinyinOf(entry?.other_example_pinyin),
+    }))
+    .filter((entry) => (entry.thisExample || entry.thisMeaning) && (entry.otherExample || entry.otherMeaning));
 }
 
 /* §6: one "Common mistake" block - the first entry whose `l1` is the learner's native language,
@@ -162,6 +206,23 @@ export function mistakeOf(point, support = 'en', native = '') {
     rightPinyin: pinyinOf(entry.right_pinyin),
     reason: contractText(entry.reason, support),
   };
+}
+
+/* Every relevant mistake, wrong / right / reason: the ones aimed at the learner's native language when
+   there are any, else all of them (a mistake is still true of the pattern when no entry names the L1). */
+export function mistakesOf(point, support = 'en', native = '') {
+  const list = (Array.isArray(point?.common_mistakes) ? point.common_mistakes : []).filter((entry) => entry?.wrong && entry?.right);
+  const l1 = String(native || '').trim().toLowerCase();
+  const matches = l1
+    ? list.filter((item) => (Array.isArray(item.l1) ? item.l1 : [item.l1]).some((locale) => String(locale || '').toLowerCase() === l1))
+    : [];
+  return (matches.length ? matches : list).map((entry) => ({
+    wrong: String(entry.wrong),
+    wrongPinyin: pinyinOf(entry.wrong_pinyin),
+    right: String(entry.right),
+    rightPinyin: pinyinOf(entry.right_pinyin),
+    reason: contractText(entry.reason, support),
+  }));
 }
 
 /* §7: `answer` is a 0-based index into 2 or 3 options - compared by index, never by text. A question
@@ -212,9 +273,33 @@ export function conceptView(point, { support = 'en', native = '' } = {}) {
     header: headerOf(point, support),
     pattern: formulaCells(point, support),
     illustration: illustrationOf(point, support),
-    examples: examplesOf(point),
+    whenToUse: whenToUseOf(point, support),
+    variants: variantsOf(point, support),
+    examples: examplesOf(point, support),
     mistake: mistakeOf(point, support, native),
+    mistakes: mistakesOf(point, support, native),
+    compare: comparesOf(point, support),
     quiz: quizOf(point, support),
     tryIt: tryItOf(point, support),
   };
+}
+
+/* The sections the screen draws, in learning order. Summary -> When to use -> Pattern -> Variants ->
+   Examples -> Common mistakes -> Compare -> Quick practice -> Try it yourself. A section is listed only
+   when its data is there, so the screen never draws an empty heading. Pattern and Variants share one
+   card (the illustration sits between them as part of the pattern); the other keys are cards of
+   their own. */
+export const SECTION_ORDER = Object.freeze(['overview', 'pattern', 'examples', 'mistakes', 'compare', 'quiz', 'tryIt']);
+
+export function sectionsOf(view) {
+  const has = {
+    overview: Boolean(view.header.summary) || view.whenToUse.length > 0,
+    pattern: view.pattern.length > 0 || Boolean(view.illustration) || view.variants.length > 0,
+    examples: view.examples.length > 0,
+    mistakes: view.mistakes.length > 0,
+    compare: view.compare.length > 0,
+    quiz: view.quiz.length > 0,
+    tryIt: Boolean(view.tryIt),
+  };
+  return SECTION_ORDER.filter((key) => has[key]);
 }

@@ -280,6 +280,84 @@ const servedZh = {
   assert.equal(concept.roleBucket('nonsense'), 'k');
 }
 
+// --- Grammar Concept renders the corpus fields the API returns, in learning order --------------
+// The ZH point below is shaped like a real `/api/grammar/v1/points/zh.le_completion` body (pinyin
+// arrays, vi/en gloss maps, variants.negative/question, compare[] with `with`), cut down.
+{
+  const gloss = (vi, en) => ({ vi, en });
+  const cell = (text, role, label, pinyin) => ({ text, role, label, pinyin });
+  const pointLe = {
+    id: 'zh.le_completion', target_lang: 'zh', level: { framework: 'hsk3', value: '2', rank: 2 },
+    header: { native_title: '了', native_title_pinyin: ['le'], sub: gloss('hoàn thành', 'completion'), summary: gloss('了 báo hiệu việc đã xong.', '了 marks a finished action.') },
+    when_to_use: [gloss('Khi việc đã xong.', 'When the action is finished.'), gloss('Khi có kết quả cụ thể.', 'When there is a concrete result.')],
+    pattern: {
+      formula: [cell('主语', 'subject', gloss('chủ ngữ', 'subject'), ['zhǔ', 'yǔ']), cell('动词', 'verb', gloss('động từ', 'verb'), ['dòng', 'cí']), cell('了', 'particle', gloss('trợ từ', 'particle'), ['le'])],
+      variants: {
+        negative: [cell('主语', 'subject', gloss('chủ ngữ', 'subject'), ['zhǔ', 'yǔ']), cell('没有', 'aux', gloss('phủ định', 'negation'), ['méi', 'yǒu']), cell('动词', 'verb', gloss('động từ', 'verb'), ['dòng', 'cí'])],
+        question: [cell('主语', 'subject', gloss('chủ ngữ', 'subject'), ['zhǔ', 'yǔ']), cell('动词', 'verb', gloss('động từ', 'verb'), ['dòng', 'cí']), cell('了', 'particle', gloss('trợ từ', 'particle'), ['le']), cell('吗', 'particle', gloss('nghi vấn', 'question'), ['ma'])],
+      },
+      illustration: { kind: 'none' },
+    },
+    examples: [
+      { text: '我买了书。', form: 'affirmative', spans: [{ start: 0, end: 1, role: 'subject' }, { start: 1, end: 2, role: 'verb' }, { start: 2, end: 3, role: 'particle' }], pinyin: ['wǒ', 'mǎi', 'le', 'shū', ''], translation: gloss('Tôi đã mua sách.', 'I bought a book.'), annotation: gloss('Việc đã xong.', 'The action is done.') },
+      { text: '我没买书。', form: 'negative', spans: [], pinyin: ['wǒ', 'méi', 'mǎi', 'shū', ''], translation: gloss('Tôi chưa mua sách.', 'I did not buy a book.'), annotation: { vi: '', en: '' } },
+    ],
+    compare: [{ with: 'zh.guo_experience', this_meaning: gloss('了: đã xong.', '了: finished.'), this_example: '我买了书。', this_example_pinyin: ['wǒ', 'mǎi', 'le', 'shū', ''], other_meaning: gloss('过: từng.', '过: ever.'), other_example: '我去过北京。', other_example_pinyin: ['wǒ', 'qù', 'guo', 'běi', 'jīng', ''] }],
+    common_mistakes: [
+      { wrong: '我买书了了。', right: '我买了书。', reason: gloss('Một 了 là đủ.', 'One 了 is enough.'), l1: ['vi'], wrong_pinyin: null, right_pinyin: null },
+      { wrong: '我昨天没买了书。', right: '我昨天没买书。', reason: gloss('Phủ định bỏ 了.', 'Drop 了 after 没.'), l1: ['en'] },
+      { wrong: '', right: 'x', reason: gloss('bỏ', 'skip') },
+    ],
+    quick_practice: [{ q: '我买___书。', options: [{ text: '了', pinyin: ['le'] }, { text: '过', pinyin: ['guo'] }], answer: 0, explain: gloss('Việc đã xong dùng 了.', 'A finished action uses 了.') }],
+    personal_production: { prompt: gloss('Viết một câu có 了.', 'Write a sentence with 了.'), placeholder: '我买了……', sample: { text: '我吃了饭。', pinyin: ['wǒ', 'chī', 'le', 'fàn', ''] } },
+  };
+  const ORDER = ['overview', 'pattern', 'examples', 'mistakes', 'compare', 'quiz', 'tryIt'];
+  assert.deepEqual([...concept.SECTION_ORDER], ORDER, 'learning order: summary + when to use, pattern + variants, examples, mistakes, compare, quick practice, try it');
+
+  const vi = concept.conceptView(pointLe, { support: 'vi', native: 'vi' });
+  assert.deepEqual(concept.sectionsOf(vi), ORDER, 'a full point draws every section, in order');
+  assert.deepEqual(vi.whenToUse, ['Khi việc đã xong.', 'Khi có kết quả cụ thể.']);
+  assert.deepEqual(vi.variants.map((variant) => variant.form), ['negative', 'question'], 'only the forms the point declares');
+  assert.deepEqual(vi.variants[1].cells.map((c) => c.text), ['主语', '动词', '了', '吗']);
+  assert.equal(vi.examples[0].translation, 'Tôi đã mua sách.', 'translation in the support language');
+  assert.equal(vi.examples[0].annotation, 'Việc đã xong.');
+  assert.equal(vi.examples[1].annotation, '', 'an empty annotation is no line');
+  assert.deepEqual(vi.mistakes.map((m) => m.wrong), ['我买书了了。'], 'the mistakes aimed at the learner\'s L1; one without wrong/right is dropped');
+  assert.equal(vi.mistakes[0].reason, 'Một 了 là đủ.');
+  assert.equal(vi.compare[0].withId, 'zh.guo_experience');
+  assert.equal(vi.compare[0].thisMeaning, '了: đã xong.');
+  assert.equal(vi.compare[0].otherExample, '我去过北京。');
+  assert.deepEqual(vi.compare[0].otherExamplePinyin, ['wǒ', 'qù', 'guo', 'běi', 'jīng', '']);
+  assert.equal(vi.quiz[0].explain, 'Việc đã xong dùng 了.', 'quick_practice explain in the support language');
+  assert.equal(vi.tryIt.prompt, 'Viết một câu có 了.');
+
+  const en = concept.conceptView(pointLe, { support: 'en', native: 'fr' });
+  assert.deepEqual(en.mistakes.map((m) => m.wrong), ['我买书了了。', '我昨天没买了书。'], 'no mistake names the L1: all of them');
+  assert.equal(en.examples[0].translation, 'I bought a book.');
+  assert.equal(en.whenToUse[0], 'When the action is finished.');
+
+  // The same on an English point shaped like the API (the contract's own fixture).
+  const pp = concept.conceptView(pointPP, { support: 'en', native: 'en' });
+  assert.deepEqual(concept.sectionsOf(pp), ORDER.filter((key) => key !== 'compare' || pp.compare.length), 'the EN point draws the sections it has data for');
+  assert.ok(pp.examples.every((example) => example.translation), 'every EN example carries its translation');
+  assert.ok(pp.variants.length > 0 && pp.compare.length > 0, 'EN fixture: variants and compare are rendered (the fixture has no when_to_use, so that section is omitted)');
+  assert.ok(!concept.sectionsOf(pp).includes('overview') || pp.header.summary, 'overview needs a summary or a when_to_use line');
+
+  // Sections with no data disappear: no heading, no placeholder.
+  const bare = concept.conceptView({ id: 'x', target_lang: 'en', header: { native_title: 'X', summary: { en: 'Only a summary.' } } }, { support: 'en' });
+  assert.deepEqual(concept.sectionsOf(bare), ['overview']);
+  assert.deepEqual([bare.whenToUse, bare.variants, bare.examples, bare.mistakes, bare.compare, bare.quiz], [[], [], [], [], [], []]);
+  assert.deepEqual(concept.sectionsOf(concept.conceptView({ id: 'y', header: { native_title: 'Y' }, pattern: { formula: [], variants: { negative: [] } }, compare: [{ with: 'a' }], when_to_use: [{}, ''] })), [], 'empty arrays and entries with no content draw nothing');
+  assert.deepEqual(concept.sectionsOf(concept.conceptView({ id: 'z', header: { native_title: 'Z' }, when_to_use: [{ en: 'Only when to use.' }] })), ['overview']);
+  assert.deepEqual(concept.sectionsOf(concept.conceptView({ ...pointLe, compare: [], pattern: { formula: pointLe.pattern.formula }, when_to_use: [] })), ['overview', 'pattern', 'examples', 'mistakes', 'quiz', 'tryIt'], 'no variants, no compare, no when_to_use: the rest keeps its order');
+
+  // The screen reads these in this order and uses only kit tokens.
+  const screenSrc = fs.readFileSync('static/orena/screens/grammar-concept/screen.js', 'utf8');
+  assert.match(screenSrc, /sectionsOf\(view\)/, 'the screen draws what sectionsOf lists');
+  const cssSrc = fs.readFileSync('static/orena/screens/grammar-concept/grammar-concept.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.doesNotMatch(cssSrc, /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/, 'no colour literal in the Grammar Concept styles');
+}
+
 // --- Try it yourself never concludes the pattern was used (D-100 point 3) ----------------------
 {
   const src = fs.readFileSync('static/orena/screens/grammar-concept/screen.js', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
