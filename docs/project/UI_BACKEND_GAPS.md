@@ -5311,8 +5311,15 @@ The 2026-10-09 export's Landing, Terms and Privacy, and its Backdrop change.
   manual process); (b) the sign-in consent line and Settings → Privacy now link to the three pages (the consent
   line's two links are underlined, the one affordance the design's plain text line lacks; the Settings links are
   the Licences link's pattern); (c) the "Delete audio" row stays inert (device audio, N-31) and is not described as
-  working; (d) the pages need JavaScript (PUB-1): a crawler without it sees no policy text, which Google Play's
-  review may not accept; a server-rendered copy is a follow-up for the human to decide.
+  working; (d) Terms, Privacy and Delete account are static HTML and CSS, one file per language
+  (`templates/orena/public/<page>.<vi|en>.html`, chosen by `?lang=`): the whole text is in the response and no
+  script is needed to read it (a crawler or a Play reviewer without JavaScript sees everything); the design's
+  runtime and React are not loaded on them, the language switch is two links, and a small optional script only
+  highlights the contents entry. Measured against the previous script-driven pages at 1920x1080 and 390x844 in
+  Vietnamese and English (154, 122 and 92 elements; same element counts, 0 px position and size delta, same
+  computed type, colour, spacing and radius, same document heights). The Landing stays runtime-based (PUB-1);
+  (e) the publish date is stamped at deploy: `node scripts/build_public_pages.mjs --release --effective-date
+  YYYY-MM-DD` (the repository keeps `effective_date` null).
 - **PUB-3 Donate (human decision).** The Terms and Privacy footers link to a Donate page ("Support us"/"Ung ho")
   and Terms section 4 links "Support Orena". The pinned Donate page is Vietnamese-only with sample amounts and a
   dummy bank account, so it is **not built**: the footer link is removed and section 4's link keeps its words as

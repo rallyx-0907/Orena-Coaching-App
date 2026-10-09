@@ -4723,3 +4723,23 @@ entry built from it). Same project as D-088.
    Google Fonts disclosure, and the public-pages gate forbids `fonts.googleapis.com` and `fonts.gstatic.com`.
 7. **Links.** The sign-in consent line links Terms and Privacy Policy; Settings → Privacy links Privacy Policy,
    Terms and Delete account (new tab); the Landing footer gains "Delete account" in its own link style.
+8. **Static legal pages (human, 2026-10-09).** Terms, Privacy and Delete account are server-rendered static HTML
+   with the full text in the response and no JavaScript needed (crawlers and Play reviewers without JS read
+   everything): one file per language, Vietnamese by default, English for `?lang=en` and for `?lang=zh`, the
+   language switch is plain links, the design runtime and React are not loaded on them. The look is the design's
+   (measured: same element counts, 0 px delta, same computed styles at 1920x1080 and 390x844). The Landing stays
+   runtime-based (PUB-1, deferred). The gate checks the raw HTML of each language with scripts removed.
+9. **Age.** Minimum age 13 (not 12). The pages say the service is for people 13 and over, no date of birth is
+   collected, there is no technical age gate during the beta, and an account found to belong to someone under 13
+   is deleted. Play target audience 13+, not Families.
+10. **Backups: 30 days, enforced.** `scripts/runtime_backup.py rotate --dir <dir> --days 30 [--apply]` keeps the
+    backup directory to 30 days: dry run by default; touches only regular files named `orena-*.dump` directly
+    inside the given directory (never subfolders, symlinks, the deletion journal or anything else); removes a
+    dump when it is at least 30 days old (the older of its mtime and the timestamp in its name); keeps the newest
+    even if stale unless `--allow-empty`; logs every decision. Tested with a temporary directory (boundary at
+    exactly 30 days). Verified read-only against the real `%USERPROFILE%\.orena\backups`. `facts.json`
+    `retention.backup_days` is therefore 30. Applying it on the :8000 host (at least daily) is part of the
+    human-gated deploy.
+11. **Publish date.** `effective_date` stays null in the repository. The deploy step is `node
+    scripts/build_public_pages.mjs --release --effective-date YYYY-MM-DD` with the date of the policy's first public
+    deployment on :8000; the release check fails without it.

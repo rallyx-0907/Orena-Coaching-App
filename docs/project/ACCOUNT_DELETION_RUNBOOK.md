@@ -17,8 +17,9 @@ the public promise it serves is `/account-deletion` (D-161): a learner emails
      anonymised and that only an internal id, Google's opaque sign-in id and the deletion time are kept. The sign-in
      id (`google_sub`, the account key) must stay so the barrier holds. The reviewer decides the anonymised values
      (`email` is UNIQUE and NOT NULL, so it needs a per-account non-identifying placeholder).
-   - **Backup retention** (`facts.json` `retention.backup_days`, still null). `scripts/runtime_backup.py` has no rotation;
-     either set one and apply it, or the public text cannot be released.
+   - **Backup retention** (`facts.json` `retention.backup_days` = 30). Enforced by `python scripts/runtime_backup.py rotate
+     --dir <backup dir> --days 30 --apply`, run at least daily on the host (dry run first). Applying it on :8000 is part of
+     the human-gated deploy.
    - **Whether `ai_cost_records` exists** on the public database (migration 0026-0028 are absent from
      `migrations/versions`; `ai/account_costs.py` pauses if the table is missing).
 3. Keep the **deletion journal** outside any database (`scripts/runtime_backup.py deletions`), and after any restore run
@@ -92,5 +93,5 @@ Record the completion date in the request log. If the 30 days are about to pass,
 2. The tables outside `deletion_enumeration.py` (section 3, "Not in the enumeration") added to it, so the future runtime
    deletes the same set.
 3. Whether admin-action `audit_logs` rows about the account are kept.
-4. Backup rotation and `backup_days`.
+4. Confirm backup rotation is applied on the host (`backup_days` = 30).
 5. Whether session revocation is needed before the runtime is built.

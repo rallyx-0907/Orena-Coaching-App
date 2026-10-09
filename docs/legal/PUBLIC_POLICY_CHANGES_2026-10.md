@@ -70,9 +70,16 @@ deleted (the enumeration in `persistence/deletion_enumeration.py:12-50` plus the
 overwritten, operational logs, data already with service providers, device-local data), processing by hand within
 30 days. No commitment beyond the human's decision.
 
+## Later changes (2026-10-09, human decisions on the PR)
+
+- The three pages are static HTML (no script needed; one file per language); layout measured identical to the previous pages.
+- Age: Terms 1 and Privacy 11 now also say no date of birth is collected and there is no technical age gate during the beta
+  (evidence: no birth/age/parental code; `auth_support.py:164-175`).
+- Backups: "up to 30 days" now has a mechanism (`scripts/runtime_backup.py rotate`).
+
 ## Facts the text states and who must confirm them
 
-`docs/legal/public/facts.json`: publish date (null), backup retention days (null); both block
-`node scripts/build_public_pages.mjs --release`. Minimum age 13, Orena Intelligence records 90 days and feedback 24
-months are the human's decisions of 2026-10-09; the last two are true only once `AGENT_TURN_RETENTION_SWEEP` and
-`FEEDBACK_RETENTION_SWEEP` are ON on the public runtime.
+`docs/legal/public/facts.json`: publish date (null in the repository; stamped at deploy with `--release
+--effective-date YYYY-MM-DD`, which fails without it). Minimum age 13, Orena Intelligence records 90 days, feedback 24
+months and backups 30 days are the human's decisions of 2026-10-09; the retention statements are true only once
+`AGENT_TURN_RETENTION_SWEEP` and `FEEDBACK_RETENTION_SWEEP` are ON and backup rotation is applied on the public host.

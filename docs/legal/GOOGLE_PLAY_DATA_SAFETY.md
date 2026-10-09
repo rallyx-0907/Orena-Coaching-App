@@ -19,7 +19,7 @@ build adds a diagnostics or advertising SDK, this file and the policy are wrong 
 | Data deletion URL / request without deleting the account | same page, section 4 (per-item deletes) | |
 | Privacy policy URL | `https://<public host>/privacy` | **PENDING** host, as above |
 | Independent security review | No | |
-| Target audience | 13 and over; not designed for children; not in the Families programme | human decision 2026-10-09 (`facts.json` `min_age` 13). No technical age gate in the beta |
+| Target audience | 13 and over; not designed for children; not in the Families programme | human decision 2026-10-09 (`facts.json` `min_age` 13; stays 13, not 12). No date of birth is collected and there is no technical age gate in the beta; accounts found to belong to someone under 13 are deleted. Not in the Families programme |
 | Ads | No ads, no ad SDK | policy summary; no ad code |
 | Data sold | No | policy sect. 6 |
 
@@ -62,7 +62,9 @@ Sign-in with Google, and a learner's own import of a YouTube link, are not shari
   (`feedback_retention.py`): **true only when `AGENT_TURN_RETENTION_SWEEP=on` and `FEEDBACK_RETENTION_SWEEP=on`**; they are
   unset on :8000 today, the human decided to turn both on at deploy. AI cost records 13 months
   (`ai/account_costs.py:27`).
-- Backups: up to `retention.backup_days` days. **PENDING**: null in `facts.json`; `scripts/runtime_backup.py` has no rotation.
+- Backups: up to 30 days (`retention.backup_days` = 30), enforced by `python scripts/runtime_backup.py rotate --dir <backup
+  dir> --days 30 --apply` (tested; `scripts/test_runtime_backup.py`). **Applying it on the :8000 host, at least daily, is
+  part of the human-gated deploy**; until then the statement is not yet true there.
 
 ## 5. Internal providers (never named in public text)
 
@@ -87,8 +89,9 @@ Verified by coordinator 2026-10-09 against :8000 (names and booleans only, no ke
 ## 6. Release checklist for this form
 
 1. Set `AGENT_TURN_RETENTION_SWEEP=on` and `FEEDBACK_RETENTION_SWEEP=on` before publishing the policy.
-2. Set `effective_date` and `retention.backup_days` in `docs/legal/public/facts.json`; rebuild the pages
-   (`node scripts/build_public_pages.mjs`); `node scripts/build_public_pages.mjs --release` must pass.
+2. Apply backup rotation on the :8000 host (daily `rotate ... --apply`). At deploy run `node
+   scripts/build_public_pages.mjs --release --effective-date YYYY-MM-DD` (the date of first public deployment);
+   it fails while any fact is unconfirmed or the date is missing.
 3. Confirm the classification in section 2 and the two readings flagged in section 3 (diagnostics, IP address).
 4. Put the real host into the Play Console privacy-policy and delete-account URLs.
 5. An independent architecture review of `docs/project/ACCOUNT_DELETION_RUNBOOK.md` is recorded in Git before the
