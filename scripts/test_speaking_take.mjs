@@ -154,4 +154,64 @@ assert.deepEqual(failureOf(Object.assign(new TypeError('Failed to fetch'))), { k
   assert.equal(h.take.takeMs, 1500);
 }
 
+// The plan's pronunciation minutes (D-16Z). The server charges a take's seconds once per idempotency key: one key
+// per take, kept when the answer was lost or the server says it already has the take, new when the server answered
+// that it charged nothing - so a retry of the same take is never charged twice and never blocked by a failure.
+const refusal = Object.assign(new Error('You have used 5 of 5'), {
+  status: 429, category: 'quota_exhausted', context: { feature: 'pronunciation.audio', used: 300, limit: 300, scale: 60 },
+});
+assert.deepEqual(failureOf(refusal), { kind: 'quota', retry: false, error: refusal }, 'the limit is the server\'s refusal, not a service failure');
+assert.equal(failureOf(Object.assign(new Error('x'), { status: 429, category: 'rate_limited' })).kind, 'service', 'another 429 is not the plan');
+{
+  const keys = [];
+  const script = [
+    () => { throw new TypeError('Failed to fetch'); }, // no answer: the take may have been processed
+    () => { throw Object.assign(new Error('done'), { status: 409, category: 'operation_finished' }); },
+    () => { throw Object.assign(new Error('timeout'), { status: 504, category: 'pronunciation_timeout' }); }, // answered: nothing charged
+    (line) => measured(line),
+    (line) => measured(line),
+  ];
+  const api = {
+    assessPronunciation: async (blob, language, line, mode, filename, options) => {
+      keys.push(options?.idempotencyKey);
+      return script[keys.length - 1](line);
+    },
+  };
+  const h = harness({ api });
+  await h.take.start();
+  h.advance(1500);
+  await h.take.stop('Hello again.');
+  assert.deepEqual(h.last().error, { kind: 'offline', retry: true });
+  await h.take.retry();
+  await h.take.retry();
+  await h.take.retry();
+  await h.take.retry();
+  assert.equal(h.last().phase, TAKE.RESULT);
+  assert.ok(keys.every((key) => typeof key === 'string' && key.length >= 8), 'every send carries a key');
+  assert.equal(keys[0], keys[1], 'the answer was lost: the same key');
+  assert.equal(keys[1], keys[2], 'the server already had the take: the same key');
+  assert.notEqual(keys[2], keys[3], 'a timeout answered by the server charged nothing: a new key');
+  // The next take is another action.
+  await h.take.start();
+  h.advance(1500);
+  await h.take.stop('Hello again.');
+  assert.ok(!keys.slice(0, 4).includes(keys[4]), 'another take, another key');
+}
+
+// The request itself: the take's key and the device timezone ride as headers, and the form is left to the browser
+// (a JSON content type would break the multipart boundary).
+{
+  const { api } = await import('../static/orena/infrastructure/api.js');
+  const seen = [];
+  globalThis.fetch = async (url, options) => (seen.push({ url, options }), new Response('{"score_kind":"measured"}', { status: 200, headers: { 'content-type': 'application/json' } }));
+  await api.assessPronunciation(new Blob(['x']), 'en', 'Hello.', 'scripted', 'recording.webm', { idempotencyKey: 'take-key-1' });
+  await api.assessPronunciation(new Blob(['x']), 'en', 'Hello.');
+  assert.equal(seen[0].url, '/api/speech/pronunciation');
+  assert.equal(seen[0].options.headers['Idempotency-Key'], 'take-key-1');
+  assert.ok(seen[0].options.headers['X-Orena-Timezone'], 'the learner\'s zone decides when the month ends');
+  assert.ok(!Object.keys(seen[0].options.headers).some((name) => name.toLowerCase() === 'content-type'));
+  assert.ok(seen[0].options.body instanceof FormData);
+  assert.ok(!('Idempotency-Key' in seen[1].options.headers), 'no key unless the take supplies one');
+}
+
 console.log('Speaking take lifecycle: PASS');

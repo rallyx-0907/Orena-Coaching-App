@@ -28,6 +28,7 @@ import { pronunciationView } from '../../capabilities/pronunciation-result.js';
 import { createSpeakingRecorder, TAKE, MAX_TAKE_MS } from '../../product/speaking-recorder.js';
 import { lineKey, listTakes, viewOfTake, bestTake, attemptIdOf } from '../../product/take-store.js';
 import { openMicState, micGate } from '../mic/sheet.js';
+import { showQuotaNotice } from '../plan/quota-notice.js';
 import { t } from './copy.js';
 import { tokenStrip, tipFor, detailFor, metricsFor, recorderState, recCaptionKey, micStateFor, attemptOrdinal, ringTone, verdictKey, bandInk, clockLabel, restingWave, liveWave, whenLabel, WAVE_BARS } from './model.js';
 
@@ -117,7 +118,9 @@ export default async function mountScriptedPronunciation(element, ctx) {
         paintClock();
       },
       failure(error) {
-        if (error.kind === 'microphone' || error.kind === 'unsupported') {
+        if (error.kind === 'quota') {
+          showQuotaNotice(ctx, error.error);
+        } else if (error.kind === 'microphone' || error.kind === 'unsupported') {
           openMicState(ctx, { state: 'blocked', onAction: (action) => (action === 'retry' ? void begin() : undefined) });
         } else {
           openMicState(ctx, {

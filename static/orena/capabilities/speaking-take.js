@@ -12,6 +12,8 @@
    - A failure says whose it is: the learner's (no speech, too short, microphone) or the service's
      (retry the same take without recording again). A service failure is never the learner's. */
 
+import { newIdempotencyKey } from '../infrastructure/quota-headers.js';
+
 export const TAKE = Object.freeze({
   IDLE: 'idle',
   RECORDING: 'recording',
@@ -25,12 +27,15 @@ export const TAKE = Object.freeze({
 export const MIN_TAKE_MS = 600;
 export const MAX_TAKE_MS = 60_000;
 
-/* What went wrong, from the route's canonical error envelope. */
+/* What went wrong, from the route's canonical error envelope. The plan's limit (D-16Z) is the server's refusal,
+   told apart from a failure of the service: nothing is retried, and the room says it from the server's own figures
+   (`error`, for `screens/plan/quota-notice.js`). */
 export function failureOf(error) {
   if (error?.name === 'AbortError') return { kind: 'aborted', retry: false };
   // A request that never reached the server: the network, not the learner and not the provider.
   if ((error?.name === 'TypeError' && !error?.status) || globalThis.navigator?.onLine === false) return { kind: 'offline', retry: true };
   const category = String(error?.category || '');
+  if (error?.status === 429 && category === 'quota_exhausted') return { kind: 'quota', retry: false, error };
   if (category === 'pronunciation_no_speech') return { kind: 'no_speech', retry: false };
   if (category === 'pronunciation_audio_empty') return { kind: 'too_short', retry: false };
   if (category === 'pronunciation_audio_unsupported') return { kind: 'audio_unsupported', retry: false };
@@ -53,6 +58,9 @@ export function createSpeakingTake({
   let disposed = false;
   let startedAt = 0;
   let take = null; // { blob, url, ms }
+  // One key per take (D-16Z): the server charges a take's seconds once however often this exact take is sent. It
+  // changes only after the server answered that it charged nothing, so the same take can be assessed again.
+  let takeKey = '';
   const state = { phase: TAKE.IDLE, result: null, error: null, kept: null, attemptId: '', reference: '' };
 
   const emit = () => {
@@ -115,6 +123,7 @@ export function createSpeakingTake({
     }
     release();
     take = { blob: recorded.blob, url: urls?.createObjectURL ? urls.createObjectURL(recorded.blob) : recorded.url, ms };
+    takeKey = newIdempotencyKey();
     recorder.discard?.();
     await assess(reference, mine);
   }
@@ -124,7 +133,7 @@ export function createSpeakingTake({
     const line = String(reference || '').trim();
     set({ phase: TAKE.PROCESSING, error: null, result: null, kept: null, attemptId: '', reference: line });
     try {
-      const result = await api.assessPronunciation(take.blob, language, line);
+      const result = await api.assessPronunciation(take.blob, language, line, 'scripted', 'recording.webm', { idempotencyKey: takeKey });
       if (disposed || mine !== generation) return;
       set({ phase: TAKE.RESULT, result });
       if (keep) void remember(result, mine);
@@ -132,6 +141,11 @@ export function createSpeakingTake({
       if (disposed || mine !== generation) return;
       const failure = failureOf(error);
       if (failure.kind === 'aborted') return;
+      // An answer from Orena's own server (it has a category) says what happened to the allowance: a refusal or a
+      // failure charged nothing, so the same take may be sent again as a new request. No answer (the network, a
+      // proxy), or "already being processed / already processed", keeps the key, so a resend of a take the server
+      // did process is refused instead of charged again.
+      if (typeof error?.category === 'string' && error.status >= 400 && error.category !== 'operation_in_progress' && error.category !== 'operation_finished') takeKey = newIdempotencyKey();
       set({ phase: TAKE.ERROR, error: failure });
     }
   }

@@ -21,6 +21,9 @@ Routes never touch the repository or a plan id; they write
 An exception inside the block settles 0 (dispatched work, the learner got nothing) or releases (not
 dispatched). Leaving the block without a settle settles the admitted units.
 
+A meter charged by what the request turns out to be (audio seconds) asks `require_ready()` first, measures the
+work locally, then admits exactly that many units (`pronunciation.audio`, D-16Z).
+
 Work that outlives the call stack that admitted it - a streamed Orena answer is produced in a worker thread after
 the route returned - uses `begin()` instead: the same admission, returning the ticket, which the caller then owns
 and must settle or release on every path (D-163).
@@ -74,9 +77,9 @@ SETTING_KEY = "product.quota_enforcement"
 # Meters whose routes this build admits through `admit()`. Listing any other meter enforces nothing, so it is
 # refused by the admin setting and ignored (logged) in the environment: a Plan screen must never show a meter as
 # counted while nothing counts it.
-WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message")
+WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio")
 # Meters whose provider call ends inside the request; only these are reconciled after RECONCILE_AFTER.
-SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message")
+SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio")
 SWITCH_CACHE_SECONDS = 5.0
 
 # [HUMAN, pending] What a reservation whose owner died after dispatch costs: "admitted" (default, human
@@ -641,6 +644,21 @@ def begin(meter: str, *, units: int = 1, request_digest: str = "", idempotency_k
     if meter not in state["meters"]:
         return NULL_TICKET
     return _reserve(meter, units, request_digest, idempotency_key)
+
+
+def require_ready(meter: str) -> bool:
+    """True when `meter` is enforced and enforcement can run; False when it is not enforced; 503 when it is enforced
+    but cannot be checked (the switch, the store or the catalogue is unreadable). For a route whose units are known
+    only after local work (decoding audio): it asks first, so that work is not done for a request about to be
+    refused, and a route that does not enforce the meter does none of it."""
+    if meter not in METERS:
+        raise ValueError(f"Unknown meter {meter!r}")
+    state = switch()
+    if meter not in state["meters"]:
+        return False
+    if state["state"] == "unavailable":
+        raise _unavailable(state["reason"] or "store")
+    return True
 
 
 def refuse_unmetered(meter: str, *, category: str, message: str) -> None:
