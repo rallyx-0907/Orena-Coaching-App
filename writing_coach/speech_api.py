@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime, timedelta
+import functools
 import hashlib
 import json
 import logging
@@ -10,10 +12,12 @@ import math
 import os
 import time
 from typing import Annotated, Any
+import weakref
 
+import anyio
+import anyio.to_thread
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
-from starlette.concurrency import run_in_threadpool
 
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code
@@ -597,9 +601,11 @@ async def assess_pronunciation(
                 "pronunciation_audio_empty",
                 "The recording is empty.",
             )
-        # Local decoding, the plan quota and the paid provider call run off the event loop (they block).
-        result = await run_in_threadpool(
-            _assess_metered, provider, data, file, normalized_language, reference, unscripted
+        # Local decoding, the plan quota and the paid provider call run off the event loop (they block), on a
+        # limiter of their own so a burst of assessments cannot take every worker thread the other routes share.
+        result = await anyio.to_thread.run_sync(
+            functools.partial(_assess_metered, provider, data, file, normalized_language, reference, unscripted),
+            limiter=_pronunciation_limiter(),
         )
         outcome = result.score_kind
     except HTTPException as exc:
@@ -654,6 +660,26 @@ async def assess_pronunciation(
         ],
         "latency_ms": latency_ms,
     }
+
+
+PRONUNCIATION_WORKERS_ENV = "PRONUNCIATION_MAX_CONCURRENT"
+DEFAULT_PRONUNCIATION_WORKERS = 8
+_pronunciation_limiters: weakref.WeakKeyDictionary[Any, anyio.CapacityLimiter] = weakref.WeakKeyDictionary()
+
+
+def _pronunciation_limiter() -> anyio.CapacityLimiter:
+    """The worker threads assessments may hold at once (decode plus the provider request can take tens of seconds):
+    `PRONUNCIATION_MAX_CONCURRENT`, default 8, of the pool's 40 that every synchronous route shares. One limiter per
+    running event loop (a limiter belongs to the loop that created it)."""
+    loop = asyncio.get_running_loop()
+    limiter = _pronunciation_limiters.get(loop)
+    if limiter is None:
+        try:
+            size = int(os.getenv(PRONUNCIATION_WORKERS_ENV, "") or DEFAULT_PRONUNCIATION_WORKERS)
+        except ValueError:
+            size = DEFAULT_PRONUNCIATION_WORKERS
+        limiter = _pronunciation_limiters[loop] = anyio.CapacityLimiter(max(1, size))
+    return limiter
 
 
 PRONUNCIATION_METER = "pronunciation.audio"

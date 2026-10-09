@@ -163,39 +163,79 @@ const refusal = Object.assign(new Error('You have used 5 of 5'), {
 assert.deepEqual(failureOf(refusal), { kind: 'quota', retry: false, error: refusal }, 'the limit is the server\'s refusal, not a service failure');
 assert.equal(failureOf(Object.assign(new Error('x'), { status: 429, category: 'rate_limited' })).kind, 'service', 'another 429 is not the plan');
 {
-  const keys = [];
-  const script = [
-    () => { throw new TypeError('Failed to fetch'); }, // no answer: the take may have been processed
-    () => { throw Object.assign(new Error('done'), { status: 409, category: 'operation_finished' }); },
-    () => { throw Object.assign(new Error('timeout'), { status: 504, category: 'pronunciation_timeout' }); }, // answered: nothing charged
-    (line) => measured(line),
-    (line) => measured(line),
-  ];
-  const api = {
-    assessPronunciation: async (blob, language, line, mode, filename, options) => {
-      keys.push(options?.idempotencyKey);
-      return script[keys.length - 1](line);
-    },
+  /* A server that answers only what the real one can: a key it has seen is `operation_in_progress` while its first
+     request runs and `operation_finished` for ever after - whatever that first request's outcome (the quota core
+     records a settled-0 failure too), so only a NEW key can be assessed again. `lose` makes the answer to a first
+     request vanish on the way back (the server still finishes it); `hang` leaves it running; `fail` makes the first
+     request an answered service failure. */
+  const server = (plan) => {
+    const seen = new Map(); // key -> 'in_progress' | 'finished'
+    const sent = [];
+    return {
+      sent,
+      finish: (key) => seen.set(key, 'finished'),
+      api: {
+        assessPronunciation: async (blob, language, line, mode, filename, options) => {
+          const key = options?.idempotencyKey;
+          sent.push(key);
+          if (seen.get(key) === 'in_progress') throw Object.assign(new Error('busy'), { status: 409, category: 'operation_in_progress' });
+          if (seen.get(key) === 'finished') throw Object.assign(new Error('done'), { status: 409, category: 'operation_finished' });
+          const how = plan.shift();
+          seen.set(key, how === 'hang' ? 'in_progress' : 'finished');
+          if (how === 'lose' || how === 'hang') throw new TypeError('Failed to fetch');
+          if (how === 'fail') throw Object.assign(new Error('timeout'), { status: 504, category: 'pronunciation_timeout' });
+          return measured(line);
+        },
+      },
+    };
   };
-  const h = harness({ api });
-  await h.take.start();
-  h.advance(1500);
-  await h.take.stop('Hello again.');
-  assert.deepEqual(h.last().error, { kind: 'offline', retry: true });
-  await h.take.retry();
-  await h.take.retry();
-  await h.take.retry();
-  await h.take.retry();
-  assert.equal(h.last().phase, TAKE.RESULT);
-  assert.ok(keys.every((key) => typeof key === 'string' && key.length >= 8), 'every send carries a key');
-  assert.equal(keys[0], keys[1], 'the answer was lost: the same key');
-  assert.equal(keys[1], keys[2], 'the server already had the take: the same key');
-  assert.notEqual(keys[2], keys[3], 'a timeout answered by the server charged nothing: a new key');
-  // The next take is another action.
-  await h.take.start();
-  h.advance(1500);
-  await h.take.stop('Hello again.');
-  assert.ok(!keys.slice(0, 4).includes(keys[4]), 'another take, another key');
+  const record = async (h, line) => {
+    await h.take.start();
+    h.advance(1500);
+    await h.take.stop(line);
+  };
+
+  // The answer was lost but the server finished: the resend is `operation_finished` - terminal, not a retry loop.
+  {
+    const s = server(['lose', 'ok']);
+    const h = harness({ api: s.api });
+    await record(h, 'Hello again.');
+    assert.deepEqual(h.last().error, { kind: 'offline', retry: true });
+    await h.take.retry();
+    assert.equal(s.sent[0], s.sent[1], 'no answer: the same key, so a processed take is never charged twice');
+    assert.deepEqual(h.last().error, { kind: 'already_assessed', retry: false });
+    const before = s.sent.length;
+    await h.take.retry();
+    assert.equal(s.sent.length, before, 'nothing is resent: the answer could only ever be the same');
+    assert.equal(h.last().phase, TAKE.ERROR);
+    await record(h, 'Hello again.'); // the learner records again: a new take, a new key, a new assessment
+    assert.equal(h.last().phase, TAKE.RESULT);
+    assert.notEqual(s.sent[2], s.sent[0], 'a new take is a new key');
+  }
+  // The first request is still running when the resend arrives: that is worth retrying, with the same key.
+  {
+    const s = server(['hang']);
+    const h = harness({ api: s.api });
+    await record(h, 'Hello again.');
+    await h.take.retry();
+    assert.deepEqual(h.last().error, { kind: 'service', retry: true }, 'in progress: try again shortly');
+    assert.equal(s.sent[0], s.sent[1]);
+    s.finish(s.sent[0]);
+    await h.take.retry();
+    assert.deepEqual(h.last().error, { kind: 'already_assessed', retry: false });
+  }
+  // The server answered a failure (it charged nothing and closed that key): the same take goes again under a NEW key.
+  {
+    const s = server(['fail', 'ok']);
+    const h = harness({ api: s.api });
+    await record(h, 'Hello again.');
+    assert.deepEqual(h.last().error, { kind: 'service', retry: true });
+    await h.take.retry();
+    assert.equal(h.last().phase, TAKE.RESULT);
+    assert.notEqual(s.sent[0], s.sent[1], 'an answered failure closed the key: a new key');
+    assert.ok(s.sent.every((key) => typeof key === 'string' && key.length >= 8), 'every send carries a key');
+  }
+  assert.deepEqual(failureOf(Object.assign(new Error('x'), { status: 409, category: 'operation_conflict' })), { kind: 'already_assessed', retry: false });
 }
 
 // The request itself: the take's key and the device timezone ride as headers, and the form is left to the browser

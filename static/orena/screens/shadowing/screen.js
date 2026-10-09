@@ -32,7 +32,7 @@ import { pronunciationView } from '../../capabilities/pronunciation-result.js';
 import { createSpeakingTake, TAKE } from '../../capabilities/speaking-take.js';
 import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { watchMicrophone } from '../../capabilities/mic-readiness.js';
-import { showQuotaNotice } from '../plan/quota-notice.js';
+import { showAssessmentRefusal } from '../plan/quota-notice.js';
 import { t } from './copy.js';
 import { openMedia } from '../../product/media-source.js';
 import {
@@ -339,10 +339,7 @@ export default async function mountShadowing(element, ctx) {
 
   function routeFailure(error) {
     const kind = error?.kind;
-    if (kind === 'quota') {
-      showQuotaNotice(ctx, error.error);
-      return;
-    }
+    if (showAssessmentRefusal(ctx, error)) return;
     if (kind === 'no_speech' || kind === 'too_short') {
       void openMicState(ctx, {
         state: 'notheard',

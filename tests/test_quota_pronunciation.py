@@ -9,8 +9,11 @@ behaviour against real PostgreSQL is proved in `tests/test_quota_pronunciation_p
 from __future__ import annotations
 
 import concurrent.futures
+import shutil
 import struct
+import subprocess
 import threading
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -634,3 +637,77 @@ def test_the_validation_errors_come_before_any_quota_work():
 def test_the_switch_can_enforce_it_from_the_admin_setting():
     assert quota.validate_switch_setting({"enabled": True, "meters": [METER]}) == {"enabled": True, "meters": [METER]}
     assert METER in quota.SYNC_METERS, "the reconciler backstops an abandoned reservation"
+
+
+# ------------------------------------------------ workers, real ffmpeg (review of #119) --
+
+def test_assessments_hold_at_most_the_configured_worker_threads(monkeypatch):
+    """A burst of assessments queues on its own limiter instead of taking every thread the other routes share."""
+    monkeypatch.setenv(speech_api.PRONUNCIATION_WORKERS_ENV, "2")
+    repo = enforced_runtime(env=ENV)
+    live, peak = [0], [0]
+    lock = threading.Lock()
+
+    class Gauge(AzureSession):
+        def post(self, url: str, **kwargs: Any):
+            with lock:
+                live[0] += 1
+                peak[0] = max(peak[0], live[0])
+            time.sleep(0.15)
+            try:
+                return super().post(url, **kwargs)
+            finally:
+                with lock:
+                    live[0] -= 1
+
+    session = Gauge()
+    speech_api.configure_speech_pronunciation(azure(session))
+    with build_client() as client:  # one event loop for every request, as in production
+        with concurrent.futures.ThreadPoolExecutor(6) as pool:
+            answers = list(pool.map(lambda n: assess(client, take(3.0, str(n)), key=f"w-{n}"), range(6)))
+    assert [a.status_code for a in answers] == [200] * 6
+    assert peak[0] == 2 and session.posts == 6
+    assert used(repo) == 18
+
+
+def test_a_bad_worker_setting_falls_back_to_the_default(monkeypatch):
+    monkeypatch.setenv(speech_api.PRONUNCIATION_WORKERS_ENV, "many")
+    enforced_runtime(env=ENV)
+    speech_api.configure_speech_pronunciation(azure(AzureSession()))
+    assert assess(build_client(), take(3.0)).status_code == 200
+
+
+FFMPEG = shutil.which("ffmpeg")
+
+
+@pytest.mark.skipif(FFMPEG is None, reason="ffmpeg is not installed")
+def test_real_ffmpeg_output_is_measured_by_its_data_chunk_and_carries_no_client_metadata(tmp_path):
+    """The seconds reserved are the seconds of the bytes sent: proven on the real decoder, with a tag-laden input."""
+    from writing_coach.speech_pronunciation import normalize_audio_to_pcm16_wav
+
+    source = tmp_path / "client.wav"
+    subprocess.run(
+        [FFMPEG, "-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=7.4", "-ar", "44100", "-ac", "2",
+         "-metadata", "title=CLIENT-CHOSEN-TEXT", "-metadata", "comment=" + "x" * 5000, str(source)],
+        check=True,
+    )
+    sent = normalize_audio_to_pcm16_wav(source.read_bytes())
+    assert b"CLIENT-CHOSEN-TEXT" not in sent and b"LIST" not in sent, "audio only goes to the provider"
+    assert wav_seconds(sent) == pytest.approx(7.4, abs=0.001)
+    assert speech_api._seconds_to_units(wav_seconds(sent)) == 8
+
+    # The same decode WITH tags keeps ffmpeg's LIST chunk before `data`: still measured from the data chunk.
+    tagged = tmp_path / "tagged.wav"
+    subprocess.run(
+        [FFMPEG, "-v", "error", "-i", str(source), "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", str(tagged)],
+        check=True,
+    )
+    raw = tagged.read_bytes()
+    assert b"LIST" in raw[:200] and b"CLIENT-CHOSEN-TEXT" in raw
+    assert wav_seconds(raw) == pytest.approx(7.4, abs=0.001)
+    assert len(raw) - 44 != int(wav_seconds(raw) * 32000), "the old len-44 formula would have been wrong here"
+
+    longer = tmp_path / "long.wav"
+    subprocess.run([FFMPEG, "-v", "error", "-f", "lavfi", "-i", "sine=duration=75", "-ar", "8000", "-ac", "1", str(longer)],
+                   check=True)
+    assert wav_seconds(normalize_audio_to_pcm16_wav(longer.read_bytes())) == pytest.approx(60.0, abs=0.001)

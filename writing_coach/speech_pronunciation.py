@@ -175,6 +175,11 @@ def normalize_audio_to_pcm16_wav(
                     "16000",
                     "-c:a",
                     "pcm_s16le",
+                    # Audio only goes to the provider: none of the client file's tags, no encoder string.
+                    "-map_metadata",
+                    "-1",
+                    "-fflags",
+                    "+bitexact",
                     str(output_path),
                 ],
                 capture_output=True,

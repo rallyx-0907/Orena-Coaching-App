@@ -5431,6 +5431,21 @@ the meters below.
   to `pronunciation.audio` (a free-speech coaching action), or stay free with the brake; D-16Z does not decide it. Blocks
   nothing in the Voice slice, but `quota.refuse_unmetered` (QTA-4) still refuses live voice sessions while `orena.message` is
   enforced. Owner: human, then BACKEND.
+- **QTA-15 A take whose answer was lost: "record again" (architecture review of #119, P2-1).** When the network drops
+  after Azure assessed a take, the resend under the same `Idempotency-Key` is `409 operation_finished` for ever. The room
+  does not offer a retry that can never succeed: it says "This recording was already processed. Record it again to get a
+  new assessment." (EN/VI/ZH, the shared toast, no action) and the learner records again - a new key, a new real
+  assessment and charge. The design draws no such state (nearest mic-sheet states say "assessment unavailable" or "we didn't
+  hear you", both untrue here). Replaying the stored result of a finished take instead (a short-lived result store) is new
+  persistence and the human's decision; not built. Owner: design (a state, if wanted) / human (replay).
+- **QTA-16 Pronunciation notes from the review (P3).** (a) `NO_SPEECH_CHARGED=True` means a muted microphone burns allowance
+  silently (five 60 s silent takes exhaust Free); `False` makes silent clips free provider spend bounded only by the
+  `speech_ai` brake - the human's answer is required before activation on :8000; (b) the stored-credential read that resolves
+  the provider still runs on the event loop; (c) a local decode failure is a `pronunciation_evaluator` / `azure-speech`
+  failure row though no Azure request was made (a distinct label needs the ledger allow-list, reserved to the human); (d)
+  `displayAmount` rounds, so 299 of 300 s shows "5 of 5" minutes while a short take is still admitted (shared with Plan &
+  usage); (e) `/api/speech/transcribe` stays unmetered paid spend (QTA-14) - until it is metered, not all paid AI is
+  plan-bounded; (f) an exhausted (429) or duplicate (409) request still costs one local decode. Owner: human / BACKEND.
 - **QTA-6 Media import minutes - NOT YET ENFORCED.** The learner import paths must be scoped first (async jobs settle
   from the worker). Owner: BACKEND.
 - **QTA-7 Target languages - NOT YET ENFORCED.** A count cap where a learning language is added; a Free account that

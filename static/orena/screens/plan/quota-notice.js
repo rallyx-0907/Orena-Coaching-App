@@ -36,3 +36,19 @@ export function seePlansLabel() {
 export function showQuotaNotice(ctx, error) {
   toast(quotaMessage(error), { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
 }
+
+/* A take the server already processed (its answer was lost on the way back): it cannot be assessed again under the
+   same request, so the room says so and the learner records again. Said as a toast - the design draws no state for
+   it (docs/project/UI_BACKEND_GAPS.md QTA-15). */
+export function showRecordAgainNotice() {
+  toast(t('recordAgain'));
+}
+
+/* What a Speaking room does with a take failure of the plan's making: `quota` (the allowance is used up) or
+   `already_assessed` (record again). False for every other failure, which the room handles as before. */
+export function showAssessmentRefusal(ctx, failure) {
+  if (failure?.kind === 'quota') showQuotaNotice(ctx, failure.error);
+  else if (failure?.kind === 'already_assessed') showRecordAgainNotice();
+  else return false;
+  return true;
+}

@@ -4950,8 +4950,10 @@ review before merge** (entitlement and commerce enforcement on a paid provider p
    than remain is `429 quota_exhausted` before the provider and is never partially assessed (a learner with 5 s left can
    still send a 4.2 s take). The 429 body is the core's (`used`, `limit` in seconds with `unit: second`, `display_unit:
    minute`, `scale: 60`, `resets_at`, `upgrade`). Enforcement unreadable (store, catalogue, switch) is `503 quota_unavailable`
-   and is asked before the decode (`quota.require_ready`), so a request about to be refused does no ffmpeg work. Not enforced:
-   the route is exactly the unmetered path (no read, no bucket).
+   and is asked before the decode (`quota.require_ready`), so that refusal does no ffmpeg work. **A 429 (exhausted) or a 409
+   (duplicate) is decided at the reservation, which needs the decoded length, so those still cost one local decode (up to 8
+   MiB / 20 s of CPU, no provider call)**; the per-account `speech_ai` brake bounds that. Not enforced: the route is exactly
+   the unmetered path (no read, no bucket).
 4. **What a take costs the learner.** Success: the seconds Azure processed (equal to the decoded length, never more than
    reserved; the rest is released). Any provider failure - request failed, timeout, a result that cannot be used (malformed),
    undecodable audio - settles **0**, consistent with D-161 point 10 / D-163 point 2 (the learner got nothing; Azure's billed
@@ -4968,7 +4970,12 @@ review before merge** (entitlement and commerce enforcement on a paid provider p
    response) or the server says it already has the take, and takes a new one only after an answer of Orena's own that charged
    nothing (a failure, a refusal), so "assess the same take again" after a service failure is allowed and never blocked. A
    server that processed a take whose answer the client lost cannot replay the result (no audio or result store): the retry
-   is refused instead of charged.
+   is refused instead of charged (`409 operation_finished`). **That answer is terminal for the key (architecture review of
+   #119, P2-1):** the client maps `operation_finished` / `operation_conflict` to its own non-retryable failure
+   (`already_assessed`), says "This recording was already processed. Record it again to get a new assessment." (EN/VI/ZH, a
+   toast; `UI_BACKEND_GAPS.md` QTA-15) and offers nothing to resend; the learner records again - a new take, a new key, a new
+   real assessment and a new charge. Replaying a stored result instead would be new persistence and is the human's decision
+   (asked in parallel); none is built. `operation_in_progress` stays retryable with the same key.
 6. **Not metered (and why).** Learner pronunciation assessment is the only paid call here. `POST /api/speech/transcribe`
    (Groq Whisper) is a separate speaking-input path - used by Free talk, Conversation, Situation, React, Reading transfer and
    Orena's push-to-talk, never by the Speak / Compare / Shadow pronunciation rooms - and is left **unmetered**; the Voice
@@ -4989,7 +4996,10 @@ review before merge** (entitlement and commerce enforcement on a paid provider p
    shows them (`displayAmount`: whole when whole, otherwise one decimal; Vietnamese with a decimal comma). No client check
    and no new visual. Plan & usage reads the same buckets (seconds), shown as minutes.
 9. **The route no longer blocks the event loop.** The decode, the quota calls and the provider request run in the thread pool
-   (they were synchronous calls inside an `async` handler).
+   (they were synchronous calls inside an `async` handler), on a limiter of their own (`PRONUNCIATION_MAX_CONCURRENT`, default
+   8 of the pool's 40) so a burst of assessments queues instead of starving the synchronous routes. Provider resolution
+   (stored-credential read) still runs on the loop, as before. The decoder strips the client file's tags
+   (`-map_metadata -1 -fflags +bitexact`): only audio is sent to Azure.
 10. **Meter wiring.** `pronunciation.audio` joins `WIRED_METERS` and `SYNC_METERS` (the reconciler settles an abandoned take
     at its reserved seconds, D-161 point 10, ABANDONED_SETTLES); `PUT /api/product/admin/quota {"enabled":true,"meters":
     ["writing.review","orena.message","pronunciation.audio"]}` and `ORENA_QUOTA_METERS` can enforce it. Roll back = switch off.

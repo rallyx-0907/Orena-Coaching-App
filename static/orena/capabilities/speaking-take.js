@@ -36,6 +36,10 @@ export function failureOf(error) {
   if ((error?.name === 'TypeError' && !error?.status) || globalThis.navigator?.onLine === false) return { kind: 'offline', retry: true };
   const category = String(error?.category || '');
   if (error?.status === 429 && category === 'quota_exhausted') return { kind: 'quota', retry: false, error };
+  // The server already has this take under this key (an answer that was lost on the way back): sending it again can
+  // only be answered the same way for ever. Nothing is retried; the learner records again - a new take, a new key,
+  // a new real assessment. (No stored result is replayed: that would be new persistence.)
+  if (category === 'operation_finished' || category === 'operation_conflict') return { kind: 'already_assessed', retry: false };
   if (category === 'pronunciation_no_speech') return { kind: 'no_speech', retry: false };
   if (category === 'pronunciation_audio_empty') return { kind: 'too_short', retry: false };
   if (category === 'pronunciation_audio_unsupported') return { kind: 'audio_unsupported', retry: false };
@@ -141,10 +145,11 @@ export function createSpeakingTake({
       if (disposed || mine !== generation) return;
       const failure = failureOf(error);
       if (failure.kind === 'aborted') return;
-      // An answer from Orena's own server (it has a category) says what happened to the allowance: a refusal or a
-      // failure charged nothing, so the same take may be sent again as a new request. No answer (the network, a
-      // proxy), or "already being processed / already processed", keeps the key, so a resend of a take the server
-      // did process is refused instead of charged again.
+      // An answer from Orena's own server (it has a category) ends that request. A refusal or a service failure
+      // charged nothing, so the same take may be sent again under a new key; a take the server heard no speech in
+      // is charged but is never resent (`retry: false`), so the new key is never used. No answer (the network, a
+      // proxy) keeps the key: the server may have processed the take, and a resend is then answered
+      // `operation_finished` (the learner records again, below) instead of being charged twice.
       if (typeof error?.category === 'string' && error.status >= 400 && error.category !== 'operation_in_progress' && error.category !== 'operation_finished') takeKey = newIdempotencyKey();
       set({ phase: TAKE.ERROR, error: failure });
     }
