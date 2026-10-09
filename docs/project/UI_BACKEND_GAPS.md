@@ -5107,3 +5107,18 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   `PLATFORM_ADMIN_EMAILS`.
 - **SIGN-5 One origin per runtime.** `GOOGLE_REDIRECT_URI` must equal `PUBLIC_BASE_URL` + `/auth/google/callback`
   (`deployment.py`), so one container signs in on one origin: `http://localhost:8021` or the tailnet name, not both.
+
+## Grammar Concept rendering (2026-10-09)
+
+The concept screen now renders every learning field the API returns (summary, when_to_use, formula, variants, examples with translation and annotation, all relevant common_mistakes, compare, quick_practice explain, personal_production). Gaps found:
+
+- `compare[].with` is a point id only; the other point's title is not in the response. The screen resolves it from the catalogue (`GET /api/grammar/v1/points`) and leaves that side unlabelled when the catalogue cannot be read. A `with_title` in the compare entry would remove the second request.
+- `pattern.variants` is declared for `affirmative`, `negative` and `question`; the live ZH corpus carries only `negative` (53 of 380 points) and `question` (47). The affirmative form is the `formula` itself.
+- Examples carry `form` (affirmative / negative / question); the screen does not label it (not drawn, nothing invented).
+- The learner API answers only in the session's learning language, so an EN point cannot be read while the profile is ZH; the EN shape was checked against the contract and the test fixture, not a live EN body.
+  **Live EN check (2026-10-09, profile switched to EN and back):** 215 published EN points - summary, when_to_use,
+  formula, common_mistakes and quick_practice explain on all 215; variants on 131; compare on 43; translation and
+  annotation on all 639 examples; personal_production on 209 (the 6 without it draw no "Try it yourself").
+- **CONTENT:** 12 examples in 6 older EN points (e.g. `en.present_simple.habit`) carry the same text in `translation`
+  and `annotation` - the "translation" is an explanation, not a translation. The screen draws the line once; the
+  corpus fix (a real translation) is a content task, not done here.

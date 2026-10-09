@@ -1,73 +1,818 @@
-/* Frame "Grammar Library" (frame 44). Measured from SCRATCH/inventory/E5-grammar-quicksheets-orena.md
-   §1.2-1.3: root gap 28/padding-top 28/max-width 880; group gap 14; heading row gap 10 baseline;
-   h2 20/26/600; hint 13/var(--text3); grid gap 12, --cols-ip (1 col mobile, auto-fill 280px desktop).
-   Tokens only - no colour literal (Design Contract rule 30). */
-.s-grammar {
-  max-width: 880px;
+/* Frames "Grammar Library" and "Grammar category" (design export 2026-10-08), measured from the frame's own inline
+   styles. Tokens only (rule 30): category hues are --gcat-*, carried on each element as --hue; the hero's surface,
+   shadow and ink are --gl-hero-bg, --sh-hero and --gl-hero-*. */
+.s-gl {
+  max-width: 1180px;
   margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  padding-top: 28px;
+  gap: 30px;
+  padding-top: 20px;
+  padding-bottom: 24px;
+}
+.s-gl__body {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
 }
 
-.s-grammar__group {
+/* Header row: back, breadcrumb, search + status. */
+.s-gl__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.s-gl__back {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 0;
+  box-shadow: var(--edge-light);
+  background: var(--surface);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.s-gl__crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.s-gl__crumb .ic {
+  color: var(--text3);
+  flex: none;
+}
+.s-gl__crumbRoot {
+  color: var(--muted);
+}
+.s-gl__crumbHere {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-gl__find {
+  display: flex;
+  gap: 8px;
+  flex: 1 1 360px;
+  max-width: 520px;
+  min-width: 0;
+}
+.s-gl__search {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  color: var(--text3);
+}
+.s-gl__search .ic {
+  flex: none;
+}
+.s-gl__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+}
+.s-gl__status {
+  height: 44px;
+  border-radius: 14px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 12px;
+  flex: none;
+  cursor: pointer;
+}
+
+/* Level hero and the level row. */
+.s-gl__levelGroup {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-
-.s-grammar__ghead {
+.s-gl__hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--gl-hero-bg);
+  color: var(--gl-hero-ink);
+  padding: clamp(22px, 3vw, 32px);
+  box-shadow: var(--sh-hero);
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  flex-direction: column;
+  gap: 20px;
 }
-
-.s-grammar__gname {
-  margin: 0;
-  font-size: 20px;
-  line-height: 26px;
+.s-gl__glyph {
+  position: absolute;
+  right: clamp(-20px, 1vw, 24px);
+  bottom: -0.32em;
+  font-family: 'Noto Serif SC', Literata, serif;
+  font-size: clamp(150px, 22vw, 250px);
+  line-height: 1;
   font-weight: 600;
+  color: var(--gl-hero-glyph);
+  pointer-events: none;
+  letter-spacing: -0.04em;
+}
+.s-gl__heroHead {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s-gl__heroLevel {
+  font-size: clamp(38px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.s-gl__heroSub {
+  font-size: 16.5px;
+  color: var(--gl-hero-sub);
+}
+.s-gl__stats {
+  position: relative;
+  display: flex;
+  gap: clamp(20px, 4vw, 48px);
+  flex-wrap: wrap;
+}
+.s-gl__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.s-gl__statN {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.s-gl__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+.s-gl__dot--learned {
+  background: var(--gl-learned);
+}
+.s-gl__dot--new {
+  background: var(--gl-new);
+}
+.s-gl__statLabel {
+  font-size: 13.5px;
+  color: var(--gl-hero-label);
+  padding-left: 17px;
+}
+.s-gl__bar {
+  position: relative;
+  display: flex;
+  height: 6px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--gl-hero-track);
+  max-width: 520px;
+}
+.s-gl__bar > span {
+  background: var(--gl-learned);
+  transition: width 0.4s;
+}
+.s-gl__levels {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: none;
+}
+.s-gl__levels::-webkit-scrollbar {
+  display: none;
+}
+.s-gl__level {
+  flex: 1 0 auto;
+  min-width: 96px;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 0;
+  box-shadow: var(--edge-light);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.s-gl__level:hover {
+  box-shadow: var(--edge-light), var(--sh2);
+}
+.s-gl__level[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.s-gl__levelN {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--muted);
+}
+/* The design's white count on the accent: the D-093 AA fill. */
+.s-gl__level[aria-pressed='true'] .s-gl__levelN {
+  background: var(--accent-fill);
+  color: var(--accent-ink);
 }
 
-.s-grammar__ghint {
-  font-size: 13px;
-  color: var(--text3);
+/* Groups and the shared grid. */
+.s-gl__group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
-
-.s-grammar__grid {
+.s-gl__h2 {
+  margin: 0;
+  font-size: 21px;
+  line-height: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.s-gl__grid {
   display: grid;
   grid-template-columns: var(--cols-ip);
   gap: 12px;
 }
 
-/* The concept card's level tile (frame 44 §1.2: 44x44, radius 12, solid fill, white bold glyph -
-   the "solid hex fill" the frame draws is the design's own --skill-grammar hue, rule 32). It holds
-   the level value: "B1", or "HSK3" for an HSK 3.0 level (contract §0). */
-.s-grammar__tile {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--skill-grammar);
-  color: var(--accent-ink);
+/* A category tile: the hue, white glyph, the hue's own soft drop shadow. */
+.s-gl__tile {
+  background: var(--hue);
+  color: var(--gl-hero-ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
-  font-weight: 700;
   flex: none;
+  box-shadow: 0 6px 14px -6px var(--hue);
+}
+.s-gl__tile--44 {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+}
+.s-gl__tile--48 {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+}
+.s-gl__tile--38 {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
 }
 
-/* Header back button (rule 42): frame 44 draws border-radius:12px / 19x19 icon, identical to
-   frame 47's back button - but 47 gets that via pageHeader's compact:true path, which also
-   shrinks the title to a smaller fixed size that frame 44 does not draw (its h1 stays var(--h1)).
-   This screen can't use compact:true for that reason, so the button alone is overridden locally
-   to cancel kit/kit.css's .o-iconbtn--back modifier (14px radius / 21px icon, the shared
-   non-compact default) back down to the frame's own 12px/19px. */
-.s-grammar .o-iconbtn--back {
-  border-radius: 12px;
+/* The status ring: learned is a full green ring with its check, not started the empty track. */
+.s-gl__ring {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--green);
 }
-.s-grammar .o-iconbtn--back svg {
-  width: 19px;
-  height: 19px;
+.s-gl__ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--surface3);
+  mask: radial-gradient(circle, transparent 10px, currentColor 11px);
+}
+.s-gl__ring--done::before {
+  background: var(--green);
+}
+.s-gl__ring .ic {
+  position: relative;
+}
+
+.s-gl__tag {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--hue) 15%, transparent);
+  color: var(--hue);
+}
+.s-gl__tag--cont {
+  align-self: flex-start;
+  margin-top: 8px;
+}
+.s-gl__tag--clip {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s-gl__tag--row {
+  display: var(--hide-mobile);
+  white-space: nowrap;
+}
+
+/* Continue learning card. */
+.s-gl__cont {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  min-width: 0;
+}
+.s-gl__cont:hover {
+  box-shadow: var(--sh2);
+}
+.s-gl__contBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.s-gl__contTitle {
+  font-family: 'Noto Serif SC', Outfit, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.s-gl__contRd {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.s-gl__contMean {
+  font-size: 14px;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+/* Category card. */
+.s-gl__cat {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 16px;
+  border-radius: 20px;
+  border: 0;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--hue) 18%, transparent) 0%, var(--surface) 62%);
+  box-shadow: var(--edge-light);
+  color: var(--text);
+  text-align: left;
+  min-width: 0;
+  transition: box-shadow 0.15s;
+}
+.s-gl__cat:hover {
+  box-shadow: var(--edge-light), var(--sh2);
+}
+.s-gl__cat[aria-pressed='true'] {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--hue) 34%, transparent) 0%, var(--surface) 72%);
+  box-shadow: var(--edge-light);
+}
+.s-gl__catBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.s-gl__catName {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.s-gl__catCount {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-gl__catEx {
+  font-family: 'Noto Serif SC', Outfit, sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-gl__chev {
+  flex: none;
+  align-self: center;
+  color: var(--text3);
+  display: flex;
+}
+
+/* The open category ("Grammar category" frame). */
+.s-gl__panel {
+  border-radius: 26px;
+  background: var(--surface);
+  padding: clamp(16px, 2.4vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.s-gl__panelHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.s-gl__panelText {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.s-gl__panelName {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.s-gl__panelSub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.s-gl__seeAll {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.s-gl__seeAll:hover {
+  background: var(--accent-soft);
+}
+.s-gl__panelEmpty {
+  padding: 22px;
+  border-radius: 18px;
+  background: var(--surface2);
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Topic card (panel and "all" grid). */
+.s-gl__topic {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 14px;
+  border-radius: 20px;
+  border: 0;
+  background: var(--surface2);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  transition: background 0.15s;
+}
+.s-gl__topic:hover {
+  background: var(--surface3);
+}
+.s-gl__topicHead {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.s-gl__topicTitle {
+  font-family: 'Noto Serif SC', Outfit, sans-serif;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.s-gl__topicRd {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.s-gl__topicMean {
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: var(--text);
+  text-wrap: pretty;
+}
+.s-gl__topicFoot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+/* All topics: head, chips, list rows, empty. */
+.s-gl__all {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-margin-top: 80px;
+}
+.s-gl__allHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.s-gl__allTitle {
+  flex: 1 1 220px;
+}
+.s-gl__sort {
+  height: 40px;
+  border-radius: 12px;
+  border: 0;
+  box-shadow: var(--edge-light);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 10px;
+  cursor: pointer;
+}
+.s-gl__views {
+  display: flex;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--surface2);
+  gap: 2px;
+}
+.s-gl__view {
+  width: 36px;
+  height: 34px;
+  border-radius: 9px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-gl__view[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--sh1);
+}
+.s-gl__chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.s-gl__chips::-webkit-scrollbar {
+  display: none;
+}
+.s-gl__chip {
+  flex: none;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 0;
+  box-shadow: var(--edge-light);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.s-gl__chip[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.s-gl__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-gl__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.s-gl__row:hover {
+  box-shadow: var(--sh2);
+}
+.s-gl__rowBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 4px 12px;
+  flex-wrap: wrap;
+}
+.s-gl__rowTitle {
+  font-family: 'Noto Serif SC', Outfit, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+}
+.s-gl__rowRd {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.s-gl__rowMean {
+  font-size: 14px;
+  color: var(--text);
+  flex-basis: 100%;
+}
+.s-gl__allEmpty {
+  padding: 28px;
+  border-radius: 20px;
+  background: var(--surface2);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.s-gl__allEmptyTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-gl__clear {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 0;
+  box-shadow: var(--edge-light);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Light-theme separation (human, 2026-10-08): on the light page gradient the frame's surface2 cards, the view toggle and
+   the empty block read as the page itself. Outside the white category panel they take the page's card surface and its
+   shadow, as every other card here; the ring's track and the toggle get a visible edge; small hue text on its own 15%
+   wash is darkened so a yellow or green tag stays legible. The dark theme keeps the frame's values. */
+.s-gl__all .s-gl__topic {
+  background: var(--surface);
+}
+.s-gl__all .s-gl__topic:hover {
+  background: var(--surface);
+  box-shadow: var(--sh2);
+}
+.s-gl__allEmpty {
+  background: var(--surface);
+}
+:root:not([data-theme='dark']) .s-gl__views {
+  background: var(--surface);
+  box-shadow: var(--edge-light);
+}
+:root:not([data-theme='dark']) .s-gl__view[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: none;
+}
+:root:not([data-theme='dark']) .s-gl__ring:not(.s-gl__ring--done)::before {
+  background: var(--border2);
+}
+:root:not([data-theme='dark']) .s-gl__tag {
+  color: color-mix(in oklch, var(--hue), black 40%);
+  background: color-mix(in srgb, var(--hue) 18%, transparent);
+}
+:root:not([data-theme='dark']) .s-gl__level:not([aria-pressed='true']) .s-gl__levelN {
+  background: var(--surface3);
+}
+/* Dark: the design's hue as small text on its own 15% wash falls under AA for the violet and rose hues (3.6 and
+   4.3:1, design review 2026-10-08); lightened by the smallest step that clears 4.5:1 on every hue. */
+:root[data-theme='dark'] .s-gl__tag {
+  color: color-mix(in oklch, var(--hue), white 30%);
+}
+
+/* Cards behave as Practice Hub's tiles: raised at rest by the edge token's --sh1 (D-151, which replaced D-150's flat rest);
+   hover = --sh2 and a 2px lift over 0.15s. No border appears (D-147). The panel's grey topic cards keep their surface3 hover. */
+.s-gl__cont,
+.s-gl__cat,
+.s-gl__topic,
+.s-gl__row {
+  transition: box-shadow 0.15s, transform 0.15s, background 0.15s;
+}
+.s-gl__cont:hover,
+.s-gl__cat:hover,
+.s-gl__topic:hover,
+.s-gl__row:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sh2);
+}
+.s-gl__panel .s-gl__topic:hover {
+  box-shadow: var(--sh2);
+}
+
+/* ---- Design/UX review 2026-10-08 ---- */
+/* The selected count on the dark accent sat at 4.54:1; one fill step deeper. */
+:root[data-theme='dark'] .s-gl__level[aria-pressed='true'] .s-gl__levelN {
+  background: var(--accent-fill-hover);
+}
+/* A mouse press on a select paints no violet ring (D-147); the keyboard focus ring stays. */
+.s-gl__sort:focus:not(:focus-visible),
+.s-gl__status:focus:not(:focus-visible) {
+  outline: 0;
+}
+/* The search field shows that it has focus: elevation and full ink on its icon, no outline. */
+.s-gl__search {
+  transition: box-shadow 0.15s;
+}
+.s-gl__search:focus-within {
+  box-shadow: var(--edge-light), var(--sh2);
+  color: var(--text);
+}
+/* Rows that scroll sideways say so: their right edge fades. */
+.s-gl__chips,
+:root[data-device='mobile'] .s-gl__levels {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  padding-right: 28px;
+}
+/* Phone: every control is at least 44px to the touch. */
+:root[data-device='mobile'] .s-gl__back,
+:root[data-device='mobile'] .s-gl__sort,
+:root[data-device='mobile'] .s-gl__chip,
+:root[data-device='mobile'] .s-gl__seeAll,
+:root[data-device='mobile'] .s-gl__clear {
+  min-height: 44px;
+}
+:root[data-device='mobile'] .s-gl__back {
+  width: 44px;
+}
+:root[data-device='mobile'] .s-gl__view {
+  width: 44px;
+  height: 40px;
+}
+
+/* ---- Design/UX review round 3 (2026-10-08) ---- */
+/* Level tabs are card-like controls: hover lifts 2px as the cards do (D-150). */
+.s-gl__level {
+  transition: box-shadow 0.15s, transform 0.15s, background 0.15s;
+}
+.s-gl__level:hover {
+  transform: translateY(-2px);
+}
+/* The search field's focus: the neutral field edge (D-150), not only a soft shadow. */
+.s-gl__search:focus-within {
+  box-shadow: inset 0 0 0 1px var(--text3), var(--sh2);
+}
+:root[data-device='mobile'] .s-gl__view {
+  height: 44px;
+}
+
+/* Progress could not be read (PR #108 review): said plainly, with a retry, where Continue learning would be. */
+.s-gl__progressOff {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 14px;
 }

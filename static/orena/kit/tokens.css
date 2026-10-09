@@ -144,6 +144,24 @@
   --skill-write: #7B4FD8;
   --skill-vocab: #F2B705;
   --skill-grammar: #4867EC;
+  /* Grammar Library (design export 2026-10-08, `GLIB.*.cats` and the level hero): the six category hues in the
+     design's order (sentence structures, adverbs, conjunctions, complements, emphasis, comparison) and the hero's
+     ink on the --mark-disc surface. Category hues mark a category tile, its card wash and its tag only (rule 32). */
+  --gcat-1: #FF7A3D;
+  --gcat-2: #8B5CF6;
+  --gcat-3: #1FB8B8;
+  --gcat-4: #22B573;
+  --gcat-5: #F2B705;
+  --gcat-6: #EE4F6C;
+  --gl-hero-bg: radial-gradient(120% 160% at 0% 0%, #2B2158 0%, #150F2E 72%);
+  --gl-hero-ink: #fff;
+  --gl-hero-sub: rgba(255, 255, 255, .72);
+  --gl-hero-label: rgba(255, 255, 255, .62);
+  --gl-hero-track: rgba(255, 255, 255, .12);
+  --gl-hero-glyph: rgba(255, 255, 255, .07);
+  --gl-learned: #3DD68C;
+  --gl-learning: #F5B544;
+  --gl-new: #F27BA6;
   /* A character's radical strokes in the stroke-order animation: the design's stroke writer `radicalColor`. */
   --hz-radical: #FF7A3D;
   /* The brand mark's disc, as the design draws it behind ol-mark / ol-intel (brand artwork,
@@ -231,4 +249,13 @@
   --voice-fill-on: rgba(255, 255, 255, .08);
   --voice-glow: rgba(111, 214, 255, .12);
   --voice-glow-strong: rgba(111, 214, 255, .4);
+}
+
+/* The edge (D-147): a thin, even strip of light, never a coloured outline, carrying the resting elevation so a card
+   stands off the page (D-151). Introduced with the Grammar Library, which draws it; the UI sweep uses it app-wide. */
+:root[data-theme='dark'] {
+  --edge-light: inset 0 0 0 1px rgba(255, 255, 255, .06), var(--sh1);
+}
+:root:not([data-theme='dark']) {
+  --edge-light: inset 0 0 0 1px rgba(255, 255, 255, .6), var(--sh1);
 }
