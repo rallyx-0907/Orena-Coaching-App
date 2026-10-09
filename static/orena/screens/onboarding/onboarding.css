@@ -27,9 +27,24 @@
   height: 100%;
   min-height: 0;
   display: flex;
-  background: var(--bg);
+  background: var(--ob-scrim), var(--ob-img) center / cover no-repeat, var(--bg);
   color: var(--text);
   overflow: hidden;
+}
+/* The backdrop (PUB-4, D-16W): this screen only - never the shell, rail, bars or a learning
+   workspace. Dark is the design's midnight photo, light its paper; wide on the desktop, tall on the
+   phone. A static background: it adds no motion and no layout, so reduced motion needs nothing. */
+.s-onboarding {
+  --ob-img: url('../../public/bg/paper-wide.jpg');
+}
+:root[data-theme='dark'] .s-onboarding {
+  --ob-img: url('../../public/bg/midnight-wide.jpg');
+}
+:root[data-device='mobile'] .s-onboarding {
+  --ob-img: url('../../public/bg/paper-tall.jpg');
+}
+:root[data-theme='dark'][data-device='mobile'] .s-onboarding {
+  --ob-img: url('../../public/bg/midnight-tall.jpg');
 }
 
 /* Every primary control the frame draws in this flow (Get started, the Continues, Go to Today) is
@@ -51,7 +66,11 @@
   flex-direction: column;
   gap: clamp(12px, 3vh, 28px);
   padding: clamp(20px, 4vh, 40px) 44px;
-  background: var(--mark-disc);
+  /* The design's translucent panel with a 2px blur, at alphas raised until white ink is AA over a
+     white pixel of the photo (--ob-aside); its right border is the light edge (D-147). */
+  background: var(--ob-aside);
+  backdrop-filter: blur(2px);
+  box-shadow: var(--edge-light);
   color: var(--toast-ink);
 }
 :root[data-device='mobile'] .s-onboarding__aside {
@@ -195,6 +214,18 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  /* The content surface over the backdrop: opaque enough (--ob-panel, .96 dark, .99 light) that every word is AA over
+     any pixel of the photo, with the light edge instead of an outline (D-147). */
+  margin: 16px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--ob-panel);
+  backdrop-filter: var(--ob-panel-blur);
+  box-shadow: var(--edge-light);
+}
+:root[data-device='mobile'] .s-onboarding__main {
+  margin: 8px;
+  border-radius: 20px;
 }
 
 .s-onboarding__topbar {

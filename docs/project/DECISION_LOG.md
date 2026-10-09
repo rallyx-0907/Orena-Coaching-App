@@ -4927,3 +4927,7 @@ change to `main` and the Intelligence lane receives it by merging forward.
 5. **Gates.** `scripts/test_orena_agent.mjs` asserts the §2.1 rows (in order), their categories, the headers, §3.3 and the
    voice 503 against the contract text and drives the transport through each; `tests/test_agent_contract_tables.py` fails if
    the quota gate can answer a category the contract does not name, or the voice refusal drifts.
+
+## D-16W - Onboarding backdrop (PUB-4)
+
+Placeholder id; the number is assigned at merge. Human decision PUB-4 (2026-10-09), scope widened the same day: the design's Backdrop (photo per theme and device under its scrim, glass rail / top bar / phone bar) ships on the learner shell, the Admin shell and Onboarding, on by default with no learner control. Content surfaces stay solid; chrome alpha and a page veil are raised above the design so every text token is AA over the photo (measured, pinned by sha256 in `scripts/fixtures/backdrop_extremes.json`); the chrome edge is `--edge-light` (D-147); reduced transparency and a browser without `backdrop-filter` get solid chrome. See `UI_BACKEND_GAPS.md` PUB-4. Colour stays owned by `kit/tokens.css`.

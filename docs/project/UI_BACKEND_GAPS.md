@@ -5327,12 +5327,21 @@ The 2026-10-09 export's Landing, Terms and Privacy, and its Backdrop change.
   and Terms section 4 links "Support Orena". The pinned Donate page is Vietnamese-only with sample amounts and a
   dummy bank account, so it is **not built**: the footer link is removed and section 4's link keeps its words as
   plain text. Say when Donate should be built.
-- **PUB-4 Backdrop (pinned, not built).** The export adds an optional photographic Backdrop with glass chrome
-  (translucent rail, top bar and phone bar with blur) to the learner shell and to Admin, and a midnight photograph
-  behind Onboarding with a translucent aside. Not built: it is an app-wide change to the colour owner
-  (`kit/tokens.css`), needs a contrast review (the design lays the theme's own text colours over a dark photograph
-  in the light theme too, and the glass chrome must still pass AA) and a D-147 edge decision. It is the human's call
-  whether the app gets it.
+- **PUB-4 Backdrop (human decision, built - D-16W).** The photographic Backdrop with glass chrome is built on the
+  learner shell (rail, desktop top bar, phone bar), the Admin shell (rail, header, phone chips) and Onboarding (its
+  own scrim, a content panel and a translucent brand aside), on by default with no learner control (the design's
+  "Backdrop" button is the prototype strip); the only switch is the non-UI `<html data-backdrop="off">`. Photo per
+  theme and device (`midnight`/`paper`, `wide`/`tall`), the design's scrim at its 0.6 strength, the edge is `--edge-light`
+  (D-147). Cards, panels, sheets and every workspace's reading/working surface stay solid; reduced transparency and a
+  browser without `backdrop-filter` get solid chrome and no photo. **Design values that fail AA, raised and documented**
+  (`scripts/test_orena_kit.mjs` BACKDROP, from `scripts/fixtures/backdrop_extremes.json`, which
+  `scripts/measure_backdrop_extremes.py` regenerates from the photos): the glass alpha .62 dark / .66 light becomes
+  .80 / .84 (`--text3` and `--accent` otherwise fall below 4.5:1 over the lightest dark / darkest light region), and
+  the page gets a veil the design does not draw (.80 dark / .97 light of `--bg`) because text set straight on the photo
+  cannot be AA with the design's scrim even at full strength; in the light theme the photo is therefore nearly
+  invisible behind the page and shows mainly through the glass. Onboarding: panel .96 / .99, aside .96-.98 (the design's
+  .55-.82), each AA over any pixel. **Human decision wanted:** if the light page should show more photograph, `--text3`
+  and `--accent` text set directly on the page must move onto cards first.
 - **PUB-5 Front door.** For a visitor who is not signed in and with sign-in on, `/` is the Landing and `/?app=1` is
   the shell (Welcome); the Landing's buttons and `/login` go to `/?app=1#/welcome`, so there is no loop. A mid-session
   sign-out, or an unknown address, lands on the Landing. Local mode (sign-in off) is unchanged.

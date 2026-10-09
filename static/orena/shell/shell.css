@@ -18,10 +18,15 @@
   flex-direction: column;
   width: var(--rail-w);
   flex: none;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid transparent;
   padding: 18px 12px 14px;
   gap: 4px;
-  background: var(--surface);
+  background: var(--bd-chrome);
+  backdrop-filter: var(--bd-chrome-blur);
+  -webkit-backdrop-filter: var(--bd-chrome-blur);
+  box-shadow: var(--edge-light);
+  position: relative;
+  z-index: 1;
   overflow-y: auto;
 }
 .o-rail__brand {
@@ -203,6 +208,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 /* Phone header */
@@ -253,8 +260,11 @@
   height: 64px;
   padding: 0 var(--pad);
   flex: none;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--bd-chrome);
+  backdrop-filter: var(--bd-chrome-blur);
+  -webkit-backdrop-filter: var(--bd-chrome-blur);
+  border-bottom: 1px solid transparent;
+  box-shadow: var(--edge-light);
 }
 .o-crumb {
   display: flex;
@@ -368,6 +378,7 @@
   overflow: auto;
   padding: 0 var(--pad) 32px;
   position: relative;
+  background: var(--bd-veil);
 }
 /* On a phone a learning workspace (and Welcome) has no header to clear the status bar: the column starts below it.
    The browsing places get the same clearance from the phone header's own padding. */
@@ -396,8 +407,10 @@
   margin: 0 12px max(18px, calc(env(safe-area-inset-bottom, 0px) - 10px));
   padding: 0 4px;
   border-radius: 24px;
-  background: var(--surface);
-  box-shadow: var(--sh2);
+  background: var(--bd-chrome);
+  backdrop-filter: var(--bd-chrome-blur);
+  -webkit-backdrop-filter: var(--bd-chrome-blur);
+  box-shadow: var(--edge-light), var(--sh2);
   flex: none;
   position: relative;
 }
@@ -510,4 +523,90 @@
 }
 :root[data-bare='1'] .o-main {
   padding: 0;
+  background: none;
+}
+
+/* ---- The backdrop (PUB-4, D-16W; Orena.dc.html body[data-backdrop=on], Orena-Admin.dc.html) ----
+   The design's default is ON and it has no learner control (its "Backdrop" button is the prototype strip), so this
+   ships on. The kill switch is a non-UI attribute only: <html data-backdrop="off">. Two layers behind the frame - the
+   photo for the theme and device, and the design's scrim at its strength - then the rail, the desktop top bar and
+   the phone bar as glass (--bd-chrome, edge from --edge-light, D-147). Cards, panels, sheets and every workspace's
+   reading and working surface keep their own solid tokens; only the page behind them changes, under a veil
+   (--bd-veil) that keeps text set straight on the page AA. Values: kit/tokens.css; measured in test_orena_kit.mjs. */
+.o-frame,
+.a-shell {
+  --bd-img: url('../public/bg/paper-wide.jpg');
+}
+:root[data-theme='dark'] .o-frame,
+:root[data-theme='dark'] .a-shell {
+  --bd-img: url('../public/bg/midnight-wide.jpg');
+}
+:root[data-device='mobile'] .o-frame,
+:root[data-device='mobile'] .a-shell {
+  --bd-img: url('../public/bg/paper-tall.jpg');
+}
+:root[data-theme='dark'][data-device='mobile'] .o-frame,
+:root[data-theme='dark'][data-device='mobile'] .a-shell {
+  --bd-img: url('../public/bg/midnight-tall.jpg');
+}
+.o-frame::before,
+.a-shell::before,
+.o-frame::after,
+.a-shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.o-frame::before,
+.a-shell::before {
+  background: var(--bd-img) center / cover no-repeat;
+}
+.o-frame::after,
+.a-shell::after {
+  background: var(--bd-scrim);
+  opacity: var(--bd-strength);
+}
+:root[data-route^='admin'] .o-main {
+  background: none;
+}
+
+/* Solid chrome instead of glass: the kill switch, a browser without backdrop-filter, and a learner who asks for less
+   transparency. The photo goes too, so nothing translucent remains. */
+:root[data-backdrop='off'] .o-frame::before,
+:root[data-backdrop='off'] .o-frame::after,
+:root[data-backdrop='off'] .a-shell::before,
+:root[data-backdrop='off'] .a-shell::after {
+  display: none;
+}
+:root[data-backdrop='off'] {
+  --bd-chrome: var(--surface);
+  --bd-chrome-blur: none;
+  --bd-veil: transparent;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .o-frame::before,
+  .o-frame::after,
+  .a-shell::before,
+  .a-shell::after {
+    display: none;
+  }
+  :root[data-theme] {
+    --bd-chrome: var(--surface);
+    --bd-chrome-blur: none;
+    --bd-veil: transparent;
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root[data-theme] {
+    --bd-chrome: var(--surface);
+    --bd-veil: transparent;
+  }
+  .o-frame::before,
+  .o-frame::after,
+  .a-shell::before,
+  .a-shell::after {
+    display: none;
+  }
 }
