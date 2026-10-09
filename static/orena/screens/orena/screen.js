@@ -174,6 +174,8 @@ export default async function mountOrena(element, ctx) {
       button.addEventListener('click', () => runOffered({ dispatcher, action: findAction(button.dataset.actionId), ranActions, repaint: () => paint(homeState()) })),
     );
     element.querySelectorAll('[data-retry]').forEach((button) => button.addEventListener('click', retryHome));
+    // The plan's limit (D-163): the way to the plans, in the retry button's place.
+    element.querySelectorAll('[data-plans]').forEach((button) => button.addEventListener('click', () => ctx.go(button.dataset.plans)));
     element.querySelectorAll('[data-starter]').forEach((button) => button.addEventListener('click', () => sendHomeMessage(button.dataset.starter)));
     const input = element.querySelector('[data-input]');
     if (input) {

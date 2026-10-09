@@ -21,6 +21,10 @@ Routes never touch the repository or a plan id; they write
 An exception inside the block settles 0 (dispatched work, the learner got nothing) or releases (not
 dispatched). Leaving the block without a settle settles the admitted units.
 
+Work that outlives the call stack that admitted it - a streamed Orena answer is produced in a worker thread after
+the route returned - uses `begin()` instead: the same admission, returning the ticket, which the caller then owns
+and must settle or release on every path (D-163).
+
 The switch (default OFF everywhere): the environment `ORENA_QUOTA_ENFORCEMENT` (on/off) wins when it is set;
 otherwise the platform setting `product.quota_enforcement` (`{"enabled": bool, "meters": [...]}`, editable at
 `PUT /api/product/admin/quota`) decides, so QA can switch a running sandbox without recreating it. The meters
@@ -70,9 +74,9 @@ SETTING_KEY = "product.quota_enforcement"
 # Meters whose routes this build admits through `admit()`. Listing any other meter enforces nothing, so it is
 # refused by the admin setting and ignored (logged) in the environment: a Plan screen must never show a meter as
 # counted while nothing counts it.
-WIRED_METERS: tuple[str, ...] = ("writing.review",)
+WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message")
 # Meters whose provider call ends inside the request; only these are reconciled after RECONCILE_AFTER.
-SYNC_METERS: tuple[str, ...] = ("writing.review",)
+SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message")
 SWITCH_CACHE_SECONDS = 5.0
 
 # [HUMAN, pending] What a reservation whose owner died after dispatch costs: "admitted" (default, human
@@ -131,6 +135,12 @@ class QuotaRequestMiddleware:
             return await self.app(scope, receive, send)
         finally:
             _REQUEST.reset(token)
+
+
+def current_facts() -> RequestFacts:
+    """The request's quota facts (idempotency key, timezone) as set by the middleware. A route that admits work from
+    another thread (a streamed turn) captures them here, in the request's own context, and replays them there."""
+    return _facts_now()
 
 
 @contextmanager
@@ -539,7 +549,7 @@ def _facts(meter: str, entitlement: Entitlement, plan: Plan, *, used: int, windo
     }
 
 
-def _reserve(meter: str, units: int, digest: str) -> Ticket:
+def _reserve(meter: str, units: int, digest: str, idempotency_key: str | None = None) -> Ticket:
     from writing_coach.persistence.quota_repository import BucketWindow
 
     repository = _runtime.repository
@@ -564,7 +574,7 @@ def _reserve(meter: str, units: int, digest: str) -> Ticket:
     kind = METERS[meter].window
     if kind not in MIN_WINDOW:
         raise ValueError(f"{meter} is a count cap, not a windowed meter")
-    key = _facts_now().idempotency_key or str(uuid.uuid4())
+    key = idempotency_key or _facts_now().idempotency_key or str(uuid.uuid4())
     op = operation_id(incarnation=incarnation, meter=meter, key=key, request_digest=digest)
     for _attempt in range(WINDOW_RETRIES):
         now = _runtime.clock()
@@ -609,24 +619,51 @@ def _reserve(meter: str, units: int, digest: str) -> Ticket:
     raise _unavailable(str(status))
 
 
-@contextmanager
-def admit(meter: str, *, units: int = 1, request_digest: str = "") -> Iterator[Any]:
-    """Reserve `units` of `meter` for this request, or refuse it before any provider is called (429/403/409/503).
+def enforces(meter: str) -> bool:
+    """True when this meter is listed (metered, or refused because the store is unavailable)."""
+    return meter in switch()["meters"]
 
-    A no-op (`NullTicket`) unless the switch is on and lists the meter."""
+
+def begin(meter: str, *, units: int = 1, request_digest: str = "", idempotency_key: str | None = None) -> Any:
+    """`admit()` without the context manager: returns the ticket, which the caller settles or releases itself.
+
+    For work that outlives the call stack that admitted it - a streamed answer is produced in a worker thread
+    after the route returned - where a `with` block cannot span the lifetime and a contextvar token cannot be
+    reset from another thread. The caller owns the ticket: it must `settle` or `release` it on every path (the
+    reconciler is only the backstop). The no-op ticket when the meter is not enforced.
+
+    Raises the same 429 / 403 / 409 / 503 as `admit()`, before any provider is called."""
     if meter not in METERS:
         raise ValueError(f"Unknown meter {meter!r}")
     state = switch()
     if meter in state["meters"] and state["state"] == "unavailable":
         raise _unavailable(state["reason"] or "store")
     if meter not in state["meters"]:
+        return NULL_TICKET
+    return _reserve(meter, units, request_digest, idempotency_key)
+
+
+def refuse_unmetered(meter: str, *, category: str, message: str) -> None:
+    """Fail closed for a path that cannot be metered yet: 503 `category` when `meter` is enforced (or enforcement
+    cannot tell), nothing when it is not. Used by live voice, which is charged by duration in a later change."""
+    if enforces(meter):
+        raise orena_http_error(503, category, message, retryable=False, context={"feature": meter})
+
+
+@contextmanager
+def admit(meter: str, *, units: int = 1, request_digest: str = "", idempotency_key: str | None = None) -> Iterator[Any]:
+    """Reserve `units` of `meter` for this request, or refuse it before any provider is called (429/403/409/503).
+
+    A no-op (`NullTicket`) unless the switch is on and lists the meter. `idempotency_key` overrides the
+    `Idempotency-Key` header (a body field the client already uses to make a retry safe)."""
+    ticket = begin(meter, units=units, request_digest=request_digest, idempotency_key=idempotency_key)
+    if ticket is NULL_TICKET:
         token = _TICKET.set(NULL_TICKET)
         try:
             yield NULL_TICKET
         finally:
             _TICKET.reset(token)
         return
-    ticket = _reserve(meter, units, request_digest)
     token = _TICKET.set(ticket)
     try:
         yield ticket

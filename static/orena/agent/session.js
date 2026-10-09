@@ -185,7 +185,8 @@ export function createSession({ log = console.warn } = {}) {
       } else if (event === 'suggestion') {
         reply.suggestions.push(data);
       } else if (event === 'error') {
-        reply.error = { class: data.class, message: String(data.message || ''), fallback: fallbackOf(data.fallback) };
+        // `quota` is the transport's own: the plan-limit refusal's figures (D-163), never a server stream event.
+        reply.error = { class: data.class, message: String(data.message || ''), fallback: fallbackOf(data.fallback), ...(data.quota ? { quota: data.quota } : {}) };
         reply.done = true;
         tool = null;
       } else if (event === 'done') {

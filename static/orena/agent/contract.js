@@ -6,7 +6,7 @@
    UI's boundary, and the §5.6 address rules (how Orena says "I" and "you"). DOM-free, so
    scripts/test_orena_agent.mjs checks it against the contract text. */
 
-export const CONTRACT_VERSION = 6;
+export const CONTRACT_VERSION = 7;
 
 export const EVENTS = Object.freeze([
   'session', 'segment_delta', 'segment_end', 'tool_call', 'tool_result', 'evidence', 'action',
@@ -94,6 +94,7 @@ export function readStatus(status, retryAfter = null, now = Date.now()) {
   if (status >= 200 && status < 300) return { kind: 'stream' };
   if (status === 401) return { kind: 'signed_out' };
   if (status === 404) return { kind: 'absent' };
+  if (status === 403) return { kind: 'error', class: 'transport', fallback: 'none' }; // v7: account deleted / not in the plan
   if (status === 409) return { kind: 'language_mismatch' };
   if (status === 429) return { kind: 'wait', seconds: retrySeconds(retryAfter, now) };
   return { kind: 'error', class: 'transport', fallback: status === 422 ? 'none' : 'retry' };

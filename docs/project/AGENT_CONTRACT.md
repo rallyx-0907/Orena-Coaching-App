@@ -6,7 +6,9 @@ Purpose: the single interface between the Orena Intelligence backend (lane `feat
 Authority: D-085, D-086, D-092, D-094, D-095, D-096. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
 Change when: a field, event, action, intent or rule below changes. Edit **only on `codex/work`** through a reviewed commit that bumps `contract_version` and records the change in DECISION_LOG.md; the intelligence lane receives it by merging `codex/work` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 6`
+`contract_version: 7`
+
+v7 (D-164, 2026-10-09): the plan's limit of Orena messages (`orena.message`, D-163) reaches this interface. §2.1 names the new HTTP statuses of `/api/agent/*` - `429 quota_exhausted` (an object body, told apart from the string `rate_limited`; never waited out or resent), `409 operation_in_progress | operation_finished | operation_conflict` (never a language change), `403 account_deleted | feature_not_in_plan`, `503 quota_unavailable` - and what the UI does with each; §3 names the optional request headers `Idempotency-Key` and `X-Orena-Timezone` and §3.3 what counts as a message (a turn that asks a model for the learner's message is one; the opening greeting and every answer made without a model are free and never refused, and the model writes at most one greeting per account per 30 minutes - past that the greeting is built from the learner's snapshot, still a full §3.2 stream); §9 names `503 quota_voice_not_metered` for `POST /api/agent/voice/session`. No event, field, action or intent changed. The statuses occur only where the server enforces the plan quota; a client that declares `contract_version` ≤ 6 sends neither header and, if it meets one of them, reads `429` as `rate_limited` and `409` as a language change - the shipped UI is v7.
 
 v6 (D-145, 2026-10-08): voice and text are one conversation, and every spoken utterance is one turn of it. The client numbers what the learner says per voice session (`utterance`, an opaque token such as `u1`, never the words); `POST /api/agent/voice/tool` carries it, the new `POST /api/agent/voice/turn` closes it at the vendor's turn end, and `POST /api/agent/voice/end` may carry a transcript whose items are tagged with it (§9). All additions are optional: a client that declares `contract_version` ≤ 5 sends none of them and is served as before, except that its spoken turns are not counted as turns of the conversation. No event, action or text-turn request changes.
 
@@ -58,8 +60,12 @@ The client reads the status before it reads a stream. Every `/api/agent/*` route
 | `409` | `{"detail": "target_language_mismatch"}` | turn only: `context.locale.target`, mapped at the server's boundary (`zh-CN` → `zh`), is not the learner's learning language on the server - it changed in another tab or on another device after the UI built its context. Nothing ran and nothing was metered | the UI re-reads the learner's learning language and applies it as any change of learning language; the learner's message stays unsent in the composer; nothing is resent automatically |
 | `422` | a validation detail | a request that does not match §3, or an `interface` on §8 that is not an interface language | a client defect: the client logs it and ends the turn with its own `transport` error, `fallback: none` (§4.1) |
 | `429` | `{"detail": "rate_limited"}`, header `Retry-After: <seconds>` (whole seconds, at least 1) | the learner's sliding window is full; turns and capability reads are counted apart. Checked after the 404 and before the body is read: nothing ran, nothing was metered, and the refused request is not counted | a brief wait state, not an error: Orena stays thinking, then the client sends the same request again after `Retry-After` seconds; refused again, it waits again. The learner may cancel the wait (abort) |
+| `429` | `{"detail": {"category": "quota_exhausted", "message", "retryable": false, "context": {"feature": "orena.message", "used", "limit", "unit", "window": "day", "resets_at", "plan", "upgrade"}}}`, header `Retry-After: <seconds until resets_at>` | turn only (v7): the learner's plan limit of Orena messages for this day (the learner's timezone, §3 `X-Orena-Timezone`) is used up. Refused before the stream; nothing ran and nothing was charged. `detail` is an **object with a `category`**; `rate_limited`'s is a string | told, never waited out or resent: the reply's error line reads the server's own figures (`used` of `limit`) in the interface language, with the way to the plans (`context.upgrade`); the learner's message stays. `Retry-After` is when the limit resets, not a wait to resend |
+| `409` | `{"detail": {"category": "operation_in_progress" \| "operation_finished" \| "operation_conflict" \| "account_not_ready", "message", "retryable"}}` | turn only (v7): the request's `Idempotency-Key` (§3) names a message already being processed (`in_progress`, retryable), already processed (`finished`) or sent with another body (`conflict`); or the learner's account is not set up yet (`account_not_ready`, retryable). `detail` is an object; `target_language_mismatch`'s is a string | the client's own `transport` error with `fallback: retry`; the retry is a new send with a new key. Never a change of learning language |
+| `403` | `{"detail": {"category": "account_deleted" \| "feature_not_in_plan", "message", "retryable": false, "context": {"feature", "plan", "upgrade"}}}` (context on `feature_not_in_plan`) | turn only (v7): the account was deleted, or the learner's plan has no Orena messages. Nothing ran | the client's own `transport` error, `fallback: none` |
+| `503` | `{"detail": {"category": "quota_unavailable", "message", "retryable": true, "context": {"reason"}}}` | turn only (v7): while the plan quota is enforced, the limit cannot be checked (the store or the catalogue is unavailable). Fail closed: nothing ran. (For the voice session, `quota_voice_not_metered`, §9) | the client's own `transport` error, `fallback: retry` |
 
-A `409` or `422` counts toward the learner's limit; only a refused `429` does not.
+A `409` or `422` counts toward the learner's limit; only a refused `rate_limited` `429` does not. The v7 statuses come after the learner's window, so they count.
 
 ---
 
@@ -67,7 +73,7 @@ A `409` or `422` counts toward the learner's limit; only a refused `429` does no
 
 ```json
 {
-  "contract_version": 6,
+  "contract_version": 7,
   "session_id": "optional, from a previous session event",
   "trigger": "message",
   "message": "Tại sao tôi cứ sai từ này?",
@@ -90,6 +96,12 @@ A `409` or `422` counts toward the learner's limit; only a refused `429` does no
   ]
 }
 ```
+
+Request headers (v7, both optional):
+
+- `Idempotency-Key: <string, ≤ 200 printable characters>` - one per learner message, reused only when that same message is sent again (a resend after a `rate_limited` wait keeps it; a retry the learner taps mints a new one). The server counts a message against the plan once per key; a key already finished answers `409 operation_finished` (§2.1). Without it the server mints one: nothing is deduplicated, nothing is counted twice.
+  It applies to `POST /api/agent/turn` (a `message` turn) and to the text discussion route only. `POST /api/agent/voice/turn` and `POST /api/agent/voice/tool` neither require nor read it: a spoken utterance's own `utterance` token (§9) stays its identity, and the plan quota never touches those routes.
+- `X-Orena-Timezone: <IANA zone, e.g. Asia/Ho_Chi_Minh>` - the device's timezone. The plan's limit of Orena messages is per day and the day ends at the learner's local midnight (`resets_at` in a `429 quota_exhausted`). Absent or invalid: the zone of the learner's last window, else UTC.
 
 Rules:
 
@@ -122,6 +134,15 @@ session → segment_delta… → segment_end{0, <support>, …, neutral_explain}
 - One segment, ≤ 240 characters, in the `support` language; Design Contract rule 50 (learning-first copy) governs it.
 - Not a learner turn: it does not advance `turn_ordinal`. A `soft_limited` learner gets the suggestions without the greeting, never an error.
 - At most one per thread; the client may reuse it for the same `surface` + `selected_item` within a session.
+- Free and never refused (§3.3). The model writes at most one greeting per account per 30 minutes; a greeting asked for sooner is built by the server from the learner's snapshot (a fact it holds, the default suggestions for the surface) with no model, and is the same stream, with the same events, to the client. A refresh or a reconnect therefore never costs a model call each time.
+
+### 3.3 What counts as an Orena message (v7)
+
+The plan limits Orena messages per day (Free / Plus / Pro: 20 / 200 / 1000; the catalogue is the server's). Where the server enforces it:
+
+- A `trigger: "message"` turn that asks a model is **one** message, however many model rounds, tools or retries inside the turn it takes. Admission is decided once, before the stream starts: a refusal is a plain JSON status (§2.1) and nothing streams. A turn that ends in an `error` event, or that asked a model for nothing usable, is not counted; a turn the learner abandons after the model has started is counted.
+- Free, and never refused even when the day is used up: the opening greeting (§3.2), an identity answer (§7 copy), "open it" on an offered place, and the opening on a selection - answers the server makes without a model.
+- The text discussion over a reading (`POST /api/texts/discussion/turns`, not this contract) is also an Orena message; its `request_id` is its idempotency key.
 
 ---
 
@@ -391,6 +412,7 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
      - 429 `rate_limited` with Retry-After (the daily cap and turn window apply first);
      - 409 `target_language_mismatch`;
      - 503 `voice_unavailable`;
+     - 503 `quota_voice_not_metered` (v7): `{"detail": {"category": "quota_voice_not_metered", …}}`, while the plan's limit of Orena messages is enforced and voice is not yet charged by duration. No token is minted; the client carries the conversation on its device cascade exactly as for `voice_unavailable` (its turns are text turns, §3.3). This is a deliberate interim: live voice is blocked while the limit is enforced, until voice is charged by duration (a later change removes this row). `/voice/tool`, `/voice/turn`, `/voice/context` and `/voice/end` are unchanged by the quota (they act on a session `voice/session` created and read no `Idempotency-Key`; the `utterance` token is their identity). If the limit cannot be checked the answer is the same `quota_voice_not_metered` (fail closed);
      - 404 while voice is off.
 2. **Connect.**
    - Open a WebSocket to `connect.url + "?access_token=" + encodeURIComponent(ephemeral_token)`.

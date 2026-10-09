@@ -4818,3 +4818,112 @@ If another branch (PR A) lands a D-161 first, this entry is renumbered to the ne
 11. **Publish date.** `effective_date` stays null in the repository. The deploy step is `node
     scripts/build_public_pages.mjs --release --effective-date YYYY-MM-DD` with the date of the policy's first public
     deployment on :8000; the release check fails without it.
+
+
+## D-163 - Orena messages enforced on the server: text turns and text discussion; voice refused until it is metered
+
+2026-10-09, the human's decisions relayed by the coordinating session, implemented on branch
+`feat/quota-orena-message` on top of D-161 (`feat/quota-core`). The number is assigned at merge. **Needs independent
+architecture review before merge** (entitlement and commerce enforcement on the agent path; an implementer may not
+self-approve).
+
+1. **What is one Orena message.** A learner's text turn that calls a model is 1 message, per day in the learner's
+   timezone (D-161 point 5), Free / Plus / Pro 20 / 200 / 1000 (catalogue). One turn may run several model rounds (a
+   read tool, the evidence nudge, the answer nudge): it is still 1. The automatic opening greeting
+   (`trigger: "open"`) and every answer produced without a model - an identity question, an offered place opened on
+   "open it", the opening on a selection - are free and are never refused, even for a learner whose day is spent.
+   **The greeting is bounded (architecture review of #118, P1-1; the human: it costs no learner quota, its real provider
+   cost stays in telemetry, and reconnecting or refreshing must not yield unlimited free greetings).** The model writes at
+   most `AgentLimits.model_openings_per_window` (1) greeting per account per `opening_window_seconds` (30 minutes), in a
+   sliding-window limiter on `AgentRuntime` keyed by the account; each greeting round is capped at
+   `opening_max_output_tokens` (200). Past the allowance the greeting is **built by the server** from the learner's
+   snapshot (`greeting.built`) with the surface's default suggestions: no provider call, the same stream to the client,
+   still 200, never refused, no quota. The bound is **per process** (like the other agent limiters) until the shared
+   store backs it - required before :8000 runs more than one worker (`UI_BACKEND_GAPS.md` QTA-12). A greeting's real
+   cost is recorded as before (`ai.operation`, `ai_cost_records`, and the `agent.turn` row with `opening: true`, its
+   rounds, tokens and outcome - how free-greeting spend is read per account; a separate capability key was not added,
+   the AI capability vocabulary being pinned).
+   Learner-authored text no longer reaches the free opening prompt: it is shown each coach note's id and kind, never its
+   text (review P2-1). A turn that asked no model and is unadmitted (an identity answer, "open it") skips the
+   rolling-summary compaction, which would be a free model call; the upkeep waits for the next paid turn (review P2-2).
+2. **Where it is admitted.** `agent/turn.py` calls an `admission` once, at the one point where the turn knows it will ask
+   a model for a learner's message (after the decisions, before any event is released and before any provider round);
+   `agent/api.py` reads that first event before it builds the response, so a refusal is a plain JSON 429 / 503 / 409 in
+   the agent's error envelope and never an SSE frame. The ticket is dispatched at admission and settled when the turn
+   ends, however it ends: **1** when a model round ran and the turn completed or the learner left (the provider did the
+   work - walking away does not make it free), **0** when the turn ended in an error (provider unavailable, timeout, an
+   empty answer: nothing usable - the learner pays nothing and the provider cost stays in telemetry, as for writing
+   reviews, review of #116 P2-3) or before any model round. A stream dropped before it is read is closed by the
+   generator's own `finally`; the reconciler (`SYNC_METERS` now includes `orena.message`) is only the backstop.
+3. **Idempotency.** `Idempotency-Key` (one per learner message, kept through a rate-limit resend) keys the operation; a
+   resend of a finished message is 409 `operation_finished` and is never charged twice; a deliberate retry is a new key.
+   Without the header the server mints one (no dedup, no double count).
+4. **`reading.discussion_turn` is an Orena message.** The text discussion (`POST /api/texts/discussion/turns`) is Orena
+   answering the learner about a text - the tutor speaks as Orena ("Orena is thinking", "I'm attached to ...") - so it is
+   metered as `orena.message`. Admitted after the stored-repeat check (a repeat of a `request_id` returns the stored
+   exchange free) and before the turn cap and the provider; a full thread (409), a provider that cannot answer (503) and a
+   repeat that lost the race settle 0. The body's `request_id` is the idempotency key. It is one constant
+   (`text_discussion.QUOTA_METER`); `None` takes discussion out of the Orena messages if the human disagrees. The other
+   model-backed learner helpers (translation, the reading summary, spoken-response coaching, dictionary explanations) are
+   single-shot tools, not a conversation with Orena, and are not Orena messages.
+5. **Voice is refused, not unmetered.** While `orena.message` is enforced, `POST /api/agent/voice/session` answers 503
+   `quota_voice_not_metered` and mints no token (the client already falls back to text on any failed session); if
+   enforcement cannot be read it answers the same 503 `quota_voice_not_metered` (fail closed; the client treats both alike). The other voice routes act on a session that
+   `voice/session` created and the server calls no model on them, so there is no other way to a vendor token. Voice is
+   charged by duration (`voice_seconds_per_message`) in a later change, which removes this refusal. A voice session
+   opened before enforcement was switched on keeps its token until it expires (at most 15 minutes).
+6. **Meter wiring.** `orena.message` joins `WIRED_METERS` / `SYNC_METERS`; the admin switch (`PUT
+   /api/product/admin/quota {"enabled":true,"meters":["writing.review","orena.message"]}`) and `ORENA_QUOTA_METERS` can
+   now enforce it. Off or unlisted: nothing changes (no bucket, no read). Store, catalogue or incarnation unreadable
+   while it is on: 503, no provider call. The per-process 12 / min limiter and the daily USD cap stay as cost safety,
+   separate from quota.
+7. **Client.** The agent client sends `Idempotency-Key` and `X-Orena-Timezone` on a turn, tells the quota 429 from the
+   contract's `rate_limited` 429 and from the language 409 by the body's envelope, and shows the server's figures in the
+   reply's existing error place, in the retry button's place and style, with "See all plans" (`UI_BACKEND_GAPS.md`
+   QTA-1). Plan & usage reads `orena.message` from the same buckets (used, limit, `resets_at`).
+8. **Activation:** :8021 may enable `orena.message` after review; :8000 needs the explicit human GO and the
+   architecture review of D-161 points 6-8 and of this entry.
+9. **Accepted, recorded (review P3):** a refused discussion turn leaves an empty thread row and a refused agent turn an
+   in-memory session (created before admission; harmless); a client that disconnects while its worker thread is inside the
+   stream is settled when the generator is collected or by the reconciler, charging 1 as decided; a provider error after
+   some text streamed settles 0, so a learner may have read partial text for free; a voice session opened before
+   enforcement was switched on keeps its token for up to 15 minutes (switch on, expect that).
+
+Independent architecture review: `docs/reviews/architecture/` of PR #118 (claude-opus-5-5, REQUEST CHANGES on
+d8583d2b; P1-1 greeting bound, P1-2 contract v7, P2-1, P2-2 fixed here; D-164 below is the contract change).
+
+
+## D-164 - AGENT_CONTRACT v7: the plan limit of Orena messages reaches the agent interface
+
+2026-10-09, written on `feat/quota-orena-message` on the coordinator's instruction and the architecture review of #118
+(P1-2); **the human confirmed** that the `/api/agent/*` changes and this bump belong in PR C, the UI lane owning the contract
+(the Intelligence session was notified). The number is assigned at merge (D-145 is taken: v6).
+
+`/api/agent/turn` can now answer statuses AGENT_CONTRACT v6 §2.1 did not allow (D-163), and D-086 forbids the Intelligence
+lane from editing the contract, so the change is made by the UI lane in a reviewed commit: `contract_version: 7`,
+consistently in `docs/project/AGENT_CONTRACT.md`, `writing_coach/agent/contract.py`, `static/orena/agent/contract.js`,
+`static/orena/copy/surfaces.json` (regenerated) and the pin in `scripts/test_orena_surfaces.mjs`. The base already carries
+v6 (D-145, PR #95: `POST /voice/turn`, `utterance` on `/voice/tool`). The contract header says "edit only on `codex/work`";
+the UI-lane branches now target `main` directly (the human-approved flow for this milestone), so this PR carries the
+change to `main` and the Intelligence lane receives it by merging forward.
+
+1. **§2.1** gains the rows `429 quota_exhausted` (an object body, `Retry-After` = seconds to `resets_at`; told, never waited
+   out or resent - told apart from the string `rate_limited`), `409 operation_in_progress | operation_finished |
+   operation_conflict | account_not_ready` (a transport error with retry; never a language change - told apart from the
+   string `target_language_mismatch`), `403 account_deleted | feature_not_in_plan` (a transport error, no retry) and `503
+   quota_unavailable` (retry). Only a refused `rate_limited` 429 stays uncounted by the learner's window.
+2. **§3** names the optional request headers `Idempotency-Key` (one per learner message) and `X-Orena-Timezone` (the day ends
+   at the learner's local midnight), and **§3.3** what counts as an Orena message: a message turn that asks a model is one;
+   the opening greeting and answers made without a model are free and never refused; the model writes at most one greeting
+   per account per 30 minutes, past which the greeting is built from the snapshot as the same stream (§3.2).
+3. **§9** names `503 quota_voice_not_metered` for `POST /api/agent/voice/session` while voice cannot be metered - a
+   deliberate interim: live voice is blocked while `orena.message` is enforced, until the voice-minutes change. The quota's
+   `Idempotency-Key` applies to `POST /api/agent/turn` (message) and the discussion route only; `/voice/turn` and
+   `/voice/tool` neither require nor read it (their `utterance` token stays their identity), and the quota never touches
+   them (tested).
+4. **Compatibility.** No event, field, action or intent changed. The new statuses occur only where the server enforces the
+   quota; a client that declares `contract_version` ≤ 6 sends neither header and reads a 429 as `rate_limited` - the
+   shipped UI is v7 and reads the bodies (`static/orena/agent/transport.js`).
+5. **Gates.** `scripts/test_orena_agent.mjs` asserts the §2.1 rows (in order), their categories, the headers, §3.3 and the
+   voice 503 against the contract text and drives the transport through each; `tests/test_agent_contract_tables.py` fails if
+   the quota gate can answer a category the contract does not name, or the voice refusal drifts.

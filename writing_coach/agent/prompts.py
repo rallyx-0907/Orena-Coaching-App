@@ -193,6 +193,8 @@ def context_document(
     tier1: Tier1Context,
     capabilities: Sequence[CapabilityEntry],
     session: AgentSessionState | None,
+    *,
+    opening: bool = False,
 ) -> dict:
     locale = tier1.contract_locale
     live = session.live_pending() if session else None
@@ -216,8 +218,10 @@ def context_document(
             "asked_this_session": bool(session and session.address_asked),
         },
         # the address note has its own place above; the rest, with ids, so a correction can replace one
+        # An opening greeting is free of learner quota and is built on the snapshot, not on the learner's words: it is
+        # shown the notes' ids and kinds only, never their text (D-163, architecture review P2-1).
         "coach_notes": [
-            {"id": note.id, "kind": note.kind, "text": note.text}
+            {"id": note.id, "kind": note.kind, **({} if opening else {"text": note.text})}
             for note in tier1.coach_notes
             if not note.id.startswith("address-")
         ],
@@ -373,7 +377,7 @@ def opening_messages(
     """The messages of a turn. `budget_tokens` bounds the whole assembled prompt: what is added from the conversation
     (the older turns, then the carried pasted text) gives way to the fixed parts, the summary and the learner's words."""
 
-    context = json.dumps(context_document(turn, tier1, capabilities, session), ensure_ascii=False)
+    context = json.dumps(context_document(turn, tier1, capabilities, session, opening=opening), ensure_ascii=False)
     messages = [
         ProviderMessage(role="system", content=INSTRUCTION),
         ProviderMessage(role="system", content=f"context: {context}"),

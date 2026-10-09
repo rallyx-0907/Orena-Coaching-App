@@ -10,6 +10,7 @@ import { fromContractLang } from '../../agent/contract.js';
 import { t } from './copy.js';
 import { actionCardMarkup, evidenceMarkup, hasCard } from './cards.js';
 import { offerableActions, errorText } from './model.js';
+import { seePlansLabel } from '../plan/quota-notice.js';
 import { richSegments } from '../../kit/rich-text.js';
 
 /* A reply's text is Markdown (LEX-006): its meaning is rendered - headings, bold, lists, quotes, web links -
@@ -24,7 +25,11 @@ function segmentsMarkup(prefix, segments, streaming) {
 }
 
 function errorMarkup(prefix, error) {
-  return html`<div class="${prefix}__error"><span>${errorText(error, t('transportError'))}</span>${error.fallback === 'retry' ? html`<button type="button" class="${prefix}__retry" data-retry>${t('errorRetry')}</button>` : ''}</div>`;
+  // The plan's limit (D-163): the retry button's place and look carry the way to the plans instead; nothing new is drawn.
+  const action = error.quota
+    ? html`<button type="button" class="${prefix}__retry" data-plans="${String(error.quota.upgrade || '#/plan/pricing')}">${seePlansLabel()}</button>`
+    : error.fallback === 'retry' ? html`<button type="button" class="${prefix}__retry" data-retry>${t('errorRetry')}</button>` : '';
+  return html`<div class="${prefix}__error"><span>${errorText(error, t('transportError'))}</span>${action}</div>`;
 }
 
 export function messageMarkup(message, { surface, ranActions, supported }) {

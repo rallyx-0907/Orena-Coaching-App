@@ -234,9 +234,13 @@ def test_the_setting_switches_it_on_and_the_environment_wins_when_set():
 
 
 def test_only_wired_meters_can_be_listed():
-    with pytest.raises(ValueError, match="orena.message"):
-        quota.validate_switch_setting({"enabled": True, "meters": ["orena.message"]})
-    quota.configure_quota(settings=MemorySettings(), env={quota.FLAG: "on", quota.METERS_FLAG: "orena.message,writing.review"})
+    assert set(quota.WIRED_METERS) == {"writing.review", "orena.message"}
+    assert quota.validate_switch_setting({"enabled": True, "meters": ["orena.message", "writing.review"]}) == {
+        "enabled": True, "meters": ["writing.review", "orena.message"]}
+    with pytest.raises(ValueError, match="pronunciation.audio"):
+        quota.validate_switch_setting({"enabled": True, "meters": ["pronunciation.audio"]})
+    quota.configure_quota(settings=MemorySettings(),
+                          env={quota.FLAG: "on", quota.METERS_FLAG: "pronunciation.audio,writing.review"})
     assert quota.switch()["meters"] == ["writing.review"], "an unwired meter enforces nothing and is not listed"
 
 
@@ -604,7 +608,7 @@ def test_env_off_is_off_even_when_the_setting_cannot_be_read():
 def test_env_on_without_a_meter_is_a_503_not_a_silent_off():
     _switch_with(MemorySettings(), {quota.FLAG: "on"})
     state = quota.switch()
-    assert (state["state"], state["reason"], state["meters"]) == ("unavailable", "no_meters", ["writing.review"])
+    assert (state["state"], state["reason"], state["meters"]) == ("unavailable", "no_meters", list(quota.WIRED_METERS))
     assert _refused_with_503() == "no_meters"
     _switch_with(MemorySettings(fail=True), {quota.FLAG: "on"})
     assert _refused_with_503() == "switch_unreadable"
@@ -621,7 +625,7 @@ def test_an_unreadable_setting_in_a_fresh_worker_fails_closed():
     state = quota.switch()
     assert (state["state"], state["reason"]) == ("unavailable", "switch_unreadable")
     assert _refused_with_503() == "switch_unreadable"
-    assert quota.usage_for("legacy", catalog.FREE) == {"writing.review": {"state": "unavailable"}}
+    assert quota.usage_for("legacy", catalog.FREE) == {key: {"state": "unavailable"} for key in quota.WIRED_METERS}
 
 
 def test_an_unreadable_setting_after_a_good_read_keeps_the_last_value():
