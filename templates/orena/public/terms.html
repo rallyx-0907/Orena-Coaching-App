@@ -10,8 +10,7 @@
 <helmet>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Điều khoản dịch vụ · Orena</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&amp;family=Outfit:wght@400;500;600;700&amp;family=Literata:ital,opsz,wght@1,7..72,500&amp;display=swap" rel="stylesheet">
+<link href="/orena-assets/fonts/fonts.css" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:88px}
@@ -37,19 +36,20 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
     <nav style="display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--surface);align-self:flex-start;max-width:100%;overflow-x:auto">
       <a href="/privacy" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;color:var(--muted);font-size:14.5px;font-weight:600;display:flex;align-items:center" style-hover="color:var(--text)">Quyền riêng tư</a>
       <a href="/terms" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;background:var(--accent-soft);color:var(--text);font-size:14.5px;font-weight:600;display:flex;align-items:center">Điều khoản dịch vụ</a>
+      <a href="/account-deletion" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;color:var(--muted);font-size:14.5px;font-weight:600;display:flex;align-items:center" style-hover="color:var(--text)">Xoá tài khoản</a>
     </nav>
     <h1 style="margin:0;font-size:clamp(38px,5.4vw,62px);line-height:1.05;font-weight:700;letter-spacing:-.035em;text-wrap:balance;max-width:820px">Điều khoản <span style="font-family:Literata,Georgia,serif;font-style:italic;font-weight:500;color:var(--accent-text);letter-spacing:-.02em">dịch vụ</span></h1>
-    <p style="margin:0;font-size:clamp(17px,1.4vw,19px);line-height:1.6;color:var(--muted);max-width:680px;text-wrap:pretty">Các điều khoản này là thoả thuận giữa bạn và Orena khi bạn tạo tài khoản, học, mua gói hoặc ủng hộ dự án.</p>
-    <div style="display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var(--text3)"><span>Cập nhật lần cuối: 9 tháng 10, 2026</span><span>Hiệu lực từ: 9 tháng 10, 2026</span></div>
+    <p style="margin:0;font-size:clamp(17px,1.4vw,19px);line-height:1.6;color:var(--muted);max-width:680px;text-wrap:pretty">Các điều khoản này là thoả thuận giữa bạn và Orena, do RallyX, Việt Nam vận hành, khi bạn tạo tài khoản và sử dụng Orena.</p>
+    <div style="display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var(--text3)"><span>Cập nhật lần cuối: <mark style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: effective_date]</mark></span><span>Hiệu lực từ: <mark style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: effective_date]</mark></span></div>
 
     <sc-if value="{{ showSummary }}" hint-placeholder-val="{{ true }}">
       <div style="background:var(--surface);border-radius:24px;padding:clamp(20px,2.6vw,28px);display:flex;flex-direction:column;gap:18px;margin-top:8px">
         <div style="font-size:15px;font-weight:600;color:var(--muted)">Tóm tắt nhanh</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:18px 28px">
           <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Bạn giữ quyền với bài viết, ghi âm và tài liệu của mình.</span></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Gói trả phí tự gia hạn; bạn huỷ bất cứ lúc nào trong Hồ sơ.</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Gói trả phí chưa hoạt động; trong giai đoạn thử nghiệm, quản trị viên có thể gán gói cho tài khoản.</span></div>
           <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Orena Intelligence có thể sai; hãy kiểm tra lại thông tin quan trọng.</span></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Ủng hộ là tự nguyện và không phải điều kiện để dùng Orena.</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Bạn có thể yêu cầu xoá tài khoản bất cứ lúc nào qua email.</span></div>
         </div>
       </div>
     </sc-if>
@@ -76,33 +76,31 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
     <article style="flex:1 1 0;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:44px;font-size:16.5px;line-height:1.7;color:var(--body)">
       <section id="s1" data-sec="1" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">1. Chấp nhận điều khoản</h2>
-        <p style="margin:0;text-wrap:pretty">Khi tạo tài khoản hoặc sử dụng Orena, bạn đồng ý với các Điều khoản này và <a href="/privacy">Chính sách quyền riêng tư</a>. Nếu bạn không đồng ý, vui lòng ngừng sử dụng dịch vụ. Người dưới 16 tuổi cần có sự đồng ý của cha mẹ hoặc người giám hộ.</p>
+        <p style="margin:0;text-wrap:pretty">Khi tạo tài khoản hoặc sử dụng Orena, bạn đồng ý với các Điều khoản này và <a href="/privacy">Chính sách quyền riêng tư</a>. Nếu bạn không đồng ý, vui lòng ngừng sử dụng dịch vụ. Bạn phải từ 13 tuổi trở lên mới được sử dụng Orena.</p>
       </section>
 
       <section id="s2" data-sec="2" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">2. Tài khoản</h2>
         <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px">
-          <li>Bạn cung cấp thông tin chính xác khi đăng ký và cập nhật khi có thay đổi.</li>
-          <li>Bạn chịu trách nhiệm giữ an toàn mật khẩu và mọi hoạt động trên tài khoản của mình.</li>
+          <li>Bạn đăng nhập bằng tài khoản Google. Hãy giữ an toàn cho tài khoản đó: bạn chịu trách nhiệm về mọi hoạt động trên tài khoản Orena của mình.</li>
           <li>Mỗi tài khoản dành cho một người. Không chia sẻ, bán hoặc chuyển nhượng tài khoản.</li>
           <li>Hãy báo cho chúng tôi ngay nếu nghi ngờ tài khoản bị truy cập trái phép.</li>
+          <li>Bạn có thể yêu cầu chúng tôi xoá tài khoản bất cứ lúc nào; xem <a href="/account-deletion">Xoá tài khoản</a>.</li>
         </ul>
       </section>
 
       <section id="s3" data-sec="3" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">3. Gói dịch vụ và thanh toán</h2>
-        <p style="margin:0;text-wrap:pretty">Orena có gói miễn phí và các gói trả phí theo tháng hoặc theo năm, với giới hạn sử dụng được nêu ở trang Bảng giá. Giá đã bao gồm thuế theo quy định, trừ khi ghi chú khác.</p>
+        <p style="margin:0;text-wrap:pretty">Orena có gói miễn phí. Gói trả phí chưa được cung cấp: Orena không thu tiền, và không có khoản nào trong Orena là khoản phải trả. Giới hạn sử dụng phụ thuộc vào gói của bạn và được hiển thị trong ứng dụng. Trong giai đoạn thử nghiệm, quản trị viên có thể thay đổi gói hoặc giới hạn của một tài khoản theo cách thủ công.</p>
         <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Tự động gia hạn</div><div style="font-size:15.5px;line-height:1.6">Gói trả phí tự gia hạn vào cuối mỗi kỳ cho đến khi bạn huỷ. Chúng tôi gửi nhắc nhở trước ngày gia hạn của gói năm 7 ngày.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Huỷ gói</div><div style="font-size:15.5px;line-height:1.6">Bạn huỷ trong Hồ sơ → Gói và mức dùng. Gói vẫn hoạt động đến hết kỳ đã thanh toán; không phát sinh phí huỷ.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Hoàn tiền</div><div style="font-size:15.5px;line-height:1.6">Lần mua đầu tiên được hoàn tiền đầy đủ nếu bạn yêu cầu trong vòng 7 ngày. Mua qua App Store hoặc Google Play tuân theo chính sách hoàn tiền của cửa hàng đó.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Thay đổi giá</div><div style="font-size:15.5px;line-height:1.6">Nếu giá thay đổi, chúng tôi thông báo ít nhất 30 ngày trước kỳ gia hạn tiếp theo. Giá mới chỉ áp dụng từ kỳ đó.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Thanh toán</div><div style="font-size:15.5px;line-height:1.6">Thanh toán chưa hoạt động. Hiện tại Orena không thu thập thông tin thanh toán.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Khi gói trả phí ra mắt</div><div style="font-size:15.5px;line-height:1.6">Chúng tôi sẽ cập nhật các Điều khoản này, và cho bạn biết giá cùng quy định về gia hạn, huỷ gói và hoàn tiền, trước khi thu bất kỳ khoản nào của bạn.</div></div>
         </div>
       </section>
 
       <section id="s4" data-sec="4" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">4. Ủng hộ dự án</h2>
-        <p style="margin:0;text-wrap:pretty">Khoản ủng hộ qua trang Ủng hộ Orena là tự nguyện, không phải khoản mua hàng và không đi kèm quyền lợi sử dụng ngoài huy hiệu ghi nhận. Khoản ủng hộ một lần thường không được hoàn lại; nếu bạn chuyển nhầm số tiền, hãy liên hệ trong vòng 7 ngày để được hỗ trợ. Ủng hộ hàng tháng có thể dừng bất cứ lúc nào trong Hồ sơ.</p>
+        <p style="margin:0;text-wrap:pretty">Orena chưa nhận ủng hộ. Nếu điều này thay đổi, chúng tôi sẽ cập nhật các Điều khoản này trước.</p>
       </section>
 
       <section id="s5" data-sec="5" style="display:flex;flex-direction:column;gap:14px">
@@ -135,7 +133,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
 
       <section id="s9" data-sec="9" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">9. Tạm ngưng và chấm dứt</h2>
-        <p style="margin:0;text-wrap:pretty">Bạn có thể xoá tài khoản bất cứ lúc nào trong Cài đặt. Chúng tôi có thể tạm ngưng hoặc chấm dứt tài khoản vi phạm Điều khoản này, sau khi đã thông báo và cho bạn cơ hội giải thích, trừ trường hợp vi phạm nghiêm trọng hoặc theo yêu cầu của pháp luật. Nếu tài khoản trả phí bị chấm dứt mà không do lỗi của bạn, chúng tôi hoàn lại phần phí của thời gian chưa sử dụng.</p>
+        <p style="margin:0;text-wrap:pretty">Bạn có thể yêu cầu chúng tôi xoá tài khoản bất cứ lúc nào qua email, như hướng dẫn ở trang <a href="/account-deletion">Xoá tài khoản</a>; chúng tôi xử lý yêu cầu thủ công trong vòng 30 ngày. Chúng tôi có thể tạm ngưng hoặc chấm dứt tài khoản vi phạm Điều khoản này, sau khi đã thông báo và cho bạn cơ hội giải thích, trừ trường hợp vi phạm nghiêm trọng hoặc theo yêu cầu của pháp luật.</p>
       </section>
 
       <section id="s10" data-sec="10" style="display:flex;flex-direction:column;gap:14px">
@@ -145,7 +143,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
 
       <section id="s11" data-sec="11" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">11. Thay đổi điều khoản</h2>
-        <p style="margin:0;text-wrap:pretty">Chúng tôi có thể cập nhật Điều khoản khi sản phẩm hoặc quy định pháp luật thay đổi. Với thay đổi quan trọng, chúng tôi thông báo trong ứng dụng hoặc qua email ít nhất 14 ngày trước khi có hiệu lực. Tiếp tục sử dụng Orena sau thời điểm đó nghĩa là bạn đồng ý với Điều khoản mới.</p>
+        <p style="margin:0;text-wrap:pretty">Chúng tôi có thể cập nhật Điều khoản khi sản phẩm hoặc quy định pháp luật thay đổi. Với thay đổi quan trọng, chúng tôi đăng bản cập nhật trên trang này ít nhất 14 ngày trước khi có hiệu lực. Tiếp tục sử dụng Orena sau thời điểm đó nghĩa là bạn đồng ý với Điều khoản mới.</p>
       </section>
 
       <section id="s12" data-sec="12" style="display:flex;flex-direction:column;gap:14px">
@@ -155,7 +153,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
 
       <section id="s13" data-sec="13" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">13. Liên hệ</h2>
-        <p style="margin:0;text-wrap:pretty">Nếu có câu hỏi về Điều khoản dịch vụ, hãy viết cho chúng tôi:</p>
+        <p style="margin:0;text-wrap:pretty">Orena do RallyX, Việt Nam vận hành. Nếu có câu hỏi về Điều khoản dịch vụ, hãy viết cho chúng tôi:</p>
         <div style="background:var(--surface);border-radius:18px;padding:18px 20px;display:flex;flex-wrap:wrap;gap:12px 32px">
           <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:var(--text3)">Pháp lý</span><a href="mailto:orena.legal@chillpickle.org" style="font-size:16px;font-weight:600">orena.legal@chillpickle.org</a></div>
           <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:var(--text3)">Hỗ trợ chung</span><a href="mailto:orena.support@chillpickle.org" style="font-size:16px;font-weight:600">orena.support@chillpickle.org</a></div>
@@ -170,6 +168,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
       <a href="/landing" style="color:var(--muted)">Giới thiệu</a>
       <a href="/privacy" style="color:var(--muted)">Quyền riêng tư</a>
       <a href="/terms" style="color:var(--text)">Điều khoản</a>
+      <a href="/account-deletion" style="color:var(--muted)">Xoá tài khoản</a>
     </div>
   </footer>
 </sc-if>
@@ -178,19 +177,20 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
     <nav style="display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--surface);align-self:flex-start;max-width:100%;overflow-x:auto">
       <a href="/privacy?lang=en" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;color:var(--muted);font-size:14.5px;font-weight:600;display:flex;align-items:center" style-hover="color:var(--text)">Privacy</a>
       <a href="/terms?lang=en" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;background:var(--accent-soft);color:var(--text);font-size:14.5px;font-weight:600;display:flex;align-items:center">Terms of Service</a>
+      <a href="/account-deletion?lang=en" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;color:var(--muted);font-size:14.5px;font-weight:600;display:flex;align-items:center" style-hover="color:var(--text)">Delete account</a>
     </nav>
     <h1 style="margin:0;font-size:clamp(38px,5.4vw,62px);line-height:1.05;font-weight:700;letter-spacing:-.035em;text-wrap:balance;max-width:820px">Terms of <span style="font-family:Literata,Georgia,serif;font-style:italic;font-weight:500;color:var(--accent-text);letter-spacing:-.02em">Service</span></h1>
-    <p style="margin:0;font-size:clamp(17px,1.4vw,19px);line-height:1.6;color:var(--muted);max-width:680px;text-wrap:pretty">These terms are the agreement between you and Orena when you create an account, learn, buy a plan or support the project.</p>
-    <div style="display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var(--text3)"><span>Last updated: October 9, 2026</span><span>Effective: October 9, 2026</span></div>
+    <p style="margin:0;font-size:clamp(17px,1.4vw,19px);line-height:1.6;color:var(--muted);max-width:680px;text-wrap:pretty">These terms are the agreement between you and Orena, operated by RallyX, Vietnam, when you create an account and use Orena.</p>
+    <div style="display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var(--text3)"><span>Last updated: <mark style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: effective_date]</mark></span><span>Effective: <mark style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: effective_date]</mark></span></div>
 
     <sc-if value="{{ showSummary }}" hint-placeholder-val="{{ true }}">
       <div style="background:var(--surface);border-radius:24px;padding:clamp(20px,2.6vw,28px);display:flex;flex-direction:column;gap:18px;margin-top:8px">
         <div style="font-size:15px;font-weight:600;color:var(--muted)">At a glance</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:18px 28px">
           <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">You keep the rights to your writing, recordings and documents.</span></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Paid plans renew automatically; cancel any time in Profile.</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Paid plans are not live yet; during the beta an administrator may assign a plan to an account.</span></div>
           <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Orena Intelligence can be wrong; double-check anything important.</span></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Donations are voluntary and never required to use Orena.</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">You can ask us to delete your account at any time, by email.</span></div>
         </div>
       </div>
     </sc-if>
@@ -217,33 +217,31 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
     <article style="flex:1 1 0;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:44px;font-size:16.5px;line-height:1.7;color:var(--body)">
       <section id="s1" data-sec="1" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">1. Accepting these terms</h2>
-        <p style="margin:0;text-wrap:pretty">By creating an account or using Orena, you agree to these Terms and our <a href="/privacy?lang=en">Privacy Policy</a>. If you do not agree, please stop using the service. Users under 16 need consent from a parent or guardian.</p>
+        <p style="margin:0;text-wrap:pretty">By creating an account or using Orena, you agree to these Terms and our <a href="/privacy?lang=en">Privacy Policy</a>. If you do not agree, please stop using the service. You must be at least 13 years old to use Orena.</p>
       </section>
 
       <section id="s2" data-sec="2" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">2. Your account</h2>
         <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px">
-          <li>Provide accurate information when you sign up and keep it up to date.</li>
-          <li>You are responsible for keeping your password safe and for all activity on your account.</li>
+          <li>You sign in with a Google account. Keep it secure: you are responsible for all activity on your Orena account.</li>
           <li>Each account is for one person. Do not share, sell or transfer your account.</li>
           <li>Tell us right away if you suspect unauthorised access.</li>
+          <li>You can ask us to delete your account at any time; see <a href="/account-deletion?lang=en">Delete account</a>.</li>
         </ul>
       </section>
 
       <section id="s3" data-sec="3" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">3. Plans and payment</h2>
-        <p style="margin:0;text-wrap:pretty">Orena offers a free plan and paid monthly or yearly plans, with usage limits listed on the Pricing page. Prices include applicable taxes unless stated otherwise.</p>
+        <p style="margin:0;text-wrap:pretty">Orena has a free plan. Paid plans are not available yet: Orena does not take payments, and nothing in Orena is a charge. Usage limits depend on your plan and are shown in the app. During the beta, an administrator may change the plan or limits of an account by hand.</p>
         <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Automatic renewal</div><div style="font-size:15.5px;line-height:1.6">Paid plans renew at the end of each period until you cancel. We send a reminder 7 days before a yearly plan renews.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Cancelling</div><div style="font-size:15.5px;line-height:1.6">Cancel in Profile → Plan & usage. Your plan stays active until the end of the paid period; there is no cancellation fee.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Refunds</div><div style="font-size:15.5px;line-height:1.6">Your first purchase is fully refundable if you ask within 7 days. Purchases through the App Store or Google Play follow that store's refund policy.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Price changes</div><div style="font-size:15.5px;line-height:1.6">If prices change, we will tell you at least 30 days before your next renewal. New prices apply only from that period.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Payments</div><div style="font-size:15.5px;line-height:1.6">Payments are not live. Orena does not collect payment details today.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">When paid plans launch</div><div style="font-size:15.5px;line-height:1.6">We will update these Terms, and tell you the price, renewal, cancellation and refund rules, before you are charged anything.</div></div>
         </div>
       </section>
 
       <section id="s4" data-sec="4" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">4. Donations</h2>
-        <p style="margin:0;text-wrap:pretty">Donations made through the Support Orena page are voluntary. They are not purchases and come with no usage benefits beyond a recognition badge. One-time donations are generally non-refundable; if you sent the wrong amount, contact us within 7 days and we will help. Monthly donations can be stopped at any time in Profile.</p>
+        <p style="margin:0;text-wrap:pretty">Orena does not accept donations yet. If that changes, we will update these Terms first.</p>
       </section>
 
       <section id="s5" data-sec="5" style="display:flex;flex-direction:column;gap:14px">
@@ -276,7 +274,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
 
       <section id="s9" data-sec="9" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">9. Suspension and termination</h2>
-        <p style="margin:0;text-wrap:pretty">You can delete your account at any time in Settings. We may suspend or terminate accounts that breach these Terms after notifying you and giving you a chance to respond, except for serious violations or where the law requires. If a paid account is terminated through no fault of yours, we refund the unused portion.</p>
+        <p style="margin:0;text-wrap:pretty">You can ask us to delete your account at any time by email, as described on <a href="/account-deletion?lang=en">Delete account</a>; we process requests by hand within 30 days. We may suspend or terminate accounts that breach these Terms after notifying you and giving you a chance to respond, except for serious violations or where the law requires.</p>
       </section>
 
       <section id="s10" data-sec="10" style="display:flex;flex-direction:column;gap:14px">
@@ -286,7 +284,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
 
       <section id="s11" data-sec="11" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">11. Changes to these terms</h2>
-        <p style="margin:0;text-wrap:pretty">We may update these Terms when the product or the law changes. For significant changes, we will notify you in the app or by email at least 14 days before they take effect. Continuing to use Orena after that date means you accept the updated Terms.</p>
+        <p style="margin:0;text-wrap:pretty">We may update these Terms when the product or the law changes. For significant changes, we will publish the update on this page at least 14 days before it takes effect. Continuing to use Orena after that date means you accept the updated Terms.</p>
       </section>
 
       <section id="s12" data-sec="12" style="display:flex;flex-direction:column;gap:14px">
@@ -296,7 +294,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
 
       <section id="s13" data-sec="13" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">13. Contact</h2>
-        <p style="margin:0;text-wrap:pretty">For questions about these Terms of Service, write to us:</p>
+        <p style="margin:0;text-wrap:pretty">Orena is operated by RallyX, Vietnam. For questions about these Terms of Service, write to us:</p>
         <div style="background:var(--surface);border-radius:18px;padding:18px 20px;display:flex;flex-wrap:wrap;gap:12px 32px">
           <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:var(--text3)">Legal</span><a href="mailto:orena.legal@chillpickle.org" style="font-size:16px;font-weight:600">orena.legal@chillpickle.org</a></div>
           <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:var(--text3)">General support</span><a href="mailto:orena.support@chillpickle.org" style="font-size:16px;font-weight:600">orena.support@chillpickle.org</a></div>
@@ -311,6 +309,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
       <a href="/landing" style="color:var(--muted)">About</a>
       <a href="/privacy?lang=en" style="color:var(--muted)">Privacy</a>
       <a href="/terms?lang=en" style="color:var(--text)">Terms</a>
+      <a href="/account-deletion?lang=en" style="color:var(--muted)">Delete account</a>
     </div>
   </footer>
 </sc-if>

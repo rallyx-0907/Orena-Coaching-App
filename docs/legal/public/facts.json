@@ -1,0 +1,15 @@
+{
+  "_about": "The facts the public legal text states. A null value is unconfirmed: a normal build renders it as a visible [pending: ...] mark, and `node scripts/build_public_pages.mjs --release` (the check that must pass before the pages go to :8000) fails while any is null. Nothing here is guessed (D-161).",
+  "effective_date": null,
+  "_effective_date": "Publish date, YYYY-MM-DD, set by the human when the policy goes live. Rendered on all three legal pages in both languages.",
+  "operator": { "name": "RallyX", "country": { "vi": "Việt Nam", "en": "Vietnam" } },
+  "_operator": "Human decision 2026-10-09: the developer/operator public name is RallyX, Vietnam. No personal name and no address are published.",
+  "min_age": 13,
+  "_min_age": "Human decision 2026-10-09: 13. There is no technical age gate in the beta; Google Play target audience 13+, not Families.",
+  "retention": {
+    "agent_turn_days": 90,
+    "feedback_months": 24,
+    "backup_days": null
+  },
+  "_retention": "agent_turn_days and feedback_months state what AGENT_TURN_RETENTION_SWEEP (writing_coach/agent/retention.py) and FEEDBACK_RETENTION_SWEEP (writing_coach/feedback_retention.py) do once both are ON (human decision 2026-10-09: both ON at deploy; they are unset on :8000 today). backup_days is the longest a database backup is kept before it is overwritten; scripts/runtime_backup.py has no rotation, so it stays null until the operator sets and applies one."
+}

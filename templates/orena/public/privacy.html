@@ -10,8 +10,7 @@
 <helmet>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chính sách quyền riêng tư · Orena</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&amp;family=Outfit:wght@400;500;600;700&amp;family=Literata:ital,opsz,wght@1,7..72,500&amp;display=swap" rel="stylesheet">
+<link href="/orena-assets/fonts/fonts.css" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:88px}
@@ -37,19 +36,20 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
     <nav style="display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--surface);align-self:flex-start;max-width:100%;overflow-x:auto">
       <a href="/privacy" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;background:var(--accent-soft);color:var(--text);font-size:14.5px;font-weight:600;display:flex;align-items:center">Quyền riêng tư</a>
       <a href="/terms" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;color:var(--muted);font-size:14.5px;font-weight:600;display:flex;align-items:center" style-hover="color:var(--text)">Điều khoản dịch vụ</a>
+      <a href="/account-deletion" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;color:var(--muted);font-size:14.5px;font-weight:600;display:flex;align-items:center" style-hover="color:var(--text)">Xoá tài khoản</a>
     </nav>
     <h1 style="margin:0;font-size:clamp(38px,5.4vw,62px);line-height:1.05;font-weight:700;letter-spacing:-.035em;text-wrap:balance;max-width:820px">Chính sách <span style="font-family:Literata,Georgia,serif;font-style:italic;font-weight:500;color:var(--accent-text);letter-spacing:-.02em">quyền riêng tư</span></h1>
     <p style="margin:0;font-size:clamp(17px,1.4vw,19px);line-height:1.6;color:var(--muted);max-width:680px;text-wrap:pretty">Chính sách này giải thích Orena thu thập dữ liệu gì khi bạn học, dùng dữ liệu đó vào việc gì và bạn kiểm soát nó ra sao.</p>
-    <div style="display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var(--text3)"><span>Cập nhật lần cuối: 9 tháng 10, 2026</span><span>Hiệu lực từ: 9 tháng 10, 2026</span></div>
+    <div style="display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var(--text3)"><span>Cập nhật lần cuối: <mark style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: effective_date]</mark></span><span>Hiệu lực từ: <mark style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: effective_date]</mark></span></div>
 
     <sc-if value="{{ showSummary }}" hint-placeholder-val="{{ true }}">
       <div style="background:var(--surface);border-radius:24px;padding:clamp(20px,2.6vw,28px);display:flex;flex-direction:column;gap:18px;margin-top:8px">
         <div style="font-size:15px;font-weight:600;color:var(--muted)">Tóm tắt nhanh</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:18px 28px">
           <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Chúng tôi không bán dữ liệu cá nhân và không chạy quảng cáo.</span></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Bản ghi giọng nói chỉ được lưu khi bạn bật tuỳ chọn này.</span></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Bạn xuất hoặc xoá toàn bộ dữ liệu bất cứ lúc nào trong Cài đặt.</span></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Nhà cung cấp AI chỉ được dùng dữ liệu để trả lời yêu cầu của bạn.</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Máy chủ Orena không giữ bản ghi giọng nói của bạn. Bản ghi nào được giữ để nghe lại đều nằm trên thiết bị của bạn.</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Bạn có thể gửi email yêu cầu xoá tài khoản và dữ liệu: xem <a href="/account-deletion">Xoá tài khoản</a>.</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Một số tính năng AI và giọng nói gửi nội dung bạn nhập hoặc ghi âm tới nhà cung cấp dịch vụ xử lý giúp chúng tôi để trả kết quả.</span></div>
         </div>
       </div>
     </sc-if>
@@ -76,18 +76,18 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
     <article style="flex:1 1 0;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:44px;font-size:16.5px;line-height:1.7;color:var(--body)">
       <section id="s1" data-sec="1" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">1. Phạm vi áp dụng</h2>
-        <p style="margin:0;text-wrap:pretty">Chính sách này áp dụng cho ứng dụng Orena trên web và di động, trang orena.app và mọi dịch vụ liên quan (gọi chung là “Orena”). Khi dùng Orena, bạn đồng ý với cách xử lý dữ liệu được mô tả dưới đây. Chính sách này đi kèm <a href="/terms">Điều khoản dịch vụ</a>.</p>
+        <p style="margin:0;text-wrap:pretty">Chính sách này áp dụng cho ứng dụng web Orena, mọi ứng dụng Orena kết nối với nó (ví dụ ứng dụng Android), trang web đăng tải chính sách này và mọi dịch vụ liên quan (gọi chung là “Orena”). Orena do RallyX, Việt Nam vận hành. Khi dùng Orena, bạn đồng ý với cách xử lý dữ liệu được mô tả dưới đây. Chính sách này đi kèm <a href="/terms">Điều khoản dịch vụ</a>.</p>
       </section>
 
       <section id="s2" data-sec="2" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">2. Dữ liệu chúng tôi thu thập</h2>
         <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Thông tin tài khoản</div><div style="font-size:15.5px;line-height:1.6">Tên hiển thị, email, ảnh đại diện và phương thức đăng nhập (email, Google hoặc Apple).</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Dữ liệu học tập</div><div style="font-size:15.5px;line-height:1.6">Ngôn ngữ đang học, kết quả kiểm tra trình độ, tiến độ đọc, từ vựng đã lưu, lịch ôn tập, điểm bài tập, chuỗi ngày học và mục tiêu hằng ngày.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Nội dung bạn tạo</div><div style="font-size:15.5px;line-height:1.6">Bài viết, câu trả lời, ghi chú, câu hỏi gửi tới Orena Intelligence, sách và tài liệu bạn tải lên.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Âm thanh giọng nói</div><div style="font-size:15.5px;line-height:1.6">Đoạn ghi âm khi bạn luyện nói hoặc chấm phát âm. Xem chi tiết ở mục 5.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Thanh toán</div><div style="font-size:15.5px;line-height:1.6">Gói đang dùng, lịch sử giao dịch và khoản ủng hộ. Số thẻ do đối tác thanh toán xử lý; Orena không lưu số thẻ đầy đủ.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Thiết bị và nhật ký kỹ thuật</div><div style="font-size:15.5px;line-height:1.6">Loại thiết bị, hệ điều hành, trình duyệt, ngôn ngữ giao diện, địa chỉ IP, thời điểm truy cập và báo cáo lỗi.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Thông tin tài khoản</div><div style="font-size:15.5px;line-height:1.6">Orena chỉ đăng nhập bằng Google. Chúng tôi lưu mã tài khoản Google, địa chỉ email, tên hiển thị và đường dẫn ảnh đại diện của bạn, cùng ngôn ngữ giao diện, ngôn ngữ đang học, mục tiêu hằng tuần, loại tài khoản (người học hoặc quản trị viên), thời điểm đăng ký và lần đăng nhập gần nhất. Chúng tôi chỉ xin Google các quyền openid, email và profile. Chúng tôi không lưu mật khẩu.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Dữ liệu học tập</div><div style="font-size:15.5px;line-height:1.6">Ngôn ngữ đang học, kết quả kiểm tra trình độ, tiến độ đọc, từ vựng đã lưu, lịch ôn tập, điểm bài tập, chuỗi ngày học và mục tiêu hằng ngày. Dữ liệu này gồm cả tiến độ nghe, nói, ngữ pháp và lịch sử ôn tập của bạn.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Nội dung bạn tạo</div><div style="font-size:15.5px;line-height:1.6">Bài viết bạn gửi để nhận xét cùng phần đánh giá do AI tạo, câu trả lời, bản nháp, ghi chú và phần đánh dấu, các cuộc trò chuyện đã lưu và vị trí bạn đọc dở, các cuộc thảo luận văn bản với Orena Intelligence, cùng sách, tài liệu và media bạn nhập vào. Với người học đã đăng nhập, những nội dung này được lưu trên máy chủ của chúng tôi và gắn với tài khoản của bạn.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Âm thanh giọng nói</div><div style="font-size:15.5px;line-height:1.6">Đoạn âm thanh bạn ghi khi luyện nói hoặc chấm phát âm được gửi đi để xử lý và không được lưu trên máy chủ của chúng tôi. Xem mục 5.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Gói và mức dùng</div><div style="font-size:15.5px;line-height:1.6">Gói đang dùng và số lần bạn đã dùng. Thanh toán chưa hoạt động, nên Orena không giữ số thẻ, thông tin thanh toán hay lịch sử giao dịch. Nếu trong giai đoạn thử nghiệm quản trị viên gán thủ công một gói trả phí cho bạn, chỉ gói đó và giới hạn của nó được ghi lại.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Bản ghi kỹ thuật</div><div style="font-size:15.5px;line-height:1.6">Như mọi dịch vụ web, máy chủ của chúng tôi cùng nhà cung cấp lưu trữ và mạng thấy địa chỉ IP của bạn, nội dung bạn yêu cầu và thời điểm, và có thể giữ nhật ký vận hành. Chúng tôi cũng giữ các bản ghi gắn với tài khoản: khi bạn dùng Orena Intelligence (thời điểm và loại yêu cầu, không có nội dung tin nhắn), và phản hồi bạn gửi (số sao, các mục và nội dung tối đa 600 ký tự). Số lần dùng AI và chi phí được giữ mà không kèm nội dung của bạn. Orena không có dịch vụ quảng cáo, phân tích hay báo cáo lỗi.</div></div>
         </div>
       </section>
 
@@ -98,78 +98,81 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
           <li>Cung cấp các bài học, đồng bộ tiến độ giữa các thiết bị và lên lịch ôn tập phù hợp với bạn.</li>
           <li>Cá nhân hoá gợi ý bài đọc, từ vựng và bài luyện theo trình độ và thói quen học.</li>
           <li>Chạy Orena Intelligence: giải thích, chấm bài viết, chấm phát âm và trả lời câu hỏi.</li>
-          <li>Xử lý thanh toán, gửi biên nhận và thông báo về tài khoản.</li>
-          <li>Phát hiện lỗi, gian lận và lạm dụng; cải thiện chất lượng sản phẩm dựa trên số liệu tổng hợp.</li>
+          <li>Hiển thị gói của bạn và áp dụng giới hạn sử dụng của gói.</li>
+          <li>Phát hiện lỗi, gian lận và lạm dụng; cải thiện chất lượng sản phẩm dựa trên số liệu sử dụng tổng hợp của chính chúng tôi.</li>
           <li>Thực hiện nghĩa vụ theo quy định pháp luật.</li>
         </ul>
-        <p style="margin:0">Chúng tôi chỉ gửi email quảng bá khi bạn đồng ý, và bạn có thể huỷ đăng ký trong mỗi email.</p>
+        <p style="margin:0">Orena không gửi email quảng bá.</p>
       </section>
 
       <section id="s4" data-sec="4" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">4. Orena Intelligence và nhà cung cấp AI</h2>
-        <p style="margin:0;text-wrap:pretty">Khi bạn dùng Orena Intelligence, đoạn văn bản hoặc âm thanh liên quan được gửi tới nhà cung cấp mô hình AI mà chúng tôi hợp tác để tạo câu trả lời. Chúng tôi chỉ gửi phần cần thiết cho yêu cầu đó, kèm theo trình độ và ngôn ngữ đang học, không gửi email hay thông tin thanh toán.</p>
-        <p style="margin:0;text-wrap:pretty">Hợp đồng với các nhà cung cấp này không cho phép họ dùng dữ liệu của bạn để huấn luyện mô hình, và yêu cầu họ xoá dữ liệu sau thời gian lưu giữ ngắn phục vụ chống lạm dụng. Câu trả lời do AI tạo có thể chưa chính xác; hãy xem Điều khoản dịch vụ để biết thêm.</p>
+        <p style="margin:0;text-wrap:pretty">Khi bạn dùng Orena Intelligence hoặc một tính năng AI khác (ví dụ nhận xét bài viết, dịch, từ điển, thảo luận văn bản hay chấm phát âm), đoạn văn bản hoặc âm thanh liên quan được gửi tới các nhà cung cấp dịch vụ AI và giọng nói, họ xử lý thay mặt chúng tôi để trả kết quả. Chúng tôi gửi phần tính năng đó cần, kèm theo trình độ và ngôn ngữ đang học. Với yêu cầu gửi tới Orena Intelligence, chúng tôi loại bỏ tên, địa chỉ email, ảnh đại diện và mã định danh tài khoản của bạn.</p>
+        <p style="margin:0;text-wrap:pretty">Các nhà cung cấp này có thể đặt máy chủ ngoài Việt Nam (xem mục 6) và chúng tôi không kiểm soát hệ thống của họ, vì vậy đừng gửi vào tính năng AI điều gì bạn không muốn được xử lý theo cách này. Câu trả lời do AI tạo có thể chưa chính xác; hãy xem Điều khoản dịch vụ để biết thêm.</p>
       </section>
 
       <section id="s5" data-sec="5" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">5. Giọng nói và micro</h2>
-        <p style="margin:0;text-wrap:pretty">Orena chỉ dùng micro khi bạn bấm ghi âm. Theo mặc định, bản ghi được xử lý để chấm phát âm rồi bị xoá; chỉ điểm số và nhận xét được lưu lại.</p>
-        <p style="margin:0;text-wrap:pretty">Nếu bạn bật “Lưu bản ghi để nghe lại” trong Cài đặt → Quyền riêng tư, bản ghi sẽ được giữ trong tài khoản để bạn so sánh tiến bộ. Bạn có thể tắt tuỳ chọn này và xoá toàn bộ bản ghi bất cứ lúc nào.</p>
+        <p style="margin:0;text-wrap:pretty">Orena chỉ dùng micro khi bạn bấm ghi âm. Bản ghi được gửi đi để chuyển thành văn bản hoặc chấm phát âm, và máy chủ Orena không giữ âm thanh; chỉ điểm số và nhận xét được lưu lại.</p>
+        <p style="margin:0;text-wrap:pretty">Các bản ghi bạn tạo để nghe lại chỉ nằm trong thẻ trình duyệt và mất khi bạn đóng thẻ. Ở những nơi Orena cho phép giữ các bản ghi gần đây, tối đa năm bản ghi mỗi câu nằm trên thiết bị của bạn và không bao giờ được tải lên Orena; tắt tuỳ chọn đó hoặc xoá dữ liệu trang web của trình duyệt sẽ xoá chúng.</p>
       </section>
 
       <section id="s6" data-sec="6" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">6. Chia sẻ dữ liệu</h2>
         <p style="margin:0">Orena không bán hoặc cho thuê dữ liệu cá nhân. Chúng tôi chỉ chia sẻ dữ liệu với:</p>
         <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px">
-          <li><strong style="color:var(--text);font-weight:600">Bên xử lý dữ liệu</strong> giúp vận hành Orena: lưu trữ đám mây, nhà cung cấp AI và giọng nói, đối tác thanh toán, dịch vụ gửi email và báo cáo lỗi. Họ chỉ được xử lý dữ liệu theo chỉ dẫn của chúng tôi.</li>
+          <li><strong style="color:var(--text);font-weight:600">Nhà cung cấp dịch vụ</strong> giúp vận hành Orena: nhà cung cấp lưu trữ và mạng của chúng tôi, cùng các nhà cung cấp AI và giọng nói nêu ở mục 4. Họ xử lý dữ liệu để cung cấp dịch vụ cho chúng tôi.</li>
+          <li><strong style="color:var(--text);font-weight:600">Google</strong>, khi bạn đăng nhập bằng tài khoản Google. Chính sách quyền riêng tư của Google áp dụng cho tài khoản Google của bạn.</li>
+          <li><strong style="color:var(--text);font-weight:600">Các dịch vụ khác mà một tính năng cần.</strong> Tra từ điển hoặc tra phát âm của từ sẽ gửi từ bạn tra (không kèm tên hay email) tới các nguồn từ điển và âm thanh công khai. Nếu bạn nhập video từ YouTube, chúng tôi gửi liên kết của video tới YouTube để lấy thông tin, phụ đề hoặc âm thanh, và trình duyệt của bạn tải trình phát cùng ảnh thu nhỏ của YouTube, nên YouTube nhận được địa chỉ IP của bạn. Một số tài liệu nghe và đọc được trình duyệt tải từ các máy chủ media công khai như Wikimedia, nơi này cũng thấy địa chỉ IP của bạn.</li>
           <li><strong style="color:var(--text);font-weight:600">Cơ quan có thẩm quyền</strong> khi pháp luật yêu cầu, hoặc khi cần bảo vệ an toàn của người dùng và của Orena.</li>
           <li><strong style="color:var(--text);font-weight:600">Bên nhận chuyển nhượng</strong> trong trường hợp sáp nhập hoặc mua lại; chúng tôi sẽ thông báo trước cho bạn.</li>
         </ul>
-        <p style="margin:0;text-wrap:pretty">Một số bên xử lý đặt máy chủ ngoài Việt Nam. Khi chuyển dữ liệu ra nước ngoài, chúng tôi áp dụng các biện pháp bảo vệ theo quy định pháp luật về bảo vệ dữ liệu cá nhân.</p>
+        <p style="margin:0;text-wrap:pretty">Một số nhà cung cấp này đặt máy chủ ngoài Việt Nam. Khi chuyển dữ liệu ra nước ngoài, chúng tôi áp dụng các biện pháp bảo vệ theo quy định pháp luật về bảo vệ dữ liệu cá nhân.</p>
       </section>
 
       <section id="s7" data-sec="7" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">7. Lưu trữ và xoá</h2>
-        <p style="margin:0;text-wrap:pretty">Chúng tôi giữ dữ liệu trong thời gian tài khoản còn hoạt động. Khi bạn xoá tài khoản, dữ liệu sẽ bị xoá khỏi hệ thống chính trong vòng 30 ngày và khỏi bản sao lưu trong vòng 90 ngày. Hồ sơ giao dịch có thể được giữ lâu hơn để đáp ứng nghĩa vụ kế toán và thuế.</p>
+        <p style="margin:0;text-wrap:pretty">Chúng tôi giữ tài khoản và dữ liệu học tập của bạn trong thời gian tài khoản còn tồn tại. Orena chưa có nút xoá tài khoản: để xoá tài khoản, hãy gửi email tới <a href="mailto:orena.support@chillpickle.org">orena.support@chillpickle.org</a> từ địa chỉ email của tài khoản Google, như hướng dẫn ở trang <a href="/account-deletion">Xoá tài khoản</a>. Chúng tôi xử lý các yêu cầu này thủ công trong vòng 30 ngày.</p>
+        <p style="margin:0;text-wrap:pretty">Một số bản ghi có thời hạn cố định: bản ghi hoạt động của Orena Intelligence (không có nội dung tin nhắn) bị xoá sau 90 ngày, phản hồi bạn gửi bị xoá sau 24 tháng, và bản ghi về lượt dùng AI và chi phí (không có nội dung của bạn) sau 13 tháng. Dữ liệu đã xoá khỏi hệ thống đang chạy có thể còn trong bản sao lưu tối đa <mark style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: retention.backup_days]</mark> ngày, cho đến khi bị ghi đè. Các bản ghi âm bạn chọn giữ vẫn nằm trên thiết bị của bạn cho đến khi bạn xoá.</p>
       </section>
 
       <section id="s8" data-sec="8" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">8. Quyền của bạn</h2>
         <p style="margin:0">Bạn có quyền:</p>
         <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px">
-          <li>Xem và chỉnh sửa thông tin cá nhân trong Hồ sơ.</li>
-          <li>Xuất toàn bộ dữ liệu học tập dưới dạng tệp có thể đọc được.</li>
-          <li>Xoá từng mục (bản ghi giọng nói, lịch sử hỏi đáp) hoặc xoá toàn bộ tài khoản.</li>
-          <li>Rút lại sự đồng ý đã cho, ví dụ lưu bản ghi giọng nói hoặc nhận email quảng bá.</li>
+          <li>Xem và chỉnh sửa cài đặt ngôn ngữ và mục tiêu hằng tuần trong ứng dụng. Tên, địa chỉ email và ảnh của bạn lấy từ tài khoản Google và được cập nhật khi bạn đăng nhập.</li>
+          <li>Hỏi chúng tôi qua email về dữ liệu cá nhân chúng tôi đang giữ về bạn. Hiện chưa có chức năng tự xuất dữ liệu.</li>
+          <li>Xoá từng mục ở những nơi ứng dụng cho phép (ví dụ bài viết, từ đã lưu, mục trong thư viện, thảo luận văn bản và media đã nhập), hoặc yêu cầu chúng tôi xoá toàn bộ tài khoản.</li>
+          <li>Xoá mọi thứ Orena lưu trên thiết bị của bạn bằng cách xoá dữ liệu trang web của trình duyệt, và thu hồi quyền dùng micro trong trình duyệt hoặc thiết bị bất cứ lúc nào.</li>
           <li>Phản đối hoặc yêu cầu hạn chế một hoạt động xử lý cụ thể.</li>
           <li>Khiếu nại tới cơ quan có thẩm quyền về bảo vệ dữ liệu cá nhân.</li>
         </ul>
-        <p style="margin:0;text-wrap:pretty">Phần lớn các quyền này có sẵn trong Cài đặt → Quyền riêng tư. Với các yêu cầu khác, hãy liên hệ chúng tôi theo mục 13; chúng tôi phản hồi trong vòng 15 ngày làm việc.</p>
+        <p style="margin:0;text-wrap:pretty">Với các yêu cầu ứng dụng chưa xử lý được, kể cả xoá tài khoản, hãy liên hệ chúng tôi theo mục 13; chúng tôi phản hồi trong vòng 30 ngày.</p>
       </section>
 
       <section id="s9" data-sec="9" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">9. Bảo mật</h2>
-        <p style="margin:0;text-wrap:pretty">Dữ liệu được mã hoá khi truyền và khi lưu trữ. Quyền truy cập nội bộ được giới hạn theo vai trò và được ghi nhật ký. Không có hệ thống nào an toàn tuyệt đối; nếu xảy ra sự cố ảnh hưởng tới dữ liệu của bạn, chúng tôi sẽ thông báo cho bạn và cơ quan có thẩm quyền theo thời hạn luật định.</p>
+        <p style="margin:0;text-wrap:pretty">Dữ liệu được mã hoá khi truyền bằng HTTPS. Quyền truy cập công cụ quản trị chỉ dành cho tài khoản quản trị viên, và thao tác của quản trị viên được ghi nhật ký. Không có hệ thống nào an toàn tuyệt đối; nếu xảy ra sự cố ảnh hưởng tới dữ liệu của bạn, chúng tôi sẽ thông báo cho bạn và cơ quan có thẩm quyền theo thời hạn luật định.</p>
       </section>
 
       <section id="s10" data-sec="10" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">10. Cookie và lưu trữ cục bộ</h2>
-        <p style="margin:0;text-wrap:pretty">Orena dùng cookie và bộ nhớ trình duyệt để giữ bạn đăng nhập, ghi nhớ giao diện sáng hoặc tối, ngôn ngữ và vị trí đang đọc. Chúng tôi dùng số liệu phân tích ở dạng tổng hợp để hiểu tính năng nào hữu ích, và không dùng cookie quảng cáo của bên thứ ba.</p>
+        <p style="margin:0;text-wrap:pretty">Orena đặt một cookie duy nhất, là cookie phiên có chữ ký để giữ bạn đăng nhập (tối đa 14 ngày). Orena dùng bộ nhớ cục bộ của trình duyệt để ghi nhớ giao diện sáng hoặc tối và ngôn ngữ, và chỉ khi bạn chọn giữ thì mới lưu các bản ghi âm gần đây trên thiết bị. Trang và phông chữ của Orena được phục vụ từ chính Orena. Chúng tôi không dùng cookie phân tích hay cookie quảng cáo của bên thứ ba.</p>
       </section>
 
       <section id="s11" data-sec="11" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">11. Trẻ em</h2>
-        <p style="margin:0;text-wrap:pretty">Người dùng dưới 16 tuổi cần có sự đồng ý của cha mẹ hoặc người giám hộ. Nếu phát hiện tài khoản của trẻ được tạo khi chưa có sự đồng ý này, chúng tôi sẽ xoá tài khoản và dữ liệu liên quan.</p>
+        <p style="margin:0;text-wrap:pretty">Orena dành cho người từ 13 tuổi trở lên. Orena không kiểm tra tuổi của bạn khi đăng nhập; đăng nhập cần tài khoản Google, vốn có quy định độ tuổi riêng. Nếu phát hiện tài khoản thuộc về người dưới 13 tuổi, chúng tôi sẽ xoá tài khoản và dữ liệu liên quan.</p>
       </section>
 
       <section id="s12" data-sec="12" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">12. Thay đổi chính sách</h2>
-        <p style="margin:0;text-wrap:pretty">Khi có thay đổi quan trọng, chúng tôi sẽ thông báo trong ứng dụng hoặc qua email ít nhất 14 ngày trước khi thay đổi có hiệu lực. Ngày cập nhật ở đầu trang luôn cho biết phiên bản hiện hành.</p>
+        <p style="margin:0;text-wrap:pretty">Chúng tôi đăng các thay đổi trên trang này. Với thay đổi quan trọng, chúng tôi cập nhật trang này ít nhất 14 ngày trước khi thay đổi có hiệu lực. Ngày cập nhật ở đầu trang luôn cho biết phiên bản hiện hành.</p>
       </section>
 
       <section id="s13" data-sec="13" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">13. Liên hệ</h2>
-        <p style="margin:0;text-wrap:pretty">Nếu có câu hỏi hoặc yêu cầu về quyền riêng tư, hãy viết cho chúng tôi:</p>
+        <p style="margin:0;text-wrap:pretty">Orena do RallyX, Việt Nam vận hành. Nếu có câu hỏi hoặc yêu cầu về quyền riêng tư, hãy viết cho chúng tôi:</p>
         <div style="background:var(--surface);border-radius:18px;padding:18px 20px;display:flex;flex-wrap:wrap;gap:12px 32px">
           <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:var(--text3)">Quyền riêng tư</span><a href="mailto:orena.legal@chillpickle.org" style="font-size:16px;font-weight:600">orena.legal@chillpickle.org</a></div>
           <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:var(--text3)">Hỗ trợ chung</span><a href="mailto:orena.support@chillpickle.org" style="font-size:16px;font-weight:600">orena.support@chillpickle.org</a></div>
@@ -184,6 +187,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
       <a href="/landing" style="color:var(--muted)">Giới thiệu</a>
       <a href="/privacy" style="color:var(--text)">Quyền riêng tư</a>
       <a href="/terms" style="color:var(--muted)">Điều khoản</a>
+      <a href="/account-deletion" style="color:var(--muted)">Xoá tài khoản</a>
     </div>
   </footer>
 </sc-if>
@@ -192,19 +196,20 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
     <nav style="display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--surface);align-self:flex-start;max-width:100%;overflow-x:auto">
       <a href="/privacy?lang=en" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;background:var(--accent-soft);color:var(--text);font-size:14.5px;font-weight:600;display:flex;align-items:center">Privacy</a>
       <a href="/terms?lang=en" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;color:var(--muted);font-size:14.5px;font-weight:600;display:flex;align-items:center" style-hover="color:var(--text)">Terms of Service</a>
+      <a href="/account-deletion?lang=en" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;color:var(--muted);font-size:14.5px;font-weight:600;display:flex;align-items:center" style-hover="color:var(--text)">Delete account</a>
     </nav>
     <h1 style="margin:0;font-size:clamp(38px,5.4vw,62px);line-height:1.05;font-weight:700;letter-spacing:-.035em;text-wrap:balance;max-width:820px">Privacy <span style="font-family:Literata,Georgia,serif;font-style:italic;font-weight:500;color:var(--accent-text);letter-spacing:-.02em">Policy</span></h1>
     <p style="margin:0;font-size:clamp(17px,1.4vw,19px);line-height:1.6;color:var(--muted);max-width:680px;text-wrap:pretty">This policy explains what data Orena collects while you learn, what we use it for, and how you stay in control.</p>
-    <div style="display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var(--text3)"><span>Last updated: October 9, 2026</span><span>Effective: October 9, 2026</span></div>
+    <div style="display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var(--text3)"><span>Last updated: <mark style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: effective_date]</mark></span><span>Effective: <mark style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: effective_date]</mark></span></div>
 
     <sc-if value="{{ showSummary }}" hint-placeholder-val="{{ true }}">
       <div style="background:var(--surface);border-radius:24px;padding:clamp(20px,2.6vw,28px);display:flex;flex-direction:column;gap:18px;margin-top:8px">
         <div style="font-size:15px;font-weight:600;color:var(--muted)">At a glance</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:18px 28px">
           <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">We don't sell personal data and we don't run ads.</span></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Voice recordings are kept only if you turn that option on.</span></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Export or delete all your data at any time in Settings.</span></div>
-          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">AI providers may use your data only to answer your request.</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Orena's servers do not keep your voice recordings. Any recording kept for playback stays on your own device.</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">You can ask us to delete your account and data by email: see <a href="/account-deletion?lang=en">Delete account</a>.</span></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3DD68C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size:15.5px;line-height:1.5;color:var(--body)">Some AI and speech features send what you submit or record to service providers that process it for us to return the result.</span></div>
         </div>
       </div>
     </sc-if>
@@ -231,18 +236,18 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
     <article style="flex:1 1 0;min-width:0;max-width:720px;display:flex;flex-direction:column;gap:44px;font-size:16.5px;line-height:1.7;color:var(--body)">
       <section id="s1" data-sec="1" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">1. Scope</h2>
-        <p style="margin:0;text-wrap:pretty">This policy applies to the Orena web and mobile apps, orena.app and all related services (together, “Orena”). By using Orena, you agree to the data practices described below. Read it together with our <a href="/terms?lang=en">Terms of Service</a>.</p>
+        <p style="margin:0;text-wrap:pretty">This policy applies to the Orena web app, any Orena app that connects to it (for example an Android app), the website where this page is published and all related services (together, “Orena”). Orena is operated by RallyX, Vietnam. By using Orena, you agree to the data practices described below. Read it together with our <a href="/terms?lang=en">Terms of Service</a>.</p>
       </section>
 
       <section id="s2" data-sec="2" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">2. Data we collect</h2>
         <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Account information</div><div style="font-size:15.5px;line-height:1.6">Display name, email, profile photo and sign-in method (email, Google or Apple).</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Learning data</div><div style="font-size:15.5px;line-height:1.6">Target language, placement results, reading progress, saved vocabulary, review schedule, exercise scores, streak and daily goal.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Content you create</div><div style="font-size:15.5px;line-height:1.6">Writing, answers, notes, questions you ask Orena Intelligence, and books or documents you upload.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Voice audio</div><div style="font-size:15.5px;line-height:1.6">Recordings made when you practise speaking or check pronunciation. See section 5.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Payments</div><div style="font-size:15.5px;line-height:1.6">Your plan, transaction history and donations. Card numbers are handled by our payment partner; Orena never stores full card numbers.</div></div>
-          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Device and technical logs</div><div style="font-size:15.5px;line-height:1.6">Device type, operating system, browser, interface language, IP address, access times and crash reports.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Account information</div><div style="font-size:15.5px;line-height:1.6">Orena signs you in with Google only. We store your Google account ID, email address, display name and profile picture link, your interface language, learning language and weekly goal, your account type (learner or administrator), and when you signed up and last signed in. We ask Google for the openid, email and profile scopes only. We do not store a password.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Learning data</div><div style="font-size:15.5px;line-height:1.6">Target language, placement results, reading progress, saved vocabulary, review schedule, exercise scores, streak and daily goal. This includes your listening, speaking and grammar progress and your review history.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Content you create</div><div style="font-size:15.5px;line-height:1.6">Writing you submit for feedback and its AI evaluations, answers, drafts, notes and highlights, saved conversations and your place in a text, text discussions with Orena Intelligence, and the books, documents and media you import. For signed-in learners this is stored on our servers and tied to your account.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Voice audio</div><div style="font-size:15.5px;line-height:1.6">The audio you record when you practise speaking or check pronunciation is sent for processing and is not stored on our servers. See section 5.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Plan and usage</div><div style="font-size:15.5px;line-height:1.6">Your plan and your usage counts. Payments are not live yet, so Orena holds no card numbers, payment details or transaction history. If an administrator assigns you a paid plan by hand during the beta, only the plan and its limits are recorded.</div></div>
+          <div style="background:var(--surface);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:4px"><div style="font-size:16px;font-weight:600;color:var(--text)">Technical records</div><div style="font-size:15.5px;line-height:1.6">Like any web service, our servers and our hosting and network providers see your IP address, what you request and when, and may keep operational logs. We also keep records tied to your account: when you use Orena Intelligence (time and kind of request, not your message text), and any feedback you send (your rating, areas and message of up to 600 characters). Counts of AI use and its cost are kept without your content. Orena has no advertising, analytics or crash-reporting service.</div></div>
         </div>
       </section>
 
@@ -253,78 +258,81 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
           <li>Deliver lessons, sync progress across devices and schedule reviews that suit you.</li>
           <li>Personalise reading, vocabulary and practice suggestions to your level and habits.</li>
           <li>Run Orena Intelligence: explanations, writing feedback, pronunciation scoring and answers to your questions.</li>
-          <li>Process payments and send receipts and account notices.</li>
-          <li>Detect bugs, fraud and abuse, and improve the product using aggregated statistics.</li>
+          <li>Show your plan and apply its usage limits.</li>
+          <li>Detect bugs, fraud and abuse, and improve the product using our own aggregated usage counts.</li>
           <li>Meet our legal obligations.</li>
         </ul>
-        <p style="margin:0">We send marketing email only with your consent, and every email includes an unsubscribe link.</p>
+        <p style="margin:0">Orena does not send marketing email.</p>
       </section>
 
       <section id="s4" data-sec="4" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">4. Orena Intelligence and AI providers</h2>
-        <p style="margin:0;text-wrap:pretty">When you use Orena Intelligence, the relevant text or audio is sent to the AI model provider we work with to generate a response. We send only what the request needs, along with your level and target language, and never your email or payment details.</p>
-        <p style="margin:0;text-wrap:pretty">Our contracts with these providers do not allow them to train models on your data, and require them to delete it after a short retention period for abuse monitoring. AI-generated answers can be inaccurate; see the Terms of Service for more.</p>
+        <p style="margin:0;text-wrap:pretty">When you use Orena Intelligence or another AI feature (for example writing feedback, translation, dictionary entries, text discussions or pronunciation scoring), the relevant text or audio is sent to AI and speech service providers that process it on our behalf to return the result. We send what the feature needs, along with your level and target language. In Orena Intelligence requests we remove your name, email address, profile picture and account identifiers.</p>
+        <p style="margin:0;text-wrap:pretty">These providers may be located outside Vietnam (see section 6), and we do not control their systems, so do not submit to an AI feature anything you do not want processed this way. AI-generated answers can be inaccurate; see the Terms of Service for more.</p>
       </section>
 
       <section id="s5" data-sec="5" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">5. Voice and microphone</h2>
-        <p style="margin:0;text-wrap:pretty">Orena uses the microphone only when you tap record. By default, recordings are processed for pronunciation scoring and then deleted; only your scores and feedback are kept.</p>
-        <p style="margin:0;text-wrap:pretty">If you turn on “Keep recordings for playback” in Settings → Privacy, recordings are stored in your account so you can compare your progress. You can turn this off and delete all recordings at any time.</p>
+        <p style="margin:0;text-wrap:pretty">Orena uses the microphone only when you tap record. The recording is sent for transcription or pronunciation scoring and Orena's servers do not keep the audio; only your scores and feedback are kept.</p>
+        <p style="margin:0;text-wrap:pretty">Recordings you make for playback stay in your browser tab and are gone when you close it. Where Orena lets you keep recent recordings, up to five per line stay on your own device and are never uploaded to Orena; turning that option off or clearing your browser's site data deletes them.</p>
       </section>
 
       <section id="s6" data-sec="6" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">6. Sharing data</h2>
         <p style="margin:0">Orena does not sell or rent personal data. We share data only with:</p>
         <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px">
-          <li><strong style="color:var(--text);font-weight:600">Data processors</strong> that help run Orena: cloud hosting, AI and speech providers, payment partners, email delivery and crash reporting. They may process data only on our instructions.</li>
+          <li><strong style="color:var(--text);font-weight:600">Service providers</strong> that help run Orena: our hosting and network providers, and the AI and speech providers described in section 4. They process data to provide their service to us.</li>
+          <li><strong style="color:var(--text);font-weight:600">Google</strong>, when you sign in with your Google account. Google's own privacy policy applies to your Google account.</li>
+          <li><strong style="color:var(--text);font-weight:600">Other services a feature needs.</strong> A dictionary lookup or word-pronunciation lookup sends the word you looked up (not your name or email) to public dictionary and audio sources. If you import a video from YouTube, we send its link to YouTube to fetch its details, captions or audio, and your browser loads YouTube's player and thumbnails, so YouTube receives your IP address. Some listening and reading material loads in your browser from public media hosts such as Wikimedia, which also see your IP address.</li>
           <li><strong style="color:var(--text);font-weight:600">Competent authorities</strong> when required by law, or when needed to protect the safety of our users and of Orena.</li>
           <li><strong style="color:var(--text);font-weight:600">A successor</strong> in the event of a merger or acquisition; we will notify you in advance.</li>
         </ul>
-        <p style="margin:0;text-wrap:pretty">Some processors host servers outside Vietnam. When data is transferred abroad, we apply the safeguards required by personal data protection law.</p>
+        <p style="margin:0;text-wrap:pretty">Some of these providers host servers outside Vietnam. When data is transferred abroad, we apply the safeguards required by personal data protection law.</p>
       </section>
 
       <section id="s7" data-sec="7" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">7. Retention and deletion</h2>
-        <p style="margin:0;text-wrap:pretty">We keep data while your account is active. When you delete your account, your data is removed from our primary systems within 30 days and from backups within 90 days. Transaction records may be kept longer to meet accounting and tax obligations.</p>
+        <p style="margin:0;text-wrap:pretty">We keep your account and learning data while your account exists. Orena has no delete-account button yet: to have your account deleted, email <a href="mailto:orena.support@chillpickle.org">orena.support@chillpickle.org</a> from the email address of your Google account, as described on <a href="/account-deletion?lang=en">Delete account</a>. We process these requests by hand within 30 days.</p>
+        <p style="margin:0;text-wrap:pretty">Some records have a fixed lifetime: Orena Intelligence activity records (without your message text) are deleted after 90 days, feedback you send is deleted after 24 months, and records of AI use and cost (without your content) after 13 months. Data deleted from the live system can remain in backups for up to <mark style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: retention.backup_days]</mark> days, until they are overwritten. Recordings you chose to keep stay on your device until you delete them.</p>
       </section>
 
       <section id="s8" data-sec="8" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">8. Your rights</h2>
         <p style="margin:0">You have the right to:</p>
         <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px">
-          <li>View and edit your personal information in Profile.</li>
-          <li>Export all of your learning data in a readable file.</li>
-          <li>Delete individual items (voice recordings, question history) or your entire account.</li>
-          <li>Withdraw consent you have given, such as keeping voice recordings or receiving marketing email.</li>
+          <li>View and edit your language and weekly-goal settings in the app. Your name, email address and photo come from your Google account and update when you sign in.</li>
+          <li>Ask us what personal data we hold about you, by email. There is no self-service export yet.</li>
+          <li>Delete individual items where the app offers it (for example essays, saved words, library items, text discussions and imported media), or ask us to delete your whole account.</li>
+          <li>Delete anything Orena keeps on your device by clearing your browser's site data, and withdraw microphone permission in your browser or device at any time.</li>
           <li>Object to, or ask us to restrict, a specific processing activity.</li>
           <li>Lodge a complaint with the competent personal data protection authority.</li>
         </ul>
-        <p style="margin:0;text-wrap:pretty">Most of these are available in Settings → Privacy. For anything else, contact us as described in section 13; we respond within 15 working days.</p>
+        <p style="margin:0;text-wrap:pretty">For requests the app cannot handle yet, including account deletion, contact us as described in section 13; we respond within 30 days.</p>
       </section>
 
       <section id="s9" data-sec="9" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">9. Security</h2>
-        <p style="margin:0;text-wrap:pretty">Data is encrypted in transit and at rest. Internal access is limited by role and logged. No system is perfectly secure; if an incident affects your data, we will notify you and the competent authorities within the legally required time.</p>
+        <p style="margin:0;text-wrap:pretty">Data is encrypted in transit with HTTPS. Access to administration tools is limited to administrator accounts, and administrator actions are logged. No system is perfectly secure; if an incident affects your data, we will notify you and the competent authorities within the legally required time.</p>
       </section>
 
       <section id="s10" data-sec="10" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">10. Cookies and local storage</h2>
-        <p style="margin:0;text-wrap:pretty">Orena uses cookies and browser storage to keep you signed in and to remember your light or dark theme, language and reading position. We use aggregated analytics to understand which features help, and we don't use third-party advertising cookies.</p>
+        <p style="margin:0;text-wrap:pretty">Orena sets one cookie, a signed session cookie that keeps you signed in (for up to 14 days). It uses your browser's local storage to remember your light or dark theme and language, and, only if you choose to keep them, recent recordings on your device. Orena's pages and fonts are served from Orena itself. We don't use analytics cookies or third-party advertising cookies.</p>
       </section>
 
       <section id="s11" data-sec="11" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">11. Children</h2>
-        <p style="margin:0;text-wrap:pretty">Users under 16 need consent from a parent or guardian. If we learn that a child's account was created without that consent, we will delete the account and its data.</p>
+        <p style="margin:0;text-wrap:pretty">Orena is for people aged 13 and over. Orena does not check your age when you sign in; signing in needs a Google account, which has its own age requirements. If we learn that an account belongs to someone under 13, we will delete the account and its data.</p>
       </section>
 
       <section id="s12" data-sec="12" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">12. Changes to this policy</h2>
-        <p style="margin:0;text-wrap:pretty">For significant changes, we will notify you in the app or by email at least 14 days before they take effect. The date at the top of this page always shows the current version.</p>
+        <p style="margin:0;text-wrap:pretty">We publish changes on this page. For significant changes, we update this page at least 14 days before they take effect. The date at the top of this page always shows the current version.</p>
       </section>
 
       <section id="s13" data-sec="13" style="display:flex;flex-direction:column;gap:14px">
         <h2 style="margin:0;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--text)">13. Contact</h2>
-        <p style="margin:0;text-wrap:pretty">For privacy questions or requests, write to us:</p>
+        <p style="margin:0;text-wrap:pretty">Orena is operated by RallyX, Vietnam. For privacy questions or requests, write to us:</p>
         <div style="background:var(--surface);border-radius:18px;padding:18px 20px;display:flex;flex-wrap:wrap;gap:12px 32px">
           <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:var(--text3)">Privacy</span><a href="mailto:orena.legal@chillpickle.org" style="font-size:16px;font-weight:600">orena.legal@chillpickle.org</a></div>
           <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;color:var(--text3)">General support</span><a href="mailto:orena.support@chillpickle.org" style="font-size:16px;font-weight:600">orena.support@chillpickle.org</a></div>
@@ -339,6 +347,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
       <a href="/landing" style="color:var(--muted)">About</a>
       <a href="/privacy?lang=en" style="color:var(--text)">Privacy</a>
       <a href="/terms?lang=en" style="color:var(--muted)">Terms</a>
+      <a href="/account-deletion?lang=en" style="color:var(--muted)">Delete account</a>
     </div>
   </footer>
 </sc-if>

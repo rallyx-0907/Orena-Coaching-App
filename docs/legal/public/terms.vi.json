@@ -1,0 +1,125 @@
+{
+  "title": "Điều khoản dịch vụ · Orena",
+  "nav": [["privacy", "Quyền riêng tư"], ["terms", "Điều khoản dịch vụ"], ["account-deletion", "Xoá tài khoản"]],
+  "h1": ["Điều khoản ", "dịch vụ"],
+  "intro": "Các điều khoản này là thoả thuận giữa bạn và Orena, do {{fact:operator.name}}, {{fact:operator.country}} vận hành, khi bạn tạo tài khoản và sử dụng Orena.",
+  "dates": ["Cập nhật lần cuối: {{date}}", "Hiệu lực từ: {{date}}"],
+  "summary": {
+    "label": "Tóm tắt nhanh",
+    "items": [
+      "Bạn giữ quyền với bài viết, ghi âm và tài liệu của mình.",
+      "Gói trả phí chưa hoạt động; trong giai đoạn thử nghiệm, quản trị viên có thể gán gói cho tài khoản.",
+      "Orena Intelligence có thể sai; hãy kiểm tra lại thông tin quan trọng.",
+      "Bạn có thể yêu cầu xoá tài khoản bất cứ lúc nào qua email."
+    ]
+  },
+  "tocLabel": "Nội dung",
+  "sections": [
+    {
+      "h": "1. Chấp nhận điều khoản",
+      "blocks": [
+        { "p": "Khi tạo tài khoản hoặc sử dụng Orena, bạn đồng ý với các Điều khoản này và [Chính sách quyền riêng tư](/privacy). Nếu bạn không đồng ý, vui lòng ngừng sử dụng dịch vụ. Bạn phải từ {{fact:min_age}} tuổi trở lên mới được sử dụng Orena." }
+      ]
+    },
+    {
+      "h": "2. Tài khoản",
+      "blocks": [
+        {
+          "ul": [
+            "Bạn đăng nhập bằng tài khoản Google. Hãy giữ an toàn cho tài khoản đó: bạn chịu trách nhiệm về mọi hoạt động trên tài khoản Orena của mình.",
+            "Mỗi tài khoản dành cho một người. Không chia sẻ, bán hoặc chuyển nhượng tài khoản.",
+            "Hãy báo cho chúng tôi ngay nếu nghi ngờ tài khoản bị truy cập trái phép.",
+            "Bạn có thể yêu cầu chúng tôi xoá tài khoản bất cứ lúc nào; xem [Xoá tài khoản](/account-deletion)."
+          ]
+        }
+      ]
+    },
+    {
+      "h": "3. Gói dịch vụ và thanh toán",
+      "blocks": [
+        { "p": "Orena có gói miễn phí. Gói trả phí chưa được cung cấp: Orena không thu tiền, và không có khoản nào trong Orena là khoản phải trả. Giới hạn sử dụng phụ thuộc vào gói của bạn và được hiển thị trong ứng dụng. Trong giai đoạn thử nghiệm, quản trị viên có thể thay đổi gói hoặc giới hạn của một tài khoản theo cách thủ công." },
+        {
+          "cards": [
+            ["Thanh toán", "Thanh toán chưa hoạt động. Hiện tại Orena không thu thập thông tin thanh toán."],
+            ["Khi gói trả phí ra mắt", "Chúng tôi sẽ cập nhật các Điều khoản này, và cho bạn biết giá cùng quy định về gia hạn, huỷ gói và hoàn tiền, trước khi thu bất kỳ khoản nào của bạn."]
+          ]
+        }
+      ]
+    },
+    {
+      "h": "4. Ủng hộ dự án",
+      "blocks": [
+        { "p": "Orena chưa nhận ủng hộ. Nếu điều này thay đổi, chúng tôi sẽ cập nhật các Điều khoản này trước." }
+      ]
+    },
+    {
+      "h": "5. Quy tắc sử dụng",
+      "blocks": [
+        { "lead": "Khi dùng Orena, bạn không được:" },
+        {
+          "ul": [
+            "Tải lên nội dung vi phạm pháp luật, xâm phạm quyền sở hữu trí tuệ hoặc quyền riêng tư của người khác.",
+            "Dùng Orena Intelligence để tạo nội dung gây hại, lừa đảo, quấy rối hoặc thù ghét.",
+            "Thu thập dữ liệu tự động, dò quét hoặc can thiệp vào hệ thống của Orena.",
+            "Tìm cách vượt qua giới hạn sử dụng, dịch ngược ứng dụng hoặc bán lại dịch vụ.",
+            "Mạo danh người khác hoặc đội ngũ Orena."
+          ]
+        }
+      ]
+    },
+    {
+      "h": "6. Nội dung của bạn",
+      "blocks": [
+        { "p": "Bạn giữ toàn bộ quyền với bài viết, ghi âm, ghi chú và tài liệu bạn tải lên. Bạn cấp cho Orena quyền sử dụng không độc quyền, giới hạn ở mức cần thiết để lưu trữ, xử lý và hiển thị nội dung đó cho bạn, bao gồm gửi tới nhà cung cấp AI khi bạn yêu cầu." },
+        { "p": "Khi nhập sách hoặc tài liệu, bạn xác nhận mình có quyền sử dụng chúng cho mục đích học cá nhân. Tài liệu bạn nhập chỉ hiển thị với bạn." }
+      ]
+    },
+    {
+      "h": "7. Nội dung của Orena",
+      "blocks": [
+        { "p": "Bài đọc, bài nghe, bài tập, giao diện, logo và tên Orena thuộc về Orena hoặc bên cấp phép. Bạn được dùng chúng cho việc học cá nhân, không được sao chép, phân phối lại hoặc sử dụng cho mục đích thương mại khi chưa có sự đồng ý bằng văn bản." }
+      ]
+    },
+    {
+      "h": "8. Orena Intelligence",
+      "blocks": [
+        { "p": "Orena Intelligence dùng mô hình AI để giải thích, chấm bài và gợi ý. Câu trả lời có thể chưa chính xác hoặc chưa đầy đủ. Điểm phát âm và điểm bài viết chỉ mang tính tham khảo cho việc tự học, không thay thế đánh giá của giáo viên hoặc kết quả kỳ thi chính thức như IELTS hay HSK." }
+      ]
+    },
+    {
+      "h": "9. Tạm ngưng và chấm dứt",
+      "blocks": [
+        { "p": "Bạn có thể yêu cầu chúng tôi xoá tài khoản bất cứ lúc nào qua email, như hướng dẫn ở trang [Xoá tài khoản](/account-deletion); chúng tôi xử lý yêu cầu thủ công trong vòng 30 ngày. Chúng tôi có thể tạm ngưng hoặc chấm dứt tài khoản vi phạm Điều khoản này, sau khi đã thông báo và cho bạn cơ hội giải thích, trừ trường hợp vi phạm nghiêm trọng hoặc theo yêu cầu của pháp luật." }
+      ]
+    },
+    {
+      "h": "10. Miễn trừ và giới hạn trách nhiệm",
+      "blocks": [
+        { "p": "Orena được cung cấp theo hiện trạng. Chúng tôi cố gắng giữ dịch vụ ổn định nhưng không cam kết dịch vụ luôn không gián đoạn hay không có lỗi. Trong phạm vi pháp luật cho phép, trách nhiệm của Orena đối với mọi khiếu nại liên quan đến dịch vụ không vượt quá số tiền bạn đã trả cho Orena trong 12 tháng trước đó. Điều khoản này không làm ảnh hưởng tới các quyền của người tiêu dùng theo pháp luật Việt Nam." }
+      ]
+    },
+    {
+      "h": "11. Thay đổi điều khoản",
+      "blocks": [
+        { "p": "Chúng tôi có thể cập nhật Điều khoản khi sản phẩm hoặc quy định pháp luật thay đổi. Với thay đổi quan trọng, chúng tôi đăng bản cập nhật trên trang này ít nhất 14 ngày trước khi có hiệu lực. Tiếp tục sử dụng Orena sau thời điểm đó nghĩa là bạn đồng ý với Điều khoản mới." }
+      ]
+    },
+    {
+      "h": "12. Luật áp dụng",
+      "blocks": [
+        { "p": "Điều khoản này được điều chỉnh bởi pháp luật Việt Nam. Hai bên ưu tiên giải quyết tranh chấp bằng thương lượng; nếu không đạt được thoả thuận trong vòng 30 ngày, tranh chấp sẽ được đưa ra toà án có thẩm quyền tại Việt Nam." }
+      ]
+    },
+    {
+      "h": "13. Liên hệ",
+      "blocks": [
+        { "p": "Orena do {{fact:operator.name}}, {{fact:operator.country}} vận hành. Nếu có câu hỏi về Điều khoản dịch vụ, hãy viết cho chúng tôi:" },
+        { "contact": [["Pháp lý", "orena.legal@chillpickle.org"], ["Hỗ trợ chung", "orena.support@chillpickle.org"]] }
+      ]
+    }
+  ],
+  "footer": {
+    "copy": "© 2026 Orena",
+    "links": [["landing", "Giới thiệu"], ["privacy", "Quyền riêng tư"], ["terms", "Điều khoản"], ["account-deletion", "Xoá tài khoản"]]
+  }
+}

@@ -288,7 +288,7 @@ def _native_session_cookie(user_sub: str) -> str:
     return TimestampSigner(SESSION_SECRET or "local-single-user-mode").sign(payload).decode("utf-8")
 
 
-PUBLIC_PAGE_PATHS = frozenset({"/landing", "/terms", "/privacy"})
+PUBLIC_PAGE_PATHS = frozenset({"/landing", "/terms", "/privacy", "/account-deletion"})
 
 router = APIRouter()
 

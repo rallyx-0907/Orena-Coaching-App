@@ -1,0 +1,79 @@
+{
+  "title": "Xoá tài khoản · Orena",
+  "nav": [["privacy", "Quyền riêng tư"], ["terms", "Điều khoản dịch vụ"], ["account-deletion", "Xoá tài khoản"]],
+  "h1": ["Xoá ", "tài khoản"],
+  "intro": "Cách yêu cầu {{fact:operator.name}} xoá tài khoản Orena và dữ liệu gắn với tài khoản, những gì được xoá và những gì được giữ lại.",
+  "dates": ["Cập nhật lần cuối: {{date}}", "Hiệu lực từ: {{date}}"],
+  "summary": {
+    "label": "Tóm tắt nhanh",
+    "items": [
+      "Gửi email tới orena.support@chillpickle.org từ địa chỉ email của tài khoản Google bạn dùng với Orena.",
+      "Chúng tôi xử lý yêu cầu xoá thủ công, chậm nhất trong vòng 30 ngày.",
+      "Dữ liệu học tập và nội dung của bạn được xoá; bản sao lưu hết hạn theo lịch ghi đè luân phiên.",
+      "Ứng dụng chưa có nút xoá tài khoản."
+    ]
+  },
+  "tocLabel": "Nội dung",
+  "sections": [
+    {
+      "h": "1. Cách yêu cầu xoá",
+      "blocks": [
+        { "lead": "Orena chưa có nút xoá tài khoản trong ứng dụng, nên việc xoá được thực hiện bằng yêu cầu qua email:" },
+        {
+          "ul": [
+            "Viết thư tới [orena.support@chillpickle.org](mailto:orena.support@chillpickle.org) từ địa chỉ email của tài khoản Google bạn dùng để đăng nhập Orena. Dùng tiêu đề “Xoá tài khoản Orena của tôi”.",
+            "Chúng tôi kiểm tra yêu cầu đến từ đúng địa chỉ đó và có thể trả lời để xác nhận. Chúng tôi không thể xoá tài khoản theo yêu cầu gửi từ một địa chỉ khác.",
+            "Chúng tôi xử lý yêu cầu thủ công và xoá tài khoản chậm nhất trong vòng 30 ngày, sau đó trả lời để xác nhận."
+          ]
+        }
+      ]
+    },
+    {
+      "h": "2. Những gì được xoá",
+      "blocks": [
+        { "lead": "Khi tài khoản của bạn bị xoá, chúng tôi xoá dữ liệu gắn với tài khoản trên máy chủ của chúng tôi:" },
+        {
+          "ul": [
+            "Hồ sơ và cài đặt của bạn: ngôn ngữ đang học, ngôn ngữ giao diện, mục tiêu hằng tuần và hồ sơ học tập.",
+            "Tiến độ và lịch sử học: tiến độ đọc, nghe, nói và ngữ pháp, các lần thử và điểm số, lịch sử ôn tập, từ đã lưu và danh sách từ vựng.",
+            "Nội dung của bạn: bài viết bạn đã gửi cùng phần đánh giá và các bản chỉnh sửa, bản nháp, ghi chú và phần đánh dấu, các cuộc trò chuyện đã lưu và vị trí đọc dở, các cuộc thảo luận văn bản, và các mục trong thư viện.",
+            "Sách, tài liệu và media bạn đã nhập, kể cả các tệp được lưu của chúng.",
+            "Phản hồi bạn đã gửi, bản ghi hoạt động của Orena Intelligence, bản ghi về gói và mức dùng của bạn, và bản ghi về lượt dùng AI và chi phí.",
+            "Tên, địa chỉ email và đường dẫn ảnh đại diện của bạn được gỡ bỏ hoặc ẩn danh hoá không thể khôi phục. Phiên đăng nhập của bạn kết thúc."
+          ]
+        }
+      ]
+    },
+    {
+      "h": "3. Những gì được giữ lại và trong bao lâu",
+      "blocks": [
+        {
+          "ul": [
+            "**Bản ghi về việc đã xoá.** Chúng tôi giữ một mã nội bộ, mã đăng nhập ẩn danh mà Google cấp cho tài khoản của bạn và thời điểm xoá, không kèm tên, email hay nội dung, để việc xoá của bạn vẫn có hiệu lực nếu một bản sao lưu được khôi phục.",
+            "**Bản sao lưu.** Các bản sao lưu tạo trước khi xoá vẫn có thể chứa dữ liệu của bạn. Chúng bị ghi đè theo lịch luân phiên trong vòng {{fact:retention.backup_days}} ngày.",
+            "**Nhật ký máy chủ và mạng.** Nhật ký vận hành của máy chủ chúng tôi và của nhà cung cấp lưu trữ, mạng có thể vẫn chứa địa chỉ IP và thời điểm yêu cầu của bạn.",
+            "**Dữ liệu đã gửi tới nhà cung cấp dịch vụ.** Văn bản hoặc âm thanh đã gửi tới nhà cung cấp AI và giọng nói để trả kết quả được xử lý theo quy định lưu giữ của họ, và chúng tôi không thể xoá khỏi hệ thống của họ.",
+            "**Bản ghi trên thiết bị của bạn.** Mọi thứ Orena lưu trong trình duyệt hoặc thiết bị của bạn vẫn ở đó cho đến khi bạn xoá dữ liệu trang web của trình duyệt."
+          ]
+        }
+      ]
+    },
+    {
+      "h": "4. Xoá mà không đóng tài khoản",
+      "blocks": [
+        { "p": "Bạn có thể tự xoá từng mục ở những nơi ứng dụng cho phép, ví dụ bài viết, từ đã lưu, mục trong thư viện, thảo luận văn bản và media đã nhập, và có thể xoá dữ liệu lưu trên thiết bị bằng cách xoá dữ liệu trang web của trình duyệt. Để đóng hẳn tài khoản, hãy gửi yêu cầu theo mục 1." }
+      ]
+    },
+    {
+      "h": "5. Liên hệ",
+      "blocks": [
+        { "p": "Orena do {{fact:operator.name}}, {{fact:operator.country}} vận hành. Với yêu cầu xoá và hỗ trợ, hãy viết cho chúng tôi. Với câu hỏi về quyền riêng tư, xem [Chính sách quyền riêng tư](/privacy)." },
+        { "contact": [["Yêu cầu xoá và hỗ trợ", "orena.support@chillpickle.org"], ["Quyền riêng tư", "orena.legal@chillpickle.org"]] }
+      ]
+    }
+  ],
+  "footer": {
+    "copy": "© 2026 Orena",
+    "links": [["landing", "Giới thiệu"], ["privacy", "Quyền riêng tư"], ["terms", "Điều khoản"], ["account-deletion", "Xoá tài khoản"]]
+  }
+}

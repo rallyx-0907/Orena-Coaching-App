@@ -1,5 +1,5 @@
 """The public entry: `/` is the Landing for a visitor who is not signed in (sign-in on), the learner shell
-for everyone else; `/landing`, `/terms` and `/privacy` are public pages. Nothing under /api opens."""
+for everyone else; `/landing`, `/terms`, `/privacy` and `/account-deletion` are public pages. Nothing under /api opens."""
 
 import asyncio
 
@@ -71,7 +71,7 @@ def test_public_pages_need_no_session(monkeypatch):
 
     async def go():
         async with _client() as c:
-            return {p: await c.get(p) for p in ("/landing", "/terms", "/privacy", "/terms?lang=en", "/privacy?lang=zh")}
+            return {p: await c.get(p) for p in ("/landing", "/terms", "/privacy", "/account-deletion", "/terms?lang=en", "/privacy?lang=zh", "/account-deletion?lang=en")}
 
     r = _run(go())
     for path, res in r.items():
@@ -80,9 +80,11 @@ def test_public_pages_need_no_session(monkeypatch):
     assert LANDING_MARKER in r["/landing"].text
     assert "Điều khoản dịch vụ" in r["/terms"].text and "Terms of Service" in r["/terms"].text
     assert "Chính sách quyền riêng tư" in r["/privacy"].text
+    assert "Xoá tài khoản" in r["/account-deletion"].text and "Delete account" in r["/account-deletion"].text
     for res in r.values():
         assert "Orena Donate.dc.html" not in res.text, "Donate is out of scope"
         assert ".dc.html" not in res.text.replace("data-dc-script", ""), "no prototype-file link survives"
+        assert "fonts.googleapis.com" not in res.text and "fonts.gstatic.com" not in res.text, "fonts are self-hosted"
 
 
 def test_public_pages_in_local_mode(monkeypatch):
@@ -90,9 +92,9 @@ def test_public_pages_in_local_mode(monkeypatch):
 
     async def go():
         async with _client() as c:
-            return [await c.get(p) for p in ("/landing", "/terms", "/privacy")]
+            return [await c.get(p) for p in ("/landing", "/terms", "/privacy", "/account-deletion")]
 
-    assert [r.status_code for r in _run(go())] == [200, 200, 200]
+    assert [r.status_code for r in _run(go())] == [200, 200, 200, 200]
 
 
 def test_the_api_and_admin_stay_closed_to_a_visitor(monkeypatch):
@@ -131,3 +133,37 @@ def test_landing_buttons_point_where_the_visitor_can_continue():
     text = (app_module.ROOT / "templates" / "orena" / "public" / "landing.html").read_text(encoding="utf-8")
     assert 'href="/?app=1#/welcome"' in text and 'href="/privacy?lang=en"' in text and 'href="/terms?lang=en"' in text
     assert "Onboarding.dc.html" not in text
+
+
+def test_account_deletion_page_is_public_uncached_and_says_how(monkeypatch):
+    # Google Play's deletion URL: reachable signed out, never cached, and it names the real request channel.
+    monkeypatch.setattr(auth_support, "AUTH_ENABLED", True)
+
+    async def go():
+        async with _client() as c:
+            return await c.get("/account-deletion")
+
+    res = _run(go())
+    assert res.status_code == 200 and "text/html" in res.headers["content-type"]
+    assert res.headers["cache-control"] == "no-store, max-age=0"
+    assert "orena.support@chillpickle.org" in res.text
+    assert "30 days" in res.text and "30 ngày" in res.text
+    assert "/account-deletion" in auth_support.PUBLIC_PAGE_PATHS
+
+
+def test_fonts_are_served_from_this_origin_and_the_shell_does_not_call_google(monkeypatch):
+    monkeypatch.setattr(auth_support, "AUTH_ENABLED", False)
+
+    async def go():
+        async with _client() as c:
+            shell = await c.get("/?app=1")
+            css = await c.get("/orena-assets/fonts/fonts.css")
+            face = await c.get("/orena-assets/fonts/outfit-normal-latin.woff2")
+            return shell, css, face
+
+    shell, css, face = _run(go())
+    assert "fonts.googleapis.com" not in shell.text and "fonts.gstatic.com" not in shell.text
+    assert "/orena-assets/fonts/fonts.css" in shell.text
+    assert css.status_code == 200 and "font-family:'Outfit'" in css.text and "https://" not in css.text
+    assert face.status_code == 200 and face.content[:4] == b"wOF2"
+    assert "max-age=604800" in face.headers["cache-control"]

@@ -1,21 +1,28 @@
-// Builds the public pages (Landing, Terms, Privacy) from the pinned design files.
+// Builds the public pages (Landing, Terms, Privacy, Delete account) from the pinned design files.
 //
-//   node scripts/build_public_pages.mjs           write templates/orena/public/*.html and static/orena/public/*
-//   node scripts/build_public_pages.mjs --check   fail if the committed output differs from a fresh build
+//   node scripts/build_public_pages.mjs            write templates/orena/public/*.html and static/orena/public/*
+//   node scripts/build_public_pages.mjs --check    fail if the committed output differs from a fresh build
+//   node scripts/build_public_pages.mjs --release  build in memory and fail while any fact is still unconfirmed
+//                                                  (the check that must pass before the pages go to :8000)
 //
 // The pages are the design's own files, run by the design's own template runtime (support.js, vendored byte for
-// byte beside them), so layout, copy, legal text and motion are the pinned design and nothing is retyped. The
-// build changes only what a prototype file cannot keep when it becomes a route: relative links between prototype
-// files become the app's addresses, asset URLs become /orena-assets URLs, and the Donate link is removed (the
-// Donate page is out of scope, D-160). Every substitution must match, or the build fails: a re-pin that moves one
-// of them is noticed here and not in production.
+// byte beside them), so layout, type, spacing and motion are the pinned design. The legal WORDS are no longer the
+// design's (D-161, a human-authorised deviation: the design's text claimed things Orena does not do): Terms,
+// Privacy and Delete account take their text from docs/legal/public/<page>.<vi|en>.json and the facts in
+// docs/legal/public/facts.json, laid out with the design's own markup (scripts/public_legal_text.mjs). The build
+// also changes only what a prototype file cannot keep when it becomes a route: relative links between prototype
+// files become the app's addresses, asset URLs become /orena-assets URLs, fonts are served from this origin
+// (D-161), and the Donate link is removed (the Donate page is out of scope, D-160). Every substitution must
+// match, or the build fails: a re-pin that moves one of them is noticed here and not in production.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { applyText, loadFacts, loadTexts, Pending } from './public_legal_text.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pin = path.join(root, 'docs/design/canonical-ui/screens');
 const check = process.argv.includes('--check');
+const release = process.argv.includes('--release');
 
 const APP_SIGN_IN = '/?app=1#/welcome';
 const APP_OPEN = '/?app=1';
@@ -30,7 +37,16 @@ function sub(text, name, pattern, replacement, { min = 1 } = {}) {
   return out;
 }
 
+// Fonts are served from this origin: a page never contacts Google (D-161). The design's font lines (a preconnect
+// and the css2 stylesheet) become one stylesheet link.
+function fonts(text) {
+  text = sub(text, 'font preconnect', /[ \t]*<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\r?\n/g, '');
+  return sub(text, 'font stylesheet', /<link href="https:\/\/fonts\.googleapis\.com\/css2\?[^"]*" rel="stylesheet">/g,
+    '<link href="/orena-assets/fonts/fonts.css" rel="stylesheet">');
+}
+
 function common(text) {
+  text = fonts(text);
   text = sub(text, 'support.js', /src="\.\/support\.js"/g, 'src="/orena-assets/public/support.js"');
   text = sub(text, 'background', /assets\/bg\/midnight-wide\.jpg/g, '/orena-assets/public/bg/midnight-wide.jpg');
   text = sub(text, 'sign-in', /href="Onboarding\.dc\.html"/g, `href="${APP_SIGN_IN}"`, { min: 0 });
@@ -54,13 +70,23 @@ function legal(text) {
 
 function landing(text) {
   text = sub(text, 'title', /<helmet>\r?\n/, '<helmet>\n<title>Orena</title>\n');
+  // The footer's legal row gains the deletion page, in the row's own link style.
+  text = sub(text, 'footer deletion', /(<a href="Orena Terms\.dc\.html\?lang=en" style="color:var\(--muted\)">Terms<\/a>)/g,
+    (_m, terms) => `${terms}<a href="Orena Account Deletion.dc.html?lang=en" style="color:var(--muted)">Delete account</a>`);
+  text = sub(text, 'deletion link', /href="Orena Account Deletion\.dc\.html(\?lang=en)?"/g, (_m, q) => `href="/account-deletion${q || ''}"`);
   return common(text);
 }
 
+const facts = loadFacts(root);
+const pending = new Pending();
+
+// The legal pages: the design's Terms and Privacy pages are the skeletons; the deletion page uses the Terms one.
+const legalPage = (srcName, page) => (text) => applyText(legal(text), page, loadTexts(root, page), facts, pending);
 const pages = [
   ['Orena-Landing.dc.html', 'landing.html', landing],
-  ['Orena-Terms.dc.html', 'terms.html', legal],
-  ['Orena-Privacy.dc.html', 'privacy.html', legal],
+  ['Orena-Terms.dc.html', 'terms.html', legalPage('Orena-Terms.dc.html', 'terms')],
+  ['Orena-Privacy.dc.html', 'privacy.html', legalPage('Orena-Privacy.dc.html', 'privacy')],
+  ['Orena-Terms.dc.html', 'account-deletion.html', legalPage('Orena-Terms.dc.html', 'account-deletion')],
 ];
 const copies = [['assets/bg/midnight-wide.jpg', 'static/orena/public/bg/midnight-wide.jpg']];
 
@@ -84,6 +110,19 @@ for (const [src, dest, fn] of pages) {
 for (const [src, dest] of copies) outputs.set(dest, fs.readFileSync(path.join(pin, src)));
 outputs.set('static/orena/public/support.js', Buffer.from(runtime(fs.readFileSync(path.join(pin, 'support.js'), 'utf8')), 'utf8'));
 
+if (release) {
+  if (pending.paths.size) {
+    console.error(`NOT RELEASABLE: ${pending.paths.size} fact(s) in docs/legal/public/facts.json are unconfirmed:`);
+    for (const p of [...pending.paths].sort()) console.error(`  - ${p}`);
+    process.exit(1);
+  }
+  console.log('release check passed: every fact the public legal text states is confirmed');
+  process.exit(0);
+}
+if (pending.paths.size) {
+  console.warn(`note: ${pending.paths.size} unconfirmed fact(s) render as "[pending: ...]" and block --release: ${[...pending.paths].sort().join(', ')}`);
+}
+
 let bad = 0;
 for (const [rel, buf] of outputs) {
   const file = path.join(root, rel);
@@ -99,4 +138,4 @@ for (const [rel, buf] of outputs) {
   }
 }
 if (bad) process.exit(1);
-if (check) console.log(`public pages match the pinned design (${outputs.size} files)`);
+if (check) console.log(`public pages match the pinned design and the repository legal text (${outputs.size} files)`);

@@ -366,6 +366,10 @@ def orena_asset(asset_path: str, request: Request):
     # header.
     etag = _asset_etag(candidate)
     headers = {"Cache-Control": "no-cache", "ETag": etag}
+    if candidate.suffix == ".woff2" and candidate.parent.name == "fonts":
+        # Self-hosted font slices (D-161): a page loads a dozen of them and they change only when the fonts are
+        # re-fetched, so they are kept for a week rather than revalidated one by one (fonts.css still revalidates).
+        headers["Cache-Control"] = "public, max-age=604800"
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
     return FileResponse(candidate, headers=headers)
@@ -1794,6 +1798,12 @@ def terms_page() -> HTMLResponse:
 @app.get("/privacy", response_class=HTMLResponse)
 def privacy_page() -> HTMLResponse:
     return _page("public", "privacy.html")
+
+
+@app.get("/account-deletion", response_class=HTMLResponse)
+def account_deletion_page() -> HTMLResponse:
+    # Public and signed-out by design: Google Play asks for a deletion page a person can reach without an account.
+    return _page("public", "account-deletion.html")
 
 
 @app.get("/next")
