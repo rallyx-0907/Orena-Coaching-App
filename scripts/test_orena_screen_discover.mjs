@@ -360,10 +360,30 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.match(css, /conic-gradient\(\s*from var\(--vip-angle\)/, 'a conic-gradient border');
   assert.match(css, /animation:\s*s-discover-vip-run[^;]*infinite/, 'it runs');
   assert.match(css, /@keyframes s-discover-vip-run\s*\{\s*to\s*\{\s*--vip-angle:\s*360deg/, 'one full turn');
-  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.o-btn\.o-btn--primary\.s-discover__vip\s*\{\s*animation:\s*none/, 'reduced motion: a static border');
-  assert.match(css, /linear-gradient\(var\(--vip-fill\), var\(--vip-fill\)\) padding-box/, 'the fill stays the accent fill (label contrast unchanged)');
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.o-btn\.o-btn--primary\.s-discover__vip\s*\{\s*animation:\s*none;\s*--vip-live:\s*0\.\d+/, 'reduced motion: a static ring and a fainter static glow');
+  assert.match(css, /linear-gradient\(var\(--vip-fill\), var\(--vip-fill\)\) padding-box,\s*var\(--vip-rainbow\) border-box/, 'the fill stays the accent fill (label contrast unchanged) inside the rainbow ring');
   assert.match(css, /--vip-fill:\s*var\(--accent-fill\)/);
-  assert.match(css, /padding:\s*10px 16px;\s*border:\s*2px solid transparent/, 'the border is paid out of the padding: no layout shift');
+  // The ring: a 3px border on a pseudo-element laid over the button's own box, behind its label - the button's box,
+  // padding and border are never touched, so nothing shifts.
+  const rule = (selector) => css.match(new RegExp(`${selector.replace(/[.:()[\]]/g, '\\$&')}\\s*\\{([^}]*)\\}`))?.[1] || '';
+  const ring = rule('.o-btn.o-btn--primary.s-discover__vip::after');
+  assert.match(ring, /inset:\s*0;/);
+  assert.match(ring, /border:\s*3px solid transparent/, 'a 3px ring');
+  assert.match(ring, /z-index:\s*-1/, 'behind the label');
+  assert.match(ring, /pointer-events:\s*none/);
+  const base = rule('.o-btn.o-btn--primary.s-discover__vip');
+  assert.ok(!/(^|;)\s*(padding|border|width|height|margin)\s*:/.test(base), 'the button keeps its own box: no padding, border or size override (no layout shift)');
+  assert.match(base, /position:\s*relative/);
+  assert.match(base, /isolation:\s*isolate/);
+  // The halo: the same rainbow, blurred, behind the ring, outside the layout, ignoring the pointer.
+  const halo = rule('.o-btn.o-btn--primary.s-discover__vip::before');
+  assert.match(halo, /background:\s*var\(--vip-rainbow\)/, 'the same rotating rainbow');
+  assert.match(halo, /filter:\s*blur\(\d+px\)/, 'a soft glow');
+  assert.match(halo, /z-index:\s*-2/, 'behind the ring');
+  assert.match(halo, /pointer-events:\s*none/, 'never takes a click');
+  assert.match(halo, /opacity:\s*calc\(var\(--vip-glow\) \* var\(--vip-live\)\)/);
+  assert.match(base, /--vip-glow:\s*0\.5\d*/, 'a strong glow on a dark page');
+  assert.match(css, /:root\[data-theme='light'\] \.o-btn\.o-btn--primary\.s-discover__vip\s*\{\s*--vip-glow:\s*0\.[2-4]\d*/, 'a lower glow on a light page');
   assert.equal(css.replace(/\/\*[\s\S]*?\*\//g, '').match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/), null, 'colours come from tokens.css only');
   for (const token of ['skill-speak', 'skill-read', 'skill-vocab', 'gcat-4', 'skill-listen', 'skill-grammar', 'skill-write']) {
     assert.match(fs.readFileSync('static/orena/kit/tokens.css', 'utf8'), new RegExp(`--${token}:`), `the rainbow stop --${token} exists in tokens.css`);

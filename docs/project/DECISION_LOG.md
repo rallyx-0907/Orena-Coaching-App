@@ -4959,10 +4959,12 @@ type. Goal: the user understands the app's content structure without clicking ea
    existing import flow; it has no "See all" (nothing to see). While a search or a filter narrows the page and nothing
    imported matches, the section is omitted like any other (a narrowed page is not an invitation to import).
 7. **The VIP import control - an explicit human exception to D-147.** The header's "+ Import" and that call to action
-   draw a running rainbow border: a conic gradient (the skill and category hues of `tokens.css`, no colour of its own)
-   turned by an animated `@property --vip-angle`, around the unchanged accent fill, so the label keeps its AA contrast.
-   The 2px border is taken out of the padding (no layout shift); under `prefers-reduced-motion` the border is held still;
-   the global keyboard focus ring is unchanged. D-147 (no violet or coloured outline) stands everywhere else; this
+   draw a running rainbow: a conic gradient (the skill and category hues of `tokens.css`, no colour of its own) turned by
+   an animated `@property --vip-angle`, as a 3px ring around the unchanged accent fill (the label keeps its AA contrast)
+   and as a soft blurred halo behind the button (opacity 0.55 on a dark page, 0.35 on a light one; QA on the first 2px
+   hairline: too subtle). Ring and halo are pseudo-elements outside the layout (no layout shift, the halo ignores the
+   pointer); under `prefers-reduced-motion` the ring is held still and the halo is static and fainter; the global keyboard
+   focus ring is unchanged. D-147 (no violet or coloured outline) stands everywhere else; this
    exception is these two controls only (`discover.css`, `s-discover__vip`).
 8. **Gate.** `scripts/test_orena_screen_discover.mjs` section 13 renders the overview in English, Vietnamese and Chinese,
    and checks the order, the always-present Imported with its call to action, the VIP class on both import controls and the
