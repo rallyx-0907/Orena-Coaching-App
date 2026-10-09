@@ -87,7 +87,7 @@ def test_learner_routes_are_allowed_for_a_non_admin_on_staging(monkeypatch) -> N
 
 def test_admin_authorization_stays_separate_on_staging(monkeypatch) -> None:
     _staging(monkeypatch)
-    for path in ("/api/admin/ai/config", "/api/admin/console/overview"):
+    for path in ("/api/admin/ai/config", "/api/product/admin/account"):
         assert _get(path).status_code == 403, path
         assert _get(path, signed_in=False).status_code == 401, path
 
