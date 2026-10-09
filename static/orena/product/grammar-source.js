@@ -63,11 +63,20 @@ export function sortCatalog(rows) {
 }
 
 export async function grammarCatalog(targetLang, { fetchJson = defaultFetch } = {}) {
+  return (await grammarLibraryData(targetLang, { fetchJson })).points;
+}
+
+/* The whole catalogue body the Library draws: the sorted, approved points and the corpus's functions (the topics,
+   `{id, title: {vi, en, zh?}}`), for the session's learning language. */
+export async function grammarLibraryData(targetLang, { fetchJson = defaultFetch } = {}) {
   const lang = TARGETS.includes(targetLang) ? targetLang : 'en';
   const body = await readJson(CATALOG_URL, fetchJson);
-  const rows = Array.isArray(body?.points) ? body.points : [];
-  if (body?.language && body.language !== lang) return [];
-  return sortCatalog(rows.filter((row) => approved(row) && row.id && (row.header?.native_title || row.native_title)));
+  if (!body || (body.language && body.language !== lang)) return { points: [], functions: [] };
+  const rows = Array.isArray(body.points) ? body.points : [];
+  return {
+    points: sortCatalog(rows.filter((row) => approved(row) && row.id && (row.header?.native_title || row.native_title))),
+    functions: (Array.isArray(body.functions) ? body.functions : []).filter((fn) => fn && fn.id),
+  };
 }
 
 /* One point, by its id. An old R5 id (deep links, Writing's grammar_links, Search, Today) is resolved
@@ -90,12 +99,15 @@ export async function grammarPoint(id, { targetLang = 'en', fetchJson = defaultF
 
 /* The learner's completed grammar points: `[{point_id, completed_at, last_quiz, via}]`. A failure reads as
    no progress, never as a load error: progress is an addition to a screen, not its content. */
+/* The learner's completed points, or `null` when they cannot be read (a failed request, an unexpected answer).
+   `null` is "unknown", never "nothing learned": a transient 500 must not show an existing learner as 0 learned or
+   recommend topics they finished (PR #108 review). `[]` only when the server says the history is empty. */
 export async function grammarProgress({ fetchJson = defaultFetch } = {}) {
   try {
     const body = await readJson(PROGRESS_URL, fetchJson);
-    return Array.isArray(body?.progress) ? body.progress : [];
+    return Array.isArray(body?.progress) ? body.progress : null;
   } catch {
-    return [];
+    return null;
   }
 }
 
