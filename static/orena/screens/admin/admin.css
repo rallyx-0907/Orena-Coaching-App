@@ -45,8 +45,13 @@
   gap: 4px;
   width: 232px;
   flex: none;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background: var(--bd-chrome);
+  backdrop-filter: var(--bd-chrome-blur);
+  -webkit-backdrop-filter: var(--bd-chrome-blur);
+  box-shadow: var(--edge-light);
+  position: relative;
+  z-index: 1;
+  border-right: 1px solid transparent;
   padding: 18px 12px 14px;
   overflow-y: auto;
 }
@@ -86,7 +91,7 @@
 .a-nav[aria-current='page'] {
   font-weight: 600;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-nav__dot {
   width: 8px;
@@ -113,11 +118,11 @@
   gap: 10px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   background: var(--accent-soft);
 }
 .a-applink:hover {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-account {
   display: flex;
@@ -154,6 +159,8 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 .a-top {
   height: 64px;
@@ -162,8 +169,11 @@
   align-items: center;
   gap: 12px;
   padding: 0 var(--a-pad);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--bd-chrome);
+  backdrop-filter: var(--bd-chrome-blur);
+  -webkit-backdrop-filter: var(--bd-chrome-blur);
+  box-shadow: var(--edge-light);
+  border-bottom: 1px solid transparent;
 }
 .a-top__title {
   flex: 1;
@@ -199,8 +209,11 @@
   overflow-x: auto;
   padding: 10px var(--a-pad);
   flex: none;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  border-bottom: 1px solid transparent;
+  box-shadow: var(--edge-light);
+  background: var(--bd-chrome);
+  backdrop-filter: var(--bd-chrome-blur);
+  -webkit-backdrop-filter: var(--bd-chrome-blur);
   scrollbar-width: none;
 }
 .a-mnav::-webkit-scrollbar {
@@ -220,7 +233,7 @@
 }
 .a-chip[aria-current='page'] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-main {
   flex: 1;
@@ -349,7 +362,7 @@
 }
 .a-pill[data-tone='info'] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-pill[data-tone='fut'] {
   background: transparent;
@@ -462,7 +475,7 @@ a.a-btn--primary:hover {
   font-weight: 600;
 }
 .a-banner[data-tone='info'] .a-banner__title {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-banner[data-tone='warn'] .a-banner__title {
   color: var(--amber);
@@ -528,7 +541,7 @@ a.a-btn--primary:hover {
 }
 .a-tab[aria-selected='true'] .a-tab__count {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-tab__bar {
   height: 3px;
@@ -884,7 +897,7 @@ a.a-btn--primary:hover {
   color: var(--red);
 }
 .a-field__hint[data-tone='info'] {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-input {
   height: 42px;
@@ -928,7 +941,7 @@ a.a-btn--primary:hover {
 }
 .a-seg__option[aria-pressed='true'] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   border-color: transparent;
 }
 .a-seg__option:disabled {
@@ -1205,7 +1218,7 @@ a.a-btn--primary:hover {
 }
 .a-chipbtn[aria-pressed='true'] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-filters {
   display: flex;
@@ -1266,7 +1279,7 @@ a.a-btn--primary:hover {
   color: var(--green);
 }
 .a-tile__value[data-tone='accent'] {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-tile__value[data-tone='warn'] {
   color: var(--amber);
@@ -1474,7 +1487,7 @@ a.a-btn--primary:hover {
   font-size: 13px;
   font-weight: 600;
   align-self: center;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-rights {
   background: var(--surface);
@@ -1860,7 +1873,7 @@ a.a-btn--primary:hover {
   height: 36px;
   border-radius: 10px;
   background: var(--surface);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2377,7 +2390,7 @@ a.a-btn--primary:hover {
   flex: none;
   display: flex;
   margin-top: 1px;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .a-plan__note {
   font-size: 13.5px;

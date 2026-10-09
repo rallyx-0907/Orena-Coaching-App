@@ -5,7 +5,8 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { mediaCard, headlineTitle, settleCovers } from '../../kit/components.js';
+import { mediaCard, headlineTitle, settleCovers, vipButton } from '../../kit/components.js';
+import { openImportFlow as openImport } from '../import/open.js';
 import { langSpan, langAttr } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
@@ -16,13 +17,15 @@ import { sourceFromLesson } from '../../product/speaking-source.js';
 import { shellCopy as ts } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
+import { overviewMarkup } from './overview.js';
 import {
   entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
   entryFromTextImport, entryFromMediaImport, filterOptions, visibleEntries,
-  presentCard, hrefFor, typeLabel, topicLabel, hasAnyFilter, filterCount, practiceCandidates, practiceHref, preparedMediaEntry,
+  presentCard, hrefFor, overviewSections, typeLabel, topicLabel, hasAnyFilter, filterCount, practiceCandidates, practiceHref, preparedMediaEntry,
 } from './model.js';
 
-const TAB_LABEL_KEY = { all: 'tabAll', read: 'tabRead', listen: 'tabListen', collections: 'tabCollections', imported: 'tabImported' };
+// The skill order (D-152): Listen before Read, on the tab bar and in the All overview alike.
+const TAB_LABEL_KEY = { all: 'tabAll', listen: 'tabListen', read: 'tabRead', collections: 'tabCollections', imported: 'tabImported' };
 const TABS = Object.keys(TAB_LABEL_KEY);
 const FILTER_GROUPS = [
   { key: 'level', labelKey: 'groupLevel' },
@@ -64,7 +67,7 @@ export default async function discover(element, ctx) {
           : html`<div><h1 class="o-h1">${ts('discover')}</h1><p class="s-discover__sub">${t('subtitle')}</p></div>`}
         <div class="s-discover__actions">
           <button type="button" class="o-btn o-btn--secondary" data-filters>${raw(icon('list-filter', { size: 16 }))}${t('filters')}<span data-filtercount></span></button>
-          ${practice === 'listening' ? '' : html`<button type="button" class="o-btn o-btn--primary" data-import>+ ${t('importAction')}</button>`}
+          ${practice === 'listening' ? '' : vipButton({ label: t('importAction'), dataset: { import: '' } })}
         </div>
       </div>
       <div class="o-search">
@@ -96,12 +99,23 @@ export default async function discover(element, ctx) {
       html`${TABS.map((id) => html`<button type="button" class="o-tab" role="tab" aria-selected="${state.tab === id ? 'true' : 'false'}" data-tab="${id}"><span>${t(TAB_LABEL_KEY[id])}</span><span class="o-tab__bar"></span></button>`)}`,
     );
     tabsEl.querySelectorAll('[data-tab]').forEach((button) => {
-      button.addEventListener('click', () => {
-        state.tab = button.dataset.tab;
-        paintTabs();
-        paintResults();
-      });
+      button.addEventListener('click', () => openTab(button.dataset.tab));
     });
+  }
+
+  // The tab bar and every section's "See all" change the tab the same way: in place, no route.
+  function openTab(id) {
+    if (!TABS.includes(id) || id === state.tab) return;
+    state.tab = id;
+    paintTabs();
+    paintResults();
+  }
+
+  // One card for one entry, as every tab draws it (the All overview reuses it unchanged).
+  function cardFor(entry) {
+    // Navigation history is not completion of this newly chosen practice.
+    const card = presentCard(practice ? { ...entry, started: false, progressPct: null } : entry, t);
+    return mediaCard({ ...card, title: langSpan(headlineTitle(card.title), card.titleLang), fullTitle: card.title, dataset: { go: practice ? practiceHref(entry, ctx.href, practicePlace) : hrefFor(entry, ctx.href) } });
   }
 
   function paintFilterBadge() {
@@ -121,18 +135,27 @@ export default async function discover(element, ctx) {
     );
     resultsRowEl.querySelector('[data-clear]')?.addEventListener('click', clearFilters);
 
-    if (!list.length && !state.loading) {
+    const overview = !practice && state.tab === 'all';
+
+    // The overview always draws its Imported section, so an un-narrowed All is never "nothing matches".
+    const narrowed = hasFilters || Boolean(state.query.trim());
+    if (!list.length && !state.loading && !(overview && !narrowed)) {
       mount(resultsEl, emptyMarkup({ text: t('emptyText'), actionLabel: hasFilters || state.query.trim() ? t('clearFilters') : '', iconName: 'inbox' }));
       resultsEl.querySelector('[data-empty-action]')?.addEventListener('click', clearFilters);
+    } else if (overview) {
+      /* D-167: All is an overview of four sections, never one grid of every type. Each section
+         draws the same cards its own tab draws (cardFor) and a "See all" that opens that tab. */
+      mount(resultsEl, overviewMarkup(overviewSections(state.entries, { query: state.query, filters: state.filters }), { card: cardFor, t }));
+      resultsEl.querySelector('[data-import-cta]')?.addEventListener('click', openImportFlow);
+      resultsEl.querySelectorAll('[data-see-all]').forEach((button) => {
+        button.addEventListener('click', () => {
+          openTab(button.dataset.seeAll);
+          // The section the learner pressed sits far down the page; the tab they opened starts at its top.
+          root.scrollIntoView({ block: 'start' });
+        });
+      });
     } else {
-      mount(
-        resultsEl,
-        html`<div class="s-discover__grid">${list.map((entry) => {
-          // Navigation history is not completion of this newly chosen practice.
-          const card = presentCard(practice ? {...entry,started:false,progressPct:null} : entry, t);
-          return mediaCard({ ...card, title: langSpan(headlineTitle(card.title), card.titleLang), fullTitle: card.title, dataset: { go: practice ? practiceHref(entry, ctx.href, practicePlace) : hrefFor(entry, ctx.href) } });
-        })}</div>`,
-      );
+      mount(resultsEl, html`<div class="s-discover__grid">${list.map(cardFor)}</div>`);
     }
     settleCovers(resultsEl);
     paintFilterBadge();
@@ -201,11 +224,11 @@ export default async function discover(element, ctx) {
     });
   });
 
-  root.querySelector('[data-import]')?.addEventListener('click', () => {
-    import('../import/sheet.js')
-      .then((module) => module.openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' }))
-      .catch((error) => console.error('[Orena] Import is not available yet', error));
-  });
+  // The header's "+ Import" and the Imported section's call to action are one action.
+  function openImportFlow() {
+    return openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' });
+  }
+  root.querySelector('[data-import]')?.addEventListener('click', openImportFlow);
 
   let searchTimer = null;
   queryInput.addEventListener('input', () => {
@@ -232,26 +255,45 @@ export default async function discover(element, ctx) {
     return { items };
   }
 
-  async function load() {
-    const [articles, books, media, collections, speaking] = await Promise.all([
-      allReadingArticles(language),
-      api.libraryBooks(language).catch(() => ({ items: [] })),
-      api.listeningLibrary(language).catch(() => ({ items: [] })),
-      api.vocabularyLibraryCollections(language).catch(() => ({ items: [] })),
-      pronunciation ? api.speakingLibrary(language).catch(() => ({items:[]})) : Promise.resolve({items:[]}),
-      // The account's imports: a deletion made on another device leaves this list (no deletion is offered here).
-      syncImports(memory, language).catch(() => false),
-    ]);
+  /* Each source lands in its own bucket and is painted as it arrives (not in practice mode, which
+     waits for every source): a slow or failed source leaves only its own section late or out, never
+     the others (D-167). The bucket order is the order the tabs and the sections list their cards. */
+  const buckets = { articles: [], books: [], media: [], collections: [] };
+  function compose() {
     const textEntries = (memory?.value?.imports || []).map((item) => entryFromTextImport(item));
     const mediaEntries = (memory?.value?.mediaImports || []).map((item) => entryFromMediaImport(item, continuation));
     state.entries = [
-      ...(articles.items || []).map((item) => entryFromArticle(item, continuation)),
-      ...(books.items || []).map((item) => entryFromBook(item, continuation, bookCoverUrl(item.id))),
-      ...(media.items || []).map((item) => entryFromMedia(item, continuation)),
-      ...(collections.items || []).map((item) => entryFromCollection(item)),
+      ...buckets.articles.map((item) => entryFromArticle(item, continuation)),
+      ...buckets.books.map((item) => entryFromBook(item, continuation, bookCoverUrl(item.id))),
+      ...buckets.media.map((item) => entryFromMedia(item, continuation)),
+      ...buckets.collections.map((item) => entryFromCollection(item)),
       ...textEntries,
       ...mediaEntries,
     ];
+  }
+  function arrived() {
+    if (practice || !ctx.isCurrent()) return;
+    compose();
+    paintResults();
+  }
+  const bucketed = (key, request) => request.then((value) => {
+    buckets[key] = value?.items || [];
+    arrived();
+    return value;
+  });
+
+  async function load() {
+    if (!practice) compose();
+    const [, , , , speaking] = await Promise.all([
+      bucketed('articles', allReadingArticles(language)),
+      bucketed('books', api.libraryBooks(language).catch(() => ({ items: [] }))),
+      bucketed('media', api.listeningLibrary(language).catch(() => ({ items: [] }))),
+      bucketed('collections', api.vocabularyLibraryCollections(language).catch(() => ({ items: [] }))),
+      pronunciation ? api.speakingLibrary(language).catch(() => ({items:[]})) : Promise.resolve({items:[]}),
+      // The account's imports: a deletion made on another device leaves this list (no deletion is offered here).
+      syncImports(memory, language).catch(() => false).then((value) => { arrived(); return value; }),
+    ]);
+    compose();
     if (practice) {
       const privateMedia = await Promise.all((practice === 'listening' ? [] : memory?.value?.mediaImports || []).map(async item => {
         try {

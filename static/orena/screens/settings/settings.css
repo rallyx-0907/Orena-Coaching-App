@@ -173,7 +173,7 @@
   gap: 8px;
 }
 .s-settings-picker__row .c-row__trail {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-settings-action:hover:not(:disabled) {
   background: var(--surface2);

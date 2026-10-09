@@ -248,7 +248,7 @@
 .s-listening__pill--toggle[aria-pressed="true"],
 .s-listening__more[aria-pressed="true"] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   border-color: transparent;
 }
 .s-listening__trans-code { text-transform: uppercase; }
@@ -478,7 +478,7 @@
   color: var(--text3);
 }
 .is-current .s-listening__row-time,
-.is-selected .s-listening__row-time { color: var(--accent); }
+.is-selected .s-listening__row-time { color: var(--accent-on-photo, var(--accent)); }
 .s-listening__row-main { flex: 1; min-width: 0; }
 .s-listening__row-main, .s-listening__row-text { overflow-wrap: anywhere; max-width: 100%; }
 .s-listening__row-text > * { max-width: 100%; min-width: 0; }

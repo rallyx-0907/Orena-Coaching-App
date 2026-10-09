@@ -43,6 +43,57 @@
   margin-top: 12px;
 }
 
+/* The All overview (D-167): the sections stack with the design's grouped-list spacing (frame 04, the
+   grouped branch: 32px between groups, 14px heading to cards, 20px between cards). The heading row is
+   kit's sectionHead ("For you" / "See all"). Each section is one row of cards - never a second row:
+   the grid is the same auto-fill grid the tabs use, and the cards that would wrap are display:none,
+   decided by the section's own width (a section holds at most five cards; a column is 230px + 20px
+   gap, so 2/3/4/5 columns start at 480/730/980/1230px). On a phone the grid is two columns wide. */
+.s-discover__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-top: 12px;
+}
+.s-discover__section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  container: s-discover-section / inline-size;
+}
+.s-discover__section .s-discover__grid {
+  margin-top: 0;
+}
+@container s-discover-section (max-width: 1229px) {
+  .s-discover__grid--overview > :nth-child(n + 5) { display: none; }
+}
+@container s-discover-section (max-width: 979px) {
+  .s-discover__grid--overview > :nth-child(n + 4) { display: none; }
+}
+@container s-discover-section (max-width: 729px) {
+  .s-discover__grid--overview > :nth-child(n + 3) { display: none; }
+}
+:root[data-device='mobile'] .s-discover__grid--overview > :nth-child(n + 3) {
+  display: none;
+}
+
+/* Imported with nothing imported: one card holding a line and the import control. */
+.s-discover__importcta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  padding: 20px 22px;
+}
+.s-discover__importcta-text {
+  flex: 1 1 240px;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--text);
+}
+
 /* Filter Sheet body (frame 52-Filter-Sheet.html): one block per group, a wrapped chip row. The
    sheet shell itself (position/inset/width/radius/header/footer) is kit.css's .o-sheet family. */
 .s-discover-fgroup__label {

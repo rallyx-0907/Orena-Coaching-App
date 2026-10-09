@@ -2,6 +2,7 @@
    04-Discover.html, 52-Filter-Sheet.html). screens/discover/model.js is DOM-free - imported
    directly, no globals to stub. */
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { practiceCandidates, practiceHref, preparedMediaEntry } from '../static/orena/screens/discover/model.js';
 {
   for (const language of ['en', 'zh']) {
@@ -254,6 +255,190 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
 {
   assert.equal(hrefFor({ id: 'article:1', kind: 'article' }, href), '#/content/article:1');
   assert.equal(hrefFor({ id: 'collection:9', kind: 'collection' }, href), '#/collection/9');
+}
+
+// 13. The All tab is a sectioned overview (D-167): Listen - Watch, Read, Collections, Imported (the skill
+// order, D-152), each the first OVERVIEW_LIMIT entries of its own tab with a "See all" that opens that tab;
+// Imported is always drawn, as an import call to action while nothing is imported.
+{
+  const { overviewSections, OVERVIEW_TABS, OVERVIEW_LIMIT, TABS } = await import('../static/orena/screens/discover/model.js');
+  const { overviewMarkup } = await import('../static/orena/screens/discover/overview.js');
+  const { mediaCard } = await import('../static/orena/kit/components.js');
+  const { registeredCopy } = await import('../static/orena/copy/index.js');
+  await import('../static/orena/screens/discover/copy.js');
+  const packs = registeredCopy().get('discover').packs;
+
+  assert.deepEqual(OVERVIEW_TABS, ['listen', 'read', 'collections', 'imported'], 'the skill order (D-152): Listen before Read');
+  assert.deepEqual(TABS, ['all', ...OVERVIEW_TABS], 'the tab bar and the overview sections share one order');
+  for (const tab of OVERVIEW_TABS) assert.ok(TABS.includes(tab), `${tab} is a real tab, so its "See all" has somewhere to go`);
+  assert.ok(OVERVIEW_LIMIT >= 4 && OVERVIEW_LIMIT <= 6, 'a few representative items, one row');
+
+  const many = (n, make) => Array.from({ length: n }, (_, i) => make(i));
+  const entries = [
+    ...many(7, (i) => ({ id: `article:a${i}`, kind: 'article', title: `Article ${i}`, author: '', level: i % 2 ? 'B2' : 'A2', topic: '' })),
+    ...many(3, (i) => ({ id: `book:b${i}`, kind: 'book', title: `Book ${i}`, author: 'Author', level: '', topic: '' })),
+    ...many(8, (i) => ({ id: `media:m${i}`, kind: 'media', mediaType: i % 2 ? 'video' : 'audio', title: `Clip ${i}`, author: 'Src', level: '', topic: '' })),
+    ...many(2, (i) => ({ id: `collection:c${i}`, kind: 'collection', title: `Words ${i}`, level: '', topic: '', itemCount: 10 })),
+    { id: 'text:t0', kind: 'text', title: 'My text', author: '', level: '', topic: '' },
+    { id: 'upload:u0', kind: 'upload', title: 'My upload', author: 'host', level: '', topic: '' },
+  ];
+  const sections = overviewSections(entries);
+  assert.deepEqual(sections.map((section) => section.tab), OVERVIEW_TABS, 'four sections, in order');
+  const KINDS = { read: ['article', 'book'], listen: ['media'], collections: ['collection'], imported: ['text', 'upload'] };
+  for (const section of sections) {
+    assert.ok(section.entries.length <= OVERVIEW_LIMIT, `${section.tab}: at most ${OVERVIEW_LIMIT} items`);
+    assert.ok(section.entries.every((entry) => KINDS[section.tab].includes(entry.kind)), `${section.tab}: only its own type`);
+    // Representative items are the tab's own first N, in the tab's own order.
+    assert.deepEqual(section.entries, visibleEntries(entries, { tab: section.tab }).slice(0, OVERVIEW_LIMIT), `${section.tab}: the tab's own first items`);
+    assert.equal(section.total, visibleEntries(entries, { tab: section.tab }).length, `${section.tab}: total is the tab's full count`);
+  }
+  assert.equal(sections[0].entries.length, OVERVIEW_LIMIT);
+  assert.equal(sections[0].total, 8);
+  assert.equal(sections[1].total, 10, 'Read is articles then books, exactly as the Read tab lists them');
+  assert.equal(sections[3].entries.length, 2);
+  assert.ok(sections.every((section) => !section.empty), 'with imports, no section is the empty call to action');
+
+  // An empty section is left out (the design draws no empty state for a section) - except Imported, which is
+  // always drawn: with nothing imported it is the import call to action.
+  const noImports = overviewSections(entries.filter((entry) => entry.kind !== 'text' && entry.kind !== 'upload'));
+  assert.deepEqual(noImports.map((section) => section.tab), OVERVIEW_TABS, 'Imported is always present');
+  assert.deepEqual(noImports.map((section) => section.empty), [false, false, false, true], 'and with nothing imported it is the empty one');
+  assert.equal(noImports[3].entries.length, 0);
+  assert.deepEqual(overviewSections([]).map((section) => [section.tab, section.empty]), [['imported', true]], 'a new learner with nothing loaded still sees Imported and its call to action');
+  assert.deepEqual(overviewSections(entries.filter((entry) => entry.kind === 'media')).map((section) => section.tab), ['listen', 'imported'], 'a source that failed leaves only its own section out');
+
+  // Search and filters narrow every section alike; a narrowed page is not an invitation to import.
+  assert.deepEqual(overviewSections(entries, { query: 'clip 3' }).map((section) => [section.tab, section.total]), [['listen', 1]]);
+  assert.deepEqual(overviewSections(entries.filter((entry) => entry.kind !== 'text' && entry.kind !== 'upload'), { query: 'zzz' }), [], 'nothing matches a search: no sections, never the import call to action');
+  const b2 = overviewSections(entries, { filters: { level: new Set(['B2']), topic: new Set(), type: new Set() } });
+  assert.deepEqual(b2.map((section) => section.tab), ['read'], 'a Level filter keeps only sections that still have a match');
+
+  // Rendered, in each interface language: section headings are the tabs' own labels, each section has one
+  // "See all" aimed at its tab, and the cards open where the type's own tab opens them.
+  for (const ui of ['en', 'vi', 'zh']) {
+    const pack = packs[ui];
+    for (const key of ['seeAll', 'importCta', 'importAction', 'tabRead', 'tabListen', 'tabCollections', 'tabImported']) assert.ok(pack[key], `${ui}: ${key}`);
+    const tr = (key, params) => fill(pack[key] ?? key, params);
+    tr.plural = (key, n, params = {}) => fill(pack[`${key}_${n === 1 ? 'one' : 'other'}`] ?? pack[`${key}_other`] ?? key, { n, ...params });
+    const card = (entry) => {
+      const presented = presentCard(entry, tr);
+      return mediaCard({ ...presented, title: presented.title, fullTitle: presented.title, dataset: { go: hrefFor(entry, href) } });
+    };
+    const markup = String(overviewMarkup(sections, { card, t: tr }));
+    const found = [...markup.matchAll(/<section class="s-discover__section" data-section="(\w+)">([\s\S]*?)<\/section>/g)];
+    assert.deepEqual(found.map((match) => match[1]), OVERVIEW_TABS, `${ui}: four sections in order`);
+    const headings = [...markup.matchAll(/<h2 class="c-section-head__title">([^<]+)<\/h2>/g)].map((match) => match[1]);
+    assert.deepEqual(headings, [pack.tabListen, pack.tabRead, pack.tabCollections, pack.tabImported], `${ui}: each heading is its tab's own label`);
+    for (const [, tab, body] of found) {
+      assert.equal([...body.matchAll(/data-see-all="(\w+)"/g)].map((match) => match[1]).join(), tab, `${ui}: ${tab} has one See all, aimed at the ${tab} tab`);
+      assert.ok(body.includes(`${pack.seeAll}</button>`), `${ui}: See all is worded in the interface language`);
+      const cards = [...body.matchAll(/class="o-card o-card--hover c-media" data-go="([^"]+)"/g)].map((match) => match[1]);
+      assert.ok(cards.length >= 1 && cards.length <= OVERVIEW_LIMIT, `${ui}: ${tab} draws 1-${OVERVIEW_LIMIT} cards`);
+    }
+    assert.ok(found[2][2].includes('data-go="#/collection/c0"'), `${ui}: a collection card opens the collection route`);
+    assert.ok(found[1][2].includes('data-go="#/content/article:a0"'), `${ui}: Read opens its articles`);
+
+    // With nothing imported, Imported is the call to action: its own line, the "+ Import" control in the VIP look,
+    // no cards and no "See all" (there is nothing to see).
+    const bare = String(overviewMarkup(noImports, { card, t: tr }));
+    const bareFound = [...bare.matchAll(/<section class="s-discover__section" data-section="(\w+)">([\s\S]*?)<\/section>/g)];
+    assert.deepEqual(bareFound.map((match) => match[1]), OVERVIEW_TABS, `${ui}: Imported is drawn with nothing imported`);
+    const cta = bareFound[3][2];
+    assert.ok(cta.includes(pack.importCta), `${ui}: the call to action is worded in the interface language`);
+    assert.match(cta, /<button type="button" class="o-btn o-btn--primary o-btn--vip" data-import-cta="">\+ /, `${ui}: the call to action is the VIP import control`);
+    assert.ok(cta.includes(`+ ${pack.importAction}`), `${ui}: and carries the page's own import label`);
+    assert.ok(!/c-media|data-see-all/.test(cta), `${ui}: an empty Imported draws no cards and no See all`);
+    assert.ok(bareFound.slice(0, 3).every((match) => /data-see-all/.test(match[2])), `${ui}: the other sections keep their See all`);
+  }
+
+  // The VIP import control (human exception to D-147, 2026-10-09): on the header's "+ Import" and on the call to
+  // action, a rotating conic-gradient border around the accent fill; held still under reduced motion; no colour literal.
+  const css = fs.readFileSync('static/orena/kit/components.css', 'utf8'); // the VIP control is a kit control (D-167)
+  const screenSrc = fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8');
+  assert.match(screenSrc, /vipButton\(\{ label: t\('importAction'\), dataset: \{ import: '' \} \}\)/, 'the header "+ Import" is the VIP control');
+  assert.match(css, /@property --vip-angle\s*\{[^}]*syntax:\s*'<angle>'/, 'the angle is a registered property, so it can animate');
+  assert.match(css, /conic-gradient\(\s*from var\(--vip-angle\)/, 'a conic-gradient border');
+  assert.match(css, /animation:\s*o-vip-run[^;]*infinite/, 'it runs');
+  assert.match(css, /@keyframes o-vip-run\s*\{\s*to\s*\{\s*--vip-angle:\s*360deg/, 'one full turn');
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.o-btn\.o-btn--primary\.o-btn--vip\s*\{\s*animation:\s*none;\s*--vip-live:\s*0\.\d+/, 'reduced motion: a static ring and a fainter static glow');
+  assert.match(css, /linear-gradient\(var\(--vip-fill\), var\(--vip-fill\)\) padding-box,\s*var\(--vip-rainbow\) border-box/, 'the fill stays the accent fill (label contrast unchanged) inside the rainbow ring');
+  assert.match(css, /--vip-fill:\s*var\(--accent-fill\)/);
+  // The ring: a 3px border on a pseudo-element laid over the button's own box, behind its label - the button's box,
+  // padding and border are never touched, so nothing shifts.
+  const rule = (selector) => css.match(new RegExp(`${selector.replace(/[.:()[\]]/g, '\\$&')}\\s*\\{([^}]*)\\}`))?.[1] || '';
+  const ring = rule('.o-btn.o-btn--primary.o-btn--vip::after');
+  assert.match(ring, /inset:\s*0;/);
+  assert.match(ring, /border:\s*3px solid transparent/, 'a 3px ring');
+  assert.match(ring, /z-index:\s*-1/, 'behind the label');
+  assert.match(ring, /pointer-events:\s*none/);
+  const base = rule('.o-btn.o-btn--primary.o-btn--vip');
+  assert.ok(!/(^|;)\s*(padding|border|width|height|margin)\s*:/.test(base), 'the button keeps its own box: no padding, border or size override (no layout shift)');
+  assert.match(base, /position:\s*relative/);
+  assert.match(base, /isolation:\s*isolate/);
+  // The halo: the same rainbow, blurred, behind the ring, outside the layout, ignoring the pointer.
+  const halo = rule('.o-btn.o-btn--primary.o-btn--vip::before');
+  assert.match(halo, /background:\s*var\(--vip-rainbow\)/, 'the same rotating rainbow');
+  assert.match(halo, /filter:\s*blur\(\d+px\)/, 'a soft glow');
+  assert.match(halo, /z-index:\s*-2/, 'behind the ring');
+  assert.match(halo, /pointer-events:\s*none/, 'never takes a click');
+  assert.match(halo, /opacity:\s*calc\(var\(--vip-glow\) \* var\(--vip-live\)\)/);
+  assert.match(base, /--vip-glow:\s*0\.5\d*/, 'a strong glow on a dark page');
+  assert.match(css, /:root\[data-theme='light'\] \.o-btn\.o-btn--primary\.o-btn--vip\s*\{\s*--vip-glow:\s*0\.[2-4]\d*/, 'a lower glow on a light page');
+  assert.equal(css.replace(/\/\*[\s\S]*?\*\//g, '').match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/), null, 'colours come from tokens.css only');
+  for (const token of ['skill-speak', 'skill-read', 'skill-vocab', 'gcat-4', 'skill-listen', 'skill-grammar', 'skill-write']) {
+    assert.match(fs.readFileSync('static/orena/kit/tokens.css', 'utf8'), new RegExp(`--${token}:`), `the rainbow stop --${token} exists in tokens.css`);
+  }
+  // The exception is scoped: no other rule in the screen draws a rainbow.
+  assert.equal((css.match(/conic-gradient\(/g) || []).length, 1, 'the rainbow is drawn once');
+
+  // Import is featured (human, 2026-10-09): every entry point draws the one kit VIP control and opens the one flow.
+  {
+    const { vipButton } = await import('../static/orena/kit/components.js');
+    const sample = String(vipButton({ label: 'Import', dataset: { import: '' } }));
+    assert.equal(sample, '<button type="button" class="o-btn o-btn--primary o-btn--vip" data-import="">+ Import</button>', 'the kit control: primary button plus the VIP ring');
+    assert.ok(!/o-btn--vip/.test(fs.readFileSync('static/orena/kit/kit.css', 'utf8')), 'the VIP look has one owner (components.css)');
+    const read = (file) => fs.readFileSync(file, 'utf8');
+    const entries = {
+      'Discover header': ['static/orena/screens/discover/screen.js', /vipButton\(\{ label: t\('importAction'\), dataset: \{ import: '' \} \}\)/, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', openImportFlow\)/],
+      'Discover Imported call to action': ['static/orena/screens/discover/overview.js', /vipButton\(\{ label: t\('importAction'\), dataset: \{ 'import-cta': '' \} \}\)/, null],
+      'Today featured card': ['static/orena/screens/today/screen.js', /vipButton\(\{ label: shellCopy\('importAction'\), dataset: \{ import: '' \} \}\)/, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', \(\) => openImportFlow\(ctx\)\)/],
+      'My Library header': ['static/orena/screens/library/screen.js', /vipButton\(\{ label: sc\('importAction'\), dataset: \{ import: '' \} \}\)/, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', \(\) => openImportFlow\(ctx\)\)/],
+    };
+    for (const [name, [file, draws, wires]] of Object.entries(entries)) {
+      const source = read(file);
+      assert.match(source, draws, `${name}: draws the VIP control`);
+      if (wires) assert.match(source, wires, `${name}: opens the import flow`);
+      assert.ok(!/class="[^"]*\bo-btn--primary[^"]*"[^>]*data-import/.test(source), `${name}: no hand-written import button beside the kit control`);
+    }
+    // One flow: every entry point goes through screens/import/open.js (Discover's own wrapper adds its room route).
+    for (const file of ['static/orena/screens/today/screen.js', 'static/orena/screens/library/screen.js', 'static/orena/screens/discover/screen.js']) {
+      assert.match(read(file), /from '\.\.\/import\/open\.js'/, `${file} opens Import through the shared opener`);
+    }
+    assert.match(read('static/orena/screens/import/open.js'), /import\('\.\/sheet\.js'\)[\s\S]*module\.openImport\(ctx, options\)/, 'the shared opener opens the one import sheet');
+    // The rail and the phone bar keep the design's navigation set: Import is not a destination there.
+    for (const file of ['static/orena/shell/frame.js']) assert.ok(!/importAction|vipButton|o-btn--vip/.test(read(file)), 'no import control in the rail or phone bar');
+    // Words, in each interface language: the shared label and Today's one line of value.
+    await import('../static/orena/copy/shell.js');
+    const shell = registeredCopy().get('shell').packs;
+    await import('../static/orena/screens/today/copy.js');
+    const today = registeredCopy().get('today').packs;
+    for (const ui of ['en', 'vi', 'zh']) {
+      assert.ok(shell[ui].importAction, `${ui}: the shared "Import" label`);
+      assert.ok(today[ui].importValue && today[ui].importValue.length < 80, `${ui}: Today's one line of value`);
+    }
+    assert.notEqual(shell.en.importAction, shell.vi.importAction);
+    assert.notEqual(shell.en.importAction, shell.zh.importAction);
+  }
+
+  // The screen wires All to the overview and nothing else: the other tabs and the practice chooser keep the flat grid,
+  // and a section's "See all" is the tab bar's own switch.
+  const screenSource = fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8');
+  assert.match(screenSource, /const overview = !practice && state\.tab === 'all'/, 'only All, and never a practice chooser, is the overview');
+  assert.match(screenSource, /openTab\(button\.dataset\.seeAll\)/, 'See all opens the tab through the same openTab the tab bar uses');
+  assert.match(screenSource, /button\.addEventListener\('click', \(\) => openTab\(button\.dataset\.tab\)\)/, 'the tab bar keeps its own switch');
+  assert.match(screenSource, /TAB_LABEL_KEY = \{ all: 'tabAll', listen: 'tabListen', read: 'tabRead', collections: 'tabCollections', imported: 'tabImported' \}/, 'the tab bar runs in the skill order (D-152)');
+  assert.match(screenSource, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', openImportFlow\)/, 'the header "+ Import" opens the import flow');
+  assert.match(screenSource, /querySelector\('\[data-import-cta\]'\)\?\.addEventListener\('click', openImportFlow\)/, 'the call to action opens the same import flow');
 }
 
 console.log('Orena Discover: data mapping, filters, tabs, search and presentation all pure, no invented data: PASS');

@@ -496,7 +496,7 @@
   border-radius: 12px;
   border: 0;
   background: transparent;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   font-size: 14px;
   font-weight: 600;
   display: flex;
@@ -642,7 +642,7 @@
 }
 .s-gl__chip[aria-pressed='true'] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-gl__list {
   display: flex;
@@ -733,7 +733,7 @@
 }
 :root:not([data-theme='dark']) .s-gl__view[aria-pressed='true'] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   box-shadow: none;
 }
 :root:not([data-theme='dark']) .s-gl__ring:not(.s-gl__ring--done)::before {

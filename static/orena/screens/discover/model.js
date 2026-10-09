@@ -273,6 +273,27 @@ export function visibleEntries(entries, { tab = 'all', query = '', filters = nul
     .filter((entry) => !q || `${entry.title} ${entry.author}`.toLowerCase().includes(q));
 }
 
+/* The All tab is an overview, not a library (D-167): four sections in the skill order (D-152) - Listen · Watch,
+   Read, Collections, Imported - each the first `OVERVIEW_LIMIT` entries of its own tab (the very list
+   `visibleEntries` gives that tab, in its order), and a "See all" that opens that tab. `tab` is both the section's
+   identity and the tab it leads to; its heading is that tab's own label. Search and filters narrow every section
+   alike, and a section with nothing to show is left out - except Imported, which is always drawn while nothing
+   narrows the page: with nothing imported it carries `empty: true` and the screen draws its import call to action
+   instead of cards. `total` is the tab's full match count. */
+export const OVERVIEW_TABS = Object.freeze(['listen', 'read', 'collections', 'imported']);
+export const OVERVIEW_LIMIT = 5;
+const ALWAYS_TAB = 'imported';
+
+export function overviewSections(entries, { query = '', filters = null, limit = OVERVIEW_LIMIT } = {}) {
+  const narrowed = Boolean(String(query || '').trim()) || hasAnyFilter(filters);
+  return OVERVIEW_TABS
+    .map((tab) => {
+      const all = visibleEntries(entries, { tab, query, filters });
+      return { tab, total: all.length, entries: all.slice(0, limit), empty: tab === ALWAYS_TAB && !all.length && !narrowed };
+    })
+    .filter((section) => section.total > 0 || section.empty);
+}
+
 /* entry -> kit/components.js#mediaCard() props. `t` is copy/discover.js's translate function
    (a plain function of (key, params) - this stays pure, nothing here touches the DOM). Any count
    this screen shows (minutes, chapters, words) comes from a real field on the entry; an entry with

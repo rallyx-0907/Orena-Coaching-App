@@ -4,7 +4,8 @@
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { mediaCard, masteryBars } from '../../kit/components.js';
+import { mediaCard, masteryBars, vipButton } from '../../kit/components.js';
+import { openImportFlow } from '../import/open.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langAttr, langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
@@ -237,7 +238,10 @@ export default async function library(element, ctx) {
     mount(
       element,
       html`<div class="s-library">
-        <h1 class="o-h1">${sc('myLibrary')}</h1>
+        <div class="s-library__head">
+          <h1 class="o-h1">${sc('myLibrary')}</h1>
+          ${vipButton({ label: sc('importAction'), dataset: { import: '' } })}
+        </div>
         ${tabsMarkup(active, stats.dueCount)}
         <div data-panel>${panelFor(active)}</div>
       </div>`,
@@ -265,6 +269,7 @@ export default async function library(element, ctx) {
   }
 
   function bind() {
+    element.querySelector('[data-import]')?.addEventListener('click', () => openImportFlow(ctx));
     for (const button of element.querySelectorAll('[data-tab]')) {
       button.addEventListener('click', () => {
         active = button.dataset.tab;

@@ -4928,6 +4928,62 @@ change to `main` and the Intelligence lane receives it by merging forward.
    voice 503 against the contract text and drives the transport through each; `tests/test_agent_contract_tables.py` fails if
    the quota gate can answer a category the contract does not name, or the voice refusal drifts.
 
+## D-167 - Discover All is a sectioned overview
+
+2026-10-09, explicit human decision (product owner). The number is assigned at merge. `feat/discover-all-sections`.
+
+The decision, in the human's words: "Discover / All must not be one grid mixing every content type. All must be an
+overview page organised by clear sections, so the user immediately sees: Read; Listen · Watch; Collections; Imported.
+Each section shows only a few representative items and has 'See all'. The individual tabs are the full libraries of each
+type. Goal: the user understands the app's content structure without clicking each tab."
+
+1. **Supersedes the design's All.** `Orena.dc.html` (Discover frame, state script `tab:"All"`) draws All as one flat grid
+   of every type in "For you" order; its only grouped form is the Sort control's "By level" / "By type" groups. The
+   human's decision replaces that flat grid for the All tab (the design is the authority for look, the human for this
+   structure; D-067). The tabs, the card, the filters and search are unchanged.
+2. **Four sections, in the skill order (D-152):** Listen · Watch, Read, Collections, Imported - and the tab bar the same:
+   All, Listen · Watch, Read, Collections, Imported. This supersedes the first wording of this decision (Read first), by
+   the human's later instruction the same day. A section's heading is its tab's own label.
+3. **Representative items = the tab's own first five**, in the order that tab lists them (`overviewSections` over
+   `visibleEntries`; no "featured" ordering exists in any source). Read is therefore articles first, then books, as its tab
+   lists them (Listen · Watch is the media library's own first five). Each section is one row: the cards that would wrap are `display:none` by the section's own width, and a
+   phone shows two.
+4. **Reuse, no new component.** The heading row is kit's `sectionHead` ("For you" / "See all", Today); the cards are
+   `mediaCard` through the same `cardFor` as every tab. "See all" opens that tab in place - the same change the tab bar
+   makes, no route, no history entry - and scrolls to the top of the page.
+5. **Search and filters narrow every section alike.** A section with nothing to show is omitted, and a source that fails
+   to load leaves only its own section out - except Imported, below. Each source is painted as it arrives. The practice
+   choosers (`?practice=`) are not browsing and keep their one flat list.
+6. **Imported is always drawn on All** (human, later the same day). With nothing imported, its row is one call to action
+   ("Bring your own video, audio or text", en/vi/zh) with the same "+ Import" control as the page header, which opens the
+   existing import flow; it has no "See all" (nothing to see). While a search or a filter narrows the page and nothing
+   imported matches, the section is omitted like any other (a narrowed page is not an invitation to import).
+7. **The VIP import control - an explicit human exception to D-147.** The header's "+ Import" and that call to action
+   draw a running rainbow: a conic gradient (the skill and category hues of `tokens.css`, no colour of its own) turned by
+   an animated `@property --vip-angle`, as a 3px ring around the unchanged accent fill (the label keeps its AA contrast)
+   and as a soft blurred halo behind the button (opacity 0.55 on a dark page, 0.35 on a light one; QA on the first 2px
+   hairline: too subtle). Ring and halo are pseudo-elements outside the layout (no layout shift, the halo ignores the
+   pointer); under `prefers-reduced-motion` the ring is held still and the halo is static and fainter; the global keyboard
+   focus ring is unchanged. D-147 (no violet or coloured outline) stands everywhere else; this
+   exception is these two controls only (`discover.css`, `s-discover__vip`).
+8. **Import is a featured function, found from every browsing place** (human, 2026-10-09: it is a money-making feature,
+   so users should notice it and find it easily). The same VIP control (kit `vipButton`, the look of `components.css`
+   `.o-btn--vip`) opens the same flow (`screens/import/open.js`) from: Discover's header and its Imported call to action;
+   Today, as a featured card on the page's own card shell and icon tile with one line of value ("Learn from anything:
+   import a video, audio or text", en/vi/zh) between Recommended and For you; and My Library's page header. On a phone the
+   control is one tap from the Discover and Library headers (the header row wraps; no overflow at 360px). The rail and the
+   phone bar keep the design's navigation set. D-147 stands everywhere except these VIP controls. The shared label is the
+   shell's `importAction`.
+9. **Gate.** `scripts/test_orena_screen_discover.mjs` section 13 renders the overview in English, Vietnamese and Chinese,
+   and checks the order, the always-present Imported with its call to action, the VIP class on both import controls and the
+   reduced-motion rule.
+
+## D-166 - Onboarding backdrop (PUB-4)
+
+Placeholder id; the number is assigned at merge. Human decision PUB-4 (2026-10-09), scope widened and then set to "make it like the design - the background shows fully, nothing blends into anything": the pinned Backdrop (photo per theme and device under the design's scrim, glass rail / top bar / phone bar at the design's alpha, Onboarding's own scrim and translucent aside) ships on the learner shell, the Admin shell and Onboarding, on by default with no learner control (non-UI kill switch `data-backdrop="off"`). No veil, no panel. Content surfaces stay solid; the chrome edge is `--edge-light` (D-147); a browser without `backdrop-filter` keeps the photo and gets a more opaque solid chrome.
+
+AA over the photo is met by scoped text tokens in `kit/tokens.css`, not by hiding the photo: on the chrome `--text3` and `--accent` move 3-12% toward `--text`; on the page `--muted` and `--text3` move 46-78% toward `--text` (hierarchy flattens for text set on the bare photo, most in light; inside every solid surface - card, panel, sheet, menu, input - the base tokens are restored by the generated `shell/surfaces.css`); Onboarding's aside gets +.22 (dark) / +.32 (light) alpha at most. Accent TEXT uses a dedicated `--accent-on-photo` (every accent-coloured text rule reads `var(--accent-on-photo, var(--accent))`, set only in the backdrop scopes), so fills, bars and dots keep `--accent` and no exception remains. The glass never depends on the operating system: there is no `prefers-reduced-transparency` rule; only a browser that truly lacks `backdrop-filter` gets a more opaque solid chrome, and it keeps the photo. Proven by `scripts/test_orena_kit.mjs` (BACKDROP) from `scripts/fixtures/backdrop_extremes.json`; exact values and the open human choices are in `UI_BACKEND_GAPS.md` PUB-4. Colour stays owned by `kit/tokens.css`.
+
 
 ## D-165 - Pronunciation minutes enforced on the server: the take's real seconds, reserved before the paid request
 

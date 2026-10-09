@@ -61,7 +61,7 @@
 }
 .s-respond__kind[aria-pressed="true"] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   border-color: transparent;
 }
 .s-respond__prompt { flex: none; font-size: 19px; font-weight: 600; line-height: 27px; }
@@ -145,7 +145,7 @@
 .s-respond__fix-line b { font-weight: 700; }
 .s-respond__fix-why { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .s-respond__callout { padding: 14px 16px; border-radius: 14px; background: var(--accent-soft); font-size: 14px; line-height: 1.5; }
-.s-respond__callout b { color: var(--accent); }
+.s-respond__callout b { color: var(--accent-on-photo, var(--accent)); }
 
 /* ---- Source panel ---- */
 .s-respond__source {

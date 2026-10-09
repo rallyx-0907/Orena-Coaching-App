@@ -131,7 +131,7 @@
 .s-plan-pill--green { background: var(--green-soft); color: var(--green); }
 .s-plan-pill--amber { background: var(--amber-soft); color: var(--amber); }
 .s-plan-pill--red { background: var(--red-soft); color: var(--red); }
-.s-plan-pill--accent { background: var(--accent-soft); color: var(--accent); padding: 4px 10px; font-size: 11.5px; }
+.s-plan-pill--accent { background: var(--accent-soft); color: var(--accent-on-photo, var(--accent)); padding: 4px 10px; font-size: 11.5px; }
 
 /* Usage */
 .s-plan-usage {
@@ -324,7 +324,7 @@
   flex: none;
   display: flex;
   margin-top: 1px;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 
 /* Compare plans */
@@ -356,7 +356,7 @@
   text-align: center;
 }
 .s-pricing-compare__plan--current {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-pricing-compare__label {
   line-height: 1.35;

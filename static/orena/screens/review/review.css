@@ -122,7 +122,7 @@
 .s-review-eyebrow {
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-review-prompt {
   font-size: 36px;
@@ -168,7 +168,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 17px;
   letter-spacing: 0.12em;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 
 .s-review-hidden-actions {
@@ -286,7 +286,7 @@
 }
 .s-review-icon--play {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-review-card__meaning {
   border-radius: 16px;

@@ -17,7 +17,7 @@
 }
 .o-more[data-on="1"] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   border-color: transparent;
 }
 .o-more-menu {

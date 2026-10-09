@@ -113,7 +113,7 @@
 .s-reader__toggle[data-on="1"],
 .s-reader__pill[data-on="1"] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   border-color: transparent;
 }
 /* The icon toggles keep the neutral ring whatever their state (frame 14: their border is the
@@ -152,7 +152,7 @@
 }
 .s-reader__menu-item[data-on="1"] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   border-color: transparent;
 }
 .s-reader__menu-item--flat {
@@ -585,7 +585,7 @@
 }
 .s-reader__chapter[aria-current="true"] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   border-color: transparent;
 }
 .s-reader__endnote {

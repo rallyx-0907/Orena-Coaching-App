@@ -107,7 +107,7 @@
 }
 /* "Choose source" (D-149): the way to pick what to practise, labelled in the header, not behind "...". */
 .s-compare-source .ic {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   flex: none;
 }
 
@@ -169,7 +169,7 @@
   white-space: nowrap;
 }
 .s-compare-pill--active .s-compare-pill__label {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-compare-pill__score {
   font-size: 20px;
@@ -649,7 +649,7 @@
   border-radius: 999px;
   border: 0;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -685,7 +685,7 @@
   line-height: 1.55;
 }
 .s-compare-tip__icon {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   display: flex;
   padding-top: 2px;
 }

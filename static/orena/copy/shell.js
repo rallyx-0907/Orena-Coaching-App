@@ -15,7 +15,7 @@ const KEYS = [
   'conversation', 'situationReaction', 'retell', 'reactReuse', 'timedRecall', 'contextTransfer', 'dailyFeed',
   'contextRewrite', 'timedWriting', 'readingTransfer', 'readingComplete', 'attemptHistory', 'speakingSummary',
   'timedReaction', 'respondToContent', 'discussion', 'mockInterview', 'soundTone', 'fromYourErrors',
-  'welcome', 'admin', 'themeToLight', 'themeToDark', 'planUsage', 'plans', 'feedback',
+  'importAction', 'welcome', 'admin', 'themeToLight', 'themeToDark', 'planUsage', 'plans', 'feedback',
 ];
 
 export const shellCopy = defineCopy('shell', {
@@ -24,6 +24,7 @@ export const shellCopy = defineCopy('shell', {
     listeningComprehension: 'Listening comprehension',
     mainNavigation: 'Main', skipToContent: 'Skip to content',
     today: 'Today', discover: 'Discover', orena: 'Orena', practiceHub: 'Practice Hub', practiceShort: 'Practice',
+    importAction: 'Import',
     myLibrary: 'My Library', libraryShort: 'Library', progress: 'Progress', profile: 'Profile',
     askOrena: 'Ask Orena', askOrenaSub: 'Your study companion', askAnything: 'Ask anything…', talkToOrena: 'Talk to Orena', search: 'Search',
     notifications: 'Notifications', back: 'Back', retry: 'Retry', close: 'Close', undo: 'Undo', dismiss: 'Dismiss',
@@ -49,6 +50,7 @@ export const shellCopy = defineCopy('shell', {
     listeningComprehension: 'Nghe hiểu',
     mainNavigation: 'Điều hướng chính', skipToContent: 'Đến nội dung',
     today: 'Hôm nay', discover: 'Khám phá', orena: 'Orena', practiceHub: 'Luyện tập', practiceShort: 'Luyện tập',
+    importAction: 'Nhập',
     myLibrary: 'Thư viện của tôi', libraryShort: 'Thư viện', progress: 'Tiến độ', profile: 'Hồ sơ',
     askOrena: 'Hỏi Orena', askOrenaSub: 'Bạn đồng hành học tập', askAnything: 'Hỏi bất cứ điều gì…', talkToOrena: 'Nói với Orena', search: 'Tìm kiếm',
     notifications: 'Thông báo', back: 'Quay lại', retry: 'Thử lại', close: 'Đóng', undo: 'Hoàn tác', dismiss: 'Bỏ qua',
@@ -74,6 +76,7 @@ export const shellCopy = defineCopy('shell', {
     listeningComprehension: '听力理解',
     mainNavigation: '主导航', skipToContent: '跳至内容',
     today: '今天', discover: '发现', orena: 'Orena', practiceHub: '练习中心', practiceShort: '练习',
+    importAction: '导入',
     myLibrary: '我的书库', libraryShort: '书库', progress: '进度', profile: '个人',
     askOrena: '问 Orena', askOrenaSub: '你的学习伙伴', askAnything: '随便问…', talkToOrena: '和 Orena 说话', search: '搜索',
     notifications: '通知', back: '返回', retry: '重试', close: '关闭', undo: '撤销', dismiss: '忽略',
