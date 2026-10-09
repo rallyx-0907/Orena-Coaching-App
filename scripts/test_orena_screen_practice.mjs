@@ -12,7 +12,7 @@ import {
 
 // --- Skill order / icon / tint tables agree with each other -----------------------------------
 {
-  assert.deepEqual(SKILL_ORDER, ['speak', 'write', 'listen', 'vocabulary', 'grammar', 'reading'], 'all six of the design\'s skills are known skills - which ones render a hub section is decided by buildSkillSections from real data, not by this list (rule 40, corrected per N-22)');
+  assert.deepEqual(SKILL_ORDER, ['listen', 'speak', 'reading', 'write', 'vocabulary', 'grammar'], 'all six of the design\'s skills are known skills - which ones render a hub section is decided by buildSkillSections from real data, not by this list (rule 40, corrected per N-22)');
   for (const skill of SKILL_ORDER) {
     assert.ok(SKILL_ICONS[skill], `${skill} has an icon table`);
     assert.ok(SKILL_TINT[skill]?.startsWith('var(--skill-'), `${skill} tints its icon swatch with the design's own --skill-* hue (rule 32), never a flat accent`);
@@ -149,7 +149,7 @@ import {
 // --- buildSkillSections is data-driven: a skill's section appears only when it has real modes --
 {
   const noListenOrReading = buildSkillSections({ speakingItems: [], due: 3, listeningItems: [], reading: { available: false, next: null } });
-  assert.deepEqual(noListenOrReading.map((s) => s.skill), ['speak', 'write', 'listen', 'vocabulary', 'grammar'], 'Listen retains its personal-import Dictation chooser; comprehension requires a materialized set');
+  assert.deepEqual(noListenOrReading.map((s) => s.skill), ['listen', 'speak', 'write', 'vocabulary', 'grammar'], 'Listen retains its personal-import Dictation chooser; comprehension requires a materialized set');
   assert.equal(noListenOrReading.find((s) => s.skill === 'vocabulary').modes.find((m) => m.key === 'review').due, 3);
 
   const withAll = buildSkillSections({
@@ -158,7 +158,7 @@ import {
     listeningItems: [{ lesson_id: 'l1', level: 'A2', available_modes: ['listen', 'dictation'] }],
     reading: { available: true, next: { set: { article: { id: 'art-1', level: 'B1' } } } },
   });
-  assert.deepEqual(withAll.map((s) => s.skill), SKILL_ORDER, 'with real data for every skill, all six sections render, in the design\'s own order');
+  assert.deepEqual(withAll.map((s) => s.skill), SKILL_ORDER, 'with real data for every skill, all six sections render, in the human\'s order (D-152)');
 
   assert.deepEqual(buildSkillSections(), buildSkillSections({}), 'no data bag at all does not crash - every builder has a safe default');
   assert.deepEqual(buildSkillSections(), buildSkillSections().filter((s) => s.modes.length > 0), 'no data bag never produces an empty-but-rendered section');

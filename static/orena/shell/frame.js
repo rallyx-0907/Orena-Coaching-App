@@ -9,6 +9,7 @@ import { shellCopy as t } from '../copy/shell.js';
 import { href } from './routes.js';
 import { orenaPresent, onOrenaPresence } from '../agent/presence.js';
 import { probe } from '../agent/transport.js';
+import { theme, toggleAppearance, onDeviceChange } from '../kit/device.js';
 
 const RAIL = [
   { id: 'today', icon: 'house', label: 'today' },
@@ -90,12 +91,21 @@ function crumbMarkup(state) {
   return html`${crumb.section ? html`<a class="o-crumb__section" href="${crumb.sectionHref}">${crumb.section}</a>${raw(icon('chevron-right', { size: 14 }))}` : ''}<span class="o-crumb__screen">${crumb.screen}</span>`;
 }
 
+/* Light/dark in one tap, beside the bell (human, 2026-10-09): the icon is the theme it switches to. Settings keeps
+   Light / Dark / System; this stores the explicit choice the same way. */
+function themeButton(className) {
+  const toLight = theme() === 'dark';
+  const label = t(toLight ? 'themeToLight' : 'themeToDark');
+  return html`<button type="button" class="${className} o-themebtn" data-theme-toggle aria-label="${label}" title="${label}">${raw(icon(toLight ? 'sun' : 'moon', { size: 18 }))}</button>`;
+}
+
 function topbarMarkup(state) {
   const { context } = state;
   return html`
     <div class="o-crumb">${crumbMarkup(state)}</div>
     <a class="o-topsearch" href="${href('search')}">${raw(icon('search', { size: 17 }))}<span class="o-topsearch__label">${t('search')}</span><span class="o-topsearch__key">⌘K</span></a>
     <div class="o-tlpill">${learningLabel(context)}</div>
+    ${themeButton('o-bell')}
     <button type="button" class="o-bell" data-open="notifications" aria-label="${t('notifications')}">${raw(icon('bell', { size: 18 }))}${
       context.unread ? html`<span class="o-bell__dot"></span>` : ''
     }</button>`;
@@ -106,6 +116,7 @@ function mheadMarkup(state) {
   return html`
     <div class="o-mhead__brand">${brandChip({ size: 28, mark: 22, round: true })}<span>Orena</span></div>
     <div class="o-mhead__actions">
+      ${themeButton('o-mhead__button')}
       <a class="o-mhead__button" href="${href('search')}" aria-label="${t('search')}">${raw(icon('search', { size: 18 }))}</a>
       <button type="button" class="o-mhead__button" data-open="notifications" aria-label="${t('notifications')}">${raw(icon('bell', { size: 18 }))}${
         context.unread ? html`<span class="o-mhead__count">${context.unread}</span>` : ''
@@ -159,6 +170,12 @@ export function drawFrame(root) {
   };
   // §2.1: asked once when the UI starts; a server without the agent answers 404, which hides every
   // entry point via the `onOrenaPresence` repaint below.
+  root.addEventListener('click', (event) => {
+    if (event.target.closest('[data-theme-toggle]')) toggleAppearance();
+  });
+  onDeviceChange(() => {
+    if (lastState) handles.paint(lastState);
+  });
   void probe();
   onOrenaPresence(() => {
     if (lastState) handles.paint(lastState);

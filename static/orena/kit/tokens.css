@@ -57,7 +57,7 @@
 :root[data-theme="light"] {
   color-scheme: light;
   --page: linear-gradient(160deg, #E9EEFB 0%, #EEEAFB 45%, #F4E8F5 100%);
-  --bg: #F5F5FA;
+  --bg: #ECEDF4; /* human 2026-10-09 (D-151): cards stand off the page (design #F5F5FA) */
   --surface: #FFFFFF;
   --surface2: #F4F4F9;
   --surface3: #EBEBF3;
@@ -65,7 +65,7 @@
   --border2: #DCDCE7;
   --text: #17171F;
   --muted: #5C5C6E;
-  --text3: #6E6E86; /* AA, D-093 (design #8E8EA2) */
+  --text3: #68687F; /* AA, D-093 (design #8E8EA2); one step darker for the D-151 page */
   --accent: #5A55E3;
   --accent-hover: #4C47D2;
   --accent-press: #403BBE;
@@ -91,7 +91,7 @@
   --ai-ink: #6A4FE0;
   --ai-line: #D6C8FD;
   --scrim: rgba(24, 22, 48, .38);
-  --sh1: 0 1px 2px rgba(23, 23, 50, .04), 0 2px 10px rgba(23, 23, 50, .04);
+  --sh1: 0 1px 2px rgba(23, 23, 50, .07), 0 3px 12px rgba(23, 23, 50, .07); /* D-151 (design .04/.04) */
   --sh2: 0 2px 6px rgba(40, 36, 110, .05), 0 12px 32px rgba(40, 36, 110, .10);
   --sh3: 0 24px 64px rgba(40, 36, 110, .20);
   --shadow: 0 24px 64px rgba(40, 36, 110, .20);
@@ -255,9 +255,14 @@
    no top highlight, which reads as a raised 3D card), never a coloured outline. No violet/purple border or ring on any control or card, at rest, on hover or when selected,
    even where the design draws one; selection is carried by fill and ink, hover by elevation. Keyboard focus keeps
    its own visible ring (accessibility), which is not an edge. */
+/* Every card stands raised at rest (human, 2026-10-09, D-151 - replaces D-150's flat rest): the edge carries the
+   resting elevation, so whatever draws the edge also stands off the page; hover adds --sh2 and the 2px lift. */
 :root[data-theme='dark'] {
-  --edge-light: inset 0 0 0 1px rgba(255, 255, 255, .06);
+  --edge-light: inset 0 0 0 1px rgba(255, 255, 255, .06), var(--sh1);
 }
 :root:not([data-theme='dark']) {
-  --edge-light: inset 0 0 0 1px rgba(255, 255, 255, .6);
+  --edge-light: inset 0 0 0 1px rgba(255, 255, 255, .6), var(--sh1);
 }
+
+/* Each accent's own colour, shown beside its name in Settings so the choice is seen, not read (human, 2026-10-09). */
+:root[data-palette], :root { --swatch-indigo: #5A55E3; --swatch-orchid: #7B4FD8; --swatch-blue: #2F6FEB; --swatch-rose: #D9487A; }

@@ -22,12 +22,13 @@ import { speakingResumeTarget } from '../../product/speaking-resume.js';
    translated in copy/shell.js (shellCopy) - this file only decides *which* routes belong to which
    skill and *whether* a content-needing mode has a real id to open. */
 
-/* All six skills the design draws, in the design's own order (S1 orena-script.js:599 `SK` object
-   key order). Whether a given skill's *section* actually renders on Practice Hub is decided by
+/* All six skills the design draws, in the human's order (2026-10-09, D-152: Listen, Speak, Read, Write,
+   Vocabulary, Grammar on desktop and phone; the design's `SK` order was Speak, Write, Listen, Vocabulary,
+   Grammar, Reading). Whether a given skill's *section* actually renders on Practice Hub is decided by
    `buildSkillSections` from real data, not by this list - this is the full vocabulary of known
    skills (used by Skill Hub to tell "a real skill with nothing to show right now" from "not a
    skill at all"), not a pre-filtered subset. */
-export const SKILL_ORDER = ['speak', 'write', 'listen', 'vocabulary', 'grammar', 'reading'];
+export const SKILL_ORDER = ['listen', 'speak', 'reading', 'write', 'vocabulary', 'grammar'];
 
 const SPEAK_ICONS = {
   freetalk: 'mic',

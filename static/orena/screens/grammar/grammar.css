@@ -727,8 +727,8 @@
   color: color-mix(in oklch, var(--hue), white 30%);
 }
 
-/* Cards behave as Practice Hub's tiles (human, 2026-10-08): flat at rest (surface, no resting shadow, no raised
-   edge); hover = --sh2 and a 2px lift over 0.15s. No border appears (D-147). The panel's grey topic cards keep their surface3 hover. */
+/* Cards behave as Practice Hub's tiles: raised at rest by the edge token's --sh1 (D-151, which replaced D-150's flat rest);
+   hover = --sh2 and a 2px lift over 0.15s. No border appears (D-147). The panel's grey topic cards keep their surface3 hover. */
 .s-gl__cont,
 .s-gl__cat,
 .s-gl__topic,

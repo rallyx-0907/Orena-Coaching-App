@@ -96,7 +96,7 @@ function choiceOptions(row) {
   if (row.id === 'support') return row.options.map((opt) => ({ value: opt.code, label: supportLanguageLabel(opt.code, opt.label), selected: opt.code === row.value }));
   if (row.id === 'interface') return row.options.map((opt) => ({ value: opt.code, label: opt.label, selected: opt.code === row.value }));
   if (row.id === 'theme') return row.options.map((value) => ({ value, label: t(THEME_LABEL_KEY[value]), selected: value === row.value }));
-  if (row.id === 'palette') return row.options.map((value) => ({ value, label: t(`palette_${value}`), selected: value === row.value }));
+  if (row.id === 'palette') return row.options.map((value) => ({ value, label: html`<span class="s-settings-swatch" style="--sw:var(--swatch-${value})" aria-hidden="true"></span>${t(`palette_${value}`)}`, selected: value === row.value }));
   if (row.id === 'readerSize') return row.options.map((size) => ({ value: size, label: t(`size${size}`), selected: size === row.value }));
   // The server labels its voices in the interface language; no vendor name reaches the learner.
   if (row.id === 'orenaVoice') return row.options.map((voice) => ({ value: voice.id, label: voice.label || voice.id, selected: voice.id === row.value }));

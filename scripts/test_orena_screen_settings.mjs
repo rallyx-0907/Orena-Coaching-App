@@ -376,9 +376,11 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
 {
   const opts = (n) => Array.from({ length: n }, (_, i) => ({ code: `l${i}`, label: `L${i}` }));
   assert.equal(SEGMENTED_MAX_OPTIONS, 4);
-  assert.equal(usesPicker({ id: 'support', options: opts(4) }), false, 'four languages: the segmented control');
-  assert.equal(usesPicker({ id: 'support', options: opts(5) }), true, 'five: the picker');
-  assert.equal(usesPicker({ id: 'interface', options: opts(9) }), false, 'only the support language row changes');
+  // The Languages tab's three rows are always the picker, as Support language looks (human, 2026-10-09).
+  for (const id of ['target', 'support', 'interface']) assert.equal(usesPicker({ id, options: opts(2) }), true, `${id}: the picker at any length`);
+  assert.equal(usesPicker({ id: 'orenaVoice', options: opts(4) }), false, 'four voices: the segmented control');
+  assert.equal(usesPicker({ id: 'orenaVoice', options: opts(5) }), true, 'five: the picker');
+  assert.equal(usesPicker({ id: 'readerSize', options: opts(9) }), false, 'other choices keep the segmented control');
   assert.equal(usesPicker(null), false);
 }
 

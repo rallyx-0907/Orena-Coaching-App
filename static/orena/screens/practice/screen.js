@@ -3,7 +3,7 @@
    keys both to `screen: 'practice'` and the two are one continuous picker: the hub's skill sections
    inline, the per-skill drill-down one level deeper. See SCRATCH/reports/practice.md for the full
    accounting of what maps to what and why. */
-import { html, mount } from '../../kit/html.js';
+import { html, mount, raw } from '../../kit/html.js';
 import { useStyles } from '../../kit/styles.js';
 import { listRow, rowIconSwatch, sectionHead, pageHeader } from '../../kit/components.js';
 import { langSpan } from '../../kit/lang.js';
@@ -15,6 +15,8 @@ import { languages } from '../../copy/index.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { loadPendingRows, recentRows, recentMediaFacts, lastListenedLine } from './continuation.js';
 import { t } from './copy.js';
+import { device } from '../../kit/device.js';
+import { icon } from '../../kit/icons.js';
 import { loadAttemptsSince } from '../../product/speaking-history.js';
 import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SKILL_GROUPS, buildSkillSections, writeRecommendation, weakestLines, vocabularyRecommendation } from './model.js';
 import { t as writingT } from '../writing/copy.js';
@@ -121,7 +123,25 @@ function hubRowMarkup(skill, mode) {
    sections as desktop, just single-column - Skill Hub's only entry point in the pinned design,
    `phTiles`, is not wired into any rendered element in this snapshot, D2 Open Question #1). Adding
    one here would be an interaction the source does not draw (rule 44); recorded as a gap instead. */
+/* Phone (human, 2026-10-09, D-152): each skill folds to its heading - icon, name, how many activities - and opens
+   in place, so every skill is reachable without scrolling past the others. Which ones the learner opened is kept
+   for this visit of the app (back from a room finds them open). The desk keeps the open sections. */
+const SKILL_HEAD_ICON = { listen: 'headphones', speak: 'mic', reading: 'book-open', write: 'pen-line', vocabulary: 'panels-top-left', grammar: 'languages' };
+const openFolds = new Set();
+
+function foldMarkup(skill, modes) {
+  return html`<details class="s-practice-fold s-practice-tile--${skill}" data-fold="${skill}"${openFolds.has(skill) ? ' open' : ''}>
+    <summary class="s-practice-fold__head">
+      ${rowIconSwatch({ iconName: SKILL_HEAD_ICON[skill], tint: SKILL_TINT[skill] })}
+      <span class="s-practice-fold__text"><span class="s-practice-fold__title">${t(SKILL_LABEL_KEY[skill])}</span><span class="s-practice-fold__count">${t.plural('modeCount', modes.length)}</span></span>
+      <span class="s-practice-fold__chev" aria-hidden="true">${raw(icon('chevron-down', { size: 20 }))}</span>
+    </summary>
+    <div class="s-practice-grid">${modes.map((mode) => tileMarkup(skill, mode))}</div>
+  </details>`;
+}
+
 function sectionMarkup(skill, modes) {
+  if (device() === 'mobile') return foldMarkup(skill, modes);
   return html`<section class="s-practice-section">
     ${sectionHead({ title: t(SKILL_LABEL_KEY[skill]), size: 'lg' })}
     <div class="s-practice-grid">${modes.map((mode) => tileMarkup(skill, mode))}</div>
@@ -256,6 +276,9 @@ async function renderHub(element, ctx, data) {
     </div>`,
   );
   element.querySelector('[data-earlier]')?.addEventListener('click', () => openEarlierDrafts(ctx));
+  for (const fold of element.querySelectorAll('[data-fold]')) {
+    fold.addEventListener('toggle', () => (fold.open ? openFolds.add(fold.dataset.fold) : openFolds.delete(fold.dataset.fold)));
+  }
   let recentOpening = false;
   element.querySelector('[data-recent]')?.addEventListener('click', async event => {
     if (recentOpening) return;

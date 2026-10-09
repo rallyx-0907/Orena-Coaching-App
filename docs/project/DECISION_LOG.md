@@ -4542,3 +4542,28 @@ hãy làm giống với đặc tính của các card trong practice hub."
    bars and rings on selected rows/options were removed (their fill stays). Kept: dividers (single-side borders),
    fields' resting borders (UX_REVIEW_RULES: an input's edge is a legitimate special case), the spinner, the mic
    pulse and the keyboard focus ring.
+
+## D-151 - Every card stands raised; the light page is a step darker
+
+2026-10-09, explicit human decision, replacing D-150 point 1's flat rest. Human: "tất cả phải làm thẻ nổi. Đặc biệt
+điều chỉnh lại bản màu ở chế độ sáng. màu nền và màu card đang gần như hòa vào nhau".
+
+1. A card or card-like control is raised at rest: `--edge-light` now carries `--sh1` with the hairline, so everything
+   that draws the edge stands off the page in both themes. Hover stays `--sh2` with the 2px lift (D-148/D-150);
+   selection stays fill; no violet edge (D-147).
+2. Light theme, smallest change that separates card from page: `--bg` #F5F5FA → #ECEDF4, `--sh1` alphas .04/.04 →
+   .07/.07 with a 12px blur, and `--text3` #6E6E86 → #68687F so it keeps AA on the darker page (4.64:1). Recorded as
+   deviations in `scripts/test_orena_kit.mjs`.
+
+## D-152 - Skill order, the phone Practice Hub folds, quick theme switch, Settings pickers
+
+2026-10-09, explicit human decisions.
+
+1. Skills are ordered Listen → Speak → Read → Write → Vocabulary → Grammar on desktop and phone
+   (`practice/model.js` `SKILL_ORDER`; the design's `SK` order is superseded).
+2. On the phone, Practice Hub's skill sections fold to their heading (icon, name, number of activities) and open in
+   place, so every skill is reachable without scrolling past the others; the desktop keeps the open sections.
+3. A sun/moon button beside the bell (desktop top bar, phone header) switches light/dark in one tap; Settings keeps
+   Light / Dark / System.
+4. Settings: the Languages tab's three choices are pickers, as Support language already was (D-098); each Accent
+   option shows its own colour beside its name.

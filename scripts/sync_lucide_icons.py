@@ -105,6 +105,7 @@ NAMES = sorted(
         "square-check-big",
         "star",
         "sun",
+        "sun",
         "tags",
         "target",
         "timer",
