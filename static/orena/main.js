@@ -1,9 +1,9 @@
 /* Entry of the learner UI (D-088), served at / since the cutover (D-091, D-143).
 
    Boot: theme and device are already on the root (kit/boot.js); load the brand sprite, draw the
-   frame, read who the learner is (shell/context.js), then hand over to the router. The old UI's
-   internal-review gate is kept: the new product direction stays internal until the human release
-   gate, so an account that is not an admin sees the same plain notice the old UI shows. */
+   frame, read who the learner is (shell/context.js), then hand over to the router. Every signed-in
+   account reaches the learner flow (the entry rule sends a new account to Welcome and a completed one
+   to Today); only Platform Admin is gated, by role. */
 import './kit/device.js';
 import { onLanguageChange } from './copy/index.js';
 import { shellCopy as t } from './copy/shell.js';
@@ -136,17 +136,14 @@ async function boot() {
     location.replace(`${location.pathname}${location.search}${target}`);
     location.reload();
   });
-  if (!learner.isAdmin) {
-    /* An account that is not an admin, at an admin address: the design's No access frame, drawn
-       before any admin request exists. Anywhere else the internal-review notice stands. */
-    if (isAdminHash(location.hash)) {
-      await brand;
-      await useStyles('screens/admin/admin.css');
-      const { renderNoAccess } = await import('./screens/admin/no-access.js');
-      renderNoAccess(app, { email: learner.user?.email, name: learner.name, backHref: '/' });
-      return;
-    }
-    mount(app, html`<div class="o-error"><div class="o-error__card"><div class="o-error__text">${t('limited')}</div><a class="o-btn o-btn--secondary o-btn--sm" href="/account">${t('account')}</a></div></div>`);
+  /* A signed-in account is a learner, whoever it is: there is no review-only gate (the retired "internal
+     review" notice and its /account link are gone). Admin authority is separate - a non-admin at an admin
+     address gets the design's No access frame, drawn before any admin request exists. */
+  if (!learner.isAdmin && isAdminHash(location.hash)) {
+    await brand;
+    await useStyles('screens/admin/admin.css');
+    const { renderNoAccess } = await import('./screens/admin/no-access.js');
+    renderNoAccess(app, { email: learner.user?.email, name: learner.name, backHref: '/' });
     return;
   }
   await brand;

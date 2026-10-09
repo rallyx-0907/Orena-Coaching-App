@@ -120,4 +120,33 @@ const source = (path) => readFileSync(fileURLToPath(new URL(path, import.meta.ur
   }
 }
 
+/* --- a signed-in learner is never gated by admin status; /account is retired --------------------------- */
+{
+  const fs2 = await import('node:fs');
+  const path2 = await import('node:path');
+  const main = source('../static/orena/main.js');
+  const gate = main.slice(main.indexOf('const router = createRouter') - 900, main.indexOf('const router = createRouter'));
+  assert.ok(!/shellCopy|t\('limited'\)|t\('account'\)/.test(gate), 'no limited notice is drawn before the router');
+  assert.match(main, /if \(!learner\.isAdmin && isAdminHash\(location\.hash\)\)/, 'a non-admin is stopped only at an admin address');
+  assert.ok(!/if \(!learner\.isAdmin\) \{/.test(main), 'no blanket non-admin gate');
+  assert.ok(!/internal review/i.test(source('../static/orena/copy/shell.js')), 'the internal-review notice copy is gone');
+
+  const walk = (dir) => fs2.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path2.join(dir, entry.name);
+    return entry.isDirectory() ? (entry.name === 'vendor' ? [] : walk(full)) : /\.(js|css|html)$/.test(entry.name) ? [full] : [];
+  });
+  const root = new URL('../static/orena/', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+  for (const file of walk(decodeURIComponent(root))) {
+    const text = fs2.readFileSync(file, 'utf8');
+    assert.ok(!/href=["']\/account["']|location\.(assign|replace)\(["']\/account/.test(text), `${file} links to the retired /account`);
+  }
+
+  // New / incomplete account -> Welcome (onboarding); completed -> Today; a reload with an address keeps it.
+  assert.equal(entryRoute({ profile: { exists: false }, activeLanguage: 'en' }), 'welcome', 'a new account starts onboarding');
+  assert.equal(entryRoute({ profile: { exists: true, language: '' }, activeLanguage: '' }), 'welcome', 'an account with no learning language starts onboarding');
+  assert.equal(entryRoute({ profile: { exists: true, language: 'en' }, activeLanguage: 'en' }), 'today', 'a completed account opens Today');
+  assert.equal(match('#/progress').route.id, 'progress', 'a reload keeps the place in the address');
+  assert.equal(decodeURIComponent(signInHref('login').split('=')[1]), '/#/', 'the OAuth return target is honoured');
+}
+
 console.log('test_orena_session: ok');

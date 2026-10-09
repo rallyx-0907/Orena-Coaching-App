@@ -4582,3 +4582,14 @@ mặc định". A media card with no image (and one whose image fails to load) d
 the kind's hue as a gradient into a second hue chosen by the title (stable per title), two light circles, the
 title's first letter or character large, and the kind's icon (`kit/components.js` `posterMarkup`). Per-item
 illustrations under the Art Bible remain a later, separate decision (they need a cover field for Reading).
+
+## D-158 - 27 public-domain Reading articles are published on :8000 as test content
+
+2026-10-09, explicit human decision ("chọn lọc vài nội dung chất lượng … chuyển về main 8000 … làm test case",
+"Bạn nhập thẳng vào container", "27 bài phạm vi công cộng"). :8000 already held all 52 Reading articles and 8
+approved comprehension sets, identical to :8021, unpublished on 2026-10-08 pending the human's approval of content,
+metadata, level, rights and presentation. Re-published through the admin route's own rules (publication blockers,
+warnings, status, audit; actor `ops-content-transfer`): the 15 Project Gutenberg stories (EN) and the 12 Wikisource
+texts (ZH) - public domain, 3 with approved question sets. The two source names lost their "[Mẫu kiểm thử] " prefix.
+VOA Learning English and Wikinews stay unpublished (rights per text not confirmed). No provider call, no restart.
+:8000 runs `main`: the poster covers (#111) and the staging learner-gate fix (#109) reach it only after they merge and :8000 is redeployed.
