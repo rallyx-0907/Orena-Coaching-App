@@ -4668,3 +4668,64 @@ tối đa 24 tháng"). Reviews stay in `audit_logs` (`learner.feedback`) as the 
    starts only when `FEEDBACK_RETENTION_SWEEP` is on. Switching it on, for :8000 included, is the human's activation
    step.
 3. Admin totals, average, star and area counts and filtered totals are SQL aggregates over every stored review.
+
+
+## D-160 - Plan quotas: the design's meters, enforced on the server; writing reviews first
+
+2026-10-09, explicit human decisions (in Vietnamese, relayed by the coordinating session), implemented on branch
+`feat/quota-core` against the read-only contract "Orena plan quota enforcement" (2026-10-09). **Needs independent
+architecture review before merge** (entitlement change; the quota repository's reviewed contract gains a mode).
+
+1. **The design's Pricing is the plan source of truth** (`Orena.dc.html` `BILL_PLANS`). Catalogue v2
+   (`writing_coach/product/catalog.py`): `orena.message` per day 20 / 200 / 1000; `writing.review` per month 2 / 10 / 50;
+   `pronunciation.audio` 5 / 30 / 120 min and `media.import` 15 / 120 / 600 min per month, stored in seconds;
+   `languages.target` a count cap 1 / 2 / 2. Windows and units are the code's (`METERS`); an administrator edits only
+   the numbers and a meter's own parameters. `dictionary.lookup`, `vocabulary.save` and the v1 boolean flags are no
+   longer plan entitlements (unmetered for every plan; cost telemetry unchanged). A stored v1 document is read with
+   its prices kept and its old limits ignored; a save is always v2.
+2. **One writing review** = each AI evaluation (`POST /api/evaluate`) or AI improve (`POST /api/improve`) that actually
+   runs. An identical review served from the store (no AI call) is free; the local heuristic (`fallback-demo`) and a
+   provider error settle 0. The review refresh (`/api/essays/{id}/review/refresh`) is not charged (default, pending).
+3. **Orena message** (catalogue only in this change; wiring is a later slice): a text turn that calls a model = 1; the
+   opening greeting and answers made without a model call are free; voice is charged by duration, the server mints
+   the voice token only for the remaining allowance, and `params.voice_seconds_per_message` (default 60, editable)
+   converts voice seconds to messages.
+4. **Languages:** a Free learner already learning 2 languages keeps them; only adding one beyond the cap is refused
+   (later slice).
+5. **Windows follow the learner's timezone:** the day resets at local midnight, the month at local 00:00 on the 1st.
+   The zone is the browser's (`X-Orena-Timezone` on the metered calls and the usage read), else the zone of the
+   learner's last window, else UTC. No account column holds a timezone - adding one is a schema decision reserved to
+   the human (AGENTS.md section 7), so the bucket's `window_id` records it: `D:<local date>@<zone>`,
+   `M:<local yyyy-mm>@<zone>`, with the true UTC start and end stored on the bucket. A timezone change never resets or
+   reopens the current window: an open window is kept whatever zone a request names, and a new window that would
+   overlap the previous one starts where it ended and lasts at least 23 hours (a day) or 27 days (a month), so zone
+   hopping never yields extra windows. `resets_at` (429 body, usage read) is the window's true end.
+6. **Server-side, fail closed, no plan-id branches.** One path, `writing_coach/product/quota.py`: request -> user key ->
+   account -> incarnation -> plan (strict catalogue read) -> entitlement -> window -> `reserve(limit_policy='current')`
+   -> dispatch -> provider -> settle/release. Exhausted: HTTP 429 `quota_exhausted` with `{feature, used, limit, unit,
+   window, resets_at, plan, upgrade}` and `Retry-After`; store, catalogue or incarnation unknown: 503
+   `quota_unavailable`; never "unknown = unlimited". The provider is not called when a request is refused.
+7. **Current limit, kept usage.** Buckets are plan-independent (`incarnation, meter, window`); the limit is the
+   catalogue's at each reserve (`limit_policy='current'`, no schema change), so an upgrade or an admin edit applies to
+   the next request with the window's usage kept, and a downgrade below usage is exhausted at once (stored limit =
+   GREATEST(current, consumed + reserved)). `'frozen'` stays the default for every other caller.
+8. **The switch** (default off everywhere): `ORENA_QUOTA_ENFORCEMENT` (on/off) wins when set; otherwise the admin
+   setting `product.quota_enforcement` (`PUT /api/product/admin/quota`), so a running sandbox can be switched without
+   recreating it; meters enforced = `ORENA_QUOTA_METERS` or the setting's list, only meters this build wires
+   (`writing.review` today). Enforcement needs PostgreSQL, the quota tables and an active account backbone; otherwise
+   every enforced meter answers 503. Roll back = switch off (buckets stay for audit).
+9. **Usage read = enforcement.** `/api/product/commerce` reads each enforced meter's used (consumed + reserved),
+   limit and `resets_at` from the same buckets and catalogue; a meter nothing counts is `not_metered` and a store it
+   cannot read is `unavailable` - never "0 used". `/api/product/me` (frozen native contract) is projected onto its
+   strict feature shape. The local (auth-off) Plan screen now reads the account enforcement meters ("legacy"), not a
+   second made-up account.
+10. **Defaults pending the human** (constants in `quota.py`, easy to change): calendar windows as in 5 (the human
+    answered: learner's timezone); review refresh not charged; abandoned dispatched work is settled at the reserved
+    amount by a reconciler (`ABANDONED_SETTLES = "admitted"`, every 10 minutes, after 15 minutes); an administrator's
+    downgrade applies immediately. Still open: pronunciation display rounding; the Plan screen's state for an
+    unmetered meter and the in-room exhausted message (the design draws neither, `UI_BACKEND_GAPS.md` QTA-1/QTA-2);
+    incarnation rows on a backbone-off deployment (:8000); a CI PostgreSQL service so the PostgreSQL proofs gate merges.
+11. **Activation:** :8021 may be switched on (`writing.review`) after review; :8000 needs an explicit human GO and the
+    architecture review of 6-8.
+
+If another branch (PR A) lands a D-160 first, this entry is renumbered to the next free number on merge.

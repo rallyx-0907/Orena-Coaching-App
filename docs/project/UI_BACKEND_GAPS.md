@@ -5232,6 +5232,9 @@ Payments are a human gate: no checkout, provider call or simulated success exist
   minutes. The catalogue meters `writing.evaluate`, `writing.improve`, `dictionary.lookup`, `vocabulary.save` per
   month; there is no entitlement for Orena messages, pronunciation minutes or media import (same as N-29/N-30). Usage
   and Compare plans draw the real keys only. Reset is "every month" (no reset date is returned). Owner: BACKEND.
+  **CLOSED for the catalogue 2026-10-09 (D-160):** the catalogue's meters are the design's five; Usage draws each
+  enforced meter's real use and reset (`resets_at`); see "Plan quota enforcement" (QTA-1 to QTA-9) for what is not yet
+  enforced.
 - **PLN-3 Usage history chart.** "Orena messages - last 14 days" (daily counts, the plan's daily limit line, average)
   has no source. Not drawn. Owner: BACKEND (a daily usage series).
 - **PLN-4 Renewal, banner, cancel.** No renewal date, billing period, pending change or cancellation exists
@@ -5278,3 +5281,34 @@ The 2026-10-08 export's Feedback frame (`#/feedback`, reached from Profile) and 
 - **FBK-4 Retention (D-159).** Decided: deleted with the account and after 24 months. A periodic job (at start, then
   daily) enforces the 24 months. Its switch `FEEDBACK_RETENTION_SWEEP` is the activation step, and the
   account-deletion runtime must call `delete_feedback_for_account`.
+
+
+## Plan quota enforcement (D-160), 2026-10-09
+
+`writing.review` is enforced on the server (`POST /api/evaluate`, `POST /api/improve`) when the switch is on. PLN-2
+above is **CLOSED for the catalogue** (the design's five meters are the plan entitlements, catalogue v2) and open for
+the meters below.
+
+- **QTA-1 In-room exhausted state.** The design draws no "limit reached" state in the Writing room or the Respond room.
+  The human asked for a truthful message, so the room shows the server's 429 in the place it already shows a failed
+  request: Writing's red failure strip reads "You have used 2 of 2 writing reviews this month." with a "See all plans"
+  button (to `#/plan/pricing`) instead of Retry; Respond's toast says the same with "See all plans" as its action.
+  Kit components and the plan's own words only, EN/VI/ZH. Owner: design (an exhausted state, if wanted).
+- **QTA-2 A meter nothing counts.** With enforcement off (or a meter not yet enforced) Plan & usage draws the row with
+  "—" used and "Not available" - never "0 used". The design draws no such state. Owner: design / human.
+- **QTA-3 Orena messages - NOT YET ENFORCED.** Catalogue only (20 / 200 / 1000 a day, `voice_seconds_per_message`).
+  Wiring `POST /api/agent/turn` (1 per text turn that calls a model; greeting and no-model answers free) is a later
+  slice; the agent's own per-process rate limit and daily USD cap remain. Owner: BACKEND (+ AGENT_CONTRACT routing for
+  the client's `quota_exhausted` vs `rate_limited`).
+- **QTA-4 Voice - NOT YET ENFORCED.** The voice token is still minted for the fixed session length; the human decided
+  it is minted for the remaining allowance (seconds / `voice_seconds_per_message`). Owner: BACKEND.
+- **QTA-5 Pronunciation minutes - NOT YET ENFORCED.** `POST /api/speech/pronunciation` (seconds known before the
+  provider call). Display rounding is a human decision. Owner: BACKEND.
+- **QTA-6 Media import minutes - NOT YET ENFORCED.** The learner import paths must be scoped first (async jobs settle
+  from the worker). Owner: BACKEND.
+- **QTA-7 Target languages - NOT YET ENFORCED.** A count cap where a learning language is added; a Free account that
+  already learns 2 languages keeps them (human). Owner: BACKEND + UI (Settings / onboarding refusal).
+- **QTA-8 The learner's timezone is not stored on the account.** Windows use the browser's zone sent with each metered
+  call, else the zone recorded on the learner's last quota window, else UTC (D-160 point 5). A stored account field
+  is a schema decision reserved to the human. Owner: human (schema), then BACKEND.
+- **QTA-9 Usage history chart (PLN-3).** Still not drawn; the buckets hold one row per window, not a daily series.
