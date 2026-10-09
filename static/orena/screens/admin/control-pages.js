@@ -51,7 +51,7 @@ export function membershipBlock(membership) {
   const { account, plans = [], draft, error = '', status = '', busy = false, self = false } = membership;
   const current = account.plan_id ? plans.find((plan) => plan.id === account.plan_id) || { id: account.plan_id, name: account.plan_id } : plans.find((plan) => plan.id === 'free');
   const source = account.provider === 'manual' ? t('mbManual') : account.provider ? t('mbBilling') : '';
-  const until = account.until ? t('mbUntilAt', { date: new Date(account.until).toLocaleDateString() }) : '';
+  const until = account.until ? t('mbUntilAt', { date: new Date(account.until).toLocaleDateString(undefined, { timeZone: 'UTC' }) }) : '';
   const fields = [
     { id: 'mbRole', kind: 'seg', label: t('mbRole'), options: ['user', 'admin'].map((role) => ({ id: role, label: t(role === 'admin' ? 'mbRoleAdmin' : 'mbRoleUser'), on: draft.role === role, disabled: self })) },
     { id: 'mbPlan', kind: 'seg', label: t('mbPlan'), options: plans.map((plan) => ({ id: plan.id, label: planName(plan), on: draft.plan_id === plan.id })) },
