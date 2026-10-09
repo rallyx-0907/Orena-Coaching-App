@@ -316,6 +316,36 @@ assert.match(
   }
   assert.doesNotMatch(read(path.join(ROOT, 'kit/components.css')), /var\(--(bd|ob)-/, 'shared components keep their solid surfaces');
 
+  // 4b. Solid surfaces keep the BASE tokens: inside a card, panel, sheet, menu or input the adjusted page tokens (--muted, --text3,
+  // --accent-on-photo) go back to the base values, because the surface has its own opaque ground. surfaces.css is generated from
+  // every rule that gives an element a single solid ground; it must be current, loaded after shell.css, and reset exactly the three.
+  {
+    const { buildSurfacesCss, surfaceSelectors } = await import('./build_backdrop_surfaces.mjs');
+    const surfacesCss = read(path.join(ROOT, 'shell/surfaces.css'));
+    assert.equal(surfacesCss, buildSurfacesCss(), 'shell/surfaces.css is stale: run node scripts/build_backdrop_surfaces.mjs');
+    const html = read('templates/orena/index.html');
+    assert.ok(html.indexOf('shell/surfaces.css') > html.indexOf('shell/shell.css') && html.includes('shell/surfaces.css'), 'surfaces.css is linked after shell.css');
+    const resetBody = block(surfacesCss, '\n) {');
+    assert.deepEqual(vars(resetBody), { muted: 'var(--muted-base)', text3: 'var(--text3-base)', 'accent-on-photo': 'var(--accent)' }, 'a surface resets exactly the three adjusted tokens to the base');
+    assert.deepEqual(vars(block(surfacesCss, ':root {')), { 'muted-base': 'var(--muted)', 'text3-base': 'var(--text3)' }, 'the base values are captured at :root, where nothing is adjusted');
+    const listed = new Set(surfaceSelectors());
+    // Inside a card on the backdrop page the computed tokens equal the base: the page scope sets them on .o-main / .a-main / .s-onboarding
+    // only (an ancestor), and every one of these surfaces matches the reset (an element's own declaration beats inheritance).
+    for (const selector of ['.o-card', '.o-well', '.o-chip', '.o-sheet', '.o-topsearch', '.o-ask', '.a-block', '.a-btn', 'input', 'textarea', 'select']) {
+      assert.ok(listed.has(selector) || [...listed].some((l) => l.startsWith(`${selector}[`) || l.startsWith(`${selector}:`)), `${selector} is a solid surface and resets to the base tokens`);
+    }
+    for (const scope of ['.o-main', '.a-main', '.s-onboarding']) {
+      assert.ok(![...listed].some((l) => l === scope || l.endsWith(` ${scope}`)), `${scope} carries the adjusted tokens and is never reset`);
+    }
+    assert.ok(listed.size > 300, `surfaces.css lists the whole kit and every screen's surfaces (${listed.size} selectors)`);
+    for (const theme of ['dark', 'light']) {
+      const t = vars(block(tokens, `:root[data-theme="${theme}"]`));
+      for (const name of ['muted', 'text3', 'accent']) {
+        for (const ground of ['bg', 'surface', 'surface2']) assert.ok(contrast(t[name], t[ground]) >= 4.5, `${theme} base --${name} on --${ground} is AA, so a surface needs no adjustment`);
+      }
+    }
+  }
+
   // 5. AA over the worst blurred region of the photo (fixture), with the scoped tokens, for every text pair the surfaces draw.
   const hexOf = (h) => rgb(h).map((c) => c * 255);
   const lumRgb = (c) => c.map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
