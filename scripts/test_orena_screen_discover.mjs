@@ -345,7 +345,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
     assert.deepEqual(bareFound.map((match) => match[1]), OVERVIEW_TABS, `${ui}: Imported is drawn with nothing imported`);
     const cta = bareFound[3][2];
     assert.ok(cta.includes(pack.importCta), `${ui}: the call to action is worded in the interface language`);
-    assert.match(cta, /<button type="button" class="o-btn o-btn--primary s-discover__vip" data-import-cta>\+ /, `${ui}: the call to action is the VIP import control`);
+    assert.match(cta, /<button type="button" class="o-btn o-btn--primary o-btn--vip" data-import-cta="">\+ /, `${ui}: the call to action is the VIP import control`);
     assert.ok(cta.includes(`+ ${pack.importAction}`), `${ui}: and carries the page's own import label`);
     assert.ok(!/c-media|data-see-all/.test(cta), `${ui}: an empty Imported draws no cards and no See all`);
     assert.ok(bareFound.slice(0, 3).every((match) => /data-see-all/.test(match[2])), `${ui}: the other sections keep their See all`);
@@ -353,43 +353,82 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
 
   // The VIP import control (human exception to D-147, 2026-10-09): on the header's "+ Import" and on the call to
   // action, a rotating conic-gradient border around the accent fill; held still under reduced motion; no colour literal.
-  const css = fs.readFileSync('static/orena/screens/discover/discover.css', 'utf8');
+  const css = fs.readFileSync('static/orena/kit/components.css', 'utf8'); // the VIP control is a kit control (D-16V)
   const screenSrc = fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8');
-  assert.match(screenSrc, /class="o-btn o-btn--primary s-discover__vip" data-import>/, 'the header "+ Import" is the VIP control');
+  assert.match(screenSrc, /vipButton\(\{ label: t\('importAction'\), dataset: \{ import: '' \} \}\)/, 'the header "+ Import" is the VIP control');
   assert.match(css, /@property --vip-angle\s*\{[^}]*syntax:\s*'<angle>'/, 'the angle is a registered property, so it can animate');
   assert.match(css, /conic-gradient\(\s*from var\(--vip-angle\)/, 'a conic-gradient border');
-  assert.match(css, /animation:\s*s-discover-vip-run[^;]*infinite/, 'it runs');
-  assert.match(css, /@keyframes s-discover-vip-run\s*\{\s*to\s*\{\s*--vip-angle:\s*360deg/, 'one full turn');
-  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.o-btn\.o-btn--primary\.s-discover__vip\s*\{\s*animation:\s*none;\s*--vip-live:\s*0\.\d+/, 'reduced motion: a static ring and a fainter static glow');
+  assert.match(css, /animation:\s*o-vip-run[^;]*infinite/, 'it runs');
+  assert.match(css, /@keyframes o-vip-run\s*\{\s*to\s*\{\s*--vip-angle:\s*360deg/, 'one full turn');
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.o-btn\.o-btn--primary\.o-btn--vip\s*\{\s*animation:\s*none;\s*--vip-live:\s*0\.\d+/, 'reduced motion: a static ring and a fainter static glow');
   assert.match(css, /linear-gradient\(var\(--vip-fill\), var\(--vip-fill\)\) padding-box,\s*var\(--vip-rainbow\) border-box/, 'the fill stays the accent fill (label contrast unchanged) inside the rainbow ring');
   assert.match(css, /--vip-fill:\s*var\(--accent-fill\)/);
   // The ring: a 3px border on a pseudo-element laid over the button's own box, behind its label - the button's box,
   // padding and border are never touched, so nothing shifts.
   const rule = (selector) => css.match(new RegExp(`${selector.replace(/[.:()[\]]/g, '\\$&')}\\s*\\{([^}]*)\\}`))?.[1] || '';
-  const ring = rule('.o-btn.o-btn--primary.s-discover__vip::after');
+  const ring = rule('.o-btn.o-btn--primary.o-btn--vip::after');
   assert.match(ring, /inset:\s*0;/);
   assert.match(ring, /border:\s*3px solid transparent/, 'a 3px ring');
   assert.match(ring, /z-index:\s*-1/, 'behind the label');
   assert.match(ring, /pointer-events:\s*none/);
-  const base = rule('.o-btn.o-btn--primary.s-discover__vip');
+  const base = rule('.o-btn.o-btn--primary.o-btn--vip');
   assert.ok(!/(^|;)\s*(padding|border|width|height|margin)\s*:/.test(base), 'the button keeps its own box: no padding, border or size override (no layout shift)');
   assert.match(base, /position:\s*relative/);
   assert.match(base, /isolation:\s*isolate/);
   // The halo: the same rainbow, blurred, behind the ring, outside the layout, ignoring the pointer.
-  const halo = rule('.o-btn.o-btn--primary.s-discover__vip::before');
+  const halo = rule('.o-btn.o-btn--primary.o-btn--vip::before');
   assert.match(halo, /background:\s*var\(--vip-rainbow\)/, 'the same rotating rainbow');
   assert.match(halo, /filter:\s*blur\(\d+px\)/, 'a soft glow');
   assert.match(halo, /z-index:\s*-2/, 'behind the ring');
   assert.match(halo, /pointer-events:\s*none/, 'never takes a click');
   assert.match(halo, /opacity:\s*calc\(var\(--vip-glow\) \* var\(--vip-live\)\)/);
   assert.match(base, /--vip-glow:\s*0\.5\d*/, 'a strong glow on a dark page');
-  assert.match(css, /:root\[data-theme='light'\] \.o-btn\.o-btn--primary\.s-discover__vip\s*\{\s*--vip-glow:\s*0\.[2-4]\d*/, 'a lower glow on a light page');
+  assert.match(css, /:root\[data-theme='light'\] \.o-btn\.o-btn--primary\.o-btn--vip\s*\{\s*--vip-glow:\s*0\.[2-4]\d*/, 'a lower glow on a light page');
   assert.equal(css.replace(/\/\*[\s\S]*?\*\//g, '').match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/), null, 'colours come from tokens.css only');
   for (const token of ['skill-speak', 'skill-read', 'skill-vocab', 'gcat-4', 'skill-listen', 'skill-grammar', 'skill-write']) {
     assert.match(fs.readFileSync('static/orena/kit/tokens.css', 'utf8'), new RegExp(`--${token}:`), `the rainbow stop --${token} exists in tokens.css`);
   }
   // The exception is scoped: no other rule in the screen draws a rainbow.
   assert.equal((css.match(/conic-gradient\(/g) || []).length, 1, 'the rainbow is drawn once');
+
+  // Import is featured (human, 2026-10-09): every entry point draws the one kit VIP control and opens the one flow.
+  {
+    const { vipButton } = await import('../static/orena/kit/components.js');
+    const sample = String(vipButton({ label: 'Import', dataset: { import: '' } }));
+    assert.equal(sample, '<button type="button" class="o-btn o-btn--primary o-btn--vip" data-import="">+ Import</button>', 'the kit control: primary button plus the VIP ring');
+    assert.ok(!/o-btn--vip/.test(fs.readFileSync('static/orena/kit/kit.css', 'utf8')), 'the VIP look has one owner (components.css)');
+    const read = (file) => fs.readFileSync(file, 'utf8');
+    const entries = {
+      'Discover header': ['static/orena/screens/discover/screen.js', /vipButton\(\{ label: t\('importAction'\), dataset: \{ import: '' \} \}\)/, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', openImportFlow\)/],
+      'Discover Imported call to action': ['static/orena/screens/discover/overview.js', /vipButton\(\{ label: t\('importAction'\), dataset: \{ 'import-cta': '' \} \}\)/, null],
+      'Today featured card': ['static/orena/screens/today/screen.js', /vipButton\(\{ label: shellCopy\('importAction'\), dataset: \{ import: '' \} \}\)/, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', \(\) => openImportFlow\(ctx\)\)/],
+      'My Library header': ['static/orena/screens/library/screen.js', /vipButton\(\{ label: sc\('importAction'\), dataset: \{ import: '' \} \}\)/, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', \(\) => openImportFlow\(ctx\)\)/],
+    };
+    for (const [name, [file, draws, wires]] of Object.entries(entries)) {
+      const source = read(file);
+      assert.match(source, draws, `${name}: draws the VIP control`);
+      if (wires) assert.match(source, wires, `${name}: opens the import flow`);
+      assert.ok(!/class="[^"]*\bo-btn--primary[^"]*"[^>]*data-import/.test(source), `${name}: no hand-written import button beside the kit control`);
+    }
+    // One flow: every entry point goes through screens/import/open.js (Discover's own wrapper adds its room route).
+    for (const file of ['static/orena/screens/today/screen.js', 'static/orena/screens/library/screen.js', 'static/orena/screens/discover/screen.js']) {
+      assert.match(read(file), /from '\.\.\/import\/open\.js'/, `${file} opens Import through the shared opener`);
+    }
+    assert.match(read('static/orena/screens/import/open.js'), /import\('\.\/sheet\.js'\)[\s\S]*module\.openImport\(ctx, options\)/, 'the shared opener opens the one import sheet');
+    // The rail and the phone bar keep the design's navigation set: Import is not a destination there.
+    for (const file of ['static/orena/shell/frame.js']) assert.ok(!/importAction|vipButton|o-btn--vip/.test(read(file)), 'no import control in the rail or phone bar');
+    // Words, in each interface language: the shared label and Today's one line of value.
+    await import('../static/orena/copy/shell.js');
+    const shell = registeredCopy().get('shell').packs;
+    await import('../static/orena/screens/today/copy.js');
+    const today = registeredCopy().get('today').packs;
+    for (const ui of ['en', 'vi', 'zh']) {
+      assert.ok(shell[ui].importAction, `${ui}: the shared "Import" label`);
+      assert.ok(today[ui].importValue && today[ui].importValue.length < 80, `${ui}: Today's one line of value`);
+    }
+    assert.notEqual(shell.en.importAction, shell.vi.importAction);
+    assert.notEqual(shell.en.importAction, shell.zh.importAction);
+  }
 
   // The screen wires All to the overview and nothing else: the other tabs and the practice chooser keep the flat grid,
   // and a section's "See all" is the tab bar's own switch.

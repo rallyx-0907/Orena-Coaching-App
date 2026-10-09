@@ -6,7 +6,8 @@
    - not the Writing-only streak of /api/dashboard. */
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
-import { mediaCard, sectionHead, settleCovers } from '../../kit/components.js';
+import { mediaCard, sectionHead, settleCovers, vipButton } from '../../kit/components.js';
+import { openImportFlow } from '../import/open.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
@@ -210,6 +211,16 @@ export default async function mountToday(element, ctx) {
     </div>`;
   }
 
+  // Import, featured (human, 2026-10-09, D-16V): the page's own card shell and icon tile, one line of what it is for,
+  // and the VIP "+ Import" control - the same one every entry point draws, opening the same flow.
+  function importMarkup() {
+    return html`<div class="o-card s-today-import">
+      <span class="s-today-rest-card__icon" style="background:var(--accent-fill)">${raw(icon('upload', { size: 20 }))}</span>
+      <span class="s-today-rest-card__title s-today-import__text">${t('importValue')}</span>
+      ${vipButton({ label: shellCopy('importAction'), dataset: { import: '' } })}
+    </div>`;
+  }
+
   function levelPromptMarkup() {
     if (!needsLevelPrompt(state.profile) || promptSkipped(language)) return '';
     return bannerMarkup({
@@ -229,6 +240,7 @@ export default async function mountToday(element, ctx) {
         ${headMarkup()}
         ${recommendedMarkup()}
         ${progressMarkup()}
+        ${importMarkup()}
         ${forYouMarkup()}
       </div>`,
     );
@@ -242,6 +254,7 @@ export default async function mountToday(element, ctx) {
       }
       paint();
     });
+    element.querySelector('[data-import]')?.addEventListener('click', () => openImportFlow(ctx));
     element.querySelector('[data-another]')?.addEventListener('click', () => {
       heroIndex += 1;
       paint();

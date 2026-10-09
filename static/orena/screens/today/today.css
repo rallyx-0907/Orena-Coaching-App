@@ -15,6 +15,19 @@
   width: 100%;
 }
 
+/* ---- Import, featured: one row on the page's own card shell - icon tile, one line, the VIP control (kit) ---- */
+.s-today-import {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px 16px;
+  padding: 16px 20px;
+}
+.s-today-import__text {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
 /* ---- Header: eyebrow (learner name) + title + real date pill ---- */
 .s-today-head {
   display: flex;

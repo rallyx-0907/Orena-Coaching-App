@@ -5,9 +5,9 @@
 
    The Imported section is always drawn. With nothing imported (`section.empty`) its row is one
    call to action - a short line and the page's own "+ Import" control, in the same VIP look
-   (discover.css `s-discover__vip`) - and screen.js wires it to the same import flow. */
+   (kit `vipButton`) - and screen.js wires it to the same import flow. */
 import { html } from '../../kit/html.js';
-import { sectionHead } from '../../kit/components.js';
+import { sectionHead, vipButton } from '../../kit/components.js';
 
 // Each section's heading is its tab's own label; `seeAll` is the button the screen listens to.
 const HEADING_KEY = Object.freeze({ listen: 'tabListen', read: 'tabRead', collections: 'tabCollections', imported: 'tabImported' });
@@ -17,7 +17,7 @@ export function overviewMarkup(sections, { card, t }) {
     (section) => html`<section class="s-discover__section" data-section="${section.tab}">
       ${sectionHead({ title: t(HEADING_KEY[section.tab]), action: section.empty ? null : { label: t('seeAll'), dataset: { 'see-all': section.tab } } })}
       ${section.empty
-        ? html`<div class="o-card s-discover__importcta"><span class="s-discover__importcta-text">${t('importCta')}</span><button type="button" class="o-btn o-btn--primary s-discover__vip" data-import-cta>+ ${t('importAction')}</button></div>`
+        ? html`<div class="o-card s-discover__importcta"><span class="s-discover__importcta-text">${t('importCta')}</span>${vipButton({ label: t('importAction'), dataset: { 'import-cta': '' } })}</div>`
         : html`<div class="s-discover__grid s-discover__grid--overview">${section.entries.map(card)}</div>`}
     </section>`,
   )}</div>`;

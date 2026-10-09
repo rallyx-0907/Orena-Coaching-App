@@ -4966,6 +4966,14 @@ type. Goal: the user understands the app's content structure without clicking ea
    pointer); under `prefers-reduced-motion` the ring is held still and the halo is static and fainter; the global keyboard
    focus ring is unchanged. D-147 (no violet or coloured outline) stands everywhere else; this
    exception is these two controls only (`discover.css`, `s-discover__vip`).
-8. **Gate.** `scripts/test_orena_screen_discover.mjs` section 13 renders the overview in English, Vietnamese and Chinese,
+8. **Import is a featured function, found from every browsing place** (human, 2026-10-09: it is a money-making feature,
+   so users should notice it and find it easily). The same VIP control (kit `vipButton`, the look of `components.css`
+   `.o-btn--vip`) opens the same flow (`screens/import/open.js`) from: Discover's header and its Imported call to action;
+   Today, as a featured card on the page's own card shell and icon tile with one line of value ("Learn from anything:
+   import a video, audio or text", en/vi/zh) between Recommended and For you; and My Library's page header. On a phone the
+   control is one tap from the Discover and Library headers (the header row wraps; no overflow at 360px). The rail and the
+   phone bar keep the design's navigation set. D-147 stands everywhere except these VIP controls. The shared label is the
+   shell's `importAction`.
+9. **Gate.** `scripts/test_orena_screen_discover.mjs` section 13 renders the overview in English, Vietnamese and Chinese,
    and checks the order, the always-present Imported with its call to action, the VIP class on both import controls and the
    reduced-motion rule.

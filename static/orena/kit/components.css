@@ -538,3 +538,64 @@
   background: var(--deco-strong);
   backdrop-filter: blur(6px);
 }
+
+/* ---- The VIP import control (human, 2026-10-09, D-16V): every entry point to Import - Discover's header and its
+   Imported call to action, Today's featured card, My Library's header (kit `vipButton`). A running rainbow - a conic gradient (the skill and category hues from tokens.css, no colour of its
+   own) turned by an animated @property angle - as a 3px ring around the unchanged accent fill (so the label keeps
+   the contrast the primary button has) and as a soft blurred glow behind the button. Both are pseudo-elements
+   outside the layout: the button keeps its box, the glow ignores the pointer. This is the one explicit exception
+   to D-147's no-coloured-outline rule; every other control keeps it. */
+@property --vip-angle {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+.o-btn.o-btn--primary.o-btn--vip {
+  --vip-fill: var(--accent-fill);
+  --vip-rainbow: conic-gradient(
+    from var(--vip-angle),
+    var(--skill-speak), var(--skill-read), var(--skill-vocab), var(--gcat-4),
+    var(--skill-listen), var(--skill-grammar), var(--skill-write), var(--skill-speak)
+  );
+  --vip-glow: 0.55;
+  --vip-live: 1;
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  animation: o-vip-run 4s linear infinite;
+}
+:root[data-theme='light'] .o-btn.o-btn--primary.o-btn--vip { --vip-glow: 0.35; }
+/* The ring and the fill: the 3px border is the ring, painted behind the label. */
+.o-btn.o-btn--primary.o-btn--vip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 3px solid transparent;
+  border-radius: inherit;
+  background:
+    linear-gradient(var(--vip-fill), var(--vip-fill)) padding-box,
+    var(--vip-rainbow) border-box;
+  pointer-events: none;
+}
+/* The halo, behind the ring. */
+.o-btn.o-btn--primary.o-btn--vip::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  z-index: -2;
+  border-radius: inherit;
+  background: var(--vip-rainbow);
+  filter: blur(12px);
+  opacity: calc(var(--vip-glow) * var(--vip-live));
+  pointer-events: none;
+}
+.o-btn.o-btn--primary.o-btn--vip:hover { --vip-fill: var(--accent-fill-hover); }
+.o-btn.o-btn--primary.o-btn--vip:active { --vip-fill: var(--accent-fill-press); }
+@keyframes o-vip-run {
+  to { --vip-angle: 360deg; }
+}
+/* Reduced motion: the same ring, held still, and a fainter still glow. */
+@media (prefers-reduced-motion: reduce) {
+  .o-btn.o-btn--primary.o-btn--vip { animation: none; --vip-live: 0.55; }
+}

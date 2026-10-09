@@ -5,7 +5,8 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { mediaCard, headlineTitle, settleCovers } from '../../kit/components.js';
+import { mediaCard, headlineTitle, settleCovers, vipButton } from '../../kit/components.js';
+import { openImportFlow as openImport } from '../import/open.js';
 import { langSpan, langAttr } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
@@ -66,7 +67,7 @@ export default async function discover(element, ctx) {
           : html`<div><h1 class="o-h1">${ts('discover')}</h1><p class="s-discover__sub">${t('subtitle')}</p></div>`}
         <div class="s-discover__actions">
           <button type="button" class="o-btn o-btn--secondary" data-filters>${raw(icon('list-filter', { size: 16 }))}${t('filters')}<span data-filtercount></span></button>
-          ${practice === 'listening' ? '' : html`<button type="button" class="o-btn o-btn--primary s-discover__vip" data-import>+ ${t('importAction')}</button>`}
+          ${practice === 'listening' ? '' : vipButton({ label: t('importAction'), dataset: { import: '' } })}
         </div>
       </div>
       <div class="o-search">
@@ -225,9 +226,7 @@ export default async function discover(element, ctx) {
 
   // The header's "+ Import" and the Imported section's call to action are one action.
   function openImportFlow() {
-    import('../import/sheet.js')
-      .then((module) => module.openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' }))
-      .catch((error) => console.error('[Orena] Import is not available yet', error));
+    return openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' });
   }
   root.querySelector('[data-import]')?.addEventListener('click', openImportFlow);
 
