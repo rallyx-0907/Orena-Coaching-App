@@ -118,3 +118,67 @@ assert.equal(addressOf(undefined), '');
   assert.match(router, /if \(reached !== 'traverse'\) memory\.remember\(address, 0\);/, 'a fresh arrival drops a stale position');
 }
 console.log('scroll memory: PASS');
+
+/* In-app Back (GLB-3): the index of a history entry is stamped in its state, so Back, Forward, reload and a hash typed
+   by hand cannot put a counter out of step. */
+{
+  const { canStepBack, entryIndex, readIndex, withIndex } = await import('../static/orena/shell/history-index.js');
+  assert.equal(readIndex(null), null);
+  assert.equal(readIndex({}), null);
+  assert.equal(readIndex({ orenaIdx: -1 }), null);
+  assert.equal(readIndex({ orenaIdx: '2' }), null);
+  assert.equal(readIndex({ orenaIdx: 3 }), 3);
+  assert.deepEqual(withIndex({ orenaGrammarSearch: 'x' }, 2), { orenaGrammarSearch: 'x', orenaIdx: 2 }, 'the stamp keeps the entry\'s other state');
+  assert.deepEqual(withIndex(null, 0), { orenaIdx: 0 });
+
+  // Replay a session against a model of the browser's history: entries with their state, a cursor.
+  const entries = [];
+  let cursor = -1;
+  let previous = null;
+  const render = (replaced = false) => {
+    const stamped = readIndex(entries[cursor].state);
+    previous = entryIndex({ stamped, replaced, previous });
+    entries[cursor].state = withIndex(entries[cursor].state, previous);
+    return previous;
+  };
+  const push = () => { entries.length = cursor + 1; entries.push({ state: null }); cursor += 1; return render(); };
+  const replace = () => { entries[cursor] = { state: null }; return render(true); };
+  const traverse = (to) => { cursor = to; return render(); };
+
+  entries.push({ state: null });
+  cursor = 0;
+  assert.equal(render(), 0, 'the first entry of a tab is 0');
+  assert.equal(canStepBack(0), false, 'no app entry before it: in-app Back goes to the place\'s parent route');
+  assert.equal(push(), 1);
+  assert.equal(push(), 2);
+  assert.equal(canStepBack(2), true);
+  assert.equal(replace(), 2, 'the app\'s own replace keeps the index of the entry it replaces');
+
+  // The browser's Back button twice, then in-app navigation: the old counter would still say 2.
+  assert.equal(traverse(1), 1);
+  assert.equal(traverse(0), 0);
+  assert.equal(canStepBack(previous), false, 'after the browser\'s own Back reached the first entry, in-app Back must not leave the app');
+  assert.equal(push(), 1, 'a push from the first entry drops the forward entries and numbers on from it');
+  assert.equal(entries.length, 2);
+
+  // Forward and reload read the stamp back.
+  assert.equal(traverse(0), 0);
+  assert.equal(traverse(1), 1);
+  previous = null;
+  assert.equal(render(), 1, 'a reload keeps the stamp, so Back still works after it');
+
+  // A hash typed by hand is an unstamped entry the browser pushed: one past the entry before it.
+  previous = 1;
+  entries.push({ state: null });
+  cursor += 1;
+  assert.equal(render(), 2);
+}
+
+{
+  const router = fs.readFileSync('static/orena/shell/router.js', 'utf8');
+  assert.doesNotMatch(router, /orena\.next\.depth|\bdepth\b/, 'no counter kept in step with go()');
+  assert.match(router, /if \(canStepBack\(position\)\) history\.back\(\);\s*else go\(href\(origin\), \{ replace: true \}\);/, 'in-app Back steps through history only when an app entry precedes this one');
+  assert.match(router, /hasHistory: \(\) => canStepBack\(position\)/);
+  assert.match(router, /history\.replaceState\(withIndex\(history\.state, position\), ''\)/, 'every rendered entry is stamped');
+  console.log('history index: PASS');
+}

@@ -23,6 +23,7 @@ import { shellCopy as t } from '../copy/shell.js';
 import { PRIMARY, DEFAULT_ROUTE, entryRoute, match, href, byId } from './routes.js';
 import { SCREENS } from './screens.js';
 import { formerAddress } from './former-addresses.js';
+import { canStepBack, entryIndex, readIndex, withIndex } from './history-index.js';
 import { addressOf, createScrollMemory, restoreScrollWhenReady } from './scroll-memory.js';
 
 const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
@@ -31,7 +32,6 @@ const STORY_ROUTES = ['reader', 'listening', 'dictation', 'checku', 'rtransfer',
    load, a reload in a new tab), the rail lights Practice Hub, not Today or Discover. */
 const PRACTICE_ROOMS = ['speak', 'compare', 'attempts', 'spsummary', 'freetalk', 'conv', 'situation', 'writing', 'writingDraft', 'wrcompare'];
 const ORIGIN_KEY = 'orena.next.navOrigin';
-const DEPTH_KEY = 'orena.next.depth';
 
 function session(key, value) {
   try {
@@ -47,7 +47,8 @@ export function createRouter({ frame, getContext }) {
   const root = document.documentElement;
   const storedOrigin = session(ORIGIN_KEY);
   let origin = storedOrigin || DEFAULT_ROUTE;
-  let depth = Number(session(DEPTH_KEY)) || 0;
+  // The index of the history entry on screen among the app's own (shell/history-index.js); null before the first render.
+  let position = null;
   let originKnown = Boolean(storedOrigin);
   let cleanup = null;
   let generation = 0;
@@ -94,20 +95,13 @@ export function createRouter({ frame, getContext }) {
     }
     arrival = replace ? 'replace' : 'push';
     if (replace) location.replace(hash);
-    else {
-      depth += 1;
-      session(DEPTH_KEY, depth);
-      location.hash = hash;
-    }
+    else location.hash = hash;
     return null;
   }
 
   function back() {
-    if (depth > 0) {
-      depth -= 1;
-      session(DEPTH_KEY, depth);
-      history.back();
-    } else go(href(origin), { replace: true });
+    if (canStepBack(position)) history.back();
+    else go(href(origin), { replace: true });
   }
 
   function setCrumb(text) {
@@ -150,6 +144,9 @@ export function createRouter({ frame, getContext }) {
     const mine = (generation += 1);
     const reached = arrival;
     arrival = 'traverse';
+    // Every entry the app shows carries its place among the app's entries, so Back never has to guess.
+    position = entryIndex({ stamped: readIndex(history.state), replaced: reached === 'replace', previous: position });
+    if (readIndex(history.state) !== position) history.replaceState(withIndex(history.state, position), '');
     const address = location.hash;
     settled = false;
     stopRestore?.();
@@ -211,7 +208,7 @@ export function createRouter({ frame, getContext }) {
       go,
       back,
       // Whether Back returns within the app (false when the room was opened directly, e.g. from a link).
-      hasHistory: () => depth > 0,
+      hasHistory: () => canStepBack(position),
       href,
       setCrumb,
       setLoadingLabel: (label) => { loadingLabel = String(label); },
