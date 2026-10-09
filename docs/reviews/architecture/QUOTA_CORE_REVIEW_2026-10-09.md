@@ -5,9 +5,9 @@ Recorded in Git as AGENTS.md "Architecture review authority" requires. PR #116, 
 | | |
 |---|---|
 | Reviewer | claude-opus-5-5, Delegated Architecture Reviewer (independent of the implementer) |
-| Reviewed commits | `4fbd15a2`, `85444275`, `40443ed1` (on `daf2deea`) |
-| Verdict | **REQUEST CHANGES** (one P1; expected APPROVE WITH REQUIRED CHANGES once P1-1 is fixed with a regression test) |
-| Fixes | see "Fixes" at the end; the fixes themselves are not yet re-reviewed |
+| Reviewed commits | First review: `4fbd15a2`, `85444275`, `40443ed1` (on `daf2deea`). Re-review: `40443ed1..524a03df` (fixes `fef64cd5`, `e919a6c6`, `9d014ba5`, `524a03df`) |
+| Final verdict | **APPROVE** at exact reviewed SHA `524a03df4d1d40acc1d6ba616873d1ba9f609327` (re-review 2026-10-09). First review at `40443ed1`: REQUEST CHANGES (P1-1), superseded. |
+| Fixes | see "Fixes"; re-reviewed and approved in "Re-review" below. Commits after `524a03df` only add this review record. Not product approval; not activation authorization. |
 
 The review text follows as the reviewer wrote it.
 
@@ -21,7 +21,7 @@ The review text follows as the reviewer wrote it.
   - costly metered operations fail closed;
   - nothing is enforced on the client.
 
-## VERDICT: REQUEST CHANGES
+## FIRST-REVIEW VERDICT (superseded by the re-review below): REQUEST CHANGES
 
 There is one P1. Concurrent requests that name different timezones each create their own window, and each window has a full allowance. I reproduced this on real PostgreSQL. Everything else holds or is P2/P3. Once P1-1 is fixed and has a regression test, I expect to give **APPROVE WITH REQUIRED CHANGES**, with the P2s as the required changes.
 
@@ -145,7 +145,7 @@ All runs used an ephemeral `ai-writing-coach:local` container with the worktree 
 - `/api/improve` dispatch failure status (P2-2).
 - In `'current'` mode, the reconciler settles first, then a late live settle writes nothing and nothing is double-counted.
 
-## Fixes (implementer, after this review; awaiting re-review)
+## Fixes (implementer, after the first review; re-reviewed: APPROVE)
 
 | Finding | Fix | Commit |
 |---|---|---|
