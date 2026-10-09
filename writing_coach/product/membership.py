@@ -94,22 +94,29 @@ def apply_change(
         raise LookupError("No account has this identifier.")
     if not isinstance(change, dict):
         raise MembershipInvalid("The change must be an object.")
-    applied: dict = {}
+    # Everything is checked before anything is written: a refused change leaves the account exactly as it was.
+    role = None
     if "role" in change:
         role = validate_role(change.get("role"))
-        if role != account["role"]:
-            if account["user_key"] == actor_key:
-                raise MembershipConflict("You cannot change your own role.")
-            if role != "admin" and str(account.get("email") or "").casefold() in protected_emails:
-                raise MembershipConflict("This address is a configured platform administrator; it stays an administrator.")
-            store.set_role(user_id, role)
-            applied["role"] = role
-    if "plan_id" in change:
+        if role == account["role"]:
+            role = None
+        elif account["user_key"] == actor_key:
+            raise MembershipConflict("You cannot change your own role.")
+        elif role != "admin" and str(account.get("email") or "").casefold() in protected_emails:
+            raise MembershipConflict("This address is a configured platform administrator; it stays an administrator.")
+    plan_id = until = None
+    set_plan = "plan_id" in change
+    if set_plan:
         plan_id = validate_plan(change.get("plan_id"))
         provider = str(account.get("provider") or "")
         if provider and provider != MANUAL_PROVIDER and account.get("status") in {"active", "trialing"}:
             raise MembershipConflict("This account's plan is managed by billing; it cannot be set by hand.")
         until = None if plan_id == "free" else parse_until(change.get("until"))
+    applied: dict = {}
+    if role is not None:
+        store.set_role(user_id, role)
+        applied["role"] = role
+    if set_plan:
         store.set_manual_plan(user_id, None if plan_id == "free" else plan_id, until)
         applied["plan_id"] = plan_id
         applied["until"] = until.isoformat() if until else None

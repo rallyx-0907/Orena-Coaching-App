@@ -118,8 +118,11 @@ export async function mountAi(shell, ctx) {
   }
 
   /* Token usage reads the AI cost ledger for the chosen period; a late answer for a period the operator left is dropped. */
+  let usageRequest = 0;
   async function loadUsage() {
     const days = view.usage.days;
+    // Only the latest request paints: a quick 30 -> 7 -> 30 never shows an older 30-day answer over a newer one.
+    const request = ++usageRequest;
     view.usage.report = null;
     view.usage.failed = false;
     view.usage.loaded = true;
@@ -132,7 +135,7 @@ export async function mountAi(shell, ctx) {
       if (error?.name === 'AbortError') return;
       failed = true;
     }
-    if (!alive || view.usage.days !== days) return;
+    if (!alive || request !== usageRequest || view.usage.days !== days) return;
     view.usage.report = report;
     view.usage.failed = failed;
     paint();

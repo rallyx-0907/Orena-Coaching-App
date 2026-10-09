@@ -13,6 +13,7 @@ the catalogue (`current_plans()`) overlays the stored document on these defaults
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass, field, replace
 from typing import Any, Mapping, Protocol
 
@@ -155,11 +156,21 @@ class PlanSettingStore(Protocol):
 
 
 _store: PlanSettingStore | None = None
+# The catalogue in force, kept a few seconds so a quota check on every request does not read the database each time;
+# a save in this process clears it at once (review 2026-10-09).
+CACHE_SECONDS = 5.0
+_cache: tuple[float, dict[str, Plan]] | None = None
+
+
+def _clear_cache() -> None:
+    global _cache
+    _cache = None
 
 
 def configure_plan_store(store: PlanSettingStore | None) -> None:
     global _store
     _store = store
+    _clear_cache()
 
 
 def _number(value: object, *, what: str, integer: bool = False, upper: int) -> float | int:
@@ -263,6 +274,16 @@ def stored_catalog() -> dict | None:
 
 def current_plans() -> dict[str, Plan]:
     """The catalogue in force now: the defaults with the administrator's saved prices and limits on top."""
+    global _cache
+    now = time.monotonic()
+    if _cache is not None and _cache[0] > now:
+        return dict(_cache[1])
+    plans = _read_plans()
+    _cache = (now + CACHE_SECONDS, plans)
+    return dict(plans)
+
+
+def _read_plans() -> dict[str, Plan]:
     record = stored_catalog()
     if not record:
         return dict(PLANS)
@@ -277,10 +298,12 @@ def current_plans() -> dict[str, Plan]:
 
 def save_catalog(document: object, *, updated_by: str = "") -> dict:
     """Validate and store the administrator's catalogue; it applies from this moment."""
+    normalized = validate_catalog(document)
     if _store is None:
         raise RuntimeError("The plan catalogue store has not been installed by the persistence runtime.")
-    normalized = validate_catalog(document)
-    return _store.set_setting(PLAN_SETTING_KEY, normalized, updated_by=updated_by)
+    saved = _store.set_setting(PLAN_SETTING_KEY, normalized, updated_by=updated_by)
+    _clear_cache()
+    return saved
 
 
 def resolve_plan_id(plan_id: str | None) -> str:

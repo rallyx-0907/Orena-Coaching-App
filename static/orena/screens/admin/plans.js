@@ -211,7 +211,7 @@ export async function mountPlans(shell, ctx) {
     view.error = null;
     host.paint();
     try {
-      view.doc = await adminApi.savePlans(plansPayload(view.doc.plans.map((plan) => view.drafts[plan.id])));
+      view.doc = await adminApi.savePlans({ ...plansPayload(view.doc.plans.map((plan) => view.drafts[plan.id])), expected_updated_at: view.doc.updated_at || null });
       view.doc.plans.forEach(reset);
       view.busy = false;
       host.paint();

@@ -152,3 +152,15 @@ def test_membership_routes(monkeypatch):
     store.account["user_key"] = ADMIN_KEY
     assert client.put(path, json={"role": "admin"}).status_code == 409
     assert client.get("/api/product/admin/accounts/nope/membership").status_code == 404
+
+
+def test_a_refused_plan_change_does_not_apply_the_role_either():
+    """Review P1: {role, plan} with a refused plan must not leave the role changed (and unaudited)."""
+    billing = Store(plan_id="pro", status="active", provider="polar")
+    with pytest.raises(MembershipConflict):
+        change(billing, {"role": "admin", "plan_id": "plus"})
+    assert billing.account["role"] == "user"
+    past = Store()
+    with pytest.raises(MembershipInvalid):
+        change(past, {"role": "admin", "plan_id": "plus", "until": PAST})
+    assert past.account["role"] == "user"

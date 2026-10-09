@@ -6,6 +6,13 @@ import { controlPage } from './control-pages.js';
 import { pageHead, stateBlock } from './blocks.js';
 import { t } from './copy.js';
 
+/* The plan the server applies now: an ended manual plan is Free, a stored "premium" is Pro. */
+function effectivePlan(account) {
+  if (!account.plan_id) return 'free';
+  if (account.provider === 'manual' && account.until && new Date(account.until) <= new Date()) return 'free';
+  return account.plan_id === 'premium' ? 'pro' : account.plan_id;
+}
+
 /* The account's role and plan as a form draft (D-154). */
 function membershipView(answer, context) {
   if (!answer || !answer.account) return null;
@@ -13,7 +20,7 @@ function membershipView(answer, context) {
   return {
     account,
     plans: answer.plans || [],
-    draft: { role: account.role, plan_id: account.plan_id || 'free', until: account.until ? String(account.until).slice(0, 10) : '' },
+    draft: { role: account.role, plan_id: effectivePlan(account), until: effectivePlan(account) !== 'free' && account.until ? String(account.until).slice(0, 10) : '' },
     error: '',
     status: '',
     busy: false,
@@ -28,7 +35,8 @@ export function membershipChange(view) {
   if (view.draft.role !== view.account.role) change.role = view.draft.role;
   const plan = view.draft.plan_id;
   const until = plan === 'free' ? '' : view.draft.until;
-  if (plan !== (view.account.plan_id || 'free') || until !== (view.account.until ? String(view.account.until).slice(0, 10) : '')) {
+  const stored = effectivePlan(view.account);
+  if (plan !== stored || until !== (stored !== 'free' && view.account.until ? String(view.account.until).slice(0, 10) : '')) {
     change.plan_id = plan;
     if (until) change.until = `${until}T23:59:59Z`;
   }

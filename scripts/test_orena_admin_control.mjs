@@ -53,3 +53,16 @@ console.log('Admin control-center rendering and truthful state checks passed');
   assert.deepEqual(membershipChange({ ...view, draft: { role: 'user', plan_id: 'free', until: '2027-01-15' } }), { plan_id: 'free' });
   console.log('Admin account role and plan: PASS');
 }
+
+/* Review fixes: an ended manual plan reads as Free, a stored "premium" as Pro. */
+{
+  const { membershipBlock } = await import('../static/orena/screens/admin/control-pages.js');
+  const plans = [{ id: 'free', name: 'Free', rank: 0 }, { id: 'plus', name: 'Plus', rank: 1 }, { id: 'pro', name: 'Pro', rank: 2 }];
+  const base = { id: 'u1', user_key: 'k', email: 'a@example.org', role: 'user', status: 'active' };
+  const ended = String(membershipBlock({ account: { ...base, plan_id: 'plus', provider: 'manual', until: '2020-01-01T00:00:00+00:00' }, plans, draft: { role: 'user', plan_id: 'free', until: '' } }));
+  assert.match(ended, /manual plan ended/);
+  assert.doesNotMatch(ended, /until /, 'an ended plan shows no end date');
+  const legacy = String(membershipBlock({ account: { ...base, plan_id: 'premium', provider: 'polar' }, plans, draft: { role: 'user', plan_id: 'pro', until: '' } }));
+  assert.match(legacy, /Now: Pro/);
+  console.log('Admin account plan: ended and legacy plans read as the server applies them: PASS');
+}

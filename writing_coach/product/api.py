@@ -97,10 +97,17 @@ async def product_admin_plans_save(request: Request) -> dict[str, Any]:
         document = await request.json()
     except Exception:
         raise HTTPException(400, "The catalogue must be JSON.")
+    # Two administrators editing at once: a save based on an older catalogue is refused, not silently overwritten.
+    expected = document.get("expected_updated_at") if isinstance(document, dict) else None
+    current = (stored_catalog() or {}).get("updated_at")
+    if isinstance(document, dict) and "expected_updated_at" in document and (expected or None) != (current or None):
+        raise HTTPException(409, "The plans were changed by someone else since you opened this page. Reload to see them.")
     try:
         save_catalog(document, updated_by=str(admin.get("email") or admin.get("google_sub") or ""))
     except PlanCatalogInvalid as error:
         raise HTTPException(422, str(error))
+    except RuntimeError:
+        raise HTTPException(503, "Plans are not editable on this deployment.")
     _record_admin_event(str(admin.get("google_sub") or ""), document)
     return _admin_catalog()
 

@@ -263,7 +263,7 @@ export default async function grammarConcept(element, ctx) {
   const titles = new Map();
   if (view.compare.length) {
     try {
-      (await grammarCatalog(lang)).forEach((row) => titles.set(row.id, String(row.header?.native_title || '')));
+      (await grammarCatalog(lang)).forEach((row) => titles.set(row.id, String(row.header?.native_title || row.native_title || '')));
     } catch {
       /* unlabelled */
     }

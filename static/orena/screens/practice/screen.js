@@ -15,7 +15,7 @@ import { languages } from '../../copy/index.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { loadPendingRows, recentRows, recentMediaFacts, lastListenedLine } from './continuation.js';
 import { t } from './copy.js';
-import { device } from '../../kit/device.js';
+import { device, onDeviceChange } from '../../kit/device.js';
 import { icon } from '../../kit/icons.js';
 import { loadAttemptsSince } from '../../product/speaking-history.js';
 import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SKILL_GROUPS, buildSkillSections, writeRecommendation, weakestLines, vocabularyRecommendation } from './model.js';
@@ -360,6 +360,17 @@ export default async function practiceHub(element, ctx) {
   const draft = waiting ? { title: waiting.title || (waiting.free ? writingT('freeTitle') : ''), n: waiting.n } : null;
   const earlier = earlierDrafts(ctx.context.memory?.value?.expressions || {}, language).length;
   const data = { draft, earlier, speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastListenedLine: listenedLine, speakRecommendation: speakRec };
-  if (skill) await renderSkillHub(element, ctx, data, skill);
-  else await renderHub(element, ctx, data);
+  if (skill) {
+    await renderSkillHub(element, ctx, data, skill);
+    return undefined;
+  }
+  await renderHub(element, ctx, data);
+  // The phone folds its skills, the desk does not (D-152): crossing the breakpoint redraws the hub.
+  let shown = device();
+  const leave = onDeviceChange(({ device: next }) => {
+    if (next === shown || !ctx.isCurrent()) return;
+    shown = next;
+    renderHub(element, ctx, data);
+  });
+  return leave;
 }

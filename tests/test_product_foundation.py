@@ -136,6 +136,8 @@ def test_validation_needs_exactly_the_three_plans():
 def test_saving_without_a_store_is_an_error_not_a_silent_drop():
     with pytest.raises(RuntimeError):
         save_catalog(document())
+    with pytest.raises(PlanCatalogInvalid):
+        save_catalog({"plans": []}), "an invalid document is refused on its merits first"
 
 
 def test_admin_routes_read_and_save_the_catalogue(monkeypatch):
@@ -182,3 +184,22 @@ def test_admin_routes_refuse_a_learner(monkeypatch):
     client = TestClient(app)
     assert client.get("/api/product/admin/plans").status_code == 403
     assert client.put("/api/product/admin/plans", json=document()).status_code == 403
+
+
+def test_a_save_from_a_stale_page_is_refused(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    import writing_coach.product.api as product_api
+
+    configure_plan_store(MemoryStore())
+    monkeypatch.setattr(product_api, "require_admin", lambda request: {"google_sub": "a", "email": "a@example.test"})
+    monkeypatch.setattr(product_api, "_record_admin_event", lambda actor, document: None)
+    app = FastAPI()
+    app.include_router(product_api.router)
+    client = TestClient(app)
+    first = client.put("/api/product/admin/plans", json={**document(), "expected_updated_at": None})
+    assert first.status_code == 200
+    stamp = first.json()["updated_at"]
+    assert client.put("/api/product/admin/plans", json={**document(), "expected_updated_at": None}).status_code == 409, "opened before the first save"
+    assert client.put("/api/product/admin/plans", json={**document(), "expected_updated_at": stamp}).status_code == 200
