@@ -11,7 +11,8 @@ implementation pass. Change when the human approves a new revision: pin it,
 record a `SYNC_<date>.md`, recompute `PINS.tsv`, and update
 `IMPLEMENTATION_MAP.md` for every surface the revision touches.
 
-Pinned revision: **`1790473816124946`**, 2026-09-27 (`SYNC_2026-09-27.md`).
+Pinned revision: the human's export of 2026-10-08, pinned 2026-10-09 (`SYNC_2026-10-09.md`); before it,
+`1790473816124946`, 2026-09-27 (`SYNC_2026-09-27.md`).
 
 Human-approved visual supplements (2026-10-03): `screens/Orena Visual Skin EN.html`
 (the supplied “Orena Visual Skin (2).html” export) and `screens/Orena Visual Skin ZH.html`.

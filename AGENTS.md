@@ -71,8 +71,8 @@ Reading, Listening, Speaking, Writing, Practice, Vocabulary / My Language or
 navigation task, read and obey:
 
 - **The Claude Design project, at its source** (D-088):
-  `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0`, pinned byte for byte at revision
-  `1790473816124946` in `docs/design/canonical-ui/screens/`. It is the visual,
+  `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0`, pinned byte for byte from the human's
+  export of 2026-10-08 in `docs/design/canonical-ui/screens/` (`SYNC_2026-10-09.md`). It is the visual,
   interaction and data authority for every learner-facing surface.
   `docs/project/DESIGN_CONTRACT.md` ("The authority") lists exactly what to read
   from it; `docs/design/canonical-ui/IMPLEMENTATION_MAP.md` says where each of
