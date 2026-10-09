@@ -588,3 +588,100 @@ def test_reserve_retries_mixed_with_dispatch_settle_release_never_deadlock(engin
         bucket = repo.get_bucket(incarnation, 'm', window.window_id)
         assert bucket is None or bucket['consumed'] + bucket['reserved'] <= 6
     assert errors == []
+
+
+# --- D-160: limit_policy='current' (quota enforcement) ---------------------
+
+def _current(limit, *, window_id='cur', policy='c-new'):
+    start = datetime.now(UTC) - timedelta(minutes=1)
+    return BucketWindow(window_id=window_id, window_start=start, window_end=start + timedelta(days=30),
+                        policy_version=policy, unit_limit=limit)
+
+
+def test_current_limit_upgrade_applies_without_resetting_usage(engine, incarnation):
+    repo = PostgresQuotaRepository(engine)
+    for n in range(2):
+        assert repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(2),
+                            operation_id=op(f'up-{n}'), requested_units=1, limit_policy='current')['status'] == 'admit'
+        repo.settle(operation_id=op(f'up-{n}'), actual_units=1)
+    assert repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(2),
+                        operation_id=op('up-x'), requested_units=1, limit_policy='current')['status'] == 'exhausted'
+    upgraded = repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(10, policy='c-plus'),
+                            operation_id=op('up-y'), requested_units=1, limit_policy='current')
+    assert upgraded['status'] == 'admit'
+    bucket = repo.get_bucket(incarnation, 'writing.review', 'cur')
+    assert (bucket['consumed'], bucket['reserved'], bucket['unit_limit'], bucket['policy_version']) == (2, 1, 10, 'c-plus')
+
+
+def test_current_limit_downgrade_below_usage_is_exhausted_and_keeps_the_check(engine, incarnation):
+    repo = PostgresQuotaRepository(engine)
+    for n in range(8):
+        repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(10),
+                     operation_id=op(f'down-{n}'), requested_units=1, limit_policy='current')
+        repo.settle(operation_id=op(f'down-{n}'), actual_units=1)
+    outcome = repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(2, policy='c-free'),
+                           operation_id=op('down-x'), requested_units=1, limit_policy='current')
+    assert outcome['status'] == 'exhausted'
+    assert (outcome['limit'], outcome['consumed'], outcome['reserved']) == (2, 8, 0)
+    bucket = repo.get_bucket(incarnation, 'writing.review', 'cur')
+    assert bucket['unit_limit'] == 8, 'GREATEST(current, consumed + reserved): the CHECK still holds'
+    assert bucket['policy_version'] == 'c-free'
+    assert repo.get_reservation(op('down-x')) is None
+
+
+def test_frozen_mode_is_unchanged(engine, incarnation):
+    repo = PostgresQuotaRepository(engine)
+    repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(1),
+                 operation_id=op('frozen-a'), requested_units=1)
+    frozen = repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(10),
+                          operation_id=op('frozen-b'), requested_units=1)
+    assert frozen == {'status': 'exhausted', 'bucket_id': frozen['bucket_id']}, 'the stored limit decides, as before'
+    assert repo.get_bucket(incarnation, 'writing.review', 'cur')['unit_limit'] == 1
+
+
+def test_five_concurrent_on_last_unit_current_mode(engine, incarnation):
+    repo = PostgresQuotaRepository(engine)
+    repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(2),
+                 operation_id=op('five-0'), requested_units=1, limit_policy='current')
+    results, barrier = {}, threading.Barrier(5)
+
+    def send(n):
+        barrier.wait()
+        results[n] = repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(2),
+                                  operation_id=op(f'five-{n + 1}'), requested_units=1, limit_policy='current')['status']
+
+    threads = [threading.Thread(target=send, args=(n,)) for n in range(5)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert sorted(results.values()) == ['admit', 'exhausted', 'exhausted', 'exhausted', 'exhausted']
+    assert repo.get_bucket(incarnation, 'writing.review', 'cur')['reserved'] == 2
+
+
+def test_unlimited_current_limit_admits_and_records_usage(engine, incarnation):
+    repo = PostgresQuotaRepository(engine)
+    for n in range(3):
+        assert repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(None),
+                            operation_id=op(f'free-{n}'), requested_units=5, limit_policy='current')['status'] == 'admit'
+    bucket = repo.get_bucket(incarnation, 'writing.review', 'cur')
+    assert bucket['reserved'] == 15 and bucket['unit_limit'] is None
+
+
+def test_latest_buckets_and_stale_dispatched(engine, incarnation):
+    repo = PostgresQuotaRepository(engine)
+    then = datetime.now(UTC) - timedelta(days=20)
+    past = PostgresQuotaRepository(engine, clock=lambda: then)
+    old = BucketWindow('w-old', then - timedelta(days=10), then + timedelta(days=5), 'p', 5)
+    past.reserve(incarnation_id=incarnation, meter='writing.review', window=old,
+                 operation_id=op('lb-old'), requested_units=1)
+    past.dispatch(operation_id=op('lb-old'), dispatch_ref='d')
+    repo.reserve(incarnation_id=incarnation, meter='writing.review', window=_current(5),
+                 operation_id=op('lb-new'), requested_units=1, limit_policy='current')
+    latest = repo.latest_buckets(incarnation, ['writing.review', 'orena.message'])
+    assert set(latest) == {'writing.review'} and latest['writing.review']['window_id'] == 'cur'
+    assert repo.latest_buckets(incarnation, []) == {}
+    stale = {row['operation_id'] for row in repo.stale_dispatched(datetime.now(UTC) - timedelta(days=1), 100000)}
+    assert op('lb-old') in stale and op('lb-new') not in stale
+    reserved = repo.stale_dispatched(datetime.now(UTC) + timedelta(minutes=1), 100000, states=('reserved',))
+    assert op('lb-new') in {row['operation_id'] for row in reserved}
