@@ -4628,3 +4628,11 @@ P1 report "public staging user blocked by stale internal-review gate".
 2. `static/orena/main.js` no longer stops a signed-in non-admin account with the internal-review notice and its
    dead `/account` link: every verified account runs the learner UI (new account -> Onboarding, completed -> Today);
    only `#/admin/...` addresses check the admin role (the No access frame). `/account` stays retired.
+
+## D-157 - A card without artwork shows a generated poster, never a blank tile
+
+2026-10-09, explicit human decision. Human: "nhớ có ảnh thumbnails … không được để 1 màu rỗng"; chose "Thiết kế lại ô bìa
+mặc định". A media card with no image (and one whose image fails to load) draws a poster from data and tokens only:
+the kind's hue as a gradient into a second hue chosen by the title (stable per title), two light circles, the
+title's first letter or character large, and the kind's icon (`kit/components.js` `posterMarkup`). Per-item
+illustrations under the Art Bible remain a later, separate decision (they need a cover field for Reading).
