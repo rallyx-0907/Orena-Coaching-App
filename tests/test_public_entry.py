@@ -78,9 +78,17 @@ def test_public_pages_need_no_session(monkeypatch):
         assert res.status_code == 200, path
         assert "text/html" in res.headers["content-type"], path
     assert LANDING_MARKER in r["/landing"].text
-    assert "Điều khoản dịch vụ" in r["/terms"].text and "Terms of Service" in r["/terms"].text
+    # Vietnamese by default, English for ?lang=en, and English for ?lang=zh (there is no Chinese text).
+    assert '<html lang="vi">' in r["/terms"].text and "Điều khoản dịch vụ" in r["/terms"].text
+    assert '<html lang="en">' in r["/terms?lang=en"].text and "Terms of Service" in r["/terms?lang=en"].text
     assert "Chính sách quyền riêng tư" in r["/privacy"].text
-    assert "Xoá tài khoản" in r["/account-deletion"].text and "Delete account" in r["/account-deletion"].text
+    assert '<html lang="en">' in r["/privacy?lang=zh"].text and "Privacy Policy" in r["/privacy?lang=zh"].text
+    assert "Xoá tài khoản" in r["/account-deletion"].text and "Delete account" in r["/account-deletion?lang=en"].text
+    for path, res in r.items():
+        if path != "/landing":
+            # The legal pages are static: the text is in the response and no runtime or script file is loaded.
+            assert "<h2" in res.text and "support.js" not in res.text and "<x-dc" not in res.text, path
+            assert "<script src" not in res.text, path
     for res in r.values():
         assert "Orena Donate.dc.html" not in res.text, "Donate is out of scope"
         assert ".dc.html" not in res.text.replace("data-dc-script", ""), "no prototype-file link survives"
@@ -135,6 +143,15 @@ def test_landing_buttons_point_where_the_visitor_can_continue():
     assert "Onboarding.dc.html" not in text
 
 
+async def _fetch(path):
+    async with _client() as c:
+        return await c.get(path)
+
+
+def _get(path):
+    return _fetch(path)
+
+
 def test_account_deletion_page_is_public_uncached_and_says_how(monkeypatch):
     # Google Play's deletion URL: reachable signed out, never cached, and it names the real request channel.
     monkeypatch.setattr(auth_support, "AUTH_ENABLED", True)
@@ -147,7 +164,9 @@ def test_account_deletion_page_is_public_uncached_and_says_how(monkeypatch):
     assert res.status_code == 200 and "text/html" in res.headers["content-type"]
     assert res.headers["cache-control"] == "no-store, max-age=0"
     assert "orena.support@chillpickle.org" in res.text
-    assert "30 days" in res.text and "30 ngày" in res.text
+    assert "30 ngày" in res.text
+    en = _run(_get("/account-deletion?lang=en"))
+    assert "30 days" in en.text and "orena.support@chillpickle.org" in en.text
     assert "/account-deletion" in auth_support.PUBLIC_PAGE_PATHS
 
 

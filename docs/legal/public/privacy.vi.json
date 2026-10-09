@@ -123,7 +123,7 @@
     {
       "h": "11. Trẻ em",
       "blocks": [
-        { "p": "Orena dành cho người từ {{fact:min_age}} tuổi trở lên. Orena không kiểm tra tuổi của bạn khi đăng nhập; đăng nhập cần tài khoản Google, vốn có quy định độ tuổi riêng. Nếu phát hiện tài khoản thuộc về người dưới {{fact:min_age}} tuổi, chúng tôi sẽ xoá tài khoản và dữ liệu liên quan." }
+        { "p": "Orena dành cho người từ {{fact:min_age}} tuổi trở lên. Orena không thu thập ngày sinh của bạn và trong giai đoạn thử nghiệm chưa có cơ chế kỹ thuật kiểm tra tuổi; đăng nhập cần tài khoản Google, vốn có quy định độ tuổi riêng. Nếu phát hiện tài khoản thuộc về người dưới {{fact:min_age}} tuổi, chúng tôi sẽ xoá tài khoản và dữ liệu liên quan." }
       ]
     },
     {

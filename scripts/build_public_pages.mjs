@@ -2,8 +2,12 @@
 //
 //   node scripts/build_public_pages.mjs            write templates/orena/public/*.html and static/orena/public/*
 //   node scripts/build_public_pages.mjs --check    fail if the committed output differs from a fresh build
-//   node scripts/build_public_pages.mjs --release  build in memory and fail while any fact is still unconfirmed
-//                                                  (the check that must pass before the pages go to :8000)
+//   node scripts/build_public_pages.mjs --release  fail while any fact is still unconfirmed (the check that must
+//                                                  pass before the pages go to :8000)
+//   node scripts/build_public_pages.mjs --release --effective-date YYYY-MM-DD
+//                                                  the deploy step: stamps the publish date (the repository keeps
+//                                                  it null), fails if anything is still pending, and writes the
+//                                                  pages (--out-dir DIR writes elsewhere, for tests)
 //
 // The pages are the design's own files, run by the design's own template runtime (support.js, vendored byte for
 // byte beside them), so layout, type, spacing and motion are the pinned design. The legal WORDS are no longer the
@@ -17,7 +21,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { applyText, loadFacts, loadTexts, Pending } from './public_legal_text.mjs';
+import { LANGS, applyText, loadFacts, loadTexts, Pending } from './public_legal_text.mjs';
+import { staticPage } from './public_legal_static.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pin = path.join(root, 'docs/design/canonical-ui/screens');
@@ -80,14 +85,25 @@ function landing(text) {
 const facts = loadFacts(root);
 const pending = new Pending();
 
-// The legal pages: the design's Terms and Privacy pages are the skeletons; the deletion page uses the Terms one.
-const legalPage = (srcName, page) => (text) => applyText(legal(text), page, loadTexts(root, page), facts, pending);
-const pages = [
-  ['Orena-Landing.dc.html', 'landing.html', landing],
-  ['Orena-Terms.dc.html', 'terms.html', legalPage('Orena-Terms.dc.html', 'terms')],
-  ['Orena-Privacy.dc.html', 'privacy.html', legalPage('Orena-Privacy.dc.html', 'privacy')],
-  ['Orena-Terms.dc.html', 'account-deletion.html', legalPage('Orena-Terms.dc.html', 'account-deletion')],
-];
+// The deploy step stamps the publish date: `--release --effective-date YYYY-MM-DD`. The repository keeps it null.
+const dateIdx = process.argv.indexOf('--effective-date');
+const stamped = dateIdx > 0 ? process.argv[dateIdx + 1] : null;
+if (dateIdx > 0) {
+  if (!release) { console.error('--effective-date is only for --release'); process.exit(1); }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(stamped || '') || Number.isNaN(Date.parse(stamped))) {
+    console.error(`--effective-date needs YYYY-MM-DD, got ${JSON.stringify(stamped)}`);
+    process.exit(1);
+  }
+  facts.effective_date = stamped;
+}
+const outIdx = process.argv.indexOf('--out-dir');
+const outRoot = outIdx > 0 ? path.resolve(process.argv[outIdx + 1]) : root;
+
+// Terms, Privacy and Delete account are static, script-free pages (public_legal_static.mjs): one file per
+// language, `<page>.<vi|en>.html`. The design's Terms and Privacy pages are the skeletons; the deletion page uses
+// the Terms one.
+const LEGAL_SOURCES = [['terms', 'Orena-Terms.dc.html'], ['privacy', 'Orena-Privacy.dc.html'], ['account-deletion', 'Orena-Terms.dc.html']];
+const pages = [['Orena-Landing.dc.html', 'landing.html', landing]];
 const copies = [['assets/bg/midnight-wide.jpg', 'static/orena/public/bg/midnight-wide.jpg']];
 
 // The runtime loads React from unpkg (and Babel for .jsx imports, which none of these pages use). The served copy
@@ -107,25 +123,30 @@ for (const [src, dest, fn] of pages) {
   const text = fs.readFileSync(path.join(pin, src), 'utf8');
   outputs.set(`templates/orena/public/${dest}`, Buffer.from(fn(text), 'utf8'));
 }
+for (const [page, src] of LEGAL_SOURCES) {
+  const texts = loadTexts(root, page);
+  const filled = applyText(legal(fs.readFileSync(path.join(pin, src), 'utf8')), page, texts, facts, pending);
+  for (const lang of LANGS) outputs.set(`templates/orena/public/${page}.${lang}.html`, Buffer.from(staticPage(filled, page, lang, texts), 'utf8'));
+}
 for (const [src, dest] of copies) outputs.set(dest, fs.readFileSync(path.join(pin, src)));
 outputs.set('static/orena/public/support.js', Buffer.from(runtime(fs.readFileSync(path.join(pin, 'support.js'), 'utf8')), 'utf8'));
 
 if (release) {
   if (pending.paths.size) {
-    console.error(`NOT RELEASABLE: ${pending.paths.size} fact(s) in docs/legal/public/facts.json are unconfirmed:`);
+    console.error(`NOT RELEASABLE: ${pending.paths.size} fact(s) are unconfirmed (docs/legal/public/facts.json; the publish date is set at deploy with --effective-date YYYY-MM-DD):`);
     for (const p of [...pending.paths].sort()) console.error(`  - ${p}`);
     process.exit(1);
   }
   console.log('release check passed: every fact the public legal text states is confirmed');
-  process.exit(0);
+  if (stamped === null) process.exit(0);
 }
-if (pending.paths.size) {
+else if (pending.paths.size) {
   console.warn(`note: ${pending.paths.size} unconfirmed fact(s) render as "[pending: ...]" and block --release: ${[...pending.paths].sort().join(', ')}`);
 }
 
 let bad = 0;
 for (const [rel, buf] of outputs) {
-  const file = path.join(root, rel);
+  const file = path.join(check ? root : outRoot, rel);
   if (check) {
     if (!fs.existsSync(file) || !fs.readFileSync(file).equals(buf)) {
       console.error(`DRIFT ${rel}`);

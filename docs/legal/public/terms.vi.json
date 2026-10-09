@@ -18,7 +18,7 @@
     {
       "h": "1. Chấp nhận điều khoản",
       "blocks": [
-        { "p": "Khi tạo tài khoản hoặc sử dụng Orena, bạn đồng ý với các Điều khoản này và [Chính sách quyền riêng tư](/privacy). Nếu bạn không đồng ý, vui lòng ngừng sử dụng dịch vụ. Bạn phải từ {{fact:min_age}} tuổi trở lên mới được sử dụng Orena." }
+        { "p": "Khi tạo tài khoản hoặc sử dụng Orena, bạn đồng ý với các Điều khoản này và [Chính sách quyền riêng tư](/privacy). Nếu bạn không đồng ý, vui lòng ngừng sử dụng dịch vụ. Orena dành cho người từ {{fact:min_age}} tuổi trở lên: bạn phải đủ {{fact:min_age}} tuổi mới được sử dụng. Orena không thu thập ngày sinh của bạn và trong giai đoạn thử nghiệm chưa có cơ chế kỹ thuật kiểm tra tuổi; nếu phát hiện tài khoản thuộc về người dưới {{fact:min_age}} tuổi, chúng tôi sẽ xoá tài khoản đó." }
       ]
     },
     {

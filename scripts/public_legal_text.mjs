@@ -105,15 +105,15 @@ function renderSection(sec, i, ctx) {
 
 // --- page regions ----------------------------------------------------------------------------------------------
 
-function rep(s, from, to) { return s.replace(from, () => to); }
+export function rep(s, from, to) { return s.replace(from, () => to); }
 
-function must(re, s, name) {
+export function must(re, s, name) {
   const m = re.exec(s);
   if (!m) throw new Error(`skeleton region not found: ${name}`);
   return m;
 }
 
-const PAGE_HREF = { privacy: '/privacy', terms: '/terms', 'account-deletion': '/account-deletion' };
+export const PAGE_HREF = { privacy: '/privacy', terms: '/terms', 'account-deletion': '/account-deletion' };
 
 function href(page, lang) { return PAGE_HREF[page] + (lang === 'en' ? '?lang=en' : ''); }
 
@@ -178,7 +178,7 @@ function renderPane(pane, page, data, ctx) {
 }
 
 // Splits a skeleton into [head, viPane, enPane, tail] at the language switches.
-function split(skeleton) {
+export function split(skeleton) {
   const vi = skeleton.indexOf('<sc-if value="{{ isVi }}" hint-placeholder-val="{{ true }}">\n  <div style="max-width:1120px');
   const en = skeleton.indexOf('<sc-if value="{{ isEn }}" hint-placeholder-val="{{ false }}">\n  <div style="max-width:1120px');
   const end = skeleton.indexOf('</sc-if>\n</div>\n</x-dc>');

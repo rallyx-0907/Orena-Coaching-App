@@ -123,7 +123,7 @@
     {
       "h": "11. Children",
       "blocks": [
-        { "p": "Orena is for people aged {{fact:min_age}} and over. Orena does not check your age when you sign in; signing in needs a Google account, which has its own age requirements. If we learn that an account belongs to someone under {{fact:min_age}}, we will delete the account and its data." }
+        { "p": "Orena is for people aged {{fact:min_age}} and over. Orena does not collect your date of birth and, during the beta, has no technical age check; signing in needs a Google account, which has its own age requirements. If we learn that an account belongs to someone under {{fact:min_age}}, we will delete the account and its data." }
       ]
     },
     {

@@ -18,7 +18,7 @@
     {
       "h": "1. Accepting these terms",
       "blocks": [
-        { "p": "By creating an account or using Orena, you agree to these Terms and our [Privacy Policy](/privacy?lang=en). If you do not agree, please stop using the service. You must be at least {{fact:min_age}} years old to use Orena." }
+        { "p": "By creating an account or using Orena, you agree to these Terms and our [Privacy Policy](/privacy?lang=en). If you do not agree, please stop using the service. Orena is for people aged {{fact:min_age}} and over: you must be at least {{fact:min_age}} years old to use it. Orena does not collect your date of birth and has no technical age check during the beta; if we learn that an account belongs to someone under {{fact:min_age}}, we will delete it." }
       ]
     },
     {
