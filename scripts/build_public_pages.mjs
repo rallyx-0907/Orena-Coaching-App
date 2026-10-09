@@ -11,12 +11,12 @@
 //
 // The pages are the design's own files, run by the design's own template runtime (support.js, vendored byte for
 // byte beside them), so layout, type, spacing and motion are the pinned design. The legal WORDS are no longer the
-// design's (D-161, a human-authorised deviation: the design's text claimed things Orena does not do): Terms,
+// design's (D-162, a human-authorised deviation: the design's text claimed things Orena does not do): Terms,
 // Privacy and Delete account take their text from docs/legal/public/<page>.<vi|en>.json and the facts in
 // docs/legal/public/facts.json, laid out with the design's own markup (scripts/public_legal_text.mjs). The build
 // also changes only what a prototype file cannot keep when it becomes a route: relative links between prototype
 // files become the app's addresses, asset URLs become /orena-assets URLs, fonts are served from this origin
-// (D-161), and the Donate link is removed (the Donate page is out of scope, D-160). Every substitution must
+// (D-162), and the Donate link is removed (the Donate page is out of scope, D-160). Every substitution must
 // match, or the build fails: a re-pin that moves one of them is noticed here and not in production.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -42,7 +42,7 @@ function sub(text, name, pattern, replacement, { min = 1 } = {}) {
   return out;
 }
 
-// Fonts are served from this origin: a page never contacts Google (D-161). The design's font lines (a preconnect
+// Fonts are served from this origin: a page never contacts Google (D-162). The design's font lines (a preconnect
 // and the css2 stylesheet) become one stylesheet link.
 function fonts(text) {
   text = sub(text, 'font preconnect', /[ \t]*<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\r?\n/g, '');

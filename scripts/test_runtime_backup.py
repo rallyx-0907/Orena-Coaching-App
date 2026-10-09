@@ -87,7 +87,7 @@ def _dump(directory: Path, name: str, age: timedelta, content: bytes = b'PGDMP')
 
 
 class RotationKeepsTheStatedRetention(unittest.TestCase):
-    """The public Privacy Policy says backups are overwritten within 30 days (D-161). Rotation is how that is true."""
+    """The public Privacy Policy says backups are overwritten within 30 days (D-162). Rotation is how that is true."""
 
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()

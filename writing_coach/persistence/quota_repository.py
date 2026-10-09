@@ -1,8 +1,9 @@
 """Quota buckets and the reserve/dispatch/settle/release transactional seam.
 
-DEPLOYED, INACTIVE — the tables this reads and writes are in
-`migrations/versions/20260912_0007`, approved by delegated review and applied
-to the sandbox runtime. No caller is wired to it; enforcement stays off.
+The tables this reads and writes are in `migrations/versions/20260912_0007`,
+approved by delegated review. Its one caller is `writing_coach.product.quota`
+(D-160), which uses `limit_policy='current'` and is switched off by default
+(`ORENA_QUOTA_ENFORCEMENT`).
 
 Division of responsibility, matching `commerce_repository.py`: this file
 never computes a policy decision itself. `writing_coach.reference_backbone`'s
@@ -31,7 +32,11 @@ meter, window or incarnation) the reservation insert is
 its bucket is never touched.
 
 Lock order is the same everywhere, so nothing here can deadlock with itself:
-incarnation (`FOR SHARE`) -> bucket -> reservation. `settle()` and `release()`
+incarnation (`FOR SHARE`) -> [current mode only: the transaction-scoped
+advisory lock on (incarnation, meter)] -> bucket -> reservation. Only
+reserve(limit_policy='current') takes the advisory lock, always after the
+incarnation and before any bucket, and nothing holding a bucket or a
+reservation ever waits for it, so it adds no cycle. `settle()` and `release()`
 read the reservation's bucket id unlocked (it never changes), lock the bucket,
 then the reservation; `dispatch()` locks the incarnation, then the
 reservation, and touches no bucket. The incarnation is held
@@ -75,7 +80,9 @@ from writing_coach.reference_backbone import (
 class QuotaOutcome(dict):
     """`status` is one decision's verdict. reserve(): `admit`, `exhausted`,
     `denied` (with `reason='incarnation_deleted'` for a deleted incarnation),
-    `unknown`, `window_closed`, `duplicate` (the original admission, with its
+    `unknown`, `window_closed`, `window_superseded` (current mode: another
+    bucket of this meter covers the window - re-read and retry),
+    `duplicate` (the original admission, with its
     `reservation_id`), `payload_conflict` or `unknown_incarnation`.
     dispatch()/settle()/release(): their decision's verdicts, plus `denied`
     for dispatching a deleted incarnation's work."""
@@ -83,13 +90,16 @@ class QuotaOutcome(dict):
 
 @dataclass(frozen=True)
 class BucketWindow:
-    """Identity and fixed policy of a quota bucket, supplied by the caller
-    only for the case this is the first reserve() ever seen for this
-    (incarnation, meter, window_id) - an existing bucket's own stored values
-    are always authoritative afterward, never overwritten by a later call's
-    inputs. See ORENA_COMMERCE_ARCHITECTURE.md §3: "An upgrade cannot reset
-    the existing usage window" - a bucket's policy is fixed for its own
-    window's lifetime once created.
+    """Identity and policy of a quota bucket.
+
+    The window (id, start, end) is used only for a bucket's first reserve()
+    and is fixed for the bucket's lifetime afterwards. The limit and policy
+    depend on the mode: with `limit_policy='frozen'` (the default) the values
+    stored at first use stay authoritative and are never overwritten; with
+    `limit_policy='current'` (D-160 enforcement) `unit_limit` and
+    `policy_version` are the catalogue's NOW, decide the reservation and are
+    written back to the row (usage is kept: ORENA_COMMERCE_ARCHITECTURE.md §3
+    "An upgrade cannot reset the existing usage window").
     """
 
     window_id: str
@@ -194,9 +204,53 @@ class PostgresQuotaRepository:
             state=recorded['state'],
         )
 
+    def latest_buckets(self, incarnation_id: str, meters: list[str]) -> dict[str, dict[str, Any]]:
+        """Each meter's most recent bucket (latest `window_end`), in one SELECT; a meter never used is absent.
+
+        Windows are anchored in the learner's timezone (D-160), so the current window cannot be computed
+        without the previous one: an open latest bucket IS the current window (a timezone change never
+        reopens or restarts it), and a closed one's end is where the next window may start at the earliest.
+        """
+        if not meters:
+            return {}
+        with self._engine.connect() as connection:
+            rows = connection.execute(
+                text(
+                    'SELECT DISTINCT ON (meter) id, meter, window_id, window_start, window_end, '
+                    'policy_version, unit_limit, consumed, reserved FROM commerce_quota_buckets '
+                    'WHERE incarnation_id = :inc AND meter = ANY(:meters) '
+                    'ORDER BY meter, window_end DESC, window_start ASC'
+                ),
+                {'inc': incarnation_id, 'meters': list(meters)},
+            ).mappings().all()
+        return {row['meter']: dict(row) for row in rows}
+
+    def stale_dispatched(self, older_than: datetime, limit: int,
+                         states: tuple[str, ...] = ('dispatched',),
+                         meters: tuple[str, ...] | None = None) -> list[dict[str, Any]]:
+        """Reservations still open (`dispatched` by default) whose last change is before `older_than`: work
+        whose owning request is gone (a killed process). The reconciler settles or releases them. `meters`
+        limits it to those meters (an async meter's worker settles its own). No (state, updated_at) index
+        exists yet; one belongs in a later reviewed migration (review P3-1)."""
+        with self._engine.connect() as connection:
+            rows = connection.execute(
+                text(
+                    'SELECT r.operation_id, r.state, r.admitted_units, r.updated_at, b.meter '
+                    'FROM commerce_quota_reservations r '
+                    'JOIN commerce_quota_buckets b ON b.id = r.bucket_id '
+                    'WHERE r.state = ANY(:states) AND r.updated_at < :before '
+                    'AND (CAST(:meters AS TEXT[]) IS NULL OR b.meter = ANY(CAST(:meters AS TEXT[]))) '
+                    'ORDER BY r.updated_at LIMIT :limit'
+                ),
+                {'states': list(states), 'before': older_than, 'limit': int(limit),
+                 'meters': list(meters) if meters is not None else None},
+            ).mappings().all()
+        return [dict(row) for row in rows]
+
     def reserve(
         self, *, incarnation_id: str, meter: str, window: BucketWindow,
         operation_id: str, requested_units: int, entitlement: str = 'allowed',
+        limit_policy: str = 'frozen',
     ) -> QuotaOutcome:
         """One admission attempt, or one idempotent replay of a prior one.
 
@@ -209,7 +263,21 @@ class PostgresQuotaRepository:
         insert the reservation `ON CONFLICT (operation_id) DO NOTHING`; if a
         concurrent first use won, replay against it and leave the bucket
         alone; otherwise add the units to the bucket, same transaction.
+
+        `limit_policy`: 'frozen' (the default, unchanged) decides against the
+        limit stored on the bucket at its first use. 'current' (D-160, quota
+        enforcement) decides against `window.unit_limit` - the catalogue's
+        limit NOW - under the same bucket lock, so a plan change or an
+        administrator's edit applies to the next request while the window's
+        usage is kept (the bucket is plan-independent). The stored row
+        follows: on admit `unit_limit` becomes the current limit (admission
+        guarantees consumed + reserved <= it); on exhausted it becomes
+        GREATEST(current, consumed + reserved), so a downgrade below what was
+        already used never violates the bucket's CHECK. The window (id, start,
+        end) stays the stored one in both modes.
         """
+        if limit_policy not in ('frozen', 'current'):
+            raise ValueError('Unknown limit policy')
         # Validates the units (and entitlement vocabulary) before any SQL;
         # 'admit' here only means "entitlement allows asking".
         asked = reserve_decision(Quota(None, 0, 0), requested_units, entitlement=entitlement)
@@ -231,6 +299,30 @@ class PostgresQuotaRepository:
                 return self._replay(recorded, **identity)
             if asked != 'admit':
                 return QuotaOutcome(status=asked)
+
+            if limit_policy == 'current':
+                # One window at a time per (incarnation, meter) (review of #116, P1-1). Windows are cut in a
+                # client-named timezone, so concurrent first uses could each create their own window - and each
+                # its own full allowance. Serialise the choice of window on a transaction-scoped advisory lock
+                # (lock order: incarnation -> advisory -> bucket -> reservation; settle/release/dispatch and
+                # mark_deleted never take it, so no cycle), then refuse any window that another bucket of this
+                # meter already covers: the caller re-reads and uses that one. Nothing is written for the refusal.
+                connection.execute(
+                    text('SELECT pg_advisory_xact_lock(hashtextextended(:lock_key, 0))'),
+                    {'lock_key': f'quota:{incarnation_id}:{meter}'},
+                )
+                rival = connection.execute(
+                    text(
+                        'SELECT window_id FROM commerce_quota_buckets '
+                        'WHERE incarnation_id = :inc AND meter = :meter AND window_id <> :window_id '
+                        'AND ((window_start <= :now AND :now < window_end) '
+                        'OR (window_start < :end AND :start < window_end)) LIMIT 1'
+                    ),
+                    {'inc': incarnation_id, 'meter': meter, 'window_id': window.window_id, 'now': now,
+                     'start': window.window_start, 'end': window.window_end},
+                ).scalar_one_or_none()
+                if rival is not None:
+                    return QuotaOutcome(status='window_superseded')
 
             select_bucket = text(
                 'SELECT id, window_start, window_end, policy_version, unit_limit, consumed, reserved '
@@ -270,11 +362,28 @@ class PostgresQuotaRepository:
             if recorded is not None:
                 return self._replay(recorded, **identity)
 
+            current = limit_policy == 'current'
+            limit = window.unit_limit if current else bucket['unit_limit']
             verdict = reserve_decision(
-                Quota(bucket['unit_limit'], bucket['consumed'], bucket['reserved']),
+                Quota(limit, bucket['consumed'], bucket['reserved']),
                 requested_units, entitlement=entitlement,
             )
             if verdict != 'admit':
+                if current and verdict == 'exhausted':
+                    connection.execute(
+                        text(
+                            'UPDATE commerce_quota_buckets SET unit_limit = CASE WHEN CAST(:limit AS BIGINT) '
+                            'IS NULL THEN NULL ELSE GREATEST(CAST(:limit AS BIGINT), consumed + reserved) END, '
+                            'policy_version = :policy, updated_at = :now WHERE id = :bucket '
+                            # A 429 storm writes nothing when the limit and policy are already the stored ones.
+                            'AND (unit_limit IS DISTINCT FROM CASE WHEN CAST(:limit AS BIGINT) IS NULL THEN NULL '
+                            'ELSE GREATEST(CAST(:limit AS BIGINT), consumed + reserved) END '
+                            'OR policy_version IS DISTINCT FROM :policy)'
+                        ),
+                        {'limit': limit, 'policy': window.policy_version, 'now': now, 'bucket': bucket['id']},
+                    )
+                    return QuotaOutcome(status=verdict, bucket_id=str(bucket['id']), limit=limit,
+                                        consumed=bucket['consumed'], reserved=bucket['reserved'])
                 return QuotaOutcome(status=verdict, bucket_id=str(bucket['id']))
 
             reservation_id = connection.execute(
@@ -287,19 +396,31 @@ class PostgresQuotaRepository:
                 ),
                 {
                     'id': uuid.uuid4(), 'bucket': bucket['id'], 'op': operation_id,
-                    'units': requested_units, 'policy': bucket['policy_version'], 'now': now,
+                    'units': requested_units,
+                    'policy': window.policy_version if current else bucket['policy_version'], 'now': now,
                 },
             ).scalar_one_or_none()
             if reservation_id is None:
                 # A concurrent first use of this operation committed first.
                 return self._replay(self._recorded(connection, operation_id), **identity)
-            connection.execute(
-                text(
-                    'UPDATE commerce_quota_buckets SET reserved = reserved + :units, '
-                    'updated_at = :now WHERE id = :bucket'
-                ),
-                {'units': requested_units, 'now': now, 'bucket': bucket['id']},
-            )
+            if current:
+                connection.execute(
+                    text(
+                        'UPDATE commerce_quota_buckets SET reserved = reserved + :units, '
+                        'unit_limit = :limit, policy_version = :policy, '
+                        'updated_at = :now WHERE id = :bucket'
+                    ),
+                    {'units': requested_units, 'limit': limit, 'policy': window.policy_version,
+                     'now': now, 'bucket': bucket['id']},
+                )
+            else:
+                connection.execute(
+                    text(
+                        'UPDATE commerce_quota_buckets SET reserved = reserved + :units, '
+                        'updated_at = :now WHERE id = :bucket'
+                    ),
+                    {'units': requested_units, 'now': now, 'bucket': bucket['id']},
+                )
             return QuotaOutcome(
                 status='admit', reservation_id=str(reservation_id), bucket_id=str(bucket['id']),
                 admitted_units=requested_units, state='reserved',

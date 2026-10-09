@@ -30,7 +30,8 @@ import { toast } from '../../kit/toast.js';
 import { langAttr } from '../../kit/lang.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
-import { api, request } from '../../infrastructure/api.js';
+import { api, request, newIdempotencyKey } from '../../infrastructure/api.js';
+import { isQuotaExhausted, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
 import { editWouldFit, measureWriting } from '../../capabilities/writing-limits.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { orenaPresent } from '../../agent/presence.js';
@@ -506,7 +507,7 @@ export default async function mountWriting(element, ctx) {
      it is the next attempt, not a timer, that clears it. */
   function failedMarkup() {
     return failed
-      ? html`<div class="s-writing__failed" role="alert" lang="${langOf(uiLocale)}"><span>${t('reviewFailed')}</span>${failed.retry ? html`<button type="button" class="s-writing__btn" data-act="review">${s('retry')}</button>` : ''}</div>`
+      ? html`<div class="s-writing__failed" role="alert" lang="${langOf(uiLocale)}"><span>${failed.quota || t('reviewFailed')}</span>${failed.quota ? html`<button type="button" class="s-writing__btn" data-act="plans">${seePlansLabel()}</button>` : failed.retry ? html`<button type="button" class="s-writing__btn" data-act="review">${s('retry')}</button>` : ''}</div>`
       : '';
   }
 
@@ -749,7 +750,9 @@ export default async function mountWriting(element, ctx) {
     paintHeader();
     if (hadFinding) paintDraft();
     paintReview();
-    const ask = (parentId) => api.evaluate(reviewPayload({ prompt: promptText, text, level, parentId, language }));
+    // One key per press: a resend of this same review is never charged twice (D-161).
+    const idempotencyKey = newIdempotencyKey();
+    const ask = (parentId) => api.evaluate(reviewPayload({ prompt: promptText, text, level, parentId, language }), { idempotencyKey });
     try {
       let result;
       try {
@@ -796,7 +799,8 @@ export default async function mountWriting(element, ctx) {
       if (!ctx.isCurrent() || error?.name === 'AbortError') return;
       busyReview = false;
       rightMode = essay ? 'review' : 'none';
-      failed = { retry: error?.retryable !== false };
+      // The plan's limit is reached: the server's own figures, and the way to the plans - never a retry.
+      failed = isQuotaExhausted(error) ? { retry: false, quota: quotaMessage(error) } : { retry: error?.retryable !== false };
       activePane = 'review';
       paintTabs();
       paintHeader();
@@ -918,6 +922,7 @@ export default async function mountWriting(element, ctx) {
     else if (act === 'compare') {
       if (essay) ctx.go(ctx.href('wrcompare', { id: essay.id }));
     } else if (act === 'review') runReview();
+    else if (act === 'plans') ctx.go(ctx.href('pricing'));
     else if (act === 'tab') {
       activePane = node.dataset.tab;
       paintTabs();

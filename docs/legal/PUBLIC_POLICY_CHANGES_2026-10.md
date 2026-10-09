@@ -1,7 +1,7 @@
-# Public Privacy and Terms: what changed from the design's text, and why (PUB-2, D-161)
+# Public Privacy and Terms: what changed from the design's text, and why (PUB-2, D-162)
 
 The pinned design's legal text (`Orena-Privacy.dc.html`, `Orena-Terms.dc.html`, revision of 2026-10-09) described
-things Orena does not do. The human authorised replacing the WORDS (2026-10-09, D-161); the structure (13 sections,
+things Orena does not do. The human authorised replacing the WORDS (2026-10-09, D-162); the structure (13 sections,
 same headings and order, summary card, contents list, contacts, footer), layout and tone are unchanged. Vietnamese
 and English change in parallel; one row covers both. Old text is shortened. Evidence is file:line on this branch.
 
@@ -38,7 +38,7 @@ Source of the new text: `docs/legal/public/*.json` and `facts.json`. Audit: `PUB
 | P22 | "Withdraw consent ... marketing email" | device data cleared by clearing site data; microphone permission withdrawn in the browser or device | no marketing |
 | P23 | "Most of these are available in Settings -> Privacy ... respond within 15 working days" | "For requests the app cannot handle yet, including account deletion, contact us ... we respond within 30 days." | Settings -> Privacy has no such rows; 30 days is the human's deletion commitment, applied to all requests (operator to confirm) |
 | P24 | "encrypted in transit and at rest. Internal access limited by role and logged" | "encrypted in transit with HTTPS. Access to administration tools is limited to administrator accounts, and administrator actions are logged" | `core/deployment.py:138-157`, `core/http_security.py:32,61`, `auth_support.py:144-157`; at-rest encryption is not provable |
-| P25/P26 | Cookies: "cookies and browser storage ... theme, language and reading position. We use aggregated analytics ..." | one signed session cookie (up to 14 days); local storage for theme and language and, only if kept, recent recordings; pages and fonts served from Orena itself; no analytics or third-party advertising cookies | `auth_support.py:613-618`, `kit/boot.js:18`; fonts self-hosted (D-161) |
+| P25/P26 | Cookies: "cookies and browser storage ... theme, language and reading position. We use aggregated analytics ..." | one signed session cookie (up to 14 days); local storage for theme and language and, only if kept, recent recordings; pages and fonts served from Orena itself; no analytics or third-party advertising cookies | `auth_support.py:613-618`, `kit/boot.js:18`; fonts self-hosted (D-162) |
 | P27/T12 | Children: "Users under 16 need parental consent ..." | "Orena is for people aged 13 and over. Orena does not check your age when you sign in; Google has its own age rules. If we learn an account belongs to someone under 13 we delete it." | no age gate in code (grep birth/age/parental); human decision min age 13 |
 | P28 | "notify you in the app or by email at least 14 days before" | "We publish changes on this page. For significant changes, we update this page at least 14 days before they take effect." | no in-app notification system or email sender (`settings/model.js:135-139`) |
 | P29 | Contact | kept; adds "Orena is operated by RallyX, Vietnam" | human decision |

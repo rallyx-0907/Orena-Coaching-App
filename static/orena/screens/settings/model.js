@@ -138,7 +138,7 @@ export function notificationRows() {
   return ['dueReview', 'writingReview', 'mediaReady', 'system'].map((id) => ({ id, kind: 'toggle', value: false, disabled: true }));
 }
 
-/* The public legal pages (D-161). They know the languages en and vi; a Chinese interface reads them in English,
+/* The public legal pages (D-162). They know the languages en and vi; a Chinese interface reads them in English,
    which is what the page itself does for `?lang=zh`, so the address says so. */
 export function legalHref(path, lang) {
   return `${path}?lang=${lang === 'vi' ? 'vi' : lang === 'zh' ? 'zh' : 'en'}`;

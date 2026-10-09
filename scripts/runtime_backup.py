@@ -8,7 +8,7 @@ and the middle one is not optional in the checklist:
         --into orena_restore_rehearsal
     python scripts/runtime_backup.py verify --dump backups/pre-i2.dump
 
-a fourth keeps the backup directory to the retention the public Privacy Policy states (D-161: backups are
+a fourth keeps the backup directory to the retention the public Privacy Policy states (D-162: backups are
 overwritten within 30 days):
 
     python scripts/runtime_backup.py rotate --dir <backup dir> --days 30            # dry run: lists, deletes nothing
@@ -337,7 +337,7 @@ def rehearse(url: str, dump: Path, into: str, journals: list[Path] | None = None
 
 
 
-# --- Retention (D-161): the public policy says backups are overwritten within N days. --------------------------------
+# --- Retention (D-162): the public policy says backups are overwritten within N days. --------------------------------
 
 _log = logging.getLogger("orena.backup")
 BACKUP_GLOB = "orena-*.dump"

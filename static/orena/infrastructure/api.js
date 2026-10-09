@@ -3,6 +3,21 @@ import { navigationSignal } from './navigation.js';
 
 const JSON_HEADERS = {'Content-Type':'application/json'};
 
+/* Plan quota (D-161): the learner's own timezone decides when a day or month of use resets, so a metered
+   call and the usage read say which zone this device is in. */
+function deviceTimezone(){
+  try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch{return 'UTC';}
+}
+/* One key per learner action (a Review or Improve press), reused only if that same action is sent again, so
+   the server never charges one action twice. */
+export function newIdempotencyKey(){
+  try{if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();}catch{/* fall through */}
+  return `k-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,12)}`;
+}
+function quotaHeaders(idempotencyKey){
+  return {...JSON_HEADERS,'X-Orena-Timezone':deviceTimezone(),...(idempotencyKey?{'Idempotency-Key':idempotencyKey}:{})};
+}
+
 /* What a 401 does: main.js installs its own (Welcome). Before it has, the learner goes to Welcome too. */
 let onUnauthorized=()=>{location.href='/#/welcome';};
 export function setUnauthorizedHandler(handler){onUnauthorized=typeof handler==='function'?handler:()=>{};}
@@ -51,7 +66,7 @@ export const api={
   productMe:()=>request('/api/product/me'),
   // Canonical read (accountCommerce): full subscription-state vocabulary,
   // web-only. /me stays byte-for-byte for the frozen mobile contract.
-  productCommerce:()=>request('/api/product/commerce'),
+  productCommerce:()=>request('/api/product/commerce',{headers:{'X-Orena-Timezone':deviceTimezone()}}),
   // The plan catalogue (Free, Plus, Pro with prices and entitlements); `billing_ready` is false.
   productPlans:()=>request('/api/product/plans'),
   /* Learner feedback (D-156): one review per send; the learner's own are read newest first. */
@@ -505,14 +520,14 @@ export const api={
     headers:JSON_HEADERS,
     body:JSON.stringify(payload),
   }),
-  evaluate:(payload)=>request('/api/evaluate',{
+  evaluate:(payload,{idempotencyKey}={})=>request('/api/evaluate',{
     method:'POST',
-    headers:JSON_HEADERS,
+    headers:quotaHeaders(idempotencyKey),
     body:JSON.stringify(payload),
   }),
-  improve:(payload)=>request('/api/improve',{
+  improve:(payload,{idempotencyKey}={})=>request('/api/improve',{
     method:'POST',
-    headers:JSON_HEADERS,
+    headers:quotaHeaders(idempotencyKey),
     body:JSON.stringify(payload),
   }),
   logout:(next)=>request(next?`/auth/logout?next=${encodeURIComponent(next)}`:'/auth/logout',{method:'POST'}),

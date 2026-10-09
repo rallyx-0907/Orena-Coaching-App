@@ -1,7 +1,9 @@
 /* Admin > Users > Plans & pricing (the human's request 2026-10-09): each plan is drawn as the learner's
    Pricing card (screens/plan/pricing.js) and "Edit" FLIPS the card to a form on its back - the plan's
-   prices (monthly and yearly, USD and VND) and each entitlement (enabled, and a whole-number monthly
-   limit when the feature is metered). Save sends the WHOLE catalogue (PUT /api/product/admin/plans);
+   prices (monthly and yearly, USD and VND) and each meter of the design's Pricing (catalogue v2, D-161):
+   enabled, its limit in the unit a learner reads (minutes for the minute meters, stored as seconds) with
+   its window shown beside it, and a meter's own parameters (seconds of voice per Orena message). Windows
+   and units are the code's, not editable. Save sends the WHOLE catalogue (PUT /api/product/admin/plans);
    the server validates it and stamps who changed it and when, which the header shows as the moment the
    new values apply from. Cancel flips back and drops that card's edits; a refusal (422) is shown on the
    back of the card with the edits kept.
@@ -26,12 +28,28 @@ export const CURRENCIES = Object.freeze(['USD', 'VND']);
 
 const text = (value) => (value == null ? '' : String(value));
 
+const scaleOf = (item) => (Number(item?.scale) > 0 ? Number(item.scale) : 1);
+
+/* A stored limit in the unit the operator edits (seconds -> minutes). */
+function shown(value, scale) {
+  const amount = Number(value) / scale;
+  return text(Number.isInteger(amount) ? amount : Math.round(amount * 1000) / 1000);
+}
+
 /* The editable copy of one catalogue plan: every number a string, as the operator types it. */
 export function draftOf(plan) {
   return {
     id: plan.id,
     prices: Object.fromEntries(PERIODS.map((period) => [period, Object.fromEntries(CURRENCIES.map((currency) => [currency, text(plan.prices?.[period]?.[currency] ?? 0)]))])),
-    entitlements: (plan.entitlements || []).map((item) => ({ key: item.key, enabled: item.enabled === true, metered: item.monthly_limit != null, monthly_limit: item.monthly_limit == null ? null : text(item.monthly_limit) })),
+    entitlements: (plan.entitlements || []).map((item) => {
+      const scale = scaleOf(item);
+      const limit = item.limit ?? item.monthly_limit;
+      return {
+        key: item.key, enabled: item.enabled === true, metered: limit != null, limit: limit == null ? null : shown(limit, scale),
+        scale, window: item.window || null, unit: item.display_unit || '',
+        params: Object.fromEntries(Object.entries(item.params || {}).map(([name, value]) => [name, text(value)])),
+      };
+    }),
   };
 }
 
@@ -42,17 +60,34 @@ function numeric(value) {
   return typed !== '' && Number.isFinite(Number(typed)) ? Number(typed) : typed;
 }
 
-/* The PUT body: the whole catalogue, in the order given. Free's prices are always 0 and a feature
-   without a limit carries none. Pure, so the gate can check the shape. */
+/* What the operator typed, in the stored unit (minutes -> seconds); anything that is not a number is sent as
+   typed. */
+function stored(value, scale) {
+  const typed = numeric(value);
+  return typeof typed === 'number' ? Math.round(typed * scale * 1000) / 1000 : typed;
+}
+
+/* The PUT body: the whole catalogue (version 2), in the order given. Free's prices are always 0. Pure, so the
+   gate can check the shape. */
 export function plansPayload(drafts) {
   return {
-    version: 1,
+    version: 2,
     plans: drafts.map((draft) => ({
       id: draft.id,
       prices: Object.fromEntries(PERIODS.map((period) => [period, Object.fromEntries(CURRENCIES.map((currency) => [currency, draft.id === 'free' ? 0 : numeric(draft.prices?.[period]?.[currency])]))])),
-      entitlements: draft.entitlements.map((item) => ({ key: item.key, enabled: item.enabled === true, monthly_limit: item.metered ? numeric(item.monthly_limit) : null })),
+      entitlements: draft.entitlements.map((item) => ({
+        key: item.key, enabled: item.enabled === true, limit: item.metered ? stored(item.limit, item.scale || 1) : null,
+        params: Object.fromEntries(Object.entries(item.params || {}).map(([name, value]) => [name, numeric(value)])),
+      })),
     })),
   };
+}
+
+/* What one stored unit window reads as beside its number: "min / month", "messages / day", "languages". */
+export function unitLabel(item) {
+  const unit = item.unit && t.has(`plansUnit_${item.unit}`) ? t(`plansUnit_${item.unit}`) : '';
+  const per = item.window ? t(`plansPer_${item.window}`) : '';
+  return [unit, per].filter(Boolean).join(' ');
 }
 
 function money(value, currency, ui) {
@@ -75,8 +110,12 @@ function frontFace(plan, ui, flipped) {
   const byKey = Object.fromEntries((plan.entitlements || []).map((item) => [item.key, item]));
   const lines = orderedKeys(Object.keys(byKey)).filter((key) => byKey[key].enabled).map((key) => {
     const item = byKey[key];
-    const label = featureLabel(key);
-    return item.monthly_limit == null ? label : planCopy('monthlyLimit', { label, n: new Intl.NumberFormat(ui).format(item.monthly_limit) });
+    const limit = item.limit ?? item.monthly_limit;
+    if (limit == null) return featureLabel(key);
+    const n = Number(limit) / scaleOf(item);
+    if (key === 'languages.target') return planCopy.plural('line_languages_target', n, { n: new Intl.NumberFormat(ui).format(n) });
+    const line = `line_${key.replace(/\./g, '_')}`;
+    return planCopy.has(line) ? planCopy(line, { n: new Intl.NumberFormat(ui).format(n) }) : featureLabel(key);
   });
   const month = plan.prices?.monthly || {};
   const year = plan.prices?.yearly || {};
@@ -109,10 +148,13 @@ function backFace(plan, draft, flipped, { busy, error }) {
     <div class="a-plan__ents">${orderedKeys(draft.entitlements.map((item) => item.key)).map((key) => {
     const item = draft.entitlements.find((entry) => entry.key === key);
     const id = `${plan.id}|${key}`;
-    return html`<div class="a-plan__ent${item.metered ? '' : ' a-plan__ent--flag'}"><span class="a-plan__entname">${featureLabel(key)}</span>
+    const unit = unitLabel(item);
+    return html`<div class="a-plan__ent${item.metered ? '' : ' a-plan__ent--flag'}"><span class="a-plan__entname">${featureLabel(key)}${unit ? html`<span class="a-plan__entunit">${unit}</span>` : ''}</span>
       <button type="button" class="a-toggle" role="switch" aria-checked="${item.enabled ? 'true' : 'false'}" aria-label="${featureLabel(key)} · ${t('plansIncluded')}" data-a="plan-toggle" data-id="${id}" data-plan="${plan.id}" data-key="${key}"><span class="a-toggle__track"><span class="a-toggle__knob"></span></span></button>
-      ${item.metered ? html`<input class="a-input a-plan__limit" name="${id}" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="${item.monthly_limit}" aria-label="${featureLabel(key)} · ${t('plansLimit')}" data-a-input="limit|${id}"${raw(item.enabled ? '' : ' disabled')}>` : ''}
-    </div>`;
+      ${item.metered ? html`<input class="a-input a-plan__limit" name="${id}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="${item.limit}" aria-label="${featureLabel(key)} · ${t('plansLimit')} (${unit})" data-a-input="limit|${id}"${raw(item.enabled ? '' : ' disabled')}>` : ''}
+    </div>${Object.entries(item.params || {}).map(([name, value]) => html`<div class="a-plan__ent"><span class="a-plan__entname">${t.has(`plansParam_${name}`) ? t(`plansParam_${name}`) : humanKey(name.replace(/_/g, ' '))}</span>
+      <input class="a-input a-plan__limit" name="${id}|${name}" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="${value}" aria-label="${featureLabel(key)} · ${t.has(`plansParam_${name}`) ? t(`plansParam_${name}`) : name}" data-a-input="param|${id}|${name}"${raw(item.enabled ? '' : ' disabled')}>
+    </div>`)}`;
   })}</div>
     ${error ? html`<div class="a-error" role="alert">${error}</div>` : ''}
     <div class="a-actions a-actions--end">
@@ -202,7 +244,10 @@ export async function mountPlans(shell, ctx) {
     if (kind === 'price') draft.prices[a][b] = value;
     else if (kind === 'limit') {
       const item = draft.entitlements.find((entry) => entry.key === a);
-      if (item) item.monthly_limit = value;
+      if (item) item.limit = value;
+    } else if (kind === 'param') {
+      const item = draft.entitlements.find((entry) => entry.key === a);
+      if (item && item.params) item.params[b] = value;
     }
   });
   host.on('plan-save', async (control, dataset) => {

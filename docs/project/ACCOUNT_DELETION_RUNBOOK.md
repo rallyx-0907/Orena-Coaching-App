@@ -4,7 +4,7 @@ Status: **DRAFT. Destructive. Needs independent architecture review before first
 review authority", and section 10: account deletion and destructive lifecycle changes require it; the account-deletion
 runtime is a reserved hold, section 7). Nobody runs this against `:8000` until a Delegated Architecture Reviewer has
 recorded their name, the reviewed commit and the outcome in Git. This file contains no code that deletes anything:
-the public promise it serves is `/account-deletion` (D-161): a learner emails
+the public promise it serves is `/account-deletion` (D-162): a learner emails
 `orena.support@chillpickle.org` from their Google account's email, and the account is deleted by hand within 30 days at most.
 
 ## 0. Before the first request

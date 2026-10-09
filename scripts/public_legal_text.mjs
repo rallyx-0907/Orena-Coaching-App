@@ -4,7 +4,7 @@
 // module replaces only the regions that carry words and rebuilds them with the skeleton's own markup, so layout,
 // type and spacing stay the design's. Words come from docs/legal/public/<page>.<lang>.json; facts that the
 // operator must confirm come from docs/legal/public/facts.json. A fact that is not confirmed (null) renders as a
-// visible "[pending: ...]" mark in a normal build and fails a --release build (PUB-2, D-161).
+// visible "[pending: ...]" mark in a normal build and fails a --release build (PUB-2, D-162).
 import fs from 'node:fs';
 import path from 'node:path';
 

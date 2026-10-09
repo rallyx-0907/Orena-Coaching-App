@@ -1,5 +1,5 @@
 // Gate for the public pages (Landing, Terms, Privacy, Delete account).
-//   - the committed output is a fresh build of the pinned design plus the repository-owned legal text (D-161);
+//   - the committed output is a fresh build of the pinned design plus the repository-owned legal text (D-162);
 //   - Terms, Privacy and Delete account are static HTML: the raw response of each language carries every heading
 //     and every sentence of the repository text with no script needed, and loads no runtime, React or other origin;
 //   - no page names an AI vendor or claims what Orena does not do; fonts come from this origin;
@@ -129,7 +129,7 @@ assert.ok(html('landing.html').includes('/orena-assets/public/support.js'), 'lan
 assert.ok(!/x-import/.test(html('landing.html')), 'landing: no JSX import, so no Babel');
 assert.ok(html('landing.html').includes('href="/account-deletion?lang=en"'), 'landing footer links Delete account');
 
-// 6. Nothing is loaded from another origin: not scripts, not fonts (self-hosted since D-161). The only absolute URL
+// 6. Nothing is loaded from another origin: not scripts, not fonts (self-hosted since D-162). The only absolute URL
 //    left is the SVG namespace name, which is never fetched.
 const served = [...PAGES.map(html), fs.readFileSync('static/orena/public/support.js', 'utf8'), fs.readFileSync('templates/orena/index.html', 'utf8')];
 for (const t of served) {

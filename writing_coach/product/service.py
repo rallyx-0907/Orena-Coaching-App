@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -10,84 +11,120 @@ from writing_coach.product.repository import ProductRepository
 
 @dataclass(frozen=True)
 class FeatureAccess:
+    """One plan entitlement and its use in the current window (D-160).
+
+    `usage_state`: `known` (read from the quota buckets enforcement writes), `unavailable` (the store could not
+    be read - never shown as 0 used) or `not_metered` (this meter is not enforced on this deployment, so nothing
+    counts it and `used` is None). `limit`/`used`/`remaining` are in the meter's stored `unit`."""
+
     key: str
     enabled: bool
-    monthly_limit: int | None
-    used: int
+    limit: int | None
+    used: int | None
     remaining: int | None
-    usage_state: str = "known"
+    usage_state: str = "not_metered"
     entitlement_state: str = "enabled"
+    window: str | None = None
+    unit: str = ""
+    display_unit: str = ""
+    scale: int = 1
+    resets_at: str | None = None
+
+    @property
+    def monthly_limit(self) -> int | None:
+        return self.limit if self.window == "month" else None
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "key": self.key,
             "enabled": self.enabled,
+            "limit": self.limit,
             "monthly_limit": self.monthly_limit,
+            "window": self.window,
+            "unit": self.unit,
+            "display_unit": self.display_unit,
+            "scale": self.scale,
             "used": self.used,
             "remaining": self.remaining,
+            "resets_at": self.resets_at,
             "usage_state": self.usage_state,
             "entitlement_state": self.entitlement_state,
         }
 
 
+# (user_key, plan) -> {feature: {"state": "known"|"unavailable", "used": int, "resets_at": iso}}; a feature
+# absent from the answer is not metered. Installed by the app (writing_coach.product.quota.usage_for).
+UsageReader = Callable[[str, Plan], dict[str, dict[str, Any]]]
+
+
 class ProductService:
-    def __init__(self, repository: ProductRepository | None = None) -> None:
+    def __init__(self, repository: ProductRepository | None = None, usage: UsageReader | None = None) -> None:
         self.repository = repository
+        self.usage = usage
 
     def _repository(self) -> ProductRepository:
         if self.repository is None:
             raise RuntimeError("Product repository has not been installed by the persistence runtime.")
         return self.repository
 
-    def plan_for_user(self, user_key: str) -> Plan:
+    def plan_for_user(self, user_key: str, *, strict: bool = False) -> Plan:
+        """The effective plan. `strict` (enforcement) raises when the catalogue cannot be read."""
         subscription = self._repository().get_subscription(user_key)
-        return self._plan_for_subscription(subscription)
+        return self._plan_for_subscription(subscription, strict=strict)
 
     @staticmethod
-    def _plan_for_subscription(subscription: object | None) -> Plan:
+    def _plan_for_subscription(subscription: object | None, *, strict: bool = False) -> Plan:
         status = str(getattr(subscription, "status", "") or "").strip().casefold()
         plan_id = str(getattr(subscription, "plan_id", "") or "").strip().casefold()
         if not subscription or status not in {"active", "trialing"} or manual_expired(subscription):
-            return plan_by_id(DEFAULT_PLAN_ID)
-        return plan_by_id(plan_id)
+            return plan_by_id(DEFAULT_PLAN_ID, strict=strict)
+        return plan_by_id(plan_id, strict=strict)
 
     def _subscription(self, user_key: str):
         return self._repository().get_subscription(user_key)
 
     def feature_access(self, *, user_key: str, feature: str) -> FeatureAccess:
         plan = self.plan_for_user(user_key)
-        return self._feature_access_for_plan(user_key=user_key, feature=feature, plan=plan)
+        return self._features_for_plan(user_key=user_key, plan=plan, only=feature)[feature]
 
-    def _feature_access_for_plan(self, *, user_key: str, feature: str, plan: Plan) -> FeatureAccess:
-        entitlement = plan.entitlement_map().get(feature)
-        if not entitlement:
-            return FeatureAccess(feature, False, None, 0, None, entitlement_state="unavailable")
-
+    def _usage(self, user_key: str, plan: Plan) -> dict[str, dict[str, Any]] | None:
+        if self.usage is None:
+            return {}
         try:
-            used = self._repository().monthly_usage(user_key=user_key, feature=feature)
+            return self.usage(user_key, plan)
         except Exception:
+            return None
+
+    def _features_for_plan(self, *, user_key: str, plan: Plan, only: str | None = None) -> dict[str, FeatureAccess]:
+        entitlements = plan.entitlement_map()
+        keys = [only] if only else list(entitlements)
+        usage = self._usage(user_key, plan)
+        return {key: self._access(key, entitlements.get(key), None if usage is None else usage.get(key, {}))
+                for key in keys}
+
+    @staticmethod
+    def _access(feature: str, entitlement, usage: dict[str, Any] | None) -> FeatureAccess:
+        if not entitlement:
+            return FeatureAccess(feature, False, None, None, None, entitlement_state="unavailable")
+        meter = entitlement.meter
+        shape = {"window": meter.window, "unit": meter.unit, "display_unit": meter.display_unit, "scale": meter.scale}
+        limit = entitlement.limit
+        state = "unavailable" if usage is None else str(usage.get("state") or "not_metered")
+        if state != "known":
             return FeatureAccess(
-                key=feature,
-                enabled=entitlement.enabled,
-                monthly_limit=entitlement.monthly_limit,
-                used=0,
-                remaining=None,
-                usage_state="unavailable",
-                entitlement_state="unknown",
+                feature, entitlement.enabled, limit, None, None, usage_state=state,
+                entitlement_state=("disabled" if not entitlement.enabled else ("unknown" if state == "unavailable" else "enabled")),
+                **shape,
             )
-        remaining = (
-            None
-            if entitlement.monthly_limit is None
-            else max(0, entitlement.monthly_limit - used)
-        )
-        enabled = entitlement.enabled and (remaining is None or remaining > 0)
+        used = max(0, int(usage.get("used") or 0))
+        remaining = None if limit is None else max(0, limit - used)
         return FeatureAccess(
-            key=feature,
-            enabled=enabled,
-            monthly_limit=entitlement.monthly_limit,
-            used=used,
-            remaining=remaining,
+            feature,
+            entitlement.enabled and (remaining is None or remaining > 0),
+            limit, used, remaining, usage_state="known",
             entitlement_state=("disabled" if not entitlement.enabled else ("exhausted" if remaining == 0 else "enabled")),
+            resets_at=usage.get("resets_at"),
+            **shape,
         )
 
     def account_state(self, user_key: str) -> dict[str, Any]:
@@ -108,10 +145,7 @@ class ProductService:
         raw_plan_id = str(getattr(subscription, "plan_id", "") or "").strip().casefold() if subscription else DEFAULT_PLAN_ID
         plan_known = known_plan_id(raw_plan_id)
         plan = plan_by_id(raw_plan_id if active and plan_known else DEFAULT_PLAN_ID)
-        features = {
-            item.key: self._feature_access_for_plan(user_key=user_key, feature=item.key, plan=plan).as_dict()
-            for item in plan.entitlements
-        }
+        features = {key: access.as_dict() for key, access in self._features_for_plan(user_key=user_key, plan=plan).items()}
         return {
             "available": True,
             "plan": {
@@ -134,3 +168,7 @@ product_service = ProductService()
 
 def configure_product_repository(repository: ProductRepository) -> None:
     product_service.repository = repository
+
+
+def configure_product_usage(usage: UsageReader | None) -> None:
+    product_service.usage = usage

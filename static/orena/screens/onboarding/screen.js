@@ -148,7 +148,7 @@ export default async function onboardingScreen(element, ctx) {
   }
 
   /* "By continuing you agree to the Terms and Privacy Policy": the two names are links to the public pages
-     (D-161), opened in a new tab so the sign-in is not lost. The sentence is one copy key with {terms} and
+     (D-162), opened in a new tab so the sign-in is not lost. The sentence is one copy key with {terms} and
      {privacy} where they go, so each language orders it its own way. */
   function termsLine() {
     const lang = copyLanguages().ui;

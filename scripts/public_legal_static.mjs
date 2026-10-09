@@ -1,4 +1,4 @@
-// Static, script-free legal pages (Terms, Privacy, Delete account), D-161.
+// Static, script-free legal pages (Terms, Privacy, Delete account), D-162.
 //
 // The whole text is in the HTML response: a crawler or a store reviewer without JavaScript reads everything. The
 // markup is the pinned design's, taken from the page that public_legal_text.mjs fills; what the design's runtime did

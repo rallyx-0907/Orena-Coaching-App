@@ -1,5 +1,5 @@
 {
-  "_about": "The facts the public legal text states. A null value is unconfirmed: a normal build renders it as a visible [pending: ...] mark, and `node scripts/build_public_pages.mjs --release` (the check that must pass before the pages go to :8000) fails while any is null. Nothing here is guessed (D-161).",
+  "_about": "The facts the public legal text states. A null value is unconfirmed: a normal build renders it as a visible [pending: ...] mark, and `node scripts/build_public_pages.mjs --release` (the check that must pass before the pages go to :8000) fails while any is null. Nothing here is guessed (D-162).",
   "effective_date": null,
   "_effective_date": "Stays null in the repository. The deploy step stamps it: `node scripts/build_public_pages.mjs --release --effective-date YYYY-MM-DD`, the date of the policy's first public deployment on :8000. Rendered on all three legal pages in both languages.",
   "operator": { "name": "RallyX", "country": { "vi": "Việt Nam", "en": "Vietnam" } },

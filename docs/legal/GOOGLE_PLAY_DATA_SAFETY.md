@@ -1,6 +1,6 @@
-# Google Play Data safety form: answers for Orena (PUB-2, D-161)
+# Google Play Data safety form: answers for Orena (PUB-2, D-162)
 
-Internal. Not published. Each answer matches the public Privacy Policy as revised in D-161
+Internal. Not published. Each answer matches the public Privacy Policy as revised in D-162
 (`docs/legal/public/privacy.en.json`), and points at the evidence. Change the policy and this file together.
 Rows that wait on a fact still `null` in `docs/legal/public/facts.json`, or on a human decision, are marked **PENDING**.
 Assumption: the Play app is a client for this same web backend (web view, TWA or a thin native shell). If the shipped

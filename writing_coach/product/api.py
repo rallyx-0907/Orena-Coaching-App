@@ -6,9 +6,12 @@ from fastapi import APIRouter, HTTPException, Request
 
 from auth_support import AUTH_ENABLED, auth_user, require_admin
 from writing_coach.persistence.platform_repository import SettingConflict
+from writing_coach.core.request_context import current_user_key as request_user_key
+from writing_coach.product import quota
 from writing_coach.product.catalog import (
     CURRENCIES,
     FEATURE_KEYS,
+    METERS,
     PERIODS,
     PlanCatalogInvalid,
     current_plans,
@@ -23,8 +26,12 @@ router = APIRouter(prefix="/api/product", tags=["product"])
 
 
 def current_user_key(request: Request) -> str:
+    """The account a product read is about: the same request-context key quota enforcement meters (D-160).
+
+    Signed in, the session's Google subject; with authentication off, the one local account the middleware
+    keys every request by ("legacy") - not a second, made-up account, so the Plan screen and enforcement agree."""
     if not AUTH_ENABLED:
-        return "local-development"
+        return request_user_key()
 
     sub = str(request.session.get("user_sub") or "")
     if not sub or not auth_user(sub):
@@ -41,12 +48,34 @@ def product_me(request: Request) -> dict[str, Any]:
     return mobile_account_state(product_service.account_state(current_user_key(request)))
 
 
+MOBILE_FEATURE_FIELDS = ("key", "enabled", "monthly_limit", "used", "remaining", "usage_state", "entitlement_state")
+
+
+def _mobile_feature(item: dict[str, Any]) -> dict[str, Any]:
+    """The frozen native shape of one feature (strict: no extra field; usage_state known | unavailable)."""
+    known = item.get("usage_state") == "known"
+    return {
+        "key": item.get("key"),
+        "enabled": bool(item.get("enabled")),
+        "monthly_limit": item.get("monthly_limit"),
+        "used": int(item.get("used") or 0) if known else 0,
+        "remaining": item.get("remaining") if known else None,
+        "usage_state": "known" if known else "unavailable",
+        "entitlement_state": item.get("entitlement_state"),
+    }
+
+
 def mobile_account_state(state: dict[str, Any]) -> dict[str, Any]:
     """The frozen native contract knows two plan ids, free and premium (mobile/src/api/contracts/product.ts):
-    a paid tier (Plus, Pro - D-153) is reported to it as premium. The web reads /commerce and sees the real id."""
+    a paid tier (Plus, Pro - D-153) is reported to it as premium, and each feature is projected onto the
+    native feature shape (D-160 added fields the strict native schema would refuse). The web reads /commerce
+    and sees the real id and every field."""
     plan = state.get("plan")
     if isinstance(plan, dict) and plan.get("id") not in (None, "free", "premium"):
-        return {**state, "plan": {**plan, "id": "premium"}}
+        state = {**state, "plan": {**plan, "id": "premium"}}
+    features = state.get("features")
+    if isinstance(features, dict):
+        state = {**state, "features": {key: _mobile_feature(item) for key, item in features.items()}}
     return state
 
 
@@ -74,6 +103,14 @@ def _admin_catalog() -> dict[str, Any]:
     return {
         "plans": [plan.as_dict() for plan in current_plans().values()],
         "features": list(FEATURE_KEYS),
+        # What each feature is - window, unit, display unit and scale - is the code's; the editor shows it beside
+        # the number it edits (D-160).
+        "meters": {
+            key: {"window": meter.window, "unit": meter.unit, "display_unit": meter.display_unit,
+                  "scale": meter.scale, "params": {name: list(bounds) for name, bounds in meter.params.items()}}
+            for key, meter in METERS.items()
+        },
+        "version": 2,
         "currencies": list(CURRENCIES),
         "periods": list(PERIODS),
         "source": "stored" if record else "default",
@@ -92,7 +129,8 @@ def product_admin_plans(request: Request) -> dict[str, Any]:
 
 @router.put("/admin/plans")
 async def product_admin_plans_save(request: Request) -> dict[str, Any]:
-    """Save prices and monthly limits for Free, Plus and Pro. They apply from this moment (D-153)."""
+    """Save prices and limits for Free, Plus and Pro. They apply from this moment (D-153), and quota
+    enforcement reads them within the catalogue cache (D-160)."""
     admin = require_admin(request)
     try:
         document = await request.json()
@@ -118,6 +156,33 @@ async def product_admin_plans_save(request: Request) -> dict[str, Any]:
     except RuntimeError:
         raise HTTPException(503, "Plans are not editable on this deployment.")
     return _admin_catalog()
+
+
+@router.get("/admin/quota")
+def product_admin_quota(request: Request) -> dict[str, Any]:
+    """The quota enforcement switch and where it comes from (D-160)."""
+    require_admin(request)
+    return quota.switch()
+
+
+@router.put("/admin/quota")
+async def product_admin_quota_save(request: Request) -> dict[str, Any]:
+    """Switch enforcement on or off and choose the meters, without a restart. The environment
+    (ORENA_QUOTA_ENFORCEMENT / ORENA_QUOTA_METERS), when set, still wins; the answer says which applies."""
+    admin = require_admin(request)
+    try:
+        document = await request.json()
+    except Exception:
+        raise HTTPException(400, "The switch must be JSON.")
+    actor = str(admin.get("google_sub") or "")
+    audit = {"action": "product.quota.update", "actor": actor, "entity_type": "platform_setting",
+             "entity_id": quota.SETTING_KEY, "payload": document if isinstance(document, dict) else {}}
+    try:
+        return quota.save_switch(document, updated_by=str(admin.get("email") or actor), audit=audit)
+    except ValueError as error:
+        raise HTTPException(422, str(error))
+    except RuntimeError:
+        raise HTTPException(503, "The quota switch is not editable on this deployment.")
 
 
 def _membership_store():
