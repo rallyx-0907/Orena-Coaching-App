@@ -25,7 +25,7 @@ switches provider. A client that goes away stops the turn where it is. A turn
 that completes is metered - counted (R5) - and its session is kept for the next
 turn.
 
-Plan quota (D-161, `orena.message`): the caller may hand `run` an `admission`, a
+Plan quota (D-16X, `orena.message`): the caller may hand `run` an `admission`, a
 callable that reserves one message and returns its ticket, or raises the
 refusal (429 / 503 / 409). It is called exactly once, at the one point where the
 turn knows it will ask a model for a learner's message - after the decisions,
@@ -33,7 +33,12 @@ before the first event is released and before any provider call - so the refusal
 reaches the caller as `TurnRefused` before a single frame is streamed. An opening
 greeting, a selection opening, an offered place opened and an identity answer ask
 no learner-message model and are never admitted, so they are free and never
-refused. The ticket is settled when the turn ends however it ends: 1 when a model
+refused. The opening greeting asks a model, but the model writes at most
+`limits.model_openings_per_window` of them per account per `opening_window_seconds` (and each round
+is capped at `opening_max_output_tokens`): past that the greeting is built from the learner's
+snapshot with no model call, still a full stream, still free, never refused. A turn that asked no model
+(and is unadmitted) also skips the rolling-summary compaction, which would be a free model call.
+The ticket is settled when the turn ends however it ends: 1 when a model
 round ran for a turn that completed or that the learner left; 0 when the turn
 ended in an error (nothing usable was produced) or before any model round.
 """
@@ -241,9 +246,17 @@ class AgentRuntime:
     voice: Any = None
     turn_limiter: SlidingWindowLimiter = field(init=False)
     read_limiter: SlidingWindowLimiter = field(init=False)
+    # The opening greeting is free of learner quota, so the model may write at most `model_openings_per_window` of
+    # them per account in `opening_window_seconds`; past that the greeting is built from the snapshot, with no model
+    # (agent/limits.py). Per process, like the other limiters, until the shared store backs it.
+    opening_limiter: SlidingWindowLimiter = field(init=False)
 
     def __post_init__(self) -> None:
         limits = self.limits
+        self.opening_limiter = SlidingWindowLimiter(
+            limits.model_openings_per_window, limits.opening_window_seconds,
+            max_keys=limits.rate_limited_learners, clock=self.clock,
+        )
         self.turn_limiter = SlidingWindowLimiter(
             limits.turns_per_window, limits.rate_window_seconds, max_keys=limits.rate_limited_learners, clock=self.clock
         )
@@ -277,6 +290,7 @@ class _Turn:
         self.rt = runtime
         self.admission = admission
         self.ticket: Any = None  # the quota ticket of an admitted learner message, until it is settled
+        self.no_model = False  # an opening whose per-account model allowance is spent: built from the snapshot
         self.request = request
         self.learner = learner
         self.should_stop = should_stop
@@ -415,6 +429,13 @@ class _Turn:
                 route = "model"
             if route == "model" and not self.opening:
                 self._admit_turn()  # the one place a learner's message asks a model (raises TurnRefused)
+            elif route == "model" and self.rt.opening_limiter.check(self.learner.user_key) is not None:
+                # The greeting costs the learner nothing and is never refused, but the model writes only so many
+                # per account per window: this one is built from the snapshot, with no model (refresh and reconnect
+                # are not an unbounded free model call).
+                self.no_model = True
+                _log.info("agent opening: allowance spent, greeting built without a model",
+                          extra={"trace_id": self.trace_id})
             released = True
             yield opened
             if route == "selection":
@@ -548,10 +569,11 @@ class _Turn:
         selected = context.selected_item
         if selected is not None and selected.type in SELECTED_ID_KEYS:
             outputs.learn_ids(SELECTED_ID_KEYS[selected.type], (selected.id,))
-        yield from self._rounds(messages, outputs)
+        if not self.no_model:
+            yield from self._rounds(messages, outputs)
         if self.should_stop():
             return
-        if (not "".join(self.text).strip() and not outputs.actions and not self.notes_asked
+        if (not self.no_model and not "".join(self.text).strip() and not outputs.actions and not self.notes_asked
                 and self.note_confirmed is None and not self.unaccented_keep):  # fmt: skip
             # Nothing to say (or only whitespace) and nothing offered is not an answer: the learner is told,
             # and it is not metered. An action with no words is answered by its offer (agent/honesty.py).
@@ -627,7 +649,9 @@ class _Turn:
             request = ProviderTurnRequest(
                 messages=tuple(messages),
                 tools=offer,
-                max_output_tokens=self.rt.max_output_tokens,
+                # A greeting is at most 240 characters and a few suggestions: its round is capped, since it is free.
+                max_output_tokens=min(self.rt.max_output_tokens, self.rt.limits.opening_max_output_tokens)
+                if self.opening else self.rt.max_output_tokens,
                 timeout_seconds=remaining,
             )
             round_text: list[str] = []
@@ -1029,6 +1053,10 @@ class _Turn:
         # Not gated on `should_stop`: the learner leaves as soon as the answer is done, and this is upkeep of the
         # session, not part of what they are waiting for.
         if self.opening:
+            return
+        if not self.provider_rounds:
+            # A turn that asked no model - an identity answer, "open it" - is free and unadmitted; its upkeep is not a
+            # free model call either. Compaction waits for the next turn that asks a model, which the learner pays for.
             return
         try:
             state = self.rt.sessions.get(session.agent_session_id, self.learner.user_key)

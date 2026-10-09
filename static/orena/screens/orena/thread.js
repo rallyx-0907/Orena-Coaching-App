@@ -25,7 +25,7 @@ function segmentsMarkup(prefix, segments, streaming) {
 }
 
 function errorMarkup(prefix, error) {
-  // The plan's limit (D-161): the retry button's place and look carry the way to the plans instead; nothing new is drawn.
+  // The plan's limit (D-16X): the retry button's place and look carry the way to the plans instead; nothing new is drawn.
   const action = error.quota
     ? html`<button type="button" class="${prefix}__retry" data-plans="${String(error.quota.upgrade || '#/plan/pricing')}">${seePlansLabel()}</button>`
     : error.fallback === 'retry' ? html`<button type="button" class="${prefix}__retry" data-retry>${t('errorRetry')}</button>` : '';

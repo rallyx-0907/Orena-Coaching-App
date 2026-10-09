@@ -206,9 +206,31 @@ def test_the_error_classes_are_the_contracts():
 
 
 def test_the_http_statuses_are_the_contracts():
-    statuses = {row[0].strip("`"): row[1] for row in _table_rows("### 2.1") if row[0].startswith("`")}
-    assert set(statuses) == {"200", "401", "404", "409", "422", "429"}
+    rows = [(row[0].strip("`"), row[1]) for row in _table_rows("### 2.1") if row[0].startswith("`")]
+    assert [status for status, _ in rows] == ["200", "401", "404", "409", "422", "429", "429", "409", "403", "503"]
+    statuses = {}
+    for status, body in rows:  # the first row of a status is the plain-string one; v7 adds object-bodied rows after
+        statuses.setdefault(status, body)
     assert '`{"detail": "Not Found"}`' in statuses["404"]
     assert '`{"detail": "target_language_mismatch"}`' in statuses["409"]
     assert '`{"detail": "rate_limited"}`' in statuses["429"] and "Retry-After" in statuses["429"]
-    assert "A `409` or `422` counts toward the learner's limit; only a refused `429` does not." in CONTRACT
+    assert "only a refused `rate_limited` `429` does not" in CONTRACT
+
+
+def test_v7_the_plan_limit_statuses_headers_and_voice_refusal_are_in_the_contract():
+    """D-16Y: every category the quota gate can answer on `/api/agent/*` is a row of section 2.1, the two request
+    headers are in section 3, and the voice refusal is in section 9 (the Intelligence lane builds against this file)."""
+
+    source = (ROOT / "writing_coach/product/quota.py").read_text(encoding="utf-8")
+    answered = set(re.findall(r'orena_http_error\(\s*\d+,\s*"([a-z_]+)"', source)) | {"quota_exhausted"}
+    assert {"quota_unavailable", "account_deleted", "feature_not_in_plan", "operation_in_progress",
+            "operation_finished", "operation_conflict", "quota_exhausted"} <= answered
+    table = _section("### 2.1")
+    for category in answered:
+        assert category in table, f"section 2.1 does not name {category}"
+    assert "`rate_limited`" in table and "object with a `category`" in table
+    assert "`Idempotency-Key:" in _section("## 3.") and "`X-Orena-Timezone:" in _section("## 3.")
+    assert "neither require nor read it" in _section("## 3.")  # voice/turn and voice/tool keep their `utterance` token
+    api = (ROOT / "writing_coach/agent/api.py").read_text(encoding="utf-8")
+    voice_category = re.search(r'category="([a-z_]+)"', api).group(1)
+    assert voice_category == "quota_voice_not_metered" and f"503 `{voice_category}`" in _section("## 9.")

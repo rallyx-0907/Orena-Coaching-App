@@ -15,7 +15,7 @@ capability reads in a sliding window (spec §22). One more is answered 429
 `rate_limited` with `Retry-After`, after the 404 and before the body is read,
 so a malformed request counts too.
 
-Plan quota (D-161): when `orena.message` is enforced, a learner's message turn is admitted
+Plan quota (D-16X): when `orena.message` is enforced, a learner's message turn is admitted
 before anything streams - exhausted is a plain 429 `quota_exhausted` JSON response, never an
 SSE frame - and the opening greeting and the answers that ask no model are free (agent/turn.py).
 Live voice is not metered yet (it is charged by duration, in a later change), so while the

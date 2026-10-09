@@ -5337,9 +5337,11 @@ the meters below.
   metered the same way (Orena answering about a text; one constant, `text_discussion.QUOTA_METER`, if the human
   decides otherwise). The agent's own per-process rate limit and daily USD cap remain. The agent client tells the quota
   429 (`category: quota_exhausted`, a JSON envelope) from the contract's `rate_limited` 429 by the body, and shows it in the
-  reply's existing error place (QTA-1). **AGENT_CONTRACT routing (owner: the learner lane, D-086):** §2.1 should name
-  the 429 `quota_exhausted` envelope and the 409 `operation_*` envelope beside `rate_limited` and
-  `target_language_mismatch`; this change reads them by their `detail.category` and changes no contract text.
+  reply's existing error place (QTA-1). **AGENT_CONTRACT v7 (D-16Y)** names the 429 `quota_exhausted`, 409
+  `operation_*` / `account_not_ready`, 403 and 503 `quota_unavailable` rows in §2.1, the `Idempotency-Key` and
+  `X-Orena-Timezone` headers in §3, what counts as a message in §3.3 and the voice 503 in §9; it is written on this branch
+  and was confirmed by the human as the UI lane's change (PR C). The opening greeting is bounded (one model greeting per
+  account per 30 minutes, QTA-12).
 - **QTA-4 Voice - NOT YET ENFORCED, REFUSED while `orena.message` is enforced.** The voice token cannot be metered by
   message: it is a 15-minute vendor token. While the meter is enforced `POST /api/agent/voice/session` answers 503
   `quota_voice_not_metered` and mints nothing (the client falls back to text). The later change mints the token for the
@@ -5368,3 +5370,12 @@ the meters below.
   (c) deleting and re-registering an account starts a new incarnation with fresh buckets - the account-deletion
   runtime (reserved) must decide whether usage carries over; (d) the reconciler is scoped to synchronous meters
   (`SYNC_METERS`) and must stay so when media import (settled by its worker) is wired. Owner: BACKEND / human.
+- **QTA-12 The free-greeting bound is per process - a shared-store greeting limiter is required before running more than
+  one worker.** The per-process bound is accepted by the human for the beta; it is not built now. The model writes at most
+  one opening greeting per account per 30 minutes (`AgentLimits.model_openings_per_window`, `opening_window_seconds`); the
+  limiter lives in the worker's memory like the agent's other limiters, so N workers allow N model greetings per window and
+  a restart forgets it. Back it with the shared store first: an internal, non-learner-visible meter through
+  `quota.begin()` (for example `orena.greeting`, 1 per 30 minutes), or a count of recent `agent.turn` rows with
+  `opening: true`. Past the allowance a greeting is built from the snapshot with no model (never refused). Greeting spend per
+  account is read from the `agent.turn` rows (`opening: true`, rounds, tokens); the AI capability vocabulary was not
+  extended. Owner: BACKEND (review of #118, P1-1).

@@ -271,7 +271,7 @@ console.log('Orena (Home/Contextual panel/voice/memory sheet): context label, re
 }
 
 
-// D-161: a reply that ended on the plan's limit of Orena messages says so with the server's figures, and the retry
+// D-16X: a reply that ended on the plan's limit of Orena messages says so with the server's figures, and the retry
 // button's place carries the way to the plans (nothing new is drawn); an ordinary retry error is unchanged.
 {
   const { messageMarkup } = await import('../static/orena/screens/orena/thread.js');

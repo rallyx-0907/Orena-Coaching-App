@@ -110,7 +110,8 @@ def test_the_free_turns_write_nothing_and_a_spent_day_still_greets(engine, accou
     wire_messages(engine)
     spend(20)
     rig = Rig([reply("Chào bạn, hôm nay ôn vài từ nhé.")])
-    assert rig.turn(trigger="open", surface="orena.home").status_code == 200
+    for _refresh in range(5):  # refresh and reconnect: a new session each, all 200, one model greeting in all
+        assert rig.turn(trigger="open", surface="orena.home").status_code == 200
     assert rig.turn("Bạn là ai?").status_code == 200
     assert rig.turn().status_code == 429
     assert len(rig.provider.requests) == 1, "only the greeting asked a model"

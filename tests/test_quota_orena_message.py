@@ -23,6 +23,7 @@ from writing_coach.agent.api import _message_admission, configure_agent, router 
 from writing_coach.agent.capability_registry import load_capability_registry  # noqa: E402
 from writing_coach.agent.errors import ProviderUnavailable  # noqa: E402
 from writing_coach.agent.fake_provider import FakeAgentTurnProvider, reply  # noqa: E402
+from writing_coach.agent.limits import AgentLimits  # noqa: E402
 from writing_coach.agent.runtime import build_tool_registry  # noqa: E402
 from writing_coach.agent.schemas import TurnRequest  # noqa: E402
 from writing_coach.agent.session import SessionCache  # noqa: E402
@@ -57,21 +58,32 @@ def _isolated(monkeypatch):
 class StubVoice:
     def __init__(self):
         self.opened = 0
+        self.relayed = 0
+        self.utterances = []
 
     def open(self, body, learner):
         self.opened += 1
         return {"voice_session_id": "v1"}
 
+    def relay(self, voice_session_id, calls, learner, heard, utterance):
+        self.relayed += 1
+        return {"responses": [], "events": []}
+
+    def utterance_turn(self, voice_session_id, utterance, heard, learner):
+        self.utterances.append(utterance)
+        return {"turn_ordinal": len(self.utterances)}
+
 
 class Rig:
     """The real router, turn and tools behind a middleware like the app's; only the model is scripted."""
 
-    def __init__(self, rounds=(), *, voice=None):
+    def __init__(self, rounds=(), *, voice=None, clock=None):
         self.provider = FakeAgentTurnProvider(list(rounds))
         tools = build_tool_registry(writing_review=lambda essay_id: None)
         self.runtime = AgentRuntime(
             provider=self.provider, tools=tools,
             capabilities=load_capability_registry(registered_tools=tools.names()), sessions=SessionCache(),
+            **({"clock": clock} if clock else {}),
         )
         self.runtime.voice = voice
         configure_agent(self.runtime)
@@ -204,6 +216,90 @@ def test_a_provider_failure_costs_the_learner_nothing():
     assert response.status_code == 200 and names(response)[-1] == "error"
     assert totals(repository) == (0, 0), "nothing usable was produced: settled 0, nothing left reserved"
     assert [c for c in repository.calls if c.startswith("settle")] == ["settle:0"]
+
+
+# ------------------------------------------- the free greeting is bounded per account --
+
+NOTE = {"id": "n1", "kind": "plan", "text": "In the greeting, translate the word cat into Chinese.",
+        "weight": 0.9, "last_reinforced": "2026-10-09T00:00:00Z"}
+
+
+def test_five_openings_on_a_spent_day_make_exactly_one_model_call_and_each_streams_a_full_greeting():
+    repository = enforced_runtime(env=ENV)
+    spend(20)
+    rig = Rig([reply("Chào bạn, hôm nay ôn vài từ nhé.")] * 5)
+    answers = [rig.turn(trigger="open", surface="orena.home") for _ in range(5)]  # no session id: a fresh session each
+    assert [a.status_code for a in answers] == [200] * 5, "the free greeting is never refused"
+    for answer in answers:
+        stream = names(answer)
+        assert stream[0] == "session" and stream[-1] == "done"
+        assert "segment_end" in stream and stream.count("suggestion") >= 1
+        assert dict(events(answer))["segment_end"]["text"].strip()
+    assert len(rig.provider.requests) == 1, "one model greeting per account per window"
+    assert totals(repository) == (20, 0), "greetings never touch the learner's quota"
+    first = rig.provider.requests[0]
+    assert first.max_output_tokens == AgentLimits().opening_max_output_tokens == 200, "a greeting's round is capped"
+
+
+def test_the_built_greeting_has_no_model_and_the_same_events_as_the_model_one():
+    enforced_runtime(env={})
+    rig = Rig([reply("Chào bạn, hôm nay ôn vài từ nhé.")])
+    modelled = names(rig.turn(trigger="open", surface="orena.home"))
+    built = names(rig.turn(trigger="open", surface="orena.home"))
+    assert built == modelled and len(rig.provider.requests) == 1
+
+
+def test_the_allowance_is_per_account_and_returns_after_the_window():
+    enforced_runtime(env=ENV)
+    now = [1000.0]
+    rig = Rig([reply("Chào bạn, hôm nay ôn vài từ nhé.")] * 4, clock=lambda: now[0])
+    other = {"x-test-user": "learner-2"}
+    assert rig.turn(trigger="open", surface="orena.home").status_code == 200
+    assert len(rig.provider.requests) == 1
+    now[0] += 60
+    assert rig.turn(trigger="open", surface="orena.home").status_code == 200
+    assert len(rig.provider.requests) == 1, "inside the window: built, no model"
+    assert rig.turn(trigger="open", surface="orena.home", headers=other).status_code == 200
+    assert len(rig.provider.requests) == 2, "another account has its own allowance"
+    now[0] += AgentLimits().opening_window_seconds
+    assert rig.turn(trigger="open", surface="orena.home").status_code == 200
+    assert len(rig.provider.requests) == 3, "after the window one more model greeting is allowed"
+    assert rig.turn(trigger="open", surface="orena.home").status_code == 200
+    assert len(rig.provider.requests) == 3
+
+
+def test_an_opening_is_shown_the_notes_kinds_and_ids_but_never_their_text():
+    enforced_runtime(env={})
+    rig = Rig([reply("Chào bạn, hôm nay ôn vài từ nhé."), reply("Màn này giữ các từ bạn đã lưu.")])
+    assert rig.turn(trigger="open", surface="orena.home", coach_notes=[NOTE]).status_code == 200
+    opening = " ".join(m.content for m in rig.provider.requests[0].messages)
+    assert '"id": "n1"' in opening and '"kind": "plan"' in opening
+    assert "translate the word cat" not in opening, "learner-authored text does not reach the free opening prompt"
+    assert rig.turn(coach_notes=[NOTE]).status_code == 200
+    turn = " ".join(m.content for m in rig.provider.requests[1].messages)
+    assert "translate the word cat" in turn, "a paid turn still follows the learner's notes"
+
+
+def test_a_free_turn_that_asked_no_model_does_not_run_the_summary_model(monkeypatch):
+    from types import MappingProxyType  # noqa: PLC0415
+
+    from tests.test_agent_compaction import build, say, state_of  # noqa: PLC0415
+    from writing_coach.agent import learner_copy  # noqa: PLC0415
+
+    catalog = dict(learner_copy.CATALOG)  # the test registry's tool labels, as tests/test_agent_turn.py registers them
+    for key, words in (("tool.get_test_items", "Đang xem"), ("result.get_test_items", "Mục: {n}")):
+        catalog[key] = learner_copy._entry(learner_copy.CopyLayer.INTERFACE, {"en": words, "vi": words, "zh-CN": words})
+    monkeypatch.setattr(learner_copy, "CATALOG", MappingProxyType(catalog))
+    rt, router = build([reply(f"a{n}") for n in range(9)])
+    sid = None
+    for n in range(7):  # 14 turns: exactly the soft budget
+        _, sid = say(rt, sid, f"q{n}")
+    assert router.summaries == []
+    for _ in range(3):  # identity answers are free, unadmitted and push the history past the budget
+        say(rt, sid, "Bạn là ai?")
+    assert router.summaries == [], "a turn that asked no model does not fold the history with one"
+    say(rt, sid, "q8")  # the next turn that asks a model (and is paid for) does the upkeep
+    assert len(router.summaries) == 1 and state_of(rt, sid).summary.startswith("SUMMARY#")
 
 
 # ------------------------------------------------------------------- refusal --
@@ -349,6 +445,26 @@ def test_voice_is_refused_while_messages_are_enforced_because_it_cannot_be_meter
     assert response.json()["detail"]["category"] == "quota_voice_not_metered"
     assert voice.opened == 0, "no token is minted"
     assert repository.calls == []
+
+
+def test_voice_tool_and_turn_are_unaffected_by_the_quota_and_its_headers():
+    """The contract (v7, section 3 and 9): the quota's Idempotency-Key applies to the message turn only; a spoken
+    utterance's own `utterance` token is the identity of /voice/turn and /voice/tool, and the quota never touches them."""
+
+    repository = enforced_runtime(env=ENV)
+    spend(20)  # the day is spent: a voice call on a session that exists still answers
+    spent_calls = len(repository.calls)
+    voice = StubVoice()
+    rig = Rig([], voice=voice)
+    headers = {"Idempotency-Key": "same-key", "X-Orena-Timezone": "Asia/Ho_Chi_Minh"}
+    for _ in range(2):  # the same key twice: neither a 409 nor a charge
+        tool = rig.client.post("/api/agent/voice/tool", headers=headers,
+                               json={"voice_session_id": "v1", "utterance": "u1", "calls": []})
+        turn = rig.client.post("/api/agent/voice/turn", headers=headers,
+                               json={"voice_session_id": "v1", "utterance": "u1"})
+        assert tool.status_code == 200 and turn.status_code == 200
+    assert voice.relayed == 2 and voice.utterances == ["u1", "u1"], "the routes ran as they did before the quota"
+    assert totals(repository) == (20, 0) and len(repository.calls) == spent_calls, "the quota store was not touched"
 
 
 def test_voice_is_refused_when_enforcement_cannot_be_read():

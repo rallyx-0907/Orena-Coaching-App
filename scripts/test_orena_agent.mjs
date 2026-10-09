@@ -332,12 +332,31 @@ assert.ok(supportedIntents(new Set(['grammar-concept', 'grammar'])).includes('gr
 // 10. §2.1 HTTP statuses and §4.1 error classes: the tables the UI reads equal the contract text,
 //     and the live transport answers each status as they say (driven with a fake fetch; it stays off).
 const statusRows = [...section('### 2.1 HTTP status', '## 3.').matchAll(/^\| `(\d{3})` \|/gm)].map((m) => Number(m[1]));
-assert.deepEqual(statusRows, [200, 401, 404, 409, 422, 429], '§2.1 statuses');
+assert.deepEqual(statusRows, [200, 401, 404, 409, 422, 429, 429, 409, 403, 503], '§2.1 statuses (v7 adds the plan-limit rows after their plain-string ones)');
 assert.deepEqual(
-  Object.fromEntries(statusRows.map((s) => [s, contract.readStatus(s, '3').kind])),
-  { 200: 'stream', 401: 'signed_out', 404: 'absent', 409: 'language_mismatch', 422: 'error', 429: 'wait' },
-  'each status reads as §2.1 says',
+  Object.fromEntries([...new Set(statusRows)].map((s) => [s, contract.readStatus(s, '3').kind])),
+  { 200: 'stream', 401: 'signed_out', 404: 'absent', 409: 'language_mismatch', 422: 'error', 429: 'wait', 403: 'error', 503: 'error' },
+  'each status reads as §2.1 says (the v7 rows with an object body are told apart by the transport, below)',
 );
+assert.equal(contract.readStatus(403).fallback, 'none', 'v7: an account deleted or not in the plan is nothing to retry');
+assert.equal(contract.readStatus(503).fallback, 'retry', 'v7: quota_unavailable is a retry');
+// v7 (D-16Y): the plan-limit rows, their categories, the two request headers and the voice 503 are in the contract text,
+// and the transport reads the categories the contract spells.
+{
+  const table = section('### 2.1 HTTP status', '## 3.');
+  for (const category of ['quota_exhausted', 'operation_in_progress', 'operation_finished', 'operation_conflict', 'account_not_ready', 'account_deleted', 'feature_not_in_plan', 'quota_unavailable']) {
+    assert.ok(table.includes(category), `§2.1 names ${category}`);
+  }
+  assert.match(table, /\| `429` \| `\{"detail": "rate_limited"\}`/, '§2.1 keeps the string rate_limited row');
+  assert.match(table, /`detail` is an \*\*object with a `category`\*\*/, '§2.1 says how to tell the quota 429 from rate_limited');
+  const request = section('## 3. Request', '### 3.1');
+  assert.match(request, /`Idempotency-Key: /);
+  assert.match(request, /`X-Orena-Timezone: /);
+  assert.match(request, /voice\/turn` and `POST \/api\/agent\/voice\/tool` neither require nor read it/, 'the voice routes keep their utterance token');
+  assert.match(section('### 3.3', '## 4. Events'), /Free, and never refused/, '§3.3 says the greeting and no-model answers are free');
+  assert.match(section('## 9. Voice session', '2. **Connect.**'), /503 `quota_voice_not_metered`/, '§9 names the voice 503');
+  for (const category of ['quota_exhausted', 'operation_']) assert.ok(transport.includes(category), `the transport reads ${category}`);
+}
 assert.equal(contract.readStatus(422).fallback, 'none', 'a 422 is a client defect: nothing to retry');
 assert.equal(contract.readStatus(500).fallback, 'retry', 'a status outside §2.1 is a transport error');
 assert.equal(contract.readStatus(429, '7').seconds, 7);
@@ -388,7 +407,7 @@ run = await drive([answer(404, '{"detail":"Not Found"}')]);
 assert.deepEqual(run.events, ['absent'], '404: Orena is absent, no error');
 run = await drive([answer(409, '{"detail":"target_language_mismatch"}')]);
 assert.deepEqual([run.events, run.sent.length], [['language_mismatch'], 1], '409: handed back, never resent');
-// D-161: the plan's limit of Orena messages is told to the learner with the server's figures - never waited out,
+// D-16X: the plan's limit of Orena messages is told to the learner with the server's figures - never waited out,
 // never resent - and is told apart from the contract's own 429 / 409 by the body's canonical envelope.
 {
   const envelope = (category, context = {}) => JSON.stringify({ detail: { category, message: 'm', retryable: false, context } });
@@ -398,6 +417,12 @@ assert.deepEqual([run.events, run.sent.length], [['language_mismatch'], 1], '409
   assert.deepEqual(run.items[0].data.quota, limit, 'the server figures travel with the refusal');
   run = await drive([answer(409, envelope('operation_finished'), { 'Content-Type': 'application/json' })]);
   assert.deepEqual([run.events, run.sent.length], [['error:transport:retry'], 1], '409 operation_*: a retry (a new send is a new key), not a language change');
+  run = await drive([answer(409, envelope('account_not_ready'), { 'Content-Type': 'application/json' })]);
+  assert.deepEqual(run.events, ['error:transport:retry'], '409 account_not_ready: a retry, not a language change');
+  run = await drive([answer(403, envelope('account_deleted'), { 'Content-Type': 'application/json' })]);
+  assert.deepEqual(run.events, ['error:transport:none'], '403: nothing to retry');
+  run = await drive([answer(503, envelope('quota_unavailable'), { 'Content-Type': 'application/json' })]);
+  assert.deepEqual(run.events, ['error:transport:retry'], '503 quota_unavailable: a retry');
   run = await drive([answer(429, '{"detail":"rate_limited"}', { 'Retry-After': '1' }), answer(200, SSE_OK)]);
   assert.ok(run.heads[0]['Idempotency-Key'] && run.heads[0]['Idempotency-Key'] === run.heads[1]['Idempotency-Key'], 'one key per message, kept through a rate-limit resend');
   assert.ok(run.heads[0]['X-Orena-Timezone'], 'the device timezone says when the learner\'s day ends');
