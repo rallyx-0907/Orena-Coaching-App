@@ -8,6 +8,8 @@
    text lives in the history entry's state instead (model.js withSearch), so Back from a point keeps it too without
    putting it in a shareable address. Where the learner had scrolled to is restored by the router (shell/scroll-memory.js).
 
+   The categories are one row that scrolls sideways (human request 2026-10-09: the main list below is the content, the
+   categories must not take the page); the pinned frame draws them as a grid (UI_BACKEND_GAPS GLB-5).
    A category card opens that category's panel under the grid and brings the panel into view: on a phone it sits a
    screen below the cards, and a press that changed nothing the learner could see read as a dead button.
 
@@ -32,6 +34,14 @@ function bringIntoView(element) {
   if (!element) return;
   const calm = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   element.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+}
+
+/* The first draw of the category row shows the selected category (an address that names one far along the row). */
+function revealSelected(row) {
+  const selected = row?.querySelector('[aria-pressed="true"]');
+  if (!selected) return;
+  const edge = selected.offsetLeft - row.offsetLeft;
+  if (edge + selected.offsetWidth > row.clientWidth) row.scrollTo({ left: edge - 2, behavior: 'instant' });
 }
 
 const hueStyle = (entry) => `--hue:${entry.hue}`;
@@ -151,7 +161,7 @@ export default async function grammarLibrary(element, ctx) {
 
   function render() {
     const view = buildLibrary({
-      rows: data.points, functions: data.functions, progress, current: ctx.context.level || '', state, support: languages().support, ui: languages().ui, t,
+      rows: data.points, functions: data.functions, progress, current: ctx.context.level || '', state, support: languages().support, ui: languages().ui, target, t,
     });
     const level = view.level.key;
     const percent = view.progressKnown && view.stats.total ? (view.stats.learned / view.stats.total) * 100 : 0;
@@ -161,6 +171,8 @@ export default async function grammarLibrary(element, ctx) {
     const stat = (value) => (value === null ? '—' : value);
     const panel = view.panel;
     const list = state.view === 'list';
+    // The categories are one row that scrolls sideways; a re-render keeps where the learner had scrolled it.
+    const rowLeft = body.querySelector('[data-cat-row]')?.scrollLeft ?? null;
     mount(
       body,
       html`<div class="s-gl__levelGroup">
@@ -184,7 +196,7 @@ export default async function grammarLibrary(element, ctx) {
 
       <div class="s-gl__group">
         <h2 class="s-gl__h2">${t('categoriesTitle')}</h2>
-        <div class="s-gl__grid">${view.categories.map(categoryCard)}</div>
+        <div class="s-gl__catRow" data-cat-row>${view.categories.map(categoryCard)}</div>
       </div>
 
       ${panel
@@ -214,6 +226,9 @@ export default async function grammarLibrary(element, ctx) {
           : html`<div class="s-gl__allEmpty"><div class="s-gl__allEmptyTitle">${t('emptyFiltered')}</div><button type="button" class="s-gl__clear" data-clear>${t('clearFilters')}</button></div>`}
       </div>`,
     );
+    const row = body.querySelector('[data-cat-row]');
+    if (row && rowLeft !== null) row.scrollTo({ left: rowLeft, behavior: 'instant' });
+    else revealSelected(row);
   }
 
   render();

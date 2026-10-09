@@ -381,6 +381,30 @@
   margin-top: 2px;
 }
 
+/* The categories: ONE row that scrolls sideways (human request 2026-10-09), cards at their own width, snapping to the
+   start, no native scrollbar (the same hidden bar the level tabs use), the right edge fading to say there is more. The
+   padding gives the card's hover lift and shadow room inside the clipped row. */
+.s-gl__catRow {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 2px;
+  scrollbar-width: none;
+  padding: 6px 28px 18px 2px;
+  margin-bottom: -12px;
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+}
+.s-gl__catRow::-webkit-scrollbar {
+  display: none;
+}
+.s-gl__catRow > .s-gl__cat {
+  flex: 0 0 min(300px, 78%);
+  scroll-snap-align: start;
+}
+
 /* Category card. */
 .s-gl__cat {
   position: relative;
