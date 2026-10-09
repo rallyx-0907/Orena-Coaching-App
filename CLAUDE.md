@@ -31,9 +31,9 @@ design. If it is not in the design, it is not a reason to add or keep UI.
 
 **1. Read the source, not a copy of a copy.** The design is the Claude Design
 project `e6dc1cb2-72d0-40b4-a916-5dcd47e17cc0` (D-088), pinned byte for byte in
-`docs/design/canonical-ui/screens/` (`SYNC_2026-09-27.md`). `DesignSync`
+`docs/design/canonical-ui/screens/` (`SYNC_2026-10-09.md`). `DesignSync`
 (`ToolSearch select:DesignSync`; only `list_files` and `get_file`) truncates a
-file at 256 KiB: `Orena.dc.html` is 832 KB, so a `get_file` read of it silently
+file at 256 KiB: `Orena.dc.html` is 928 KB, so a `get_file` read of it silently
 stops at the Profile frame, before the phone bar, every sheet and the state
 script. Read it from the pin; to check for a newer revision, compare the first
 256 KiB and ask the human for an export. Before a learner-facing task read the

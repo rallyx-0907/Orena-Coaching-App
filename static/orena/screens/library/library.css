@@ -28,7 +28,7 @@
 }
 .s-library-content-row:hover {
   box-shadow: var(--sh2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .s-library-content-row__body {
   flex: 1;
@@ -117,8 +117,9 @@
   align-items: center;
   padding: 14px 16px;
   border-radius: 16px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   background: var(--surface);
+  box-shadow: var(--edge-light);
 }
 .s-library-chip {
   height: 24px;
@@ -202,7 +203,7 @@
 }
 .s-library-active-card:hover {
   box-shadow: var(--sh2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .s-library-active-card__top {
   display: flex;

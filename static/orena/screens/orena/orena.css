@@ -218,7 +218,7 @@
   flex: none;
 }
 .s-orena-home__voicebtn:hover {
-  border-color: var(--accent);
+  border-color: transparent;
 }
 .s-orena-home__send {
   width: 44px;
@@ -357,11 +357,12 @@
   height: 30px;
   padding: 0 13px;
   border-radius: 999px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--muted);
   font-size: 13px;
   font-weight: 500;
+  box-shadow: var(--edge-light);
 }
 .s-orena-panel__foot {
   flex: none;
@@ -405,7 +406,7 @@
   flex: none;
 }
 .s-orena-panel__voicebtn:hover {
-  border-color: var(--accent);
+  border-color: transparent;
 }
 .s-orena-panel__send {
   width: 40px;
@@ -611,13 +612,14 @@
   width: 38px;
   height: 38px;
   border-radius: 999px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--ai-ink);
   display: flex;
   align-items: center;
   justify-content: center;
   flex: none;
+  box-shadow: var(--edge-light);
 }
 .s-orena-vrow__speak--off {
   color: var(--muted);

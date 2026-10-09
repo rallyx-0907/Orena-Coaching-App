@@ -6,6 +6,7 @@
 import { html, mount } from '../../kit/html.js';
 import { toast } from '../../kit/toast.js';
 import { languages } from '../../copy/index.js';
+import { adminApi } from '../../capabilities/admin-api.js';
 import { createAiAdmin, credentialState, routeDraft, routingIsLive } from '../../capabilities/admin-ai.js';
 import { t } from './copy.js';
 import { capabilityPage, keyPage, listPage, loadFailed, providerPage, removeDialog } from './ai-pages.js';
@@ -36,7 +37,8 @@ function remember(container, paint) {
 export async function mountAi(shell, ctx) {
   const routeId = ctx.route.id;
   const view = {
-    tab: ctx.query.get('tab') === 'route' ? 'route' : 'prov',
+    tab: ['route', 'tok'].includes(ctx.query.get('tab')) ? ctx.query.get('tab') : 'prov',
+    usage: { days: 30, report: null, failed: false, loaded: false },
     query: '',
     id: ctx.params.id || '',
     form: { key: '', endpoint: null, model: '', busy: '', error: '', reason: '' },
@@ -94,7 +96,7 @@ export async function mountAi(shell, ctx) {
     const page = build();
     shell.setTitle(page.title);
     if (page.crumb) ctx.setCrumb(page.crumb);
-    shell.setFilter({ enabled: routeId === 'adminAi' && !view.loading && !view.failed, value: view.query });
+    shell.setFilter({ enabled: routeId === 'adminAi' && view.tab !== 'tok' && !view.loading && !view.failed, value: view.query });
     remember(shell.page, () => mount(shell.page, page.markup));
   }
 
@@ -112,6 +114,31 @@ export async function mountAi(shell, ctx) {
     view.loading = false;
     paint();
     if (!view.failed) controller.loadCatalog().catch(() => {});
+    if (!view.failed && view.tab === 'tok') loadUsage();
+  }
+
+  /* Token usage reads the AI cost ledger for the chosen period; a late answer for a period the operator left is dropped. */
+  let usageRequest = 0;
+  async function loadUsage() {
+    const days = view.usage.days;
+    // Only the latest request paints: a quick 30 -> 7 -> 30 never shows an older 30-day answer over a newer one.
+    const request = ++usageRequest;
+    view.usage.report = null;
+    view.usage.failed = false;
+    view.usage.loaded = true;
+    paint();
+    let report = null;
+    let failed = false;
+    try {
+      report = await adminApi.aiCosts(days);
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      failed = true;
+    }
+    if (!alive || request !== usageRequest || view.usage.days !== days) return;
+    view.usage.report = report;
+    view.usage.failed = failed;
+    paint();
   }
 
   const capability = () => (controller.state.config?.capabilities || []).find((item) => item.key === view.id);
@@ -208,6 +235,10 @@ export async function mountAi(shell, ctx) {
     if (a === 'tab') {
       view.tab = tab;
       paint();
+      if (tab === 'tok' && !view.usage.loaded) loadUsage();
+    } else if (a === 'tk-period') {
+      view.usage.days = Number(value) || 30;
+      loadUsage();
     } else if (a === 'go') ctx.go(to);
     else if (a === 'reload') load();
     else if (a === 'test-provider') controller.testProvider(id);

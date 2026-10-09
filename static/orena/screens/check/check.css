@@ -103,7 +103,7 @@
 .s-check__option {
   padding: 15px 18px;
   border-radius: 14px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 15.5px;
@@ -112,6 +112,7 @@
   display: flex;
   gap: 12px;
   align-items: center;
+  box-shadow: var(--edge-light);
 }
 .s-check__option[aria-disabled='true'] {
   cursor: default;
@@ -120,7 +121,7 @@
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -129,6 +130,7 @@
   flex: none;
   background: transparent;
   color: var(--muted);
+  box-shadow: var(--edge-light);
 }
 
 .s-check__verdict {
@@ -177,11 +179,12 @@
 .s-check__show {
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 13px;
   font-weight: 600;
+  box-shadow: var(--edge-light);
 }
 .s-check__spacer {
   flex: 1;
@@ -339,12 +342,13 @@
 .s-check__deeper-chip {
   padding: 11px 15px;
   border-radius: 12px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
   min-height: 44px;
+  box-shadow: var(--edge-light);
 }
 
 .s-check__empty {

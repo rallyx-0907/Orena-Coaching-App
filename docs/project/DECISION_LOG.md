@@ -4482,3 +4482,103 @@ Topology: `codex/work` (development + QA) -> release candidate -> restored-copy 
    only for developer diagnostics, test fixtures, and work not yet reviewed and merged to `main`.
 5. **:8000 env (to apply after review, not before):** `APP_ENV=staging`, `AGENT_ENABLED=true`,
    `AGENT_VOICE_ENABLED=false`. No schema change.
+
+## D-147 - No violet outlines; an edge is a thin strip of light (overrides the design)
+
+2026-10-08, explicit human rule, repeated after earlier reviews (D-133 LEX-016 "no default purple-outline control";
+`docs/UX_REVIEW_RULES.md` "viền bo tím/filled card kiểu SaaS không mặc nhiên hợp lệ"). Human: "màu tím đây là thứ đã
+nhắn bao nhiêu lần là luật không được dùng … nếu cần border thì nó phải có dạng như 1 dải sáng mảnh. Dù UI design có
+thì vẫn phải loại trừ lỗi này ra."
+
+1. **No violet/purple border, outline or ring** on any learner or Admin control or card - at rest, on hover, when
+   selected or active. This holds **even where the Claude Design frame draws one** (`border:1px solid var(--accent)`,
+   `var(--tint2)`, a hue-coloured 1.5px outline, …); it is a recorded exception to D-067's "the design is the
+   standard" and to the fidelity gate, not a deviation to report.
+2. **An edge, where one is needed at all, is a thin strip of light:** `--edge-light` in `kit/tokens.css` (a 1px top
+   highlight plus a near-invisible 1px inset, per theme), never a grey or coloured outline and never a thick border.
+3. **State without outlines:** hover is elevation (`--sh2`); selection is fill and ink (e.g. `--accent-soft` with the
+   text colour); a selected category is a deeper wash of its own hue.
+4. **Not affected:** the keyboard focus ring (accessibility); progress rings and tracks, which are drawings, not edges.
+5. First applied: Grammar Library (level tabs, category cards, chips, back, sort, clear, view toggle). Other surfaces
+   are brought to this rule as they are touched; a reviewer scores a violet outline as P1.
+
+## D-148 - One hover behaviour for every card; no box on a press
+
+2026-10-08, explicit human rule ("nên nhất quán hành vi animation khi hover với card cũ").
+
+1. Every clickable card in the learner UI hovers the way the existing cards do (kit `.o-card--hover`, Today's
+   cards): `box-shadow` to `--sh2` and `transform: translateY(-1px)`, transitioned over 0.15s. A surface may add its
+   own background step (a grey card to `--surface3`) but never a border (D-147) and never a different motion.
+2. Pressing a card or control paints no box: touch browsers' tap-highlight is off for buttons, links, labels,
+   summaries and `[role=button]` (kit `base.css`). The keyboard focus ring stays.
+3. First applied: Grammar Library (continue, category, topic and list cards). Other surfaces follow as they are
+   touched; a reviewer scores a card with a different hover, or a box on press, as P2 (P1 if it is a violet edge).
+
+## D-149 - Pronunciation starts at the source chooser; "Choose source" is visible in the room
+
+2026-10-08, explicit human decision, superseding D-139 HD-3 and the "Choose media" half of HD-4. Human: "Phần
+Pronunciation bấm vào thay vì là vào nơi chọn nguồn phát âm thì lại cứ bị đưa vào phần attempt và bước để chọn nguồn
+để tập nói thì nằm tuốt ở ô ... nhỏ."
+
+1. Pronunciation (Practice Hub, Speak's Skill Hub) always opens the source chooser
+   (`#/discover?tab=listen&practice=pronunciation`) first; it never drops the learner into an attempt on the last line.
+2. In the speaking room the way to change source is a labelled header button, "Choose source", beside Attempt
+   history - not an item in the "…" sheet. The "…" sheet keeps only the line list and "Listen".
+3. The header's text buttons take D-147's light edge instead of a border2 outline.
+
+## D-150 - Cards are flat like Practice Hub's tiles; the light edge is flat
+
+2026-10-08, explicit human decision. Human: "các border của phần ngữ pháp đang bị sai … nó đang tạo cảm giác 3d nổi lên.
+hãy làm giống với đặc tính của các card trong practice hub."
+
+1. A card or card-like control is flat at rest, as Practice Hub's tiles: the surface, no resting shadow, no outline.
+   Hover is `--sh2` with a 2px lift (Practice Hub's own), refining D-148's 1px; selection is fill (a selected
+   category card is a deeper wash of its hue, still flat).
+2. `--edge-light` (D-147) is a flat, even hairline of light (`inset 0 0 0 1px`, white at .6 in light, .06 in dark),
+   never a top highlight, which read as a raised 3D card.
+3. Applied: Grammar Library, and the D-147 sweep of the learner UI (kit, shell, every screen's CSS except Admin):
+   full grey borders on controls and cards became the light edge; violet/grey state borders became fills; field
+   focus is a neutral `--text3` edge with elevation instead of the violet border and `--ring` halo; violet marker
+   bars and rings on selected rows/options were removed (their fill stays). Kept: dividers (single-side borders),
+   fields' resting borders (UX_REVIEW_RULES: an input's edge is a legitimate special case), the spinner, the mic
+   pulse and the keyboard focus ring.
+
+## D-151 - Every card stands raised; the light page is a step darker
+
+2026-10-09, explicit human decision, replacing D-150 point 1's flat rest. Human: "tất cả phải làm thẻ nổi. Đặc biệt
+điều chỉnh lại bản màu ở chế độ sáng. màu nền và màu card đang gần như hòa vào nhau".
+
+1. A card or card-like control is raised at rest: `--edge-light` now carries `--sh1` with the hairline, so everything
+   that draws the edge stands off the page in both themes. Hover stays `--sh2` with the 2px lift (D-148/D-150);
+   selection stays fill; no violet edge (D-147).
+2. Light theme, smallest change that separates card from page: `--bg` #F5F5FA → #ECEDF4, `--sh1` alphas .04/.04 →
+   .07/.07 with a 12px blur, and `--text3` #6E6E86 → #68687F so it keeps AA on the darker page (4.64:1). Recorded as
+   deviations in `scripts/test_orena_kit.mjs`.
+
+## D-152 - Skill order, the phone Practice Hub folds, quick theme switch, Settings pickers
+
+2026-10-09, explicit human decisions.
+
+1. Skills are ordered Listen → Speak → Read → Write → Vocabulary → Grammar on desktop and phone
+   (`practice/model.js` `SKILL_ORDER`; the design's `SK` order is superseded).
+2. On the phone, Practice Hub's skill sections fold to their heading (icon, name, number of activities) and open in
+   place, so every skill is reachable without scrolling past the others; the desktop keeps the open sections.
+3. A sun/moon button beside the bell (desktop top bar, phone header) switches light/dark in one tap; Settings keeps
+   Light / Dark / System.
+4. Settings: the Languages tab's three choices are pickers, as Support language already was (D-098); each Accent
+   option shows its own colour beside its name.
+
+## D-155 - Vietnamese text in Plus Jakarta Sans everywhere
+
+2026-10-09, explicit human decision. Human: "Chuyển font tiếng Việt về Gilroy", then "Có thể chuyển sang Poppins / Plus
+Jakarta Sans cho free". Gilroy is a paid face and not in the repository; Poppins has no Vietnamese subset (its stacked
+tones would fall back to another face). Vietnamese stays in Plus Jakarta Sans, now through `--font-ui`, so the places
+that set Outfit themselves (the Reader's translation, note and badges) follow the language too.
+
+## D-157 - A card without artwork shows a generated poster, never a blank tile
+
+2026-10-09, explicit human decision. Human: "nhớ có ảnh thumbnails … không được để 1 màu rỗng"; chose "Thiết kế lại ô bìa
+mặc định". A media card with no image (and one whose image fails to load) draws a poster from data and tokens only:
+the kind's hue as a gradient into a second hue chosen by the title (stable per title), two light circles, the
+title's first letter or character large, and the kind's icon (`kit/components.js` `posterMarkup`). Per-item
+illustrations under the Art Bible remain a later, separate decision (they need a cover field for Reading).

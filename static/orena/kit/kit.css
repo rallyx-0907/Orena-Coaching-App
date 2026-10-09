@@ -58,9 +58,10 @@
 /* Secondary: Discover "Filters", Filter sheet "Clear", Load error "Retry". */
 .o-btn--secondary {
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
+  box-shadow: var(--edge-light);
 }
 .o-btn--secondary:hover {
   background: var(--surface2);
@@ -95,13 +96,14 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
+  box-shadow: var(--edge-light);
 }
 .o-iconbtn:hover {
   background: var(--surface2);
@@ -138,17 +140,18 @@
   gap: 8px;
   padding: 11px 18px;
   border-radius: 999px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
+  box-shadow: var(--edge-light);
 }
 .o-chip[aria-pressed='true'],
 .o-chip[aria-selected='true'] {
-  border-color: var(--accent);
+  border-color: transparent;
   background: var(--accent-soft);
   color: var(--accent);
 }
@@ -245,9 +248,10 @@
 .o-card--hover {
   transition: box-shadow 0.15s, transform 0.15s;
 }
+/* One card hover across the app: Practice Hub's (D-148, D-150). */
 .o-card--hover:hover {
   box-shadow: var(--sh2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .o-well {
   border-radius: 16px;
@@ -656,3 +660,16 @@
 
 /* iOS Safari zooms the page when a text field under 16px takes focus (and leaves it zoomed): on a phone the field is 16px. */
 :root[data-device='mobile'] .o-search input { font-size: 16px; }
+
+/* Light theme: a control on a white card has no edge to show it (D-147/D-150 removed the grey outline, and the flat
+   light edge is white on white). Such controls take the design's own --surface2 fill instead, as the Grammar level
+   pill does (G-14; design/UX review 2026-10-08, P1). Dark keeps the surface + edge. */
+:root:not([data-theme='dark']) .s-settings-action,
+:root:not([data-theme='dark']) .o-more:not([data-on="1"]),
+:root:not([data-theme='dark']) .s-progress-next {
+  background: var(--surface2);
+}
+:root:not([data-theme='dark']) .s-settings-action:hover:not(:disabled),
+:root:not([data-theme='dark']) .o-more:not([data-on="1"]):hover {
+  background: var(--surface3);
+}

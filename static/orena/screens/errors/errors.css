@@ -31,12 +31,13 @@
   height: 40px;
   flex: none;
   border-radius: 12px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--edge-light);
 }
 .s-errors-head__title {
   flex: 1;
@@ -132,8 +133,8 @@
   outline: 0;
 }
 .s-errors-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--ring);
+  border-color: var(--text3);
+  box-shadow: var(--sh2);
 }
 
 /* ---- Buttons ---- */
@@ -159,9 +160,10 @@
   height: 44px;
   padding: 0 16px;
   border-radius: 12px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
+  box-shadow: var(--edge-light);
 }
 .s-errors-btn--primary {
   height: 48px;

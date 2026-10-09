@@ -16,11 +16,12 @@
   width: 100%;
   padding: 20px;
   border-radius: 18px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   text-align: left;
   font: inherit;
+  box-shadow: var(--edge-light);
 }
 .s-import__option--primary {
   border: 0;
@@ -67,8 +68,8 @@
 }
 .s-import__input:focus,
 .s-import__textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--ring);
+  border-color: var(--text3);
+  box-shadow: var(--sh2);
 }
 .s-import__stats {
   display: flex;
@@ -87,8 +88,9 @@
   gap: 14px;
   padding: 14px 18px;
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
+  box-shadow: var(--edge-light);
 }
 .s-import__stage-label {
   font-size: 15px;

@@ -59,3 +59,13 @@
 
 /* The page's own line under the title (frame 04). */
 .s-discover__sub { margin: 8px 0 0; color: var(--muted); font-size: 16px; line-height: 24px; }
+
+/* The practice chooser's head: Back, then its title (G-15). */
+.s-discover__practicehead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-discover__hint {
+  margin: 4px 0 0;
+}
