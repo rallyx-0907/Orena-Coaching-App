@@ -5,7 +5,11 @@
    seam product/grammar-source.js; model.js buildLibrary shapes them as the frame's state script (`glVals`) does, for
    the corpus as it is (see its notes for what the corpus cannot supply). The level, the open category, the "all" chip,
    the status filter, the sort and the view live in the address, so reload and Back from a point keep them; the search
-   text does not.
+   text lives in the history entry's state instead (model.js withSearch), so Back from a point keeps it too without
+   putting it in a shareable address. Where the learner had scrolled to is restored by the router (shell/scroll-memory.js).
+
+   A category card opens that category's panel under the grid and brings the panel into view: on a phone it sits a
+   screen below the cards, and a press that changed nothing the learner could see read as a dead button.
 
    The header row (back, breadcrumb, search, status) is drawn once and the rest of the page re-renders under it, so the
    search field keeps its focus while the learner types. */
@@ -18,10 +22,17 @@ import { shellCopy as shell } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
 import { grammarLibraryData, grammarProgress } from '../../product/grammar-source.js';
-import { SORTS, STATUSES, buildLibrary, statusControl } from './model.js';
+import { NO_FUNCTION, SORTS, STATUSES, buildLibrary, readSearch, statusControl, withSearch } from './model.js';
 
 const GLYPH = Object.freeze({ zh: '语', en: 'Aa' });
 const QUERY_KEYS = Object.freeze(['level', 'cat', 'all', 'st', 'sort', 'view']);
+
+/* Scrolls the main column to `element`, without animation when the learner asks for less motion. */
+function bringIntoView(element) {
+  if (!element) return;
+  const calm = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  element.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+}
 
 const hueStyle = (entry) => `--hue:${entry.hue}`;
 
@@ -63,7 +74,7 @@ function continueCard(entry, pinyin) {
 }
 
 function categoryCard(category) {
-  return html`<button type="button" class="s-gl__cat" data-cat="${category.id || '-'}" aria-pressed="${category.selected ? 'true' : 'false'}" style="${hueStyle(category)}">
+  return html`<button type="button" class="s-gl__cat" data-cat="${category.id || NO_FUNCTION}" aria-pressed="${category.selected ? 'true' : 'false'}" style="${hueStyle(category)}">
     ${tile(category, 48, 22)}
     <span class="s-gl__catBody">
       <span class="s-gl__catName">${category.name}</span>
@@ -102,7 +113,7 @@ export default async function grammarLibrary(element, ctx) {
   let progress = firstProgress;
   if (!ctx.isCurrent()) return;
 
-  const state = { q: '' };
+  const state = { q: readSearch(history.state) };
   for (const key of QUERY_KEYS) state[key] = ctx.query?.get?.(key) || '';
   if (state.view !== 'list') state.view = '';
   const pinyin = ctx.context.pinyin !== false;
@@ -129,6 +140,7 @@ export default async function grammarLibrary(element, ctx) {
   );
   const body = element.querySelector('[data-body]');
   const q = element.querySelector('[data-q]');
+  q.value = state.q;
   const st = element.querySelector('[data-st]');
 
   function remember() {
@@ -180,7 +192,7 @@ export default async function grammarLibrary(element, ctx) {
           <div class="s-gl__panelHead">
             ${tile(panel, 48, 22)}
             <div class="s-gl__panelText"><div class="s-gl__panelName">${panel.name}</div><div class="s-gl__panelSub">${t.plural('topics', panel.count)}</div></div>
-            <button type="button" class="s-gl__seeAll" data-see-all="${panel.id || '-'}">${t('seeAll')}${raw(icon('arrow-right', { size: 16 }))}</button>
+            <button type="button" class="s-gl__seeAll" data-see-all="${panel.id || NO_FUNCTION}">${t('seeAll')}${raw(icon('arrow-right', { size: 16 }))}</button>
           </div>
           ${view.panelItems.length
             ? html`<div class="s-gl__grid">${view.panelItems.map((entry) => topicCard(entry, pinyin))}</div>`
@@ -194,7 +206,7 @@ export default async function grammarLibrary(element, ctx) {
           <select class="s-gl__sort" data-sort aria-label="${t('sortLabel')}">${SORTS.map((value) => option(value, t(`sort_${value}`), value === view.sort))}</select>
           <div class="s-gl__views">${[['', 'layout-grid', t('viewGrid')], ['list', 'list', t('viewList')]].map(([value, name, aria]) => html`<button type="button" class="s-gl__view" data-view="${value || 'grid'}" aria-label="${aria}" aria-pressed="${(state.view || '') === value ? 'true' : 'false'}">${raw(icon(name, { size: 17 }))}</button>`)}</div>
         </div>
-        <div class="s-gl__chips">${[{ id: 'all', name: t('chipAll') }, ...view.categories].map((entry) => html`<button type="button" class="s-gl__chip" data-chip="${entry.id || '-'}" aria-pressed="${entry.id === view.allCat ? 'true' : 'false'}">${entry.name}</button>`)}</div>
+        <div class="s-gl__chips">${[{ id: 'all', name: t('chipAll') }, ...view.categories].map((entry) => html`<button type="button" class="s-gl__chip" data-chip="${entry.id || NO_FUNCTION}" aria-pressed="${entry.id === view.allCat ? 'true' : 'false'}">${entry.name}</button>`)}</div>
         ${view.all.length
           ? list
             ? html`<div class="s-gl__list">${view.all.map((entry) => topicRow(entry, pinyin))}</div>`
@@ -208,6 +220,7 @@ export default async function grammarLibrary(element, ctx) {
 
   q.addEventListener('input', () => {
     state.q = q.value;
+    history.replaceState(withSearch(history.state, state.q), '');
     render();
   });
   element.addEventListener('change', (event) => {
@@ -243,7 +256,8 @@ export default async function grammarLibrary(element, ctx) {
     const seeAll = hit('[data-see-all]');
     const chip = hit('[data-chip]');
     const viewButton = hit('[data-view]');
-    const id = (value) => (value === '-' || value === 'all' ? '' : value);
+    // "all" is no category; a topic with no function stays "-" in the address (model.js NO_FUNCTION).
+    const id = (value) => (value === 'all' ? '' : value);
     if (level) Object.assign(state, { level: level.dataset.level, cat: '', all: '' });
     else if (cat) state.cat = id(cat.dataset.cat);
     else if (seeAll) state.all = id(seeAll.dataset.seeAll);
@@ -251,12 +265,14 @@ export default async function grammarLibrary(element, ctx) {
     else if (viewButton) state.view = viewButton.dataset.view === 'list' ? 'list' : '';
     else if (hit('[data-clear]')) {
       Object.assign(state, { q: '', st: '', all: '' });
+      history.replaceState(withSearch(history.state, ''), '');
       q.value = '';
       st.value = 'all';
     } else return;
     remember();
     render();
-    if (seeAll) element.querySelector('[data-all]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (seeAll) bringIntoView(element.querySelector('[data-all]'));
+    else if (cat) bringIntoView(element.querySelector('.s-gl__panel'));
     // The page re-renders under the header; the control the learner pressed keeps the focus (design review 2026-10-08).
     const again = (attr, value) => body.querySelector(`[${attr}="${CSS.escape(value)}"]`);
     const keep = level ? again('data-level', level.dataset.level) : cat ? again('data-cat', cat.dataset.cat)

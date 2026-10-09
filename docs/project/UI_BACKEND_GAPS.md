@@ -5473,3 +5473,9 @@ the meters below.
   `opening: true`. Past the allowance a greeting is built from the snapshot with no model (never refused). Greeting spend per
   account is read from the `agent.turn` rows (`opening: true`, rounds, tokens); the AI capability vocabulary was not
   extended. Owner: BACKEND (review of #118, P1-1).
+
+## Grammar Library: category and Back (human report, 2026-10-09)
+
+- **GLB-1 The design draws no scroll on a category press.** The pinned `glVals` category `onClick` only sets the category; its panel opens under the grid. On a phone that panel is a screen below the cards, so the press read as dead. The build scrolls the panel into view (reduced motion: no animation), as the design itself does for "See all". Not a new control or copy; reported because the source is silent. Owner: human (keep or drop).
+- **GLB-2 Back restores the place for every browsing page, not only Grammar.** `shell/scroll-memory.js` is wired in the router: a browser traversal (Back, Forward, reload) of a non-focus page returns to the position and (through the address) the filters it was left with; an arrival through the app starts at the top as before. The design has no state script for this. Owner: human (review other places on Back).
+- **GLB-3 In-app Back counts its own steps only.** `router.back()` calls `history.back()` when the app has pushed a page this tab (`orena.next.depth`), and that count is not reduced by the browser's own Back button, so after using the browser button the in-app Back can leave the app one step early. Not caused by this change; a history-index stamp in `history.state` would make it exact. Owner: shell.

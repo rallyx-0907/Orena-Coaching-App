@@ -470,3 +470,47 @@ console.log('Orena Grammar surface (Library + Concept) on the Grammar Store lear
   assert.deepEqual(statusControl(buildLibrary({ rows, progress: [], state: {} }), {}), { value: 'all', disabled: false });
   console.log('Grammar Library: a disabled status control shows All and keeps the choice: PASS');
 }
+
+/* Learner report 2026-10-09: a category in "Explore by category" did nothing the learner could see, and Back from a
+   point returned to the top of the Library. The category's choice lives in the address; the panel it opens is brought
+   into view; the search text rides in the history entry. */
+{
+  const { buildLibrary, NO_FUNCTION, readSearch, withSearch } = await import('../static/orena/screens/grammar/model.js');
+  const lv = { framework: 'cefr', value: 'B1', rank: 3 };
+  const row = (id, fn) => ({ id: `en.${id}`, level: lv, function: fn, sequence: 1, header: { native_title: id } });
+  const rows = [row('a', 'fn.time'), row('b', 'fn.link'), row('c', 'fn.link'), row('d', '')];
+  const functions = [{ id: 'fn.link', title: { en: 'Linking' } }, { id: 'fn.time', title: { en: 'Time' } }];
+  const base = { rows, functions, progress: [], current: 'B1', support: 'en', ui: 'en' };
+
+  // Pressing a category selects it (the control the learner pressed shows as selected) and opens its topics.
+  for (const id of ['fn.link', 'fn.time']) {
+    const view = buildLibrary({ ...base, state: { cat: id } });
+    assert.deepEqual(view.categories.filter((c) => c.selected).map((c) => c.id), [id], `${id}: exactly the pressed category is selected`);
+    assert.equal(view.panel.id, id);
+    assert.deepEqual(view.panelItems.map((i) => i.cat), view.panelItems.map(() => id), `${id}: the panel lists that category's points only`);
+  }
+  assert.equal(buildLibrary({ ...base, state: {} }).panel.id, 'fn.link', 'no choice yet: the first category');
+  assert.equal(buildLibrary({ ...base, state: { cat: '' } }).panel.id, 'fn.link', 'an empty address value is no choice, not the uncategorised group');
+
+  // The group with no function is a category too, and its choice survives the address.
+  assert.equal(NO_FUNCTION, '-');
+  const other = buildLibrary({ ...base, state: { cat: NO_FUNCTION, all: NO_FUNCTION } });
+  assert.deepEqual([other.panel.id, other.panelItems.map((i) => i.id), other.allCat, other.all.map((i) => i.id)], ['', ['en.d'], '', ['en.d']], '"-" in the address is the uncategorised group, in the panel and in the all-topics chip');
+  assert.equal(buildLibrary({ ...base, state: { all: '' } }).allCat, 'all', 'an empty "all" is every topic');
+
+  // The search text is kept in the history entry's state, never in the address.
+  assert.equal(readSearch(null), '');
+  assert.equal(readSearch({}), '');
+  assert.deepEqual(withSearch({ keep: 1 }, 'past'), { keep: 1, orenaGrammarSearch: 'past' });
+  assert.equal(readSearch(withSearch(null, 'past')), 'past');
+  assert.deepEqual(withSearch({ keep: 1, orenaGrammarSearch: 'past' }, ''), { keep: 1 }, 'an emptied search leaves the other state alone');
+
+  const src = fs.readFileSync('static/orena/screens/grammar/screen.js', 'utf8');
+  assert.match(src, /else if \(cat\) bringIntoView\(element\.querySelector\('\.s-gl__panel'\)\)/, 'a category press brings its panel into view');
+  assert.match(src, /remember\(\);\s*render\(\);/, 'the choice is written to the address before the page re-renders');
+  assert.match(src, /readSearch\(history\.state\)/, 'Back restores the search text from the entry');
+  const css = fs.readFileSync('static/orena/screens/grammar/grammar.css', 'utf8');
+  assert.match(css, /\.s-gl__panel \{\s*scroll-margin-top: 80px;/, 'the panel stops below the top edge as the all-topics block does');
+  assert.match(css, /\.s-gl__cat\[aria-pressed='true'\] \{[^}]*background:/, 'the selected category is a fill, not an outline (D-147)');
+  console.log('Grammar Library: a category press selects it, opens its topics in view and keeps them across Back: PASS');
+}

@@ -438,6 +438,7 @@
 
 /* The open category ("Grammar category" frame). */
 .s-gl__panel {
+  scroll-margin-top: 80px;
   border-radius: 26px;
   background: var(--surface);
   padding: clamp(16px, 2.4vw, 24px);
