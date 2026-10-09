@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from writing_coach.product.catalog import DEFAULT_PLAN_ID, Plan, known_plan_id, plan_by_id
+from writing_coach.product.membership import manual_expired
 from writing_coach.product.repository import ProductRepository
 
 
@@ -46,7 +47,7 @@ class ProductService:
     def _plan_for_subscription(subscription: object | None) -> Plan:
         status = str(getattr(subscription, "status", "") or "").strip().casefold()
         plan_id = str(getattr(subscription, "plan_id", "") or "").strip().casefold()
-        if not subscription or status not in {"active", "trialing"}:
+        if not subscription or status not in {"active", "trialing"} or manual_expired(subscription):
             return plan_by_id(DEFAULT_PLAN_ID)
         return plan_by_id(plan_id)
 
@@ -102,7 +103,8 @@ class ProductService:
             }
 
         status = str(getattr(subscription, "status", "") or "").strip().casefold() if subscription else "inactive"
-        active = status in {"active", "trialing"}
+        # A plan an administrator set by hand ends on its date (D-154).
+        active = status in {"active", "trialing"} and not manual_expired(subscription)
         raw_plan_id = str(getattr(subscription, "plan_id", "") or "").strip().casefold() if subscription else DEFAULT_PLAN_ID
         plan_known = known_plan_id(raw_plan_id)
         plan = plan_by_id(raw_plan_id if active and plan_known else DEFAULT_PLAN_ID)

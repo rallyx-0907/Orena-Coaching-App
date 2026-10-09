@@ -4589,3 +4589,27 @@ apply tính từ lúc thay đổi từ admin"; "Có theo thiết kế mới" (Se
 4. Settings' "Plan & privacy" tab becomes Privacy, as the new design draws it.
 5. The 2026-10-09 export is pinned: `screens/Orena.dc.html` (928 080 bytes, sha256 1abfa9cd…) and
    `screens/Orena-Admin.dc.html` (232 508 bytes, a70b3baa…); `PINS.tsv` updated, `SYNC_2026-10-09.md` records it.
+
+## D-154 - An administrator sets an account's role and plan by hand
+
+2026-10-09, explicit human decision. Human: "Tạo phần manual để admin khả năng mở giới hạn và set thành viên theo tài
+khoản", then "Phần giới hạn là phân quyền user ấy không phải thay đổi giới hạn sử dụng".
+
+1. Platform Admin's account page (`#/admin/users/:id`) has a "Role & plan" block: role Learner / Administrator
+   (`users.role`), plan Free / Plus / Pro with an optional end date. `GET`/`PUT /api/product/admin/accounts/{id}/membership`,
+   `require_admin`; each change writes an audit row and applies from the moment it is saved.
+2. A plan set by hand is a `manual` subscription row (`provider="manual"`, status `active`, `current_period_end` the end
+   date); past its date the account reads as Free with nothing to run. Free removes it. A subscription billing owns is
+   never overwritten by hand (409). A missing `plans` row for Plus or Pro is inserted (the FK target).
+3. Guards: an administrator cannot change their own role; an address in `PLATFORM_ADMIN_EMAILS` cannot be made a
+   learner here (sign-in would restore it). Roles stay the two the platform has (`user`, `admin`); finer permissions
+   would need a permission model of their own.
+4. Usage limits are not edited per account (the human's correction); plan limits are D-153's.
+5. Entitlement and role changes: the independent architecture review applies before `main`.
+
+## D-155 - Vietnamese text in Plus Jakarta Sans everywhere
+
+2026-10-09, explicit human decision. Human: "Chuyển font tiếng Việt về Gilroy", then "Có thể chuyển sang Poppins / Plus
+Jakarta Sans cho free". Gilroy is a paid face and not in the repository; Poppins has no Vietnamese subset (its stacked
+tones would fall back to another face). Vietnamese stays in Plus Jakarta Sans, now through `--font-ui`, so the places
+that set Outfit themselves (the Reader's translation, note and badges) follow the language too.

@@ -15,6 +15,7 @@ from writing_coach.product.catalog import (
     stored_catalog,
 )
 from writing_coach.product.commerce import accountCommerce
+from writing_coach.product.membership import ROLES, MembershipConflict, MembershipInvalid, apply_change
 from writing_coach.product.service import product_service
 
 router = APIRouter(prefix="/api/product", tags=["product"])
@@ -104,6 +105,59 @@ async def product_admin_plans_save(request: Request) -> dict[str, Any]:
     return _admin_catalog()
 
 
+def _membership_store():
+    store = product_service.repository
+    if store is None or not hasattr(store, "account_membership"):
+        raise HTTPException(503, "Accounts are not editable on this deployment.")
+    return store
+
+
+def _membership_body(account: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "available": True,
+        "account": account,
+        "roles": list(ROLES),
+        "plans": [{"id": plan.id, "name": plan.name, "rank": plan.rank} for plan in current_plans().values()],
+    }
+
+
+@router.get("/admin/accounts/{user_id}/membership")
+def product_admin_membership(user_id: str, request: Request) -> dict[str, Any]:
+    """One account's role and plan, for Platform Admin's account page (D-154)."""
+    require_admin(request)
+    account = _membership_store().account_membership(user_id)
+    if account is None:
+        raise HTTPException(404, "No account has this identifier.")
+    return _membership_body(account)
+
+
+@router.put("/admin/accounts/{user_id}/membership")
+async def product_admin_membership_save(user_id: str, request: Request) -> dict[str, Any]:
+    """Set an account's role and/or plan by hand; applies from this moment (D-154)."""
+    admin = require_admin(request)
+    store = _membership_store()
+    try:
+        change = await request.json()
+    except Exception:
+        raise HTTPException(400, "The change must be JSON.")
+    from auth_support import PLATFORM_ADMIN_EMAILS
+
+    try:
+        result = apply_change(
+            store, user_id, change, actor_key=str(admin.get("google_sub") or ""),
+            protected_emails={str(email).casefold() for email in PLATFORM_ADMIN_EMAILS},
+        )
+    except LookupError:
+        raise HTTPException(404, "No account has this identifier.")
+    except MembershipInvalid as error:
+        raise HTTPException(422, str(error))
+    except MembershipConflict as error:
+        raise HTTPException(409, str(error))
+    if result["applied"]:
+        _audit(str(admin.get("google_sub") or ""), "product.account.membership", "account", user_id, result["applied"])
+    return _membership_body(result["account"])
+
+
 def _record_admin_event(actor: str, document: Any) -> None:
     from writing_coach.ai.platform import _installed_platform_repository
 
@@ -131,3 +185,13 @@ def product_admin_account(request: Request) -> dict[str, Any]:
     admin = require_admin(request)
     state = product_service.account_state(str(admin.get("google_sub") or "local-admin"))
     return {"account": state, "read_only": True}
+
+
+def _audit(actor: str, action: str, entity_type: str, entity_id: str, payload: dict[str, Any]) -> None:
+    from writing_coach.ai.platform import _installed_platform_repository
+
+    try:
+        _installed_platform_repository().record_admin_event(action, actor=actor, entity_type=entity_type, entity_id=entity_id, payload=payload)
+    except Exception:
+        # The audit row is best effort; the saved change is the change.
+        pass

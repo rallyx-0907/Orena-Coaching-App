@@ -31,3 +31,25 @@ assert.ok(!String(operations.markup).includes('24 h'));
 const errors = controlPage('adminErrors', { overview: { available: false } }, { href });
 assert.ok(String(errors.markup).includes('Unavailable'));
 console.log('Admin control-center rendering and truthful state checks passed');
+
+/* D-154: an account's role and plan, set by hand. */
+{
+  const { membershipBlock } = await import('../static/orena/screens/admin/control-pages.js');
+  const plans = [{ id: 'free', name: 'Free', rank: 0 }, { id: 'plus', name: 'Plus', rank: 1 }, { id: 'pro', name: 'Pro', rank: 2 }];
+  const account = { id: 'u1', user_key: 'k', email: 'a@example.org', role: 'user', plan_id: 'plus', status: 'active', provider: 'manual', until: '2026-12-31T23:59:59+00:00' };
+  const view = { account, plans, draft: { role: 'user', plan_id: 'plus', until: '2026-12-31' }, error: '', status: '', busy: false, self: false };
+  const markup = String(membershipBlock(view));
+  assert.ok(markup.includes('data-field="mbRole"') && markup.includes('data-field="mbPlan"'), 'role and plan choices are drawn');
+  assert.equal((markup.match(/data-field="mbPlan"/g) || []).length, 3, 'the three plans');
+  assert.ok(markup.includes('type="date"') && markup.includes('value="2026-12-31"'), 'a paid plan offers an end date');
+  assert.ok(markup.includes('data-a="membership-save"'));
+  assert.ok(!String(membershipBlock({ ...view, draft: { ...view.draft, plan_id: 'free' } })).includes('type="date"'), 'Free has no end date');
+  assert.ok(String(membershipBlock({ ...view, self: true })).match(/data-field="mbRole"[^>]*disabled/), 'your own role is not editable');
+  assert.equal(membershipBlock(null), '', 'no membership read draws nothing');
+  const { membershipChange } = await import('../static/orena/screens/admin/control.js');
+  assert.deepEqual(membershipChange(view), {}, 'nothing changed sends nothing');
+  assert.deepEqual(membershipChange({ ...view, draft: { role: 'admin', plan_id: 'pro', until: '' } }), { role: 'admin', plan_id: 'pro' });
+  assert.deepEqual(membershipChange({ ...view, draft: { role: 'user', plan_id: 'pro', until: '2027-01-15' } }), { plan_id: 'pro', until: '2027-01-15T23:59:59Z' });
+  assert.deepEqual(membershipChange({ ...view, draft: { role: 'user', plan_id: 'free', until: '2027-01-15' } }), { plan_id: 'free' });
+  console.log('Admin account role and plan: PASS');
+}

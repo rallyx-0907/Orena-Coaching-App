@@ -6,6 +6,35 @@ import { controlPage } from './control-pages.js';
 import { pageHead, stateBlock } from './blocks.js';
 import { t } from './copy.js';
 
+/* The account's role and plan as a form draft (D-154). */
+function membershipView(answer, context) {
+  if (!answer || !answer.account) return null;
+  const account = answer.account;
+  return {
+    account,
+    plans: answer.plans || [],
+    draft: { role: account.role, plan_id: account.plan_id || 'free', until: account.until ? String(account.until).slice(0, 10) : '' },
+    error: '',
+    status: '',
+    busy: false,
+    // Your own account: the server refuses a change to your own role; the form says so before you try.
+    self: Boolean(account.email && context?.owner && String(context.owner).toLowerCase() === String(account.email).toLowerCase()),
+  };
+}
+
+/* What Save sends: only what changed, and an end date only with a paid plan. */
+export function membershipChange(view) {
+  const change = {};
+  if (view.draft.role !== view.account.role) change.role = view.draft.role;
+  const plan = view.draft.plan_id;
+  const until = plan === 'free' ? '' : view.draft.until;
+  if (plan !== (view.account.plan_id || 'free') || until !== (view.account.until ? String(view.account.until).slice(0, 10) : '')) {
+    change.plan_id = plan;
+    if (until) change.until = `${until}T23:59:59Z`;
+  }
+  return change;
+}
+
 export async function mountControl(shell, ctx) {
   const host = createHost(shell, ctx);
   const route = ctx.route.id;
@@ -29,7 +58,11 @@ export async function mountControl(shell, ctx) {
     host.paint();
     try {
       if (route === 'adminOverview') data = { overview: await adminApi.overview() };
-      else if (route === 'adminUser') data = { detail: await adminApi.user(ctx.params.id) };
+      else if (route === 'adminUser') {
+        const [detail, membership] = await Promise.all([adminApi.user(ctx.params.id), adminApi.membership(ctx.params.id).catch(() => null)]);
+        if (request !== generation) return;
+        data = { detail, membership: membershipView(membership, ctx.context) };
+      }
       else if (route === 'adminUsers') {
         const [summary, list] = await Promise.all([adminApi.usersSummary(), adminApi.users({ ...filters, offset, limit: 25 })]);
         if (request !== generation) return;
@@ -49,10 +82,43 @@ export async function mountControl(shell, ctx) {
     host.paint();
   }
   host.on('reload', load);
+  host.on('pick', (_, dataset) => {
+    const view = data.membership;
+    if (!view || (dataset.field !== 'mbRole' && dataset.field !== 'mbPlan')) return;
+    if (dataset.field === 'mbRole') view.draft.role = dataset.value;
+    else view.draft.plan_id = dataset.value;
+    view.status = '';
+    view.error = '';
+    host.paint();
+  });
+  host.on('membership-save', async () => {
+    const view = data.membership;
+    if (!view || view.busy) return;
+    const change = membershipChange(view);
+    if (!Object.keys(change).length) { view.status = t('mbSaved'); host.paint(); return; }
+    view.busy = true;
+    view.error = '';
+    host.paint();
+    try {
+      const answer = await adminApi.saveMembership(ctx.params.id, change);
+      if (!host.alive()) return;
+      data.membership = { ...membershipView(answer, ctx.context), status: t('mbSaved') };
+    } catch (failure) {
+      view.busy = false;
+      view.error = failure?.message || t('mbSaveFailed');
+    }
+    host.paint();
+  });
   host.on('go', (_, dataset) => ctx.go(dataset.to));
   host.on('next', () => { offset += 25; load(); });
   host.on('previous', () => { offset = Math.max(0, offset - 25); load(); });
-  host.onInput((field, next) => { if (!(field in filters)) return; filters[field] = next; offset = 0; load(); });
+  host.onInput((field, next) => {
+    if (field === 'mbUntil' && data.membership) { data.membership.draft.until = next; data.membership.status = ''; return; }
+    if (!(field in filters)) return;
+    filters[field] = next;
+    offset = 0;
+    load();
+  });
   host.onFilter((next) => { filters.q = next; offset = 0; clearTimeout(timer); timer = setTimeout(load, 250); });
   await load();
   return () => { generation += 1; clearTimeout(timer); host.cleanup(); };
