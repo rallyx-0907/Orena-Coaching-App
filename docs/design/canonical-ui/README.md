@@ -30,6 +30,9 @@ wins. See `DESIGN_CONTRACT.md` for the authority split.
 | `screens/Onboarding.dc.html` | First run. |
 | `screens/Compare-With-Model.dc.html` | Speaking comparison, embedded by the Compare With Model frame. |
 | `screens/support.js` | The design tool's runtime, to render the frames offline. Not product code. |
+| `screens/Orena-Landing.dc.html`, `Orena-Terms.dc.html`, `Orena-Privacy.dc.html` | The public pages (pinned 2026-10-10, `SYNC_2026-10-10.md`, D-160): Landing, Terms of Service, Privacy Policy. Served at `/` (signed out), `/landing`, `/terms`, `/privacy`; built by `scripts/build_public_pages.mjs`. |
+| `screens/Orena-Donate.dc.html` | Pinned, **not built**: Donate is out of scope for the public-beta milestone (its payment details are samples), `UI_BACKEND_GAPS.md` PUB-3. |
+| `screens/assets/bg/*.jpg` | The Backdrop images (midnight/paper, wide/tall) the Landing, Onboarding and the shell's Backdrop option draw. |
 | `screens/Orena-Admin.dc.html` | Platform Admin's authority (project e6dc1cb2, pinned 2026-09-29, `SYNC_2026-09-29.md`, D-099). Its brief is `brief/ORENA_ADMIN_DESIGN_SPEC.md`. |
 | `brief/` | The designer's brief, fidelity rules and project note: intent, not authority over a frame. |
 | `IMPLEMENTATION_MAP.md` | Frame → route → code → gate → status, for every frame. |

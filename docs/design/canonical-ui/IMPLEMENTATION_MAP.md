@@ -106,6 +106,20 @@ shape).
 | 47 (canonical, H1 2026-09-29; 23 is not built) | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` (data: `product/grammar-source.js`) | reviewable (2026-10-08: `/api/grammar/v1/points/:id`; old R5 ids redirect through the server R5 map; finishing the quiz records completion with `PUT /api/grammar/v1/progress/:id`, answers graded by the server; EN and ZH, desktop and 390 checked) |
 | Onboarding 01–05 | Welcome, Account, Languages, Level, Meet Orena | `#/welcome` | none | `screens/onboarding/` | reviewable |
 
+## Public pages (D-160, pinned 2026-10-10)
+
+Served outside the learner frame, in the design's own runtime (`static/orena/public/support.js`, byte for byte the
+pinned `support.js`), from templates generated from the pinned files by `scripts/build_public_pages.mjs`. The
+signed-in routing is in `app.py` `home()`.
+
+| Frame | Route | Code | Gate | Status |
+| --- | --- | --- | --- | --- |
+| Landing (Hero, Hero demo, How Orena thinks, Orena Intelligence, How it works, Features, Languages, Progress, Beyond the screen, Final CTA) | `/` for a visitor who is not signed in (sign-in on), and `/landing` always | `templates/orena/public/landing.html` <- `screens/Orena-Landing.dc.html` | `scripts/test_orena_public_pages.mjs`, `tests/test_public_entry.py` | reviewable (English, dark: as designed) |
+| Terms of Service (Vietnamese default, English by `?lang=en`) | `/terms` | `templates/orena/public/terms.html` <- `screens/Orena-Terms.dc.html` | same | reviewable (Chinese: none in the design, shows English) |
+| Privacy Policy | `/privacy` | `templates/orena/public/privacy.html` <- `screens/Orena-Privacy.dc.html` | same | reviewable (same) |
+| Donate | - | - | - | not built (PUB-3) |
+| Backdrop (glass rail, top bar and phone bar over a photograph) and Onboarding's backdrop | - | - | - | pinned, not built (PUB-4) |
+
 ## Platform Admin (D-101 E)
 
 `Orena-Admin.dc.html` (pinned 2026-09-29, `SYNC_2026-09-29.md`) inside this UI, on the existing Admin
