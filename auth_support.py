@@ -288,6 +288,8 @@ def _native_session_cookie(user_sub: str) -> str:
     return TimestampSigner(SESSION_SECRET or "local-single-user-mode").sign(payload).decode("utf-8")
 
 
+PUBLIC_PAGE_PATHS = frozenset({"/landing", "/terms", "/privacy"})
+
 router = APIRouter()
 
 
@@ -296,7 +298,8 @@ def login_page(request: Request):
     # The learner UI signs in from its own Welcome screen (D-143); this address only sends there.
     if not AUTH_ENABLED or request.session.get("user_sub"):
         return RedirectResponse(LEARNER_UI_ROOT, status_code=302)
-    return RedirectResponse(f"{LEARNER_UI_ROOT}#/welcome", status_code=302)
+    # `?app=1` is the shell for a visitor who is not signed in: `/` alone is the public Landing for them.
+    return RedirectResponse(f"{LEARNER_UI_ROOT}?app=1#/welcome", status_code=302)
 
 
 SIGN_IN_HOST_MOVED = "canonical"
@@ -548,6 +551,8 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
             # no learner data: everything it then asks for is an /api route, and those stay protected.
             or path == LEARNER_UI_ROOT
             or path == FORMER_UI_PREFIX
+            # The public pages: Landing, Terms, Privacy. They carry no learner data and no /api route.
+            or path in PUBLIC_PAGE_PATHS
             or path.startswith("/orena-brand/")
             or path == "/api/health"
             or path == "/api/readiness"

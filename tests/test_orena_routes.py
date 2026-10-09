@@ -1,15 +1,18 @@
 import re
 from pathlib import Path
+from types import SimpleNamespace
 
 from app import ORENA_ASSET_ROOT, ORENA_BRAND_SERVED, home, becoming_preview, former_learner_ui_address
 
 ROOT = Path(__file__).resolve().parents[1]
+# Sign-in is off in the test environment, so `/` is the shell whoever asks (tests/test_public_entry.py covers sign-in on).
+_VISITOR = SimpleNamespace(session={}, query_params={})
 
 
 def test_root_serves_the_learner_ui() -> None:
     # D-091 item 5, D-143: since the cutover `/` serves the learner UI, from a template that loads none of
     # the retired UI's assets.
-    body = home().body.decode("utf-8")
+    body = home(_VISITOR).body.decode("utf-8")
     assert body == (ROOT / "templates" / "orena" / "index.html").read_text(encoding="utf-8")
     assert "/orena-assets/main.js" in body
     assert "/orena-assets/kit/tokens.css" in body
@@ -24,7 +27,7 @@ def test_root_document_is_not_cacheable() -> None:
     # copy keeps requesting yesterday's asset list and a sheet added since is
     # simply never fetched. Every asset answers no-store; the document that
     # names them has to as well.
-    assert home().headers["cache-control"] == "no-store, max-age=0"
+    assert home(_VISITOR).headers["cache-control"] == "no-store, max-age=0"
 
 
 def test_former_addresses_canonicalize_to_root() -> None:
