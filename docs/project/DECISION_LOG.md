@@ -4698,8 +4698,12 @@ architecture review before merge** (entitlement change; the quota repository's r
    the human (AGENTS.md section 7), so the bucket's `window_id` records it: `D:<local date>@<zone>`,
    `M:<local yyyy-mm>@<zone>`, with the true UTC start and end stored on the bucket. A timezone change never resets or
    reopens the current window: an open window is kept whatever zone a request names, and a new window that would
-   overlap the previous one starts where it ended and lasts at least 23 hours (a day) or 27 days (a month), so zone
-   hopping never yields extra windows. `resets_at` (429 body, usage read) is the window's true end.
+   overlap the previous one starts where it ended and lasts at least 23 hours (a day) or 27 days (a month), so
+   sequential zone hopping never yields extra windows. Concurrent requests naming different zones cannot either
+   (architecture review of #116, P1-1): the reserve takes a transaction-scoped advisory lock on (incarnation, meter)
+   and refuses (`window_superseded`, nothing written) a window another bucket of that meter already covers; the
+   request re-reads the latest bucket and uses that window. `resets_at` (429 body, usage read) is the window's true
+   end.
 6. **Server-side, fail closed, no plan-id branches.** One path, `writing_coach/product/quota.py`: request -> user key ->
    account -> incarnation -> plan (strict catalogue read) -> entitlement -> window -> `reserve(limit_policy='current')`
    -> dispatch -> provider -> settle/release. Exhausted: HTTP 429 `quota_exhausted` with `{feature, used, limit, unit,
@@ -4709,11 +4713,15 @@ architecture review before merge** (entitlement change; the quota repository's r
    catalogue's at each reserve (`limit_policy='current'`, no schema change), so an upgrade or an admin edit applies to
    the next request with the window's usage kept, and a downgrade below usage is exhausted at once (stored limit =
    GREATEST(current, consumed + reserved)). `'frozen'` stays the default for every other caller.
-8. **The switch** (default off everywhere): `ORENA_QUOTA_ENFORCEMENT` (on/off) wins when set; otherwise the admin
-   setting `product.quota_enforcement` (`PUT /api/product/admin/quota`), so a running sandbox can be switched without
-   recreating it; meters enforced = `ORENA_QUOTA_METERS` or the setting's list, only meters this build wires
-   (`writing.review` today). Enforcement needs PostgreSQL, the quota tables and an active account backbone; otherwise
-   every enforced meter answers 503. Roll back = switch off (buckets stay for audit).
+8. **The switch** (default off everywhere), failing closed (review of #116, P2-1): `ORENA_QUOTA_ENFORCEMENT=off` is
+   off; `=on` is on, and if no wired meter resolves (`ORENA_QUOTA_METERS` empty and the setting lists none) every wired
+   meter answers 503 rather than running unmetered; unset, the admin setting `product.quota_enforcement`
+   (`PUT /api/product/admin/quota`) decides, so a running sandbox can be switched without recreating it, and a setting
+   that cannot be read in a process that never read it makes every wired meter answer 503. Meters enforced =
+   `ORENA_QUOTA_METERS` or the setting's list, only meters this build wires (`writing.review` today). **:8000 must pin
+   both environment variables**, so the setting is never the authority there. Enforcement needs PostgreSQL, the quota
+   tables and an active account backbone; otherwise every enforced meter answers 503. Roll back = switch off (buckets
+   stay for audit).
 9. **Usage read = enforcement.** `/api/product/commerce` reads each enforced meter's used (consumed + reserved),
    limit and `resets_at` from the same buckets and catalogue; a meter nothing counts is `not_metered` and a store it
    cannot read is `unavailable` - never "0 used". `/api/product/me` (frozen native contract) is projected onto its
@@ -4725,7 +4733,13 @@ architecture review before merge** (entitlement change; the quota repository's r
     downgrade applies immediately. Still open: pronunciation display rounding; the Plan screen's state for an
     unmetered meter and the in-room exhausted message (the design draws neither, `UI_BACKEND_GAPS.md` QTA-1/QTA-2);
     incarnation rows on a backbone-off deployment (:8000); a CI PostgreSQL service so the PostgreSQL proofs gate merges.
+    **Recorded as the human's decision to confirm (review of #116, P2-3):** provider work that ran but whose output is
+    unusable (`AIProviderError` -> the local heuristic or a 502) settles 0 - the learner got nothing - so that spend is
+    bounded only by the per-process brake (`writing_ai`, 30 per 600 s per worker), which stays.
 11. **Activation:** :8021 may be switched on (`writing.review`) after review; :8000 needs an explicit human GO and the
     architecture review of 6-8.
+
+Independent architecture review: `docs/reviews/architecture/QUOTA_CORE_REVIEW_2026-10-09.md` (claude-opus-5-5,
+Delegated Architecture Reviewer, REQUEST CHANGES on 4fbd15a2..40443ed1; fixes listed there).
 
 If another branch (PR A) lands a D-160 first, this entry is renumbered to the next free number on merge.

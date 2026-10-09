@@ -5312,3 +5312,13 @@ the meters below.
   call, else the zone recorded on the learner's last quota window, else UTC (D-160 point 5). A stored account field
   is a schema decision reserved to the human. Owner: human (schema), then BACKEND.
 - **QTA-9 Usage history chart (PLN-3).** Still not drawn; the buckets hold one row per window, not a daily series.
+- **QTA-10 Unusable provider output costs nothing (review of #116, P2-3).** An AI call that ran but whose output could
+  not be used (`AIProviderError`: the local heuristic answers, or a 502) settles 0 writing reviews, as the contract
+  says ("the learner got nothing"). The spend is bounded only by the per-process brake (`writing_ai`). A human
+  decision to confirm. Owner: human.
+- **QTA-11 Operations notes from the review (P3).** (a) `stale_dispatched` scans without a `(state, updated_at)`
+  index - a partial index needs a reviewed migration before reservations grow; (b) the quota store is resolved once at
+  start, so a database that is down at start keeps enforcement at 503 until a restart (fails closed, no self-recovery);
+  (c) deleting and re-registering an account starts a new incarnation with fresh buckets - the account-deletion
+  runtime (reserved) must decide whether usage carries over; (d) the reconciler is scoped to synchronous meters
+  (`SYNC_METERS`) and must stay so when media import (settled by its worker) is wired. Owner: BACKEND / human.
