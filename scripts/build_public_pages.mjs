@@ -62,10 +62,19 @@ const pages = [
   ['Orena-Terms.dc.html', 'terms.html', legal],
   ['Orena-Privacy.dc.html', 'privacy.html', legal],
 ];
-const copies = [
-  ['support.js', 'static/orena/public/support.js'],
-  ['assets/bg/midnight-wide.jpg', 'static/orena/public/bg/midnight-wide.jpg'],
-];
+const copies = [['assets/bg/midnight-wide.jpg', 'static/orena/public/bg/midnight-wide.jpg']];
+
+// The runtime loads React from unpkg (and Babel for .jsx imports, which none of these pages use). The served copy
+// points at the same npm files vendored under static/orena/public/vendor/ (react@18.3.1, react-dom@18.3.1: the
+// design's own SRI hashes still match them byte for byte) and at a Babel path that is not shipped and never asked
+// for. The pinned support.js stays byte-identical in docs/design.
+const VENDOR = '/orena-assets/public/vendor';
+function runtime(text) {
+  text = sub(text, 'react url', /https:\/\/unpkg\.com\/react@18\.3\.1\/umd\/react\.production\.min\.js/g, `${VENDOR}/react.production.min.js`);
+  text = sub(text, 'react-dom url', /https:\/\/unpkg\.com\/react-dom@18\.3\.1\/umd\/react-dom\.production\.min\.js/g, `${VENDOR}/react-dom.production.min.js`);
+  text = sub(text, 'babel url', /https:\/\/unpkg\.com\/@babel\/standalone@[0-9.]+\/babel\.min\.js/g, `${VENDOR}/babel-not-shipped.js`);
+  return text;
+}
 
 const outputs = new Map();
 for (const [src, dest, fn] of pages) {
@@ -73,6 +82,7 @@ for (const [src, dest, fn] of pages) {
   outputs.set(`templates/orena/public/${dest}`, Buffer.from(fn(text), 'utf8'));
 }
 for (const [src, dest] of copies) outputs.set(dest, fs.readFileSync(path.join(pin, src)));
+outputs.set('static/orena/public/support.js', Buffer.from(runtime(fs.readFileSync(path.join(pin, 'support.js'), 'utf8')), 'utf8'));
 
 let bad = 0;
 for (const [rel, buf] of outputs) {

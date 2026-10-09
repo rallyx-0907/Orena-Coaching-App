@@ -5285,10 +5285,12 @@ The 2026-10-09 export's Landing, Terms and Privacy, and its Backdrop change.
 
 - **PUB-1 Pages run on the design's runtime.** The Landing is a scroll-choreographed page of ~1200 elements whose
   layout, motion and copy are template bindings and a 60 KB state script. It is served as the design's own file
-  under the design's own runtime (`support.js`, vendored byte for byte, with React inside), not retyped: measured
+  under the design's own runtime (`support.js`; the served copy differs from the pin only in the script URLs, below), not retyped: measured
   against the pin at 1920x1080, 1366x768, 390x844 and 360x740 the computed styles and the text are identical. The
-  cost: the page needs JavaScript (a crawler without it sees no copy), it loads the runtime (69 KB) and Google
-  Fonts as the design references them, and the browser logs a few harmless SVG-attribute parse errors from the
+  cost: the page needs JavaScript (a crawler without it sees no copy), it loads the runtime (69 KB) and React 18.3.1 (142 KB), both
+  from `/orena-assets/public/` (the runtime asked for unpkg.com; the served copy points at the same npm files, vendored with
+  their MIT licence, and the design's own SRI hashes match them; Babel, 3 MB, is for `.jsx` imports that these pages do not
+  use and is not shipped), and Google Fonts as the design references them, and the browser logs a few harmless SVG-attribute parse errors from the
   template's unresolved bindings before the runtime renders it. A native port is possible later and is the human's
   call. Re-pin: run `node scripts/build_public_pages.mjs`; the gate fails on drift.
 - **PUB-2 Terms and Privacy.** The legal text is the design's, verbatim (the gate compares every heading, date,

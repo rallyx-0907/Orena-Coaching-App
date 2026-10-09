@@ -32,5 +32,11 @@ google-auth and google-auth-oauthlib (Apache 2.0), itsdangerous (BSD-3-Clause), 
 Alembic (MIT), psycopg (LGPL-3.0, used as an unmodified library), python-multipart (Apache 2.0),
 httpx (BSD-3-Clause), cryptography (Apache 2.0 or BSD-3-Clause).
 
+Browser software served with the public pages (Landing, Terms, Privacy): React 18.3.1 and ReactDOM 18.3.1 (MIT,
+copyright Meta Platforms, Inc. and affiliates), the unmodified npm production builds, vendored in
+`static/orena/public/vendor/` with their licence texts (`LICENSE.react.txt`, `LICENSE.react-dom.txt`) and verified
+against the npm registry's integrity hashes. The design's page runtime (`static/orena/public/support.js`) is the
+design project's own file.
+
 The application image installs FFmpeg (`ffmpeg`, `ffprobe`) from Debian packages (LGPL-2.1+ /
 GPL-2+ depending on build); Orena invokes it as a separate program and does not link it.

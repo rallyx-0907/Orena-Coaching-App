@@ -2,6 +2,7 @@
 // is verbatim, and no link points at a prototype file or at the Donate page (out of scope).
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 
 const pin = (n) => fs.readFileSync(`docs/design/canonical-ui/screens/${n}`, 'utf8');
@@ -48,5 +49,28 @@ for (const out of ['landing.html', 'terms.html', 'privacy.html']) {
 }
 assert.ok(!/localStorage\.getItem\('orena-legal-lang'\)[^;]*zh/.test(built('terms.html')), 'sanity');
 for (const out of ['terms.html', 'privacy.html']) assert.ok(built(out).includes("if (q === 'zh') return 'en';"), `${out}: ?lang=zh shows English`);
+
+// 6. No external script origin anywhere: the runtime and React are served from /orena-assets (supply chain,
+//    availability, CSP). Only Google Fonts stylesheets may leave the origin.
+const served = [...['landing.html', 'terms.html', 'privacy.html'].map(built), fs.readFileSync('static/orena/public/support.js', 'utf8')];
+for (const text of served) {
+  for (const m of text.matchAll(/https?:\/\/[A-Za-z0-9.-]+/g)) {
+    // www.w3.org is the SVG/XML namespace name, never fetched.
+    assert.ok(['https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'http://www.w3.org'].includes(m[0]), `external origin: ${m[0]}`);
+  }
+  assert.ok(!/unpkg|jsdelivr|cdnjs|<script[^>]+src="https?:/i.test(text), 'no CDN script reference');
+}
+// React is the npm file the design pins: the design's own SRI hash still matches the vendored bytes.
+const runtimeText = fs.readFileSync('static/orena/public/support.js', 'utf8');
+for (const [file, key] of [['react.production.min.js', 'REACT_SRI'], ['react-dom.production.min.js', 'REACT_DOM_SRI']]) {
+  const bytes = fs.readFileSync(`static/orena/public/vendor/${file}`);
+  const sri = 'sha384-' + createHash('sha384').update(bytes).digest('base64');
+  assert.ok(runtimeText.includes(`var ${key} = "${sri}"`), `${file} matches ${key}`);
+  assert.ok(runtimeText.includes(`/orena-assets/public/vendor/${file}`), `${file} is what the runtime loads`);
+}
+assert.ok(!fs.existsSync('static/orena/public/vendor/babel-not-shipped.js'), 'Babel is not shipped');
+for (const out of ['terms.html', 'landing.html', 'privacy.html']) assert.ok(!/x-import/.test(built(out)), `${out}: no JSX import, so no Babel`);
+const pinned = fs.readFileSync('docs/design/canonical-ui/screens/support.js');
+assert.ok(pinned.includes('unpkg.com/react@18.3.1'), 'the pinned runtime is untouched');
 
 console.log('public pages gate passed');
