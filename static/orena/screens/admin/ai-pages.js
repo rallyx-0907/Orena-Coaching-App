@@ -22,7 +22,7 @@ import {
 } from '../../capabilities/admin-ai.js';
 import { relative, latency, num, percent } from '../../capabilities/admin-format.js';
 import { humanKey, matchesFilter, providerMono, providerPill, routePill, sourceLabel } from './model.js';
-import { banner, block, formBlock, kv, metrics, pageHead, rowList, stateBlock, tabs } from './blocks.js';
+import { banner, bars, block, chipRow, formBlock, kv, metrics, pageHead, rowList, skeleton, stateBlock, tabs } from './blocks.js';
 
 const capName = (t, key) => (t.has(`cap_${key}`) ? t(`cap_${key}`) : humanKey(key));
 const capHint = (t, key) => (t.has(`capHint_${key}`) ? t(`capHint_${key}`) : '');
@@ -79,12 +79,86 @@ function loadFailed(t) {
   return stateBlock({ span: true, kind: 'error', heading: t('loadFailedTitle'), text: t('loadFailedText'), actions: [{ label: t('retry'), kind: 'primary', size: 'sm', a: 'reload' }] });
 }
 
-/* A2: the Providers and Capability routing tabs. */
+export const TOKEN_PERIODS = [1, 7, 30];
+
+/* A2 Token usage, from the AI cost ledger (GET /api/admin/ai/costs): tokens, requests and audio seconds by
+   capability x provider x model. The ledger has no per-day token count, no budget and no per-character
+   count, so the design's per-day chart, budget block and alert are not drawn (UI_BACKEND_GAPS, "Admin Token
+   usage"). Nothing here is estimated. */
+function tokenUsage({ state, usage, t, ui }) {
+  const compact = (value) => new Intl.NumberFormat(ui, { notation: 'compact', maximumFractionDigits: 1 }).format(value || 0);
+  const whole = (value) => num(Math.round(value || 0), ui);
+  const money = (value) => new Intl.NumberFormat(ui, { style: 'currency', currency: 'USD', minimumFractionDigits: value < 1 ? 4 : 2, maximumFractionDigits: value < 1 ? 4 : 2 }).format(value || 0);
+  const days = usage.days;
+  const periodLabel = days === 1 ? t('tkToday') : t('costDays', { n: days });
+  const period = chipRow({ label: t('costRange'), a: 'tk-period', options: TOKEN_PERIODS.map((n) => ({ id: String(n), label: n === 1 ? t('tkToday') : t('costDays', { n }), on: n === days })) });
+  if (usage.failed) return html`${period}<div class="a-blocks">${block({ span: true, body: t('opUnavailable') })}</div>`;
+  if (!usage.report) return html`${period}${skeleton(t('loading'))}`;
+  const features = usage.report.by_feature || [];
+  const providerName = (id) => state.providers.find((item) => item.id === id)?.name || id || '';
+  const tokens = (row) => (row.prompt_tokens || 0) + (row.completion_tokens || 0);
+  const llm = features.filter((row) => tokens(row) > 0);
+  const tin = llm.reduce((sum, row) => sum + row.prompt_tokens, 0);
+  const tout = llm.reduce((sum, row) => sum + row.completion_tokens, 0);
+  const total = tin + tout;
+  const cost = features.reduce((sum, row) => sum + (row.usd || 0), 0);
+  const share = (value, of) => (of ? Math.round((value / of) * 100) : 0);
+  const byProvider = new Map();
+  for (const row of features) {
+    if (!row.provider) continue;
+    const item = byProvider.get(row.provider) || { id: row.provider, input: 0, output: 0, calls: 0, usd: 0, seconds: 0 };
+    item.input += row.prompt_tokens || 0;
+    item.output += row.completion_tokens || 0;
+    item.calls += row.calls || 0;
+    item.usd += row.usd || 0;
+    item.seconds += row.audio_seconds || 0;
+    byProvider.set(row.provider, item);
+  }
+  const providerRows = [...byProvider.values()].sort((a, b) => b.usd - a.usd).map((item) => {
+    const name = providerName(item.id);
+    const parts = [];
+    if (item.input + item.output) parts.push(t('tkProviderMeta', { input: compact(item.input), output: compact(item.output), calls: whole(item.calls) }));
+    if (item.seconds) parts.push(t('tkProviderAudio', { minutes: whole(item.seconds / 60) }));
+    return { tile: providerMono(name), title: name, meta: parts.join(' · '), right: money(item.usd) };
+  });
+  const byCapability = new Map();
+  for (const row of llm) byCapability.set(row.capability, (byCapability.get(row.capability) || 0) + tokens(row));
+  const capabilityBars = [...byCapability.entries()].sort((a, b) => b[1] - a[1]).map(([key, value]) => ({ label: capName(t, key), pct: share(value, total), value: `${share(value, total)}%` }));
+  const modelRows = [...features].sort((a, b) => b.usd - a.usd).map((row) => {
+    const audio = !tokens(row) && row.audio_seconds > 0;
+    const requests = Math.max(1, (row.calls || 0) - (row.failures || 0));
+    return {
+      tile: providerMono(providerName(row.provider)),
+      title: row.model || capName(t, row.capability),
+      meta: audio
+        ? t('tkAudioMeta', { provider: providerName(row.provider), minutes: whole(row.audio_seconds / 60), calls: whole(row.calls) })
+        : t('tkModelMeta', { provider: providerName(row.provider), input: compact(row.prompt_tokens), output: compact(row.completion_tokens), avg: compact(tokens(row) / requests) }),
+      pills: [{ label: t(audio ? 'tkPillAudio' : 'tkPillTokens'), tone: audio ? 'mute' : 'info' }],
+      right: money(row.usd),
+    };
+  });
+  const empty = { title: t('opNone'), text: '' };
+  return html`${period}<div class="a-blocks">
+    ${block({ span: true, body: metrics([
+      { label: t('tkTotal'), value: compact(total), note: t('tkPeriodNote', { period: periodLabel }) },
+      { label: t('tkIn'), value: compact(tin), note: t('tkShare', { pct: share(tin, total) }) },
+      { label: t('tkOut'), value: compact(tout), note: t('tkShare', { pct: share(tout, total) }) },
+      { label: t('costTotal'), value: money(cost), note: t('tkCostNote') },
+    ], { columns: 4 }) })}
+    ${block({ title: t('tkByProvider'), sub: t('tkByProviderSub'), body: rowList(providerRows, empty) })}
+    ${block({ title: t('tkByCap'), sub: t('tkByCapSub'), body: capabilityBars.length ? bars(capabilityBars) : rowList([], empty) })}
+    ${block({ span: true, title: t('tkByModel'), body: rowList(modelRows, empty) })}
+  </div>`;
+}
+
+/* A2: the Providers, Capability routing and Token usage tabs. */
 export function listPage({ state, view, t, ui, href, now }) {
-  const tab = view.tab === 'route' ? 'route' : 'prov';
+  const tab = view.tab === 'route' ? 'route' : view.tab === 'tok' ? 'tok' : 'prov';
   const rows = capabilityRows(state.config, state.operations, state.providers);
   let body;
-  if (tab === 'prov') {
+  if (tab === 'tok') {
+    body = tokenUsage({ state, usage: view.usage || { days: 30, report: null, failed: false }, t, ui });
+  } else if (tab === 'prov') {
     body = rowList(
       state.providers
         .filter((provider) => matchesFilter(view.query, provider.name, provider.id))
@@ -127,7 +201,7 @@ export function listPage({ state, view, t, ui, href, now }) {
       emptyList(t, view.query),
     );
   }
-  const banners = failingBanner(t, state, href);
+  const banners = tab === 'tok' ? [] : failingBanner(t, state, href);
   return {
     title: t('aiTitle'),
     markup: html`<section class="a-page" data-screen-label="A2 AI &amp; Models">
@@ -137,8 +211,9 @@ export function listPage({ state, view, t, ui, href, now }) {
       ${tabs([
         { id: 'prov', label: t('tabProviders'), count: num(state.providers.length, ui), selected: tab === 'prov' },
         { id: 'route', label: t('tabRouting'), count: num(rows.length, ui), selected: tab === 'route' },
+        { id: 'tok', label: t('tabTokens'), count: null, selected: tab === 'tok' },
       ])}
-      <div class="a-blocks">${block({ span: true, flat: true, body })}</div>
+      ${tab === 'tok' ? body : html`<div class="a-blocks">${block({ span: true, flat: true, body })}</div>`}
     </section>`,
   };
 }

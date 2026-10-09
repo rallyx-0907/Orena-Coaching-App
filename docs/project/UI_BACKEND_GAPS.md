@@ -5188,3 +5188,25 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   `PLATFORM_ADMIN_EMAILS`.
 - **SIGN-5 One origin per runtime.** `GOOGLE_REDIRECT_URI` must equal `PUBLIC_BASE_URL` + `/auth/google/callback`
   (`deployment.py`), so one container signs in on one origin: `http://localhost:8021` or the tailnet name, not both.
+
+## Admin Token usage (2026-10-09)
+
+The design export adds a "Token usage" tab to A2 AI & Models: a period filter (24 h / 7 days / 30 days), four
+metrics, a per-hour/per-day token chart, "By provider" rows with a "% of budget" pill, a "Budget · month to date"
+block, "Tokens by capability" bars, "By model" rows, an "Azure Speech has used 82% of its budget" banner, and
+"Export CSV" / "Edit budgets" buttons. The tab is wired to the existing `GET /api/admin/ai/costs` ledger
+(`prompt_tokens`, `completion_tokens`, `calls`, `usd`, `audio_seconds` by capability x provider x model). It draws
+the metrics, By provider, Tokens by capability and By model from that report; nothing is estimated.
+
+- **TOK-1 Period.** The ledger is read by UTC day (`days` 1-90), so the filter reads Today (UTC) / 7 days / 30 days,
+  not 24 h. A rolling 24-hour or hourly window needs hourly rows. Owner: BACKEND.
+- **TOK-2 Token chart.** `by_day` carries calls and USD only, no tokens, so the per-day chart is not drawn. Owner: BACKEND
+  (a daily token sum in `cost_report`).
+- **TOK-3 Budgets.** No provider budget exists (no field, store or endpoint): the "% of budget" pill, the budget bars,
+  the 80% alert banner, "Learner requests pause at 100%" and "Edit budgets" are not drawn. A budget with a pause rule is
+  a product and entitlement decision. Owner: human / BACKEND.
+- **TOK-4 Export CSV.** No usage export route; the button is not drawn. Owner: BACKEND.
+- **TOK-5 Characters.** TTS usage is not recorded in characters (audio seconds only); speech rows show audio minutes.
+  Owner: BACKEND.
+- **TOK-6 AI cost page.** The page "AI cost" (D-128, `costs.js`) still exists and overlaps this tab; the design draws
+  no such page. Retire it once the human confirms the tab replaces it.
