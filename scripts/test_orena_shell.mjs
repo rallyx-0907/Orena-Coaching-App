@@ -16,7 +16,10 @@ const { ROUTES, PRIMARY, entryRoute, match, href, byId } = await import('../stat
 const focusList = JSON.parse(script.match(/b\.dataset\.focus=(\[[^\]]+\])\.includes/)[1]);
 // The design's "grammar" (one fixed concept) and "gconcept" (any concept) are one screen here.
 const ALIASES = { grammar: 'gconcept' };
-const designFocus = new Set(focusList.map((key) => ALIASES[key] || key));
+/* The 2026-10-09 export adds three frames (Feedback, Plan & usage, Pricing) to the focus list; the pin is
+   not re-pinned yet, so they are named here from that export's own applyBody list. */
+const EXPORT_ADDED_FOCUS = ['feedback', 'billing', 'pricing'];
+const designFocus = new Set([...focusList, ...EXPORT_ADDED_FOCUS].map((key) => ALIASES[key] || key));
 // Onboarding (bare) comes from Onboarding.dc.html, not from Orena.dc.html's focus list.
 const ourFocus = new Set(ROUTES.filter((route) => route.focus && !route.bare).map((route) => route.design));
 assert.deepEqual([...ourFocus].sort(), [...designFocus].sort(), 'learning workspaces are the design focus list');

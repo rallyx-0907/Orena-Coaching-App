@@ -5219,3 +5219,57 @@ The concept screen now renders every learning field the API returns (summary, wh
 - `pattern.variants` is declared for `affirmative`, `negative` and `question`; the live ZH corpus carries only `negative` (53 of 380 points) and `question` (47). The affirmative form is the `formula` itself.
 - Examples carry `form` (affirmative / negative / question); the screen does not label it (not drawn, nothing invented).
 - The learner API answers only in the session's learning language, so an EN point cannot be read while the profile is ZH; the EN shape was checked against the contract and the test fixture, not a live EN body.
+  **Live EN check (2026-10-09, profile switched to EN and back):** 215 published EN points - summary, when_to_use,
+  formula, common_mistakes and quick_practice explain on all 215; variants on 131; compare on 43; translation and
+  annotation on all 639 examples; personal_production on 209 (the 6 without it draw no "Try it yourself").
+- **CONTENT:** 12 examples in 6 older EN points (e.g. `en.present_simple.habit`) carry the same text in `translation`
+  and `annotation` - the "translation" is an explanation, not a translation. The screen draws the line once; the
+  corpus fix (a real translation) is a content task, not done here.
+
+## New export frames: Plan, Pricing, Billing, Feedback (2026-10-09)
+
+The design export `Design interface with interaction (1)/Orena.dc.html` (not yet pinned) adds four learner frames
+the app lacked: **Plan & usage** (route `billing`, `#/plan`), **Pricing** (route `pricing`, `#/plan/pricing`),
+**Billing Sheet** (a sheet over Pricing) and **Feedback** (`#/feedback`). All three routes are in the export's focus
+list (`applyBody`). Entry points are the export's own: Profile's actions list now reads Settings / History / Progress /
+**Plan & usage** (-> `#/plan`) / **Privacy** (-> Settings, Plan & privacy tab) / **Feedback** (-> `#/feedback`) /
+Sign out; "See all plans" and the plan card's button on Plan & usage open Pricing; a plan's button on Pricing opens the
+Billing sheet. "Grammar category" is already the Grammar Library work and was not touched.
+
+Real data: `GET /api/product/commerce` (plan, subscription state, per-feature monthly limit and use) and
+`GET /api/product/plans` (Free and Premium with their entitlements; `api.productPlans` added). Everything below is a gap.
+Payments are a human gate: no checkout, provider call or simulated success exists in the UI.
+
+- **PLN-1 Tiers and prices.** The design draws Free / Plus / Pro at $0 / $9.99 / $19.99 (and 199.000d / 399.000d),
+  monthly and yearly (-33%). The catalogue has Free and Premium and `price_label` is a name, not an amount; there is no
+  billing cycle. Pricing draws the two real plans, the price as "Free" or a dash, "Pricing is not published yet", no
+  Monthly/Yearly switch and no "Most popular"/"Most capable" tags. Owner: human (plans, prices, cycles) then BACKEND.
+- **PLN-2 Limits.** The design meters Orena messages (per day), writing reviews, pronunciation minutes, media-import
+  minutes. The catalogue meters `writing.evaluate`, `writing.improve`, `dictionary.lookup`, `vocabulary.save` per
+  month; there is no entitlement for Orena messages, pronunciation minutes or media import (same as N-29/N-30). Usage
+  and Compare plans draw the real keys only. Reset is "every month" (no reset date is returned). Owner: BACKEND.
+- **PLN-3 Usage history chart.** "Orena messages - last 14 days" (daily counts, the plan's daily limit line, average)
+  has no source. Not drawn. Owner: BACKEND (a daily usage series).
+- **PLN-4 Renewal, banner, cancel.** No renewal date, billing period, pending change or cancellation exists
+  (`billing_ready: false`): the amber "cancels/changes" banner with Resume, the "Cancel plan" button, the Cancel sheet
+  (what you lose, reasons) and the period label are not drawn. Owner: BACKEND + human (payments).
+- **PLN-5 Payment method, billing email, invoices.** No card, email or invoice store. Payment method is drawn at its
+  empty state ("No payment method", Update inert), the billing email is not drawn, Invoices reads "No invoices yet"
+  (no download buttons). The Update-card sheet (number, expiry, CVC) is not built: collecting card details is a
+  payment-provider matter. Owner: human (provider) then BACKEND.
+- **PLN-6 Billing sheet.** Only the change-plan summary is reachable. Price and Due today read "-" (or "Free"),
+  Starts and Payment rows are not drawn, the primary button ("Confirm change") is disabled, and the processing and
+  "All set" steps are not drawn. Owner: human (payments gate).
+- **PLN-7 Questions (FAQ).** Its answers describe billing behaviour that does not exist (proration, cancel at period
+  end, limit reset); not drawn until the policy exists. "Prices include VAT" and "Payments are simulated in this
+  prototype" are prototype/tax copy and are not drawn. Owner: human (policy).
+- **PLN-8 Settings tabs.** The export's Settings drops "Plan & privacy" and adds a **Privacy** tab (microphone, learner
+  audio, history). The app's Settings still has the "Plan & privacy" tab (plan row with an inert Manage, three meters,
+  microphone, learner audio, history, licences), so Profile's Privacy row opens that tab and the plan rows there
+  duplicate Plan & usage. Re-tabbing Settings is a separate change. Owner: UI (Settings).
+- **FBK-1 Feedback endpoint.** No route accepts or lists feedback (no `feedback` route in `app.py` or
+  `writing_coach/`) and there is no store for it. The frame is drawn with its stars, areas and text working as an
+  in-memory draft, Send inert with "Sending feedback is not available yet" beside it, and "Your feedback" at
+  "0 reviews" with no history cards (the "Sent"/"Just now" cards and the status are not drawn). Owner: BACKEND
+  (a submit route + a per-learner list) and human (who reads it, retention).
+- **FBK-2 Star colour.** The design's literal `#F2B705` star is drawn with `--amber` (no colour literals; AA in both themes).

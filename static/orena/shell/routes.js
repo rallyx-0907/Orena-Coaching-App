@@ -36,6 +36,10 @@ export const ROUTES = Object.freeze([
 
   // Learning workspaces: focus.
   { id: 'settings', path: 'settings', design: 'settings', screen: 'settings', focus: true, crumb: 'settings', intent: 'preferences' },
+  // The 2026-10-09 export's Plan & usage, Pricing and Feedback frames (all in its focus list).
+  { id: 'billing', path: 'plan', design: 'billing', screen: 'plan', focus: true, crumb: 'planUsage' },
+  { id: 'pricing', path: 'plan/pricing', design: 'pricing', screen: 'plan', focus: true, crumb: 'plans' },
+  { id: 'feedback', path: 'feedback', design: 'feedback', screen: 'feedback', focus: true, crumb: 'feedback' },
   { id: 'search', path: 'search', design: 'search', screen: 'search', focus: true, crumb: 'search' },
   { id: 'reader', path: 'read/:id', design: 'reader', screen: 'reader', focus: true, crumb: 'reader', lesson: true, intent: 'reading.workspace' },
   { id: 'checku', path: 'read/:id/check', design: 'checku', screen: 'check', focus: true, crumb: 'checkUnderstanding', lesson: true },

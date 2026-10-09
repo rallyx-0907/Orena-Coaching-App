@@ -52,6 +52,8 @@ export const api={
   // Canonical read (accountCommerce): full subscription-state vocabulary,
   // web-only. /me stays byte-for-byte for the frozen mobile contract.
   productCommerce:()=>request('/api/product/commerce'),
+  // The plan catalogue (Free, Premium and their entitlements); `billing_ready` is false.
+  productPlans:()=>request('/api/product/plans'),
   adminProductAccount:()=>request('/api/product/admin/account'),
   adminReadinessSummary:()=>request('/api/admin/readiness-summary'),
   adminVocabularyPreview:(files)=>{

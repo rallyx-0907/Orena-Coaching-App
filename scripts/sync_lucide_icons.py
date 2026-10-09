@@ -60,6 +60,7 @@ NAMES = sorted(
         "clock",
         "clock-4",
         "compass",
+        "credit-card",
         "crown",
         "ellipsis",
         "eye",
