@@ -1,21 +1,14 @@
 import { isTransientRequestError, retryOnce } from './retry.js';
 import { navigationSignal } from './navigation.js';
+import { deviceTimezone, newIdempotencyKey, quotaHeaders as quotaHeadersFor } from './quota-headers.js';
 
 const JSON_HEADERS = {'Content-Type':'application/json'};
 
-/* Plan quota (D-161): the learner's own timezone decides when a day or month of use resets, so a metered
-   call and the usage read say which zone this device is in. */
-function deviceTimezone(){
-  try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch{return 'UTC';}
-}
-/* One key per learner action (a Review or Improve press), reused only if that same action is sent again, so
-   the server never charges one action twice. */
-export function newIdempotencyKey(){
-  try{if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();}catch{/* fall through */}
-  return `k-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,12)}`;
-}
+/* Plan quota (D-161): the learner's timezone and one idempotency key per learner action travel with a metered
+   call (infrastructure/quota-headers.js, shared with the agent's turn transport). */
+export { newIdempotencyKey };
 function quotaHeaders(idempotencyKey){
-  return {...JSON_HEADERS,'X-Orena-Timezone':deviceTimezone(),...(idempotencyKey?{'Idempotency-Key':idempotencyKey}:{})};
+  return quotaHeadersFor(JSON_HEADERS,idempotencyKey);
 }
 
 /* What a 401 does: main.js installs its own (Welcome). Before it has, the learner goes to Welcome too. */
@@ -364,9 +357,11 @@ export const api={
   // a 404). `sendDiscussionTurn`'s `request_id` makes a retry of the same submission idempotent
   // server-side - the caller supplies one per attempt, not per keystroke.
   textDiscussion:(sourceKind,sourceId)=>request(`/api/texts/discussion?source_kind=${encodeURIComponent(sourceKind)}&source_id=${encodeURIComponent(sourceId)}`),
+  // A discussion turn is an Orena message (D-16X): the body's `request_id` is its idempotency key, and the device
+  // timezone says when the learner's day ends.
   sendDiscussionTurn:(payload)=>request('/api/texts/discussion/turns',{
     method:'POST',
-    headers:JSON_HEADERS,
+    headers:quotaHeaders(),
     body:JSON.stringify(payload),
   }),
   importMedia:(payload)=>request('/api/media-learning/import',{

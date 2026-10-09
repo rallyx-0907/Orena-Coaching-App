@@ -14,6 +14,13 @@ Each learner may send `turns_per_window` turns and `capability_reads_per_window`
 capability reads in a sliding window (spec §22). One more is answered 429
 `rate_limited` with `Retry-After`, after the 404 and before the body is read,
 so a malformed request counts too.
+
+Plan quota (D-161): when `orena.message` is enforced, a learner's message turn is admitted
+before anything streams - exhausted is a plain 429 `quota_exhausted` JSON response, never an
+SSE frame - and the opening greeting and the answers that ask no model are free (agent/turn.py).
+Live voice is not metered yet (it is charged by duration, in a later change), so while the
+meter is enforced a voice session is refused 503 `quota_voice_not_metered` instead of running
+unmetered.
 """
 
 from __future__ import annotations
@@ -25,21 +32,24 @@ from collections.abc import AsyncIterator, Iterator, Mapping
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
-from starlette.concurrency import iterate_in_threadpool
+from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
 from writing_coach.agent.events import Event, sse_frame
 from writing_coach.agent.locale import interface_languages, to_internal
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.tools import LearnerScope
-from writing_coach.agent.turn import AgentRuntime
+from writing_coach.agent.turn import AgentRuntime, TurnRefused, learner_context
 from writing_coach.agent.voice_session import VoiceService, voice_catalog
 from writing_coach.ai.live_voice import VoiceUnavailable
+from writing_coach.product import quota
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 
 _TRUE = frozenset({"1", "true", "yes", "on"})
 _runtime: AgentRuntime | None = None
+_NO_MORE = object()
+MESSAGE_METER = "orena.message"
 
 
 def agent_enabled(env: Mapping[str, str]) -> bool:
@@ -83,6 +93,23 @@ def _read_allowed(runtime: AgentRuntime = Depends(_require_runtime)) -> AgentRun
     return runtime
 
 
+def _message_admission(body: TurnRequest, learner: LearnerScope):
+    """One learner message of `orena.message`, reserved when the turn reaches its model (agent/turn.py). The
+    request's own facts (Idempotency-Key, timezone) are captured here, in the request's context, and replayed in
+    the turn's worker thread, where the contextvars are not the request's."""
+
+    facts = quota.current_facts()
+    digest = quota.request_digest(body)
+
+    def admission():
+        with learner_context(learner), quota.request_facts(
+            idempotency_key=facts.idempotency_key, timezone=facts.timezone
+        ):
+            return quota.begin(MESSAGE_METER, units=1, request_digest=digest)
+
+    return admission
+
+
 # `Depends` runs before the body and query are validated, so while the agent is
 # off every request is 404 - a malformed one too, never a 422 naming the schema.
 @router.post("/turn")
@@ -93,15 +120,28 @@ async def agent_turn(
     if to_internal(body.context.locale.target) != learner.language:
         raise HTTPException(status_code=409, detail="target_language_mismatch")
     stop = threading.Event()
-    events: Iterator[Event] = runtime.run(body, learner, should_stop=stop.is_set)
+    events: Iterator[Event] = runtime.run(
+        body, learner, should_stop=stop.is_set, admission=_message_admission(body, learner)
+    )
+    # The turn is admitted (or refused) before its first event is released: read that event here, before the response
+    # exists, so a plan-limit refusal is an ordinary 429 and never a frame in a stream.
+    try:
+        first = await run_in_threadpool(next, events, _NO_MORE)
+    except TurnRefused as refused:
+        raise refused.cause from None
 
     async def frames() -> AsyncIterator[str]:
         try:
-            async for event in iterate_in_threadpool(events):
-                yield sse_frame(event)
+            if first is not _NO_MORE:
+                yield sse_frame(first)
                 if await request.is_disconnected():
                     stop.set()
-                    break
+                    return
+                async for event in iterate_in_threadpool(events):
+                    yield sse_frame(event)
+                    if await request.is_disconnected():
+                        stop.set()
+                        break
         finally:
             stop.set()
             # Close the turn (and the provider's response) now rather than at
@@ -146,6 +186,13 @@ def _voice_call_allowed(runtime: AgentRuntime = Depends(_read_allowed)) -> Voice
 
 @router.post("/voice/session")
 def agent_voice_session(body: dict = Body(...), voice: VoiceService = Depends(_voice_session_allowed)) -> dict:
+    # Voice talks to the vendor directly on a token minted here, for up to 15 minutes, and is charged by duration in
+    # a later change. Until then it cannot be metered, so while `orena.message` is enforced no token is minted.
+    quota.refuse_unmetered(
+        MESSAGE_METER,
+        category="quota_voice_not_metered",
+        message="Voice conversations are not available while message limits are being applied.",
+    )
     learner = LearnerScope.from_request_context()
     try:
         target = to_internal(str(((body.get("context") or {}).get("locale") or {}).get("target") or ""))

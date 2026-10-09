@@ -270,3 +270,19 @@ console.log('Orena (Home/Contextual panel/voice/memory sheet): context label, re
   assert.deepEqual(ran, ['n2'], 'an unmarked offer waits for a tap');
 }
 
+
+// D-161: a reply that ended on the plan's limit of Orena messages says so with the server's figures, and the retry
+// button's place carries the way to the plans (nothing new is drawn); an ordinary retry error is unchanged.
+{
+  const { messageMarkup } = await import('../static/orena/screens/orena/thread.js');
+  const base = { role: 'orena', segments: [], actions: [], evidence: [], suggestions: [], done: true };
+  const where = { surface: 'panel', ranActions: new Set(), supported: new Set() };
+  const limit = { feature: 'orena.message', used: 20, limit: 20, upgrade: '#/plan/pricing' };
+  const quota = String(messageMarkup({ ...base, error: { class: 'quota_exhausted', message: '', fallback: 'none', quota: limit } }, where));
+  assert.match(quota, /You have used 20 of 20 Orena messages today\./);
+  assert.match(quota, /data-plans="#\/plan\/pricing"/);
+  assert.doesNotMatch(quota, /data-retry/, 'the limit is not a retry');
+  const retry = String(messageMarkup({ ...base, error: { class: 'transport', message: '', fallback: 'retry' } }, where));
+  assert.match(retry, /data-retry/);
+  assert.doesNotMatch(retry, /data-plans/);
+}

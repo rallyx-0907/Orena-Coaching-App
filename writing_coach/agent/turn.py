@@ -22,8 +22,20 @@ whether a message is that question.
 
 A provider that fails ends the turn with an `error` event (`retry`); nothing
 switches provider. A client that goes away stops the turn where it is. A turn
-that completes is metered - counted, never refused (R5) - and its session is
-kept for the next turn.
+that completes is metered - counted (R5) - and its session is kept for the next
+turn.
+
+Plan quota (D-161, `orena.message`): the caller may hand `run` an `admission`, a
+callable that reserves one message and returns its ticket, or raises the
+refusal (429 / 503 / 409). It is called exactly once, at the one point where the
+turn knows it will ask a model for a learner's message - after the decisions,
+before the first event is released and before any provider call - so the refusal
+reaches the caller as `TurnRefused` before a single frame is streamed. An opening
+greeting, a selection opening, an offered place opened and an identity answer ask
+no learner-message model and are never admitted, so they are free and never
+refused. The ticket is settled when the turn ends however it ends: 1 when a model
+round ran for a turn that completed or that the learner left; 0 when the turn
+ended in an error (nothing usable was produced) or before any model round.
 """
 
 from __future__ import annotations
@@ -139,6 +151,17 @@ SCREEN_HELP_REPLY_TOOLS = frozenset({"suggest_next"})  # S1: an answer and follo
 _log = logging.getLogger(__name__)
 
 Meter = Callable[[str, str, int, str], None]  # (user_key, feature, amount, request_id)
+Admission = Callable[[], Any]  # reserves one learner message; returns a ticket (dispatch / settle / release) or raises
+
+
+class TurnRefused(Exception):
+    """The admission refused the turn (plan limit, store unavailable, duplicate): raised before the first event, so
+    the caller answers it as an ordinary HTTP response. `cause` is what the admission raised."""
+
+    def __init__(self, cause: BaseException) -> None:
+        super().__init__(str(cause))
+        self.cause = cause
+
 TURN_FEATURE = "agent.turn"
 OPEN_FEATURE = "agent.open"
 SNAPSHOT_TOOL = "build_learning_snapshot"
@@ -232,16 +255,28 @@ class AgentRuntime:
         )
 
     def run(
-        self, request: TurnRequest, learner: LearnerScope, *, should_stop: Callable[[], bool] = never_stop
+        self,
+        request: TurnRequest,
+        learner: LearnerScope,
+        *,
+        should_stop: Callable[[], bool] = never_stop,
+        admission: Admission | None = None,
     ) -> Iterator[Event]:
-        return _Turn(self, request, learner, should_stop).timed_events()
+        return _Turn(self, request, learner, should_stop, admission).timed_events()
 
 
 class _Turn:
     def __init__(
-        self, runtime: AgentRuntime, request: TurnRequest, learner: LearnerScope, should_stop: Callable[[], bool]
+        self,
+        runtime: AgentRuntime,
+        request: TurnRequest,
+        learner: LearnerScope,
+        should_stop: Callable[[], bool],
+        admission: Admission | None = None,
     ) -> None:
         self.rt = runtime
+        self.admission = admission
+        self.ticket: Any = None  # the quota ticket of an admitted learner message, until it is settled
         self.request = request
         self.learner = learner
         self.should_stop = should_stop
@@ -298,8 +333,38 @@ class _Turn:
                 elif event.name == "done" and not outcome.startswith("error"):
                     outcome = "success"
                 yield event
+        except TurnRefused:
+            outcome = "refused"
+            raise
         finally:
+            self._settle_quota(outcome)
             self._record_turn(outcome)
+
+    def _admit_turn(self) -> None:
+        """Reserve this learner message and hand the work to the provider (dispatch), before anything is sent."""
+
+        if self.admission is None:
+            return
+        try:
+            ticket = self.admission()
+            ticket.dispatch(self.trace_id)
+        except Exception as exc:
+            raise TurnRefused(exc) from exc
+        self.ticket = ticket
+
+    def _settle_quota(self, outcome: str) -> None:
+        """However the turn ended, its ticket is closed here: one message when a model round ran and the turn
+        completed or the learner left (the provider did the work); none when it ended in an error or before a round
+        (the learner got nothing usable). A failure to settle is left to the reconciler and never costs the answer."""
+
+        ticket, self.ticket = self.ticket, None
+        if ticket is None:
+            return
+        charged = 1 if self.provider_rounds and outcome in ("success", "abandoned") else 0
+        try:
+            ticket.settle(charged, f"turn:{outcome}")
+        except Exception:
+            _log.warning("agent quota settle failed", exc_info=True, extra={"trace_id": self.trace_id})
 
     def _record_turn(self, outcome: str) -> None:
         if self.rt.record_turn is None:
@@ -319,7 +384,10 @@ class _Turn:
 
     def events(self) -> Iterator[Event]:
         session, _ = self.rt.sessions.open(self.request.session_id, self.learner.user_key)
-        yield self.stream.emit(SessionEvent(session_id=session.agent_session_id, contract_version=self.stream.version))
+        # Emitted into the stream now (it must be first), released to the caller once the turn is admitted: a refused
+        # turn streams nothing at all.
+        opened = self.stream.emit(SessionEvent(session_id=session.agent_session_id, contract_version=self.stream.version))
+        released = False
         try:
             turn = TurnInput.from_request(self.request)
             # A changed target language starts from a clean context: nothing kept in the other one is read (3.3).
@@ -336,25 +404,44 @@ class _Turn:
             decisions = self.rt.decider.decide(
                 DecisionState(turn=turn, tier1=tier1, registry=self.rt.capabilities), frozenset(questions)
             )
+            offered = None
             if self.opening and self.request.context.selected_item is not None:
-                yield from self._selection_opening()
+                route = "selection"
             elif (offered := self._offered_again(turn, session)) is not None:
-                yield from self._open_offered(offered)
+                route = "offered"
             elif decisions.identity is not None:
+                route = "identity"
+            else:
+                route = "model"
+            if route == "model" and not self.opening:
+                self._admit_turn()  # the one place a learner's message asks a model (raises TurnRefused)
+            released = True
+            yield opened
+            if route == "selection":
+                yield from self._selection_opening()
+            elif route == "offered":
+                yield from self._open_offered(offered)
+            elif route == "identity":
                 yield from self._identity(decisions.identity)
             else:
                 yield from self._model_turn(turn, tier1, decisions, session)
             if self.should_stop():
                 return
+        except TurnRefused:
+            raise
         except AgentError as exc:
             self._notes_unresolved()
             if not self.should_stop():
+                if not released:
+                    yield opened
                 yield self._error(exc.error_class)
             return
         except Exception:  # an unexpected failure still ends the stream properly
             _log.exception("agent turn failed", extra={"trace_id": self.trace_id})
             self._notes_unresolved()
             if not self.should_stop():
+                if not released:
+                    yield opened
                 yield self._error("internal_error")
             return
         self._keep(session, turn)

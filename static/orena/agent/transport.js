@@ -12,6 +12,7 @@ import { parseEvents, bodyChunks } from './sse.js';
 import { mockTurn } from './mock.js';
 import { readStatus, toContractLang } from './contract.js';
 import { markOrenaAbsent } from './presence.js';
+import { newIdempotencyKey, quotaHeaders } from '../infrastructure/quota-headers.js';
 
 function forcedStream() {
   try {
@@ -68,6 +69,21 @@ export async function* turn(request, { signal, fetchImpl = globalThis.fetch } = 
 
 const transportError = (fallback = 'retry') => ({ event: 'error', data: { class: 'transport', message: '', fallback } });
 
+/* The plan-limit refusals (D-161) answer 429 / 409 with the canonical envelope - `detail` an object with a
+   `category` - where the contract's own 429 (`rate_limited`) and 409 (`target_language_mismatch`) carry a plain
+   string. The body is read only to tell them apart; a response that cannot be read as an envelope is the contract's. */
+async function readRefusal(response) {
+  try {
+    if (typeof response.json !== 'function') return null;
+    const detail = (await (typeof response.clone === 'function' ? response.clone() : response).json())?.detail;
+    return detail && typeof detail === 'object' && typeof detail.category === 'string'
+      ? { category: detail.category, context: detail.context && typeof detail.context === 'object' ? detail.context : {} }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function pause(ms, signal) {
   return new Promise((resolve) => {
     const timer = setTimeout(resolve, ms);
@@ -95,6 +111,8 @@ function idleAfter(ms) {
 /* The live path. Exported with its fetch and clock injectable so the gate can drive every §2.1
    status. */
 export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch, sleep = pause, signedOut = () => location.assign('/#/welcome'), log = console.error, idleMs = TURN_IDLE_MS } = {}) {
+  // One key for this learner message, kept through a rate-limit resend: the server never counts it twice (D-161).
+  const idempotencyKey = newIdempotencyKey();
   for (;;) {
     let response;
     // The request is the client's own to stop: the caller's stop, or a server that goes quiet (LEX-028).
@@ -106,7 +124,7 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
       const asked = fetchImpl('/api/agent/turn', {
         method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+        headers: quotaHeaders({ 'Content-Type': 'application/json', Accept: 'text/event-stream' }, idempotencyKey),
         body: JSON.stringify(request),
         signal: local.signal,
       });
@@ -122,6 +140,19 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
     } catch {
       if (!signal?.aborted) yield transportError();
       return;
+    }
+    if (response.status === 429 || response.status === 409) {
+      const refusal = await readRefusal(response);
+      if (refusal?.category === 'quota_exhausted') {
+        // The plan's limit of Orena messages: never waited out or resent. The learner is told, with the server's own
+        // figures (screens/orena/model.js `errorText`) and the way to the plans.
+        yield { event: 'error', data: { class: 'quota_exhausted', message: '', fallback: 'none', quota: refusal.context } };
+        return;
+      }
+      if (refusal?.category?.startsWith('operation_')) {
+        yield transportError('retry'); // this message is being processed, or was: a new send is a new key
+        return;
+      }
     }
     const status = readStatus(response.status, response.headers?.get?.('Retry-After'));
     if (status.kind === 'wait') {

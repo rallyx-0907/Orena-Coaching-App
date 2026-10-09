@@ -5331,12 +5331,23 @@ the meters below.
   Kit components and the plan's own words only, EN/VI/ZH. Owner: design (an exhausted state, if wanted).
 - **QTA-2 A meter nothing counts.** With enforcement off (or a meter not yet enforced) Plan & usage draws the row with
   "—" used and "Not available" - never "0 used". The design draws no such state. Owner: design / human.
-- **QTA-3 Orena messages - NOT YET ENFORCED.** Catalogue only (20 / 200 / 1000 a day, `voice_seconds_per_message`).
-  Wiring `POST /api/agent/turn` (1 per text turn that calls a model; greeting and no-model answers free) is a later
-  slice; the agent's own per-process rate limit and daily USD cap remain. Owner: BACKEND (+ AGENT_CONTRACT routing for
-  the client's `quota_exhausted` vs `rate_limited`).
-- **QTA-4 Voice - NOT YET ENFORCED.** The voice token is still minted for the fixed session length; the human decided
-  it is minted for the remaining allowance (seconds / `voice_seconds_per_message`). Owner: BACKEND.
+- **QTA-3 Orena messages (text) - ENFORCED when the switch lists `orena.message`** (D-16X; 20 / 200 / 1000 a day in the
+  learner's timezone). `POST /api/agent/turn`: 1 per learner turn that calls a model, however many model rounds; the
+  opening greeting and answers made without a model are free and never refused. `POST /api/texts/discussion/turns` is
+  metered the same way (Orena answering about a text; one constant, `text_discussion.QUOTA_METER`, if the human
+  decides otherwise). The agent's own per-process rate limit and daily USD cap remain. The agent client tells the quota
+  429 (`category: quota_exhausted`, a JSON envelope) from the contract's `rate_limited` 429 by the body, and shows it in the
+  reply's existing error place (QTA-1). **AGENT_CONTRACT routing (owner: the learner lane, D-086):** §2.1 should name
+  the 429 `quota_exhausted` envelope and the 409 `operation_*` envelope beside `rate_limited` and
+  `target_language_mismatch`; this change reads them by their `detail.category` and changes no contract text.
+- **QTA-4 Voice - NOT YET ENFORCED, REFUSED while `orena.message` is enforced.** The voice token cannot be metered by
+  message: it is a 15-minute vendor token. While the meter is enforced `POST /api/agent/voice/session` answers 503
+  `quota_voice_not_metered` and mints nothing (the client falls back to text). The later change mints the token for the
+  remaining allowance (seconds / `voice_seconds_per_message`) and removes the refusal. Owner: BACKEND.
+- **QTA-3b The agent's exhausted state.** The design draws no "limit reached" reply for Orena (Home thread, the Ask Orena
+  panel, full-screen voice) or the discussion room. The reply's error line reads "You have used 20 of 20 Orena messages
+  today." with "See all plans" in the retry button's place and style (to `#/plan/pricing`); the discussion room uses the
+  shared toast with the same action. No new visual; EN/VI/ZH. Owner: design (an exhausted state, if wanted).
 - **QTA-5 Pronunciation minutes - NOT YET ENFORCED.** `POST /api/speech/pronunciation` (seconds known before the
   provider call). Display rounding is a human decision. Owner: BACKEND.
 - **QTA-6 Media import minutes - NOT YET ENFORCED.** The learner import paths must be scoped first (async jobs settle

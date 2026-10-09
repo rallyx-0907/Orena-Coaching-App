@@ -358,10 +358,12 @@ async function drive(responses, { abortOnSleep = false } = {}) {
   const queue = [...responses];
   const sent = [];
   const slept = [];
+  const heads = [];
   const out = [];
   const controller = new AbortController();
   const fetchImpl = async (url, init) => {
     sent.push(JSON.parse(init.body));
+    heads.push(init.headers);
     const next = queue.shift();
     if (next instanceof Error) throw next;
     return next;
@@ -371,7 +373,7 @@ async function drive(responses, { abortOnSleep = false } = {}) {
     if (abortOnSleep) controller.abort();
   };
   for await (const e of liveTurn(base, { signal: controller.signal, fetchImpl, sleep, signedOut: () => out.push({ event: 'signed_out' }), log: () => {} })) out.push(e);
-  return { events: out.map((e) => (e.event === 'error' ? `error:${e.data.class}:${e.data.fallback}` : e.event)), sent, slept };
+  return { events: out.map((e) => (e.event === 'error' ? `error:${e.data.class}:${e.data.fallback}` : e.event)), sent, slept, heads, items: out };
 }
 let run = await drive([answer(429, '{"detail":"rate_limited"}', { 'Retry-After': '3' }), answer(200, SSE_OK)]);
 assert.deepEqual(run.events, ['wait', 'session', 'done'], '429: wait, then the turn');
@@ -386,6 +388,30 @@ run = await drive([answer(404, '{"detail":"Not Found"}')]);
 assert.deepEqual(run.events, ['absent'], '404: Orena is absent, no error');
 run = await drive([answer(409, '{"detail":"target_language_mismatch"}')]);
 assert.deepEqual([run.events, run.sent.length], [['language_mismatch'], 1], '409: handed back, never resent');
+// D-161: the plan's limit of Orena messages is told to the learner with the server's figures - never waited out,
+// never resent - and is told apart from the contract's own 429 / 409 by the body's canonical envelope.
+{
+  const envelope = (category, context = {}) => JSON.stringify({ detail: { category, message: 'm', retryable: false, context } });
+  const limit = { feature: 'orena.message', used: 20, limit: 20, window: 'day', resets_at: '2026-10-10T00:00:00Z', plan: 'free', upgrade: '#/plan/pricing' };
+  run = await drive([answer(429, envelope('quota_exhausted', limit), { 'Retry-After': '3600', 'Content-Type': 'application/json' })]);
+  assert.deepEqual([run.events, run.sent.length, run.slept], [['error:quota_exhausted:none'], 1, []], '429 quota_exhausted: told, not waited out or resent');
+  assert.deepEqual(run.items[0].data.quota, limit, 'the server figures travel with the refusal');
+  run = await drive([answer(409, envelope('operation_finished'), { 'Content-Type': 'application/json' })]);
+  assert.deepEqual([run.events, run.sent.length], [['error:transport:retry'], 1], '409 operation_*: a retry (a new send is a new key), not a language change');
+  run = await drive([answer(429, '{"detail":"rate_limited"}', { 'Retry-After': '1' }), answer(200, SSE_OK)]);
+  assert.ok(run.heads[0]['Idempotency-Key'] && run.heads[0]['Idempotency-Key'] === run.heads[1]['Idempotency-Key'], 'one key per message, kept through a rate-limit resend');
+  assert.ok(run.heads[0]['X-Orena-Timezone'], 'the device timezone says when the learner\'s day ends');
+  const again = await drive([answer(200, SSE_OK)]);
+  assert.notEqual(again.heads[0]['Idempotency-Key'], run.heads[0]['Idempotency-Key'], 'the next message is a new key');
+  const { createSession } = await import('../static/orena/agent/session.js');
+  const folded = createSession({ log: () => {} });
+  folded.learner('Hi');
+  const refused = await drive([answer(429, envelope('quota_exhausted', limit), { 'Content-Type': 'application/json' })]);
+  for (const item of refused.items) folded.apply(item);
+  assert.deepEqual(folded.lastReply().error, { class: 'quota_exhausted', message: '', fallback: 'none', quota: limit }, 'the reducer keeps the figures on the reply');
+  const { errorText } = await import('../static/orena/screens/orena/model.js');
+  assert.equal(errorText(folded.lastReply().error, 'fallback'), 'You have used 20 of 20 Orena messages today.', 'the sentence is the plan copy, in the interface language');
+}
 run = await drive([answer(401)]);
 assert.deepEqual(run.events, ['signed_out'], '401: the app signs the learner in again');
 run = await drive([answer(422, '{"detail":[]}')]);

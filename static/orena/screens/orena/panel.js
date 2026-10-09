@@ -39,7 +39,7 @@ import { runOffered, openIfAsked } from './actions.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
 import { voiceSessionBody, voiceThread, chosenVoice } from '../../agent/live-voice.js';
-import { builtScreens, createOrenaDispatcher, requestLanguages } from './dispatcher-setup.js';
+import { builtScreens, createOrenaDispatcher, go, requestLanguages } from './dispatcher-setup.js';
 
 /* The context pill's label: the selected item's own text (marked with the language it is in) and
    its kind, or the caller's label, or the place's name. */
@@ -122,6 +122,13 @@ export async function openOrenaPanel(context = {}, carry = null) {
       button.addEventListener('click', () => runOffered({ dispatcher, action: findAction(button.dataset.actionId), ranActions, repaint: paint })),
     );
     sheetEl.querySelectorAll('[data-retry]').forEach((button) => button.addEventListener('click', retry));
+    // The plan's limit (D-161): the panel gives way to the plans.
+    sheetEl.querySelectorAll('[data-plans]').forEach((button) =>
+      button.addEventListener('click', () => {
+        handle.close();
+        go(button.dataset.plans);
+      }),
+    );
     sheetEl.querySelectorAll('[data-starter]').forEach((button) => button.addEventListener('click', () => void runTurn('message', button.dataset.starter)));
     const input = sheetEl.querySelector('[data-input]');
     if (input) {
