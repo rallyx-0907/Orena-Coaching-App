@@ -415,7 +415,7 @@
   border-radius: 999px;
   background: var(--amber-soft);
   color: var(--amber);
-  font-family: Outfit, sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 700;
   margin-left: 3px;
@@ -446,7 +446,7 @@
 }
 /* On-request translation (D-130): the paragraph's meaning slot shows the kit spinner while it is
    asked for, or one short line with Retry when the provider failed. */
-.s-reader__article .s-reader__translation--state { display: flex; align-items: center; gap: 8px; font-family: Outfit, sans-serif; font-size: 13px; }
+.s-reader__article .s-reader__translation--state { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-size: 13px; }
 .s-reader__retry { border: 0; background: none; padding: 0; color: var(--accent-text); font: inherit; font-weight: 600; cursor: pointer; }
 
 /* Notes attached to a paragraph (frame 14's amber cards, Outfit). */
@@ -455,7 +455,7 @@
   flex-direction: column;
   gap: 8px;
   margin-top: 12px;
-  font-family: Outfit, sans-serif;
+  font-family: var(--font-ui);
 }
 .s-reader__note {
   border-radius: 14px;
@@ -726,7 +726,7 @@
   border-radius: 16px;
   background: var(--surface);
   box-shadow: var(--sh3);
-  font-family: Outfit, sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   line-height: 1;
   animation: rise 0.18s ease;
