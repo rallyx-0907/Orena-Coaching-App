@@ -97,6 +97,7 @@ export const ROUTES = Object.freeze([
   { id: 'adminProviderKey', path: 'admin/ai/provider/:id/key', design: 'aiconf', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminCapability', path: 'admin/ai/capability/:id', design: 'aicap', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminPlans', path: 'admin/plans', design: 'adminPlans', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminTraffic', path: 'admin/traffic', design: 'adminTraffic', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminFeedback', path: 'admin/feedback', design: 'adminFeedback', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminAiCosts', path: 'admin/ai/costs', design: 'aiCosts', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminContent', path: 'admin/content', design: 'content', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },

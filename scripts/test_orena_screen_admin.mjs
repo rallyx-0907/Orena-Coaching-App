@@ -80,6 +80,7 @@ const { ROUTES, match, href, isAdminHash } = await import('../static/orena/shell
 const KIT_PAGES = Object.freeze({
   impPack: 'D-128: content pack export/import, kit blocks only (human decision 2026-10-04, item 2 of the completion plan)',
   adminPlans: 'Plans & pricing: the learner Pricing card flipped to an edit form, kit blocks only (human request 2026-10-09)',
+  adminTraffic: 'Traffic & engagement: sign-ups and learning activity per day from the overview and product-activity reads, kit blocks only (human request 2026-10-09)',
   adminFeedback: 'Feedback: the reviews learners sent, with a summary, filters and paging, kit blocks only (D-156; human request 2026-10-09)',
   aiCosts: 'D-128: AI cost page, kit blocks only (human decision 2026-10-04, decision 2)',
   impGrammar: 'Grammar package import, composed from the Content packs page (proposals/ADMIN_GRAMMAR_UI.md G2; layout approved by the human 2026-10-08)',
@@ -572,6 +573,45 @@ fixtureFor = (method, url) => {
   copyIndex.setLanguages({ ui: 'en', support: 'en' });
   const usersPage = String((await import('../static/orena/screens/admin/control-pages.js')).controlPage('adminUsers', { summary: { activity: {} }, list: { items: [], total: 0 } }, { href }).markup);
   assert.ok(usersPage.includes('data-to="#/admin/feedback"') && usersPage.includes('data-to="#/admin/plans"'), 'Users offers Feedback next to Plans & pricing');
+}
+
+/* ---- 5g. Traffic & engagement: metrics, per-day bars, skills, funnel, honest note, empty and failed ---- */
+{
+  const page = await import('../static/orena/screens/admin/traffic.js');
+  assert.equal(model.areaOf('adminTraffic'), 'overview');
+  assert.equal(match('#/admin/traffic').route.id, 'adminTraffic');
+  const dates = Array.from({ length: 30 }, (_, i) => `2026-09-${String(10 + i).padStart(2, '0')}`.replace(/^2026-09-(3[1-9]|[4-9]\d)$/, '2026-10-01'));
+  const overview = {
+    accounts: { available: true, total: 12, admins: 1, new_7d: 3, new_30d: 9, window_days: 30, registrations: dates.map((date, i) => ({ date, count: i % 3 })) },
+    activity: { available: true, active_7d: 5, active_30d: 8, new_7d: 3, returning_7d: 2, events: 400, daily: dates.map((date, i) => ({ date, learners: i % 5, events: 10 })), domains: [], languages: [] },
+  };
+  const stages = (a, c) => ({ stages: [{ stage: 'started', available: false, count: null, rate_percent: null }, { stage: 'attempted', available: true, count: a, rate_percent: null }, { stage: 'completed', available: true, count: c, rate_percent: 50 }] });
+  const activity = {
+    available: true, has_data: true, window_days: 30, active_learners: 5, returning_learners: 3, repeat_practice_learners: 2, cross_skill_returning_learners: null,
+    return_windows: [{ days: 1, eligible_learners: 4, returned_learners: 2, return_rate_percent: 50 }, { days: 7, eligible_learners: 0, returned_learners: 0, return_rate_percent: null }],
+    skills: [{ skill: 'writing', activities: 10, completions: 6, completion_rate_percent: 60, funnel: stages(10, 6) }, { skill: 'speaking', activities: 5, completions: 5, completion_rate_percent: 100, funnel: stages(null, 5) }],
+  };
+  for (const ui of ['en', 'vi', 'zh']) {
+    copyIndex.setLanguages({ ui, support: 'en' });
+    const words = packs[ui];
+    const markup = String(page.trafficPage({ overview, activity, days: 7, ui, href }));
+    for (const key of ['trafTitle', 'trafSub', 'trafNote', 'trafAccounts', 'trafSignups', 'trafEvents', 'trafPerDay', 'trafSignupsPerDay', 'trafSkills', 'trafFunnel', 'trafReturnWindows', 'trafSkill_writing']) assert.ok(markup.includes(words[key].replace('&', '&amp;')), `${ui}: ${key}`);
+    assert.equal((markup.match(/class="a-chipbtn"/g) || []).length, 2, `${ui}: two period chips`);
+    assert.match(markup, /data-a="pick"[^>]*data-field="days"[^>]*data-value="7"[^>]*aria-pressed="true"/, `${ui}: 7 days is chosen`);
+    assert.equal((markup.match(/class="a-bar"/g) || []).length, 7 + 7 + 2, `${ui}: seven days of each series and two skills`);
+    assert.match(markup, new RegExp(`a-metric__value[^>]*>${new Intl.NumberFormat(ui).format(70)}<`), `${ui}: seven days of events`);
+    assert.match(markup, />—</, `${ui}: a missing number is a dash`);
+    assert.doesNotMatch(markup, /\{[a-z]+\}|undefined|\[object|NaN/i, `${ui}: nothing unfilled`);
+    const thirty = String(page.trafficPage({ overview, activity, days: 30, ui, href }));
+    assert.equal((thirty.match(/class="a-bar"/g) || []).length, 30 + 30 + 2, `${ui}: thirty days of each series`);
+    const empty = String(page.trafficPage({ overview: { accounts: { available: false }, activity: { available: false } }, activity: { available: true, has_data: false, skills: [] }, ui, href }));
+    assert.ok(empty.includes(words.opUnavailable) && empty.includes(words.opNone) && empty.includes(words.trafNote), `${ui}: empty says so and keeps the note`);
+    assert.ok(String(page.trafficPage({ overview: null, activity: null, failed: true, ui, href })).includes(words.opUnavailable), `${ui}: failed says unavailable`);
+    assert.ok(String(page.trafficPage({ overview: null, activity: null, ui, href })).includes('a-skeleton'), `${ui}: loading is the skeleton`);
+  }
+  copyIndex.setLanguages({ ui: 'en', support: 'en' });
+  const overviewPage = String((await import('../static/orena/screens/admin/control-pages.js')).controlPage('adminOverview', { overview: {} }, { href }).markup);
+  assert.ok(overviewPage.includes('data-to="#/admin/traffic"'), 'Overview offers Traffic & engagement');
 }
 
 /* ---- 6. nothing here borrows the old UI, and every colour is a token ------------------------------ */
