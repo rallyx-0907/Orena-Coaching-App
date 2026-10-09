@@ -39,6 +39,8 @@ export const ROUTES = Object.freeze([
   // The 2026-10-08 export's Plan & usage and Pricing frames (both in its focus list).
   { id: 'billing', path: 'plan', design: 'billing', screen: 'plan', focus: true, crumb: 'planUsage' },
   { id: 'pricing', path: 'plan/pricing', design: 'pricing', screen: 'plan', focus: true, crumb: 'plans' },
+  // The 2026-10-08 export's Feedback frame (in its focus list).
+  { id: 'feedback', path: 'feedback', design: 'feedback', screen: 'feedback', focus: true, crumb: 'feedback' },
   { id: 'search', path: 'search', design: 'search', screen: 'search', focus: true, crumb: 'search' },
   { id: 'reader', path: 'read/:id', design: 'reader', screen: 'reader', focus: true, crumb: 'reader', lesson: true, intent: 'reading.workspace' },
   { id: 'checku', path: 'read/:id/check', design: 'checku', screen: 'check', focus: true, crumb: 'checkUnderstanding', lesson: true },
@@ -97,6 +99,8 @@ export const ROUTES = Object.freeze([
   { id: 'adminCapability', path: 'admin/ai/capability/:id', design: 'aicap', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminAiCosts', path: 'admin/ai/costs', design: 'aiCosts', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminPlans', path: 'admin/plans', design: 'adminPlans', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminTraffic', path: 'admin/traffic', design: 'adminTraffic', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminFeedback', path: 'admin/feedback', design: 'adminFeedback', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminContent', path: 'admin/content', design: 'content', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminBooks', path: 'admin/content/books', design: 'books', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminBook', path: 'admin/content/books/:id', design: 'book', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },

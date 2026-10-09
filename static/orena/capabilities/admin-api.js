@@ -82,6 +82,7 @@ export const adminApi = {
   savePlans: (doc) => request('/api/product/admin/plans', json('PUT', doc)),
   membership: (id) => request(`/api/product/admin/accounts/${encodeURIComponent(id)}/membership`),
   saveMembership: (id, change) => request(`/api/product/admin/accounts/${encodeURIComponent(id)}/membership`, json('PUT', change)),
+  feedback: (params = {}) => request(`/api/admin/feedback${query(params)}`),
   aiCostsByAccount: (days = 30) => request(`/api/admin/ai/costs/accounts${query({ days })}`),
   packPlan: (file) => request('/api/admin/content-packs/plan', { method: 'POST', body: files('file', [file]) }),
   packImport: (file) => request('/api/admin/content-packs/import', { method: 'POST', body: files('file', [file]) }),

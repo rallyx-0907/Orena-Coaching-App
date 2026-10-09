@@ -94,6 +94,8 @@ export function profileActions({ isAdmin = false } = {}) {
   actions.push({ id: 'progress', kind: 'nav' });
   actions.push({ id: 'plan', kind: 'nav' });
   actions.push({ id: 'privacy', kind: 'nav' });
+  // The 2026-10-08 export's Feedback row (D-156).
+  actions.push({ id: 'feedback', kind: 'nav' });
   actions.push({ id: 'signout', kind: 'signout' });
   return actions;
 }

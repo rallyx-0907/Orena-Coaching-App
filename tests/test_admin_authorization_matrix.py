@@ -108,6 +108,7 @@ MATRIX = {
     # D-154: an account's role and plan. A made-up account id is 404 (or 503 where accounts are not editable).
     ("GET", "/api/product/admin/accounts/{user_id}/membership"): ("/api/product/admin/accounts/not-an-id/membership", {}, {404, 503}),
     ("PUT", "/api/product/admin/accounts/{user_id}/membership"): ("/api/product/admin/accounts/not-an-id/membership", {"json": {"role": "user"}}, {404, 503}),
+    ("GET", "/api/admin/feedback"): ("/api/admin/feedback", {}, {200, 503}),  # D-156 learner feedback
     ("GET", "/api/admin/readiness-summary"): ("/api/admin/readiness-summary", {}, {200}),
     ("GET", "/api/admin/product-activity"): ("/api/admin/product-activity", {}, {200}),
     # Admin-only although their paths do not say so.
@@ -267,7 +268,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 87  # includes Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record and the 15 grammar store routes, the plan catalogue (D-153) and account membership (D-154)
+    assert len(routes) == 88  # includes Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record and the 15 grammar store routes, the plan catalogue (D-153) and account membership (D-154)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

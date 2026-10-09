@@ -155,6 +155,7 @@ const ACTION_LABEL = (id) => ({
   progress: shellCopy('progress'),
   plan: t('actionPlan'),
   privacy: t('actionPrivacy'),
+  feedback: t('actionFeedback'),
   signout: t('actionSignOut'),
 }[id]);
 
@@ -168,6 +169,7 @@ function actionSub(action) {
     progress: t('actionProgressSub'),
     plan: t('actionPlanSub'),
     privacy: t('actionPrivacySub'),
+    feedback: t('actionFeedbackSub'),
   }[action.id] || '';
 }
 
@@ -180,6 +182,7 @@ function actionHref(id, ctx) {
     plan: ctx.href('billing'),
     // Settings' Plan & privacy tab holds the microphone and learner-audio rows (no separate Privacy tab yet).
     privacy: ctx.href('settings', {}, { tab: 'privacy' }),
+    feedback: ctx.href('feedback'),
   }[id];
 }
 

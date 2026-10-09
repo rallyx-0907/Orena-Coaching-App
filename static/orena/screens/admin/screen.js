@@ -15,9 +15,13 @@ import { drawAdminShell } from './frame.js';
 import { mountTray } from './tray.js';
 
 const AREA_PAGES = {
-  overview: () => import('./control.js').then((module) => module.mountControl),
+  overview: (routeId) => (routeId === 'adminTraffic'
+    ? import('./traffic.js').then((module) => module.mountTraffic)
+    : import('./control.js').then((module) => module.mountControl)),
   users: (routeId) => (routeId === 'adminPlans'
     ? import('./plans.js').then((module) => module.mountPlans)
+    : routeId === 'adminFeedback'
+    ? import('./feedback.js').then((module) => module.mountFeedback)
     : import('./control.js').then((module) => module.mountControl)),
   operations: () => import('./control.js').then((module) => module.mountControl),
   ai: (routeId) => (routeId === 'adminAiCosts'

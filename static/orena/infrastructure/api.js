@@ -54,6 +54,9 @@ export const api={
   productCommerce:()=>request('/api/product/commerce'),
   // The plan catalogue (Free, Plus, Pro with prices and entitlements); `billing_ready` is false.
   productPlans:()=>request('/api/product/plans'),
+  /* Learner feedback (D-156): one review per send; the learner's own are read newest first. */
+  feedbackSend:(body)=>request('/api/feedback',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
+  feedbackMine:()=>request('/api/feedback/mine'),
   adminProductAccount:()=>request('/api/product/admin/account'),
   adminReadinessSummary:()=>request('/api/admin/readiness-summary'),
   adminVocabularyPreview:(files)=>{

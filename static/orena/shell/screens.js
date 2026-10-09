@@ -22,6 +22,7 @@ export const SCREENS = Object.freeze({
   practice: () => import('../screens/practice/screen.js'),
   settings: () => import('../screens/settings/screen.js'),
   plan: () => import('../screens/plan/screen.js'),
+  feedback: () => import('../screens/feedback/screen.js'),
   review: () => import('../screens/review/screen.js'),
   feed: () => import('../screens/feed/screen.js'),
   errors: () => import('../screens/errors/screen.js'),

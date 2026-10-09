@@ -4620,6 +4620,21 @@ Jakarta Sans cho free". Gilroy is a paid face and not in the repository; Poppins
 tones would fall back to another face). Vietnamese stays in Plus Jakarta Sans, now through `--font-ui`, so the places
 that set Outfit themselves (the Reader's translation, note and badges) follow the language too.
 
+## D-156 - Learner feedback is stored and read in Platform Admin; the stale review gate is gone
+
+2026-10-09, explicit human decisions. Human: "Bổ sung thêm phần ghi nhận feedback từ user nữa trong admin", and the
+P1 report "public staging user blocked by stale internal-review gate".
+
+1. A review (1-5 stars, the screen's areas, up to 600 characters) is sent from the Feedback screen (`POST
+   /api/feedback`, at most 10 a day per account) and stored as a `learner.feedback` `audit_logs` row linked to the
+   account - no new table. The learner reads their own (`GET /api/feedback/mine`); Platform Admin reads all of them
+   with totals, average, stars and areas (`GET /api/admin/feedback`, `#/admin/feedback`). Storing learner-authored
+   text in `audit_logs` is a persistence choice the independent architecture review must confirm before `main`
+   (a dedicated table and retention are the human's).
+2. `static/orena/main.js` no longer stops a signed-in non-admin account with the internal-review notice and its
+   dead `/account` link: every verified account runs the learner UI (new account -> Onboarding, completed -> Today);
+   only `#/admin/...` addresses check the admin role (the No access frame). `/account` stays retired.
+
 ## D-157 - A card without artwork shows a generated poster, never a blank tile
 
 2026-10-09, explicit human decision. Human: "nhớ có ảnh thumbnails … không được để 1 màu rỗng"; chose "Thiết kế lại ô bìa
@@ -4638,3 +4653,18 @@ warnings, status, audit; actor `ops-content-transfer`): the 15 Project Gutenberg
 texts (ZH) - public domain, 3 with approved question sets. The two source names lost their "[Mẫu kiểm thử] " prefix.
 VOA Learning English and Wikinews stay unpublished (rights per text not confirmed). No provider call, no restart.
 :8000 runs `main`: the poster covers (#111) and the staging learner-gate fix (#109) reach it only after they merge and :8000 is redeployed.
+
+## D-159 - Learner feedback retention: deleted with the account, and after 24 months
+
+2026-10-09, explicit human decision (asked by the delegated architecture review of #113: "Xóa khi xóa tài khoản + giữ
+tối đa 24 tháng"). Reviews stay in `audit_logs` (`learner.feedback`) as the bounded MVP store.
+
+1. With the account: `delete_feedback_for_account(user_key)` removes every review an account sent; the account-deletion
+   runtime (still a reserved hold, AGENTS.md section 7) calls it when it deletes an account. A review whose account row
+   is deleted becomes an orphan (`user_id` empty, no account key) and the sweep removes it.
+2. After 24 months: a periodic job (`feedback_retention.py`). A daemon thread is started with the app; it sweeps at start and then
+   daily, independent of traffic, through `delete_feedback_before()` in bounded batches (final review of #113: a
+   send-triggered sweep does not enforce a maximum age). Deletion is a destructive lifecycle job, so the schedule
+   starts only when `FEEDBACK_RETENTION_SWEEP` is on. Switching it on, for :8000 included, is the human's activation
+   step.
+3. Admin totals, average, star and area counts and filtered totals are SQL aggregates over every stored review.
