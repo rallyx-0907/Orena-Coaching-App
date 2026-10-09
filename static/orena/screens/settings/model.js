@@ -138,7 +138,13 @@ export function notificationRows() {
   return ['dueReview', 'writingReview', 'mediaReady', 'system'].map((id) => ({ id, kind: 'toggle', value: false, disabled: true }));
 }
 
-export function privacyRows({ micOn, micState } = {}) {
+/* The public legal pages (D-161). They know the languages en and vi; a Chinese interface reads them in English,
+   which is what the page itself does for `?lang=zh`, so the address says so. */
+export function legalHref(path, lang) {
+  return `${path}?lang=${lang === 'vi' ? 'vi' : lang === 'zh' ? 'zh' : 'en'}`;
+}
+
+export function privacyRows({ micOn, micState, lang } = {}) {
   return [
     { id: 'mic', kind: 'toggle', disabled: false, value: micOn === true, state: micState || 'unsupported' },
     // No route deletes a learner's stored audio/media - UI_BACKEND_GAPS.md N-31.
@@ -146,6 +152,11 @@ export function privacyRows({ micOn, micState } = {}) {
     { id: 'history', kind: 'action', disabled: false },
     // Who made the dictionaries, recordings and texts, and under which licence (D-124).
     { id: 'licences', kind: 'action', disabled: false },
+    // Pointers to the public pages, in the Licences link's own pattern: the privacy policy, the terms, and the
+    // way to ask for the account to be deleted (there is no in-app deletion yet, so a link to the request page).
+    { id: 'privacyPolicy', kind: 'link', href: legalHref('/privacy', lang) },
+    { id: 'termsOfService', kind: 'link', href: legalHref('/terms', lang) },
+    { id: 'deleteAccount', kind: 'link', href: legalHref('/account-deletion', lang) },
   ];
 }
 

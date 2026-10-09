@@ -147,6 +147,19 @@ export default async function onboardingScreen(element, ctx) {
     </section>`;
   }
 
+  /* "By continuing you agree to the Terms and Privacy Policy": the two names are links to the public pages
+     (D-161), opened in a new tab so the sign-in is not lost. The sentence is one copy key with {terms} and
+     {privacy} where they go, so each language orders it its own way. */
+  function termsLine() {
+    const lang = copyLanguages().ui;
+    const link = (path, key) => html`<a class="s-onboarding__terms-link" href="${path}?lang=${lang}" target="_blank" rel="noopener">${t(key)}</a>`;
+    return t('terms').split(/(\{terms\}|\{privacy\})/).map((piece) => {
+      if (piece === '{terms}') return link('/terms', 'termsLink');
+      if (piece === '{privacy}') return link('/privacy', 'privacyLink');
+      return piece;
+    });
+  }
+
   /* The design's Account frame, with what exists: the title and sub by mode, the mode switch, "Continue with
      Google" and the terms line. The email, password and name fields and their submit are not built (the
      backend has Google only; UI_BACKEND_GAPS "Email sign-in"). */
@@ -160,7 +173,7 @@ export default async function onboardingScreen(element, ctx) {
         <button type="button" class="s-onboarding__mode" aria-pressed="${signup ? 'false' : 'true'}" data-action="mode-login">${t('tabLogin')}</button>
       </div>
       <button type="button" class="s-onboarding__google" data-action="google" ${busy ? 'disabled aria-busy="true"' : ''}>${busy ? html`<span class="s-onboarding__spin" aria-hidden="true"></span>` : html`<span class="s-onboarding__g" aria-hidden="true">G</span>`}${busy ? t('googleBusy') : t('googleCta')}</button>
-      <p class="s-onboarding__terms">${t('terms')}</p>
+      <p class="s-onboarding__terms">${termsLine()}</p>
     </section>`;
   }
 

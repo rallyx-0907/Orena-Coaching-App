@@ -128,8 +128,15 @@ function licencesLink(row) {
   return html`<button type="button" class="s-settings-link" data-action-row="${row.id}">${t('licencesLabel')}</button>`;
 }
 
+/* The public Privacy Policy, Terms and Delete account pages: the same quiet link, opened in a new tab so the
+   learner keeps their place. */
+function legalLink(row) {
+  return html`<a class="s-settings-link" href="${row.href}" target="_blank" rel="noopener">${rowLabel(row)}</a>`;
+}
+
 function rowMarkup(row) {
   if (row.id === 'licences') return licencesLink(row);
+  if (row.kind === 'link') return legalLink(row);
   return listRow({
     tag: 'div',
     radius: 16,
@@ -204,6 +211,7 @@ export default async function settingsScreen(element, ctx) {
       privacy: {
         micOn: state.mic.on,
         micState: state.mic.state,
+        lang: copyLanguages().ui,
       },
     };
   }
