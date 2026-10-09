@@ -8,6 +8,17 @@ and the middle one is not optional in the checklist:
         --into orena_restore_rehearsal
     python scripts/runtime_backup.py verify --dump backups/pre-i2.dump
 
+a fourth keeps the backup directory to the retention the public Privacy Policy states (D-161: backups are
+overwritten within 30 days):
+
+    python scripts/runtime_backup.py rotate --dir <backup dir> --days 30            # dry run: lists, deletes nothing
+    python scripts/runtime_backup.py rotate --dir <backup dir> --days 30 --apply    # deletes
+
+`rotate` only ever touches regular files named `orena-*.dump` directly inside the directory it is given (never
+subfolders, symlinks, the deletion journal or anything else), removes one only when it is at least `--days` old
+(the older of its modification time and the timestamp in its name), and refuses to remove the last backup unless
+`--allow-empty` is given. Run it at least daily or the retention can overshoot by the interval between runs.
+
 and two more for the one thing a restore must never undo - a deletion (D-054):
 
     python scripts/runtime_backup.py deletions --out backups/deletions.json
@@ -45,10 +56,12 @@ says so too rather than failing with a traceback.
 from __future__ import annotations
 
 import argparse
+import logging
+import re
 import shutil
 import subprocess
 import sys
-from datetime import datetime, UTC
+from datetime import datetime, timedelta, UTC
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse, urlunparse
 
@@ -323,9 +336,96 @@ def rehearse(url: str, dump: Path, into: str, journals: list[Path] | None = None
     return 0
 
 
+
+# --- Retention (D-161): the public policy says backups are overwritten within N days. --------------------------------
+
+_log = logging.getLogger("orena.backup")
+BACKUP_GLOB = "orena-*.dump"
+# `20261007-143640`, `20261007T143640Z` or a bare `20261004` inside the file name.
+_NAME_STAMP = re.compile(r"(?<!\d)(20\d{2})(\d{2})(\d{2})(?:[T-]?(\d{2})(\d{2})(\d{2}))?(?!\d)")
+
+
+def _name_time(name: str) -> datetime | None:
+    m = _NAME_STAMP.search(name)
+    if not m:
+        return None
+    y, mo, d, hh, mm, ss = (int(g) if g else 0 for g in m.groups())
+    try:
+        return datetime(y, mo, d, hh, mm, ss, tzinfo=UTC)
+    except ValueError:
+        return None
+
+
+def backup_time(path: Path) -> datetime:
+    """When a backup was taken: the older of its modification time and the timestamp in its name. The older, so a
+    copy that reset the file's mtime cannot extend how long the data is kept."""
+    mtime = datetime.fromtimestamp(path.stat().st_mtime, UTC)
+    named = _name_time(path.name)
+    return min(mtime, named) if named else mtime
+
+
+def _refuse_directory(directory: Path) -> str | None:
+    """A directory rotation must never be pointed at: it has to exist, be a real directory (not a link) and be
+    something other than a root or the repository, a home directory or the filesystem's top."""
+    if not directory.exists() or not directory.is_dir():
+        return f"{directory} is not an existing directory"
+    if directory.is_symlink():
+        return f"{directory} is a symbolic link"
+    resolved = directory.resolve()
+    if resolved == Path(resolved.anchor) or len(resolved.parts) < 3:
+        return f"{resolved} is a filesystem root or too shallow to be a backup directory"
+    if resolved in (Path.home().resolve(), Path(__file__).resolve().parents[1]):
+        return f"{resolved} is a home or repository directory, not a backup directory"
+    return None
+
+
+def rotate(directory: Path, days: int, apply: bool = False, now: datetime | None = None,
+           allow_empty: bool = False) -> dict:
+    """Remove the dumps in `directory` that are at least `days` old. Returns what was kept and removed.
+
+    A dump exactly `days` old is removed ("keep backups newer than `days`"). Dry run unless `apply`. Only regular
+    files named `orena-*.dump` directly inside `directory` are considered: nothing else is read, listed or removed.
+    If every dump is old the newest is kept anyway (no backups at all is worse than one stale one) unless
+    `allow_empty`; the report says so."""
+    if days < 1:
+        raise ValueError("days must be at least 1")
+    reason = _refuse_directory(directory)
+    if reason:
+        raise ValueError(reason)
+    now = now or datetime.now(UTC)
+    limit = timedelta(days=days)
+    candidates = []
+    for entry in sorted(directory.iterdir()):
+        if entry.is_symlink() or not entry.is_file() or not entry.match(BACKUP_GLOB):
+            continue
+        candidates.append((entry, backup_time(entry)))
+    keep = [(p, t) for p, t in candidates if now - t < limit]
+    old = [(p, t) for p, t in candidates if now - t >= limit]
+    spared = None
+    if old and not keep and not allow_empty:
+        spared = max(old, key=lambda pt: pt[1])
+        old.remove(spared)
+        keep.append(spared)
+    removed = []
+    for path, taken in old:
+        age = (now - taken).days
+        if apply:
+            path.unlink()
+        removed.append(path.name)
+        _log.info("%s %s (taken %s, %d days old)", "removed" if apply else "would remove", path.name,
+                  taken.strftime("%Y-%m-%d"), age)
+    for path, taken in keep:
+        _log.info("keep %s (taken %s)", path.name, taken.strftime("%Y-%m-%d"))
+    if spared:
+        _log.warning("every backup is %d days old or older; kept the newest (%s). Backups may have stopped.",
+                     days, spared[0].name)
+    return {"applied": apply, "days": days, "kept": [p.name for p, _ in keep], "removed": removed,
+            "spared_last": spared[0].name if spared else None}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("capture", "verify", "rehearse", "deletions", "suppress"))
+    parser.add_argument("mode", choices=("capture", "verify", "rehearse", "deletions", "suppress", "rotate"))
     parser.add_argument("--url", default="", help="defaults to POSTGRES_RUNTIME_URL")
     parser.add_argument("--out", type=Path,
                         help="capture: where to write the dump (default: backups/)")
@@ -337,7 +437,33 @@ def main(argv: list[str] | None = None) -> int:
                         help="suppress: write nothing; exit non-zero while any record does not hold")
     parser.add_argument("--allow-ephemeral", action="store_true",
                         help="capture: permit a destination that dies with its container")
+    parser.add_argument("--dir", type=Path, help="rotate: the backup directory (or ORENA_BACKUP_DIR)")
+    parser.add_argument("--days", type=int, default=30, help="rotate: remove dumps at least this old (default 30)")
+    parser.add_argument("--apply", action="store_true", help="rotate: delete (without it, a dry run)")
+    parser.add_argument("--dry-run", action="store_true", help="rotate: the default; accepted for clarity")
+    parser.add_argument("--allow-empty", action="store_true",
+                        help="rotate: permit removing the last remaining backup")
     args = parser.parse_args(argv)
+
+    if args.mode == "rotate":
+        import os
+
+        logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
+        directory = args.dir or (Path(os.environ["ORENA_BACKUP_DIR"]) if os.environ.get("ORENA_BACKUP_DIR") else None)
+        if directory is None:
+            print("rotate needs --dir (or ORENA_BACKUP_DIR)", file=sys.stderr)
+            return 1
+        if args.apply and args.dry_run:
+            print("rotate: --apply and --dry-run contradict each other", file=sys.stderr)
+            return 1
+        try:
+            report = rotate(directory, args.days, apply=args.apply, allow_empty=args.allow_empty)
+        except ValueError as exc:
+            print(f"rotate refused: {exc}", file=sys.stderr)
+            return 1
+        verb = "removed" if report["applied"] else "would remove (dry run, nothing deleted)"
+        print(f"{verb}: {len(report['removed'])}; kept: {len(report['kept'])}")
+        return 0
 
     if args.mode == "verify":
         return verify(args.dump) if args.dump else 1
