@@ -120,9 +120,10 @@ class FakeQuotaRepository:
             row["state"] = "released"
             return {"status": "release"}
 
-    def stale_dispatched(self, older_than, limit, states=("dispatched",)):
+    def stale_dispatched(self, older_than, limit, states=("dispatched",), meters=None):
         return [{"operation_id": op, "state": row["state"], "admitted_units": row["units"]}
-                for op, row in self.reservations.items() if row["state"] in states and row["updated_at"] < older_than]
+                for op, row in self.reservations.items() if row["state"] in states and row["updated_at"] < older_than
+                and (meters is None or row["key"][1] in meters)]
 
 
 class FakeIncarnations:
@@ -575,3 +576,83 @@ def test_admin_quota_routes_switch_enforcement(monkeypatch):
     assert on.status_code == 200 and on.json()["state"] == "enforced"
     assert settings.rows[quota.SETTING_KEY]["value"] == {"enabled": True, "meters": ["writing.review"]}
     assert client.put("/api/product/admin/quota", json={"enabled": True, "meters": ["media.import"]}).status_code == 422
+
+
+# ------------------------------------------- review of #116: the switch fails closed (P2-1) --
+
+def _switch_with(settings, env):
+    quota.configure_quota(repository=FakeQuotaRepository(), incarnations=FakeIncarnations(),
+                          plan_for=lambda user_key, strict=False: catalog.plan_by_id("free", strict=strict),
+                          settings=settings, env=env)
+
+
+def _refused_with_503():
+    with pytest.raises(HTTPException) as refused:
+        with quota.admit("writing.review", request_digest="x"):
+            pytest.fail("no provider work when the switch is unknown")
+    assert refused.value.status_code == 503 and refused.value.detail["category"] == "quota_unavailable"
+    return refused.value.detail["context"]["reason"]
+
+
+def test_env_off_is_off_even_when_the_setting_cannot_be_read():
+    _switch_with(MemorySettings(fail=True), {quota.FLAG: "off"})
+    assert quota.switch()["state"] == "off"
+    with quota.admit("writing.review", request_digest="x") as ticket:
+        assert ticket is quota.NULL_TICKET
+
+
+def test_env_on_without_a_meter_is_a_503_not_a_silent_off():
+    _switch_with(MemorySettings(), {quota.FLAG: "on"})
+    state = quota.switch()
+    assert (state["state"], state["reason"], state["meters"]) == ("unavailable", "no_meters", ["writing.review"])
+    assert _refused_with_503() == "no_meters"
+    _switch_with(MemorySettings(fail=True), {quota.FLAG: "on"})
+    assert _refused_with_503() == "switch_unreadable"
+
+
+def test_env_on_takes_its_meters_from_the_setting_when_the_env_lists_none():
+    _switch_with(MemorySettings({quota.SETTING_KEY: {"value": {"enabled": False, "meters": ["writing.review"]}}}),
+                 {quota.FLAG: "on"})
+    assert quota.switch()["state"] == "enforced", "the environment's on wins over the setting's enabled"
+
+
+def test_an_unreadable_setting_in_a_fresh_worker_fails_closed():
+    _switch_with(MemorySettings(fail=True), {})
+    state = quota.switch()
+    assert (state["state"], state["reason"]) == ("unavailable", "switch_unreadable")
+    assert _refused_with_503() == "switch_unreadable"
+    assert quota.usage_for("legacy", catalog.FREE) == {"writing.review": {"state": "unavailable"}}
+
+
+def test_an_unreadable_setting_after_a_good_read_keeps_the_last_value():
+    settings = MemorySettings({quota.SETTING_KEY: {"value": {"enabled": True, "meters": ["writing.review"]}}})
+    _switch_with(settings, {})
+    assert quota.switch()["state"] == "enforced"
+    settings.fail = True
+    quota._clear_switch_cache()
+    assert quota.switch()["state"] == "enforced"
+
+
+def test_nothing_stored_and_no_env_is_off():
+    _switch_with(MemorySettings(), {})
+    assert quota.switch()["state"] == "off"
+
+
+# --------------------------------- review of #116: /api/improve keeps a dispatch refusal's status (P2-2) --
+
+@pytest.mark.parametrize("refusal, status, category", [("denied", 403, "account_deleted"),
+                                                       ("raise", 503, "quota_unavailable")])
+def test_a_refusal_at_dispatch_is_not_reported_as_502(rooms, refusal, status, category):
+    client, calls, _app = rooms
+
+    class Refusing(FakeQuotaRepository):
+        def dispatch(self, *, operation_id, dispatch_ref=None):
+            if refusal == "raise":
+                raise RuntimeError("store down at dispatch")
+            return {"status": "denied", "reason": "incarnation_deleted"}
+
+    repository = enforced_runtime(repository=Refusing(), clock=lambda: datetime.now(UTC))
+    answer = _improve(client)
+    assert answer.status_code == status and answer.json()["detail"]["category"] == category
+    assert calls == [], "the provider is not called"
+    assert sum(b["reserved"] + b["consumed"] for b in repository.buckets.values()) == 0, "the reservation is released"

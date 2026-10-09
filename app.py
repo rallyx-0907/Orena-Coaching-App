@@ -2503,8 +2503,10 @@ def api_improve(payload: ImproveIn) -> dict[str, Any]:
     # D-160: one AI improve that runs is one writing review. Admitted BEFORE the try, so a refusal (429/503) is
     # never turned into this route's 502; an exhausted plan never reaches the provider. A failure settles 0.
     with _quota.admit("writing.review", request_digest=_quota.request_digest(payload)) as ticket:
+        # Before the try as well: a refusal at dispatch (503 quota_unavailable, 403 account_deleted) keeps its own
+        # status instead of becoming this route's 502 (review of #116, P2-2).
+        ticket.dispatch("improve")
         try:
-            ticket.dispatch("improve")
             result = improve_with_ai(payload)
         except requests.RequestException as exc:
             raise HTTPException(503, "AI engine is unavailable for writing improvement.") from exc
