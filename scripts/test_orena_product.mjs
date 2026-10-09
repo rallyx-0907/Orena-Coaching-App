@@ -121,7 +121,8 @@ assert.match(speakingTake,/set\(\{ phase: TAKE\.RESULT, result \}\);\s*if \(keep
 
 // Plan/usage (ORENA_COMMERCE_ARCHITECTURE.md section 2, 4): read-only, additive to the frozen mobile /me
 // contract, no enforcement, no provider identifier. Profile and Settings both read it.
-for (const screen of ['profile','settings']) {
+// Settings' plan rows moved to Plan & usage when its tab became Privacy (D-153).
+for (const screen of ['profile','plan']) {
   const source=readFileSync(new URL(`../static/orena/screens/${screen}/screen.js`,import.meta.url),'utf8');
   assert.match(source,/api\.productCommerce\(\)\.catch\(/,`${screen}: a failed plan/usage read must never block the screen`);
   assert.doesNotMatch(source,/api\.productMe\(\)/,`${screen}: the web client reads the web-only canonical endpoint, not the frozen mobile one`);

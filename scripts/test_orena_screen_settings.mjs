@@ -10,12 +10,11 @@ import {
   targetLanguageOptions,
   supportLanguageOptions,
   interfaceLanguageOptions,
-  barPercent,
   languageRows,
   learningRows,
   reviewRows,
   notificationRows,
-  planRows,
+  privacyRows,
   rowsForTab,
   SESSION_LENGTH_FALLBACK,
   SEGMENTED_MAX_OPTIONS,
@@ -25,13 +24,14 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
 
 /* --- tabFromQuery --------------------------------------------------------- */
 {
-  assert.equal(tabFromQuery('plan'), 'plan');
-  assert.equal(tabFromQuery('PLAN'), 'plan', 'case-insensitive');
+  assert.equal(tabFromQuery('privacy'), 'privacy');
+  assert.equal(tabFromQuery('PRIVACY'), 'privacy', 'case-insensitive');
+  assert.equal(tabFromQuery('plan'), 'privacy', 'an old ?tab=plan link lands on Privacy, the tab that replaced it');
   assert.equal(tabFromQuery(' review '), 'review', 'trims');
   assert.equal(tabFromQuery(''), TABS[0], 'empty falls back to the first tab');
   assert.equal(tabFromQuery('nope'), TABS[0], 'an unknown slug falls back, never throws');
   assert.equal(tabFromQuery(undefined), TABS[0]);
-  assert.deepEqual(TABS, ['languages', 'appearance', 'learning', 'review', 'notifications', 'plan']);
+  assert.deepEqual(TABS, ['languages', 'appearance', 'learning', 'review', 'notifications', 'privacy'], 'the 2026-10-09 design: Privacy replaces Plan & privacy');
 }
 
 /* --- Language option builders --------------------------------------------- */
@@ -62,17 +62,6 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   assert.equal(iface.find((o) => o.code === 'vi').label, 'Tiếng Việt', 'the endonym, not a translation');
   assert.equal(iface.find((o) => o.code === 'zh').label, '中文');
   assert.equal(INTERFACE_ENDONYMS.en, 'English');
-}
-
-/* --- barPercent: rule 40's zero fallback ----------------------------------- */
-{
-  assert.equal(barPercent(5, 0), 0, 'a zero limit is 0, never a divide-by-zero figure');
-  assert.equal(barPercent(5, -1), 0, 'a negative limit is 0');
-  assert.equal(barPercent(5, null), 0, 'a missing limit is 0');
-  assert.equal(barPercent('x', 10), 0, 'a non-numeric used is 0');
-  assert.equal(barPercent(5, 10), 50);
-  assert.equal(barPercent(15, 10), 100, 'usage past the limit clamps, never overflows the track');
-  assert.equal(barPercent(0, 10), 0);
 }
 
 /* --- Reader size bucketing (shared with product/reader-settings.js) -------- */
@@ -156,38 +145,17 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   }
 }
 
-/* --- planRows: real plan/quota data adapts, gaps stay gaps ------------------ */
+/* --- privacyRows: the microphone, learner audio and History; the plan lives on Plan & usage -------------- */
 {
-  const withEvidence = planRows({
-    plan: { name: 'Premium', description: 'Deeper feedback.' },
-    features: { 'writing.evaluate': { used: 4, monthly_limit: 500 } },
-    micOn: true,
-    micState: 'granted',
-  });
-  const byId = Object.fromEntries(withEvidence.map((r) => [r.id, r]));
-  assert.equal(byId.plan.disabled, true, 'billing_ready is false everywhere - Manage has no real destination');
-  assert.equal(byId.plan.planName, 'Premium');
-  assert.equal(byId.messages.disabled, true, 'no entitlement key for AI-tutor messages exists');
-  assert.equal(byId.messages.used, 0);
-  assert.equal(byId.messages.limit, 0);
-  assert.equal(byId.writingReviews.disabled, false, 'writing.evaluate is a real entitlement');
-  assert.equal(byId.writingReviews.used, 4);
-  assert.equal(byId.writingReviews.limit, 500);
-  assert.equal(byId.pronunciation.disabled, true, 'no entitlement key for pronunciation minutes exists');
+  const rows = privacyRows({ micOn: true, micState: 'granted' });
+  const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
+  assert.deepEqual(rows.map((r) => r.id), ['mic', 'learnerAudio', 'history', 'licences'], 'the design\'s three rows, then the licences link (D-124)');
   assert.equal(byId.mic.value, true);
   assert.equal(byId.mic.disabled, false, 'requesting the permission is a real effect even when it cannot be revoked from script');
   assert.equal(byId.learnerAudio.disabled, true, 'no delete-audio route exists');
   assert.equal(byId.history.disabled, false, 'a real navigation to Progress needs no backend');
-  assert.equal(byId.licences.kind, 'action');
   assert.equal(byId.licences.disabled, false, 'Licences and data sources reads GET /api/licences');
-
-  const withoutEvidence = planRows({ plan: null, features: {}, micOn: false, micState: undefined });
-  const byId2 = Object.fromEntries(withoutEvidence.map((r) => [r.id, r]));
-  assert.equal(byId2.plan.planName, '', 'a missing plan name is empty, never invented');
-  assert.equal(byId2.writingReviews.disabled, true, 'a missing entitlement is a gap, not a fabricated 0/0 that looks real');
-  assert.equal(byId2.writingReviews.used, 0);
-  assert.equal(byId2.writingReviews.limit, 0);
-  assert.equal(byId2.mic.state, 'unsupported', 'an unread permission state falls back, never throws');
+  assert.equal(privacyRows({}).find((r) => r.id === 'mic').state, 'unsupported', 'an unread permission state falls back, never throws');
 }
 
 /* --- rowsForTab dispatch ----------------------------------------------------- */
@@ -196,14 +164,15 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
     languages: { languages: [], supportLanguages: [], targetCode: 'en', supportCode: 'en', interfaceCode: 'en' },
     learning: { sizeBucket: 'M', autoscroll: true, meaning: true, theme: 'system' },
     review: { modes: {} },
-    plan: { plan: null, features: {}, micOn: false, micState: 'prompt' },
+    privacy: { micOn: false, micState: 'prompt' },
   };
   assert.equal(rowsForTab('languages', inputs).length, 3);
   assert.equal(rowsForTab('learning', inputs).length, 5, 'learning tab: the study rows only');
   assert.deepEqual(rowsForTab('appearance', inputs).map((row) => row.id), ['theme', 'palette'], 'Appearance and Accent have their own tab (LEX-079)');
   assert.equal(rowsForTab('review', inputs).length, 4);
   assert.equal(rowsForTab('notifications', inputs).length, 4);
-  assert.equal(rowsForTab('plan', inputs).length, 8, 'plan tab: the seven rows plus Licences and data sources (D-124)');
+  assert.equal(rowsForTab('privacy', inputs).length, 4, 'privacy tab: three rows plus Licences and data sources (D-124)');
+  assert.deepEqual(rowsForTab('plan', inputs), [], 'the plan tab is gone');
   assert.deepEqual(rowsForTab('nonsense', inputs), [], 'an unknown tab id is empty, never throws');
 }
 
@@ -319,14 +288,6 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   const { __internal } = await import('../static/orena/screens/settings/screen.js');
   assert.equal(__internal.rowLabel({ id: 'target' }), t('targetLabel'));
   assert.equal(__internal.rowSub({ id: 'target' }), t('targetSub'), 'an ordinary row reads `${id}Sub`');
-  assert.equal(__internal.rowSub({ id: 'writingReviews' }), t('thisMonth'), 'writingReviews shares thisMonth, not a duplicate key');
-  assert.equal(
-    __internal.planSub({ planName: 'Premium', planDescription: 'Deeper feedback.' }),
-    'Premium · Deeper feedback.',
-    'the Plan row\'s sub is assembled from real data, never a copy key',
-  );
-  assert.equal(__internal.planSub({ planName: '', planDescription: '' }), '', 'a missing plan is an empty sub, never invented text');
-  assert.equal(__internal.rowSub({ id: 'plan', planName: 'Free', planDescription: 'Core.' }), 'Free · Core.', 'rowSub dispatches plan through planSub');
 
   const targetOpts = __internal.choiceOptions({ id: 'target', value: 'zh', options: [
     { code: 'en', name: 'English', nativeName: 'English' },

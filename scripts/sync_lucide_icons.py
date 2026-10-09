@@ -77,6 +77,7 @@ NAMES = sorted(
         "lock",
         "messages-square",
         "mic",
+        "credit-card",
         "moon",
         "notebook-pen",
         "panels-top-left",

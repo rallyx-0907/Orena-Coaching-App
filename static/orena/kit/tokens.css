@@ -232,3 +232,12 @@
   --voice-glow: rgba(111, 214, 255, .12);
   --voice-glow-strong: rgba(111, 214, 255, .4);
 }
+
+/* The edge (D-147): a thin, even strip of light, never a coloured outline, carrying the resting elevation so a card
+   stands off the page (D-151). Introduced with the Grammar Library, which draws it; the UI sweep uses it app-wide. */
+:root[data-theme='dark'] {
+  --edge-light: inset 0 0 0 1px rgba(255, 255, 255, .06), var(--sh1);
+}
+:root:not([data-theme='dark']) {
+  --edge-light: inset 0 0 0 1px rgba(255, 255, 255, .6), var(--sh1);
+}

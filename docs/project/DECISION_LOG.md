@@ -4482,3 +4482,42 @@ Topology: `codex/work` (development + QA) -> release candidate -> restored-copy 
    only for developer diagnostics, test fixtures, and work not yet reviewed and merged to `main`.
 5. **:8000 env (to apply after review, not before):** `APP_ENV=staging`, `AGENT_ENABLED=true`,
    `AGENT_VOICE_ENABLED=false`. No schema change.
+
+## D-153 - Three plans with administrator-set prices and limits; Settings' Privacy tab; the new export pinned
+
+2026-10-09, explicit human decisions. Human: "Tạo 3 option plan như thiết kế không được để 2 gói", then "Đổi catalog
+thành 3 gói với giá và hạn mức tương tự thiết kế. Khi có kích hoạt billing thật thì có thể điều chỉnh sau. Nhưng phải
+có phần UI để điều chỉnh giá trong admin và các hạn mức … lật lại thì có thể sửa giá và các hạn mức đi kèm. Và có thể
+apply tính từ lúc thay đổi từ admin"; "Có theo thiết kế mới" (Settings); "Cho phép" (pin the export).
+
+1. The plan catalogue (`writing_coach/product/catalog.py`) is Free / Plus / Pro (ranks 0-2) with the design's monthly
+   and yearly prices in USD and VND. Limits use the existing feature keys: Free unchanged, Pro with Premium's former
+   limits, Plus between them. A stored `premium` subscription is Pro; the frozen native `/api/product/me` still
+   reports Plus and Pro as `premium` (its schema knows two ids).
+2. An administrator edits every price and monthly limit in Platform Admin (`#/admin/plans`, `GET`/`PUT
+   /api/product/admin/plans`, `require_admin`). The document is validated and stored as the `product.plan_catalog`
+   `platform_settings` row (no new table or migration) and applies from the moment it is saved; each save writes an
+   `audit_logs` row. A stored document that cannot be read is ignored, never half-applied.
+3. Billing stays off (`billing_ready: false`): a price is what the product shows, not a charge. The billing module's
+   price file is separate and must be aligned before billing is activated. This is an entitlement change: it needs
+   the independent architecture review AGENTS.md requires before it reaches `main`.
+4. Settings' "Plan & privacy" tab becomes Privacy, as the new design draws it.
+5. The 2026-10-09 export is pinned: `screens/Orena.dc.html` (928 080 bytes, sha256 1abfa9cd…) and
+   `screens/Orena-Admin.dc.html` (232 508 bytes, a70b3baa…); `PINS.tsv` updated, `SYNC_2026-10-09.md` records it.
+
+## D-154 - An administrator sets an account's role and plan by hand
+
+2026-10-09, explicit human decision. Human: "Tạo phần manual để admin khả năng mở giới hạn và set thành viên theo tài
+khoản", then "Phần giới hạn là phân quyền user ấy không phải thay đổi giới hạn sử dụng".
+
+1. Platform Admin's account page (`#/admin/users/:id`) has a "Role & plan" block: role Learner / Administrator
+   (`users.role`), plan Free / Plus / Pro with an optional end date. `GET`/`PUT /api/product/admin/accounts/{id}/membership`,
+   `require_admin`; each change writes an audit row and applies from the moment it is saved.
+2. A plan set by hand is a `manual` subscription row (`provider="manual"`, status `active`, `current_period_end` the end
+   date); past its date the account reads as Free with nothing to run. Free removes it. A subscription billing owns is
+   never overwritten by hand (409). A missing `plans` row for Plus or Pro is inserted (the FK target).
+3. Guards: an administrator cannot change their own role; an address in `PLATFORM_ADMIN_EMAILS` cannot be made a
+   learner here (sign-in would restore it). Roles stay the two the platform has (`user`, `admin`); finer permissions
+   would need a permission model of their own.
+4. Usage limits are not edited per account (the human's correction); plan limits are D-153's.
+5. Entitlement and role changes: the independent architecture review applies before `main`.

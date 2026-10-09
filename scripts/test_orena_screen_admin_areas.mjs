@@ -314,7 +314,7 @@ for (const routeId of model.ADMIN_ROUTE_IDS.filter((id) => id !== 'admin' && mod
     assert.doesNotMatch(page, /option value="SRC2"/);
   }
   for (const request of requests) {
-    assert.ok(/^\/api\/(admin|media\/admin)\//.test(request.path), `${routeId}: ${request.path} is an admin route`);
+    assert.ok(/^\/api\/(admin|media\/admin|product\/admin)\//.test(request.path), `${routeId}: ${request.path} is an admin route`);
     assert.ok(isGuarded(request), `${routeId}: ${request.method} ${request.path} is in tests/test_admin_authorization_matrix.py (anonymous 401, learner 403)`);
   }
   cleanup();
