@@ -7,6 +7,15 @@
   padding-top: 22px;
 }
 
+/* The page head: the title and the VIP "+ Import" (kit) on one line, wrapping on a narrow phone. */
+.s-library__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+
 /* ---- Content tab: a row per saved book/article/listening item ---- */
 .s-library-content-grid {
   display: grid;
