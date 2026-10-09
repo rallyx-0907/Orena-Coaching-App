@@ -102,6 +102,7 @@ MATRIX = {
     ("POST", "/api/media/admin/upload"): ("/api/media/admin/upload", {"files": [MEDIA_FILE], "data": {"language": "en"}}, {200, 503}),
     ("GET", "/api/media/admin/library"): ("/api/media/admin/library", {}, {200, 503}),
     ("GET", "/api/product/admin/account"): ("/api/product/admin/account", {}, {200}),
+    ("GET", "/api/admin/feedback"): ("/api/admin/feedback", {}, {200, 503}),  # D-156 learner feedback
     ("GET", "/api/admin/readiness-summary"): ("/api/admin/readiness-summary", {}, {200}),
     ("GET", "/api/admin/product-activity"): ("/api/admin/product-activity", {}, {200}),
     # Admin-only although their paths do not say so.
@@ -261,7 +262,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 83  # includes Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record and the 15 grammar store routes
+    assert len(routes) == 84  # includes Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record and the 15 grammar store routes and learner feedback (D-156)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

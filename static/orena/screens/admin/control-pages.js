@@ -124,5 +124,5 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
       ].map(([label, routeId]) => ({ title: t(label), go: href(routeId) }))))}`;
     }
   }
-  return { title, filterValue: filters.q || '', markup: html`<section class="a-page">${pageHead({ title, sub, back, actions: [{ label: t('retry'), a: 'reload' }] })}<div class="a-blocks">${body}</div></section>` };
+  return { title, filterValue: filters.q || '', markup: html`<section class="a-page">${pageHead({ title, sub, back, actions: [...(route === 'adminOverview' ? [{ label: t('trafTitle'), size: 'sm', a: 'go', data: { to: href('adminTraffic') } }] : []), ...(route === 'adminUsers' ? [{ label: t('fbTitle'), size: 'sm', a: 'go', data: { to: href('adminFeedback') } }] : []), { label: t('retry'), a: 'reload' }] })}<div class="a-blocks">${body}</div></section>` };
 }

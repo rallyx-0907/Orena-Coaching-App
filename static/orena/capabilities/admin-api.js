@@ -78,6 +78,7 @@ export const adminApi = {
   grammarPublish: (items, reason) => request('/api/admin/grammar/publish', json('POST', { items, attested: true, reason })),
   grammarStatus: (id, action, reason) => request(`/api/admin/grammar/points/${encodeURIComponent(id)}/status`, json('POST', { action, reason })),
   aiCosts: (days = 30) => request(`/api/admin/ai/costs${query({ days })}`),
+  feedback: (params = {}) => request(`/api/admin/feedback${query(params)}`),
   aiCostsByAccount: (days = 30) => request(`/api/admin/ai/costs/accounts${query({ days })}`),
   packPlan: (file) => request('/api/admin/content-packs/plan', { method: 'POST', body: files('file', [file]) }),
   packImport: (file) => request('/api/admin/content-packs/import', { method: 'POST', body: files('file', [file]) }),

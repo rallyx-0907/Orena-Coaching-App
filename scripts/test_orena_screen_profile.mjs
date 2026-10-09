@@ -90,13 +90,13 @@ const { dueTileValue, actionSub, streakDaysTileValue, heroMarkup, identityMarkup
 // a non-admin never sees the row at all (not disabled, not hidden - absent).
 {
   const admin = profileActions({ isAdmin: true, planName: 'Plus' });
-  assert.deepEqual(admin.map((a) => a.id), ['admin', 'settings', 'history', 'progress', 'plan', 'signout']);
+  assert.deepEqual(admin.map((a) => a.id), ['admin', 'settings', 'history', 'progress', 'plan', 'feedback', 'signout']);
   assert.equal(admin[0].kind, 'nav', 'Platform admin opens the Admin inside this UI (D-101 E), not the old console');
   assert.equal('href' in admin[0], false, 'the row names no address of its own: the screen resolves it from the router');
   assert.equal(admin.find((a) => a.id === 'plan').sub, 'Plus');
 
   const learner = profileActions({ isAdmin: false, planName: '' });
-  assert.deepEqual(learner.map((a) => a.id), ['settings', 'history', 'progress', 'plan', 'signout']);
+  assert.deepEqual(learner.map((a) => a.id), ['settings', 'history', 'progress', 'plan', 'feedback', 'signout']);
   assert.equal(learner.some((a) => a.id === 'admin'), false, 'a non-admin never gets the admin row');
   assert.equal(learner.find((a) => a.id === 'plan').sub, '', 'no plan read yet - the row keeps its place with no sub, never an invented plan name');
   assert.equal(learner.find((a) => a.id === 'signout').kind, 'signout');

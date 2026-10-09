@@ -93,6 +93,8 @@ export function profileActions({ isAdmin = false, planName = '' } = {}) {
   actions.push({ id: 'history', kind: 'nav' });
   actions.push({ id: 'progress', kind: 'nav' });
   actions.push({ id: 'plan', kind: 'nav', sub: planName || '' });
+  // The 2026-10-08 export's Feedback row (D-156).
+  actions.push({ id: 'feedback', kind: 'nav' });
   actions.push({ id: 'signout', kind: 'signout' });
   return actions;
 }

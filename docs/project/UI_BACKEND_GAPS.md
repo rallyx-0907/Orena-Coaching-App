@@ -5107,3 +5107,22 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   `PLATFORM_ADMIN_EMAILS`.
 - **SIGN-5 One origin per runtime.** `GOOGLE_REDIRECT_URI` must equal `PUBLIC_BASE_URL` + `/auth/google/callback`
   (`deployment.py`), so one container signs in on one origin: `http://localhost:8021` or the tailnet name, not both.
+
+## Feedback and Admin traffic (2026-10-09)
+
+The 2026-10-08 export's Feedback frame (`#/feedback`, reached from Profile) and Platform Admin's Feedback
+(`#/admin/feedback`) and Traffic & engagement (`#/admin/traffic`) pages.
+
+- **FBK-1 Feedback endpoint.** No route accepts or lists feedback (no `feedback` route in `app.py` or
+  `writing_coach/`) and there is no store for it. The frame is drawn with its stars, areas and text working as an
+  in-memory draft, Send inert with "Sending feedback is not available yet" beside it, and "Your feedback" at
+  "0 reviews" with no history cards (the "Sent"/"Just now" cards and the status are not drawn). Owner: BACKEND
+  (a submit route + a per-learner list) and human (who reads it, retention).
+  **CLOSED 2026-10-09 (D-156):** `POST /api/feedback`, `GET /api/feedback/mine`, `GET /api/admin/feedback`; Send
+  works, the learner's own history is drawn, Platform Admin reads every review (`#/admin/feedback`). Still the
+  human's: retention, and the dedicated store (reviews live in `audit_logs`; an account deletion keeps them,
+  unlinked).
+- **FBK-2 Star colour.** The design's literal `#F2B705` star is drawn with `--amber` (no colour literals; AA in both themes).
+- **TRF-1 Page views and visits.** Nothing records a page view, a visit or a session (no table, no beacon); Traffic &
+  engagement counts sign-ups (`users.created_at`) and learning activity (the evidence tables) only, and says so on the
+  page. A visit record is a new table and a human decision (Architecture holds).

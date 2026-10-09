@@ -15,7 +15,7 @@ const KEYS = [
   'conversation', 'situationReaction', 'retell', 'reactReuse', 'timedRecall', 'contextTransfer', 'dailyFeed',
   'contextRewrite', 'timedWriting', 'readingTransfer', 'readingComplete', 'attemptHistory', 'speakingSummary',
   'timedReaction', 'respondToContent', 'discussion', 'mockInterview', 'soundTone', 'fromYourErrors',
-  'welcome', 'admin',
+  'welcome', 'admin', 'feedback',
 ];
 
 export const shellCopy = defineCopy('shell', {
@@ -37,7 +37,7 @@ export const shellCopy = defineCopy('shell', {
     content: 'Content', listening: 'Listening', dictation: 'Dictation', reader: 'Reader', pronunciation: 'Pronunciation',
     compareWithModel: 'Compare with model', review: 'Review', writing: 'Writing', compareVersions: 'Compare versions',
     checkUnderstanding: 'Check understanding', collection: 'Collection', word: 'Word', grammar: 'Grammar',
-    settings: 'Settings', shadowing: 'Shadowing', freeTalk: 'Free Talk', conversation: 'Conversation',
+    feedback: 'Feedback', settings: 'Settings', shadowing: 'Shadowing', freeTalk: 'Free Talk', conversation: 'Conversation',
     situationReaction: 'Situation Reaction', retell: 'Retell', reactReuse: 'React / Reuse', timedRecall: 'Timed Recall',
     contextTransfer: 'Context Transfer', dailyFeed: 'Daily feed', contextRewrite: 'Context Rewrite',
     timedWriting: 'Timed Writing', readingTransfer: 'Reading Transfer', readingComplete: 'Reading complete',
@@ -62,7 +62,7 @@ export const shellCopy = defineCopy('shell', {
     content: 'Nội dung', listening: 'Nghe', dictation: 'Chép chính tả', reader: 'Đọc', pronunciation: 'Phát âm',
     compareWithModel: 'So với mẫu', review: 'Ôn tập', writing: 'Viết', compareVersions: 'So sánh phiên bản',
     checkUnderstanding: 'Kiểm tra hiểu', collection: 'Bộ sưu tập', word: 'Từ', grammar: 'Ngữ pháp',
-    settings: 'Cài đặt', shadowing: 'Đọc theo', freeTalk: 'Nói tự do', conversation: 'Hội thoại',
+    feedback: 'Góp ý', settings: 'Cài đặt', shadowing: 'Đọc theo', freeTalk: 'Nói tự do', conversation: 'Hội thoại',
     situationReaction: 'Phản xạ tình huống', retell: 'Kể lại', reactReuse: 'Phản hồi và dùng lại', timedRecall: 'Nhớ nhanh',
     contextTransfer: 'Chuyển ngữ cảnh', dailyFeed: 'Từ mỗi ngày', contextRewrite: 'Viết lại theo ngữ cảnh',
     timedWriting: 'Viết có giờ', readingTransfer: 'Vận dụng bài đọc', readingComplete: 'Đọc xong',
@@ -87,7 +87,7 @@ export const shellCopy = defineCopy('shell', {
     content: '内容', listening: '听力', dictation: '听写', reader: '阅读', pronunciation: '发音',
     compareWithModel: '与示范对比', review: '复习', writing: '写作', compareVersions: '版本对比',
     checkUnderstanding: '理解检查', collection: '合集', word: '词语', grammar: '语法',
-    settings: '设置', shadowing: '跟读', freeTalk: '自由说', conversation: '对话',
+    feedback: '反馈', settings: '设置', shadowing: '跟读', freeTalk: '自由说', conversation: '对话',
     situationReaction: '情景反应', retell: '复述', reactReuse: '反应与复用', timedRecall: '限时回忆',
     contextTransfer: '语境迁移', dailyFeed: '每日词汇', contextRewrite: '语境改写',
     timedWriting: '限时写作', readingTransfer: '阅读迁移', readingComplete: '读完了',

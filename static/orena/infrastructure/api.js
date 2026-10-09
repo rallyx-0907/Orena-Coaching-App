@@ -52,6 +52,9 @@ export const api={
   // Canonical read (accountCommerce): full subscription-state vocabulary,
   // web-only. /me stays byte-for-byte for the frozen mobile contract.
   productCommerce:()=>request('/api/product/commerce'),
+  /* Learner feedback (D-156): one review per send; the learner's own are read newest first. */
+  feedbackSend:(body)=>request('/api/feedback',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
+  feedbackMine:()=>request('/api/feedback/mine'),
   adminProductAccount:()=>request('/api/product/admin/account'),
   adminReadinessSummary:()=>request('/api/admin/readiness-summary'),
   adminVocabularyPreview:(files)=>{

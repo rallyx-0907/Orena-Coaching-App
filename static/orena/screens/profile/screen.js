@@ -154,6 +154,7 @@ const ACTION_LABEL = (id) => ({
   history: t('actionHistory'),
   progress: shellCopy('progress'),
   plan: t('actionPlanPrivacy'),
+  feedback: t('actionFeedback'),
   signout: t('actionSignOut'),
 }[id]);
 
@@ -171,6 +172,7 @@ function actionSub(action) {
     settings: t('actionSettingsSub'),
     history: t('actionHistorySub'),
     progress: t('actionProgressSub'),
+    feedback: t('actionFeedbackSub'),
   }[action.id] || '';
 }
 
@@ -181,6 +183,7 @@ function actionHref(id, ctx) {
     history: ctx.href('progress', {}, { tab: 'history' }),
     progress: ctx.href('progress'),
     plan: ctx.href('settings', {}, { tab: 'plan' }),
+    feedback: ctx.href('feedback'),
   }[id];
 }
 
