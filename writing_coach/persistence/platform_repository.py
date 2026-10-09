@@ -678,6 +678,8 @@ class PostgresPlatformRepository:
                 "language": (log.payload or {}).get("language") or "",
                 "interface": (log.payload or {}).get("interface") or "",
                 "account_id": str(user.id) if user else None,
+                # An account with no users row (local mode, or one deleted since) keeps the key it was sent under.
+                "account_key": "" if user else str((log.payload or {}).get("account") or ""),
                 "name": user.name if user else "",
                 "email": user.email if user else "",
             } for log, user in rows]

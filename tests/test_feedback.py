@@ -86,6 +86,7 @@ def test_routes(monkeypatch):
     admin = client.get("/api/admin/feedback").json()
     assert admin["summary"]["total"] == 2 and admin["summary"]["average"] == 2.5
     assert admin["items"][0]["email"] == "ben@example.test"
+    assert "account_key" in admin["items"][0]
     assert client.get("/api/admin/feedback?stars=4").json()["total"] == 1
     assert client.get("/api/admin/feedback?area=bugs").json()["items"][0]["text"] == "Crash"
     assert client.get("/api/admin/feedback?area=design").status_code == 422

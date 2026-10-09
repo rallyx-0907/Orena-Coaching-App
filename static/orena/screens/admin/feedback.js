@@ -51,7 +51,7 @@ export function feedbackPage({ data, filters = {}, offset = 0, failed = false, u
       ${block({ title: t('fbByArea'), body: bars((data.areas?.length ? data.areas : AREAS).map((area) => ({ label: areaLabel(area), pct: share(summary.by_area?.[area] || 0, total), value: number.format(summary.by_area?.[area] || 0) }))) })}
       ${block({ span: true, title: t('fbReviews'), body: html`${filterRows}${rowList(items.map((item) => ({
         title: starsText(item.stars),
-        meta: [[item.name, item.email].filter(Boolean).join(' · ') || t('fbAnonymous'), [item.language, item.interface].filter(Boolean).join(' / ')].filter(Boolean).join(' · '),
+        meta: [[item.name, item.email].filter(Boolean).join(' · ') || (item.account_key ? t('fbUnlinked', { key: item.account_key }) : t('fbAnonymous')), [item.language, item.interface].filter(Boolean).join(' / ')].filter(Boolean).join(' · '),
         detail: item.text || '',
         pills: (item.areas || []).map((area) => ({ label: areaLabel(area) })),
         right: whenOf(item.created_at, ui),

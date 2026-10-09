@@ -38,6 +38,7 @@ def _public(row: dict[str, Any], *, admin: bool) -> dict[str, Any]:
     if admin:
         item.update({
             "account_id": row.get("account_id"),
+            "account_key": row.get("account_key") or "",
             "name": row.get("name") or "",
             "email": row.get("email") or "",
             "language": row.get("language") or "",
