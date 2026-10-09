@@ -5506,6 +5506,111 @@ the meters below.
   account is read from the `agent.turn` rows (`opening: true`, rounds, tokens); the AI capability vocabulary was not
   extended. Owner: BACKEND (review of #118, P1-1).
 
+## Grammar Library: category and Back (human report, 2026-10-09)
+
+- **GLB-1 The design draws no scroll on a category press.** The pinned `glVals` category `onClick` only sets the category; its panel opens under the grid. On a phone that panel is a screen below the cards, so the press read as dead. The build scrolls the panel into view (reduced motion: no animation), as the design itself does for "See all". Not a new control or copy; reported because the source is silent. Owner: human (keep or drop).
+- **GLB-2 Back restores the place for every browsing page, not only Grammar.** `shell/scroll-memory.js` is wired in the router: a browser traversal (Back, Forward, reload) of a non-focus page returns to the position and (through the address) the filters it was left with; an arrival through the app starts at the top as before. The design has no state script for this. Owner: human (review other places on Back).
+- **GLB-3 In-app Back no longer counts its own steps (fixed).** The counter `orena.next.depth` was not reduced by the browser's own Back button. Each entry the router renders is now stamped with its index in `history.state` (`shell/history-index.js`); in-app Back calls `history.back()` only when an app entry precedes the current one, otherwise it goes to the place's parent route. Robust to reload, Back and Forward. Owner: shell.
+
+## Grammar Library: category names and layout (human request, 2026-10-09)
+
+- **GLB-4 Category names are per learning language, and the corpus's own category assignment needs a content review (human request 2026-10-09).**
+  - **Where the names come from.** A category is a point's `function` (`fn.<snake_case>`, contract section 0). The content package holds ONE registry of "communicative functions shared by every target language" (`grammar_lab/functions/functions.yaml`, on the Grammar Lab branches, not on `main`; 43 functions, each with a `vi`, `en` and `zh-Hans` title, written once and read for English and Chinese alike). It was authored by the Grammar Lab pipeline's agent sessions: created in `0b066370` (2026-09-26, 9 functions, `vi` and `en` only), grown to 43 by about 40 commits to 2026-10-07 (`4b46e1c2` ingests the canonical catalogue and marks every point it cannot place `fn.catalog_unclassified`; the `zh-Hans` titles arrive in the same line of work), all by agent sessions committing as CalisJI with `Co-Authored-By: Claude` trailers. The labels were written for English grammar and carried over to Chinese; the Chinese points were then assigned to the same registry. The runtime reads them from the `grammar_functions` table the importer fills from the package; the Library sent them to the screen unchanged (`writing_coach/grammar_api.py`, `functions: [{id, title}]`), and the client copy (`screens/grammar/copy.js`) holds only interface strings. The categories ARE per language at runtime already: the catalogue lists a function only when the learner's language has a point under it (`grammar_store_repository.py`, `function_ids` of the language's rows), so a Chinese learner never saw a category with no Chinese point. What was shared was the NAME, and that is what was wrong: `fn.verb_patterns` is named "Động từ đi với -ing hoặc to V" for Chinese learners over 4 points (兼语句 and the like).
+  - **Fix.** `static/orena/screens/grammar/categories.js`: a table per learning language (`en`, `zh`), id to a name in each shipped language (`vi`, `en`, `zh`), written in each language's own pedagogy terms (Vietnamese: câu chữ 把, bổ ngữ, trợ từ động thái; Chinese: 把字句, 补语, 能愿动词; the original term in brackets where it helps), not translated from the English name. Fallback: interface language, then English, then the catalogue's own title, then the id. Adding a support language is one key on each row; the gate (`scripts/test_orena_screen_grammar.mjs`, against `scripts/fixtures/grammar/category_usage.json`) fails on a missing name in any shipped language, on an id the corpus does not use for that language (an English-only id in the Chinese table and the reverse), and on an English grammar term in a Chinese learner's names.
+  - **Names are display only.** The registry in the package still carries the old titles; the right place for the corrected names is the Grammar Lab registry (one `functions.yaml` per learning language, or a per-language title map), after which this table can go. Until then the table wins. A category id the table does not know falls back to the registry's title, so a new corpus category shows its registry title until it is added here. Owner: CONTENT (Grammar Lab) and human review of the terminology below.
+  - **CONTENT items (not re-tagged here).** The corpus assigns points to categories that do not fit them; the Library shows each point under the category the corpus gave it. Examples, by point id (`zh.canon.gf.*` are the HSK 3.0 syllabus points, `en.canon.*` the English canon):
+    - Chinese: `fn.time_expression` (17) holds degree adverbs (`zh.canon.gf.hsk2.a_2_1_6.p1` 程度副词：多、多么、好、更…) and 当; `fn.duration_frequency` holds 程度副词：非常、很、太、真、最 (`zh.canon.gf.hsk1.a_1_1_6.p1`); `fn.ongoing_now` holds 不敢当, 沿（着）, 随着 (`zh.canon.gf.hsk5.a_5_2_1_2.p1`, `zh.canon.gf.hsk6.a_6_2_4_2.p1`, `zh.canon.r5.hsk4_10_topic`), none of them progressive aspect; `fn.completed_past` holds 动词重叠 (`zh.verb_reduplication`); `fn.sequence` holds 方式副词：偷偷; `fn.contrast` holds 承接复句 (`zh.canon.gf.hsk2.a_2_5_3.p1`); `fn.reason_result` holds 假设复句 (`zh.canon.gf.hsk2.a_2_5_3.p2`); `fn.verb_patterns` holds 不由得 and 为…所…; `fn.linking` is a 69-point grab bag of connectives, compound-sentence types and conjunction phrases; `fn.sentence_basics` holds 喂 (`zh.canon.gf.hsk2.a_2_1_10.p1`).
+    - English: `fn.past_ongoing` holds "Past simple vs present perfect" (`en.canon.b1.005`); `fn.condition_real` holds the third conditional and wish / if only (`en.canon.b1.026`, `en.canon.b1.035`, `en.canon.b1.036`) that `fn.hypothetical_counterfactual` is for; `fn.pronoun_reference` holds the relative-pronoun points `en.canon.b1.001` and `en.canon.b1.031` that `fn.relative` is for; `fn.possibility` holds "Passive with modals" (`en.canon.b1.015`); `fn.sentence_basics` holds "Ellipsis" and "Nominal clauses" (`en.canon.b2.035`, `en.canon.b2.036`); `fn.comparison` holds "As If As Though" (`en.canon.b2.042`).
+    - One id is a single bucket for several grammars: `fn.linking`, `fn.sentence_basics`, `fn.time_expression` hold points whose only common ground is a syllabus section. A Chinese-first registry (补语, 量词, 把字句, 被字句, 离合词, 趋向补语 as their own groups, and the aspect particles 了 / 过 / 着 together) would fit the 380 points better than the shared communicative-function layer; the Chinese table above already uses Chinese terms where the corpus's grouping allows it and names the group for what most of its points are.
+  - **The table** (corpus: 215 EN + 380 ZH approved points at `3cf8a68f`, branch `codex/zh-export-title-normalization`, 2026-10-08; `fn.catalog_unclassified` has no approved point):
+
+**English learners (215 approved points)**
+
+| id | points | Vietnamese | English | Chinese |
+| --- | ---: | --- | --- | --- |
+| `fn.verb_patterns` | 24 | Động từ đi với V-ing hoặc to V | Verb patterns (-ing and to + verb) | 动词后接 -ing 或不定式 |
+| `fn.possibility` | 14 | Động từ khuyết thiếu: khả năng | Modals: ability and possibility | 情态动词：能力与可能 |
+| `fn.information_structure` | 13 | Nhấn mạnh và cấu trúc thông tin | Emphasis and information structure | 强调与信息结构 |
+| `fn.future_plans` | 11 | Thì tương lai | Future forms | 将来时 |
+| `fn.reference` | 10 | Mạo từ | Articles | 冠词 |
+| `fn.sentence_basics` | 10 | Cấu trúc câu | Sentence structure | 句子结构 |
+| `fn.completed_past` | 9 | Quá khứ đơn và quá khứ hoàn thành | Past simple and past perfect | 一般过去时与过去完成时 |
+| `fn.quantity` | 9 | Lượng từ và số nhiều | Quantifiers and plurals | 数量词与复数 |
+| `fn.condition_real` | 8 | Câu điều kiện | Conditionals | 条件句 |
+| `fn.questions` | 8 | Câu hỏi | Questions | 疑问句 |
+| `fn.relative` | 8 | Mệnh đề quan hệ | Relative clauses | 关系从句 |
+| `fn.linking` | 7 | Từ nối và liên kết ý | Linking words | 连接词与衔接 |
+| `fn.obligation_advice` | 7 | Động từ khuyết thiếu: nghĩa vụ, lời khuyên | Modals: obligation and advice | 情态动词：义务与建议 |
+| `fn.pronoun_reference` | 7 | Đại từ | Pronouns | 代词 |
+| `fn.reporting` | 7 | Câu tường thuật | Reported speech | 间接引语 |
+| `fn.comparison` | 6 | So sánh | Comparison | 比较 |
+| `fn.degree` | 6 | Trạng từ và mức độ | Adverbs and degree | 副词与程度 |
+| `fn.voice_causative` | 6 | Câu bị động và thể sai khiến | Passive and causative | 被动语态与使役 |
+| `fn.past_experience` | 5 | Hiện tại hoàn thành | Present perfect | 现在完成时 |
+| `fn.aspect_viewpoint` | 4 | Thể (aspect) nâng cao | Aspect, advanced | 体（高阶） |
+| `fn.habit_fact` | 4 | Hiện tại đơn | Present simple | 一般现在时 |
+| `fn.hypothetical_counterfactual` | 4 | Giả định và điều kiện không có thật | Hypothetical and unreal conditions | 虚拟与非真实条件 |
+| `fn.possession` | 4 | Sở hữu | Possession | 所有格与所属 |
+| `fn.identity_state` | 3 | Động từ to be và động từ chỉ trạng thái | Be and stative verbs | be 动词与状态动词 |
+| `fn.past_ongoing` | 3 | Quá khứ tiếp diễn | Past continuous | 过去进行时 |
+| `fn.register_style` | 3 | Văn phong và ngữ vực | Register and style | 语体与风格 |
+| `fn.contrast` | 2 | Đối lập và nhượng bộ | Contrast and concession | 转折与让步 |
+| `fn.existence` | 2 | Cấu trúc tồn tại (there is / there are) | Existential there | 存在句 there be |
+| `fn.negation` | 2 | Phủ định | Negation | 否定 |
+| `fn.place_time` | 2 | Giới từ chỉ nơi chốn và thời gian | Prepositions of place and time | 地点与时间介词 |
+| `fn.exclusion` | 1 | Giới hạn và loại trừ | Limitation and exclusion | 限定与排除 |
+| `fn.indefinite_reference` | 1 | Đại từ bất định | Indefinite pronouns | 不定代词 |
+| `fn.instructions` | 1 | Câu mệnh lệnh | Imperatives | 祈使句 |
+| `fn.ongoing_now` | 1 | Hiện tại tiếp diễn | Present continuous | 现在进行时 |
+| `fn.reason_result` | 1 | Nguyên nhân và kết quả | Cause and result | 原因与结果 |
+| `fn.sequence` | 1 | Mệnh đề chỉ thời gian | Time clauses | 时间状语从句 |
+| `fn.time_expression` | 1 | Cách nói thời gian | Time expressions | 时间表达 |
+
+**Chinese learners (380 approved points)**
+
+| id | points | Vietnamese | English | Chinese |
+| --- | ---: | --- | --- | --- |
+| `fn.linking` | 69 | Từ nối và câu phức | Connectives and complex sentences | 关联词语与复句 |
+| `fn.sentence_basics` | 40 | Câu cơ bản | Basic sentence patterns | 基本句型 |
+| `fn.negation` | 24 | Phủ định | Negation | 否定表达 |
+| `fn.questions` | 20 | Câu hỏi | Questions | 疑问句 |
+| `fn.time_expression` | 17 | Biểu đạt thời gian | Time expressions | 时间表达 |
+| `fn.location` | 16 | Phương vị từ và vị trí | Location and direction words | 方位与处所 |
+| `fn.quantity` | 15 | Số từ và lượng từ | Numbers and measure words | 数词与量词 |
+| `fn.degree` | 14 | Mức độ và phương thức | Degree and manner | 程度与方式 |
+| `fn.contrast` | 13 | Quan hệ chuyển ngoặt (转折) | Contrast (转折) | 转折关系 |
+| `fn.reason_result` | 13 | Quan hệ nhân quả | Cause and result | 因果关系 |
+| `fn.object_disposal` | 12 | Câu chữ 把 (把字句) | The 把 construction (把字句) | 把字句 |
+| `fn.possibility` | 11 | Động từ năng nguyện và khả năng | Modal verbs and possibility | 能愿动词与可能 |
+| `fn.pronoun_reference` | 10 | Đại từ | Pronouns | 代词 |
+| `fn.sequence` | 10 | Trình tự và nối tiếp | Sequence | 承接与先后 |
+| `fn.comparison` | 9 | Câu so sánh | Comparison | 比较句 |
+| `fn.condition_real` | 8 | Điều kiện và giả thiết | Conditions | 条件关系 |
+| `fn.action_result` | 7 | Bổ ngữ (kết quả, xu hướng, trạng thái) | Complements (result, direction, degree) | 补语（结果、趋向、状态） |
+| `fn.obligation_advice` | 7 | Lời khuyên và nghĩa vụ | Advice and obligation | 建议与义务 |
+| `fn.ongoing_now` | 7 | Tiến hành và kéo dài (在, 着) | Progressive and durative (在, 着) | 进行与持续（在、着） |
+| `fn.relative` | 7 | Định ngữ (定语) | Attributives (定语) | 定语 |
+| `fn.future_plans` | 6 | Ý định và tương lai | Intentions and the future | 意愿与将来 |
+| `fn.exclusion` | 5 | Loại trừ và phạm vi | Exclusion and scope | 排除与范围 |
+| `fn.register_style` | 5 | Phong cách ngôn ngữ (语体) | Register and style (语体) | 语体与风格 |
+| `fn.duration_frequency` | 4 | Bổ ngữ thời lượng và động lượng | Duration and frequency complements | 时量与动量 |
+| `fn.information_structure` | 4 | Chủ đề và nhấn mạnh | Topic and emphasis | 话题与强调 |
+| `fn.verb_patterns` | 4 | Cấu trúc động từ (câu kiêm ngữ…) | Verb patterns (pivotal sentences…) | 动词结构（兼语句等） |
+| `fn.voice_causative` | 4 | Câu chữ 被 và câu sai khiến | The 被 passive and causatives | 被字句与使役句 |
+| `fn.completed_past` | 3 | Hoàn thành (了) | Completion (了) | 完成（了） |
+| `fn.reference` | 3 | Chỉ thị (之, 者…) | Reference (之, 者…) | 指代（之、者等） |
+| `fn.existence` | 2 | Câu tồn hiện và câu chữ 有 | Existence (存现句, 有) | 存现句与“有”字句 |
+| `fn.hypothetical_counterfactual` | 2 | Câu giả thiết | Hypotheticals | 假设关系 |
+| `fn.identity_state` | 2 | Câu chữ 是 và vị ngữ tính từ | 是 sentences and adjective predicates | “是”字句与形容词谓语句 |
+| `fn.instructions` | 2 | Câu cầu khiến | Imperatives and requests | 祈使句 |
+| `fn.aspect_viewpoint` | 1 | Trợ từ động thái 了/过/着 | Aspect particles 了 / 过 / 着 | 动态助词“了/过/着” |
+| `fn.past_experience` | 1 | Trải nghiệm (过) | Experience (过) | 经历（过） |
+| `fn.possession` | 1 | Sở hữu (的) | Possession (的) | 领属（的） |
+| `fn.reporting` | 1 | Trích dẫn và thuật lại | Quoting and reporting | 引述与转述 |
+| `fn.separable_verbs` | 1 | Động từ ly hợp (离合词) | Separable verbs (离合词) | 离合词 |
+
+- **GLB-5 The categories are one sideways row, not the design's grid (human request 2026-10-09).** The pinned frame (`Orena.dc.html`, Grammar Library, `gl.cats`) draws the category cards as a grid of `--cols-ip` columns. The human asked for one row, because the main list below is the content; the row scrolls sideways on desktop and phone (cards 300px or 78% of the row, scroll-snap to the card start, the level tabs' hidden native scrollbar, the right edge fading), the selected card stays a fill (D-147), and the panel and list stay below. The design has no strip to measure; the card itself is unchanged. Owner: human (confirm, or send the strip to design).
+
 ## Discover All as a sectioned overview (D-167), 2026-10-09
 
 - **DAS-1 The design draws no empty section, and no import call to action.** Any other section with nothing to show is

@@ -103,6 +103,7 @@ jobs:
           node scripts/test_orena_my_library.mjs
           node scripts/test_orena_rank_frame.mjs
           node scripts/test_orena_room_navigation_cancellation.mjs
+          node scripts/test_orena_scroll_memory.mjs
           node scripts/test_orena_kit.mjs
           node scripts/test_orena_shell.mjs
           node scripts/test_orena_session.mjs

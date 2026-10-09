@@ -470,3 +470,120 @@ console.log('Orena Grammar surface (Library + Concept) on the Grammar Store lear
   assert.deepEqual(statusControl(buildLibrary({ rows, progress: [], state: {} }), {}), { value: 'all', disabled: false });
   console.log('Grammar Library: a disabled status control shows All and keeps the choice: PASS');
 }
+
+/* Learner report 2026-10-09: a category in "Explore by category" did nothing the learner could see, and Back from a
+   point returned to the top of the Library. The category's choice lives in the address; the panel it opens is brought
+   into view; the search text rides in the history entry. */
+{
+  const { buildLibrary, NO_FUNCTION, readSearch, withSearch } = await import('../static/orena/screens/grammar/model.js');
+  const lv = { framework: 'cefr', value: 'B1', rank: 3 };
+  const row = (id, fn) => ({ id: `en.${id}`, level: lv, function: fn, sequence: 1, header: { native_title: id } });
+  const rows = [row('a', 'fn.time'), row('b', 'fn.link'), row('c', 'fn.link'), row('d', '')];
+  const functions = [{ id: 'fn.link', title: { en: 'Linking' } }, { id: 'fn.time', title: { en: 'Time' } }];
+  const base = { rows, functions, progress: [], current: 'B1', support: 'en', ui: 'en' };
+
+  // Pressing a category selects it (the control the learner pressed shows as selected) and opens its topics.
+  for (const id of ['fn.link', 'fn.time']) {
+    const view = buildLibrary({ ...base, state: { cat: id } });
+    assert.deepEqual(view.categories.filter((c) => c.selected).map((c) => c.id), [id], `${id}: exactly the pressed category is selected`);
+    assert.equal(view.panel.id, id);
+    assert.deepEqual(view.panelItems.map((i) => i.cat), view.panelItems.map(() => id), `${id}: the panel lists that category's points only`);
+  }
+  assert.equal(buildLibrary({ ...base, state: {} }).panel.id, 'fn.link', 'no choice yet: the first category');
+  assert.equal(buildLibrary({ ...base, state: { cat: '' } }).panel.id, 'fn.link', 'an empty address value is no choice, not the uncategorised group');
+
+  // The group with no function is a category too, and its choice survives the address.
+  assert.equal(NO_FUNCTION, '-');
+  const other = buildLibrary({ ...base, state: { cat: NO_FUNCTION, all: NO_FUNCTION } });
+  assert.deepEqual([other.panel.id, other.panelItems.map((i) => i.id), other.allCat, other.all.map((i) => i.id)], ['', ['en.d'], '', ['en.d']], '"-" in the address is the uncategorised group, in the panel and in the all-topics chip');
+  assert.equal(buildLibrary({ ...base, state: { all: '' } }).allCat, 'all', 'an empty "all" is every topic');
+
+  // The search text is kept in the history entry's state, never in the address.
+  assert.equal(readSearch(null), '');
+  assert.equal(readSearch({}), '');
+  assert.deepEqual(withSearch({ keep: 1 }, 'past'), { keep: 1, orenaGrammarSearch: 'past' });
+  assert.equal(readSearch(withSearch(null, 'past')), 'past');
+  assert.deepEqual(withSearch({ keep: 1, orenaGrammarSearch: 'past' }, ''), { keep: 1 }, 'an emptied search leaves the other state alone');
+
+  const src = fs.readFileSync('static/orena/screens/grammar/screen.js', 'utf8');
+  assert.match(src, /else if \(cat\) bringIntoView\(element\.querySelector\('\.s-gl__panel'\)\)/, 'a category press brings its panel into view');
+  assert.match(src, /remember\(\);\s*render\(\);/, 'the choice is written to the address before the page re-renders');
+  assert.match(src, /readSearch\(history\.state\)/, 'Back restores the search text from the entry');
+  const css = fs.readFileSync('static/orena/screens/grammar/grammar.css', 'utf8');
+  assert.match(css, /\.s-gl__panel \{\s*scroll-margin-top: 80px;/, 'the panel stops below the top edge as the all-topics block does');
+  assert.match(css, /\.s-gl__cat\[aria-pressed='true'\] \{[^}]*background:/, 'the selected category is a fill, not an outline (D-147)');
+  console.log('Grammar Library: a category press selects it, opens its topics in view and keeps them across Back: PASS');
+}
+
+/* Human review 2026-10-09 (GLB-4): the category names were one registry for English and Chinese, written once. They are
+   now a table per LEARNING language (screens/grammar/categories.js), in each learning language's own terms, and the
+   categories are one row that scrolls sideways (GLB-5). */
+{
+  const { CATEGORY_NAMES, SUPPORT_LANGUAGES, categoryName } = await import('../static/orena/screens/grammar/categories.js');
+  const { buildLibrary } = await import('../static/orena/screens/grammar/model.js');
+  const usage = JSON.parse(fs.readFileSync(new URL('./fixtures/grammar/category_usage.json', import.meta.url), 'utf8'));
+  assert.deepEqual([...SUPPORT_LANGUAGES], ['vi', 'en', 'zh'], 'the support languages the Library ships');
+  assert.deepEqual(Object.keys(CATEGORY_NAMES).sort(), ['en', 'zh'], 'one table per learning language');
+
+  for (const learning of ['en', 'zh']) {
+    const used = Object.keys(usage[learning]).sort();
+    const named = Object.keys(CATEGORY_NAMES[learning]).sort();
+    // Every category the corpus uses for this language is named, and the table holds nothing else: an English-only
+    // category is never in the Chinese table, and the other way round.
+    assert.deepEqual(named, used, `${learning}: the table names exactly the categories that language's approved points use`);
+    for (const id of named) {
+      const row = CATEGORY_NAMES[learning][id];
+      for (const language of SUPPORT_LANGUAGES) {
+        assert.ok(typeof row[language] === 'string' && row[language].trim().length > 0, `${learning} ${id}: a name in ${language}`);
+      }
+      assert.deepEqual(Object.keys(row).sort(), [...SUPPORT_LANGUAGES].sort(), `${learning} ${id}: no language outside the shipped ones`);
+    }
+  }
+  const englishOnly = Object.keys(usage.en).filter((id) => !(id in usage.zh));
+  const chineseOnly = Object.keys(usage.zh).filter((id) => !(id in usage.en));
+  assert.ok(englishOnly.length > 0 && chineseOnly.length > 0, 'the corpus really has categories of one language only');
+  for (const id of englishOnly) assert.equal(id in CATEGORY_NAMES.zh, false, `${id} is English-only and not in the Chinese table`);
+  for (const id of chineseOnly) assert.equal(id in CATEGORY_NAMES.en, false, `${id} is Chinese-only and not in the English table`);
+  assert.equal(Object.keys(usage.en).length, 37);
+  assert.equal(Object.keys(usage.zh).length, 38);
+
+  // A name is written in the learning language's own terms, not carried over from the other language.
+  assert.match(categoryName('zh', 'fn.verb_patterns', ['zh']), /兼语句/, 'Chinese "verb patterns" is the pivotal sentence, not -ing / to V');
+  assert.doesNotMatch(Object.values(CATEGORY_NAMES.zh).flatMap((row) => Object.values(row)).join('|'), /-ing|to V|gerund|infinitive|不定式|动名词/i, 'no English-only grammar term in a Chinese learner\'s categories');
+  assert.equal(categoryName('zh', 'fn.object_disposal', ['vi']), 'Câu chữ 把 (把字句)');
+  assert.equal(categoryName('zh', 'fn.action_result', ['vi']), 'Bổ ngữ (kết quả, xu hướng, trạng thái)');
+  assert.equal(categoryName('en', 'fn.verb_patterns', ['vi']), 'Động từ đi với V-ing hoặc to V');
+  assert.notEqual(categoryName('en', 'fn.verb_patterns', ['en']), categoryName('zh', 'fn.verb_patterns', ['en']), 'the same id is named per learning language');
+
+  // Fallback order: the interface language, then English, then (in the model) the catalogue's title, then the id.
+  assert.equal(categoryName('zh', 'fn.questions', ['ja']), 'Questions', 'a language without a name falls back to English');
+  assert.equal(categoryName('zh', 'fn.nope', ['vi']), '', 'an id the table lacks yields nothing, so the model uses the catalogue title');
+
+  // The model shows the table's name for the learner's language, the catalogue's title for an unknown id, then the id.
+  const lv = { framework: 'hsk3', value: '3', rank: 3 };
+  const point = (id, fn) => ({ id: `zh.${id}`, level: lv, function: fn, sequence: 1, header: { native_title: id } });
+  const rows = [point('a', 'fn.verb_patterns'), point('b', 'fn.brand_new'), point('c', 'fn.unlisted')];
+  const functions = [{ id: 'fn.verb_patterns', title: { vi: 'Động từ đi với -ing hoặc to V', en: 'Verb patterns' } }, { id: 'fn.brand_new', title: { vi: 'Nhóm mới', en: 'New group' } }];
+  const named = (ui) => buildLibrary({ rows, functions, ui, support: 'vi', target: 'zh' }).categories.map((c) => c.name);
+  assert.deepEqual(named('vi'), ['Cấu trúc động từ (câu kiêm ngữ…)', 'Nhóm mới', 'fn.unlisted'], 'table name, then catalogue title, then id');
+  assert.deepEqual(named('en'), ['Verb patterns (pivotal sentences…)', 'New group', 'fn.unlisted']);
+  assert.equal(buildLibrary({ rows, functions, ui: 'zh', support: 'vi' }).categories[0].name, '动词结构（兼语句等）', 'the target is read from the point ids when not given');
+  const english = buildLibrary({ rows: [{ ...point('x', 'fn.verb_patterns'), id: 'en.x' }], functions, ui: 'vi', support: 'vi' });
+  assert.equal(english.categories[0].name, 'Động từ đi với V-ing hoặc to V', 'an English learner gets the English table');
+
+  // Layout: one row that scrolls sideways, snaps, hides the native bar, and the selected card is a fill.
+  const src = fs.readFileSync('static/orena/screens/grammar/screen.js', 'utf8');
+  assert.match(src, /<div class="s-gl__catRow" data-cat-row>\$\{view\.categories\.map\(categoryCard\)\}<\/div>/, 'the categories are one row');
+  assert.doesNotMatch(src, /s-gl__grid">\$\{view\.categories/, 'not a grid');
+  assert.match(src, /rowLeft/, 'a re-render keeps the row where the learner scrolled it');
+  const css = fs.readFileSync('static/orena/screens/grammar/grammar.css', 'utf8');
+  const row = css.match(/\.s-gl__catRow \{([^}]*)\}/)[1];
+  assert.match(row, /display: flex;/);
+  assert.match(row, /overflow-x: auto;/);
+  assert.match(row, /scroll-snap-type: x mandatory;/);
+  assert.match(row, /scrollbar-width: none;/);
+  assert.doesNotMatch(row, /flex-wrap: wrap|grid/, 'it never wraps to a second row');
+  assert.match(css, /\.s-gl__catRow::-webkit-scrollbar \{\s*display: none;/);
+  assert.match(css, /\.s-gl__catRow > \.s-gl__cat \{[^}]*flex: 0 0 min\(300px, 78%\);[^}]*scroll-snap-align: start;/);
+  console.log('Grammar Library: categories are named per learning language, in one sideways row: PASS');
+}

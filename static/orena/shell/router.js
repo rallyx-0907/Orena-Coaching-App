@@ -7,6 +7,8 @@
      section;
    - a learning workspace (route.focus) sets :root[data-focus="1"]: no top bar, no phone header,
      no phone bar, and the main column never scrolls as a page;
+   - Back, Forward and a reload return a browsing page to the place the learner left on it (shell/scroll-memory.js);
+     a page opened from a link or a card starts at the top;
    - navigating closes every sheet, aborts the previous room's requests
      (infrastructure/navigation.js) and runs the previous room's cleanup;
    - a lesson route shows the design's loading skeleton while it loads, and its load error with
@@ -21,6 +23,8 @@ import { shellCopy as t } from '../copy/shell.js';
 import { PRIMARY, DEFAULT_ROUTE, entryRoute, match, href, byId } from './routes.js';
 import { SCREENS } from './screens.js';
 import { formerAddress } from './former-addresses.js';
+import { canStepBack, entryIndex, readIndex, withIndex } from './history-index.js';
+import { addressOf, createScrollMemory, restoreScrollWhenReady } from './scroll-memory.js';
 
 const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
 const STORY_ROUTES = ['reader', 'listening', 'dictation', 'checku', 'rtransfer', 'feed'];
@@ -28,7 +32,6 @@ const STORY_ROUTES = ['reader', 'listening', 'dictation', 'checku', 'rtransfer',
    load, a reload in a new tab), the rail lights Practice Hub, not Today or Discover. */
 const PRACTICE_ROOMS = ['speak', 'compare', 'attempts', 'spsummary', 'freetalk', 'conv', 'situation', 'writing', 'writingDraft', 'wrcompare'];
 const ORIGIN_KEY = 'orena.next.navOrigin';
-const DEPTH_KEY = 'orena.next.depth';
 
 function session(key, value) {
   try {
@@ -44,12 +47,19 @@ export function createRouter({ frame, getContext }) {
   const root = document.documentElement;
   const storedOrigin = session(ORIGIN_KEY);
   let origin = storedOrigin || DEFAULT_ROUTE;
-  let depth = Number(session(DEPTH_KEY)) || 0;
+  // The index of the history entry on screen among the app's own (shell/history-index.js); null before the first render.
+  let position = null;
   let originKnown = Boolean(storedOrigin);
   let cleanup = null;
   let generation = 0;
   let current = null;
   let crumbOverride = '';
+  const memory = createScrollMemory();
+  /* How the address being rendered was reached: 'push' and 'replace' are the app's own go(); anything else is the
+     browser (Back, Forward, a reload) and returns to the remembered place. */
+  let arrival = 'traverse';
+  let settled = false;
+  let stopRestore = null;
 
   function state() {
     const route = current?.route;
@@ -79,22 +89,19 @@ export function createRouter({ frame, getContext }) {
 
   function go(target, { replace = false } = {}) {
     const hash = target.startsWith('#') ? target : `#${target.startsWith('/') ? target : `/${target}`}`;
-    if (hash === location.hash) return render();
-    if (replace) location.replace(hash);
-    else {
-      depth += 1;
-      session(DEPTH_KEY, depth);
-      location.hash = hash;
+    if (hash === location.hash) {
+      arrival = 'push';
+      return render();
     }
+    arrival = replace ? 'replace' : 'push';
+    if (replace) location.replace(hash);
+    else location.hash = hash;
     return null;
   }
 
   function back() {
-    if (depth > 0) {
-      depth -= 1;
-      session(DEPTH_KEY, depth);
-      history.back();
-    } else go(href(origin), { replace: true });
+    if (canStepBack(position)) history.back();
+    else go(href(origin), { replace: true });
   }
 
   function setCrumb(text) {
@@ -135,6 +142,17 @@ export function createRouter({ frame, getContext }) {
       return;
     }
     const mine = (generation += 1);
+    const reached = arrival;
+    arrival = 'traverse';
+    // Every entry the app shows carries its place among the app's entries, so Back never has to guess.
+    position = entryIndex({ stamped: readIndex(history.state), replaced: reached === 'replace', previous: position });
+    if (readIndex(history.state) !== position) history.replaceState(withIndex(history.state, position), '');
+    const address = location.hash;
+    settled = false;
+    stopRestore?.();
+    stopRestore = null;
+    // An arrival through the app's own go() starts at the top, and an older position under this address is stale.
+    if (reached !== 'traverse') memory.remember(address, 0);
     const signal = beginNavigation();
     closeSheet();
     try {
@@ -190,7 +208,7 @@ export function createRouter({ frame, getContext }) {
       go,
       back,
       // Whether Back returns within the app (false when the room was opened directly, e.g. from a link).
-      hasHistory: () => depth > 0,
+      hasHistory: () => canStepBack(position),
       href,
       setCrumb,
       setLoadingLabel: (label) => { loadingLabel = String(label); },
@@ -210,6 +228,10 @@ export function createRouter({ frame, getContext }) {
         return;
       }
       cleanup = typeof result === 'function' ? result : null;
+      settled = true;
+      // Back to a browsing page: the place the learner left on it, once its content is there to scroll.
+      const place = reached === 'traverse' && !route.focus ? memory.recall(address) : 0;
+      if (place > 0) stopRestore = restoreScrollWhenReady(main, place, element);
     } catch (error) {
       if (mine !== generation || error?.name === 'AbortError') return;
       console.error('[Orena] screen failed', route.id, error);
@@ -290,7 +312,12 @@ export function createRouter({ frame, getContext }) {
 
   return {
     start() {
-      window.addEventListener('hashchange', render);
+      window.addEventListener('hashchange', (event) => {
+        // The page being left is still on screen: its position goes under the address it had (a screen may have
+        // rewritten it with replaceState, which is why the event's old address is the one to use).
+        if (settled && frame.main) memory.remember(addressOf(event.oldURL), frame.main.scrollTop);
+        render();
+      });
       document.addEventListener('keydown', onKey);
       document.addEventListener('click', onClick);
       document.addEventListener('click', onLinkClick);

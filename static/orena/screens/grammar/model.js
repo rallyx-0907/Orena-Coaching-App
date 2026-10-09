@@ -6,6 +6,7 @@
    the point's name in the language being learned. Counting and grouping by function within a level is the UI's job
    (§9: "đếm và nhóm theo function trong mỗi level là việc của UI"). */
 import { contractText, levelCode, sortCatalog } from '../../product/grammar-source.js';
+import { categoryName } from './categories.js';
 
 /* A level's short code, "B1" or "HSK3": the design's level button and hero title. */
 export function levelTile(level) {
@@ -37,6 +38,22 @@ export const PANEL_LIMIT = 6;
 export const SORTS = Object.freeze(['def', 'st', 'az']);
 export const STATUSES = Object.freeze(['all', 'L', 'N']);
 
+/* The address names a category by its function id; a topic with no function is "-" there (an empty value would read as
+   "no choice made" and fall back to the first category). `undefined` is no choice. */
+export const NO_FUNCTION = '-';
+const fromAddress = (value) => (value === NO_FUNCTION ? '' : value || undefined);
+
+/* The search text is not in the address (it is not a place to share), but Back from a point returns to the entry the
+   learner left, so it travels in that entry's history state. */
+const SEARCH_KEY = 'orenaGrammarSearch';
+export const readSearch = (historyState) => (historyState && typeof historyState[SEARCH_KEY] === 'string' ? historyState[SEARCH_KEY] : '');
+export const withSearch = (historyState, text) => {
+  const next = { ...(historyState && typeof historyState === 'object' ? historyState : {}) };
+  if (text) next[SEARCH_KEY] = String(text);
+  else delete next[SEARCH_KEY];
+  return next;
+};
+
 function searchable(row) {
   const header = row.header || {};
   const parts = [header.native_title, ...(Array.isArray(header.native_title_pinyin) ? header.native_title_pinyin : [])];
@@ -50,14 +67,16 @@ function searchable(row) {
 /* `rows` the catalogue points, `functions` its functions, `progress` the progress API's list (`null`: it could not be
    read - every stateful part is then unknown, not empty), `current` the learner's declared level code;
    `state` = {level, cat, all, q, st, sort}. */
-export function buildLibrary({ rows = [], functions = [], progress = [], current = '', state = {}, support = 'en', ui = '', t = (key) => key } = {}) {
+export function buildLibrary({ rows = [], functions = [], progress = [], current = '', state = {}, support = 'en', ui = '', target = '', t = (key) => key } = {}) {
   const list = sortCatalog(Array.isArray(rows) ? rows : []);
   const progressKnown = Array.isArray(progress);
   const done = new Map((progressKnown ? progress : []).map((entry) => [String(entry.point_id), entry]));
   const fnOrder = (Array.isArray(functions) ? functions : []).map((fn) => fn.id);
   // A category is navigation, so its name follows the interface language; a topic's meaning stays in the support
   // language (design review 2026-10-08, UX rule 26).
-  const fnName = new Map((functions || []).map((fn) => [fn.id, contractText(fn.title, ui || support) || fn.id]));
+  // ...in the learning language's own terms (categories.js) when the table has the category, else the catalogue's title.
+  const learning = target || (String(list[0]?.id || '').startsWith('zh.') ? 'zh' : 'en');
+  const fnTitle = new Map((functions || []).map((fn) => [fn.id, contractText(fn.title, ui || support) || fn.id]));
 
   const levels = [];
   for (const row of list) {
@@ -79,7 +98,7 @@ export function buildLibrary({ rows = [], functions = [], progress = [], current
     const index = fnOrder.indexOf(id);
     return CATEGORY_LOOKS[(index < 0 ? fnOrder.length : index) % CATEGORY_LOOKS.length];
   };
-  const catName = (id) => (id ? fnName.get(id) || id : t('otherTopic'));
+  const catName = (id) => (id ? categoryName(learning, id, [ui || support]) || fnTitle.get(id) || id : t('otherTopic'));
 
   const item = (row) => {
     const header = row.header || {};
@@ -115,10 +134,12 @@ export function buildLibrary({ rows = [], functions = [], progress = [], current
     const members = items.filter((entry) => entry.cat === id);
     return { id, name: catName(id), count: members.length, examples: members.slice(0, 3).map((entry) => entry.title), more: members.length > 3, ...lookOf(id) };
   });
-  const catId = catIds.includes(state.cat) ? state.cat : catIds[0] ?? '';
+  const wantedCat = fromAddress(state.cat);
+  const catId = catIds.includes(wantedCat) ? wantedCat : catIds[0] ?? '';
   for (const category of categories) category.selected = category.id === catId;
   const panelAll = filtered((entry) => entry.cat === catId);
-  const allCat = catIds.includes(state.all) ? state.all : 'all';
+  const wantedAll = fromAddress(state.all);
+  const allCat = catIds.includes(wantedAll) ? wantedAll : 'all';
   const all = filtered((entry) => allCat === 'all' || entry.cat === allCat);
   const learned = items.filter((entry) => entry.learned).length;
 
