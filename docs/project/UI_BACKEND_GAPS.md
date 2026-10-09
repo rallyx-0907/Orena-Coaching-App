@@ -5126,3 +5126,8 @@ The 2026-10-08 export's Feedback frame (`#/feedback`, reached from Profile) and 
 - **TRF-1 Page views and visits.** Nothing records a page view, a visit or a session (no table, no beacon); Traffic &
   engagement counts sign-ups (`users.created_at`) and learning activity (the evidence tables) only, and says so on the
   page. A visit record is a new table and a human decision (Architecture holds).
+- **FBK-3 Daily limit under concurrency (P2, review of #113).** The 10-a-day guard counts, then inserts; concurrent
+  sends can pass it together. Harden (a per-account lock or a conditional insert) if abuse becomes material.
+- **FBK-4 Retention (D-159).** Decided: deleted with the account and after 24 months; the sweep's switch
+  `FEEDBACK_RETENTION_SWEEP` is the activation step, and the account-deletion runtime must call
+  `delete_feedback_for_account`.

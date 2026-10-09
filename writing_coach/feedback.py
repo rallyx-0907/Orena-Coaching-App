@@ -18,6 +18,22 @@ TEXT_LIMIT = 600
 DAILY_LIMIT = 10
 MAX_PAGE = 100
 
+# Retention (human decision 2026-10-09, D-159): a review is deleted with its account, and every review after 24 months.
+# The sweep is a destructive lifecycle job, so like the agent.turn sweep it runs only once its switch is on.
+FEEDBACK_RETENTION_DAYS = 730
+RETENTION_SWITCH = "FEEDBACK_RETENTION_SWEEP"
+_ON = frozenset({"1", "true", "on", "yes"})
+_OFF = frozenset({"", "0", "false", "off", "no"})
+
+
+def retention_enabled(env: Mapping[str, str]) -> bool:
+    value = str(env.get(RETENTION_SWITCH, "")).strip().casefold()
+    if value in _ON:
+        return True
+    if value in _OFF:
+        return False
+    raise ValueError(f"{RETENTION_SWITCH} must be one of {sorted(_ON | _OFF - {''})}")
+
 
 class FeedbackInvalid(ValueError):
     """A review that cannot be stored (HTTP 422)."""

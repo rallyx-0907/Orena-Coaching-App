@@ -20,9 +20,18 @@ class Store:
     def count_feedback_since(self, user_key, since):
         return sum(1 for row in self.rows if row["user_key"] == user_key and row["created_at"] >= since)
 
-    def list_feedback(self, *, user_key=None, limit=50, offset=0):
-        rows = [row for row in reversed(self.rows) if user_key is None or row["user_key"] == user_key]
-        return rows[offset:offset + limit]
+    def _filtered(self, user_key=None, stars=0, area=""):
+        return [row for row in reversed(self.rows) if (user_key is None or row["user_key"] == user_key)
+                and (not stars or row["stars"] == stars) and (not area or area in row["areas"])]
+
+    def list_feedback(self, *, user_key=None, stars=0, area="", limit=50, offset=0):
+        return self._filtered(user_key, stars, area)[offset:offset + limit]
+
+    def count_feedback(self, *, stars=0, area=""):
+        return len(self._filtered(None, stars, area))
+
+    def feedback_summary(self):
+        return summarize(self.rows)
 
 
 def test_a_review_is_validated_and_normalized():
@@ -96,3 +105,112 @@ def test_routes(monkeypatch):
 
     monkeypatch.setattr(api, "require_admin", deny)
     assert client.get("/api/admin/feedback").status_code == 403
+
+
+# --- Review of #113: the real SQL, over more than 5,000 reviews, and the retention policy (D-159) ---------------
+def _sql_repository(tmp_path):
+    import sqlalchemy as sa
+    from writing_coach.persistence.models import AuditLog, Base, User
+    from writing_coach.persistence.platform_repository import PostgresPlatformRepository
+
+    engine = sa.create_engine(f"sqlite+pysqlite:///{tmp_path / 'feedback.db'}", future=True)
+    Base.metadata.create_all(engine, tables=[User.__table__, AuditLog.__table__])
+    return engine, PostgresPlatformRepository(engine=engine)
+
+
+def _add_user(engine, key):
+    import uuid
+    from sqlalchemy.orm import Session
+    from writing_coach.persistence.models import User
+
+    with Session(engine) as session, session.begin():
+        user = User(id=uuid.uuid4(), user_key=key, email=f"{key}@example.test", name=key, picture="", role="user",
+                    created_at=datetime.now(UTC), last_login=None)
+        session.add(user)
+        return user.id
+
+
+def test_admin_totals_are_over_every_review_not_a_truncated_page(tmp_path):
+    import uuid
+    from sqlalchemy.orm import Session
+    from writing_coach.persistence.models import AuditLog
+
+    engine, repo = _sql_repository(tmp_path)
+    old = datetime.now(UTC) - timedelta(days=30)
+    with Session(engine) as session, session.begin():
+        for i in range(5005):
+            session.add(AuditLog(id=uuid.uuid4(), user_id=None, action="learner.feedback", entity_type="feedback",
+                                 entity_id=str(i), created_at=old if i < 5000 else datetime.now(UTC),
+                                 payload={"stars": 5 if i % 5 == 0 else 3, "areas": ["reading", "bugs"] if i % 2 else ["listening"],
+                                          "text": f"r{i}", "account": f"local-{i % 7}"}))
+    summary = repo.feedback_summary()
+    assert summary["total"] == 5005, "every stored review counts, past 5,000"
+    assert summary["by_stars"]["5"] == 1001 and summary["by_stars"]["3"] == 4004
+    assert summary["average"] == round((1001 * 5 + 4004 * 3) / 5005, 2)
+    assert summary["by_area"]["reading"] == 2502 and summary["by_area"]["listening"] == 2503 and summary["by_area"]["bugs"] == 2502
+    assert summary["last_7_days"] == 5
+    assert repo.count_feedback(stars=5) == 1001
+    assert repo.count_feedback(area="listening") == 2503
+    assert repo.count_feedback(stars=5, area="listening") == 501
+    page = repo.list_feedback(area="bugs", limit=25, offset=2475)
+    assert len(page) == 25 and all("bugs" in row["areas"] for row in page)
+    assert len(repo.list_feedback(area="bugs", limit=25, offset=2500)) == 2, "the last page of the filtered set"
+
+
+def test_retention_deletes_an_accounts_reviews_and_reviews_past_24_months(tmp_path):
+    from sqlalchemy.orm import Session
+    from writing_coach.persistence.models import AuditLog, User
+
+    engine, repo = _sql_repository(tmp_path)
+    ana = _add_user(engine, "ana")
+    _add_user(engine, "ben")
+    repo.record_feedback("ana", {"stars": 4, "areas": [], "text": "a"})
+    repo.record_feedback("ben", {"stars": 2, "areas": [], "text": "b"})
+    repo.record_feedback("local-development", {"stars": 5, "areas": [], "text": "local"})
+    assert repo.delete_feedback_for_account("ana") == 1
+    assert [row["text"] for row in repo.list_feedback(limit=10)] == ["local", "b"]
+
+    # A review older than 24 months goes; an account row deleted after its review leaves an orphan, which goes too.
+    with Session(engine) as session, session.begin():
+        log = session.query(AuditLog).filter(AuditLog.payload["text"].as_string() == "local").one()
+        log.created_at = datetime.now(UTC) - timedelta(days=731)
+        session.query(AuditLog).filter(AuditLog.payload["text"].as_string() == "b").update({AuditLog.user_id: None})
+    repo.record_feedback("local-other", {"stars": 3, "areas": [], "text": "keep"})
+    removed = repo.delete_feedback_before(datetime.now(UTC) - timedelta(days=730), limit=100)
+    assert removed == 2
+    assert [row["text"] for row in repo.list_feedback(limit=10)] == ["keep"]
+
+
+def test_retention_switch_is_off_unless_turned_on():
+    from writing_coach.feedback import FEEDBACK_RETENTION_DAYS, retention_enabled
+
+    assert FEEDBACK_RETENTION_DAYS == 730
+    assert retention_enabled({}) is False
+    assert retention_enabled({"FEEDBACK_RETENTION_SWEEP": "on"}) is True
+    with pytest.raises(ValueError):
+        retention_enabled({"FEEDBACK_RETENTION_SWEEP": "maybe"})
+
+
+def test_a_send_starts_the_retention_sweep_when_it_is_installed(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    import writing_coach.feedback_api as api
+
+    calls = []
+
+    class Sweep:
+        def maybe_sweep(self):
+            calls.append(1)
+
+    store = Store()
+    monkeypatch.setattr(api, "_store", lambda: store)
+    monkeypatch.setattr(api, "current_user_key", lambda request: "ana")
+    api.configure_feedback_retention(Sweep())
+    try:
+        app = FastAPI()
+        app.include_router(api.router)
+        assert TestClient(app).post("/api/feedback", json={"stars": 5}).status_code == 201
+    finally:
+        api.configure_feedback_retention(None)
+    assert calls == [1]

@@ -8,10 +8,18 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_support import require_admin
-from writing_coach.feedback import AREAS, FeedbackInvalid, page_bounds, submit, summarize
+from writing_coach.feedback import AREAS, FeedbackInvalid, page_bounds, submit
 from writing_coach.product.api import current_user_key
 
 router = APIRouter(tags=["feedback"])
+
+# The D-159 retention sweep (app.py installs it when FEEDBACK_RETENTION_SWEEP is on); a send starts it at most daily.
+_retention = None
+
+
+def configure_feedback_retention(retention) -> None:
+    global _retention
+    _retention = retention
 
 
 def _store():
@@ -61,6 +69,8 @@ async def feedback_send(request: Request) -> dict[str, Any]:
         raise HTTPException(422, str(error))
     except OverflowError:
         raise HTTPException(429, "You have sent the most reviews allowed today. Thank you!")
+    if _retention is not None:
+        _retention.maybe_sweep()
     return {"review": _public(saved, admin=False)}
 
 
@@ -80,20 +90,17 @@ def feedback_admin(request: Request, limit: int = 50, offset: int = 0, stars: in
     require_admin(request)
     store = _store()
     bounded, start = page_bounds(limit, offset)
-    rows = store.list_feedback(limit=5000)
-    summary = summarize(rows)
-    if stars:
-        rows = [row for row in rows if row.get("stars") == stars]
-    if area:
-        if area not in AREAS:
-            raise HTTPException(422, "Unknown area.")
-        rows = [row for row in rows if area in (row.get("areas") or [])]
+    if stars and not 1 <= stars <= 5:
+        raise HTTPException(422, "Stars are 1 to 5.")
+    if area and area not in AREAS:
+        raise HTTPException(422, "Unknown area.")
+    # Every number is over all stored reviews (SQL), the list is one page of the filtered set.
     return {
         "available": True,
-        "summary": summary,
+        "summary": store.feedback_summary(),
         "areas": list(AREAS),
-        "total": len(rows),
+        "total": store.count_feedback(stars=stars, area=area),
         "limit": bounded,
         "offset": start,
-        "items": [_public(row, admin=True) for row in rows[start:start + bounded]],
+        "items": [_public(row, admin=True) for row in store.list_feedback(stars=stars, area=area, limit=bounded, offset=start)],
     }

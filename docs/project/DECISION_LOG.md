@@ -4497,3 +4497,15 @@ P1 report "public staging user blocked by stale internal-review gate".
 2. `static/orena/main.js` no longer stops a signed-in non-admin account with the internal-review notice and its
    dead `/account` link: every verified account runs the learner UI (new account -> Onboarding, completed -> Today);
    only `#/admin/...` addresses check the admin role (the No access frame). `/account` stays retired.
+
+## D-159 - Learner feedback retention: deleted with the account, and after 24 months
+
+2026-10-09, explicit human decision (asked by the delegated architecture review of #113: "Xóa khi xóa tài khoản + giữ
+tối đa 24 tháng"). Reviews stay in `audit_logs` (`learner.feedback`) as the bounded MVP store.
+
+1. With the account: `delete_feedback_for_account(user_key)` removes every review an account sent; the account-deletion
+   runtime (still a reserved hold, AGENTS.md section 7) calls it when it deletes an account. A review whose account row
+   is deleted becomes an orphan (`user_id` empty, no account key) and the sweep removes it.
+2. After 24 months: `delete_feedback_before()` in bounded daily batches, started by a send (the agent.turn sweep's
+   pattern). It is a destructive lifecycle job, so it runs only once `FEEDBACK_RETENTION_SWEEP` is switched on.
+3. Admin totals, average, star and area counts and filtered totals are SQL aggregates over every stored review.

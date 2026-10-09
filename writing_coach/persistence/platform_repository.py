@@ -4,11 +4,11 @@ import json
 import sqlite3
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Protocol
 
-from sqlalchemy import Engine, delete, func, select, text
+from sqlalchemy import Engine, String, cast, delete, func, select, text
 from sqlalchemy.orm import Session
 
 from writing_coach.ai.config import (
@@ -593,16 +593,33 @@ class PostgresPlatformRepository:
             query = query.where(AuditLog.user_id == user_id) if user_id is not None else query.where(AuditLog.payload["account"].as_string() == str(user_key))
             return int(session.scalar(query) or 0)
 
-    def list_feedback(self, *, user_key: str | None = None, limit: int = 50, offset: int = 0) -> list[dict]:
+    # Totals, filters and paging run in SQL over every stored review - never over a truncated page (review of #113).
+    @staticmethod
+    def _feedback_filters(query, *, stars: int = 0, area: str = ""):
         from writing_coach.feedback import FEEDBACK_ACTION
 
+        query = query.where(AuditLog.action == FEEDBACK_ACTION)
+        if stars:
+            query = query.where(AuditLog.payload["stars"].as_integer() == int(stars))
+        if area:
+            # `areas` is a JSON list of fixed tokens; a quoted token matches one whole entry, on every dialect.
+            query = query.where(cast(AuditLog.payload["areas"], String).like(f'%"{area}"%'))
+        return query
+
+    def _feedback_user_filter(self, session, query, user_key: str):
+        user_id = session.scalar(select(User.id).where(User.user_key == user_key))
+        if user_id is not None:
+            return query.where(AuditLog.user_id == user_id)
+        return query.where(AuditLog.payload["account"].as_string() == str(user_key))
+
+    def list_feedback(self, *, user_key: str | None = None, stars: int = 0, area: str = "", limit: int = 50,
+                      offset: int = 0) -> list[dict]:
         with Session(self.engine) as session:
-            query = (select(AuditLog, User).outerjoin(User, User.id == AuditLog.user_id)
-                     .where(AuditLog.action == FEEDBACK_ACTION).order_by(AuditLog.created_at.desc()))
+            query = select(AuditLog, User).outerjoin(User, User.id == AuditLog.user_id)
+            query = self._feedback_filters(query, stars=stars, area=area).order_by(AuditLog.created_at.desc())
             if user_key is not None:
-                user_id = session.scalar(select(User.id).where(User.user_key == user_key))
-                query = query.where(AuditLog.user_id == user_id) if user_id is not None else query.where(AuditLog.payload["account"].as_string() == str(user_key))
-            rows = session.execute(query.offset(max(0, offset)).limit(max(1, min(limit, 5000)))).all()
+                query = self._feedback_user_filter(session, query, user_key)
+            rows = session.execute(query.offset(max(0, int(offset))).limit(max(1, min(int(limit), 100)))).all()
             return [{
                 "id": str(log.id),
                 "created_at": log.created_at,
@@ -612,16 +629,72 @@ class PostgresPlatformRepository:
                 "language": (log.payload or {}).get("language") or "",
                 "interface": (log.payload or {}).get("interface") or "",
                 "account_id": str(user.id) if user else None,
-                # An account with no users row (local mode, or one deleted since) keeps the key it was sent under.
+                # An account with no users row (local mode) keeps the key it was sent under.
                 "account_key": "" if user else str((log.payload or {}).get("account") or ""),
                 "name": user.name if user else "",
                 "email": user.email if user else "",
             } for log, user in rows]
 
-    def feedback_summary(self) -> dict:
-        from writing_coach.feedback import summarize
+    def count_feedback(self, *, stars: int = 0, area: str = "") -> int:
+        with Session(self.engine) as session:
+            query = self._feedback_filters(select(func.count()).select_from(AuditLog), stars=stars, area=area)
+            return int(session.scalar(query) or 0)
 
-        return summarize(self.list_feedback(limit=5000))
+    def feedback_summary(self, *, now: datetime | None = None) -> dict:
+        """Count, average, by stars, by area and the last seven days over every stored review, in SQL."""
+        from writing_coach.feedback import AREAS
+
+        moment = now or datetime.now(UTC)
+        stars_value = AuditLog.payload["stars"].as_integer()
+        with Session(self.engine) as session:
+            base = self._feedback_filters(select(func.count()).select_from(AuditLog))
+            total = int(session.scalar(base) or 0)
+            average = session.scalar(self._feedback_filters(select(func.avg(stars_value)).select_from(AuditLog)))
+            by_stars = {str(n): 0 for n in range(1, 6)}
+            for value, count in session.execute(
+                self._feedback_filters(select(stars_value, func.count()).select_from(AuditLog)).group_by(stars_value)
+            ).all():
+                if value is not None and str(int(value)) in by_stars:
+                    by_stars[str(int(value))] = int(count)
+            by_area = {area: int(session.scalar(self._feedback_filters(select(func.count()).select_from(AuditLog), area=area)) or 0)
+                       for area in AREAS}
+            recent = int(session.scalar(base.where(AuditLog.created_at >= moment - timedelta(days=7))) or 0)
+        return {
+            "total": total,
+            "average": round(float(average), 2) if total and average is not None else None,
+            "by_stars": by_stars,
+            "by_area": by_area,
+            "last_7_days": recent,
+        }
+
+    # --- Retention (human decision 2026-10-09, D-159): reviews go with their account, and after 24 months. --------
+    def delete_feedback_for_account(self, user_key: str) -> int:
+        """Every review an account sent - for the account-deletion runtime to call when it deletes the account."""
+        from writing_coach.feedback import FEEDBACK_ACTION
+
+        with Session(self.engine) as session, session.begin():
+            user_id = session.scalar(select(User.id).where(User.user_key == user_key)) if user_key else None
+            query = delete(AuditLog).where(AuditLog.action == FEEDBACK_ACTION)
+            query = query.where(AuditLog.user_id == user_id) if user_id is not None else query.where(
+                AuditLog.payload["account"].as_string() == str(user_key))
+            return int(session.execute(query).rowcount or 0)
+
+    def delete_feedback_before(self, before: datetime, *, limit: int) -> int:
+        """The retention sweep: reviews older than `before`, and reviews whose account row is gone (an account row
+        deleted after the review leaves `user_id` empty and no account key, the shape no live review has). Bounded
+        batches; `learner.feedback` rows only."""
+        from writing_coach.feedback import FEEDBACK_ACTION
+
+        with Session(self.engine) as session, session.begin():
+            orphan = (AuditLog.user_id.is_(None)) & (AuditLog.payload["account"].as_string().is_(None))
+            ids = session.scalars(
+                select(AuditLog.id).where(AuditLog.action == FEEDBACK_ACTION)
+                .where((AuditLog.created_at < before) | orphan)
+                .order_by(AuditLog.created_at).limit(max(1, int(limit)))
+            ).all()
+            if not ids:
+                return 0
+            return int(session.execute(delete(AuditLog).where(AuditLog.id.in_(ids))).rowcount or 0)
 
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         bounded = max(1, min(int(limit), 500))
