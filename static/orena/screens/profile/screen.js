@@ -181,7 +181,7 @@ function actionHref(id, ctx) {
     progress: ctx.href('progress'),
     plan: ctx.href('billing'),
     // Settings' Plan & privacy tab holds the microphone and learner-audio rows (no separate Privacy tab yet).
-    privacy: ctx.href('settings', {}, { tab: 'plan' }),
+    privacy: ctx.href('settings', {}, { tab: 'privacy' }),
     feedback: ctx.href('feedback'),
   }[id];
 }

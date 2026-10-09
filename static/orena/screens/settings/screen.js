@@ -1,6 +1,6 @@
 /* Settings (frame 26-Settings.html, D-091). A focus route (shell/routes.js `settings.focus`),
    reached only from Profile's action list, with five tabs as local UI state on one route
-   (`?tab=`, matching Profile's own `ctx.href('settings', {}, { tab: 'plan' })` link) - not five
+   (`?tab=`, matching Profile's own `ctx.href('settings', {}, { tab: 'privacy' })` link) - not five
    routes, the same pattern Progress already establishes for its own six tabs.
 
    Real data only (Design Contract rule 40 - model.js explains the shape, this reads it):
@@ -12,8 +12,8 @@
      `memory`).
    - Notifications: no real source anywhere (model.js, UI_BACKEND_GAPS.md N-28) - every row drawn
      disabled.
-   - Plan & privacy: GET /api/product/commerce (plan, writing-review quota),
-     capabilities/mic-readiness.js (microphone), a real navigation to Progress's History tab.
+   - Privacy: capabilities/mic-readiness.js (microphone), learner audio (inert, N-31), a real navigation to
+     Progress's History tab. The plan and its usage are on Plan & usage (screens/plan).
    Every row the backend cannot back is drawn with its real (never invented) fallback value and
    an inert control (rule 40/43) - see docs/project/UI_BACKEND_GAPS.md N-25..N-31 (renumbered from
    this section's earlier N-11..N-17 once N-11 collided with Word Detail's own gap; model.js's own
@@ -25,7 +25,7 @@ import { useStyles } from '../../kit/styles.js';
 import { listRow, sectionHead, segmentedControl, pageHeader } from '../../kit/components.js';
 import { toast } from '../../kit/toast.js';
 import { api } from '../../infrastructure/api.js';
-import { shellCopy, planName, planDescription } from '../../copy/shell.js';
+import { shellCopy } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
 import { adoptLearningLanguage, updateContext } from '../../shell/context.js';
 import { saveAccountSettings, saveReviewSettings, selectLearningLanguage } from '../../product/account-settings.js';
@@ -36,16 +36,13 @@ import { MIC_STATES, watchMicrophone } from '../../capabilities/mic-readiness.js
 import { appearance, setAppearance, palette, setPalette } from '../../kit/device.js';
 import { appendNativeName, supportLanguageLabel } from '../../kit/lang.js';
 import { t } from './copy.js';
-import { TABS, tabFromQuery, rowsForTab, barPercent, usesPicker } from './model.js';
+import { TABS, tabFromQuery, rowsForTab, usesPicker } from './model.js';
 import { listVoices, chosenVoice, chooseVoice } from '../../agent/live-voice.js';
 import { toContractLang } from '../../agent/contract.js';
 
-const TAB_LABEL_KEY = { languages: 'tabLanguages', appearance: 'tabAppearance', learning: 'tabLearning', review: 'tabReview', notifications: 'tabNotifications', plan: 'tabPlan' };
-/* Every row's sub reads t(`${id}Sub`) except these two: "Plan" has no chrome sub at all (its sub
-   is the real plan name/description, assembled from data, not copy - see planSub() below), and
-   "Writing reviews" shares the same "This month" text "Pronunciation minutes" already has its own
-   copy of, rather than duplicating a second identical key. */
-const SUB_KEY = { plan: null, writingReviews: 'thisMonth' };
+const TAB_LABEL_KEY = { languages: 'tabLanguages', appearance: 'tabAppearance', learning: 'tabLearning', review: 'tabReview', notifications: 'tabNotifications', privacy: 'tabPrivacy' };
+/* Every row's sub reads t(`${id}Sub`); a row listed here reads another key (none today). */
+const SUB_KEY = {};
 
 function safeStorage() {
   try {
@@ -59,15 +56,7 @@ function rowLabel(row) {
   return t(`${row.id}Label`);
 }
 
-function planSub(row) {
-  const parts = [row.plan ? planName(row.plan) : row.planName, row.plan ? planDescription(row.plan) : row.planDescription].filter(Boolean);
-  // Manage is inert until plans can be changed: the row says so rather than leaving a grey button unexplained (LEX-079).
-  if (row.disabled) parts.push(t('manageUnavailable'));
-  return parts.join(' · ');
-}
-
 function rowSub(row) {
-  if (row.id === 'plan') return planSub(row);
   const key = SUB_KEY[row.id] === undefined ? `${row.id}Sub` : SUB_KEY[row.id];
   return key ? t(key) : '';
 }
@@ -121,22 +110,14 @@ function choiceControl(row) {
   return row.disabled ? html`<span class="s-settings-row__inert">${control}</span>` : control;
 }
 
-function barControl(row) {
-  // A meter with nothing behind it says so, never "0 ... 0" (LEX-079).
-  if (row.disabled && !Number(row.limit)) return html`<div class="s-settings-bar"><div class="s-settings-bar__labels"><span>${t('notMeasured')}</span></div><div class="s-settings-bar__track"><div class="s-settings-bar__fill" style="width:0%"></div></div></div>`;
-  const pct = barPercent(row.used, row.limit);
-  return html`<div class="s-settings-bar"><div class="s-settings-bar__labels"><span>${row.used}</span><span>${row.limit}</span></div><div class="s-settings-bar__track"><div class="s-settings-bar__fill" style="width:${pct}%"></div></div></div>`;
-}
-
 function actionControl(row) {
-  const label = { plan: t('manageAction'), learnerAudio: t('deleteAudioAction'), history: t('openAction'), licences: t('openAction') }[row.id] || '';
+  const label = { learnerAudio: t('deleteAudioAction'), history: t('openAction'), licences: t('openAction') }[row.id] || '';
   return html`<button type="button" class="s-settings-action" data-action-row="${row.id}" ${row.disabled ? 'disabled' : ''}>${label}</button>`;
 }
 
 function controlMarkup(row) {
   if (row.kind === 'toggle') return toggleControl(row);
   if (row.kind === 'choice') return choiceControl(row);
-  if (row.kind === 'bar') return barControl(row);
   if (row.kind === 'action') return actionControl(row);
   return '';
 }
@@ -167,7 +148,6 @@ export default async function settingsScreen(element, ctx) {
   const state = {
     tab: tabFromQuery(ctx.query.get('tab')),
     languagesData: null,
-    commerce: null,
     mic: { on: false, state: undefined },
   };
 
@@ -183,15 +163,13 @@ export default async function settingsScreen(element, ctx) {
     }
   }
 
-  const [languagesData, commerce, mic, voices] = await Promise.all([
+  const [languagesData, mic, voices] = await Promise.all([
     api.languages().catch(() => null),
-    api.productCommerce().catch(() => null),
     readMicState(),
     listVoices(toContractLang(copyLanguages().ui)),
   ]);
   if (!ctx.isCurrent()) return undefined;
   state.languagesData = languagesData;
-  state.commerce = commerce;
   state.mic = mic;
   state.voices = voices;
 
@@ -206,7 +184,6 @@ export default async function settingsScreen(element, ctx) {
     // dictation on), the same normalization ui/expression.js's own Review room already applies
     // every time it reads this same field.
     const reviewSettings = readReviewSettings(context.memory?.value?.reviewSettings);
-    const writingEvaluate = state.commerce?.features?.['writing.evaluate'] || null;
     return {
       languages: {
         languages: state.languagesData?.languages,
@@ -224,9 +201,7 @@ export default async function settingsScreen(element, ctx) {
         voices: state.voices ? { ...state.voices, chosen: chosenVoice() } : null,
       },
       review: { modes: reviewSettings?.modes },
-      plan: {
-        plan: state.commerce?.plan || null,
-        features: state.commerce?.features || {},
+      privacy: {
         micOn: state.mic.on,
         micState: state.mic.state,
       },
@@ -490,4 +465,4 @@ export default async function settingsScreen(element, ctx) {
 
 // Exported for the node gate (scripts/test_orena_screen_settings.mjs): the DOM-free row-shaping
 // helpers model.js cannot cover itself (label/sub copy-key mapping, choice-option labels).
-export const __internal = { rowLabel, rowSub, planSub, targetOptionLabel, choiceOptions };
+export const __internal = { rowLabel, rowSub, targetOptionLabel, choiceOptions };

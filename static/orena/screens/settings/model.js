@@ -11,11 +11,16 @@ import { INTERFACE_ENDONYMS, INTERFACE_LOCALES, interfaceLanguageOptions as shar
 
 /* Appearance and Accent are how Orena looks on this device, not how a learner studies, so they have their own
    tab (LEX-079); the frame draws neither, so no frame tab holds them. */
-export const TABS = Object.freeze(['languages', 'appearance', 'learning', 'review', 'notifications', 'plan']);
+/* The 2026-10-09 design replaced "Plan & privacy" with "Privacy": the plan and its usage live on Plan & usage
+   (screens/plan, reached from Profile), so this tab keeps only the microphone, learner audio and History. */
+export const TABS = Object.freeze(['languages', 'appearance', 'learning', 'review', 'notifications', 'privacy']);
+/* Old links (`?tab=plan`) land on the tab that replaced it. */
+const TAB_ALIASES = Object.freeze({ plan: 'privacy' });
 const APPEARANCE_ROW_IDS = Object.freeze(['theme', 'palette']);
 
 export function tabFromQuery(raw) {
-  const value = String(raw || '').trim().toLowerCase();
+  const raw2 = String(raw || '').trim().toLowerCase();
+  const value = TAB_ALIASES[raw2] || raw2;
   return TABS.includes(value) ? value : TABS[0];
 }
 
@@ -60,16 +65,6 @@ export function usesPicker(row) {
 
 export function interfaceLanguageOptions(locales = INTERFACE_LOCALES) {
   return sharedInterfaceLanguageOptions(locales);
-}
-
-/* A quota bar's fill: 0 whenever the limit is not a real positive number (rule 40 - a metric with
-   no measured value is 0, never invented), clamped so a usage figure larger than the limit never
-   overflows the track. */
-export function barPercent(used, limit) {
-  const u = Number(used);
-  const l = Number(limit);
-  if (!Number.isFinite(u) || !Number.isFinite(l) || l <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round((u / l) * 100)));
 }
 
 export function languageRows({ languages, supportLanguages, targetCode, supportCode, interfaceCode }) {
@@ -143,21 +138,8 @@ export function notificationRows() {
   return ['dueReview', 'writingReview', 'mediaReady', 'system'].map((id) => ({ id, kind: 'toggle', value: false, disabled: true }));
 }
 
-export function planRows({ plan, features, micOn, micState }) {
-  const writingEvaluate = features && typeof features === 'object' ? features['writing.evaluate'] : null;
+export function privacyRows({ micOn, micState } = {}) {
   return [
-    { id: 'plan', kind: 'action', disabled: true, plan: plan || null, planName: plan?.name || '', planDescription: plan?.description || '' },
-    // No entitlement key for AI-tutor messages or for pronunciation minutes exists in the plan
-    // catalogue at all - UI_BACKEND_GAPS.md N-29/N-30.
-    { id: 'messages', kind: 'bar', disabled: true, used: 0, limit: 0 },
-    {
-      id: 'writingReviews',
-      kind: 'bar',
-      disabled: !writingEvaluate,
-      used: Number(writingEvaluate?.used) || 0,
-      limit: Number(writingEvaluate?.monthly_limit) || 0,
-    },
-    { id: 'pronunciation', kind: 'bar', disabled: true, used: 0, limit: 0 },
     { id: 'mic', kind: 'toggle', disabled: false, value: micOn === true, state: micState || 'unsupported' },
     // No route deletes a learner's stored audio/media - UI_BACKEND_GAPS.md N-31.
     { id: 'learnerAudio', kind: 'action', disabled: true },
@@ -173,6 +155,6 @@ export function rowsForTab(tab, inputs) {
   if (tab === 'learning') return learningRows(inputs.learning).filter((row) => !APPEARANCE_ROW_IDS.includes(row.id));
   if (tab === 'review') return reviewRows(inputs.review);
   if (tab === 'notifications') return notificationRows();
-  if (tab === 'plan') return planRows(inputs.plan);
+  if (tab === 'privacy') return privacyRows(inputs.privacy);
   return [];
 }
