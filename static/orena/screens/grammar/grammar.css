@@ -802,3 +802,17 @@
 :root[data-device='mobile'] .s-gl__view {
   height: 44px;
 }
+
+/* Progress could not be read (PR #108 review): said plainly, with a retry, where Continue learning would be. */
+.s-gl__progressOff {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 14px;
+}

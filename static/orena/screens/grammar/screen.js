@@ -30,6 +30,8 @@ function tile(entry, size, iconSize) {
 }
 
 function ring(entry) {
+  // Progress could not be read: no ring at all rather than a "New" that may be wrong.
+  if (entry.learned === null) return '';
   const label = entry.learned
     ? entry.score ? t('learnedScore', { correct: entry.score.correct, total: entry.score.total }) : t('status_L')
     : t('status_N');
@@ -96,7 +98,8 @@ function option(value, label, selected) {
 export default async function grammarLibrary(element, ctx) {
   await useStyles('screens/grammar/grammar.css');
   const target = ctx.context.language === 'zh' ? 'zh' : 'en';
-  const [data, progress] = await Promise.all([grammarLibraryData(target), grammarProgress()]);
+  const [data, firstProgress] = await Promise.all([grammarLibraryData(target), grammarProgress()]);
+  let progress = firstProgress;
   if (!ctx.isCurrent()) return;
 
   const state = { q: '' };
@@ -139,7 +142,9 @@ export default async function grammarLibrary(element, ctx) {
       rows: data.points, functions: data.functions, progress, current: ctx.context.level || '', state, support: languages().support, ui: languages().ui, t,
     });
     const level = view.level.key;
-    const percent = view.stats.total ? (view.stats.learned / view.stats.total) * 100 : 0;
+    const percent = view.progressKnown && view.stats.total ? (view.stats.learned / view.stats.total) * 100 : 0;
+    st.disabled = !view.progressKnown;
+    const stat = (value) => (value === null ? '—' : value);
     const panel = view.panel;
     const list = state.view === 'list';
     mount(
@@ -149,17 +154,19 @@ export default async function grammarLibrary(element, ctx) {
           <span class="s-gl__glyph" aria-hidden="true">${GLYPH[target]}</span>
           <div class="s-gl__heroHead"><div class="s-gl__heroLevel">${level}</div><div class="s-gl__heroSub">${langTitle} · ${t.plural('topics', view.stats.total)}</div></div>
           <div class="s-gl__stats">
-            <div class="s-gl__stat"><span class="s-gl__statN"><span class="s-gl__dot s-gl__dot--learned"></span>${view.stats.learned}</span><span class="s-gl__statLabel">${t('learned')}</span></div>
-            <div class="s-gl__stat"><span class="s-gl__statN"><span class="s-gl__dot s-gl__dot--new"></span>${view.stats.notStarted}</span><span class="s-gl__statLabel">${t('notStarted')}</span></div>
+            <div class="s-gl__stat"><span class="s-gl__statN"><span class="s-gl__dot s-gl__dot--learned"></span>${stat(view.stats.learned)}</span><span class="s-gl__statLabel">${t('learned')}</span></div>
+            <div class="s-gl__stat"><span class="s-gl__statN"><span class="s-gl__dot s-gl__dot--new"></span>${stat(view.stats.notStarted)}</span><span class="s-gl__statLabel">${t('notStarted')}</span></div>
           </div>
           <div class="s-gl__bar" aria-hidden="true"><span style="${`width:${percent}%`}"></span></div>
         </div>
         <div class="s-gl__levels">${view.levels.map((entry) => html`<button type="button" class="s-gl__level" data-level="${entry.key}" aria-pressed="${entry.selected ? 'true' : 'false'}">${entry.key}<span class="s-gl__levelN">${entry.count}</span></button>`)}</div>
       </div>
 
-      ${view.continue.length
-        ? html`<div class="s-gl__group"><h2 class="s-gl__h2">${t('continueTitle')}</h2><div class="s-gl__grid">${view.continue.map((entry) => continueCard(entry, pinyin))}</div></div>`
-        : ''}
+      ${view.progressKnown
+        ? view.continue.length
+          ? html`<div class="s-gl__group"><h2 class="s-gl__h2">${t('continueTitle')}</h2><div class="s-gl__grid">${view.continue.map((entry) => continueCard(entry, pinyin))}</div></div>`
+          : ''
+        : html`<div class="s-gl__group"><div class="s-gl__progressOff" role="status"><span>${t('progressUnavailable')}</span><button type="button" class="s-gl__clear" data-retry-progress>${shell('retry')}</button></div></div>`}
 
       <div class="s-gl__group">
         <h2 class="s-gl__h2">${t('categoriesTitle')}</h2>
@@ -212,6 +219,16 @@ export default async function grammarLibrary(element, ctx) {
     const hit = (selector) => event.target.closest(selector);
     if (hit('[data-back]')) {
       ctx.back();
+      return;
+    }
+    const retry = hit('[data-retry-progress]');
+    if (retry) {
+      retry.disabled = true;
+      grammarProgress().then((next) => {
+        if (!ctx.isCurrent()) return;
+        progress = next;
+        render();
+      });
       return;
     }
     const open = hit('[data-open]');

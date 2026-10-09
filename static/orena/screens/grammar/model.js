@@ -47,11 +47,13 @@ function searchable(row) {
   return parts.filter(Boolean).join(' ').toLowerCase();
 }
 
-/* `rows` the catalogue points, `functions` its functions, `progress` the progress API's list, `current` the learner's
-   declared level code; `state` = {level, cat, all, q, st, sort}. */
+/* `rows` the catalogue points, `functions` its functions, `progress` the progress API's list (`null`: it could not be
+   read - every stateful part is then unknown, not empty), `current` the learner's declared level code;
+   `state` = {level, cat, all, q, st, sort}. */
 export function buildLibrary({ rows = [], functions = [], progress = [], current = '', state = {}, support = 'en', ui = '', t = (key) => key } = {}) {
   const list = sortCatalog(Array.isArray(rows) ? rows : []);
-  const done = new Map((progress || []).map((entry) => [String(entry.point_id), entry]));
+  const progressKnown = Array.isArray(progress);
+  const done = new Map((progressKnown ? progress : []).map((entry) => [String(entry.point_id), entry]));
   const fnOrder = (Array.isArray(functions) ? functions : []).map((fn) => fn.id);
   // A category is navigation, so its name follows the interface language; a topic's meaning stays in the support
   // language (design review 2026-10-08, UX rule 26).
@@ -92,15 +94,16 @@ export function buildLibrary({ rows = [], functions = [], progress = [], current
       cat,
       tag: catName(cat),
       ...lookOf(cat),
-      learned: Boolean(state),
+      learned: progressKnown ? Boolean(state) : null,
       score: state?.last_quiz && Number.isFinite(state.last_quiz.total) ? { correct: state.last_quiz.correct, total: state.last_quiz.total } : null,
     };
   };
   const items = atLevel.map(item);
   const q = String(state.q || '').trim().toLowerCase();
-  const st = STATUSES.includes(state.st) ? state.st : 'all';
+  // Without progress, a status filter or a status sort would rest on a guess: both fall back to their neutral value.
+  const st = progressKnown && STATUSES.includes(state.st) ? state.st : 'all';
   const match = (entry, row) => (!q || searchable(row).includes(q)) && (st === 'all' || (st === 'L') === entry.learned);
-  const sort = SORTS.includes(state.sort) ? state.sort : 'def';
+  const sort = SORTS.includes(state.sort) && (progressKnown || state.sort !== 'st') ? state.sort : 'def';
   const sortList = (entries) => {
     if (sort === 'st') return [...entries].sort((a, b) => Number(a.learned) - Number(b.learned));
     if (sort === 'az') return [...entries].sort((a, b) => (a.reading || a.title).localeCompare(b.reading || b.title));
@@ -120,10 +123,11 @@ export function buildLibrary({ rows = [], functions = [], progress = [], current
   const learned = items.filter((entry) => entry.learned).length;
 
   return {
+    progressKnown,
     levels,
     level: chosen,
-    stats: { total: items.length, learned, notStarted: items.length - learned },
-    continue: items.filter((entry) => !entry.learned).slice(0, CONTINUE_LIMIT),
+    stats: progressKnown ? { total: items.length, learned, notStarted: items.length - learned } : { total: items.length, learned: null, notStarted: null },
+    continue: progressKnown ? items.filter((entry) => !entry.learned).slice(0, CONTINUE_LIMIT) : [],
     categories,
     panel: categories.find((category) => category.selected) || null,
     panelItems: panelAll.slice(0, PANEL_LIMIT),

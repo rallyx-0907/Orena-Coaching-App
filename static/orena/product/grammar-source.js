@@ -99,12 +99,15 @@ export async function grammarPoint(id, { targetLang = 'en', fetchJson = defaultF
 
 /* The learner's completed grammar points: `[{point_id, completed_at, last_quiz, via}]`. A failure reads as
    no progress, never as a load error: progress is an addition to a screen, not its content. */
+/* The learner's completed points, or `null` when they cannot be read (a failed request, an unexpected answer).
+   `null` is "unknown", never "nothing learned": a transient 500 must not show an existing learner as 0 learned or
+   recommend topics they finished (PR #108 review). `[]` only when the server says the history is empty. */
 export async function grammarProgress({ fetchJson = defaultFetch } = {}) {
   try {
     const body = await readJson(PROGRESS_URL, fetchJson);
-    return Array.isArray(body?.progress) ? body.progress : [];
+    return Array.isArray(body?.progress) ? body.progress : null;
   } catch {
-    return [];
+    return null;
   }
 }
 

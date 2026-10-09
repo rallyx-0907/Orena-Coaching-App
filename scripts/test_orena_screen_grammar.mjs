@@ -110,7 +110,10 @@ const servedZh = {
   // Progress: read as an addition (a failure is no progress), written with the answers in quick_practice order.
   const progress = stubFetch({ [PROGRESS_URL]: { language: 'en', progress: [{ point_id: 'en.plural_nouns', completed_at: 't', last_quiz: { correct: 2, total: 3 }, via: 'point' }] } });
   assert.deepEqual((await grammarProgress(progress)).map((row) => row.point_id), ['en.plural_nouns']);
-  assert.deepEqual(await grammarProgress({ fetchJson: async () => { throw Object.assign(new Error('down'), { status: 503 }); } }), []);
+  // PR #108 review: an unreadable progress is unknown (null), never an authoritative empty history.
+  assert.equal(await grammarProgress({ fetchJson: async () => { throw Object.assign(new Error('down'), { status: 503 }); } }), null);
+  assert.equal(await grammarProgress({ fetchJson: async () => ({ unexpected: true }) }), null, 'an answer without a progress list is unknown too');
+  assert.deepEqual(await grammarProgress({ fetchJson: async () => ({ progress: [] }) }), [], 'only the server saying so is empty');
   const sent = [];
   await recordGrammarCompletion('en.plural_nouns', [1, null, 0], { send: async (url, body) => sent.push([url, body]) });
   assert.deepEqual(sent, [['/api/grammar/v1/progress/en.plural_nouns', { answers: [1, null, 0] }]], 'the answers are sent, never a score');
@@ -425,4 +428,29 @@ console.log('Orena Grammar surface (Library + Concept) on the Grammar Store lear
   assert.equal(row.translation, same.vi);
   assert.equal(row.annotation, '', 'the repeated line is not drawn twice');
   console.log('Grammar Concept: a repeated example note is drawn once: PASS');
+}
+
+/* PR #108 review (P1): progress that cannot be read never shows a learner as 0 learned, every topic as New, or
+   recommends a finished topic. */
+{
+  const { buildLibrary } = await import('../static/orena/screens/grammar/model.js');
+  const rows = [
+    { id: 'en.a', level: 'A1', function: 'f1', header: { native_title: 'A' } },
+    { id: 'en.b', level: 'A1', function: 'f1', header: { native_title: 'B' } },
+  ];
+  const known = buildLibrary({ rows, progress: [{ point_id: 'en.a' }], state: { st: 'L', sort: 'st' } });
+  assert.equal(known.progressKnown, true);
+  assert.deepEqual(known.stats, { total: 2, learned: 1, notStarted: 1 });
+  assert.deepEqual(known.continue.map((entry) => entry.id), ['en.b']);
+  assert.deepEqual(known.all.map((entry) => entry.id), ['en.a'], 'the status filter works when progress is known');
+
+  const unknown = buildLibrary({ rows, progress: null, state: { st: 'L', sort: 'st' } });
+  assert.equal(unknown.progressKnown, false);
+  assert.deepEqual(unknown.stats, { total: 2, learned: null, notStarted: null }, 'no invented zero');
+  assert.deepEqual(unknown.continue, [], 'no recommendation built on unknown progress');
+  assert.ok(unknown.all.every((entry) => entry.learned === null), 'no topic is marked New or Learned');
+  assert.equal(unknown.st, 'all', 'a status filter is not applied on a guess');
+  assert.equal(unknown.sort, 'def', 'a status sort is not applied on a guess');
+  assert.equal(unknown.all.length, 2, 'every topic still opens');
+  console.log('Grammar Library: unreadable progress stays unknown, never "nothing learned": PASS');
 }
