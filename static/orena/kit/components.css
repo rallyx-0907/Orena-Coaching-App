@@ -94,7 +94,8 @@
   box-shadow: var(--sh1);
 }
 .c-row--outline {
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
+  box-shadow: var(--edge-light);
 }
 .c-row--shadow:hover,
 .c-row--outline:hover {
@@ -484,3 +485,56 @@
    negative margin, so nothing moves) for the tabs' touch areas. */
 :root[data-device='mobile'] .o-tabs { padding-top: 4px; padding-bottom: 4px; margin-top: -4px; margin-bottom: -4px; }
 :root[data-device='mobile'] .s-progress-card__link { display: inline-block; z-index: 1; }
+
+/* A coverless card's poster (human, 2026-10-09: never a blank single-colour tile): the kind's hue as a gradient, two
+   light circles and the title's first letter, with the kind's icon chip above it. Tokens only. */
+.c-media__img--blank {
+  overflow: hidden;
+}
+.c-poster {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in oklch, var(--hue), var(--surface) 18%) 0%, transparent 60%),
+    linear-gradient(140deg, var(--hue) 0%, color-mix(in oklch, var(--hue), var(--hue2, var(--hue)) 55%) 70%, color-mix(in oklch, var(--hue2, var(--hue)), var(--text) 22%) 100%);
+}
+.c-poster__deco {
+  position: absolute;
+  border-radius: 999px;
+}
+.c-poster__deco--a {
+  right: -18%;
+  top: -34%;
+  width: 62%;
+  aspect-ratio: 1;
+  background: var(--deco-strong);
+}
+.c-poster__deco--b {
+  left: 34%;
+  bottom: -46%;
+  width: 46%;
+  aspect-ratio: 1;
+  background: var(--deco-soft);
+}
+.c-poster__glyph {
+  position: absolute;
+  right: 9%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: clamp(48px, 30cqi, 92px);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--accent-ink);
+  opacity: 0.92;
+}
+.c-media__img--blank {
+  container-type: inline-size;
+}
+.c-poster__chip {
+  position: relative;
+  z-index: 1;
+  background: var(--deco-strong);
+  backdrop-filter: blur(6px);
+}

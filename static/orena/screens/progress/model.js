@@ -14,13 +14,14 @@ export function tabFromQuery(raw) {
   return TABS.find((tab) => tab.toLowerCase() === value) || TABS[0];
 }
 
-/* Design order: Listening, Vocabulary / Recall, Reading, Speaking, Writing (17-Progress.html). */
+/* The human's skill order everywhere (D-152): Listening, Speaking, Reading, Writing, Vocabulary (the frame drew
+   Listening, Vocabulary, Reading, Speaking, Writing). */
 export const SKILL_ROWS = [
   { key: 'listening', domain: 'listening' },
-  { key: 'vocabulary', domain: 'language' },
-  { key: 'reading', domain: 'reading' },
   { key: 'speaking', domain: 'speaking' },
+  { key: 'reading', domain: 'reading' },
   { key: 'writing', domain: 'writing' },
+  { key: 'vocabulary', domain: 'language' },
 ];
 
 const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);

@@ -3,7 +3,7 @@
    keys both to `screen: 'practice'` and the two are one continuous picker: the hub's skill sections
    inline, the per-skill drill-down one level deeper. See SCRATCH/reports/practice.md for the full
    accounting of what maps to what and why. */
-import { html, mount } from '../../kit/html.js';
+import { html, mount, raw } from '../../kit/html.js';
 import { useStyles } from '../../kit/styles.js';
 import { listRow, rowIconSwatch, sectionHead, pageHeader } from '../../kit/components.js';
 import { langSpan } from '../../kit/lang.js';
@@ -13,8 +13,10 @@ import { api } from '../../infrastructure/api.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
-import { loadPendingRows, recentRows, recentMediaFacts, lastSpeakingLine, lastListenedLine } from './continuation.js';
+import { loadPendingRows, recentRows, recentMediaFacts, lastListenedLine } from './continuation.js';
 import { t } from './copy.js';
+import { device, onDeviceChange } from '../../kit/device.js';
+import { icon } from '../../kit/icons.js';
 import { loadAttemptsSince } from '../../product/speaking-history.js';
 import { SKILL_ORDER, SKILL_ICONS, SKILL_TINT, SKILL_BUILDERS, SKILL_GROUPS, buildSkillSections, writeRecommendation, weakestLines, vocabularyRecommendation } from './model.js';
 import { t as writingT } from '../writing/copy.js';
@@ -93,7 +95,7 @@ function tileMarkup(skill, mode) {
     leading: rowIconSwatch({ iconName: SKILL_ICONS[skill][mode.key] || 'target', tint: SKILL_TINT[skill] }),
     title: labelOf(skill, mode),
     sub: modeMeta(skill, mode),
-    className: 's-practice-tile',
+    className: `s-practice-tile s-practice-tile--${skill}`,
     dataset: modeDataset(mode),
   });
 }
@@ -121,7 +123,25 @@ function hubRowMarkup(skill, mode) {
    sections as desktop, just single-column - Skill Hub's only entry point in the pinned design,
    `phTiles`, is not wired into any rendered element in this snapshot, D2 Open Question #1). Adding
    one here would be an interaction the source does not draw (rule 44); recorded as a gap instead. */
+/* Phone (human, 2026-10-09, D-152): each skill folds to its heading - icon, name, how many activities - and opens
+   in place, so every skill is reachable without scrolling past the others. Which ones the learner opened is kept
+   for this visit of the app (back from a room finds them open). The desk keeps the open sections. */
+const SKILL_HEAD_ICON = { listen: 'headphones', speak: 'mic', reading: 'book-open', write: 'pen-line', vocabulary: 'panels-top-left', grammar: 'languages' };
+const openFolds = new Set();
+
+function foldMarkup(skill, modes) {
+  return html`<details class="s-practice-fold s-practice-tile--${skill}" data-fold="${skill}"${openFolds.has(skill) ? ' open' : ''}>
+    <summary class="s-practice-fold__head">
+      ${rowIconSwatch({ iconName: SKILL_HEAD_ICON[skill], tint: SKILL_TINT[skill] })}
+      <span class="s-practice-fold__text"><span class="s-practice-fold__title">${t(SKILL_LABEL_KEY[skill])}</span><span class="s-practice-fold__count">${t.plural('modeCount', modes.length)}</span></span>
+      <span class="s-practice-fold__chev" aria-hidden="true">${raw(icon('chevron-down', { size: 20 }))}</span>
+    </summary>
+    <div class="s-practice-grid">${modes.map((mode) => tileMarkup(skill, mode))}</div>
+  </details>`;
+}
+
 function sectionMarkup(skill, modes) {
+  if (device() === 'mobile') return foldMarkup(skill, modes);
   return html`<section class="s-practice-section">
     ${sectionHead({ title: t(SKILL_LABEL_KEY[skill]), size: 'lg' })}
     <div class="s-practice-grid">${modes.map((mode) => tileMarkup(skill, mode))}</div>
@@ -256,6 +276,9 @@ async function renderHub(element, ctx, data) {
     </div>`,
   );
   element.querySelector('[data-earlier]')?.addEventListener('click', () => openEarlierDrafts(ctx));
+  for (const fold of element.querySelectorAll('[data-fold]')) {
+    fold.addEventListener('toggle', () => (fold.open ? openFolds.add(fold.dataset.fold) : openFolds.delete(fold.dataset.fold)));
+  }
   let recentOpening = false;
   element.querySelector('[data-recent]')?.addEventListener('click', async event => {
     if (recentOpening) return;
@@ -320,13 +343,11 @@ export default async function practiceHub(element, ctx) {
      Skill Hub visit needs whichever one its own skill owns. Each degrades to a real, honest empty
      on failure rather than throwing (this route is not `lesson: true`, so there is no router load-
      error screen to catch it). */
-  const [speakingItems, listeningItems, reading, recommendation, lastLine, speakRec, listenedLine] = await Promise.all([
+  const [speakingItems, listeningItems, reading, recommendation, speakRec, listenedLine] = await Promise.all([
     api.speakingLibrary(language).then((res) => (Array.isArray(res?.items) ? res.items : [])).catch(() => []),
     api.listeningLibrary(language).then((res) => (Array.isArray(res?.items) ? res.items : [])).catch(() => []),
     api.readingPracticeNext().catch(() => ({ available: false, next: null })),
     fetchRecommendation ? api.practiceRecommendation().catch(() => null) : Promise.resolve(null),
-    // Pronunciation opens the learner's last line at once (D-139 HD-3); only the hub and Speak's hub list it.
-    !skill || skill === 'speak' ? lastSpeakingLine(ctx.context.memory, { api, language, support: languages().support, owner: ctx.context.owner }).catch(() => null) : Promise.resolve(null),
     // Skill Hub Speak's Recommended card, from the learner's weakest real attempt (D-139 HD-1); none without attempts.
     skill === 'speak' ? speakRecommendation(ctx, language).catch(() => null) : Promise.resolve(null),
     // React / Reuse opens the last listened line (X-01, HX-1 A); no line, no tile.
@@ -338,7 +359,18 @@ export default async function practiceHub(element, ctx) {
   const waiting = waitingDraft(ctx.context.memory?.value?.expressions || {}, language);
   const draft = waiting ? { title: waiting.title || (waiting.free ? writingT('freeTitle') : ''), n: waiting.n } : null;
   const earlier = earlierDrafts(ctx.context.memory?.value?.expressions || {}, language).length;
-  const data = { draft, earlier, speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastSpeakingLine: lastLine, lastListenedLine: listenedLine, speakRecommendation: speakRec };
-  if (skill) await renderSkillHub(element, ctx, data, skill);
-  else await renderHub(element, ctx, data);
+  const data = { draft, earlier, speakingItems, listeningItems, reading, due: ctx.context.due, recommendation, lastListenedLine: listenedLine, speakRecommendation: speakRec };
+  if (skill) {
+    await renderSkillHub(element, ctx, data, skill);
+    return undefined;
+  }
+  await renderHub(element, ctx, data);
+  // The phone folds its skills, the desk does not (D-152): crossing the breakpoint redraws the hub.
+  let shown = device();
+  const leave = onDeviceChange(({ device: next }) => {
+    if (next === shown || !ctx.isCurrent()) return;
+    shown = next;
+    renderHub(element, ctx, data);
+  });
+  return leave;
 }

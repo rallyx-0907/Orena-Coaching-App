@@ -131,12 +131,13 @@
 .s-react__option {
   padding: 14px 18px;
   border-radius: 14px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   background: var(--bg);
   font-size: 15.5px;
   text-align: left;
   line-height: 1.45;
   color: var(--text);
+  box-shadow: var(--edge-light);
 }
 .s-react__option.is-correct { border-color: var(--green); background: var(--green-soft); }
 .s-react__option.is-wrong { border-color: var(--red); background: var(--red-soft); }
@@ -202,18 +203,19 @@
   outline: 0;
   font-family: inherit;
 }
-.s-react__textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.s-react__textarea:focus { border-color: var(--text3); box-shadow: var(--sh2); }
 .s-react__mic {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 13px 18px;
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface2);
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
+  box-shadow: var(--edge-light);
 }
 .s-react__mic.is-recording { background: var(--red); color: var(--badge-ink); }
 

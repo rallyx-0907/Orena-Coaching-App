@@ -63,7 +63,8 @@ for (const source of skins) {
 // ink of the red count badge).
 const ADJUSTED = {
   dark: { text3: '#858599', accent: '#847ff6' },
-  light: { text3: '#6e6e86', green: '#117e52', red: '#d0292e', amber: '#a16000' },
+  // bg/sh1/text3: the human's raised-card page (D-151, 2026-10-09), text3 kept at AA on it.
+  light: { text3: '#68687f', bg: '#ecedf4', green: '#117e52', red: '#d0292e', amber: '#a16000', sh1: '0 1px 2px rgba(23, 23, 50, .07), 0 3px 12px rgba(23, 23, 50, .07)' },
 };
 const ADDED = ['accent-fill', 'accent-fill-hover', 'accent-fill-press', 'badge-ink'];
 for (const theme of ['dark', 'light']) {

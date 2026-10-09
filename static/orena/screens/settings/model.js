@@ -50,8 +50,12 @@ export function supportLanguageOptions(supportLanguages) {
    this many options it becomes a picker - a button that opens a sheet of rows (D-098). */
 export const SEGMENTED_MAX_OPTIONS = 4;
 
+/* The Languages tab's three choices are always the picker, the way Support language looks (human, 2026-10-09). */
+const ALWAYS_PICKER = Object.freeze(['target', 'support', 'interface']);
+
 export function usesPicker(row) {
-  return ['support', 'orenaVoice'].includes(row?.id) && Array.isArray(row.options) && row.options.length > SEGMENTED_MAX_OPTIONS;
+  if (ALWAYS_PICKER.includes(row?.id)) return true;
+  return ['orenaVoice'].includes(row?.id) && Array.isArray(row.options) && row.options.length > SEGMENTED_MAX_OPTIONS;
 }
 
 export function interfaceLanguageOptions(locales = INTERFACE_LOCALES) {

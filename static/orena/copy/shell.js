@@ -15,7 +15,7 @@ const KEYS = [
   'conversation', 'situationReaction', 'retell', 'reactReuse', 'timedRecall', 'contextTransfer', 'dailyFeed',
   'contextRewrite', 'timedWriting', 'readingTransfer', 'readingComplete', 'attemptHistory', 'speakingSummary',
   'timedReaction', 'respondToContent', 'discussion', 'mockInterview', 'soundTone', 'fromYourErrors',
-  'welcome', 'admin',
+  'welcome', 'admin', 'themeToLight', 'themeToDark',
 ];
 
 export const shellCopy = defineCopy('shell', {
@@ -43,6 +43,7 @@ export const shellCopy = defineCopy('shell', {
     attemptHistory: 'Attempt history', speakingSummary: 'Speaking summary', timedReaction: 'Timed Reaction',
     respondToContent: 'Respond to content', discussion: 'Discussion', mockInterview: 'Mock Interview',
     soundTone: 'Sound / Tone', fromYourErrors: 'From your errors', welcome: 'Welcome', admin: 'Platform admin',
+    themeToLight: 'Switch to light theme', themeToDark: 'Switch to dark theme',
   },
   vi: {
     listeningComprehension: 'Nghe hiểu',
@@ -67,6 +68,7 @@ export const shellCopy = defineCopy('shell', {
     attemptHistory: 'Các lần thử', speakingSummary: 'Tổng kết buổi nói', timedReaction: 'Phản xạ có giờ',
     respondToContent: 'Phản hồi nội dung', discussion: 'Thảo luận', mockInterview: 'Phỏng vấn thử',
     soundTone: 'Âm và thanh điệu', fromYourErrors: 'Từ lỗi của bạn', welcome: 'Chào mừng', admin: 'Quản trị nền tảng',
+    themeToLight: 'Chuyển sang giao diện sáng', themeToDark: 'Chuyển sang giao diện tối',
   },
   zh: {
     listeningComprehension: '听力理解',
@@ -91,6 +93,7 @@ export const shellCopy = defineCopy('shell', {
     attemptHistory: '尝试记录', speakingSummary: '口语总结', timedReaction: '限时反应',
     respondToContent: '回应内容', discussion: '讨论', mockInterview: '模拟面试',
     soundTone: '音与声调', fromYourErrors: '从错误中练', welcome: '欢迎', admin: '平台管理',
+    themeToLight: '切换到浅色模式', themeToDark: '切换到深色模式',
   },
 });
 

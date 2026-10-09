@@ -17,8 +17,8 @@
   font-family: inherit;
 }
 .s-dict__input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--ring);
+  border-color: var(--text3);
+  box-shadow: var(--sh2);
 }
 
 /* The frame's "Live check" strip (`dLiveOn`): on while a hint is in use and the line is unchecked.
@@ -83,7 +83,7 @@
 .s-dict__livechip--partial {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: var(--accent);
+  border-color: transparent;
 }
 
 .s-dict__hintrow {
@@ -95,12 +95,13 @@
 .s-dict__hint {
   padding: 13px 18px;
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
   min-height: 44px;
+  box-shadow: var(--edge-light);
 }
 .s-dict__hint:hover:not(:disabled) {
   background: var(--surface2);
@@ -229,12 +230,13 @@
   gap: 8px;
   padding: 12px 18px;
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
   min-height: 44px;
+  box-shadow: var(--edge-light);
 }
 .s-dict__navbtn:hover:not(:disabled) {
   background: var(--surface2);

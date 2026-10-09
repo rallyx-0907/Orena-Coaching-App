@@ -19,8 +19,13 @@ body {
   height: 100%;
 }
 
+/* The interface face, as a variable so a component that sets its own family still follows the language. */
+:root {
+  --font-ui: 'Outfit', 'Noto Sans SC', system-ui, sans-serif;
+}
+
 body {
-  font-family: 'Outfit', 'Noto Sans SC', system-ui, sans-serif;
+  font-family: var(--font-ui);
   background: var(--page) fixed;
   background-color: var(--bg);
   color: var(--text);
@@ -30,9 +35,11 @@ body {
 
 /* Outfit has no Vietnamese subset: Vietnamese text - the interface in Vietnamese, or support text
    written in Vietnamese - is set in Plus Jakarta Sans, the face this design project used before
-   its skin (UI_BACKEND_GAPS N-1, Design Contract rule 34). */
+   its skin (UI_BACKEND_GAPS N-1, Design Contract rule 34). The human asked for Gilroy (2026-10-09), a paid face; Plus
+   Jakarta Sans is the free one they allowed - Poppins has no Vietnamese subset, so its stacked tones would fall back. */
 :lang(vi) {
-  font-family: 'Plus Jakarta Sans', 'Outfit', 'Noto Sans SC', system-ui, sans-serif;
+  --font-ui: 'Plus Jakarta Sans', 'Outfit', 'Noto Sans SC', system-ui, sans-serif;
+  font-family: var(--font-ui);
 }
 
 /* Zero specificity, so a component's own colour always wins over the plain link colour. */
@@ -98,6 +105,16 @@ button:disabled {
   border-color: transparent !important;
   cursor: not-allowed;
   transform: none !important;
+}
+
+/* No box flashed on a press (human, 2026-10-08, D-147): touch browsers paint a tap-highlight rectangle on every
+   pressed control, read as a border appearing on the card. The keyboard focus ring below stays. */
+button,
+a,
+summary,
+label,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
 }
 
 :focus-visible {

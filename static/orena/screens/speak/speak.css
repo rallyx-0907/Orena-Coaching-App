@@ -55,12 +55,13 @@
   flex: none;
   padding: 10px 14px;
   border-radius: 12px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
+  box-shadow: var(--edge-light);
 }
 
 .s-speak-scroll {
@@ -157,9 +158,10 @@
   gap: 6px;
 }
 .s-speak-btn--outline {
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
+  box-shadow: var(--edge-light);
 }
 
 .s-speak-detail {
@@ -198,7 +200,7 @@
 .s-speak-mini {
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 13px;
@@ -207,6 +209,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-shadow: var(--edge-light);
 }
 .s-speak-mini--ghost {
   border: 0;
@@ -227,12 +230,13 @@
   gap: 10px;
   padding: 14px 20px;
   border-radius: 16px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 15px;
   font-weight: 600;
   min-height: 44px;
+  box-shadow: var(--edge-light);
 }
 .s-speak-side[disabled] {
   opacity: 0.5;
@@ -470,12 +474,13 @@
 .s-speak-secondary {
   padding: 13px 18px;
   border-radius: 14px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
   min-height: 44px;
+  box-shadow: var(--edge-light);
 }
 .s-speak-ai {
   height: 40px;

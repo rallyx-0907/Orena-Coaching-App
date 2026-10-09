@@ -5,7 +5,7 @@
   height: 34px;
   padding: 0;
   border-radius: 10px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--muted);
   font-size: 16px;
@@ -13,11 +13,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--edge-light);
 }
 .o-more[data-on="1"] {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: var(--tint2);
+  border-color: transparent;
 }
 .o-more-menu {
   display: flex;
@@ -34,7 +35,7 @@
   height: 32px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--muted);
   font-size: 13.5px;
@@ -43,6 +44,7 @@
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
+  box-shadow: var(--edge-light);
 }
 .o-more-menu__spacer {
   flex: 1;

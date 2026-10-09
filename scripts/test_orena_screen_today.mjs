@@ -122,7 +122,8 @@ assert.equal(pickMeaning([], 'en'), '', 'no meanings at all is empty, not invent
   const listen = mapContinuationEntry({ id: 'media:l1', title: 'Cosmic calendar', context: 'Science' }, t);
   assert.equal(listen.routeId, 'listening');
   assert.deepEqual(listen.routeParams, { id: 'l1' });
-  assert.equal(listen.meta, 'Science');
+  assert.equal(listen.meta, 'Continue · Science', '"Continue" leads the meta line (design/UX review 2026-10-08)');
+  assert.equal(listen.kind, 'Listen', 'the kind names the skill, not "Continue"');
 
   const dictation = mapContinuationEntry({ id: 'media:l1', title: 'x', intent: 'dictation' }, t);
   assert.equal(dictation.routeId, 'dictation', 'a dictation intent routes to Dictation, not plain Listening');
@@ -193,11 +194,11 @@ assert.deepEqual(usedRecommendationIds([{ id: 'a' }, { id: 'b' }, { id: null }])
   const rings = buildSkillRings(t);
   assert.equal(rings.length, 3);
   for (const ring of rings) assert.equal(ring.percent, 0, `${ring.key}: no per-skill daily measure exists, so 0 - never an invented percent`);
-  assert.deepEqual(rings.map((r) => r.color), ['var(--skill-read)', 'var(--skill-listen)', 'var(--skill-speak)']);
-  assert.deepEqual(rings.map((r) => r.icon), ['book-open', 'headphones', 'mic']);
+  assert.deepEqual(rings.map((r) => r.color), ['var(--skill-listen)', 'var(--skill-speak)', 'var(--skill-read)'], 'D-152 skill order');
+  assert.deepEqual(rings.map((r) => r.icon), ['headphones', 'mic', 'book-open']);
   // The frame fuses the caption with the ring's own percent ("Reading 0%"), not the bare name.
-  assert.deepEqual(rings.map((r) => r.label), ['Reading 0%', 'Listening 0%', 'Speaking 0%']);
-  assert.deepEqual(rings.map((r) => r.name), ['Reading', 'Listening', 'Speaking'], 'the bare name is kept too, for the ring\'s title tooltip');
+  assert.deepEqual(rings.map((r) => r.label), ['Listening 0%', 'Speaking 0%', 'Reading 0%']);
+  assert.deepEqual(rings.map((r) => r.name), ['Listening', 'Speaking', 'Reading'], 'the bare name is kept too, for the ring\'s title tooltip');
 
   const streak = buildStreak(t);
   assert.equal(streak.known, false, 'no activity read: there is no streak to show, not 0 days');
@@ -347,8 +348,8 @@ console.log('Orena Today: recommendation pool, continuation mapping, For-you rai
 {
   const { buildForYou, usedRecommendationIds } = await import('../static/orena/screens/today/model.js');
   const placed = mapContinuationEntry({ id: 'media:l1', title: 'Cosmic calendar', context: 'Science', place: { index: 1, total: 1, within: 40 } }, t);
-  assert.equal(placed.meta, 'Science · 40% done', 'the measured place follows the context');
-  assert.equal(mapContinuationEntry({ id: 'media:l1', title: 'x', place: { index: 1, total: 1 } }, t).meta, '', 'a 1 of 1 place with nothing measured says nothing');
+  assert.equal(placed.meta, 'Continue · Science · 40% done', 'the measured place follows the context');
+  assert.equal(mapContinuationEntry({ id: 'media:l1', title: 'x', place: { index: 1, total: 1 } }, t).meta, 'Continue', 'a 1 of 1 place with nothing measured says only that it continues');
   const reading = mapContinuationEntry({ id: 'book:b1:c3', title: 'THE CRY IN THE CORRIDOR', context: 'The Secret Garden', place: { index: 3, total: 9 } }, t);
   assert.equal(reading.routeId, 'reader');
   assert.deepEqual(reading.routeParams, { id: 'book:b1:c3' });

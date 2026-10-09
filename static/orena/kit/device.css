@@ -45,6 +45,8 @@
   --seg-flex: none;
   --ph-cols: minmax(0, 1.8fr) minmax(280px, 1fr);
   --td-cols: minmax(0, 1.2fr) minmax(0, 1fr);
+  --bill-cols: minmax(0, 1.55fr) minmax(0, 1fr);
+  --price-cols: repeat(3, minmax(0, 1fr));
   --tile-cols: repeat(3, minmax(0, 1fr));
   --tile-desc: block;
   --tile-minh: 112px;
@@ -93,6 +95,8 @@
   --seg-flex: 1 1 100%;
   --ph-cols: 1fr;
   --td-cols: 1fr;
+  --bill-cols: 1fr;
+  --price-cols: 1fr;
   --tile-cols: repeat(3, minmax(0, 1fr));
   --tile-desc: none;
   --tile-minh: 0;

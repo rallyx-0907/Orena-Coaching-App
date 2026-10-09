@@ -117,12 +117,13 @@
   gap: 14px;
   padding: 14px;
   border-radius: 16px;
-  border: 1px solid var(--border2);
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   text-align: left;
   font: inherit;
   cursor: pointer;
+  box-shadow: var(--edge-light);
 }
 .s-progress-next__body {
   flex: 1;

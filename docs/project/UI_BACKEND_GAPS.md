@@ -221,6 +221,17 @@ backend at all:
   A real daily goal, per-skill percent, cross-activity streak and level/XP
   system are each a product-and-schema decision (Architecture holds §7), not
   something this surface can measure.
+  **Update 2026-10-08 (human: "phần today của thiết kế có today's goal mà trên UI chưa có, card streak bị kéo dài
+  cả màn trông thô"):** the streak is now real (`GET /api/learner-activity`, D4 I14) and drawn; the goal card and
+  the level card still are not, so the streak stood alone as a full-width row under Recommended. Recomposed: on a
+  desk the streak card sits in the Recommended row's right column under the smaller picks (the design keeps it in
+  the 1fr side column); on a phone it stacks after them; with no recommendations it keeps the side column's width.
+  **Still open (human decision, then backend):** the "Today's goal" card. It needs (1) a definition of the daily
+  goal - a learner-set target (new persisted learner data, §7 hold) or a fixed plan such as "one activity in each
+  of the counted skills"; (2) a per-skill "today" read. (2) is derivable without schema from the same records
+  `learner_activity.py` already reads (essays, speaking attempts, Reading attempts; Dictation, Shadowing,
+  vocabulary review and Grammar completion are `PENDING_SOURCES`), but it is a Python change that needs a :8021
+  restart, which only the human does. The level/XP card stays undrawn (no level/XP system).
 
 (This screen's own hit of the `copy/index.js` `fill()`-drops-zero bug - the
 streak count, skill percents and XP value - is consolidated into **N-34**.)
@@ -4278,6 +4289,57 @@ backend cannot yet serve:
 - **G-12 · Grammar Lab content: Chinese subtitles that show a raw slug (2026-10-08, owner: Grammar Lab).** Some ZH
   points' `header.title` reads like "Ngữ pháp tiếng Trung: tai_le" (seen in the Library on :8021 after importing
   `zh-complete.zip`). Fixed upstream in Grammar Lab and re-exported; never edited in the UI lane or the store.
+- **G-13 · the Claude Design project moved past the pin (2026-10-08, owner: human).** Read through DesignSync:
+  `support.js` and the project `CLAUDE.md` are unchanged. `Orena Admin.dc.html` (232508 bytes, unpinned) adds a
+  "Token usage" tab to A2 AI & Models (period filter, totals, per-provider/model rows, budget bars). In
+  `Orena.dc.html`, the first 256 KiB that DesignSync returns differ in three places: Discover gains a Level chip row, a
+  Sort segmented control and grouped sections (`dGroups`: heading 20/700 over a 1px border); the Reader's theme and
+  menu buttons change; and the device variables change (`--bill-cols`, `--price-cols`). The Grammar Library frame
+  (about 375 KB in) and the state script lie past the 256 KiB cut, so their new revision is unread. The Grammar
+  Library IA follow-up (human, 2026-10-08) uses the new Discover Level chip and grouped heading as measured from that
+  prefix. Needed: an export of the whole `Orena.dc.html` to pin the new revision (PINS.tsv, SYNC record) and re-diff
+  Grammar.
+  **Update 2026-10-08:** the human supplied the export (`Downloads/Design interface with interaction (1)/`).
+  `Orena.dc.html` is 928080 bytes (sha256 `1abfa9cd1410…`), `Orena Admin.dc.html` 232508 (`a70b3baa57de…`);
+  `support.js`, `Onboarding`, `Compare With Model`, the briefs and the project `CLAUDE.md` are unchanged (the fidelity
+  rules differ only in CRLF). New frames: Feedback, Plan & usage, Pricing, Grammar category, Billing Sheet. Changed:
+  Discover, Reader, Profile · Today's progress, Settings, Grammar Library, Coming soon. The Grammar Library was
+  rebuilt on that export's frames ("Grammar Library", "Grammar category"). **Still open:** copying it into
+  `docs/design/canonical-ui/screens/` (PINS.tsv, a SYNC record, README and the revision named in AGENTS.md and
+  DESIGN_CONTRACT.md) was refused by the agent's permission policy; the human pins it or allows it.
+  **CLOSED 2026-10-09 (human: "Cho phép"):** pinned - `SYNC_2026-10-09.md`, PINS.tsv, README, AGENTS.md and CLAUDE.md
+  updated. DESIGN_CONTRACT.md ("The authority") still names revision `1790473816124946`: it is left untouched because
+  the human's own uncommitted edit is in that file - the human updates that line with their edit. IMPLEMENTATION_MAP.md still carries the 2026-09-27 title and frame
+  numbers; the new frames are mapped in the gap entries until it is re-keyed.
+- **G-15 · Human UI requests queued for the next reviewer round (2026-10-08, owner: UI lane).** Done together with
+  the fixes from the design/UX reviewer's next report, not separately:
+  - **Category-hue wash on similar cards:** the Grammar category card's 135° wash of its own hue into the surface
+    (`linear-gradient(135deg, color-mix(hue 18%) 0%, var(--surface) 62%)`) is applied to the other cards of the same
+    kind that carry a skill or category hue (e.g. Practice/Skill Hub mode cards, Today's recommendation cards,
+    Discover collection cards), with the hue from the semantic tokens, under D-147/D-148 (no outline, same hover).
+  - **Every entry has a way back:** audit every route reachable from a place for a visible back/close control,
+    in the browser at 1920 and 390 (code scan 2026-10-08: speak-summary has "Back to Practice Hub", lesson-complete
+    is a sheet; unbuilt routes fall to Coming soon, which has Back); fix any that only the menu can leave.
+  - **D-147/D-148 across the app:** remove default thin borders and violet edges, one card hover, no press box.
+    **Done 2026-10-08 for the learner UI** (D-150 sweep: 43 CSS files; no violet border measured on Today,
+    Discover, Practice, Speak hub, Library, Settings, Grammar, Progress, Profile, Search in light and dark).
+    **Open:** Admin (`screens/admin/admin.css`, 20 occurrences) and the remaining card hovers that lift 1px
+    (Today, kit `.o-card--hover`) against Practice Hub's 2px (D-150).
+  - **From the design/UX review of 2026-10-08, not yet done:** For-you cards all tagged "Continue" even without
+    progress (model: kind vs source); the For-you rail's bleed and scrollbar misaligned with the content column;
+    Chinese line breaks inside a word (今天…享/受); "0 day streak" beside two ticked days reads contradictory; the
+    Grammar breadcrumb/rail follow the origin and differ across reloads; level-row roving tabindex.
+  - **Round 3 (2026-10-08), done:** hue wash on Practice Hub tiles and Today's smaller picks; one 2px card hover
+    (kit, Today, Library); Admin brought to D-147; For-you kinds name the skill ("Continue" leads the meta);
+    For-you rail inside the column on a desk; the Pronunciation chooser has Back; the speaking room's phone header
+    is two rows (Back · title · "…" / Choose source · Attempt history); word tiles and tone chips select by fill,
+    not a ring; light-theme controls on white cards (Settings actions and picker, Library "⋯", Progress next) take
+    `--surface2`; Writing's empty review well is a fill, not a dashed outline.
+    **Still open:** Settings off-toggle track contrast 1.19:1 (pre-existing, WCAG 1.4.11 needs 3:1); Progress and
+    Profile entered from a Profile row have only the rail to go back; level-row roving tabindex; resting shadows on
+    cards outside Grammar/Practice/Today picks (D-150 not applied app-wide).
+    **Closed by the human (2026-10-09):** "0 day streak" beside ticked days stays as is - no "N days this week" line
+    (the design draws none).
 
 ## Current Admin reconciliation — 2026-10-03
 
@@ -5107,6 +5169,28 @@ of record) behind one layer, order table proposed as migration `20261005_0027`.
   `PLATFORM_ADMIN_EMAILS`.
 - **SIGN-5 One origin per runtime.** `GOOGLE_REDIRECT_URI` must equal `PUBLIC_BASE_URL` + `/auth/google/callback`
   (`deployment.py`), so one container signs in on one origin: `http://localhost:8021` or the tailnet name, not both.
+
+## Admin Token usage (2026-10-09)
+
+The design export adds a "Token usage" tab to A2 AI & Models: a period filter (24 h / 7 days / 30 days), four
+metrics, a per-hour/per-day token chart, "By provider" rows with a "% of budget" pill, a "Budget · month to date"
+block, "Tokens by capability" bars, "By model" rows, an "Azure Speech has used 82% of its budget" banner, and
+"Export CSV" / "Edit budgets" buttons. The tab is wired to the existing `GET /api/admin/ai/costs` ledger
+(`prompt_tokens`, `completion_tokens`, `calls`, `usd`, `audio_seconds` by capability x provider x model). It draws
+the metrics, By provider, Tokens by capability and By model from that report; nothing is estimated.
+
+- **TOK-1 Period.** The ledger is read by UTC day (`days` 1-90), so the filter reads Today (UTC) / 7 days / 30 days,
+  not 24 h. A rolling 24-hour or hourly window needs hourly rows. Owner: BACKEND.
+- **TOK-2 Token chart.** `by_day` carries calls and USD only, no tokens, so the per-day chart is not drawn. Owner: BACKEND
+  (a daily token sum in `cost_report`).
+- **TOK-3 Budgets.** No provider budget exists (no field, store or endpoint): the "% of budget" pill, the budget bars,
+  the 80% alert banner, "Learner requests pause at 100%" and "Edit budgets" are not drawn. A budget with a pause rule is
+  a product and entitlement decision. Owner: human / BACKEND.
+- **TOK-4 Export CSV.** No usage export route; the button is not drawn. Owner: BACKEND.
+- **TOK-5 Characters.** TTS usage is not recorded in characters (audio seconds only); speech rows show audio minutes.
+  Owner: BACKEND.
+- **TOK-6 AI cost page.** The page "AI cost" (D-128, `costs.js`) still exists and overlaps this tab; the design draws
+  no such page. Retire it once the human confirms the tab replaces it.
 
 ## Grammar Concept rendering (2026-10-09)
 
