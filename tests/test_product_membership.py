@@ -28,15 +28,19 @@ class Store:
     def account_membership(self, user_id):
         return dict(self.account) if user_id == self.account["id"] else None
 
-    def set_role(self, user_id, role):
-        self.account["role"] = role
+    audits = None
 
-    def set_manual_plan(self, user_id, plan_id, until):
-        if plan_id is None:
+    def apply_membership(self, user_id, *, role=None, plan=..., until=None, audit=None):
+        self.audits = (self.audits or []) + [audit]
+        if role is not None:
+            self.account["role"] = role
+        if plan is ...:
+            return
+        if plan is None:
             if self.account["provider"] == "manual":
                 self.account.update(plan_id=None, status=None, provider=None, until=None)
             return
-        self.account.update(plan_id=plan_id, status="active", provider="manual", until=until.isoformat() if until else None)
+        self.account.update(plan_id=plan, status="active", provider="manual", until=until.isoformat() if until else None)
 
 
 def change(store, body, **kwargs):
@@ -138,7 +142,6 @@ def test_membership_routes(monkeypatch):
     store = Store()
     monkeypatch.setattr(product_api, "require_admin", lambda request: {"google_sub": ADMIN_KEY, "email": "a@example.test"})
     monkeypatch.setattr(product_api.product_service, "repository", store)
-    monkeypatch.setattr(product_api, "_audit", lambda *args: None)
     app = FastAPI()
     app.include_router(product_api.router)
     client = TestClient(app)

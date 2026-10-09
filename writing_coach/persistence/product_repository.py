@@ -141,42 +141,53 @@ class PostgresProductRepository(ProductRepository):
                 "until": row.current_period_end.isoformat() if row and row.current_period_end else None,
             }
 
-    def set_role(self, user_id: str, role: str) -> None:
-        identifier = self._account_uuid(user_id)
-        with Session(self.engine) as session, session.begin():
-            user = session.get(User, identifier)
-            if user is None:
-                raise LookupError("No account has this identifier.")
-            user.role = role
+    def apply_membership(self, user_id: str, *, role: str | None = None, plan: object = ..., until=None,
+                         audit: dict | None = None) -> None:
+        """Role and/or plan for one account, and its audit row, in ONE transaction (review of #112).
 
-    def set_manual_plan(self, user_id: str, plan_id: str | None, until) -> None:
-        """A manual subscription for the plan (None: remove the manual one, the account reads as Free)."""
+        The account and subscription rows are locked (`SELECT ... FOR UPDATE`) and the subscription is read again under
+        the lock: a billing subscription that became active after the caller validated is refused here, never
+        overwritten. Any failure - the refusal, a write, the audit row - rolls the whole change back.
+        `plan`: `...` leaves the plan alone, None removes a manual subscription (Free), an id sets a manual one."""
+        from writing_coach.persistence.platform_repository import _add_audit
+        from writing_coach.product.membership import MANUAL_PROVIDER, MembershipConflict
+
         identifier = self._account_uuid(user_id)
         now = datetime.now(timezone.utc)
         with Session(self.engine) as session, session.begin():
-            if session.get(User, identifier) is None:
+            user = session.scalar(select(User).where(User.id == identifier).with_for_update()) if identifier else None
+            if user is None:
                 raise LookupError("No account has this identifier.")
-            row = session.scalar(select(Subscription).where(Subscription.user_id == identifier))
-            if plan_id is None:
-                if row is not None and row.provider == "manual":
-                    session.delete(row)
-                return
-            plan = PLANS[plan_id]
-            if session.get(PlanRecord, plan_id) is None:
-                # The plans table is seeded by the importer; Plus and Pro may be newer than that seed (FK target).
-                session.add(PlanRecord(id=plan.id, name=plan.name, description=plan.description, price_label=plan.price_label, active=True))
-                session.flush()
-            if row is None:
-                session.add(Subscription(
-                    id=stable_uuid("subscription", str(identifier)), user_id=identifier, plan_id=plan_id, status="active",
-                    provider="manual", external_customer_id="", external_subscription_id="", current_period_end=until,
-                    updated_at=now,
-                ))
-            else:
-                row.plan_id = plan_id
-                row.status = "active"
-                row.provider = "manual"
-                row.external_customer_id = ""
-                row.external_subscription_id = ""
-                row.current_period_end = until
-                row.updated_at = now
+            if plan is not ...:
+                row = session.scalar(select(Subscription).where(Subscription.user_id == identifier).with_for_update())
+                if row is not None and row.provider and row.provider != MANUAL_PROVIDER and row.status in {"active", "trialing"}:
+                    raise MembershipConflict("This account's plan is managed by billing; it cannot be set by hand.")
+            if role is not None:
+                user.role = role
+            if plan is not ...:
+                if plan is None:
+                    if row is not None and row.provider == MANUAL_PROVIDER:
+                        session.delete(row)
+                else:
+                    record = PLANS[plan]
+                    if session.get(PlanRecord, plan) is None:
+                        # The plans table is seeded by the importer; Plus and Pro may be newer than that seed (FK target).
+                        session.add(PlanRecord(id=record.id, name=record.name, description=record.description,
+                                               price_label=record.price_label, active=True))
+                        session.flush()
+                    if row is None:
+                        session.add(Subscription(
+                            id=stable_uuid("subscription", str(identifier)), user_id=identifier, plan_id=plan, status="active",
+                            provider=MANUAL_PROVIDER, external_customer_id="", external_subscription_id="",
+                            current_period_end=until, updated_at=now,
+                        ))
+                    else:
+                        row.plan_id = plan
+                        row.status = "active"
+                        row.provider = MANUAL_PROVIDER
+                        row.external_customer_id = ""
+                        row.external_subscription_id = ""
+                        row.current_period_end = until
+                        row.updated_at = now
+            if audit:
+                _add_audit(session, audit, now)

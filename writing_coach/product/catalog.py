@@ -152,7 +152,8 @@ class PlanCatalogInvalid(ValueError):
 
 class PlanSettingStore(Protocol):
     def get_setting(self, key: str) -> dict | None: ...
-    def set_setting(self, key: str, value: dict, *, updated_by: str = "") -> dict: ...
+    def set_setting(self, key: str, value: dict, *, updated_by: str = "", expected_updated_at: object = ...,
+                    audit: dict | None = None) -> dict: ...
 
 
 _store: PlanSettingStore | None = None
@@ -296,12 +297,16 @@ def _read_plans() -> dict[str, Plan]:
     return {plan_id: _overlay(plan, rows[plan_id]) for plan_id, plan in PLANS.items()}
 
 
-def save_catalog(document: object, *, updated_by: str = "") -> dict:
-    """Validate and store the administrator's catalogue; it applies from this moment."""
+def save_catalog(document: object, *, updated_by: str = "", expected_updated_at: object = ...,
+                 audit: dict | None = None) -> dict:
+    """Validate and store the administrator's catalogue; it applies from this moment. `expected_updated_at` (the
+    version the editor loaded, None for "nothing stored yet") is checked inside the store's write transaction, and
+    `audit` is written in that same transaction (review of #112)."""
     normalized = validate_catalog(document)
     if _store is None:
         raise RuntimeError("The plan catalogue store has not been installed by the persistence runtime.")
-    saved = _store.set_setting(PLAN_SETTING_KEY, normalized, updated_by=updated_by)
+    saved = _store.set_setting(PLAN_SETTING_KEY, normalized, updated_by=updated_by,
+                               expected_updated_at=expected_updated_at, audit=audit)
     _clear_cache()
     return saved
 

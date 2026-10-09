@@ -24,8 +24,18 @@ class MemoryStore:
     def get_setting(self, key):
         return copy.deepcopy(self.rows.get(key))
 
-    def set_setting(self, key, value, *, updated_by=""):
-        self.rows[key] = {"value": copy.deepcopy(value), "updated_at": "2026-10-09T10:00:00+00:00", "updated_by": updated_by}
+    saves = 0
+    audits = None
+
+    def set_setting(self, key, value, *, updated_by="", expected_updated_at=..., audit=None):
+        from writing_coach.persistence.platform_repository import SettingConflict
+
+        stored = (self.rows.get(key) or {}).get("updated_at")
+        if expected_updated_at is not ... and expected_updated_at != stored:
+            raise SettingConflict(key)
+        self.saves += 1
+        self.audits = (self.audits or []) + [audit]
+        self.rows[key] = {"value": copy.deepcopy(value), "updated_at": f"2026-10-09T10:00:{self.saves:02d}+00:00", "updated_by": updated_by}
         return copy.deepcopy(self.rows[key])
 
 
@@ -149,7 +159,6 @@ def test_admin_routes_read_and_save_the_catalogue(monkeypatch):
     store = MemoryStore()
     configure_plan_store(store)
     monkeypatch.setattr(product_api, "require_admin", lambda request: {"google_sub": "admin-sub", "email": "admin@example.test"})
-    monkeypatch.setattr(product_api, "_record_admin_event", lambda actor, document: None)
     app = FastAPI()
     app.include_router(product_api.router)
     client = TestClient(app)
@@ -194,7 +203,6 @@ def test_a_save_from_a_stale_page_is_refused(monkeypatch):
 
     configure_plan_store(MemoryStore())
     monkeypatch.setattr(product_api, "require_admin", lambda request: {"google_sub": "a", "email": "a@example.test"})
-    monkeypatch.setattr(product_api, "_record_admin_event", lambda actor, document: None)
     app = FastAPI()
     app.include_router(product_api.router)
     client = TestClient(app)

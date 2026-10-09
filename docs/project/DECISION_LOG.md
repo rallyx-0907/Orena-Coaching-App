@@ -4521,3 +4521,9 @@ khoản", then "Phần giới hạn là phân quyền user ấy không phải th
    would need a permission model of their own.
 4. Usage limits are not edited per account (the human's correction); plan limits are D-153's.
 5. Entitlement and role changes: the independent architecture review applies before `main`.
+6. Review of #112 (delegated architecture review, REQUEST CHANGES on `5fc9b83e`), fixed: the catalogue's stale-save
+   check is a compare-and-set inside the write transaction (PostgreSQL `SELECT ... FOR UPDATE`; the SQLite archive
+   store `BEGIN IMMEDIATE`), so two editors from one version cannot both save; the membership change (role, plan) is one
+   transaction that locks the account and subscription rows and re-checks billing ownership under the lock; and the
+   audit row of a catalogue or membership change is written in the same transaction - a change that cannot be audited
+   is rolled back, never kept unaudited (the separate, failure-swallowing audit calls are gone).

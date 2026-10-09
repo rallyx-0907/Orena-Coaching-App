@@ -32,8 +32,8 @@ class MembershipConflict(ValueError):
 
 class MembershipStore(Protocol):
     def account_membership(self, user_id: str) -> dict | None: ...
-    def set_role(self, user_id: str, role: str) -> None: ...
-    def set_manual_plan(self, user_id: str, plan_id: str | None, until: datetime | None) -> None: ...
+    def apply_membership(self, user_id: str, *, role: str | None = None, plan: object = ..., until: datetime | None = None,
+                         audit: dict | None = None) -> None: ...
 
 
 def parse_until(value: object) -> datetime | None:
@@ -114,10 +114,15 @@ def apply_change(
         until = None if plan_id == "free" else parse_until(change.get("until"))
     applied: dict = {}
     if role is not None:
-        store.set_role(user_id, role)
         applied["role"] = role
     if set_plan:
-        store.set_manual_plan(user_id, None if plan_id == "free" else plan_id, until)
         applied["plan_id"] = plan_id
         applied["until"] = until.isoformat() if until else None
+    if applied:
+        # One transaction: role, plan and the audit row commit together; the store re-checks billing under its lock.
+        store.apply_membership(
+            user_id, role=role, plan=(None if plan_id == "free" else plan_id) if set_plan else ..., until=until,
+            audit={"action": "product.account.membership", "actor": actor_key, "entity_type": "account",
+                   "entity_id": str(user_id), "payload": applied},
+        )
     return {"applied": applied, "account": store.account_membership(user_id)}

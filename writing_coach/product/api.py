@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_support import AUTH_ENABLED, auth_user, require_admin
+from writing_coach.persistence.platform_repository import SettingConflict
 from writing_coach.product.catalog import (
     CURRENCIES,
     FEATURE_KEYS,
@@ -97,18 +98,25 @@ async def product_admin_plans_save(request: Request) -> dict[str, Any]:
         document = await request.json()
     except Exception:
         raise HTTPException(400, "The catalogue must be JSON.")
-    # Two administrators editing at once: a save based on an older catalogue is refused, not silently overwritten.
-    expected = document.get("expected_updated_at") if isinstance(document, dict) else None
-    current = (stored_catalog() or {}).get("updated_at")
-    if isinstance(document, dict) and "expected_updated_at" in document and (expected or None) != (current or None):
-        raise HTTPException(409, "The plans were changed by someone else since you opened this page. Reload to see them.")
+    if not isinstance(document, dict):
+        raise HTTPException(422, "The catalogue must be an object.")
+    # Two administrators editing at once: the version the editor loaded is compared inside the write transaction
+    # (compare-and-set), and the audit row commits with the change (review of #112).
+    actor = str(admin.get("google_sub") or "")
+    audit = {
+        "action": "product.plans.update", "actor": actor, "entity_type": "plan_catalog",
+        "entity_id": "product.plan_catalog",
+        "payload": {"plans": [row.get("id") for row in document.get("plans", []) if isinstance(row, dict)]},
+    }
     try:
-        save_catalog(document, updated_by=str(admin.get("email") or admin.get("google_sub") or ""))
+        save_catalog(document, updated_by=str(admin.get("email") or actor),
+                     expected_updated_at=document.get("expected_updated_at", ...), audit=audit)
     except PlanCatalogInvalid as error:
         raise HTTPException(422, str(error))
+    except SettingConflict:
+        raise HTTPException(409, "The plans were changed by someone else since you opened this page. Reload to see them.")
     except RuntimeError:
         raise HTTPException(503, "Plans are not editable on this deployment.")
-    _record_admin_event(str(admin.get("google_sub") or ""), document)
     return _admin_catalog()
 
 
@@ -160,25 +168,7 @@ async def product_admin_membership_save(user_id: str, request: Request) -> dict[
         raise HTTPException(422, str(error))
     except MembershipConflict as error:
         raise HTTPException(409, str(error))
-    if result["applied"]:
-        _audit(str(admin.get("google_sub") or ""), "product.account.membership", "account", user_id, result["applied"])
     return _membership_body(result["account"])
-
-
-def _record_admin_event(actor: str, document: Any) -> None:
-    from writing_coach.ai.platform import _installed_platform_repository
-
-    try:
-        _installed_platform_repository().record_admin_event(
-            "product.plans.update",
-            actor=actor,
-            entity_type="plan_catalog",
-            entity_id="product.plan_catalog",
-            payload={"plans": [row.get("id") for row in (document or {}).get("plans", []) if isinstance(row, dict)]},
-        )
-    except Exception:
-        # The audit row is best effort; the saved catalogue is the change.
-        pass
 
 
 @router.get("/admin/account")
@@ -192,13 +182,3 @@ def product_admin_account(request: Request) -> dict[str, Any]:
     admin = require_admin(request)
     state = product_service.account_state(str(admin.get("google_sub") or "local-admin"))
     return {"account": state, "read_only": True}
-
-
-def _audit(actor: str, action: str, entity_type: str, entity_id: str, payload: dict[str, Any]) -> None:
-    from writing_coach.ai.platform import _installed_platform_repository
-
-    try:
-        _installed_platform_repository().record_admin_event(action, actor=actor, entity_type=entity_type, entity_id=entity_id, payload=payload)
-    except Exception:
-        # The audit row is best effort; the saved change is the change.
-        pass
