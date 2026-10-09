@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from sqlalchemy import Engine, delete, select, text
+from sqlalchemy import Engine, delete, func, select, text
 from sqlalchemy.orm import Session
 
 from writing_coach.ai.config import (
@@ -634,6 +634,58 @@ class PostgresPlatformRepository:
         )
         with self.engine.connect() as connection:
             return float(connection.execute(query, {"capability": str(capability)}).scalar_one() or 0)
+
+    # --- D-156: learner feedback, kept as `learner.feedback` audit rows ----------------------------------------
+    def record_feedback(self, user_key: str, review: dict) -> dict:
+        from writing_coach.feedback import FEEDBACK_ACTION
+
+        now = datetime.now(UTC)
+        row_id = uuid.uuid4()
+        with Session(self.engine) as session, session.begin():
+            user_id = session.scalar(select(User.id).where(User.user_key == user_key)) if user_key else None
+            body = dict(review)
+            if user_id is None:
+                body["account"] = str(user_key or "unknown")
+            session.add(AuditLog(id=row_id, user_id=user_id, action=FEEDBACK_ACTION, entity_type="feedback",
+                                 entity_id=str(row_id), payload=body, created_at=now))
+        return {"id": str(row_id), "created_at": now.isoformat(), **review}
+
+    def count_feedback_since(self, user_key: str, since: datetime) -> int:
+        from writing_coach.feedback import FEEDBACK_ACTION
+
+        with Session(self.engine) as session:
+            user_id = session.scalar(select(User.id).where(User.user_key == user_key)) if user_key else None
+            query = select(func.count()).select_from(AuditLog).where(AuditLog.action == FEEDBACK_ACTION, AuditLog.created_at >= since)
+            query = query.where(AuditLog.user_id == user_id) if user_id is not None else query.where(AuditLog.payload["account"].as_string() == str(user_key))
+            return int(session.scalar(query) or 0)
+
+    def list_feedback(self, *, user_key: str | None = None, limit: int = 50, offset: int = 0) -> list[dict]:
+        from writing_coach.feedback import FEEDBACK_ACTION
+
+        with Session(self.engine) as session:
+            query = (select(AuditLog, User).outerjoin(User, User.id == AuditLog.user_id)
+                     .where(AuditLog.action == FEEDBACK_ACTION).order_by(AuditLog.created_at.desc()))
+            if user_key is not None:
+                user_id = session.scalar(select(User.id).where(User.user_key == user_key))
+                query = query.where(AuditLog.user_id == user_id) if user_id is not None else query.where(AuditLog.payload["account"].as_string() == str(user_key))
+            rows = session.execute(query.offset(max(0, offset)).limit(max(1, min(limit, 5000)))).all()
+            return [{
+                "id": str(log.id),
+                "created_at": log.created_at,
+                "stars": (log.payload or {}).get("stars"),
+                "areas": (log.payload or {}).get("areas") or [],
+                "text": (log.payload or {}).get("text") or "",
+                "language": (log.payload or {}).get("language") or "",
+                "interface": (log.payload or {}).get("interface") or "",
+                "account_id": str(user.id) if user else None,
+                "name": user.name if user else "",
+                "email": user.email if user else "",
+            } for log, user in rows]
+
+    def feedback_summary(self) -> dict:
+        from writing_coach.feedback import summarize
+
+        return summarize(self.list_feedback(limit=5000))
 
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]:
         bounded = max(1, min(int(limit), 500))

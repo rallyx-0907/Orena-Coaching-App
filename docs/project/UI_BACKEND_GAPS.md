@@ -5282,4 +5282,8 @@ Payments are a human gate: no checkout, provider call or simulated success exist
   in-memory draft, Send inert with "Sending feedback is not available yet" beside it, and "Your feedback" at
   "0 reviews" with no history cards (the "Sent"/"Just now" cards and the status are not drawn). Owner: BACKEND
   (a submit route + a per-learner list) and human (who reads it, retention).
+  **CLOSED 2026-10-09 (D-156):** `POST /api/feedback`, `GET /api/feedback/mine`, `GET /api/admin/feedback`; Send
+  works, the learner's own history is drawn, Platform Admin reads every review (`#/admin/feedback`). Still the
+  human's: retention, and the dedicated store (reviews live in `audit_logs`; an account deletion keeps them,
+  unlinked).
 - **FBK-2 Star colour.** The design's literal `#F2B705` star is drawn with `--amber` (no colour literals; AA in both themes).

@@ -103,6 +103,7 @@ MATRIX = {
     ("GET", "/api/media/admin/library"): ("/api/media/admin/library", {}, {200, 503}),
     ("GET", "/api/product/admin/account"): ("/api/product/admin/account", {}, {200}),
     ("GET", "/api/product/admin/plans"): ("/api/product/admin/plans", {}, {200}),
+    ("GET", "/api/admin/feedback"): ("/api/admin/feedback", {}, {200, 503}),  # D-156 learner feedback
     # An empty catalogue is refused on its merits (422), which only an administrator reaches.
     ("PUT", "/api/product/admin/plans"): ("/api/product/admin/plans", {"json": {"plans": []}}, {422}),
     # D-154: an account's role and plan. A made-up account id is 404 (or 503 where accounts are not editable).
@@ -267,7 +268,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 87  # includes Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the 15 grammar store routes the plan catalogue (D-153) and account membership (D-154)
+    assert len(routes) == 88  # includes Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the 15 grammar store routes the plan catalogue (D-153) account membership (D-154) and learner feedback (D-156)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

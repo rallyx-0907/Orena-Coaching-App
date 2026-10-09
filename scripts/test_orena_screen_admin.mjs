@@ -80,6 +80,7 @@ const { ROUTES, match, href, isAdminHash } = await import('../static/orena/shell
 const KIT_PAGES = Object.freeze({
   impPack: 'D-128: content pack export/import, kit blocks only (human decision 2026-10-04, item 2 of the completion plan)',
   adminPlans: 'Plans & pricing: the learner Pricing card flipped to an edit form, kit blocks only (human request 2026-10-09)',
+  adminFeedback: 'Feedback: the reviews learners sent, with a summary, filters and paging, kit blocks only (D-156; human request 2026-10-09)',
   aiCosts: 'D-128: AI cost page, kit blocks only (human decision 2026-10-04, decision 2)',
   impGrammar: 'Grammar package import, composed from the Content packs page (proposals/ADMIN_GRAMMAR_UI.md G2; layout approved by the human 2026-10-08)',
   grammar: 'Grammar review queue, composed from the Reading queue (proposals/ADMIN_GRAMMAR_UI.md G3; approved 2026-10-08)',
@@ -522,6 +523,55 @@ fixtureFor = (method, url) => {
   copyIndex.setLanguages({ ui: 'en', support: 'en' });
   assert.ok(String(plansPage.plansPage({ doc: { ...catalogue, source: 'default', updated_at: null }, drafts, ui: 'en', href })).includes(t('plansDefault')), 'built-in values say so');
   assert.equal(model.areaOf('adminPlans'), 'users');
+}
+
+/* ---- 5f. Feedback: metrics, bars, filters, the review list, paging, empty and failed ------------------ */
+{
+  const page = await import('../static/orena/screens/admin/feedback.js');
+  assert.equal(model.areaOf('adminFeedback'), 'users');
+  assert.equal(match('#/admin/feedback').route.id, 'adminFeedback');
+  assert.equal(page.starsText(3), '★★★☆☆');
+  const data = {
+    available: true,
+    summary: { total: 4, average: 3.75, by_stars: { 1: 0, 2: 1, 3: 0, 4: 1, 5: 2 }, by_area: { writing: 3, bugs: 1 }, last_7_days: 2 },
+    areas: page.AREAS, total: 60, limit: 25, offset: 0,
+    items: [
+      { id: 'f1', created_at: '2026-10-09T10:30:00Z', stars: 5, areas: ['writing', 'bugs'], text: 'Great <b>app</b>', account_id: 'acc-1', name: 'Linh', email: 'linh@example.com', language: 'en', interface: 'vi' },
+      { id: 'f2', created_at: '2026-10-08T10:30:00Z', stars: 2, areas: [], text: '', account_id: null, name: '', email: '', language: 'zh', interface: 'zh' },
+    ],
+  };
+  for (const ui of ['en', 'vi', 'zh']) {
+    copyIndex.setLanguages({ ui, support: 'en' });
+    const markup = String(page.feedbackPage({ data, filters: { stars: '5', area: 'writing' }, offset: 0, ui, href }));
+    const words = packs[ui];
+    for (const key of ['fbTitle', 'fbTotal', 'fbAverage', 'fbLast7', 'fbByStars', 'fbByArea', 'fbArea_writing']) assert.ok(markup.includes(words[key].replace('&', '&amp;')), `${ui}: ${key}`);
+    assert.ok(markup.includes('3.75'.replace('.', ui === 'vi' ? ',' : '.')) === false, `${ui}: the average is one decimal`);
+    assert.match(markup, new RegExp(`a-metric__value[^>]*>${ui === 'vi' ? '3,8' : '3.8'}<`), `${ui}: average to one decimal`);
+    assert.equal((markup.match(/class="a-bar"/g) || []).length, 5 + 7, `${ui}: five star bars and seven area bars`);
+    assert.match(markup, /width:50%/, `${ui}: the 5-star bar is half`);
+    assert.equal((markup.match(/class="a-chipbtn"/g) || []).length, 6 + 8, `${ui}: stars and area chips`);
+    assert.equal((markup.match(/aria-pressed="true"/g) || []).length, 2, `${ui}: the chosen filters are pressed`);
+    assert.ok(markup.includes('★★★★★') && markup.includes('★★☆☆☆'), `${ui}: stars as text`);
+    assert.ok(markup.includes('data-go="#/admin/users/acc-1"') && markup.includes('linh@example.com'), `${ui}: the review links to the account`);
+    assert.equal((markup.match(/a-row--open/g) || []).length, 1, `${ui}: a review with no account does not link`);
+    assert.ok(markup.includes('Great &lt;b&gt;app&lt;/b&gt;') && !markup.includes('<b>app'), `${ui}: the text is escaped`);
+    assert.ok(markup.includes(words.fbAnonymous === undefined ? '' : words.fbAnonymous), `${ui}: a review without an account says so`);
+    assert.match(markup, /data-a="previous"[^>]*disabled/, `${ui}: no previous on the first page`);
+    assert.doesNotMatch(markup, /data-a="next"[^>]*disabled/, `${ui}: more pages remain`);
+    assert.doesNotMatch(markup, /\{[a-z]+\}|undefined|\[object|NaN/i, `${ui}: nothing unfilled`);
+    const last = String(page.feedbackPage({ data: { ...data, total: 2 }, offset: 0, ui, href }));
+    assert.match(last, /data-a="next"[^>]*disabled/, `${ui}: no next on the last page`);
+    const empty = String(page.feedbackPage({ data: { available: true, summary: { total: 0, average: null, by_stars: {}, by_area: {}, last_7_days: 0 }, areas: page.AREAS, total: 0, items: [] }, ui, href }));
+    assert.ok(empty.includes(words.opNone), `${ui}: empty says there is nothing`);
+    assert.ok(empty.includes('—'), `${ui}: no average when there is no review`);
+    const failed = String(page.feedbackPage({ data: null, failed: true, ui, href }));
+    assert.ok(failed.includes(words.opUnavailable), `${ui}: failed says unavailable`);
+    assert.ok(String(page.feedbackPage({ data: { available: false }, ui, href })).includes(words.opUnavailable), `${ui}: not stored here says unavailable`);
+    assert.ok(String(page.feedbackPage({ data: null, ui, href })).includes('a-skeleton'), `${ui}: loading is the skeleton`);
+  }
+  copyIndex.setLanguages({ ui: 'en', support: 'en' });
+  const usersPage = String((await import('../static/orena/screens/admin/control-pages.js')).controlPage('adminUsers', { summary: { activity: {} }, list: { items: [], total: 0 } }, { href }).markup);
+  assert.ok(usersPage.includes('data-to="#/admin/feedback"') && usersPage.includes('data-to="#/admin/plans"'), 'Users offers Feedback next to Plans & pricing');
 }
 
 /* ---- 6. nothing here borrows the old UI, and every colour is a token ------------------------------ */

@@ -97,6 +97,7 @@ export const ROUTES = Object.freeze([
   { id: 'adminProviderKey', path: 'admin/ai/provider/:id/key', design: 'aiconf', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminCapability', path: 'admin/ai/capability/:id', design: 'aicap', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminPlans', path: 'admin/plans', design: 'adminPlans', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminFeedback', path: 'admin/feedback', design: 'adminFeedback', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminAiCosts', path: 'admin/ai/costs', design: 'aiCosts', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminContent', path: 'admin/content', design: 'content', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminBooks', path: 'admin/content/books', design: 'books', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
@@ -127,7 +128,7 @@ export const ROUTES = Object.freeze([
 ]);
 
 /* An address inside Platform Admin. main.js asks this for a signed-in account that is not an admin,
-   so it can show the No access frame in place of the internal-review notice. */
+   so it can show the No access frame instead of an admin screen. */
 export function isAdminHash(hash = '') {
   return /^#\/?admin(?:[/?]|$)/.test(String(hash));
 }

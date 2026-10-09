@@ -533,6 +533,8 @@ if _media_fallback_mode == "supadata" and _supadata_fallback_client is None:
 
 app.include_router(platform_router)
 app.include_router(product_router)
+from writing_coach.feedback_api import router as feedback_router  # noqa: E402  (D-156 learner feedback)
+app.include_router(feedback_router)
 # The one acquisition service, kept in a named binding because the Shared
 # Listening Library importer must resolve a source through exactly the same
 # provider boundary the learner's own import uses - never a second one.

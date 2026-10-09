@@ -4613,3 +4613,18 @@ khoản", then "Phần giới hạn là phân quyền user ấy không phải th
 Jakarta Sans cho free". Gilroy is a paid face and not in the repository; Poppins has no Vietnamese subset (its stacked
 tones would fall back to another face). Vietnamese stays in Plus Jakarta Sans, now through `--font-ui`, so the places
 that set Outfit themselves (the Reader's translation, note and badges) follow the language too.
+
+## D-156 - Learner feedback is stored and read in Platform Admin; the stale review gate is gone
+
+2026-10-09, explicit human decisions. Human: "Bổ sung thêm phần ghi nhận feedback từ user nữa trong admin", and the
+P1 report "public staging user blocked by stale internal-review gate".
+
+1. A review (1-5 stars, the screen's areas, up to 600 characters) is sent from the Feedback screen (`POST
+   /api/feedback`, at most 10 a day per account) and stored as a `learner.feedback` `audit_logs` row linked to the
+   account - no new table. The learner reads their own (`GET /api/feedback/mine`); Platform Admin reads all of them
+   with totals, average, stars and areas (`GET /api/admin/feedback`, `#/admin/feedback`). Storing learner-authored
+   text in `audit_logs` is a persistence choice the independent architecture review must confirm before `main`
+   (a dedicated table and retention are the human's).
+2. `static/orena/main.js` no longer stops a signed-in non-admin account with the internal-review notice and its
+   dead `/account` link: every verified account runs the learner UI (new account -> Onboarding, completed -> Today);
+   only `#/admin/...` addresses check the admin role (the No access frame). `/account` stays retired.

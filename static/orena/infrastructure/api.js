@@ -69,6 +69,9 @@ export const api={
     return request('/api/admin/vocabulary/import',{method:'POST',body:form});
   },
   health:()=>request('/api/health'),
+  /* Learner feedback (D-156): one review per send; the learner's own are read newest first. */
+  feedbackSend:(body)=>request('/api/feedback',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
+  feedbackMine:()=>request('/api/feedback/mine'),
   languages:()=>request('/api/platform/languages'),
   skills:()=>request('/api/platform/skills'),
   /* `settingsVersion` is the opaque token read from accountSettings(), echoed verbatim (D-104 H-17).
