@@ -109,9 +109,9 @@ function backFace(plan, draft, flipped, { busy, error }) {
     <div class="a-plan__ents">${orderedKeys(draft.entitlements.map((item) => item.key)).map((key) => {
     const item = draft.entitlements.find((entry) => entry.key === key);
     const id = `${plan.id}|${key}`;
-    return html`<div class="a-plan__ent"><span class="a-plan__entname">${featureLabel(key)}</span>
+    return html`<div class="a-plan__ent${item.metered ? '' : ' a-plan__ent--flag'}"><span class="a-plan__entname">${featureLabel(key)}</span>
       <button type="button" class="a-toggle" role="switch" aria-checked="${item.enabled ? 'true' : 'false'}" aria-label="${featureLabel(key)} · ${t('plansIncluded')}" data-a="plan-toggle" data-id="${id}" data-plan="${plan.id}" data-key="${key}"><span class="a-toggle__track"><span class="a-toggle__knob"></span></span></button>
-      ${item.metered ? html`<input class="a-input a-plan__limit" name="${id}" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="${item.monthly_limit}" aria-label="${featureLabel(key)} · ${t('plansLimit')}" data-a-input="limit|${id}"${raw(item.enabled ? '' : ' disabled')}>` : html`<span class="a-plan__limit a-plan__limit--none"></span>`}
+      ${item.metered ? html`<input class="a-input a-plan__limit" name="${id}" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="${item.monthly_limit}" aria-label="${featureLabel(key)} · ${t('plansLimit')}" data-a-input="limit|${id}"${raw(item.enabled ? '' : ' disabled')}>` : ''}
     </div>`;
   })}</div>
     ${error ? html`<div class="a-error" role="alert">${error}</div>` : ''}

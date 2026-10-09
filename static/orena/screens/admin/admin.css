@@ -2481,3 +2481,20 @@ a.a-btn--primary:hover {
     visibility: hidden;
   }
 }
+
+/* The back of a plan card: the limits take a row each; the on/off features share two columns, so the card is not
+   stretched far past its front (2026-10-09 review). */
+.a-plan__ents {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.a-plan__ent:not(.a-plan__ent--flag) {
+  grid-column: 1 / -1;
+}
+.a-plan__ent--flag {
+  min-height: 34px;
+}
+:root[data-device='mobile'] .a-plan__ents {
+  grid-template-columns: minmax(0, 1fr);
+}
