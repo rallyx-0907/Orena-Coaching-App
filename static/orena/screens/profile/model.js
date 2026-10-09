@@ -81,18 +81,19 @@ export function buildProfileModel({ context, vocabulary, commerce } = {}) {
 }
 
 /* The design's `profileActions` list (frame 25), in the source's own order: Platform admin only
-   when the learner is one, then Settings / History / Progress / Plan & privacy / Sign out. `kind`
+   when the learner is one, then Settings / History / Progress / Plan & usage / Privacy / Sign out (the 2026-10-09 export; Plan & usage is its own route). `kind`
    tells the view how to wire the row: 'nav' is an in-app route (rendered with data-go, which the
    shell router's own document-wide click listener already handles - no per-row listener needed;
    Platform admin is one, D-101 E: it opens the Admin inside this UI), 'signout' needs the screen's
    own handler. The row exists only for an admin - for anyone else it is absent, not disabled. */
-export function profileActions({ isAdmin = false, planName = '' } = {}) {
+export function profileActions({ isAdmin = false } = {}) {
   const actions = [];
   if (isAdmin) actions.push({ id: 'admin', kind: 'nav' });
   actions.push({ id: 'settings', kind: 'nav' });
   actions.push({ id: 'history', kind: 'nav' });
   actions.push({ id: 'progress', kind: 'nav' });
-  actions.push({ id: 'plan', kind: 'nav', sub: planName || '' });
+  actions.push({ id: 'plan', kind: 'nav' });
+  actions.push({ id: 'privacy', kind: 'nav' });
   // The 2026-10-08 export's Feedback row (D-156).
   actions.push({ id: 'feedback', kind: 'nav' });
   actions.push({ id: 'signout', kind: 'signout' });

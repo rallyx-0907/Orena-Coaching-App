@@ -1,6 +1,8 @@
 import { html } from '../../kit/html.js';
+import { planName } from '../../copy/shell.js';
+import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
-import { pageHead, block, metrics, rowList, kv, stateBlock, formBlock, banner, futureCard } from './blocks.js';
+import { pageHead, block, metrics, rowList, kv, stateBlock, formBlock, banner } from './blocks.js';
 
 const value = (x) => x === null || x === undefined || x === '' ? t('opUnavailable') : String(x);
 const key = (x) => String(x || '').replaceAll('_', ' ');
@@ -41,6 +43,32 @@ function attention(data, href) {
     pills: [{ label: key(item.severity), tone: item.severity === 'critical' ? 'err' : 'warn' }],
     go: issueHref(item, href),
   })));
+}
+
+/* D-154: an account's role and plan, set by hand. `membership` is { account, plans, draft, error, status, busy, self }
+   from control.js; an unreadable membership read draws nothing rather than a dead form. */
+export function membershipBlock(membership) {
+  if (!membership || !membership.account) return '';
+  const { account, plans = [], draft, error = '', status = '', busy = false, self = false } = membership;
+  // What the server applies now: an ended manual plan reads as Free; a stored "premium" is Pro (D-153/D-154).
+  const ended = account.provider === 'manual' && account.until && new Date(account.until) <= new Date();
+  const planId = ended || !account.plan_id ? 'free' : (account.plan_id === 'premium' ? 'pro' : account.plan_id);
+  const current = plans.find((plan) => plan.id === planId) || { id: planId, name: planId };
+  const source = ended ? t('mbEnded') : account.provider === 'manual' ? t('mbManual') : account.provider ? t('mbBilling') : '';
+  const until = account.until && !ended ? t('mbUntilAt', { date: new Intl.DateTimeFormat(languages().ui, { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(account.until)) }) : '';
+  const fields = [
+    { id: 'mbRole', kind: 'seg', label: t('mbRole'), options: ['user', 'admin'].map((role) => ({ id: role, label: t(role === 'admin' ? 'mbRoleAdmin' : 'mbRoleUser'), on: draft.role === role, disabled: self })) },
+    { id: 'mbPlan', kind: 'seg', label: t('mbPlan'), options: plans.map((plan) => ({ id: plan.id, label: planName(plan), on: draft.plan_id === plan.id })) },
+    ...(draft.plan_id === 'free' ? [] : [{ id: 'mbUntil', type: 'date', label: t('mbUntil'), value: draft.until || '', hint: t('mbUntilHint') }]),
+  ];
+  return formBlock({
+    title: t('mbTitle'),
+    sub: [t('mbSub'), t('mbCurrent', { plan: [current ? planName(current) : '', source, until].filter(Boolean).join(' · ') }), self ? t('mbSelf') : ''].filter(Boolean).join(' '),
+    fields,
+    error,
+    status,
+    actions: [{ label: busy ? t('mbSaving') : t('mbSave'), a: 'membership-save', kind: 'primary', disabled: busy }],
+  });
 }
 
 export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}) {
@@ -90,7 +118,7 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
       { key: t('opLastActive'), value: value(d.last_active_at) },
     ]))}${section('opProfile', rows((d.profiles || []).map((p) => ({ title: value(p.language), meta: `${t('opSupport')}: ${value(p.support_language)}` }))))}
     ${section('opActivity', rows((d.activity || []).map((a) => ({ title: key(a.measure), meta: [a.language, a.last_at].filter(Boolean).join(' · '), right: value(a.count) }))))}
-    ${futureCard({ title: t('opRoleUnavailable'), pill: t('opUnavailable'), text: t('opPrivacy') })}`;
+    ${membershipBlock(data.membership)}${block({ body: t('opPrivacy') })}`;
   } else {
     sub = t('opOperationsSub');
     const runtime = data.runtime || {};
@@ -124,5 +152,5 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
       ].map(([label, routeId]) => ({ title: t(label), go: href(routeId) }))))}`;
     }
   }
-  return { title, filterValue: filters.q || '', markup: html`<section class="a-page">${pageHead({ title, sub, back, actions: [...(route === 'adminOverview' ? [{ label: t('trafTitle'), size: 'sm', a: 'go', data: { to: href('adminTraffic') } }] : []), ...(route === 'adminUsers' ? [{ label: t('fbTitle'), size: 'sm', a: 'go', data: { to: href('adminFeedback') } }] : []), { label: t('retry'), a: 'reload' }] })}<div class="a-blocks">${body}</div></section>` };
+  return { title, filterValue: filters.q || '', markup: html`<section class="a-page">${pageHead({ title, sub, back, actions: [...(route === 'adminOverview' ? [{ label: t('trafTitle'), size: 'sm', a: 'go', data: { to: href('adminTraffic') } }] : []), ...(route === 'adminUsers' ? [{ label: t('plansTitle'), size: 'sm', a: 'go', data: { to: href('adminPlans') } }, { label: t('fbTitle'), size: 'sm', a: 'go', data: { to: href('adminFeedback') } }] : []), { label: t('retry'), a: 'reload' }] })}<div class="a-blocks">${body}</div></section>` };
 }

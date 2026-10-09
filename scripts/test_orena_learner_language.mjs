@@ -29,7 +29,7 @@ const tables = registeredCopy();
 
 /* Words that are genuinely the same in every language: a product or framework name, a file type, a
    unit. Anything else the English words repeated in a vi/zh pack is an untranslated string. */
-const SAME_IN_EVERY_LANGUAGE = new Set(['Orena', 'Orena Intelligence', 'Premium', 'API', 'Runtime', 'Video', 'Media', 'Aa', 'Pinyin', 'S', 'M', 'L', 'XP', 'CEFR A1–C2']);
+const SAME_IN_EVERY_LANGUAGE = new Set(['Orena', 'Orena Intelligence', 'Premium', 'Plus', 'Pro', 'API', 'Runtime', 'Video', 'Media', 'Aa', 'Pinyin', 'S', 'M', 'L', 'XP', 'CEFR A1–C2']);
 const hasWords = (text) => !/^https?:/.test(String(text)) && String(text).replace(/\{\w+\}/g, '').match(/\p{L}{2,}/u) !== null;
 
 let checked = 0;

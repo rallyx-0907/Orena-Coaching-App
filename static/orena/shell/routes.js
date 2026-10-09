@@ -36,6 +36,9 @@ export const ROUTES = Object.freeze([
 
   // Learning workspaces: focus.
   { id: 'settings', path: 'settings', design: 'settings', screen: 'settings', focus: true, crumb: 'settings', intent: 'preferences' },
+  // The 2026-10-08 export's Plan & usage and Pricing frames (both in its focus list).
+  { id: 'billing', path: 'plan', design: 'billing', screen: 'plan', focus: true, crumb: 'planUsage' },
+  { id: 'pricing', path: 'plan/pricing', design: 'pricing', screen: 'plan', focus: true, crumb: 'plans' },
   // The 2026-10-08 export's Feedback frame (in its focus list).
   { id: 'feedback', path: 'feedback', design: 'feedback', screen: 'feedback', focus: true, crumb: 'feedback' },
   { id: 'search', path: 'search', design: 'search', screen: 'search', focus: true, crumb: 'search' },
@@ -95,6 +98,7 @@ export const ROUTES = Object.freeze([
   { id: 'adminProviderKey', path: 'admin/ai/provider/:id/key', design: 'aiconf', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminCapability', path: 'admin/ai/capability/:id', design: 'aicap', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminAiCosts', path: 'admin/ai/costs', design: 'aiCosts', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
+  { id: 'adminPlans', path: 'admin/plans', design: 'adminPlans', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminTraffic', path: 'admin/traffic', design: 'adminTraffic', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminFeedback', path: 'admin/feedback', design: 'adminFeedback', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },
   { id: 'adminContent', path: 'admin/content', design: 'content', screen: 'admin', focus: false, bare: true, admin: true, crumb: 'admin' },

@@ -18,7 +18,9 @@ const AREA_PAGES = {
   overview: (routeId) => (routeId === 'adminTraffic'
     ? import('./traffic.js').then((module) => module.mountTraffic)
     : import('./control.js').then((module) => module.mountControl)),
-  users: (routeId) => (routeId === 'adminFeedback'
+  users: (routeId) => (routeId === 'adminPlans'
+    ? import('./plans.js').then((module) => module.mountPlans)
+    : routeId === 'adminFeedback'
     ? import('./feedback.js').then((module) => module.mountFeedback)
     : import('./control.js').then((module) => module.mountControl)),
   operations: () => import('./control.js').then((module) => module.mountControl),

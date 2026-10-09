@@ -23,6 +23,40 @@ from writing_coach.persistence.config import create_shadow_engine
 from writing_coach.persistence.models import AuditLog, PlatformSetting, User
 
 
+class SettingConflict(Exception):
+    """A compare-and-set write whose expected version is no longer the stored one (HTTP 409)."""
+
+
+def _moment(value: object) -> datetime | None:
+    """A stored or expected timestamp as an aware UTC datetime (None for "no row yet")."""
+    if value in (None, ""):
+        return None
+    moment = value if isinstance(value, datetime) else datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+
+
+def _add_audit(session: Session, audit: dict, now: datetime) -> None:
+    """One `audit_logs` row inside the caller's transaction; the actor is linked to their account row when there is one."""
+    actor = str(audit.get("actor") or "")
+    body = dict(audit.get("payload") or {})
+    user_id = session.scalar(select(User.id).where(User.user_key == actor)) if actor else None
+    if user_id is None:
+        body["actor"] = actor or "unknown"
+    session.add(AuditLog(id=uuid.uuid4(), user_id=user_id, action=str(audit["action"])[:160],
+                         entity_type=str(audit.get("entity_type") or "")[:120],
+                         entity_id=str(audit.get("entity_id") or "")[:255], payload=body, created_at=now))
+
+
+def _version_matches(stored: object, expected: object) -> bool:
+    """`expected` is `...` (no check), None (the row must not exist yet), or the version the caller read."""
+    if expected is ...:
+        return True
+    try:
+        return _moment(stored) == _moment(expected)
+    except ValueError:
+        return False
+
+
 @dataclass(frozen=True)
 class AISelectionRecord:
     provider: str
@@ -72,6 +106,9 @@ class PlatformRepository(Protocol):
     ) -> None: ...
     def delete_provider_credential(self, provider_id: str) -> None: ...
     def record_ai_operation(self, telemetry: dict) -> None: ...
+    def get_setting(self, key: str) -> dict | None: ...
+    def set_setting(self, key: str, value: dict, *, updated_by: str = "", expected_updated_at: object = ...,
+                    audit: dict | None = None) -> dict: ...
     def list_ai_operation_events(self, limit: int = 100) -> list[dict]: ...
     def record_admin_event(
         self,
@@ -283,6 +320,63 @@ class SQLitePlatformRepository:
                 conn.execute("DELETE FROM platform_settings WHERE key = ?", (key,))
                 conn.commit()
 
+    def get_setting(self, key: str) -> dict | None:
+        """One platform_settings document as {value, updated_at, updated_by}, or None."""
+        with self.connect() as conn:
+            if not self._has_platform_settings(conn):
+                return None
+            row = conn.execute(
+                "SELECT value_json, updated_at, updated_by FROM platform_settings WHERE key = ?",
+                (key,),
+            ).fetchone()
+        if row is None:
+            return None
+        try:
+            value = json.loads(row["value_json"])
+        except (TypeError, ValueError):
+            return None
+        return {"value": value, "updated_at": str(row["updated_at"]), "updated_by": str(row["updated_by"])}
+
+    def set_setting(self, key: str, value: dict, *, updated_by: str = "", expected_updated_at: object = ...,
+                    audit: dict | None = None) -> dict:
+        """Write one document. With `expected_updated_at`, only if the stored version is still that one - checked and
+        written in one IMMEDIATE transaction, so two writers from the same version cannot both pass. The frozen archive
+        has no audit store; `audit` is recorded by the PostgreSQL runtime only."""
+        now = datetime.now(timezone.utc).isoformat()
+        conn = self.connect()
+        conn.isolation_level = None  # explicit transaction control below
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS platform_settings (
+                    key TEXT PRIMARY KEY,
+                    value_json TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    updated_by TEXT NOT NULL DEFAULT ''
+                )
+                """
+            )
+            row = conn.execute("SELECT updated_at FROM platform_settings WHERE key = ?", (key,)).fetchone()
+            if not _version_matches(row["updated_at"] if row else None, expected_updated_at):
+                conn.execute("ROLLBACK")
+                raise SettingConflict(key)
+            conn.execute(
+                """
+                INSERT INTO platform_settings(key, value_json, updated_at, updated_by)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(key) DO UPDATE SET
+                  value_json = excluded.value_json,
+                  updated_at = excluded.updated_at,
+                  updated_by = excluded.updated_by
+                """,
+                (key, json.dumps(value, sort_keys=True), now, updated_by),
+            )
+            conn.execute("COMMIT")
+        finally:
+            conn.close()
+        return {"value": value, "updated_at": now, "updated_by": updated_by}
+
     def record_ai_operation(self, telemetry: dict) -> None:
         # SQLite is frozen archive/rollback storage; telemetry is PostgreSQL-only.
         return None
@@ -372,6 +466,35 @@ class PostgresPlatformRepository:
                 row.value = value
                 row.updated_at = now
                 row.updated_by = updated_by
+
+    def get_setting(self, key: str) -> dict | None:
+        """One platform_settings document as {value, updated_at, updated_by}, or None."""
+        with Session(self.engine) as session:
+            row = session.get(PlatformSetting, key)
+            if row is None:
+                return None
+            return {"value": row.value, "updated_at": row.updated_at.isoformat(), "updated_by": row.updated_by}
+
+    def set_setting(self, key: str, value: dict, *, updated_by: str = "", expected_updated_at: object = ...,
+                    audit: dict | None = None) -> dict:
+        """Write one document. With `expected_updated_at`, only if the stored version is still that one: the row is
+        locked (`SELECT ... FOR UPDATE`), compared and written in one transaction, so two writers from the same version
+        cannot both pass (review of #112). `audit` ({action, actor, entity_type, entity_id, payload}) is written in the
+        same transaction: the change and its audit row commit together or not at all."""
+        now = datetime.now(timezone.utc)
+        with Session(self.engine) as session, session.begin():
+            row = session.scalar(select(PlatformSetting).where(PlatformSetting.key == key).with_for_update())
+            if not _version_matches(row.updated_at if row else None, expected_updated_at):
+                raise SettingConflict(key)
+            if row is None:
+                session.add(PlatformSetting(key=key, value=value, updated_at=now, updated_by=updated_by))
+            else:
+                row.value = value
+                row.updated_at = now
+                row.updated_by = updated_by
+            if audit:
+                _add_audit(session, audit, now)
+        return {"value": value, "updated_at": now.isoformat(), "updated_by": updated_by}
 
     def get_capability_config(self, capability_key: str) -> CapabilityConfigRecord | None:
         setting_key = capability_setting_key(capability_key)

@@ -52,7 +52,8 @@ def test_exhausted_and_unlimited_usage_are_explicit():
 def test_account_state_uses_one_normalized_subscription_snapshot():
     repo = Repo(Subscription("Premium", "ACTIVE"), fail_subscription_after_first=True)
     state = ProductService(repo).account_state("user-1")
-    assert state["plan"]["id"] == "premium"
+    # A stored "premium" subscription is Pro, the plan with Premium's limits (D-153).
+    assert state["plan"]["id"] == "pro"
     assert state["features"]["writing.evaluate"]["monthly_limit"] == 500
     assert repo.subscription_reads == 1
 
@@ -78,7 +79,7 @@ def test_admin_account_surface_is_read_only_and_redacted():
         product_api.require_admin = previous_admin
         product_api.product_service = previous_service
     assert result["read_only"] is True
-    assert result["account"]["plan"]["id"] == "premium"
+    assert result["account"]["plan"]["id"] == "pro", "a stored premium subscription is Pro (D-153)"
     assert "external_customer_id" not in result["account"]["subscription"]
 
 
@@ -124,3 +125,15 @@ def test_degraded_account_state_stays_parseable_by_the_mobile_contract():
         "features": {},
         "billing_ready": False,
     }
+
+
+def test_mobile_me_keeps_its_two_plan_ids():
+    """/api/product/me feeds the frozen native schema (id: free | premium): Plus and Pro read as premium there."""
+    from writing_coach.product.api import mobile_account_state
+
+    for stored in ("plus", "pro", "premium"):
+        state = mobile_account_state(ProductService(Repo(Subscription(stored, "active"))).account_state("user-1"))
+        assert state["plan"]["id"] == "premium"
+        assert set(state["plan"]) == _mobile_plan_schema_fields()
+    free = mobile_account_state(ProductService(Repo(None)).account_state("user-1"))
+    assert free["plan"]["id"] == "free"

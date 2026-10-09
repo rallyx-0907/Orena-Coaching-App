@@ -78,6 +78,7 @@ const { ROUTES, match, href, isAdminHash } = await import('../static/orena/shell
 /* Pages the design does not draw, built from existing kit blocks only by the human's decision (D-128): the
    reason is required, and every key here must still not be a design page (the list cannot hide one). */
 const KIT_PAGES = Object.freeze({
+  adminPlans: 'Plans & pricing: the learner Pricing card flipped to an edit form, kit blocks only (human request 2026-10-09)',
   adminTraffic: 'Traffic & engagement: sign-ups and learning activity per day from the overview and product-activity reads, kit blocks only (human request 2026-10-09)',
   adminFeedback: 'Feedback: the reviews learners sent, with a summary, filters and paging, kit blocks only (D-156; human request 2026-10-09)',
   impPack: 'D-128: content pack export/import, kit blocks only (human decision 2026-10-04, item 2 of the completion plan)',
@@ -570,4 +571,58 @@ console.log(`Orena admin screen: routes, access (Profile entry, No access with z
   copyIndex.setLanguages({ ui: 'en', support: 'en' });
   const overviewPage = String((await import('../static/orena/screens/admin/control-pages.js')).controlPage('adminOverview', { overview: {} }, { href }).markup);
   assert.ok(overviewPage.includes('data-to="#/admin/traffic"'), 'Overview offers Traffic & engagement');
+}
+
+/* ---- 5e. Plans & pricing: the flip card, both faces, the PUT body, three languages ---------------- */
+{
+  const plansPage = await import('../static/orena/screens/admin/plans.js');
+  const KEYS = ['writing.evaluate', 'dictionary.lookup', 'library.grammar'];
+  const catalogue = {
+    plans: ['free', 'plus', 'pro'].map((id, index) => ({
+      id, name: id, description: `${id} plan`, price_label: id, rank: index,
+      prices: { monthly: { USD: index * 9.99, VND: index * 249000 }, yearly: { USD: index * 99, VND: index * 2490000 } },
+      entitlements: [
+        { key: KEYS[0], enabled: true, monthly_limit: 10 * (index + 1) },
+        { key: KEYS[1], enabled: index > 0, monthly_limit: index > 0 ? 200 : null },
+        { key: KEYS[2], enabled: true, monthly_limit: null },
+      ],
+    })),
+    features: KEYS, currencies: ['USD', 'VND'], periods: ['monthly', 'yearly'], source: 'stored', updated_at: '2026-10-09T08:30:00Z', updated_by: 'admin@x.io', billing_ready: false,
+  };
+  const drafts = Object.fromEntries(catalogue.plans.map((plan) => [plan.id, plansPage.draftOf(plan)]));
+  const payload = plansPage.plansPayload(catalogue.plans.map((plan) => drafts[plan.id]));
+  assert.equal(payload.version, 1);
+  assert.deepEqual(payload.plans.map((plan) => plan.id), ['free', 'plus', 'pro'], 'the whole catalogue is sent');
+  assert.deepEqual(payload.plans[1].prices, { monthly: { USD: 9.99, VND: 249000 }, yearly: { USD: 99, VND: 2490000 } });
+  assert.deepEqual(payload.plans[1].entitlements, [
+    { key: KEYS[0], enabled: true, monthly_limit: 20 },
+    { key: KEYS[1], enabled: true, monthly_limit: 200 },
+    { key: KEYS[2], enabled: true, monthly_limit: null },
+  ], 'a feature without a limit carries none; a metered one carries a number');
+  drafts.plus.prices.monthly.USD = '12.5';
+  drafts.plus.entitlements[0].monthly_limit = 'many';
+  const edited = plansPage.plansPayload(catalogue.plans.map((plan) => drafts[plan.id]));
+  assert.equal(edited.plans[1].prices.monthly.USD, 12.5, 'typed prices become numbers');
+  assert.equal(edited.plans[1].entitlements[0].monthly_limit, 'many', 'what is not a number is sent as typed, for the server to name');
+  drafts.free.prices.monthly.USD = '5';
+  assert.deepEqual(plansPage.plansPayload([drafts.free]).plans[0].prices.monthly, { USD: 0, VND: 0 }, 'Free is always free');
+  for (const ui of ['en', 'vi', 'zh']) {
+    copyIndex.setLanguages({ ui, support: 'en' });
+    const markup = String(plansPage.plansPage({ doc: catalogue, drafts: Object.fromEntries(catalogue.plans.map((plan) => [plan.id, plansPage.draftOf(plan)])), editing: { plus: true }, error: { plan: 'plus', message: 'USD price must have at most 2 decimals' }, ui, href }));
+    assert.equal((markup.match(/data-plan-card="/g) || []).length, 3, `${ui}: three plan cards`);
+    assert.equal((markup.match(/class="a-plan__face a-plan__back"/g) || []).length, 3, `${ui}: every card has a back`);
+    assert.equal((markup.match(/is-flipped/g) || []).length, 1, `${ui}: only the card being edited is turned`);
+    assert.match(markup, /data-a-input="price\|plus\|monthly\|USD"/, `${ui}: Plus has price inputs`);
+    assert.doesNotMatch(markup, /data-a-input="price\|free\|/, `${ui}: Free has no price inputs`);
+    assert.doesNotMatch(markup, /data-a-input="limit\|plus\|library\.grammar"/, `${ui}: a feature without a limit has a toggle only`);
+    assert.match(markup, /data-a-input="limit\|plus\|writing\.evaluate"/, `${ui}: a metered feature has a limit input`);
+    assert.ok(markup.includes('USD price must have at most 2 decimals'), `${ui}: the server's message is shown on the back`);
+    assert.ok(markup.includes(packs[ui].plansTitle.replace('&', '&amp;')) && markup.includes(packs[ui].plansBilling), `${ui}: title and billing line`);
+    assert.ok(markup.includes(packs[ui].plansFree), `${ui}: Free is named`);
+    assert.ok(markup.includes('admin@x.io') && markup.includes(packs[ui].plansBy.replace('{name}', 'admin@x.io')), `${ui}: the header names who changed it`);
+    assert.doesNotMatch(markup, /\{[a-z]+\}|undefined|\[object/i, `${ui}: nothing unfilled`);
+  }
+  copyIndex.setLanguages({ ui: 'en', support: 'en' });
+  assert.ok(String(plansPage.plansPage({ doc: { ...catalogue, source: 'default', updated_at: null }, drafts, ui: 'en', href })).includes(t('plansDefault')), 'built-in values say so');
+  assert.equal(model.areaOf('adminPlans'), 'users');
 }

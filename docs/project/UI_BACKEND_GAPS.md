@@ -5207,6 +5207,54 @@ The concept screen now renders every learning field the API returns (summary, wh
   and `annotation` - the "translation" is an explanation, not a translation. The screen draws the line once; the
   corpus fix (a real translation) is a content task, not done here.
 
+## New export frames: Plan & usage, Pricing, Billing (2026-10-09)
+
+The design export `Design interface with interaction (1)/Orena.dc.html` (not yet pinned) adds four learner frames
+the app lacked: **Plan & usage** (route `billing`, `#/plan`), **Pricing** (route `pricing`, `#/plan/pricing`),
+**Billing Sheet** (a sheet over Pricing) and **Feedback** (`#/feedback`). All three routes are in the export's focus
+list (`applyBody`). Entry points are the export's own: Profile's actions list now reads Settings / History / Progress /
+**Plan & usage** (-> `#/plan`) / **Privacy** (-> Settings, Plan & privacy tab) / **Feedback** (-> `#/feedback`) /
+Sign out; "See all plans" and the plan card's button on Plan & usage open Pricing; a plan's button on Pricing opens the
+Billing sheet. "Grammar category" is already the Grammar Library work and was not touched.
+
+Real data: `GET /api/product/commerce` (plan, subscription state, per-feature monthly limit and use) and
+`GET /api/product/plans` (Free and Premium with their entitlements; `api.productPlans` added). Everything below is a gap.
+Payments are a human gate: no checkout, provider call or simulated success exists in the UI.
+
+- **PLN-1 Tiers and prices. CLOSED 2026-10-09 (D-153):** the catalogue is Free / Plus / Pro with the design's monthly
+  and yearly prices in USD and VND, editable with every monthly limit in Platform Admin (`#/admin/plans`), applied from
+  the moment it is saved. Pricing draws the three tiers, the Monthly/Yearly switch with the saving computed from the
+  prices, and the currency of the interface (dong in Vietnamese, dollars otherwise). Still not drawn: the "Most
+  popular"/"Most capable" tags (no measure behind them). The price is display only while `billing_ready` is false;
+  the billing module's own price file (`BILLING_PRICES_FILE`, tests/test_billing.py) is separate and must be aligned
+  with the catalogue before billing is switched on. Owner: human (billing activation).
+- **PLN-2 Limits.** The design meters Orena messages (per day), writing reviews, pronunciation minutes, media-import
+  minutes. The catalogue meters `writing.evaluate`, `writing.improve`, `dictionary.lookup`, `vocabulary.save` per
+  month; there is no entitlement for Orena messages, pronunciation minutes or media import (same as N-29/N-30). Usage
+  and Compare plans draw the real keys only. Reset is "every month" (no reset date is returned). Owner: BACKEND.
+- **PLN-3 Usage history chart.** "Orena messages - last 14 days" (daily counts, the plan's daily limit line, average)
+  has no source. Not drawn. Owner: BACKEND (a daily usage series).
+- **PLN-4 Renewal, banner, cancel.** No renewal date, billing period, pending change or cancellation exists
+  (`billing_ready: false`): the amber "cancels/changes" banner with Resume, the "Cancel plan" button, the Cancel sheet
+  (what you lose, reasons) and the period label are not drawn. Owner: BACKEND + human (payments).
+- **PLN-5 Payment method, billing email, invoices.** No card, email or invoice store. Payment method is drawn at its
+  empty state ("No payment method", Update inert), the billing email is not drawn, Invoices reads "No invoices yet"
+  (no download buttons). The Update-card sheet (number, expiry, CVC) is not built: collecting card details is a
+  payment-provider matter. Owner: human (provider) then BACKEND.
+- **PLN-6 Billing sheet.** Only the change-plan summary is reachable. Price and Due today read "-" (or "Free"),
+  Starts and Payment rows are not drawn, the primary button ("Confirm change") is disabled, and the processing and
+  "All set" steps are not drawn. Owner: human (payments gate).
+- **PLN-7 Questions (FAQ).** Its answers describe billing behaviour that does not exist (proration, cancel at period
+  end, limit reset); not drawn until the policy exists. "Prices include VAT" and "Payments are simulated in this
+  prototype" are prototype/tax copy and are not drawn. Owner: human (policy).
+- **PLN-8 Settings tabs.** The export's Settings drops "Plan & privacy" and adds a **Privacy** tab (microphone, learner
+  audio, history). The app's Settings still has the "Plan & privacy" tab (plan row with an inert Manage, three meters,
+  microphone, learner audio, history, licences), so Profile's Privacy row opens that tab and the plan rows there
+  duplicate Plan & usage. Re-tabbing Settings is a separate change. Owner: UI (Settings).
+  **CLOSED 2026-10-09 (human: "Có theo thiết kế mới"):** Settings' last tab is Privacy (microphone, learner audio,
+  History, and the licences link); the plan row and its three meters are gone - Plan & usage owns them. An old
+  `?tab=plan` link opens Privacy.
+
 ## Feedback and Admin traffic (2026-10-09)
 
 The 2026-10-08 export's Feedback frame (`#/feedback`, reached from Profile) and Platform Admin's Feedback
