@@ -4482,3 +4482,14 @@ Topology: `codex/work` (development + QA) -> release candidate -> restored-copy 
    only for developer diagnostics, test fixtures, and work not yet reviewed and merged to `main`.
 5. **:8000 env (to apply after review, not before):** `APP_ENV=staging`, `AGENT_ENABLED=true`,
    `AGENT_VOICE_ENABLED=false`. No schema change.
+
+## D-158 - 27 public-domain Reading articles are published on :8000 as test content
+
+2026-10-09, explicit human decision ("chọn lọc vài nội dung chất lượng … chuyển về main 8000 … làm test case",
+"Bạn nhập thẳng vào container", "27 bài phạm vi công cộng"). :8000 already held all 52 Reading articles and 8
+approved comprehension sets, identical to :8021, unpublished on 2026-10-08 pending the human's approval of content,
+metadata, level, rights and presentation. Re-published through the admin route's own rules (publication blockers,
+warnings, status, audit; actor `ops-content-transfer`): the 15 Project Gutenberg stories (EN) and the 12 Wikisource
+texts (ZH) - public domain, 3 with approved question sets. The two source names lost their "[Mẫu kiểm thử] " prefix.
+VOA Learning English and Wikinews stay unpublished (rights per text not confirmed). No provider call, no restart.
+:8000 runs `main`: the poster covers (#111) and the staging learner-gate fix (#109) reach it only after they merge and :8000 is redeployed.
