@@ -84,7 +84,7 @@
 }
 .s-qs__iconbtn[data-play] {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 
 /* ---- Meaning card (both branches) ---- */
@@ -257,7 +257,7 @@
 }
 .s-qs__tab.is-active {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   border-color: transparent;
 }
 .s-qs__panel {
@@ -348,7 +348,7 @@
 }
 .s-qs__notechip.is-active {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   border-color: transparent;
 }
 .s-qs__textarea {

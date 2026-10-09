@@ -214,4 +214,206 @@ assert.match(
   '.o-chip: never shrinks below its label (its row scrolls or wraps instead) - a shrunk chip clips its own text',
 );
 
+// BACKDROP (PUB-4, D-166; Orena.dc.html body[data-backdrop=on], Orena-Admin.dc.html, Onboarding.dc.html). The learner shell, the
+// Admin shell and Onboarding draw the design's photo under the design's scrim; the rail, the desktop top bar and the phone bar
+// are glass at the design's alpha; the photo shows fully (no veil); every content surface stays solid. Accessibility never
+// redesigns the baseline, so AA over the photo is met by scoped TEXT tokens (kit/tokens.css: --bd-chrome-*, --bd-page-*) and,
+// for Onboarding's aside, the least extra alpha. ADJUSTED values are listed in docs/project/UI_BACKEND_GAPS.md (PUB-4).
+// The photo's lightest/darkest blurred region behind each surface comes from scripts/fixtures/backdrop_extremes.json
+// (scripts/measure_backdrop_extremes.py; the photos' sha256 are checked here).
+{
+  const read = (p) => fs.readFileSync(p, 'utf8');
+  const shellCss = read(path.join(ROOT, 'shell/shell.css'));
+  const adminCss = read(path.join(ROOT, 'screens/admin/admin.css'));
+  const onboardingCss = read(path.join(ROOT, 'screens/onboarding/onboarding.css'));
+  const fixture = JSON.parse(read('scripts/fixtures/backdrop_extremes.json'));
+  const sectionAt = tokens.indexOf('The backdrop (PUB-4');
+  assert.ok(sectionAt > 0, 'tokens.css carries the backdrop section');
+  const backdropTokens = tokens.slice(sectionAt);
+
+  // 1. Present on the three surfaces, per theme and device, from the four pinned photos; the bytes are the design's.
+  for (const [selector, label] of [['.o-frame', 'learner shell'], ['.a-shell', 'Admin shell']]) {
+    assert.ok(shellCss.includes(`${selector}::before`) && shellCss.includes(`${selector}::after`), `${label}: photo and scrim layers`);
+  }
+  assert.match(shellCss, /\.o-frame::before,\s*\.a-shell::before \{\s*background: var\(--bd-img\)/, 'the photo layer');
+  assert.match(shellCss, /\.o-frame::after,\s*\.a-shell::after \{\s*background: var\(--bd-scrim\);\s*opacity: var\(--bd-strength\);/, "the design's scrim at its strength");
+  for (const [theme, device, name] of [['light', 'desktop', 'paper-wide'], ['dark', 'desktop', 'midnight-wide'], ['light', 'mobile', 'paper-tall'], ['dark', 'mobile', 'midnight-tall']]) {
+    assert.ok(shellCss.includes(`public/bg/${name}.jpg`), `${theme}/${device}: ${name} is mapped in the shell`);
+    assert.ok(onboardingCss.includes(`public/bg/${name}.jpg`), `${theme}/${device}: ${name} is mapped in Onboarding`);
+    assert.ok(fs.readFileSync(`docs/design/canonical-ui/screens/assets/bg/${name}.jpg`).equals(fs.readFileSync(`static/orena/public/bg/${name}.jpg`)), `${name}.jpg is the pinned design's file`);
+  }
+  assert.match(onboardingCss, /\.s-onboarding \{[^}]*background: var\(--ob-scrim\), var\(--ob-img\)/, 'Onboarding: its scrim over its photo');
+  assert.match(onboardingCss, /\.s-onboarding__aside \{[^}]*background: var\(--ob-aside\);[^}]*backdrop-filter: blur\(2px\)/, "Onboarding: the aside is translucent with the design's 2px blur");
+  assert.doesNotMatch(onboardingCss, /s-onboarding__main \{[^}]*(background|backdrop-filter)/, 'Onboarding: no panel over the photo (the design draws none)');
+  assert.doesNotMatch(tokens + shellCss + adminCss + onboardingCss, /--bd-veil|--ob-panel/, 'no veil and no panel: the photo shows fully');
+
+  // 2. The design's own values, exactly: scrims, strength, glass alpha, blur.
+  const pinScrim = (theme) => helmet.match(new RegExp(`body\\[data-backdrop="on"\\]\\[data-theme="${theme}"\\]\\{--bdscrim:(radial-gradient\\([^;]*?\\));--chrome:(rgba\\([^)]*\\));--chromeBlur:([^;]*);`));
+  for (const theme of ['dark', 'light']) {
+    const [, scrim, chrome, blur] = pinScrim(theme);
+    const rule = theme === 'dark' ? ":root[data-theme='dark'] {" : ":root:not([data-theme='dark']) {";
+    const bd = vars(block(backdropTokens, rule));
+    const squash = (v) => v.toLowerCase().replace(/\s+/g, '').replace(/\.(\d)/g, '0.$1').replace(/\b0\./g, '.');
+    assert.equal(squash(bd['bd-scrim']), squash(scrim).replace(/56%46%/, '56%46%'), `${theme}: the app scrim is the design's`);
+    assert.equal(squash(bd['bd-chrome']), squash(chrome), `${theme}: the glass alpha is the design's`);
+    assert.equal(squash(bd['bd-chrome-blur']), squash(blur), `${theme}: the blur is the design's`);
+    assert.equal(bd['bd-strength'], '.6', 'the design backdropDim default');
+  }
+  assert.equal(fixture.strength, 0.6, 'the fixture was measured at the shipped strength');
+  assert.match(PIN, /backdropDim\?\?\.6/, 'the design strength is .6');
+
+  // 3. Glass chrome (learner rail / top bar / phone bar; Admin rail / header / chips); the edge is --edge-light (D-147).
+  for (const [css, selectors] of [[shellCss, ['.o-rail', '.o-topbar', '.o-bnav']], [adminCss, ['.a-rail', '.a-top', '.a-mnav']]]) {
+    for (const selector of selectors) {
+      const body = block(css, `\n${selector} {`);
+      assert.match(body, /background:\s*var\(--bd-chrome\)/, `${selector}: glass ground`);
+      assert.match(body, /backdrop-filter:\s*var\(--bd-chrome-blur\)/, `${selector}: the design's blur`);
+      assert.match(body, /box-shadow:[^;]*var\(--edge-light\)/, `${selector}: the edge is --edge-light, not a coloured line`);
+      assert.doesNotMatch(body, /border[^:]*:[^;]*(var\(--(accent|ring|ai-line)|#|rgba)/, `${selector}: no violet or coloured outline (D-147)`);
+    }
+  }
+  // Solid fallbacks and no learner control.
+  assert.match(shellCss, /:root\[data-backdrop='off'\]/, 'a non-UI kill switch exists');
+  // Nothing depends on the operating system: no prefers-reduced-transparency rule may hide the photo or the glass (human, 2026-10-09).
+  for (const [css, label] of [[shellCss, 'shell'], [adminCss, 'admin'], [onboardingCss, 'onboarding']]) {
+    assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ''), /prefers-reduced-transparency/, `${label}: no reduced-transparency rule (the glass is the same on every platform)`);
+    assert.doesNotMatch(css, /background-attachment/, `${label}: no background-attachment (iOS); the photo is a fixed layer`);
+  }
+  assert.doesNotMatch(shellCss.replace(/\/\*[\s\S]*?\*\//g, ''), /@media[^{]*\{[^}]*\.o-frame::before/, 'no media query removes the photo layer');
+  // A browser that truly lacks backdrop-filter keeps the photo and the scrim, with a more opaque solid chrome.
+  const noFilter = block(shellCss, '@supports not ((backdrop-filter: blur(1px))');
+  assert.match(noFilter, /--bd-chrome:\s*var\(--bd-chrome-solid\)/, 'no backdrop-filter: more opaque solid chrome');
+  assert.doesNotMatch(noFilter, /display:\s*none|::before|::after/, 'no backdrop-filter: the photo and scrim stay');
+  // The photo is the same layer on first paint and on phones: a pseudo-element of the frame, tall images on the phone.
+  assert.match(shellCss, /:root\[data-device='mobile'\] \.o-frame,\s*:root\[data-device='mobile'\] \.a-shell \{\s*--bd-img: url\('\.\.\/public\/bg\/paper-tall\.jpg'\)/, 'phone light: paper-tall');
+  assert.match(shellCss, /:root\[data-theme='dark'\]\[data-device='mobile'\] \.o-frame,\s*:root\[data-theme='dark'\]\[data-device='mobile'\] \.a-shell \{\s*--bd-img: url\('\.\.\/public\/bg\/midnight-tall\.jpg'\)/, 'phone dark: midnight-tall');
+  assert.match(onboardingCss, /:root\[data-device='mobile'\] \.s-onboarding \{\s*--ob-img: url\('\.\.\/\.\.\/public\/bg\/paper-tall\.jpg'\)/, 'Onboarding phone light: paper-tall');
+  assert.match(onboardingCss, /\[data-device='mobile'\] \.s-onboarding \{\s*--ob-img: url\('\.\.\/\.\.\/public\/bg\/midnight-tall\.jpg'\)/, 'Onboarding phone dark: midnight-tall');
+  assert.match(block(shellCss, '.o-frame::before,\n.a-shell::before {'), /center \/ cover no-repeat/, 'the photo covers the frame, centred');
+  // Accent TEXT uses the on-photo variable (fallback --accent); fills, bars and dots keep --accent. No plain accent text rule is left.
+  for (const file of fs.readdirSync(ROOT, { recursive: true }).map((f) => f.replace(/\\/g, '/'))) {
+    if (!/\.(css|js)$/.test(file) || file.startsWith('vendor/') || file === 'kit/tokens.css') continue;
+    assert.doesNotMatch(read(path.join(ROOT, file)), /(^|[\s{;"'])color:\s*var\(--accent\)/m, `${file}: accent text must use var(--accent-on-photo, var(--accent))`);
+  }
+  assert.match(shellCss, /:is\(\.o-main, \.a-main\) \{[^}]*--accent-on-photo: var\(--bd-page-accent\)/, 'page accent text token');
+  assert.match(shellCss, /:is\(\.o-rail[^)]*\) \{[^}]*--accent-on-photo: var\(--bd-chrome-accent\)/, 'chrome accent text token');
+  assert.doesNotMatch(shellCss, /--accent:\s*var\(--bd-/, 'the accent fill is never overridden');
+  for (const dir of ['shell', 'screens', 'kit']) {
+    for (const file of fs.readdirSync(path.join(ROOT, dir), { recursive: true }).filter((f) => f.endsWith('.js'))) {
+      assert.doesNotMatch(read(path.join(ROOT, dir, file)), /data-backdrop|dataset\.backdrop/, `${dir}/${file}: the backdrop has no learner control`);
+    }
+  }
+
+  // 4. Content stays solid: only the shell chrome, Admin chrome, Onboarding's aside and CTA blur, and the two pre-existing media
+  // overlays use backdrop-filter; the --bd-/--ob- tokens are used nowhere else.
+  const FILTER_OK = new Set(['kit/components.css', 'shell/shell.css', 'screens/admin/admin.css', 'screens/onboarding/onboarding.css', 'screens/listening/listening.css']);
+  const TOKEN_OK = new Set(['kit/tokens.css', 'shell/shell.css', 'screens/admin/admin.css', 'screens/onboarding/onboarding.css']);
+  for (const file of fs.readdirSync(ROOT, { recursive: true }).map((f) => f.replace(/\\/g, '/'))) {
+    if (!/\.(css|js)$/.test(file) || file.startsWith('vendor/') || file.startsWith('public/')) continue;
+    const text = read(path.join(ROOT, file));
+    if (/backdrop-filter/.test(text)) assert.ok(FILTER_OK.has(file), `${file}: a content surface may not use backdrop-filter`);
+    if (/--(bd|ob)-(img|scrim|strength|chrome|page|aside)/.test(text)) assert.ok(TOKEN_OK.has(file), `${file}: uses a backdrop token outside the shell, Admin and Onboarding`);
+  }
+  assert.doesNotMatch(read(path.join(ROOT, 'kit/components.css')), /var\(--(bd|ob)-/, 'shared components keep their solid surfaces');
+
+  // 4b. Solid surfaces keep the BASE tokens: inside a card, panel, sheet, menu or input the adjusted page tokens (--muted, --text3,
+  // --accent-on-photo) go back to the base values, because the surface has its own opaque ground. surfaces.css is generated from
+  // every rule that gives an element a single solid ground; it must be current, loaded after shell.css, and reset exactly the three.
+  {
+    const { buildSurfacesCss, surfaceSelectors } = await import('./build_backdrop_surfaces.mjs');
+    const surfacesCss = read(path.join(ROOT, 'shell/surfaces.css'));
+    assert.equal(surfacesCss, buildSurfacesCss(), 'shell/surfaces.css is stale: run node scripts/build_backdrop_surfaces.mjs');
+    const html = read('templates/orena/index.html');
+    assert.ok(html.indexOf('shell/surfaces.css') > html.indexOf('shell/shell.css') && html.includes('shell/surfaces.css'), 'surfaces.css is linked after shell.css');
+    const resetBody = block(surfacesCss, '\n) {');
+    assert.deepEqual(vars(resetBody), { muted: 'var(--muted-base)', text3: 'var(--text3-base)', 'accent-on-photo': 'var(--accent)' }, 'a surface resets exactly the three adjusted tokens to the base');
+    assert.deepEqual(vars(block(surfacesCss, ':root {')), { 'muted-base': 'var(--muted)', 'text3-base': 'var(--text3)' }, 'the base values are captured at :root, where nothing is adjusted');
+    const listed = new Set(surfaceSelectors());
+    // Inside a card on the backdrop page the computed tokens equal the base: the page scope sets them on .o-main / .a-main / .s-onboarding
+    // only (an ancestor), and every one of these surfaces matches the reset (an element's own declaration beats inheritance).
+    for (const selector of ['.o-card', '.o-well', '.o-chip', '.o-sheet', '.o-topsearch', '.o-ask', '.a-block', '.a-btn', 'input', 'textarea', 'select']) {
+      assert.ok(listed.has(selector) || [...listed].some((l) => l.startsWith(`${selector}[`) || l.startsWith(`${selector}:`)), `${selector} is a solid surface and resets to the base tokens`);
+    }
+    for (const scope of ['.o-main', '.a-main', '.s-onboarding']) {
+      assert.ok(![...listed].some((l) => l === scope || l.endsWith(` ${scope}`)), `${scope} carries the adjusted tokens and is never reset`);
+    }
+    assert.ok(listed.size > 300, `surfaces.css lists the whole kit and every screen's surfaces (${listed.size} selectors)`);
+    for (const theme of ['dark', 'light']) {
+      const t = vars(block(tokens, `:root[data-theme="${theme}"]`));
+      for (const name of ['muted', 'text3', 'accent']) {
+        for (const ground of ['bg', 'surface', 'surface2']) assert.ok(contrast(t[name], t[ground]) >= 4.5, `${theme} base --${name} on --${ground} is AA, so a surface needs no adjustment`);
+      }
+    }
+  }
+
+  // 5. AA over the worst blurred region of the photo (fixture), with the scoped tokens, for every text pair the surfaces draw.
+  const hexOf = (h) => rgb(h).map((c) => c * 255);
+  const lumRgb = (c) => c.map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const contrastRgb = (a, b) => { const [x, y] = [lumRgb(a), lumRgb(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  const over = (fg, a, bg) => fg.map((c, i) => c * a + bg[i] * (1 - a));
+  const rgbaOf = (value) => { const m = value.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([.\d]+)\)/); return { c: m.slice(1, 4).map(Number), a: Number(m[4]) }; };
+  const crypto = await import('node:crypto');
+  const table = [];
+  const need = (label, value) => { assert.ok(value >= 4.5, `${label} is ${value.toFixed(2)}:1, AA needs 4.5`); table.push(`${label} ${value.toFixed(2)}`); };
+  for (const theme of ['dark', 'light']) {
+    const t = vars(block(tokens, `:root[data-theme="${theme}"]`));
+    const rule = theme === 'dark' ? ":root[data-theme='dark'] {" : ":root:not([data-theme='dark']) {";
+    const bd = vars(block(backdropTokens, rule));
+    const chrome = rgbaOf(bd['bd-chrome']);
+    const scoped = { chrome: { text: t.text, muted: t.muted, text3: bd['bd-chrome-text3'], accent: bd['bd-chrome-accent'] }, page: { text: t.text, muted: bd['bd-page-muted'], text3: bd['bd-page-text3'], accent: bd['bd-page-accent'] } };
+    for (const [key, entry] of Object.entries(fixture.regions)) {
+      if (!key.includes(`/${theme}/`)) continue;
+      const sha = crypto.createHash('sha256').update(fs.readFileSync(`static/orena/public/bg/${entry.photo}.jpg`)).digest('hex');
+      assert.equal(sha, entry.sha256, `${entry.photo}.jpg is the photo the fixture measured (run scripts/measure_backdrop_extremes.py)`);
+      const [kind, , region] = key.split('/');
+      if (region === 'aside') continue;
+      const isChrome = kind === 'shell' && ['rail', 'topbar', 'bar', 'chips'].includes(region);
+      const tokensHere = isChrome ? scoped.chrome : scoped.page;
+      for (const [name, value] of Object.entries(tokensHere)) {
+        const worst = Math.min(...[entry.lightest, entry.darkest].map((g) => contrastRgb(hexOf(value), isChrome ? over(chrome.c, chrome.a, g) : g)));
+        need(`${key} --${name}`, worst);
+      }
+    }
+    // The scoped tokens stay valid on the solid surfaces they also reach, and keep their order (text >= muted >= text3 in strength).
+    for (const [name, value] of [['muted', bd['bd-page-muted']], ['text3', bd['bd-page-text3']], ['text3', bd['bd-chrome-text3']], ['accent', bd['bd-chrome-accent']], ['accent', bd['bd-page-accent']]]) {
+      for (const ground of ['bg', 'surface', 'surface2', ...(name === 'accent' ? ['accent-soft'] : [])]) {
+        assert.ok(contrast(value, t[ground]) >= 4.5, `${theme} scoped --${name} ${value} on --${ground} stays AA`);
+      }
+    }
+    // Chrome shifts are small: the base token moved no more than 12% toward --text.
+    for (const [name, value] of [['text3', bd['bd-chrome-text3']], ['accent', bd['bd-chrome-accent']]]) {
+      const share = hexOf(t[name]).map((c, i) => (c === hexOf(t.text)[i] ? 0 : (hexOf(value)[i] - c) / (hexOf(t.text)[i] - c))).filter((s) => Number.isFinite(s)).reduce((a, b) => Math.max(a, b), 0);
+      assert.ok(share <= 0.13, `${theme} chrome --${name} moved ${(share * 100).toFixed(0)}% toward --text`);
+    }
+    // The more opaque chrome of a browser without backdrop-filter keeps the scoped chrome tokens AA as well.
+    const solid = rgbaOf(bd['bd-chrome-solid']);
+    assert.ok(solid.a > chrome.a, `${theme}: the no-backdrop-filter chrome is more opaque than the glass`);
+    for (const region of ['rail', 'topbar', 'bar', 'chips']) {
+      const entry = fixture.regions[`shell/${theme}/${region}`];
+      if (!entry) continue;
+      for (const [name, value] of Object.entries(scoped.chrome)) {
+        const worst = Math.min(...[entry.lightest, entry.darkest].map((g) => contrastRgb(hexOf(value), over(solid.c, solid.a, g))));
+        assert.ok(worst >= 4.5, `${theme} ${region} --${name} on the solid chrome is ${worst.toFixed(2)}:1`);
+      }
+    }
+  }
+  // Onboarding's aside: white ink at the step list's alphas, over the lightest and darkest aside region, at each gradient stop.
+  for (const theme of ['dark', 'light']) {
+    const rule = theme === 'dark' ? ":root[data-theme='dark'] {" : ":root:not([data-theme='dark']) {";
+    const stops = [...vars(block(backdropTokens, rule))['ob-aside'].matchAll(/rgba\((\d+),(\d+),(\d+),([.\d]+)\)/g)].map((m) => ({ c: m.slice(1, 4).map(Number), a: Number(m[4]) }));
+    assert.equal(stops.length, 3, "the aside gradient has the design's three stops");
+    const design = [0.82, 0.74, 0.55];
+    stops.forEach((s, i) => assert.ok(s.a >= design[i], `${theme}: aside stop ${i + 1} is not below the design's ${design[i]}`));
+    const entry = fixture.regions[`onboarding/${theme}/aside`];
+    for (const [ink, label] of [[1, 'white'], [0.8, 'white 80% (done step)'], [0.7, 'white 70% (subhead)'], [0.5, 'white 50% (upcoming step)']]) {
+      const worst = Math.min(...stops.flatMap((s) => [entry.lightest, entry.darkest].map((g) => {
+        const surface = over(s.c, s.a, g);
+        return contrastRgb(over([255, 255, 255], ink, surface), surface);
+      })));
+      need(`onboarding/${theme}/aside ${label}`, worst);
+    }
+  }
+  console.log(`BACKDROP contrast (worst region): ${table.join('; ')}`);
+}
+
 console.log(`Orena kit: tokens and device variables are the pinned design's, AA holds in both themes (${measured.length} pairs; D-093 adjustments), icons are lucide-static@${release}, one colour owner, no old UI imported: PASS`);
