@@ -32,6 +32,7 @@ import { loadLineAttempts, reviewableAttempts } from '../../product/speaking-his
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { micStateFor } from '../speak/model.js';
 import { openMicState, micGate } from '../mic/sheet.js';
+import { showAssessmentRefusal } from '../plan/quota-notice.js';
 import { t } from './copy.js';
 import {
   ringColor, scoreLabelKey, headlineKey, wordStatus, pronunciationStatusKey, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
@@ -197,6 +198,11 @@ export default async function mountCompareWithModel(element, ctx) {
         paintLive();
       },
       failure(error) {
+        // The plan's pronunciation minutes are used up (D-165): the server's own sentence, with the way to the plans.
+        if (showAssessmentRefusal(ctx, error)) {
+          errorText = '';
+          return;
+        }
         // A failure the same take can be scored again after (the service, the network) is offered
         // that through the mic sheet; every other one is the frame's own banner.
         if (error.retry) {

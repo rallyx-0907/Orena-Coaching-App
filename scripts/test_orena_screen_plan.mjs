@@ -198,6 +198,23 @@ assert.equal(resetLabel({ window: 'day', resetsAt: null }), 'Resets every day');
   copy.setLanguages({ ui: 'en', support: 'en' });
   assert.equal(notice.quotaMessage(refusal), 'You have used 2 of 2 writing reviews this month.');
   assert.equal(notice.quotaMessage({ status: 429, category: 'quota_exhausted', context: {} }), 'You have reached the limit of your plan for now.');
+
+  /* Pronunciation minutes (D-165): stored in seconds, said in minutes exactly as Plan & usage shows them (whole when
+     whole, one decimal otherwise), in the learner's language, from the server's own figures. */
+  const pronunciation = (used, limit = 300) => ({ status: 429, category: 'quota_exhausted', context: { feature: 'pronunciation.audio', used, limit, unit: 'second', display_unit: 'minute', scale: 60 } });
+  copy.setLanguages({ ui: 'en', support: 'en' });
+  assert.equal(notice.quotaMessage(pronunciation(300)), 'You have used 5 of 5 pronunciation minutes this month.');
+  assert.equal(notice.quotaMessage(pronunciation(68)), 'You have used 1.1 of 5 pronunciation minutes this month.', '68 s is 1.1 min');
+  assert.equal(notice.quotaMessage(pronunciation(1800 - 30, 1800)), 'You have used 29.5 of 30 pronunciation minutes this month.');
+  assert.equal(notice.quotaMessage(pronunciation(300)).includes('300'), false, 'never seconds');
+  copy.setLanguages({ ui: 'vi', support: 'en' });
+  assert.equal(notice.quotaMessage(pronunciation(68)), 'Bạn đã dùng 1,1/5 phút phát âm trong tháng này.');
+  copy.setLanguages({ ui: 'zh', support: 'en' });
+  assert.equal(notice.quotaMessage(pronunciation(68)), '本月发音分析已用 1.1/5 分钟。');
+  /* The same figure Plan & usage draws for the same bucket. */
+  const row = model.usageRows({ ...COMMERCE, features: { ...COMMERCE.features, 'pronunciation.audio': feature('pronunciation.audio', 300, 68) } }).find((r) => r.key === 'pronunciation.audio');
+  assert.deepEqual([row.used, row.limit], [1.1, 5], 'display == bucket');
+  copy.setLanguages({ ui: 'en', support: 'en' });
 }
 
 /* --- routes ---------------------------------------------------------------------------------- */

@@ -5373,7 +5373,8 @@ The 2026-10-09 export's Landing, Terms and Privacy, and its Backdrop change.
 
 ## Plan quota enforcement (D-161), 2026-10-09
 
-`writing.review` is enforced on the server (`POST /api/evaluate`, `POST /api/improve`) when the switch is on. PLN-2
+`writing.review` is enforced on the server (`POST /api/evaluate`, `POST /api/improve`) when the switch is on;
+`orena.message` (D-163) and `pronunciation.audio` (D-165) likewise. PLN-2
 above is **CLOSED for the catalogue** (the design's five meters are the plan entitlements, catalogue v2) and open for
 the meters below.
 
@@ -5403,8 +5404,80 @@ the meters below.
   panel, full-screen voice) or the discussion room. The reply's error line reads "You have used 20 of 20 Orena messages
   today." with "See all plans" in the retry button's place and style (to `#/plan/pricing`); the discussion room uses the
   shared toast with the same action. No new visual; EN/VI/ZH. Owner: design (an exhausted state, if wanted).
-- **QTA-5 Pronunciation minutes - NOT YET ENFORCED.** `POST /api/speech/pronunciation` (seconds known before the
-  provider call). Display rounding is a human decision. Owner: BACKEND.
+- **QTA-5 Pronunciation minutes - ENFORCED when the switch lists `pronunciation.audio`** (D-165; Free / Plus / Pro 5 / 30 /
+  120 minutes a month, stored in seconds, in the learner's timezone; beta configuration). `POST /api/speech/pronunciation`
+  decodes the take locally (no provider call), reserves exactly its whole seconds (`ceil`, at most 60), refuses with 429
+  before Azure when they do not remain (never a partial assessment), and settles the seconds Azure processed; any failure
+  or unusable result settles 0 (QTA-10). Plan & usage reads the same buckets and shows minutes. The room shows the 429 as
+  the Respond room's toast pattern with "See all plans" in Speak, Compare and Shadowing, EN/VI/ZH: "You have used 1.1 of 5
+  pronunciation minutes this month." (minutes as Plan & usage shows them: whole when whole, otherwise one decimal; the
+  design draws no exhausted state, QTA-1). Owner: design (an exhausted state, if wanted).
+  **Open for the human:** (a) `speech_api.NO_SPEECH_CHARGED` (default `True`): a take Azure answered "no speech" is charged
+  the seconds it processed; `False` charges nothing (a silent clip would then be free provider spend, bounded only by the
+  `speech_ai` brake of 60 requests per 10 minutes per account); (b) the display rounding above; (c) a take is charged
+  whole seconds rounded up (a learner may lose under one second per take).
+- **QTA-13 Pronunciation audit (2026-10-09, `origin/main` 5e02173e before D-165; line numbers are of that commit unless
+  marked "now").**
+  * *Learner entry points:* `speaking-take.js` `assess()` calls `api.assessPronunciation` (`:127` before, `:136` now), the
+    only caller; it is reached through `product/speaking-recorder.js` by Speak (`screens/speak/screen.js:90`) and Compare
+    (`screens/compare/screen.js:170`), and directly by Shadowing (`screens/shadowing/screen.js:301`). The client call is
+    `infrastructure/api.js:460` (`POST /api/speech/pronunciation`, form data; now `:463`). No client uses `mode:
+    "unscripted"`.
+  * *Endpoint:* `speech_api.py:543` `assess_pronunciation` (async) read the upload (`:580`, 8 MiB cap `:519`), then called
+    `_assess` (`:595`, `:651`) and `provider.assess_bytes` (`:664`) synchronously inside the `async` handler; there was no
+    quota call and nothing cached (no hash lookup anywhere): every request with audio was a paid Azure request. Now
+    `_assess_metered` (`speech_api.py:760`), run in the thread pool (`:601`).
+  * *Provider really called:* `build_speech_pronunciation_provider` (`speech_pronunciation.py:616`) - `PRONUNCIATION_PROVIDER`
+    (`:627`, `compose.yaml:77`; azure / demo / none), unset = Azure when `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION`
+    (`compose.yaml:78`) or a stored `azure-speech` credential exist, else none (503 `pronunciation_unconfigured`). The demo
+    provider (`:537`) is development-only, `score_kind: synthetic_demo`, never a score. The real call is
+    `AzureSpeechPronunciationProvider._assess` -> `https://<region>.stt.speech.microsoft.com/speech/recognition/conversation/
+    cognitiveservices/v1` (short-audio REST, `format=detailed`, Pronunciation-Assessment header). `ai/azure.py` is the
+    control plane only (model discovery / `issueToken`), never an assessment.
+  * *Where the duration is known:* only after the provider's own decode - `normalize_audio_to_pcm16_wav`
+    (`speech_pronunciation.py:124`, ffmpeg, `-t 60` at `:151`), called inside `_assess` (`:340`) and measured afterwards
+    (`meter["seconds"]`, `:393`, `(len - 44) / 32000`). The route knew bytes, not seconds, and nothing was reserved. Now the
+    decode is `prepare_audio` (`:331`), run before the reservation, and the length is parsed from the WAV `data` chunk
+    (`wav_seconds`, `:200`): real ffmpeg output carries a 78-byte header, measured exactly for 0.4 s, 7.4 s and (cut)
+    60.0 s from 61.5 s and 75 s inputs. The cap is the new `MAX_ASSESSED_SECONDS` (`:23`), also the client's `MAX_TAKE_MS`.
+  * *Free / local paths:* none for learner assessment. Browser-only scoring does not exist (the client shows the server's
+    scores); Kokoro (`word_audio.py`) and Azure word TTS (`word_audio_azure.py`) are *playback* of a word, not an assessment,
+    and stay unmetered; the demo provider costs nothing and settles 0. Work done before the duration was known: only the
+    upload read and the local ffmpeg decode (CPU, no provider cost) - now preceded by the cheap `require_ready` 503.
+  * *Which requests incur provider cost:* Azure bills every request it answers 200 for the audio it processed, including a
+    silent take (`speech_pronunciation.py:393`, `audio_telemetry` comment); a 4xx/5xx or a timeout is not billed. Cost rows
+    exist already for each Azure request (`speech_pronunciation.py:296-313`, `ai/audio_telemetry.py`, price in
+    `ai/pricing.py:58-62`): capability, provider, model, seconds, USD; the Azure region and provider-reported usage are not in
+    the allow-list (`ai/base.py` `sanitize_telemetry`) and were not added (a ledger field is reserved to the human).
+  * *Groq Whisper ASR (`POST /api/speech/transcribe`, `speech_api.py:343`):* a **separate** path - not part of a
+    pronunciation action. Callers: Free talk (`screens/free-talk/screen.js:281`), Conversation (`screens/conversation/screen.js:
+    347`), Situation (`screens/situation/screen.js:160`), React (`screens/react/screen.js:309`), Reading transfer
+    (`screens/reading-transfer/screen.js:306`), Orena push-to-talk (`screens/orena/voice.js:331`); server-side the media
+    pipeline (`media_transcript_pipeline.py:554`, `media_timing.py:254`, the `media.import` meter). Left **unmetered** and not
+    given a meter of its own (no new meter was invented); its cost is in the ledger (`speech_asr`, `speech_asr.py:221-235`);
+    the per-process `speech_ai` brake (`core/http_security.py:76`, 60 per 600 s) stays. See QTA-14.
+- **QTA-14 Spoken input outside pronunciation is not metered yet (for the Voice slice).** `POST /api/speech/transcribe`
+  (Groq, ~$0.04 per audio hour, 10 s minimum) is charged to nothing in the learner's plan: the Orena push-to-talk and the
+  speaking rooms above send audio to it and only the *text* that follows is an `orena.message` where it reaches the agent.
+  The Voice slice decides whether transcription seconds belong to a voice meter (with `voice_seconds_per_message`, QTA-4),
+  to `pronunciation.audio` (a free-speech coaching action), or stay free with the brake; D-165 does not decide it. Blocks
+  nothing in the Voice slice, but `quota.refuse_unmetered` (QTA-4) still refuses live voice sessions while `orena.message` is
+  enforced. Owner: human, then BACKEND.
+- **QTA-15 A take whose answer was lost: "record again" (architecture review of #119, P2-1).** When the network drops
+  after Azure assessed a take, the resend under the same `Idempotency-Key` is `409 operation_finished` for ever. The room
+  does not offer a retry that can never succeed: it says "This recording was already processed. Record it again to get a
+  new assessment." (EN/VI/ZH, the shared toast, no action) and the learner records again - a new key, a new real
+  assessment and charge. The design draws no such state (nearest mic-sheet states say "assessment unavailable" or "we didn't
+  hear you", both untrue here). Replaying the stored result of a finished take instead (a short-lived result store) is new
+  persistence and the human's decision; not built. Owner: design (a state, if wanted) / human (replay).
+- **QTA-16 Pronunciation notes from the review (P3).** (a) `NO_SPEECH_CHARGED=True` means a muted microphone burns allowance
+  silently (five 60 s silent takes exhaust Free); `False` makes silent clips free provider spend bounded only by the
+  `speech_ai` brake - human decision 2026-10-09: True for the beta; a lost answer means "record again" under a new key (a new charge), no stored-result replay; (b) the stored-credential read that resolves
+  the provider still runs on the event loop; (c) a local decode failure is a `pronunciation_evaluator` / `azure-speech`
+  failure row though no Azure request was made (a distinct label needs the ledger allow-list, reserved to the human); (d)
+  `displayAmount` rounds, so 299 of 300 s shows "5 of 5" minutes while a short take is still admitted (shared with Plan &
+  usage); (e) `/api/speech/transcribe` stays unmetered paid spend (QTA-14) - until it is metered, not all paid AI is
+  plan-bounded; (f) an exhausted (429) or duplicate (409) request still costs one local decode. Owner: human / BACKEND.
 - **QTA-6 Media import minutes - NOT YET ENFORCED.** The learner import paths must be scoped first (async jobs settle
   from the worker). Owner: BACKEND.
 - **QTA-7 Target languages - NOT YET ENFORCED.** A count cap where a learning language is added; a Free account that
