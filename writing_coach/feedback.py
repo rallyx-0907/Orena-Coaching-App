@@ -19,7 +19,7 @@ DAILY_LIMIT = 10
 MAX_PAGE = 100
 
 # Retention (human decision 2026-10-09, D-159): a review is deleted with its account, and every review after 24 months.
-# The sweep is a destructive lifecycle job, so like the agent.turn sweep it runs only once its switch is on.
+# The periodic sweep (feedback_retention.py) is a destructive lifecycle job: it runs only once its switch is on.
 FEEDBACK_RETENTION_DAYS = 730
 RETENTION_SWITCH = "FEEDBACK_RETENTION_SWEEP"
 _ON = frozenset({"1", "true", "on", "yes"})

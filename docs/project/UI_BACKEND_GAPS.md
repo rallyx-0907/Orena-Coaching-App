@@ -5128,6 +5128,6 @@ The 2026-10-08 export's Feedback frame (`#/feedback`, reached from Profile) and 
   page. A visit record is a new table and a human decision (Architecture holds).
 - **FBK-3 Daily limit under concurrency (P2, review of #113).** The 10-a-day guard counts, then inserts; concurrent
   sends can pass it together. Harden (a per-account lock or a conditional insert) if abuse becomes material.
-- **FBK-4 Retention (D-159).** Decided: deleted with the account and after 24 months; the sweep's switch
-  `FEEDBACK_RETENTION_SWEEP` is the activation step, and the account-deletion runtime must call
-  `delete_feedback_for_account`.
+- **FBK-4 Retention (D-159).** Decided: deleted with the account and after 24 months. A periodic job (at start, then
+  daily) enforces the 24 months. Its switch `FEEDBACK_RETENTION_SWEEP` is the activation step, and the
+  account-deletion runtime must call `delete_feedback_for_account`.

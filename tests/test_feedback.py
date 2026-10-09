@@ -191,26 +191,38 @@ def test_retention_switch_is_off_unless_turned_on():
         retention_enabled({"FEEDBACK_RETENTION_SWEEP": "maybe"})
 
 
-def test_a_send_starts_the_retention_sweep_when_it_is_installed(monkeypatch):
-    from fastapi import FastAPI
-    from fastapi.testclient import TestClient
+def test_retention_is_a_periodic_job_independent_of_sends():
+    import time
 
-    import writing_coach.feedback_api as api
+    from writing_coach.feedback_retention import FeedbackRetentionSchedule, sweep_once
 
-    calls = []
+    cutoffs = []
 
-    class Sweep:
-        def maybe_sweep(self):
-            calls.append(1)
+    def deleter(before, limit):
+        cutoffs.append(before)
+        return 0
 
-    store = Store()
-    monkeypatch.setattr(api, "_store", lambda: store)
-    monkeypatch.setattr(api, "current_user_key", lambda request: "ana")
-    api.configure_feedback_retention(Sweep())
-    try:
-        app = FastAPI()
-        app.include_router(api.router)
-        assert TestClient(app).post("/api/feedback", json={"stars": 5}).status_code == 201
-    finally:
-        api.configure_feedback_retention(None)
-    assert calls == [1]
+    schedule = FeedbackRetentionSchedule(deleter, interval=0.05)
+    schedule.start()
+    deadline = time.monotonic() + 3
+    while schedule.sweeps < 3 and time.monotonic() < deadline:
+        time.sleep(0.02)
+    schedule.stop()
+    assert schedule.sweeps >= 3, "it sweeps on a clock, with no feedback sent"
+    age = datetime.now(UTC) - cutoffs[0]
+    assert timedelta(days=729) < age < timedelta(days=731), "the cutoff is 24 months"
+
+    # A backlog goes in bounded batches; a failing sweep is retried at the next tick, never raised.
+    batches = iter([1000, 1000, 7])
+    assert sweep_once(lambda before, limit: next(batches)) == 2007
+
+    def broken(before, limit):
+        raise RuntimeError("db down")
+
+    failing = FeedbackRetentionSchedule(broken)
+    assert failing.tick() is None and failing.sweeps == 1
+
+
+def test_the_app_starts_the_schedule_only_when_switched_on():
+    source = open("app.py", encoding="utf-8").read()
+    assert "_feedback_retention.start()" in source and "if _feedback_retention_enabled(os.environ):" in source

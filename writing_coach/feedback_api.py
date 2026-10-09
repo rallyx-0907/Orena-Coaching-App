@@ -13,14 +13,6 @@ from writing_coach.product.api import current_user_key
 
 router = APIRouter(tags=["feedback"])
 
-# The D-159 retention sweep (app.py installs it when FEEDBACK_RETENTION_SWEEP is on); a send starts it at most daily.
-_retention = None
-
-
-def configure_feedback_retention(retention) -> None:
-    global _retention
-    _retention = retention
-
 
 def _store():
     from writing_coach.ai.platform import _installed_platform_repository
@@ -69,8 +61,6 @@ async def feedback_send(request: Request) -> dict[str, Any]:
         raise HTTPException(422, str(error))
     except OverflowError:
         raise HTTPException(429, "You have sent the most reviews allowed today. Thank you!")
-    if _retention is not None:
-        _retention.maybe_sweep()
     return {"review": _public(saved, admin=False)}
 
 

@@ -530,17 +530,17 @@ if _media_fallback_mode == "supadata" and _supadata_fallback_client is None:
 
 app.include_router(platform_router)
 app.include_router(product_router)
-from writing_coach.feedback_api import router as feedback_router, configure_feedback_retention  # noqa: E402  (D-156)
-from writing_coach.feedback import FEEDBACK_RETENTION_DAYS, retention_enabled as _feedback_retention_enabled  # noqa: E402
+from writing_coach.feedback_api import router as feedback_router  # noqa: E402  (D-156 learner feedback)
+from writing_coach.feedback import retention_enabled as _feedback_retention_enabled  # noqa: E402
+from writing_coach.feedback_retention import FeedbackRetentionSchedule  # noqa: E402
 app.include_router(feedback_router)
-if _feedback_retention_enabled(os.environ):
-    # D-159: reviews older than 24 months (and orphans of a deleted account row) go in bounded daily batches.
-    from writing_coach.agent.retention import TurnTelemetryRetention as _Retention  # noqa: E402
 
+# D-159: reviews are kept at most 24 months, enforced by a periodic job (at start, then daily), not by traffic.
+_feedback_retention: FeedbackRetentionSchedule | None = None
+if _feedback_retention_enabled(os.environ):
     _feedback_deleter = getattr(_persistence_runtime.platform_repository, "delete_feedback_before", None)
     if callable(_feedback_deleter):
-        configure_feedback_retention(_Retention(lambda before, limit: _feedback_deleter(before, limit=limit),
-                                                days=FEEDBACK_RETENTION_DAYS))
+        _feedback_retention = FeedbackRetentionSchedule(lambda before, limit: _feedback_deleter(before, limit=limit))
 # The one acquisition service, kept in a named binding because the Shared
 # Listening Library importer must resolve a source through exactly the same
 # provider boundary the learner's own import uses - never a second one.
@@ -1746,6 +1746,14 @@ def error_memory(
 @app.on_event("startup")
 def startup() -> None:
     init_db()
+    if _feedback_retention is not None:
+        _feedback_retention.start()
+
+
+@app.on_event("shutdown")
+def _stop_feedback_retention() -> None:
+    if _feedback_retention is not None:
+        _feedback_retention.stop()
 
 
 @app.get("/", response_class=HTMLResponse)

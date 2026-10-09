@@ -4506,6 +4506,9 @@ tối đa 24 tháng"). Reviews stay in `audit_logs` (`learner.feedback`) as the 
 1. With the account: `delete_feedback_for_account(user_key)` removes every review an account sent; the account-deletion
    runtime (still a reserved hold, AGENTS.md section 7) calls it when it deletes an account. A review whose account row
    is deleted becomes an orphan (`user_id` empty, no account key) and the sweep removes it.
-2. After 24 months: `delete_feedback_before()` in bounded daily batches, started by a send (the agent.turn sweep's
-   pattern). It is a destructive lifecycle job, so it runs only once `FEEDBACK_RETENTION_SWEEP` is switched on.
+2. After 24 months: a periodic job (`feedback_retention.py`). A daemon thread is started with the app; it sweeps at start and then
+   daily, independent of traffic, through `delete_feedback_before()` in bounded batches (final review of #113: a
+   send-triggered sweep does not enforce a maximum age). Deletion is a destructive lifecycle job, so the schedule
+   starts only when `FEEDBACK_RETENTION_SWEEP` is on. Switching it on, for :8000 included, is the human's activation
+   step.
 3. Admin totals, average, star and area counts and filtered totals are SQL aggregates over every stored review.
