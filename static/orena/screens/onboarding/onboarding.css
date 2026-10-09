@@ -46,27 +46,15 @@
 :root[data-theme='dark'][data-device='mobile'] .s-onboarding {
   --ob-img: url('../../public/bg/midnight-tall.jpg');
 }
-/* AA over the photo: the page text tokens kit/tokens.css scopes to where the photo is behind the text. Not with the kill
-   switch, reduced transparency or no backdrop-filter - then the screen is the plain --bg it was, and the base tokens stand. */
-@media not (prefers-reduced-transparency: reduce) {
-  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    :root:not([data-backdrop='off']) .s-onboarding {
-      --muted: var(--bd-page-muted);
-      --text3: var(--bd-page-text3);
-    }
-  }
+/* AA over the photo: the page text tokens kit/tokens.css scopes to where the photo is behind the text. Only the kill switch
+   (a non-UI attribute) removes the photo; nothing depends on the operating system's transparency setting. */
+:root:not([data-backdrop='off']) .s-onboarding {
+  --muted: var(--bd-page-muted);
+  --text3: var(--bd-page-text3);
+  --accent-on-photo: var(--bd-page-accent);
 }
 :root[data-backdrop='off'] .s-onboarding {
   background: var(--bg);
-}
-@media (prefers-reduced-transparency: reduce) {
-  .s-onboarding {
-    background: var(--bg);
-  }
-  .s-onboarding__aside {
-    background: var(--mark-disc);
-    backdrop-filter: none;
-  }
 }
 
 /* Every primary control the frame draws in this flow (Get started, the Continues, Go to Today) is
@@ -699,7 +687,7 @@
   gap: 8px;
 }
 .s-onboarding__picker-row .c-row__trail {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 
 /* ---- Signed out (Welcome's second button and the Account frame, Onboarding.dc.html 01-02) ---- */

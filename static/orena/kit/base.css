@@ -48,7 +48,7 @@ body {
   text-decoration: none;
 }
 :where(a):hover {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 
 button {

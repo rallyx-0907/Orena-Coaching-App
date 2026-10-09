@@ -274,9 +274,30 @@ assert.match(
   }
   // Solid fallbacks and no learner control.
   assert.match(shellCss, /:root\[data-backdrop='off'\]/, 'a non-UI kill switch exists');
-  assert.match(shellCss, /@media \(prefers-reduced-transparency: reduce\)/, 'reduced transparency gets solid chrome');
-  assert.match(shellCss, /@supports not \(\(backdrop-filter: blur\(1px\)\)/, 'no backdrop-filter gets solid chrome');
-  assert.match(shellCss, /@media not \(prefers-reduced-transparency: reduce\) \{\s*@supports \(\(backdrop-filter/, 'the scoped text tokens apply only while the photo is drawn');
+  // Nothing depends on the operating system: no prefers-reduced-transparency rule may hide the photo or the glass (human, 2026-10-09).
+  for (const [css, label] of [[shellCss, 'shell'], [adminCss, 'admin'], [onboardingCss, 'onboarding']]) {
+    assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ''), /prefers-reduced-transparency/, `${label}: no reduced-transparency rule (the glass is the same on every platform)`);
+    assert.doesNotMatch(css, /background-attachment/, `${label}: no background-attachment (iOS); the photo is a fixed layer`);
+  }
+  assert.doesNotMatch(shellCss.replace(/\/\*[\s\S]*?\*\//g, ''), /@media[^{]*\{[^}]*\.o-frame::before/, 'no media query removes the photo layer');
+  // A browser that truly lacks backdrop-filter keeps the photo and the scrim, with a more opaque solid chrome.
+  const noFilter = block(shellCss, '@supports not ((backdrop-filter: blur(1px))');
+  assert.match(noFilter, /--bd-chrome:\s*var\(--bd-chrome-solid\)/, 'no backdrop-filter: more opaque solid chrome');
+  assert.doesNotMatch(noFilter, /display:\s*none|::before|::after/, 'no backdrop-filter: the photo and scrim stay');
+  // The photo is the same layer on first paint and on phones: a pseudo-element of the frame, tall images on the phone.
+  assert.match(shellCss, /:root\[data-device='mobile'\] \.o-frame,\s*:root\[data-device='mobile'\] \.a-shell \{\s*--bd-img: url\('\.\.\/public\/bg\/paper-tall\.jpg'\)/, 'phone light: paper-tall');
+  assert.match(shellCss, /:root\[data-theme='dark'\]\[data-device='mobile'\] \.o-frame,\s*:root\[data-theme='dark'\]\[data-device='mobile'\] \.a-shell \{\s*--bd-img: url\('\.\.\/public\/bg\/midnight-tall\.jpg'\)/, 'phone dark: midnight-tall');
+  assert.match(onboardingCss, /:root\[data-device='mobile'\] \.s-onboarding \{\s*--ob-img: url\('\.\.\/\.\.\/public\/bg\/paper-tall\.jpg'\)/, 'Onboarding phone light: paper-tall');
+  assert.match(onboardingCss, /\[data-device='mobile'\] \.s-onboarding \{\s*--ob-img: url\('\.\.\/\.\.\/public\/bg\/midnight-tall\.jpg'\)/, 'Onboarding phone dark: midnight-tall');
+  assert.match(block(shellCss, '.o-frame::before,\n.a-shell::before {'), /center \/ cover no-repeat/, 'the photo covers the frame, centred');
+  // Accent TEXT uses the on-photo variable (fallback --accent); fills, bars and dots keep --accent. No plain accent text rule is left.
+  for (const file of fs.readdirSync(ROOT, { recursive: true }).map((f) => f.replace(/\\/g, '/'))) {
+    if (!/\.(css|js)$/.test(file) || file.startsWith('vendor/') || file === 'kit/tokens.css') continue;
+    assert.doesNotMatch(read(path.join(ROOT, file)), /(^|[\s{;"'])color:\s*var\(--accent\)/m, `${file}: accent text must use var(--accent-on-photo, var(--accent))`);
+  }
+  assert.match(shellCss, /:is\(\.o-main, \.a-main\) \{[^}]*--accent-on-photo: var\(--bd-page-accent\)/, 'page accent text token');
+  assert.match(shellCss, /:is\(\.o-rail[^)]*\) \{[^}]*--accent-on-photo: var\(--bd-chrome-accent\)/, 'chrome accent text token');
+  assert.doesNotMatch(shellCss, /--accent:\s*var\(--bd-/, 'the accent fill is never overridden');
   for (const dir of ['shell', 'screens', 'kit']) {
     for (const file of fs.readdirSync(path.join(ROOT, dir), { recursive: true }).filter((f) => f.endsWith('.js'))) {
       assert.doesNotMatch(read(path.join(ROOT, dir, file)), /data-backdrop|dataset\.backdrop/, `${dir}/${file}: the backdrop has no learner control`);
@@ -309,7 +330,7 @@ assert.match(
     const rule = theme === 'dark' ? ":root[data-theme='dark'] {" : ":root:not([data-theme='dark']) {";
     const bd = vars(block(backdropTokens, rule));
     const chrome = rgbaOf(bd['bd-chrome']);
-    const scoped = { chrome: { text: t.text, muted: t.muted, text3: bd['bd-chrome-text3'], accent: bd['bd-chrome-accent'] }, page: { text: t.text, muted: bd['bd-page-muted'], text3: bd['bd-page-text3'] } };
+    const scoped = { chrome: { text: t.text, muted: t.muted, text3: bd['bd-chrome-text3'], accent: bd['bd-chrome-accent'] }, page: { text: t.text, muted: bd['bd-page-muted'], text3: bd['bd-page-text3'], accent: bd['bd-page-accent'] } };
     for (const [key, entry] of Object.entries(fixture.regions)) {
       if (!key.includes(`/${theme}/`)) continue;
       const sha = crypto.createHash('sha256').update(fs.readFileSync(`static/orena/public/bg/${entry.photo}.jpg`)).digest('hex');
@@ -324,8 +345,8 @@ assert.match(
       }
     }
     // The scoped tokens stay valid on the solid surfaces they also reach, and keep their order (text >= muted >= text3 in strength).
-    for (const [name, value] of [['muted', bd['bd-page-muted']], ['text3', bd['bd-page-text3']], ['text3', bd['bd-chrome-text3']], ['accent', bd['bd-chrome-accent']]]) {
-      for (const ground of ['bg', 'surface', 'surface2']) {
+    for (const [name, value] of [['muted', bd['bd-page-muted']], ['text3', bd['bd-page-text3']], ['text3', bd['bd-chrome-text3']], ['accent', bd['bd-chrome-accent']], ['accent', bd['bd-page-accent']]]) {
+      for (const ground of ['bg', 'surface', 'surface2', ...(name === 'accent' ? ['accent-soft'] : [])]) {
         assert.ok(contrast(value, t[ground]) >= 4.5, `${theme} scoped --${name} ${value} on --${ground} stays AA`);
       }
     }
@@ -334,11 +355,16 @@ assert.match(
       const share = hexOf(t[name]).map((c, i) => (c === hexOf(t.text)[i] ? 0 : (hexOf(value)[i] - c) / (hexOf(t.text)[i] - c))).filter((s) => Number.isFinite(s)).reduce((a, b) => Math.max(a, b), 0);
       assert.ok(share <= 0.13, `${theme} chrome --${name} moved ${(share * 100).toFixed(0)}% toward --text`);
     }
-    // --accent as text directly on the photo is the recorded exception (it is also the fill of bars and dots): report, never assume.
-    for (const key of [`shell/${theme}/main/desktop`, `shell/${theme}/page/mobile`]) {
-      const entry = fixture.regions[key];
-      const worst = Math.min(...[entry.lightest, entry.darkest].map((g) => contrastRgb(hexOf(t.accent), g)));
-      table.push(`RECORDED-EXCEPTION ${key} --accent ${worst.toFixed(2)}`);
+    // The more opaque chrome of a browser without backdrop-filter keeps the scoped chrome tokens AA as well.
+    const solid = rgbaOf(bd['bd-chrome-solid']);
+    assert.ok(solid.a > chrome.a, `${theme}: the no-backdrop-filter chrome is more opaque than the glass`);
+    for (const region of ['rail', 'topbar', 'bar', 'chips']) {
+      const entry = fixture.regions[`shell/${theme}/${region}`];
+      if (!entry) continue;
+      for (const [name, value] of Object.entries(scoped.chrome)) {
+        const worst = Math.min(...[entry.lightest, entry.darkest].map((g) => contrastRgb(hexOf(value), over(solid.c, solid.a, g))));
+        assert.ok(worst >= 4.5, `${theme} ${region} --${name} on the solid chrome is ${worst.toFixed(2)}:1`);
+      }
     }
   }
   // Onboarding's aside: white ink at the step list's alphas, over the lightest and darkest aside region, at each gradient stop.

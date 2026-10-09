@@ -120,7 +120,7 @@
 .s-conv__level[aria-pressed='true'] {
   border-color: transparent;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-conv__start {
   padding: 18px;
@@ -362,7 +362,7 @@
   position: relative;
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-conv__ended-note {
   font-size: 15px;

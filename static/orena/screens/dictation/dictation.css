@@ -82,7 +82,7 @@
 }
 .s-dict__livechip--partial {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   border-color: transparent;
 }
 

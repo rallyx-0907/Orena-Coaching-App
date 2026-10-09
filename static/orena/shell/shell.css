@@ -67,7 +67,7 @@
 .o-rail__item[aria-current='page'] {
   font-weight: 600;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .o-rail__label {
   flex: 1;
@@ -152,7 +152,7 @@
   flex: none;
 }
 .o-ask__voice:hover {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 
 /* The rail's account row */
@@ -325,7 +325,7 @@
   padding: 0 14px;
   border-radius: 999px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
@@ -432,7 +432,7 @@
 }
 .o-bnav__item[aria-current='page'] {
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .o-bnav__pill {
   position: relative;
@@ -477,7 +477,7 @@
   color: var(--muted);
 }
 .o-bnav__orena[aria-current='page'] {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .o-bnav__disc {
   width: 58px;
@@ -571,23 +571,22 @@
   background: none;
 }
 
-/* The scoped text tokens (kit/tokens.css): only where the photo is behind the text, and only while it is drawn (not with
-   the kill switch, reduced transparency, or no backdrop-filter - then the base tokens stand). */
-@media not (prefers-reduced-transparency: reduce) {
-  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    :root:not([data-backdrop='off']) :is(.o-rail, .o-topbar, .o-bnav, .a-rail, .a-top, .a-mnav) {
-      --text3: var(--bd-chrome-text3);
-      --accent: var(--bd-chrome-accent);
-    }
-    :root:not([data-backdrop='off']) :is(.o-main, .a-main) {
-      --muted: var(--bd-page-muted);
-      --text3: var(--bd-page-text3);
-    }
-  }
+/* The scoped text tokens (kit/tokens.css), where the photo is behind the text. --accent-on-photo is the colour of accent TEXT
+   (every `color: var(--accent-on-photo, var(--accent))` rule); fills, bars and dots keep --accent. Outside these scopes the
+   variable is unset and the fallback --accent stands. Nothing here depends on the operating system's transparency setting. */
+:root:not([data-backdrop='off']) :is(.o-rail, .o-topbar, .o-bnav, .a-rail, .a-top, .a-mnav) {
+  --text3: var(--bd-chrome-text3);
+  --accent-on-photo: var(--bd-chrome-accent);
+}
+:root:not([data-backdrop='off']) :is(.o-main, .a-main) {
+  --muted: var(--bd-page-muted);
+  --text3: var(--bd-page-text3);
+  --accent-on-photo: var(--bd-page-accent);
 }
 
-/* Solid chrome instead of glass: the kill switch, a browser without backdrop-filter, and a learner who asks for less
-   transparency. The photo goes too, so nothing translucent remains. */
+/* Fallbacks. The kill switch (a non-UI attribute) is the only thing that removes the photo. A browser that truly lacks
+   backdrop-filter keeps the photo and the scrim and gets a more opaque solid chrome (--bd-chrome-solid, .92) so it still
+   reads as the design. There is deliberately no prefers-reduced-transparency rule: the glass is the same on every platform. */
 :root[data-backdrop='off'] .o-frame::before,
 :root[data-backdrop='off'] .o-frame::after,
 :root[data-backdrop='off'] .a-shell::before,
@@ -598,26 +597,8 @@
   --bd-chrome: var(--surface);
   --bd-chrome-blur: none;
 }
-@media (prefers-reduced-transparency: reduce) {
-  .o-frame::before,
-  .o-frame::after,
-  .a-shell::before,
-  .a-shell::after {
-    display: none;
-  }
-  :root[data-theme] {
-    --bd-chrome: var(--surface);
-    --bd-chrome-blur: none;
-  }
-}
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root[data-theme] {
-    --bd-chrome: var(--surface);
-  }
-  .o-frame::before,
-  .o-frame::after,
-  .a-shell::before,
-  .a-shell::after {
-    display: none;
+  :root[data-theme]:not([data-backdrop='off']) {
+    --bd-chrome: var(--bd-chrome-solid);
   }
 }

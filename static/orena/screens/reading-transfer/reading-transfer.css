@@ -74,7 +74,7 @@
 .s-reading-transfer__mode[aria-pressed='true'] {
   border-color: transparent;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 
 .s-reading-transfer__card {

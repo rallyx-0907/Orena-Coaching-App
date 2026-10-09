@@ -274,8 +274,8 @@
                   so those two read close to --text there, and on cards in that scope too;
    --ob-aside:    Onboarding's aside gradient keeps its colours and gets the least extra alpha that keeps white ink AA
                   (dark +.22, light +.32; the design draws .82/.74/.55).
-   Not changed (recorded, UI_BACKEND_GAPS PUB-4): --accent set as text directly on the photo, because it is also the fill of
-   bars and dots and recolouring it would recolour the product.
+   --bd-*-accent: the colour of accent TEXT (read as var(--accent-on-photo, var(--accent)) by every accent text rule); the fill
+   --accent of bars, dots and buttons is never changed. --bd-chrome-solid: the more opaque chrome of a browser without backdrop blur.
    scripts/test_orena_kit.mjs (BACKDROP) proves every pair from scripts/fixtures/backdrop_extremes.json. Single-quoted
    selectors: scoped additions the exact-token gate for the design's theme blocks does not compare, like --edge-light. */
 :root[data-theme='dark'] {
@@ -287,6 +287,8 @@
   --bd-chrome-accent: #8782F6;
   --bd-page-muted: #CBCBD8;
   --bd-page-text3: #CBCBD6;
+  --bd-page-accent: #CAC8F7;
+  --bd-chrome-solid: rgba(20, 18, 32, .92);
   --ob-scrim: radial-gradient(110% 85% at 62% 46%, rgba(12, 10, 22, .55) 0%, rgba(12, 10, 22, .38) 55%, rgba(12, 10, 22, .1) 100%);
   --ob-aside: radial-gradient(120% 140% at 0% 0%, rgba(43, 33, 88, 1) 0%, rgba(21, 15, 46, .96) 62%, rgba(14, 14, 22, .77) 100%);
 }
@@ -299,6 +301,8 @@
   --bd-chrome-accent: #534ECD;
   --bd-page-muted: #292934;
   --bd-page-text3: #292934;
+  --bd-page-accent: #26254C;
+  --bd-chrome-solid: rgba(255, 253, 248, .92);
   --ob-scrim: radial-gradient(110% 85% at 62% 46%, rgba(250, 247, 240, .55) 0%, rgba(250, 247, 240, .38) 55%, rgba(250, 247, 240, .1) 100%);
   --ob-aside: radial-gradient(120% 140% at 0% 0%, rgba(43, 33, 88, 1) 0%, rgba(21, 15, 46, 1) 62%, rgba(14, 14, 22, .87) 100%);
 }
