@@ -1,4 +1,4 @@
-"""D-16Z `pronunciation.audio` enforcement against real PostgreSQL: concurrent takes on the last seconds, restart
+"""D-165 `pronunciation.audio` enforcement against real PostgreSQL: concurrent takes on the last seconds, restart
 persistence, the month boundary in the learner's timezone, the Plan & usage read, and the reconciler.
 
 Skips unless `ORENA_TEST_POSTGRES_URL` names a THROWAWAY database (the fixture upgrades it to head, like

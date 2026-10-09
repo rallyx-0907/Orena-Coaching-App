@@ -154,7 +154,7 @@ assert.deepEqual(failureOf(Object.assign(new TypeError('Failed to fetch'))), { k
   assert.equal(h.take.takeMs, 1500);
 }
 
-// The plan's pronunciation minutes (D-16Z). The server charges a take's seconds once per idempotency key: one key
+// The plan's pronunciation minutes (D-165). The server charges a take's seconds once per idempotency key: one key
 // per take, kept when the answer was lost or the server says it already has the take, new when the server answered
 // that it charged nothing - so a retry of the same take is never charged twice and never blocked by a failure.
 const refusal = Object.assign(new Error('You have used 5 of 5'), {

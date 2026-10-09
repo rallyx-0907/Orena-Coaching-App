@@ -457,7 +457,7 @@ export const api={
   speakingLibrary:(language)=>request(`/api/speaking/library?language=${encodeURIComponent(language||'')}`),
   speakingItem:(itemId)=>request(`/api/speaking/items/${encodeURIComponent(itemId)}`),
   // mode 'scripted' assesses a line against its reference; 'unscripted' assesses free speech. An assessment is
-  // charged by the take's length against the plan's pronunciation minutes (D-16Z): one key per take, reused only
+  // charged by the take's length against the plan's pronunciation minutes (D-165): one key per take, reused only
   // when that same take is sent again, and the device timezone says when the learner's month ends. The body is a
   // form, so no JSON content type.
   assessPronunciation:(blob,language,referenceText,mode='scripted',filename='recording.webm',{idempotencyKey}={})=>{

@@ -4929,7 +4929,7 @@ change to `main` and the Intelligence lane receives it by merging forward.
    the quota gate can answer a category the contract does not name, or the voice refusal drifts.
 
 
-## D-16Z - Pronunciation minutes enforced on the server: the take's real seconds, reserved before the paid request
+## D-165 - Pronunciation minutes enforced on the server: the take's real seconds, reserved before the paid request
 
 2026-10-09, the human's decisions relayed by the coordinating session, implemented on branch `feat/quota-pronunciation` on
 top of D-161 (quota core) and D-163 (`orena.message`). The number is assigned at merge. **Needs independent architecture
@@ -4958,7 +4958,7 @@ review before merge** (entitlement and commerce enforcement on a paid provider p
    reserved; the rest is released). Any provider failure - request failed, timeout, a result that cannot be used (malformed),
    undecodable audio - settles **0**, consistent with D-161 point 10 / D-163 point 2 (the learner got nothing; Azure's billed
    seconds stay in the AI cost ledger, not the allowance). The development stand-in (`score_kind != measured`) settles 0.
-   **Recorded as a default for the human to confirm (`speech_api.NO_SPEECH_CHARGED`, one line): a take Azure answered
+   **Human decision 2026-10-09 (`speech_api.NO_SPEECH_CHARGED = True` for the beta): a take Azure answered
    "no speech" is charged the seconds it processed** - it was processed and billed, it is not a service failure, and not
    charging it would make silent clips free provider spend (bounded only by the per-process `speech_ai` brake, 60 requests per
    10 minutes); set it to `False` to charge nothing. A provider that cannot measure ahead (no `prepare_audio`) reserves 60 s

@@ -5342,7 +5342,7 @@ The 2026-10-09 export's Landing, Terms and Privacy, and its Backdrop change.
 ## Plan quota enforcement (D-161), 2026-10-09
 
 `writing.review` is enforced on the server (`POST /api/evaluate`, `POST /api/improve`) when the switch is on;
-`orena.message` (D-163) and `pronunciation.audio` (D-16Z) likewise. PLN-2
+`orena.message` (D-163) and `pronunciation.audio` (D-165) likewise. PLN-2
 above is **CLOSED for the catalogue** (the design's five meters are the plan entitlements, catalogue v2) and open for
 the meters below.
 
@@ -5372,7 +5372,7 @@ the meters below.
   panel, full-screen voice) or the discussion room. The reply's error line reads "You have used 20 of 20 Orena messages
   today." with "See all plans" in the retry button's place and style (to `#/plan/pricing`); the discussion room uses the
   shared toast with the same action. No new visual; EN/VI/ZH. Owner: design (an exhausted state, if wanted).
-- **QTA-5 Pronunciation minutes - ENFORCED when the switch lists `pronunciation.audio`** (D-16Z; Free / Plus / Pro 5 / 30 /
+- **QTA-5 Pronunciation minutes - ENFORCED when the switch lists `pronunciation.audio`** (D-165; Free / Plus / Pro 5 / 30 /
   120 minutes a month, stored in seconds, in the learner's timezone; beta configuration). `POST /api/speech/pronunciation`
   decodes the take locally (no provider call), reserves exactly its whole seconds (`ceil`, at most 60), refuses with 429
   before Azure when they do not remain (never a partial assessment), and settles the seconds Azure processed; any failure
@@ -5384,7 +5384,7 @@ the meters below.
   the seconds it processed; `False` charges nothing (a silent clip would then be free provider spend, bounded only by the
   `speech_ai` brake of 60 requests per 10 minutes per account); (b) the display rounding above; (c) a take is charged
   whole seconds rounded up (a learner may lose under one second per take).
-- **QTA-13 Pronunciation audit (2026-10-09, `origin/main` 5e02173e before D-16Z; line numbers are of that commit unless
+- **QTA-13 Pronunciation audit (2026-10-09, `origin/main` 5e02173e before D-165; line numbers are of that commit unless
   marked "now").**
   * *Learner entry points:* `speaking-take.js` `assess()` calls `api.assessPronunciation` (`:127` before, `:136` now), the
     only caller; it is reached through `product/speaking-recorder.js` by Speak (`screens/speak/screen.js:90`) and Compare
@@ -5428,7 +5428,7 @@ the meters below.
   (Groq, ~$0.04 per audio hour, 10 s minimum) is charged to nothing in the learner's plan: the Orena push-to-talk and the
   speaking rooms above send audio to it and only the *text* that follows is an `orena.message` where it reaches the agent.
   The Voice slice decides whether transcription seconds belong to a voice meter (with `voice_seconds_per_message`, QTA-4),
-  to `pronunciation.audio` (a free-speech coaching action), or stay free with the brake; D-16Z does not decide it. Blocks
+  to `pronunciation.audio` (a free-speech coaching action), or stay free with the brake; D-165 does not decide it. Blocks
   nothing in the Voice slice, but `quota.refuse_unmetered` (QTA-4) still refuses live voice sessions while `orena.message` is
   enforced. Owner: human, then BACKEND.
 - **QTA-15 A take whose answer was lost: "record again" (architecture review of #119, P2-1).** When the network drops
@@ -5440,7 +5440,7 @@ the meters below.
   persistence and the human's decision; not built. Owner: design (a state, if wanted) / human (replay).
 - **QTA-16 Pronunciation notes from the review (P3).** (a) `NO_SPEECH_CHARGED=True` means a muted microphone burns allowance
   silently (five 60 s silent takes exhaust Free); `False` makes silent clips free provider spend bounded only by the
-  `speech_ai` brake - the human's answer is required before activation on :8000; (b) the stored-credential read that resolves
+  `speech_ai` brake - human decision 2026-10-09: True for the beta; a lost answer means "record again" under a new key (a new charge), no stored-result replay; (b) the stored-credential read that resolves
   the provider still runs on the event loop; (c) a local decode failure is a `pronunciation_evaluator` / `azure-speech`
   failure row though no Azure request was made (a distinct label needs the ledger allow-list, reserved to the human); (d)
   `displayAmount` rounds, so 299 of 300 s shows "5 of 5" minutes while a short take is still admitted (shared with Plan &

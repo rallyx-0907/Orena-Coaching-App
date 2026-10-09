@@ -198,7 +198,7 @@ export default async function mountCompareWithModel(element, ctx) {
         paintLive();
       },
       failure(error) {
-        // The plan's pronunciation minutes are used up (D-16Z): the server's own sentence, with the way to the plans.
+        // The plan's pronunciation minutes are used up (D-165): the server's own sentence, with the way to the plans.
         if (showAssessmentRefusal(ctx, error)) {
           errorText = '';
           return;

@@ -359,7 +359,7 @@ assert.equal(segmentOf(null), '');
   recorder.dispose();
 }
 {
-  // The plan's pronunciation minutes are used up (D-16Z): reported once as the plan's limit, carrying the server's
+  // The plan's pronunciation minutes are used up (D-165): reported once as the plan's limit, carrying the server's
   // own figures for the room's sentence - never a service failure, never retried.
   let clock = 0;
   const refusal = Object.assign(new Error('x'), { status: 429, category: 'quota_exhausted', context: { feature: 'pronunciation.audio', used: 300, limit: 300, scale: 60 } });

@@ -27,7 +27,7 @@ export const TAKE = Object.freeze({
 export const MIN_TAKE_MS = 600;
 export const MAX_TAKE_MS = 60_000;
 
-/* What went wrong, from the route's canonical error envelope. The plan's limit (D-16Z) is the server's refusal,
+/* What went wrong, from the route's canonical error envelope. The plan's limit (D-165) is the server's refusal,
    told apart from a failure of the service: nothing is retried, and the room says it from the server's own figures
    (`error`, for `screens/plan/quota-notice.js`). */
 export function failureOf(error) {
@@ -62,7 +62,7 @@ export function createSpeakingTake({
   let disposed = false;
   let startedAt = 0;
   let take = null; // { blob, url, ms }
-  // One key per take (D-16Z): the server charges a take's seconds once however often this exact take is sent. It
+  // One key per take (D-165): the server charges a take's seconds once however often this exact take is sent. It
   // changes only after the server answered that it charged nothing, so the same take can be assessed again.
   let takeKey = '';
   const state = { phase: TAKE.IDLE, result: null, error: null, kept: null, attemptId: '', reference: '' };

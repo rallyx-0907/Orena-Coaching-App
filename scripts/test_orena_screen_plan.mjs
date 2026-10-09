@@ -199,7 +199,7 @@ assert.equal(resetLabel({ window: 'day', resetsAt: null }), 'Resets every day');
   assert.equal(notice.quotaMessage(refusal), 'You have used 2 of 2 writing reviews this month.');
   assert.equal(notice.quotaMessage({ status: 429, category: 'quota_exhausted', context: {} }), 'You have reached the limit of your plan for now.');
 
-  /* Pronunciation minutes (D-16Z): stored in seconds, said in minutes exactly as Plan & usage shows them (whole when
+  /* Pronunciation minutes (D-165): stored in seconds, said in minutes exactly as Plan & usage shows them (whole when
      whole, one decimal otherwise), in the learner's language, from the server's own figures. */
   const pronunciation = (used, limit = 300) => ({ status: 429, category: 'quota_exhausted', context: { feature: 'pronunciation.audio', used, limit, unit: 'second', display_unit: 'minute', scale: 60 } });
   copy.setLanguages({ ui: 'en', support: 'en' });

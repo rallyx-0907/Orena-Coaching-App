@@ -1,4 +1,4 @@
-"""D-16Z `pronunciation.audio` enforcement, hermetic (CI, SQLite): `POST /api/speech/pronunciation`.
+"""D-165 `pronunciation.audio` enforcement, hermetic (CI, SQLite): `POST /api/speech/pronunciation`.
 
 The meter is the take's real length in seconds. The quota store is the in-memory TEST DOUBLE of
 `tests/test_quota_gate.py` (never a runtime store); the provider is either a scripted fake (so "the provider was not

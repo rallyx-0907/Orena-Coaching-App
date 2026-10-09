@@ -683,9 +683,9 @@ def _pronunciation_limiter() -> anyio.CapacityLimiter:
 
 
 PRONUNCIATION_METER = "pronunciation.audio"
-# [HUMAN, pending] A take the provider heard no speech in was still processed, and billed, by it. True (default)
+# [HUMAN, decided 2026-10-09: True for the beta] A take the provider heard no speech in was still processed, and billed, by it. True (default)
 # charges the seconds it processed against the plan - a silent clip is not free provider spend; False would charge
-# nothing, as for a provider failure. One line either way (D-16Z).
+# nothing, as for a provider failure. One line either way (D-165).
 NO_SPEECH_CHARGED = True
 
 
@@ -791,7 +791,7 @@ def _assess_metered(
     reference: str,
     unscripted: bool,
 ) -> Any:
-    """One assessment, admitted by the plan's `pronunciation.audio` allowance (D-16Z) when that is enforced.
+    """One assessment, admitted by the plan's `pronunciation.audio` allowance (D-165) when that is enforced.
 
     The meter is the take's real length, never the clicks. The take is decoded locally first (no provider call), so
     the exact whole seconds are reserved before the paid request; a take that needs more than remains is refused

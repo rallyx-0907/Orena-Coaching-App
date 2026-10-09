@@ -22,7 +22,7 @@ An exception inside the block settles 0 (dispatched work, the learner got nothin
 dispatched). Leaving the block without a settle settles the admitted units.
 
 A meter charged by what the request turns out to be (audio seconds) asks `require_ready()` first, measures the
-work locally, then admits exactly that many units (`pronunciation.audio`, D-16Z).
+work locally, then admits exactly that many units (`pronunciation.audio`, D-165).
 
 Work that outlives the call stack that admitted it - a streamed Orena answer is produced in a worker thread after
 the route returned - uses `begin()` instead: the same admission, returning the ticket, which the caller then owns
