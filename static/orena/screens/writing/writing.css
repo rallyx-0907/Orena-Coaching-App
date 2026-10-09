@@ -529,7 +529,7 @@
 .s-writing__keep.is-kept {
   border-color: transparent;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-writing__section-title {
   font-size: 13px;
@@ -730,7 +730,7 @@
 .s-writing__pill.is-active {
   border-color: transparent;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-writing__pill--setup {
   padding: 11px 18px;

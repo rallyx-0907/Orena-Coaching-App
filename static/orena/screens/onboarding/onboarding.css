@@ -27,9 +27,34 @@
   height: 100%;
   min-height: 0;
   display: flex;
-  background: var(--bg);
+  background: var(--ob-scrim), var(--ob-img) center / cover no-repeat, var(--bg);
   color: var(--text);
   overflow: hidden;
+}
+/* The backdrop (PUB-4, D-166): this screen only - never the shell, rail, bars or a learning
+   workspace. Dark is the design's midnight photo, light its paper; wide on the desktop, tall on the
+   phone. A static background: it adds no motion and no layout, so reduced motion needs nothing. */
+.s-onboarding {
+  --ob-img: url('../../public/bg/paper-wide.jpg');
+}
+:root[data-theme='dark'] .s-onboarding {
+  --ob-img: url('../../public/bg/midnight-wide.jpg');
+}
+:root[data-device='mobile'] .s-onboarding {
+  --ob-img: url('../../public/bg/paper-tall.jpg');
+}
+:root[data-theme='dark'][data-device='mobile'] .s-onboarding {
+  --ob-img: url('../../public/bg/midnight-tall.jpg');
+}
+/* AA over the photo: the page text tokens kit/tokens.css scopes to where the photo is behind the text. Only the kill switch
+   (a non-UI attribute) removes the photo; nothing depends on the operating system's transparency setting. */
+:root:not([data-backdrop='off']) .s-onboarding {
+  --muted: var(--bd-page-muted);
+  --text3: var(--bd-page-text3);
+  --accent-on-photo: var(--bd-page-accent);
+}
+:root[data-backdrop='off'] .s-onboarding {
+  background: var(--bg);
 }
 
 /* Every primary control the frame draws in this flow (Get started, the Continues, Go to Today) is
@@ -51,7 +76,11 @@
   flex-direction: column;
   gap: clamp(12px, 3vh, 28px);
   padding: clamp(20px, 4vh, 40px) 44px;
-  background: var(--mark-disc);
+  /* The design's translucent panel with a 2px blur, at alphas raised until white ink is AA over a
+     white pixel of the photo (--ob-aside); its right border is the light edge (D-147). */
+  background: var(--ob-aside);
+  backdrop-filter: blur(2px);
+  box-shadow: var(--edge-light);
   color: var(--toast-ink);
 }
 :root[data-device='mobile'] .s-onboarding__aside {
@@ -288,7 +317,9 @@
   bottom: 0;
   flex: none;
   padding: 0 0 40px;
-  background: var(--bg);
+  /* The frame draws no ground behind the button; content that scrolls under it is blurred, not hidden by a solid
+     block, so the photo shows through. */
+  backdrop-filter: blur(8px);
 }
 :root[data-device='mobile'] .s-onboarding__cta {
   padding-bottom: 24px;
@@ -656,7 +687,7 @@
   gap: 8px;
 }
 .s-onboarding__picker-row .c-row__trail {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 
 /* ---- Signed out (Welcome's second button and the Account frame, Onboarding.dc.html 01-02) ---- */

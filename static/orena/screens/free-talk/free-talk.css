@@ -130,7 +130,7 @@
 .s-ft__duration[aria-pressed='true'] {
   border-color: transparent;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-ft__phrase {
   padding: 9px 13px;

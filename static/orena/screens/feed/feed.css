@@ -271,7 +271,7 @@
 }
 .s-feed-icon--play {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 
 .s-feed-card__meaning {

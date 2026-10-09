@@ -4977,3 +4977,89 @@ type. Goal: the user understands the app's content structure without clicking ea
 9. **Gate.** `scripts/test_orena_screen_discover.mjs` section 13 renders the overview in English, Vietnamese and Chinese,
    and checks the order, the always-present Imported with its call to action, the VIP class on both import controls and the
    reduced-motion rule.
+
+## D-166 - Onboarding backdrop (PUB-4)
+
+Placeholder id; the number is assigned at merge. Human decision PUB-4 (2026-10-09), scope widened and then set to "make it like the design - the background shows fully, nothing blends into anything": the pinned Backdrop (photo per theme and device under the design's scrim, glass rail / top bar / phone bar at the design's alpha, Onboarding's own scrim and translucent aside) ships on the learner shell, the Admin shell and Onboarding, on by default with no learner control (non-UI kill switch `data-backdrop="off"`). No veil, no panel. Content surfaces stay solid; the chrome edge is `--edge-light` (D-147); a browser without `backdrop-filter` keeps the photo and gets a more opaque solid chrome.
+
+AA over the photo is met by scoped text tokens in `kit/tokens.css`, not by hiding the photo: on the chrome `--text3` and `--accent` move 3-12% toward `--text`; on the page `--muted` and `--text3` move 46-78% toward `--text` (hierarchy flattens for text set on the bare photo, most in light; inside every solid surface - card, panel, sheet, menu, input - the base tokens are restored by the generated `shell/surfaces.css`); Onboarding's aside gets +.22 (dark) / +.32 (light) alpha at most. Accent TEXT uses a dedicated `--accent-on-photo` (every accent-coloured text rule reads `var(--accent-on-photo, var(--accent))`, set only in the backdrop scopes), so fills, bars and dots keep `--accent` and no exception remains. The glass never depends on the operating system: there is no `prefers-reduced-transparency` rule; only a browser that truly lacks `backdrop-filter` gets a more opaque solid chrome, and it keeps the photo. Proven by `scripts/test_orena_kit.mjs` (BACKDROP) from `scripts/fixtures/backdrop_extremes.json`; exact values and the open human choices are in `UI_BACKEND_GAPS.md` PUB-4. Colour stays owned by `kit/tokens.css`.
+
+
+## D-165 - Pronunciation minutes enforced on the server: the take's real seconds, reserved before the paid request
+
+2026-10-09, the human's decisions relayed by the coordinating session, implemented on branch `feat/quota-pronunciation` on
+top of D-161 (quota core) and D-163 (`orena.message`). The number is assigned at merge. **Needs independent architecture
+review before merge** (entitlement and commerce enforcement on a paid provider path; an implementer may not self-approve).
+
+1. **What is metered.** `pronunciation.audio`: the length of a learner's take, never the number of clicks. The product unit
+   is the minute, the store holds seconds (catalogue scale 60); Free / Plus / Pro 5 / 30 / 120 minutes a month are the
+   catalogue's beta configuration and are not changed here. The month follows the learner's timezone (D-161 point 5). The
+   only metered route is `POST /api/speech/pronunciation` - the one place Azure Speech pronunciation assessment is called
+   (`speech_api._assess_metered`); no cache sits in front of it, every request with audio is a paid request.
+2. **The seconds are known before the call.** The route decodes the take locally first (`AzureSpeechPronunciationProvider.
+   prepare_audio`: ffmpeg to 16 kHz mono PCM, capped at `MAX_ASSESSED_SECONDS` = 60, no provider call) and measures it from
+   the WAV's `data` chunk (the old `len - 44` formula over-counted ffmpeg's 78-byte header by a millisecond, which would
+   charge a whole-second take one second more). It then reserves exactly `ceil(seconds)` (after millisecond rounding: 7.4 s
+   is 8, 7.0004 s is 7, a half second is 1; at most 60), dispatches, calls Azure with the already-decoded audio (decoded
+   once, not twice), and settles.
+3. **Reserve -> provider -> settle.** Exhausted is decided on the reservation, all or nothing: a take needing more seconds
+   than remain is `429 quota_exhausted` before the provider and is never partially assessed (a learner with 5 s left can
+   still send a 4.2 s take). The 429 body is the core's (`used`, `limit` in seconds with `unit: second`, `display_unit:
+   minute`, `scale: 60`, `resets_at`, `upgrade`). Enforcement unreadable (store, catalogue, switch) is `503 quota_unavailable`
+   and is asked before the decode (`quota.require_ready`), so that refusal does no ffmpeg work. **A 429 (exhausted) or a 409
+   (duplicate) is decided at the reservation, which needs the decoded length, so those still cost one local decode (up to 8
+   MiB / 20 s of CPU, no provider call)**; the per-account `speech_ai` brake bounds that. Not enforced: the route is exactly
+   the unmetered path (no read, no bucket).
+4. **What a take costs the learner.** Success: the seconds Azure processed (equal to the decoded length, never more than
+   reserved; the rest is released). Any provider failure - request failed, timeout, a result that cannot be used (malformed),
+   undecodable audio - settles **0**, consistent with D-161 point 10 / D-163 point 2 (the learner got nothing; Azure's billed
+   seconds stay in the AI cost ledger, not the allowance). The development stand-in (`score_kind != measured`) settles 0.
+   **Human decision 2026-10-09 (`speech_api.NO_SPEECH_CHARGED = True` for the beta): a take Azure answered
+   "no speech" is charged the seconds it processed** - it was processed and billed, it is not a service failure, and not
+   charging it would make silent clips free provider spend (bounded only by the per-process `speech_ai` brake, 60 requests per
+   10 minutes); set it to `False` to charge nothing. A provider that cannot measure ahead (no `prepare_audio`) reserves 60 s
+   and settles on the length it reports, else the reserved bound (a measured result) or 0.
+5. **Idempotency.** The operation is (account, meter, `Idempotency-Key`, a digest of the audio's SHA-256, language, line and
+   mode): a retry of the same take under the same key is never charged twice (`409 operation_finished`, or
+   `operation_in_progress` while the first is running, proven concurrently on PostgreSQL); other audio or another line under
+   the same key is another operation. The learner client sends one key per take and keeps it when the answer was lost (no
+   response) or the server says it already has the take, and takes a new one only after an answer of Orena's own that charged
+   nothing (a failure, a refusal), so "assess the same take again" after a service failure is allowed and never blocked. A
+   server that processed a take whose answer the client lost cannot replay the result (no audio or result store): the retry
+   is refused instead of charged (`409 operation_finished`). **That answer is terminal for the key (architecture review of
+   #119, P2-1):** the client maps `operation_finished` / `operation_conflict` to its own non-retryable failure
+   (`already_assessed`), says "This recording was already processed. Record it again to get a new assessment." (EN/VI/ZH, a
+   toast; `UI_BACKEND_GAPS.md` QTA-15) and offers nothing to resend; the learner records again - a new take, a new key, a new
+   real assessment and a new charge. Replaying a stored result instead would be new persistence and is the human's decision
+   (asked in parallel); none is built. `operation_in_progress` stays retryable with the same key.
+6. **Not metered (and why).** Learner pronunciation assessment is the only paid call here. `POST /api/speech/transcribe`
+   (Groq Whisper) is a separate speaking-input path - used by Free talk, Conversation, Situation, React, Reading transfer and
+   Orena's push-to-talk, never by the Speak / Compare / Shadow pronunciation rooms - and is left **unmetered**; the Voice
+   slice owns it (`UI_BACKEND_GAPS.md` QTA-13). Word text-to-speech (Azure `word_audio_azure`, Kokoro in `word_audio`) is
+   audio *playback*, not a learner pronunciation assessment, and is left unmetered. Media-import transcription (Groq, in the
+   worker) belongs to `media.import`. No new meter was invented.
+7. **Cost telemetry stays separate.** Every Azure request already records one `ai.operation` / `ai_cost_records` row
+   (capability `pronunciation_evaluator`, provider `azure-speech`, model `pronunciation-assessment`, the seconds Azure
+   processed, USD from the list price in `ai/pricing.py`, per account); every Groq request records a `speech_asr` row. A local
+   decode failure is now a row too. The Azure region and a provider-reported usage figure are not recorded (the telemetry
+   allow-list has no field for them and Azure's answer reports no usage); a ledger field is a schema decision reserved to the
+   human. The learner's allowance and the ledger share nothing: the allowance is what the learner is charged, the ledger is
+   what Azure charges.
+8. **Client.** `api.assessPronunciation` sends `Idempotency-Key` and `X-Orena-Timezone` (no JSON content type). The 429 is
+   the server's refusal and is told apart from a service failure (`failureOf` kind `quota`, never retried); Speak, Compare
+   and Shadowing show it as the Respond room's toast pattern with "See all plans" (`#/plan/pricing`), from the server's own
+   figures, EN/VI/ZH: "You have used 1.1 of 5 pronunciation minutes this month." Minutes are shown exactly as Plan & usage
+   shows them (`displayAmount`: whole when whole, otherwise one decimal; Vietnamese with a decimal comma). No client check
+   and no new visual. Plan & usage reads the same buckets (seconds), shown as minutes.
+9. **The route no longer blocks the event loop.** The decode, the quota calls and the provider request run in the thread pool
+   (they were synchronous calls inside an `async` handler), on a limiter of their own (`PRONUNCIATION_MAX_CONCURRENT`, default
+   8 of the pool's 40) so a burst of assessments queues instead of starving the synchronous routes. Provider resolution
+   (stored-credential read) still runs on the loop, as before. The decoder strips the client file's tags
+   (`-map_metadata -1 -fflags +bitexact`): only audio is sent to Azure.
+10. **Meter wiring.** `pronunciation.audio` joins `WIRED_METERS` and `SYNC_METERS` (the reconciler settles an abandoned take
+    at its reserved seconds, D-161 point 10, ABANDONED_SETTLES); `PUT /api/product/admin/quota {"enabled":true,"meters":
+    ["writing.review","orena.message","pronunciation.audio"]}` and `ORENA_QUOTA_METERS` can enforce it. Roll back = switch off.
+11. **Activation:** :8021 may enable `pronunciation.audio` after review; :8000 needs the explicit human GO and the
+    architecture review of D-161 points 6-8.
+12. **Accepted, recorded:** a take longer than 60 s is cut to 60 s by the decoder (as before this change) and is charged 60;
+    a take is charged its whole seconds rounded up, so a learner may lose up to one second per take to rounding.

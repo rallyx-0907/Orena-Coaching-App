@@ -358,5 +358,27 @@ assert.equal(segmentOf(null), '');
   assert.deepEqual(failures, [{ kind: 'no_speech', retry: false }]);
   recorder.dispose();
 }
+{
+  // The plan's pronunciation minutes are used up (D-165): reported once as the plan's limit, carrying the server's
+  // own figures for the room's sentence - never a service failure, never retried.
+  let clock = 0;
+  const refusal = Object.assign(new Error('x'), { status: 429, category: 'quota_exhausted', context: { feature: 'pronunciation.audio', used: 300, limit: 300, scale: 60 } });
+  const api = { assessPronunciation: async () => { throw refusal; } };
+  const fakeRecorder = { start: async () => true, stop: async () => ({ blob: new Blob(['x'.repeat(4000)]), url: 'blob:r' }), cleanup() {}, discard() {}, snapshot: () => ({}) };
+  const source = sourceFromLesson('rec-lesson-3', fixture('listening_library_lesson.en.json'));
+  const failures = [];
+  const recorder = createSpeakingRecorder({
+    api, source, key: lineKey(source.sourceId, source.line.lineId), language: 'en',
+    on: { failure: (error) => failures.push(error) },
+    deps: { createRecorder: () => fakeRecorder, watchMic: () => ({ stop() {} }), now: () => clock, urls: { createObjectURL: () => 'blob:take', revokeObjectURL() {} } },
+  });
+  await recorder.start();
+  clock = 1500;
+  await recorder.stop();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.deepEqual(failures, [{ kind: 'quota', retry: false, error: refusal }]);
+  assert.equal(micStateFor('quota'), 'provider', 'a room that does not know the limit still shows a failed request');
+  recorder.dispose();
+}
 
 console.log('test_orena_screen_speak.mjs: Scripted Pronunciation data mapping, shared speaking-source resolution, take-store views and the one-attempt-per-take recorder - real backend contracts, rule 40 throughout: PASS');

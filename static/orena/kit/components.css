@@ -217,7 +217,7 @@
   border: 0;
   background: none;
   padding: 0;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   font-size: 14px;
   font-weight: 600;
 }

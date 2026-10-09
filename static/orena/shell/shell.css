@@ -18,10 +18,15 @@
   flex-direction: column;
   width: var(--rail-w);
   flex: none;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid transparent;
   padding: 18px 12px 14px;
   gap: 4px;
-  background: var(--surface);
+  background: var(--bd-chrome);
+  backdrop-filter: var(--bd-chrome-blur);
+  -webkit-backdrop-filter: var(--bd-chrome-blur);
+  box-shadow: var(--edge-light);
+  position: relative;
+  z-index: 1;
   overflow-y: auto;
 }
 .o-rail__brand {
@@ -62,7 +67,7 @@
 .o-rail__item[aria-current='page'] {
   font-weight: 600;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .o-rail__label {
   flex: 1;
@@ -147,7 +152,7 @@
   flex: none;
 }
 .o-ask__voice:hover {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 
 /* The rail's account row */
@@ -203,6 +208,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 /* Phone header */
@@ -253,8 +260,11 @@
   height: 64px;
   padding: 0 var(--pad);
   flex: none;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--bd-chrome);
+  backdrop-filter: var(--bd-chrome-blur);
+  -webkit-backdrop-filter: var(--bd-chrome-blur);
+  border-bottom: 1px solid transparent;
+  box-shadow: var(--edge-light);
 }
 .o-crumb {
   display: flex;
@@ -315,7 +325,7 @@
   padding: 0 14px;
   border-radius: 999px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
@@ -396,8 +406,10 @@
   margin: 0 12px max(18px, calc(env(safe-area-inset-bottom, 0px) - 10px));
   padding: 0 4px;
   border-radius: 24px;
-  background: var(--surface);
-  box-shadow: var(--sh2);
+  background: var(--bd-chrome);
+  backdrop-filter: var(--bd-chrome-blur);
+  -webkit-backdrop-filter: var(--bd-chrome-blur);
+  box-shadow: var(--edge-light), var(--sh2);
   flex: none;
   position: relative;
 }
@@ -420,7 +432,7 @@
 }
 .o-bnav__item[aria-current='page'] {
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .o-bnav__pill {
   position: relative;
@@ -465,7 +477,7 @@
   color: var(--muted);
 }
 .o-bnav__orena[aria-current='page'] {
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .o-bnav__disc {
   width: 58px;
@@ -510,4 +522,83 @@
 }
 :root[data-bare='1'] .o-main {
   padding: 0;
+  background: none;
+}
+
+/* ---- The backdrop (PUB-4, D-166; Orena.dc.html body[data-backdrop=on], Orena-Admin.dc.html) ----
+   The design's default is ON and it has no learner control (its "Backdrop" button is the prototype strip), so this
+   ships on. The kill switch is a non-UI attribute only: <html data-backdrop="off">. Two layers behind the frame - the
+   photo for the theme and device, and the design's scrim at its strength - then the rail, the desktop top bar and
+   the phone bar as glass (--bd-chrome, edge from --edge-light, D-147). Cards, panels, sheets and every workspace's
+   reading and working surface keep their own solid tokens; the photo shows fully, as the design draws it. AA is met
+   by scoped text tokens (--bd-chrome-*, --bd-page-*; kit/tokens.css), measured in test_orena_kit.mjs. */
+.o-frame,
+.a-shell {
+  --bd-img: url('../public/bg/paper-wide.jpg');
+}
+:root[data-theme='dark'] .o-frame,
+:root[data-theme='dark'] .a-shell {
+  --bd-img: url('../public/bg/midnight-wide.jpg');
+}
+:root[data-device='mobile'] .o-frame,
+:root[data-device='mobile'] .a-shell {
+  --bd-img: url('../public/bg/paper-tall.jpg');
+}
+:root[data-theme='dark'][data-device='mobile'] .o-frame,
+:root[data-theme='dark'][data-device='mobile'] .a-shell {
+  --bd-img: url('../public/bg/midnight-tall.jpg');
+}
+.o-frame::before,
+.a-shell::before,
+.o-frame::after,
+.a-shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.o-frame::before,
+.a-shell::before {
+  background: var(--bd-img) center / cover no-repeat;
+}
+.o-frame::after,
+.a-shell::after {
+  background: var(--bd-scrim);
+  opacity: var(--bd-strength);
+}
+:root[data-route^='admin'] .o-main {
+  background: none;
+}
+
+/* The scoped text tokens (kit/tokens.css), where the photo is behind the text. --accent-on-photo is the colour of accent TEXT
+   (every `color: var(--accent-on-photo, var(--accent))` rule); fills, bars and dots keep --accent. Outside these scopes the
+   variable is unset and the fallback --accent stands. Nothing here depends on the operating system's transparency setting. */
+:root:not([data-backdrop='off']) :is(.o-rail, .o-topbar, .o-bnav, .a-rail, .a-top, .a-mnav) {
+  --text3: var(--bd-chrome-text3);
+  --accent-on-photo: var(--bd-chrome-accent);
+}
+:root:not([data-backdrop='off']) :is(.o-main, .a-main) {
+  --muted: var(--bd-page-muted);
+  --text3: var(--bd-page-text3);
+  --accent-on-photo: var(--bd-page-accent);
+}
+
+/* Fallbacks. The kill switch (a non-UI attribute) is the only thing that removes the photo. A browser that truly lacks
+   backdrop-filter keeps the photo and the scrim and gets a more opaque solid chrome (--bd-chrome-solid, .92) so it still
+   reads as the design. There is deliberately no prefers-reduced-transparency rule: the glass is the same on every platform. */
+:root[data-backdrop='off'] .o-frame::before,
+:root[data-backdrop='off'] .o-frame::after,
+:root[data-backdrop='off'] .a-shell::before,
+:root[data-backdrop='off'] .a-shell::after {
+  display: none;
+}
+:root[data-backdrop='off'] {
+  --bd-chrome: var(--surface);
+  --bd-chrome-blur: none;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root[data-theme]:not([data-backdrop='off']) {
+    --bd-chrome: var(--bd-chrome-solid);
+  }
 }

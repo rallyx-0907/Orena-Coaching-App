@@ -154,4 +154,104 @@ assert.deepEqual(failureOf(Object.assign(new TypeError('Failed to fetch'))), { k
   assert.equal(h.take.takeMs, 1500);
 }
 
+// The plan's pronunciation minutes (D-165). The server charges a take's seconds once per idempotency key: one key
+// per take, kept when the answer was lost or the server says it already has the take, new when the server answered
+// that it charged nothing - so a retry of the same take is never charged twice and never blocked by a failure.
+const refusal = Object.assign(new Error('You have used 5 of 5'), {
+  status: 429, category: 'quota_exhausted', context: { feature: 'pronunciation.audio', used: 300, limit: 300, scale: 60 },
+});
+assert.deepEqual(failureOf(refusal), { kind: 'quota', retry: false, error: refusal }, 'the limit is the server\'s refusal, not a service failure');
+assert.equal(failureOf(Object.assign(new Error('x'), { status: 429, category: 'rate_limited' })).kind, 'service', 'another 429 is not the plan');
+{
+  /* A server that answers only what the real one can: a key it has seen is `operation_in_progress` while its first
+     request runs and `operation_finished` for ever after - whatever that first request's outcome (the quota core
+     records a settled-0 failure too), so only a NEW key can be assessed again. `lose` makes the answer to a first
+     request vanish on the way back (the server still finishes it); `hang` leaves it running; `fail` makes the first
+     request an answered service failure. */
+  const server = (plan) => {
+    const seen = new Map(); // key -> 'in_progress' | 'finished'
+    const sent = [];
+    return {
+      sent,
+      finish: (key) => seen.set(key, 'finished'),
+      api: {
+        assessPronunciation: async (blob, language, line, mode, filename, options) => {
+          const key = options?.idempotencyKey;
+          sent.push(key);
+          if (seen.get(key) === 'in_progress') throw Object.assign(new Error('busy'), { status: 409, category: 'operation_in_progress' });
+          if (seen.get(key) === 'finished') throw Object.assign(new Error('done'), { status: 409, category: 'operation_finished' });
+          const how = plan.shift();
+          seen.set(key, how === 'hang' ? 'in_progress' : 'finished');
+          if (how === 'lose' || how === 'hang') throw new TypeError('Failed to fetch');
+          if (how === 'fail') throw Object.assign(new Error('timeout'), { status: 504, category: 'pronunciation_timeout' });
+          return measured(line);
+        },
+      },
+    };
+  };
+  const record = async (h, line) => {
+    await h.take.start();
+    h.advance(1500);
+    await h.take.stop(line);
+  };
+
+  // The answer was lost but the server finished: the resend is `operation_finished` - terminal, not a retry loop.
+  {
+    const s = server(['lose', 'ok']);
+    const h = harness({ api: s.api });
+    await record(h, 'Hello again.');
+    assert.deepEqual(h.last().error, { kind: 'offline', retry: true });
+    await h.take.retry();
+    assert.equal(s.sent[0], s.sent[1], 'no answer: the same key, so a processed take is never charged twice');
+    assert.deepEqual(h.last().error, { kind: 'already_assessed', retry: false });
+    const before = s.sent.length;
+    await h.take.retry();
+    assert.equal(s.sent.length, before, 'nothing is resent: the answer could only ever be the same');
+    assert.equal(h.last().phase, TAKE.ERROR);
+    await record(h, 'Hello again.'); // the learner records again: a new take, a new key, a new assessment
+    assert.equal(h.last().phase, TAKE.RESULT);
+    assert.notEqual(s.sent[2], s.sent[0], 'a new take is a new key');
+  }
+  // The first request is still running when the resend arrives: that is worth retrying, with the same key.
+  {
+    const s = server(['hang']);
+    const h = harness({ api: s.api });
+    await record(h, 'Hello again.');
+    await h.take.retry();
+    assert.deepEqual(h.last().error, { kind: 'service', retry: true }, 'in progress: try again shortly');
+    assert.equal(s.sent[0], s.sent[1]);
+    s.finish(s.sent[0]);
+    await h.take.retry();
+    assert.deepEqual(h.last().error, { kind: 'already_assessed', retry: false });
+  }
+  // The server answered a failure (it charged nothing and closed that key): the same take goes again under a NEW key.
+  {
+    const s = server(['fail', 'ok']);
+    const h = harness({ api: s.api });
+    await record(h, 'Hello again.');
+    assert.deepEqual(h.last().error, { kind: 'service', retry: true });
+    await h.take.retry();
+    assert.equal(h.last().phase, TAKE.RESULT);
+    assert.notEqual(s.sent[0], s.sent[1], 'an answered failure closed the key: a new key');
+    assert.ok(s.sent.every((key) => typeof key === 'string' && key.length >= 8), 'every send carries a key');
+  }
+  assert.deepEqual(failureOf(Object.assign(new Error('x'), { status: 409, category: 'operation_conflict' })), { kind: 'already_assessed', retry: false });
+}
+
+// The request itself: the take's key and the device timezone ride as headers, and the form is left to the browser
+// (a JSON content type would break the multipart boundary).
+{
+  const { api } = await import('../static/orena/infrastructure/api.js');
+  const seen = [];
+  globalThis.fetch = async (url, options) => (seen.push({ url, options }), new Response('{"score_kind":"measured"}', { status: 200, headers: { 'content-type': 'application/json' } }));
+  await api.assessPronunciation(new Blob(['x']), 'en', 'Hello.', 'scripted', 'recording.webm', { idempotencyKey: 'take-key-1' });
+  await api.assessPronunciation(new Blob(['x']), 'en', 'Hello.');
+  assert.equal(seen[0].url, '/api/speech/pronunciation');
+  assert.equal(seen[0].options.headers['Idempotency-Key'], 'take-key-1');
+  assert.ok(seen[0].options.headers['X-Orena-Timezone'], 'the learner\'s zone decides when the month ends');
+  assert.ok(!Object.keys(seen[0].options.headers).some((name) => name.toLowerCase() === 'content-type'));
+  assert.ok(seen[0].options.body instanceof FormData);
+  assert.ok(!('Idempotency-Key' in seen[1].options.headers), 'no key unless the take supplies one');
+}
+
 console.log('Speaking take lifecycle: PASS');

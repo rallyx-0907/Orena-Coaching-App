@@ -254,7 +254,7 @@
 .s-check__result-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
   position: relative;
 }
 .s-check__score {

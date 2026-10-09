@@ -71,7 +71,7 @@
 }
 .s-word-icon--play {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-photo, var(--accent));
 }
 .s-word-card__meaning {
   border-radius: 16px;
