@@ -212,7 +212,7 @@ export function sectionHead({ title, size = 'lg', action = null } = {}) {
   </div>`;
 }
 
-/* ---- VIP import button (human, 2026-10-09, D-16V): "+ Import" with the running rainbow ring and glow of
+/* ---- VIP import button (human, 2026-10-09, D-167): "+ Import" with the running rainbow ring and glow of
    components.css `.o-btn--vip`, over the primary fill. Every entry point to Import draws this one control
    (Discover's header and its Imported call to action, Today's featured card, My Library's header); the caller
    gives the already-translated `label` and the `data-*` its click handler listens for. ---- */

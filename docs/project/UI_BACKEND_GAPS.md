@@ -5506,12 +5506,12 @@ the meters below.
   account is read from the `agent.turn` rows (`opening: true`, rounds, tokens); the AI capability vocabulary was not
   extended. Owner: BACKEND (review of #118, P1-1).
 
-## Discover All as a sectioned overview (D-16V), 2026-10-09
+## Discover All as a sectioned overview (D-167), 2026-10-09
 
 - **DAS-1 The design draws no empty section, and no import call to action.** Any other section with nothing to show is
   omitted rather than invented. Imported is the human's exception (always drawn; with nothing imported it is a line of copy
   and the page's "+ Import" control), and that control, with the header's, carries a rainbow border the design does not
-  draw (explicit human exception to D-147, D-16V point 7). The call-to-action card, its copy and the rainbow are
+  draw (explicit human exception to D-147, D-167 point 7). The call-to-action card, its copy and the rainbow are
   implemented from the human's words, not from a frame: the design needs to draw them. Owner: DESIGN / human.
 - **DAS-2 No "featured" ordering exists, so "representative" is the tab's first five.** Read lists every article before any
   book, so on All the Read row shows articles until a learner's catalogue has fewer than five. A mix of articles and books

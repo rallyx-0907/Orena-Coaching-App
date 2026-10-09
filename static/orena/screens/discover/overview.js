@@ -1,4 +1,4 @@
-/* The All tab's markup (D-16V): four sections, each kit's section heading with its "See all" and a
+/* The All tab's markup (D-167): four sections, each kit's section heading with its "See all" and a
    row of the very cards the section's own tab draws. DOM-free (markup in, markup out) so
    scripts/test_orena_screen_discover.mjs can render it; screen.js supplies `card` (entry -> card
    markup, the one function every tab uses) and the translate function.

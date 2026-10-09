@@ -257,7 +257,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal(hrefFor({ id: 'collection:9', kind: 'collection' }, href), '#/collection/9');
 }
 
-// 13. The All tab is a sectioned overview (D-16V): Listen - Watch, Read, Collections, Imported (the skill
+// 13. The All tab is a sectioned overview (D-167): Listen - Watch, Read, Collections, Imported (the skill
 // order, D-152), each the first OVERVIEW_LIMIT entries of its own tab with a "See all" that opens that tab;
 // Imported is always drawn, as an import call to action while nothing is imported.
 {
@@ -353,7 +353,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
 
   // The VIP import control (human exception to D-147, 2026-10-09): on the header's "+ Import" and on the call to
   // action, a rotating conic-gradient border around the accent fill; held still under reduced motion; no colour literal.
-  const css = fs.readFileSync('static/orena/kit/components.css', 'utf8'); // the VIP control is a kit control (D-16V)
+  const css = fs.readFileSync('static/orena/kit/components.css', 'utf8'); // the VIP control is a kit control (D-167)
   const screenSrc = fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8');
   assert.match(screenSrc, /vipButton\(\{ label: t\('importAction'\), dataset: \{ import: '' \} \}\)/, 'the header "+ Import" is the VIP control');
   assert.match(css, /@property --vip-angle\s*\{[^}]*syntax:\s*'<angle>'/, 'the angle is a registered property, so it can animate');

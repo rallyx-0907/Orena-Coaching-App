@@ -273,7 +273,7 @@ export function visibleEntries(entries, { tab = 'all', query = '', filters = nul
     .filter((entry) => !q || `${entry.title} ${entry.author}`.toLowerCase().includes(q));
 }
 
-/* The All tab is an overview, not a library (D-16V): four sections in the skill order (D-152) - Listen · Watch,
+/* The All tab is an overview, not a library (D-167): four sections in the skill order (D-152) - Listen · Watch,
    Read, Collections, Imported - each the first `OVERVIEW_LIMIT` entries of its own tab (the very list
    `visibleEntries` gives that tab, in its order), and a "See all" that opens that tab. `tab` is both the section's
    identity and the tab it leads to; its heading is that tab's own label. Search and filters narrow every section

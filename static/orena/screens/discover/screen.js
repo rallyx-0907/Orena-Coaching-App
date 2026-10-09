@@ -143,7 +143,7 @@ export default async function discover(element, ctx) {
       mount(resultsEl, emptyMarkup({ text: t('emptyText'), actionLabel: hasFilters || state.query.trim() ? t('clearFilters') : '', iconName: 'inbox' }));
       resultsEl.querySelector('[data-empty-action]')?.addEventListener('click', clearFilters);
     } else if (overview) {
-      /* D-16V: All is an overview of four sections, never one grid of every type. Each section
+      /* D-167: All is an overview of four sections, never one grid of every type. Each section
          draws the same cards its own tab draws (cardFor) and a "See all" that opens that tab. */
       mount(resultsEl, overviewMarkup(overviewSections(state.entries, { query: state.query, filters: state.filters }), { card: cardFor, t }));
       resultsEl.querySelector('[data-import-cta]')?.addEventListener('click', openImportFlow);
@@ -257,7 +257,7 @@ export default async function discover(element, ctx) {
 
   /* Each source lands in its own bucket and is painted as it arrives (not in practice mode, which
      waits for every source): a slow or failed source leaves only its own section late or out, never
-     the others (D-16V). The bucket order is the order the tabs and the sections list their cards. */
+     the others (D-167). The bucket order is the order the tabs and the sections list their cards. */
   const buckets = { articles: [], books: [], media: [], collections: [] };
   function compose() {
     const textEntries = (memory?.value?.imports || []).map((item) => entryFromTextImport(item));

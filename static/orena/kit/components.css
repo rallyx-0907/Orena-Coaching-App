@@ -539,7 +539,7 @@
   backdrop-filter: blur(6px);
 }
 
-/* ---- The VIP import control (human, 2026-10-09, D-16V): every entry point to Import - Discover's header and its
+/* ---- The VIP import control (human, 2026-10-09, D-167): every entry point to Import - Discover's header and its
    Imported call to action, Today's featured card, My Library's header (kit `vipButton`). A running rainbow - a conic gradient (the skill and category hues from tokens.css, no colour of its
    own) turned by an animated @property angle - as a 3px ring around the unchanged accent fill (so the label keeps
    the contrast the primary button has) and as a soft blurred glow behind the button. Both are pseudo-elements

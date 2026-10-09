@@ -211,7 +211,7 @@ export default async function mountToday(element, ctx) {
     </div>`;
   }
 
-  // Import, featured (human, 2026-10-09, D-16V): the page's own card shell and icon tile, one line of what it is for,
+  // Import, featured (human, 2026-10-09, D-167): the page's own card shell and icon tile, one line of what it is for,
   // and the VIP "+ Import" control - the same one every entry point draws, opening the same flow.
   function importMarkup() {
     return html`<div class="o-card s-today-import">

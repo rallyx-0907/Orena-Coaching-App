@@ -4928,7 +4928,7 @@ change to `main` and the Intelligence lane receives it by merging forward.
    voice 503 against the contract text and drives the transport through each; `tests/test_agent_contract_tables.py` fails if
    the quota gate can answer a category the contract does not name, or the voice refusal drifts.
 
-## D-16V - Discover All is a sectioned overview
+## D-167 - Discover All is a sectioned overview
 
 2026-10-09, explicit human decision (product owner). The number is assigned at merge. `feat/discover-all-sections`.
 
