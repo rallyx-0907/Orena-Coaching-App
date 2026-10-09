@@ -71,6 +71,8 @@ SETTING_KEY = "product.quota_enforcement"
 # refused by the admin setting and ignored (logged) in the environment: a Plan screen must never show a meter as
 # counted while nothing counts it.
 WIRED_METERS: tuple[str, ...] = ("writing.review",)
+# Meters whose provider call ends inside the request; only these are reconciled after RECONCILE_AFTER.
+SYNC_METERS: tuple[str, ...] = ("writing.review",)
 SWITCH_CACHE_SECONDS = 5.0
 
 # [HUMAN, pending] What a reservation whose owner died after dispatch costs: "admitted" (default, human
@@ -80,6 +82,8 @@ ABANDONED_SETTLES = "admitted"
 # twice the slowest provider timeout of a wired route (OLLAMA_TIMEOUT 180 s).
 RECONCILE_AFTER = timedelta(minutes=15)
 RECONCILE_INTERVAL_SECONDS = 600
+# How often an admission re-reads the latest bucket when its computed window lost a race (review P1-1).
+WINDOW_RETRIES = 4
 
 # A window never shrinks below this when a timezone change moves its boundary (anti-abuse, D-160).
 MIN_WINDOW = {"day": timedelta(hours=23), "month": timedelta(days=27)}
@@ -169,9 +173,11 @@ _switch_lock = threading.Lock()
 
 
 def configure_quota(**fields: Any) -> QuotaRuntime:
-    global _runtime, _switch_cache
+    global _runtime, _switch_cache, _switch_last_good, _switch_ever_read
     _runtime = QuotaRuntime(**fields)
     _switch_cache = None
+    _switch_last_good = None
+    _switch_ever_read = False
     return _runtime
 
 
@@ -183,8 +189,12 @@ def _env() -> Any:
     return os.environ if _runtime.env is None else _runtime.env
 
 
-def _setting() -> dict | None:
-    """The stored switch, cached a few seconds. A read failure keeps the last good value (logged)."""
+_UNREAD = object()
+
+
+def _setting() -> Any:
+    """The stored switch, cached a few seconds: a dict, None (nothing stored / no store), or `_UNREAD` when the
+    store failed and no value was ever read in this process. A failure after a good read keeps that value."""
     global _switch_cache, _switch_last_good
     import time
 
@@ -199,12 +209,24 @@ def _setting() -> dict | None:
         value = record.get("value") if record else None
         value = value if isinstance(value, dict) else None
     except Exception:
+        if not _switch_ever_read:
+            _log.error("quota switch setting unreadable and never read: enforcement fails closed", exc_info=True)
+            return _UNREAD
         _log.warning("quota switch setting unreadable; keeping the last value read", exc_info=True)
         return _switch_last_good
     with _switch_lock:
         _switch_cache = (now + SWITCH_CACHE_SECONDS, value)
         _switch_last_good = value
+        _mark_read()
     return value
+
+
+_switch_ever_read = False
+
+
+def _mark_read() -> None:
+    global _switch_ever_read
+    _switch_ever_read = True
 
 
 def _clear_switch_cache() -> None:
@@ -213,28 +235,52 @@ def _clear_switch_cache() -> None:
 
 
 def switch() -> dict[str, Any]:
-    """{enabled, meters, source, state, store}. `state`: off | enforced | unavailable."""
+    """{enabled, meters, source, state, reason, store}. `state`: off | enforced | unavailable.
+
+    Fails closed (review of #116, P2-1):
+      * `ORENA_QUOTA_ENFORCEMENT=off` -> off, whatever the setting says;
+      * `=on` -> on; if no wired meter resolves (ORENA_QUOTA_METERS empty and the setting lists none or cannot
+        be read) every wired meter answers 503 (`reason=no_meters`) - never a silent off;
+      * unset -> the admin setting decides; a setting that cannot be read, in a process that never read it, makes
+        every wired meter answer 503 (`reason=switch_unreadable`); nothing stored -> off.
+    :8000 must pin both environment variables so the setting is never the authority there.
+    `meters` lists the meters that are refused or metered (both go through `admit()`'s store path)."""
     env = _env()
     raw = str(env.get(FLAG, "") or "").strip().casefold()
-    setting = _setting() or {}
-    if raw in _ON | _OFF:
-        enabled, source = raw in _ON, "environment"
+    raw_meters = env.get(METERS_FLAG)
+    env_meters = (
+        [item.strip() for item in str(raw_meters).split(",") if item.strip()]
+        if raw_meters is not None and str(raw_meters).strip() != "" else None
+    )
+    store = _runtime.repository is not None and _runtime.incarnations is not None and _runtime.plan_for is not None
+    base = {"store": "ready" if store else (_runtime.reason or "missing"), "wired_meters": list(WIRED_METERS)}
+    if raw in _OFF:
+        return {**base, "enabled": False, "meters": [], "source": "environment", "state": "off", "reason": ""}
+    setting = _setting() if (raw not in _ON or env_meters is None) else None
+    unreadable = setting is _UNREAD
+    setting = {} if unreadable or setting is None else setting
+    if raw in _ON:
+        enabled, source = True, "environment"
+    elif unreadable:
+        return {**base, "enabled": True, "meters": list(WIRED_METERS), "source": "setting",
+                "state": "unavailable", "reason": "switch_unreadable"}
     else:
         enabled, source = setting.get("enabled") is True, "setting" if setting else "default"
-    raw_meters = env.get(METERS_FLAG)
-    listed = (
-        [item.strip() for item in str(raw_meters).split(",") if item.strip()]
-        if raw_meters is not None and str(raw_meters).strip() != ""
-        else [str(item) for item in setting.get("meters") or []]
-    )
+    listed = env_meters if env_meters is not None else [str(item) for item in setting.get("meters") or []]
     ignored = [item for item in listed if item not in WIRED_METERS]
     if ignored:
         _log.warning("quota meters not wired in this build are ignored: %s", ", ".join(ignored))
     meters = [item for item in WIRED_METERS if item in listed]
-    store = _runtime.repository is not None and _runtime.incarnations is not None and _runtime.plan_for is not None
-    state = "off" if not enabled or not meters else ("enforced" if store else "unavailable")
-    return {"enabled": enabled, "meters": meters if enabled else [], "source": source, "state": state,
-            "store": "ready" if store else (_runtime.reason or "missing"), "wired_meters": list(WIRED_METERS)}
+    if not enabled:
+        return {**base, "enabled": False, "meters": [], "source": source, "state": "off", "reason": ""}
+    if not meters:
+        if source == "environment":
+            _log.error("ORENA_QUOTA_ENFORCEMENT=on but no wired meter is listed: every wired meter answers 503")
+            return {**base, "enabled": True, "meters": list(WIRED_METERS), "source": source,
+                    "state": "unavailable", "reason": "switch_unreadable" if unreadable else "no_meters"}
+        return {**base, "enabled": True, "meters": [], "source": source, "state": "off", "reason": ""}
+    return {**base, "enabled": True, "meters": meters, "source": source,
+            "state": "enforced" if store else "unavailable", "reason": "" if store else (_runtime.reason or "store")}
 
 
 def enforced_meters() -> list[str]:
@@ -502,8 +548,12 @@ def _reserve(meter: str, units: int, digest: str) -> Ticket:
     user_key = current_user_key()
     incarnation = incarnation_for(user_key)
     try:
-        plan = _runtime.plan_for(user_key, strict=True)
-        _plans, revision = current_catalog(strict=True)
+        # One catalogue snapshot for both the limit and the policy label it is recorded under (review P3-2); the
+        # subscription read only names the effective plan.
+        plans, revision = current_catalog(strict=True)
+        plan = plans.get(_runtime.plan_for(user_key, strict=True).id)
+        if plan is None:
+            raise CatalogUnavailable("the effective plan is not in the catalogue snapshot")
     except CatalogUnavailable as error:
         raise _unavailable("catalogue") from error
     except HTTPException:
@@ -516,7 +566,7 @@ def _reserve(meter: str, units: int, digest: str) -> Ticket:
         raise ValueError(f"{meter} is a count cap, not a windowed meter")
     key = _facts_now().idempotency_key or str(uuid.uuid4())
     op = operation_id(incarnation=incarnation, meter=meter, key=key, request_digest=digest)
-    for _attempt in range(2):
+    for _attempt in range(WINDOW_RETRIES):
         now = _runtime.clock()
         try:
             previous = repository.latest_buckets(incarnation, [meter]).get(meter)
@@ -530,8 +580,10 @@ def _reserve(meter: str, units: int, digest: str) -> Ticket:
         except Exception as error:
             raise _unavailable("store") from error
         status = outcome.get("status")
-        if status == "window_closed":
-            continue  # the window ended between the read and the lock: decide again in the next one
+        if status in ("window_closed", "window_superseded"):
+            # The window ended between the read and the lock, or another request (in another zone) opened the
+            # current window first: read the latest bucket again and decide in the window that now holds.
+            continue
         break
     else:
         raise _unavailable("window")
@@ -565,6 +617,8 @@ def admit(meter: str, *, units: int = 1, request_digest: str = "") -> Iterator[A
     if meter not in METERS:
         raise ValueError(f"Unknown meter {meter!r}")
     state = switch()
+    if meter in state["meters"] and state["state"] == "unavailable":
+        raise _unavailable(state["reason"] or "store")
     if meter not in state["meters"]:
         token = _TICKET.set(NULL_TICKET)
         try:
@@ -597,11 +651,17 @@ def usage_for(user_key: str, plan: Plan) -> dict[str, dict[str, Any]]:
 
     Only enforced meters appear (`known` with `used` and `resets_at`, or `unavailable`); the rest are not
     metered and the caller says so. Never "0 used" for a store it could not read."""
-    meters = [key for key in enforced_meters() if key in plan.entitlement_map()]
+    state = switch()
+    meters = [key for key in state["meters"] if key in plan.entitlement_map()]
     if not meters:
         return {}
     repository = _runtime.repository
-    if repository is None or _runtime.incarnations is None:
+    if state["state"] == "unavailable" or repository is None or _runtime.incarnations is None:
+        return {key: {"state": "unavailable"} for key in meters}
+    try:
+        # The display's limits are known only when enforcement's own (strict) catalogue read works (review P3-4).
+        current_catalog(strict=True)
+    except CatalogUnavailable:
         return {key: {"state": "unavailable"} for key in meters}
     try:
         now = _runtime.clock()
@@ -627,7 +687,9 @@ def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int =
     one (never handed to a provider) is released. Idempotent; several processes may run it."""
     now = now or datetime.now(UTC)
     done = {"settled": 0, "released": 0}
-    for row in repository.stale_dispatched(now - RECONCILE_AFTER, limit, states=("reserved", "dispatched")):
+    # Only synchronous meters (review P3-1): an async meter (media import) is settled by its worker, never here.
+    for row in repository.stale_dispatched(now - RECONCILE_AFTER, limit, states=("reserved", "dispatched"),
+                                           meters=SYNC_METERS):
         if row["state"] == "dispatched":
             actual = int(row["admitted_units"]) if ABANDONED_SETTLES == "admitted" else 0
             outcome = repository.settle(operation_id=row["operation_id"], actual_units=actual,

@@ -363,3 +363,136 @@ def test_the_reconciler_charges_abandoned_dispatched_work(engine, account):
     bucket = bucket_of(engine, account)
     assert (bucket["consumed"], bucket["reserved"]) == (1, 0), "charged what was reserved (ABANDONED_SETTLES)"
     assert PostgresQuotaRepository(engine).get_reservation(operation)["outcome_ref"] == "reconciled:abandoned"
+
+
+# ------------------------------------- review of #116, P1-1: one window per (account, meter) under races --
+
+ZONES = ["UTC", "Asia/Tokyo", "America/Los_Angeles", "Europe/Paris", "Asia/Ho_Chi_Minh",
+         "Australia/Sydney", "America/New_York", "Asia/Kolkata", "Pacific/Auckland", "America/Sao_Paulo"]
+
+
+def _race(zones, *, barrier_in_read=False, monkeypatch=None):
+    """Every zone admits one review at the same moment; returns how many were admitted."""
+    if barrier_in_read:
+        barrier = threading.Barrier(len(zones))
+        real_latest = PostgresQuotaRepository.latest_buckets
+
+        def slow_latest(self, inc, meters):
+            out = real_latest(self, inc, meters)
+            try:
+                barrier.wait(timeout=5)
+            except threading.BrokenBarrierError:
+                pass  # retries after a superseded window read again; only the first read is synchronised
+            return out
+
+        monkeypatch.setattr(PostgresQuotaRepository, "latest_buckets", slow_latest)
+    start = threading.Barrier(len(zones))
+
+    def one(zone):
+        start.wait(timeout=10)
+        with quota.request_facts(timezone=zone):
+            try:
+                with quota.admit("writing.review", request_digest=f"text-{zone}") as ticket:
+                    ticket.dispatch("p")
+                    ticket.settle(1)
+            except HTTPException as error:
+                assert error.status_code == 429, error.detail
+                return 0
+        return 1
+
+    with concurrent.futures.ThreadPoolExecutor(len(zones)) as pool:
+        admitted = sum(pool.map(one, zones))
+    if barrier_in_read:
+        monkeypatch.setattr(PostgresQuotaRepository, "latest_buckets", real_latest)
+    return admitted
+
+
+def _open_buckets(engine, key, now):
+    incarnation = PostgresIncarnationRepository(engine).resolve(str(stable_uuid("user", key)))
+    with engine.connect() as connection:
+        return connection.execute(
+            text("SELECT window_id, consumed, reserved FROM commerce_quota_buckets WHERE incarnation_id = :i "
+                 "AND meter = 'writing.review' AND window_start <= :now AND :now < window_end"),
+            {"i": incarnation, "now": now}).all()
+
+
+def test_reviewer_repro_concurrent_first_use_in_distinct_zones(engine, account, monkeypatch):
+    """The reviewer's reproduction (10 of 10 admitted on a Free plan of 2 before the fix)."""
+    wire(engine)
+    PostgresIncarnationRepository(engine).ensure_active(str(stable_uuid("user", account)))
+    assert _race(ZONES, barrier_in_read=True, monkeypatch=monkeypatch) <= 2
+    open_now = _open_buckets(engine, account, datetime.now(UTC))
+    assert len(open_now) == 1, open_now
+    assert open_now[0][1] + open_now[0][2] <= 2
+
+
+def test_reviewer_repro_without_an_injected_delay(engine, monkeypatch):
+    results = []
+    for _round in range(5):
+        key = f"quota-race-{uuid.uuid4()}"
+        with engine.begin() as connection:
+            connection.execute(
+                text("INSERT INTO users (id, user_key, email, name, picture, role, created_at) "
+                     "VALUES (:id, :key, '', '', '', 'user', :now)"),
+                {"id": stable_uuid("user", key), "key": key, "now": datetime.now(UTC)})
+        monkeypatch.setattr(quota, "current_user_key", lambda key=key: key)
+        configure_plan_store(None)
+        wire(engine)
+        results.append(_race(ZONES))
+        assert len(_open_buckets(engine, key, datetime.now(UTC))) == 1
+    assert max(results) <= 2, results
+
+
+def test_concurrent_distinct_zones_at_a_closed_window_transition(engine, account, monkeypatch):
+    clock = Clock(datetime(2026, 10, 15, 12, 0, tzinfo=UTC))
+    wire(engine, clock=clock)
+    with quota.request_facts(timezone="UTC"):
+        spend(2)  # October is used up
+    clock.now = datetime(2026, 11, 1, 0, 0, 30, tzinfo=UTC)  # October (UTC) has just closed
+    assert _race(ZONES, barrier_in_read=True, monkeypatch=monkeypatch) <= 2
+    open_now = _open_buckets(engine, account, clock.now)
+    assert len(open_now) == 1, open_now
+    assert open_now[0][1] + open_now[0][2] <= 2
+
+
+def test_a_window_another_bucket_covers_is_superseded_and_writes_nothing(engine, account):
+    from writing_coach.persistence.quota_repository import BucketWindow
+
+    repository, _service, _products = wire(engine)
+    incarnation = PostgresIncarnationRepository(engine).ensure_active(str(stable_uuid("user", account)))
+    now = datetime.now(UTC)
+    utc = quota.window_for("month", now=now, zone_name="UTC", previous=None)
+    tokyo = quota.window_for("month", now=now, zone_name="Asia/Tokyo", previous=None)
+    first = repository.reserve(incarnation_id=incarnation, meter="writing.review", operation_id=f"q1:a-{uuid.uuid4()}",
+                               requested_units=1, limit_policy="current",
+                               window=BucketWindow(utc.window_id, utc.start, utc.end, "p", 2))
+    assert first["status"] == "admit"
+    second = repository.reserve(incarnation_id=incarnation, meter="writing.review", operation_id=f"q1:b-{uuid.uuid4()}",
+                                requested_units=1, limit_policy="current",
+                                window=BucketWindow(tokyo.window_id, tokyo.start, tokyo.end, "p", 2))
+    assert second == {"status": "window_superseded"}
+    assert repository.get_bucket(incarnation, "writing.review", tokyo.window_id) is None
+
+
+def test_the_reconciler_settles_first_and_a_late_live_settle_writes_nothing(engine, account):
+    """Current mode: a request outlives RECONCILE_AFTER, the reconciler charges it, then the request finishes."""
+    from writing_coach.persistence.quota_repository import BucketWindow
+
+    an_hour_ago = datetime.now(UTC) - timedelta(hours=1)
+    past = PostgresQuotaRepository(engine, clock=lambda: an_hour_ago)
+    incarnation = PostgresIncarnationRepository(engine).ensure_active(str(stable_uuid("user", account)))
+    window = quota.window_for("month", now=an_hour_ago, zone_name="UTC", previous=None)
+    operation = f"q1:slow-{uuid.uuid4()}"
+    past.reserve(incarnation_id=incarnation, meter="writing.review", operation_id=operation, requested_units=1,
+                 window=BucketWindow(window.window_id, window.start, window.end, "cdefault:free", 2),
+                 limit_policy="current")
+    past.dispatch(operation_id=operation, dispatch_ref="provider")
+    live = quota.Ticket(PostgresQuotaRepository(engine), operation, 1, {})
+    live.dispatched = True
+    assert quota.reconcile_once(PostgresQuotaRepository(engine), limit=100000)["settled"] >= 1
+    before = bucket_of(engine, account)
+    late = PostgresQuotaRepository(engine).settle(operation_id=operation, actual_units=1, outcome_ref="essay:1")
+    assert late["status"] == "payload_conflict"
+    live.settle(1, "essay:1")  # the live ticket's own settle: logged, never raised, nothing written
+    after = bucket_of(engine, account)
+    assert (after["consumed"], after["reserved"]) == (before["consumed"], before["reserved"]) == (1, 0)

@@ -32,7 +32,11 @@ meter, window or incarnation) the reservation insert is
 its bucket is never touched.
 
 Lock order is the same everywhere, so nothing here can deadlock with itself:
-incarnation (`FOR SHARE`) -> bucket -> reservation. `settle()` and `release()`
+incarnation (`FOR SHARE`) -> [current mode only: the transaction-scoped
+advisory lock on (incarnation, meter)] -> bucket -> reservation. Only
+reserve(limit_policy='current') takes the advisory lock, always after the
+incarnation and before any bucket, and nothing holding a bucket or a
+reservation ever waits for it, so it adds no cycle. `settle()` and `release()`
 read the reservation's bucket id unlocked (it never changes), lock the bucket,
 then the reservation; `dispatch()` locks the incarnation, then the
 reservation, and touches no bucket. The incarnation is held
@@ -76,7 +80,9 @@ from writing_coach.reference_backbone import (
 class QuotaOutcome(dict):
     """`status` is one decision's verdict. reserve(): `admit`, `exhausted`,
     `denied` (with `reason='incarnation_deleted'` for a deleted incarnation),
-    `unknown`, `window_closed`, `duplicate` (the original admission, with its
+    `unknown`, `window_closed`, `window_superseded` (current mode: another
+    bucket of this meter covers the window - re-read and retry),
+    `duplicate` (the original admission, with its
     `reservation_id`), `payload_conflict` or `unknown_incarnation`.
     dispatch()/settle()/release(): their decision's verdicts, plus `denied`
     for dispatching a deleted incarnation's work."""
@@ -84,13 +90,16 @@ class QuotaOutcome(dict):
 
 @dataclass(frozen=True)
 class BucketWindow:
-    """Identity and fixed policy of a quota bucket, supplied by the caller
-    only for the case this is the first reserve() ever seen for this
-    (incarnation, meter, window_id) - an existing bucket's own stored values
-    are always authoritative afterward, never overwritten by a later call's
-    inputs. See ORENA_COMMERCE_ARCHITECTURE.md §3: "An upgrade cannot reset
-    the existing usage window" - a bucket's policy is fixed for its own
-    window's lifetime once created.
+    """Identity and policy of a quota bucket.
+
+    The window (id, start, end) is used only for a bucket's first reserve()
+    and is fixed for the bucket's lifetime afterwards. The limit and policy
+    depend on the mode: with `limit_policy='frozen'` (the default) the values
+    stored at first use stay authoritative and are never overwritten; with
+    `limit_policy='current'` (D-160 enforcement) `unit_limit` and
+    `policy_version` are the catalogue's NOW, decide the reservation and are
+    written back to the row (usage is kept: ORENA_COMMERCE_ARCHITECTURE.md §3
+    "An upgrade cannot reset the existing usage window").
     """
 
     window_id: str
@@ -217,18 +226,24 @@ class PostgresQuotaRepository:
         return {row['meter']: dict(row) for row in rows}
 
     def stale_dispatched(self, older_than: datetime, limit: int,
-                         states: tuple[str, ...] = ('dispatched',)) -> list[dict[str, Any]]:
+                         states: tuple[str, ...] = ('dispatched',),
+                         meters: tuple[str, ...] | None = None) -> list[dict[str, Any]]:
         """Reservations still open (`dispatched` by default) whose last change is before `older_than`: work
-        whose owning request is gone (a killed process). The reconciler settles or releases them."""
+        whose owning request is gone (a killed process). The reconciler settles or releases them. `meters`
+        limits it to those meters (an async meter's worker settles its own). No (state, updated_at) index
+        exists yet; one belongs in a later reviewed migration (review P3-1)."""
         with self._engine.connect() as connection:
             rows = connection.execute(
                 text(
-                    'SELECT operation_id, state, admitted_units, updated_at '
-                    'FROM commerce_quota_reservations '
-                    'WHERE state = ANY(:states) AND updated_at < :before '
-                    'ORDER BY updated_at LIMIT :limit'
+                    'SELECT r.operation_id, r.state, r.admitted_units, r.updated_at, b.meter '
+                    'FROM commerce_quota_reservations r '
+                    'JOIN commerce_quota_buckets b ON b.id = r.bucket_id '
+                    'WHERE r.state = ANY(:states) AND r.updated_at < :before '
+                    'AND (CAST(:meters AS TEXT[]) IS NULL OR b.meter = ANY(CAST(:meters AS TEXT[]))) '
+                    'ORDER BY r.updated_at LIMIT :limit'
                 ),
-                {'states': list(states), 'before': older_than, 'limit': int(limit)},
+                {'states': list(states), 'before': older_than, 'limit': int(limit),
+                 'meters': list(meters) if meters is not None else None},
             ).mappings().all()
         return [dict(row) for row in rows]
 
@@ -285,6 +300,30 @@ class PostgresQuotaRepository:
             if asked != 'admit':
                 return QuotaOutcome(status=asked)
 
+            if limit_policy == 'current':
+                # One window at a time per (incarnation, meter) (review of #116, P1-1). Windows are cut in a
+                # client-named timezone, so concurrent first uses could each create their own window - and each
+                # its own full allowance. Serialise the choice of window on a transaction-scoped advisory lock
+                # (lock order: incarnation -> advisory -> bucket -> reservation; settle/release/dispatch and
+                # mark_deleted never take it, so no cycle), then refuse any window that another bucket of this
+                # meter already covers: the caller re-reads and uses that one. Nothing is written for the refusal.
+                connection.execute(
+                    text('SELECT pg_advisory_xact_lock(hashtextextended(:lock_key, 0))'),
+                    {'lock_key': f'quota:{incarnation_id}:{meter}'},
+                )
+                rival = connection.execute(
+                    text(
+                        'SELECT window_id FROM commerce_quota_buckets '
+                        'WHERE incarnation_id = :inc AND meter = :meter AND window_id <> :window_id '
+                        'AND ((window_start <= :now AND :now < window_end) '
+                        'OR (window_start < :end AND :start < window_end)) LIMIT 1'
+                    ),
+                    {'inc': incarnation_id, 'meter': meter, 'window_id': window.window_id, 'now': now,
+                     'start': window.window_start, 'end': window.window_end},
+                ).scalar_one_or_none()
+                if rival is not None:
+                    return QuotaOutcome(status='window_superseded')
+
             select_bucket = text(
                 'SELECT id, window_start, window_end, policy_version, unit_limit, consumed, reserved '
                 'FROM commerce_quota_buckets '
@@ -335,7 +374,11 @@ class PostgresQuotaRepository:
                         text(
                             'UPDATE commerce_quota_buckets SET unit_limit = CASE WHEN CAST(:limit AS BIGINT) '
                             'IS NULL THEN NULL ELSE GREATEST(CAST(:limit AS BIGINT), consumed + reserved) END, '
-                            'policy_version = :policy, updated_at = :now WHERE id = :bucket'
+                            'policy_version = :policy, updated_at = :now WHERE id = :bucket '
+                            # A 429 storm writes nothing when the limit and policy are already the stored ones.
+                            'AND (unit_limit IS DISTINCT FROM CASE WHEN CAST(:limit AS BIGINT) IS NULL THEN NULL '
+                            'ELSE GREATEST(CAST(:limit AS BIGINT), consumed + reserved) END '
+                            'OR policy_version IS DISTINCT FROM :policy)'
                         ),
                         {'limit': limit, 'policy': window.policy_version, 'now': now, 'bucket': bucket['id']},
                     )
