@@ -144,7 +144,7 @@ export default async function mountDiscussion(element, ctx) {
       turns = before;
       field.value = question;
       if (isQuotaExhausted(error)) {
-        // The plan's limit of Orena messages (D-16X): the server's figures, with the way to the plans as the action.
+        // The plan's limit of Orena messages (D-163): the server's figures, with the way to the plans as the action.
         toast(quotaMessage(error), { iconName: 'circle-alert', undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
       } else {
         // A 409 with a category is the quota gate's (a repeat in flight); a plain 409 is the thread's own turn cap.

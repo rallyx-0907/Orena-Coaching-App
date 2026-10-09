@@ -25,7 +25,7 @@ switches provider. A client that goes away stops the turn where it is. A turn
 that completes is metered - counted (R5) - and its session is kept for the next
 turn.
 
-Plan quota (D-16X, `orena.message`): the caller may hand `run` an `admission`, a
+Plan quota (D-163, `orena.message`): the caller may hand `run` an `admission`, a
 callable that reserves one message and returns its ticket, or raises the
 refusal (429 / 503 / 409). It is called exactly once, at the one point where the
 turn knows it will ask a model for a learner's message - after the decisions,

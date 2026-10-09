@@ -357,7 +357,7 @@ export const api={
   // a 404). `sendDiscussionTurn`'s `request_id` makes a retry of the same submission idempotent
   // server-side - the caller supplies one per attempt, not per keystroke.
   textDiscussion:(sourceKind,sourceId)=>request(`/api/texts/discussion?source_kind=${encodeURIComponent(sourceKind)}&source_id=${encodeURIComponent(sourceId)}`),
-  // A discussion turn is an Orena message (D-16X): the body's `request_id` is its idempotency key, and the device
+  // A discussion turn is an Orena message (D-163): the body's `request_id` is its idempotency key, and the device
   // timezone says when the learner's day ends.
   sendDiscussionTurn:(payload)=>request('/api/texts/discussion/turns',{
     method:'POST',

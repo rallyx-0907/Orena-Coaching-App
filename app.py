@@ -677,7 +677,7 @@ configure_listening_translation_cache(_learning_cache)
 app.include_router(listening_progress_router)
 
 # The learner's discussion about a whole text (D-072.2). Each turn is an Orena message: it meters usage and,
-# where `orena.message` is enforced (D-16X), is admitted through the quota gate before the provider is asked.
+# where `orena.message` is enforced (D-163), is admitted through the quota gate before the provider is asked.
 app.include_router(
     install_text_discussion(
         repository=_persistence_runtime.text_discussion_repository,

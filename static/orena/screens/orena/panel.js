@@ -122,7 +122,7 @@ export async function openOrenaPanel(context = {}, carry = null) {
       button.addEventListener('click', () => runOffered({ dispatcher, action: findAction(button.dataset.actionId), ranActions, repaint: paint })),
     );
     sheetEl.querySelectorAll('[data-retry]').forEach((button) => button.addEventListener('click', retry));
-    // The plan's limit (D-16X): the panel gives way to the plans.
+    // The plan's limit (D-163): the panel gives way to the plans.
     sheetEl.querySelectorAll('[data-plans]').forEach((button) =>
       button.addEventListener('click', () => {
         handle.close();

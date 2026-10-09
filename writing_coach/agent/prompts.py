@@ -219,7 +219,7 @@ def context_document(
         },
         # the address note has its own place above; the rest, with ids, so a correction can replace one
         # An opening greeting is free of learner quota and is built on the snapshot, not on the learner's words: it is
-        # shown the notes' ids and kinds only, never their text (D-16X, architecture review P2-1).
+        # shown the notes' ids and kinds only, never their text (D-163, architecture review P2-1).
         "coach_notes": [
             {"id": note.id, "kind": note.kind, **({} if opening else {"text": note.text})}
             for note in tier1.coach_notes

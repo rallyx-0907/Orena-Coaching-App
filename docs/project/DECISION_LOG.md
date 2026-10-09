@@ -4767,7 +4767,7 @@ Delegated Architecture Reviewer, REQUEST CHANGES on 4fbd15a2..40443ed1; fixes li
 If another branch (PR A) lands a D-161 first, this entry is renumbered to the next free number on merge.
 
 
-## D-16X - Orena messages enforced on the server: text turns and text discussion; voice refused until it is metered
+## D-163 - Orena messages enforced on the server: text turns and text discussion; voice refused until it is metered
 
 2026-10-09, the human's decisions relayed by the coordinating session, implemented on branch
 `feat/quota-orena-message` on top of D-161 (`feat/quota-core`). The number is assigned at merge. **Needs independent
@@ -4815,7 +4815,7 @@ self-approve).
    single-shot tools, not a conversation with Orena, and are not Orena messages.
 5. **Voice is refused, not unmetered.** While `orena.message` is enforced, `POST /api/agent/voice/session` answers 503
    `quota_voice_not_metered` and mints no token (the client already falls back to text on any failed session); if
-   enforcement cannot be read it answers the usual 503 `quota_unavailable`. The other voice routes act on a session that
+   enforcement cannot be read it answers the same 503 `quota_voice_not_metered` (fail closed; the client treats both alike). The other voice routes act on a session that
    `voice/session` created and the server calls no model on them, so there is no other way to a vendor token. Voice is
    charged by duration (`voice_seconds_per_message`) in a later change, which removes this refusal. A voice session
    opened before enforcement was switched on keeps its token until it expires (at most 15 minutes).
@@ -4837,16 +4837,16 @@ self-approve).
    enforcement was switched on keeps its token for up to 15 minutes (switch on, expect that).
 
 Independent architecture review: `docs/reviews/architecture/` of PR #118 (claude-opus-5-5, REQUEST CHANGES on
-d8583d2b; P1-1 greeting bound, P1-2 contract v7, P2-1, P2-2 fixed here; D-16Y below is the contract change).
+d8583d2b; P1-1 greeting bound, P1-2 contract v7, P2-1, P2-2 fixed here; D-164 below is the contract change).
 
 
-## D-16Y - AGENT_CONTRACT v7: the plan limit of Orena messages reaches the agent interface
+## D-164 - AGENT_CONTRACT v7: the plan limit of Orena messages reaches the agent interface
 
 2026-10-09, written on `feat/quota-orena-message` on the coordinator's instruction and the architecture review of #118
 (P1-2); **the human confirmed** that the `/api/agent/*` changes and this bump belong in PR C, the UI lane owning the contract
 (the Intelligence session was notified). The number is assigned at merge (D-145 is taken: v6).
 
-`/api/agent/turn` can now answer statuses AGENT_CONTRACT v6 §2.1 did not allow (D-16X), and D-086 forbids the Intelligence
+`/api/agent/turn` can now answer statuses AGENT_CONTRACT v6 §2.1 did not allow (D-163), and D-086 forbids the Intelligence
 lane from editing the contract, so the change is made by the UI lane in a reviewed commit: `contract_version: 7`,
 consistently in `docs/project/AGENT_CONTRACT.md`, `writing_coach/agent/contract.py`, `static/orena/agent/contract.js`,
 `static/orena/copy/surfaces.json` (regenerated) and the pin in `scripts/test_orena_surfaces.mjs`. The base already carries

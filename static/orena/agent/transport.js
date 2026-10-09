@@ -69,7 +69,7 @@ export async function* turn(request, { signal, fetchImpl = globalThis.fetch } = 
 
 const transportError = (fallback = 'retry') => ({ event: 'error', data: { class: 'transport', message: '', fallback } });
 
-/* The plan-limit refusals (D-16X) answer 429 / 409 with the canonical envelope - `detail` an object with a
+/* The plan-limit refusals (D-163) answer 429 / 409 with the canonical envelope - `detail` an object with a
    `category` - where the contract's own 429 (`rate_limited`) and 409 (`target_language_mismatch`) carry a plain
    string. The body is read only to tell them apart; a response that cannot be read as an envelope is the contract's. */
 async function readRefusal(response) {
@@ -111,7 +111,7 @@ function idleAfter(ms) {
 /* The live path. Exported with its fetch and clock injectable so the gate can drive every §2.1
    status. */
 export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch, sleep = pause, signedOut = () => location.assign('/#/welcome'), log = console.error, idleMs = TURN_IDLE_MS } = {}) {
-  // One key for this learner message, kept through a rate-limit resend: the server never counts it twice (D-16X).
+  // One key for this learner message, kept through a rate-limit resend: the server never counts it twice (D-163).
   const idempotencyKey = newIdempotencyKey();
   for (;;) {
     let response;

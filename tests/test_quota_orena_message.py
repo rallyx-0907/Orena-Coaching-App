@@ -1,4 +1,4 @@
-"""D-16X `orena.message` enforcement, hermetic (CI, SQLite): the agent's text turn and the text discussion turn.
+"""D-163 `orena.message` enforcement, hermetic (CI, SQLite): the agent's text turn and the text discussion turn.
 
 The quota store is the in-memory TEST DOUBLE of `tests/test_quota_gate.py` (never a runtime store); the model is
 the deterministic `FakeAgentTurnProvider`, so "the provider was not called" is asserted, not inferred. The same

@@ -23,7 +23,7 @@ dispatched). Leaving the block without a settle settles the admitted units.
 
 Work that outlives the call stack that admitted it - a streamed Orena answer is produced in a worker thread after
 the route returned - uses `begin()` instead: the same admission, returning the ticket, which the caller then owns
-and must settle or release on every path (D-16X).
+and must settle or release on every path (D-163).
 
 The switch (default OFF everywhere): the environment `ORENA_QUOTA_ENFORCEMENT` (on/off) wins when it is set;
 otherwise the platform setting `product.quota_enforcement` (`{"enabled": bool, "meters": [...]}`, editable at

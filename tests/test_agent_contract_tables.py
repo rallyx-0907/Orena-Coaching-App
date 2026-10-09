@@ -218,7 +218,7 @@ def test_the_http_statuses_are_the_contracts():
 
 
 def test_v7_the_plan_limit_statuses_headers_and_voice_refusal_are_in_the_contract():
-    """D-16Y: every category the quota gate can answer on `/api/agent/*` is a row of section 2.1, the two request
+    """D-164: every category the quota gate can answer on `/api/agent/*` is a row of section 2.1, the two request
     headers are in section 3, and the voice refusal is in section 9 (the Intelligence lane builds against this file)."""
 
     source = (ROOT / "writing_coach/product/quota.py").read_text(encoding="utf-8")

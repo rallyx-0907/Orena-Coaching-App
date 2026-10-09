@@ -5331,13 +5331,13 @@ the meters below.
   Kit components and the plan's own words only, EN/VI/ZH. Owner: design (an exhausted state, if wanted).
 - **QTA-2 A meter nothing counts.** With enforcement off (or a meter not yet enforced) Plan & usage draws the row with
   "—" used and "Not available" - never "0 used". The design draws no such state. Owner: design / human.
-- **QTA-3 Orena messages (text) - ENFORCED when the switch lists `orena.message`** (D-16X; 20 / 200 / 1000 a day in the
+- **QTA-3 Orena messages (text) - ENFORCED when the switch lists `orena.message`** (D-163; 20 / 200 / 1000 a day in the
   learner's timezone). `POST /api/agent/turn`: 1 per learner turn that calls a model, however many model rounds; the
   opening greeting and answers made without a model are free and never refused. `POST /api/texts/discussion/turns` is
   metered the same way (Orena answering about a text; one constant, `text_discussion.QUOTA_METER`, if the human
   decides otherwise). The agent's own per-process rate limit and daily USD cap remain. The agent client tells the quota
   429 (`category: quota_exhausted`, a JSON envelope) from the contract's `rate_limited` 429 by the body, and shows it in the
-  reply's existing error place (QTA-1). **AGENT_CONTRACT v7 (D-16Y)** names the 429 `quota_exhausted`, 409
+  reply's existing error place (QTA-1). **AGENT_CONTRACT v7 (D-164)** names the 429 `quota_exhausted`, 409
   `operation_*` / `account_not_ready`, 403 and 503 `quota_unavailable` rows in §2.1, the `Idempotency-Key` and
   `X-Orena-Timezone` headers in §3, what counts as a message in §3.3 and the voice 503 in §9; it is written on this branch
   and was confirmed by the human as the UI lane's change (PR C). The opening greeting is bounded (one model greeting per

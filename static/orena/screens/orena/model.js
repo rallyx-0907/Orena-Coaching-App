@@ -181,7 +181,7 @@ export function thinkingText(tool, fallback) {
    client's own copy, in the support language (`fallbackText`); every other class shows the
    server's. */
 export function errorText(error, fallbackText) {
-  // The plan's limit of Orena messages (D-16X): the server's own figures, in the interface language.
+  // The plan's limit of Orena messages (D-163): the server's own figures, in the interface language.
   if (error?.quota) return quotaMessage({ context: error.quota });
   return String(error?.message || '').trim() || fallbackText;
 }

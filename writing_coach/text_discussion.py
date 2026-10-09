@@ -10,7 +10,7 @@ and is not repeated. What a reader of this file needs to know:
   whole provider latency.
 - **The quota meter is one line.** A discussion turn is Orena answering the
   learner about a text - the tutor speaks in Orena's voice and the room says "Orena
-  is thinking" - so it is an `orena.message` (D-16X, `QUOTA_METER` below). It is
+  is thinking" - so it is an `orena.message` (D-163, `QUOTA_METER` below). It is
   admitted after the repeat check, before the turn cap and the provider; a stored
   repeat, a full thread and a failed or empty answer cost nothing. `record_usage`
   stays as telemetry. To take discussion out of the Orena messages, set

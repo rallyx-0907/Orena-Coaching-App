@@ -37,7 +37,7 @@ class AgentLimits:
     turns_per_window: int = 12
     capability_reads_per_window: int = 60
     rate_limited_learners: int = 10_000  # learners remembered, least recently seen forgotten first
-    # The opening greeting (D-16X) costs the learner no quota, so the model writes at most this many per account in the
+    # The opening greeting (D-163) costs the learner no quota, so the model writes at most this many per account in the
     # window (per process); past it the greeting is built from the snapshot with no model, and is never refused. A
     # greeting's model round is capped at `opening_max_output_tokens` (240 characters and a few suggestions).
     model_openings_per_window: int = 1

@@ -340,7 +340,7 @@ assert.deepEqual(
 );
 assert.equal(contract.readStatus(403).fallback, 'none', 'v7: an account deleted or not in the plan is nothing to retry');
 assert.equal(contract.readStatus(503).fallback, 'retry', 'v7: quota_unavailable is a retry');
-// v7 (D-16Y): the plan-limit rows, their categories, the two request headers and the voice 503 are in the contract text,
+// v7 (D-164): the plan-limit rows, their categories, the two request headers and the voice 503 are in the contract text,
 // and the transport reads the categories the contract spells.
 {
   const table = section('### 2.1 HTTP status', '## 3.');
@@ -407,7 +407,7 @@ run = await drive([answer(404, '{"detail":"Not Found"}')]);
 assert.deepEqual(run.events, ['absent'], '404: Orena is absent, no error');
 run = await drive([answer(409, '{"detail":"target_language_mismatch"}')]);
 assert.deepEqual([run.events, run.sent.length], [['language_mismatch'], 1], '409: handed back, never resent');
-// D-16X: the plan's limit of Orena messages is told to the learner with the server's figures - never waited out,
+// D-163: the plan's limit of Orena messages is told to the learner with the server's figures - never waited out,
 // never resent - and is told apart from the contract's own 429 / 409 by the body's canonical envelope.
 {
   const envelope = (category, context = {}) => JSON.stringify({ detail: { category, message: 'm', retryable: false, context } });

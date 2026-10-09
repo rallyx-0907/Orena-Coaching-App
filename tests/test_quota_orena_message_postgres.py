@@ -1,4 +1,4 @@
-"""D-16X `orena.message` enforcement against real PostgreSQL: the agent text turn, the text discussion turn and the
+"""D-163 `orena.message` enforcement against real PostgreSQL: the agent text turn, the text discussion turn and the
 Plan & usage read.
 
 Skips unless `ORENA_TEST_POSTGRES_URL` names a THROWAWAY database (the fixture upgrades it to head, like
