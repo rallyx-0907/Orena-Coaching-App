@@ -81,7 +81,12 @@ export async function mountContent(shell, ctx) {
         if (kind === 'vocabulary') data.form = { rights: admission.rights_status || '', completeness: admission.completeness || 'unknown', attested: false };
         if (kind === 'media') data.form = { rights: data.detail.source?.rights || 'unknown', license: data.detail.source?.license || '', attested: false };
       } else {
-        data.counts = await contentCounts(api);
+        const [counts, grammar] = await Promise.all([contentCounts(api), api.grammarPoints().catch(() => null)]);
+        const points = grammar?.points || [];
+        data.counts = { ...counts, grammar: grammar ? {
+          published: points.filter((point) => point.lifecycle === 'published').length,
+          review: points.filter((point) => point.latest_version?.review_status === 'imported').length,
+        } : null };
       }
     } catch (error) {
       if (!host.alive() || error?.name === 'AbortError') return;

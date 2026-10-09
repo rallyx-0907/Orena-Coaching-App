@@ -96,4 +96,4 @@ export function learnerLink(record, detail) {
 }
 
 /* The mono tile letters and the kind a record is filed under in the design. */
-export const KIND_TILE = { book: 'B', media: 'V', vocabulary: 'W', reading: 'R' };
+export const KIND_TILE = { book: 'B', media: 'V', vocabulary: 'W', reading: 'R', grammar: 'G' };

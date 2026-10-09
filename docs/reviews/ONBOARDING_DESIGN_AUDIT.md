@@ -104,3 +104,23 @@ Dated 2026-10-07. Reason: "human: continue without asking; follows Settings / D-
 | HO-3 A | greeting only; Orena is parked | keep, no work. |
 | HO-4 A | immediate writes, as built | keep, no work. |
 | O-07, O-10, O-12 | accepted HSK decision; level-only mode and Today banner; dark-only prototype | no change. |
+
+## Re-verification after the cutover (2026-10-08, `codex/work` 402ed5de, :8021 at 0030 and :8000 staging)
+
+Browser walk, Playwright, no touch emulation; nothing finished on :8000.
+
+| Path | Where | Result |
+| --- | --- | --- |
+| Existing learner at `/` | :8021 | lands on Today (entry rule) |
+| Welcome -> Account -> Languages -> Level -> Meet -> Today, EN, 1920x1080 | :8021 | each step, "n / 4" counter, Back on steps 2-5; no page scroll or horizontal overflow; finishing resets the session step to 0 and opens Today; the Level Continue re-saved the unchanged level |
+| Reload on Level | :8021 | the step is restored (session step) |
+| Back from Level | :8021 | Languages |
+| Same walk, Chinese interface, 390x844 | :8021 | every step fits: no page scroll, no horizontal overflow, primary button inside the viewport; Welcome's own region scrolls 12 px (856 in 844); greeting in the interface language as HO-5 A decided |
+| Level-only `#/welcome?step=level` | :8021 | opens on Level; Back and Continue return to Today |
+| Signed-out Welcome | :8000 (public domain) | "Get started" and "I already have an account" (O-01 is closed by the cutover sign-in flow) |
+| Get started / I already have an account | :8000 | "Create your account" / "Welcome back", mode switch, Continue with Google, terms line, Back to Welcome; reload keeps the Account step; Chinese at 390x844 fits |
+
+No UI defect found. Open, for the human (not fixed here):
+- **O-04 / HO-3 revisited:** the text agent is now live on :8021 and :8000 (D-146). The Meet Orena starters, composer and reply the frame draws can be wired once the agent contract names an onboarding surface; the contract is edited only on `codex/work` and the agent's behaviour is the Intelligence lane's.
+- **Terms line:** plain text as the frame draws it; the legal pages exist (`#/legal/*`) but still carry `[DECISION: ...]` placeholders, so they are not linked. The frame's second sentence ("Your recordings are only used to give you feedback.") is not shown: it is a privacy statement the human must confirm.
+- O-02 (email/password form) stays out: the deployment's sign-in is Google only.

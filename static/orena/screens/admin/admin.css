@@ -2276,3 +2276,7 @@ a.a-btn--primary:hover {
 .a-tile__value {
   line-height: normal;
 }
+
+.a-filters__batch {
+  margin-left: auto;
+}

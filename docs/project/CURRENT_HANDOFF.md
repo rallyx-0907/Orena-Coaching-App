@@ -16,19 +16,17 @@ builds Agent Intelligence (D-085) against `AGENT_CONTRACT.md` v5 (D-092, D-094,
 D-095, D-096), which is edited only on `codex/work`. Verified history:
 `PROJECT_STATE.md` "New learner UI migration".
 
-Release (D-143): one UI; cutover done (`/` = learner UI, old UI deleted); schema via
-`proposals/PRODUCTION_MIGRATION_PACK.md`; backbone off, invite-only; no new runtime.
-:8000 staging (D-146): 0029, main-a2342e62.
-Agent stays on the contract mock until Intelligence integration is authorized.
+`/` is the learner UI (D-143; `/next`, `/login` redirect). :8000 = public product-like staging (D-146):
+`main` a7b56d35, 0029, Agent text live, backbone/practice session/reading submit on, capability AI, Azure,
+reading worker; deploy `scripts/staging_8000_deploy.ps1`. :8000 content only by human approval, never auto
+from :8021 (S1 samples unpublished 2026-10-08).
 Frame/route/code/status: `docs/design/canonical-ui/IMPLEMENTATION_MAP.md`.
 
 - Foundation/Wave A/B: REVIEWABLE; inventory in IMPLEMENTATION_MAP.md.
-- QA :8021: durable PG volume `orena-next-verify-postgres`, schema `20261007_0029`. Media volume `orena-next-verify-media` at `/lanedata`; `/rundata` SQLite scratch
-  only. Worker stopped. `ORENA_ACCOUNT_BACKBONE=on` here only. Recreate copies env by name.
-- Wave B (`161d917`): REVIEWABLE; backend-less routes stay Coming soon,
-  Orena uses the mock; Grammar waits for its canonical runtime.
-- Orena agent LIVE on :8021 only (D-125, `AGENT_ENABLED=true`, Gemini flash-lite legacy
-  selection); the client follows capabilities (404 hides Orena). ORENA_AGENT_LIVE_8021_CHECKPOINT.md.
+- QA :8021: image `orena-qa:8021-<sha>` (jsonschema), schema 0030; Grammar EN 215 / ZH 380 published
+  there (not on :8000). Media `/lanedata`; `/rundata` scratch.
+- Wave B (`161d917`): REVIEWABLE; backend-less routes stay Coming soon; Grammar UI awaits wiring.
+- Orena agent text LIVE on :8021 and :8000 (`AGENT_ENABLED`, D-146); voice on :8021 only.
 - Grammar Lab replaces R5 (D-100, PR#66 `f86a2bf`); screens44/47 (`b83142d`)
   wait for canonical fixtures behind grammar-source.js. G-1..G-9: UI_BACKEND_GAPS.
   No false pattern-used claim. Store/API waits for architecture review.
@@ -41,7 +39,7 @@ Design/review: `proposals/VOCABULARY_LOCALIZATION.md` (+ .REVIEW); gaps VL-1..5.
 S1 source admission (e74735b): READING_SOURCE_ADMISSION_CHECKPOINT.md; level/source breadth,
 enrichment/questions/fidelity open. Preserve S3 a8e7914: VOCABULARY_COLLECTION_CHECKPOINT.md. Grammar deferred.
 
-Grammar Store (#99): 0030 promoted (applied nowhere); backend+API in its own PR, real
+Grammar Store (#106, main 4086b935): 0030 applied on :8021 only; learner + Admin UI on codex/work, real
 595-point import rehearsed; UI wiring awaits the human. GRAMMAR_CONTENT_STORE.IMPLEMENTATION.md.
 
 Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);

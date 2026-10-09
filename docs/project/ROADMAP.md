@@ -37,6 +37,12 @@ require approval and must remain consistent with `PROJECT_STATE.md` and
 
 ## Program status
 
+**Runtimes (2026-10-08, D-146).** `codex/work` + :8021 = development / QA. `main` + :8000 + the public domain =
+public, product-like staging (`APP_ENV=staging`): schema 0029, Orena text agent live, account backbone, practice
+sessions, Reading worker and practice submit, capability AI routing, Azure pronunciation. There is no final production
+runtime yet. :8000 content is promoted only on the human's approval of content, metadata, level, rights and
+presentation; nothing moves from :8021 automatically.
+
 Current execution program is PRODUCT COMPLETION under D-109–D-113. This Roadmap
 owns sequencing; `PRODUCT_COMPLETION_PLAN.md` supplies audit evidence and bounded
 slice detail, not a competing product authority. `CURRENT_HANDOFF.md` locates active work.
@@ -87,8 +93,8 @@ Agent is its contextual interface. No invented history, scores, timing, weakness
 deleted source excerpts must not be reconstructed. Missing support is explicitly general/unavailable.
 EN/ZH and applicable desktop/mobile browser journeys, state transitions and persistence are required.
 Non-blocking hardening is secondary unless it affects data safety, ownership/security, normal learner/Admin
-operations or required continuity. Native remains frozen; `/next` is the current implementation location,
-not a permanent second product. The old `/` remains only until the governed single cutover.
+operations or required continuity. Native remains frozen. The cutover is done (D-143): `/` is the learner UI and
+`/next` redirects to it; there is no second product.
 
 Current phase (explicit human instruction, 2026-10-02): complete basic functional coverage of the
 whole approved learner/Admin UI first. Deep fidelity, cross-device completeness, edge cases,

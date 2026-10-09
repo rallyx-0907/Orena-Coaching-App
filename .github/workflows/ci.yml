@@ -131,6 +131,7 @@ jobs:
           node scripts/test_orena_screen_profile.mjs
           node scripts/test_orena_screen_admin.mjs
           node scripts/test_orena_screen_admin_areas.mjs
+          node scripts/test_orena_screen_admin_grammar.mjs
           node scripts/test_orena_screen_settings.mjs
           node scripts/test_orena_screen_sheets.mjs
           node scripts/test_orena_screen_quick-sheet.mjs

@@ -430,3 +430,21 @@
   line-height: 1.55;
   font-weight: 600;
 }
+
+/* Admin's review preview (conceptPreviewMarkup): the learner page inside an Admin block, read-only and at its natural
+   height - no viewport fit, no scroll region of its own. */
+.s-gc--preview {
+  height: auto;
+  padding-top: 0;
+}
+.s-gc--preview .s-gc__head,
+.s-gc--preview .s-gc__inner {
+  max-width: none;
+  margin: 0;
+  padding-bottom: 0;
+}
+.s-gc__previewQ + .s-gc__previewQ {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border2);
+}

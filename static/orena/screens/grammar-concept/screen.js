@@ -9,8 +9,10 @@
    "Try it yourself" (D-100 point 3): drawn as frame 47 draws it - prompt, one-line input, Check,
    and the result line under it. Until the contract has a rule for recognising the target pattern,
    the result line never says the pattern was used and nothing is recorded as evidence: it shows
-   the contract's `sample` sentence, the one thing that can honestly be said. The quiz writes
-   nothing either (the R5 completion endpoint does not know Grammar Lab ids). */
+   the contract's `sample` sentence, the one thing that can honestly be said. Finishing the quiz
+   records the point as completed through the Grammar Store's progress API with the answers in
+   `quick_practice` order; the server grades them from the published key, and the screen draws only what
+   the frame draws (score, Retry). A failed save says so in a toast and is sent again on the next finish. */
 import { html, mount, raw } from '../../kit/html.js';
 import { useStyles } from '../../kit/styles.js';
 import { pageHeader } from '../../kit/components.js';
@@ -19,7 +21,8 @@ import { emptyMarkup } from '../../kit/states.js';
 import { shellCopy as shell } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
-import { grammarPoint } from '../../product/grammar-source.js';
+import { grammarPoint, recordGrammarCompletion } from '../../product/grammar-source.js';
+import { toast } from '../../kit/toast.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { conceptView } from './model.js';
 import { hanziMarkup } from '../grammar/hanzi.js';
@@ -145,6 +148,51 @@ function tryMarkup(tryIt, lang) {
     <div data-try-result></div>`;
 }
 
+/* The point card the learner reads: summary, pattern, illustration, examples, the common mistake. */
+function cardMarkup(view, lang) {
+  const { header } = view;
+  return [
+    header.summary ? html`<div class="s-gc__summary">${header.summary}</div>` : '',
+    view.pattern.length ? patternMarkup(view.pattern, lang) : '',
+    view.illustration ? illustrationMarkup(view.illustration, lang) : '',
+    view.examples.length ? html`${eyebrow(t('examples'))}<div class="s-gc__examples">${view.examples.map((example) => exampleMarkup(example, lang))}</div>` : '',
+    view.mistake ? mistakeMarkup(view.mistake, lang) : '',
+  ];
+}
+
+/* The learner's page for one point, read-only, for Admin's review (proposals/ADMIN_GRAMMAR_UI.md G4): the same header,
+   card and parts the learner meets, every quiz question in its answered state with the right option marked and its
+   explanation, and the Try-it prompt. Nothing here is interactive. */
+export function conceptPreviewMarkup(point, { support = 'en', native = '' } = {}) {
+  const view = conceptView(point, { support, native });
+  const { header } = view;
+  const lang = header.lang;
+  const quiz = view.quiz.length
+    ? html`<div class="o-card o-card--24 s-gc__card"><div class="s-gc__quizhead"><h2 class="s-gc__title">${t('quiz')}</h2><span class="s-gc__quizprog">${view.quiz.length}</span></div>
+        ${view.quiz.map((question) => html`<div class="s-gc__previewQ">
+          <div class="s-gc__qprompt" lang="${langAttr(lang)}">${material(question.q, question.qPinyin, lang)}</div>
+          <div class="s-gc__options">${question.options.map((option, i) => optionMarkup(option, i, question.answer, question, lang))}</div>
+          ${question.explain ? html`<div class="s-gc__why"><b>${t('why')}</b> ${question.explain}</div>` : ''}
+        </div>`)}</div>`
+    : '';
+  const tryIt = view.tryIt
+    ? html`<div class="o-card o-card--24 s-gc__card"><h2 class="s-gc__title">${t('tryIt')}</h2><div class="s-gc__tryPrompt">${view.tryIt.prompt}</div>${
+      view.tryIt.sample ? html`<div class="s-gc__tryResult"><span>${t('sample')}</span> <span lang="${langAttr(lang)}">${material(view.tryIt.sample, view.tryIt.samplePinyin, lang)}</span></div>` : ''}</div>`
+    : '';
+  return html`<div class="s-gc s-gc--preview">
+    <div class="s-gc__head">${pageHeader({
+      title: langSpan(material(header.title, header.titlePinyin, lang), lang),
+      meta: [shell('grammar'), header.level, header.sub].filter(Boolean).join(' · '),
+      compact: true,
+    })}</div>
+    <div class="s-gc__inner">
+      <div class="o-card o-card--24 s-gc__card">${cardMarkup(view, lang)}</div>
+      ${quiz}
+      ${tryIt}
+    </div>
+  </div>`;
+}
+
 function notFound(element, ctx) {
   mount(
     element,
@@ -175,13 +223,7 @@ export default async function grammarConcept(element, ctx) {
   const lang = header.lang;
   ctx.setCrumb(header.title);
 
-  const card = [
-    header.summary ? html`<div class="s-gc__summary">${header.summary}</div>` : '',
-    view.pattern.length ? patternMarkup(view.pattern, lang) : '',
-    view.illustration ? illustrationMarkup(view.illustration, lang) : '',
-    view.examples.length ? html`${eyebrow(t('examples'))}<div class="s-gc__examples">${view.examples.map((example) => exampleMarkup(example, lang))}</div>` : '',
-    view.mistake ? mistakeMarkup(view.mistake, lang) : '',
-  ];
+  const card = cardMarkup(view, lang);
 
   mount(
     element,
@@ -217,6 +259,16 @@ export default async function grammarConcept(element, ctx) {
   if (quizHolder) {
     const state = { qi: 0, picks: new Array(view.quiz.length).fill(null) };
     const renderQuiz = () => mount(quizHolder, quizMarkup(view.quiz, state, lang));
+    const total = Array.isArray(found.point.quick_practice) ? found.point.quick_practice.length : 0;
+    const record = () => {
+      const answers = new Array(total).fill(null);
+      view.quiz.forEach((question, i) => {
+        if (question.index < total) answers[question.index] = state.picks[i];
+      });
+      recordGrammarCompletion(view.id, answers).catch(() => {
+        if (ctx.isCurrent()) toast(t('saveError'));
+      });
+    };
     quizHolder.addEventListener('click', (event) => {
       const pick = event.target.closest('[data-pick]');
       if (pick && state.picks[state.qi] == null) {
@@ -224,6 +276,7 @@ export default async function grammarConcept(element, ctx) {
         renderQuiz();
       } else if (event.target.closest('[data-quiz-next]')) {
         state.qi += 1;
+        if (state.qi >= view.quiz.length) record();
         renderQuiz();
       } else if (event.target.closest('[data-quiz-retry]')) {
         state.qi = 0;

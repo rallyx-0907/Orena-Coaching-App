@@ -80,6 +80,9 @@ const { ROUTES, match, href, isAdminHash } = await import('../static/orena/shell
 const KIT_PAGES = Object.freeze({
   impPack: 'D-128: content pack export/import, kit blocks only (human decision 2026-10-04, item 2 of the completion plan)',
   aiCosts: 'D-128: AI cost page, kit blocks only (human decision 2026-10-04, decision 2)',
+  impGrammar: 'Grammar package import, composed from the Content packs page (proposals/ADMIN_GRAMMAR_UI.md G2; layout approved by the human 2026-10-08)',
+  grammar: 'Grammar review queue, composed from the Reading queue (proposals/ADMIN_GRAMMAR_UI.md G3; approved 2026-10-08)',
+  grammarPoint: 'Grammar point review, composed from the Reading review detail with the learner Concept page as preview (G4; approved 2026-10-08)',
 });
 /* ---- 1. routes: Admin is bare, admin-only, and on the pinned design's own keys ---------------- */
 const pin = fs.readFileSync('docs/design/canonical-ui/screens/Orena-Admin.dc.html', 'utf8');

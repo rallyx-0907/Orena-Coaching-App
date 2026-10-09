@@ -4265,10 +4265,19 @@ backend cannot yet serve:
   `jsonschema` dependency (D-106.8). UI lane after that: a Grammar entry in the existing Imports flow (preview,
   confirm, receipt) - its layout is a human design decision since the pin draws none - and the two readers of
   `grammar-source.js` pointed at `/api/grammar/v1/*`; screens 44/47 do not change.
-  **Update 2026-10-08 (issue #99):** the backend side is BUILT on `feature/grammar-content-store` (migration 0030 promoted, applied to
-  no runtime; store, export-profile-1 validator/importer, `/api/admin/grammar/*`, `/api/grammar/v1/*`, progress/R5),
-  and the real 595-point corpus imports and publishes on a throwaway PostgreSQL. The UI side above is unchanged and
-  waits for the human's handoff decision: `proposals/GRAMMAR_CONTENT_STORE.IMPLEMENTATION.md`, "STOP".
+  **Update 2026-10-08:** the backend is merged to `main` by PR #106 (`4086b935`; migration 0030, store, export-profile-1
+  validator/importer, `/api/admin/grammar/*`, `/api/grammar/v1/*`, progress/R5), applied to :8021 only. The UI side is
+  wired on `codex/work`: Library and Concept read `/api/grammar/v1/*` and record quiz completion; Admin imports, reviews
+  and publishes (`proposals/ADMIN_GRAMMAR_UI.md`). :8000 has neither 0030 nor any Grammar content.
+
+- **G-11 · learner-summary counts Grammar completions as undated (2026-10-08, owner: learner summary).** `learner_summary._grammar`
+  reads only `completed_grammar_ids` and tallies each with no instant, so `/api/learner-summary` reports
+  `patterns_marked_complete` `count: 0, undated: N` and a completion never enters a window. `grammar_progress` keeps
+  `completed_at` (written by `PUT /api/grammar/v1/progress/:id`); the reader should take it. Outside the Grammar Store
+  contract; no learner screen draws the Grammar domain today (the Progress frame has none).
+- **G-12 · Grammar Lab content: Chinese subtitles that show a raw slug (2026-10-08, owner: Grammar Lab).** Some ZH
+  points' `header.title` reads like "Ngữ pháp tiếng Trung: tai_le" (seen in the Library on :8021 after importing
+  `zh-complete.zip`). Fixed upstream in Grammar Lab and re-exported; never edited in the UI lane or the store.
 
 ## Current Admin reconciliation — 2026-10-03
 

@@ -58,6 +58,7 @@ export function hubPage({ recent, failedJobs, t, href }) {
           row(t('impReading'), t('impReadingNote'), href('adminAdd')),
           row(t('impSources'), t('impSourcesNote'), href('adminImportSource')),
           row(t('impPack'), t('impPackNote'), href('adminImportPack')),
+          row(t('grImp'), t('grImpNote'), href('adminImportGrammar'), recent.grammar),
         ]) })}
         ${block({ title: t('impFollow'), body: rowList([
           row(t('impJobs'), t('impJobsNote'), href('adminJobs'), null, failedJobs ? t('impFailedCount', { n: failedJobs }) : ''),

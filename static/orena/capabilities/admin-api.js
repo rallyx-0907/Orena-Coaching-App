@@ -54,8 +54,29 @@ async function packExport(body) {
   return response.blob();
 }
 
+/* Grammar Store Admin (writing_coach/grammar_admin_api.py): a package is a file field named `upload`; the commit
+   echoes the hash the check returned and carries the package's one rights confirmation. */
+function grammarUpload(file, fields = {}) {
+  const form = files('upload', [file]);
+  for (const [key, value] of Object.entries(fields)) form.append(key, value);
+  return form;
+}
+
 export const adminApi = {
   packExport,
+  grammarValidate: (file) => request('/api/admin/grammar/imports/validate', { method: 'POST', body: grammarUpload(file) }),
+  grammarImport: (file, { packageHash, basis, attestation }) => request('/api/admin/grammar/imports', {
+    method: 'POST', body: grammarUpload(file, { package_hash: packageHash, rights_basis: basis, rights_attestation: attestation }),
+  }),
+  grammarBatches: (limit = 50) => request(`/api/admin/grammar/imports${query({ limit })}`),
+  grammarPoints: (params = {}) => request(`/api/admin/grammar/points${query({ limit: 1000, ...params })}`),
+  grammarPoint: (id) => request(`/api/admin/grammar/points/${encodeURIComponent(id)}`),
+  grammarPreview: (versionId) => request(`/api/admin/grammar/versions/${encodeURIComponent(versionId)}/preview`),
+  grammarReview: (versionId, decision, reason) => request(`/api/admin/grammar/versions/${encodeURIComponent(versionId)}/review`, json('POST', { decision, reason })),
+  grammarVersionRights: (versionId, status, reason) => request(`/api/admin/grammar/versions/${encodeURIComponent(versionId)}/rights`, json('POST', { status, reason })),
+  grammarPublishPoint: (id, versionId, reason) => request(`/api/admin/grammar/points/${encodeURIComponent(id)}/publish`, json('POST', { version_id: versionId, attested: true, reason })),
+  grammarPublish: (items, reason) => request('/api/admin/grammar/publish', json('POST', { items, attested: true, reason })),
+  grammarStatus: (id, action, reason) => request(`/api/admin/grammar/points/${encodeURIComponent(id)}/status`, json('POST', { action, reason })),
   aiCosts: (days = 30) => request(`/api/admin/ai/costs${query({ days })}`),
   aiCostsByAccount: (days = 30) => request(`/api/admin/ai/costs/accounts${query({ days })}`),
   packPlan: (file) => request('/api/admin/content-packs/plan', { method: 'POST', body: files('file', [file]) }),

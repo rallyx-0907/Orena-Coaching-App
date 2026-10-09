@@ -14,8 +14,9 @@ human sets it).
 = a learning workspace from the design script's focus list (Design Contract
 rules 47, 49).
 
-Routes are hash routes of the new entry (`/next#/…` until the cutover, then
-`/#/…`). Agent intents (`docs/project/AGENT_CONTRACT.md` §6) map to routes in
+Routes are hash routes of the learner UI at `/` (`/#/…`; the cutover is done, D-143, and `/next` redirects).
+The learner UI runs on :8021 (dev/QA, `codex/work`) and on :8000 (public product-like staging, `main`, D-146);
+:8000 content is promoted only by human approval. Agent intents (`docs/project/AGENT_CONTRACT.md` §6) map to routes in
 `static/orena/shell/intents.js`.
 
 ## Shell, primitives and overlays
@@ -66,7 +67,7 @@ shape).
 | 12 | My Library | `#/library` | shell | `screens/library/` | reviewable |
 | 21 | Collection Detail | `#/collection/:id` | shell | `screens/collection/` | reviewable |
 | 22 | Word Detail | `#/word/:id` | shell | `screens/word/` | reviewable |
-| 44 | Grammar Library | `#/grammar` | shell | `screens/grammar/` (data: `product/grammar-source.js`) | building (2026-09-29: rebuilt on `GRAMMAR_CONTENT_CONTRACT.md` §9, D-100; no R5 read; no content is served yet, so it draws the empty state; verified with the test-only fixture `scripts/fixtures/grammar/`; waits for Grammar Lab PR B) |
+| 44 | Grammar Library | `#/grammar` | shell | `screens/grammar/` (data: `product/grammar-source.js`) | reviewable (2026-10-08: reads the Grammar Store learner API `/api/grammar/v1/points` through `product/grammar-source.js`; on :8021, 215 EN and 380 ZH published points from the Grammar Lab complete packages; desktop and 390 checked) |
 | 17 | Progress | `#/progress` (`?tab=` per Profile's own links) | shell | `screens/progress/` | reviewable |
 | 24–25 | Profile, Today's progress | `#/profile` | shell | `screens/profile/` | reviewable |
 | 51 | Coming soon | `#/coming/:key` | shell | `screens/coming/` | reviewable |
@@ -102,7 +103,7 @@ shape).
 | 35 | Context Transfer | `#/transfer` | focus | `screens/coming/` | coming-soon (no backend or content) |
 | 36 | Vocabulary Daily Feed | `#/feed` | focus | `screens/feed/` | reviewable |
 | 50 | From Your Errors | `#/from-your-errors` | focus | `screens/errors/` | reviewable |
-| 47 (canonical, H1 2026-09-29; 23 is not built) | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` (data: `product/grammar-source.js`) | building (2026-09-29: rebuilt on `GRAMMAR_CONTENT_CONTRACT.md` §0-§8, D-100; no R5 read or write; an R5 id resolves through `aliases`; with no content served every point draws "not available"; verified with the test-only fixture `scripts/fixtures/grammar/`; waits for Grammar Lab PR B) |
+| 47 (canonical, H1 2026-09-29; 23 is not built) | Grammar Concept | `#/grammar/:id` | focus | `screens/grammar-concept/` (data: `product/grammar-source.js`) | reviewable (2026-10-08: `/api/grammar/v1/points/:id`; old R5 ids redirect through the server R5 map; finishing the quiz records completion with `PUT /api/grammar/v1/progress/:id`, answers graded by the server; EN and ZH, desktop and 390 checked) |
 | Onboarding 01–05 | Welcome, Account, Languages, Level, Meet Orena | `#/welcome` | none | `screens/onboarding/` | reviewable |
 
 ## Platform Admin (D-101 E)
@@ -142,7 +143,7 @@ existing backend. The Practice generator still has no working backend and is una
 | Register source | Register a source | `#/admin/imports/sources` | Admin's own | `imports-pages.js` `sourceFormPage` | same | building |
 | Reading jobs, A29 Job detail, A30 History | Jobs, retry, history | `#/admin/imports/jobs`, `#/admin/imports/jobs/:id`, `#/admin/imports/history` | Admin's own | `imports-pages.js` | same | building |
 | Progress tray | Global tray | every Admin place | Admin's own | `screens/admin/tray.js`, `capabilities/admin-tray.js` | same | building |
-| Grammar Lab package import | not drawn by the Admin design | - | - | not built: no grammar store or `/api/grammar/v1/*` (D-100) | - | blocked (see `UI_BACKEND_GAPS.md`) |
+| Grammar import, review and publish (G2-G4) | not drawn; composed from Content packs, Reading queue and Reading review detail (`proposals/ADMIN_GRAMMAR_UI.md`, approved 2026-10-08) | `#/admin/imports/grammar`, `#/admin/content/grammar`, `#/admin/content/grammar/:id` | Admin's own | `screens/admin/grammar{,-pages}.js`, `imports.js`; preview `grammar-concept/screen.js` `conceptPreviewMarkup` | `scripts/test_orena_screen_admin_grammar.mjs` | reviewable (2026-10-08, :8021: 1920 and 390, en/vi/zh, light/dark) |
 | A1 Overview, A6-A7 Users, A31-A34 Operations | Overview, accounts, runtime, workers, polling, errors | `#/admin/overview`, `#/admin/users`, `#/admin/users/:id`, `#/admin/operations` and children | Admin's own | `screens/admin/control{,-pages}.js` | `test_orena_admin_control.mjs`, `test_orena_screen_admin_areas.mjs`; ADMIN_BASIC_CONTROL_BROWSER_CHECKPOINT.md | REVIEWABLE (2026-10-03) |
 | A24-A27 Practice generator | unavailable: no generation backend | - | - | - | - | not built |
 
