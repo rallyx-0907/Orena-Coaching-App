@@ -18,14 +18,16 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import math
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 from urllib.parse import urlsplit
 
+from writing_coach import media_quota
 from writing_coach.book_asset_store import BookAssetStore
 from writing_coach.media_api import serialize_media_acquisition
 from writing_coach.media_ingestion import MediaAcquisition, MediaIngestionService
@@ -136,6 +138,14 @@ def _source(provider: str, canonical_url: str, imported_by: str, *, kind: str = 
 
 def _entry_with(entry: MediaLibraryEntry, **changes: Any) -> MediaLibraryEntry:
     return MediaLibraryEntry(**{**entry.__dict__, **changes})
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _safe_suffix(raw: str) -> str:
@@ -261,11 +271,16 @@ def _write_failure(exc: OSError) -> MediaLibraryWriteFailed:
 class MediaSourceImporter:
     """Detect, acquire, normalise, persist — reusing M1 acquisition throughout."""
 
-    def __init__(self, ingestion: MediaIngestionService, store: MediaLibraryStore, asset_store: BookAssetStore, *, pipeline: Any = None) -> None:
+    def __init__(
+        self, ingestion: MediaIngestionService, store: MediaLibraryStore, asset_store: BookAssetStore, *,
+        pipeline: Any = None, duration_probe: Callable[[str], float | None] | None = None,
+    ) -> None:
         self._ingestion = ingestion
         self._store = store
         self._asset_store = asset_store
         self.pipeline = pipeline
+        # The length a provider reports for a source (YouTube metadata), used to charge a metered import (D-168).
+        self._duration_probe = duration_probe
 
     def prepare(self, entry: MediaLibraryEntry, *, declared: bool | None = None, batch_id: str = "") -> MediaLibraryEntry:
         """The same transcript admission step for URL and file imports."""
@@ -295,6 +310,9 @@ class MediaSourceImporter:
     def import_personal_url(self, url: str, *, language: str, owner_key: str) -> MediaLibraryEntry:
         if not owner_key:
             raise ValueError("a personal source needs its owner")
+        # Asked before anything is fetched: where `media.import` is enforced but cannot be checked this is 503, and
+        # nothing is downloaded or probed for a request about to be refused; where it is not enforced, False.
+        metered = media_quota.ready()
         host = (urlsplit(url).hostname or "").casefold()
         if host not in {"youtu.be", "youtube.com"} and not host.endswith(".youtube.com"):
             suffix = _safe_suffix(urlsplit(url).path)
@@ -304,10 +322,60 @@ class MediaSourceImporter:
                 download_bounded(url, temp.path)
                 return self.import_upload(temp.path, filename=Path(urlsplit(url).path).name,
                                           language=language, imported_by="learner", library="personal", owner_key=owner_key)
+        if metered:
+            return self._import_youtube_metered(url, language=language, owner_key=owner_key)
         entry, _ = self._from_url(url, language=language, imported_by="learner", persist_media=True)
         entry = _entry_with(entry, media_id=f"source-{uuid.uuid4().hex}", library="personal",
                             source={**entry.source, OWNER_FIELD: owner_token(owner_key)})
         return self.prepare(entry)
+
+    def _youtube_seconds(self, url: str) -> float | None:
+        probe = self._duration_probe
+        if probe is None:
+            from writing_coach.media_providers.youtube_audio import probe_youtube_duration as probe
+        return probe(url)
+
+    def _import_youtube_metered(self, url: str, *, language: str, owner_key: str) -> MediaLibraryEntry:
+        """A YouTube link where `media.import` is enforced (D-168).
+
+        The same learner importing the same video again is answered with what they already have, free. Otherwise the
+        video's length is read from YouTube's metadata before anything else is fetched, its minutes are reserved
+        (capped at what the pipeline will process) and only then are the page and captions read; the worker settles
+        what the import turned out to cost. Metadata that cannot be read falls back to the length of the captions,
+        and failing that the import is refused (503): an unreadable length is never "free"."""
+        from writing_coach.media_providers.youtube import parse_youtube_video_id
+
+        try:
+            source_key = f"youtube:{parse_youtube_video_id(url)}"
+        except Exception:  # noqa: BLE001 - a malformed link is answered, in the usual words, by the acquisition below
+            source_key = ""
+        if not source_key:
+            self._from_youtube(url, language=language, imported_by="learner")
+            raise UnsupportedMediaAddress
+        with media_quota.source_lock(owner_key, source_key):
+            existing = media_quota.existing_import(self._store, owner_key=owner_key, language=language,
+                                                   source_key=source_key)
+            if existing is not None:
+                return existing
+            hold = None
+            media_id = f"source-{uuid.uuid4().hex}"
+            seconds = self._youtube_seconds(url)
+            if seconds is not None:
+                hold = media_quota.admit(seconds, source_key)
+            try:
+                entry, _ = self._from_url(url, language=language, imported_by="learner", persist_media=True)
+                if hold is None and seconds is None:
+                    # The provider's metadata could not be read: the captions' own length is the fallback.
+                    hold = media_quota.admit(entry.duration_ms / 1000 if entry.duration_ms else 0, source_key)
+                fields = hold.fields() if hold is not None else {}
+                entry = _entry_with(entry, media_id=media_id, library="personal",
+                                    source={**entry.source, OWNER_FIELD: owner_token(owner_key), **fields})
+                return self.prepare(entry)
+            except BaseException:
+                # An entry the index already holds owns the reservation (its worker or recover() settles it).
+                if hold is not None and self._store.get(media_id) is None:
+                    hold.release()
+                raise
 
     def import_urls(
         self, items: list[Mapping[str, Any]], *, language: str, imported_by: str
@@ -395,11 +463,45 @@ class MediaSourceImporter:
         """Store an audio/video file Orena is given, with its own thumbnail.
 
         `rights_cleared` is the operator's declaration at import (D-111): True clears rights for publication,
-        anything else leaves them to review."""
+        anything else leaves them to review.
+
+        A learner's own file (`library="personal"`) is metered where `media.import` is enforced (D-168): its length is
+        read from the stored bytes (ffprobe), the same file imported again is answered with the entry the learner
+        already has, and otherwise its minutes are reserved before anything is stored or queued."""
         if library == "personal" and not owner_key:
             raise ValueError("a personal file needs its owner")
         probe = probe_media(path)
         token = uuid.uuid4().hex
+        if library != "personal" or not media_quota.ready():
+            return self._store_upload(path, probe, token, filename=filename, language=language, imported_by=imported_by,
+                                      library=library, title=title, owner_key=owner_key, batch_id=batch_id,
+                                      rights_cleared=rights_cleared)
+        source_key = f"file:{_file_sha256(path)}"
+        with media_quota.source_lock(owner_key, source_key):
+            existing = media_quota.existing_import(self._store, owner_key=owner_key, language=language,
+                                                   source_key=source_key)
+            if existing is not None:
+                return existing
+            if probe.duration_ms <= 0:
+                raise ValueError("The length of this file could not be read.")
+            if math.ceil(probe.duration_ms / 1000) > media_quota.max_import_seconds():
+                raise ValueError("This file is longer than Orena can import.")
+            hold = media_quota.admit(probe.duration_ms / 1000, source_key)
+            try:
+                return self._store_upload(path, probe, token, filename=filename, language=language,
+                                          imported_by=imported_by, library=library, title=title, owner_key=owner_key,
+                                          batch_id=batch_id, rights_cleared=rights_cleared,
+                                          extra_source=hold.fields() if hold is not None else {})
+            except BaseException:
+                if hold is not None and self._store.get(f"upload-{token}") is None:
+                    hold.release()
+                raise
+
+    def _store_upload(
+        self, path: Path, probe: Any, token: str, *, filename: str, language: str, imported_by: str, library: str,
+        title: str, owner_key: str, batch_id: str, rights_cleared: bool | None,
+        extra_source: Mapping[str, str] | None = None,
+    ) -> MediaLibraryEntry:
         suffix = _safe_suffix(filename)
         asset_key = f"media/{token}/original{suffix}"
         self._asset_store.put(asset_key, path.read_bytes())
@@ -421,6 +523,7 @@ class MediaSourceImporter:
                 **_source("upload", "", imported_by, kind="upload"),
                 # A personal file is its creator's: recorded as a digest of the account key.
                 **({OWNER_FIELD: owner_token(owner_key)} if library == "personal" and owner_key else {}),
+                **(extra_source or {}),
             },
             library=library,
             created_at=_now(),

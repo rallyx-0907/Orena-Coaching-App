@@ -354,7 +354,7 @@ assert.equal(contract.readStatus(503).fallback, 'retry', 'v7: quota_unavailable 
   assert.match(request, /`X-Orena-Timezone: /);
   assert.match(request, /voice\/turn` and `POST \/api\/agent\/voice\/tool` neither require nor read it/, 'the voice routes keep their utterance token');
   assert.match(section('### 3.3', '## 4. Events'), /Free, and never refused/, '§3.3 says the greeting and no-model answers are free');
-  // v8 (D-16T): voice is charged by duration; the session answers the quota's own 429 and 503, and carries its cap.
+  // v8 (D-169): voice is charged by duration; the session answers the quota's own 429 and 503, and carries its cap.
   const voice = section('## 9. Voice session', '2. **Connect.**');
   assert.match(voice, /429 `quota_exhausted`/, '§9 names the voice 429');
   assert.match(voice, /503 `quota_unavailable`/, '§9 names the voice 503');

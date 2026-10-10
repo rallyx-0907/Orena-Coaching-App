@@ -437,7 +437,7 @@ def test_a_stream_that_is_never_read_does_not_leave_a_reservation_after_it_is_dr
 # -------------------------------------------------------------------- voice --
 
 def test_the_voice_route_no_longer_refuses_by_itself_the_session_is_admitted_by_duration_in_the_service():
-    """D-16T: the v7 interim refusal is gone. The admission (429 / 503 / the reserved seconds) lives in
+    """D-169: the v7 interim refusal is gone. The admission (429 / 503 / the reserved seconds) lives in
     `VoiceService.open` and is proved in tests/test_quota_voice.py; the route only hands the request over."""
     repository = enforced_runtime(env=ENV)
     voice = StubVoice()

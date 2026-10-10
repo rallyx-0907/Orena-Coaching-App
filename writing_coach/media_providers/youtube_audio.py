@@ -16,6 +16,29 @@ from writing_coach.media_timing import (
 )
 
 
+def probe_youtube_duration(source_url: str, *, ydl_factory: Callable[[dict[str, Any]], Any] = YoutubeDL,
+                           timeout_seconds: float = 15.0) -> float | None:
+    """The length YouTube itself reports for a video, in seconds, or None when it cannot be read (D-168).
+
+    Metadata only - nothing is downloaded and no paid provider is called. It is the length a media import is charged
+    by, so it is read on the server from the provider, never taken from the client or guessed from captions."""
+    if not recognizes_youtube_url(source_url):
+        return None
+    options = {
+        "quiet": True, "no_warnings": True, "skip_download": True,
+        "noplaylist": True, "socket_timeout": timeout_seconds, "js_runtimes": {"node": {}},
+    }
+    try:
+        with ydl_factory(options) as ydl:
+            info = ydl.extract_info(source_url, download=False)
+    except Exception:  # noqa: BLE001 - a provider that cannot be read is "unknown", decided by the caller
+        return None
+    duration = info.get("duration") if isinstance(info, dict) else None
+    if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not 0 < duration < 86_400:
+        return None
+    return float(duration)
+
+
 def download_audio(source_url, work, *, max_seconds):
     """Download one bounded provider audio file through the existing resolver."""
     from pathlib import Path

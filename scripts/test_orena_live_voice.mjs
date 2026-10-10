@@ -58,7 +58,7 @@ const { createSession } = await import('../static/orena/agent/session.js');
   await assert.rejects(openVoiceSession({}, { fetchImpl: fail(429, 'rate_limited') }), (error) => error.status === 429 && error.retryAfter === 7);
 }
 
-// D-16T (contract v8): voice is charged by duration. The session request carries the quota headers, and a 429
+// D-169 (contract v8): voice is charged by duration. The session request carries the quota headers, and a 429
 // quota_exhausted carries the server's own figures so the voice screen can tell the learner, not fall back.
 {
   const seen = [];
@@ -88,7 +88,7 @@ const { createSession } = await import('../static/orena/agent/session.js');
   }
 }
 
-// D-16T: the session ends by itself at `max_seconds` (the seconds the learner's remaining messages buy).
+// D-169: the session ends by itself at `max_seconds` (the seconds the learner's remaining messages buy).
 {
   const calls = [];
   const realSetTimeout = globalThis.setTimeout;
@@ -109,7 +109,7 @@ const { createSession } = await import('../static/orena/agent/session.js');
   }
 }
 
-// D-16T: the conversation is a chain of short tokens. The client renews before the held token dies, brings the next
+// D-169: the conversation is a chain of short tokens. The client renews before the held token dies, brings the next
 // socket up beside the old one, hands over when its setup completes, and ends only when no further token comes.
 {
   const timers = [];
@@ -271,7 +271,7 @@ const { createSession } = await import('../static/orena/agent/session.js');
   ]);
 }
 
-// D-16T: Orena's push-to-talk marks its transcription (`purpose`), so the server can refuse an exhausted learner before it
+// D-169: Orena's push-to-talk marks its transcription (`purpose`), so the server can refuse an exhausted learner before it
 // transcribes; the speaking rooms send none.
 {
   const seen = [];

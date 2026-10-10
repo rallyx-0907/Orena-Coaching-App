@@ -1,4 +1,4 @@
-"""D-16T: the guard on `POST /api/speech/transcribe` - a take is at most five minutes (measured on the server), an account
+"""D-169: the guard on `POST /api/speech/transcribe` - a take is at most five minutes (measured on the server), an account
 sends at most an hour of audio a day, and Orena's push-to-talk is refused before transcribing when no Orena message is left.
 No plan meter is added or used for the transcription itself.
 

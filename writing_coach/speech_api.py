@@ -114,7 +114,7 @@ def _pronunciation_provider() -> SpeechPronunciationProvider:
 _UPLOAD_READ_CHUNK_BYTES = 1024 * 1024
 _DEFAULT_ASR_MAX_BYTES = 24 * 1024 * 1024
 
-# --- the guard on /api/speech/transcribe (D-16T) ----------------------------------------------------------------
+# --- the guard on /api/speech/transcribe (D-169) ----------------------------------------------------------------
 # Transcription is paid provider work that no plan meter counts (it is speech-to-text input: push-to-talk's words are
 # then an Orena message, a speaking room's words are a draft). It is bounded instead by three things, none of them a
 # plan limit and none a new meter:

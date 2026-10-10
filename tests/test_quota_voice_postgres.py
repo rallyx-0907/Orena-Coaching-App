@@ -1,4 +1,4 @@
-"""D-16T live voice charged by duration, against real PostgreSQL: each chunk reserved and settled whole at its token, the
+"""D-169 live voice charged by duration, against real PostgreSQL: each chunk reserved and settled whole at its token, the
 renewal chain, no refund for an early end, concurrent sessions on one allowance, and the read-only check.
 
 Skips unless `ORENA_TEST_POSTGRES_URL` names a THROWAWAY database (the fixtures of `tests/test_quota_gate_postgres.py`

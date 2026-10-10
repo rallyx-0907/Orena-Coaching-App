@@ -1,4 +1,4 @@
-"""D-16T live voice charged by duration against `orena.message`, hermetic (CI, SQLite).
+"""D-169 live voice charged by duration against `orena.message`, hermetic (CI, SQLite).
 
 A voice session is a chain of short vendor tokens (chunks). Each chunk is admitted before its token exists, charged whole
 when it is minted, and a learner who ends early gets nothing back, because the server cannot see the vendor socket.

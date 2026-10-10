@@ -14,7 +14,7 @@ spoken words do not pass every gate a text turn does. What the server keeps:
   is also given as §4 events for the thread;
 - fifteen minutes at most (§9), then the token is spent; no audio is stored;
 - the time used is priced from the audio catalog into the shared AI ledger, so the daily spend cap counts voice;
-- the learner's plan pays for it by duration (D-16T): when `orena.message` is enforced the session reserves the
+- the learner's plan pays for it by duration (D-169): when `orena.message` is enforced the session reserves the
   messages it may use (one per `voice_seconds_per_message`), the token's life is the seconds those buy, and the
   session settles what it really used when it ends. The ledger and the allowance are separate things: the allowance
   is what the learner is charged, the ledger is what the vendor charges.
@@ -63,7 +63,7 @@ from writing_coach.product import quota
 _log = logging.getLogger(__name__)
 
 VOICE_MODEL = "gemini-3.8-live"
-VOICE_METER = "orena.message"  # a voice minute is a message: `voice_seconds_per_message` seconds each (D-16T)
+VOICE_METER = "orena.message"  # a voice minute is a message: `voice_seconds_per_message` seconds each (D-169)
 
 
 @dataclass(frozen=True)
@@ -111,7 +111,7 @@ def vendor_voice(choice: object) -> str:
     return _VOICES.get(str(choice), _VOICES[DEFAULT_VOICE]).vendor_voice if choice else VOICE_NAME
 
 SESSION_SECONDS = 15 * 60  # §9: a voice session is capped at fifteen minutes, in all its chunks
-# D-16T: the session is a chain of short tokens. A chunk is VOICE_CHUNK_UNITS messages of voice (2 x 60 s = 2 minutes
+# D-169: the session is a chain of short tokens. A chunk is VOICE_CHUNK_UNITS messages of voice (2 x 60 s = 2 minutes
 # at the catalogue's default), never under VOICE_MIN_CHUNK_SECONDS whatever an administrator sets, and is charged whole
 # when its token is minted. The client asks for the next one RENEW_LEAD_SECONDS before the token it holds dies.
 VOICE_CHUNK_UNITS = 2
@@ -365,7 +365,7 @@ class VoiceSession:
     evidence_count: int = 0
     ended: bool = False
     agent_session_id: str = ""  # the conversation this voice session is part of (the typed turns' session)
-    # The session is a chain of short vendor tokens, one per chunk (D-16T), each charged whole when it is minted: how
+    # The session is a chain of short vendor tokens, one per chunk (D-169), each charged whole when it is minted: how
     # many exist, the seconds they were minted for in all, the session-clock instant the newest one dies, the setup
     # every one of them locks in, and the last renewal answer (a repeat of that request gets the same token back).
     setup: dict[str, Any] = field(default_factory=dict)
@@ -420,7 +420,7 @@ class VoiceSessions:
 
     def expired(self) -> list[VoiceSession]:
         """Sessions whose newest token is dead, taken out. Nothing is owed on them: every chunk was charged whole when
-        its token was minted (D-16T), so a session nobody ended costs what it already cost."""
+        its token was minted (D-169), so a session nobody ended costs what it already cost."""
 
         now = self.clock()
         with self._lock:
@@ -469,7 +469,7 @@ class VoiceService:
         )  # fmt: skip
         _in_view(outputs, request.context)
         voice_session_id = f"vs-{secrets.token_hex(8)}"
-        # The first chunk (D-16T): admitted before anything is sent to the vendor. A learner with no message left today
+        # The first chunk (D-169): admitted before anything is sent to the vendor. A learner with no message left today
         # is a 429 here and no token is minted; a repeat of the request's `Idempotency-Key` is the same operation
         # (409, never a second charge); without a key each request is its own session.
         opened = self.sessions.clock()
@@ -490,7 +490,7 @@ class VoiceService:
             **self._chunk_answer(minted, index=0),
         }
 
-    # -- the chain of tokens (D-16T) ---------------------------------------------------------------------------
+    # -- the chain of tokens (D-169) ---------------------------------------------------------------------------
 
     def _mint_chunk(self, setup: dict[str, Any], *, session_id: str, user_key: str, index: int, minted: int,
                     digest: str, key: str | None, resumption: str | None) -> dict[str, Any]:
@@ -904,7 +904,7 @@ class VoiceService:
 
     def end(self, voice_session_id: str, learner: LearnerScope, transcript: Any = None) -> dict[str, Any] | None:
         """The learner stops: no further chunk is minted for the session. Nothing is refunded and nothing more is owed -
-        every chunk was charged whole when its token was minted (D-16T), and the server never saw the vendor socket, so
+        every chunk was charged whole when its token was minted (D-169), and the server never saw the vendor socket, so
         the end changes what the learner may ask for next, not what they hold. `seconds` is the wall-clock time from
         the first token to now, at most the seconds minted: what the client sees, not what was charged."""
 

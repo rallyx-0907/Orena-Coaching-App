@@ -83,6 +83,7 @@ jobs:
           node scripts/test_audio_recorder.mjs
           node scripts/test_m3_pronunciation_contract.mjs
           node scripts/test_speaking_take.mjs
+          node scripts/test_media_import_quota.mjs
           node scripts/test_speaking_workspace.mjs
           node scripts/test_orena_language_layers.mjs
           node scripts/test_orena_copy_layers.mjs

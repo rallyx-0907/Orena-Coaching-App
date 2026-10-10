@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import re
+import time
 from collections.abc import Mapping
 from typing import Protocol
 
@@ -352,6 +353,18 @@ class GroqTranslationProvider:
                 )
             return merged
 
+    def _record(self, started: float, outcome: str, usage: object, error: BaseException | None = None) -> None:
+        """Every Groq translation request in the shared AI ledger (ai/audio_telemetry.py): provider, model, the
+        provider-reported tokens and the cost from the catalog. A request the provider answered is one row even when
+        its batch is then split (its tokens were billed); no text is recorded."""
+        from writing_coach.ai.audio_telemetry import record_token_operation
+
+        reported = usage if isinstance(usage, dict) else {}
+        record_token_operation(
+            "media_translation", provider=self.engine_id, model=self._model, outcome=outcome,
+            latency_ms=int((time.perf_counter() - started) * 1000), usage=reported, error=error,
+        )
+
     def _request_batch(
         self,
         source_language: str,
@@ -392,6 +405,8 @@ class GroqTranslationProvider:
             "max_completion_tokens": self._max_completion_tokens,
         }
 
+        started = time.perf_counter()
+        answered = False
         try:
             response = requests.post(
                 self._url,
@@ -417,6 +432,8 @@ class GroqTranslationProvider:
                     raise _RequestTooLarge()
             response.raise_for_status()
             envelope = response.json()
+            answered = True
+            self._record(started, "success", envelope.get("usage") if isinstance(envelope, dict) else None)
             if envelope["choices"][0].get("finish_reason") == "length":
                 raise _RequestTooLarge()
             content = envelope["choices"][0]["message"]["content"]
@@ -424,6 +441,8 @@ class GroqTranslationProvider:
         except _RequestTooLarge:
             raise
         except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as exc:
+            if not answered:
+                self._record(started, "failure", None, exc)
             raise TranslationProviderError("Groq translation is unavailable.") from exc
 
         items = data.get("translations") if isinstance(data, dict) else None

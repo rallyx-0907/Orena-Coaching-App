@@ -12,7 +12,7 @@
       - an `interrupted` stops playback at once (barge-in);
       - a tool call is run by the server (`POST /api/agent/voice/tool`), its §4 events handed to the caller and
         its responses sent back on the socket.
-   3. The conversation is a chain of short tokens (v8, D-16T). Each token is charged when the server mints it and lives
+   3. The conversation is a chain of short tokens (v8, D-169). Each token is charged when the server mints it and lives
       `max_seconds`; the client asks `POST /api/agent/voice/extend` for the next one `renew_in` seconds after it got
       the one it holds, opens the next socket beside the old one (carrying the conversation with the vendor's
       session-resumption handle), moves the microphone and the tool answers over when its setup completes, and closes

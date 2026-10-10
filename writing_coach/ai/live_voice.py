@@ -64,7 +64,7 @@ class GeminiLiveTokens:
             "uses": 1,
             "expireTime": expires,
             # The token is spent at `expireTime` whether or not it opened: a session cut short by the learner's
-            # remaining allowance (D-16T) must still be opened within its own life.
+            # remaining allowance (D-169) must still be opened within its own life.
             "newSessionExpireTime": (now + timedelta(seconds=min(OPEN_WITHIN_SECONDS, seconds))).strftime(iso),
             "bidiGenerateContentSetup": dict(setup),
         }

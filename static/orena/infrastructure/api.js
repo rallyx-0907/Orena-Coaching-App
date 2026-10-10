@@ -399,7 +399,10 @@ export const api={
   // payload `/import` answers with, so the encounter has one shape to render.
   // The admin routes are admin-gated server-side, not here.
   mediaMy:(mediaId,support='')=>request(`/api/media/my/${encodeURIComponent(mediaId)}${support?`?target_language=${encodeURIComponent(support)}`:''}`),
-  prepareMedia:(payload)=>request('/api/media-learning/source',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
+  // An import is charged by the source's length against the plan's media-import minutes (D-168): the device timezone
+  // says when the learner's month ends. No idempotency key: importing the same source again is answered by the
+  // server with the import the learner already has, charged once.
+  prepareMedia:(payload)=>request('/api/media-learning/source',{method:'POST',headers:quotaHeaders(),body:JSON.stringify(payload)}),
   mediaSource:(url,target)=>request(`/api/media/source?source_url=${encodeURIComponent(url)}&target_language=${encodeURIComponent(target||'')}`),
   /* The owner-scoped delete of a learner's own stored upload (404 for anything else); idempotent. */
   deleteMyMedia:(mediaId)=>request(`/api/media/my/${encodeURIComponent(mediaId)}`,{method:'DELETE'}),
@@ -407,7 +410,7 @@ export const api={
     const form=new FormData();
     form.append('file',file,file.name);
     form.append('language',String(language||'en'));
-    return request('/api/media-learning/upload',{method:'POST',body:form});
+    return request('/api/media-learning/upload',{method:'POST',headers:quotaHeadersFor({}),body:form});
   },
   adminMediaPreview:(urls,language)=>request('/api/media/admin/preview',{
     method:'POST',
@@ -441,7 +444,7 @@ export const api={
   speechStatus:()=>request('/api/speech/status'),
   speakingModelReference:(lessonId,segmentId)=>request(`/api/speaking/model-reference/${encodeURIComponent(lessonId)}/${encodeURIComponent(segmentId)}`,{method:'POST'}),
   /* `purpose: 'orena_voice'` marks Orena's push-to-talk: its words become an Orena message, so the server refuses an
-     exhausted learner before it transcribes anything (D-16T). A take is at most 5 minutes (413 otherwise) and an account
+     exhausted learner before it transcribes anything (D-169). A take is at most 5 minutes (413 otherwise) and an account
      can send an hour of audio a day (429 `speech_asr_daily_limit`). */
   transcribeSpeech:(blob,language,filename='',{purpose=''}={})=>{
     const form=new FormData();

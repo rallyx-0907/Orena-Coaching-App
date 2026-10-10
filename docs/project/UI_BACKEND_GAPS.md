@@ -5396,7 +5396,7 @@ the meters below.
   `X-Orena-Timezone` headers in §3, what counts as a message in §3.3 and the voice 503 in §9; it is written on this branch
   and was confirmed by the human as the UI lane's change (PR C). The opening greeting is bounded (one model greeting per
   account per 30 minutes, QTA-12).
-- **QTA-4 Voice - ENFORCED by duration when the switch lists `orena.message`** (D-16T, contract v8). One voice minute is
+- **QTA-4 Voice - ENFORCED by duration when the switch lists `orena.message`** (D-169, contract v8). One voice minute is
   one message (`params.voice_seconds_per_message`, default 60, admin-editable). A session is a chain of short vendor tokens:
   each chunk is two messages of voice (120 s at the default, never under 60 s), reserved and **charged whole when its token is
   minted** (ending early refunds nothing; the first chunk of any session costs at least one message), and the client renews it
@@ -5466,7 +5466,7 @@ the meters below.
     pipeline (`media_transcript_pipeline.py:554`, `media_timing.py:254`, the `media.import` meter). Left **unmetered** and not
     given a meter of its own (no new meter was invented); its cost is in the ledger (`speech_asr`, `speech_asr.py:221-235`);
     the per-process `speech_ai` brake (`core/http_security.py:76`, 60 per 600 s) stays. See QTA-14.
-- **QTA-14 `POST /api/speech/transcribe` - DECIDED: no meter of its own, but guarded** (D-16T point 8). It is speech-to-text
+- **QTA-14 `POST /api/speech/transcribe` - DECIDED: no meter of its own, but guarded** (D-169 point 8). It is speech-to-text
   *input*, not an assessment: push-to-talk turns it into an ordinary message turn (one `orena.message`, so metering the
   transcription too would charge a message twice), and the speaking rooms (Free talk, Conversation, Situation, React, Reading
   transfer) turn it into a draft the learner reads and edits before sending - none of them scores pronunciation (that is
@@ -5490,10 +5490,11 @@ the meters below.
   the provider still runs on the event loop; (c) a local decode failure is a `pronunciation_evaluator` / `azure-speech`
   failure row though no Azure request was made (a distinct label needs the ledger allow-list, reserved to the human); (d)
   `displayAmount` rounds, so 299 of 300 s shows "5 of 5" minutes while a short take is still admitted (shared with Plan &
-  usage); (e) `/api/speech/transcribe` stays unmetered paid spend, decided in D-16T (QTA-14) - not all paid AI is
+  usage); (e) `/api/speech/transcribe` stays unmetered paid spend, decided in D-169 (QTA-14) - not all paid AI is
   plan-bounded; (f) an exhausted (429) or duplicate (409) request still costs one local decode. Owner: human / BACKEND.
-- **QTA-6 Media import minutes - NOT YET ENFORCED.** The learner import paths must be scoped first (async jobs settle
-  from the worker). Owner: BACKEND.
+- **QTA-6 Media import minutes - ENFORCED when the switch lists `media.import`** (D-168; Free / Plus / Pro 15 / 120 / 600
+  minutes a month, stored in seconds, learner's timezone; beta configuration). See QTA-17 for the audit and the open items.
+  The Import sheet shows the 429 as the toast with "See all plans" (no exhausted state is drawn, QTA-1), EN/VI/ZH.
 - **QTA-7 Target languages - NOT YET ENFORCED.** A count cap where a learning language is added; a Free account that
   already learns 2 languages keeps them (human). Owner: BACKEND + UI (Settings / onboarding refusal).
 - **QTA-8 The learner's timezone is not stored on the account.** Windows use the browser's zone sent with each metered
@@ -5638,3 +5639,41 @@ the meters below.
 - **DAS-3 The sections' loading and failure are silent.** Each source is painted as it arrives and a source that fails
   leaves only its own section out; the design draws no per-section loading or error visual, so none is added. A learner
   cannot tell a failed source from an empty one. Owner: DESIGN / human.
+- **QTA-17 Media import audit (2026-10-10, `origin/main` b93b2388; line numbers are of that commit).** Owner: BACKEND.
+  (a) **Entry points.** *YouTube link*: `POST /api/media-learning/source` (`media_library_api.py:157` `learner_source` ->
+  `MediaSourceImporter.import_personal_url`, `media_source_import.py:295`) - the only call of the learner UI
+  (`static/orena/capabilities/media-acquisition.js:6`, Import sheet `screens/import/sheet.js` `submitUrl`); it stores a
+  personal entry and queues the pipeline, the room polls `GET /api/media/my/{id}` (up to 60 s). *Uploaded audio/video file*:
+  `POST /api/media-learning/upload` (`media_library_api.py:454`, `sheet.js` `submitFile`) -> `import_upload`
+  (`media_source_import.py:382`). *Direct media URL*: the same route, downloaded (`download_bounded`) then `import_upload`.
+  *Text / article*: the sheet's text step keeps the text on the device (`product/memory.js`), no server call, no duration:
+  **left unmetered**. Reading-library book import (`reading_library_api.py:257`) and every `/api/media/admin/*` import are
+  administrator-only and unmetered. *Older* `POST /api/media-learning/import` (`media_api.py:259`, Groq timing + Supadata +
+  translation, synchronous) is reachable by any signed-in learner but is called by the UI only when `api.prepareMedia` is
+  absent (never): refused with 503 while the meter is enforced.
+  (b) **Pipeline.** A background thread pool inside the application process (`MediaPipeline`, `workers=1` in `app.py:714`),
+  state on the library entry (JSON index, single-process); `recover()` re-queues at start (`app.py:731`), at most 3 attempts.
+  Stages fetch -> transcribe -> segment -> translate -> ready.
+  (c) **Where the duration becomes known.** File: ffprobe at upload (`probe_media`, `media_thumbnail.py:67`). YouTube: oEmbed
+  carries none, captions give a lower bound (`_transcript_duration_ms`), yt-dlp metadata the exact length (previously only in
+  the speech-recognition step, `youtube_audio.py`); D-168 reads it at admission.
+  (d) **What costs money.** Free: YouTube oEmbed and captions (`youtube_transcript_api`), ffprobe/ffmpeg, yt-dlp, thumbnails.
+  Paid: Groq Whisper (only when captions are missing or fail validation; 600 s chunks; `speech_asr` ledger rows),
+  Groq `openai/gpt-oss-120b` pre-translation (`MEDIA_PRETRANSLATE_LANGUAGES`, default `vi`, unless
+  `MEDIA_TRANSLATION_PROVIDER=local`), Supadata only on the older route and when `MEDIA_TRANSCRIPT_FALLBACK=supadata`
+  (off by default). The media spend ledger (`media_spend.py`: $5 ASR / $10 AI per batch, $25 per day) bounds the paid steps.
+  Idempotency before D-168: none - every request made a new `source-<uuid>` entry and ran the pipeline again.
+  (e) **Open.** (1) Provider rows written by the worker carry no account (the job has no request context; AC-2 attribution
+  would need the owner key stored on the entry - a schema/persistence decision). (2) The Groq translation request is one row
+  per batch call and does not record cached tokens. (3) Supadata has no price in the repository (rows are unpriced). (4)
+  `stale_dispatched` still lacks its `(state, updated_at)` index (QTA-11a). (5) (resolved in the review follow-up: see (11)). (6) Dedupe by file bytes and by video id works
+  per learning language; the same bytes in another language are a second, charged import. (7) A removed unfinished import is
+  free even if a provider already ran. (8) The "already imported?" lookup scans every personal entry of the media index per
+  metered request (O(entries of all learners)), and the per-(learner, source) lock is process-local: both are correct only
+  while the JSON media index is a single-process store (its own contract) and must be replaced together with it before more
+  than one worker serves imports. (9) `POST /api/media-learning/translate` and `/import` are refused while the meter is
+  enforced; `/import/status` still polls a job an earlier `/import` started. (10) A re-queued job of a deleted account
+  proceeds (`dispatch` answers `duplicate` without the incarnation check - core behaviour); account deletion removes the
+  learner's personal entries, so exposure is low. (11) The Import sheet now says 503 `quota_unavailable`,
+  `media_duration_unavailable` and 403 `feature_not_in_plan` in its own sentences (EN/VI/ZH); the sheet's other failures
+  are unchanged.

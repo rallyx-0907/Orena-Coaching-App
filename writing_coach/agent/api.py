@@ -18,7 +18,7 @@ so a malformed request counts too.
 Plan quota (D-163): when `orena.message` is enforced, a learner's message turn is admitted
 before anything streams - exhausted is a plain 429 `quota_exhausted` JSON response, never an
 SSE frame - and the opening greeting and the answers that ask no model are free (agent/turn.py).
-Live voice is charged against the same meter by duration (D-16T, contract v8): one message per
+Live voice is charged against the same meter by duration (D-169, contract v8): one message per
 `voice_seconds_per_message` seconds, one short vendor token at a time. `POST /voice/session` mints the first
 chunk and `POST /voice/extend` each next one (agent/voice_session.py): every chunk is admitted before its token is
 minted - 429 `quota_exhausted` when not even one message remains, 503 `quota_unavailable` when enforcement cannot be
@@ -173,7 +173,7 @@ def voice_enabled(env: Mapping[str, str]) -> bool:
 
 
 def voice_resumption(env: Mapping[str, str]) -> bool:
-    """Session resumption in a metered voice session's token (D-16T): on unless `AGENT_VOICE_RESUMPTION` is false, the
+    """Session resumption in a metered voice session's token (D-169): on unless `AGENT_VOICE_RESUMPTION` is false, the
     switch for a vendor that accepts the token but refuses its socket because of the field."""
 
     return str(env.get("AGENT_VOICE_RESUMPTION", "")).strip().casefold() not in {"0", "false", "no", "off"}

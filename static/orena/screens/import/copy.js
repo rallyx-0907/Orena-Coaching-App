@@ -26,6 +26,7 @@ const SUPPORT_KEYS = [
   'error_unsupported_source_language', 'error_invalid_target_language',
   'error_media_job_unavailable',
   'error_media_upload_invalid', 'error_media_upload_unavailable',
+  'error_quota_unavailable', 'error_media_duration_unavailable', 'error_feature_not_in_plan',
   'error_generic', 'error_practice_unavailable',
 ];
 
@@ -67,6 +68,9 @@ export const t = defineCopy('import', {
     error_media_job_unavailable: 'This import is no longer available. Try again.',
     error_media_upload_invalid: 'Orena can’t use this file. Choose an audio or video file within the upload limit.',
     error_media_upload_unavailable: 'This file couldn’t be stored right now. Please try again.',
+    error_quota_unavailable: 'Usage limits can’t be checked right now. Please try again in a moment.',
+    error_media_duration_unavailable: 'The length of this media couldn’t be read right now. Please try again.',
+    error_feature_not_in_plan: 'Media import isn’t part of your plan.',
     error_generic: 'Something went wrong. Please try again.',
   },
   vi: {
@@ -105,6 +109,9 @@ export const t = defineCopy('import', {
     error_media_job_unavailable: 'Lượt nhập này không còn khả dụng. Hãy thử lại.',
     error_media_upload_invalid: 'Orena không dùng được tệp này. Hãy chọn một tệp âm thanh hoặc video trong giới hạn tải lên.',
     error_media_upload_unavailable: 'Hiện chưa lưu được tệp này. Vui lòng thử lại.',
+    error_quota_unavailable: 'Hiện chưa kiểm tra được hạn mức sử dụng. Vui lòng thử lại sau ít phút.',
+    error_media_duration_unavailable: 'Hiện chưa đọc được độ dài của media này. Vui lòng thử lại.',
+    error_feature_not_in_plan: 'Gói của bạn không bao gồm nhập media.',
     error_generic: 'Đã có lỗi xảy ra. Vui lòng thử lại.',
   },
   zh: {
@@ -143,6 +150,9 @@ export const t = defineCopy('import', {
     error_media_job_unavailable: '此次导入已不可用，请重新导入。',
     error_media_upload_invalid: 'Orena 无法使用这个文件。请选择上传限制以内的音频或视频文件。',
     error_media_upload_unavailable: '暂时无法保存这个文件，请重试。',
+    error_quota_unavailable: '暂时无法检查使用额度，请稍后重试。',
+    error_media_duration_unavailable: '暂时无法读取这段媒体的时长，请重试。',
+    error_feature_not_in_plan: '你的套餐不包含媒体导入。',
     error_generic: '出了点问题，请重试。',
   },
 });
