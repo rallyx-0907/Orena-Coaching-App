@@ -31,6 +31,9 @@ _CATALOG = MappingProxyType({
     ("deepseek", "deepseek-chat"): TokenPricing("deepseek", "deepseek-chat", "USD", 0.27, 1.10),
     ("deepseek", "deepseek-reasoner"): TokenPricing("deepseek", "deepseek-reasoner", "USD", 0.55, 2.19),
     ("groq", "llama-3.3-70b-versatile"): TokenPricing("groq", "llama-3.3-70b-versatile", "USD", 0.59, 0.79),
+    # Media pre-translation (D-16S): published rate, console.groq.com/docs/model/openai/gpt-oss-120b, read 2026-10-09
+    # (input 0.15, output 0.60 per million; the cached-input rate 0.075 is not modelled, so this never understates).
+    ("groq", "openai/gpt-oss-120b"): TokenPricing("groq", "openai/gpt-oss-120b", "USD", 0.15, 0.60),
     # Published paid-tier text rate, ai.google.dev/gemini-api/docs/pricing, read 2026-09-27.
     ("gemini", "gemini-3.5-flash-lite"): TokenPricing("gemini", "gemini-3.5-flash-lite", "USD", 0.30, 2.50),
 })

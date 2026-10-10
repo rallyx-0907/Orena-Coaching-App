@@ -234,13 +234,13 @@ def test_the_setting_switches_it_on_and_the_environment_wins_when_set():
 
 
 def test_only_wired_meters_can_be_listed():
-    assert set(quota.WIRED_METERS) == {"writing.review", "orena.message", "pronunciation.audio"}
+    assert set(quota.WIRED_METERS) == {"writing.review", "orena.message", "pronunciation.audio", "media.import"}
     assert quota.validate_switch_setting({"enabled": True, "meters": ["pronunciation.audio", "writing.review"]}) == {
         "enabled": True, "meters": ["writing.review", "pronunciation.audio"]}
-    with pytest.raises(ValueError, match="media.import"):
-        quota.validate_switch_setting({"enabled": True, "meters": ["media.import"]})
+    with pytest.raises(ValueError, match="languages.target"):
+        quota.validate_switch_setting({"enabled": True, "meters": ["languages.target"]})
     quota.configure_quota(settings=MemorySettings(),
-                          env={quota.FLAG: "on", quota.METERS_FLAG: "media.import,writing.review"})
+                          env={quota.FLAG: "on", quota.METERS_FLAG: "languages.target,writing.review"})
     assert quota.switch()["meters"] == ["writing.review"], "an unwired meter enforces nothing and is not listed"
 
 
@@ -579,7 +579,7 @@ def test_admin_quota_routes_switch_enforcement(monkeypatch):
     on = client.put("/api/product/admin/quota", json={"enabled": True, "meters": ["writing.review"]})
     assert on.status_code == 200 and on.json()["state"] == "enforced"
     assert settings.rows[quota.SETTING_KEY]["value"] == {"enabled": True, "meters": ["writing.review"]}
-    assert client.put("/api/product/admin/quota", json={"enabled": True, "meters": ["media.import"]}).status_code == 422
+    assert client.put("/api/product/admin/quota", json={"enabled": True, "meters": ["languages.target"]}).status_code == 422
 
 
 # ------------------------------------------- review of #116: the switch fails closed (P2-1) --

@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 
 from writing_coach.core.errors import orena_http_error
+from writing_coach.product import quota
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from writing_coach.core.request_context import current_language_code, current_user_key
@@ -259,6 +260,12 @@ def _ready_response(
 @router.post("/import")
 def import_media(payload: MediaImportIn) -> dict[str, Any]:
     """Acquire native media, then Groq timing/transcript, then explicit fallback."""
+    # The learner UI imports through `/api/media-learning/source` (metered, D-16S); this older route runs Groq and
+    # Supadata work with no duration to charge, so where `media.import` is enforced it is refused, not left open.
+    quota.refuse_unmetered(
+        "media.import", category="quota_media_import_not_metered",
+        message="This import route is not available while plan limits are enforced.",
+    )
     learning_language = current_language_code()
     try:
         acquisition = _installed_media_ingestion().import_media(

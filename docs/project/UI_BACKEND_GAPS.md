@@ -5478,8 +5478,9 @@ the meters below.
   `displayAmount` rounds, so 299 of 300 s shows "5 of 5" minutes while a short take is still admitted (shared with Plan &
   usage); (e) `/api/speech/transcribe` stays unmetered paid spend (QTA-14) - until it is metered, not all paid AI is
   plan-bounded; (f) an exhausted (429) or duplicate (409) request still costs one local decode. Owner: human / BACKEND.
-- **QTA-6 Media import minutes - NOT YET ENFORCED.** The learner import paths must be scoped first (async jobs settle
-  from the worker). Owner: BACKEND.
+- **QTA-6 Media import minutes - ENFORCED when the switch lists `media.import`** (D-16S; Free / Plus / Pro 15 / 120 / 600
+  minutes a month, stored in seconds, learner's timezone; beta configuration). See QTA-17 for the audit and the open items.
+  The Import sheet shows the 429 as the toast with "See all plans" (no exhausted state is drawn, QTA-1), EN/VI/ZH.
 - **QTA-7 Target languages - NOT YET ENFORCED.** A count cap where a learning language is added; a Free account that
   already learns 2 languages keeps them (human). Owner: BACKEND + UI (Settings / onboarding refusal).
 - **QTA-8 The learner's timezone is not stored on the account.** Windows use the browser's zone sent with each metered
@@ -5624,3 +5625,34 @@ the meters below.
 - **DAS-3 The sections' loading and failure are silent.** Each source is painted as it arrives and a source that fails
   leaves only its own section out; the design draws no per-section loading or error visual, so none is added. A learner
   cannot tell a failed source from an empty one. Owner: DESIGN / human.
+- **QTA-17 Media import audit (2026-10-10, `origin/main` b93b2388; line numbers are of that commit).** Owner: BACKEND.
+  (a) **Entry points.** *YouTube link*: `POST /api/media-learning/source` (`media_library_api.py:157` `learner_source` ->
+  `MediaSourceImporter.import_personal_url`, `media_source_import.py:295`) - the only call of the learner UI
+  (`static/orena/capabilities/media-acquisition.js:6`, Import sheet `screens/import/sheet.js` `submitUrl`); it stores a
+  personal entry and queues the pipeline, the room polls `GET /api/media/my/{id}` (up to 60 s). *Uploaded audio/video file*:
+  `POST /api/media-learning/upload` (`media_library_api.py:454`, `sheet.js` `submitFile`) -> `import_upload`
+  (`media_source_import.py:382`). *Direct media URL*: the same route, downloaded (`download_bounded`) then `import_upload`.
+  *Text / article*: the sheet's text step keeps the text on the device (`product/memory.js`), no server call, no duration:
+  **left unmetered**. Reading-library book import (`reading_library_api.py:257`) and every `/api/media/admin/*` import are
+  administrator-only and unmetered. *Older* `POST /api/media-learning/import` (`media_api.py:259`, Groq timing + Supadata +
+  translation, synchronous) is reachable by any signed-in learner but is called by the UI only when `api.prepareMedia` is
+  absent (never): refused with 503 while the meter is enforced.
+  (b) **Pipeline.** A background thread pool inside the application process (`MediaPipeline`, `workers=1` in `app.py:714`),
+  state on the library entry (JSON index, single-process); `recover()` re-queues at start (`app.py:731`), at most 3 attempts.
+  Stages fetch -> transcribe -> segment -> translate -> ready.
+  (c) **Where the duration becomes known.** File: ffprobe at upload (`probe_media`, `media_thumbnail.py:67`). YouTube: oEmbed
+  carries none, captions give a lower bound (`_transcript_duration_ms`), yt-dlp metadata the exact length (previously only in
+  the speech-recognition step, `youtube_audio.py`); D-16S reads it at admission.
+  (d) **What costs money.** Free: YouTube oEmbed and captions (`youtube_transcript_api`), ffprobe/ffmpeg, yt-dlp, thumbnails.
+  Paid: Groq Whisper (only when captions are missing or fail validation; 600 s chunks; `speech_asr` ledger rows),
+  Groq `openai/gpt-oss-120b` pre-translation (`MEDIA_PRETRANSLATE_LANGUAGES`, default `vi`, unless
+  `MEDIA_TRANSLATION_PROVIDER=local`), Supadata only on the older route and when `MEDIA_TRANSCRIPT_FALLBACK=supadata`
+  (off by default). The media spend ledger (`media_spend.py`: $5 ASR / $10 AI per batch, $25 per day) bounds the paid steps.
+  Idempotency before D-16S: none - every request made a new `source-<uuid>` entry and ran the pipeline again.
+  (e) **Open.** (1) Provider rows written by the worker carry no account (the job has no request context; AC-2 attribution
+  would need the owner key stored on the entry - a schema/persistence decision). (2) The Groq translation request is one row
+  per batch call and does not record cached tokens. (3) Supadata has no price in the repository (rows are unpriced). (4)
+  `stale_dispatched` still lacks its `(state, updated_at)` index (QTA-11a). (5) The Import sheet cannot show a specific
+  message for a 503 `media_duration_unavailable` (shown as the generic error). (6) Dedupe by file bytes and by video id works
+  per learning language; the same bytes in another language are a second, charged import. (7) A removed unfinished import is
+  free even if a provider already ran.

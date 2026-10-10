@@ -36,6 +36,11 @@ build has wired (`WIRED_METERS`). Off, or a meter not listed: `admit()` is a no-
 written. On with no quota store (SQLite test backend, missing tables, account backbone off): every listed meter
 answers 503 `quota_unavailable`. Enforcement never treats "unknown" as "unlimited".
 
+Work that outlives the request itself - a media import runs minutes in a background job and survives a restart - keeps
+only the operation id (`ticket.operation_id`) with the work. The job dispatches, settles or releases by that id
+(`dispatch_operation`, `settle_operation`, `release_operation`), and the meter is listed in `ASYNC_METERS`, so the
+reconciler leaves it to its job for `ASYNC_RECONCILE_AFTER` (D-16S).
+
 Defaults still waiting for a human answer are named constants here (`ABANDONED_SETTLES`, `RECONCILE_AFTER`) and
 in D-160; the refresh route is deliberately not metered.
 """
@@ -77,9 +82,12 @@ SETTING_KEY = "product.quota_enforcement"
 # Meters whose routes this build admits through `admit()`. Listing any other meter enforces nothing, so it is
 # refused by the admin setting and ignored (logged) in the environment: a Plan screen must never show a meter as
 # counted while nothing counts it.
-WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio")
+WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "media.import")
 # Meters whose provider call ends inside the request; only these are reconciled after RECONCILE_AFTER.
 SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio")
+# Meters whose work outlives the request in a background job that settles its own reservation by operation id
+# (`settle_operation`, D-16S). The reconciler is only their backstop, after ASYNC_RECONCILE_AFTER.
+ASYNC_METERS: tuple[str, ...] = ("media.import",)
 SWITCH_CACHE_SECONDS = 5.0
 
 # [HUMAN, pending] What a reservation whose owner died after dispatch costs: "admitted" (default, human
@@ -88,6 +96,10 @@ ABANDONED_SETTLES = "admitted"
 # [HUMAN, pending] How long an open reservation may sit before the reconciler decides it was abandoned: more than
 # twice the slowest provider timeout of a wired route (OLLAMA_TIMEOUT 180 s).
 RECONCILE_AFTER = timedelta(minutes=15)
+# An async meter's job queues behind others and may run for the pipeline's longest audio (MEDIA_ASR_MAX_SECONDS, 90
+# minutes) and be re-queued after a restart; its worker, not the reconciler, settles it. A reservation still open
+# after this long has lost its job and its entry.
+ASYNC_RECONCILE_AFTER = timedelta(hours=6)
 RECONCILE_INTERVAL_SECONDS = 600
 # How often an admission re-reads the latest bucket when its computed window lost a race (review P1-1).
 WINDOW_RETRIES = 4
@@ -622,6 +634,40 @@ def _reserve(meter: str, units: int, digest: str, idempotency_key: str | None = 
     raise _unavailable(str(status))
 
 
+# --- work that outlives its request: act on a reservation by operation id ----------------------------------------
+
+def _store_repository() -> Any:
+    repository = _runtime.repository
+    if repository is None:
+        raise _unavailable(_runtime.reason or "store")
+    return repository
+
+
+def dispatch_operation(operation_id: str, ref: str = "") -> str:
+    """The background job is about to start paid work: `dispatched` for this reservation, by id.
+
+    Returns the repository's verdict (`dispatch`, `duplicate` for a job re-queued after a restart, `denied` for a
+    deleted account, `unknown_operation`, ...). Raises on a store failure. The caller decides what each verdict
+    means for its job; paid work starts only on `dispatch` or `duplicate`."""
+    outcome = _store_repository().dispatch(operation_id=operation_id, dispatch_ref=(ref or "dispatch")[:200])
+    return str(outcome.get("status"))
+
+
+def settle_operation(operation_id: str, actual: int, outcome_ref: str | None = None) -> str:
+    """Settle `actual` units of a reservation by id (idempotent). Returns the verdict; raises on a store failure.
+
+    Used by a background job, which cannot hold the request's `Ticket`: the id was kept with the work, so the
+    settlement survives a process restart. `actual` can never exceed what was reserved (`exceeds_admitted`)."""
+    outcome = _store_repository().settle(operation_id=operation_id, actual_units=max(0, int(actual)),
+                                         outcome_ref=(outcome_ref or None) and outcome_ref[:200])
+    return str(outcome.get("status"))
+
+
+def release_operation(operation_id: str) -> str:
+    """Give back a reservation that never reached a provider (by id, idempotent)."""
+    return str(_store_repository().release(operation_id=operation_id).get("status"))
+
+
 def enforces(meter: str) -> bool:
     """True when this meter is listed (metered, or refused because the store is unavailable)."""
     return meter in switch()["meters"]
@@ -738,21 +784,23 @@ def usage_for(user_key: str, plan: Plan) -> dict[str, dict[str, Any]]:
 # --- reconciler -----------------------------------------------------------------------------------------------
 
 def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int = 200) -> dict[str, int]:
-    """Open reservations older than RECONCILE_AFTER: a dispatched one is settled (ABANDONED_SETTLES), a reserved
-    one (never handed to a provider) is released. Idempotent; several processes may run it."""
+    """Open reservations older than their meter's threshold: a dispatched one is settled (ABANDONED_SETTLES), a
+    reserved one (never handed to a provider) is released. Idempotent; several processes may run it.
+
+    Scoped by meter (review P3-1): a synchronous meter is swept after RECONCILE_AFTER, an async meter (media import,
+    settled by its own worker) only after ASYNC_RECONCILE_AFTER, so a long import is never swept while it runs."""
     now = now or datetime.now(UTC)
     done = {"settled": 0, "released": 0}
-    # Only synchronous meters (review P3-1): an async meter (media import) is settled by its worker, never here.
-    for row in repository.stale_dispatched(now - RECONCILE_AFTER, limit, states=("reserved", "dispatched"),
-                                           meters=SYNC_METERS):
-        if row["state"] == "dispatched":
-            actual = int(row["admitted_units"]) if ABANDONED_SETTLES == "admitted" else 0
-            outcome = repository.settle(operation_id=row["operation_id"], actual_units=actual,
-                                        outcome_ref="reconciled:abandoned")
-            done["settled"] += outcome.get("status") == "settle"
-        else:
-            outcome = repository.release(operation_id=row["operation_id"])
-            done["released"] += outcome.get("status") == "release"
+    for meters, after in ((SYNC_METERS, RECONCILE_AFTER), (ASYNC_METERS, ASYNC_RECONCILE_AFTER)):
+        for row in repository.stale_dispatched(now - after, limit, states=("reserved", "dispatched"), meters=meters):
+            if row["state"] == "dispatched":
+                actual = int(row["admitted_units"]) if ABANDONED_SETTLES == "admitted" else 0
+                outcome = repository.settle(operation_id=row["operation_id"], actual_units=actual,
+                                            outcome_ref="reconciled:abandoned")
+                done["settled"] += outcome.get("status") == "settle"
+            else:
+                outcome = repository.release(operation_id=row["operation_id"])
+                done["released"] += outcome.get("status") == "release"
     if any(done.values()):
         _log.info("quota reconciler: %s", done)
     return done

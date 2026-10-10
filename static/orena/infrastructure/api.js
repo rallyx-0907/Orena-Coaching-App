@@ -399,7 +399,10 @@ export const api={
   // payload `/import` answers with, so the encounter has one shape to render.
   // The admin routes are admin-gated server-side, not here.
   mediaMy:(mediaId,support='')=>request(`/api/media/my/${encodeURIComponent(mediaId)}${support?`?target_language=${encodeURIComponent(support)}`:''}`),
-  prepareMedia:(payload)=>request('/api/media-learning/source',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(payload)}),
+  // An import is charged by the source's length against the plan's media-import minutes (D-16S): the device timezone
+  // says when the learner's month ends. No idempotency key: importing the same source again is answered by the
+  // server with the import the learner already has, charged once.
+  prepareMedia:(payload)=>request('/api/media-learning/source',{method:'POST',headers:quotaHeaders(),body:JSON.stringify(payload)}),
   mediaSource:(url,target)=>request(`/api/media/source?source_url=${encodeURIComponent(url)}&target_language=${encodeURIComponent(target||'')}`),
   /* The owner-scoped delete of a learner's own stored upload (404 for anything else); idempotent. */
   deleteMyMedia:(mediaId)=>request(`/api/media/my/${encodeURIComponent(mediaId)}`,{method:'DELETE'}),
@@ -407,7 +410,7 @@ export const api={
     const form=new FormData();
     form.append('file',file,file.name);
     form.append('language',String(language||'en'));
-    return request('/api/media-learning/upload',{method:'POST',body:form});
+    return request('/api/media-learning/upload',{method:'POST',headers:quotaHeadersFor({}),body:form});
   },
   adminMediaPreview:(urls,language)=>request('/api/media/admin/preview',{
     method:'POST',

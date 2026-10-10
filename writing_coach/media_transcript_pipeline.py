@@ -46,6 +46,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from writing_coach import media_quota
 from writing_coach.ai.pricing import estimate_token_cost
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore
 from writing_coach.media_learning import MediaTranscript, TranscriptSegment
@@ -104,6 +105,12 @@ def _env_int(name: str, default: int) -> int:
     except ValueError:
         return default
     return value if value > 0 else default
+
+
+def max_asr_seconds() -> int:
+    """The longest source speech recognition will take (`MEDIA_ASR_MAX_SECONDS`, 90 minutes): also the most one
+    import can be charged (`media_quota`)."""
+    return _env_int("MEDIA_ASR_MAX_SECONDS", 5400)
 
 
 # -- rights ---------------------------------------------------------------------------------
@@ -327,7 +334,11 @@ class MediaPipeline:
         return True
 
     def recover(self, store: Any, assets: BookAssetStore) -> int:
-        """Re-queue what a restart interrupted. An item that keeps being interrupted stops after MAX_ATTEMPTS."""
+        """Re-queue what a restart interrupted. An item that keeps being interrupted stops after MAX_ATTEMPTS.
+
+        A metered import (D-16S) also keeps its quota reservation across the restart: an interrupted job is
+        re-queued and settles when it ends, and a job that ended but could not write its settlement (the quota
+        store was down) writes it now, from the intent recorded on the entry."""
         count = 0
         try:
             entries = [*store.list(library="shared", status=None), *store.list(library="personal", status=None)]
@@ -336,11 +347,13 @@ class MediaPipeline:
         for entry in entries:
             processing = dict(entry.processing or {})
             if processing.get("state") not in {STATE_QUEUED, STATE_RUNNING}:
+                self._settle_quota(store, entry.media_id, media_quota.hold_of(entry), final=entry)
                 continue
             if int(processing.get("attempts") or 0) >= MAX_ATTEMPTS:
                 self._write_processing(store, entry, state=STATE_FAILED, stage=processing.get("stage") or STAGE_FETCH,
                                        reason="pipeline_interrupted", detail="Processing was interrupted too many times.",
                                        status="review")
+                self._settle_quota(store, entry.media_id, media_quota.hold_of(entry))
                 continue
             self.enqueue(store, assets, entry.media_id, batch_id=str(processing.get("batch_id") or self.new_batch()))
             count += 1
@@ -373,6 +386,8 @@ class MediaPipeline:
     # -- the job ------------------------------------------------------------------------
 
     def _job(self, store: Any, assets: BookAssetStore, media_id: str, batch_id: str, candidate: Candidate | None) -> None:
+        # The reservation is read before anything runs: the learner may remove the entry while it is processing.
+        hold = media_quota.hold_of(store.get(media_id))
         try:
             self._run(store, assets, media_id, batch_id, candidate)
         except PipelineStop as stop:
@@ -389,8 +404,48 @@ class MediaPipeline:
             except Exception:  # noqa: BLE001
                 _logger.exception("media pipeline could not record its own failure for %s", media_id)
         finally:
+            self._settle_quota(store, media_id, hold)
             with self._guard:
                 self._inflight.discard(media_id)
+
+    def _dispatch_quota(self, entry: MediaLibraryEntry) -> None:
+        """A metered import starts its first paid step only against a live reservation (fail closed)."""
+        hold = media_quota.hold_of(entry)
+        if hold is None:
+            return
+        try:
+            media_quota.dispatch(hold)
+        except media_quota.ImportQuotaUnavailable as refused:
+            raise PipelineStop(refused.code) from None
+
+    def _settle_quota(self, store: Any, media_id: str, hold: media_quota.EntryHold | None,
+                      final: MediaLibraryEntry | None = None) -> None:
+        """Settle a metered import by its operation id from where it ended (success: the source seconds; anything
+        else: 0). Never raises: a settlement the store cannot take now is kept as an intent on the entry and written
+        by the next `recover()`; the reconciler is only the last backstop."""
+        if hold is None:
+            return
+        try:
+            entry = final if final is not None else store.get(media_id)
+            recorded = entry.source.get(media_quota.SOURCE_SETTLE, "") if entry is not None else ""
+            pending = media_quota.decode_intent(recorded)
+            actual, ref = pending if pending is not None else media_quota.settlement_for(entry, hold)
+            if entry is not None and pending is None:
+                self._mark_quota(store, media_id, media_quota.encode_intent(actual, ref))
+            media_quota.settle(hold, actual, ref)
+            self._mark_quota(store, media_id, media_quota.SETTLED)
+            _logger.info("media import %s settled %s of %s source seconds (%s)", media_id, actual, hold.units, ref)
+        except Exception:  # noqa: BLE001 - accounting never takes the pipeline down
+            _logger.warning("media import quota not settled for %s; retried at the next recover()", media_id,
+                            exc_info=True)
+
+    @staticmethod
+    def _mark_quota(store: Any, media_id: str, value: str) -> None:
+        try:
+            store.update_if_present(
+                media_id, lambda fresh: replace(fresh, source={**fresh.source, media_quota.SOURCE_SETTLE: value}))
+        except Exception:  # noqa: BLE001 - the marker is a convenience; the settlement itself is what counts
+            _logger.warning("media import quota marker not written for %s", media_id, exc_info=True)
 
     def _run(self, store: Any, assets: BookAssetStore, media_id: str, batch_id: str, candidate: Candidate | None) -> None:
         entry = store.get(media_id)
@@ -400,6 +455,7 @@ class MediaPipeline:
         personal = entry.library == "personal"
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing")
+            self._dispatch_quota(entry)
             lines, origin, cost, asr_seconds, detected, words = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:
             self._hold_failed(store, media_id, stop)
@@ -451,7 +507,7 @@ class MediaPipeline:
             pending = model_clips.missing_lines(assets, entry_clip_lines(admitted))
             if not pending:
                 return
-            max_seconds = _env_int("MEDIA_ASR_MAX_SECONDS", 5400)
+            max_seconds = max_asr_seconds()
             with tempfile.TemporaryDirectory(prefix="orena-clips-") as directory:
                 source = self._audio_source(assets, entry, Path(directory), max_seconds)
                 result = model_clips.prepare_clips(
@@ -529,7 +585,7 @@ class MediaPipeline:
     ) -> tuple[list[Cue], list[SpeechAsrWord], str, float, float]:
         if self._asr is None:
             raise PipelineStop("asr_unconfigured")
-        max_seconds = _env_int("MEDIA_ASR_MAX_SECONDS", 5400)
+        max_seconds = max_asr_seconds()
         with tempfile.TemporaryDirectory(prefix="orena-asr-") as directory:
             work = Path(directory)
             source = self._audio_source(assets, entry, work, max_seconds)
@@ -537,6 +593,11 @@ class MediaPipeline:
             total = sum(_probe_seconds(path) for path, _ in chunks)
             if total > max_seconds:
                 raise PipelineStop("too_long", f"{int(total)}s")
+            # A metered import listens to no more than the minutes it reserved: audio longer than the length read
+            # at admission is not the source that was admitted, and nothing paid has started yet.
+            reserved = media_quota.reserved_seconds(entry)
+            if reserved is not None and total > reserved + media_quota.TOLERANCE_SECONDS:
+                raise PipelineStop("duration_mismatch", f"{int(total)}s of {reserved}s")
             # Refuse before the first paid call when the whole item would pass a cap.
             try:
                 self._ledger.check(KIND_ASR, batch_id, self._ledger.asr_estimate(total) if len(chunks) == 1 else self._ledger.asr_estimate(total))

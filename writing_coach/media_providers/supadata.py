@@ -255,6 +255,35 @@ class SupadataTranscriptClient:
         deadline: float,
         allow_206: bool,
     ) -> dict[str, Any] | None:
+        """One Supadata request. The request that starts a transcript (it carries parameters) is one row in the AI
+        cost ledger - provider, model, outcome, latency; Supadata reports no usage and the repository holds no
+        price for it, so its cost is said as unpriced, never zero. A poll of a job already started is not counted
+        again."""
+        if params is None:
+            return self._request(url, params=params, deadline=deadline, allow_206=allow_206)
+        from writing_coach.ai.audio_telemetry import record_audio_operation
+
+        started = time.perf_counter()
+        try:
+            payload = self._request(url, params=params, deadline=deadline, allow_206=allow_206)
+        except Exception as exc:
+            record_audio_operation("media_transcript_fallback", provider="supadata", model="transcript",
+                                   outcome="failure", latency_ms=int((time.perf_counter() - started) * 1000),
+                                   audio_seconds=None, error=exc)
+            raise
+        record_audio_operation("media_transcript_fallback", provider="supadata", model="transcript",
+                               outcome="success", latency_ms=int((time.perf_counter() - started) * 1000),
+                               audio_seconds=None)
+        return payload
+
+    def _request(
+        self,
+        url: str,
+        *,
+        params: dict[str, str] | None,
+        deadline: float,
+        allow_206: bool,
+    ) -> dict[str, Any] | None:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise SupadataTranscriptTimedOut()

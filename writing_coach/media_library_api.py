@@ -26,10 +26,12 @@ from pathlib import Path
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from fastapi import APIRouter, File, Form, Query, Request, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore, InvalidAssetKey
+from writing_coach import media_quota
 from writing_coach.core.errors import orena_http_error
 from writing_coach.media_library_store import OWNER_FIELD, MediaIndexUnavailable, MediaLibraryEntry, owner_token, visible_to
 from writing_coach.core.request_context import current_language_code, current_user_key
@@ -160,6 +162,9 @@ def learner_source(payload: LearnerSourceIn) -> dict[str, Any]:
     from writing_coach.media_ingestion import MediaImportError
     try:
         entry = importer.import_personal_url(payload.source_url, language=current_language_code(), owner_key=current_user_key())
+    except HTTPException:
+        # The plan's refusals (429 quota_exhausted, 503 quota_unavailable, 409, 403) are the quota core's own words.
+        raise
     except MediaImportError as exc:
         raise orena_http_error(422, exc.category.value, exc.learner_message) from exc
     except (UnsafeMediaFetch, UnsupportedMediaAddress, ValueError):
@@ -269,6 +274,8 @@ def _remove_personal_entry(store: Any, asset_store: BookAssetStore, entry: Media
     assert_writable = getattr(store, "assert_writable", None)
     if assert_writable is not None:
         assert_writable()
+    # An import removed before it finished produced nothing for the learner: its reservation settles 0 (D-16S).
+    media_quota.cancel_entry(entry)
     if entry.provider == "youtube":
         return store.delete(entry.media_id)
     prefix = f"media/{entry.provider_media_id}"
@@ -468,10 +475,14 @@ async def learner_upload(
         raise orena_http_error(503, "media_library_unavailable", "The Media Library is not configured for this environment.")
     selected = _require_language(language, "learning language")
     filename = Path(str(file.filename or "upload")).name or "upload"
+    # Where `media.import` is enforced but cannot be checked this is a 503 before the file is read at all.
+    media_quota.ready()
     try:
         with TempMediaFile(suffix=Path(filename).suffix or ".bin") as temp:
             await _stream_upload(file, temp.path)
-            entry = importer.import_upload(
+            # Probing, hashing and the quota store are blocking: off the event loop (the request's context goes along).
+            entry = await run_in_threadpool(
+                importer.import_upload,
                 temp.path,
                 filename=filename,
                 language=selected,
@@ -480,6 +491,8 @@ async def learner_upload(
                 title=title.strip(),
                 owner_key=current_user_key(),
             )
+    except HTTPException:
+        raise
     except UnsafeMediaFetch as exc:
         raise orena_http_error(422, "media_upload_invalid", str(exc)) from exc
     except ValueError as exc:
