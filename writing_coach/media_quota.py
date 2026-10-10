@@ -289,19 +289,22 @@ def decide(store: Any, operation_id: str) -> tuple[int, str] | None:
     The entry that owns the operation knows: a recorded intent is settled as decided; a finished entry as its outcome
     says (0 when it failed); an entry gone from the index (removed or lost) produced nothing for the learner: 0. An
     entry still queued or running is in play, so None (settled as admitted by the caller). Raises when the index
-    cannot be read - not knowing is not a decision."""
+    cannot be read - not knowing is not a decision. None means the job is in play (the reconciler leaves it, up to
+    `ASYNC_IN_PLAY_CEILING`)."""
     for library in ("personal", "shared"):
         for entry in store.list(library=library, status=None):
             if entry.source.get(SOURCE_OP) != operation_id:
                 continue
-            hold = hold_of(entry)
-            if hold is None:
-                return None  # already settled by its job; the store answers the repeat as a duplicate
+            try:
+                hold = EntryHold(operation_id, int(entry.source.get(SOURCE_UNITS, "")))
+            except ValueError:
+                return None
             intent = decode_intent(entry.source.get(SOURCE_SETTLE, ""))
             if intent is not None:
                 return intent
             if (entry.processing or {}).get("state") in ("queued", "running"):
                 return None
+            # Also an entry marked settled whose row is still open: what it ended as, never the full reservation.
             return settlement_for(entry, hold)
     if getattr(store, "last_read_issue", "") in {"index_corrupt", "index_unreadable"}:
         raise RuntimeError("the media index cannot be read")

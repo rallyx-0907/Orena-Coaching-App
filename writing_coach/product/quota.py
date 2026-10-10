@@ -101,6 +101,9 @@ RECONCILE_AFTER = timedelta(minutes=15)
 # minutes) and be re-queued after a restart; its worker, not the reconciler, settles it. A reservation still open
 # after this long has lost its job and its entry.
 ASYNC_RECONCILE_AFTER = timedelta(hours=6)
+# A job its owner still reports in play (queued or running) is left to finish past ASYNC_RECONCILE_AFTER - a restart after
+# a long outage re-queues it, and its failure must still settle 0 - and is settled as admitted only after this ceiling.
+ASYNC_IN_PLAY_CEILING = timedelta(hours=24)
 RECONCILE_INTERVAL_SECONDS = 600
 # How often an admission re-reads the latest bucket when its computed window lost a race (review P1-1).
 WINDOW_RETRIES = 4
@@ -816,6 +819,8 @@ def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int =
                         continue
                     if decided is not None:
                         actual, ref = min(max(0, int(decided[0])), int(row["admitted_units"])), f"reconciled:{decided[1]}"[:200]
+                    elif row.get("updated_at") is None or row["updated_at"] > now - ASYNC_IN_PLAY_CEILING:
+                        continue  # in play on a live entry: its worker settles it; the ceiling is the last resort
                 outcome = repository.settle(operation_id=row["operation_id"], actual_units=actual,
                                             outcome_ref=ref)
                 done["settled"] += outcome.get("status") == "settle"

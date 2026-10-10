@@ -121,7 +121,7 @@ class FakeQuotaRepository:
             return {"status": "release"}
 
     def stale_dispatched(self, older_than, limit, states=("dispatched",), meters=None):
-        return [{"operation_id": op, "state": row["state"], "admitted_units": row["units"]}
+        return [{"operation_id": op, "state": row["state"], "admitted_units": row["units"], "updated_at": row["updated_at"]}
                 for op, row in self.reservations.items() if row["state"] in states and row["updated_at"] < older_than
                 and (meters is None or row["key"][1] in meters)]
 

@@ -173,16 +173,58 @@ def test_the_backstop_charges_nothing_for_an_import_that_is_gone_and_leaves_an_u
     assert world.repo.settled[-1] == (operation, 0, "reconciled:no-entry")
 
 
-def test_a_job_still_running_is_settled_as_admitted_by_the_backstop(tmp_path, monkeypatch):
+def test_a_job_still_in_play_is_left_to_finish_and_settled_as_admitted_only_at_the_ceiling(tmp_path, monkeypatch):
     world = World(tmp_path, monkeypatch)
     idle(world, monkeypatch)
     world.upload(media(60))
     (entry,) = world.entries()
     quota.configure_async_decision(lambda op: media_quota.decide(world.store, op))
-    quota.dispatch_operation(entry.source[media_quota.SOURCE_OP], media_quota.DISPATCH_REF)
-    now = old(world)
-    assert quota.reconcile_once(world.repo, now=now + quota.ASYNC_RECONCILE_AFTER)["settled"] == 1
-    assert world.repo.settled[-1][1:] == (60, "reconciled:abandoned")
+    operation = entry.source[media_quota.SOURCE_OP]
+    quota.dispatch_operation(operation, media_quota.DISPATCH_REF)
+    old(world, hours=7)
+    assert quota.reconcile_once(world.repo) == {"settled": 0, "released": 0}, "7 h old and in play: left to its worker"
+    old(world, hours=25)
+    assert quota.reconcile_once(world.repo)["settled"] == 1
+    assert world.repo.settled[-1] == (operation, 60, "reconciled:abandoned"), "stuck for a day: as admitted"
+
+
+def test_a_failure_after_a_long_outage_still_settles_zero(tmp_path, monkeypatch):
+    """The reviewer's probe F: the job had dispatched, the server stayed down for more than 6 h, and at restart the
+    reconciler's first tick ran before the re-queued job did. The job then fails: its 0 must be accepted."""
+    world = World(tmp_path, monkeypatch)
+    idle(world, monkeypatch)
+    world.upload(media(60))
+    (entry,) = world.entries()
+    operation = entry.source[media_quota.SOURCE_OP]
+    quota.dispatch_operation(operation, media_quota.DISPATCH_REF)
+    world.store.update_if_present(entry.media_id, lambda e: dataclasses.replace(
+        e, processing={**e.processing, "state": "running", "attempts": 1}))
+    old(world, hours=8)
+    quota.configure_async_decision(lambda op: media_quota.decide(world.store, op))
+    restarted = world.new_pipeline()
+    monkeypatch.setattr(restarted, "_pool", type("Idle", (), {"submit": lambda *_a, **_k: None})())
+    restarted.recover(world.store, world.assets)
+    assert quota.reconcile_once(world.repo) == {"settled": 0, "released": 0}, "the startup tick leaves the job in play"
+    world.asr.error = SpeechAsrRequestFailed(500)
+    monkeypatch.setenv("MEDIA_PIPELINE_INLINE", "1")
+    world.new_pipeline()._job(world.store, world.assets, entry.media_id, "batch", None)
+    assert world.store.get(entry.media_id).processing["state"] == "failed"
+    assert world.repo.settled == [(operation, 0, "failed:asr_failed")]
+    assert (world.bucket()["consumed"], world.bucket()["reserved"]) == (0, 0)
+
+
+def test_the_backstop_settles_the_recorded_outcome_of_a_settled_entry_whose_row_is_still_open(tmp_path, monkeypatch):
+    world = World(tmp_path, monkeypatch)
+    world.asr.error = SpeechAsrRequestFailed(500)
+    assert world.upload(media(60)).status_code == 200
+    (entry,) = world.entries()
+    operation = entry.source[media_quota.SOURCE_OP]
+    assert world.store.get(entry.media_id).source[media_quota.SOURCE_SETTLE] == media_quota.SETTLED
+    # The row was reopened (a lost write): the marker says done, the row says dispatched.
+    row = world.repo.reservations[operation]
+    row["state"] = "dispatched"
+    world.repo.buckets[row["key"]]["reserved"] += row["units"]
+    assert media_quota.decide(world.store, operation) == (0, "failed:asr_failed"), "not the full reservation"
 
 
 def test_a_failing_sweep_does_not_stop_its_timer():

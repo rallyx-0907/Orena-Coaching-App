@@ -5105,9 +5105,11 @@ per-meter reconciler threshold; an implementer may not self-approve).
    a process that stays up, every 5 minutes** by `MediaPipeline.settle_pending` (`IntentSchedule`, 200 entries a tick,
    started with the reconciler). The reconciler is the last backstop and **asks the media index what an abandoned import
    decided** (`quota.configure_async_decision` -> `media_quota.decide`): a recorded intent is settled as decided, a
-   finished entry as its outcome says (0 when it failed), an entry gone from the index 0 (`no-entry`); only an entry still
-   queued or running (stuck) is settled as admitted (ABANDONED_SETTLES), and an unreadable index leaves the row for the
-   next tick. `reconcile_once` is scoped by meter with a threshold per group - synchronous meters after 15 minutes as
+   finished entry as its outcome says (0 when it failed), an entry gone from the index 0 (`no-entry`); an entry marked settled
+   whose row is still open is settled as its recorded outcome; an entry still queued or running is **left to its worker**
+   (a restart after a long outage re-queues it, and a failure must still settle 0) and settled as admitted only once its row
+   is `ASYNC_IN_PLAY_CEILING` = 24 hours old (ABANDONED_SETTLES, the last resort for a stuck job); an unreadable index
+   leaves the row for the next tick. `reconcile_once` is scoped by meter with a threshold per group - synchronous meters after 15 minutes as
    before, `ASYNC_METERS` (`media.import`) only after `ASYNC_RECONCILE_AFTER` = 6 hours.
    `quota.dispatch_operation / settle_operation / release_operation` act by operation id for work that outlives its request.
    A settled personal import is never re-run by `pipeline.retry()` (that would be Whisper with no reservation); a new
