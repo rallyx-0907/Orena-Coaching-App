@@ -19,10 +19,10 @@ Plan quota (D-163): when `orena.message` is enforced, a learner's message turn i
 before anything streams - exhausted is a plain 429 `quota_exhausted` JSON response, never an
 SSE frame - and the opening greeting and the answers that ask no model are free (agent/turn.py).
 Live voice is charged against the same meter by duration (D-16T, contract v8): one message per
-`voice_seconds_per_message` seconds. `POST /voice/session` reserves the messages the session may use
-(agent/voice_session.py), is refused 429 `quota_exhausted` when not even one remains and 503
-`quota_unavailable` when enforcement cannot be read - before any token is minted - and the token's life
-(`max_seconds`) is the seconds the reserved messages buy.
+`voice_seconds_per_message` seconds, one short vendor token at a time. `POST /voice/session` mints the first
+chunk and `POST /voice/extend` each next one (agent/voice_session.py): every chunk is admitted before its token is
+minted - 429 `quota_exhausted` when not even one message remains, 503 `quota_unavailable` when enforcement cannot be
+read - and charged whole when the token exists. `/voice/end` only stops further chunks.
 """
 
 from __future__ import annotations
@@ -186,10 +186,20 @@ def _voice_call_allowed(runtime: AgentRuntime = Depends(_read_allowed)) -> Voice
     return _voice(runtime)
 
 
+def _voice_extend_allowed(runtime: AgentRuntime = Depends(_require_runtime)) -> VoiceService:
+    # A renewal mints a paid token, so the daily spend cap applies to it as to an opening; but it carries on a
+    # conversation the learner already opened, so it is not counted as one more turn of their window.
+    wait = runtime.spend_guard() if runtime.spend_guard is not None else None
+    if wait is not None:
+        raise HTTPException(status_code=429, detail="rate_limited", headers={"Retry-After": str(max(1, math.ceil(wait)))})
+    _admit(runtime.read_limiter)
+    return _voice(runtime)
+
+
 @router.post("/voice/session")
 def agent_voice_session(body: dict = Body(...), voice: VoiceService = Depends(_voice_session_allowed)) -> dict:
-    # Voice talks to the vendor directly on a token minted here, for up to 15 minutes. The plan's messages are
-    # reserved by `VoiceService.open` before the token exists (429 / 503 / 409 / 403 are the quota gate's own).
+    # Voice talks to the vendor directly on a token minted here, a chunk of it at a time. The plan messages are
+    # charged by `VoiceService.open` before the token exists (429 / 503 / 409 / 403 are the quota gate own).
     learner = LearnerScope.from_request_context()
     try:
         target = to_internal(str(((body.get("context") or {}).get("locale") or {}).get("target") or ""))
@@ -203,6 +213,24 @@ def agent_voice_session(body: dict = Body(...), voice: VoiceService = Depends(_v
         raise HTTPException(status_code=422, detail=exc.errors(include_url=False, include_context=False)) from exc
     except VoiceUnavailable as exc:
         raise HTTPException(status_code=503, detail="voice_unavailable") from exc
+
+
+@router.post("/voice/extend")
+def agent_voice_extend(body: dict = Body(...), voice: VoiceService = Depends(_voice_extend_allowed)) -> dict:
+    """The next chunk of a voice session (contract §9, v8): a new vendor token, admitted and charged like the first.
+    `chunk` is the index wanted (the number of tokens the client holds); a repeat of the last request returns the same
+    token without a second charge. 429 `quota_exhausted` when no message is left, 503 `quota_unavailable` when the
+    limit cannot be read, 404 `voice_session_not_found` when the session is over, 409 for a chunk out of order or a
+    session at its time limit: in every case the client ends the session when the token it holds dies."""
+
+    learner = LearnerScope.from_request_context()
+    try:
+        answer = voice.extend(str(body.get("voice_session_id") or ""), learner, body.get("chunk"), body.get("resumption"))
+    except VoiceUnavailable as exc:
+        raise HTTPException(status_code=503, detail="voice_unavailable") from exc
+    if answer is None:
+        raise HTTPException(status_code=404, detail="voice_session_not_found")
+    return answer
 
 
 @router.get("/voice/voices")

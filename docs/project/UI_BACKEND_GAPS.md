@@ -5397,17 +5397,18 @@ the meters below.
   and was confirmed by the human as the UI lane's change (PR C). The opening greeting is bounded (one model greeting per
   account per 30 minutes, QTA-12).
 - **QTA-4 Voice - ENFORCED by duration when the switch lists `orena.message`** (D-16T, contract v8). One voice minute is
-  one message (`params.voice_seconds_per_message`, default 60, admin-editable); `POST /api/agent/voice/session` reserves
-  the messages the session may use, mints the token only for the seconds they buy (`max_seconds`, at most 900) and
-  settles `ceil(seconds / voice_seconds_per_message)` at the end. Not even one message left: 429 `quota_exhausted`
-  (the voice screen shows the server's figures as the Respond room's toast with "See all plans" and does **not** start
-  the device cascade); unreadable: 503 `quota_unavailable` (falls back to the cascade, as for any failed session). The
-  design draws no remaining-time display and no "session ended at the limit" state, so none was invented: the session
-  simply ends at `max_seconds` (the socket closes and `/voice/end` settles). A shorter-than-900 s cap is invisible until
-  it ends. Owner: design (a remaining-time or end-of-allowance state, if wanted). Residual risk: whether the vendor
-  closes an already-open socket at the token's `expireTime` is unverified live (a paid-provider gate); the client and
-  the server settle at the cap either way, so the learner is never charged more than reserved, but a client that
-  ignores the cap and a vendor that does not enforce it could use up to the vendor's own 15-minute audio-session limit.
+  one message (`params.voice_seconds_per_message`, default 60, admin-editable). A session is a chain of short vendor tokens:
+  each chunk is two messages of voice (120 s at the default, never under 60 s), reserved and **charged whole when its token is
+  minted** (ending early refunds nothing; the first chunk of any session costs at least one message), and the client renews it
+  12 s before expiry through `POST /api/agent/voice/extend`, at most 900 s in all. No message left: 429 `quota_exhausted` at
+  the open (the voice screen shows the server's figures as the Respond room's toast with "See all plans" and does **not** start
+  the device cascade) or at a renewal (the same toast once; the conversation ends when the held token does); unreadable: 503
+  `quota_unavailable` (falls back to the cascade at the open, as for any failed session). The design draws no
+  remaining-time display and no "session ended at the limit" state, so none was invented: the session simply ends. Owner: design
+  (a remaining-time or end-of-allowance state, if wanted). Precondition before real learners: a bounded paid check (run by the
+  human under the Gemini Live lock) that the vendor closes an open socket at the token's `expireTime`, and that
+  `sessionResumption` is accepted in a token's locked setup. Without the first, a client that ignores its token's life could use
+  the vendor's own 15-minute audio-session limit.
 - **QTA-3b The agent's exhausted state.** The design draws no "limit reached" reply for Orena (Home thread, the Ask Orena
   panel, full-screen voice) or the discussion room. The reply's error line reads "You have used 20 of 20 Orena messages
   today." with "See all plans" in the retry button's place and style (to `#/plan/pricing`); the discussion room uses the
@@ -5464,14 +5465,17 @@ the meters below.
     pipeline (`media_transcript_pipeline.py:554`, `media_timing.py:254`, the `media.import` meter). Left **unmetered** and not
     given a meter of its own (no new meter was invented); its cost is in the ledger (`speech_asr`, `speech_asr.py:221-235`);
     the per-process `speech_ai` brake (`core/http_security.py:76`, 60 per 600 s) stays. See QTA-14.
-- **QTA-14 `POST /api/speech/transcribe` - DECIDED: stays unmetered, with the per-account `speech_ai` brake** (D-16T
-  point 7). It is speech-to-text *input*, not an assessment: push-to-talk turns it into an ordinary message turn (one
-  `orena.message`, so metering it too would charge a message twice), and the speaking rooms (Free talk, Conversation,
-  Situation, React, Reading transfer) turn it into a draft the learner reads and edits before sending - none of them scores
-  pronunciation (that is `/api/speech/pronunciation`, `pronunciation.audio`). Its cost (Groq Whisper, ~$0.04 per audio hour,
-  10 s minimum: about 1/25 of a pronunciation minute) is in the ledger (`speech_asr`). Bound: 60 requests per 10 minutes per
-  account per process, at most 24 MiB each - an abuse bound, not a plan limit; a duration cap on a take is the follow-up if
-  the ledger shows the spend matters. Owner: human to confirm, then BACKEND.
+- **QTA-14 `POST /api/speech/transcribe` - DECIDED: no meter of its own, but guarded** (D-16T point 8). It is speech-to-text
+  *input*, not an assessment: push-to-talk turns it into an ordinary message turn (one `orena.message`, so metering the
+  transcription too would charge a message twice), and the speaking rooms (Free talk, Conversation, Situation, React, Reading
+  transfer) turn it into a draft the learner reads and edits before sending - none of them scores pronunciation (that is
+  `/api/speech/pronunciation`, `pronunciation.audio`). Its cost (Groq Whisper, ~$0.04 per audio hour, 10 s minimum: about 1/25
+  of a pronunciation minute) is in the ledger (`speech_asr`). The guard: a take is at most 300 s (measured by the server; 413
+  `speech_asr_take_too_long`) and 12 MiB on this route; one account sends at most 60 minutes of audio per 24 hours (429
+  `speech_asr_daily_limit`; `SPEECH_ASR_DAILY_SECONDS`; counted in this process, so a restart resets it and N workers keep N counts);
+  Orena's push-to-talk (`purpose=orena_voice`) is refused 429 `quota_exhausted` before any audio is read when no `orena.message`
+  remains (a read-only peek, nothing reserved). Follow-up: a count that survives a restart (the ledger or the shared store).
+  Owner: BACKEND.
 - **QTA-15 A take whose answer was lost: "record again" (architecture review of #119, P2-1).** When the network drops
   after Azure assessed a take, the resend under the same `Idempotency-Key` is `409 operation_finished` for ever. The room
   does not offer a retry that can never succeed: it says "This recording was already processed. Record it again to get a

@@ -10,6 +10,7 @@ import json
 import logging
 import math
 import os
+import threading
 import time
 from typing import Annotated, Any
 import weakref
@@ -20,7 +21,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
 from writing_coach.core.errors import orena_http_error
-from writing_coach.core.request_context import current_language_code
+from writing_coach.core.request_context import current_language_code, current_user_key
 from writing_coach.product import quota
 
 from writing_coach.speech_pronunciation import (
@@ -112,6 +113,96 @@ def _pronunciation_provider() -> SpeechPronunciationProvider:
 
 _UPLOAD_READ_CHUNK_BYTES = 1024 * 1024
 _DEFAULT_ASR_MAX_BYTES = 24 * 1024 * 1024
+
+# --- the guard on /api/speech/transcribe (D-16T) ----------------------------------------------------------------
+# Transcription is paid provider work that no plan meter counts (it is speech-to-text input: push-to-talk's words are
+# then an Orena message, a speaking room's words are a draft). It is bounded instead by three things, none of them a
+# plan limit and none a new meter:
+#   1. one take is at most TRANSCRIBE_MAX_SECONDS of audio, measured on the server (ffmpeg), and at most
+#      TRANSCRIBE_MAX_BYTES of upload. These cap only this route: the media pipeline calls the same provider with
+#      its own 600-second chunks and keeps the provider's larger `max_bytes`;
+#   2. one account sends at most TRANSCRIBE_DAILY_SECONDS of audio in any 24 hours (a sliding window, each take
+#      counted at least the provider's 10-second minimum). The count is in this process, like the other per-account
+#      brakes (`core/http_security.RATE_GROUPS`), and is reset by a restart; with several workers each has its own;
+#   3. Orena's push-to-talk (`purpose=orena_voice`) is refused 429 `quota_exhausted` before any audio is read when the
+#      learner has no Orena message left today: a read-only check, nothing reserved - the message itself is charged
+#      when the transcript reaches the agent as a turn.
+TRANSCRIBE_MAX_SECONDS = 300
+TRANSCRIBE_MAX_BYTES = 12 * 1024 * 1024
+TRANSCRIBE_MIN_BILLED_SECONDS = 10
+TRANSCRIBE_DAILY_SECONDS = int(os.getenv("SPEECH_ASR_DAILY_SECONDS", str(60 * 60)) or 60 * 60)
+TRANSCRIBE_DAY = 24 * 60 * 60
+PURPOSE_ORENA_VOICE = "orena_voice"
+_TRANSCRIBE_PURPOSES = frozenset({"", PURPOSE_ORENA_VOICE})
+_PCM16_16K_BYTES_PER_SECOND = 32000
+
+
+class TakeUnreadable(Exception):
+    """The upload is not audio the server can decode."""
+
+
+def take_seconds(audio: bytes, *, limit: int = TRANSCRIBE_MAX_SECONDS, timeout_seconds: float = 20.0) -> float:
+    """The length of a recorded take in seconds, by decoding it (ffmpeg to 16 kHz mono PCM, no provider call). A browser
+    recording (MediaRecorder webm) carries no duration in its header, so the container cannot be trusted and the
+    decoded samples are counted instead; decoding stops one second past `limit`, so a long file costs no more than a
+    short one. Raises `TakeUnreadable` for audio ffmpeg cannot decode."""
+    import subprocess
+
+    if not audio:
+        raise TakeUnreadable()
+    try:
+        done = subprocess.run(
+            ["ffmpeg", "-protocol_whitelist", "pipe", "-hide_banner", "-loglevel", "error", "-nostdin",
+             "-i", "pipe:0", "-t", str(limit + 1), "-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "pipe:1"],
+            input=audio, capture_output=True, check=False, timeout=timeout_seconds,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError) as exc:
+        raise TakeUnreadable() from exc
+    if done.returncode != 0 or not done.stdout:
+        raise TakeUnreadable()
+    return len(done.stdout) / _PCM16_16K_BYTES_PER_SECOND
+
+
+class DailySecondsBrake:
+    """A per-account sliding 24-hour sum of audio seconds, in this process. `take` adds the seconds when they fit and
+    says how long to wait when they do not."""
+
+    def __init__(self, limit_seconds: int, window_seconds: int = TRANSCRIBE_DAY, clock=time.monotonic) -> None:
+        self._limit = limit_seconds
+        self._window = window_seconds
+        self._clock = clock
+        self._takes: dict[str, list[tuple[float, float]]] = {}
+        self._lock = threading.Lock()
+
+    def take(self, account: str, seconds: float) -> float | None:
+        now = self._clock()
+        with self._lock:
+            kept = [(at, used) for at, used in self._takes.get(account, []) if now - at < self._window]
+            total = sum(used for _, used in kept)
+            if total + seconds > self._limit:
+                self._takes[account] = kept
+                # The earliest instant enough of the oldest takes have aged out.
+                freed, wait = total + seconds, self._window
+                for at, used in kept:
+                    freed -= used
+                    if freed <= self._limit:
+                        wait = max(1.0, self._window - (now - at))
+                        break
+                return wait
+            kept.append((now, seconds))
+            self._takes[account] = kept
+            if len(self._takes) > 10_000:  # a bound on what a long-running process remembers
+                self._takes = {k: v for k, v in self._takes.items() if v and now - v[-1][0] < self._window}
+            return None
+
+
+_transcribe_brake = DailySecondsBrake(TRANSCRIBE_DAILY_SECONDS)
+
+
+def reset_transcribe_brake(limit_seconds: int | None = None) -> None:
+    """For tests and operators: forget every account's seconds (and optionally change the ceiling)."""
+    global _transcribe_brake
+    _transcribe_brake = DailySecondsBrake(TRANSCRIBE_DAILY_SECONDS if limit_seconds is None else limit_seconds)
 
 
 class SpeakingEvaluationIn(BaseModel):
@@ -353,6 +444,7 @@ def speech_status() -> dict[str, Any]:
 async def transcribe_speech(
     file: UploadFile = File(...),
     language: str = Form(default=""),
+    purpose: str = Form(default=""),
 ) -> dict[str, Any]:
     normalized_language = language.strip().casefold() or None
     if normalized_language is not None and normalized_language not in {"en", "zh"}:
@@ -361,11 +453,40 @@ async def transcribe_speech(
             "speech_asr_invalid_language",
             "Unsupported speech language.",
         )
+    purpose = purpose.strip().casefold()
+    if purpose not in _TRANSCRIBE_PURPOSES:
+        raise orena_http_error(422, "speech_asr_invalid_purpose", "Unsupported transcription purpose.")
 
     provider = _provider()
-    max_bytes = int(getattr(provider, "max_bytes", _DEFAULT_ASR_MAX_BYTES))
+    if purpose == PURPOSE_ORENA_VOICE:
+        # Push-to-talk feeds a message the agent will charge: an exhausted learner is refused here, before any audio is
+        # read or paid for. Read-only - nothing is reserved (the turn reserves its own message).
+        await anyio.to_thread.run_sync(quota.check_available, "orena.message")
+    max_bytes = min(int(getattr(provider, "max_bytes", _DEFAULT_ASR_MAX_BYTES)), TRANSCRIBE_MAX_BYTES)
+    account = current_user_key()
     try:
         data = await _read_upload_limited(file, max_bytes=max_bytes)
+        try:
+            seconds = await anyio.to_thread.run_sync(take_seconds, data)
+        except TakeUnreadable as exc:
+            raise orena_http_error(
+                422, "speech_asr_unprocessable_audio", "The speech provider could not process this audio.",
+            ) from exc
+        if seconds > TRANSCRIBE_MAX_SECONDS:
+            raise orena_http_error(
+                413, "speech_asr_take_too_long",
+                f"A recording can be at most {TRANSCRIBE_MAX_SECONDS // 60} minutes long.",
+            )
+        # A take counts from the moment it is accepted, whatever the provider then does: the ceiling is a bound on
+        # spend, so a failed call is not given back.
+        wait = _transcribe_brake.take(account, max(seconds, float(TRANSCRIBE_MIN_BILLED_SECONDS)))
+        if wait is not None:
+            refusal = orena_http_error(
+                429, "speech_asr_daily_limit", "Speech recognition is paused for today. Please try again later.",
+                retryable=False, context={"retry_after": math.ceil(wait)},
+            )
+            refusal.headers = {"Retry-After": str(math.ceil(wait))}
+            raise refusal
         result = provider.transcribe_bytes(
             data,
             filename=file.filename or "recording.webm",

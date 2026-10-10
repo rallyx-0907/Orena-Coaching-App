@@ -180,25 +180,29 @@ def test_a_session_is_only_its_learners_and_only_for_fifteen_minutes():
 # --- billing ---------------------------------------------------------------------------------------------------
 
 
-def test_ending_a_session_bills_its_time_into_the_shared_ledger():
+def test_a_session_is_billed_into_the_shared_ledger_when_its_token_is_minted():
+    """D-16T: the ledger gets a chunk when its token exists, at the seconds the token lives (the most the vendor can
+    charge for it); ending early changes nothing, because the server never saw the vendor socket."""
     clock, billed = Clock(), []
     service = _service(clock=clock, billed=billed)
     sid = service.open(_body(), LEARNER)["voice_session_id"]
-    clock.t += 125.0
-    assert service.end(sid, LEARNER) == {"voice_session_id": sid, "seconds": 125.0}
     (args, kwargs), = billed
     assert args == ("agent_voice",) and kwargs["provider"] == "gemini" and kwargs["model"] == VOICE_MODEL
-    assert kwargs["audio_seconds"] == 125.0 and kwargs["outcome"] == "success"
-    assert service.end(sid, LEARNER) is None  # billed once
+    assert kwargs["audio_seconds"] == float(SESSION_SECONDS) and kwargs["outcome"] == "success"  # messages not enforced: one token
+    clock.t += 125.0
+    assert service.end(sid, LEARNER) == {"voice_session_id": sid, "seconds": 125.0}
+    assert len(billed) == 1, "ending bills nothing more"
+    assert service.end(sid, LEARNER) is None
 
 
-def test_a_session_never_ended_is_billed_at_its_cap_when_the_next_one_opens():
+def test_a_session_never_ended_costs_what_it_already_cost_and_is_forgotten_when_the_next_one_opens():
     clock, billed = Clock(), []
     service = _service(clock=clock, billed=billed)
-    service.open(_body(), LEARNER)
+    first = service.open(_body(), LEARNER)["voice_session_id"]
     clock.t += SESSION_SECONDS + 300
     service.open(_body(), LEARNER)
-    assert [k["audio_seconds"] for _, k in billed] == [SESSION_SECONDS]
+    assert [k["audio_seconds"] for _, k in billed] == [float(SESSION_SECONDS)] * 2, "one row per token, nothing at the sweep"
+    assert service.end(first, LEARNER) is None, "the sweep forgot the first session"
 
 
 def test_gemini_live_time_is_priced_from_the_audio_catalog():
