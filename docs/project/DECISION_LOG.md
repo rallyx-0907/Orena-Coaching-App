@@ -5079,7 +5079,9 @@ per-meter reconciler threshold; an implementer may not self-approve).
    `POST /api/media-learning/upload` (a file); a direct media link goes through the same file path. Not metered: text (the
    learner's pasted text never leaves the device and has no duration), and every administrator import (shared library,
    operator cost). The older `POST /api/media-learning/import` (Groq timing + Supadata, no duration to charge, unused by the
-   UI) answers 503 `quota_media_import_not_metered` while the meter is enforced (`quota.refuse_unmetered`).
+   UI) and `POST /api/media-learning/translate` (a client-supplied transcript of any length to the paid translation
+   provider, unused by the UI) answer 503 `quota_media_import_not_metered` while the meter is enforced
+   (`quota.refuse_unmetered`). `/import/status` only polls a job an earlier `/import` started and is left as it is.
 2. **The length is the server's.** A file: ffprobe of the stored bytes. A YouTube link: YouTube's own length from yt-dlp
    metadata (nothing downloaded, no paid provider); if that cannot be read, the length of the captions; if neither, 503
    `media_duration_unavailable` - an unreadable length is never free. Nothing the client sends is read. A reservation is
@@ -5094,15 +5096,27 @@ per-meter reconciler threshold; an implementer may not self-approve).
    recognition: the seconds it actually decoded, never more than reserved), **anything else = 0** (failed, unusable
    transcript, interrupted too often, removed by the learner); what Groq/Azure charged stays in the AI cost ledger. Audio
    longer than the reservation is stopped before it is heard (`duration_mismatch`).
-4. **Restart.** The id lives on the entry. A job interrupted by a restart is re-queued by `recover()` and settles when it
-   ends; a settlement the store could not take is recorded on the entry as an intent (`quota_settle`) and written by the next
-   `recover()`. The reconciler stays the backstop: `reconcile_once` is now scoped by meter with a threshold per group -
-   synchronous meters after 15 minutes as before, `ASYNC_METERS` (`media.import`) only after `ASYNC_RECONCILE_AFTER` = 6
-   hours (a long import is never swept while it runs; a lost one is released/settled as admitted, ABANDONED_SETTLES).
+4. **Restart and deferred settlement (architecture review of 5ce3567e, P1-1/P1-2).** The id lives on the entry. A job
+   interrupted by a restart is re-queued by `recover()` and settles when it ends. `app.py` runs `recover()` only after the
+   quota runtime is configured; a `recover()` that finds no quota store (the pipeline built earlier than the runtime, a
+   deployment without PostgreSQL) leaves every metered import untouched - nothing dispatched, nothing settled, nothing
+   slept on - and a later call takes it up. A settlement the store could not take is recorded on the entry as an intent
+   (`quota_settle`, the units and outcome decided when the job ended) and written (a) by the next `recover()` and (b) **in
+   a process that stays up, every 5 minutes** by `MediaPipeline.settle_pending` (`IntentSchedule`, 200 entries a tick,
+   started with the reconciler). The reconciler is the last backstop and **asks the media index what an abandoned import
+   decided** (`quota.configure_async_decision` -> `media_quota.decide`): a recorded intent is settled as decided, a
+   finished entry as its outcome says (0 when it failed), an entry gone from the index 0 (`no-entry`); only an entry still
+   queued or running (stuck) is settled as admitted (ABANDONED_SETTLES), and an unreadable index leaves the row for the
+   next tick. `reconcile_once` is scoped by meter with a threshold per group - synchronous meters after 15 minutes as
+   before, `ASYNC_METERS` (`media.import`) only after `ASYNC_RECONCILE_AFTER` = 6 hours.
    `quota.dispatch_operation / settle_operation / release_operation` act by operation id for work that outlives its request.
-5. **Idempotency.** The same learner importing the same source again is answered with the entry they have, free, before
-   anything is probed or fetched: a YouTube video (any link form, key `youtube:<id>`) or the same file bytes (`file:<sha256>`),
-   in the same learning language, while that import is queued, running, ready or held. A failed one settled 0, so importing
+   A settled personal import is never re-run by `pipeline.retry()` (that would be Whisper with no reservation); a new
+   import is a new admission.
+5. **Idempotency.** (The entry's provenance keeps `source_key`: `youtube:<id>`, or `file:<sha256 of the file's bytes>` - a
+   content fingerprint kept for as long as the entry exists and removed with it, including on account deletion.) The same
+   learner importing the same source again is answered with the entry they have, free, before anything is probed or fetched: a YouTube video (any link form, key `youtube:<id>`) or the same file bytes (`file:<sha256>`),
+   in the same learning language, while that import is queued, running, ready or held (an entry stored but never queued,
+   with no pipeline state and not published, is not one). A failed one settled 0, so importing
    again is a new, charged import. Concurrent requests for one source are serialised per (learner, source), so two cannot both
    be charged. This applies only where the meter is enforced; switched off, an import is exactly what it was.
 6. **Switch and failure modes.** Off, or `media.import` not listed: no read, no bucket, no probe, nothing changed. Enforced
@@ -5115,9 +5129,9 @@ per-meter reconciler threshold; an implementer may not self-approve).
 8. **Cost telemetry.** Groq Whisper already records one `speech_asr` row per request (seconds, USD at the catalogue rate,
    10 s minimum). New: each Groq translation request records a `media_translation` row (provider, model, provider-reported
    tokens, USD; `openai/gpt-oss-120b` is now priced at the published $0.15 / $0.60 per million) and each Supadata transcript
-   request a `media_transcript_fallback` row (unpriced - no published price in the repository, never zero). Account
-   attribution of rows written by the background worker is not available (the job has no request context); recorded as
-   QTA-17 (e).
+   request a `media_transcript_fallback` row (unpriced - no published price in the repository, never zero). Rows of an
+   operator's shared import carry no origin (not `learner`). Account attribution of rows written by the background worker
+   is not available (the job has no request context); recorded as QTA-17 (e).
 9. **Accepted, recorded:** a learner who removes an import before it finishes is charged nothing even if a provider already
    ran (bounded by the per-account request brakes and the spend ledger); an unreadable-metadata YouTube video with captions
    is charged the captions' length, which is a lower bound; a video longer than 90 minutes with captions is charged 90.

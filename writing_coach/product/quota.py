@@ -39,7 +39,8 @@ answers 503 `quota_unavailable`. Enforcement never treats "unknown" as "unlimite
 Work that outlives the request itself - a media import runs minutes in a background job and survives a restart - keeps
 only the operation id (`ticket.operation_id`) with the work. The job dispatches, settles or releases by that id
 (`dispatch_operation`, `settle_operation`, `release_operation`), and the meter is listed in `ASYNC_METERS`, so the
-reconciler leaves it to its job for `ASYNC_RECONCILE_AFTER` (D-16S).
+reconciler leaves it to its job for `ASYNC_RECONCILE_AFTER`; after that it settles what the owner of the work decided
+(`configure_async_decision`), and only a job still in play is settled as admitted (D-16S).
 
 Defaults still waiting for a human answer are named constants here (`ABANDONED_SETTLES`, `RECONCILE_AFTER`) and
 in D-160; the refresh route is deliberately not metered.
@@ -634,6 +635,17 @@ def _reserve(meter: str, units: int, digest: str, idempotency_key: str | None = 
     raise _unavailable(str(status))
 
 
+# The owner of an async meter's work tells the backstop what a job it finds abandoned actually decided: `fn(operation_id)`
+# returns (units, outcome_ref), None when the job is still in play (the backstop then settles as admitted, below), and
+# raises when the owner cannot tell (the row is left for the next tick, never guessed).
+_async_decision: Callable[[str], tuple[int, str] | None] | None = None
+
+
+def configure_async_decision(decide: Callable[[str], tuple[int, str] | None] | None) -> None:
+    global _async_decision
+    _async_decision = decide
+
+
 # --- work that outlives its request: act on a reservation by operation id ----------------------------------------
 
 def _store_repository() -> Any:
@@ -795,8 +807,17 @@ def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int =
         for row in repository.stale_dispatched(now - after, limit, states=("reserved", "dispatched"), meters=meters):
             if row["state"] == "dispatched":
                 actual = int(row["admitted_units"]) if ABANDONED_SETTLES == "admitted" else 0
+                ref = "reconciled:abandoned"
+                if meters is ASYNC_METERS and _async_decision is not None:
+                    try:
+                        decided = _async_decision(row["operation_id"])
+                    except Exception:  # noqa: BLE001 - the owner cannot tell now: not guessed, retried next tick
+                        _log.warning("quota reconciler: no decision for %s yet", row["operation_id"], exc_info=True)
+                        continue
+                    if decided is not None:
+                        actual, ref = min(max(0, int(decided[0])), int(row["admitted_units"])), f"reconciled:{decided[1]}"[:200]
                 outcome = repository.settle(operation_id=row["operation_id"], actual_units=actual,
-                                            outcome_ref="reconciled:abandoned")
+                                            outcome_ref=ref)
                 done["settled"] += outcome.get("status") == "settle"
             else:
                 outcome = repository.release(operation_id=row["operation_id"])

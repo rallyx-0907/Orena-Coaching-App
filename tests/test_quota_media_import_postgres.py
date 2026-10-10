@@ -297,3 +297,56 @@ def test_the_reconciler_is_scoped_by_meter_in_the_real_tables(engine, account):
     assert (bucket["reserved"], bucket["consumed"]) == (0, 300), "charged at the admitted seconds, never twice"
     quota.reconcile_once(repository, limit=100000)
     assert bucket_of(engine, account)["consumed"] == 300
+
+
+def test_a_long_running_process_settles_its_deferred_failure_at_zero_and_the_backstop_agrees(engine, account, tmp_path, monkeypatch):
+    from writing_coach.speech_asr import SpeechAsrRequestFailed
+
+    world = World(tmp_path, monkeypatch)
+    repository, _service = wire(engine)
+    real_settle = repository.settle
+
+    def down(**_kwargs):
+        raise RuntimeError("database unavailable")
+
+    monkeypatch.setattr(media_quota.time, "sleep", lambda _s: None)
+    world.asr.error = SpeechAsrRequestFailed(500)
+    repository.settle = down  # type: ignore[method-assign]
+    assert world.upload(media(60, tag="failed"), user=account).status_code == 200
+    (entry,) = world.entries()
+    operation = entry.source[media_quota.SOURCE_OP]
+    assert PostgresQuotaRepository(engine).get_reservation(operation)["state"] == "dispatched"
+    assert bucket_of(engine, account)["reserved"] == 60
+    repository.settle = real_settle  # type: ignore[method-assign]  # the store is back; the process never restarted
+    assert world.pipeline.settle_pending(world.store) == 1
+    reservation = PostgresQuotaRepository(engine).get_reservation(operation)
+    assert (reservation["state"], reservation["actual_units"]) == ("settled", 0)
+    assert (bucket_of(engine, account)["consumed"], bucket_of(engine, account)["reserved"]) == (0, 0)
+
+
+def test_the_backstop_settles_an_undelivered_decision_not_the_full_reservation_in_the_real_tables(engine, account, tmp_path, monkeypatch):
+    from sqlalchemy import text
+
+    from writing_coach.speech_asr import SpeechAsrRequestFailed
+
+    world = World(tmp_path, monkeypatch)
+    repository, _service = wire(engine)
+    quota.configure_async_decision(lambda op: media_quota.decide(world.store, op))
+    try:
+        monkeypatch.setattr(media_quota.time, "sleep", lambda _s: None)
+        world.asr.error = SpeechAsrRequestFailed(500)
+        repository.settle = lambda **_k: (_ for _ in ()).throw(RuntimeError("down"))  # type: ignore[method-assign]
+        assert world.upload(media(60, tag="failed"), user=account).status_code == 200
+        (entry,) = world.entries()
+        operation = entry.source[media_quota.SOURCE_OP]
+        long_ago = datetime.now(UTC) - quota.ASYNC_RECONCILE_AFTER - timedelta(minutes=5)
+        with engine.begin() as connection:
+            connection.execute(text("UPDATE commerce_quota_reservations SET updated_at = :t WHERE operation_id = :op"),
+                               {"t": long_ago, "op": operation})
+        quota.reconcile_once(PostgresQuotaRepository(engine), limit=100000)
+        reservation = PostgresQuotaRepository(engine).get_reservation(operation)
+        assert (reservation["state"], reservation["actual_units"]) == ("settled", 0), "the import failed: 0, not 60"
+        assert reservation["outcome_ref"] == "reconciled:failed:asr_failed"
+        assert bucket_of(engine, account)["consumed"] == 0
+    finally:
+        quota.configure_async_decision(None)

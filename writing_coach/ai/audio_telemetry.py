@@ -11,13 +11,30 @@ learner's request.
 
 from __future__ import annotations
 
+import contextvars
 import logging
 import re
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
 from writing_coach.ai.pricing import estimate_audio_cost
 
 _log = logging.getLogger(__name__)
+
+
+# Whose request a recorded provider call belongs to. A learner's call is "learner"; the media pipeline records the calls
+# of an operator's shared import with no origin (it is neither a learner's request nor an operator's test).
+_ORIGIN: contextvars.ContextVar[str | None] = contextvars.ContextVar("orena_telemetry_origin", default="learner")
+
+
+@contextmanager
+def telemetry_origin(origin: str | None) -> Iterator[None]:
+    token = _ORIGIN.set(origin)
+    try:
+        yield
+    finally:
+        _ORIGIN.reset(token)
 
 
 def _error_class(error: BaseException | None) -> str | None:
@@ -47,7 +64,7 @@ def record_token_operation(
         reported = {key: value for key, value in (usage or {}).items() if key in {"prompt_tokens", "completion_tokens", "total_tokens"}}
         event: dict[str, Any] = {
             "capability": capability,
-            "origin": "learner",
+            "origin": _ORIGIN.get(),
             "provider": provider,
             "model": model,
             "model_redacted": False,
@@ -82,7 +99,7 @@ def record_audio_operation(
         billed = audio_seconds if outcome == "success" else None
         event: dict[str, Any] = {
             "capability": capability,
-            "origin": "learner",
+            "origin": _ORIGIN.get(),
             "provider": provider,
             "model": model,
             "model_redacted": False,

@@ -414,6 +414,12 @@ def _media_object_for_translation(payload: MediaTranslationIn) -> MediaLearningO
 @router.post("/translate")
 def translate_media(payload: MediaTranslationIn) -> dict[str, Any]:
     """Translate a previously acquired canonical transcript without re-importing."""
+    # A client-supplied transcript of any length goes to the paid translation provider with no import behind it to
+    # charge (D-16S): refused, not left open, while `media.import` is enforced. The learner UI does not call it.
+    quota.refuse_unmetered(
+        "media.import", category="quota_media_import_not_metered",
+        message="This translation route is not available while plan limits are enforced.",
+    )
     translation = _installed_media_translation().translate(
         _media_object_for_translation(payload), payload.target_language
     )

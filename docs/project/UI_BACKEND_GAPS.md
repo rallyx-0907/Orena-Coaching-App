@@ -5652,7 +5652,14 @@ the meters below.
   (e) **Open.** (1) Provider rows written by the worker carry no account (the job has no request context; AC-2 attribution
   would need the owner key stored on the entry - a schema/persistence decision). (2) The Groq translation request is one row
   per batch call and does not record cached tokens. (3) Supadata has no price in the repository (rows are unpriced). (4)
-  `stale_dispatched` still lacks its `(state, updated_at)` index (QTA-11a). (5) The Import sheet cannot show a specific
-  message for a 503 `media_duration_unavailable` (shown as the generic error). (6) Dedupe by file bytes and by video id works
+  `stale_dispatched` still lacks its `(state, updated_at)` index (QTA-11a). (5) (resolved in the review follow-up: see (11)). (6) Dedupe by file bytes and by video id works
   per learning language; the same bytes in another language are a second, charged import. (7) A removed unfinished import is
-  free even if a provider already ran.
+  free even if a provider already ran. (8) The "already imported?" lookup scans every personal entry of the media index per
+  metered request (O(entries of all learners)), and the per-(learner, source) lock is process-local: both are correct only
+  while the JSON media index is a single-process store (its own contract) and must be replaced together with it before more
+  than one worker serves imports. (9) `POST /api/media-learning/translate` and `/import` are refused while the meter is
+  enforced; `/import/status` still polls a job an earlier `/import` started. (10) A re-queued job of a deleted account
+  proceeds (`dispatch` answers `duplicate` without the incarnation check - core behaviour); account deletion removes the
+  learner's personal entries, so exposure is low. (11) The Import sheet now says 503 `quota_unavailable`,
+  `media_duration_unavailable` and 403 `feature_not_in_plan` in its own sentences (EN/VI/ZH); the sheet's other failures
+  are unchanged.

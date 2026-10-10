@@ -47,6 +47,7 @@ from pathlib import Path
 from typing import Any
 
 from writing_coach import media_quota
+from writing_coach.ai.audio_telemetry import telemetry_origin
 from writing_coach.ai.pricing import estimate_token_cost
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore
 from writing_coach.media_learning import MediaTranscript, TranscriptSegment
@@ -327,6 +328,10 @@ class MediaPipeline:
         entry = store.get(media_id)
         if entry is None:
             return False
+        if media_quota.is_settled_import(entry):
+            # A learner's metered import that has settled would run Whisper again with no reservation: a new
+            # import is a new admission (D-16S), never a re-run.
+            return False
         with self._guard:
             if media_id in self._inflight:
                 return True
@@ -344,8 +349,13 @@ class MediaPipeline:
             entries = [*store.list(library="shared", status=None), *store.list(library="personal", status=None)]
         except Exception:  # noqa: BLE001 - an unreadable index is reported elsewhere
             return 0
+        ready = media_quota.store_ready()
         for entry in entries:
             processing = dict(entry.processing or {})
+            if media_quota.hold_of(entry) is not None and not ready:
+                # A metered import waits for the quota store (wired after this runs in a process that starts it
+                # early): nothing is dispatched, settled or slept on, and a later recover() takes it up.
+                continue
             if processing.get("state") not in {STATE_QUEUED, STATE_RUNNING}:
                 self._settle_quota(store, entry.media_id, media_quota.hold_of(entry), final=entry)
                 continue
@@ -358,6 +368,29 @@ class MediaPipeline:
             self.enqueue(store, assets, entry.media_id, batch_id=str(processing.get("batch_id") or self.new_batch()))
             count += 1
         return count
+
+    def settle_pending(self, store: Any, limit: int = media_quota.INTENT_BATCH) -> int:
+        """Write the settlements a finished metered import decided but the quota store could not take (an intent on
+        the entry), bounded per call. Run on a timer in a process that stays up, so a settlement is never left for the
+        reconciler's backstop (D-16S). Returns how many were attempted."""
+        if not media_quota.store_ready():
+            return 0
+        try:
+            entries = [*store.list(library="personal", status=None), *store.list(library="shared", status=None)]
+        except Exception:  # noqa: BLE001 - an unreadable index is reported elsewhere
+            return 0
+        attempted = 0
+        for entry in entries:
+            if attempted >= limit:
+                break
+            hold = media_quota.hold_of(entry)
+            if hold is None or (entry.processing or {}).get("state") in {STATE_QUEUED, STATE_RUNNING}:
+                continue
+            if media_quota.decode_intent(entry.source.get(media_quota.SOURCE_SETTLE, "")) is None:
+                continue  # nothing decided yet: its job (or recover()) decides
+            attempted += 1
+            self._settle_quota(store, entry.media_id, hold, final=entry)
+        return attempted
 
     # -- state --------------------------------------------------------------------------
 
@@ -387,9 +420,12 @@ class MediaPipeline:
 
     def _job(self, store: Any, assets: BookAssetStore, media_id: str, batch_id: str, candidate: Candidate | None) -> None:
         # The reservation is read before anything runs: the learner may remove the entry while it is processing.
-        hold = media_quota.hold_of(store.get(media_id))
+        first = store.get(media_id)
+        hold = media_quota.hold_of(first)
         try:
-            self._run(store, assets, media_id, batch_id, candidate)
+            # An operator's shared import is not a learner's request: its provider calls are recorded without that origin.
+            with telemetry_origin("learner" if first is None or first.library == "personal" else None):
+                self._run(store, assets, media_id, batch_id, candidate)
         except PipelineStop as stop:
             if stop.code != "cancelled":
                 self._hold_failed(store, media_id, stop)

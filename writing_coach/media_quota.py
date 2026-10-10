@@ -23,7 +23,7 @@ import logging
 import math
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
@@ -48,6 +48,9 @@ DISPATCH_REF = "media-import"
 # the source that was reserved for.
 TOLERANCE_SECONDS = 2
 SETTLE_ATTEMPTS = 3
+# How often an undecided settlement is retried in a process that stays up: well under ASYNC_RECONCILE_AFTER.
+INTENT_INTERVAL_SECONDS = 300
+INTENT_BATCH = 200
 LIVE_STATES = frozenset({"queued", "running", "ready", "held"})
 
 
@@ -60,6 +63,12 @@ class ImportQuotaUnavailable(Exception):
 
 
 # --- the switch ---------------------------------------------------------------------------------------------
+
+def store_ready() -> bool:
+    """Whether a quota store is configured in this process yet. Recovery of a metered import waits for it: nothing
+    is dispatched or settled, and nothing sleeps, against a store that does not exist."""
+    return quota.runtime().repository is not None
+
 
 def ready() -> bool:
     """True when `media.import` is enforced and can be checked; False when it is not enforced (the unmetered path,
@@ -162,7 +171,9 @@ def existing_import(store: Any, *, owner_key: str, language: str, source_key: st
         if key != source_key:
             continue
         state = (entry.processing or {}).get("state")
-        if state is None or state in LIVE_STATES:
+        # No pipeline state is live only for an entry that is published as it is; one stored but never queued (a crash
+        # between the file and the queue) is not an import the learner already has.
+        if state in LIVE_STATES or (state is None and entry.status == "published"):
             return entry
     return None
 
@@ -248,6 +259,8 @@ def settle(hold: EntryHold, actual: int, ref: str, *, attempts: int | None = Non
     """Settle by operation id. Any verdict the store returns is final (settled, or already so); only a failure to
     reach the store is retried, with a short back-off, and then raised: the caller keeps its intent and the next
     restart retries."""
+    if not store_ready():
+        raise ImportQuotaUnavailable("quota_unavailable")  # not configured yet: no retries, no sleeping
     attempts = max(1, SETTLE_ATTEMPTS if attempts is None else attempts)
     last: Exception | None = None
     for attempt in range(attempts):
@@ -262,6 +275,71 @@ def settle(hold: EntryHold, actual: int, ref: str, *, attempts: int | None = Non
             _log.warning("media import settle %s: %s", hold.operation_id, status)
         return status
     raise ImportQuotaUnavailable("quota_unavailable") from last
+
+
+def is_settled_import(entry: MediaLibraryEntry) -> bool:
+    """A personal import that was metered and has been settled: running it again would be paid work with no
+    reservation, so it is not re-run (a new import is a new admission)."""
+    return entry.library == "personal" and bool(entry.source.get(SOURCE_OP)) and hold_of(entry) is None
+
+
+def decide(store: Any, operation_id: str) -> tuple[int, str] | None:
+    """What the reconciler's backstop should settle for an import it finds abandoned (hours old, still dispatched).
+
+    The entry that owns the operation knows: a recorded intent is settled as decided; a finished entry as its outcome
+    says (0 when it failed); an entry gone from the index (removed or lost) produced nothing for the learner: 0. An
+    entry still queued or running is in play, so None (settled as admitted by the caller). Raises when the index
+    cannot be read - not knowing is not a decision."""
+    for library in ("personal", "shared"):
+        for entry in store.list(library=library, status=None):
+            if entry.source.get(SOURCE_OP) != operation_id:
+                continue
+            hold = hold_of(entry)
+            if hold is None:
+                return None  # already settled by its job; the store answers the repeat as a duplicate
+            intent = decode_intent(entry.source.get(SOURCE_SETTLE, ""))
+            if intent is not None:
+                return intent
+            if (entry.processing or {}).get("state") in ("queued", "running"):
+                return None
+            return settlement_for(entry, hold)
+    if getattr(store, "last_read_issue", "") in {"index_corrupt", "index_unreadable"}:
+        raise RuntimeError("the media index cannot be read")
+    return 0, "no-entry"
+
+
+class IntentSchedule:
+    """Every INTENT_INTERVAL_SECONDS, on its own daemon thread: retries the settlements a metered import decided but the
+    quota store could not take (`MediaPipeline.settle_pending`). Started where a quota store exists."""
+
+    def __init__(self, tick: Callable[[], Any], *, interval: float = INTENT_INTERVAL_SECONDS) -> None:
+        self._tick = tick
+        self._interval = interval
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def tick(self) -> Any:
+        try:
+            return self._tick()
+        except Exception:  # noqa: BLE001 - retried at the next tick
+            _log.warning("media import settlement sweep failed; retried at the next tick", exc_info=True)
+            return None
+
+    def _loop(self) -> None:
+        while not self._stop.is_set():
+            self.tick()
+            self._stop.wait(self._interval)
+
+    def start(self) -> None:
+        if self._thread is None or not self._thread.is_alive():
+            self._stop.clear()
+            self._thread = threading.Thread(target=self._loop, name="media-quota-intents", daemon=True)
+            self._thread.start()
+
+    def stop(self, timeout: float = 5.0) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout)
 
 
 def cancel_entry(entry: MediaLibraryEntry) -> None:

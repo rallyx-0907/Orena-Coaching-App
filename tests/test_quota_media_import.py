@@ -58,6 +58,8 @@ FREE_LIMIT = 900  # seconds: 15 minutes a month
 @pytest.fixture(autouse=True)
 def _isolated(monkeypatch):
     previous = quota.runtime()
+    decision = quota._async_decision  # the application wires one (app.py); a test decides for itself
+    quota.configure_async_decision(None)
     configure_plan_store(None)
     monkeypatch.delenv(quota.FLAG, raising=False)
     monkeypatch.delenv(quota.METERS_FLAG, raising=False)
@@ -65,6 +67,7 @@ def _isolated(monkeypatch):
     monkeypatch.setenv("MEDIA_MODEL_CLIPS", "0")
     monkeypatch.setattr(media_quota.time, "sleep", lambda _seconds: None)
     yield
+    quota.configure_async_decision(decision)
     configure_plan_store(None)
     quota.configure_quota(**{field: getattr(previous, field) for field in
                              ("repository", "incarnations", "plan_for", "settings", "reason", "env", "clock")})
