@@ -5251,3 +5251,69 @@ and the transcribe guard (point 8); the contract stays v8 (not merged yet).
     `orena.message` not listed: the session is exactly the old unmetered path (one 900 s token, no renewal, no read, no bucket).
     Before QA check that the catalogue stored on :8021 has `voice_seconds_per_message` (a missing or invalid value fails
     closed: 503).
+
+
+## D-16R - Target-language count enforced on the server: the languages an account holds, judged where it adds one
+
+2026-10-10, the human's decisions relayed by the coordinating session, implemented on branch `feat/entitlement-languages`
+on top of D-161 (quota core) and the meters that followed. The number is assigned at merge. **Needs independent
+architecture review before merge** (entitlement enforcement; a change to the reviewed account-settings write path; an
+implementer may not self-approve). No schema change, no migration.
+
+1. **What is enforced.** `languages.target` is a COUNT entitlement of the plan catalogue (catalogue v2: Free / Plus / Pro 1 / 2 / 2,
+   administrator-editable, stored `product.plan_catalog`; numbers unchanged). It is not a time-window bucket: no window, no
+   reservation, nothing to settle, never admitted through `admit()` (`quota.admit("languages.target")` raises). The rule lives
+   in `writing_coach/product/language_limit.py`.
+2. **What "owned" means (server-derived, never client-declared).** The target languages an account HOLDS are the union of (a) its
+   stored learning language (`users.learning_language`, set only by the two mutations below), (b) the language of every row it
+   owns that is scoped to a language - every mapped table with `user_id` -> `users` and `language_code` (15 today: profiles,
+   essays and revisions, grammar/listening/shadowing/speaking progress, saved words, library items and collections, vocabulary
+   decks, text discussions, reading attempts/projections/legacy sessions; found from the ORM metadata, a drift test names them)
+   and (c) its non-deleted works (drafts, conversations, notes) of its ACTIVE incarnation. Only languages the registry enables
+   count. `persistence/language_ownership.py` reads it; nothing is stored for it.
+3. **The rule.** Adding a language the account does not hold, when it holds the plan's limit or more, is refused: `403
+   language_limit_reached`, context `{feature, limit, owned, languages, plan, upgrade: "#/plan/pricing"}`; a plan whose catalogue
+   disables the entitlement answers `403 feature_not_in_plan`. Nothing changes server-side: the stored language, the settings
+   version and the session are untouched, no row is created or deleted. Switching to a language the account already holds is
+   always allowed - after a downgrade 2 -> 1 both languages stay switchable and nothing is deleted; only a third is refused.
+4. **Where it is judged - every mutation that gives an account a learning language.** `POST /api/platform/language` (the Settings
+   picker and onboarding) and `PATCH /api/account-settings` with `learning_language`. A switch without a settings token to a
+   language not held is no longer session-only: it is written (against the token the server reads under the lock) so the
+   adoption leaves a trace. The learner-profile PUT/PATCH writes the profile of the session's language and sets no learning
+   language. The check and the write happen in ONE transaction with the `users` row locked `FOR UPDATE`
+   (`PostgresAuthRepository.update_account_settings(guard=...)`): two concurrent additions of different new languages at
+   limit - 1 admit one and refuse the other (proved on PostgreSQL; removing the lock fails the tests). A stale token is the 409 it
+   always was, judged before the limit.
+5. **Plan and catalogue.** The limit is read at each mutation from the strict catalogue and the account's effective plan
+   (subscription -> catalogue), so an administrator's plan change applies to the next mutation and a catalogue edit as soon as the
+   catalogue's own cache (5 s, in other workers) allows. A downgrade changes only what can be added.
+6. **Failure modes.** The catalogue or the plan unreadable: ADDING fails closed (503 `quota_unavailable`, `context.reason`
+   `catalogue` / `subscription`, retryable); switching to a language the account holds needs neither and still works. The store
+   that holds the data cannot answer (no PostgreSQL, the switch unreadable, no ownership reader): the server cannot tell a held
+   language from a new one, so every selection answers 503, like every other enforced entitlement. Never "unlimited".
+7. **Switch.** The same switch as the meters: `ORENA_QUOTA_ENFORCEMENT` / `ORENA_QUOTA_METERS` and the admin setting
+   `product.quota_enforcement` may list `languages.target`. `quota.WIRED_ENTITLEMENTS = ("languages.target",)`; `WIRED_METERS` is
+   unchanged and is still every bucket meter, `ENFORCEABLE` is both; `GET /api/product/admin/quota` reports `wired_entitlements`.
+   Off, or not listed: nothing here runs and both routes behave exactly as before. The unavailable state lists it too.
+8. **Local mode.** Authentication off: the one local account ("legacy") is judged identically; its `users` row is created by its
+   first settings write as before.
+9. **A recreated account.** Held languages derive from the account's rows, its `users` column and its active incarnation. The
+   deletion workflow (`deletion_enumeration.py`, not built, D-055) resets the column, deletes the rows and keeps the old
+   incarnation as the barrier, so a recreated account holds nothing and adopts a language like a new one (tested by simulating
+   that workflow). If that workflow does not delete a table listed in point 2, the account still holds its language: see
+   `UI_BACKEND_GAPS` QTA-18 - seven of the fifteen tables are not in `ACCOUNT_KEYED_TABLES` today.
+10. **Plan & usage.** `GET /api/product/commerce` reports `features["languages.target"]` with `used` = languages held, `limit`,
+    `remaining`, `usage_state` `known` (`not_metered` when not enforced), no `resets_at`. A count at its cap is not "exhausted":
+    what is held stays usable. The design draws no usage row for it (its Plan frame lists the four meters; the count is in the
+    comparison table only), so none was added (rule 43); recorded as QTA-7 for the human.
+11. **Client.** Onboarding and the Settings picker tell the server's refusal in EN/VI/ZH from its figures ("Your plan includes 1
+    target language, and you already have 1. Choose one you already learn, or see the plans."), as the quota toast with "See all
+    plans" (the Respond room's pattern); they count and decide nothing. The picker is unchanged.
+12. **Accepted, recorded (QTA-7, QTA-18).** (a) Held is derived, not a record of adoption: a learner who deletes everything they
+    wrote in a language and is not learning it frees that slot. (b) A stale session on a language the account no longer stores,
+    written into after the account added others elsewhere, can create data in a language beyond the count; closing it needs an
+    explicit adopted-languages record (a table or column: a schema decision reserved to the human). (c) The stored learning
+    language counts, so a Free learner who picked a language and used nothing cannot change their mind to another new language;
+    switching back to a held language works. (d) Native clients receive the same 403 envelope.
+13. **Activation.** :8021 may list `languages.target` after review; :8000 needs the explicit human GO and the architecture review
+    of D-161 points 6-8.

@@ -242,10 +242,15 @@ def test_only_wired_meters_can_be_listed():
     assert set(quota.WIRED_METERS) == {"writing.review", "orena.message", "pronunciation.audio", "media.import"}
     assert quota.validate_switch_setting({"enabled": True, "meters": ["pronunciation.audio", "writing.review"]}) == {
         "enabled": True, "meters": ["writing.review", "pronunciation.audio"]}
-    with pytest.raises(ValueError, match="languages.target"):
-        quota.validate_switch_setting({"enabled": True, "meters": ["languages.target"]})
+    # D-16R: `languages.target` is wired as a COUNT entitlement (language_limit.py), not as a bucket meter: the same
+    # switch lists it, `admit()` never takes it, and a name nothing enforces is still refused and ignored.
+    assert set(quota.WIRED_ENTITLEMENTS) == {"languages.target"} and set(quota.ENFORCEABLE) == set(quota.WIRED_METERS) | {"languages.target"}
+    assert quota.validate_switch_setting({"enabled": True, "meters": ["languages.target", "writing.review"]}) == {
+        "enabled": True, "meters": ["writing.review", "languages.target"]}
+    with pytest.raises(ValueError, match="entitlements.sentinel"):
+        quota.validate_switch_setting({"enabled": True, "meters": ["entitlements.sentinel"]})
     quota.configure_quota(settings=MemorySettings(),
-                          env={quota.FLAG: "on", quota.METERS_FLAG: "languages.target,writing.review"})
+                          env={quota.FLAG: "on", quota.METERS_FLAG: "entitlements.sentinel,writing.review"})
     assert quota.switch()["meters"] == ["writing.review"], "an unwired meter enforces nothing and is not listed"
 
 
@@ -584,7 +589,9 @@ def test_admin_quota_routes_switch_enforcement(monkeypatch):
     on = client.put("/api/product/admin/quota", json={"enabled": True, "meters": ["writing.review"]})
     assert on.status_code == 200 and on.json()["state"] == "enforced"
     assert settings.rows[quota.SETTING_KEY]["value"] == {"enabled": True, "meters": ["writing.review"]}
-    assert client.put("/api/product/admin/quota", json={"enabled": True, "meters": ["languages.target"]}).status_code == 422
+    assert client.put("/api/product/admin/quota", json={"enabled": True, "meters": ["entitlements.sentinel"]}).status_code == 422
+    both = client.put("/api/product/admin/quota", json={"enabled": True, "meters": ["languages.target", "writing.review"]})
+    assert both.status_code == 200 and both.json()["meters"] == ["writing.review", "languages.target"]
 
 
 # ------------------------------------------- review of #116: the switch fails closed (P2-1) --
@@ -613,7 +620,7 @@ def test_env_off_is_off_even_when_the_setting_cannot_be_read():
 def test_env_on_without_a_meter_is_a_503_not_a_silent_off():
     _switch_with(MemorySettings(), {quota.FLAG: "on"})
     state = quota.switch()
-    assert (state["state"], state["reason"], state["meters"]) == ("unavailable", "no_meters", list(quota.WIRED_METERS))
+    assert (state["state"], state["reason"], state["meters"]) == ("unavailable", "no_meters", list(quota.ENFORCEABLE))
     assert _refused_with_503() == "no_meters"
     _switch_with(MemorySettings(fail=True), {quota.FLAG: "on"})
     assert _refused_with_503() == "switch_unreadable"
@@ -630,7 +637,7 @@ def test_an_unreadable_setting_in_a_fresh_worker_fails_closed():
     state = quota.switch()
     assert (state["state"], state["reason"]) == ("unavailable", "switch_unreadable")
     assert _refused_with_503() == "switch_unreadable"
-    assert quota.usage_for("legacy", catalog.FREE) == {key: {"state": "unavailable"} for key in quota.WIRED_METERS}
+    assert quota.usage_for("legacy", catalog.FREE) == {key: {"state": "unavailable"} for key in quota.ENFORCEABLE}
 
 
 def test_an_unreadable_setting_after_a_good_read_keeps_the_last_value():

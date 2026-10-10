@@ -14,6 +14,7 @@ import { shellCopy } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
 import { adoptLearningLanguage, updateContext } from '../../shell/context.js';
 import { selectLearningLanguage } from '../../product/account-settings.js';
+import { isLanguageLimit, showLanguageLimitNotice } from '../plan/quota-notice.js';
 import { signInHref } from '../../shell/session.js';
 import { t } from './copy.js';
 import {
@@ -367,9 +368,11 @@ export default async function onboardingScreen(element, ctx) {
     render();
     try {
       await selectLearningLanguage(code);
-    } catch {
+    } catch (error) {
       state.busy = '';
-      toast(t('saveError'));
+      /* The plan's count of target languages (D-16R): the server's refusal is told as it is, with the way to the plans. */
+      if (isLanguageLimit(error)) showLanguageLimitNotice(ctx, error);
+      else toast(t('saveError'));
       render();
       return;
     }

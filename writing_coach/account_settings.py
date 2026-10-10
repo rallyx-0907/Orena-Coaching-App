@@ -120,14 +120,36 @@ def validated_changes(payload: AccountSettingsPatchIn) -> dict[str, Any]:
     return changes
 
 
-def write_account_settings(changes: dict[str, Any], expected_token: str) -> dict[str, Any]:
-    """The conditional write; raises the HTTP errors the routes share."""
+def language_adoption(changes: dict[str, Any]):
+    """The target-language entitlement's adoption for a write that sets the learning language (D-16R), or None.
+
+    None when the write does not touch the learning language, or the entitlement is not enforced. Raises the 503 of
+    the gate when enforcement is on but cannot run. The repository calls `adoption.guard` inside the write's
+    transaction."""
+    code = changes.get("learning_language")
+    if not code:
+        return None
+    from writing_coach.product import language_limit
+
+    return language_limit.adoption(str(code), _user_key())
+
+
+def _guard_of(adoption: Any):
+    return adoption.guard if adoption is not None else None
+
+
+def write_account_settings(changes: dict[str, Any], expected_token: str | None, *, guard: Any = None) -> dict[str, Any]:
+    """The conditional write; raises the HTTP errors the routes share.
+
+    `guard` (from `adoption_guard`) judges the write inside its transaction. `expected_token=None` writes against the
+    token the server reads under that lock, for a caller that holds none."""
     if _repository is None:
         raise HTTPException(503, detail={"reason": "account_settings_unavailable"})
     key = _user_key()
+    options = {"guard": guard} if guard is not None else {}
     try:
         try:
-            row = _repository.update_account_settings(key, changes, expected_token)
+            row = _repository.update_account_settings(key, changes, expected_token, **options)
         except AccountRowMissing:
             # Authentication-disabled local development has one account, "legacy", whose row a PostgreSQL
             # runtime seeds at start and a test backend never had. Create exactly that row (idempotent, so two
@@ -137,7 +159,7 @@ def write_account_settings(changes: dict[str, Any], expected_token: str) -> dict
             _repository.upsert_user(
                 {"sub": LOCAL_ACCOUNT_KEY, "email": "local@localhost.invalid", "name": "Local developer"}, set()
             )
-            row = _repository.update_account_settings(key, changes, expected_token)
+            row = _repository.update_account_settings(key, changes, expected_token, **options)
     except SettingsVersionConflict as conflict:
         raise _conflict(conflict.current_token) from conflict
     except AccountRowMissing as missing:
@@ -152,4 +174,7 @@ def get_account_settings() -> dict[str, Any]:
 
 @router.patch("/api/account-settings")
 def patch_account_settings(payload: AccountSettingsPatchIn) -> dict[str, Any]:
-    return write_account_settings(validated_changes(payload), payload.expected_settings_version)
+    changes = validated_changes(payload)
+    return write_account_settings(
+        changes, payload.expected_settings_version, guard=_guard_of(language_adoption(changes))
+    )
