@@ -134,6 +134,32 @@ export function pricingPlans({ plans, commerce } = {}) {
   });
 }
 
+/* Why a refused language opens Plans (D-17Q): the facts of the explanation, from the server's refusal (`reason`, what
+   reason.js holds - absent after a reload) and the catalogue's plans (`list`, pricingPlans()). Nothing is decided here: the
+   limit is the server's own, and the plan to upgrade to is the lowest one above the learner's whose catalogue entry
+   lets them hold more languages than they do. `included` is false when the plan has no target-language entitlement at all. */
+export function languageReasonFacts({ reason, list } = {}) {
+  const plans = Array.isArray(list) ? list : [];
+  const current = plans.find((plan) => plan.isCurrent) || null;
+  const plan = plans.find((item) => item.id === reason?.plan) || current;
+  const entry = plan ? plan.byKey['languages.target'] : null;
+  const refusedAsNotInPlan = reason?.category === 'feature_not_in_plan';
+  const limit = reason?.limit != null && Number.isFinite(reason.limit)
+    ? reason.limit
+    : (entry && entry.enabled ? limitOf(entry) : null);
+  const included = !refusedAsNotInPlan && (reason?.limit != null ? Number.isFinite(reason.limit) : Boolean(entry && entry.enabled));
+  const held = Array.isArray(reason?.languages) ? reason.languages : [];
+  const owned = reason?.owned != null && Number.isFinite(reason.owned) ? reason.owned : held.length;
+  const holds = Math.max(owned, included && limit != null ? limit : 0);
+  const upgrade = plan
+    ? plans
+      .filter((item) => item.rank > plan.rank && item.byKey['languages.target']?.enabled)
+      .filter((item) => limitOf(item.byKey['languages.target']) == null || limitOf(item.byKey['languages.target']) > holds)
+      .sort((a, b) => a.rank - b.rank)[0] || null
+    : null;
+  return { plan, included, limit: included ? limit : null, held, requested: String(reason?.requested || ''), upgrade };
+}
+
 /* One row of the compare table per feature any plan lists; a cell is a limit, a tick or a dash. */
 export function compareRows(plans) {
   const keys = FEATURE_ORDER.filter((key) => plans.some((plan) => plan.byKey[key]));

@@ -230,8 +230,43 @@ assert.equal(resetLabel({ window: 'day', resetsAt: null }), 'Resets every day');
   copy.setLanguages({ ui: 'en', support: 'en' });
 }
 
+/* --- the plans in full (D-17Q): every meter of every plan, and a layout that lets all of it be reached ------ */
+{
+  const { readFileSync } = await import('node:fs');
+  const FIVE = ['orena.message', 'writing.review', 'pronunciation.audio', 'media.import', 'languages.target'];
+  const expected = { free: [20, 2, 5, 15, 1], plus: [200, 10, 30, 120, 2], pro: [1000, 50, 120, 600, 2] };
+  const plans = model.pricingPlans({ plans: [FREE, PLUS, PRO], commerce: COMMERCE });
+  for (const plan of plans) {
+    assert.deepEqual(plan.features.map((f) => f.key), FIVE, `${plan.id}: all five meters`);
+    assert.deepEqual(plan.features.map((f) => f.limit), expected[plan.id], `${plan.id}: each limit, from the catalogue, in the unit a learner reads`);
+  }
+  for (const ui of ['en', 'vi', 'zh']) {
+    copy.setLanguages({ ui, support: 'en' });
+    const markup = String(pricingMarkup({ plans: [FREE, PLUS, PRO], commerce: COMMERCE }));
+    assert.equal((markup.match(/class="s-pricing-card__feat"/g) || []).length, 15, `${ui}: five lines on each of three cards`);
+    assert.equal((markup.match(/class="s-pricing-compare__row"/g) || []).length, 5, `${ui}: five compare rows`);
+    assert.equal((markup.match(/class="s-pricing-cell"/g) || []).length, 15, `${ui}: a value for every plan in every row`);
+    for (const plan of plans) {
+      for (const [index, key] of FIVE.entries()) {
+        const value = expected[plan.id][index];
+        const line = key === 'languages.target' ? t.plural('line_languages_target', value, { n: String(value) }) : t(`line_${key.replace(/\./g, '_')}`, { n: model.formatNumber(value, ui) });
+        assert.ok(markup.includes(line), `${ui}: ${plan.id} says "${line}"`);
+      }
+    }
+  }
+  copy.setLanguages({ ui: 'en', support: 'en' });
+
+  /* The region scrolls, and nothing in it is squeezed: a flex item that clips its own overflow (the compare card) is
+     shrunk to its padding by the column unless its sections keep their height - the bug that hid what each plan includes. */
+  const css = readFileSync(new URL('../static/orena/screens/plan/plan.css', import.meta.url), 'utf8');
+  assert.match(css, /\.s-plan__scroll \{[^}]*overflow: auto;[^}]*\}/, 'the cards scroll inside their own region');
+  assert.match(css, /\.s-plan__scroll > \* \{\s*flex: none;\s*\}/, 'its sections never shrink below their content');
+  assert.match(String(pricingMarkup({ plans: [FREE, PLUS, PRO], commerce: COMMERCE })), /class="s-plan__scroll" data-scroll-region/);
+}
+
 /* --- routes ---------------------------------------------------------------------------------- */
 {
+  assert.equal(match('#/plan/pricing?reason=language').route.id, 'pricing', 'a reason does not change the place');
   for (const id of ['billing', 'pricing']) {
     const route = byId(id);
     assert.equal(route.focus, true, `${id} is a learning workspace (the design's focus list)`);

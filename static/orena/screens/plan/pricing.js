@@ -12,11 +12,14 @@
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { pageHeader } from '../../kit/components.js';
+import { bannerMarkup } from '../../kit/states.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy, planName, planDescription } from '../../copy/shell.js';
 import { t } from './copy.js';
-import { pricingPlans, compareRows, changeKind, featureCopyKey, formatNumber, priceView, yearlySaving, CYCLES } from './model.js';
+import { pricingPlans, compareRows, changeKind, featureCopyKey, formatNumber, priceView, yearlySaving, languageReasonFacts, CYCLES } from './model.js';
+import { heldReason, releaseReason, REASON_LANGUAGE } from './reason.js';
+import { languageReasonText } from './reason-text.js';
 import { openBillingSheet } from './sheet.js';
 
 const number = (value) => formatNumber(value, languages().ui);
@@ -60,13 +63,14 @@ function cyclesMarkup(cycle, saving) {
   return html`<div class="s-pricing__cycles" role="group" aria-label="${t('billingCycle')}">${CYCLES.map((key) => html`<button type="button" class="s-pricing__cycle" aria-pressed="${key === cycle ? 'true' : 'false'}" data-cycle="${key}">${t(key === 'yearly' ? 'cycleYearly' : 'cycleMonthly')}${key === 'yearly' && saving > 0 ? html`<span class="s-pricing__save">−${saving}%</span>` : ''}</button>`)}</div>`;
 }
 
-export function pricingMarkup({ plans, commerce, cycle = 'monthly' }) {
+export function pricingMarkup({ plans, commerce, cycle = 'monthly', reason = null }) {
   const list = pricingPlans({ plans, commerce });
   const current = list.find((plan) => plan.isCurrent) || null;
   const rows = compareRows(list);
   return html`<div class="s-plan s-pricing">
     ${pageHeader({ back: { label: shellCopy('back'), dataset: { back: '1' } }, title: t('plansTitle') })}
     <div class="s-plan__scroll" data-scroll-region>
+      ${reason ? bannerMarkup({ kind: 'info', title: reason.title, text: reason.text, dismissLabel: shellCopy('dismiss') }) : ''}
       <div class="s-pricing__hero"><h2 class="s-pricing__headline">${t('pricingHero')}</h2><p class="s-pricing__sub">${t('pricingSub')}</p>${cyclesMarkup(cycle, yearlySaving(list, languages().ui))}</div>
       <div class="s-pricing__plans">${list.map((plan) => planCard(plan, current, cycle))}</div>
       ${rows.length ? html`<section class="s-plan-card s-pricing-compare" style="--cols:${list.length}">
@@ -90,15 +94,30 @@ export default async function pricing(element, ctx) {
   const list = pricingPlans({ plans, commerce });
   const current = list.find((plan) => plan.isCurrent) || null;
   let cycle = 'monthly';
+  /* Why the learner was sent here (D-17Q): a refused language explains itself on top, until it is dismissed. Without the
+     address's `reason` there is nothing to explain, and what was held is let go. */
+  let reason = null;
+  if (ctx.query?.get?.('reason') === REASON_LANGUAGE) {
+    const held = heldReason();
+    reason = languageReasonText(languageReasonFacts({ reason: held?.kind === REASON_LANGUAGE ? held : null, list }));
+  } else {
+    releaseReason();
+  }
   const paint = () => {
     const scroll = element.querySelector('[data-scroll-region]')?.scrollTop || 0;
-    mount(element, pricingMarkup({ plans, commerce, cycle }));
+    mount(element, pricingMarkup({ plans, commerce, cycle, reason }));
     const region = element.querySelector('[data-scroll-region]');
     if (region) region.scrollTop = scroll;
   };
   paint();
   element.addEventListener('click', (event) => {
     if (event.target.closest('[data-back]')) return ctx.back();
+    if (event.target.closest('[data-banner-close]')) {
+      reason = null;
+      releaseReason();
+      paint();
+      return undefined;
+    }
     const cycleButton = event.target.closest('[data-cycle]');
     if (cycleButton && cycleButton.dataset.cycle !== cycle) {
       cycle = cycleButton.dataset.cycle;

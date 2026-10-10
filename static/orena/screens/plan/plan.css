@@ -32,6 +32,11 @@
   flex-direction: column;
   gap: 20px;
 }
+/* A section keeps the height its content needs and the region scrolls. Left to shrink, a flex item that clips its
+   own overflow (the compare card) is squeezed to its padding and its rows can never be reached (D-17Q). */
+.s-plan__scroll > * {
+  flex: none;
+}
 .s-plan__all {
   min-height: 44px;
   padding: 0 18px;
@@ -472,4 +477,9 @@
 .s-pricing-card__per {
   font-size: 14px;
   color: var(--muted);
+}
+
+/* The explanation of a refused language (the kit's banner) spans the column like the cards below it. */
+.s-plan__scroll > .o-banner {
+  width: 100%;
 }

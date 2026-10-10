@@ -5492,6 +5492,19 @@ the meters below.
   `displayAmount` rounds, so 299 of 300 s shows "5 of 5" minutes while a short take is still admitted (shared with Plan &
   usage); (e) `/api/speech/transcribe` stays unmetered paid spend, decided in D-169 (QTA-14) - not all paid AI is
   plan-bounded; (f) an exhausted (429) or duplicate (409) request still costs one local decode. Owner: human / BACKEND.
+- **QTA-18 A refused language opens Plans with the reason (human report, 2026-10-10, D-17Q).** The design draws no state for
+  "your plan does not allow this" and the toast was too small and gone too soon. The refusal now navigates to
+  `#/plan/pricing?reason=language` and Plans shows the design's **Banner** component (kind info, dismissible, sticky at the top of
+  the region) above the hero: "Free includes 1 target language. You're learning English. To add Chinese, upgrade to Plus. Nothing
+  was changed." Every figure comes from the 403 `context` (limit, owned, languages, plan) plus the language the learner tried to
+  add (the screen knew it) and the plan list (the lowest plan above the learner's whose `languages.target` allows more); language
+  and plan names are in the interface language. After a reload the address still says why and the sentence is built from the
+  plans alone (no language named that the server did not name). The Banner is the design's drawn component reused for a reason it
+  does not draw: **Owner: design** (a drawn "why you are here" on Plans, if wanted). **The other refusals do NOT follow**
+  (429 `quota_exhausted` for writing reviews, Orena messages, pronunciation, media import): they arrive in the middle of a task
+  (a recording, an essay, an import sheet, a conversation) and leaving the room would lose it, so they stay in the room's own
+  failure place with "See all plans" (QTA-1). The meter-exhausted sentence ("You have used 2 of 2 writing reviews this month")
+  and the count-cap sentence ("Free includes 1 target language") are different words for different facts and each reads on its own.
 - **QTA-6 Media import minutes - ENFORCED when the switch lists `media.import`** (D-168; Free / Plus / Pro 15 / 120 / 600
   minutes a month, stored in seconds, learner's timezone; beta configuration). See QTA-17 for the audit and the open items.
   The Import sheet shows the 429 as the toast with "See all plans" (no exhausted state is drawn, QTA-1), EN/VI/ZH.
@@ -5499,8 +5512,8 @@ the meters below.
   cap with no window; beta configuration). Adding a language the account does not hold at its limit is refused on the server
   (403 `language_limit_reached`); a Free account that already learns 2 languages KEEPS them and can switch between them -
   only adding a third is refused (human). Held = stored learning language + every language-scoped row the account owns
-  (D-170 point 2). Onboarding and the Settings picker show the refusal as the quota toast with "See all plans", EN/VI/ZH
-  (no new visual, rule 43). **For the human:** (a) the design draws no languages row in Plan & usage (the Plan frame lists the
+  (D-170 point 2). Onboarding and the Settings picker open Plans at once with the reason (D-17Q, QTA-18) instead of a toast, EN/VI/ZH
+  (the kit's Banner, no new visual, rule 43). **For the human:** (a) the design draws no languages row in Plan & usage (the Plan frame lists the
   four meters; the count is in the comparison table only), so none was added although the commerce read supplies `used` /
   `limit` / `remaining`; decide whether the design should draw one. (b) A Free learner who picked a language and used nothing
   cannot change their mind to another new language (the stored language counts; D-170 point 12c). Owner: BACKEND + UI.
