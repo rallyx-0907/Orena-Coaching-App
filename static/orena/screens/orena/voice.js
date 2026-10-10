@@ -27,6 +27,7 @@ import { micUnavailableReason } from '../mic/model.js';
 import { openVoiceSession, connectLiveVoice } from '../../agent/live-voice.js';
 import { onViewContext } from '../../shell/view-context.js';
 import { refreshLearningLanguage } from './language-sync.js';
+import { isQuotaExhausted, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { href } from '../../shell/routes.js';
@@ -183,7 +184,14 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       closeAudio();
       if (disposed) return;
       if (error?.status === 409) void refreshLearningLanguage();
-      // Off here, unavailable, or over the day's limit: the device cascade carries the conversation instead.
+      if (isQuotaExhausted(error)) {
+        // Not one Orena message is left today (§9, v8): the server's own figures, with the way to the plans - and
+        // not the device cascade, whose turns would be refused the same way after a paid transcription.
+        setPhase('idle');
+        toast(quotaMessage(error), { undo: () => { location.hash = href('pricing'); }, undoLabel: seePlansLabel() });
+        return;
+      }
+      // Off here, unavailable, or any other failure: the device cascade carries the conversation instead.
       liveOff = true;
       live = true;
       setPhase('idle');

@@ -89,6 +89,11 @@ class FakeQuotaRepository:
                                                "updated_at": datetime.now(UTC)}
             return {"status": "admit", "admitted_units": requested_units, "state": "reserved"}
 
+    def get_reservation(self, operation_id):
+        self.calls.append("get_reservation")
+        row = self.reservations.get(operation_id)
+        return None if row is None else {"state": row["state"], "admitted_units": row["units"]}
+
     def dispatch(self, *, operation_id, dispatch_ref=None):
         self.calls.append("dispatch")
         with self.lock:

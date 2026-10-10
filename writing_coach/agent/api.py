@@ -18,9 +18,11 @@ so a malformed request counts too.
 Plan quota (D-163): when `orena.message` is enforced, a learner's message turn is admitted
 before anything streams - exhausted is a plain 429 `quota_exhausted` JSON response, never an
 SSE frame - and the opening greeting and the answers that ask no model are free (agent/turn.py).
-Live voice is not metered yet (it is charged by duration, in a later change), so while the
-meter is enforced a voice session is refused 503 `quota_voice_not_metered` instead of running
-unmetered.
+Live voice is charged against the same meter by duration (D-16T, contract v8): one message per
+`voice_seconds_per_message` seconds. `POST /voice/session` reserves the messages the session may use
+(agent/voice_session.py), is refused 429 `quota_exhausted` when not even one remains and 503
+`quota_unavailable` when enforcement cannot be read - before any token is minted - and the token's life
+(`max_seconds`) is the seconds the reserved messages buy.
 """
 
 from __future__ import annotations
@@ -186,13 +188,8 @@ def _voice_call_allowed(runtime: AgentRuntime = Depends(_read_allowed)) -> Voice
 
 @router.post("/voice/session")
 def agent_voice_session(body: dict = Body(...), voice: VoiceService = Depends(_voice_session_allowed)) -> dict:
-    # Voice talks to the vendor directly on a token minted here, for up to 15 minutes, and is charged by duration in
-    # a later change. Until then it cannot be metered, so while `orena.message` is enforced no token is minted.
-    quota.refuse_unmetered(
-        MESSAGE_METER,
-        category="quota_voice_not_metered",
-        message="Voice conversations are not available while message limits are being applied.",
-    )
+    # Voice talks to the vendor directly on a token minted here, for up to 15 minutes. The plan's messages are
+    # reserved by `VoiceService.open` before the token exists (429 / 503 / 409 / 403 are the quota gate's own).
     learner = LearnerScope.from_request_context()
     try:
         target = to_internal(str(((body.get("context") or {}).get("locale") or {}).get("target") or ""))

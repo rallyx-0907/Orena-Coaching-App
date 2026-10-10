@@ -52,6 +52,9 @@ class GeminiLiveTokens:
     socket_url: str = LIVE_SOCKET
 
     def mint(self, setup: Mapping[str, Any], *, now: datetime, seconds: int) -> tuple[str, str]:
+        """`seconds` is the token's whole life (`expireTime`): the session's cap, whatever the learner's allowance
+        buys (agent/voice_session.py). Whether the vendor also closes a socket that is already open when it passes
+        has not been verified live; the client ends the session at the cap and the server settles what was reserved."""
         key = self.key()
         if not key:
             raise VoiceUnavailable("no Gemini key is configured")
@@ -60,7 +63,9 @@ class GeminiLiveTokens:
         body = {
             "uses": 1,
             "expireTime": expires,
-            "newSessionExpireTime": (now + timedelta(seconds=OPEN_WITHIN_SECONDS)).strftime(iso),
+            # The token is spent at `expireTime` whether or not it opened: a session cut short by the learner's
+            # remaining allowance (D-16T) must still be opened within its own life.
+            "newSessionExpireTime": (now + timedelta(seconds=min(OPEN_WITHIN_SECONDS, seconds))).strftime(iso),
             "bidiGenerateContentSetup": dict(setup),
         }
         status, raw = self.post(TOKEN_URL, {"x-goog-api-key": key, "Content-Type": "application/json"},

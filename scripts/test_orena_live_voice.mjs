@@ -58,6 +58,57 @@ const { createSession } = await import('../static/orena/agent/session.js');
   await assert.rejects(openVoiceSession({}, { fetchImpl: fail(429, 'rate_limited') }), (error) => error.status === 429 && error.retryAfter === 7);
 }
 
+// D-16T (contract v8): voice is charged by duration. The session request carries the quota headers, and a 429
+// quota_exhausted carries the server's own figures so the voice screen can tell the learner, not fall back.
+{
+  const seen = [];
+  const exhausted = async (path, init) => {
+    seen.push({ path, headers: init.headers });
+    return {
+      ok: false, status: 429, headers: { get: () => '3600' },
+      json: async () => ({ detail: { category: 'quota_exhausted', message: 'm', retryable: false, context: { feature: 'orena.message', used: 20, limit: 20, resets_at: '2026-10-10T17:00:00Z', upgrade: '#/plan/pricing' } } }),
+    };
+  };
+  await assert.rejects(
+    openVoiceSession({ x: 1 }, { fetchImpl: exhausted, idempotencyKey: 'k-1' }),
+    (error) => error instanceof VoiceSessionError && error.status === 429 && error.category === 'quota_exhausted'
+      && error.context.used === 20 && error.context.limit === 20 && error.context.feature === 'orena.message' && error.retryAfter === 3600,
+  );
+  assert.equal(seen[0].path, '/api/agent/voice/session');
+  assert.equal(seen[0].headers['Idempotency-Key'], 'k-1', 'one key per session the learner opens');
+  assert.ok(seen[0].headers['X-Orena-Timezone'], "the device's timezone, so the day ends at the learner's midnight");
+  assert.equal(seen[0].headers['Content-Type'], 'application/json');
+  const { isQuotaExhausted, quotaMessage } = await import('../static/orena/screens/plan/quota-notice.js').catch(() => ({}));
+  if (isQuotaExhausted) {
+    const error = new VoiceSessionError(429, 'quota_exhausted', 0, { feature: 'orena.message', used: 20, limit: 20 });
+    assert.equal(isQuotaExhausted(error), true, 'the voice screen reads it as the plan limit');
+    assert.equal(isQuotaExhausted(new VoiceSessionError(429, 'rate_limited')), false, 'a rate limit stays a failed session');
+    assert.equal(isQuotaExhausted(new VoiceSessionError(503, 'quota_unavailable')), false, 'an unreadable limit falls back as before');
+    assert.ok(quotaMessage(error).includes('20'), 'the sentence carries the server\'s figures');
+  }
+}
+
+// D-16T: the session ends by itself at `max_seconds` (the seconds the learner's remaining messages buy).
+{
+  const calls = [];
+  const realSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms, ...rest) => { calls.push(ms); return realSetTimeout(() => {}, 0); };
+  globalThis.document ??= { addEventListener() {}, removeEventListener() {} };
+  globalThis.window ??= { addEventListener() {}, removeEventListener() {} };
+  const { connectLiveVoice } = await import('../static/orena/agent/live-voice.js');
+  try {
+    const socket = function FakeSocket() { this.readyState = 0; this.close = () => {}; this.send = () => {}; };
+    const link = connectLiveVoice(
+      { voice_session_id: 'vs-1', connect: { url: 'wss://x', ephemeral_token: 't', setup: {} }, max_seconds: 120 },
+      { audio: { input: {}, output: {} }, mediaDevices: {}, fetchImpl: async () => ({ ok: true, json: async () => ({}) }), WebSocketCtor: socket },
+    );
+    assert.ok(calls.includes(120 * 1000), 'the cap timer is the session\'s own max_seconds, not a fixed 900');
+    link.end('cap');
+  } finally {
+    globalThis.setTimeout = realSetTimeout;
+  }
+}
+
 // R29: the learner's voice rides in the session body; with none chosen, no field (the server's default).
 {
   const { chosenVoice, chooseVoice } = await import('../static/orena/agent/live-voice.js');

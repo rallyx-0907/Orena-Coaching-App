@@ -13,7 +13,11 @@ spoken words do not pass every gate a text turn does. What the server keeps:
   same `ReplyOutputs` as in text - D-135, no unasked routing, notes only on the learner's own request. Each answer
   is also given as §4 events for the thread;
 - fifteen minutes at most (§9), then the token is spent; no audio is stored;
-- the time used is priced from the audio catalog into the shared AI ledger, so the daily spend cap counts voice.
+- the time used is priced from the audio catalog into the shared AI ledger, so the daily spend cap counts voice;
+- the learner's plan pays for it by duration (D-16T): when `orena.message` is enforced the session reserves the
+  messages it may use (one per `voice_seconds_per_message`), the token's life is the seconds those buy, and the
+  session settles what it really used when it ends. The ledger and the allowance are separate things: the allowance
+  is what the learner is charged, the ledger is what the vendor charges.
 """
 
 from __future__ import annotations
@@ -53,10 +57,12 @@ from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.tools import FORBIDDEN_ARGUMENTS, LearnerScope, ToolArgumentsInvalid
+from writing_coach.product import quota
 
 _log = logging.getLogger(__name__)
 
 VOICE_MODEL = "gemini-3.8-live"
+VOICE_METER = "orena.message"  # a voice minute is a message: `voice_seconds_per_message` seconds each (D-16T)
 
 
 @dataclass(frozen=True)
@@ -334,6 +340,10 @@ class VoiceSession:
     evidence_count: int = 0
     ended: bool = False
     agent_session_id: str = ""  # the conversation this voice session is part of (the typed turns' session)
+    # The seconds this session may last: the cap, or fewer when the learner's allowance buys fewer (D-16T), and the
+    # quota ticket that holds the messages reserved for it (the no-op ticket when messages are not enforced).
+    cap_seconds: int = SESSION_SECONDS
+    ticket: Any = None
     # The client's own utterance sequence (never the words): the one in progress, the ones already counted as a turn
     # of the conversation, and the ones whose words are already in it.
     utterance: str | None = None
@@ -363,7 +373,7 @@ class VoiceSessions:
             session = self._sessions.get(voice_session_id)
         if session is None or session.user_key != user_key or session.ended:
             return None
-        if self.clock() - session.opened > SESSION_SECONDS:
+        if self.clock() - session.opened > session.cap_seconds:
             return None
         return session
 
@@ -381,7 +391,7 @@ class VoiceSessions:
 
         now = self.clock()
         with self._lock:
-            gone = [s for s in self._sessions.values() if now - s.opened > SESSION_SECONDS]
+            gone = [s for s in self._sessions.values() if now - s.opened > s.cap_seconds]
             for session in gone:
                 session.ended = True
                 del self._sessions[session.voice_session_id]
@@ -417,7 +427,6 @@ class VoiceService:
         locale = request.context.locale
         setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
                            languages=recognition_languages(locale.support, locale.target))  # fmt: skip
-        token, expires = self.tokens.mint(setup, now=now, seconds=SESSION_SECONDS)
         outputs = ReplyOutputs(
             client=request.client, interface=locale.interface, support=locale.support, target=locale.target,
             version=request.version, notes={note.id: note.weight for note in tier1.coach_notes},
@@ -426,10 +435,26 @@ class VoiceService:
             recent_runs=session_state.recent_runs(),
         )  # fmt: skip
         _in_view(outputs, request.context)
+        voice_session_id = f"vs-{secrets.token_hex(8)}"
+        # Admission (D-16T): before anything is sent to the vendor. The learner's allowance decides how long the
+        # token lives - the session cap, or fewer seconds when fewer messages remain; none left is a 429 here and
+        # no token is minted. A retry that repeats the request's `Idempotency-Key` is the same operation (409, never
+        # a second reservation); without one each request is its own session.
+        ticket = quota.begin_voice(
+            VOICE_METER, max_seconds=SESSION_SECONDS, request_digest=quota.request_digest(dict(body)),
+        )
+        cap = min(SESSION_SECONDS, ticket.max_seconds) if ticket.max_seconds else SESSION_SECONDS
+        opened = self.sessions.clock()  # before the token exists, so the learner is never charged less than the token lived
+        try:
+            ticket.dispatch(f"voice:{voice_session_id}")
+            token, expires = self.tokens.mint(setup, now=now, seconds=cap)
+        except BaseException:
+            ticket.settle(0, "failed")  # nothing was opened for the learner: dispatched work that gave them nothing
+            raise
         session = VoiceSession(
-            voice_session_id=f"vs-{secrets.token_hex(8)}", user_key=learner.user_key, learner=learner,
-            request=request, model=self.model, opened=self.sessions.clock(), outputs=outputs,
-            agent_session_id=session_state.agent_session_id,
+            voice_session_id=voice_session_id, user_key=learner.user_key, learner=learner,
+            request=request, model=self.model, opened=opened, outputs=outputs,
+            agent_session_id=session_state.agent_session_id, cap_seconds=cap, ticket=ticket,
         )  # fmt: skip
         self.sessions.add(session)
         return {
@@ -444,7 +469,7 @@ class VoiceService:
                 # the one message the client sends first; the token's locked setup decides everything else
                 "setup": {"setup": {"model": f"models/{self.model}"}},
             },
-            "max_seconds": SESSION_SECONDS,
+            "max_seconds": cap,  # how long the token lives: the client ends the session there
         }
 
     def _capability_ids(self, tier1) -> tuple[str, ...]:
@@ -754,16 +779,30 @@ class VoiceService:
         session = self.sessions.close(voice_session_id, learner.user_key)
         if session is None:
             return None
-        self._flush_transcript(session, transcript)
-        seconds = self._bill(session)
+        try:
+            self._flush_transcript(session, transcript)
+        finally:  # the learner's messages are settled whatever happens to their transcript
+            seconds = self._bill(session)
+        self._bill_expired()  # any other session of this process that outlived its token is settled now too
         return {"voice_session_id": voice_session_id, "seconds": seconds}
 
     def _bill_expired(self) -> None:
         for session in self.sessions.expired():
-            self._bill(session)
+            self._bill(session, abandoned=True)
 
-    def _bill(self, session: VoiceSession) -> float:
-        seconds = round(min(SESSION_SECONDS, max(0.0, self.sessions.clock() - session.opened)), 1)
+    def _bill(self, session: VoiceSession, *, abandoned: bool = False) -> float:
+        """The session's time is billed twice, and the two are different things. The ledger (`record_audio`) gets
+        the seconds the vendor was probably charged for: the wall-clock time from the token to the end, at most the
+        token's life - Gemini Live reports its real usage only to the client on the socket (never to the server) and
+        the ledger has no field for tokens (a schema decision), so wall-clock is the estimate it can hold. The
+        allowance (`ticket`) gets what the learner is charged: `ceil(seconds / voice_seconds_per_message)` messages,
+        never more than were reserved; the rest of the reservation is released by the same settlement. A session
+        nobody ended ran to its token's end (`abandoned`) and is charged what was reserved."""
+        seconds = round(min(session.cap_seconds, max(0.0, self.sessions.clock() - session.opened)), 1)
+        ticket = session.ticket
+        if ticket is not None:
+            ticket.settle(ticket.units_for(session.cap_seconds if abandoned else seconds),
+                          "abandoned" if abandoned else "completed")
         if self.record_audio is not None:
             try:
                 self.record_audio("agent_voice", provider="gemini", model=session.model, outcome="success",

@@ -12,28 +12,34 @@
       - an `interrupted` stops playback at once (barge-in);
       - a tool call is run by the server (`POST /api/agent/voice/tool`), its §4 events handed to the caller and
         its responses sent back on the socket.
-   3. `end()` closes everything and tells the server (`POST /api/agent/voice/end`), which bills the time. A
-      session never ended is billed at its cap, so leaving the page ends it too (sendBeacon).
+   3. `end()` closes everything and tells the server (`POST /api/agent/voice/end`), which bills the time and settles
+      the learner's messages by it. A session never ended is billed at its cap, so leaving the page ends it too
+      (sendBeacon). The session ends by itself at `session.max_seconds` (v8: the seconds the learner's remaining
+      messages buy, at most 900).
 
    Failure is never a switch to another vendor (§9): the caller falls back to its own cascade. */
 import { CONTRACT_VERSION } from './contract.js';
+import { newIdempotencyKey, quotaHeaders } from '../infrastructure/quota-headers.js';
 
 const WORKLET_URL = new URL('../capabilities/pcm-capture-worklet.js', import.meta.url).href;
 
 export class VoiceSessionError extends Error {
-  constructor(status, category = '', retryAfter = 0) {
+  constructor(status, category = '', retryAfter = 0, context = null) {
     super(category || `voice_session_${status}`);
     this.status = status;
     this.category = category;
     this.retryAfter = retryAfter;
+    // The quota's own figures (`used`, `limit`, `feature`, `upgrade`) on a 429 `quota_exhausted` (§2.1, v8): what
+    // screens/plan/quota-notice.js reads, so it is a refusal the learner is told, never a failure to work around.
+    this.context = context;
   }
 }
 
-async function post(path, body, fetchImpl) {
+async function post(path, body, fetchImpl, headers = {}) {
   const response = await fetchImpl(path, {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
     body: JSON.stringify(body),
   });
   let data = null;
@@ -45,7 +51,8 @@ async function post(path, body, fetchImpl) {
   if (!response.ok) {
     // The voice routes answer a category object, or the category as the plain detail string (/voice/context).
     const category = String(data?.detail?.category || data?.category || (typeof data?.detail === 'string' ? data.detail : ''));
-    throw new VoiceSessionError(response.status, category, Number(response.headers?.get?.('Retry-After')) || 0);
+    const context = data?.detail?.context && typeof data.detail.context === 'object' ? data.detail.context : null;
+    throw new VoiceSessionError(response.status, category, Number(response.headers?.get?.('Retry-After')) || 0, context);
   }
   return data;
 }
@@ -86,8 +93,10 @@ export function voiceSessionBody(turnRequest, { voice = '' } = {}) {
   return { contract_version: CONTRACT_VERSION, ...rest, ...(voice ? { voice } : {}) };
 }
 
-export function openVoiceSession(body, { fetchImpl = globalThis.fetch } = {}) {
-  return post('/api/agent/voice/session', body, fetchImpl);
+/* One Idempotency-Key per session the learner opens and the device's timezone (§3, v8): the server reserves the
+   learner's messages for the session once per key, and the day it counts them in ends at the learner's midnight. */
+export function openVoiceSession(body, { fetchImpl = globalThis.fetch, idempotencyKey = newIdempotencyKey() } = {}) {
+  return post('/api/agent/voice/session', body, fetchImpl, quotaHeaders({}, idempotencyKey));
 }
 
 /* Bytes <-> base64 without a stack overflow on long frames. */
@@ -126,7 +135,9 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   const tracker = utteranceTracker();
   let playAt = 0;
   const playing = new Set();
-  const capTimer = setTimeout(() => end('cap'), Math.max(30, Number(session.max_seconds) || 900) * 1000);
+  // The session's own cap (§9, v8): 900 s, or fewer when the learner's remaining messages buy fewer. The token dies
+  // there; the client ends the session at the same moment, in the same way as at the learner's tap.
+  const capTimer = setTimeout(() => end('cap'), Math.max(1, Number(session.max_seconds) || 900) * 1000);
 
   function send(message) {
     if (socket.readyState === 1) socket.send(JSON.stringify(message));

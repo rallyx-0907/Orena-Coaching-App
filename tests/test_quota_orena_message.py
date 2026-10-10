@@ -436,15 +436,15 @@ def test_a_stream_that_is_never_read_does_not_leave_a_reservation_after_it_is_dr
 
 # -------------------------------------------------------------------- voice --
 
-def test_voice_is_refused_while_messages_are_enforced_because_it_cannot_be_metered_yet():
+def test_the_voice_route_no_longer_refuses_by_itself_the_session_is_admitted_by_duration_in_the_service():
+    """D-16T: the v7 interim refusal is gone. The admission (429 / 503 / the reserved seconds) lives in
+    `VoiceService.open` and is proved in tests/test_quota_voice.py; the route only hands the request over."""
     repository = enforced_runtime(env=ENV)
     voice = StubVoice()
     rig = Rig([], voice=voice)
     response = rig.client.post("/api/agent/voice/session", json={"context": {"locale": {"target": "en"}}})
-    assert response.status_code == 503
-    assert response.json()["detail"]["category"] == "quota_voice_not_metered"
-    assert voice.opened == 0, "no token is minted"
-    assert repository.calls == []
+    assert response.status_code == 200 and voice.opened == 1
+    assert repository.calls == [], "the stub service reserved nothing, and the route reads no quota of its own"
 
 
 def test_voice_tool_and_turn_are_unaffected_by_the_quota_and_its_headers():
@@ -465,14 +465,6 @@ def test_voice_tool_and_turn_are_unaffected_by_the_quota_and_its_headers():
         assert tool.status_code == 200 and turn.status_code == 200
     assert voice.relayed == 2 and voice.utterances == ["u1", "u1"], "the routes ran as they did before the quota"
     assert totals(repository) == (20, 0) and len(repository.calls) == spent_calls, "the quota store was not touched"
-
-
-def test_voice_is_refused_when_enforcement_cannot_be_read():
-    quota.configure_quota(settings=MemorySettings(), env=ENV, reason="no_postgresql")
-    voice = StubVoice()
-    rig = Rig([], voice=voice)
-    assert rig.client.post("/api/agent/voice/session", json={}).status_code == 503
-    assert voice.opened == 0
 
 
 def test_voice_is_unchanged_when_messages_are_not_enforced():
