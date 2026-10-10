@@ -5317,7 +5317,7 @@ implementer may not self-approve). No schema change, no migration.
     language counts, so a Free learner who picked a language and used nothing cannot change their mind to another new language;
     switching back to a held language works. (d) Native clients receive the same 403 envelope.
 13. **Activation.** :8021 may list `languages.target` after review; :8000 needs the explicit human GO and the architecture review
-    of D-161 points 6-8.
+    of D-161 points 6-8 (not the adopted-languages record of point 15, which a third language needs).
 14. **Review of the first version (REQUEST CHANGES at bd6c01fa; F1, F2 fixed).** (F1) A token-less first choice by an account
     that never chose is, while enforced, written against the token the server reads under the lock, so the guard always judges
     it; the session is set only after a judged write or for a language the account holds. Two such choices racing admit one and
@@ -5330,8 +5330,24 @@ implementer may not self-approve). No schema change, no migration.
     `languages.target` (or whose limit is 0) refuses a new account's first language, so onboarding cannot complete on it:
     administrators must not disable it for a plan learners can be on.
 15. **Precondition for a third target language (review F3).** With English and Chinese only, a stale session cannot take an account
-    above what it legitimately held. Before ANY third language is enabled in the registry, or the entitlement is activated on
-    :8000, add (a) an explicit, monotonic adopted-languages record (a table or a JSON column on `users`: a schema change, a human
-    gate and an independent architecture review) and (b) a per-request admission - the session's language must be one the
-    account adopted - or bind the session language to the account's `settings_version`. Until then a session-only switch made
-    before the switch was turned on survives up to 14 days (the cookie's `max_age`).
+    above what it legitimately held (the independent reviewer confirmed that activating `languages.target` with English and
+    Chinese only does NOT need the record below). Before a THIRD target language is enabled in the registry, add (a) an
+    explicit, monotonic adopted-languages record (a table or a JSON column on `users`: a schema change, a human gate and an
+    independent architecture review) and (b) a per-request admission - the session's language must be one the account adopted -
+    or bind the session language to the account's `settings_version`. Residual, accepted (P3): a session-only switch made
+    before the switch was turned on survives up to the cookie's lifetime (14 days, `max_age`) and is a one-time grandfathering.
+16. **Review of the second version (REQUEST CHANGES at f817b373; F8 fixed).** (F8) An account that never stored a learning
+    language runs in the default language, which nothing had judged. While enforced, a mutating `/api/` request from such a
+    session is refused with 409 `learning_language_required` (context `{feature: "languages.target"}`), unless the default
+    language is one the account already holds (an English learner from before the count who never stored a choice) or the route
+    writes no learner row. The exempt routes are listed in `language_limit.LANGUAGE_FREE_PREFIXES` (choosing the language, the
+    account settings, sign-in, billing, plan administration, feedback) plus any route with an `admin` path segment; every other
+    mutating route is covered by default, and a test enumerates the app's mutating routes and fails if the exempt set changes. A
+    failed read of what the account holds answers 503 `quota_unavailable` (`reason: "language"`). This closes the in-flight write
+    (the language is judged at the request's start) and the onboarding regression. Client: onboarding stores the learning
+    language BEFORE any profile write - a support language picked first is shown at once and written only after a language is
+    stored (`target-first.js`), the Continue on the Languages step stores the language the screen shows, and a 409
+    `learning_language_required` is told as "Choose the language you are learning first." in EN/VI/ZH - so a Free learner can pick
+    a support language and then Chinese (holds only Chinese). (F9) The limit is read when the adoption is made, before the row
+    lock: a downgrade committed in that window can miss one in-flight adoption; the next mutation sees it (accepted). (F10) The
+    middleware asks whether the count is enforced only for a request that has no language of its own and goes to `/api/`.

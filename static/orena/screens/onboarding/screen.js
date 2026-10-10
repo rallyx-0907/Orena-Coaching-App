@@ -12,7 +12,8 @@ import { openSheet, fillSheet, sheetHead } from '../../kit/overlay.js';
 import { listRow } from '../../kit/components.js';
 import { shellCopy } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
-import { adoptLearningLanguage, updateContext } from '../../shell/context.js';
+import { adoptLearningLanguage, context as shellContext, updateContext } from '../../shell/context.js';
+import { createTargetFirst } from './target-first.js';
 import { selectLearningLanguage } from '../../product/account-settings.js';
 import { isLanguageLimit, showLanguageLimitNotice } from '../plan/quota-notice.js';
 import { signInHref } from '../../shell/session.js';
@@ -37,6 +38,39 @@ const FOCUS_ATTRS = ['data-target', 'data-support', 'data-iface', 'data-level'];
 const REFOCUS_MS = 5000;
 const NO_CARRY = Object.freeze({ selector: '', top: 0, at: 0 });
 let carry = NO_CARRY;
+
+/* A profile change against the version the shell holds. A 409 means the profile moved on (another
+   device, or the learning language just changed - a profile is kept per learning language): read
+   it again and send the same change once more, so the learner's tap is never silently dropped. */
+async function patchProfileOf(context, fields) {
+  let version = context.profile?.version ?? '';
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await api.patchLearnerProfile({ expected_version: version, ...fields });
+    } catch (error) {
+      if (error?.status !== 409 || attempt >= 1) throw error;
+      const fresh = await api.learnerProfile();
+      updateContext({ profile: fresh });
+      version = fresh?.version ?? '';
+    }
+  }
+}
+
+/* The order onboarding writes in while the account has no learning language (target-first.js, D-16R). One instance for the
+   page: a support pick remounts the screen, and what is waiting must outlive that. */
+const targetFirst = createTargetFirst({
+  account: () => shellContext().account,
+  storeTarget: async (code) => {
+    await selectLearningLanguage(code);
+    const account = await api.accountSettings().catch(() => null);
+    if (account) updateContext({ account });
+  },
+  writeSupport: async (code) => {
+    const next = await patchProfileOf(shellContext(), { support_language: code });
+    updateContext({ profile: next });
+    setSupportFromProfile(next);
+  },
+});
 
 function sessionStore() {
   try {
@@ -345,21 +379,37 @@ export default async function onboardingScreen(element, ctx) {
 
   /* ---- Actions -------------------------------------------------------------------------------- */
 
-  /* A profile change against the version the shell holds. A 409 means the profile moved on (another
-     device, or the learning language just changed - a profile is kept per learning language): read
-     it again and send the same change once more, so the learner's tap is never silently dropped. */
-  async function patchProfile(fields) {
-    let version = context.profile?.version ?? '';
-    for (let attempt = 0; ; attempt += 1) {
-      try {
-        return await api.patchLearnerProfile({ expected_version: version, ...fields });
-      } catch (error) {
-        if (error?.status !== 409 || attempt >= 1) throw error;
-        const fresh = await api.learnerProfile();
-        updateContext({ profile: fresh });
-        version = fresh?.version ?? '';
-      }
+  const patchProfile = (fields) => patchProfileOf(context, fields);
+
+  /* What the learner is told when a language could not be stored: the plan's count (told as the server says it, with the
+     way to the plans), the learning language still to choose, or the generic failure. */
+  function reportTargetFailure(error) {
+    if (isLanguageLimit(error)) showLanguageLimitNotice(ctx, error);
+    else if (error?.category === 'learning_language_required') toast(t('targetFirst'));
+    else toast(t('saveError'));
+  }
+
+  /* The learner is moving on with the learning language the screen shows (English unless they chose another): store it
+     before anything is written to its profile. True when there was nothing to store or it is stored now. */
+  async function ensureTarget() {
+    try {
+      await targetFirst.ensure(context.language);
+      return true;
+    } catch (error) {
+      reportTargetFailure(error);
+      return false;
     }
+  }
+
+  async function languagesNext() {
+    if (state.busy) return;
+    state.busy = 'target';
+    render();
+    const stored = await ensureTarget();
+    if (!ctx.isCurrent()) return;
+    state.busy = '';
+    if (stored) setStep(3);
+    else render();
   }
 
   async function pickTarget(code) {
@@ -367,12 +417,10 @@ export default async function onboardingScreen(element, ctx) {
     state.busy = 'target';
     render();
     try {
-      await selectLearningLanguage(code);
+      await targetFirst.store(code);
     } catch (error) {
       state.busy = '';
-      /* The plan's count of target languages (D-16R): the server's refusal is told as it is, with the way to the plans. */
-      if (isLanguageLimit(error)) showLanguageLimitNotice(ctx, error);
-      else toast(t('saveError'));
+      reportTargetFailure(error);
       render();
       return;
     }
@@ -380,6 +428,11 @@ export default async function onboardingScreen(element, ctx) {
        version the shell holds are the previous language's until read again. The context is the
        shell's, so it is brought up to date even if the screen was left meanwhile. */
     await adoptLearningLanguage(code, memoryStorage || undefined);
+    try {
+      await targetFirst.flush();
+    } catch {
+      toast(t('saveError'));
+    }
     if (!ctx.isCurrent()) return;
     state.busy = '';
     state.level = '';
@@ -389,6 +442,13 @@ export default async function onboardingScreen(element, ctx) {
 
   async function pickSupport(code) {
     if (!code || code === (context.profile?.support_language || '') || state.busy) return;
+    if (targetFirst.stage(code)) {
+      /* No learning language is stored yet: show the pick, write it once a language is chosen (target-first.js). */
+      updateContext({ profile: { ...(context.profile || {}), support_language: code } });
+      setSupportFromProfile({ support_language: code });
+      render();
+      return;
+    }
     state.busy = 'support';
     render();
     let failed = false;
@@ -466,6 +526,11 @@ export default async function onboardingScreen(element, ctx) {
     if (patch) {
       state.busy = 'level';
       render();
+      if (!(await ensureTarget())) {
+        state.busy = '';
+        if (ctx.isCurrent()) render();
+        return;
+      }
       try {
         const next = await patchProfile(patch);
         updateContext({ profile: next, level: String(next?.declared_level || '').trim() });
@@ -534,7 +599,7 @@ export default async function onboardingScreen(element, ctx) {
     }
     if (action === 'google') return startGoogle();
     if (action === 'account-next') return setStep(2);
-    if (action === 'lang-next') return setStep(3);
+    if (action === 'lang-next') return languagesNext();
     if (action === 'level-next') return finishLevel();
     if (action === 'finish') return finish();
     if (action === 'support-more') return openSupportPicker();

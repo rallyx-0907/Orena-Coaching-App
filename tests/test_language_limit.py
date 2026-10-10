@@ -539,6 +539,13 @@ def _middleware_app(accounts):
     app = FastAPI()
     app.add_middleware(auth_support.UserIsolationMiddleware)
     app.add_middleware(SessionMiddleware, secret_key="test-secret")
+    app.include_router(platform_api.router)
+
+    @app.post("/api/slow-write")
+    def slow_write():
+        time.sleep(0.2)
+        accounts.data["legacy"].add(current_language_code())
+        return {"language": current_language_code()}
 
     @app.post("/api/learner-write")
     def write():
@@ -591,7 +598,74 @@ def test_f2_an_unreadable_account_refuses_a_write_but_not_a_read_while_enforced(
     assert world.accounts.data["legacy"] == set(), "nothing was written in a language nobody checked"
     assert a.get("/api/learner-read").status_code == 200, "a read still answers"
     monkeypatch.setattr(world.accounts, "get_account_settings", original)
-    assert a.post("/api/learner-write").status_code == 200
+    gated = a.post("/api/learner-write")
+    assert gated.status_code == 409 and gated.json()["detail"]["category"] == "learning_language_required"
+    assert world.accounts.data["legacy"] == set()
+
+
+# --- F8: an account that never chose writes no learner rows in the default language ------------------------------
+
+def test_f8_a_never_chosen_account_is_asked_for_its_language_before_any_learner_write(monkeypatch):
+    world = _f2_world(monkeypatch, enforced=True)
+    a = TestClient(_middleware_app(world.accounts))
+    refused_write = a.post("/api/learner-write")
+    detail = refused_write.json()["detail"]
+    assert refused_write.status_code == 409 and detail["category"] == "learning_language_required"
+    assert detail["retryable"] is False and detail["context"] == {"feature": "languages.target"}
+    assert world.accounts.data["legacy"] == set(), "nothing was written"
+    assert a.get("/api/learner-read").status_code == 200, "reads are not gated"
+    # The routes that write no learner row still work, and choosing the language ends the gate.
+    chose = world.client()
+    assert chose.post("/api/platform/language", json={"language": "zh"}).status_code == 200
+    assert a.post("/api/learner-write").json()["language"] == "zh"
+
+
+def test_f8_an_english_learner_from_before_the_count_is_not_locked_out(monkeypatch):
+    """Never stored a choice, but holds English by data: the default language is one the account holds."""
+    world = _f2_world(monkeypatch, enforced=True)
+    world.accounts.data["legacy"].add("en")
+    a = TestClient(_middleware_app(world.accounts))
+    assert a.post("/api/learner-write").json()["language"] == "en"
+
+
+def test_f8_in_flight_write_cannot_land_in_the_default_language_after_another_adoption(monkeypatch):
+    """The reviewer's probe: the write is decided at its start, the adoption happens during it."""
+    world = _f2_world(monkeypatch, enforced=True)
+    a = TestClient(_middleware_app(world.accounts))
+    a.get("/api/learner-read")                                  # the session has looked: nothing stored
+    written = a.post("/api/slow-write")
+    assert written.status_code == 409, "refused at its start, so it can never land in English after an adoption"
+    adopted = a.post("/api/platform/language", json={"language": "zh"})
+    assert adopted.status_code == 200
+    assert world.accounts.held("legacy") == {"zh"}
+
+
+def test_f8_not_enforced_a_never_chosen_account_writes_as_before(monkeypatch):
+    world = _f2_world(monkeypatch, enforced=False)
+    a = TestClient(_middleware_app(world.accounts))
+    assert a.post("/api/learner-write").json()["language"] == "en"
+
+
+def test_f8_the_exempt_routes_are_exactly_the_ones_that_write_no_learner_rows():
+    """Default-deny: a route is covered unless it is listed here. A new mutating route that is not a learner-row writer must
+    be added to `LANGUAGE_FREE_PREFIXES` AND to this list on purpose; a new learner-data writer needs neither."""
+    import app as app_module
+
+    paths = app_module.app.openapi()["paths"]
+    mutating = {(method.upper(), path) for path, operations in paths.items() for method in operations
+                if method.upper() in {"POST", "PUT", "PATCH", "DELETE"}}
+    exempt = {route for route in mutating if language_limit.writes_no_learner_rows(route[1])}
+    non_admin = {route for route in exempt if "admin" not in route[1].strip("/").split("/")}
+    assert non_admin == {
+        ("PATCH", "/api/account-settings"), ("POST", "/api/auth/native/exchange"), ("POST", "/api/billing/checkout"),
+        ("POST", "/api/billing/webhooks/{gateway}"), ("POST", "/api/feedback"), ("POST", "/api/platform/language"),
+    }, sorted(non_admin)
+    for route in [("POST", "/api/evaluate"), ("PUT", "/api/learner-profile"), ("PATCH", "/api/learner-profile"),
+                  ("POST", "/api/agent/turn"), ("PUT", "/api/drafts/{key}"), ("POST", "/api/library/vocabulary"),
+                  ("POST", "/api/listening/progress"), ("PUT", "/api/grammar/v1/progress/{point_id}"),
+                  ("POST", "/api/speech/attempts"), ("POST", "/api/texts/discussion/turns")]:
+        assert route in mutating and route not in exempt, route
+    assert len(mutating - exempt) > 60, "every other mutating route is covered"
 
 
 def test_f2_a_session_with_its_own_language_is_not_re_read(monkeypatch):

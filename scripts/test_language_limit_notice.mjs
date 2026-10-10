@@ -72,11 +72,72 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   copy.setLanguages({ ui: 'en', support: 'en' });
 }
 
+/* Onboarding's order while the account has no learning language (D-16R, review F8): the language is stored before
+   anything is written to a profile, and a support pick made first is written only after that. */
+{
+  const { createTargetFirst } = await import('../static/orena/screens/onboarding/target-first.js');
+  const run = (account) => {
+    const calls = [];
+    const row = { value: account };
+    const gate = createTargetFirst({
+      account: () => row.value,
+      storeTarget: async (code) => { calls.push(`store:${code}`); row.value = { stored: true, learning_language: code }; },
+      writeSupport: async (code) => { calls.push(`support:${code}`); },
+    });
+    return { calls, gate, row };
+  };
+
+  /* A Free learner taps a support language first, then Chinese: English is never stored, the pick follows Chinese. */
+  {
+    const { calls, gate } = run({ stored: true, learning_language: '' });
+    assert.equal(gate.stage('vi'), true, 'the support pick is held, not written');
+    assert.deepEqual(calls, []);
+    assert.equal(gate.pending(), 'vi');
+    await gate.store('zh');
+    await gate.flush();
+    assert.deepEqual(calls, ['store:zh', 'support:vi'], 'the language first, then the support language');
+    assert.equal(gate.pending(), '');
+    assert.equal(gate.stage('en'), false, 'once a language is stored a support pick is written at once');
+  }
+
+  /* An English learner taps a support language and goes on: English is stored first, then the pick. */
+  {
+    const { calls, gate } = run({ stored: true, learning_language: '' });
+    gate.stage('vi');
+    await gate.ensure('en');
+    assert.deepEqual(calls, ['store:en', 'support:vi']);
+    await gate.ensure('en');
+    assert.deepEqual(calls, ['store:en', 'support:vi'], 'nothing more to store');
+  }
+
+  /* Nothing is held for an account that already has a language, or that has no settings row to keep one in. */
+  for (const account of [{ stored: true, learning_language: 'zh' }, { stored: false, learning_language: '' }, null]) {
+    const { calls, gate } = run(account);
+    assert.equal(gate.stage('vi'), false);
+    await gate.ensure('en');
+    assert.deepEqual(calls, []);
+  }
+
+  /* A refused store (the plan's count) leaves the pick waiting and writes nothing. */
+  {
+    const calls = [];
+    const gate = createTargetFirst({
+      account: () => ({ stored: true, learning_language: '' }),
+      storeTarget: async () => { throw refusal(1, 1); },
+      writeSupport: async (code) => { calls.push(code); },
+    });
+    gate.stage('vi');
+    await assert.rejects(() => gate.ensure('en'), (error) => isLanguageLimit(error));
+    assert.deepEqual(calls, []);
+    assert.equal(gate.pending(), 'vi');
+  }
+}
+
 /* The two places a learner picks a target language tell the refusal and change nothing themselves. */
 for (const screen of ['onboarding', 'settings']) {
   const source = readFileSync(new URL(`../static/orena/screens/${screen}/screen.js`, import.meta.url), 'utf8');
   assert.ok(source.includes("isLanguageLimit, showLanguageLimitNotice } from '../plan/quota-notice.js'"), `${screen}: imports the notice`);
-  assert.ok(/catch \(error\) \{[\s\S]{0,400}isLanguageLimit\(error\)\) showLanguageLimitNotice\(ctx, error\)/.test(source), `${screen}: tells the refusal`);
+  assert.ok(/(catch \(error\) \{|function reportTargetFailure\(error\) \{)[\s\S]{0,400}isLanguageLimit\(error\)\) showLanguageLimitNotice\(ctx, error\)/.test(source), `${screen}: tells the refusal`);
 }
 
 console.log('test_language_limit_notice.mjs: the language-limit refusal is told in EN/VI/ZH from the server figures; nothing is counted on the client: PASS');

@@ -532,7 +532,100 @@ def _middleware_app(world):
                                         lesson_id=f"lesson-{uuid.uuid4()}", completed_at=NOW))
         return {"language": language}
 
+    @app.post("/api/slow-write")
+    def slow_write():
+        language = current_language_code()           # decided by the middleware at the start of the request
+        time.sleep(1.0)                               # e.g. a provider call: a writing review, an agent turn
+        with Session(world.engine) as session, session.begin():
+            session.add(GrammarProgress(id=uuid.uuid4(), user_id=world.user_id, language_code=language,
+                                        lesson_id=f"lesson-{uuid.uuid4()}", completed_at=NOW))
+        return {"language": language}
+
     return app
+
+
+@pytest.fixture()
+def legacy(world, monkeypatch):
+    """The local account ("legacy", authentication off) as the world's account, fresh and Free."""
+    import auth_support
+
+    monkeypatch.setattr(auth_support, "AUTH_ENABLED", False)
+    monkeypatch.setattr(account_settings, "_auth_enabled", lambda: False)
+    with world.engine.begin() as connection:
+        connection.execute(text("DELETE FROM users WHERE user_key = 'legacy'"))
+    world.key, world.user_id = "legacy", stable_uuid("user", "legacy")
+    world.auth.upsert_user({"sub": "legacy", "email": "local@localhost.invalid", "name": "Local"}, set())
+    yield world
+    with world.engine.begin() as connection:
+        connection.execute(text("DELETE FROM users WHERE user_key = 'legacy'"))
+
+
+def test_f8_in_flight_write_of_a_never_chosen_account_is_refused_at_its_start(legacy):
+    """The reviewer's probe, on the fixed server: the slow write used to land in English after the same cookie adopted
+    Chinese, leaving a Free account with two languages."""
+    client = TestClient(_middleware_app(legacy))
+
+    def write():
+        return client.post("/api/slow-write")
+
+    def choose():
+        time.sleep(0.3)
+        return client.post("/api/platform/language", json={"language": "zh"})
+
+    with concurrent.futures.ThreadPoolExecutor(2) as pool:
+        written, chose = pool.submit(write), pool.submit(choose)
+        written, chose = written.result(10), chose.result(10)
+    assert written.status_code == 409 and written.json()["detail"]["category"] == "learning_language_required"
+    assert chose.status_code == 200 and legacy.learning_language() == "zh"
+    assert language_limit.held_by("legacy") == {"zh"}, "a Free account holds one language"
+    assert legacy.rows() == 0
+
+
+def test_f8_an_english_learner_from_before_the_count_keeps_writing_and_cannot_add_a_second_by_a_race(legacy):
+    """Never stored a choice but holds English: the in-flight English write is allowed, the adoption of Chinese is not."""
+    legacy.write("en")
+    client = TestClient(_middleware_app(legacy))
+
+    def write():
+        return client.post("/api/slow-write")
+
+    def choose():
+        time.sleep(0.3)
+        return client.post("/api/platform/language", json={"language": "zh"})
+
+    with concurrent.futures.ThreadPoolExecutor(2) as pool:
+        written, chose = pool.submit(write), pool.submit(choose)
+        written, chose = written.result(10), chose.result(10)
+    assert written.status_code == 200 and written.json() == {"language": "en"}
+    refused(chose, 403, "language_limit_reached")
+    assert language_limit.held_by("legacy") == {"en"}
+
+
+def test_f8_free_learner_picks_support_then_chinese_and_holds_only_chinese(legacy):
+    """Onboarding's order: a profile write (stand-in: any learner write) before a language is stored is asked for the
+    language; choosing Chinese then works, and the learner's writes run in Chinese."""
+    client = TestClient(_middleware_app(legacy))
+    first = client.post("/api/learner-write")
+    assert first.status_code == 409 and first.json()["detail"]["category"] == "learning_language_required"
+    assert legacy.rows() == 0 and language_limit.held_by("legacy") == set(), "no English profile row, English not held"
+    chose = client.post("/api/platform/language", json={"language": "zh"})
+    assert chose.status_code == 200 and chose.json()["stored"] is True
+    assert client.post("/api/learner-write").json() == {"language": "zh"}
+    assert language_limit.held_by("legacy") == {"zh"}
+
+
+def test_f8_an_english_learner_stores_english_and_then_writes(legacy):
+    client = TestClient(_middleware_app(legacy))
+    assert client.post("/api/learner-write").status_code == 409
+    assert client.post("/api/platform/language", json={"language": "en"}).json()["stored"] is True
+    assert client.post("/api/learner-write").json() == {"language": "en"}
+    assert language_limit.held_by("legacy") == {"en"}
+
+
+def test_f8_not_enforced_nothing_is_gated(legacy):
+    off = World(legacy.engine, "legacy", env={quota.FLAG: "off"})
+    client = TestClient(_middleware_app(off))
+    assert client.post("/api/learner-write").json() == {"language": "en"}
 
 
 def test_f2_a_session_that_never_chose_does_not_write_in_the_default_language(world, monkeypatch):

@@ -64,6 +64,26 @@ def enforced() -> bool:
     return quota.enforces(ENTITLEMENT)
 
 
+REQUIRED_CATEGORY = "learning_language_required"
+# Mutating routes that write no learner row in the request's learning language, so an account that has not chosen one may
+# still call them: choosing the language itself, the account's settings, sign-in, billing and plan administration,
+# feedback (an audit row, not language-scoped). Any route with an `admin` path segment is an operator's. Everything else
+# that mutates is covered by default (a new learner-data writer needs no change here); a test lists what is exempt.
+LANGUAGE_FREE_PREFIXES: tuple[str, ...] = (
+    "/api/platform/language", "/api/account-settings", "/api/auth/", "/api/billing/", "/api/product/", "/api/feedback",
+)
+
+
+def writes_no_learner_rows(path: str) -> bool:
+    return path.startswith(LANGUAGE_FREE_PREFIXES) or "admin" in path.strip("/").split("/")
+
+
+def required_error() -> EntitlementRefusal:
+    return EntitlementRefusal(409, detail=error_detail(
+        REQUIRED_CATEGORY, "Choose the language you are learning first.", retryable=False,
+        context={"feature": ENTITLEMENT}))
+
+
 def _unavailable(reason: str) -> EntitlementRefusal:
     return _refusal(quota._unavailable(reason))
 
