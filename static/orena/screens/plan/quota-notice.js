@@ -58,8 +58,10 @@ export function languageLimitMessage(error) {
   return t('languageNotInPlan');
 }
 
-export function showLanguageLimitNotice(ctx, error) {
-  toast(languageLimitMessage(error), { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
+/* `notify` is the toast; a caller may hand another (a test records what the learner would be told and where "See all
+   plans" leads). */
+export function showLanguageLimitNotice(ctx, error, notify = toast) {
+  notify(languageLimitMessage(error), { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
 }
 
 /* A take the server already processed (its answer was lost on the way back): it cannot be assessed again under the

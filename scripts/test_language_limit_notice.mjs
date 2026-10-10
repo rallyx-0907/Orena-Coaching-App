@@ -53,6 +53,25 @@ for (const ui of ['vi', 'zh']) {
 }
 copy.setLanguages({ ui: 'en', support: 'en' });
 
+/* The notice itself: what the learner is told, the label of the way out, and where it leads (the plans). */
+{
+  const { showLanguageLimitNotice } = await import('../static/orena/screens/plan/quota-notice.js');
+  const { href } = await import('../static/orena/shell/routes.js');
+  const told = [];
+  const went = [];
+  const ctx = { href, go: (target) => went.push(target) };
+  copy.setLanguages({ ui: 'vi', support: 'en' });
+  showLanguageLimitNotice(ctx, refusal(2, 2), (text, options) => told.push({ text, options }));
+  assert.equal(told.length, 1);
+  assert.equal(told[0].text, languageLimitMessage(refusal(2, 2)));
+  assert.match(told[0].text, /2/);
+  assert.equal(told[0].options.undoLabel, 'Xem tất cả gói', 'the way out is worded in the interface language');
+  assert.equal(went.length, 0, 'telling the refusal navigates nowhere by itself');
+  told[0].options.undo();
+  assert.deepEqual(went, ['#/plan/pricing'], '"See all plans" leads to the plans');
+  copy.setLanguages({ ui: 'en', support: 'en' });
+}
+
 /* The two places a learner picks a target language tell the refusal and change nothing themselves. */
 for (const screen of ['onboarding', 'settings']) {
   const source = readFileSync(new URL(`../static/orena/screens/${screen}/screen.js`, import.meta.url), 'utf8');

@@ -43,8 +43,6 @@ def api_platform_language(payload: LanguageSelectIn, request: Request) -> dict[s
     code = payload.language.strip().casefold()
     if not is_enabled(code):
         raise HTTPException(409, f"Language module '{code}' is not enabled yet.")
-    from writing_coach.product.language_limit import EntitlementRefusal
-
     stored, token = False, ""
     # D-16R: where the target-language count is enforced (None when it is not), taking a language the account does
     # not hold yet is judged inside the write's own transaction - so it must be stored; a language it holds switches
@@ -62,13 +60,18 @@ def api_platform_language(payload: LanguageSelectIn, request: Request) -> dict[s
             )
             stored, token = True, written["settings_version"]
         elif not row["learning_language"] and not token:
-            try:
-                written = account_settings.write_account_settings({"learning_language": code}, "", guard=guard)
+            if adoption is not None:
+                # Enforced: the first choice is an adoption like any other. It is written against the token the server
+                # reads under the lock, so the guard ALWAYS judges it - a rival first choice that committed meanwhile
+                # cannot turn this write into a skipped check and a swallowed 409 (review F1).
+                written = account_settings.write_account_settings({"learning_language": code}, None, guard=guard)
                 stored, token = True, written["settings_version"]
-            except EntitlementRefusal:
-                raise
-            except HTTPException:
-                stored = False
+            else:
+                try:
+                    written = account_settings.write_account_settings({"learning_language": code}, "")
+                    stored, token = True, written["settings_version"]
+                except HTTPException:
+                    stored = False
         elif adoption is not None and not adoption.holds():
             # A token-less switch to a language the account does not hold would otherwise change this session only
             # and leave no trace of the adoption: record it, against the token the server reads under the lock.

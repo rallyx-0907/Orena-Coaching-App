@@ -513,6 +513,10 @@ def api_session_bootstrap(request: Request, response: Response) -> dict[str, Any
         },
     }
 
+class _AccountLanguageUnreadable(Exception):
+    """The account's stored learning language could not be read while the target-language count is enforced."""
+
+
 class UserIsolationMiddleware(BaseHTTPMiddleware):
     @staticmethod
     def _seeded_language(request: Request, path: str) -> str:
@@ -521,14 +525,22 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
         Read only when the session carries no language, and then written into the session, so every
         later request reads the cookie as before. It seeds; it never overrides a session that chose.
         """
-        if request.session.get("language") or request.session.get("language_checked") or not path.startswith("/api/"):
+        # D-16R: while the target-language count is enforced, "this account has not chosen" is not remembered in the
+        # session. Another session may store a language at any moment, and a session that kept running in the default
+        # language would write rows the guard never judged; so it asks again, one primary-key read per request, until it
+        # has a language of its own (review F2).
+        enforced = UserIsolationMiddleware._language_count_enforced()
+        checked = request.session.get("language_checked") and not enforced
+        if request.session.get("language") or checked or not path.startswith("/api/"):
             return ""
         key = str(request.session.get("user_sub") or "") if AUTH_ENABLED else "legacy"
         if not key:
             return ""
         try:
             stored = account_settings.stored_learning_language(key)
-        except Exception:  # an unreadable account row must not take the request down
+        except Exception as error:  # an unreadable account row must not take a read down ...
+            if enforced:  # ... but a write must not run in a language nobody checked
+                raise _AccountLanguageUnreadable from error
             return ""
         if stored:
             request.session["language"] = stored
@@ -538,9 +550,30 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
             request.session["language_checked"] = True
         return stored
 
+    @staticmethod
+    def _language_count_enforced() -> bool:
+        try:
+            from writing_coach.product import language_limit
+
+            return language_limit.enforced()
+        except Exception:
+            return False
+
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        seeded = self._seeded_language(request, path)
+        try:
+            seeded = self._seeded_language(request, path)
+        except _AccountLanguageUnreadable:
+            if request.method not in {"GET", "HEAD", "OPTIONS"}:
+                from writing_coach.core.errors import error_detail
+
+                return JSONResponse(
+                    {"detail": error_detail(
+                        "quota_unavailable", "Usage limits cannot be checked right now. Please try again in a moment.",
+                        retryable=True, context={"reason": "language"})},
+                    status_code=503,
+                )
+            seeded = ""
         requested_language = enabled_language(
             request.session.get("language") or seeded or DEFAULT_LANGUAGE
         ).code

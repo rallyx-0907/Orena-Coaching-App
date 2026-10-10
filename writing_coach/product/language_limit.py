@@ -103,11 +103,21 @@ def _limit(user_key: str) -> tuple[int | None, str]:
 
 
 class Adoption:
-    """One account's attempt to take `target` as its learning language, under an enforced entitlement."""
+    """One account's attempt to take `target` as its learning language, under an enforced entitlement.
+
+    The plan's limit is read when the adoption is made - before the account row is locked, so no pooled connection is
+    taken for the catalogue or the subscription while it is (review F6). A failed read is kept and raised only if the
+    write turns out to ADD a language: switching to one the account holds needs no limit."""
 
     def __init__(self, target: str, user_key: str) -> None:
         self.target = target
         self.user_key = user_key
+        self._limit: tuple[int | None, str] | None = None
+        self._unreadable: HTTPException | None = None
+        try:
+            self._limit = _limit(user_key)
+        except HTTPException as error:
+            self._unreadable = error
 
     def holds(self) -> bool:
         """True when the account already holds the target (an unlocked read; the guard re-judges under the lock)."""
@@ -121,7 +131,9 @@ class Adoption:
         held = _enabled(owned)
         if self.target in held:
             return                      # switching among languages already held: always allowed
-        limit, plan_id = _limit(self.user_key)
+        if self._limit is None:
+            raise self._unreadable
+        limit, plan_id = self._limit
         if limit is None or len(held) < limit:
             return
         raise EntitlementRefusal(403, detail=error_detail(

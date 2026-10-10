@@ -117,13 +117,16 @@ class World:
 def world(pg_engine, monkeypatch):
     key = f"lang-limit-{uuid.uuid4()}"
     previous = quota.runtime()
+    previous_repository, previous_user_key = account_settings._repository, account_settings._user_key  # noqa: SLF001
+    previous_ownership = language_limit._ownership  # noqa: SLF001
     configure_plan_store(None)
     monkeypatch.delenv(quota.FLAG, raising=False)
     monkeypatch.delenv(quota.METERS_FLAG, raising=False)
     PostgresAuthRepository(pg_engine).upsert_user({"sub": key, "email": f"{key}@example.test", "name": key}, set())
     yield World(pg_engine, key)
     configure_plan_store(None)
-    language_limit.configure(None)
+    language_limit.configure(previous_ownership)
+    account_settings.configure_account_settings(previous_repository, user_key=previous_user_key)
     quota.configure_quota(**{f: getattr(previous, f) for f in
                              ("repository", "incarnations", "plan_for", "settings", "reason", "env", "clock")})
 
@@ -476,3 +479,104 @@ def test_plan_and_usage_reads_the_held_count_against_the_cap(world):
 def test_the_ownership_query_runs_on_every_table(world):
     with Session(world.engine) as session:
         assert owned_languages(session, world.user_id) == set()
+
+
+# ------------------------------------------------------------------------- review of #125 (F1, F2, F5) --
+
+def test_f1_two_token_less_first_choices_of_a_fresh_account_admit_exactly_one(world, monkeypatch):
+    """The reviewer's probe: Free, a fresh account, two token-less first choices in parallel. The loser used to skip the
+    guard (its token no longer matched), have the 409 swallowed and still move its session."""
+    real = language_limit.Adoption.guard
+
+    def slow(self, owned):
+        time.sleep(0.6)
+        return real(self, owned)
+
+    monkeypatch.setattr(language_limit.Adoption, "guard", slow)
+    barrier = threading.Barrier(2)
+    clients = {"zh": world.client(), "en": world.client()}
+
+    def pick(language):
+        barrier.wait()
+        if language == "en":
+            time.sleep(0.15)          # read the fresh row after zh started, before zh commits
+        return language, clients[language].post("/api/platform/language", json={"language": language})
+
+    with concurrent.futures.ThreadPoolExecutor(2) as pool:
+        results = dict(pool.map(pick, ["zh", "en"]))
+    assert sorted(r.status_code for r in results.values()) == [200, 403], {k: r.status_code for k, r in results.items()}
+    winner = next(language for language, response in results.items() if response.status_code == 200)
+    loser = "en" if winner == "zh" else "zh"
+    assert refused(results[loser], 403, "language_limit_reached")["context"]["limit"] == 1
+    assert world.learning_language() == winner
+    assert clients[loser].get("/_active").json()["active"] is None, "the refused session was not moved"
+    assert clients[winner].get("/_active").json()["active"] == winner
+    world.write(winner)
+    assert language_limit.held_by(world.key) == {winner}, "a Free account holds one language"
+
+
+def _middleware_app(world):
+    import auth_support
+    from writing_coach.core.request_context import current_language_code
+
+    app = FastAPI()
+    app.add_middleware(auth_support.UserIsolationMiddleware)
+    app.add_middleware(SessionMiddleware, secret_key="test-secret")
+    app.include_router(platform_api.router)
+
+    @app.post("/api/learner-write")
+    def write():
+        language = current_language_code()
+        with Session(world.engine) as session, session.begin():
+            session.add(GrammarProgress(id=uuid.uuid4(), user_id=world.user_id, language_code=language,
+                                        lesson_id=f"lesson-{uuid.uuid4()}", completed_at=NOW))
+        return {"language": language}
+
+    return app
+
+
+def test_f2_a_session_that_never_chose_does_not_write_in_the_default_language(world, monkeypatch):
+    """Through the real middleware on PostgreSQL: session A looked before any choice; session B stores zh; A's next
+    write must run in zh (never create English rows on a Free account)."""
+    import auth_support
+
+    monkeypatch.setattr(auth_support, "AUTH_ENABLED", False)
+    monkeypatch.setattr(account_settings, "_auth_enabled", lambda: False)
+    with world.engine.begin() as connection:
+        connection.execute(text("DELETE FROM users WHERE user_key = 'legacy'"))
+    world.key, world.user_id = "legacy", stable_uuid("user", "legacy")
+    world.auth.upsert_user({"sub": "legacy", "email": "local@localhost.invalid", "name": "Local"}, set())
+    try:
+        a = TestClient(_middleware_app(world))
+        a.get("/api/platform/languages")                       # A looks: nothing stored, so the default
+        assert world.post(world.client(), "zh", token=False).json()["stored"] is True
+        written = a.post("/api/learner-write")
+        assert written.json()["language"] == "zh"
+        assert language_limit.held_by("legacy") == {"zh"}, "no English row was created"
+        with world.engine.connect() as connection:
+            languages = set(connection.execute(text("SELECT DISTINCT language_code FROM grammar_progress WHERE user_id = :u"),
+                                               {"u": world.user_id}).scalars())
+        assert languages == {"zh"}
+    finally:
+        with world.engine.begin() as connection:
+            connection.execute(text("DELETE FROM users WHERE user_key = 'legacy'"))
+
+
+def test_feature_not_in_plan_when_the_catalogue_disables_the_entitlement(world):
+    class Store:
+        def get_setting(self, key):
+            document = {"version": 2, "plans": [{"id": plan.id, "prices": plan.prices, "entitlements": [
+                {"key": "languages.target", "enabled": plan.id != "free", "limit": 2, "params": {}}]}
+                for plan in catalog.PLANS.values()]}
+            return {"value": catalog.validate_catalog(document), "updated_at": "t1", "updated_by": "a"}
+
+    world.write("en")
+    world.auth.update_account_settings(world.key, {"learning_language": "en"}, "")
+    configure_plan_store(Store())
+    client = world.client()
+    detail = refused(world.post(client, "zh"), 403, "feature_not_in_plan")
+    assert detail["context"] == {"feature": "languages.target", "plan": "free", "upgrade": "#/plan/pricing"}
+    assert world.learning_language() == "en"
+    assert world.post(client, "en").status_code == 200, "a language it holds still switches"
+    world.plan("plus")
+    assert world.post(client, "zh").status_code == 200, "Plus has the entitlement in this catalogue"

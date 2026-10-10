@@ -5300,8 +5300,9 @@ implementer may not self-approve). No schema change, no migration.
 9. **A recreated account.** Held languages derive from the account's rows, its `users` column and its active incarnation. The
    deletion workflow (`deletion_enumeration.py`, not built, D-055) resets the column, deletes the rows and keeps the old
    incarnation as the barrier, so a recreated account holds nothing and adopts a language like a new one (tested by simulating
-   that workflow). If that workflow does not delete a table listed in point 2, the account still holds its language: see
-   `UI_BACKEND_GAPS` QTA-18 - seven of the fifteen tables are not in `ACCOUNT_KEYED_TABLES` today.
+   that workflow). The seven tables that were missing (`essay_revisions`, `library_collections`,
+   `reading_ability_projections`, `reading_attempts`, `reading_legacy_sessions`, `text_discussions`, `vocabulary_decks`) are
+   now in `ACCOUNT_KEYED_TABLES`, and a test fails if a table `language_ownership` counts is not enumerated (review F4).
 10. **Plan & usage.** `GET /api/product/commerce` reports `features["languages.target"]` with `used` = languages held, `limit`,
     `remaining`, `usage_state` `known` (`not_metered` when not enforced), no `resets_at`. A count at its cap is not "exhausted":
     what is held stays usable. The design draws no usage row for it (its Plan frame lists the four meters; the count is in the
@@ -5317,3 +5318,20 @@ implementer may not self-approve). No schema change, no migration.
     switching back to a held language works. (d) Native clients receive the same 403 envelope.
 13. **Activation.** :8021 may list `languages.target` after review; :8000 needs the explicit human GO and the architecture review
     of D-161 points 6-8.
+14. **Review of the first version (REQUEST CHANGES at bd6c01fa; F1, F2 fixed).** (F1) A token-less first choice by an account
+    that never chose is, while enforced, written against the token the server reads under the lock, so the guard always judges
+    it; the session is set only after a judged write or for a language the account holds. Two such choices racing admit one and
+    refuse the other (403), proved on PostgreSQL with the reviewer's probe. (F2) While the count is enforced a session that has no
+    language of its own does not remember "the account had not chosen": the middleware reads the stored language again (one
+    primary-key read) until the session has one, so a session cannot keep writing in the default language after another session
+    stored one; if that read fails a write answers 503 `quota_unavailable` (`context.reason: "language"`) and a read carries on.
+    Not enforced: the old once-per-session lookup, unchanged. (F6) The plan's limit is read when the adoption is made, before the
+    account row is locked; a failed read is raised only if the write adds a language. (F7) A plan whose catalogue disables
+    `languages.target` (or whose limit is 0) refuses a new account's first language, so onboarding cannot complete on it:
+    administrators must not disable it for a plan learners can be on.
+15. **Precondition for a third target language (review F3).** With English and Chinese only, a stale session cannot take an account
+    above what it legitimately held. Before ANY third language is enabled in the registry, or the entitlement is activated on
+    :8000, add (a) an explicit, monotonic adopted-languages record (a table or a JSON column on `users`: a schema change, a human
+    gate and an independent architecture review) and (b) a per-request admission - the session's language must be one the
+    account adopted - or bind the session language to the account's `settings_version`. Until then a session-only switch made
+    before the switch was turned on survives up to 14 days (the cookie's `max_age`).

@@ -37,6 +37,7 @@ class FakeAccounts:
         self.rows: dict[str, dict] = {}
         self.data: dict[str, set[str]] = defaultdict(set)
         self.locks: dict[str, threading.Lock] = defaultdict(threading.Lock)
+        self.in_lock = False
 
     def add(self, key, *, learning="", data=()):
         self.rows[key] = {"learning_language": learning, "interface_language": "", "weekly_goal_days": None,
@@ -56,7 +57,11 @@ class FakeAccounts:
             if expected_token is not None and expected_token != row["settings_version"]:
                 raise SettingsVersionConflict(row["settings_version"])
             if guard is not None:
-                guard(self.held(user_key))
+                self.in_lock = True
+                try:
+                    guard(self.held(user_key))
+                finally:
+                    self.in_lock = False
             row.update(changes)
             row["settings_version"] = str(int(row["settings_version"] or 0) + 1)
             return dict(row)
@@ -73,12 +78,15 @@ class FakeAccounts:
 @pytest.fixture(autouse=True)
 def _isolated(monkeypatch):
     previous = quota.runtime()
+    previous_repository, previous_user_key = account_settings._repository, account_settings._user_key  # noqa: SLF001
+    previous_ownership = language_limit._ownership  # noqa: SLF001
     configure_plan_store(None)
     monkeypatch.delenv(quota.FLAG, raising=False)
     monkeypatch.delenv(quota.METERS_FLAG, raising=False)
     yield
     configure_plan_store(None)
-    language_limit.configure(None)
+    language_limit.configure(previous_ownership)
+    account_settings.configure_account_settings(previous_repository, user_key=previous_user_key)
     quota.configure_quota(**{field: getattr(previous, field) for field in
                              ("repository", "incarnations", "plan_for", "settings", "reason", "env", "clock")})
 
@@ -446,3 +454,155 @@ def test_plan_and_usage_reports_what_the_account_holds_against_the_cap(monkeypat
     quota.configure_quota(repository=object(), incarnations=object(), plan_for=lambda key, strict=False: catalog.FREE,
                           settings=None, env={quota.FLAG: "off"})
     assert service.account_state("learner")["features"]["languages.target"]["usage_state"] == "not_metered"
+
+
+# ------------------------------------------------------------------------- review of #125 (F1, F2, F6) --
+
+def test_f1_two_token_less_first_choices_race_and_only_one_is_admitted(monkeypatch):
+    """Free, an account that never chose, no token: the loser of the race must be refused and its session left alone."""
+    add_language(monkeypatch, "xx")
+    world = World(plan="free")
+    world.accounts.add("learner")
+    real = language_limit.Adoption.guard
+
+    def slow(self, owned):
+        time.sleep(0.3)
+        return real(self, owned)
+
+    monkeypatch.setattr(language_limit.Adoption, "guard", slow)
+    barrier = threading.Barrier(2)
+    clients = {"zh": world.client(), "en": world.client()}
+
+    def pick(language):
+        barrier.wait()
+        if language == "en":
+            time.sleep(0.1)
+        return language, clients[language].post("/api/platform/language", json={"language": language})
+
+    with concurrent.futures.ThreadPoolExecutor(2) as pool:
+        results = dict(pool.map(pick, ["zh", "en"]))
+    codes = sorted(response.status_code for response in results.values())
+    assert codes == [200, 403], {language: response.status_code for language, response in results.items()}
+    winner = next(language for language, response in results.items() if response.status_code == 200)
+    loser = "en" if winner == "zh" else "zh"
+    assert world.accounts.rows["learner"]["learning_language"] == winner
+    assert clients[loser].get("/_active").json()["active"] is None, "the refused session was not moved"
+    assert clients[winner].get("/_active").json()["active"] == winner
+    assert world.accounts.held("learner") == {winner}
+
+
+def test_f6_the_limit_is_read_before_the_account_row_is_locked(monkeypatch):
+    """No catalogue or subscription read (pooled connections) happens while the guard holds the account lock."""
+    world = World(plan="plus")
+    world.accounts.add("learner", learning="en", data={"en"})
+    runtime = quota.runtime()
+    reads = []
+
+    def plan_for(key, strict=False):
+        reads.append(world.accounts.in_lock)
+        return catalog.plan_by_id("plus", strict=strict)
+
+    quota.configure_quota(repository=runtime.repository, incarnations=runtime.incarnations, plan_for=plan_for,
+                          settings=None, env=runtime.env)
+    client = world.client()
+    assert client.post("/api/platform/language", json={"language": "zh", "settings_version": world.token(client)}).status_code == 200
+    assert reads and not any(reads), reads
+
+
+def test_f7_a_plan_without_the_entitlement_refuses_even_a_first_language():
+    """Recorded for administrators (D-16R): disabling `languages.target` for a plan blocks onboarding on it."""
+    document = {"version": 2, "plans": [
+        {"id": plan.id, "prices": plan.prices, "entitlements": [
+            {"key": "languages.target", "enabled": plan.id != "free", "limit": 2, "params": {}}]}
+        for plan in catalog.PLANS.values()]}
+
+    class Store:
+        def get_setting(self, key):
+            return {"value": catalog.validate_catalog(document), "updated_at": "t", "updated_by": "a"}
+
+    configure_plan_store(Store())
+    world = World(plan="free")
+    world.accounts.add("learner")
+    client = world.client()
+    refused(client.post("/api/platform/language", json={"language": "en", "settings_version": world.token(client)}),
+            "feature_not_in_plan")
+    world.accounts.data["learner"].add("en")
+    assert client.post("/api/platform/language", json={"language": "en", "settings_version": world.token(client)}).status_code == 200
+
+
+# --- F2: the middleware path ----------------------------------------------------------------------------------
+
+def _middleware_app(accounts):
+    import auth_support
+    from writing_coach.core.request_context import current_language_code
+
+    app = FastAPI()
+    app.add_middleware(auth_support.UserIsolationMiddleware)
+    app.add_middleware(SessionMiddleware, secret_key="test-secret")
+
+    @app.post("/api/learner-write")
+    def write():
+        accounts.data["legacy"].add(current_language_code())       # a learner row, in the request's language
+        return {"language": current_language_code()}
+
+    @app.get("/api/learner-read")
+    def read():
+        return {"language": current_language_code()}
+
+    return app
+
+
+def _f2_world(monkeypatch, *, enforced):
+    import auth_support
+
+    monkeypatch.setattr(auth_support, "AUTH_ENABLED", False)
+    world = World(user="legacy", env=None if enforced else {quota.FLAG: "off"})
+    world.accounts.add("legacy")
+    return world
+
+
+def test_f2_a_session_that_never_chose_asks_again_while_the_count_is_enforced(monkeypatch):
+    world = _f2_world(monkeypatch, enforced=True)
+    a = TestClient(_middleware_app(world.accounts))
+    assert a.get("/api/learner-read").json()["language"] == "en", "nothing stored yet: the default"
+    # Another session stores zh.
+    b = world.client()
+    assert b.post("/api/platform/language", json={"language": "zh"}).json()["stored"] is True
+    assert a.post("/api/learner-write").json()["language"] == "zh", "A re-read the account instead of keeping 'en'"
+    assert world.accounts.held("legacy") == {"zh"}, "no English row was created on a Free account"
+
+
+def test_f2_without_the_count_enforced_the_session_keeps_asking_once(monkeypatch):
+    world = _f2_world(monkeypatch, enforced=False)
+    a = TestClient(_middleware_app(world.accounts))
+    assert a.get("/api/learner-read").json()["language"] == "en"
+    world.accounts.rows["legacy"]["learning_language"] = "zh"
+    assert a.get("/api/learner-read").json()["language"] == "en", "as before: one lookup per session (proposal I2)"
+
+
+def test_f2_an_unreadable_account_refuses_a_write_but_not_a_read_while_enforced(monkeypatch):
+    world = _f2_world(monkeypatch, enforced=True)
+    a = TestClient(_middleware_app(world.accounts))
+    original = world.accounts.get_account_settings
+    monkeypatch.setattr(world.accounts, "get_account_settings", lambda key: (_ for _ in ()).throw(RuntimeError("down")))
+    write = a.post("/api/learner-write")
+    assert write.status_code == 503 and write.json()["detail"]["category"] == "quota_unavailable"
+    assert write.json()["detail"]["context"]["reason"] == "language" and write.json()["detail"]["retryable"] is True
+    assert world.accounts.data["legacy"] == set(), "nothing was written in a language nobody checked"
+    assert a.get("/api/learner-read").status_code == 200, "a read still answers"
+    monkeypatch.setattr(world.accounts, "get_account_settings", original)
+    assert a.post("/api/learner-write").status_code == 200
+
+
+def test_f2_a_session_with_its_own_language_is_not_re_read(monkeypatch):
+    world = _f2_world(monkeypatch, enforced=True)
+    a = TestClient(_middleware_app(world.accounts))
+    chosen = world.client()
+    assert chosen.post("/api/platform/language", json={"language": "zh"}).status_code == 200
+    reads = []
+    original = account_settings.stored_learning_language
+    monkeypatch.setattr(account_settings, "stored_learning_language", lambda key: reads.append(key) or original(key))
+    assert a.get("/api/learner-read").json()["language"] == "zh"      # seeded once
+    for _ in range(3):
+        a.get("/api/learner-read")
+    assert len(reads) == 1, "once the session has a language it costs no more reads"

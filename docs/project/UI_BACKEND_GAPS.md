@@ -5509,12 +5509,14 @@ the meters below.
   a learning language; session seeding (`auth_support.py`) reads what they stored; the learner-profile PUT/PATCH write the
   session language's profile. All go through one guard. (2) The Admin users list's `languages` comes from
   `user_language_profiles` (`persistence/admin_repository.py`), which is only the profiles a learner has set up - not the held
-  set (D-16R point 2); it was not changed. (3) `deletion_enumeration.ACCOUNT_KEYED_TABLES` omits `essay_revisions`,
+  set (D-16R point 2); it was not changed. (3) `deletion_enumeration.ACCOUNT_KEYED_TABLES` omitted `essay_revisions`,
   `library_collections`, `reading_ability_projections`, `reading_attempts`, `reading_legacy_sessions`, `text_discussions` and
-  `vocabulary_decks`, which also hold a learner's rows per language: the deletion workflow (D-055, not built) must delete them
-  too, or a recreated account would still hold their languages. (4) An explicit, monotonic adopted-languages record (a table, or a
+  `vocabulary_decks`, which also hold a learner's rows per language; they are now enumerated and a test keeps every table the
+  count reads there (the deletion workflow itself, D-055, is still not built). (4) An explicit, monotonic adopted-languages record (a table, or a
   JSON column on `users`) would remove the derived-set edge cases of D-16R point 12 (a deleted language frees its slot; a stale
-  session can write into a language the account stopped storing). It is a schema change: a human gate, not done here. (5)
+  session can write into a language the account stopped storing). It is a schema change: a human gate, not done here, and **a precondition for enabling any third target language or activating on
+  :8000** (D-16R point 15: that record plus per-request admission of the session's language, or the session bound to
+  `settings_version`). A plan with `languages.target` disabled or limit 0 blocks onboarding on it (D-16R point 14). (5)
   `tests/test_quota_voice_postgres.py::test_the_reconciler_has_nothing_to_settle_for_a_vanished_session` fails when the quota
   PostgreSQL test files share one database (leftover reservations of the earlier files are released by its reconciler pass); it
   fails the same on `origin/main`, passes alone, and CI has no PostgreSQL service.

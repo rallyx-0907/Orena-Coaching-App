@@ -49,3 +49,13 @@ def test_incarnation_keyed_tables_are_listed_because_their_cascade_does_not_fire
 def test_the_account_keyed_tables_are_keyed_by_the_account():
     for table in enumeration.ACCOUNT_KEYED_TABLES:
         assert "user_id" in Base.metadata.tables[table].c, table
+
+
+def test_every_language_scoped_table_the_target_language_count_reads_is_in_the_enumeration():
+    """D-16R: a recreated account holds the languages of the rows it still has, so the deletion workflow built from this
+    enumeration must delete every table `language_ownership` counts (review F4)."""
+    from writing_coach.persistence.language_ownership import language_scoped_tables
+
+    counted = {table.name for table in language_scoped_tables()}
+    covered = set(enumeration.ACCOUNT_KEYED_TABLES) | set(enumeration.CASCADED_TABLES)
+    assert counted <= covered, sorted(counted - covered)
