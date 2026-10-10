@@ -119,6 +119,11 @@ VOICE_MIN_CHUNK_SECONDS = 60
 RENEW_LEAD_SECONDS = 12
 # The most characters of a vendor resumption handle a client may hand back (it goes into the next locked setup).
 RESUMPTION_HANDLE_PATTERN = re.compile(r"^[A-Za-z0-9._:=/+-]{1,2048}$")
+# Session resumption (the vendor's handle for carrying a conversation onto the next token's socket) is part of the
+# chunked, metered path only: an unmetered session is one token and never asks for it. `VoiceService.resumption` (set from
+# `AGENT_VOICE_RESUMPTION` at start-up, `api.voice_resumption`) takes it out of the metered path too, should the vendor
+# refuse it at connect time (a token that mints but whose socket is refused would fail every session); a renewal then
+# carries on with the same instruction and a fresh context.
 # The reply tools a spoken turn may use besides do_action: a coach note, the address. Evidence ids, styles,
 # references and suggestions are a text thread's; the voice says what it read.
 VOICE_REPLY_TOOLS = frozenset({REMEMBER_NOTE, FORGET_NOTE, SET_ADDRESS, OFFER_ADDRESS, RESOLVE_PENDING})
@@ -368,6 +373,7 @@ class VoiceSession:
     minted_seconds: int = 0
     valid_until: float = 0.0
     attempts: int = 0
+    metered: bool = False  # chunks charged to the plan; False = the old single unmetered token, billed at the end
     last_extend: tuple[int, dict[str, Any]] | None = None
     lock: threading.Lock = field(default_factory=threading.Lock)
     # The client's own utterance sequence (never the words): the one in progress, the ones already counted as a turn
@@ -436,6 +442,7 @@ class VoiceService:
     tokens: VoiceTokens
     record_audio: RecordAudio | None = None
     sessions: VoiceSessions = field(default_factory=VoiceSessions)
+    resumption: bool = True
     model: str = VOICE_MODEL
     now: Callable[[], datetime] = lambda: datetime.now(UTC)
 
@@ -452,8 +459,7 @@ class VoiceService:
         specs = self._tool_specs(request, learner)
         locale = request.context.locale
         setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
-                           languages=recognition_languages(locale.support, locale.target),
-                           resumption={})  # fmt: skip
+                           languages=recognition_languages(locale.support, locale.target))  # fmt: skip
         outputs = ReplyOutputs(
             client=request.client, interface=locale.interface, support=locale.support, target=locale.target,
             version=request.version, notes={note.id: note.weight for note in tier1.coach_notes},
@@ -473,7 +479,7 @@ class VoiceService:
             voice_session_id=voice_session_id, user_key=learner.user_key, learner=learner,
             request=request, model=self.model, opened=opened, outputs=outputs,
             agent_session_id=session_state.agent_session_id, setup=setup, chunks=1,
-            minted_seconds=minted["seconds"], valid_until=opened + minted["seconds"],
+            minted_seconds=minted["seconds"], valid_until=opened + minted["seconds"], metered=minted["metered"],
         )  # fmt: skip
         self.sessions.add(session)
         return {
@@ -500,8 +506,9 @@ class VoiceService:
         # Messages not enforced: one token for what is left of the session, exactly as before the plan limit.
         seconds = int(ticket.max_seconds) if ticket.max_seconds else SESSION_SECONDS - minted
         locked = dict(setup)
-        if resumption:
-            locked["sessionResumption"] = {"handle": resumption}
+        if ticket.enforced and self.resumption:
+            # Only a chunked (metered) session carries the conversation across tokens; an unmetered one is one token.
+            locked["sessionResumption"] = {"handle": resumption} if resumption else {}
         try:
             ticket.dispatch(f"voice:{session_id}:{index}")
             token, expires = self.tokens.mint(locked, now=self.now(), seconds=seconds)
@@ -509,9 +516,10 @@ class VoiceService:
             ticket.settle(0, "failed")  # nothing was handed to the learner
             raise
         ticket.settle(ticket.units, "chunk")
-        self._record_chunk(session_id, user_key, index, seconds)
+        if ticket.enforced:
+            self._record_chunk(session_id, user_key, index, seconds)
         last = minted + seconds >= SESSION_SECONDS or not ticket.enforced
-        return {"token": token, "expires": expires, "seconds": seconds, "last": last}
+        return {"token": token, "expires": expires, "seconds": seconds, "last": last, "metered": ticket.enforced}
 
     def _chunk_answer(self, minted: dict[str, Any], *, index: int) -> dict[str, Any]:
         seconds = minted["seconds"]
@@ -571,10 +579,10 @@ class VoiceService:
             return answer
 
     def _record_chunk(self, session_id: str, user_key: str, index: int, seconds: int) -> None:
-        """The vendor ledger gets the chunk when its token is minted, at the seconds the token can be used for: the
-        most the vendor can charge for it, whatever the learner does next. (Gemini Live reports its real usage only to
-        the client on the socket, and the ledger has no field for tokens, a schema decision, so the token's life is
-        the figure the server can know.)"""
+        """A metered chunk goes to the vendor ledger when its token is minted, at the seconds the token can be used for:
+        the most the vendor can charge for it, whatever the learner does next. (Gemini Live reports its real usage only
+        to the client on the socket, and the ledger has no field for tokens, a schema decision, so the token's life is
+        the figure the server can know.) An unmetered session is billed as it always was, at its end (`_bill`)."""
 
         if self.record_audio is not None:
             try:
@@ -908,11 +916,34 @@ class VoiceService:
         try:
             self._flush_transcript(session, transcript)
         finally:
-            seconds = round(min(float(session.minted_seconds), max(0.0, self.sessions.clock() - session.opened)), 1)
+            seconds = self._bill(session) if not session.metered else round(
+                min(float(session.minted_seconds), max(0.0, self.sessions.clock() - session.opened)), 1)
         self._sweep()
         return {"voice_session_id": voice_session_id, "seconds": seconds}
 
     def _sweep(self) -> None:
-        """Forget the sessions of this process whose newest token is dead (they owe nothing, see `expired`)."""
+        """Forget the sessions of this process whose newest token is dead. A metered one owes nothing (every chunk was
+        charged when its token was minted); an unmetered one is billed at its cap, as before."""
 
-        self.sessions.expired()
+        for session in self.sessions.expired():
+            if not session.metered:
+                self._bill(session)
+
+    def _bill(self, session: VoiceSession) -> float:
+        """An unmetered session (messages not enforced): its wall-clock time, at most the cap, goes to the AI ledger when
+        it ends - exactly what voice did before the plan limit existed."""
+
+        seconds = round(min(SESSION_SECONDS, max(0.0, self.sessions.clock() - session.opened)), 1)
+        if self.record_audio is not None:
+            try:
+                self.record_audio("agent_voice", provider="gemini", model=session.model, outcome="success",
+                                  latency_ms=None, audio_seconds=seconds)  # fmt: skip
+            except Exception:  # billing telemetry never fails the learner's request
+                _log.warning("voice session not recorded", exc_info=True)
+        meter = getattr(self.runtime, "meter", None)
+        if meter is not None:
+            try:
+                meter(session.user_key, "agent.voice_seconds", int(seconds), f"{session.voice_session_id}:voice")
+            except Exception:
+                _log.warning("voice metering failed", exc_info=True)
+        return seconds

@@ -172,6 +172,13 @@ def voice_enabled(env: Mapping[str, str]) -> bool:
     return str(env.get("AGENT_VOICE_ENABLED", "")).strip().casefold() in _TRUE
 
 
+def voice_resumption(env: Mapping[str, str]) -> bool:
+    """Session resumption in a metered voice session's token (D-16T): on unless `AGENT_VOICE_RESUMPTION` is false, the
+    switch for a vendor that accepts the token but refuses its socket because of the field."""
+
+    return str(env.get("AGENT_VOICE_RESUMPTION", "")).strip().casefold() not in {"0", "false", "no", "off"}
+
+
 def _voice(runtime: AgentRuntime) -> VoiceService:
     if runtime.voice is None:
         raise HTTPException(status_code=404, detail="Not Found")

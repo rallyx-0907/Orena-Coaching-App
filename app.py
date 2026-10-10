@@ -844,7 +844,7 @@ app.include_router(learner_summary_router)
 # runtime that is not production (human ruling 2026-09-27); while off both routes
 # answer 404. It routes through the legacy AI selection and reads with the app's
 # own services: the Writing review below and the usage store it meters with.
-from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router, voice_enabled  # noqa: E402
+from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router, voice_enabled, voice_resumption  # noqa: E402
 from writing_coach.agent.voice_session import VoiceService  # noqa: E402
 from writing_coach.ai.live_voice import GeminiLiveTokens  # noqa: E402
 from writing_coach.ai.audio_telemetry import record_audio_operation  # noqa: E402
@@ -978,7 +978,8 @@ def _with_voice(runtime):
 
     if runtime is not None and voice_enabled(os.environ):
         runtime.voice = VoiceService(runtime=runtime, tokens=GeminiLiveTokens(key=_gemini_key),
-                                     record_audio=record_audio_operation)  # fmt: skip
+                                     record_audio=record_audio_operation,
+                                     resumption=voice_resumption(os.environ))  # fmt: skip
     return runtime
 
 

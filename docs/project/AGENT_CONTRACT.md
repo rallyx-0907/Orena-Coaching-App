@@ -148,7 +148,9 @@ The plan limits Orena messages per day (Free / Plus / Pro: 20 / 200 / 1000; the 
 - A live voice session (§9, v8) is charged by its duration, one chunk at a time: a chunk is `2 x voice_seconds_per_message`
   seconds, `ceil(seconds / voice_seconds_per_message)` messages, charged whole when its token is minted (so a session costs at
   least one message, and leaving early refunds nothing). The server admits each chunk before minting it: no message left is a
-  refusal, fewer left than a chunk needs is a shorter chunk.
+  refusal, fewer left than a chunk needs is a shorter chunk. The renewal overlap is paid: the next token is minted
+  12 seconds before the one in hand dies, so each 120 s chunk carries about 108 s of conversation (roughly
+  10% less usable talk than the messages' minutes suggest); the overlap is not credited back.
 - The browser's push-to-talk cascade (§9 fallback) is not a voice session: its transcribed words are an ordinary message turn, one message each, with nothing added for the transcription.
 
 ---
@@ -419,7 +421,8 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
      `max_seconds` is that token's life in whole seconds (`connect.expires_at`); `chunk` is its index (0 for the first);
      `session_max_seconds` is the whole session's ceiling, 900; `renew_in` is how many seconds after receiving it the
      client asks for the next chunk, or `null` when there is none; `last` is true for the chunk that reaches the 900 s
-     ceiling and for a session that is not metered (one token for what is left of the 900 s, no `extend`).
+     ceiling and for a session that is not metered (one token for what is left of the 900 s, no `extend`, and the setup
+     sent to the vendor is exactly what it was before the plan limit: no session resumption).
    - What a chunk costs: `2 x voice_seconds_per_message` seconds (never under 60 s, never past the session's 900 s) is
      `ceil(seconds / voice_seconds_per_message)` messages, reserved and charged whole when its token is minted - the
      learner is charged for a chunk the moment it exists, so the first chunk of any session costs at least one

@@ -145,17 +145,24 @@ def take_seconds(audio: bytes, *, limit: int = TRANSCRIBE_MAX_SECONDS, timeout_s
     """The length of a recorded take in seconds, by decoding it (ffmpeg to 16 kHz mono PCM, no provider call). A browser
     recording (MediaRecorder webm) carries no duration in its header, so the container cannot be trusted and the
     decoded samples are counted instead; decoding stops one second past `limit`, so a long file costs no more than a
-    short one. Raises `TakeUnreadable` for audio ffmpeg cannot decode."""
+    short one. The upload is decoded from a temporary file (deleted at once; the route has already capped its size),
+    never from a pipe: an iPhone's MP4 may keep its `moov` index at the end of the file, which a pipe cannot seek to.
+    Raises `TakeUnreadable` for audio ffmpeg cannot decode."""
     import subprocess
+    import tempfile
+    from pathlib import Path
 
     if not audio:
         raise TakeUnreadable()
     try:
-        done = subprocess.run(
-            ["ffmpeg", "-protocol_whitelist", "pipe", "-hide_banner", "-loglevel", "error", "-nostdin",
-             "-i", "pipe:0", "-t", str(limit + 1), "-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "pipe:1"],
-            input=audio, capture_output=True, check=False, timeout=timeout_seconds,
-        )
+        with tempfile.TemporaryDirectory(prefix="orena-transcribe-") as tmp:
+            source = Path(tmp) / "take.audio"
+            source.write_bytes(audio)
+            done = subprocess.run(
+                ["ffmpeg", "-protocol_whitelist", "file", "-hide_banner", "-loglevel", "error", "-nostdin",
+                 "-i", str(source), "-t", str(limit + 1), "-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "pipe:1"],
+                capture_output=True, check=False, timeout=timeout_seconds,
+            )
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError) as exc:
         raise TakeUnreadable() from exc
     if done.returncode != 0 or not done.stdout:

@@ -5408,7 +5408,8 @@ the meters below.
   (a remaining-time or end-of-allowance state, if wanted). Precondition before real learners: a bounded paid check (run by the
   human under the Gemini Live lock) that the vendor closes an open socket at the token's `expireTime`, and that
   `sessionResumption` is accepted in a token's locked setup. Without the first, a client that ignores its token's life could use
-  the vendor's own 15-minute audio-session limit.
+  the vendor's own 15-minute audio-session limit, so voice together with enforcement stays testers-only (:8021) until the check
+  passes. `AGENT_VOICE_RESUMPTION=false` takes session resumption out of the metered setup if the vendor refuses it at connect.
 - **QTA-3b The agent's exhausted state.** The design draws no "limit reached" reply for Orena (Home thread, the Ask Orena
   panel, full-screen voice) or the discussion room. The reply's error line reads "You have used 20 of 20 Orena messages
   today." with "See all plans" in the retry button's place and style (to `#/plan/pricing`); the discussion room uses the

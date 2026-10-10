@@ -463,7 +463,50 @@ def test_voice_is_unchanged_when_messages_are_not_enforced():
     voice.clock.t += 61
     assert voice.end(answer).json()["seconds"] == 61.0
     assert repository.calls == [] and repository.buckets == {}, "no read and no bucket: exactly the old path"
-    assert voice.billed[0][1]["audio_seconds"] == 900.0
+    (_args, kwargs), = voice.billed
+    assert kwargs["audio_seconds"] == 61.0, "the ledger gets the wall-clock seconds at the end, as it always did"
+    assert "sessionResumption" not in voice.setup_sent(), "what is sent to the vendor is what it always was"
+
+
+def test_an_unmetered_session_nobody_ended_is_billed_at_its_cap_by_the_next_sweep():
+    enforced_runtime(env={quota.FLAG: "off"})
+    voice = Voice()
+    voice.open()
+    assert voice.billed == [], "nothing is recorded at the mint on the unmetered path"
+    voice.clock.t += SESSION_SECONDS + 300
+    voice.open(user="learner-2")
+    assert [kwargs["audio_seconds"] for _args, kwargs in voice.billed] == [float(SESSION_SECONDS)]
+
+
+def test_a_meter_that_is_not_listed_sends_the_vendor_the_old_setup():
+    enforced_runtime(env={quota.FLAG: "on", quota.METERS_FLAG: "writing.review"})
+    voice = Voice()
+    voice.open()
+    assert "sessionResumption" not in voice.setup_sent() and voice.billed == []
+
+
+def test_resumption_is_asked_for_only_by_a_chunked_session_and_the_switch_takes_it_out():
+    enforced_runtime(env=ENV)
+    voice = Voice()
+    opened = voice.open()
+    assert voice.setup_sent()["sessionResumption"] == {}
+    voice.extend(opened, 1, resumption="h-1")
+    assert voice.setup_sent()["sessionResumption"] == {"handle": "h-1"}
+    off = Voice()
+    off.service.resumption = False  # AGENT_VOICE_RESUMPTION=false: the vendor refused it at connect
+    opened = off.open()
+    off.extend(opened, 1, resumption="h-1")
+    assert all("sessionResumption" not in call[2]["bidiGenerateContentSetup"] for call in off.post.calls)
+    assert off.post.calls[0][2]["bidiGenerateContentSetup"]["systemInstruction"], "the rest of the setup is the same"
+
+
+def test_the_resumption_switch_reads_the_environment_given_to_it():
+    from writing_coach.agent.api import voice_resumption
+
+    assert voice_resumption({}) is True
+    for value in ("false", "0", "OFF", "no"):
+        assert voice_resumption({"AGENT_VOICE_RESUMPTION": value}) is False
+    assert voice_resumption({"AGENT_VOICE_RESUMPTION": "true"}) is True
 
 
 def test_an_unmetered_session_has_nothing_to_extend():

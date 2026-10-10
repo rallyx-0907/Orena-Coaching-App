@@ -5109,18 +5109,24 @@ and the transcribe guard (point 8); the contract stays v8 (not merged yet).
    dies. `/voice/end` only stops further chunks. The 900 s ceiling holds across the chunks. Messages not enforced: one token for
    the whole 900 s, no renewal (the old path).
 5. **Precondition (a paid live check the human runs, not this change): that Gemini closes an already-open socket at the token's
-   `expireTime`.** The code is safe either way: if it does not, the scheme degrades to the old behaviour (a client that
-   ignores its token's life keeps the socket until the vendor's own 15-minute audio-session limit) but every chunk the learner
-   can obtain is still charged when minted; only a server-proxied socket could bound usage then. A bounded script
-   (`check_token_expiry.py`, one session, a token of about two minutes, one short text turn, then silence) reports whether the
-   vendor closes the socket within 30 s of `expires_at`; it must be run under the Gemini Live lock before any real learner
-   uses voice with enforcement on. Also unverified live: whether `sessionResumption` is accepted inside an ephemeral token's
-   locked setup (`live_setup(resumption=...)`); if the vendor refuses it the token mint fails and voice is unavailable (503,
-   the client's cascade), nothing is charged. If the handle is not honoured on reconnect the new socket carries on with the
-   same instruction and a fresh context.
+   `expireTime`.** The change is NOT safe either way. Every chunk a learner can obtain is charged when it is minted, so a
+   client that stops renewing is bounded by the chunk it holds - but only if the vendor ends the socket when the token dies.
+   If it does not, usage per open is bounded only by the vendor's own audio-session limit (about 15 minutes), and a client that
+   ignores its token's life can stay on one socket that long for the price of one chunk; only a server-proxied socket could
+   bound that. **Voice together with `orena.message` enforcement therefore stays testers-only (:8021) until the live check
+   confirms the vendor closes at `expireTime`.** Two more unverified vendor behaviours, checked by the same single run
+   (`check_token_expiry.py`: one session, a token of about two minutes, one short text turn, one renewal carrying a handle,
+   then silence; under a cent): (a) whether `sessionResumption` is accepted inside an ephemeral token's locked setup. There are
+   two ways it can fail. The mint can be refused: voice is unavailable (503, the client's cascade) and nothing is charged. Or
+   the mint succeeds and the vendor refuses the socket at connect time because of the field: then every metered session
+   fails after its first chunk was charged, so `AGENT_VOICE_RESUMPTION=false` takes `sessionResumption` out of the setup (a
+   renewal then carries on with the same instruction and a fresh context); (b) whether the handle is honoured on reconnect.
+   Session resumption is part of the metered, chunked path only: with enforcement off the setup sent to the vendor is
+   exactly what it was before this change.
 6. **Provider cost telemetry stays separate from quota.** The ledger row (`agent_voice` / `gemini` / `gemini-3.8-live`,
-   `audio_seconds`, USD from `ai/pricing.py`) is written per chunk when its token is minted, at the seconds the token lives:
-   the most the vendor can charge for it, whatever the learner does next (it also closes the review's note that the ledger and
+   `audio_seconds`, USD from `ai/pricing.py`) is written, for a metered session, per chunk when its token is minted, at the seconds
+   the token lives: the most the vendor can charge for it, whatever the learner does next (an unmetered session is recorded as
+   before: its wall-clock seconds, at most the cap, when it ends or is swept) (it also closes the review's note that the ledger and
    the daily AI spend brake were undercounted by an early end). Gemini Live reports its real usage only to the client on the
    socket and the ledger has no field for tokens (a schema decision reserved to the human), so the token's life is the figure
    the server can know. The allowance is what the learner is charged; the ledger is what the vendor charges.
@@ -5128,7 +5134,7 @@ and the transcribe guard (point 8); the contract stays v8 (not merged yet).
    messages (the token existed); the client does not report "never connected" because a client report cannot lower a server
    charge. (b) A learner whose day has fewer messages than a chunk needs gets a shorter token and sees no countdown (the design
    draws none, `UI_BACKEND_GAPS.md` QTA-4). (c) Renewing 12 s before expiry means the next token overlaps the old one by
-   about 12 s: the learner is charged for chunks of 120 s that cover about 108 s of conversation each. (d) The session registry
+   about 12 s: the learner is charged for chunks of 120 s that cover about 108 s of conversation each (paid, not credited back: about 10% less usable talk, said in contract section 3.3). (d) The session registry
    is per process (R26): after a restart a renewal is a 404 and the client ends the session; with several workers a request can
    land on a worker that does not know the session (404). Keep one worker until the registry is shared. (e) `refuse_unmetered`
    stays in `quota.py` as a generic helper for the media-import slice; voice no longer calls it.

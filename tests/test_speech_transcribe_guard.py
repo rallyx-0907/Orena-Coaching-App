@@ -112,6 +112,44 @@ def test_a_take_is_measured_by_decoding_it_not_by_trusting_its_container():
         speech_api.take_seconds(b"")
 
 
+def moov_at_end_mp4(seconds: float = 3.0) -> bytes:
+    """An MP4 as a phone writes one: the `moov` index after the media data, so it cannot be read from a pipe."""
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as tmp:
+        target = Path(tmp) / "take.mp4"
+        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i",
+                        f"sine=frequency=440:duration={seconds}", "-c:a", "aac", "-f", "mp4", str(target)], check=True)
+        data = target.read_bytes()
+    assert data.index(b"moov") > data.index(b"mdat"), "the fixture must have its index at the end"
+    return data
+
+
+def test_an_mp4_with_its_index_at_the_end_is_measured_and_transcribed(room):
+    """A recording from a device that writes the moov atom last (iPhone Safari) must not be refused as unreadable."""
+    provider, send = room
+    take = moov_at_end_mp4(3.0)
+    assert speech_api.take_seconds(take) == pytest.approx(3.0, abs=0.2)
+    answer = send(take, purpose=None)
+    assert answer.status_code == 200 and answer.json()["text"] == "hello there"
+    assert len(provider.calls) == 1
+    # and the too-long case is still caught for the same container
+    assert send(moov_at_end_mp4(310.0)).status_code == 413
+
+
+def test_the_decode_leaves_no_file_behind():
+    import tempfile
+    from pathlib import Path
+
+    before = {p.name for p in Path(tempfile.gettempdir()).glob("orena-transcribe-*")}
+    speech_api.take_seconds(silent_wav(1))
+    with pytest.raises(speech_api.TakeUnreadable):
+        speech_api.take_seconds(b"not audio")
+    assert {p.name for p in Path(tempfile.gettempdir()).glob("orena-transcribe-*")} == before
+
+
 def test_audio_the_server_cannot_decode_is_refused(room):
     provider, send = room
     bad = send(b"this is not audio at all, just text")
