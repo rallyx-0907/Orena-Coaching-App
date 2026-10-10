@@ -73,7 +73,7 @@ METERS: dict[str, Meter] = {
         Meter("writing.review", "month", "review", "review"),
         Meter("pronunciation.audio", "month", "second", "minute", scale=60),
         Meter("media.import", "month", "second", "minute", scale=60),
-        # A count of target languages; only adding one beyond the cap is refused (a later slice).
+        # A count of target languages; only ADDING one beyond the cap is refused, on the server (language_limit.py, D-170).
         Meter("languages.target", None, "language", "language"),
     )
 }

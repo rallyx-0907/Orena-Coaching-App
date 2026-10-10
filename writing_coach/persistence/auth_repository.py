@@ -3,6 +3,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any, Protocol
 
 from sqlalchemy import Engine, func, select, update
@@ -75,8 +76,16 @@ class AuthRepository(Protocol):
     def upsert_user(self, info: dict[str, Any], admin_emails: set[str]) -> dict[str, Any]: ...
     def get_account_settings(self, user_key: str) -> dict[str, Any] | None: ...
     def update_account_settings(
-        self, user_key: str, changes: dict[str, Any], expected_token: str
+        self, user_key: str, changes: dict[str, Any], expected_token: str | None, *,
+        guard: Callable[[set[str]], None] | None = None,
     ) -> dict[str, Any]: ...
+
+
+# A `guard` is called inside the write's own transaction, with the account row locked, with the set of learning
+# languages the account holds (`language_ownership.owned_languages`); whatever it raises aborts the write and nothing
+# is stored (the target-language count, D-170). `expected_token=None` compares against the token read under that
+# lock - a write the server itself serialises, for a caller that holds no token (see `platform_api`).
+Guard = Callable[[set[str]], None]
 
 
 class SQLiteAuthRepository:
@@ -167,12 +176,18 @@ class SQLiteAuthRepository:
         return _settings_payload({**dict(row), "settings_version": row["settings_updated_at"] or ""})
 
     def update_account_settings(
-        self, user_key: str, changes: dict[str, Any], expected_token: str
+        self, user_key: str, changes: dict[str, Any], expected_token: str | None, *, guard: Guard | None = None
     ) -> dict[str, Any]:
         """One conditional UPDATE: the token is compared and replaced by the server in one statement."""
         columns = [name for name in changes if name in ACCOUNT_SETTING_COLUMNS]
         if not columns:
             raise ValueError("No account setting to write")
+        if guard is not None:
+            # The languages an account holds are in PostgreSQL; this archive backend cannot answer, so it must not
+            # write what a guard was asked to judge.
+            raise RuntimeError("The target-language count is enforced on PostgreSQL only.")
+        if expected_token is None:
+            raise ValueError("The SQLite archive backend writes against a token the caller holds.")
         current = self.get_account_settings(user_key)
         if current is None:
             raise AccountRowMissing(user_key)
@@ -291,33 +306,44 @@ class PostgresAuthRepository:
             return self._settings_of(row) if row else None
 
     def update_account_settings(
-        self, user_key: str, changes: dict[str, Any], expected_token: str
+        self, user_key: str, changes: dict[str, Any], expected_token: str | None, *, guard: Guard | None = None
     ) -> dict[str, Any]:
         """`UPDATE ... WHERE id = :id AND settings_updated_at IS NOT DISTINCT FROM :expected`.
 
         The new token is the database clock in the same statement, so two writers holding one token
         cannot both succeed and a client timestamp never enters (D-104 H-17).
+
+        With a `guard` (D-170) the account row is locked first (`FOR UPDATE`): two adoptions of one account run one
+        after the other, the second reading what the first committed, and the guard judges the languages the account
+        holds under that lock - before anything is written, in the same transaction as the write.
         """
         columns = {name: changes[name] for name in changes if name in ACCOUNT_SETTING_COLUMNS}
         if not columns:
             raise ValueError("No account setting to write")
         uid = self._id(user_key)
-        valid, expected = _parse_token(expected_token)
+        valid, expected = _parse_token(expected_token or "")
         with Session(self.engine) as session, session.begin():
-            current = session.get(User, uid)
+            current = session.get(User, uid, with_for_update=guard is not None)
             if current is None:
                 raise AccountRowMissing(user_key)
             latest = self._settings_of(current)
+            if expected_token is None:
+                valid, expected = _parse_token(latest["settings_version"])
             if not valid:
                 raise SettingsVersionConflict(latest["settings_version"])
-            guard = (
+            if guard is not None and expected == current.settings_updated_at:
+                # A stale token is the conflict below (409); the guard judges only a write that would be applied.
+                from writing_coach.persistence.language_ownership import owned_languages
+
+                guard(owned_languages(session, uid))
+            unchanged = (
                 User.settings_updated_at.is_(None)
                 if expected is None
                 else User.settings_updated_at == expected
             )
             result = session.execute(
                 update(User)
-                .where(User.id == uid, guard)
+                .where(User.id == uid, unchanged)
                 .values(**columns, settings_updated_at=func.clock_timestamp())
                 .execution_options(synchronize_session=False)
             )

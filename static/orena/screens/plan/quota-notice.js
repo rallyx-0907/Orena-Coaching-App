@@ -37,6 +37,33 @@ export function showQuotaNotice(ctx, error) {
   toast(quotaMessage(error), { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
 }
 
+/* Taking a learning language the account does not hold yet, when the plan's count is reached (HTTP 403
+   `language_limit_reached`, or `feature_not_in_plan` for `languages.target`, D-170). The server judges it; the client
+   only says it, in the interface language, from the server's own figures (`context.limit`, `context.owned`), with the
+   way to the plans. Nothing was changed on the server, and a language the account already learns stays switchable. */
+export function isLanguageLimit(error) {
+  if (!error || error.status !== 403) return false;
+  if (error.category === 'language_limit_reached') return true;
+  return error.category === 'feature_not_in_plan' && error.context?.feature === 'languages.target';
+}
+
+export function languageLimitMessage(error) {
+  const context = error?.context || {};
+  const limit = Number(context.limit);
+  const owned = Number(context.owned);
+  if (error?.category === 'language_limit_reached' && Number.isFinite(limit) && Number.isFinite(owned)) {
+    const ui = languages().ui;
+    return t.plural('languageLimit', limit, { limit: formatNumber(limit, ui), owned: formatNumber(owned, ui) });
+  }
+  return t('languageNotInPlan');
+}
+
+/* `notify` is the toast; a caller may hand another (a test records what the learner would be told and where "See all
+   plans" leads). */
+export function showLanguageLimitNotice(ctx, error, notify = toast) {
+  notify(languageLimitMessage(error), { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
+}
+
 /* A take the server already processed (its answer was lost on the way back): it cannot be assessed again under the
    same request, so the room says so and the learner records again. Said as a toast - the design draws no state for
    it (docs/project/UI_BACKEND_GAPS.md QTA-15). */

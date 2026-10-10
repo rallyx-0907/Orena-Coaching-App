@@ -29,6 +29,7 @@ import { shellCopy } from '../../copy/shell.js';
 import { chooseInterface, languages as copyLanguages, setSupportFromProfile } from '../../copy/index.js';
 import { adoptLearningLanguage, updateContext } from '../../shell/context.js';
 import { saveAccountSettings, saveReviewSettings, selectLearningLanguage } from '../../product/account-settings.js';
+import { isLanguageLimit, showLanguageLimitNotice } from '../plan/quota-notice.js';
 import { readReaderSettings, writeReaderSettings, sizeBucketOf, SIZE_BUCKETS } from '../../product/reader-settings.js';
 import { readStage, writeStage, transcriptDefaults } from '../../product/transcript-stage.js';
 import { readReviewSettings } from '../../product/recall-modes.js';
@@ -250,8 +251,10 @@ export default async function settingsScreen(element, ctx) {
     if (!code || code === context.language) return;
     try {
       await selectLearningLanguage(code);
-    } catch {
-      toast(t('saveError'));
+    } catch (error) {
+      /* The plan's count of target languages (D-170): the server's refusal is told as it is, with the way to the plans. */
+      if (isLanguageLimit(error)) showLanguageLimitNotice(ctx, error);
+      else toast(t('saveError'));
       return;
     }
     // The shell's language-scoped state (profile and its version, review settings, places, imports) is the new

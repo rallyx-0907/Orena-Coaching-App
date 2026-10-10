@@ -1104,6 +1104,12 @@ _quota.configure_quota(
     reason=_quota_reason,
 )
 configure_product_usage(_quota.usage_for)
+# D-170: the target-language count reads what the account holds from the same PostgreSQL the quota store lives on; a
+# runtime without that store has no ownership reader, and an enforced `languages.target` then answers 503.
+from writing_coach.persistence.language_ownership import PostgresLanguageOwnership  # noqa: E402
+from writing_coach.product import language_limit as _language_limit  # noqa: E402
+
+_language_limit.configure(PostgresLanguageOwnership(_persistence_runtime.engine) if _quota_repository is not None else None)
 app.add_middleware(_quota.QuotaRequestMiddleware)
 _quota_reconciler = _quota.QuotaReconcileSchedule(_quota_repository) if _quota_repository is not None else None
 # D-168: a metered media import keeps its quota reservation across a restart, so the media pipeline recovers what a

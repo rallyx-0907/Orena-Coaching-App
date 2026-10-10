@@ -38,7 +38,8 @@ The switch (default OFF everywhere): the environment `ORENA_QUOTA_ENFORCEMENT` (
 otherwise the platform setting `product.quota_enforcement` (`{"enabled": bool, "meters": [...]}`, editable at
 `PUT /api/product/admin/quota`) decides, so QA can switch a running sandbox without recreating it. The meters
 enforced are `ORENA_QUOTA_METERS` (comma separated) when set, otherwise the setting's list, and only meters this
-build has wired (`WIRED_METERS`). Off, or a meter not listed: `admit()` is a no-op ticket and no bucket is
+build has wired (`WIRED_METERS`, and the count entitlements `WIRED_ENTITLEMENTS` - `languages.target`, D-170, which is
+judged where an account adds a language and never admitted through a bucket). Off, or a meter not listed: `admit()` is a no-op ticket and no bucket is
 written. On with no quota store (SQLite test backend, missing tables, account backbone off): every listed meter
 answers 503 `quota_unavailable`. Enforcement never treats "unknown" as "unlimited".
 
@@ -90,6 +91,11 @@ SETTING_KEY = "product.quota_enforcement"
 # refused by the admin setting and ignored (logged) in the environment: a Plan screen must never show a meter as
 # counted while nothing counts it.
 WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "media.import")
+# Entitlements this build enforces that are NOT bucket meters: a count cap with no window and no reservation
+# (`languages.target`, D-170 - `writing_coach.product.language_limit`). The same switch lists them, so one setting and
+# one pair of environment variables govern everything the server enforces; they never go through `admit()`.
+WIRED_ENTITLEMENTS: tuple[str, ...] = ("languages.target",)
+ENFORCEABLE: tuple[str, ...] = WIRED_METERS + WIRED_ENTITLEMENTS
 # Meters whose provider call ends inside the request; only these are reconciled after RECONCILE_AFTER.
 SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio")
 # Meters whose work outlives the request in a background job that settles its own reservation by operation id
@@ -288,7 +294,8 @@ def switch() -> dict[str, Any]:
         if raw_meters is not None and str(raw_meters).strip() != "" else None
     )
     store = _runtime.repository is not None and _runtime.incarnations is not None and _runtime.plan_for is not None
-    base = {"store": "ready" if store else (_runtime.reason or "missing"), "wired_meters": list(WIRED_METERS)}
+    base = {"store": "ready" if store else (_runtime.reason or "missing"), "wired_meters": list(WIRED_METERS),
+            "wired_entitlements": list(WIRED_ENTITLEMENTS)}
     if raw in _OFF:
         return {**base, "enabled": False, "meters": [], "source": "environment", "state": "off", "reason": ""}
     setting = _setting() if (raw not in _ON or env_meters is None) else None
@@ -297,21 +304,21 @@ def switch() -> dict[str, Any]:
     if raw in _ON:
         enabled, source = True, "environment"
     elif unreadable:
-        return {**base, "enabled": True, "meters": list(WIRED_METERS), "source": "setting",
+        return {**base, "enabled": True, "meters": list(ENFORCEABLE), "source": "setting",
                 "state": "unavailable", "reason": "switch_unreadable"}
     else:
         enabled, source = setting.get("enabled") is True, "setting" if setting else "default"
     listed = env_meters if env_meters is not None else [str(item) for item in setting.get("meters") or []]
-    ignored = [item for item in listed if item not in WIRED_METERS]
+    ignored = [item for item in listed if item not in ENFORCEABLE]
     if ignored:
         _log.warning("quota meters not wired in this build are ignored: %s", ", ".join(ignored))
-    meters = [item for item in WIRED_METERS if item in listed]
+    meters = [item for item in ENFORCEABLE if item in listed]
     if not enabled:
         return {**base, "enabled": False, "meters": [], "source": source, "state": "off", "reason": ""}
     if not meters:
         if source == "environment":
             _log.error("ORENA_QUOTA_ENFORCEMENT=on but no wired meter is listed: every wired meter answers 503")
-            return {**base, "enabled": True, "meters": list(WIRED_METERS), "source": source,
+            return {**base, "enabled": True, "meters": list(ENFORCEABLE), "source": source,
                     "state": "unavailable", "reason": "switch_unreadable" if unreadable else "no_meters"}
         return {**base, "enabled": True, "meters": [], "source": source, "state": "off", "reason": ""}
     return {**base, "enabled": True, "meters": meters, "source": source,
@@ -331,10 +338,10 @@ def validate_switch_setting(document: object) -> dict[str, Any]:
     meters = document.get("meters", [])
     if not isinstance(meters, list) or not all(isinstance(item, str) for item in meters):
         raise ValueError("meters must be a list of meter keys.")
-    unwired = [item for item in meters if item not in WIRED_METERS]
+    unwired = [item for item in meters if item not in ENFORCEABLE]
     if unwired:
         raise ValueError(f"Not enforceable in this build: {', '.join(unwired)}.")
-    return {"enabled": enabled, "meters": [item for item in WIRED_METERS if item in meters]}
+    return {"enabled": enabled, "meters": [item for item in ENFORCEABLE if item in meters]}
 
 
 def save_switch(document: object, *, updated_by: str = "", audit: dict | None = None) -> dict[str, Any]:
@@ -626,13 +633,20 @@ def _context(meter: str) -> tuple[Any, str, Plan, str, Entitlement]:
     return repository, incarnation, plan, revision, _entitlement(plan, meter)
 
 
+def _require_bucket_meter(meter: str) -> None:
+    """Only a meter with a window is admitted through a bucket; a count entitlement (`languages.target`) is not."""
+    if meter not in METERS:
+        raise ValueError(f"Unknown meter {meter!r}")
+    if METERS[meter].window is None:
+        raise ValueError(f"{meter!r} is a count entitlement, not a bucket meter; it is not admitted through the gate")
+
+
 def check_available(meter: str, units: int = 1) -> None:
     """Read-only: 429 `quota_exhausted` when fewer than `units` of `meter` remain in the learner's window, 503 when
     enforcement cannot be read, nothing when the meter is not enforced or enough remain. It reserves nothing and writes
     nothing: it is for paid work that feeds a message the gate will charge itself (Orena's push-to-talk transcription,
     D-169), so that an exhausted learner is not made to pay for audio that would be refused next."""
-    if meter not in METERS:
-        raise ValueError(f"Unknown meter {meter!r}")
+    _require_bucket_meter(meter)
     state = switch()
     if meter not in state["meters"]:
         return
@@ -809,8 +823,7 @@ def begin(meter: str, *, units: int = 1, request_digest: str = "", idempotency_k
     reconciler is only the backstop). The no-op ticket when the meter is not enforced.
 
     Raises the same 429 / 403 / 409 / 503 as `admit()`, before any provider is called."""
-    if meter not in METERS:
-        raise ValueError(f"Unknown meter {meter!r}")
+    _require_bucket_meter(meter)
     state = switch()
     if meter in state["meters"] and state["state"] == "unavailable":
         raise _unavailable(state["reason"] or "store")
@@ -824,8 +837,7 @@ def require_ready(meter: str) -> bool:
     but cannot be checked (the switch, the store or the catalogue is unreadable). For a route whose units are known
     only after local work (decoding audio): it asks first, so that work is not done for a request about to be
     refused, and a route that does not enforce the meter does none of it."""
-    if meter not in METERS:
-        raise ValueError(f"Unknown meter {meter!r}")
+    _require_bucket_meter(meter)
     state = switch()
     if meter not in state["meters"]:
         return False
@@ -857,8 +869,7 @@ def begin_voice(meter: str, *, max_seconds: int, chunk_units: int, min_chunk_sec
 
     The caller owns the ticket: `dispatch` immediately before the token is minted, then `settle(ticket.units)` - the
     chunk is charged whole once its token exists, early end or not - or `settle(0)` when the mint failed."""
-    if meter not in METERS:
-        raise ValueError(f"Unknown meter {meter!r}")
+    _require_bucket_meter(meter)
     if max_seconds < 1 or chunk_units < 1:
         raise ValueError("A voice chunk lasts at least one second and costs at least one message")
     state = switch()
@@ -907,34 +918,51 @@ def usage_for(user_key: str, plan: Plan) -> dict[str, dict[str, Any]]:
     """What the Plan & usage screen shows, read from the buckets enforcement writes.
 
     Only enforced meters appear (`known` with `used` and `resets_at`, or `unavailable`); the rest are not
-    metered and the caller says so. Never "0 used" for a store it could not read."""
+    metered and the caller says so. Never "0 used" for a store it could not read. An enforced count entitlement
+    (`languages.target`) appears with `used` = the target languages the account holds and no `resets_at`."""
     state = switch()
-    meters = [key for key in state["meters"] if key in plan.entitlement_map()]
-    if not meters:
+    entitlements = plan.entitlement_map()
+    meters = [key for key in state["meters"] if key in WIRED_METERS and key in entitlements]
+    counted = [key for key in state["meters"] if key in WIRED_ENTITLEMENTS and key in entitlements]
+    if not meters and not counted:
         return {}
     repository = _runtime.repository
     if state["state"] == "unavailable" or repository is None or _runtime.incarnations is None:
-        return {key: {"state": "unavailable"} for key in meters}
+        return {key: {"state": "unavailable"} for key in meters + counted}
     try:
         # The display's limits are known only when enforcement's own (strict) catalogue read works (review P3-4).
         current_catalog(strict=True)
     except CatalogUnavailable:
-        return {key: {"state": "unavailable"} for key in meters}
+        return {key: {"state": "unavailable"} for key in meters + counted}
+    out: dict[str, dict[str, Any]] = {}
+    if meters:
+        try:
+            now = _runtime.clock()
+            incarnation = _runtime.incarnations.resolve(account_id(user_key))
+            latest = repository.latest_buckets(incarnation, meters) if incarnation else {}
+            for key in meters:
+                previous = latest.get(key)
+                window = window_for(METERS[key].window, now=now, zone_name=_zone_for(previous), previous=previous)
+                used = int(previous["consumed"]) + int(previous["reserved"])                     if previous and previous["window_id"] == window.window_id else 0
+                out[key] = {"state": "known", "used": used, "resets_at": _iso(window.end), "window_id": window.window_id}
+        except Exception:
+            _log.warning("quota usage unreadable", exc_info=True)
+            out.update({key: {"state": "unavailable"} for key in meters})
+    for key in counted:
+        out[key] = _count_usage(key, user_key)
+    return out
+
+
+def _count_usage(key: str, user_key: str) -> dict[str, Any]:
+    """The use of a count entitlement: how many the account holds. No window, so nothing resets."""
+    from writing_coach.product import language_limit
+
     try:
-        now = _runtime.clock()
-        incarnation = _runtime.incarnations.resolve(account_id(user_key))
-        latest = repository.latest_buckets(incarnation, meters) if incarnation else {}
-        out: dict[str, dict[str, Any]] = {}
-        for key in meters:
-            previous = latest.get(key)
-            window = window_for(METERS[key].window, now=now, zone_name=_zone_for(previous), previous=previous)
-            used = int(previous["consumed"]) + int(previous["reserved"]) \
-                if previous and previous["window_id"] == window.window_id else 0
-            out[key] = {"state": "known", "used": used, "resets_at": _iso(window.end), "window_id": window.window_id}
-        return out
+        held = language_limit.held_by(user_key)
     except Exception:
-        _log.warning("quota usage unreadable", exc_info=True)
-        return {key: {"state": "unavailable"} for key in meters}
+        _log.warning("%s usage unreadable", key, exc_info=True)
+        return {"state": "unavailable"}
+    return {"state": "known", "used": len(held), "resets_at": None}
 
 
 # --- reconciler -----------------------------------------------------------------------------------------------
