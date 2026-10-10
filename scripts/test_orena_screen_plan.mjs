@@ -215,6 +215,19 @@ assert.equal(resetLabel({ window: 'day', resetsAt: null }), 'Resets every day');
   const row = model.usageRows({ ...COMMERCE, features: { ...COMMERCE.features, 'pronunciation.audio': feature('pronunciation.audio', 300, 68) } }).find((r) => r.key === 'pronunciation.audio');
   assert.deepEqual([row.used, row.limit], [1.1, 5], 'display == bucket');
   copy.setLanguages({ ui: 'en', support: 'en' });
+
+  /* Media import minutes (D-168): the source's seconds, said in minutes exactly as Plan & usage shows them. */
+  const imported = (used, limit = 900) => ({ status: 429, category: 'quota_exhausted', context: { feature: 'media.import', used, limit, unit: 'second', display_unit: 'minute', scale: 60 } });
+  assert.equal(notice.quotaMessage(imported(900)), 'You have used 15 of 15 media import minutes this month.');
+  assert.equal(notice.quotaMessage(imported(890)), 'You have used 14.8 of 15 media import minutes this month.', '890 s is 14.8 min');
+  assert.equal(notice.quotaMessage(imported(900)).includes('900'), false, 'never seconds');
+  copy.setLanguages({ ui: 'vi', support: 'en' });
+  assert.equal(notice.quotaMessage(imported(890)), 'Bạn đã dùng 14,8/15 phút nhập media trong tháng này.');
+  copy.setLanguages({ ui: 'zh', support: 'en' });
+  assert.equal(notice.quotaMessage(imported(890)), '本月媒体导入已用 14.8/15 分钟。');
+  const importRow = model.usageRows({ ...COMMERCE, features: { ...COMMERCE.features, 'media.import': feature('media.import', 900, 890) } }).find((r) => r.key === 'media.import');
+  assert.deepEqual([importRow.used, importRow.limit], [14.8, 15], 'display == bucket');
+  copy.setLanguages({ ui: 'en', support: 'en' });
 }
 
 /* --- routes ---------------------------------------------------------------------------------- */

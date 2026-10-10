@@ -31,6 +31,7 @@ import { acquireMedia } from '../../capabilities/media-acquisition.js';
 import { isSupportedMediaUrl } from '../../product/media-url.js';
 import { sourceFromLesson } from '../../product/speaking-source.js';
 import { t } from './copy.js';
+import { isQuotaExhausted, showQuotaNotice } from '../plan/quota-notice.js';
 import { textStats, importErrorKey, urlMediaEntry, uploadMediaEntry } from './model.js';
 
 const STEP_LABEL = { type: 'stepType', text: 'stepText', url: 'stepUrl', processing: 'stepProcessing' };
@@ -48,6 +49,23 @@ export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
     if (typeof ctx.go === 'function') ctx.go(target);
     else window.location.hash = target;
   };
+
+  /* The plan's media-import minutes are used up (D-168): the server's own sentence, with the way to the plans, as the
+     rooms that have no failed-request place of their own show it (a toast). The sheet closes on the way out, and
+     what the learner typed is kept when they come back. */
+  const plansCtx = {
+    href,
+    go: (target) => {
+      sheetHandle?.close();
+      if (typeof ctx.go === 'function') ctx.go(target);
+      else window.location.hash = target;
+    },
+  };
+  function refuseForPlan(error) {
+    state.busy = false;
+    showQuotaNotice(plansCtx, error);
+    go(state.source === 'file' ? 'type' : 'url');
+  }
 
   let alive = true;
   let sheetEl = null;
@@ -285,6 +303,7 @@ export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
       navigate(mediaRoute, { id: result.media_id });
     } catch (error) {
       if (!alive) return;
+      if (isQuotaExhausted(error)) return refuseForPlan(error);
       state.busy = false;
       state.fileRefused = error?.category === 'media_upload_invalid';
       state.processError = t(importErrorKey(error?.category));
@@ -334,6 +353,7 @@ export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
       navigate(mediaRoute, { id: entry.id });
     } catch (error) {
       if (!alive) return;
+      if (isQuotaExhausted(error)) return refuseForPlan(error);
       state.busy = false;
       state.processError = t(importErrorKey(error?.category));
       paint();

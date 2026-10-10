@@ -729,7 +729,6 @@ configure_media_library(
 )
 configure_media_library_payload(stored_media_payload)
 configure_listening_media_library(_media_library_store)
-_media_pipeline.recover(_media_library_store, _media_library_assets)
 app.include_router(media_library_router)
 app.include_router(media_library_upload_router)
 # Canonical Reading evidence (D-075): the one Reading read contract every
@@ -1106,6 +1105,18 @@ _quota.configure_quota(
 configure_product_usage(_quota.usage_for)
 app.add_middleware(_quota.QuotaRequestMiddleware)
 _quota_reconciler = _quota.QuotaReconcileSchedule(_quota_repository) if _quota_repository is not None else None
+# D-168: a metered media import keeps its quota reservation across a restart, so the media pipeline recovers what a
+# restart interrupted only now that the quota runtime above is configured (never earlier: a re-queued job dispatches
+# and settles against it). The reconciler's backstop asks the media index what an abandoned import decided, and a timer
+# retries the settlements a failing quota store could not take.
+from writing_coach import media_quota as _media_quota  # noqa: E402
+
+_quota.configure_async_decision(lambda operation_id: _media_quota.decide(_media_library_store, operation_id))
+_media_pipeline.recover(_media_library_store, _media_library_assets)
+_media_intents = (
+    _media_quota.IntentSchedule(lambda: _media_pipeline.settle_pending(_media_library_store))
+    if _quota_repository is not None else None
+)
 
 
 def _billing_service():
@@ -1798,6 +1809,8 @@ def startup() -> None:
         _feedback_retention.start()
     if _quota_reconciler is not None:
         _quota_reconciler.start()
+    if _media_intents is not None:
+        _media_intents.start()
 
 
 @app.on_event("shutdown")
@@ -1806,6 +1819,8 @@ def _stop_feedback_retention() -> None:
         _feedback_retention.stop()
     if _quota_reconciler is not None:
         _quota_reconciler.stop()
+    if _media_intents is not None:
+        _media_intents.stop()
 
 
 def _page(*parts: str) -> HTMLResponse:

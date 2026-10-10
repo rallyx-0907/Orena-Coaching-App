@@ -107,7 +107,7 @@ MATRIX = {
     ("PUT", "/api/product/admin/plans"): ("/api/product/admin/plans", {"json": {"plans": []}}, {422}),
     # D-161: the quota enforcement switch. An unwired meter is refused on its merits (422).
     ("GET", "/api/product/admin/quota"): ("/api/product/admin/quota", {}, {200}),
-    ("PUT", "/api/product/admin/quota"): ("/api/product/admin/quota", {"json": {"enabled": True, "meters": ["media.import"]}}, {422}),
+    ("PUT", "/api/product/admin/quota"): ("/api/product/admin/quota", {"json": {"enabled": True, "meters": ["languages.target"]}}, {422}),
     # D-154: an account's role and plan. A made-up account id is 404 (or 503 where accounts are not editable).
     ("GET", "/api/product/admin/accounts/{user_id}/membership"): ("/api/product/admin/accounts/not-an-id/membership", {}, {404, 503}),
     ("PUT", "/api/product/admin/accounts/{user_id}/membership"): ("/api/product/admin/accounts/not-an-id/membership", {"json": {"role": "user"}}, {404, 503}),

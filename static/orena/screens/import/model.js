@@ -58,6 +58,10 @@ const ERROR_KEYS = new Set([
   'media_job_unavailable',
   'media_upload_invalid',
   'media_upload_unavailable',
+  // The plan's own refusals other than the limit (D-168): the limit is a toast, these are said in the sheet.
+  'quota_unavailable',
+  'media_duration_unavailable',
+  'feature_not_in_plan',
 ]);
 
 export function importErrorKey(category) {
