@@ -381,10 +381,10 @@ export default async function onboardingScreen(element, ctx) {
 
   const patchProfile = (fields) => patchProfileOf(context, fields);
 
-  /* What the learner is told when a language could not be stored: the plan's count (told as the server says it, with the
-     way to the plans), the learning language still to choose, or the generic failure. */
-  function reportTargetFailure(error) {
-    if (isLanguageLimit(error)) showLanguageLimitNotice(ctx, error);
+  /* What the learner is told when a language could not be stored: the plan's count (it opens the plans with the reason,
+     D-17Q), the learning language still to choose, or the generic failure. */
+  function reportTargetFailure(error, requested = '') {
+    if (isLanguageLimit(error)) showLanguageLimitNotice(ctx, error, requested);
     else if (error?.category === 'learning_language_required') toast(t('targetFirst'));
     else toast(t('saveError'));
   }
@@ -396,7 +396,7 @@ export default async function onboardingScreen(element, ctx) {
       await targetFirst.ensure(context.language);
       return true;
     } catch (error) {
-      reportTargetFailure(error);
+      reportTargetFailure(error, context.language);
       return false;
     }
   }
@@ -420,7 +420,7 @@ export default async function onboardingScreen(element, ctx) {
       await targetFirst.store(code);
     } catch (error) {
       state.busy = '';
-      reportTargetFailure(error);
+      reportTargetFailure(error, code);
       render();
       return;
     }

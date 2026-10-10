@@ -11,6 +11,7 @@ import { languages } from '../../copy/index.js';
 import { toast } from '../../kit/toast.js';
 import { t } from './copy.js';
 import { displayAmount, formatNumber } from './model.js';
+import { holdLanguageRefusal, REASON_LANGUAGE } from './reason.js';
 
 export function isQuotaExhausted(error) {
   return Boolean(error) && error.status === 429 && error.category === 'quota_exhausted';
@@ -39,29 +40,19 @@ export function showQuotaNotice(ctx, error) {
 
 /* Taking a learning language the account does not hold yet, when the plan's count is reached (HTTP 403
    `language_limit_reached`, or `feature_not_in_plan` for `languages.target`, D-170). The server judges it; the client
-   only says it, in the interface language, from the server's own figures (`context.limit`, `context.owned`), with the
-   way to the plans. Nothing was changed on the server, and a language the account already learns stays switchable. */
+   only says it. A toast was too small and gone too soon to explain it, so the refusal opens Plans at once
+   (`?reason=language`, D-17Q) with the explanation on top: the plan's limit and the languages the learner holds, from the
+   server's own `context`, the language they tried to add (`requested`) and the plan that allows it (plan/pricing.js).
+   Nothing was changed on the server; Back returns to the language the learner is on, which stays switchable. */
 export function isLanguageLimit(error) {
   if (!error || error.status !== 403) return false;
   if (error.category === 'language_limit_reached') return true;
   return error.category === 'feature_not_in_plan' && error.context?.feature === 'languages.target';
 }
 
-export function languageLimitMessage(error) {
-  const context = error?.context || {};
-  const limit = Number(context.limit);
-  const owned = Number(context.owned);
-  if (error?.category === 'language_limit_reached' && Number.isFinite(limit) && Number.isFinite(owned)) {
-    const ui = languages().ui;
-    return t.plural('languageLimit', limit, { limit: formatNumber(limit, ui), owned: formatNumber(owned, ui) });
-  }
-  return t('languageNotInPlan');
-}
-
-/* `notify` is the toast; a caller may hand another (a test records what the learner would be told and where "See all
-   plans" leads). */
-export function showLanguageLimitNotice(ctx, error, notify = toast) {
-  notify(languageLimitMessage(error), { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
+export function showLanguageLimitNotice(ctx, error, requested = '') {
+  holdLanguageRefusal(error, requested);
+  ctx.go(ctx.href('pricing', {}, { reason: REASON_LANGUAGE }));
 }
 
 /* A take the server already processed (its answer was lost on the way back): it cannot be assessed again under the
