@@ -28,6 +28,12 @@ Work that outlives the call stack that admitted it - a streamed Orena answer is 
 the route returned - uses `begin()` instead: the same admission, returning the ticket, which the caller then owns
 and must settle or release on every path (D-163).
 
+Live voice is charged by duration against `orena.message` (D-169), one short vendor token at a time: `begin_voice()`
+reserves the messages one chunk of voice needs - the units the learner still has in the window, at most what the
+chunk needs - and returns a ticket that says how many seconds that buys (`max_seconds`). The caller dispatches, mints
+the token for those seconds and settles the chunk whole; the next chunk is a new admission. A read-only
+`check_available()` lets paid work that feeds an already-charged message refuse an exhausted learner first.
+
 The switch (default OFF everywhere): the environment `ORENA_QUOTA_ENFORCEMENT` (on/off) wins when it is set;
 otherwise the platform setting `product.quota_enforcement` (`{"enabled": bool, "meters": [...]}`, editable at
 `PUT /api/product/admin/quota`) decides, so QA can switch a running sandbox without recreating it. The meters
@@ -443,6 +449,9 @@ class NullTicket:
 
     enforced = False
     usage: dict[str, Any] = {}
+    max_seconds: int | None = None   # voice: nothing limits the session but its own cap
+    seconds_per_unit = 0
+    units = 0
 
     def dispatch(self, ref: str = "") -> None:
         return None
@@ -473,6 +482,8 @@ class Ticket:
         self.usage = usage
         self.dispatched = False
         self.finished = False
+        self.max_seconds: int | None = None   # voice (`begin_voice`): the seconds the reserved units buy
+        self.seconds_per_unit = 0
 
     def dispatch(self, ref: str = "") -> None:
         if self.dispatched or self.finished:
@@ -568,9 +579,32 @@ def _facts(meter: str, entitlement: Entitlement, plan: Plan, *, used: int, windo
     }
 
 
-def _reserve(meter: str, units: int, digest: str, idempotency_key: str | None = None) -> Ticket:
-    from writing_coach.persistence.quota_repository import BucketWindow
+def _duplicate_error(state: object) -> HTTPException:
+    """The answer for an operation this key already is: still running, or already done."""
+    if state in ("reserved", "dispatched"):
+        return orena_http_error(409, "operation_in_progress", "This request is already being processed.",
+                                retryable=True)
+    return orena_http_error(409, "operation_finished",
+                            "This request was already processed. Send it again as a new request.",
+                            retryable=False)
 
+
+VOICE_PARAM = "voice_seconds_per_message"
+# How often a voice admission re-reads the bucket when a concurrent session took the units it counted on.
+VOICE_RETRIES = 6
+
+
+def seconds_per_unit(entitlement: Entitlement) -> int:
+    """How many seconds of voice are one message: the catalogue's `voice_seconds_per_message` (validated 1..3600)."""
+    value = entitlement.params.get(VOICE_PARAM)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise _unavailable("catalogue")
+    return value
+
+
+def _context(meter: str) -> tuple[Any, str, Plan, str, Entitlement]:
+    """The repository, the account's incarnation, its effective plan, the catalogue revision and the plan's entitlement
+    for `meter` - every read strict, every failure the gate's own 403 / 503."""
     repository = _runtime.repository
     if repository is None or _runtime.incarnations is None or _runtime.plan_for is None:
         raise _unavailable(_runtime.reason or "store")
@@ -589,17 +623,79 @@ def _reserve(meter: str, units: int, digest: str, idempotency_key: str | None = 
         raise
     except Exception as error:
         raise _unavailable("subscription") from error
-    entitlement = _entitlement(plan, meter)
+    return repository, incarnation, plan, revision, _entitlement(plan, meter)
+
+
+def check_available(meter: str, units: int = 1) -> None:
+    """Read-only: 429 `quota_exhausted` when fewer than `units` of `meter` remain in the learner's window, 503 when
+    enforcement cannot be read, nothing when the meter is not enforced or enough remain. It reserves nothing and writes
+    nothing: it is for paid work that feeds a message the gate will charge itself (Orena's push-to-talk transcription,
+    D-169), so that an exhausted learner is not made to pay for audio that would be refused next."""
+    if meter not in METERS:
+        raise ValueError(f"Unknown meter {meter!r}")
+    state = switch()
+    if meter not in state["meters"]:
+        return
+    if state["state"] == "unavailable":
+        raise _unavailable(state["reason"] or "store")
+    repository, incarnation, plan, _revision, entitlement = _context(meter)
+    kind = METERS[meter].window
+    now = _runtime.clock()
+    try:
+        previous = repository.latest_buckets(incarnation, [meter]).get(meter)
+        window = window_for(kind, now=now, zone_name=_zone_for(previous), previous=previous)
+    except Exception as error:
+        raise _unavailable("store") from error
+    same_window = previous is not None and previous["window_id"] == window.window_id
+    spent = int(previous["consumed"]) + int(previous["reserved"]) if same_window else 0
+    if entitlement.limit is not None and entitlement.limit - spent < units:
+        raise exhausted_error(_facts(meter, entitlement, plan, used=spent, window=window), now=now)
+
+
+def _reserve(meter: str, units: int, digest: str, idempotency_key: str | None = None, *,
+             voice: tuple[int, int, int] | None = None) -> Ticket:
+    """`voice` = (max_seconds, chunk_units, min_chunk_seconds) set: reserve a chunk of voice (`units` is ignored) - the
+    messages `chunk_units` x `voice_seconds_per_message` need (at least `min_chunk_seconds`, at most `max_seconds`),
+    or all that remain in the window when that is fewer - and refuse (429) only when not even one unit remains."""
+    from writing_coach.persistence.quota_repository import BucketWindow
+
+    repository, incarnation, plan, revision, entitlement = _context(meter)
     kind = METERS[meter].window
     if kind not in MIN_WINDOW:
         raise ValueError(f"{meter} is a count cap, not a windowed meter")
-    key = idempotency_key or _facts_now().idempotency_key or str(uuid.uuid4())
+    per_unit = seconds_per_unit(entitlement) if voice is not None else 0
+    chunk_seconds = 0
+    if voice is not None:
+        max_seconds, chunk_units, min_chunk_seconds = voice
+        chunk_seconds = min(max_seconds, max(chunk_units * per_unit, min_chunk_seconds))
+    lost: tuple[Any, Window, datetime] | None = None
+    explicit = idempotency_key or _facts_now().idempotency_key
+    key = explicit or str(uuid.uuid4())
     op = operation_id(incarnation=incarnation, meter=meter, key=key, request_digest=digest)
-    for _attempt in range(WINDOW_RETRIES):
+    if voice is not None and explicit:
+        # A voice reservation's size depends on what the learner has left, so a repeat of the request is not the same
+        # size as the original: the repository would call it another request. Ask what this key already is first.
+        try:
+            existing = repository.get_reservation(op)
+        except Exception as error:
+            raise _unavailable("store") from error
+        if existing is not None:
+            raise _duplicate_error(existing.get("state"))
+    for _attempt in range(VOICE_RETRIES if voice is not None else WINDOW_RETRIES):
         now = _runtime.clock()
         try:
             previous = repository.latest_buckets(incarnation, [meter]).get(meter)
             window = window_for(kind, now=now, zone_name=_zone_for(previous), previous=previous)
+        except Exception as error:
+            raise _unavailable("store") from error
+        if voice is not None:
+            same_window = previous is not None and previous["window_id"] == window.window_id
+            spent = int(previous["consumed"]) + int(previous["reserved"]) if same_window else 0
+            wanted = max(1, math.ceil(chunk_seconds / per_unit))
+            units = wanted if entitlement.limit is None else min(wanted, max(0, entitlement.limit - spent))
+            if units < 1:
+                raise exhausted_error(_facts(meter, entitlement, plan, used=spent, window=window), now=now)
+        try:
             outcome = repository.reserve(
                 incarnation_id=incarnation, meter=meter, operation_id=op, requested_units=units,
                 window=BucketWindow(window.window_id, window.start, window.end,
@@ -613,23 +709,39 @@ def _reserve(meter: str, units: int, digest: str, idempotency_key: str | None = 
             # The window ended between the read and the lock, or another request (in another zone) opened the
             # current window first: read the latest bucket again and decide in the window that now holds.
             continue
+        if status == "exhausted" and voice is not None:
+            # A concurrent session took units this one counted on: count again, from what is left now.
+            lost = (outcome, window, now)
+            continue
         break
     else:
+        if lost is not None:
+            # Every attempt lost its units to somebody else: the cause is exhaustion, so say so (a 429 the learner
+            # is told, never a 503 they are asked to retry).
+            used = int(lost[0].get("consumed", 0)) + int(lost[0].get("reserved", 0))
+            raise exhausted_error(_facts(meter, entitlement, plan, used=used, window=lost[1]), now=lost[2])
         raise _unavailable("window")
     if status == "admit":
         used = (previous or {}).get("consumed", 0) + (previous or {}).get("reserved", 0) + units \
             if previous and previous["window_id"] == window.window_id else units
-        return Ticket(repository, op, units, _facts(meter, entitlement, plan, used=used, window=window))
+        ticket = Ticket(repository, op, units, _facts(meter, entitlement, plan, used=used, window=window))
+        if voice is not None:
+            ticket.seconds_per_unit = per_unit
+            ticket.max_seconds = min(chunk_seconds, units * per_unit)
+        return ticket
     if status == "exhausted":
         used = int(outcome.get("consumed", 0)) + int(outcome.get("reserved", 0))
         raise exhausted_error(_facts(meter, entitlement, plan, used=used, window=window), now=now)
     if status == "duplicate":
-        if outcome.get("state") in ("reserved", "dispatched"):
-            raise orena_http_error(409, "operation_in_progress", "This request is already being processed.",
-                                   retryable=True)
-        raise orena_http_error(409, "operation_finished",
-                               "This request was already processed. Send it again as a new request.",
-                               retryable=False)
+        raise _duplicate_error(outcome.get("state"))
+    if status == "payload_conflict" and voice is not None and explicit:
+        # The same key, sized differently because its twin reserved first (see above): the twin is what it is.
+        try:
+            twin = repository.get_reservation(op)
+        except Exception as error:
+            raise _unavailable("store") from error
+        if twin is not None:
+            raise _duplicate_error(twin.get("state"))
     if status == "payload_conflict":
         raise orena_http_error(409, "operation_conflict", "This request key was used for another request.",
                                retryable=False)
@@ -724,9 +836,38 @@ def require_ready(meter: str) -> bool:
 
 def refuse_unmetered(meter: str, *, category: str, message: str) -> None:
     """Fail closed for a path that cannot be metered yet: 503 `category` when `meter` is enforced (or enforcement
-    cannot tell), nothing when it is not. Used by live voice, which is charged by duration in a later change."""
+    cannot tell), nothing when it is not. A generic helper for a path whose metering is a later change; live voice no
+    longer uses it (D-169: voice is charged by duration through `begin_voice`)."""
     if enforces(meter):
         raise orena_http_error(503, category, message, retryable=False, context={"feature": meter})
+
+
+def begin_voice(meter: str, *, max_seconds: int, chunk_units: int, min_chunk_seconds: int = 1,
+                request_digest: str = "", idempotency_key: str | None = None) -> Any:
+    """Admit one chunk of live voice, charged by duration (D-169).
+
+    A voice session is a chain of short vendor tokens, each good for a chunk. A chunk is `chunk_units` x
+    `voice_seconds_per_message` seconds (at least `min_chunk_seconds`, at most `max_seconds`, the session's seconds
+    still unminted) and costs the messages those seconds need, whole, when the token is minted. This reserves them -
+    or, when fewer remain in the learner's window, all that remain - and returns the ticket: `ticket.max_seconds` is
+    what the reserved messages buy (the life of the token to mint), `ticket.units` what the chunk costs. Refuses 429
+    `quota_exhausted` only when not even one message remains, 503 `quota_unavailable` when enforcement cannot be read.
+    Concurrent sessions cannot overspend: each reserves under the bucket lock and re-counts when it loses a race.
+    The no-op ticket (`max_seconds` None) when the meter is not enforced.
+
+    The caller owns the ticket: `dispatch` immediately before the token is minted, then `settle(ticket.units)` - the
+    chunk is charged whole once its token exists, early end or not - or `settle(0)` when the mint failed."""
+    if meter not in METERS:
+        raise ValueError(f"Unknown meter {meter!r}")
+    if max_seconds < 1 or chunk_units < 1:
+        raise ValueError("A voice chunk lasts at least one second and costs at least one message")
+    state = switch()
+    if meter in state["meters"] and state["state"] == "unavailable":
+        raise _unavailable(state["reason"] or "store")
+    if meter not in state["meters"]:
+        return NULL_TICKET
+    return _reserve(meter, 0, request_digest, idempotency_key,
+                    voice=(int(max_seconds), int(chunk_units), max(1, int(min_chunk_seconds))))
 
 
 @contextmanager

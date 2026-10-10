@@ -12,28 +12,38 @@
       - an `interrupted` stops playback at once (barge-in);
       - a tool call is run by the server (`POST /api/agent/voice/tool`), its §4 events handed to the caller and
         its responses sent back on the socket.
-   3. `end()` closes everything and tells the server (`POST /api/agent/voice/end`), which bills the time. A
-      session never ended is billed at its cap, so leaving the page ends it too (sendBeacon).
+   3. The conversation is a chain of short tokens (v8, D-169). Each token is charged when the server mints it and lives
+      `max_seconds`; the client asks `POST /api/agent/voice/extend` for the next one `renew_in` seconds after it got
+      the one it holds, opens the next socket beside the old one (carrying the conversation with the vendor's
+      session-resumption handle), moves the microphone and the tool answers over when its setup completes, and closes
+      the old one. A refused renewal (no message left, the session's 900 s reached) is reported once (`onLimit`); the
+      token held plays out and the session ends when it dies.
+   4. `end()` closes everything and tells the server (`POST /api/agent/voice/end`), which mints nothing more and
+      refunds nothing. Leaving the page ends it too (sendBeacon).
 
    Failure is never a switch to another vendor (§9): the caller falls back to its own cascade. */
 import { CONTRACT_VERSION } from './contract.js';
+import { newIdempotencyKey, quotaHeaders } from '../infrastructure/quota-headers.js';
 
 const WORKLET_URL = new URL('../capabilities/pcm-capture-worklet.js', import.meta.url).href;
 
 export class VoiceSessionError extends Error {
-  constructor(status, category = '', retryAfter = 0) {
+  constructor(status, category = '', retryAfter = 0, context = null) {
     super(category || `voice_session_${status}`);
     this.status = status;
     this.category = category;
     this.retryAfter = retryAfter;
+    // The quota's own figures (`used`, `limit`, `feature`, `upgrade`) on a 429 `quota_exhausted` (§2.1, v8): what
+    // screens/plan/quota-notice.js reads, so it is a refusal the learner is told, never a failure to work around.
+    this.context = context;
   }
 }
 
-async function post(path, body, fetchImpl) {
+async function post(path, body, fetchImpl, headers = {}) {
   const response = await fetchImpl(path, {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
     body: JSON.stringify(body),
   });
   let data = null;
@@ -45,7 +55,8 @@ async function post(path, body, fetchImpl) {
   if (!response.ok) {
     // The voice routes answer a category object, or the category as the plain detail string (/voice/context).
     const category = String(data?.detail?.category || data?.category || (typeof data?.detail === 'string' ? data.detail : ''));
-    throw new VoiceSessionError(response.status, category, Number(response.headers?.get?.('Retry-After')) || 0);
+    const context = data?.detail?.context && typeof data.detail.context === 'object' ? data.detail.context : null;
+    throw new VoiceSessionError(response.status, category, Number(response.headers?.get?.('Retry-After')) || 0, context);
   }
   return data;
 }
@@ -86,8 +97,10 @@ export function voiceSessionBody(turnRequest, { voice = '' } = {}) {
   return { contract_version: CONTRACT_VERSION, ...rest, ...(voice ? { voice } : {}) };
 }
 
-export function openVoiceSession(body, { fetchImpl = globalThis.fetch } = {}) {
-  return post('/api/agent/voice/session', body, fetchImpl);
+/* One Idempotency-Key per session the learner opens and the device's timezone (§3, v8): the server reserves the
+   learner's messages for the session once per key, and the day it counts them in ends at the learner's midnight. */
+export function openVoiceSession(body, { fetchImpl = globalThis.fetch, idempotencyKey = newIdempotencyKey() } = {}) {
+  return post('/api/agent/voice/session', body, fetchImpl, quotaHeaders({}, idempotencyKey));
 }
 
 /* Bytes <-> base64 without a stack overflow on long frames. */
@@ -111,11 +124,15 @@ export function pcm16ToFloat(base64) {
 
 /* `audio` holds the two AudioContexts the caller created inside the learner's tap (mobile Safari only starts
    audio from a gesture): `{ input, output }`. */
-export function connectLiveVoice(session, { audio, mediaDevices = globalThis.navigator?.mediaDevices, fetchImpl = globalThis.fetch, WebSocketCtor = globalThis.WebSocket, onState = () => {}, onLearner = () => {}, onOrena = () => {}, onTurnComplete = () => {}, onEvents = () => {}, onClosed = () => {} } = {}) {
+export function connectLiveVoice(session, { audio, mediaDevices = globalThis.navigator?.mediaDevices, fetchImpl = globalThis.fetch, WebSocketCtor = globalThis.WebSocket, onState = () => {}, onLearner = () => {}, onOrena = () => {}, onTurnComplete = () => {}, onEvents = () => {}, onClosed = () => {}, onLimit = () => {} } = {}) {
   const id = session.voice_session_id;
-  const connect = session.connect || {};
-  const url = `${connect.url}${String(connect.url).includes('?') ? '&' : '?'}access_token=${encodeURIComponent(connect.ephemeral_token)}`;
-  const socket = new WebSocketCtor(url);
+  const socketUrl = (connect) => `${connect.url}${String(connect.url).includes('?') ? '&' : '?'}access_token=${encodeURIComponent(connect.ephemeral_token)}`;
+  let socket = null; // the vendor socket the conversation is on now
+  let pending = null; // the next chunk's socket, until its setup completes and it takes over
+  let incoming = null; // the newest answer of /voice/extend, until its socket takes over
+  let chunk = Number(session.chunk) || 0; // the index of the newest token this client holds
+  let resumeHandle = ''; // the vendor's latest handle to carry the conversation onto the next socket
+  let renewing = false;
   let ready = false;
   let closed = false;
   let stream = null;
@@ -126,7 +143,18 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   const tracker = utteranceTracker();
   let playAt = 0;
   const playing = new Set();
-  const capTimer = setTimeout(() => end('cap'), Math.max(30, Number(session.max_seconds) || 900) * 1000);
+  // The conversation is a chain of short tokens (§9, v8). The token held dies after `max_seconds`: the client ends
+  // the session at that moment, in the same way as at the learner's tap, unless a newer token has taken over. Each
+  // renewal is asked for `renew_in` seconds after its token was minted, so the next socket is up before the old one
+  // closes; the last chunk has no renewal.
+  let capTimer = setTimeout(() => end('cap'), Math.max(1, Number(session.max_seconds) || 900) * 1000);
+  let renewTimer = 0;
+  const scheduleRenew = (renewIn, mintedAt) => {
+    clearTimeout(renewTimer);
+    if (renewIn == null || !Number.isFinite(Number(renewIn))) return;
+    renewTimer = setTimeout(() => void extend(0), Math.max(0, Number(renewIn) * 1000 - (Date.now() - mintedAt)));
+  };
+  scheduleRenew(session.renew_in, Date.now());
 
   function send(message) {
     if (socket.readyState === 1) socket.send(JSON.stringify(message));
@@ -242,22 +270,53 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     send({ toolResponse: { functionResponses: answer?.responses || [] } });
   }
 
-  socket.onopen = () => send(connect.setup || {});
-  socket.onmessage = async (event) => {
-    let message;
-    try {
-      message = JSON.parse(typeof event.data === 'string' ? event.data : await event.data.text());
-    } catch {
+  /* One vendor socket and its handlers. `socket` is the one the conversation is on; `pending` is the next chunk's, whose
+     messages are ignored until its setup completes and it takes over; a retired one says nothing. */
+  function wire(sock, connect) {
+    sock.onopen = () => {
+      try { sock.send(JSON.stringify(connect.setup || {})); } catch { /* the close handler reports it */ }
+    };
+    sock.onmessage = async (event) => {
+      let message;
+      try {
+        message = JSON.parse(typeof event.data === 'string' ? event.data : await event.data.text());
+      } catch {
+        return;
+      }
+      await handle(sock, message);
+    };
+    sock.onerror = () => lost(sock);
+    sock.onclose = () => lost(sock);
+    return sock;
+  }
+
+  function lost(sock) {
+    if (sock === pending) pending = null; // the next chunk never came up: the one held carries on to its end
+    else if (sock === socket) end('socket');
+  }
+
+  async function handle(sock, message) {
+    // `setupComplete` is an empty object: its presence is the signal, not its value.
+    if (Object.prototype.hasOwnProperty.call(message, 'setupComplete')) {
+      if (sock === pending) takeOver(sock);
+      else if (sock === socket && !ready) {
+        ready = true;
+        try {
+          await startMic();
+        } catch {
+          end('mic');
+        }
+      }
       return;
     }
-    // `setupComplete` is an empty object: its presence is the signal, not its value.
-    if (!ready && Object.prototype.hasOwnProperty.call(message, 'setupComplete')) {
-      ready = true;
-      try {
-        await startMic();
-      } catch {
-        end('mic');
-      }
+    if (sock !== socket) return;
+    const update = message.sessionResumptionUpdate;
+    if (update) {
+      if (update.resumable !== false && typeof update.newHandle === 'string' && update.newHandle) resumeHandle = update.newHandle;
+      return;
+    }
+    if (message.goAway) {
+      void extend(0); // the vendor is about to close this socket: the next chunk now
       return;
     }
     if (message.toolCall?.functionCalls?.length) {
@@ -291,9 +350,53 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
       heard = '';
       said = '';
     }
-  };
-  socket.onerror = () => end('socket');
-  socket.onclose = () => end('socket');
+  }
+
+  /* The next chunk's socket is live: the microphone and the tool answers go to it from now on, the old socket closes
+     (what it had queued has played), and the timers follow the new token. */
+  function takeOver(sock) {
+    if (closed || sock !== pending || !incoming) return;
+    const old = socket;
+    socket = sock;
+    pending = null;
+    try { old?.close(); } catch { /* closed */ }
+    clearTimeout(capTimer);
+    capTimer = setTimeout(() => end('cap'), Math.max(1, incoming.maxMs - (Date.now() - incoming.mintedAt)));
+    scheduleRenew(incoming.renewIn, incoming.mintedAt);
+    incoming = null;
+  }
+
+  /* Ask for the next chunk (§9, v8). A learner with no message left, a session at its time limit or any answer that is
+     not a transient failure means no further token: what is held plays out and the session ends when it dies. */
+  async function extend(attempt) {
+    if (closed || pending || (renewing && attempt === 0)) return;
+    renewing = true;
+    let answer;
+    try {
+      answer = await post('/api/agent/voice/extend', { voice_session_id: id, chunk: chunk + 1, ...(resumeHandle ? { resumption: resumeHandle } : {}) }, fetchImpl, quotaHeaders({}));
+    } catch (error) {
+      renewing = false;
+      if (closed) return;
+      if (error?.status === 404) return end('server');
+      if ((!error?.status || error.status >= 500) && attempt < 2) {
+        setTimeout(() => void extend(attempt + 1), 3000); // a network or server hiccup: once more
+        return;
+      }
+      onLimit(error);
+      return;
+    }
+    renewing = false;
+    if (closed) return;
+    chunk = Number(answer?.chunk) || chunk + 1;
+    incoming = {
+      maxMs: Math.max(1, Number(answer?.max_seconds) || 1) * 1000,
+      renewIn: answer?.renew_in ?? null,
+      mintedAt: Date.now(),
+    };
+    pending = wire(new WebSocketCtor(socketUrl(answer.connect || {})), answer.connect || {});
+  }
+
+  socket = wire(new WebSocketCtor(socketUrl(session.connect || {})), session.connect || {});
 
   const beacon = () => {
     try {
@@ -306,11 +409,14 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     if (closed) return;
     closed = true;
     clearTimeout(capTimer);
+    clearTimeout(renewTimer);
     window.removeEventListener('pagehide', beacon);
     document.removeEventListener('orena:media-time', onMediaClock);
     silence();
     stopMic();
     try { socket.close(); } catch { /* closed */ }
+    try { pending?.close(); } catch { /* closed */ }
+    pending = null;
     post('/api/agent/voice/end', { voice_session_id: id, transcript: tracker.transcript() }, fetchImpl).catch(() => {});
     onClosed(reason);
   }

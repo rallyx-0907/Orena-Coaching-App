@@ -6,7 +6,9 @@ Purpose: the single interface between the Orena Intelligence backend (lane `feat
 Authority: D-085, D-086, D-092, D-094, D-095, D-096. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
 Change when: a field, event, action, intent or rule below changes. Edit **only on `codex/work`** through a reviewed commit that bumps `contract_version` and records the change in DECISION_LOG.md; the intelligence lane receives it by merging `codex/work` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 7`
+`contract_version: 8`
+
+v8 (D-169, 2026-10-10): live voice is charged by duration against the same plan limit of Orena messages (`orena.message`): one message per `voice_seconds_per_message` seconds (the server's catalogue; 60 to begin with). A voice session is now a chain of short vendor tokens, **chunks**: each token lives `2 x voice_seconds_per_message` seconds (never under 60; two minutes to begin with), is reserved and charged whole when it is minted, and the session is at most 900 seconds in all its chunks. The client asks for the next chunk with the new `POST /api/agent/voice/extend` shortly before the token it holds dies and carries the conversation onto it with the vendor's session resumption; `POST /api/agent/voice/end` only stops further chunks and refunds nothing, because the server cannot see the vendor socket and a token is what it lets the learner hold. `POST /api/agent/voice/session` (§9) can now answer `429 quota_exhausted` (not even one message left today: no token is minted, the voice conversation does not start, and the client does not fall back to its cascade, whose turns would be refused too) and `503 quota_unavailable`; `extend` answers the same two when a next chunk cannot be had, and the client then ends the session when the token it holds dies. The 503 `quota_voice_not_metered` of v7 is gone. `max_seconds` is now the life of the token just minted (a v7 client reads it as its session cap and so ends its voice session after one chunk, then falls back to its cascade), and the answer gains `chunk`, `session_max_seconds`, `renew_in` and `last`. `Idempotency-Key` and `X-Orena-Timezone` (§3) also apply to the voice session request and the timezone to `extend`. No event, action or intent changed.
 
 v7 (D-164, 2026-10-09): the plan's limit of Orena messages (`orena.message`, D-163) reaches this interface. §2.1 names the new HTTP statuses of `/api/agent/*` - `429 quota_exhausted` (an object body, told apart from the string `rate_limited`; never waited out or resent), `409 operation_in_progress | operation_finished | operation_conflict` (never a language change), `403 account_deleted | feature_not_in_plan`, `503 quota_unavailable` - and what the UI does with each; §3 names the optional request headers `Idempotency-Key` and `X-Orena-Timezone` and §3.3 what counts as a message (a turn that asks a model for the learner's message is one; the opening greeting and every answer made without a model are free and never refused, and the model writes at most one greeting per account per 30 minutes - past that the greeting is built from the learner's snapshot, still a full §3.2 stream); §9 names `503 quota_voice_not_metered` for `POST /api/agent/voice/session`. No event, field, action or intent changed. The statuses occur only where the server enforces the plan quota; a client that declares `contract_version` ≤ 6 sends neither header and, if it meets one of them, reads `429` as `rate_limited` and `409` as a language change - the shipped UI is v7.
 
@@ -41,7 +43,7 @@ The new UI may add, rename or drop flows. The agent therefore never names a rout
 ```text
 POST /api/agent/turn           request §3 → response: text/event-stream (§4), one stream per turn
 GET  /api/agent/capabilities   → registry (§8), filtered by the caller's locale
-POST /api/agent/voice/session  → §9 (with /voice/tool and /voice/end)
+POST /api/agent/voice/session  → §9 (with /voice/extend, /voice/tool and /voice/end)
 ```
 
 Auth: the app's existing session. The server never trusts an identifier the model produces; the learner is always the authenticated caller.
@@ -60,10 +62,10 @@ The client reads the status before it reads a stream. Every `/api/agent/*` route
 | `409` | `{"detail": "target_language_mismatch"}` | turn only: `context.locale.target`, mapped at the server's boundary (`zh-CN` → `zh`), is not the learner's learning language on the server - it changed in another tab or on another device after the UI built its context. Nothing ran and nothing was metered | the UI re-reads the learner's learning language and applies it as any change of learning language; the learner's message stays unsent in the composer; nothing is resent automatically |
 | `422` | a validation detail | a request that does not match §3, or an `interface` on §8 that is not an interface language | a client defect: the client logs it and ends the turn with its own `transport` error, `fallback: none` (§4.1) |
 | `429` | `{"detail": "rate_limited"}`, header `Retry-After: <seconds>` (whole seconds, at least 1) | the learner's sliding window is full; turns and capability reads are counted apart. Checked after the 404 and before the body is read: nothing ran, nothing was metered, and the refused request is not counted | a brief wait state, not an error: Orena stays thinking, then the client sends the same request again after `Retry-After` seconds; refused again, it waits again. The learner may cancel the wait (abort) |
-| `429` | `{"detail": {"category": "quota_exhausted", "message", "retryable": false, "context": {"feature": "orena.message", "used", "limit", "unit", "window": "day", "resets_at", "plan", "upgrade"}}}`, header `Retry-After: <seconds until resets_at>` | turn only (v7): the learner's plan limit of Orena messages for this day (the learner's timezone, §3 `X-Orena-Timezone`) is used up. Refused before the stream; nothing ran and nothing was charged. `detail` is an **object with a `category`**; `rate_limited`'s is a string | told, never waited out or resent: the reply's error line reads the server's own figures (`used` of `limit`) in the interface language, with the way to the plans (`context.upgrade`); the learner's message stays. `Retry-After` is when the limit resets, not a wait to resend |
-| `409` | `{"detail": {"category": "operation_in_progress" \| "operation_finished" \| "operation_conflict" \| "account_not_ready", "message", "retryable"}}` | turn only (v7): the request's `Idempotency-Key` (§3) names a message already being processed (`in_progress`, retryable), already processed (`finished`) or sent with another body (`conflict`); or the learner's account is not set up yet (`account_not_ready`, retryable). `detail` is an object; `target_language_mismatch`'s is a string | the client's own `transport` error with `fallback: retry`; the retry is a new send with a new key. Never a change of learning language |
-| `403` | `{"detail": {"category": "account_deleted" \| "feature_not_in_plan", "message", "retryable": false, "context": {"feature", "plan", "upgrade"}}}` (context on `feature_not_in_plan`) | turn only (v7): the account was deleted, or the learner's plan has no Orena messages. Nothing ran | the client's own `transport` error, `fallback: none` |
-| `503` | `{"detail": {"category": "quota_unavailable", "message", "retryable": true, "context": {"reason"}}}` | turn only (v7): while the plan quota is enforced, the limit cannot be checked (the store or the catalogue is unavailable). Fail closed: nothing ran. (For the voice session, `quota_voice_not_metered`, §9) | the client's own `transport` error, `fallback: retry` |
+| `429` | `{"detail": {"category": "quota_exhausted", "message", "retryable": false, "context": {"feature": "orena.message", "used", "limit", "unit", "window": "day", "resets_at", "plan", "upgrade"}}}`, header `Retry-After: <seconds until resets_at>` | turn, and the voice session (v8, §9): the learner's plan limit of Orena messages for this day (the learner's timezone, §3 `X-Orena-Timezone`) is used up. Refused before the stream (or before the voice token); nothing ran and nothing was charged. `detail` is an **object with a `category`**; `rate_limited`'s is a string | told, never waited out or resent: the reply's error line reads the server's own figures (`used` of `limit`) in the interface language, with the way to the plans (`context.upgrade`); the learner's message stays. `Retry-After` is when the limit resets, not a wait to resend |
+| `409` | `{"detail": {"category": "operation_in_progress" \| "operation_finished" \| "operation_conflict" \| "account_not_ready", "message", "retryable"}}` | turn and voice session (v7, v8): the request's `Idempotency-Key` (§3) names a message already being processed (`in_progress`, retryable), already processed (`finished`) or sent with another body (`conflict`); or the learner's account is not set up yet (`account_not_ready`, retryable). `detail` is an object; `target_language_mismatch`'s is a string | the client's own `transport` error with `fallback: retry`; the retry is a new send with a new key. Never a change of learning language |
+| `403` | `{"detail": {"category": "account_deleted" \| "feature_not_in_plan", "message", "retryable": false, "context": {"feature", "plan", "upgrade"}}}` (context on `feature_not_in_plan`) | turn and voice session (v7, v8): the account was deleted, or the learner's plan has no Orena messages. Nothing ran | the client's own `transport` error, `fallback: none` |
+| `503` | `{"detail": {"category": "quota_unavailable", "message", "retryable": true, "context": {"reason"}}}` | turn and voice session (v7, v8): while the plan quota is enforced, the limit cannot be checked (the store or the catalogue is unavailable). Fail closed: nothing ran and no voice token was minted | the client's own `transport` error, `fallback: retry` |
 
 A `409` or `422` counts toward the learner's limit; only a refused `rate_limited` `429` does not. The v7 statuses come after the learner's window, so they count.
 
@@ -100,7 +102,7 @@ A `409` or `422` counts toward the learner's limit; only a refused `rate_limited
 Request headers (v7, both optional):
 
 - `Idempotency-Key: <string, ≤ 200 printable characters>` - one per learner message, reused only when that same message is sent again (a resend after a `rate_limited` wait keeps it; a retry the learner taps mints a new one). The server counts a message against the plan once per key; a key already finished answers `409 operation_finished` (§2.1). Without it the server mints one: nothing is deduplicated, nothing is counted twice.
-  It applies to `POST /api/agent/turn` (a `message` turn) and to the text discussion route only. `POST /api/agent/voice/turn` and `POST /api/agent/voice/tool` neither require nor read it: a spoken utterance's own `utterance` token (§9) stays its identity, and the plan quota never touches those routes.
+  It applies to `POST /api/agent/turn` (a `message` turn), to `POST /api/agent/voice/session` (v8: one per session the learner opens; it makes a repeated open request the same operation, never a second reservation) and to the text discussion route only. `POST /api/agent/voice/turn` and `POST /api/agent/voice/tool` neither require nor read it: a spoken utterance's own `utterance` token (§9) stays its identity, and the plan quota never touches those routes.
 - `X-Orena-Timezone: <IANA zone, e.g. Asia/Ho_Chi_Minh>` - the device's timezone. The plan's limit of Orena messages is per day and the day ends at the learner's local midnight (`resets_at` in a `429 quota_exhausted`). Absent or invalid: the zone of the learner's last window, else UTC.
 
 Rules:
@@ -143,6 +145,13 @@ The plan limits Orena messages per day (Free / Plus / Pro: 20 / 200 / 1000; the 
 - A `trigger: "message"` turn that asks a model is **one** message, however many model rounds, tools or retries inside the turn it takes. Admission is decided once, before the stream starts: a refusal is a plain JSON status (§2.1) and nothing streams. A turn that ends in an `error` event, or that asked a model for nothing usable, is not counted; a turn the learner abandons after the model has started is counted.
 - Free, and never refused even when the day is used up: the opening greeting (§3.2), an identity answer (§7 copy), "open it" on an offered place, and the opening on a selection - answers the server makes without a model.
 - The text discussion over a reading (`POST /api/texts/discussion/turns`, not this contract) is also an Orena message; its `request_id` is its idempotency key.
+- A live voice session (§9, v8) is charged by its duration, one chunk at a time: a chunk is `2 x voice_seconds_per_message`
+  seconds, `ceil(seconds / voice_seconds_per_message)` messages, charged whole when its token is minted (so a session costs at
+  least one message, and leaving early refunds nothing). The server admits each chunk before minting it: no message left is a
+  refusal, fewer left than a chunk needs is a shorter chunk. The renewal overlap is paid: the next token is minted
+  12 seconds before the one in hand dies, so each 120 s chunk carries about 108 s of conversation (roughly
+  10% less usable talk than the messages' minutes suggest); the overlap is not credited back.
+- The browser's push-to-talk cascade (§9 fallback) is not a voice session: its transcribed words are an ordinary message turn, one message each, with nothing added for the transcription.
 
 ---
 
@@ -407,12 +416,24 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    - Request: `POST /api/agent/voice/session` with a turn body without `message`:
      `{ contract_version, session_id?, client, context, coach_notes }`.
    - 200 response:
-     `{ voice_session_id, mode: "s2s", transport: "websocket", connect: { url, ephemeral_token, expires_at, setup }, max_seconds: 900 }`.
+     `{ voice_session_id, mode: "s2s", transport: "websocket", connect: { url, ephemeral_token, expires_at, setup }, max_seconds, chunk, session_max_seconds, renew_in, last }`.
+   - The session is a chain of chunks (v8). Each answer (this one and `extend`'s) carries the token of one chunk:
+     `max_seconds` is that token's life in whole seconds (`connect.expires_at`); `chunk` is its index (0 for the first);
+     `session_max_seconds` is the whole session's ceiling, 900; `renew_in` is how many seconds after receiving it the
+     client asks for the next chunk, or `null` when there is none; `last` is true for the chunk that reaches the 900 s
+     ceiling and for a session that is not metered (one token for what is left of the 900 s, no `extend`, and the setup
+     sent to the vendor is exactly what it was before the plan limit: no session resumption).
+   - What a chunk costs: `2 x voice_seconds_per_message` seconds (never under 60 s, never past the session's 900 s) is
+     `ceil(seconds / voice_seconds_per_message)` messages, reserved and charged whole when its token is minted - the
+     learner is charged for a chunk the moment it exists, so the first chunk of any session costs at least one
+     message and an early end refunds nothing. When fewer messages remain than a chunk needs, the chunk is shorter:
+     the token lives exactly as long as the messages left can pay for.
    - Errors:
      - 429 `rate_limited` with Retry-After (the daily cap and turn window apply first);
-     - 409 `target_language_mismatch`;
+     - 429 `quota_exhausted` (v8): `{"detail": {"category": "quota_exhausted", …, "context": {"feature": "orena.message", …}}}` (§2.1) - not even one message is left in the learner's day, so no chunk can be minted. No token is minted and nothing was charged. The client shows the server's figures where it shows a failed request, with the way to the plans, and does **not** fall back to its device cascade (its turns would be refused as well);
+     - 409 `target_language_mismatch`, or `operation_in_progress | operation_finished | operation_conflict | account_not_ready` (v8, §2.1: the request's `Idempotency-Key` repeats a session already open or finished); 403 `account_deleted | feature_not_in_plan`;
      - 503 `voice_unavailable`;
-     - 503 `quota_voice_not_metered` (v7): `{"detail": {"category": "quota_voice_not_metered", …}}`, while the plan's limit of Orena messages is enforced and voice is not yet charged by duration. No token is minted; the client carries the conversation on its device cascade exactly as for `voice_unavailable` (its turns are text turns, §3.3). This is a deliberate interim: live voice is blocked while the limit is enforced, until voice is charged by duration (a later change removes this row). `/voice/tool`, `/voice/turn`, `/voice/context` and `/voice/end` are unchanged by the quota (they act on a session `voice/session` created and read no `Idempotency-Key`; the `utterance` token is their identity). If the limit cannot be checked the answer is the same `quota_voice_not_metered` (fail closed);
+     - 503 `quota_unavailable` (v8): while the plan quota is enforced, the limit cannot be checked (fail closed). No token is minted; the client carries the conversation on its device cascade exactly as for `voice_unavailable`. (v7's interim `quota_voice_not_metered` no longer exists.) `/voice/tool`, `/voice/turn`, `/voice/context` and `/voice/end` are unchanged by the quota: they act on a session `voice/session` created and read no `Idempotency-Key`; the `utterance` token is their identity;
      - 404 while voice is off.
 2. **Connect.**
    - Open a WebSocket to `connect.url + "?access_token=" + encodeURIComponent(ephemeral_token)`.
@@ -487,15 +508,41 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    - The route has the same gates as `/voice/tool`.
    - The client keeps the learner's choice on the device and sends it as an optional `"voice": "<id>"` in the
      session body. The server locks it into the token; an unknown or missing id uses the default.
-6. **End.**
+6. **Extend (v8).**
+   - `POST /api/agent/voice/extend { voice_session_id, chunk, resumption? }` mints the next chunk. `chunk` is the index
+     wanted: the number of tokens the client already holds (1 for the first renewal). `resumption` is the vendor's latest
+     session-resumption handle (`sessionResumptionUpdate.newHandle`, at most 2,048 characters from `A-Za-z0-9._:=/+-`);
+     the server puts it into the new token's locked setup, so the conversation carries on and a client cannot make the
+     vendor resume anything but what it names there. A client that has none sends none and gets a fresh conversation
+     with the same instruction. The request carries `X-Orena-Timezone` (§3).
+   - 200: `{ voice_session_id, chunk, connect: { url, ephemeral_token, expires_at, setup }, max_seconds,
+     session_max_seconds, renew_in, last }`, as in §9.1. A repeat of the last request (its answer was lost) returns the
+     same token and charges nothing.
+   - The client sends the renewal `renew_in` seconds after it received the token it holds (the server allows twelve
+     seconds before that token dies), also at once on the vendor's `goAway`. It opens the new socket beside the old one,
+     sends the locked setup, waits for `setupComplete`, moves the microphone and the tool answers to it and closes the
+     old socket. A new socket that never comes up leaves the old one to run to its end.
+   - Errors, all of which mean there will be no next chunk (the client lets the token it holds play out, then ends the
+     session as at the learner's tap): 429 `quota_exhausted` (the client tells the learner once, §2.1) or 429
+     `rate_limited` (the daily cap, §2.1); 503 `quota_unavailable` or `voice_unavailable` (the client tries twice more,
+     three seconds apart); 409 `voice_chunk_mismatch` (a chunk out of order) or `voice_session_over` (900 s reached),
+     both `{"detail": {"category", "message", "retryable": false}}`; 404 `voice_session_not_found` (the session is
+     over: the client ends it at once); 403 `account_deleted | feature_not_in_plan` (§2.1).
+   - Any chunk index but the next, and but the one just answered, is a 409. A failed or refused attempt does not use the
+     index up: the client may ask for the same chunk again.
+7. **End.**
    - `POST /api/agent/voice/end { voice_session_id, transcript? }` answers `{ voice_session_id, seconds }`. The client sends it
-     when the learner stops, leaves (sendBeacon on pagehide), the socket closes, or `max_seconds` pass.
+     when the learner stops, leaves (sendBeacon on pagehide), the socket closes, or the last token's `max_seconds` pass. It
+     only stops further chunks: nothing is refunded (every chunk was charged when its token was minted) and nothing more
+     is owed. `seconds` is the wall-clock time from the first token to the end, at most the seconds minted.
    - `transcript` (v6, optional, at most 40 items) is `[{ role: "user" | "assistant", text, utterance }]` from the two
      transcriptions, in order; a reply carries the `utterance` it answers. The server merges it into the
      conversation by `utterance`, never by the words, so each reply sits behind the words it answers and a typed turn
      or an earlier spoken one with the same words is never taken for it. An item that is not a turn is ignored; each
      text is cut to 4,000 characters. The `pagehide` beacon carries none.
-   - The server bills the session time into the shared ledger. A session never ended is billed at its cap.
+   - The server records each chunk in the shared AI ledger when its token is minted, at the seconds the token lives (the most the vendor can charge for it). A session never ended costs the same.
+   - Plan (v8): there is no settlement at the end. A session the learner left open, or whose client vanished, costs
+     exactly the chunks it minted, and the server forgets it when its newest token dies.
 
 Rules:
 - A provider key never reaches the client.

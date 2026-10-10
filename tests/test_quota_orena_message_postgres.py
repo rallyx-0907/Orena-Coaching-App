@@ -177,18 +177,6 @@ def test_the_plan_and_usage_read_equals_the_bucket(engine, account):
     assert bucket_of(engine, account)["window_id"].startswith("D:")
 
 
-def test_voice_is_refused_with_the_real_store_and_mints_nothing(engine, account):
-    from test_quota_orena_message import StubVoice
-
-    wire_messages(engine)
-    voice = StubVoice()
-    rig = Rig([], voice=voice)
-    answer = rig.client.post("/api/agent/voice/session", json={})
-    assert answer.status_code == 503 and answer.json()["detail"]["category"] == "quota_voice_not_metered"
-    assert voice.opened == 0
-    assert bucket_of(engine, account) is None
-
-
 def test_a_discussion_turn_is_one_message_on_the_real_store(engine, account, discussion):
     build, _store, calls = discussion
     wire_messages(engine)

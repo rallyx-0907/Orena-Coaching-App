@@ -13,7 +13,11 @@ spoken words do not pass every gate a text turn does. What the server keeps:
   same `ReplyOutputs` as in text - D-135, no unasked routing, notes only on the learner's own request. Each answer
   is also given as §4 events for the thread;
 - fifteen minutes at most (§9), then the token is spent; no audio is stored;
-- the time used is priced from the audio catalog into the shared AI ledger, so the daily spend cap counts voice.
+- the time used is priced from the audio catalog into the shared AI ledger, so the daily spend cap counts voice;
+- the learner's plan pays for it by duration (D-169): when `orena.message` is enforced the session reserves the
+  messages it may use (one per `voice_seconds_per_message`), the token's life is the seconds those buy, and the
+  session settles what it really used when it ends. The ledger and the allowance are separate things: the allowance
+  is what the learner is charged, the ledger is what the vendor charges.
 """
 
 from __future__ import annotations
@@ -53,10 +57,13 @@ from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.tools import FORBIDDEN_ARGUMENTS, LearnerScope, ToolArgumentsInvalid
+from writing_coach.core.errors import orena_http_error
+from writing_coach.product import quota
 
 _log = logging.getLogger(__name__)
 
 VOICE_MODEL = "gemini-3.8-live"
+VOICE_METER = "orena.message"  # a voice minute is a message: `voice_seconds_per_message` seconds each (D-169)
 
 
 @dataclass(frozen=True)
@@ -103,7 +110,20 @@ def vendor_voice(choice: object) -> str:
 
     return _VOICES.get(str(choice), _VOICES[DEFAULT_VOICE]).vendor_voice if choice else VOICE_NAME
 
-SESSION_SECONDS = 15 * 60  # §9: a voice session is capped at fifteen minutes
+SESSION_SECONDS = 15 * 60  # §9: a voice session is capped at fifteen minutes, in all its chunks
+# D-169: the session is a chain of short tokens. A chunk is VOICE_CHUNK_UNITS messages of voice (2 x 60 s = 2 minutes
+# at the catalogue's default), never under VOICE_MIN_CHUNK_SECONDS whatever an administrator sets, and is charged whole
+# when its token is minted. The client asks for the next one RENEW_LEAD_SECONDS before the token it holds dies.
+VOICE_CHUNK_UNITS = 2
+VOICE_MIN_CHUNK_SECONDS = 60
+RENEW_LEAD_SECONDS = 12
+# The most characters of a vendor resumption handle a client may hand back (it goes into the next locked setup).
+RESUMPTION_HANDLE_PATTERN = re.compile(r"^[A-Za-z0-9._:=/+-]{1,2048}$")
+# Session resumption (the vendor's handle for carrying a conversation onto the next token's socket) is part of the
+# chunked, metered path only: an unmetered session is one token and never asks for it. `VoiceService.resumption` (set from
+# `AGENT_VOICE_RESUMPTION` at start-up, `api.voice_resumption`) takes it out of the metered path too, should the vendor
+# refuse it at connect time (a token that mints but whose socket is refused would fail every session); a renewal then
+# carries on with the same instruction and a fresh context.
 # The reply tools a spoken turn may use besides do_action: a coach note, the address. Evidence ids, styles,
 # references and suggestions are a text thread's; the voice says what it read.
 VOICE_REPLY_TOOLS = frozenset({REMEMBER_NOTE, FORGET_NOTE, SET_ADDRESS, OFFER_ADDRESS, RESOLVE_PENDING})
@@ -231,10 +251,21 @@ def recognition_languages(*codes: str | None) -> list[str]:
 
 
 def live_setup(instruction: str, specs: Iterable[ProviderToolSpec], *, model: str = VOICE_MODEL,
-               voice: str = VOICE_NAME, languages: Iterable[str] = ()) -> dict[str, Any]:  # fmt: skip
-    """The session's setup, locked into its token: the client cannot change any of it."""
+               voice: str = VOICE_NAME, languages: Iterable[str] = (),
+               resumption: Mapping[str, Any] | None = None) -> dict[str, Any]:  # fmt: skip
+    """The session's setup, locked into its token: the client cannot change any of it. `resumption` asks the vendor for
+    resumption handles (`{}`) or carries the handle of the conversation to carry on (`{"handle": ...}`): the setup of
+    each chunk's token is where it is locked, so a client cannot make the vendor resume anything else."""
 
     languages = list(languages)
+    setup = _live_setup(instruction, specs, model=model, voice=voice, languages=languages)
+    if resumption is not None:
+        setup["sessionResumption"] = dict(resumption)
+    return setup
+
+
+def _live_setup(instruction: str, specs: Iterable[ProviderToolSpec], *, model: str, voice: str,
+                languages: list[str]) -> dict[str, Any]:
     return {
         "model": f"models/{model}",
         "generationConfig": {
@@ -334,6 +365,17 @@ class VoiceSession:
     evidence_count: int = 0
     ended: bool = False
     agent_session_id: str = ""  # the conversation this voice session is part of (the typed turns' session)
+    # The session is a chain of short vendor tokens, one per chunk (D-169), each charged whole when it is minted: how
+    # many exist, the seconds they were minted for in all, the session-clock instant the newest one dies, the setup
+    # every one of them locks in, and the last renewal answer (a repeat of that request gets the same token back).
+    setup: dict[str, Any] = field(default_factory=dict)
+    chunks: int = 1
+    minted_seconds: int = 0
+    valid_until: float = 0.0
+    attempts: int = 0
+    metered: bool = False  # chunks charged to the plan; False = the old single unmetered token, billed at the end
+    last_extend: tuple[int, dict[str, Any]] | None = None
+    lock: threading.Lock = field(default_factory=threading.Lock)
     # The client's own utterance sequence (never the words): the one in progress, the ones already counted as a turn
     # of the conversation, and the ones whose words are already in it.
     utterance: str | None = None
@@ -363,7 +405,7 @@ class VoiceSessions:
             session = self._sessions.get(voice_session_id)
         if session is None or session.user_key != user_key or session.ended:
             return None
-        if self.clock() - session.opened > SESSION_SECONDS:
+        if self.clock() > session.valid_until:
             return None
         return session
 
@@ -377,11 +419,12 @@ class VoiceSessions:
             return session
 
     def expired(self) -> list[VoiceSession]:
-        """Sessions past their fifteen minutes, taken out (each is billed once, at its cap)."""
+        """Sessions whose newest token is dead, taken out. Nothing is owed on them: every chunk was charged whole when
+        its token was minted (D-169), so a session nobody ended costs what it already cost."""
 
         now = self.clock()
         with self._lock:
-            gone = [s for s in self._sessions.values() if now - s.opened > SESSION_SECONDS]
+            gone = [s for s in self._sessions.values() if now > s.valid_until]
             for session in gone:
                 session.ended = True
                 del self._sessions[session.voice_session_id]
@@ -399,13 +442,14 @@ class VoiceService:
     tokens: VoiceTokens
     record_audio: RecordAudio | None = None
     sessions: VoiceSessions = field(default_factory=VoiceSessions)
+    resumption: bool = True
     model: str = VOICE_MODEL
     now: Callable[[], datetime] = lambda: datetime.now(UTC)
 
     # -- open ------------------------------------------------------------------------------------------------
 
     def open(self, body: Mapping[str, Any], learner: LearnerScope) -> dict[str, Any]:
-        self._bill_expired()
+        self._sweep()
         request = TurnRequest.model_validate({**dict(body), "trigger": "open"})
         turn = TurnInput.from_request(request)
         session_state, _ = self.runtime.sessions.open(request.session_id, learner.user_key)
@@ -413,11 +457,9 @@ class VoiceService:
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
         instruction = self._instruction(turn, tier1, here, session_state)
         specs = self._tool_specs(request, learner)
-        now = self.now()
         locale = request.context.locale
         setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
                            languages=recognition_languages(locale.support, locale.target))  # fmt: skip
-        token, expires = self.tokens.mint(setup, now=now, seconds=SESSION_SECONDS)
         outputs = ReplyOutputs(
             client=request.client, interface=locale.interface, support=locale.support, target=locale.target,
             version=request.version, notes={note.id: note.weight for note in tier1.coach_notes},
@@ -426,26 +468,136 @@ class VoiceService:
             recent_runs=session_state.recent_runs(),
         )  # fmt: skip
         _in_view(outputs, request.context)
+        voice_session_id = f"vs-{secrets.token_hex(8)}"
+        # The first chunk (D-169): admitted before anything is sent to the vendor. A learner with no message left today
+        # is a 429 here and no token is minted; a repeat of the request's `Idempotency-Key` is the same operation
+        # (409, never a second charge); without a key each request is its own session.
+        opened = self.sessions.clock()
+        minted = self._mint_chunk(setup, session_id=voice_session_id, user_key=learner.user_key, index=0, minted=0,
+                                  digest=quota.request_digest(dict(body)), key=None, resumption=None)
         session = VoiceSession(
-            voice_session_id=f"vs-{secrets.token_hex(8)}", user_key=learner.user_key, learner=learner,
-            request=request, model=self.model, opened=self.sessions.clock(), outputs=outputs,
-            agent_session_id=session_state.agent_session_id,
+            voice_session_id=voice_session_id, user_key=learner.user_key, learner=learner,
+            request=request, model=self.model, opened=opened, outputs=outputs,
+            agent_session_id=session_state.agent_session_id, setup=setup, chunks=1,
+            minted_seconds=minted["seconds"], valid_until=opened + minted["seconds"], metered=minted["metered"],
         )  # fmt: skip
         self.sessions.add(session)
         return {
-            "voice_session_id": session.voice_session_id,
+            "voice_session_id": voice_session_id,
             "session_id": session_state.agent_session_id,  # the conversation: typed turns use the same one
             "mode": "s2s",
             "transport": "websocket",
+            **self._chunk_answer(minted, index=0),
+        }
+
+    # -- the chain of tokens (D-169) ---------------------------------------------------------------------------
+
+    def _mint_chunk(self, setup: dict[str, Any], *, session_id: str, user_key: str, index: int, minted: int,
+                    digest: str, key: str | None, resumption: str | None) -> dict[str, Any]:
+        """Admit, mint and charge one chunk. The learner's messages for the chunk are reserved, the token is minted
+        for the seconds they buy (never past the session's 900), and the chunk is settled whole at once: it is charged
+        when it exists, and nothing is refunded when the learner ends early, because the server cannot see the vendor
+        socket and the token is what it lets them hold. A mint that fails charges nothing."""
+
+        ticket = quota.begin_voice(
+            VOICE_METER, max_seconds=SESSION_SECONDS - minted, chunk_units=VOICE_CHUNK_UNITS,
+            min_chunk_seconds=VOICE_MIN_CHUNK_SECONDS, request_digest=digest, idempotency_key=key,
+        )
+        # Messages not enforced: one token for what is left of the session, exactly as before the plan limit.
+        seconds = int(ticket.max_seconds) if ticket.max_seconds else SESSION_SECONDS - minted
+        locked = dict(setup)
+        if ticket.enforced and self.resumption:
+            # Only a chunked (metered) session carries the conversation across tokens; an unmetered one is one token.
+            locked["sessionResumption"] = {"handle": resumption} if resumption else {}
+        try:
+            ticket.dispatch(f"voice:{session_id}:{index}")
+            token, expires = self.tokens.mint(locked, now=self.now(), seconds=seconds)
+        except BaseException:
+            ticket.settle(0, "failed")  # nothing was handed to the learner
+            raise
+        ticket.settle(ticket.units, "chunk")
+        if ticket.enforced:
+            self._record_chunk(session_id, user_key, index, seconds)
+        last = minted + seconds >= SESSION_SECONDS or not ticket.enforced
+        return {"token": token, "expires": expires, "seconds": seconds, "last": last, "metered": ticket.enforced}
+
+    def _chunk_answer(self, minted: dict[str, Any], *, index: int) -> dict[str, Any]:
+        seconds = minted["seconds"]
+        return {
             "connect": {
                 "url": self.tokens.socket_url,
-                "ephemeral_token": token,
-                "expires_at": expires,
+                "ephemeral_token": minted["token"],
+                "expires_at": minted["expires"],
                 # the one message the client sends first; the token's locked setup decides everything else
                 "setup": {"setup": {"model": f"models/{self.model}"}},
             },
-            "max_seconds": SESSION_SECONDS,
+            "chunk": index,
+            # This token's life in seconds: the client closes the session there if it holds nothing newer, and asks
+            # for the next chunk `renew_in` seconds after it got this one (absent on the last chunk).
+            "max_seconds": seconds,
+            "session_max_seconds": SESSION_SECONDS,
+            "renew_in": None if minted["last"] else max(1, seconds - RENEW_LEAD_SECONDS),
+            "last": minted["last"],
         }
+
+    def extend(self, voice_session_id: str, learner: LearnerScope, chunk: Any, resumption: Any = None) -> dict | None:
+        """The next chunk of a session, for a learner who is still talking: None when the session is not this learner's
+        or is over (the client ends it). `chunk` is the index of the chunk wanted, the number of tokens the client
+        already holds: a repeat of the last request (a lost answer) gets that same token back without a second
+        charge, any other index is a 409. A learner with no message left is the gate's 429, and the client ends the
+        session when the token it holds dies."""
+
+        session = self.sessions.get(voice_session_id, learner.user_key)
+        if session is None:
+            return None
+        with session.lock:
+            if session.ended:
+                return None
+            if session.last_extend is not None and session.last_extend[0] == chunk:
+                return session.last_extend[1]
+            if type(chunk) is not int or chunk != session.chunks:
+                raise orena_http_error(409, "voice_chunk_mismatch", "That is not the next part of this conversation.",
+                                       retryable=False)
+            if session.minted_seconds >= SESSION_SECONDS:
+                raise orena_http_error(409, "voice_session_over", "This conversation reached its time limit.",
+                                       retryable=False)
+            handle = resumption if isinstance(resumption, str) and RESUMPTION_HANDLE_PATTERN.match(resumption) else None
+            try:
+                minted = self._mint_chunk(
+                    session.setup, session_id=voice_session_id, user_key=session.user_key, index=chunk,
+                    minted=session.minted_seconds, digest=quota.request_digest({"voice": voice_session_id, "chunk": chunk}),
+                    key=f"voice:{voice_session_id}:{chunk}:{session.attempts}", resumption=handle,
+                )
+            except BaseException:
+                session.attempts += 1  # a refused or failed attempt is over: the next one is a new operation
+                raise
+            session.chunks += 1
+            session.minted_seconds += minted["seconds"]
+            session.valid_until = max(session.valid_until, self.sessions.clock() + minted["seconds"])
+            answer = {"voice_session_id": voice_session_id, **self._chunk_answer(minted, index=chunk)}
+            session.last_extend = (chunk, answer)
+            return answer
+
+    def _record_chunk(self, session_id: str, user_key: str, index: int, seconds: int) -> None:
+        """A metered chunk goes to the vendor ledger when its token is minted, at the seconds the token can be used for:
+        the most the vendor can charge for it, whatever the learner does next. (Gemini Live reports its real usage only
+        to the client on the socket, and the ledger has no field for tokens, a schema decision, so the token's life is
+        the figure the server can know.) An unmetered session is billed as it always was, at its end (`_bill`)."""
+
+        if self.record_audio is not None:
+            try:
+                self.record_audio("agent_voice", provider="gemini", model=self.model, outcome="success",
+                                  latency_ms=None, audio_seconds=float(seconds))  # fmt: skip
+            except Exception:  # billing telemetry never fails the learner's request
+                _log.warning("voice session not recorded", exc_info=True)
+        meter = getattr(self.runtime, "meter", None)
+        if meter is not None:
+            try:
+                meter(user_key, "agent.voice_seconds", int(seconds), f"{session_id}:voice:{index}")
+            except Exception:
+                _log.warning("voice metering failed", exc_info=True)
+
+
 
     def _capability_ids(self, tier1) -> tuple[str, ...]:
         target = tier1.contract_locale.target
@@ -748,21 +900,39 @@ class VoiceService:
             self.runtime.sessions.update(session.agent_session_id, session.user_key,
                                          lambda state: state.with_transcript(tuple(turns), limits, counted))
 
-    # -- close and bill ------------------------------------------------------------------------------------------
+    # -- close ---------------------------------------------------------------------------------------------------
 
     def end(self, voice_session_id: str, learner: LearnerScope, transcript: Any = None) -> dict[str, Any] | None:
+        """The learner stops: no further chunk is minted for the session. Nothing is refunded and nothing more is owed -
+        every chunk was charged whole when its token was minted (D-169), and the server never saw the vendor socket, so
+        the end changes what the learner may ask for next, not what they hold. `seconds` is the wall-clock time from
+        the first token to now, at most the seconds minted: what the client sees, not what was charged."""
+
         session = self.sessions.close(voice_session_id, learner.user_key)
         if session is None:
             return None
-        self._flush_transcript(session, transcript)
-        seconds = self._bill(session)
+        with session.lock:
+            session.ended = True
+        try:
+            self._flush_transcript(session, transcript)
+        finally:
+            seconds = self._bill(session) if not session.metered else round(
+                min(float(session.minted_seconds), max(0.0, self.sessions.clock() - session.opened)), 1)
+        self._sweep()
         return {"voice_session_id": voice_session_id, "seconds": seconds}
 
-    def _bill_expired(self) -> None:
+    def _sweep(self) -> None:
+        """Forget the sessions of this process whose newest token is dead. A metered one owes nothing (every chunk was
+        charged when its token was minted); an unmetered one is billed at its cap, as before."""
+
         for session in self.sessions.expired():
-            self._bill(session)
+            if not session.metered:
+                self._bill(session)
 
     def _bill(self, session: VoiceSession) -> float:
+        """An unmetered session (messages not enforced): its wall-clock time, at most the cap, goes to the AI ledger when
+        it ends - exactly what voice did before the plan limit existed."""
+
         seconds = round(min(SESSION_SECONDS, max(0.0, self.sessions.clock() - session.opened)), 1)
         if self.record_audio is not None:
             try:

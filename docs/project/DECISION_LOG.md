@@ -5139,3 +5139,115 @@ per-meter reconciler threshold; an implementer may not self-approve).
    is charged the captions' length, which is a lower bound; a video longer than 90 minutes with captions is charged 90.
 10. **Activation:** :8021 may enable `media.import` after review; :8000 needs the explicit human GO and the architecture
     review of D-161 points 6-8.
+
+## D-169 - Voice charged by duration against `orena.message`, chunk by chunk; AGENT_CONTRACT v8; `/api/speech/transcribe` guarded
+
+2026-10-10, the human's decisions relayed by the coordinating session, implemented on branch `feat/quota-voice` on top of
+D-161 (quota core), D-163/D-164 (`orena.message`, contract v7) and D-165 (pronunciation). The number is assigned at merge
+(`D-169` is a placeholder in this entry, the contract and the code comments). **Needs independent architecture review
+before merge** (entitlement and commerce enforcement on a paid realtime provider path; an implementer may not
+self-approve; the contract is changed by the UI lane on the human's instruction, as in D-164). First review of
+`33782356` (claude-opus-5-5, Delegated Architecture Reviewer): REQUEST CHANGES on P1-1; the human decided the fix (points 2-4)
+and the transcribe guard (point 8); the contract stays v8 (not merged yet).
+
+1. **Voice is charged by duration against `orena.message`; no new meter.** One voice minute is one message:
+   `params.voice_seconds_per_message` of the `orena.message` entitlement (catalogue; default 60; admin-editable 1..3600; beta
+   configuration, not a pricing decision). A started unit counts whole: `ceil(seconds / voice_seconds_per_message)` messages.
+   Cost telemetry stays separate from the allowance (point 6).
+2. **A voice session is a chain of short vendor tokens (chunks), each charged whole when it is minted (review P1-1, P2-1,
+   P2-2).** The server cannot see the vendor socket, and an ephemeral token cannot be revoked: a learner can call
+   `/voice/end` at once and keep talking on the token they hold. So what the learner is charged for is what the server lets
+   them hold. A chunk is `VOICE_CHUNK_UNITS` (2) x `voice_seconds_per_message` seconds - two minutes at the default, never
+   under `VOICE_MIN_CHUNK_SECONDS` (60) whatever an administrator sets, never past what is left of the session's 900 s - and
+   costs `ceil(seconds / voice_seconds_per_message)` messages (2 by default; the last 60 s of a session cost 1). Ending early
+   refunds nothing: a minted chunk is charged. The first chunk of any session therefore costs at least one message (a session
+   ended at once is not free), and at most one chunk is ever held, never a whole day's messages. Open-end-open-end can no
+   longer hold more vendor time than the day pays for (a test reproduces the review's probe: 20 messages buy 1,200 s of
+   tokens, not 9,900).
+3. **Admission of each chunk (`quota.begin_voice`).** The server reads the learner's remaining messages in the day window and
+   reserves `min(chunk messages, remaining)` under the bucket lock (the reserve of D-161, no SQL or schema change): not even
+   one left is `429 quota_exhausted` and no token; enforcement unreadable (switch, store, catalogue, a conversion that is
+   not a positive whole number) is `503 quota_unavailable` and no token. It dispatches immediately before the mint, mints the
+   token for the seconds the reserved messages buy (a shorter chunk when fewer remain), and settles the whole chunk at once; a
+   mint that fails settles 0. Two sessions at once cannot overspend (each reserves under the lock and re-counts after losing a
+   race, up to six times; six lost races end as the 429 they are, review P3-1) - proved on PostgreSQL. A repeat of the first
+   request's `Idempotency-Key` is `409 operation_finished` or `operation_in_progress`, never a second charge.
+4. **Renewal: `POST /api/agent/voice/extend { voice_session_id, chunk, resumption? }` (contract section 9.6).** The client asks
+   for the next chunk 12 s before the token it holds dies (`renew_in`, also at once on the vendor's `goAway`), opens the new
+   socket beside the old one with the vendor's session resumption, moves the microphone and tool answers to it when its setup
+   completes, and closes the old one. `chunk` is the index wanted: a repeat of the last request returns the same token and
+   charges nothing, any other index is `409 voice_chunk_mismatch`, a session past its 900 s is `409 voice_session_over`; a failed
+   or refused attempt does not use the index up. The vendor's resumption handle, which the client reports, is validated
+   (`A-Za-z0-9._:=/+-`, at most 2,048 characters) and put into the new token's locked setup, so a client cannot make the vendor
+   resume anything but what the server named. No message left (`429`), an unreadable limit (`503`) or any other refusal means no
+   next chunk: the token held plays out, the learner is told once (the quota toast) and the session ends when it dies. A client
+   that never renews, or vanishes, costs exactly the chunks it minted; the server forgets the session when its newest token
+   dies. `/voice/end` only stops further chunks. The 900 s ceiling holds across the chunks. Messages not enforced: one token for
+   the whole 900 s, no renewal (the old path).
+5. **Precondition (a paid live check the human runs, not this change): that Gemini closes an already-open socket at the token's
+   `expireTime`.** The change is NOT safe either way. Every chunk a learner can obtain is charged when it is minted, so a
+   client that stops renewing is bounded by the chunk it holds - but only if the vendor ends the socket when the token dies.
+   If it does not, usage per open is bounded only by the vendor's own audio-session limit (about 15 minutes), and a client that
+   ignores its token's life can stay on one socket that long for the price of one chunk; only a server-proxied socket could
+   bound that. **Voice together with `orena.message` enforcement therefore stays testers-only (:8021) until the live check
+   confirms the vendor closes at `expireTime`.** Two more unverified vendor behaviours, checked by the same single run
+   (`check_token_expiry.py`: one session, a token of about two minutes, one short text turn, one renewal carrying a handle,
+   then silence; under a cent): (a) whether `sessionResumption` is accepted inside an ephemeral token's locked setup. There are
+   two ways it can fail. The mint can be refused: voice is unavailable (503, the client's cascade) and nothing is charged. Or
+   the mint succeeds and the vendor refuses the socket at connect time because of the field: then every metered session
+   fails after its first chunk was charged, so `AGENT_VOICE_RESUMPTION=false` takes `sessionResumption` out of the setup (a
+   renewal then carries on with the same instruction and a fresh context); (b) whether the handle is honoured on reconnect.
+   Session resumption is part of the metered, chunked path only: with enforcement off the setup sent to the vendor is
+   exactly what it was before this change.
+6. **Provider cost telemetry stays separate from quota.** The ledger row (`agent_voice` / `gemini` / `gemini-3.8-live`,
+   `audio_seconds`, USD from `ai/pricing.py`) is written, for a metered session, per chunk when its token is minted, at the seconds
+   the token lives: the most the vendor can charge for it, whatever the learner does next (an unmetered session is recorded as
+   before: its wall-clock seconds, at most the cap, when it ends or is swept) (it also closes the review's note that the ledger and
+   the daily AI spend brake were undercounted by an early end). Gemini Live reports its real usage only to the client on the
+   socket and the ledger has no field for tokens (a schema decision reserved to the human), so the token's life is the figure
+   the server can know. The allowance is what the learner is charged; the ledger is what the vendor charges.
+7. **Accepted, recorded.** (a) A refused microphone permission or a connection that never came up still costs the chunk's
+   messages (the token existed); the client does not report "never connected" because a client report cannot lower a server
+   charge. (b) A learner whose day has fewer messages than a chunk needs gets a shorter token and sees no countdown (the design
+   draws none, `UI_BACKEND_GAPS.md` QTA-4). (c) Renewing 12 s before expiry means the next token overlaps the old one by
+   about 12 s: the learner is charged for chunks of 120 s that cover about 108 s of conversation each (paid, not credited back: about 10% less usable talk, said in contract section 3.3). (d) The session registry
+   is per process (R26): after a restart a renewal is a 404 and the client ends the session; with several workers a request can
+   land on a worker that does not know the session (404). Keep one worker until the registry is shared. (e) `refuse_unmetered`
+   stays in `quota.py` as a generic helper for the media-import slice; voice no longer calls it.
+8. **`/api/speech/transcribe` (Groq Whisper, QTA-14): no new meter, but no longer unbounded (review P2-4).** Evidence it is not
+   plan-metered: it is speech-to-text *input*; no caller scores pronunciation with it (`assessPronunciation` is called only by
+   `capabilities/speaking-take.js`, the `pronunciation.audio` rooms); push-to-talk's transcript becomes a message turn that is
+   already one `orena.message`, so metering the transcription too would charge twice; the five speaking rooms (Free talk,
+   Conversation, Situation, React, Reading transfer) put the transcript in an editable draft; and Groq costs about 1/25 of an
+   Azure pronunciation minute. The guard (human-approved), all on the route and none a plan limit: (a) one take is at most 300
+   seconds, measured by the server (it decodes the upload with ffmpeg - a MediaRecorder webm carries no duration - and stops a
+   second past the limit): `413 speech_asr_take_too_long`, undecodable audio `422 speech_asr_unprocessable_audio`; the upload is
+   at most 12 MiB on this route (the provider's own 24 MiB `max_bytes` is untouched, because the media pipeline sends the same
+   provider its own 600-second chunks); (b) one account sends at most 60 minutes of audio in any 24 hours
+   (`SPEECH_ASR_DAILY_SECONDS`, default 3600), each take counted at least the provider's 10-second minimum, a sliding window kept
+   **in this process** like the other per-account brakes (a restart resets it; N workers each keep their own; a ledger-backed
+   count is the follow-up once the shared store backs the brakes): `429 speech_asr_daily_limit` with `Retry-After`; a failed
+   provider call is not given back, it is a bound on spend; (c) Orena's push-to-talk sends `purpose=orena_voice`, and the server
+   first checks, read-only and reserving nothing (`quota.check_available`), that at least one `orena.message` remains in the
+   learner's day: `429 quota_exhausted` before any audio is read, `503 quota_unavailable` when that cannot be read. The message
+   itself is charged when the transcript reaches the agent as a turn. The client shows the quota toast for that 429 and
+   does not retry.
+9. **AGENT_CONTRACT v8** (`contract_version: 8` in `docs/project/AGENT_CONTRACT.md`, `writing_coach/agent/contract.py`,
+   `static/orena/agent/contract.js`, `static/orena/copy/surfaces.json` regenerated, the pin in `scripts/test_orena_surfaces.mjs`).
+   Section 9: the session answer and `extend`'s carry `chunk`, `max_seconds` (this token's life, no longer the session cap),
+   `session_max_seconds` (900), `renew_in` and `last`; section 9.6 `extend`; section 9.7 `end` (stops further chunks, refunds
+   nothing); 429 `quota_exhausted`, 503 `quota_unavailable` and the 409/403 rows; section 3.3 what a voice session costs; the
+   headers of section 3 apply to the session request and `X-Orena-Timezone` to `extend`. The interim `quota_voice_not_metered`
+   of v7 is gone. A v7 client reads `max_seconds` as its session cap and so ends its voice session after one chunk (it then
+   falls back to its cascade); no event, action or intent changed.
+10. **Client.** `openVoiceSession` sends `Idempotency-Key` and `X-Orena-Timezone`; a `429 quota_exhausted` carries the server's
+    figures and the voice screen shows them as the Respond room's toast with "See all plans" and does not start the device
+    cascade; the 409 handling refreshes the learning language only for `target_language_mismatch`, never for `operation_*`
+    (review P3-2). The live client keeps the cap timer of the token it holds, renews as in point 4 and tells the learner once
+    when a renewal is refused; the push-to-talk transcription sends its purpose and shows the same toast. No visual was added
+    (the design draws none, rule 43).
+11. **Activation.** Voice is off on :8000 (`AGENT_VOICE_ENABLED=false`) and stays so; this works on :8021 once the switch lists
+    `orena.message` and voice is enabled there (a paid Gemini Live call: the human's gate, after point 5's check). Switch off or
+    `orena.message` not listed: the session is exactly the old unmetered path (one 900 s token, no renewal, no read, no bucket).
+    Before QA check that the catalogue stored on :8021 has `voice_seconds_per_message` (a missing or invalid value fails
+    closed: 503).

@@ -231,6 +231,15 @@ def test_v7_the_plan_limit_statuses_headers_and_voice_refusal_are_in_the_contrac
     assert "`rate_limited`" in table and "object with a `category`" in table
     assert "`Idempotency-Key:" in _section("## 3.") and "`X-Orena-Timezone:" in _section("## 3.")
     assert "neither require nor read it" in _section("## 3.")  # voice/turn and voice/tool keep their `utterance` token
-    api = (ROOT / "writing_coach/agent/api.py").read_text(encoding="utf-8")
-    voice_category = re.search(r'category="([a-z_]+)"', api).group(1)
-    assert voice_category == "quota_voice_not_metered" and f"503 `{voice_category}`" in _section("## 9.")
+    voice = _section("## 9.")
+    # v8 (D-169): the voice session is charged by duration. Its refusals are the quota gate's own categories, already
+    # asserted above as section 2.1 rows; section 9 names the two it adds to the session, and v7's interim is gone.
+    assert "429 `quota_exhausted`" in voice and "503 `quota_unavailable`" in voice and "`max_seconds`" in voice
+    assert "503 `quota_voice_not_metered`" not in voice
+    # The renewal route (D-169): named, with every category the voice service itself can answer.
+    assert "`POST /api/agent/voice/extend" in voice and "nothing is refunded" in voice
+    service = (ROOT / "writing_coach/agent/voice_session.py").read_text(encoding="utf-8")
+    for category in re.findall(r'orena_http_error\(\s*\d+,\s*"([a-z_]+)"', service):
+        assert category in voice, f"section 9 does not name {category}"
+    for path in ("writing_coach/agent/api.py", "writing_coach/product/quota.py", "writing_coach/agent/voice_session.py"):
+        assert "quota_voice_not_metered" not in (ROOT / path).read_text(encoding="utf-8"), path

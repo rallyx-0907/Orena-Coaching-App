@@ -27,6 +27,7 @@ import { micUnavailableReason } from '../mic/model.js';
 import { openVoiceSession, connectLiveVoice } from '../../agent/live-voice.js';
 import { onViewContext } from '../../shell/view-context.js';
 import { refreshLearningLanguage } from './language-sync.js';
+import { isQuotaExhausted, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { href } from '../../shell/routes.js';
@@ -36,6 +37,12 @@ import { sendHomeTurn, abortHome, ensureOpening, subscribeHome, homeState, reque
 import { runOffered } from './actions.js';
 
 const TTS_TAG = { en: 'en-US', vi: 'vi-VN', zh: 'zh-CN' };
+
+/* The server's plan-limit refusal (429 `quota_exhausted`, §2.1) in the place a failed request already shows one: the
+   Respond room's toast, with the server's own figures and the way to the plans. */
+function showPlanLimit(error) {
+  toast(quotaMessage(error), { undo: () => { location.hash = href('pricing'); }, undoLabel: seePlansLabel() });
+}
 
 /* Mobile Safari speaks only from inside a tap: an utterance started later (after the reply arrives) is dropped in
    silence. One silent utterance inside the learner's first tap unlocks speech for the rest of the visit. */
@@ -182,8 +189,17 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     } catch (error) {
       closeAudio();
       if (disposed) return;
-      if (error?.status === 409) void refreshLearningLanguage();
-      // Off here, unavailable, or over the day's limit: the device cascade carries the conversation instead.
+      // Only the plain `target_language_mismatch` 409 is a change of learning language; the envelope's
+      // `operation_*` 409s (§2.1) are never one.
+      if (error?.status === 409 && error.category === 'target_language_mismatch') void refreshLearningLanguage();
+      if (isQuotaExhausted(error)) {
+        // Not one Orena message is left today (§9, v8): the server's own figures, with the way to the plans - and
+        // not the device cascade, whose turns would be refused the same way after a paid transcription.
+        setPhase('idle');
+        showPlanLimit(error);
+        return;
+      }
+      // Off here, unavailable, or any other failure: the device cascade carries the conversation instead.
       liveOff = true;
       live = true;
       setPhase('idle');
@@ -204,6 +220,9 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     stopView = () => { clearTimeout(viewTimer); unview(); };
     link = connectLiveVoice(session, {
       audio,
+      // The next part of the conversation was refused for want of a message: told once, and the session ends when the
+      // token it holds does.
+      onLimit: (error) => { if (isQuotaExhausted(error)) showPlanLimit(error); },
       onState: (next) => {
         if (!disposed && link) setPhase(next);
       },
@@ -328,12 +347,14 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     }
     let transcript = '';
     try {
-      const result = await api.transcribeSpeech(take.blob, '', 'orena-voice');
+      const result = await api.transcribeSpeech(take.blob, '', 'orena-voice', { purpose: 'orena_voice' });
       transcript = String(result?.text || '').trim();
-    } catch {
+    } catch (error) {
       // Not the mic sheet's "assessment" state: nothing is being scored here and no recording is kept.
+      live = false;
       setPhase('idle');
-      toast(t('voiceTranscribeFailed'), { iconName: 'circle-alert' });
+      if (isQuotaExhausted(error)) showPlanLimit(error); // no Orena message is left today: told, not retried
+      else toast(t('voiceTranscribeFailed'), { iconName: 'circle-alert' });
       return;
     }
     if (disposed) return;

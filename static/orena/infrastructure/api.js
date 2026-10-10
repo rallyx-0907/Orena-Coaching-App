@@ -443,7 +443,10 @@ export const api={
   // take they already made.
   speechStatus:()=>request('/api/speech/status'),
   speakingModelReference:(lessonId,segmentId)=>request(`/api/speaking/model-reference/${encodeURIComponent(lessonId)}/${encodeURIComponent(segmentId)}`,{method:'POST'}),
-  transcribeSpeech:(blob,language,filename='')=>{
+  /* `purpose: 'orena_voice'` marks Orena's push-to-talk: its words become an Orena message, so the server refuses an
+     exhausted learner before it transcribes anything (D-169). A take is at most 5 minutes (413 otherwise) and an account
+     can send an hour of audio a day (429 `speech_asr_daily_limit`). */
+  transcribeSpeech:(blob,language,filename='',{purpose=''}={})=>{
     const form=new FormData();
     // The file's name follows what the device actually recorded (iPhone Safari records mp4, not webm).
     const type=String(blob?.type||'');
@@ -451,8 +454,10 @@ export const api={
     const name=`${String(filename||'recording').replace(/\.[a-z0-9]+$/i,'')}.${ext}`;
     form.append('file',blob,name);
     if(language)form.append('language',language);
+    if(purpose)form.append('purpose',purpose);
     return request('/api/speech/transcribe',{
       method:'POST',
+      headers:purpose?quotaHeadersFor({}):undefined,
       body:form,
     });
   },

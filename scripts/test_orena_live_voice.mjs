@@ -58,6 +58,171 @@ const { createSession } = await import('../static/orena/agent/session.js');
   await assert.rejects(openVoiceSession({}, { fetchImpl: fail(429, 'rate_limited') }), (error) => error.status === 429 && error.retryAfter === 7);
 }
 
+// D-169 (contract v8): voice is charged by duration. The session request carries the quota headers, and a 429
+// quota_exhausted carries the server's own figures so the voice screen can tell the learner, not fall back.
+{
+  const seen = [];
+  const exhausted = async (path, init) => {
+    seen.push({ path, headers: init.headers });
+    return {
+      ok: false, status: 429, headers: { get: () => '3600' },
+      json: async () => ({ detail: { category: 'quota_exhausted', message: 'm', retryable: false, context: { feature: 'orena.message', used: 20, limit: 20, resets_at: '2026-10-10T17:00:00Z', upgrade: '#/plan/pricing' } } }),
+    };
+  };
+  await assert.rejects(
+    openVoiceSession({ x: 1 }, { fetchImpl: exhausted, idempotencyKey: 'k-1' }),
+    (error) => error instanceof VoiceSessionError && error.status === 429 && error.category === 'quota_exhausted'
+      && error.context.used === 20 && error.context.limit === 20 && error.context.feature === 'orena.message' && error.retryAfter === 3600,
+  );
+  assert.equal(seen[0].path, '/api/agent/voice/session');
+  assert.equal(seen[0].headers['Idempotency-Key'], 'k-1', 'one key per session the learner opens');
+  assert.ok(seen[0].headers['X-Orena-Timezone'], "the device's timezone, so the day ends at the learner's midnight");
+  assert.equal(seen[0].headers['Content-Type'], 'application/json');
+  const { isQuotaExhausted, quotaMessage } = await import('../static/orena/screens/plan/quota-notice.js').catch(() => ({}));
+  if (isQuotaExhausted) {
+    const error = new VoiceSessionError(429, 'quota_exhausted', 0, { feature: 'orena.message', used: 20, limit: 20 });
+    assert.equal(isQuotaExhausted(error), true, 'the voice screen reads it as the plan limit');
+    assert.equal(isQuotaExhausted(new VoiceSessionError(429, 'rate_limited')), false, 'a rate limit stays a failed session');
+    assert.equal(isQuotaExhausted(new VoiceSessionError(503, 'quota_unavailable')), false, 'an unreadable limit falls back as before');
+    assert.ok(quotaMessage(error).includes('20'), 'the sentence carries the server\'s figures');
+  }
+}
+
+// D-169: the session ends by itself at `max_seconds` (the seconds the learner's remaining messages buy).
+{
+  const calls = [];
+  const realSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms, ...rest) => { calls.push(ms); return realSetTimeout(() => {}, 0); };
+  globalThis.document ??= { addEventListener() {}, removeEventListener() {} };
+  globalThis.window ??= { addEventListener() {}, removeEventListener() {} };
+  const { connectLiveVoice } = await import('../static/orena/agent/live-voice.js');
+  try {
+    const socket = function FakeSocket() { this.readyState = 0; this.close = () => {}; this.send = () => {}; };
+    const link = connectLiveVoice(
+      { voice_session_id: 'vs-1', connect: { url: 'wss://x', ephemeral_token: 't', setup: {} }, max_seconds: 120 },
+      { audio: { input: {}, output: {} }, mediaDevices: {}, fetchImpl: async () => ({ ok: true, json: async () => ({}) }), WebSocketCtor: socket },
+    );
+    assert.ok(calls.includes(120 * 1000), 'the cap timer is the session\'s own max_seconds, not a fixed 900');
+    link.end('cap');
+  } finally {
+    globalThis.setTimeout = realSetTimeout;
+  }
+}
+
+// D-169: the conversation is a chain of short tokens. The client renews before the held token dies, brings the next
+// socket up beside the old one, hands over when its setup completes, and ends only when no further token comes.
+{
+  const timers = [];
+  const realSetTimeout = globalThis.setTimeout;
+  const realClearTimeout = globalThis.clearTimeout;
+  globalThis.setTimeout = (fn, ms) => { const timer = { fn, ms, live: true }; timers.push(timer); return timer; };
+  globalThis.clearTimeout = (timer) => { if (timer && typeof timer === 'object') timer.live = false; };
+  globalThis.document ??= { addEventListener() {}, removeEventListener() {} };
+  globalThis.window ??= { addEventListener() {}, removeEventListener() {} };
+  const { connectLiveVoice } = await import('../static/orena/agent/live-voice.js');
+  const sockets = [];
+  function FakeSocket(url) {
+    this.url = url; this.readyState = 1; this.sent = []; this.closed = false;
+    this.send = (text) => this.sent.push(JSON.parse(text));
+    this.close = () => { this.closed = true; };
+    sockets.push(this);
+  }
+  const posts = [];
+  let extendAnswer = null;
+  const fetchImpl = async (path, init) => {
+    const body = JSON.parse(init.body);
+    posts.push({ path, body, headers: init.headers });
+    if (path === '/api/agent/voice/extend') {
+      if (extendAnswer instanceof Error) throw extendAnswer;
+      return extendAnswer.error
+        ? { ok: false, status: extendAnswer.status, headers: { get: () => '' }, json: async () => ({ detail: extendAnswer.error }) }
+        : { ok: true, json: async () => extendAnswer };
+    }
+    return { ok: true, json: async () => ({}) };
+  };
+  const live = (timer) => timer.live;
+  const near = (timer, ms) => Math.abs(timer.ms - ms) < 2000; // a timer is set for what is left of a token's life
+  const next = (ms) => timers.filter(live).find((timer) => near(timer, ms));
+  const settle = () => new Promise((resolve) => realSetTimeout(resolve, 0));
+  const closedReasons = [];
+  const limits = [];
+  try {
+    const session = { voice_session_id: 'vs-1', chunk: 0, max_seconds: 120, renew_in: 108, connect: { url: 'wss://x', ephemeral_token: 't0', setup: { setup: { model: 'm' } } } };
+    const link = connectLiveVoice(session, {
+      audio: { input: {}, output: {} }, mediaDevices: {}, fetchImpl, WebSocketCtor: FakeSocket,
+      onClosed: (reason) => closedReasons.push(reason), onLimit: (error) => limits.push(error),
+    });
+    assert.equal(sockets.length, 1);
+    assert.ok(sockets[0].url.endsWith('access_token=t0'));
+    assert.ok(next(120000), 'the held token ends the session at its own max_seconds');
+    assert.ok(next(108000), 'the next chunk is asked for renew_in seconds after the token was minted');
+
+    // renewal: the answer's socket opens beside the old one, but the old one carries the conversation until it is up
+    extendAnswer = { chunk: 1, max_seconds: 120, renew_in: 108, connect: { url: 'wss://x', ephemeral_token: 't1', setup: { setup: { model: 'm' } } } };
+    sockets[0].onmessage({ data: JSON.stringify({ sessionResumptionUpdate: { newHandle: 'h-1', resumable: true } }) });
+    await settle();
+    next(108000).fn();
+    await settle();
+    const asked = posts.find((p) => p.path === '/api/agent/voice/extend');
+    assert.deepEqual(asked.body, { voice_session_id: 'vs-1', chunk: 1, resumption: 'h-1' }, 'the chunk wanted and the vendor handle to resume');
+    assert.ok(asked.headers['X-Orena-Timezone'], "the day is the learner's");
+    assert.equal(sockets.length, 2);
+    assert.ok(sockets[1].url.endsWith('access_token=t1'));
+    assert.equal(sockets[0].closed, false, 'the old socket stays until the new one is up');
+    sockets[1].onopen();
+    assert.deepEqual(sockets[1].sent[0], { setup: { model: 'm' } }, 'the new socket sends the locked setup first');
+    sockets[1].onmessage({ data: JSON.stringify({ serverContent: { outputTranscription: { text: 'ignored while pending' } } }) });
+    await settle();
+    sockets[1].onmessage({ data: JSON.stringify({ setupComplete: {} }) });
+    await settle();
+    assert.equal(sockets[0].closed, true, 'handed over: the old socket is closed');
+    sockets[0].onclose();
+    assert.deepEqual(closedReasons, [], 'the retired socket closing does not end the session');
+    assert.equal(timers.filter(live).filter((timer) => near(timer, 120000)).length, 1, 'one cap timer, for the new token');
+    assert.ok(posts.every((p) => p.path !== '/api/agent/voice/end'), 'nothing was ended');
+
+    // no message left: the held token plays out and the learner is told once
+    extendAnswer = { status: 429, error: { category: 'quota_exhausted', message: 'm', retryable: false, context: { feature: 'orena.message', used: 20, limit: 20 } } };
+    next(108000).fn();
+    await settle();
+    assert.equal(limits.length, 1);
+    assert.equal(limits[0].status, 429);
+    assert.equal(limits[0].category, 'quota_exhausted');
+    assert.deepEqual(closedReasons, [], 'a refused renewal does not cut the conversation short');
+    assert.equal(sockets.length, 2, 'no further socket');
+    assert.ok(next(120000), 'the session ends when the token it holds dies');
+
+    // the token held dies: the session ends, in the way it ends at the learner's tap, and tells the server
+    next(120000).fn();
+    await settle();
+    assert.deepEqual(closedReasons, ['cap']);
+    assert.ok(posts.some((p) => p.path === '/api/agent/voice/end'), 'ending tells the server, which mints nothing more');
+    link.end('learner');
+  } finally {
+    globalThis.setTimeout = realSetTimeout;
+    globalThis.clearTimeout = realClearTimeout;
+  }
+}
+
+// The last chunk (or an unmetered session) has no renewal.
+{
+  const timers = [];
+  const realSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms) => { const timer = { fn, ms }; timers.push(timer); return timer; };
+  try {
+    const { connectLiveVoice } = await import('../static/orena/agent/live-voice.js');
+    const socket = function FakeSocket() { this.readyState = 0; this.close = () => {}; this.send = () => {}; };
+    const link = connectLiveVoice(
+      { voice_session_id: 'vs-2', chunk: 0, max_seconds: 900, renew_in: null, last: true, connect: { url: 'wss://x', ephemeral_token: 't', setup: {} } },
+      { audio: { input: {}, output: {} }, mediaDevices: {}, fetchImpl: async () => ({ ok: true, json: async () => ({}) }), WebSocketCtor: socket },
+    );
+    assert.deepEqual(timers.map((timer) => timer.ms), [900000], 'one timer: the end of the only token');
+    link.end('learner');
+  } finally {
+    globalThis.setTimeout = realSetTimeout;
+  }
+}
+
 // R29: the learner's voice rides in the session body; with none chosen, no field (the server's default).
 {
   const { chosenVoice, chooseVoice } = await import('../static/orena/agent/live-voice.js');
@@ -104,6 +269,33 @@ const { createSession } = await import('../static/orena/agent/session.js');
     { role: 'user', text: 'yes', utterance: 'u2' }, { role: 'assistant', text: 'Again.', utterance: 'u2' },
     { role: 'assistant', text: 'Welcome.' },
   ]);
+}
+
+// D-169: Orena's push-to-talk marks its transcription (`purpose`), so the server can refuse an exhausted learner before it
+// transcribes; the speaking rooms send none.
+{
+  const seen = [];
+  const realFetch = globalThis.fetch;
+  globalThis.window ??= { location: { hash: '' }, addEventListener() {}, removeEventListener() {} };
+  globalThis.document ??= { addEventListener() {}, removeEventListener() {} };
+  globalThis.fetch = async (url, init) => {
+    seen.push({ url, init });
+    return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ text: 'hi' }) };
+  };
+  try {
+    const { api } = await import('../static/orena/infrastructure/api.js');
+    const blob = new Blob(['x'], { type: 'audio/webm' });
+    await api.transcribeSpeech(blob, '', 'orena-voice', { purpose: 'orena_voice' });
+    await api.transcribeSpeech(blob, 'en');
+    const [voice, room] = seen;
+    assert.equal(voice.url, '/api/speech/transcribe');
+    assert.equal(voice.init.body.get('purpose'), 'orena_voice');
+    assert.ok(voice.init.headers['X-Orena-Timezone'], "the day the server checks is the learner's");
+    assert.equal(room.init.body.get('purpose'), null, 'a speaking room sends no purpose');
+    assert.equal(room.init.body.get('language'), 'en');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 }
 
 console.log('Orena live voice (§9 mode A): session body, PCM16 codecs, thread writing, server refusals: PASS');

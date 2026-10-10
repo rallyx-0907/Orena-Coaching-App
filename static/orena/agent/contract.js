@@ -6,7 +6,7 @@
    UI's boundary, and the §5.6 address rules (how Orena says "I" and "you"). DOM-free, so
    scripts/test_orena_agent.mjs checks it against the contract text. */
 
-export const CONTRACT_VERSION = 7;
+export const CONTRACT_VERSION = 8;
 
 export const EVENTS = Object.freeze([
   'session', 'segment_delta', 'segment_end', 'tool_call', 'tool_result', 'evidence', 'action',
