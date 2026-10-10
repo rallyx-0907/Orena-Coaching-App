@@ -5478,7 +5478,7 @@ the meters below.
   `displayAmount` rounds, so 299 of 300 s shows "5 of 5" minutes while a short take is still admitted (shared with Plan &
   usage); (e) `/api/speech/transcribe` stays unmetered paid spend (QTA-14) - until it is metered, not all paid AI is
   plan-bounded; (f) an exhausted (429) or duplicate (409) request still costs one local decode. Owner: human / BACKEND.
-- **QTA-6 Media import minutes - ENFORCED when the switch lists `media.import`** (D-16S; Free / Plus / Pro 15 / 120 / 600
+- **QTA-6 Media import minutes - ENFORCED when the switch lists `media.import`** (D-168; Free / Plus / Pro 15 / 120 / 600
   minutes a month, stored in seconds, learner's timezone; beta configuration). See QTA-17 for the audit and the open items.
   The Import sheet shows the 429 as the toast with "See all plans" (no exhausted state is drawn, QTA-1), EN/VI/ZH.
 - **QTA-7 Target languages - NOT YET ENFORCED.** A count cap where a learning language is added; a Free account that
@@ -5642,13 +5642,13 @@ the meters below.
   Stages fetch -> transcribe -> segment -> translate -> ready.
   (c) **Where the duration becomes known.** File: ffprobe at upload (`probe_media`, `media_thumbnail.py:67`). YouTube: oEmbed
   carries none, captions give a lower bound (`_transcript_duration_ms`), yt-dlp metadata the exact length (previously only in
-  the speech-recognition step, `youtube_audio.py`); D-16S reads it at admission.
+  the speech-recognition step, `youtube_audio.py`); D-168 reads it at admission.
   (d) **What costs money.** Free: YouTube oEmbed and captions (`youtube_transcript_api`), ffprobe/ffmpeg, yt-dlp, thumbnails.
   Paid: Groq Whisper (only when captions are missing or fail validation; 600 s chunks; `speech_asr` ledger rows),
   Groq `openai/gpt-oss-120b` pre-translation (`MEDIA_PRETRANSLATE_LANGUAGES`, default `vi`, unless
   `MEDIA_TRANSLATION_PROVIDER=local`), Supadata only on the older route and when `MEDIA_TRANSCRIPT_FALLBACK=supadata`
   (off by default). The media spend ledger (`media_spend.py`: $5 ASR / $10 AI per batch, $25 per day) bounds the paid steps.
-  Idempotency before D-16S: none - every request made a new `source-<uuid>` entry and ran the pipeline again.
+  Idempotency before D-168: none - every request made a new `source-<uuid>` entry and ran the pipeline again.
   (e) **Open.** (1) Provider rows written by the worker carry no account (the job has no request context; AC-2 attribution
   would need the owner key stored on the entry - a schema/persistence decision). (2) The Groq translation request is one row
   per batch call and does not record cached tokens. (3) Supadata has no price in the repository (rows are unpriced). (4)

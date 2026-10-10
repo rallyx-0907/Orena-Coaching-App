@@ -260,7 +260,7 @@ def _ready_response(
 @router.post("/import")
 def import_media(payload: MediaImportIn) -> dict[str, Any]:
     """Acquire native media, then Groq timing/transcript, then explicit fallback."""
-    # The learner UI imports through `/api/media-learning/source` (metered, D-16S); this older route runs Groq and
+    # The learner UI imports through `/api/media-learning/source` (metered, D-168); this older route runs Groq and
     # Supadata work with no duration to charge, so where `media.import` is enforced it is refused, not left open.
     quota.refuse_unmetered(
         "media.import", category="quota_media_import_not_metered",
@@ -415,7 +415,7 @@ def _media_object_for_translation(payload: MediaTranslationIn) -> MediaLearningO
 def translate_media(payload: MediaTranslationIn) -> dict[str, Any]:
     """Translate a previously acquired canonical transcript without re-importing."""
     # A client-supplied transcript of any length goes to the paid translation provider with no import behind it to
-    # charge (D-16S): refused, not left open, while `media.import` is enforced. The learner UI does not call it.
+    # charge (D-168): refused, not left open, while `media.import` is enforced. The learner UI does not call it.
     quota.refuse_unmetered(
         "media.import", category="quota_media_import_not_metered",
         message="This translation route is not available while plan limits are enforced.",

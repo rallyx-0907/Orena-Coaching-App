@@ -5064,7 +5064,7 @@ review before merge** (entitlement and commerce enforcement on a paid provider p
 12. **Accepted, recorded:** a take longer than 60 s is cut to 60 s by the decoder (as before this change) and is charged 60;
     a take is charged its whole seconds rounded up, so a learner may lose up to one second per take to rounding.
 
-## D-16S - Media import minutes enforced on the server: the source's length, reserved before any work, settled by its job
+## D-168 - Media import minutes enforced on the server: the source's length, reserved before any work, settled by its job
 
 2026-10-10, the human's decisions relayed by the coordinating session, implemented on branch `feat/quota-media-import` on
 top of D-161 (quota core), D-163 and D-165. The number is assigned at merge. **Needs independent architecture review before

@@ -1,4 +1,4 @@
-"""D-16S `media.import` enforcement, hermetic (CI, SQLite): a learner's link or file, through the real routes, the real
+"""D-168 `media.import` enforcement, hermetic (CI, SQLite): a learner's link or file, through the real routes, the real
 importer, the real pipeline and the real quota core over the in-memory TEST DOUBLE repository of
 `tests/test_quota_gate.py` (never a runtime store).
 

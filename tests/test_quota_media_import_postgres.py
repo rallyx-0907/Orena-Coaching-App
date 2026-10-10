@@ -1,4 +1,4 @@
-"""D-16S `media.import` enforcement against real PostgreSQL: concurrent imports on the last minutes, restart
+"""D-168 `media.import` enforcement against real PostgreSQL: concurrent imports on the last minutes, restart
 persistence (a reservation settled by its operation id after the process died), the month boundary in the learner's
 timezone, the Plan & usage read, the reconciler's scope by meter, and duplicates/failures in the real tables.
 

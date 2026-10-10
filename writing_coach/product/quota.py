@@ -40,7 +40,7 @@ Work that outlives the request itself - a media import runs minutes in a backgro
 only the operation id (`ticket.operation_id`) with the work. The job dispatches, settles or releases by that id
 (`dispatch_operation`, `settle_operation`, `release_operation`), and the meter is listed in `ASYNC_METERS`, so the
 reconciler leaves it to its job for `ASYNC_RECONCILE_AFTER`; after that it settles what the owner of the work decided
-(`configure_async_decision`), and only a job still in play is settled as admitted (D-16S).
+(`configure_async_decision`), and only a job still in play is settled as admitted (D-168).
 
 Defaults still waiting for a human answer are named constants here (`ABANDONED_SETTLES`, `RECONCILE_AFTER`) and
 in D-160; the refresh route is deliberately not metered.
@@ -87,7 +87,7 @@ WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciati
 # Meters whose provider call ends inside the request; only these are reconciled after RECONCILE_AFTER.
 SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio")
 # Meters whose work outlives the request in a background job that settles its own reservation by operation id
-# (`settle_operation`, D-16S). The reconciler is only their backstop, after ASYNC_RECONCILE_AFTER.
+# (`settle_operation`, D-168). The reconciler is only their backstop, after ASYNC_RECONCILE_AFTER.
 ASYNC_METERS: tuple[str, ...] = ("media.import",)
 SWITCH_CACHE_SECONDS = 5.0
 

@@ -1105,7 +1105,7 @@ _quota.configure_quota(
 configure_product_usage(_quota.usage_for)
 app.add_middleware(_quota.QuotaRequestMiddleware)
 _quota_reconciler = _quota.QuotaReconcileSchedule(_quota_repository) if _quota_repository is not None else None
-# D-16S: a metered media import keeps its quota reservation across a restart, so the media pipeline recovers what a
+# D-168: a metered media import keeps its quota reservation across a restart, so the media pipeline recovers what a
 # restart interrupted only now that the quota runtime above is configured (never earlier: a re-queued job dispatches
 # and settles against it). The reconciler's backstop asks the media index what an abandoned import decided, and a timer
 # retries the settlements a failing quota store could not take.

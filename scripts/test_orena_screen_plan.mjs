@@ -216,7 +216,7 @@ assert.equal(resetLabel({ window: 'day', resetsAt: null }), 'Resets every day');
   assert.deepEqual([row.used, row.limit], [1.1, 5], 'display == bucket');
   copy.setLanguages({ ui: 'en', support: 'en' });
 
-  /* Media import minutes (D-16S): the source's seconds, said in minutes exactly as Plan & usage shows them. */
+  /* Media import minutes (D-168): the source's seconds, said in minutes exactly as Plan & usage shows them. */
   const imported = (used, limit = 900) => ({ status: 429, category: 'quota_exhausted', context: { feature: 'media.import', used, limit, unit: 'second', display_unit: 'minute', scale: 60 } });
   assert.equal(notice.quotaMessage(imported(900)), 'You have used 15 of 15 media import minutes this month.');
   assert.equal(notice.quotaMessage(imported(890)), 'You have used 14.8 of 15 media import minutes this month.', '890 s is 14.8 min');

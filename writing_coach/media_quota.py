@@ -1,4 +1,4 @@
-"""Media import minutes against the plan (`media.import`, D-16S): the part of the quota that outlives the request.
+"""Media import minutes against the plan (`media.import`, D-168): the part of the quota that outlives the request.
 
 A learner's import is a background job: the request stores the source and queues it, a worker makes the transcript
 and the meanings, and the learner's room polls. The meter is the minutes of SOURCE media the learner imports in

@@ -1,4 +1,4 @@
-"""D-16S cost telemetry of a media import: every paid provider request of an import is one row in the AI cost ledger
+"""D-168 cost telemetry of a media import: every paid provider request of an import is one row in the AI cost ledger
 (provider, model, audio seconds or tokens, USD), without the media's text. Hermetic: the platform's persistence is a
 list, the providers' HTTP is scripted.
 """

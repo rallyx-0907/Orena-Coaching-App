@@ -54,7 +54,7 @@ def record_token_operation(
     usage: dict[str, Any] | None = None,
     error: BaseException | None = None,
 ) -> None:
-    """One row for a text-model call made outside the AI platform (the media pre-translation, D-16S): capability,
+    """One row for a text-model call made outside the AI platform (the media pre-translation, D-168): capability,
     provider, model, the provider-reported prompt/completion tokens and the cost from the token catalog. No prompt,
     transcript or answer is recorded. Without reported usage the cost is said as unknown, never priced as zero."""
     try:

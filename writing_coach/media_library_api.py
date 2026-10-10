@@ -274,7 +274,7 @@ def _remove_personal_entry(store: Any, asset_store: BookAssetStore, entry: Media
     assert_writable = getattr(store, "assert_writable", None)
     if assert_writable is not None:
         assert_writable()
-    # An import removed before it finished produced nothing for the learner: its reservation settles 0 (D-16S).
+    # An import removed before it finished produced nothing for the learner: its reservation settles 0 (D-168).
     media_quota.cancel_entry(entry)
     if entry.provider == "youtube":
         return store.delete(entry.media_id)

@@ -330,7 +330,7 @@ class MediaPipeline:
             return False
         if media_quota.is_settled_import(entry):
             # A learner's metered import that has settled would run Whisper again with no reservation: a new
-            # import is a new admission (D-16S), never a re-run.
+            # import is a new admission (D-168), never a re-run.
             return False
         with self._guard:
             if media_id in self._inflight:
@@ -341,7 +341,7 @@ class MediaPipeline:
     def recover(self, store: Any, assets: BookAssetStore) -> int:
         """Re-queue what a restart interrupted. An item that keeps being interrupted stops after MAX_ATTEMPTS.
 
-        A metered import (D-16S) also keeps its quota reservation across the restart: an interrupted job is
+        A metered import (D-168) also keeps its quota reservation across the restart: an interrupted job is
         re-queued and settles when it ends, and a job that ended but could not write its settlement (the quota
         store was down) writes it now, from the intent recorded on the entry."""
         count = 0
@@ -372,7 +372,7 @@ class MediaPipeline:
     def settle_pending(self, store: Any, limit: int = media_quota.INTENT_BATCH) -> int:
         """Write the settlements a finished metered import decided but the quota store could not take (an intent on
         the entry), bounded per call. Run on a timer in a process that stays up, so a settlement is never left for the
-        reconciler's backstop (D-16S). Returns how many were attempted."""
+        reconciler's backstop (D-168). Returns how many were attempted."""
         if not media_quota.store_ready():
             return 0
         try:

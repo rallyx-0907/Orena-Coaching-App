@@ -1,4 +1,4 @@
-"""D-16S review follow-ups (architecture review of 5ce3567e): the restart / deferred-settlement lifecycle in the way the
+"""D-168 review follow-ups (architecture review of 5ce3567e): the restart / deferred-settlement lifecycle in the way the
 application really starts and runs, the reconciler's backstop respecting what an import decided, the paid routes left
 open, and the smaller guards. Hermetic, on the harness of `tests/test_quota_media_import.py`.
 """

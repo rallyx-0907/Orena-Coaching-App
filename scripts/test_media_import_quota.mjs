@@ -1,4 +1,4 @@
-/* Media import minutes (D-16S), the client's part: a link and a file are sent with the device timezone (the learner's
+/* Media import minutes (D-168), the client's part: a link and a file are sent with the device timezone (the learner's
    month follows it) and no idempotency key (the server answers a repeated source with the import the learner already
    has), and the plan's refusal is told apart from every other failure of an import. */
 import assert from 'node:assert/strict';

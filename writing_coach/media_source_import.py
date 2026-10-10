@@ -279,7 +279,7 @@ class MediaSourceImporter:
         self._store = store
         self._asset_store = asset_store
         self.pipeline = pipeline
-        # The length a provider reports for a source (YouTube metadata), used to charge a metered import (D-16S).
+        # The length a provider reports for a source (YouTube metadata), used to charge a metered import (D-168).
         self._duration_probe = duration_probe
 
     def prepare(self, entry: MediaLibraryEntry, *, declared: bool | None = None, batch_id: str = "") -> MediaLibraryEntry:
@@ -336,7 +336,7 @@ class MediaSourceImporter:
         return probe(url)
 
     def _import_youtube_metered(self, url: str, *, language: str, owner_key: str) -> MediaLibraryEntry:
-        """A YouTube link where `media.import` is enforced (D-16S).
+        """A YouTube link where `media.import` is enforced (D-168).
 
         The same learner importing the same video again is answered with what they already have, free. Otherwise the
         video's length is read from YouTube's metadata before anything else is fetched, its minutes are reserved
@@ -465,7 +465,7 @@ class MediaSourceImporter:
         `rights_cleared` is the operator's declaration at import (D-111): True clears rights for publication,
         anything else leaves them to review.
 
-        A learner's own file (`library="personal"`) is metered where `media.import` is enforced (D-16S): its length is
+        A learner's own file (`library="personal"`) is metered where `media.import` is enforced (D-168): its length is
         read from the stored bytes (ffprobe), the same file imported again is answered with the entry the learner
         already has, and otherwise its minutes are reserved before anything is stored or queued."""
         if library == "personal" and not owner_key:

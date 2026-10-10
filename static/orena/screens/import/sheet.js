@@ -50,7 +50,7 @@ export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
     else window.location.hash = target;
   };
 
-  /* The plan's media-import minutes are used up (D-16S): the server's own sentence, with the way to the plans, as the
+  /* The plan's media-import minutes are used up (D-168): the server's own sentence, with the way to the plans, as the
      rooms that have no failed-request place of their own show it (a toast). The sheet closes on the way out, and
      what the learner typed is kept when they come back. */
   const plansCtx = {

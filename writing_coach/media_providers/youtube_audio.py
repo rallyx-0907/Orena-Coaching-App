@@ -18,7 +18,7 @@ from writing_coach.media_timing import (
 
 def probe_youtube_duration(source_url: str, *, ydl_factory: Callable[[dict[str, Any]], Any] = YoutubeDL,
                            timeout_seconds: float = 15.0) -> float | None:
-    """The length YouTube itself reports for a video, in seconds, or None when it cannot be read (D-16S).
+    """The length YouTube itself reports for a video, in seconds, or None when it cannot be read (D-168).
 
     Metadata only - nothing is downloaded and no paid provider is called. It is the length a media import is charged
     by, so it is read on the server from the provider, never taken from the client or guessed from captions."""
