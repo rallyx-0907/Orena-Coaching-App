@@ -1,4 +1,4 @@
-/* The order onboarding writes in when the account has no learning language yet (D-16R): the language is stored BEFORE
+/* The order onboarding writes in when the account has no learning language yet (D-170): the language is stored BEFORE
    anything is written to the profile, because the profile is per learning language and the server refuses a learner
    write for an account that has not chosen one (409 `learning_language_required`) - it must never make the default
    (English) the learner's language just because they tapped a support language first.

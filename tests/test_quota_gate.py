@@ -242,7 +242,7 @@ def test_only_wired_meters_can_be_listed():
     assert set(quota.WIRED_METERS) == {"writing.review", "orena.message", "pronunciation.audio", "media.import"}
     assert quota.validate_switch_setting({"enabled": True, "meters": ["pronunciation.audio", "writing.review"]}) == {
         "enabled": True, "meters": ["writing.review", "pronunciation.audio"]}
-    # D-16R: `languages.target` is wired as a COUNT entitlement (language_limit.py), not as a bucket meter: the same
+    # D-170: `languages.target` is wired as a COUNT entitlement (language_limit.py), not as a bucket meter: the same
     # switch lists it, `admit()` never takes it, and a name nothing enforces is still refused and ignored.
     assert set(quota.WIRED_ENTITLEMENTS) == {"languages.target"} and set(quota.ENFORCEABLE) == set(quota.WIRED_METERS) | {"languages.target"}
     assert quota.validate_switch_setting({"enabled": True, "meters": ["languages.target", "writing.review"]}) == {

@@ -25,7 +25,7 @@ ACCOUNT_KEYED_TABLES = (
     "essays",  # and, through ON DELETE CASCADE, essay_review_history
     "library_items",  # including the saved place
     "saved_words",
-    # Every other table keyed by `user_id` with a `language_code` (D-16R: they decide which target languages the account
+    # Every other table keyed by `user_id` with a `language_code` (D-170: they decide which target languages the account
     # holds, so a recreated account must not inherit them). `users.id` survives deletion, so no cascade fires for them.
     "essay_revisions",
     "library_collections",

@@ -5253,7 +5253,7 @@ and the transcribe guard (point 8); the contract stays v8 (not merged yet).
     closed: 503).
 
 
-## D-16R - Target-language count enforced on the server: the languages an account holds, judged where it adds one
+## D-170 - Target-language count enforced on the server: the languages an account holds, judged where it adds one
 
 2026-10-10, the human's decisions relayed by the coordinating session, implemented on branch `feat/entitlement-languages`
 on top of D-161 (quota core) and the meters that followed. The number is assigned at merge. **Needs independent

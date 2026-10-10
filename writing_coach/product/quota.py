@@ -38,7 +38,7 @@ The switch (default OFF everywhere): the environment `ORENA_QUOTA_ENFORCEMENT` (
 otherwise the platform setting `product.quota_enforcement` (`{"enabled": bool, "meters": [...]}`, editable at
 `PUT /api/product/admin/quota`) decides, so QA can switch a running sandbox without recreating it. The meters
 enforced are `ORENA_QUOTA_METERS` (comma separated) when set, otherwise the setting's list, and only meters this
-build has wired (`WIRED_METERS`, and the count entitlements `WIRED_ENTITLEMENTS` - `languages.target`, D-16R, which is
+build has wired (`WIRED_METERS`, and the count entitlements `WIRED_ENTITLEMENTS` - `languages.target`, D-170, which is
 judged where an account adds a language and never admitted through a bucket). Off, or a meter not listed: `admit()` is a no-op ticket and no bucket is
 written. On with no quota store (SQLite test backend, missing tables, account backbone off): every listed meter
 answers 503 `quota_unavailable`. Enforcement never treats "unknown" as "unlimited".
@@ -92,7 +92,7 @@ SETTING_KEY = "product.quota_enforcement"
 # counted while nothing counts it.
 WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "media.import")
 # Entitlements this build enforces that are NOT bucket meters: a count cap with no window and no reservation
-# (`languages.target`, D-16R - `writing_coach.product.language_limit`). The same switch lists them, so one setting and
+# (`languages.target`, D-170 - `writing_coach.product.language_limit`). The same switch lists them, so one setting and
 # one pair of environment variables govern everything the server enforces; they never go through `admit()`.
 WIRED_ENTITLEMENTS: tuple[str, ...] = ("languages.target",)
 ENFORCEABLE: tuple[str, ...] = WIRED_METERS + WIRED_ENTITLEMENTS

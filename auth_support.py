@@ -525,7 +525,7 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
         Read only when the session carries no language, and then written into the session, so every
         later request reads the cookie as before. It seeds; it never overrides a session that chose.
 
-        `enforced` (D-16R, the target-language count is on): "this account has not chosen" is not remembered in the
+        `enforced` (D-170, the target-language count is on): "this account has not chosen" is not remembered in the
         session. Another session may store a language at any moment, and a session that kept running in the default
         language would write rows the guard never judged; so it asks again, one primary-key read per request, until it
         has a language of its own (review F2). A failed read then raises `_AccountLanguageUnreadable`.

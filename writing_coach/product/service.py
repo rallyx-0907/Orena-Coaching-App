@@ -119,7 +119,7 @@ class ProductService:
         used = max(0, int(usage.get("used") or 0))
         remaining = None if limit is None else max(0, limit - used)
         if meter.window is None:
-            # A count cap (`languages.target`, D-16R): at the cap nothing more can be ADDED, but what the account
+            # A count cap (`languages.target`, D-170): at the cap nothing more can be ADDED, but what the account
             # holds stays usable, so a full count is neither "disabled" nor "exhausted" - `remaining` says 0.
             return FeatureAccess(
                 feature, entitlement.enabled, limit, used, remaining, usage_state="known",

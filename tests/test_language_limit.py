@@ -1,4 +1,4 @@
-"""D-16R `languages.target`, hermetic (CI, no PostgreSQL): the count entitlement at the two routes that give an
+"""D-170 `languages.target`, hermetic (CI, no PostgreSQL): the count entitlement at the two routes that give an
 account a learning language, with an in-memory account store that does what the PostgreSQL one does - lock the account,
 hand the guard the languages it holds, write or write nothing.
 
@@ -510,7 +510,7 @@ def test_f6_the_limit_is_read_before_the_account_row_is_locked(monkeypatch):
 
 
 def test_f7_a_plan_without_the_entitlement_refuses_even_a_first_language():
-    """Recorded for administrators (D-16R): disabling `languages.target` for a plan blocks onboarding on it."""
+    """Recorded for administrators (D-170): disabling `languages.target` for a plan blocks onboarding on it."""
     document = {"version": 2, "plans": [
         {"id": plan.id, "prices": plan.prices, "entitlements": [
             {"key": "languages.target", "enabled": plan.id != "free", "limit": 2, "params": {}}]}

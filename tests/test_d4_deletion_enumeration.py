@@ -52,7 +52,7 @@ def test_the_account_keyed_tables_are_keyed_by_the_account():
 
 
 def test_every_language_scoped_table_the_target_language_count_reads_is_in_the_enumeration():
-    """D-16R: a recreated account holds the languages of the rows it still has, so the deletion workflow built from this
+    """D-170: a recreated account holds the languages of the rows it still has, so the deletion workflow built from this
     enumeration must delete every table `language_ownership` counts (review F4)."""
     from writing_coach.persistence.language_ownership import language_scoped_tables
 

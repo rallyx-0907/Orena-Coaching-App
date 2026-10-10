@@ -1,4 +1,4 @@
-"""Target languages: a count cap enforced where an account gets one (D-16R).
+"""Target languages: a count cap enforced where an account gets one (D-170).
 
 `languages.target` is an entitlement of the plan catalogue (catalogue v2: Free / Plus / Pro 1 / 2 / 2, editable by an
 administrator), not a bucket: it has no window, no reservation and nothing to settle. The rule, on the server only:

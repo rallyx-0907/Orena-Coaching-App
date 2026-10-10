@@ -1,4 +1,4 @@
-/* Target languages (D-16R), the client's part: the server refuses a language the plan's count does not allow (403
+/* Target languages (D-170), the client's part: the server refuses a language the plan's count does not allow (403
    `language_limit_reached`); the client only says so, in the interface language, from the server's own figures, with the
    way to the plans. It enforces nothing: it never counts languages and never decides what may be picked. */
 import assert from 'node:assert/strict';
@@ -72,7 +72,7 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   copy.setLanguages({ ui: 'en', support: 'en' });
 }
 
-/* Onboarding's order while the account has no learning language (D-16R, review F8): the language is stored before
+/* Onboarding's order while the account has no learning language (D-170, review F8): the language is stored before
    anything is written to a profile, and a support pick made first is written only after that. */
 {
   const { createTargetFirst } = await import('../static/orena/screens/onboarding/target-first.js');

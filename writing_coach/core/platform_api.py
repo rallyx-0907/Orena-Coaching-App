@@ -44,7 +44,7 @@ def api_platform_language(payload: LanguageSelectIn, request: Request) -> dict[s
     if not is_enabled(code):
         raise HTTPException(409, f"Language module '{code}' is not enabled yet.")
     stored, token = False, ""
-    # D-16R: where the target-language count is enforced (None when it is not), taking a language the account does
+    # D-170: where the target-language count is enforced (None when it is not), taking a language the account does
     # not hold yet is judged inside the write's own transaction - so it must be stored; a language it holds switches
     # exactly as it always did. A refusal is raised before the session is touched.
     adoption = account_settings.language_adoption({"learning_language": code})

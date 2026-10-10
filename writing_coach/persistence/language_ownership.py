@@ -1,4 +1,4 @@
-"""Which target languages an account holds, read from what the server already stores (D-16R).
+"""Which target languages an account holds, read from what the server already stores (D-170).
 
 There is no table of "languages this account adopted", and none is added here (a new table or column is a schema
 decision reserved to the human; see UI_BACKEND_GAPS QTA-7). What the server does keep, per account, is

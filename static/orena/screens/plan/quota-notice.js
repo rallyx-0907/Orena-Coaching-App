@@ -38,7 +38,7 @@ export function showQuotaNotice(ctx, error) {
 }
 
 /* Taking a learning language the account does not hold yet, when the plan's count is reached (HTTP 403
-   `language_limit_reached`, or `feature_not_in_plan` for `languages.target`, D-16R). The server judges it; the client
+   `language_limit_reached`, or `feature_not_in_plan` for `languages.target`, D-170). The server judges it; the client
    only says it, in the interface language, from the server's own figures (`context.limit`, `context.owned`), with the
    way to the plans. Nothing was changed on the server, and a language the account already learns stays switchable. */
 export function isLanguageLimit(error) {

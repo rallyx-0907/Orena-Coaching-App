@@ -1104,7 +1104,7 @@ _quota.configure_quota(
     reason=_quota_reason,
 )
 configure_product_usage(_quota.usage_for)
-# D-16R: the target-language count reads what the account holds from the same PostgreSQL the quota store lives on; a
+# D-170: the target-language count reads what the account holds from the same PostgreSQL the quota store lives on; a
 # runtime without that store has no ownership reader, and an enforced `languages.target` then answers 503.
 from writing_coach.persistence.language_ownership import PostgresLanguageOwnership  # noqa: E402
 from writing_coach.product import language_limit as _language_limit  # noqa: E402

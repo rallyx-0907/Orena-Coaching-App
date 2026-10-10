@@ -121,7 +121,7 @@ def validated_changes(payload: AccountSettingsPatchIn) -> dict[str, Any]:
 
 
 def language_adoption(changes: dict[str, Any]):
-    """The target-language entitlement's adoption for a write that sets the learning language (D-16R), or None.
+    """The target-language entitlement's adoption for a write that sets the learning language (D-170), or None.
 
     None when the write does not touch the learning language, or the entitlement is not enforced. Raises the 503 of
     the gate when enforcement is on but cannot run. The repository calls `adoption.guard` inside the write's

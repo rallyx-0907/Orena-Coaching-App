@@ -83,7 +83,7 @@ class AuthRepository(Protocol):
 
 # A `guard` is called inside the write's own transaction, with the account row locked, with the set of learning
 # languages the account holds (`language_ownership.owned_languages`); whatever it raises aborts the write and nothing
-# is stored (the target-language count, D-16R). `expected_token=None` compares against the token read under that
+# is stored (the target-language count, D-170). `expected_token=None` compares against the token read under that
 # lock - a write the server itself serialises, for a caller that holds no token (see `platform_api`).
 Guard = Callable[[set[str]], None]
 
@@ -313,7 +313,7 @@ class PostgresAuthRepository:
         The new token is the database clock in the same statement, so two writers holding one token
         cannot both succeed and a client timestamp never enters (D-104 H-17).
 
-        With a `guard` (D-16R) the account row is locked first (`FOR UPDATE`): two adoptions of one account run one
+        With a `guard` (D-170) the account row is locked first (`FOR UPDATE`): two adoptions of one account run one
         after the other, the second reading what the first committed, and the guard judges the languages the account
         holds under that lock - before anything is written, in the same transaction as the write.
         """

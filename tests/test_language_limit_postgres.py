@@ -1,4 +1,4 @@
-"""D-16R `languages.target` against real PostgreSQL: the ownership query over the real tables, the account row lock,
+"""D-170 `languages.target` against real PostgreSQL: the ownership query over the real tables, the account row lock,
 the plan and catalogue reads, the two routes, and the Plan & usage read.
 
 Skips unless `ORENA_TEST_POSTGRES_URL` names a THROWAWAY database (the `pg_engine` fixture upgrades it to head). CI has

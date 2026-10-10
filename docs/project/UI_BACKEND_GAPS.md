@@ -5495,28 +5495,28 @@ the meters below.
 - **QTA-6 Media import minutes - ENFORCED when the switch lists `media.import`** (D-168; Free / Plus / Pro 15 / 120 / 600
   minutes a month, stored in seconds, learner's timezone; beta configuration). See QTA-17 for the audit and the open items.
   The Import sheet shows the 429 as the toast with "See all plans" (no exhausted state is drawn, QTA-1), EN/VI/ZH.
-- **QTA-7 Target languages - ENFORCED when the switch lists `languages.target`** (D-16R; Free / Plus / Pro 1 / 2 / 2, a count
+- **QTA-7 Target languages - ENFORCED when the switch lists `languages.target`** (D-170; Free / Plus / Pro 1 / 2 / 2, a count
   cap with no window; beta configuration). Adding a language the account does not hold at its limit is refused on the server
   (403 `language_limit_reached`); a Free account that already learns 2 languages KEEPS them and can switch between them -
   only adding a third is refused (human). Held = stored learning language + every language-scoped row the account owns
-  (D-16R point 2). Onboarding and the Settings picker show the refusal as the quota toast with "See all plans", EN/VI/ZH
+  (D-170 point 2). Onboarding and the Settings picker show the refusal as the quota toast with "See all plans", EN/VI/ZH
   (no new visual, rule 43). **For the human:** (a) the design draws no languages row in Plan & usage (the Plan frame lists the
   four meters; the count is in the comparison table only), so none was added although the commerce read supplies `used` /
   `limit` / `remaining`; decide whether the design should draw one. (b) A Free learner who picked a language and used nothing
-  cannot change their mind to another new language (the stored language counts; D-16R point 12c). Owner: BACKEND + UI.
+  cannot change their mind to another new language (the stored language counts; D-170 point 12c). Owner: BACKEND + UI.
 - **QTA-18 Target-language audit (2026-10-10, `origin/main` 2c04fc1e).** Owner: BACKEND. (1) Mutation paths: only
   `POST /api/platform/language` (`core/platform_api.py`) and `PATCH /api/account-settings` (`account_settings.py`) give an account
   a learning language; session seeding (`auth_support.py`) reads what they stored; the learner-profile PUT/PATCH write the
   session language's profile. All go through one guard. (2) The Admin users list's `languages` comes from
   `user_language_profiles` (`persistence/admin_repository.py`), which is only the profiles a learner has set up - not the held
-  set (D-16R point 2); it was not changed. (3) `deletion_enumeration.ACCOUNT_KEYED_TABLES` omitted `essay_revisions`,
+  set (D-170 point 2); it was not changed. (3) `deletion_enumeration.ACCOUNT_KEYED_TABLES` omitted `essay_revisions`,
   `library_collections`, `reading_ability_projections`, `reading_attempts`, `reading_legacy_sessions`, `text_discussions` and
   `vocabulary_decks`, which also hold a learner's rows per language; they are now enumerated and a test keeps every table the
   count reads there (the deletion workflow itself, D-055, is still not built). (4) An explicit, monotonic adopted-languages record (a table, or a
-  JSON column on `users`) would remove the derived-set edge cases of D-16R point 12 (a deleted language frees its slot; a stale
-  session can write into a language the account stopped storing). It is a schema change: a human gate, not done here, and **a precondition for enabling a THIRD target language** (D-16R point 15: that record plus per-request admission of the
+  JSON column on `users`) would remove the derived-set edge cases of D-170 point 12 (a deleted language frees its slot; a stale
+  session can write into a language the account stopped storing). It is a schema change: a human gate, not done here, and **a precondition for enabling a THIRD target language** (D-170 point 15: that record plus per-request admission of the
   session's language, or the session bound to `settings_version`); activating `languages.target` with English and Chinese
-  only does not need it. Accepted P3: a session-only switch made before activation survives up to the cookie's 14 days. A plan with `languages.target` disabled or limit 0 blocks onboarding on it (D-16R point 14). (5)
+  only does not need it. Accepted P3: a session-only switch made before activation survives up to the cookie's 14 days. A plan with `languages.target` disabled or limit 0 blocks onboarding on it (D-170 point 14). (5)
   `tests/test_quota_voice_postgres.py::test_the_reconciler_has_nothing_to_settle_for_a_vanished_session` fails when the quota
   PostgreSQL test files share one database (leftover reservations of the earlier files are released by its reconciler pass); it
   fails the same on `origin/main`, passes alone, and CI has no PostgreSQL service.
