@@ -61,6 +61,9 @@ class StubVoice:
         self.relayed = 0
         self.utterances = []
 
+    def is_enabled(self):  # the service's switch (D-172); voice is on in these tests
+        return True
+
     def open(self, body, learner):
         self.opened += 1
         return {"voice_session_id": "v1"}
