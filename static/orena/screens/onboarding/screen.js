@@ -382,7 +382,7 @@ export default async function onboardingScreen(element, ctx) {
   const patchProfile = (fields) => patchProfileOf(context, fields);
 
   /* What the learner is told when a language could not be stored: the plan's count (it opens the plans with the reason,
-     D-17Q), the learning language still to choose, or the generic failure. */
+     D-171), the learning language still to choose, or the generic failure. */
   function reportTargetFailure(error, requested = '') {
     if (isLanguageLimit(error)) showLanguageLimitNotice(ctx, error, requested);
     else if (error?.category === 'learning_language_required') toast(t('targetFirst'));

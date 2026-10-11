@@ -1,4 +1,4 @@
-/* Target languages (D-170, D-17Q), the client's part: the server refuses a language the plan's count does not allow (403
+/* Target languages (D-170, D-171), the client's part: the server refuses a language the plan's count does not allow (403
    `language_limit_reached`); the client only says so - it opens the plans at once with the reason, in the interface
    language, from the server's own figures. It enforces nothing: it never counts languages and never decides what may be picked. */
 import assert from 'node:assert/strict';
@@ -27,7 +27,7 @@ assert.equal(isLanguageLimit(Object.assign(new Error('x'), { status: 409 })), fa
 assert.equal(isLanguageLimit(null), false);
 assert.equal(isQuotaExhausted(refusal(1, 1)), false, 'it is not a usage bucket running out');
 
-/* The refusal opens Plans at once, with the reason (D-17Q): a toast was too small and gone too soon. What is said comes
+/* The refusal opens Plans at once, with the reason (D-171): a toast was too small and gone too soon. What is said comes
    from the server's own figures; the client counts and decides nothing. */
 const { showLanguageLimitNotice } = await import('../static/orena/screens/plan/quota-notice.js');
 const { heldReason, releaseReason } = await import('../static/orena/screens/plan/reason.js');

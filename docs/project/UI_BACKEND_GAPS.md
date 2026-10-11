@@ -5492,7 +5492,7 @@ the meters below.
   `displayAmount` rounds, so 299 of 300 s shows "5 of 5" minutes while a short take is still admitted (shared with Plan &
   usage); (e) `/api/speech/transcribe` stays unmetered paid spend, decided in D-169 (QTA-14) - not all paid AI is
   plan-bounded; (f) an exhausted (429) or duplicate (409) request still costs one local decode. Owner: human / BACKEND.
-- **QTA-18 A refused language opens Plans with the reason (human report, 2026-10-10, D-17Q).** The design draws no state for
+- **QTA-18 A refused language opens Plans with the reason (human report, 2026-10-10, D-171).** The design draws no state for
   "your plan does not allow this" and the toast was too small and gone too soon. The refusal now navigates to
   `#/plan/pricing?reason=language` and Plans shows the design's **Banner** component (kind info, dismissible, sticky at the top of
   the region) above the hero: "Free includes 1 target language. You're learning English. To add Chinese, upgrade to Plus. Nothing
@@ -5512,7 +5512,7 @@ the meters below.
   cap with no window; beta configuration). Adding a language the account does not hold at its limit is refused on the server
   (403 `language_limit_reached`); a Free account that already learns 2 languages KEEPS them and can switch between them -
   only adding a third is refused (human). Held = stored learning language + every language-scoped row the account owns
-  (D-170 point 2). Onboarding and the Settings picker open Plans at once with the reason (D-17Q, QTA-18) instead of a toast, EN/VI/ZH
+  (D-170 point 2). Onboarding and the Settings picker open Plans at once with the reason (D-171, QTA-18) instead of a toast, EN/VI/ZH
   (the kit's Banner, no new visual, rule 43). **For the human:** (a) the design draws no languages row in Plan & usage (the Plan frame lists the
   four meters; the count is in the comparison table only), so none was added although the commerce read supplies `used` /
   `limit` / `remaining`; decide whether the design should draw one. (b) A Free learner who picked a language and used nothing

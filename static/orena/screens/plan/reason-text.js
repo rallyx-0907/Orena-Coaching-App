@@ -1,4 +1,4 @@
-/* The words of the explanation Plans shows when a refused language opens it (D-17Q), from the facts of
+/* The words of the explanation Plans shows when a refused language opens it (D-171), from the facts of
    model.languageReasonFacts(): the plan and its limit, the languages the learner already learns, the one they tried to
    add and the plan that would allow it. Every figure and name is the server's or the catalogue's; the languages are named
    in the interface language. A fact that is not known leaves its sentence out - nothing is invented in its place. */

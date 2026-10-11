@@ -5352,7 +5352,7 @@ implementer may not self-approve). No schema change, no migration.
     lock: a downgrade committed in that window can miss one in-flight adoption; the next mutation sees it (accepted). (F10) The
     middleware asks whether the count is enforced only for a request that has no language of its own and goes to `/api/`.
 
-## D-17Q - Pricing details reachable; a refused language opens the plans with the reason
+## D-171 - Pricing details reachable; a refused language opens the plans with the reason
 
 2026-10-10, two learner reports, branch `fix/pricing-and-language-limit` on `origin/main` a514dba9. The number is assigned at merge.
 Client only: no server, schema or catalogue change.

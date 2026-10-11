@@ -230,7 +230,7 @@ assert.equal(resetLabel({ window: 'day', resetsAt: null }), 'Resets every day');
   copy.setLanguages({ ui: 'en', support: 'en' });
 }
 
-/* --- the plans in full (D-17Q): every meter of every plan, and a layout that lets all of it be reached ------ */
+/* --- the plans in full (D-171): every meter of every plan, and a layout that lets all of it be reached ------ */
 {
   const { readFileSync } = await import('node:fs');
   const FIVE = ['orena.message', 'writing.review', 'pronunciation.audio', 'media.import', 'languages.target'];

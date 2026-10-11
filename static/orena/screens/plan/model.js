@@ -134,7 +134,7 @@ export function pricingPlans({ plans, commerce } = {}) {
   });
 }
 
-/* Why a refused language opens Plans (D-17Q): the facts of the explanation, from the server's refusal (`reason`, what
+/* Why a refused language opens Plans (D-171): the facts of the explanation, from the server's refusal (`reason`, what
    reason.js holds - absent after a reload) and the catalogue's plans (`list`, pricingPlans()). Nothing is decided here: the
    limit is the server's own, and the plan to upgrade to is the lowest one above the learner's whose catalogue entry
    lets them hold more languages than they do. `included` is false when the plan has no target-language entitlement at all. */

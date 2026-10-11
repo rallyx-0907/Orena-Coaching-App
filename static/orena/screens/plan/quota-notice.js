@@ -41,7 +41,7 @@ export function showQuotaNotice(ctx, error) {
 /* Taking a learning language the account does not hold yet, when the plan's count is reached (HTTP 403
    `language_limit_reached`, or `feature_not_in_plan` for `languages.target`, D-170). The server judges it; the client
    only says it. A toast was too small and gone too soon to explain it, so the refusal opens Plans at once
-   (`?reason=language`, D-17Q) with the explanation on top: the plan's limit and the languages the learner holds, from the
+   (`?reason=language`, D-171) with the explanation on top: the plan's limit and the languages the learner holds, from the
    server's own `context`, the language they tried to add (`requested`) and the plan that allows it (plan/pricing.js).
    Nothing was changed on the server; Back returns to the language the learner is on, which stays switchable. */
 export function isLanguageLimit(error) {

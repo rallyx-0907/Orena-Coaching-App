@@ -1,4 +1,4 @@
-/* Why the learner was sent to Plans (D-17Q): the server's own refusal, kept in memory for the one screen that
+/* Why the learner was sent to Plans (D-171): the server's own refusal, kept in memory for the one screen that
    explains it. A refusal opens Plans at once (`#/plan/pricing?reason=language`); the figures it carries (limit,
    languages held, plan, and the language the learner tried to take) are the server's `context`, held here until the
    learner dismisses the explanation. Nothing is stored on a device or sent anywhere, and nothing here decides what

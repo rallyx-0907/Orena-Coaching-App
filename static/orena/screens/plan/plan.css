@@ -33,7 +33,7 @@
   gap: 20px;
 }
 /* A section keeps the height its content needs and the region scrolls. Left to shrink, a flex item that clips its
-   own overflow (the compare card) is squeezed to its padding and its rows can never be reached (D-17Q). */
+   own overflow (the compare card) is squeezed to its padding and its rows can never be reached (D-171). */
 .s-plan__scroll > * {
   flex: none;
 }

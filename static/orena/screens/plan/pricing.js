@@ -94,7 +94,7 @@ export default async function pricing(element, ctx) {
   const list = pricingPlans({ plans, commerce });
   const current = list.find((plan) => plan.isCurrent) || null;
   let cycle = 'monthly';
-  /* Why the learner was sent here (D-17Q): a refused language explains itself on top, until it is dismissed. Without the
+  /* Why the learner was sent here (D-171): a refused language explains itself on top, until it is dismissed. Without the
      address's `reason` there is nothing to explain, and what was held is let go. */
   let reason = null;
   if (ctx.query?.get?.('reason') === REASON_LANGUAGE) {
