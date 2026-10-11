@@ -111,7 +111,9 @@ def _env_int(name: str, default: int) -> int:
 def max_asr_seconds() -> int:
     """The longest source speech recognition will take (`MEDIA_ASR_MAX_SECONDS`, 90 minutes): also the most one
     import can be charged (`media_quota`)."""
-    return _env_int("MEDIA_ASR_MAX_SECONDS", 5400)
+    from writing_coach import policies
+
+    return int(policies.value("media.asr_max_seconds"))
 
 
 # -- rights ---------------------------------------------------------------------------------
@@ -532,7 +534,9 @@ class MediaPipeline:
         Idempotent (a stored clip is never cut again), bounded, provider-free, and never able to fail
         readiness: a lesson without clips is complete, and Compare says its model plot is unavailable.
         """
-        if os.getenv("MEDIA_MODEL_CLIPS", "1").strip().casefold() in {"0", "false", "no", "off"}:
+        from writing_coach import policies
+
+        if not policies.value("media.model_clips_enabled"):
             return
         try:
             from writing_coach import model_clips
@@ -548,7 +552,7 @@ class MediaPipeline:
                 source = self._audio_source(assets, entry, Path(directory), max_seconds)
                 result = model_clips.prepare_clips(
                     assets, source, pending,
-                    max_lines=_env_int("MEDIA_MODEL_CLIP_MAX_LINES", model_clips.DEFAULT_MAX_LINES),
+                    max_lines=int(policies.value("media.model_clip_max_lines")),
                     max_audio_ms=max_seconds * 1000,
                 )
             _logger.info("model clips for %s: %s", entry.media_id, result.as_dict())

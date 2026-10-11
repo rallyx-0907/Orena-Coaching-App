@@ -105,7 +105,7 @@ SWITCH_CACHE_SECONDS = 5.0
 
 # [HUMAN, pending] What a reservation whose owner died after dispatch costs: "admitted" (default, human
 # 2026-10-09) charges what was reserved; "zero" would charge nothing.
-ABANDONED_SETTLES = "admitted"
+ABANDONED_SETTLES = "admitted"  # the default; the effective choice is the `quota.abandoned_settles` policy (Admin, D-172)
 # [HUMAN, pending] How long an open reservation may sit before the reconciler decides it was abandoned: more than
 # twice the slowest provider timeout of a wired route (OLLAMA_TIMEOUT 180 s).
 RECONCILE_AFTER = timedelta(minutes=15)
@@ -344,11 +344,27 @@ def validate_switch_setting(document: object) -> dict[str, Any]:
     return {"enabled": enabled, "meters": [item for item in ENFORCEABLE if item in meters]}
 
 
-def save_switch(document: object, *, updated_by: str = "", audit: dict | None = None) -> dict[str, Any]:
+def stored_meta() -> dict[str, Any]:
+    """When and by whom the switch was last saved in Admin: {updated_at, updated_by}, both None when nothing is stored
+    or the store cannot be read (display only; the switch itself never reads this)."""
+    if _runtime.settings is None:
+        return {"updated_at": None, "updated_by": None}
+    try:
+        record = _runtime.settings.get_setting(SETTING_KEY) or {}
+    except Exception:  # noqa: BLE001
+        return {"updated_at": None, "updated_by": None}
+    return {"updated_at": record.get("updated_at") or None, "updated_by": record.get("updated_by") or None}
+
+
+def save_switch(document: object, *, updated_by: str = "", audit: dict | None = None,
+                expected_updated_at: object = ...) -> dict[str, Any]:
+    """Store the switch. `expected_updated_at` (the version the editor loaded; None for "nothing stored yet") is
+    compared inside the write transaction when given; omitted, the write is unconditional as before (D-172)."""
     normalized = validate_switch_setting(document)
     if _runtime.settings is None:
         raise RuntimeError("No settings store on this deployment.")
-    _runtime.settings.set_setting(SETTING_KEY, normalized, updated_by=updated_by, audit=audit)
+    _runtime.settings.set_setting(SETTING_KEY, normalized, updated_by=updated_by,
+                                  expected_updated_at=expected_updated_at, audit=audit)
     _clear_switch_cache()
     return switch()
 
@@ -967,6 +983,14 @@ def _count_usage(key: str, user_key: str) -> dict[str, Any]:
 
 # --- reconciler -----------------------------------------------------------------------------------------------
 
+def abandoned_settles() -> str:
+    """What a dispatched reservation whose owner died costs: the effective `quota.abandoned_settles` policy, else the
+    constant above (a settings store that cannot be read keeps what this process last read, or the constant)."""
+    from writing_coach import policies
+
+    return str(policies.value("quota.abandoned_settles"))
+
+
 def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int = 200) -> dict[str, int]:
     """Open reservations older than their meter's threshold: a dispatched one is settled (ABANDONED_SETTLES), a
     reserved one (never handed to a provider) is released. Idempotent; several processes may run it.
@@ -978,7 +1002,7 @@ def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int =
     for meters, after in ((SYNC_METERS, RECONCILE_AFTER), (ASYNC_METERS, ASYNC_RECONCILE_AFTER)):
         for row in repository.stale_dispatched(now - after, limit, states=("reserved", "dispatched"), meters=meters):
             if row["state"] == "dispatched":
-                actual = int(row["admitted_units"]) if ABANDONED_SETTLES == "admitted" else 0
+                actual = int(row["admitted_units"]) if abandoned_settles() == "admitted" else 0
                 ref = "reconciled:abandoned"
                 if meters is ASYNC_METERS and _async_decision is not None:
                     try:

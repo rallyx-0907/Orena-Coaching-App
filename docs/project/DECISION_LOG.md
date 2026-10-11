@@ -5393,3 +5393,67 @@ Client only: no server, schema or catalogue change.
    for the region) and `scripts/test_language_limit_notice.mjs` (the refusal opens `#/plan/pricing?reason=language`, the
    explanation from the context in EN/VI/ZH, no client counting). The toast sentences `languageLimit` / `languageNotInPlan` are removed
    with their only caller.
+
+## D-172 - Operational policies are edited in Admin
+
+2026-10-11, explicit human requirement: "All tuning must be in Admin; changing something must never require touching code."
+Implemented on branch `feat/admin-policies` (from `main` at a514dba9). Independent architecture review (Claude Opus 5.5,
+Delegated Architecture Reviewer): APPROVE WITH CONDITIONS at b962e957, APPROVE at 567fec42
+(`docs/reviews/architecture/ADMIN_POLICIES_REVIEW_2026-10-11.md`).
+
+1. **One document.** The operational parameters the server carried as constants or environment reads that govern product
+   behaviour, cost and limits are the `platform.policies` row of `platform_settings` (`writing_coach/policies.py`): versioned
+   JSON `{version, values: {key: value}}`, a typed registry (kind, range, unit, default, optional environment variable),
+   unknown keys rejected, defaults equal to the constants they replace (a test pins each one), an empty document is the
+   defaults. The audit (`docs/project/UI_BACKEND_GAPS.md` "ADM-POL") classifies every parameter: 37 are operator policy (A), the
+   rest are safety internals that stay in code with their reasons (B) or deployment/secret configuration that stays in the
+   environment (C).
+2. **Same contract as the plan catalogue (D-153).** Save is a compare-and-set on the stored version
+   (`expected_updated_at`, 409 on a stale page) with the audit row (`platform.policies.update`: who, each key's from/to, what
+   was confirmed) committed in the same transaction. Reads are cached 5 s per process; the process that saves sees it at once.
+3. **Precedence: environment > Admin > default.** A variable that is explicitly set pins its policy (the policies that had
+   one keep it - `AGENT_VOICE_ENABLED`, `AGENT_DAILY_SPEND_CAP_USD`, `FEEDBACK_RETENTION_SWEEP`, ...), the page shows it
+   "locked by environment" and the server refuses to change it. Production pins stay authoritative.
+4. **Read at use time, no restart.** Every class-(A) consumer reads the effective value when it acts: the agent limits
+   through `LiveAgentLimits`, the limiters through callables, the daily spend guard, voice (`VoiceService` now always exists
+   where the agent does; its session cap, chunk size and resumption are policies, while whether voice is on stays
+   `AGENT_VOICE_ENABLED`, the human's activation gate), speech take/brake/concurrency/no-speech charge, media caps and
+   estimates, route rate limits, feedback limit, the three retention jobs (the schedule threads always run and ask the switch;
+   nothing is deleted unless it is on), the word-audio cap and the quota settlement choice. An empty document behaves exactly
+   as before (the existing suites pass unchanged except where a test asserted the old start-up-only wiring).
+5. **Danger.** A switch or period that deletes data, and a spend cap raised past its sane maximum (or removed), is 422
+   `confirmation_required` until the request carries `confirm[key]: true`; the page asks in a dialog first, and the audit row
+   records the confirmation.
+6. **Fail-safe.** A settings store that cannot be read never raises into a request: the last values this process read stay in
+   force (the defaults if it never read any), a warning is logged, and a failed read is cached as briefly as a good one so a
+   down store is not asked on every request. (Deliberately stronger than "use the defaults": a blip must not lift an
+   Admin-set spend cap back to none.) A stored value that is not valid now, or a key this build does not know, is ignored and
+   logged, never half-applied. The quota enforcement switch keeps its own fail-closed rule (D-161 point 8) and is not a policy
+   of this document.
+7. **The quota switch joins the page.** `GET`/`PUT /api/product/admin/quota` (D-161) are reused, not duplicated; they gain
+   `updated_at`/`updated_by` and an optional `expected_updated_at` (409), and the page shows the switch, its meters and who
+   last changed it. Environment variables still win there.
+8. **The page.** Admin > Operations > Policies & limits (`#/admin/operations/policies`, `screens/admin/policies.js`), kit
+   blocks only, EN/VI/ZH, gate `scripts/test_orena_admin_policies.mjs`; routes added to the admin authorization matrix.
+9. **Review of b962e957 (APPROVE WITH CONDITIONS), fixed in the next commit.** (P1-1) The agent daily spend cap is read
+   strictly (`policies.value_strict`): a worker that has never read the settings store, or whose stored cap no longer
+   validates, refuses turns (fails closed) instead of treating "unknown" as "no cap". (P1-2) A save without
+   `expected_updated_at` is a compare-and-set against the version it just read (409 on a race), so a server-side merge
+   can never revert a concurrent change. (P2-1) `voice.enabled` is not a policy: paid live voice stays the human's
+   activation, `AGENT_VOICE_ENABLED`. (P2-2) `quota.abandoned_settles`, `speech.no_speech_charged` and `voice.chunk_units`
+   (rules the human decided) need confirmation on any change (`danger: charging`). (P2-4) the media price estimates have
+   a minimum above 0 (0 would disable the spend caps). (P2-5) Retention periods can only be shortened: their maximum is
+   the published legal value (`docs/legal/public/facts.json`: 90 days agent turns, 24 months feedback; privacy: 13 months
+   AI cost records). **Admin is now the activation point for the retention sweeps** (D-159: switching the feedback sweep on is
+   the human's activation, :8000 included): both sweep variables are unset on :8000 today, so an administrator can switch
+   deletion on there, confirmed and audited; pin `FEEDBACK_RETENTION_SWEEP` and `AGENT_TURN_RETENTION_SWEEP` in the :8000
+   deploy to keep that gate in the environment. (P2-7) Only opening a session and the voice list are refused when voice
+   is off; an open session can still be used and ended, and an unmetered session is billed at most its minted seconds. (P3)
+   a store read error during a save is a 503. Follow-ups P2-3 (Agent Contract v8 drift) and P2-6 (synchronous settings
+   read on the event loop) are recorded in `UI_BACKEND_GAPS.md` ADM-POL.
+10. **Not done, recorded.** Provider wiring, keys, URLs and activation gates stay in the environment (C); `AGENT_ENABLED` as a
+   runtime kill switch and the Groq/Azure model names as Admin settings are later slices; per-process limiters stay per worker.
+11. **Design (rule 43), human decision 2026-10-11.** The pinned `Orena Admin.dc.html` draws no Policies page; the human
+   approved this page built from the existing Admin kit blocks only, with no new visual pattern.
+12. **Strict cap read refuses turns on a cold worker.** A worker that has never read the settings store refuses agent
+   turns until it can, even on a deployment with no cap set; this is the safe direction (review P3 note).

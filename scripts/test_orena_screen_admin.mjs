@@ -79,6 +79,7 @@ const { ROUTES, match, href, isAdminHash } = await import('../static/orena/shell
    reason is required, and every key here must still not be a design page (the list cannot hide one). */
 const KIT_PAGES = Object.freeze({
   adminPlans: 'Plans & pricing: the learner Pricing card flipped to an edit form, kit blocks only (human request 2026-10-09)',
+  adminPolicies: 'Policies & limits: the server\'s operational limits, switches and caps as form blocks, with the quota switch; kit blocks only (D-172; human requirement 2026-10-11, "all tuning must be in Admin")',
   adminTraffic: 'Traffic & engagement: sign-ups and learning activity per day from the overview and product-activity reads, kit blocks only (human request 2026-10-09)',
   adminFeedback: 'Feedback: the reviews learners sent, with a summary, filters and paging, kit blocks only (D-156; human request 2026-10-09)',
   impPack: 'D-128: content pack export/import, kit blocks only (human decision 2026-10-04, item 2 of the completion plan)',

@@ -179,14 +179,20 @@ def voice_resumption(env: Mapping[str, str]) -> bool:
     return str(env.get("AGENT_VOICE_RESUMPTION", "")).strip().casefold() not in {"0", "false", "no", "off"}
 
 
-def _voice(runtime: AgentRuntime) -> VoiceService:
-    if runtime.voice is None:
+def _voice(runtime: AgentRuntime, *, new_sessions: bool = False) -> VoiceService:
+    # Absent: the routes are not there. Switched off (`is_enabled`): only what OPENS a session (and the voice list) is
+    # refused; a session already open can still be used and ended, so its time is billed to the ledger (D-172).
+    if runtime.voice is None or (new_sessions and not runtime.voice.is_enabled()):
         raise HTTPException(status_code=404, detail="Not Found")
     return runtime.voice
 
 
 def _voice_session_allowed(runtime: AgentRuntime = Depends(_turn_allowed)) -> VoiceService:
-    return _voice(runtime)  # the daily spend cap and the learner's turn window count a session as a turn
+    return _voice(runtime, new_sessions=True)  # the daily spend cap and the learner's turn window count a session as a turn
+
+
+def _voice_list_allowed(runtime: AgentRuntime = Depends(_read_allowed)) -> VoiceService:
+    return _voice(runtime, new_sessions=True)
 
 
 def _voice_call_allowed(runtime: AgentRuntime = Depends(_read_allowed)) -> VoiceService:
@@ -242,7 +248,7 @@ def agent_voice_extend(body: dict = Body(...), voice: VoiceService = Depends(_vo
 
 @router.get("/voice/voices")
 def agent_voice_voices(
-    interface: str = Query(default="en", max_length=16), voice: VoiceService = Depends(_voice_call_allowed)
+    interface: str = Query(default="en", max_length=16), voice: VoiceService = Depends(_voice_list_allowed)
 ) -> dict:
     """Orena's voices to choose from (R29), labelled in the interface language; the choice goes in the session body."""
 

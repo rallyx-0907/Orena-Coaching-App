@@ -12,6 +12,7 @@ import math
 import os
 import threading
 import time
+from collections.abc import Callable
 from typing import Annotated, Any
 import weakref
 
@@ -20,6 +21,7 @@ import anyio.to_thread
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
+from writing_coach import policies
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code, current_user_key
 from writing_coach.product import quota
@@ -127,10 +129,13 @@ _DEFAULT_ASR_MAX_BYTES = 24 * 1024 * 1024
 #   3. Orena's push-to-talk (`purpose=orena_voice`) is refused 429 `quota_exhausted` before any audio is read when the
 #      learner has no Orena message left today: a read-only check, nothing reserved - the message itself is charged
 #      when the transcript reaches the agent as a turn.
-TRANSCRIBE_MAX_SECONDS = 300
+# The take's length and the daily seconds are operator policy (Platform Admin, D-172: `speech.take_max_seconds`,
+# `speech.asr_daily_seconds`, which SPEECH_ASR_DAILY_SECONDS still pins); the names below are their defaults. The byte
+# cap protects the server and stays here.
+TRANSCRIBE_MAX_SECONDS = policies.default("speech.take_max_seconds")
 TRANSCRIBE_MAX_BYTES = 12 * 1024 * 1024
 TRANSCRIBE_MIN_BILLED_SECONDS = 10
-TRANSCRIBE_DAILY_SECONDS = int(os.getenv("SPEECH_ASR_DAILY_SECONDS", str(60 * 60)) or 60 * 60)
+TRANSCRIBE_DAILY_SECONDS = policies.default("speech.asr_daily_seconds")
 TRANSCRIBE_DAY = 24 * 60 * 60
 PURPOSE_ORENA_VOICE = "orena_voice"
 _TRANSCRIBE_PURPOSES = frozenset({"", PURPOSE_ORENA_VOICE})
@@ -141,7 +146,7 @@ class TakeUnreadable(Exception):
     """The upload is not audio the server can decode."""
 
 
-def take_seconds(audio: bytes, *, limit: int = TRANSCRIBE_MAX_SECONDS, timeout_seconds: float = 20.0) -> float:
+def take_seconds(audio: bytes, *, limit: int | None = None, timeout_seconds: float = 20.0) -> float:
     """The length of a recorded take in seconds, by decoding it (ffmpeg to 16 kHz mono PCM, no provider call). A browser
     recording (MediaRecorder webm) carries no duration in its header, so the container cannot be trusted and the
     decoded samples are counted instead; decoding stops one second past `limit`, so a long file costs no more than a
@@ -152,6 +157,8 @@ def take_seconds(audio: bytes, *, limit: int = TRANSCRIBE_MAX_SECONDS, timeout_s
     import tempfile
     from pathlib import Path
 
+    if limit is None:
+        limit = int(policies.value("speech.take_max_seconds"))
     if not audio:
         raise TakeUnreadable()
     try:
@@ -174,8 +181,9 @@ class DailySecondsBrake:
     """A per-account sliding 24-hour sum of audio seconds, in this process. `take` adds the seconds when they fit and
     says how long to wait when they do not."""
 
-    def __init__(self, limit_seconds: int, window_seconds: int = TRANSCRIBE_DAY, clock=time.monotonic) -> None:
-        self._limit = limit_seconds
+    def __init__(self, limit_seconds: int | Callable[[], int], window_seconds: int = TRANSCRIBE_DAY,
+                 clock=time.monotonic) -> None:
+        self._limit_source = limit_seconds
         self._window = window_seconds
         self._clock = clock
         self._takes: dict[str, list[tuple[float, float]]] = {}
@@ -183,16 +191,17 @@ class DailySecondsBrake:
 
     def take(self, account: str, seconds: float) -> float | None:
         now = self._clock()
+        limit = self._limit_source() if callable(self._limit_source) else self._limit_source
         with self._lock:
             kept = [(at, used) for at, used in self._takes.get(account, []) if now - at < self._window]
             total = sum(used for _, used in kept)
-            if total + seconds > self._limit:
+            if total + seconds > limit:
                 self._takes[account] = kept
                 # The earliest instant enough of the oldest takes have aged out.
                 freed, wait = total + seconds, self._window
                 for at, used in kept:
                     freed -= used
-                    if freed <= self._limit:
+                    if freed <= limit:
                         wait = max(1.0, self._window - (now - at))
                         break
                 return wait
@@ -203,13 +212,18 @@ class DailySecondsBrake:
             return None
 
 
-_transcribe_brake = DailySecondsBrake(TRANSCRIBE_DAILY_SECONDS)
+def _daily_seconds() -> int:
+    return int(policies.value("speech.asr_daily_seconds"))
+
+
+_transcribe_brake = DailySecondsBrake(_daily_seconds)
 
 
 def reset_transcribe_brake(limit_seconds: int | None = None) -> None:
-    """For tests and operators: forget every account's seconds (and optionally change the ceiling)."""
+    """For tests and operators: forget every account's seconds. With `limit_seconds` the ceiling is that number;
+    without it the ceiling is the effective `speech.asr_daily_seconds`, read at each take."""
     global _transcribe_brake
-    _transcribe_brake = DailySecondsBrake(TRANSCRIBE_DAILY_SECONDS if limit_seconds is None else limit_seconds)
+    _transcribe_brake = DailySecondsBrake(_daily_seconds if limit_seconds is None else limit_seconds)
 
 
 class SpeakingEvaluationIn(BaseModel):
@@ -479,10 +493,12 @@ async def transcribe_speech(
             raise orena_http_error(
                 422, "speech_asr_unprocessable_audio", "The speech provider could not process this audio.",
             ) from exc
-        if seconds > TRANSCRIBE_MAX_SECONDS:
+        take_limit = int(policies.value("speech.take_max_seconds"))
+        if seconds > take_limit:
             raise orena_http_error(
                 413, "speech_asr_take_too_long",
-                f"A recording can be at most {TRANSCRIBE_MAX_SECONDS // 60} minutes long.",
+                f"A recording can be at most {take_limit // 60} minutes long." if take_limit % 60 == 0
+                else f"A recording can be at most {take_limit} seconds long.",
             )
         # A take counts from the moment it is accepted, whatever the provider then does: the ceiling is a bound on
         # spend, so a failed call is not given back.
@@ -790,8 +806,8 @@ async def assess_pronunciation(
     }
 
 
-PRONUNCIATION_WORKERS_ENV = "PRONUNCIATION_MAX_CONCURRENT"
-DEFAULT_PRONUNCIATION_WORKERS = 8
+PRONUNCIATION_WORKERS_ENV = "PRONUNCIATION_MAX_CONCURRENT"  # still pins `speech.pronunciation_max_concurrent`
+DEFAULT_PRONUNCIATION_WORKERS = policies.default("speech.pronunciation_max_concurrent")
 _pronunciation_limiters: weakref.WeakKeyDictionary[Any, anyio.CapacityLimiter] = weakref.WeakKeyDictionary()
 
 
@@ -800,13 +816,12 @@ def _pronunciation_limiter() -> anyio.CapacityLimiter:
     `PRONUNCIATION_MAX_CONCURRENT`, default 8, of the pool's 40 that every synchronous route shares. One limiter per
     running event loop (a limiter belongs to the loop that created it)."""
     loop = asyncio.get_running_loop()
+    size = max(1, int(policies.value("speech.pronunciation_max_concurrent")))
     limiter = _pronunciation_limiters.get(loop)
     if limiter is None:
-        try:
-            size = int(os.getenv(PRONUNCIATION_WORKERS_ENV, "") or DEFAULT_PRONUNCIATION_WORKERS)
-        except ValueError:
-            size = DEFAULT_PRONUNCIATION_WORKERS
-        limiter = _pronunciation_limiters[loop] = anyio.CapacityLimiter(max(1, size))
+        limiter = _pronunciation_limiters[loop] = anyio.CapacityLimiter(size)
+    elif limiter.total_tokens != size:
+        limiter.total_tokens = size  # an operator's change (Admin, D-172) applies to the next assessment
     return limiter
 
 
@@ -814,7 +829,7 @@ PRONUNCIATION_METER = "pronunciation.audio"
 # [HUMAN, decided 2026-10-09: True for the beta] A take the provider heard no speech in was still processed, and billed, by it. True (default)
 # charges the seconds it processed against the plan - a silent clip is not free provider spend; False would charge
 # nothing, as for a provider failure. One line either way (D-165).
-NO_SPEECH_CHARGED = True
+NO_SPEECH_CHARGED = policies.default("speech.no_speech_charged")  # the default; `speech.no_speech_charged` decides (D-172)
 
 
 def _seconds_to_units(seconds: float) -> int:
@@ -905,7 +920,7 @@ def _charged_units(error: SpeechPronunciationError, reserved: int, prepared: Pre
     """What a failed assessment costs the learner: nothing, except a take the provider heard no speech in, charged
     for the seconds it processed (`NO_SPEECH_CHARGED`). Provider work that failed or was unusable stays in the AI
     cost telemetry, not in the learner's allowance (D-161 point 10)."""
-    if not (NO_SPEECH_CHARGED and isinstance(error, SpeechPronunciationNoSpeech)):
+    if not (policies.value("speech.no_speech_charged") and isinstance(error, SpeechPronunciationNoSpeech)):
         return 0
     seconds = error.billed_seconds if error.billed_seconds is not None else (prepared.seconds if prepared else None)
     return 0 if seconds is None else min(reserved, _seconds_to_units(seconds))  # unknown length: not guessed

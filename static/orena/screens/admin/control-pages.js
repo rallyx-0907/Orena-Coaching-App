@@ -148,7 +148,7 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
         go: e.provider ? href('adminProvider', { id: e.provider }) : href('adminAi'),
       }))))}`;
       if (route === 'adminOperations') body = html`${body}${section('navOperations', rows([
-        ['opReading', 'adminJobs'], ['opWorkers', 'adminWorkers'], ['opPolling', 'adminPolling'], ['opErrors', 'adminErrors'],
+        ['opReading', 'adminJobs'], ['opWorkers', 'adminWorkers'], ['opPolling', 'adminPolling'], ['opErrors', 'adminErrors'], ['polTitle', 'adminPolicies'],
       ].map(([label, routeId]) => ({ title: t(label), go: href(routeId) }))))}`;
     }
   }

@@ -249,6 +249,7 @@ async def refuse_cross_site_changes_and_harden_responses(request: Request, call_
         name, limit, window = group
         account = str((request.scope.get("session") or {}).get("user_sub") or "local")
         limiter = _ROUTE_LIMITERS.setdefault(name, SlidingWindowLimiter(limit, window, max_keys=50_000))
+        limiter.limit = limit  # the effective policy now (Platform Admin, D-172), not the limit it was built with
         wait = limiter.check(account)
     if wait is not None:
         response = JSONResponse(status_code=429, headers={"Retry-After": str(max(1, int(wait) + 1))}, content={
@@ -476,6 +477,11 @@ _account_costs.install(_persistence_runtime.platform_repository)
 configure_product_repository(_persistence_runtime.product_repository)
 # D-153: the administrator's plan prices and limits live in platform_settings and apply from when they are saved.
 configure_plan_store(_persistence_runtime.platform_repository)
+# D-172: the operational policies (limits, switches, caps) an administrator edits in Admin live in platform_settings
+# too (`platform.policies`); every consumer reads its effective value when it acts, so a save needs no restart.
+from writing_coach import policies as _policies  # noqa: E402
+
+_policies.configure(_persistence_runtime.platform_repository)
 
 # PostgreSQL is the application runtime. In auth-disabled local development the
 # request scope still uses the stable user key "legacy"; seed that scope once so
@@ -543,12 +549,18 @@ from writing_coach.feedback import retention_enabled as _feedback_retention_enab
 from writing_coach.feedback_retention import FeedbackRetentionSchedule  # noqa: E402
 app.include_router(feedback_router)
 
-# D-159: reviews are kept at most 24 months, enforced by a periodic job (at start, then daily), not by traffic.
+# D-159: reviews are kept at most 24 months (`feedback.retention_days`), enforced by a periodic job, not by traffic. The
+# job is deletion, so it does nothing until its switch is on (FEEDBACK_RETENTION_SWEEP, or `feedback.retention_sweep` in
+# Admin, D-172); the thread only wakes and asks, so switching it on needs no restart.
+_feedback_retention_enabled(os.environ)  # an unclear FEEDBACK_RETENTION_SWEEP still refuses to start rather than guess
 _feedback_retention: FeedbackRetentionSchedule | None = None
-if _feedback_retention_enabled(os.environ):
-    _feedback_deleter = getattr(_persistence_runtime.platform_repository, "delete_feedback_before", None)
-    if callable(_feedback_deleter):
-        _feedback_retention = FeedbackRetentionSchedule(lambda before, limit: _feedback_deleter(before, limit=limit))
+_feedback_deleter = getattr(_persistence_runtime.platform_repository, "delete_feedback_before", None)
+if callable(_feedback_deleter):
+    _feedback_retention = FeedbackRetentionSchedule(
+        lambda before, limit: _feedback_deleter(before, limit=limit),
+        enabled=lambda: _policies.value("feedback.retention_sweep"),
+        days=lambda: _policies.value("feedback.retention_days"),
+    )
 # The one acquisition service, kept in a named binding because the Shared
 # Listening Library importer must resolve a source through exactly the same
 # provider boundary the learner's own import uses - never a second one.
@@ -843,12 +855,14 @@ app.include_router(learner_summary_router)
 # runtime that is not production (human ruling 2026-09-27); while off both routes
 # answer 404. It routes through the legacy AI selection and reads with the app's
 # own services: the Writing review below and the usage store it meters with.
-from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router, voice_enabled, voice_resumption  # noqa: E402
+from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router, voice_enabled  # noqa: E402
 from writing_coach.agent.voice_session import VoiceService  # noqa: E402
 from writing_coach.ai.live_voice import GeminiLiveTokens  # noqa: E402
 from writing_coach.ai.audio_telemetry import record_audio_operation  # noqa: E402
 from writing_coach.agent.runtime import AppReads, build_agent_runtime  # noqa: E402
 from writing_coach.agent.retention import TurnTelemetryRetention, sweep_enabled  # noqa: E402
+from writing_coach.agent.limits import DEFAULT_LIMITS as _AGENT_DEFAULT_LIMITS, LiveAgentLimits  # noqa: E402
+from writing_coach.agent.budget import LiveSpendGuard  # noqa: E402
 
 
 def _agent_writing_review(essay_id: int) -> dict[str, Any] | None:
@@ -903,15 +917,16 @@ def _agent_grammar_lesson(grammar_id: str) -> dict[str, Any] | None:
 def _agent_spend_guard():
     """The staging daily cap on the shared AI ledger (agent/budget.py); None when AGENT_DAILY_SPEND_CAP_USD is unset."""
 
-    from writing_coach.agent.budget import DailySpendGuard, cap_from_env
+    from writing_coach.agent.budget import cap_from_env
 
-    cap = cap_from_env(os.environ)
+    cap_from_env(os.environ)  # an unreadable AGENT_DAILY_SPEND_CAP_USD still refuses to start
     reader = getattr(_persistence_runtime.platform_repository, "ai_spend_since", None)
-    if cap is None:
-        return None
-    if not callable(reader):  # a cap with no ledger to read refuses every turn: it fails closed
-        return lambda: 3600.0
-    return DailySpendGuard(cap_usd=cap, read=reader)
+    # D-172: the cap is the effective `agent.daily_spend_cap_usd` (environment pin, else Admin, else none) read at each
+    # turn; with no cap the guard allows every turn, exactly as when none was built.
+    # The strict read: if this worker has never read the settings store, or the stored cap no longer validates, the
+    # guard refuses turns (fails closed) instead of treating "unknown" as "no cap".
+    return LiveSpendGuard(lambda: _policies.value_strict("agent.daily_spend_cap_usd"),
+                          reader if callable(reader) else None)
 
 
 def _delete_agent_turns_before(before: datetime, limit: int) -> int:
@@ -920,10 +935,14 @@ def _delete_agent_turns_before(before: datetime, limit: int) -> int:
 
 
 # agent.turn rows are kept 90 days; the write path starts the sweep, at most once a day (agent/retention.py).
-# Off unless AGENT_TURN_RETENTION_SWEEP is switched on, after its independent review: off, nothing is deleted.
+# Off unless the sweep is switched on (AGENT_TURN_RETENTION_SWEEP, or `agent.turn_retention_sweep` in Admin, D-172),
+# after its independent review: off, nothing is deleted. The switch and the period are read at each write.
+sweep_enabled(os.environ)  # an unclear AGENT_TURN_RETENTION_SWEEP still refuses to start rather than guess
 _agent_turn_retention = TurnTelemetryRetention(
-    lambda before, limit: _delete_agent_turns_before(before, limit)
-) if sweep_enabled(os.environ) else None
+    lambda before, limit: _delete_agent_turns_before(before, limit),
+    days=lambda: _policies.value("agent.turn_retention_days"),
+    enabled=lambda: _policies.value("agent.turn_retention_sweep"),
+)
 
 
 def _record_agent_turn(user_key: str, record: dict) -> None:
@@ -975,10 +994,14 @@ def _gemini_key() -> str:
 def _with_voice(runtime):
     """Live voice, mode A (R28): only where the agent runs and AGENT_VOICE_ENABLED is on."""
 
-    if runtime is not None and voice_enabled(os.environ):
+    # D-172: the service always exists where the agent does; whether voice is on stays the environment's gate
+    # (AGENT_VOICE_ENABLED: paid live voice is the human's activation, D-169), and its session cap, chunk size and
+    # resumption are Admin policies read when a session is opened or renewed.
+    if runtime is not None:
         runtime.voice = VoiceService(runtime=runtime, tokens=GeminiLiveTokens(key=_gemini_key),
                                      record_audio=record_audio_operation,
-                                     resumption=voice_resumption(os.environ))  # fmt: skip
+                                     enabled=lambda: voice_enabled(os.environ),
+                                     policy=_policies.value)  # fmt: skip
     return runtime
 
 
@@ -1017,6 +1040,8 @@ configure_agent(_with_voice(
         record_summary=_record_agent_summary,
         price_summary=_price_agent_summary,
         spend_guard=_agent_spend_guard(),
+        # D-172: the operator-tunable limits (turns a minute, openings, input budget) are read at each use.
+        limits=LiveAgentLimits(_AGENT_DEFAULT_LIMITS, lambda: _policies.effective_agent_limits()),
     )
     if agent_enabled(os.environ)
     else None

@@ -445,6 +445,23 @@ class VoiceService:
     resumption: bool = True
     model: str = VOICE_MODEL
     now: Callable[[], datetime] = lambda: datetime.now(UTC)
+    # Operator policy (Platform Admin, D-172), read when used: `enabled()` says whether voice is on at all, and
+    # `policy(key)` gives the session cap, the chunk size and the resumption switch. Without them (the tests, a
+    # caller that decided at start-up) the constants above and below apply.
+    enabled: Callable[[], bool] | None = None
+    policy: Callable[[str], Any] | None = None
+
+    def is_enabled(self) -> bool:
+        return True if self.enabled is None else bool(self.enabled())
+
+    def _session_seconds(self) -> int:
+        return int(self.policy("voice.session_cap_seconds")) if self.policy is not None else SESSION_SECONDS
+
+    def _chunk_units(self) -> int:
+        return int(self.policy("voice.chunk_units")) if self.policy is not None else VOICE_CHUNK_UNITS
+
+    def _resumes(self) -> bool:
+        return self.resumption and (True if self.policy is None else bool(self.policy("voice.resumption")))
 
     # -- open ------------------------------------------------------------------------------------------------
 
@@ -499,14 +516,15 @@ class VoiceService:
         when it exists, and nothing is refunded when the learner ends early, because the server cannot see the vendor
         socket and the token is what it lets them hold. A mint that fails charges nothing."""
 
+        cap = self._session_seconds()
         ticket = quota.begin_voice(
-            VOICE_METER, max_seconds=SESSION_SECONDS - minted, chunk_units=VOICE_CHUNK_UNITS,
+            VOICE_METER, max_seconds=cap - minted, chunk_units=self._chunk_units(),
             min_chunk_seconds=VOICE_MIN_CHUNK_SECONDS, request_digest=digest, idempotency_key=key,
         )
         # Messages not enforced: one token for what is left of the session, exactly as before the plan limit.
-        seconds = int(ticket.max_seconds) if ticket.max_seconds else SESSION_SECONDS - minted
+        seconds = int(ticket.max_seconds) if ticket.max_seconds else cap - minted
         locked = dict(setup)
-        if ticket.enforced and self.resumption:
+        if ticket.enforced and self._resumes():
             # Only a chunked (metered) session carries the conversation across tokens; an unmetered one is one token.
             locked["sessionResumption"] = {"handle": resumption} if resumption else {}
         try:
@@ -518,7 +536,7 @@ class VoiceService:
         ticket.settle(ticket.units, "chunk")
         if ticket.enforced:
             self._record_chunk(session_id, user_key, index, seconds)
-        last = minted + seconds >= SESSION_SECONDS or not ticket.enforced
+        last = minted + seconds >= cap or not ticket.enforced
         return {"token": token, "expires": expires, "seconds": seconds, "last": last, "metered": ticket.enforced}
 
     def _chunk_answer(self, minted: dict[str, Any], *, index: int) -> dict[str, Any]:
@@ -535,7 +553,7 @@ class VoiceService:
             # This token's life in seconds: the client closes the session there if it holds nothing newer, and asks
             # for the next chunk `renew_in` seconds after it got this one (absent on the last chunk).
             "max_seconds": seconds,
-            "session_max_seconds": SESSION_SECONDS,
+            "session_max_seconds": self._session_seconds(),
             "renew_in": None if minted["last"] else max(1, seconds - RENEW_LEAD_SECONDS),
             "last": minted["last"],
         }
@@ -558,7 +576,7 @@ class VoiceService:
             if type(chunk) is not int or chunk != session.chunks:
                 raise orena_http_error(409, "voice_chunk_mismatch", "That is not the next part of this conversation.",
                                        retryable=False)
-            if session.minted_seconds >= SESSION_SECONDS:
+            if session.minted_seconds >= self._session_seconds():
                 raise orena_http_error(409, "voice_session_over", "This conversation reached its time limit.",
                                        retryable=False)
             handle = resumption if isinstance(resumption, str) and RESUMPTION_HANDLE_PATTERN.match(resumption) else None
@@ -933,7 +951,10 @@ class VoiceService:
         """An unmetered session (messages not enforced): its wall-clock time, at most the cap, goes to the AI ledger when
         it ends - exactly what voice did before the plan limit existed."""
 
-        seconds = round(min(SESSION_SECONDS, max(0.0, self.sessions.clock() - session.opened)), 1)
+        # At most the seconds the token was minted for, not the live cap: a cap changed in Admin mid-session must not
+        # under-record a session that was granted the old one.
+        seconds = round(min(float(session.minted_seconds or self._session_seconds()),
+                            max(0.0, self.sessions.clock() - session.opened)), 1)
         if self.record_audio is not None:
             try:
                 self.record_audio("agent_voice", provider="gemini", model=session.model, outcome="success",

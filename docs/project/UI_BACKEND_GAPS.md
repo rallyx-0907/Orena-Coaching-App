@@ -5713,3 +5713,123 @@ the meters below.
   learner's personal entries, so exposure is low. (11) The Import sheet now says 503 `quota_unavailable`,
   `media_duration_unavailable` and 403 `feature_not_in_plan` in its own sentences (EN/VI/ZH); the sheet's other failures
   are unchanged.
+
+## Admin: Policies & limits (ADM-POL, D-172), 2026-10-11
+
+The human's requirement: "All tuning must be in Admin; changing something must never require touching code." This is the
+audit of every operational parameter the server carried as a constant or an environment read, how each is classified, and
+what the new page (`#/admin/operations/policies`, `GET`/`PUT /api/product/admin/policies`, `require_admin`) now owns.
+
+**Classes.** (A) operator policy: editable in Admin, stored in the `platform.policies` settings document. (B) safety or
+integrity internal: stays in code, each with its reason. (C) deployment or secret configuration: stays in the environment
+(keys, URLs, OAuth, provider wiring, human-gated activations). Already Admin-editable before this change, unchanged: the plan
+catalogue (prices, the five meters' limits, `voice_seconds_per_message`), an account's role and plan, the AI provider and
+capability configuration (including each capability's timeout), and the quota enforcement switch (API only until now - it is
+now the first block of the page, on its own route and document).
+
+**Precedence** (each policy): an environment variable that is explicitly set wins and the page shows the policy "locked by
+environment" (so operations can pin production, as `staging_8000_deploy.ps1` already pins `AGENT_VOICE_ENABLED` and
+`AGENT_DAILY_SPEND_CAP_USD`); otherwise the administrator's value; otherwise the default, which is the constant the code carried
+(a test pins each default to that constant). An empty or missing document is the defaults.
+
+### (A) Operator policy - wired to Admin (37 policies + the quota switch)
+
+| Policy key | Default (was) | Range | Env pin | Consumer, read at use time |
+| --- | --- | --- | --- | --- |
+| *quota switch + meters* (`product.quota_enforcement`, own route) | off | wired meters | `ORENA_QUOTA_ENFORCEMENT`, `ORENA_QUOTA_METERS` | `quota.switch()` (D-161, fail-closed, unchanged); page adds who/when and a stale-save check |
+| `quota.abandoned_settles` (**confirm any change**) | admitted (`quota.ABANDONED_SETTLES`) | admitted / zero | - | `quota.reconcile_once` via `abandoned_settles()` |
+| `agent.turns_per_window` | 12 (`AgentLimits`) | 1-600 | - | `LiveAgentLimits` -> turn limiter (per check) |
+| `agent.capability_reads_per_window` | 60 | 1-6000 | - | read limiter |
+| `agent.rate_window_seconds` | 60 | 10-3600 s | - | turn and read limiters |
+| `agent.max_input_tokens_per_turn` | 48 000 | 4 000-200 000 | - | `_Turn` input budget |
+| `agent.model_openings_per_window` | 1 | 1-20 | - | opening limiter |
+| `agent.opening_window_seconds` | 1 800 | 60-86 400 s | - | opening limiter |
+| `agent.opening_max_output_tokens` | 200 | 50-1 024 | - | greeting model round |
+| `voice.resumption` | on | on/off | `AGENT_VOICE_RESUMPTION` | `VoiceService._resumes()` |
+| `voice.session_cap_seconds` | 900 (`SESSION_SECONDS`) | 60-3 600 s | - | `_mint_chunk`, `extend`, `_bill` |
+| `voice.chunk_units` (**confirm any change**) | 2 (`VOICE_CHUNK_UNITS`) | 1-10 | - | `_mint_chunk` |
+| `speech.take_max_seconds` | 300 (`TRANSCRIBE_MAX_SECONDS`) | 10-900 s | - | `take_seconds`, `/api/speech/transcribe` |
+| `speech.asr_daily_seconds` | 3 600 | 60-86 400 s | `SPEECH_ASR_DAILY_SECONDS` | `DailySecondsBrake` (per take) |
+| `speech.pronunciation_max_concurrent` | 8 | 1-32 | `PRONUNCIATION_MAX_CONCURRENT` | `_pronunciation_limiter()` (resized per assessment) |
+| `speech.no_speech_charged` (**confirm any change**) | on (`NO_SPEECH_CHARGED`) | on/off | - | `_charged_units` |
+| `rate.speech_ai_per_10min` | 60 | 5-5 000 | - | `http_security.rate_group` -> app middleware limiter |
+| `rate.writing_ai_per_10min` / `rate.essay_ai_per_10min` | 30 / 30 | 1-5 000 | - | same |
+| `rate.dictionary_ai_per_10min` / `rate.reading_ai_per_10min` | 120 / 300 | 1-5 000 | - | same |
+| `rate.media_learning_per_hour` | 30 | 1-1 000 | - | same |
+| `media.asr_max_seconds` | 5 400 | 60-43 200 s | `MEDIA_ASR_MAX_SECONDS` | `max_asr_seconds()` (pipeline, `media_quota`) |
+| `media.model_clips_enabled` | on | on/off | `MEDIA_MODEL_CLIPS` | `_prepare_model_clips` |
+| `media.model_clip_max_lines` | 500 | 10-5 000 | `MEDIA_MODEL_CLIP_MAX_LINES` | `_prepare_model_clips` |
+| `feedback.daily_limit` | 10 (`DAILY_LIMIT`) | 1-100 | - | `feedback.submit` |
+| `feedback.retention_sweep` (**deletes**) | off | on/off | `FEEDBACK_RETENTION_SWEEP` | `FeedbackRetentionSchedule.tick` (the thread always runs and asks hourly) |
+| `feedback.retention_days` (**deletes**) | 730 | 30-730 d (published 24 months) | - | same |
+| `agent.turn_retention_sweep` (**deletes**) | off | on/off | `AGENT_TURN_RETENTION_SWEEP` | `TurnTelemetryRetention.maybe_sweep` |
+| `agent.turn_retention_days` (**deletes**) | 90 | 7-90 d (published 90 days) | - | same |
+| `ai_costs.retention_days` (**deletes**) | 396 | 90-396 d (published 13 months) | - | `AccountCostRecorder.maybe_sweep` (it had no switch; still none) |
+| `agent.daily_spend_cap_usd` (confirm > 50) | no cap | 0.01-10 000 USD or none | `AGENT_DAILY_SPEND_CAP_USD` | `LiveSpendGuard` per turn |
+| `media.batch_cap_asr_usd` (confirm > 50) | 5 | 0-1 000 | `MEDIA_ASR_BATCH_CAP_USD` | `SpendLedger.limits()` |
+| `media.batch_cap_ai_usd` (confirm > 100) | 10 | 0-1 000 | `MEDIA_AI_BATCH_CAP_USD` | same |
+| `media.daily_cap_usd` (confirm > 250) | 25 | 0-10 000 | `MEDIA_DAILY_CAP_USD` | same |
+| `media.asr_usd_per_hour` | 0.04 | 0.001-100 (0 would disable the caps) | `MEDIA_ASR_USD_PER_HOUR` | `SpendLedger.asr_usd_per_hour()` |
+| `media.ai_usd_per_million_tokens` | 1.0 | 0.001-1 000 | `MEDIA_AI_USD_PER_MILLION_TOKENS` | `SpendLedger.ai_usd_per_million_tokens()` |
+| `word_tts.spend_cap_usd` (confirm > 50) | 5 | 0-1 000 | `WORD_TTS_SPEND_CAP_USD` | `AzureVoice._cap` (per synthesis) |
+
+### (B) Safety or integrity internals - stay in code
+
+| Parameters | Why they are not an operator's to tune |
+| --- | --- |
+| Quota reconciler and settlement timings: `RECONCILE_AFTER` 15 min, `ASYNC_RECONCILE_AFTER` 6 h, `ASYNC_IN_PLAY_CEILING` 24 h, `RECONCILE_INTERVAL_SECONDS`, `WINDOW_RETRIES`, `VOICE_RETRIES`, `MIN_WINDOW`, `DEFAULT_ZONE`, `SWITCH_CACHE_SECONDS`, media-quota `TOLERANCE_SECONDS`, `SETTLE_ATTEMPTS`, `INTENT_INTERVAL_SECONDS` | Derived from the slowest provider timeout and the pipeline's longest job; a wrong value double-charges or leaks reservations. Lock and race constants. The window floors are the anti-abuse rule of D-161 point 5. |
+| Agent interface bounds: `max_tool_iterations_per_turn` 4, `max_tool_result_bytes`, `turn_timeout_seconds`, `session_ttl_seconds`, `max_sessions`, `max_recent_*`, `max_history_chars`, `max_turn_chars`, compaction and summary sizes, `rate_limited_learners`, contract caps (`OPENING_MAX_CHARS`, `MAX_MESSAGE_CHARS`, ...) | The spec/contract shape of the agent (versioned `AGENT_CONTRACT`, pinned by tests) and process memory bounds. |
+| Voice protocol timing: `VOICE_MIN_CHUNK_SECONDS` 60, `RENEW_LEAD_SECONDS` 12, `OPEN_WITHIN_SECONDS`, transcript sizes | Vendor-protocol timing; a wrong value breaks sessions. (The chunk size in messages and the session cap are policies.) |
+| Byte caps and provider limits: `TRANSCRIBE_MAX_BYTES`, `TRANSCRIBE_MIN_BILLED_SECONDS` (the provider's billing minimum), `MAX_ASSESSED_SECONDS`, `AZURE_PRONUNCIATION_MAX_*`, `GROQ_ASR_MAX_BYTES`, `MAX_MEDIA_BYTES`, upload/EPUB/content-pack/grammar-package/vocabulary/reading-import byte and character limits, fetch timeouts | Protect the server from oversized or hostile input (zip bombs, SSRF fetches) and match a provider's hard limit. |
+| `media_transcript_pipeline.CHUNK_SECONDS` 600 | Tied to the speech provider's upload limit; changing it changes cost per call and invalidates stored work. |
+| Worker pool sizes: `MEDIA_PIPELINE_WORKERS`, `READING_WORKER_CONCURRENCY` | Resource sizing fixed when the pool starts; needs a restart, so it is not a runtime policy. Env. |
+| Learner-record shape: `MAX_IMPORTS` 20, `IMPORT_TOMBSTONES_*` (`ORENA_LIMIT_IMPORT_TOMBSTONES`), note/highlight/draft/deck/work character and row limits, `TEXT_LIMIT` of feedback, writing byte limits, review-new/limit-per-day ranges | Bounds of stored learner data, set by the limits review (P1-1); raising them is a data decision. |
+| Security posture: session cookie `max_age` 14 days, `NATIVE_HANDOFF_TTL_SECONDS` 300, origin checks | Security review; not a tuning knob. |
+| Failover internals: `ai/routing` cooldowns, retry-once, `UNPRICED_ALLOWANCE_USD` 0.01, spend-guard and catalogue `CACHE_SECONDS` 5 | The fail-closed accounting and failover algorithm, not a policy. |
+| Sweep mechanics: `SWEEP_INTERVAL_SECONDS`, `SWEEP_BATCH`, `MAX_BATCHES` | Keep deletion bounded and idempotent. (Whether it runs, and the period, are policies.) |
+| Reporting windows and paging: `TREND_DAYS`, `RETENTION_COHORT_DAYS`, `MIN_RETENTION_SAMPLE`, page sizes | Presentation of reports, not behaviour with cost or risk. |
+| `AGENT_ENABLED`-gated construction of the agent router | See (C). |
+
+### (C) Deployment and secret configuration - stay in the environment, never in Admin
+
+Keys and credentials (`GOOGLE_*`, `SESSION_SECRET`, `AZURE_SPEECH_*`, `GROQ_*`, `GEMINI_API_KEY`, `SUPADATA_*`, `PAYOS_*`,
+`POLAR_*`, `AI master key`), URLs and endpoints (`OLLAMA_URL`, `KOKORO_TTS_URL`, `LOCAL_TRANSLATION_URL`, `PUBLIC_BASE_URL`),
+database and storage paths (`PERSISTENCE_BACKEND`, `POSTGRES_RUNTIME_URL`, `*_DB`, `*_ROOT`), deployment identity
+(`APP_ENV`, `ORENA_ENVIRONMENT_LABEL`, `PLATFORM_ADMIN_EMAILS`, `BOOTSTRAP_OWNER_EMAIL`, `ALLOW_LOCAL_ADMIN`), provider wiring chosen
+at start (`PRONUNCIATION_PROVIDER`, `MEDIA_TRANSLATION_PROVIDER`, `READING_TRANSLATION_PROVIDER`, `MEDIA_TRANSCRIPT_FALLBACK`,
+`AI_RUNTIME_MODE`, `OLLAMA_*`, `CLOUD_AI_TIMEOUT`), the rights decisions (`MEDIA_RIGHTS_CLEARED_PROVIDERS/HOSTS` - a human gate
+per source), language lists tied to deployed models (`MEDIA_PRETRANSLATE_LANGUAGES`, `VOCABULARY_PIVOT_PAIRS`, support
+languages), and the activation gates tied to migrations or human approval (`AGENT_ENABLED` - it builds the agent runtime and
+routes, D-146 -, `BILLING_ENABLED` and `BILLING_PRICES_FILE`, `ORENA_ACCOUNT_BACKBONE`, `ORENA_PRACTICE_SESSION`,
+`ORENA_READING_PRACTICE_SUBMIT`, `ALLOW_FALLBACK`) - and **`AGENT_VOICE_ENABLED`** (paid live voice is the human's activation, D-169
+point 11; the architecture review moved it back from A: only the session cap, chunk size and resumption are Admin policies). The quota switch's two variables are the exception that proves the rule:
+they pin the switch (and the page shows it locked) but stay editable in Admin when unset.
+
+### What changed for the UI and the contract
+
+- Admin > Operations > **Policies & limits**: one form block per group (Quota enforcement, Quota settlement, Orena limits,
+  Voice, Speech & pronunciation, Media import, Request rates, Feedback & retention, Spend caps). Each field: label, the value
+  in force, source tag (Default / Set in Admin / Locked by environment, with the variable named), unit, allowed range,
+  default, one sentence; EN/VI/ZH in `copy-policies.js`. Kit blocks only (`KIT_PAGES`); no new visual pattern.
+- `PUT /api/product/admin/policies` takes `{set, reset, expected_updated_at, confirm}`: unknown keys, wrong types and
+  out-of-range values are 422; a stale page is 409; a change that deletes data or raises a spend cap past its sane maximum
+  (or removes a cap) is 422 `confirmation_required` until `confirm[key] === true`, and the audit row records it. The audit row
+  commits with the change (same transaction), `updated_by` is the admin's email.
+- `GET`/`PUT /api/product/admin/quota` gain `updated_at`/`updated_by` and an optional `expected_updated_at` (409 on a stale
+  page; omitted, the write behaves as before). The switch's fail-closed rule (D-161 point 8) is untouched.
+- Open: (1) the per-process limiters (agent, speech brake, route limiters) remain per worker, as they were; this change makes
+  their numbers editable, not shared. (2) A retention switch turned on at noon sweeps within the hour (feedback) or at the next
+  agent write (turns), not at the next restart. (3) `MEDIA_PRETRANSLATE_LANGUAGES` and the Groq/Azure model names were left in
+  the environment as deployment wiring (C); making them Admin-editable would be a later slice. (4) `AGENT_ENABLED` as a runtime
+  kill switch would need the agent router to be mounted unconditionally; recorded, not done.
+- Review of b962e957 (APPROVE WITH CONDITIONS; P1-1, P1-2 fixed in the follow-up commit): **follow-ups recorded, not done.**
+  (P2-3) `AGENT_CONTRACT.md` v8 states the voice session as "at most 900 seconds" and a chunk as "2 x
+  `voice_seconds_per_message`"; `voice.session_cap_seconds` and `voice.chunk_units` now change them at runtime. Clients read
+  `session_max_seconds`, so nothing breaks, but the contract the Intelligence lane builds against should say "the server's
+  policy (default 900; default 2 units)". The implementer must not edit the contract (D-086): **route to the contract owner.**
+  (P2-6) The settings read (`policies._loaded`) is synchronous and runs on the event loop in the route-limit middleware, the
+  transcribe route and `_pronunciation_limiter` on a cache miss; with an exhausted DB pool it can block the loop for the pool
+  timeout. Fix later with a background refresher (value() reading only the snapshot) or `anyio.to_thread` around the read.
+  Removing an environment pin at a later deploy resurrects a previously stored Admin value (for example a sweep switched on
+  earlier) without a fresh confirmation. A store that rejects a stored value drops it at the next rewrite with no audit entry.
+  `voice.session_cap_seconds` is read twice in `extend`; a change between the reads can make `cap - minted < 1` (a 500, no charge).

@@ -9,7 +9,9 @@ them.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, fields
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -52,3 +54,35 @@ class AgentLimits:
 
 
 DEFAULT_LIMITS = AgentLimits()
+
+
+# The limits an operator tunes in Platform Admin (writing_coach/policies.py, D-172). Everything else on `AgentLimits` is
+# a safety or context-design bound (the spec's tool iterations and result size, the history window) and stays in code.
+OPERATOR_FIELDS: tuple[str, ...] = (
+    "turns_per_window", "capability_reads_per_window", "rate_window_seconds", "max_input_tokens_per_turn",
+    "model_openings_per_window", "opening_window_seconds", "opening_max_output_tokens",
+)
+
+
+class LiveAgentLimits:
+    """`AgentLimits` whose operator-tunable fields are read from `overrides()` each time they are used.
+
+    `overrides` returns `{field: value}` for the fields it knows; a field it does not name, or names with an unusable
+    value, keeps the base value. The agent package reads no environment and no store itself: the application hands it
+    this callable (app.py), so a change saved in Admin applies to the next turn with no restart."""
+
+    def __init__(self, base: AgentLimits, overrides: Callable[[], Mapping[str, Any]]) -> None:
+        self._base = base
+        self._overrides = overrides
+
+    def __getattr__(self, name: str) -> Any:
+        if name.startswith("_"):
+            raise AttributeError(name)
+        if name in OPERATOR_FIELDS:
+            try:
+                value = self._overrides().get(name)
+            except Exception:  # noqa: BLE001 - a limit read never fails a turn
+                value = None
+            if isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0:
+                return value
+        return getattr(self._base, name)

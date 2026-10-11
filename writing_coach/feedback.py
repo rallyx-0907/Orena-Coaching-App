@@ -12,15 +12,17 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any, Mapping, Protocol
 
+from writing_coach import policies
+
 FEEDBACK_ACTION = "learner.feedback"
 AREAS: tuple[str, ...] = ("listening", "speaking", "reading", "writing", "vocabulary", "orena", "bugs")
 TEXT_LIMIT = 600
-DAILY_LIMIT = 10
+DAILY_LIMIT = policies.default("feedback.daily_limit")  # the default; the effective limit is the policy's
 MAX_PAGE = 100
 
 # Retention (human decision 2026-10-09, D-159): a review is deleted with its account, and every review after 24 months.
 # The periodic sweep (feedback_retention.py) is a destructive lifecycle job: it runs only once its switch is on.
-FEEDBACK_RETENTION_DAYS = 730
+FEEDBACK_RETENTION_DAYS = policies.default("feedback.retention_days")
 RETENTION_SWITCH = "FEEDBACK_RETENTION_SWEEP"
 _ON = frozenset({"1", "true", "on", "yes"})
 _OFF = frozenset({"", "0", "false", "off", "no"})
@@ -72,10 +74,13 @@ def validate_review(body: object) -> dict:
     }
 
 
-def submit(store: FeedbackStore, user_key: str, body: object, *, now: datetime | None = None) -> dict:
+def submit(store: FeedbackStore, user_key: str, body: object, *, now: datetime | None = None,
+           limit: int | None = None) -> dict:
+    """`limit` is the reviews a day; the default is the effective `feedback.daily_limit` (Admin, D-172)."""
     review = validate_review(body)
     moment = now or datetime.now(UTC)
-    if store.count_feedback_since(user_key, moment - timedelta(days=1)) >= DAILY_LIMIT:
+    allowed = limit if limit is not None else policies.value("feedback.daily_limit")
+    if store.count_feedback_since(user_key, moment - timedelta(days=1)) >= allowed:
         raise OverflowError("Too many reviews today.")
     return store.record_feedback(user_key, review)
 

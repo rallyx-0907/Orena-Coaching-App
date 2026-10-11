@@ -23,6 +23,7 @@ import threading
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from typing import Any
 from datetime import UTC, datetime, timedelta
 
 _log = logging.getLogger(__name__)
@@ -75,3 +76,32 @@ class DailySpendGuard:
                 verdict = until_reset
             self._cached = (self.monotonic(), verdict)
             return verdict
+
+
+class LiveSpendGuard:
+    """The daily cap, read at each check (Platform Admin, D-172): `cap()` is the cap now, None for "no cap". A change of
+    cap starts a fresh guard, so the 5-second verdict cache never answers for the old number; with no cap a turn is
+    always allowed, exactly as when the guard did not exist."""
+
+    def __init__(self, cap: Callable[[], float | None], read: SpendReader | None, **guard: Any) -> None:
+        self._cap = cap
+        self._read = read
+        self._guard = guard
+        self._current: tuple[float, DailySpendGuard] | None = None
+        self._lock = threading.Lock()
+
+    def __call__(self) -> float | None:
+        try:
+            cap = self._cap()
+        except Exception:  # noqa: BLE001 - an unreadable cap setting is not "no cap" for a guard that exists
+            _log.warning("agent daily spend cap unreadable; turns refused", exc_info=True)
+            return 3600.0
+        if cap is None:
+            return None
+        if self._read is None:  # a cap with no ledger to read refuses every turn: it fails closed
+            return 3600.0
+        with self._lock:
+            if self._current is None or self._current[0] != cap:
+                self._current = (cap, DailySpendGuard(cap_usd=cap, read=self._read, **self._guard))
+            guard = self._current[1]
+        return guard()

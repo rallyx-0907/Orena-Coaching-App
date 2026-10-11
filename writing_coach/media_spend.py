@@ -33,6 +33,8 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from writing_coach import policies
+
 _LOCKS: dict[str, threading.Lock] = {}
 _LOCKS_GUARD = threading.Lock()
 
@@ -79,20 +81,22 @@ class SpendLedger:
 
     # -- configuration, read each time so an operator change needs no restart -----
 
+    # Each is the effective policy (writing_coach/policies.py, D-172): its environment variable when set, else the
+    # administrator's value, else the default that used to be written here.
     def limits(self) -> dict[str, float]:
         return {
-            KIND_ASR: _env_float("MEDIA_ASR_BATCH_CAP_USD", 5.0, self._env),
-            KIND_AI: _env_float("MEDIA_AI_BATCH_CAP_USD", 10.0, self._env),
-            "day": _env_float("MEDIA_DAILY_CAP_USD", 25.0, self._env),
+            KIND_ASR: float(policies.value("media.batch_cap_asr_usd", env=self._env)),
+            KIND_AI: float(policies.value("media.batch_cap_ai_usd", env=self._env)),
+            "day": float(policies.value("media.daily_cap_usd", env=self._env)),
         }
 
     def asr_usd_per_hour(self) -> float:
         # Groq whisper-large-v3-turbo list price; override for another model or provider.
-        return _env_float("MEDIA_ASR_USD_PER_HOUR", 0.04, self._env)
+        return float(policies.value("media.asr_usd_per_hour", env=self._env))
 
     def ai_usd_per_million_tokens(self) -> float:
         # Used only for a model the pricing catalogue does not know.
-        return _env_float("MEDIA_AI_USD_PER_MILLION_TOKENS", 1.0, self._env)
+        return float(policies.value("media.ai_usd_per_million_tokens", env=self._env))
 
     def asr_estimate(self, audio_seconds: float) -> float:
         billed = max(10.0, float(audio_seconds or 0))
