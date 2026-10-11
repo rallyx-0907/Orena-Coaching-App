@@ -5719,12 +5719,12 @@ environment" (so operations can pin production, as `staging_8000_deploy.ps1` alr
 `AGENT_DAILY_SPEND_CAP_USD`); otherwise the administrator's value; otherwise the default, which is the constant the code carried
 (a test pins each default to that constant). An empty or missing document is the defaults.
 
-### (A) Operator policy - wired to Admin (38 policies + the quota switch)
+### (A) Operator policy - wired to Admin (37 policies + the quota switch)
 
 | Policy key | Default (was) | Range | Env pin | Consumer, read at use time |
 | --- | --- | --- | --- | --- |
 | *quota switch + meters* (`product.quota_enforcement`, own route) | off | wired meters | `ORENA_QUOTA_ENFORCEMENT`, `ORENA_QUOTA_METERS` | `quota.switch()` (D-161, fail-closed, unchanged); page adds who/when and a stale-save check |
-| `quota.abandoned_settles` | admitted (`quota.ABANDONED_SETTLES`) | admitted / zero | - | `quota.reconcile_once` via `abandoned_settles()` |
+| `quota.abandoned_settles` (**confirm any change**) | admitted (`quota.ABANDONED_SETTLES`) | admitted / zero | - | `quota.reconcile_once` via `abandoned_settles()` |
 | `agent.turns_per_window` | 12 (`AgentLimits`) | 1-600 | - | `LiveAgentLimits` -> turn limiter (per check) |
 | `agent.capability_reads_per_window` | 60 | 1-6000 | - | read limiter |
 | `agent.rate_window_seconds` | 60 | 10-3600 s | - | turn and read limiters |
@@ -5732,14 +5732,13 @@ environment" (so operations can pin production, as `staging_8000_deploy.ps1` alr
 | `agent.model_openings_per_window` | 1 | 1-20 | - | opening limiter |
 | `agent.opening_window_seconds` | 1 800 | 60-86 400 s | - | opening limiter |
 | `agent.opening_max_output_tokens` | 200 | 50-1 024 | - | greeting model round |
-| `voice.enabled` | off | on/off | `AGENT_VOICE_ENABLED` | `VoiceService.is_enabled()` -> `_voice()` (404 when off); the service now always exists where the agent does |
 | `voice.resumption` | on | on/off | `AGENT_VOICE_RESUMPTION` | `VoiceService._resumes()` |
 | `voice.session_cap_seconds` | 900 (`SESSION_SECONDS`) | 60-3 600 s | - | `_mint_chunk`, `extend`, `_bill` |
-| `voice.chunk_units` | 2 (`VOICE_CHUNK_UNITS`) | 1-10 | - | `_mint_chunk` |
+| `voice.chunk_units` (**confirm any change**) | 2 (`VOICE_CHUNK_UNITS`) | 1-10 | - | `_mint_chunk` |
 | `speech.take_max_seconds` | 300 (`TRANSCRIBE_MAX_SECONDS`) | 10-900 s | - | `take_seconds`, `/api/speech/transcribe` |
 | `speech.asr_daily_seconds` | 3 600 | 60-86 400 s | `SPEECH_ASR_DAILY_SECONDS` | `DailySecondsBrake` (per take) |
 | `speech.pronunciation_max_concurrent` | 8 | 1-32 | `PRONUNCIATION_MAX_CONCURRENT` | `_pronunciation_limiter()` (resized per assessment) |
-| `speech.no_speech_charged` | on (`NO_SPEECH_CHARGED`) | on/off | - | `_charged_units` |
+| `speech.no_speech_charged` (**confirm any change**) | on (`NO_SPEECH_CHARGED`) | on/off | - | `_charged_units` |
 | `rate.speech_ai_per_10min` | 60 | 5-5 000 | - | `http_security.rate_group` -> app middleware limiter |
 | `rate.writing_ai_per_10min` / `rate.essay_ai_per_10min` | 30 / 30 | 1-5 000 | - | same |
 | `rate.dictionary_ai_per_10min` / `rate.reading_ai_per_10min` | 120 / 300 | 1-5 000 | - | same |
@@ -5749,16 +5748,16 @@ environment" (so operations can pin production, as `staging_8000_deploy.ps1` alr
 | `media.model_clip_max_lines` | 500 | 10-5 000 | `MEDIA_MODEL_CLIP_MAX_LINES` | `_prepare_model_clips` |
 | `feedback.daily_limit` | 10 (`DAILY_LIMIT`) | 1-100 | - | `feedback.submit` |
 | `feedback.retention_sweep` (**deletes**) | off | on/off | `FEEDBACK_RETENTION_SWEEP` | `FeedbackRetentionSchedule.tick` (the thread always runs and asks hourly) |
-| `feedback.retention_days` (**deletes**) | 730 | 30-3 650 d | - | same |
+| `feedback.retention_days` (**deletes**) | 730 | 30-730 d (published 24 months) | - | same |
 | `agent.turn_retention_sweep` (**deletes**) | off | on/off | `AGENT_TURN_RETENTION_SWEEP` | `TurnTelemetryRetention.maybe_sweep` |
-| `agent.turn_retention_days` (**deletes**) | 90 | 7-3 650 d | - | same |
-| `ai_costs.retention_days` (**deletes**) | 396 | 90-3 650 d | - | `AccountCostRecorder.maybe_sweep` (it had no switch; still none) |
+| `agent.turn_retention_days` (**deletes**) | 90 | 7-90 d (published 90 days) | - | same |
+| `ai_costs.retention_days` (**deletes**) | 396 | 90-396 d (published 13 months) | - | `AccountCostRecorder.maybe_sweep` (it had no switch; still none) |
 | `agent.daily_spend_cap_usd` (confirm > 50) | no cap | 0.01-10 000 USD or none | `AGENT_DAILY_SPEND_CAP_USD` | `LiveSpendGuard` per turn |
 | `media.batch_cap_asr_usd` (confirm > 50) | 5 | 0-1 000 | `MEDIA_ASR_BATCH_CAP_USD` | `SpendLedger.limits()` |
 | `media.batch_cap_ai_usd` (confirm > 100) | 10 | 0-1 000 | `MEDIA_AI_BATCH_CAP_USD` | same |
 | `media.daily_cap_usd` (confirm > 250) | 25 | 0-10 000 | `MEDIA_DAILY_CAP_USD` | same |
-| `media.asr_usd_per_hour` | 0.04 | 0-100 | `MEDIA_ASR_USD_PER_HOUR` | `SpendLedger.asr_usd_per_hour()` |
-| `media.ai_usd_per_million_tokens` | 1.0 | 0-1 000 | `MEDIA_AI_USD_PER_MILLION_TOKENS` | `SpendLedger.ai_usd_per_million_tokens()` |
+| `media.asr_usd_per_hour` | 0.04 | 0.001-100 (0 would disable the caps) | `MEDIA_ASR_USD_PER_HOUR` | `SpendLedger.asr_usd_per_hour()` |
+| `media.ai_usd_per_million_tokens` | 1.0 | 0.001-1 000 | `MEDIA_AI_USD_PER_MILLION_TOKENS` | `SpendLedger.ai_usd_per_million_tokens()` |
 | `word_tts.spend_cap_usd` (confirm > 50) | 5 | 0-1 000 | `WORD_TTS_SPEND_CAP_USD` | `AzureVoice._cap` (per synthesis) |
 
 ### (B) Safety or integrity internals - stay in code
@@ -5789,7 +5788,8 @@ at start (`PRONUNCIATION_PROVIDER`, `MEDIA_TRANSLATION_PROVIDER`, `READING_TRANS
 per source), language lists tied to deployed models (`MEDIA_PRETRANSLATE_LANGUAGES`, `VOCABULARY_PIVOT_PAIRS`, support
 languages), and the activation gates tied to migrations or human approval (`AGENT_ENABLED` - it builds the agent runtime and
 routes, D-146 -, `BILLING_ENABLED` and `BILLING_PRICES_FILE`, `ORENA_ACCOUNT_BACKBONE`, `ORENA_PRACTICE_SESSION`,
-`ORENA_READING_PRACTICE_SUBMIT`, `ALLOW_FALLBACK`). The quota switch's two variables are the exception that proves the rule:
+`ORENA_READING_PRACTICE_SUBMIT`, `ALLOW_FALLBACK`) - and **`AGENT_VOICE_ENABLED`** (paid live voice is the human's activation, D-169
+point 11; the architecture review moved it back from A: only the session cap, chunk size and resumption are Admin policies). The quota switch's two variables are the exception that proves the rule:
 they pin the switch (and the page shows it locked) but stay editable in Admin when unset.
 
 ### What changed for the UI and the contract
@@ -5809,3 +5809,14 @@ they pin the switch (and the page shows it locked) but stay editable in Admin wh
   agent write (turns), not at the next restart. (3) `MEDIA_PRETRANSLATE_LANGUAGES` and the Groq/Azure model names were left in
   the environment as deployment wiring (C); making them Admin-editable would be a later slice. (4) `AGENT_ENABLED` as a runtime
   kill switch would need the agent router to be mounted unconditionally; recorded, not done.
+- Review of b962e957 (APPROVE WITH CONDITIONS; P1-1, P1-2 fixed in the follow-up commit): **follow-ups recorded, not done.**
+  (P2-3) `AGENT_CONTRACT.md` v8 states the voice session as "at most 900 seconds" and a chunk as "2 x
+  `voice_seconds_per_message`"; `voice.session_cap_seconds` and `voice.chunk_units` now change them at runtime. Clients read
+  `session_max_seconds`, so nothing breaks, but the contract the Intelligence lane builds against should say "the server's
+  policy (default 900; default 2 units)". The implementer must not edit the contract (D-086): **route to the contract owner.**
+  (P2-6) The settings read (`policies._loaded`) is synchronous and runs on the event loop in the route-limit middleware, the
+  transcribe route and `_pronunciation_limiter` on a cache miss; with an exhausted DB pool it can block the loop for the pool
+  timeout. Fix later with a background refresher (value() reading only the snapshot) or `anyio.to_thread` around the read.
+  Removing an environment pin at a later deploy resurrects a previously stored Admin value (for example a sweep switched on
+  earlier) without a fresh confirmation. A store that rejects a stored value drops it at the next rewrite with no audit entry.
+  `voice.session_cap_seconds` is read twice in `extend`; a change between the reads can make `cap - minted < 1` (a 500, no charge).

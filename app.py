@@ -855,7 +855,7 @@ app.include_router(learner_summary_router)
 # runtime that is not production (human ruling 2026-09-27); while off both routes
 # answer 404. It routes through the legacy AI selection and reads with the app's
 # own services: the Writing review below and the usage store it meters with.
-from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router  # noqa: E402
+from writing_coach.agent.api import agent_enabled, configure_agent, router as agent_router, voice_enabled  # noqa: E402
 from writing_coach.agent.voice_session import VoiceService  # noqa: E402
 from writing_coach.ai.live_voice import GeminiLiveTokens  # noqa: E402
 from writing_coach.ai.audio_telemetry import record_audio_operation  # noqa: E402
@@ -923,7 +923,10 @@ def _agent_spend_guard():
     reader = getattr(_persistence_runtime.platform_repository, "ai_spend_since", None)
     # D-17P: the cap is the effective `agent.daily_spend_cap_usd` (environment pin, else Admin, else none) read at each
     # turn; with no cap the guard allows every turn, exactly as when none was built.
-    return LiveSpendGuard(lambda: _policies.value("agent.daily_spend_cap_usd"), reader if callable(reader) else None)
+    # The strict read: if this worker has never read the settings store, or the stored cap no longer validates, the
+    # guard refuses turns (fails closed) instead of treating "unknown" as "no cap".
+    return LiveSpendGuard(lambda: _policies.value_strict("agent.daily_spend_cap_usd"),
+                          reader if callable(reader) else None)
 
 
 def _delete_agent_turns_before(before: datetime, limit: int) -> int:
@@ -991,12 +994,13 @@ def _gemini_key() -> str:
 def _with_voice(runtime):
     """Live voice, mode A (R28): only where the agent runs and AGENT_VOICE_ENABLED is on."""
 
-    # D-17P: the service always exists where the agent does; whether voice is on (`voice.enabled`: AGENT_VOICE_ENABLED,
-    # else Admin, default off), its session cap, chunk size and resumption are read when a session is opened or renewed.
+    # D-17P: the service always exists where the agent does; whether voice is on stays the environment's gate
+    # (AGENT_VOICE_ENABLED: paid live voice is the human's activation, D-169), and its session cap, chunk size and
+    # resumption are Admin policies read when a session is opened or renewed.
     if runtime is not None:
         runtime.voice = VoiceService(runtime=runtime, tokens=GeminiLiveTokens(key=_gemini_key),
                                      record_audio=record_audio_operation,
-                                     enabled=lambda: _policies.value("voice.enabled"),
+                                     enabled=lambda: voice_enabled(os.environ),
                                      policy=_policies.value)  # fmt: skip
     return runtime
 

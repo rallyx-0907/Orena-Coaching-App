@@ -71,7 +71,8 @@ export function changeOf(doc, drafts) {
 }
 
 /* Does this change need the operator's explicit yes? Mirrors the server's rule (writing_coach/policies.py), which
-   enforces it: a policy that can delete data, or a value past the policy's sane maximum (or no cap at all). */
+   enforces it: a policy that can delete data or changes what a learner is charged, or a value past the policy's sane
+   maximum (or no cap at all). */
 export function needsConfirmation(policy, from, to) {
   if (same(from, to)) return false;
   if (policy.danger) return true;
@@ -288,10 +289,11 @@ export async function mountPolicies(shell, ctx) {
     const confirmations = confirmationsOf(change);
     const confirm = {};
     if (confirmations.length) {
-      const deletes = confirmations.some(({ policy }) => policy.danger);
+      const deletes = confirmations.some(({ policy }) => policy.danger === 'delete');
+      const charging = confirmations.some(({ policy }) => policy.danger === 'charging');
       const answer = await host.confirm({
         title: t('polConfirmTitle'),
-        body: t(deletes ? 'polConfirmBodyDelete' : 'polConfirmBodySpend'),
+        body: t(deletes ? 'polConfirmBodyDelete' : charging ? 'polConfirmBodyCharging' : 'polConfirmBodySpend'),
         list: confirmations.map(({ policy, from, to }) => t('polConfirmLine', { name: policyLabel(policy), from: valueLabel(policy, from, ui()), to: valueLabel(policy, to, ui()) })),
         cancel: t('actCancel'),
         confirm: t('polConfirmYes'),

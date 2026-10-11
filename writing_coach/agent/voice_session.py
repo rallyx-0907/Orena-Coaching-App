@@ -951,7 +951,10 @@ class VoiceService:
         """An unmetered session (messages not enforced): its wall-clock time, at most the cap, goes to the AI ledger when
         it ends - exactly what voice did before the plan limit existed."""
 
-        seconds = round(min(self._session_seconds(), max(0.0, self.sessions.clock() - session.opened)), 1)
+        # At most the seconds the token was minted for, not the live cap: a cap changed in Admin mid-session must not
+        # under-record a session that was granted the old one.
+        seconds = round(min(float(session.minted_seconds or self._session_seconds()),
+                            max(0.0, self.sessions.clock() - session.opened)), 1)
         if self.record_audio is not None:
             try:
                 self.record_audio("agent_voice", provider="gemini", model=session.model, outcome="success",

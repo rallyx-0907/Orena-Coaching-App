@@ -5362,7 +5362,7 @@ Implemented on branch `feat/admin-policies` (from `main` at a514dba9). **Needs i
    behaviour, cost and limits are the `platform.policies` row of `platform_settings` (`writing_coach/policies.py`): versioned
    JSON `{version, values: {key: value}}`, a typed registry (kind, range, unit, default, optional environment variable),
    unknown keys rejected, defaults equal to the constants they replace (a test pins each one), an empty document is the
-   defaults. The audit (`docs/project/UI_BACKEND_GAPS.md` "ADM-POL") classifies every parameter: 38 are operator policy (A), the
+   defaults. The audit (`docs/project/UI_BACKEND_GAPS.md` "ADM-POL") classifies every parameter: 37 are operator policy (A), the
    rest are safety internals that stay in code with their reasons (B) or deployment/secret configuration that stays in the
    environment (C).
 2. **Same contract as the plan catalogue (D-153).** Save is a compare-and-set on the stored version
@@ -5373,7 +5373,8 @@ Implemented on branch `feat/admin-policies` (from `main` at a514dba9). **Needs i
    "locked by environment" and the server refuses to change it. Production pins stay authoritative.
 4. **Read at use time, no restart.** Every class-(A) consumer reads the effective value when it acts: the agent limits
    through `LiveAgentLimits`, the limiters through callables, the daily spend guard, voice (`VoiceService` now always exists
-   where the agent does and asks `voice.enabled` per request), speech take/brake/concurrency/no-speech charge, media caps and
+   where the agent does; its session cap, chunk size and resumption are policies, while whether voice is on stays
+   `AGENT_VOICE_ENABLED`, the human's activation gate), speech take/brake/concurrency/no-speech charge, media caps and
    estimates, route rate limits, feedback limit, the three retention jobs (the schedule threads always run and ask the switch;
    nothing is deleted unless it is on), the word-audio cap and the quota settlement choice. An empty document behaves exactly
    as before (the existing suites pass unchanged except where a test asserted the old start-up-only wiring).
@@ -5391,5 +5392,21 @@ Implemented on branch `feat/admin-policies` (from `main` at a514dba9). **Needs i
    last changed it. Environment variables still win there.
 8. **The page.** Admin > Operations > Policies & limits (`#/admin/operations/policies`, `screens/admin/policies.js`), kit
    blocks only, EN/VI/ZH, gate `scripts/test_orena_admin_policies.mjs`; routes added to the admin authorization matrix.
-9. **Not done, recorded.** Provider wiring, keys, URLs and activation gates stay in the environment (C); `AGENT_ENABLED` as a
+9. **Review of b962e957 (APPROVE WITH CONDITIONS), fixed in the next commit.** (P1-1) The agent daily spend cap is read
+   strictly (`policies.value_strict`): a worker that has never read the settings store, or whose stored cap no longer
+   validates, refuses turns (fails closed) instead of treating "unknown" as "no cap". (P1-2) A save without
+   `expected_updated_at` is a compare-and-set against the version it just read (409 on a race), so a server-side merge
+   can never revert a concurrent change. (P2-1) `voice.enabled` is not a policy: paid live voice stays the human's
+   activation, `AGENT_VOICE_ENABLED`. (P2-2) `quota.abandoned_settles`, `speech.no_speech_charged` and `voice.chunk_units`
+   (rules the human decided) need confirmation on any change (`danger: charging`). (P2-4) the media price estimates have
+   a minimum above 0 (0 would disable the spend caps). (P2-5) Retention periods can only be shortened: their maximum is
+   the published legal value (`docs/legal/public/facts.json`: 90 days agent turns, 24 months feedback; privacy: 13 months
+   AI cost records). **Admin is now the activation point for the retention sweeps** (D-159: switching the feedback sweep on is
+   the human's activation, :8000 included): both sweep variables are unset on :8000 today, so an administrator can switch
+   deletion on there, confirmed and audited; pin `FEEDBACK_RETENTION_SWEEP` and `AGENT_TURN_RETENTION_SWEEP` in the :8000
+   deploy to keep that gate in the environment. (P2-7) Only opening a session and the voice list are refused when voice
+   is off; an open session can still be used and ended, and an unmetered session is billed at most its minted seconds. (P3)
+   a store read error during a save is a 503. Follow-ups P2-3 (Agent Contract v8 drift) and P2-6 (synchronous settings
+   read on the event loop) are recorded in `UI_BACKEND_GAPS.md` ADM-POL.
+10. **Not done, recorded.** Provider wiring, keys, URLs and activation gates stay in the environment (C); `AGENT_ENABLED` as a
    runtime kill switch and the Groq/Azure model names as Admin settings are later slices; per-process limiters stay per worker.

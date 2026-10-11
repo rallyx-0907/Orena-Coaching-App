@@ -85,9 +85,10 @@ const row = (key, group, kind, defaults, extra = {}) => ({
 const fixture = () => ({
   version: 1, groups: [...page.GROUP_ORDER], source: 'stored', state: 'stored', updated_at: '2026-10-11T08:30:00+00:00', updated_by: 'admin@x.io',
   policies: [
-    row('quota.abandoned_settles', 'quota', 'enum', 'admitted', { choices: ['admitted', 'zero'] }),
+    row('quota.abandoned_settles', 'quota', 'enum', 'admitted', { choices: ['admitted', 'zero'], danger: 'charging' }),
     row('agent.turns_per_window', 'agent', 'int', 12, { unit: 'count', low: 1, high: 600, source: 'admin', has_admin: true, value: 20, admin: 20 }),
-    row('voice.enabled', 'voice', 'bool', false, { env: 'AGENT_VOICE_ENABLED', locked: true, source: 'env', value: true }),
+    row('voice.resumption', 'voice', 'bool', true, { env: 'AGENT_VOICE_RESUMPTION', locked: true, source: 'env', value: false }),
+    row('voice.chunk_units', 'voice', 'int', 2, { unit: 'count', low: 1, high: 10, danger: 'charging' }),
     row('speech.take_max_seconds', 'speech', 'int', 300, { unit: 'seconds', low: 10, high: 900 }),
     row('media.model_clips_enabled', 'media', 'bool', true),
     row('rate.writing_ai_per_10min', 'rates', 'int', 30, { unit: 'count', low: 1, high: 5000 }),
@@ -108,7 +109,7 @@ const rowOf = (doc, key) => doc.policies.find((policy) => policy.key === key);
   const doc = fixture();
   const drafts = page.draftsOf(doc);
   assert.equal(drafts['agent.turns_per_window'], '20', 'a draft is the value in force, as typed');
-  assert.equal(drafts['voice.enabled'], true);
+  assert.equal(drafts['voice.resumption'], false);
   assert.equal(drafts['agent.daily_spend_cap_usd'], '', 'no cap is an empty box');
   assert.deepEqual(page.changeOf(doc, drafts), { set: {}, reset: [], changed: [] }, 'untouched: nothing to send');
 
@@ -116,12 +117,12 @@ const rowOf = (doc, key) => doc.policies.find((policy) => policy.key === key);
   drafts['speech.take_max_seconds'] = ' 120 ';
   drafts['media.model_clips_enabled'] = false;
   drafts['quota.abandoned_settles'] = 'zero';
-  drafts['voice.enabled'] = false;          // pinned by the environment: never sent
+  drafts['voice.resumption'] = true;        // pinned by the environment: never sent
   drafts['media.daily_cap_usd'] = 'lots';   // not a number: sent as typed, for the server to name
   const change = page.changeOf(doc, drafts);
   assert.deepEqual(change.set, { 'agent.turns_per_window': 30, 'speech.take_max_seconds': 120, 'media.model_clips_enabled': false, 'quota.abandoned_settles': 'zero', 'media.daily_cap_usd': 'lots' });
   assert.deepEqual(change.reset, []);
-  assert.ok(!('voice.enabled' in change.set), 'a policy the environment pins is never sent');
+  assert.ok(!('voice.resumption' in change.set), 'a policy the environment pins is never sent');
 
   const back = page.draftsOf(doc);
   back['agent.turns_per_window'] = '12';   // the default again: the stored value is removed, so it follows the default
@@ -145,6 +146,8 @@ const rowOf = (doc, key) => doc.policies.find((policy) => policy.key === key);
   assert.equal(need('media.daily_cap_usd', 500, 100), false, 'lowering a cap needs nothing');
   assert.equal(need('agent.daily_spend_cap_usd', 5, null), true, 'removing a cap is past any maximum');
   assert.equal(need('agent.turns_per_window', 12, 400), false, 'an ordinary limit needs nothing');
+  assert.equal(need('voice.chunk_units', 2, 5), true, 'what a learner is charged is confirmed');
+  assert.equal(need('quota.abandoned_settles', 'admitted', 'zero'), true, 'including the settlement rule');
   const sweep = page.changeOf(doc, { ...page.draftsOf(doc), 'feedback.retention_sweep': true, 'media.daily_cap_usd': '900', 'agent.turns_per_window': '40' });
   assert.deepEqual(page.confirmationsOf(sweep).map(({ policy }) => policy.key), ['feedback.retention_sweep', 'media.daily_cap_usd']);
 
@@ -186,8 +189,8 @@ for (const ui of ['en', 'vi', 'zh']) {
   assert.ok(markup.includes(esc(words.polDangerHint)), `${ui}: a deleting policy says it is confirmed`);
   assert.match(markup, /name="pol\|agent\.turns_per_window"[^>]*value="20"/, `${ui}: the value in force is in the box`);
   /* a policy pinned by the environment */
-  assert.ok(markup.includes(esc(words.polLocked)) && markup.includes(esc(words.polLockedHint.replace('{env}', 'AGENT_VOICE_ENABLED'))), `${ui}: pinned: tagged and told which variable`);
-  assert.match(markup, /data-field="pol\|voice\.enabled"[^>]*disabled/, `${ui}: a pinned switch cannot be turned`);
+  assert.ok(markup.includes(esc(words.polLocked)) && markup.includes(esc(words.polLockedHint.replace('{env}', 'AGENT_VOICE_RESUMPTION'))), `${ui}: pinned: tagged and told which variable`);
+  assert.match(markup, /data-field="pol\|voice\.resumption"[^>]*disabled/, `${ui}: a pinned switch cannot be turned`);
   assert.doesNotMatch(markup, /data-field="pol\|media\.model_clips_enabled"[^>]*disabled/, `${ui}: an unpinned one can`);
   /* who and when */
   assert.ok(markup.includes('admin@x.io') && markup.includes(esc(words.polChangedBy.replace('{name}', 'admin@x.io'))), `${ui}: the header names who changed it`);
@@ -211,7 +214,7 @@ for (const ui of ['en', 'vi', 'zh']) {
 }
 copyIndex.setLanguages({ ui: 'en', support: 'en' });
 assert.ok(page.valueLabel(rowOf(fixture(), 'agent.daily_spend_cap_usd'), null).includes('No cap'));
-assert.equal(page.valueLabel(rowOf(fixture(), 'voice.enabled'), true), t('polOn'));
+assert.equal(page.valueLabel(rowOf(fixture(), 'voice.resumption'), true), t('polOn'));
 assert.equal(page.policyLabel({ key: 'future.policy_key', kind: 'int' }), 'Future policy key', 'a policy this build has no words for falls back to its key');
 
 /* ---- e. the place -------------------------------------------------------------------------------------------------- */

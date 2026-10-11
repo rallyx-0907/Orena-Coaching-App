@@ -58,7 +58,10 @@ def test_every_policy_is_typed_ranged_and_its_default_is_inside_its_range():
         if item.kind == "enum":
             assert item.default in item.choices, item.key
         if item.danger:
-            assert item.danger == "delete", item.key
+            assert item.danger in {"delete", "charging"}, item.key
+        if item.danger == "delete" and item.key.endswith("_days"):
+            # a retention period can only be shortened below what the published legal text states
+            assert item.high == item.default, f"{item.key}: Admin may shorten retention, never lengthen it"
     assert set(policies.GROUPS) == {item.group for item in policies.POLICIES} | {"quota"}
 
 
@@ -79,7 +82,8 @@ def test_the_defaults_are_the_values_the_code_carried_before():
     assert tuple(agent_limits.OPERATOR_FIELDS) == tuple(policies.AGENT_LIMIT_FIELDS)
     assert policies.default("voice.session_cap_seconds") == voice_session.SESSION_SECONDS == 900
     assert policies.default("voice.chunk_units") == voice_session.VOICE_CHUNK_UNITS == 2
-    assert policies.default("voice.enabled") is False and policies.default("voice.resumption") is True
+    assert "voice.enabled" not in policies.BY_KEY, "paid live voice is the human's activation gate: environment only"
+    assert policies.default("voice.resumption") is True
     assert policies.default("speech.take_max_seconds") == speech_api.TRANSCRIBE_MAX_SECONDS == 300
     assert policies.default("speech.asr_daily_seconds") == speech_api.TRANSCRIBE_DAILY_SECONDS == 3600
     assert policies.default("speech.pronunciation_max_concurrent") == speech_api.DEFAULT_PRONUNCIATION_WORKERS == 8
@@ -127,21 +131,19 @@ def test_environment_beats_admin_beats_default():
 
 
 def test_the_snapshot_says_where_each_value_comes_from_and_which_are_locked():
-    env = {"MEDIA_DAILY_CAP_USD": "40", "AGENT_VOICE_ENABLED": "true"}
+    env = {"MEDIA_DAILY_CAP_USD": "40", "AGENT_VOICE_RESUMPTION": "false"}
     with installed(MemoryPolicyStore({"media.daily_cap_usd": 99.0, "feedback.daily_limit": 3}), env=env):
         rows = {row["key"]: row for row in policies.snapshot()["policies"]}
         assert (rows["media.daily_cap_usd"]["source"], rows["media.daily_cap_usd"]["value"]) == ("env", 40.0)
         assert rows["media.daily_cap_usd"]["locked"] and rows["media.daily_cap_usd"]["env"] == "MEDIA_DAILY_CAP_USD"
         assert rows["media.daily_cap_usd"]["admin"] == 99.0, "what Admin chose is still shown beneath the pin"
-        assert (rows["voice.enabled"]["source"], rows["voice.enabled"]["value"]) == ("env", True)
+        assert (rows["voice.resumption"]["source"], rows["voice.resumption"]["value"]) == ("env", False)
         assert (rows["feedback.daily_limit"]["source"], rows["feedback.daily_limit"]["value"]) == ("admin", 3)
         assert rows["feedback.daily_limit"]["has_admin"] and not rows["feedback.daily_limit"]["locked"]
         assert (rows["speech.take_max_seconds"]["source"], rows["speech.take_max_seconds"]["value"]) == ("default", 300)
 
 
 @pytest.mark.parametrize("key, env, expected", [
-    ("voice.enabled", {"AGENT_VOICE_ENABLED": "ON"}, True),
-    ("voice.enabled", {"AGENT_VOICE_ENABLED": "maybe"}, False),            # the old reading: not in the true set -> off
     ("voice.resumption", {"AGENT_VOICE_RESUMPTION": "false"}, False),
     ("voice.resumption", {"AGENT_VOICE_RESUMPTION": "garbage"}, True),     # the old reading: only an off value turns it off
     ("media.model_clips_enabled", {"MEDIA_MODEL_CLIPS": "0"}, False),
@@ -181,8 +183,12 @@ def test_the_editor_refuses_a_policy_the_environment_pins():
     ({"set": {"feedback.daily_limit": 0}}, "between"),
     ({"set": {"feedback.daily_limit": 101}}, "between"),
     ({"set": {"feedback.daily_limit": None}}, "needs a value"),
-    ({"set": {"voice.enabled": "true"}}, "true or false"),
-    ({"set": {"voice.enabled": 1}}, "true or false"),
+    ({"set": {"voice.enabled": True}}, "Unknown policy"),                  # not a policy: environment only
+    ({"set": {"media.asr_usd_per_hour": 0}}, "between"),                   # a free estimate would disable the caps
+    ({"set": {"media.ai_usd_per_million_tokens": 0}}, "between"),
+    ({"set": {"feedback.retention_days": 731}}, "between"),                # never longer than the published 24 months
+    ({"set": {"agent.turn_retention_days": 91}}, "between"),
+    ({"set": {"ai_costs.retention_days": 397}}, "between"),
     ({"set": {"quota.abandoned_settles": "free"}}, "one of"),
     ({"set": {"media.daily_cap_usd": float("inf")}}, "must be a number"),
     ({"set": {"agent.daily_spend_cap_usd": 0}}, "between"),
@@ -277,6 +283,9 @@ def test_the_audit_row_commits_in_the_same_transaction_as_the_change(tmp_path, m
     ({"set": {"feedback.retention_sweep": True}}, ["feedback.retention_sweep"]),
     ({"set": {"agent.turn_retention_sweep": True}}, ["agent.turn_retention_sweep"]),
     ({"set": {"feedback.retention_days": 365}}, ["feedback.retention_days"]),
+    ({"set": {"quota.abandoned_settles": "zero"}}, ["quota.abandoned_settles"]),   # charging rules the human decided
+    ({"set": {"speech.no_speech_charged": False}}, ["speech.no_speech_charged"]),
+    ({"set": {"voice.chunk_units": 5}}, ["voice.chunk_units"]),
     ({"set": {"ai_costs.retention_days": 120}}, ["ai_costs.retention_days"]),
     ({"set": {"media.daily_cap_usd": 500}}, ["media.daily_cap_usd"]),          # past its sane maximum (250)
     ({"set": {"word_tts.spend_cap_usd": 60}}, ["word_tts.spend_cap_usd"]),
@@ -456,30 +465,51 @@ def test_voice_is_switched_and_shaped_by_the_policies_at_the_moment_of_use():
     bare = VoiceService(runtime=None, tokens=None)
     assert (bare.is_enabled(), bare._session_seconds(), bare._chunk_units(), bare._resumes()) == (
         True, SESSION_SECONDS, VOICE_CHUNK_UNITS, True), "a service built without policies keeps the constants"
-    service = VoiceService(runtime=None, tokens=None, enabled=lambda: policies.value("voice.enabled"), policy=policies.value)
+    service = VoiceService(runtime=None, tokens=None, policy=policies.value)
     with installed(MemoryPolicyStore()) as store:
-        assert (service.is_enabled(), service._session_seconds(), service._chunk_units(), service._resumes()) == (
-            False, 900, 2, True), "voice is off by default, as before"
-        save({"set": {"voice.enabled": True, "voice.session_cap_seconds": 300, "voice.chunk_units": 1,
-                      "voice.resumption": False}}, store)
-        assert (service.is_enabled(), service._session_seconds(), service._chunk_units(), service._resumes()) == (
-            True, 300, 1, False)
+        assert (service._session_seconds(), service._chunk_units(), service._resumes()) == (900, 2, True)
+        save({"set": {"voice.session_cap_seconds": 300, "voice.chunk_units": 1, "voice.resumption": False},
+              "confirm": {"voice.chunk_units": True}}, store)
+        assert (service._session_seconds(), service._chunk_units(), service._resumes()) == (300, 1, False)
 
 
-def test_voice_routes_answer_404_until_an_administrator_turns_voice_on():
+def test_switching_voice_off_stops_new_sessions_but_not_the_ones_in_flight():
     from test_quota_orena_message import Rig
     from test_agent_voice_session import Post, _body, _service, Clock
 
-    service = _service(Post(), clock=Clock(), billed=[])
-    service.enabled = lambda: policies.value("voice.enabled")
-    service.policy = policies.value
+    state = {"on": True}
+    billed = []
+    clock = Clock()
+    service = _service(Post(), clock=clock, billed=billed)
+    service.enabled = lambda: state["on"]
     rig = Rig([], voice=service)
-    with installed(MemoryPolicyStore()) as store:
-        assert rig.client.post("/api/agent/voice/session", json=_body(target="en"),
-                               headers={"x-test-user": "learner-1"}).status_code == 404, "off: the route is not there"
-        save({"set": {"voice.enabled": True}}, store)
-        assert rig.client.post("/api/agent/voice/session", json=_body(target="en"),
-                               headers={"x-test-user": "learner-1"}).status_code == 200, "on: no restart needed"
+    headers = {"x-test-user": "learner-1"}
+    opened = rig.client.post("/api/agent/voice/session", json=_body(target="en"), headers=headers)
+    assert opened.status_code == 200
+    state["on"] = False
+    assert rig.client.post("/api/agent/voice/session", json=_body(target="en"), headers=headers).status_code == 404, \
+        "off: a new session is refused"
+    assert rig.client.get("/api/agent/voice/voices", headers=headers).status_code == 404, "and so is the voice list"
+    clock.t += 30
+    ended = rig.client.post("/api/agent/voice/end", json={"voice_session_id": opened.json()["voice_session_id"]},
+                            headers=headers)
+    assert ended.status_code == 200, "a session already open can still be ended, so its time reaches the ledger"
+    assert [k["audio_seconds"] for _, k in billed] == [30.0]
+
+
+def test_an_unmetered_session_is_billed_for_at_most_the_seconds_it_was_minted_for():
+    from writing_coach.agent.voice_session import VoiceService, VoiceSession
+
+    seen = []
+    service = VoiceService(runtime=None, tokens=None, policy=policies.value,
+                           record_audio=lambda *a, **k: seen.append(k["audio_seconds"]))
+    class Sessions:
+        clock = staticmethod(lambda: 2000.0)
+    service.sessions = Sessions()
+    session = VoiceSession.__new__(VoiceSession)
+    session.opened, session.minted_seconds, session.model = 0.0, 900, "m"
+    with installed(MemoryPolicyStore({"voice.session_cap_seconds": 60})):  # lowered after the token was minted
+        assert service._bill(session) == 900.0 and seen == [900.0], "billed at the old grant, not the new cap"
 
 
 def test_a_metered_voice_session_uses_the_policy_cap_and_chunk_size():
@@ -491,7 +521,7 @@ def test_a_metered_voice_session_uses_the_policy_cap_and_chunk_size():
     with installed(MemoryPolicyStore()) as store:
         body = voice.open().json()
         assert (body["max_seconds"], body["session_max_seconds"]) == (120, 900), "an empty document: D-169 exactly"
-        save({"set": {"voice.session_cap_seconds": 600, "voice.chunk_units": 5}}, store)
+        save({"set": {"voice.session_cap_seconds": 600, "voice.chunk_units": 5}, "confirm": {"voice.chunk_units": True}}, store)
         other = voice_suite.Voice()
         other.service.policy = policies.value
         answer = other.open(user="learner-2").json()
@@ -681,7 +711,7 @@ def test_the_abandoned_reservation_charge_follows_the_policy():
 
     with installed(MemoryPolicyStore()) as store:
         assert quota.abandoned_settles() == "admitted"
-        save({"set": {"quota.abandoned_settles": "zero"}}, store)
+        save({"set": {"quota.abandoned_settles": "zero"}, "confirm": {"quota.abandoned_settles": True}}, store)
         assert quota.abandoned_settles() == "zero"
 
 
@@ -768,3 +798,91 @@ def test_the_quota_route_reports_who_and_when_and_takes_a_stale_check(api):
     finally:
         quota.configure_quota(**{f: getattr(previous, f) for f in
                                  ("repository", "incarnations", "plan_for", "settings", "reason", "env", "clock")})
+
+
+# ==================================================================================== review of b962e957 (P1, P3) ==
+
+def test_the_spend_cap_read_is_strict_a_cold_worker_with_an_unreadable_store_refuses_turns(monkeypatch):
+    """P1-1: "unknown" must never read as "no cap" for the one policy whose default is no cap."""
+    from writing_coach.agent.budget import LiveSpendGuard
+
+    clock = [1000.0]
+    monkeypatch.setattr(policies.time, "monotonic", lambda: clock[0])
+    store = MemoryPolicyStore({"agent.daily_spend_cap_usd": 1.0}, fail_reads=True)
+    guard = LiveSpendGuard(lambda: policies.value_strict("agent.daily_spend_cap_usd"), lambda since: (0.0, 0))
+    with installed(store):
+        with pytest.raises(policies.PolicyUnavailable):
+            policies.value_strict("agent.daily_spend_cap_usd")
+        assert policies.value("agent.daily_spend_cap_usd") is None, "the lenient read still says the default"
+        wait = guard()
+        assert wait is not None and wait > 0, "a cold worker whose store is down refuses the turn (fails closed)"
+        store.fail_reads = False
+        clock[0] += policies.CACHE_SECONDS + 1
+        assert policies.value_strict("agent.daily_spend_cap_usd") == 1.0
+        assert guard() is None, "and carries on once the store answers (spend 0 of 1 USD)"
+        store.fail_reads = True
+        clock[0] += policies.CACHE_SECONDS + 1
+        assert policies.value_strict("agent.daily_spend_cap_usd") == 1.0, "after one good read a blip keeps the cap"
+    with installed(MemoryPolicyStore(fail_reads=True), env={"AGENT_DAILY_SPEND_CAP_USD": "2"}):
+        assert policies.value_strict("agent.daily_spend_cap_usd") == 2.0, "an environment pin needs no store"
+
+
+def test_a_stored_cap_that_no_longer_validates_refuses_turns_instead_of_lifting_the_cap():
+    from writing_coach.agent.budget import LiveSpendGuard
+
+    guard = LiveSpendGuard(lambda: policies.value_strict("agent.daily_spend_cap_usd"), lambda since: (0.0, 0))
+    with installed(MemoryPolicyStore({"agent.daily_spend_cap_usd": 99999.0})):  # a later build tightened the range
+        assert policies.value("agent.daily_spend_cap_usd") is None
+        with pytest.raises(policies.PolicyUnavailable):
+            policies.value_strict("agent.daily_spend_cap_usd")
+        assert guard() is not None
+    with installed():  # nothing stored, a working store: genuinely no cap
+        assert policies.value_strict("agent.daily_spend_cap_usd") is None and guard() is None
+    with installed():
+        policies.configure(None, env={})  # no store at all (a process without persistence): the default applies
+        assert policies.value_strict("agent.daily_spend_cap_usd") is None
+
+
+def test_the_app_builds_the_spend_guard_on_the_strict_read():
+    source = (ROOT / "app.py").read_text(encoding="utf-8")
+    assert '_policies.value_strict("agent.daily_spend_cap_usd")' in source
+
+
+def test_a_save_without_the_loaded_version_is_still_a_compare_and_set():
+    """P1-2: an omitted `expected_updated_at` must not let a merge overwrite a concurrent change."""
+    class Racing(MemoryPolicyStore):
+        """Another administrator commits between this save's read and its write."""
+        def __init__(self, *a, **k):
+            super().__init__(*a, **k)
+            self.before_return = None
+
+        def get_setting(self, key):
+            row = super().get_setting(key)
+            if self.before_return is not None:
+                hook, self.before_return = self.before_return, None
+                hook()
+            return row
+
+    store = Racing({"feedback.retention_sweep": True, "feedback.daily_limit": 5})
+    with installed(store):
+        store.before_return = lambda: store.set_setting(policies.SETTING_KEY, {"version": 1, "values": {
+            "feedback.retention_sweep": False, "feedback.daily_limit": 5}}, updated_by="B")
+        with pytest.raises(SettingConflict):
+            save({"set": {"feedback.daily_limit": 6}}, store)  # no expected_updated_at: A read before B's commit
+        assert store.rows[policies.SETTING_KEY]["value"]["values"]["feedback.retention_sweep"] is False, \
+            "B's switch-off was not reverted"
+        assert store.audits == [], "the refused save left no audit row"
+        save({"set": {"feedback.daily_limit": 6}}, store)  # a fresh read goes through
+        assert store.rows[policies.SETTING_KEY]["value"]["values"] == {"feedback.retention_sweep": False,
+                                                                         "feedback.daily_limit": 6}
+    with installed(Racing()) as empty:  # nothing stored yet: "None" is the version, so a first-save race is a conflict
+        empty.before_return = lambda: empty.set_setting(policies.SETTING_KEY, {"version": 1, "values": {}}, updated_by="B")
+        with pytest.raises(SettingConflict):
+            save({"set": {"feedback.daily_limit": 6}}, empty)
+
+
+def test_a_store_that_cannot_be_read_during_a_save_is_a_503_not_a_500(api):
+    client, store = api
+    store.fail_reads = True
+    answer = client.put("/api/product/admin/policies", json={"set": {"feedback.daily_limit": 4}})
+    assert answer.status_code == 503 and store.rows == {}

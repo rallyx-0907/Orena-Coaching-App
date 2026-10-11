@@ -50,6 +50,11 @@ class PolicyInvalid(ValueError):
     """An administrator's change that cannot be applied (HTTP 422)."""
 
 
+class PolicyUnavailable(RuntimeError):
+    """A policy whose safe value cannot be known right now (the settings store was never read, or the stored value no
+    longer validates). Raised only by `value_strict`; a consumer that must fail closed catches it."""
+
+
 class PolicyConfirmationRequired(PolicyInvalid):
     """A change that needs the administrator's explicit confirmation first (HTTP 422, code confirmation_required)."""
 
@@ -71,7 +76,8 @@ class Policy:
     env_min: float | int | None = None   # an environment number below this is ignored (the old behaviour)
     nullable: bool = False          # null means "off" (no cap)
     choices: tuple[str, ...] = ()
-    danger: str = ""                # "delete": changing it can delete learner data, so it is confirmed
+    danger: str = ""                # "delete": can delete learner data; "charging": changes what a learner is charged.
+                                    # Any change to a policy with a danger is confirmed.
     confirm_above: float | int | None = None  # a value above this (or null) is confirmed
 
 
@@ -83,7 +89,7 @@ GROUPS: tuple[str, ...] = ("quota", "agent", "voice", "speech", "media", "rates"
 
 POLICIES: tuple[Policy, ...] = (
     # --- quota (the enforcement switch itself is product.quota_enforcement, D-161; this is what the reconciler decides)
-    _p("quota.abandoned_settles", "quota", "enum", "admitted", choices=("admitted", "zero")),
+    _p("quota.abandoned_settles", "quota", "enum", "admitted", choices=("admitted", "zero"), danger="charging"),
     # --- Orena (agent) limits (writing_coach/agent/limits.py)
     _p("agent.turns_per_window", "agent", "int", 12, unit="count", low=1, high=600),
     _p("agent.capability_reads_per_window", "agent", "int", 60, unit="count", low=1, high=6000),
@@ -93,17 +99,18 @@ POLICIES: tuple[Policy, ...] = (
     _p("agent.opening_window_seconds", "agent", "int", 30 * 60, unit="seconds", low=60, high=86_400),
     _p("agent.opening_max_output_tokens", "agent", "int", 200, unit="tokens", low=50, high=1024),
     # --- live voice
-    _p("voice.enabled", "voice", "bool", False, env="AGENT_VOICE_ENABLED"),
+    # `voice.enabled` is NOT a policy: turning on paid live voice is the human's activation gate (D-169 point 11), so it
+    # stays the environment's (AGENT_VOICE_ENABLED, class C).
     _p("voice.resumption", "voice", "bool", True, env="AGENT_VOICE_RESUMPTION"),
     _p("voice.session_cap_seconds", "voice", "int", 15 * 60, unit="seconds", low=60, high=3600),
-    _p("voice.chunk_units", "voice", "int", 2, unit="count", low=1, high=10),
+    _p("voice.chunk_units", "voice", "int", 2, unit="count", low=1, high=10, danger="charging"),
     # --- speech and pronunciation
     _p("speech.take_max_seconds", "speech", "int", 300, unit="seconds", low=10, high=900),
     _p("speech.asr_daily_seconds", "speech", "int", 60 * 60, unit="seconds", low=60, high=86_400,
        env="SPEECH_ASR_DAILY_SECONDS"),
     _p("speech.pronunciation_max_concurrent", "speech", "int", 8, unit="count", low=1, high=32,
        env="PRONUNCIATION_MAX_CONCURRENT"),
-    _p("speech.no_speech_charged", "speech", "bool", True),
+    _p("speech.no_speech_charged", "speech", "bool", True, danger="charging"),
     _p("rate.speech_ai_per_10min", "speech", "int", 60, unit="count", low=5, high=5000),
     # --- media import
     _p("media.asr_max_seconds", "media", "int", 5400, unit="seconds", low=60, high=43_200,
@@ -120,10 +127,12 @@ POLICIES: tuple[Policy, ...] = (
     # --- feedback and retention
     _p("feedback.daily_limit", "feedback", "int", 10, unit="count", low=1, high=100),
     _p("feedback.retention_sweep", "feedback", "bool", False, env="FEEDBACK_RETENTION_SWEEP", danger="delete"),
-    _p("feedback.retention_days", "feedback", "int", 730, unit="days", low=30, high=3650, danger="delete"),
+    # A retention period can only be shortened: the published legal text (docs/legal/public/facts.json, privacy) states
+    # 24 months, 90 days and 13 months, so each maximum is that published value.
+    _p("feedback.retention_days", "feedback", "int", 730, unit="days", low=30, high=730, danger="delete"),
     _p("agent.turn_retention_sweep", "feedback", "bool", False, env="AGENT_TURN_RETENTION_SWEEP", danger="delete"),
-    _p("agent.turn_retention_days", "feedback", "int", 90, unit="days", low=7, high=3650, danger="delete"),
-    _p("ai_costs.retention_days", "feedback", "int", 396, unit="days", low=90, high=3650, danger="delete"),
+    _p("agent.turn_retention_days", "feedback", "int", 90, unit="days", low=7, high=90, danger="delete"),
+    _p("ai_costs.retention_days", "feedback", "int", 396, unit="days", low=90, high=396, danger="delete"),
     # --- spend caps
     _p("agent.daily_spend_cap_usd", "spend", "float", None, unit="usd", low=0.01, high=10_000, nullable=True,
        env="AGENT_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=50),
@@ -133,9 +142,10 @@ POLICIES: tuple[Policy, ...] = (
        env_min=0, confirm_above=100),
     _p("media.daily_cap_usd", "spend", "float", 25.0, unit="usd", low=0, high=10_000, env="MEDIA_DAILY_CAP_USD",
        env_min=0, confirm_above=250),
-    _p("media.asr_usd_per_hour", "spend", "float", 0.04, unit="usd_per_hour", low=0, high=100,
+    # A price estimate of 0 would make every media spend cap unreachable, so the minimum is above 0.
+    _p("media.asr_usd_per_hour", "spend", "float", 0.04, unit="usd_per_hour", low=0.001, high=100,
        env="MEDIA_ASR_USD_PER_HOUR", env_min=0),
-    _p("media.ai_usd_per_million_tokens", "spend", "float", 1.0, unit="usd_per_mtok", low=0, high=1000,
+    _p("media.ai_usd_per_million_tokens", "spend", "float", 1.0, unit="usd_per_mtok", low=0.001, high=1000,
        env="MEDIA_AI_USD_PER_MILLION_TOKENS", env_min=0),
     _p("word_tts.spend_cap_usd", "spend", "float", 5.0, unit="usd", low=0, high=1000, env="WORD_TTS_SPEND_CAP_USD",
        env_min=0, confirm_above=50),
@@ -217,6 +227,7 @@ class _Loaded:
     updated_at: str | None = None
     updated_by: str | None = None
     state: str = "default"          # default (nothing stored) | stored | stale (read failed; last value kept) | unreadable
+    rejected: frozenset = frozenset()   # stored keys whose value does not validate now (the default applies to them)
 
 
 _store: SettingStore | None = None
@@ -242,6 +253,7 @@ def clear_cache() -> None:
 def _parse(record: Mapping[str, Any]) -> _Loaded:
     document = record.get("value")
     values: dict[str, Any] = {}
+    rejected: set[str] = set()
     if isinstance(document, Mapping) and isinstance(document.get("values"), Mapping):
         for key, raw in document["values"].items():
             policy = BY_KEY.get(str(key))
@@ -251,11 +263,12 @@ def _parse(record: Mapping[str, Any]) -> _Loaded:
             try:
                 values[policy.key] = check(policy, raw)
             except PolicyInvalid as error:
+                rejected.add(policy.key)
                 _log.warning("platform.policies: ignoring a stored value that is not valid now: %s", error)
     elif document not in (None, {}):
         _log.warning("platform.policies: the stored document is not readable; the defaults apply")
     return _Loaded(values, str(record.get("updated_at") or "") or None, str(record.get("updated_by") or "") or None,
-                   "stored")
+                   "stored", frozenset(rejected))
 
 
 def _loaded() -> _Loaded:
@@ -299,6 +312,23 @@ def value(key: str, *, env: Mapping[str, str] | None = None) -> Any:
     except Exception:  # noqa: BLE001 - a policy read never costs a learner a request
         _log.warning("platform.policies: reading %s failed; using its default", key, exc_info=True)
         return policy.default
+
+
+def value_strict(key: str, *, env: Mapping[str, str] | None = None) -> Any:
+    """Like `value`, for a policy whose default is NOT safe to fall back to (the agent's daily spend cap: "no cap").
+    Raises `PolicyUnavailable` when the environment does not pin the policy and either this process has never read
+    the settings store successfully, or the stored value for it does not validate now. A process that has read the
+    store once keeps its last values on a later failure, as `value` does."""
+    policy = BY_KEY[key]
+    pinned = _env_value(policy, env if env is not None else _env)
+    if pinned is not _INVALID:
+        return pinned
+    loaded = _loaded()
+    if loaded.state == "unreadable":
+        raise PolicyUnavailable(f"{key}: the settings store has never been read in this process")
+    if key in loaded.rejected:
+        raise PolicyUnavailable(f"{key}: the stored value is not valid")
+    return loaded.values[key] if key in loaded.values else policy.default
 
 
 AGENT_LIMIT_FIELDS: tuple[str, ...] = (
@@ -388,8 +418,15 @@ def save(change: object, *, updated_by: str = "", actor: str = "", expected_upda
             raise PolicyInvalid(f"{policy.key} is locked by the environment ({policy.env}); change it there.")
         clean[policy.key] = check(policy, raw)
     resets = [str(key) for key in to_reset]
-    base = _store.get_setting(SETTING_KEY)
+    try:
+        base = _store.get_setting(SETTING_KEY)
+    except Exception as error:
+        raise RuntimeError("The policies store could not be read.") from error
     base_values = dict(_parse(base).values) if base else {}
+    if expected_updated_at is ...:
+        # This write merges onto what was just read, so it is always a compare-and-set against that version (None when
+        # nothing is stored yet): a concurrent change is a conflict, never silently overwritten.
+        expected_updated_at = base.get("updated_at") if base else None
     new_values = {**base_values, **clean}
     for key in resets:
         new_values.pop(key, None)
