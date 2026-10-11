@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, Request, Response, UploadFile
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.exc import SQLAlchemyError
 
 from writing_coach.core.errors import orena_http_error
@@ -224,11 +224,49 @@ def review_version(version_id: str, body: ReviewBody, request: Request, response
     admin = _admin(request)
     _same_origin(request)
     _no_store(response)
-    version = _guarded(lambda: _store().review_version(version_id, decision=body.decision, actor=_actor(admin),
+    version = _guarded(lambda vid=version_id: _store().review_version(vid, decision=body.decision, actor=_actor(admin),
                                                        reason=body.reason))
     _audit(admin, "admin.grammar_review", entity_type="grammar_point_version", entity_id=version["id"],
            payload={"point_id": version["point_id"], "decision": body.decision})
     return version
+
+
+class BulkReviewBody(BaseModel):
+    version_ids: list[str] = Field(min_length=1, max_length=1000)
+    decision: str = Field(max_length=10)
+    reason: str = Field("", max_length=4000)
+
+    @field_validator("version_ids")
+    @classmethod
+    def _bounded_ids(cls, ids: list[str]) -> list[str]:
+        if any(not item or len(item) > 64 for item in ids):
+            raise ValueError("each version id is 1 to 64 characters")
+        return ids
+
+
+@router.post("/review")
+def review_bulk(body: BulkReviewBody, request: Request, response: Response) -> dict:
+    """One request for a whole queue. Each version goes through the single route's store method (its own transaction,
+    its own history event), so a refusal on one never blocks or hides the rest: the answer lists both."""
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    reviewed: list[str] = []
+    failed: list[dict[str, str]] = []
+    for version_id in dict.fromkeys(body.version_ids):
+        try:
+            version = _guarded(lambda vid=version_id: _store().review_version(vid, decision=body.decision,
+                                                           actor=_actor(admin), reason=body.reason))
+            reviewed.append(version["id"])
+        except HTTPException as error:
+            detail = error.detail if isinstance(error.detail, dict) else {}
+            if error.status_code == 503:
+                raise
+            failed.append({"version_id": version_id, "code": str(detail.get("category") or "grammar_review_failed"),
+                           "message": str(detail.get("message") or "The review was refused.")})
+    _audit(admin, "admin.grammar_review_bulk", entity_type="grammar_point_version", entity_id=str(len(body.version_ids)),
+           payload={"decision": body.decision, "count": len(reviewed), "failed": len(failed)})
+    return {"reviewed": reviewed, "failed": failed}
 
 
 class VersionRightsBody(BaseModel):

@@ -5457,3 +5457,13 @@ Delegated Architecture Reviewer): APPROVE WITH CONDITIONS at b962e957, APPROVE a
    approved this page built from the existing Admin kit blocks only, with no new visual pattern.
 12. **Strict cap read refuses turns on a cold worker.** A worker that has never read the settings store refuses agent
    turns until it can, even on a deployment with no cap set; this is the safe direction (review P3 note).
+
+## D-17G - Grammar "Accept all" is one server request, not a browser loop
+
+2026-10-12, human bug report (public Admin: 380 Chinese points stopped when another Admin section was opened).
+`POST /api/admin/grammar/review` takes `{version_ids (1..1000), decision, reason}` and applies each through the same store
+method as the single route (its own transaction and history event, same rules), per item and not all-or-nothing, because a
+refused version (closed, unknown, reason missing) must not block or hide the rest: the answer is `{reviewed, failed:
+[{version_id, code, message}]}`. One audit row per batch (`admin.grammar_review_bulk`: decision, count, failed); the
+per-version history events remain in the store. No schema change. The screen sends one request, so leaving it no longer
+stops the work. Publishing stays all-or-nothing (`/publish`).

@@ -185,6 +185,8 @@ MATRIX = {
         {404, 503}),
     ("POST", "/api/admin/grammar/versions/{version_id}/review"): (
         f"/api/admin/grammar/versions/{ARTICLE}/review", {"json": {"decision": "accept"}}, {404, 503}),
+    ("POST", "/api/admin/grammar/review"): (
+        "/api/admin/grammar/review", {"json": {"version_ids": [ARTICLE], "decision": "accept"}}, {200, 503}),
     ("POST", "/api/admin/grammar/versions/{version_id}/rights"): (
         f"/api/admin/grammar/versions/{ARTICLE}/rights", {"json": {"status": "restricted", "reason": "x"}},
         {404, 503}),
@@ -274,7 +276,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 92  # includes the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record and the 15 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
+    assert len(routes) == 93  # includes the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

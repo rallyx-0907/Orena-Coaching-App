@@ -166,21 +166,16 @@ export async function mountGrammar(shell, ctx) {
     if (!targets.length) return;
     const answer = await host.confirm({ title: t('grAcceptAllTitle', { n: targets.length }), body: t('grAcceptAllBody'), cancel: t('actCancel'), confirm: t('grAccept'), danger: false });
     if (!answer.confirmed) return;
-    let done = 0;
-    let failed = null;
-    for (const point of targets) {
-      if (!host.alive()) return;
-      view.busy = `${t('grAccept')} · ${done} / ${targets.length}`;
-      host.paint();
-      try {
-        await api.grammarReview(point.latest_version.id, 'accept', t('grReasonDefault'));
-        done += 1;
-      } catch (error) {
-        failed = failed || error;
-      }
+    view.busy = `${t('grAccept')} · ${targets.length}`;
+    host.paint();
+    try {
+      const result = await api.grammarReviewMany(targets.map((point) => point.latest_version.id), 'accept', t('grReasonDefault'));
+      const failed = (result.failed || []).length;
+      host.toast(failed ? t('grAcceptedPartial', { n: (result.reviewed || []).length, failed }) : t('grAccepted', { n: (result.reviewed || []).length }));
+    } catch (error) {
+      host.toast(explain(error));
     }
     view.busy = '';
-    host.toast(failed ? explain(failed) : t('grAccepted', { n: done }));
     await loadQueue();
   });
 
