@@ -22,11 +22,15 @@ function setText(target, value) {
   if (target) target.textContent = String(value ?? '');
 }
 
+let instances = 0; // one id per practice, so the hint's description never points at another room's note
+
 /* `lesson` is dictation/model.js#mapLesson's shape; `priorRead` may be a function. `byId` is the stored progress per segment; the
    factory adds this session's own checks to it. */
 export function createLinePractice({ lesson, byId, priorRead = true, memory = null, onChange = () => {}, onNext = () => {}, onCheck = () => {}, onRetry = () => {} }) {
   // Whether the stored progress was read: a value, or a question asked at check time when it loads later.
   const readPrior = typeof priorRead === 'function' ? priorRead : () => priorRead;
+  instances += 1;
+  const noteId = `s-dict-hintnote-${instances}`;
   const localById = new Map(); // this session's latest real check per segment
   const revealedIds = new Set(); // lines checked in this session: their answer may now be drawn
   const results = new Map(); // each checked line keeps its own answer and result (id -> state)
@@ -87,16 +91,24 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
     const toggle = q('[data-hint-toggle]');
     if (toggle) {
       toggle.hidden = hintLevel <= 0;
-      setText(toggle, t(hintHidden ? 'hintShow' : 'hintHide'));
+      labelControl(toggle, t(hintHidden ? 'hintShow' : 'hintHide'));
       toggle.setAttribute('aria-pressed', String(!hintHidden));
+      mount(toggle.querySelector('[data-glyph]'), html`${raw(icon(hintHidden ? 'chevron-down' : 'chevron-up', { size: 20 }))}`);
     }
+  }
+  /* A control that is a glyph on the phone (human decision 2026-10-11, D-17D): its words stay its accessible
+     name (aria-label, and the visually hidden label the desk shows as text) and its tooltip. */
+  function labelControl(button, label) {
+    setText(button.querySelector('[data-label]'), label);
+    button.setAttribute('aria-label', label);
+    button.title = label;
   }
   function paintHint() {
     const button = q('[data-hint]');
     const note = q('[data-hint-note]');
     if (!button || !note) return;
     const view = hintButton(hintLevel);
-    setText(button, t(view.key, view.values));
+    labelControl(button, t(view.key, view.values));
     button.disabled = view.disabled;
     setText(note, t(hintNoteKey(hintLevel, lesson.language)));
   }
@@ -104,10 +116,11 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
   function paintPre() {
     mount(stageEl, html`<textarea class="s-dict__input" data-input rows="3" lang="${langAttr(lesson.language)}" aria-label="${t('placeholder')}" placeholder="${t('placeholder')}">${answer}</textarea>
       <div class="s-dict__live" data-live hidden></div>`);
+    // The hint is an eye on the phone, its ladder note read to assistive technology rather than printed (D-17D).
     mount(dockEl, html`<div class="s-dict__hintrow">
-      <button type="button" class="s-dict__hint" data-hint></button>
-      <button type="button" class="s-dict__hinttoggle" data-hint-toggle hidden></button>
-      <span class="s-dict__hintnote" data-hint-note></span>
+      <button type="button" class="s-dict__hint" data-hint aria-describedby="${noteId}">${raw(icon('eye', { size: 20 }))}<span class="s-dict__actlabel" data-label></span></button>
+      <button type="button" class="s-dict__hinttoggle" data-hint-toggle hidden><span class="s-dict__glyph" data-glyph></span><span class="s-dict__actlabel" data-label></span></button>
+      <span class="s-dict__hintnote" data-hint-note id="${noteId}"></span>
       <span class="s-dict__spacer"></span>
       <button type="button" class="o-btn o-btn--primary s-dict__check" data-check>${t('checkButton')}</button>
     </div>`);

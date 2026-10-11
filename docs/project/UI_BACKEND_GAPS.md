@@ -5833,3 +5833,27 @@ they pin the switch (and the page shows it locked) but stay editable in Admin wh
   Removing an environment pin at a later deploy resurrects a previously stored Admin value (for example a sweep switched on
   earlier) without a fresh confirmation. A store that rejects a stored value drops it at the next rewrite with no audit entry.
   `voice.session_cap_seconds` is read twice in `extend`; a change between the reads can make `cap - minted < 1` (a 500, no charge).
+
+## Phone Dictation: keyboard, Transcript room and the hint (D-17D), 2026-10-11
+
+- **PD-1 The hint is an eye on the phone (human decision, deviates from frame 07).** Frame 07 draws the hint as a text
+  button ("Hint" / "More hint (2/3)") with its ladder note printed beside it. On the phone the hint is a Lucide `eye`
+  glyph button, its words kept as `aria-label`, tooltip and visually hidden text (EN/VI/ZH); the note is its
+  `aria-describedby`, not printed; the LEX-033 put-away toggle is a chevron; Check is the wide action. The desk keeps
+  the frame's words. Owner: human (approved 2026-10-11); a design revision would make it the source.
+- **PD-2 Typing on the phone keeps the Transcript (rule 49 recomposition, extends N-6 and mobile QA BUG-02).** The
+  design draws no keyboard state. While the answer box has focus the room is sized to `visualViewport`; transport,
+  answer, hint and Check stay whole, the Transcript takes what is left and scrolls in its own region; the picture, seek
+  bar, mode switch, meta line, card label and Transcript hint return when typing ends. On the shortest screens (375x667
+  with a half-height keyboard: about 72 px) the Transcript is a strip, and with the hint's live strip open it can yield
+  entirely; the answer box never does.
+- **PD-3 Dictation's picture is the compact strip on the phone, and the Transcript keeps 30% once the card runs long.**
+  Same recomposition as the short-phone rule already in `listening.css`; the design's phone frame is a page-scrolling
+  stack (N-6).
+- **PD-4 Not verified on a real device.** Measured in desktop Chrome with the phone frame emulated in the page (forced
+  `data-device="mobile"`, frame at 390x844 / 360x740 / 375x667) and the keyboard simulated by overriding
+  `visualViewport.height` to half the frame. To check on a device: iOS Safari (the keyboard's accessory bar and the
+  window scroll on focus, which the room resets to the top), Android Chrome (`interactive-widget` defaults to
+  `resizes-visual`, so `100dvh` does not follow the keyboard and the room follows `visualViewport`; the viewport meta in
+  `templates/orena/index.html` was not changed), touch scrolling of the Transcript with the keyboard open, and a desktop
+  virtual-keyboard extension, which overlays the page without resizing `visualViewport` and so is not a faithful check.
