@@ -5467,12 +5467,14 @@ Delegated Architecture Reviewer): APPROVE WITH CONDITIONS at b962e957, APPROVE a
    mobile QA BUG-02 (`.s-listening.is-typing`, set while the answer box has focus and sized to `visualViewport`) set
    `display: none` on `.s-listening__transcript`, so the Transcript and its scroll region were gone for as long as the
    keyboard was open, and the space under the card stayed empty. Measured at 390x844 with the keyboard at half height
-   (visible 422 px): before, Transcript `none` and 121 px of empty room under the card; after, the Transcript is drawn
-   under the card (160 px, its rows scroll in their own region, 125 px body) and the current line is framed by the
-   existing pane observer. Typing now keeps transport, answer, hint and Check whole and gives the Transcript what they
-   leave (`min-height: 0`, so on the shortest screens the Transcript yields, never the answer box); what only orients -
-   the picture, seek bar, mode switch, meta line, the card's label and the Transcript's hint - returns when typing ends.
-   No page scroll, no horizontal overflow in any measured state.
+   (visible 422 px): before, Transcript `none` and 121 px of empty room under the card; after, the Transcript's rows
+   fill everything under the card as their own scroll region - 212 px at 390x844 (296 px with a 40% keyboard), 160 px
+   at 360x740, 124 px at 375x667 - and the current line is framed by the existing pane observer. While typing the room
+   holds only the task (transport, answer, hint, Check) and those rows; the header (title, meta, mode switch and its
+   Back), the picture, seek bar, the card's label and the Transcript's title and hint return when typing ends (the
+   keyboard's own dismiss, or a tap outside the answer, ends typing; LEX-043's Back-closes-the-keyboard is therefore not
+   reachable on the phone while typing). The Transcript takes what the task leaves (`min-height: 0`), so on the
+   shortest screens it yields, never the answer box. No page scroll, no horizontal overflow in any measured state.
 2. **"In Listening the transcript area is far too small to read."** In Dictation on the phone the picture (veiled while
    a line is unchecked) is the compact 96 px strip short phones already use, and when the card can run long (a checked
    line's comparison, or the hint's live strip) the Transcript keeps at least 30% of the body while the card's stage

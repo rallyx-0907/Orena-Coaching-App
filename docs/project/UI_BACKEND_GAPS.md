@@ -5843,10 +5843,12 @@ they pin the switch (and the page shows it locked) but stay editable in Admin wh
   the frame's words. Owner: human (approved 2026-10-11); a design revision would make it the source.
 - **PD-2 Typing on the phone keeps the Transcript (rule 49 recomposition, extends N-6 and mobile QA BUG-02).** The
   design draws no keyboard state. While the answer box has focus the room is sized to `visualViewport`; transport,
-  answer, hint and Check stay whole, the Transcript takes what is left and scrolls in its own region; the picture, seek
-  bar, mode switch, meta line, card label and Transcript hint return when typing ends. On the shortest screens (375x667
-  with a half-height keyboard: about 72 px) the Transcript is a strip, and with the hint's live strip open it can yield
-  entirely; the answer box never does.
+  answer, hint and Check stay whole, the Transcript's rows take everything left and scroll in their own region (212 px
+  at 390x844 with a half-height keyboard); the header (title, meta, mode switch, Back), picture, seek bar, card label
+  and the Transcript's title and hint return when typing ends. Decision for the human: with the header gone while
+  typing, LEX-043's "Back closes the keyboard" is not reachable on the phone; the keyboard's own dismiss or a tap
+  outside the answer ends typing. On the shortest screens (375x667 with a half-height keyboard: 124 px) the Transcript
+  is smaller, and with the hint's live strip open it can yield entirely; the answer box never does.
 - **PD-3 Dictation's picture is the compact strip on the phone, and the Transcript keeps 30% once the card runs long.**
   Same recomposition as the short-phone rule already in `listening.css`; the design's phone frame is a page-scrolling
   stack (N-6).

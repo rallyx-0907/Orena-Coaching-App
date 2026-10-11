@@ -100,6 +100,10 @@ for (const rule of rulesFor(listenCss, '.is-typing')) {
     assert.doesNotMatch(rule.selector, /\.s-listening__transcript(?![-_])/, `typing never hides the Transcript (${rule.selector})`);
   }
 }
+// Only the task stays above the keyboard: the header and the Transcript's own title give their height to its rows.
+for (const part of ['.s-listening__head', '.s-listening__transcript-head', '.s-listening__seek']) {
+  assert.ok(phone(`.is-typing ${part}`).some((r) => /display:\s*none/.test(r.body)), `typing gives ${part}'s height to the Transcript`);
+}
 // It takes what the task leaves (no floor that would push the answer box under the keyboard on a short screen).
 assert.ok(phone('.is-typing .s-listening__transcript').some((r) => /min-height:\s*0;/.test(r.body)), 'typing gives the Transcript what the task leaves');
 assert.ok(rulesFor(listenCss, '.s-listening.is-typing').some((r) => /var\(--ls-visible-h/.test(r.body)), 'typing fits the visible viewport');

@@ -801,10 +801,11 @@
 :root[data-device="mobile"] .s-listening__dict .s-dict__actions { gap: 8px; }
 
 /* Typing with the phone keyboard open (mobile QA BUG-02, human review 2026-10-11): the room fits the visible area
-   above the keyboard. It keeps the task - transport, answer, hint, Check - and the Transcript under it, which
-   takes what is left and scrolls in its own region, so the lines already written stay readable while typing.
-   What only orients (the picture, the seek bar, the mode switch, the meta line, the card's label, the
-   Transcript's hint) returns when typing ends. */
+   above the keyboard and holds only the task - transport, answer, hint, Check - and the Transcript's lines under
+   it, which take everything left and scroll in their own region, so the lines already written stay readable while
+   typing. What only orients (the header with its title and Back, the picture, the seek bar, the card's label, the
+   Transcript's title and hint) returns when typing ends; the keyboard's own dismiss, or a tap outside the answer,
+   ends typing. */
 :root[data-device="mobile"] .s-listening.is-typing {
   /* The visible area above the keyboard, less the status-bar clearance the column already starts below: anything
      taller makes iOS scroll the page and lift the answer out of sight. */
@@ -821,15 +822,12 @@
   opacity: 0;
   pointer-events: none;
 }
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__head,
 :root[data-device="mobile"] .s-listening.is-typing .s-listening__seek,
-:root[data-device="mobile"] .s-listening.is-typing .s-listening__modes,
-:root[data-device="mobile"] .s-listening.is-typing .s-listening__meta,
 :root[data-device="mobile"] .s-listening.is-typing .s-listening__dict .s-listening__selected-head,
-:root[data-device="mobile"] .s-listening.is-typing .s-listening__transcript-hint { display: none; }
-:root[data-device="mobile"] .s-listening.is-typing .s-listening__head { padding: 8px 0; }
-:root[data-device="mobile"] .s-listening.is-typing .s-listening__title { -webkit-line-clamp: 1; }
-:root[data-device="mobile"] .s-listening.is-typing .s-listening__dict { padding-top: 12px; padding-bottom: 12px; }
-:root[data-device="mobile"] .s-listening.is-typing .s-listening__transcript-head { padding: 8px 16px; }
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__transcript-head { display: none; }
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__body { padding-top: 8px; }
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__dict { padding-top: 10px; padding-bottom: 10px; }
 
 /* Phone (mobile QA BUG-07): a long title wraps to two lines and then ends with an ellipsis, rather than being cut
    on one line; the clock sits on its own scrim so it never mixes with the video's own overlay text. */
