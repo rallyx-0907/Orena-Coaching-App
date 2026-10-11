@@ -18,6 +18,10 @@ after the review and authorization its own docstring names.
 **Open proposal:** `20261001_0024_media_entries.py` (MEDIA_METADATA_POSTGRES.md rev 2; APPROVE WITH CONDITIONS,
 awaiting the human's authorization). If it is promoted after 0025, re-parent it on `20261004_0025`.
 
+**Promoted 2026-10-12 (D-17H):** `20261005_0026_ai_cost_records.py` (AC-2, `proposals/AI_COST_PER_ACCOUNT.md`), source
+control only, after a delta review at its exact SHA and a rehearsal on a copy of :8000. Applying it to a runtime is a
+separate human gate. `20261005_0027_billing_orders.py` stays here, parented on 0026.
+
 **Promoted 2026-10-08:** `20261008_0030_grammar_content_store.py` (GRAMMAR_CONTENT_STORE.md rev 3a, issue #99;
 independent architecture review APPROVE at `b3ee8f09`, PR #100; rehearsed on a throwaway PostgreSQL 16 with
 `scripts/rehearse_grammar_content_store.py`). The human authorized the promotion in source control only: it is applied

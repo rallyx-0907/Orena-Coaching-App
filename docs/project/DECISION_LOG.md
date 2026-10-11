@@ -5457,3 +5457,25 @@ Delegated Architecture Reviewer): APPROVE WITH CONDITIONS at b962e957, APPROVE a
    approved this page built from the existing Admin kit blocks only, with no new visual pattern.
 12. **Strict cap read refuses turns on a cold worker.** A worker that has never read the settings store refuses agent
    turns until it can, even on a deployment with no cap set; this is the safe direction (review P3 note).
+
+## D-17H - AI cost per account: migration 0026 promoted into the chain (source control only)
+
+Date: 2026-10-12. Human instruction 2026-10-12 ("Chuẩn bị bước 1 và 2 cho 0026"), after :8000 logged
+"AI cost per account not recorded (ProgrammingError)": the AC-2 recorder (D-decision of 2026-10-04,
+`proposals/AI_COST_PER_ACCOUNT.md`) shipped before its table, by design, and skips recording while `ai_cost_records` is
+absent.
+
+1. **Promotion.** `20261005_0026_ai_cost_records.py` moves from `migrations/proposed/` to `migrations/versions/` unchanged
+   except its docstring; it becomes the single head, on `20261008_0030`. Revision id and file name are kept (no runtime has
+   ever applied it). The proposed `20261005_0027_billing_orders.py` stays proposed and still chains on 0026.
+2. **Reviews.** The 2026-10-05 independent review (APPROVE WITH CONDITIONS on `50e66c2` plus the uncommitted AC-2 files;
+   conditions met in `e54a2aa3`) is not bound to a committed SHA, so a delta review of this promotion at its exact SHA is
+   recorded in `docs/reviews/architecture/AI_COST_0026_REVIEW_2026-10-12.md` before merge.
+3. **Rehearsal.** On a fresh backup of :8000, with `scripts/product_migration_rehearsal.ps1` against this tree (operator
+   step, D-127); evidence recorded with the review.
+4. **Not authorized here.** Merging, and applying 0026 to any runtime, are separate human gates. Once merged, every
+   PostgreSQL runtime that takes the code must apply 0026 before it starts (startup refuses a schema below head), the same
+   operator path as 0030 (D-173): backup, rehearsal, `product_migration_pack.py apply`.
+5. **Legal text.** The published privacy page already states AI use and cost records are kept without content for 13
+   months and deleted with the account (`docs/legal/public/privacy.*.json`, `account-deletion.*.json`); no public text
+   changes. `docs/legal/DRAFT_PRIVACY.md` is a superseded draft and is not edited.

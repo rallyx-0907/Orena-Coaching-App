@@ -1,12 +1,11 @@
 """AI cost per account (AC-2): what is recorded, for whom, and the 13-month sweep.
 
 `ORENA_TEST_POSTGRES_URL` names a throwaway database for the PostgreSQL proof: the Alembic chain to head in a fresh
-schema, then the proposed migration 20261005_0026 applied and rolled back by hand (it is not in the chain yet).
+schema up to 20261008_0030, then migration 20261005_0026 (the chain head since its promotion) applied and rolled back.
 """
 
 from __future__ import annotations
 
-import importlib.util
 import os
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -97,19 +96,21 @@ def test_the_sweep_runs_once_a_day_and_deletes_older_than_13_months_in_bounded_b
 
 URL = os.getenv("ORENA_TEST_POSTGRES_URL", "")
 ROOT = Path(__file__).resolve().parents[1]
-MIGRATION = ROOT / "migrations" / "proposed" / "20261005_0026_ai_cost_records.py"
+MIGRATION = ROOT / "migrations" / "versions" / "20261005_0026_ai_cost_records.py"
 
 
-def _proposed_migration():
-    spec = importlib.util.spec_from_file_location("proposed_0026", MIGRATION)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+def test_the_migration_is_promoted_and_is_the_single_chain_head_on_0030():
+    pytest.importorskip("alembic")
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
 
-
-def test_the_proposed_migration_is_parented_on_the_current_head():
-    heads = sorted(path.name for path in (ROOT / "migrations" / "versions").glob("2*.py"))
-    assert _proposed_migration().down_revision == heads[-1].split("_", 2)[0] + "_" + heads[-1].split("_", 2)[1]
+    assert MIGRATION.exists()
+    assert not (ROOT / "migrations" / "proposed" / MIGRATION.name).exists()
+    cfg = Config(str(ROOT / "alembic.ini"))
+    cfg.set_main_option("script_location", str(ROOT / "migrations"))
+    script = ScriptDirectory.from_config(cfg)
+    assert script.get_heads() == ["20261005_0026"]
+    assert script.get_revision("20261005_0026").down_revision == "20261008_0030"
 
 
 @pytest.mark.skipif(not URL, reason="ORENA_TEST_POSTGRES_URL is not set; PostgreSQL proof not run")
@@ -117,8 +118,6 @@ def test_postgres_records_reports_sweeps_only_old_cost_rows_and_cascades_with_th
     pytest.importorskip("alembic")
     from alembic import command
     from alembic.config import Config
-    from alembic.operations import Operations
-    from alembic.runtime.migration import MigrationContext
     from sqlalchemy import create_engine, func, select, text, update
     from sqlalchemy.orm import Session
 
@@ -136,14 +135,12 @@ def test_postgres_records_reports_sweeps_only_old_cost_rows_and_cascades_with_th
         cfg.set_main_option("script_location", str(ROOT / "migrations"))
         cfg.set_main_option("path_separator", "os")
         cfg.set_main_option("sqlalchemy.url", schema_url.replace("%", "%%"))
-        command.upgrade(cfg, "head")
+        command.upgrade(cfg, "20261008_0030")
         engine = create_engine(schema_url, future=True)
-        migration = _proposed_migration()
         try:
             repository = PostgresPlatformRepository(engine=engine)
             assert repository.ai_costs_by_account(NOON) is None  # before the table: "not available", no error
-            with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
-                migration.upgrade()
+            command.upgrade(cfg, "20261005_0026")
             with Session(engine) as session, session.begin():
                 for key in ("sub-a", "sub-b"):
                     session.add(User(id=uuid.uuid4(), user_key=key, email=f"{key}@example.org", name=key,
@@ -171,8 +168,7 @@ def test_postgres_records_reports_sweeps_only_old_cost_rows_and_cascades_with_th
                 session.execute(text("DELETE FROM users WHERE user_key = 'sub-b'"))
             with Session(engine) as session:
                 assert session.scalar(select(func.count(AICostRecord.id))) == 1  # the account's records went with it
-            with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
-                migration.downgrade()
+            command.downgrade(cfg, "20261008_0030")
             assert repository.ai_costs_by_account(NOON) is None
         finally:
             engine.dispose()

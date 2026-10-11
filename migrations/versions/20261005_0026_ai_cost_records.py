@@ -11,11 +11,14 @@ account's rows go with it (ON DELETE CASCADE): the record is the account's, not 
 Indexes: (account_id, occurred_at) for an account's history and quota windows; (occurred_at) for the totals and
 the retention sweep.
 
-Review and gate. This file is a PROPOSAL in `migrations/proposed/`, which Alembic does not read, so it is not a
-head and triggers no startup refusal. It moves to `migrations/versions/` only after an independent review, the
-rehearsal (scripts/product_migration_rehearsal.ps1) and the human's authorization. The application works with the
-table absent: recording is skipped and the per-account view says it is not available. Startup never applies it
-(D-002). `downgrade()` drops the table and every record in it; it exists for rehearsal only.
+Review and gate. Promoted from `migrations/proposed/` into the chain (D-17H, branch schema/ai-cost-0026) after the
+independent review of 2026-10-05 (APPROVE WITH CONDITIONS, conditions met in e54a2aa3) and a delta review recorded
+in docs/reviews/architecture/AI_COST_0026_REVIEW_2026-10-12.md. Promotion is source control only: every PostgreSQL
+runtime that takes this code must apply it (operator step, after a backup and a rehearsal on a copy, on the runtime
+the human names) before it starts - startup refuses a schema below head. Startup never applies it (D-002). The recorder still
+tolerates a missing table (recording skipped, the per-account view says it is not available), which is how every
+runtime ran before this promotion. `downgrade()` drops the table and every record in it; it exists
+for rehearsal and rollback only.
 
 Revision ID: 20261005_0026
 Revises: 20261008_0030

@@ -1,8 +1,8 @@
 # AI cost per account (AC-2) — proposal
 
-Status: PROPOSED. The migration `migrations/proposed/20261005_0026_ai_cost_records.py` waits for an
-independent review, a rehearsal on a copy, and the human's authorization (AGENTS.md §1 "Architecture review
-authority", §7).
+Status: PROMOTED in source control (D-17H, 2026-10-12): `migrations/versions/20261005_0026_ai_cost_records.py`.
+Applied to no runtime by that change; applying it is the human's gate per runtime, after a backup and a rehearsal on a
+copy.
 
 ## The human's decision (2026-10-04)
 
