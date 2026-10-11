@@ -5457,3 +5457,22 @@ Delegated Architecture Reviewer): APPROVE WITH CONDITIONS at b962e957, APPROVE a
    approved this page built from the existing Admin kit blocks only, with no new visual pattern.
 12. **Strict cap read refuses turns on a cold worker.** A worker that has never read the settings store refuses agent
    turns until it can, even on a deployment with no cap set; this is the safe direction (review P3 note).
+
+## D-173 - First public-beta release of main 9bf88666 to :8000, with migration 20261008_0030
+
+2026-10-11, explicit human authorizations, after release gates 1-4 passed (`docs/reviews/RELEASE_GATE_8021_2026-10-11.md`):
+"Authorize deploy 9bf88666 to :8000" and "Cho phép áp migration 0030 lên :8000".
+
+1. **Release.** Image `orena:main-9bf88666`, built from `git archive 9bf88666a6b521124f8adf4f8df301b93efcc093` after
+   `node scripts/build_public_pages.mjs --release --effective-date 2026-10-11`. The repository keeps `effective_date`
+   null; the stamped date exists only in the release tree and image (D-162).
+2. **Migration.** `20261008_0030` (grammar content store, additive; independent review REV3) is applied to :8000 by
+   `scripts/product_migration_pack.py apply` with `--authorization D-173`, after a fresh `product_backup.ps1` backup and a
+   passing `product_migration_rehearsal.ps1` on a copy of that backup, with web and worker stopped.
+3. **Pinned in the :8000 operator env.**
+   - `AGENT_VOICE_ENABLED=false`: voice is off for the first release. ADM-POL P2-3 blocks voice activation.
+   - `ORENA_QUOTA_ENFORCEMENT=on` and `ORENA_QUOTA_METERS` = all five meters.
+   - `FEEDBACK_RETENTION_SWEEP=on` and `AGENT_TURN_RETENTION_SWEEP=on`. Pinning keeps these deletion gates in the
+     environment rather than in Admin (D-172).
+4. **Operator.** The human runs every :8000 step (D-127), using the operator script prepared by the Claude lane. Daily
+   backup rotation (`runtime_backup.py rotate --days 30`) is scheduled after the deploy.
