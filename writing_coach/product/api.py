@@ -180,7 +180,7 @@ async def product_admin_quota_save(request: Request) -> dict[str, Any]:
     audit = {"action": "product.quota.update", "actor": actor, "entity_type": "platform_setting",
              "entity_id": quota.SETTING_KEY, "payload": {k: v for k, v in body.items() if k != "expected_updated_at"}}
     try:
-        # `expected_updated_at` is optional (D-17P): the policies page sends it, so two editors cannot overwrite one another.
+        # `expected_updated_at` is optional (D-172): the policies page sends it, so two editors cannot overwrite one another.
         saved = quota.save_switch(
             {k: v for k, v in body.items() if k != "expected_updated_at"} if body else document,
             updated_by=str(admin.get("email") or actor), audit=audit,
@@ -196,7 +196,7 @@ async def product_admin_quota_save(request: Request) -> dict[str, Any]:
 
 @router.get("/admin/policies")
 def product_admin_policies(request: Request) -> dict[str, Any]:
-    """Every operational policy with its effective value, source (default / admin / env) and bounds (D-17P)."""
+    """Every operational policy with its effective value, source (default / admin / env) and bounds (D-172)."""
     require_admin(request)
     return policies.snapshot()
 
@@ -204,7 +204,7 @@ def product_admin_policies(request: Request) -> dict[str, Any]:
 @router.put("/admin/policies")
 async def product_admin_policies_save(request: Request) -> dict[str, Any]:
     """Apply `{set: {key: value}, reset: [key], expected_updated_at, confirm: {key: true}}` to the policies document.
-    It applies from this moment in every worker within a few seconds; the audit row commits with the change (D-17P)."""
+    It applies from this moment in every worker within a few seconds; the audit row commits with the change (D-172)."""
     admin = require_admin(request)
     try:
         change = await request.json()

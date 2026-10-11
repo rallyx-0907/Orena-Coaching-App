@@ -1,4 +1,4 @@
-/* Admin > Operations > Policies & limits (D-17P; the human's requirement 2026-10-11: "all tuning must be in Admin;
+/* Admin > Operations > Policies & limits (D-172; the human's requirement 2026-10-11: "all tuning must be in Admin;
    changing something must never require touching code").
 
    The operational parameters the server used to carry as constants or environment variables - the Orena message

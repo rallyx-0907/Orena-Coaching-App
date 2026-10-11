@@ -1,4 +1,4 @@
-"""Operational policies, edited in Platform Admin without a code change or a restart (D-17P).
+"""Operational policies, edited in Platform Admin without a code change or a restart (D-172).
 
 One settings document, `platform.policies` (a `platform_settings` row, exactly like the plan catalogue's
 `product.plan_catalog`, D-153): `{"version": 1, "values": {<policy key>: <value>}}`. It holds only what an

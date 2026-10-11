@@ -47,7 +47,7 @@ class FeedbackRetentionSchedule:
                  interval: float = SWEEP_INTERVAL_SECONDS,
                  enabled: Callable[[], bool] | None = None,
                  days: int | Callable[[], int] = FEEDBACK_RETENTION_DAYS) -> None:
-        """`enabled` and `days` may be callables (Platform Admin, D-17P: the switch and the period are an
+        """`enabled` and `days` may be callables (Platform Admin, D-172: the switch and the period are an
         administrator's). With `enabled` the thread wakes at least hourly, asks, and sweeps only when the switch is on
         and the last sweep began `interval` ago - so turning it on needs no restart, and off nothing is deleted. Without
         it every tick sweeps, as before."""

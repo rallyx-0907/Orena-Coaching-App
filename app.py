@@ -249,7 +249,7 @@ async def refuse_cross_site_changes_and_harden_responses(request: Request, call_
         name, limit, window = group
         account = str((request.scope.get("session") or {}).get("user_sub") or "local")
         limiter = _ROUTE_LIMITERS.setdefault(name, SlidingWindowLimiter(limit, window, max_keys=50_000))
-        limiter.limit = limit  # the effective policy now (Platform Admin, D-17P), not the limit it was built with
+        limiter.limit = limit  # the effective policy now (Platform Admin, D-172), not the limit it was built with
         wait = limiter.check(account)
     if wait is not None:
         response = JSONResponse(status_code=429, headers={"Retry-After": str(max(1, int(wait) + 1))}, content={
@@ -477,7 +477,7 @@ _account_costs.install(_persistence_runtime.platform_repository)
 configure_product_repository(_persistence_runtime.product_repository)
 # D-153: the administrator's plan prices and limits live in platform_settings and apply from when they are saved.
 configure_plan_store(_persistence_runtime.platform_repository)
-# D-17P: the operational policies (limits, switches, caps) an administrator edits in Admin live in platform_settings
+# D-172: the operational policies (limits, switches, caps) an administrator edits in Admin live in platform_settings
 # too (`platform.policies`); every consumer reads its effective value when it acts, so a save needs no restart.
 from writing_coach import policies as _policies  # noqa: E402
 
@@ -551,7 +551,7 @@ app.include_router(feedback_router)
 
 # D-159: reviews are kept at most 24 months (`feedback.retention_days`), enforced by a periodic job, not by traffic. The
 # job is deletion, so it does nothing until its switch is on (FEEDBACK_RETENTION_SWEEP, or `feedback.retention_sweep` in
-# Admin, D-17P); the thread only wakes and asks, so switching it on needs no restart.
+# Admin, D-172); the thread only wakes and asks, so switching it on needs no restart.
 _feedback_retention_enabled(os.environ)  # an unclear FEEDBACK_RETENTION_SWEEP still refuses to start rather than guess
 _feedback_retention: FeedbackRetentionSchedule | None = None
 _feedback_deleter = getattr(_persistence_runtime.platform_repository, "delete_feedback_before", None)
@@ -921,7 +921,7 @@ def _agent_spend_guard():
 
     cap_from_env(os.environ)  # an unreadable AGENT_DAILY_SPEND_CAP_USD still refuses to start
     reader = getattr(_persistence_runtime.platform_repository, "ai_spend_since", None)
-    # D-17P: the cap is the effective `agent.daily_spend_cap_usd` (environment pin, else Admin, else none) read at each
+    # D-172: the cap is the effective `agent.daily_spend_cap_usd` (environment pin, else Admin, else none) read at each
     # turn; with no cap the guard allows every turn, exactly as when none was built.
     # The strict read: if this worker has never read the settings store, or the stored cap no longer validates, the
     # guard refuses turns (fails closed) instead of treating "unknown" as "no cap".
@@ -935,7 +935,7 @@ def _delete_agent_turns_before(before: datetime, limit: int) -> int:
 
 
 # agent.turn rows are kept 90 days; the write path starts the sweep, at most once a day (agent/retention.py).
-# Off unless the sweep is switched on (AGENT_TURN_RETENTION_SWEEP, or `agent.turn_retention_sweep` in Admin, D-17P),
+# Off unless the sweep is switched on (AGENT_TURN_RETENTION_SWEEP, or `agent.turn_retention_sweep` in Admin, D-172),
 # after its independent review: off, nothing is deleted. The switch and the period are read at each write.
 sweep_enabled(os.environ)  # an unclear AGENT_TURN_RETENTION_SWEEP still refuses to start rather than guess
 _agent_turn_retention = TurnTelemetryRetention(
@@ -994,7 +994,7 @@ def _gemini_key() -> str:
 def _with_voice(runtime):
     """Live voice, mode A (R28): only where the agent runs and AGENT_VOICE_ENABLED is on."""
 
-    # D-17P: the service always exists where the agent does; whether voice is on stays the environment's gate
+    # D-172: the service always exists where the agent does; whether voice is on stays the environment's gate
     # (AGENT_VOICE_ENABLED: paid live voice is the human's activation, D-169), and its session cap, chunk size and
     # resumption are Admin policies read when a session is opened or renewed.
     if runtime is not None:
@@ -1040,7 +1040,7 @@ configure_agent(_with_voice(
         record_summary=_record_agent_summary,
         price_summary=_price_agent_summary,
         spend_guard=_agent_spend_guard(),
-        # D-17P: the operator-tunable limits (turns a minute, openings, input budget) are read at each use.
+        # D-172: the operator-tunable limits (turns a minute, openings, input budget) are read at each use.
         limits=LiveAgentLimits(_AGENT_DEFAULT_LIMITS, lambda: _policies.effective_agent_limits()),
     )
     if agent_enabled(os.environ)

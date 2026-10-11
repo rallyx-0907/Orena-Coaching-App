@@ -56,7 +56,7 @@ class AgentLimits:
 DEFAULT_LIMITS = AgentLimits()
 
 
-# The limits an operator tunes in Platform Admin (writing_coach/policies.py, D-17P). Everything else on `AgentLimits` is
+# The limits an operator tunes in Platform Admin (writing_coach/policies.py, D-172). Everything else on `AgentLimits` is
 # a safety or context-design bound (the spec's tool iterations and result size, the history window) and stays in code.
 OPERATOR_FIELDS: tuple[str, ...] = (
     "turns_per_window", "capability_reads_per_window", "rate_window_seconds", "max_input_tokens_per_turn",

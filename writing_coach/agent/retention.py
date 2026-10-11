@@ -59,7 +59,7 @@ class TurnTelemetryRetention:
         run: Callable[[Callable[[], None]], None] = _in_background,
         enabled: Callable[[], bool] | None = None,
     ) -> None:
-        """`days` and `enabled` may be callables, read when a sweep is due (Platform Admin, D-17P): the switch and the
+        """`days` and `enabled` may be callables, read when a sweep is due (Platform Admin, D-172): the switch and the
         period are an administrator's, so a change applies at the next write without a restart. No `enabled` means
         "always on" (a caller that built the sweep already decided)."""
         self._delete_before = delete_before

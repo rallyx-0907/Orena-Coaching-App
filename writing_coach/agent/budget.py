@@ -79,7 +79,7 @@ class DailySpendGuard:
 
 
 class LiveSpendGuard:
-    """The daily cap, read at each check (Platform Admin, D-17P): `cap()` is the cap now, None for "no cap". A change of
+    """The daily cap, read at each check (Platform Admin, D-172): `cap()` is the cap now, None for "no cap". A change of
     cap starts a fresh guard, so the 5-second verdict cache never answers for the old number; with no cap a turn is
     always allowed, exactly as when the guard did not exist."""
 

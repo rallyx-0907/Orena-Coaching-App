@@ -405,7 +405,7 @@ def test_a_silent_take_azure_processed_is_charged_its_seconds(monkeypatch, recor
 
 def test_a_silent_take_is_free_when_the_human_decides_so(monkeypatch):
     repo = enforced_runtime(env=ENV)
-    # The decision is the `speech.no_speech_charged` policy now (Platform Admin, D-17P), not a constant in the code.
+    # The decision is the `speech.no_speech_charged` policy now (Platform Admin, D-172), not a constant in the code.
     with policy_support.installed(policy_support.MemoryPolicyStore({"speech.no_speech_charged": False})):
         speech_api.configure_speech_pronunciation(azure(AzureSession(200, SILENT)))
         assert assess(build_client(), take(3.2)).status_code == 422

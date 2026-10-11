@@ -181,7 +181,7 @@ def voice_resumption(env: Mapping[str, str]) -> bool:
 
 def _voice(runtime: AgentRuntime, *, new_sessions: bool = False) -> VoiceService:
     # Absent: the routes are not there. Switched off (`is_enabled`): only what OPENS a session (and the voice list) is
-    # refused; a session already open can still be used and ended, so its time is billed to the ledger (D-17P).
+    # refused; a session already open can still be used and ended, so its time is billed to the ledger (D-172).
     if runtime.voice is None or (new_sessions and not runtime.voice.is_enabled()):
         raise HTTPException(status_code=404, detail="Not Found")
     return runtime.voice

@@ -1,4 +1,4 @@
-/* Gate for Admin > Operations > Policies & limits (D-17P): the page that edits the server's operational policies.
+/* Gate for Admin > Operations > Policies & limits (D-172): the page that edits the server's operational policies.
 
      a. the model: what a draft is, the change a Save sends (set / reset, never a pinned policy), what needs the
         operator's explicit yes (deleting data, a cap past its sane maximum) - the same rule the server enforces;

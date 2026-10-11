@@ -1,5 +1,5 @@
 /* Admin > Operations > Policies & limits: the words of the page that edits the server's operational policies
-   (writing_coach/policies.py, D-17P). Operator tooling, so every key is interface layer (D-079): English, Vietnamese
+   (writing_coach/policies.py, D-172). Operator tooling, so every key is interface layer (D-079): English, Vietnamese
    and Chinese carry the same keys and placeholders (scripts/test_orena_copy.mjs). A policy's name is `pol_<key>` and its
    one sentence is `polHelp_<key>`, the key's dots written as underscores; a policy added to the server before its words
    falls back to its humanised key. Feature names in the quota block are the learner plan screen's own. */

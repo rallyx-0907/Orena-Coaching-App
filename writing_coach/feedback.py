@@ -76,7 +76,7 @@ def validate_review(body: object) -> dict:
 
 def submit(store: FeedbackStore, user_key: str, body: object, *, now: datetime | None = None,
            limit: int | None = None) -> dict:
-    """`limit` is the reviews a day; the default is the effective `feedback.daily_limit` (Admin, D-17P)."""
+    """`limit` is the reviews a day; the default is the effective `feedback.daily_limit` (Admin, D-172)."""
     review = validate_review(body)
     moment = now or datetime.now(UTC)
     allowed = limit if limit is not None else policies.value("feedback.daily_limit")

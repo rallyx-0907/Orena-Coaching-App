@@ -1,4 +1,4 @@
-"""Test doubles for the operational policies (writing_coach/policies.py, D-17P).
+"""Test doubles for the operational policies (writing_coach/policies.py, D-172).
 
 `MemoryPolicyStore` is an in-memory `platform_settings`: the same `get_setting` / `set_setting` contract as the
 platform repository (compare-and-set on `expected_updated_at`, the audit row recorded with the write, a

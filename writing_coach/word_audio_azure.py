@@ -137,7 +137,7 @@ class AzureVoice:
     @property
     def _cap(self) -> float:
         """The lifetime spend cap: the constructor's, else the effective `word_tts.spend_cap_usd` (WORD_TTS_SPEND_CAP_USD
-        when set, else Admin, else the default), read at each synthesis (D-17P)."""
+        when set, else Admin, else the default), read at each synthesis (D-172)."""
         if self._cap_override is not None:
             return float(self._cap_override)
         return float(policies.value("word_tts.spend_cap_usd"))

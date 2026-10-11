@@ -82,7 +82,7 @@ RATE_GROUPS: tuple[tuple[str, tuple[str, ...], int, int], ...] = (
 )
 
 
-# The request count of each group is operator policy (Platform Admin, D-17P); the tuple above holds the defaults and
+# The request count of each group is operator policy (Platform Admin, D-172); the tuple above holds the defaults and
 # the window. A group not named here keeps its tuple.
 RATE_POLICY_KEYS: dict[str, str] = {
     "writing_ai": "rate.writing_ai_per_10min",

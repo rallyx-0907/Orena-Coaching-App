@@ -108,7 +108,7 @@ MATRIX = {
     # D-161: the quota enforcement switch. An unwired meter is refused on its merits (422).
     ("GET", "/api/product/admin/quota"): ("/api/product/admin/quota", {}, {200}),
     ("PUT", "/api/product/admin/quota"): ("/api/product/admin/quota", {"json": {"enabled": True, "meters": ["entitlements.sentinel"]}}, {422}),
-    # D-17P: the operational policies. An unknown policy is refused on its merits (422), which only an administrator reaches.
+    # D-172: the operational policies. An unknown policy is refused on its merits (422), which only an administrator reaches.
     ("GET", "/api/product/admin/policies"): ("/api/product/admin/policies", {}, {200}),
     ("PUT", "/api/product/admin/policies"): ("/api/product/admin/policies", {"json": {"set": {"unknown.policy": 1}}}, {422}),
     # D-154: an account's role and plan. A made-up account id is 404 (or 503 where accounts are not editable).
@@ -274,7 +274,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 92  # includes the operational policies (D-17P), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record and the 15 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
+    assert len(routes) == 92  # includes the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record and the 15 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

@@ -72,7 +72,7 @@ def test_the_app_deletes_nothing_when_the_sweep_is_off(monkeypatch):
     import app
 
     monkeypatch.delenv("AGENT_TURN_RETENTION_SWEEP", raising=False)
-    # D-17P: the sweep object always exists; whether it runs is the effective `agent.turn_retention_sweep` policy
+    # D-172: the sweep object always exists; whether it runs is the effective `agent.turn_retention_sweep` policy
     # (the environment variable when set, else Platform Admin, else off) - off here, the test environment sets neither.
     assert app._policies.value("agent.turn_retention_sweep") is False
     deleted = []

@@ -252,7 +252,7 @@ class AgentRuntime:
     opening_limiter: SlidingWindowLimiter = field(init=False)
 
     def __post_init__(self) -> None:
-        # The limits are read at each check, not once here: `self.limits` may be a LiveAgentLimits (D-17P), and an
+        # The limits are read at each check, not once here: `self.limits` may be a LiveAgentLimits (D-172), and an
         # operator's change in Admin then applies to the next request.
         limits = self.limits
         self.opening_limiter = SlidingWindowLimiter(

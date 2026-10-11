@@ -5352,11 +5352,54 @@ implementer may not self-approve). No schema change, no migration.
     lock: a downgrade committed in that window can miss one in-flight adoption; the next mutation sees it (accepted). (F10) The
     middleware asks whether the count is enforced only for a request that has no language of its own and goes to `/api/`.
 
-## D-17P - Operational policies are edited in Admin
+## D-171 - Pricing details reachable; a refused language opens the plans with the reason
+
+2026-10-10, two learner reports, branch `fix/pricing-and-language-limit` on `origin/main` a514dba9. The number is assigned at merge.
+Client only: no server, schema or catalogue change.
+
+1. **"On the Pricing page I can't scroll down to see the details of what each plan includes."** Root cause:
+   `static/orena/screens/plan/plan.css` made `.s-plan__scroll` (the Plans region, `overflow: auto`) a flex column whose sections
+   could shrink (`flex-shrink: 1`), and `.s-pricing-compare` (the Compare plans table, `overflow: hidden`, line 334) has an
+   automatic minimum height of 0. The column squeezed that card to its padding (measured at 1366x768: 16 px high, rows clipped
+   to nothing; the region scrolled only 49 px) so the table of what each plan includes could never be reached. Fix: the region's
+   sections keep their height (`.s-plan__scroll > * { flex: none }`) and the region scrolls. After: the Compare card is 344 px at
+   1366x768, the region scrolls to its end (scrollHeight 1063 for 686), and on the phone (390x844) every card (449 px) and the
+   table are reachable with no page scroll and no horizontal overflow. Plan & usage shares the region and the rule.
+2. **The design draws Pricing as a long page; rule 49 keeps it a workspace.** The design lists `pricing` (and `billing`) in its
+   focus list and draws one long column (hero, three cards, Compare plans, Questions). Rule 49 forbids a long page for a learning
+   workspace, so the route stays focus with the header fixed and the column scrolling in its own region - the layout was
+   already that; only the squeeze was wrong. No rule is loosened. Each card lists the five meters (messages a day, writing
+   reviews a month, pronunciation minutes, media import minutes, target languages) with the catalogue's limits, and the Compare
+   table has a row per meter with a value per plan, all from `GET /api/product/plans` (the Questions list and the popularity tags
+   stay undrawn, as before - UI_BACKEND_GAPS "New export frames").
+3. **"The message that I can't choose another language is hard to see and disappears quickly. It should open the pricing table
+   right away, with the explanation of why there is this restriction."** A refusal of a target language (403
+   `language_limit_reached`, or `feature_not_in_plan` for `languages.target`) from Settings or onboarding no longer shows a toast.
+   `showLanguageLimitNotice(ctx, error, requested)` holds the server's context in memory (`plan/reason.js`) and navigates to
+   `#/plan/pricing?reason=language`. Plans shows the kit's Banner (dismissible, sticky at the top of the region): "Free includes 1
+   target language. You're learning English. To add Chinese, upgrade to Plus. Nothing was changed." - the limit, languages held
+   and plan from the 403 `context`, the language tried from the caller, the plan to upgrade to from the catalogue (lowest plan
+   above the learner's allowing more; "No plan includes more target languages right now." when none), names in the interface
+   language, EN/VI/ZH. Dismissing it, or Back, leaves the learner on the language they have; nothing changed server-side and
+   nothing is enforced on the client (the numbers are the server's). After a reload the address still says why and the sentence
+   is built from the plans alone.
+4. **Other quota refusals do not follow.** 429 `quota_exhausted` (writing reviews, Orena messages, pronunciation, media import)
+   happens in the middle of a task; navigating to Plans would discard a take, an essay, an import sheet. They keep their in-room
+   sentence with "See all plans" (QTA-1). The two kinds read correctly apart: a meter says what was used ("You have used 2 of 2
+   writing reviews this month."), a count cap says what the plan includes and what the learner holds.
+5. **Not a sheet.** The design's Billing Sheet is the change-plan / cancel / card flow with a price summary and a confirm; it
+   has no place for a reason, so the explanation is the design's Banner on the Plans page rather than a new sheet.
+6. Gates: `scripts/test_orena_screen_plan.mjs` (all five meters on every card and in the Compare table, EN/VI/ZH; the CSS guard
+   for the region) and `scripts/test_language_limit_notice.mjs` (the refusal opens `#/plan/pricing?reason=language`, the
+   explanation from the context in EN/VI/ZH, no client counting). The toast sentences `languageLimit` / `languageNotInPlan` are removed
+   with their only caller.
+
+## D-172 - Operational policies are edited in Admin
 
 2026-10-11, explicit human requirement: "All tuning must be in Admin; changing something must never require touching code."
-Implemented on branch `feat/admin-policies` (from `main` at a514dba9). **Needs independent architecture review before merge**
-(it changes retention, spend-cap and quota-settlement behaviour; deletion switches become runtime-editable).
+Implemented on branch `feat/admin-policies` (from `main` at a514dba9). Independent architecture review (Claude Opus 5.5,
+Delegated Architecture Reviewer): APPROVE WITH CONDITIONS at b962e957, APPROVE at 567fec42
+(`docs/reviews/architecture/ADMIN_POLICIES_REVIEW_2026-10-11.md`).
 
 1. **One document.** The operational parameters the server carried as constants or environment reads that govern product
    behaviour, cost and limits are the `platform.policies` row of `platform_settings` (`writing_coach/policies.py`): versioned
@@ -5410,3 +5453,7 @@ Implemented on branch `feat/admin-policies` (from `main` at a514dba9). **Needs i
    read on the event loop) are recorded in `UI_BACKEND_GAPS.md` ADM-POL.
 10. **Not done, recorded.** Provider wiring, keys, URLs and activation gates stay in the environment (C); `AGENT_ENABLED` as a
    runtime kill switch and the Groq/Azure model names as Admin settings are later slices; per-process limiters stay per worker.
+11. **Design (rule 43), human decision 2026-10-11.** The pinned `Orena Admin.dc.html` draws no Policies page; the human
+   approved this page built from the existing Admin kit blocks only, with no new visual pattern.
+12. **Strict cap read refuses turns on a cold worker.** A worker that has never read the settings store refuses agent
+   turns until it can, even on a deployment with no cap set; this is the safe direction (review P3 note).

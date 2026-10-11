@@ -129,7 +129,7 @@ _DEFAULT_ASR_MAX_BYTES = 24 * 1024 * 1024
 #   3. Orena's push-to-talk (`purpose=orena_voice`) is refused 429 `quota_exhausted` before any audio is read when the
 #      learner has no Orena message left today: a read-only check, nothing reserved - the message itself is charged
 #      when the transcript reaches the agent as a turn.
-# The take's length and the daily seconds are operator policy (Platform Admin, D-17P: `speech.take_max_seconds`,
+# The take's length and the daily seconds are operator policy (Platform Admin, D-172: `speech.take_max_seconds`,
 # `speech.asr_daily_seconds`, which SPEECH_ASR_DAILY_SECONDS still pins); the names below are their defaults. The byte
 # cap protects the server and stays here.
 TRANSCRIBE_MAX_SECONDS = policies.default("speech.take_max_seconds")
@@ -821,7 +821,7 @@ def _pronunciation_limiter() -> anyio.CapacityLimiter:
     if limiter is None:
         limiter = _pronunciation_limiters[loop] = anyio.CapacityLimiter(size)
     elif limiter.total_tokens != size:
-        limiter.total_tokens = size  # an operator's change (Admin, D-17P) applies to the next assessment
+        limiter.total_tokens = size  # an operator's change (Admin, D-172) applies to the next assessment
     return limiter
 
 
@@ -829,7 +829,7 @@ PRONUNCIATION_METER = "pronunciation.audio"
 # [HUMAN, decided 2026-10-09: True for the beta] A take the provider heard no speech in was still processed, and billed, by it. True (default)
 # charges the seconds it processed against the plan - a silent clip is not free provider spend; False would charge
 # nothing, as for a provider failure. One line either way (D-165).
-NO_SPEECH_CHARGED = policies.default("speech.no_speech_charged")  # the default; `speech.no_speech_charged` decides (D-17P)
+NO_SPEECH_CHARGED = policies.default("speech.no_speech_charged")  # the default; `speech.no_speech_charged` decides (D-172)
 
 
 def _seconds_to_units(seconds: float) -> int:

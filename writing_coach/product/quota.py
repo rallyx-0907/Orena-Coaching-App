@@ -105,7 +105,7 @@ SWITCH_CACHE_SECONDS = 5.0
 
 # [HUMAN, pending] What a reservation whose owner died after dispatch costs: "admitted" (default, human
 # 2026-10-09) charges what was reserved; "zero" would charge nothing.
-ABANDONED_SETTLES = "admitted"  # the default; the effective choice is the `quota.abandoned_settles` policy (Admin, D-17P)
+ABANDONED_SETTLES = "admitted"  # the default; the effective choice is the `quota.abandoned_settles` policy (Admin, D-172)
 # [HUMAN, pending] How long an open reservation may sit before the reconciler decides it was abandoned: more than
 # twice the slowest provider timeout of a wired route (OLLAMA_TIMEOUT 180 s).
 RECONCILE_AFTER = timedelta(minutes=15)
@@ -359,7 +359,7 @@ def stored_meta() -> dict[str, Any]:
 def save_switch(document: object, *, updated_by: str = "", audit: dict | None = None,
                 expected_updated_at: object = ...) -> dict[str, Any]:
     """Store the switch. `expected_updated_at` (the version the editor loaded; None for "nothing stored yet") is
-    compared inside the write transaction when given; omitted, the write is unconditional as before (D-17P)."""
+    compared inside the write transaction when given; omitted, the write is unconditional as before (D-172)."""
     normalized = validate_switch_setting(document)
     if _runtime.settings is None:
         raise RuntimeError("No settings store on this deployment.")

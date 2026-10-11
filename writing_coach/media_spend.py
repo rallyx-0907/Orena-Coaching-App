@@ -81,7 +81,7 @@ class SpendLedger:
 
     # -- configuration, read each time so an operator change needs no restart -----
 
-    # Each is the effective policy (writing_coach/policies.py, D-17P): its environment variable when set, else the
+    # Each is the effective policy (writing_coach/policies.py, D-172): its environment variable when set, else the
     # administrator's value, else the default that used to be written here.
     def limits(self) -> dict[str, float]:
         return {

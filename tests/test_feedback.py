@@ -224,7 +224,7 @@ def test_retention_is_a_periodic_job_independent_of_sends():
 
 
 def test_the_app_starts_the_schedule_but_it_deletes_only_when_switched_on():
-    """D-17P: the thread always starts (so a switch turned on in Admin needs no restart) and asks the effective
+    """D-172: the thread always starts (so a switch turned on in Admin needs no restart) and asks the effective
     `feedback.retention_sweep` policy each tick; an unclear FEEDBACK_RETENTION_SWEEP still refuses to start."""
     source = open("app.py", encoding="utf-8").read()
     assert "_feedback_retention.start()" in source and "_feedback_retention_enabled(os.environ)" in source

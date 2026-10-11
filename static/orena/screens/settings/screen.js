@@ -253,7 +253,7 @@ export default async function settingsScreen(element, ctx) {
       await selectLearningLanguage(code);
     } catch (error) {
       /* The plan's count of target languages (D-170): the server's refusal is told as it is, with the way to the plans. */
-      if (isLanguageLimit(error)) showLanguageLimitNotice(ctx, error);
+      if (isLanguageLimit(error)) showLanguageLimitNotice(ctx, error, code);
       else toast(t('saveError'));
       return;
     }

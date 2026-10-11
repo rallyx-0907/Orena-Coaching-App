@@ -1,4 +1,4 @@
-"""D-17P: the operational policies an administrator edits in Platform Admin (`writing_coach/policies.py`).
+"""D-172: the operational policies an administrator edits in Platform Admin (`writing_coach/policies.py`).
 
 What is proved here, in the order the human's requirement ("changing something must never require touching code")
 needs it:

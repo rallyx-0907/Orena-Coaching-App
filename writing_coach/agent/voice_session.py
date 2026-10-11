@@ -445,7 +445,7 @@ class VoiceService:
     resumption: bool = True
     model: str = VOICE_MODEL
     now: Callable[[], datetime] = lambda: datetime.now(UTC)
-    # Operator policy (Platform Admin, D-17P), read when used: `enabled()` says whether voice is on at all, and
+    # Operator policy (Platform Admin, D-172), read when used: `enabled()` says whether voice is on at all, and
     # `policy(key)` gives the session cap, the chunk size and the resumption switch. Without them (the tests, a
     # caller that decided at start-up) the constants above and below apply.
     enabled: Callable[[], bool] | None = None

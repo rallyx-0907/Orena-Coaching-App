@@ -30,7 +30,7 @@ from collections.abc import Callable
 
 class SlidingWindowLimiter:
     """`limit` and `window_seconds` may be numbers or callables returning one: a callable is read at each check, so an
-    operator's change (Platform Admin, D-17P) applies to the next request without a new limiter or a restart."""
+    operator's change (Platform Admin, D-172) applies to the next request without a new limiter or a restart."""
 
     def __init__(
         self,
