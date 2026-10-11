@@ -5476,3 +5476,24 @@ Delegated Architecture Reviewer): APPROVE WITH CONDITIONS at b962e957, APPROVE a
      environment rather than in Admin (D-172).
 4. **Operator.** The human runs every :8000 step (D-127), using the operator script prepared by the Claude lane. Daily
    backup rotation (`runtime_backup.py rotate --days 30`) is scheduled after the deploy.
+
+## D-174 - Grammar corpus published on :8000
+
+2026-10-11, explicit human authorization ("cho phép"). The authorization answers the question whether the two Grammar packages
+may be imported and published on :8000 through Admin.
+
+1. **Packages.** These are the packages already published on :8021. The zips are kept outside Git in
+   `%LOCALAPPDATA%\orena-product\content\grammar\2026-10-08\`:
+   - `en-complete.zip`: batch `2026-10-08.en.complete`, package hash `66a941e6…`, 215 points.
+   - `zh-complete.zip`: batch `2026-10-08.zh.complete`, package hash `6ae62b58…`, 380 points.
+2. **Procedure.** The reviewed Admin path (`proposals/ADMIN_GRAMMAR_UI.md`), run by the human on :8000 (D-127), EN then
+   ZH:
+   1. `#/admin/imports/grammar` → Check (a dry run).
+   2. Rights basis Orena original, attested (HG-3).
+   3. Import.
+   4. `#/admin/grammar` → Accept all shown, with a reason.
+   5. Publish accepted, attested.
+
+   The expected result is EN 215 and ZH 380 published, with the same package hashes as :8021.
+3. **Why.** After migration 0030 (D-173), the learner Grammar surface on :8000 shows the honest empty state, because
+   no package was imported. It needs no code change.
