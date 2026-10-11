@@ -54,12 +54,17 @@ class TurnTelemetryRetention:
         self,
         delete_before: Callable[[datetime, int], int],
         *,
-        days: int = TURN_RETENTION_DAYS,
+        days: int | Callable[[], int] = TURN_RETENTION_DAYS,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
         run: Callable[[Callable[[], None]], None] = _in_background,
+        enabled: Callable[[], bool] | None = None,
     ) -> None:
+        """`days` and `enabled` may be callables, read when a sweep is due (Platform Admin, D-17P): the switch and the
+        period are an administrator's, so a change applies at the next write without a restart. No `enabled` means
+        "always on" (a caller that built the sweep already decided)."""
         self._delete_before = delete_before
         self._days = days
+        self._enabled = enabled
         self._now = now
         self._run = run
         self._lock = threading.Lock()
@@ -69,16 +74,24 @@ class TurnTelemetryRetention:
     def maybe_sweep(self) -> int | None:
         """Start a sweep if one is due. With an inline runner it returns how many rows went (None on failure)."""
 
+        if self._enabled is not None:
+            try:
+                if not self._enabled():
+                    return None  # off: nothing is claimed, nothing is deleted
+            except Exception:  # noqa: BLE001 - an unreadable switch is off for a destructive job
+                _log.warning("agent turn telemetry sweep switch unreadable; not sweeping", exc_info=True)
+                return None
         now = self._now()
         with self._lock:
             if self._last is not None and now - self._last < timedelta(seconds=SWEEP_INTERVAL_SECONDS):
                 return None
             self._last = now  # claimed before it runs: one sweep a day, even when it fails
         self._removed = None
-        self._run(lambda: self._sweep(now - timedelta(days=self._days)))
+        days = self._days() if callable(self._days) else self._days
+        self._run(lambda: self._sweep(now - timedelta(days=days), days))
         return self._removed
 
-    def _sweep(self, before: datetime) -> None:
+    def _sweep(self, before: datetime, days: int) -> None:
         removed = 0
         try:
             for _ in range(self.MAX_BATCHES):
@@ -91,4 +104,4 @@ class TurnTelemetryRetention:
             return
         self._removed = removed
         if removed:
-            _log.info("agent turn telemetry: %d rows older than %d days removed", removed, self._days)
+            _log.info("agent turn telemetry: %d rows older than %d days removed", removed, days)

@@ -82,7 +82,38 @@ RATE_GROUPS: tuple[tuple[str, tuple[str, ...], int, int], ...] = (
 )
 
 
+# The request count of each group is operator policy (Platform Admin, D-17P); the tuple above holds the defaults and
+# the window. A group not named here keeps its tuple.
+RATE_POLICY_KEYS: dict[str, str] = {
+    "writing_ai": "rate.writing_ai_per_10min",
+    "essay_ai": "rate.essay_ai_per_10min",
+    "dictionary_ai": "rate.dictionary_ai_per_10min",
+    "speech_ai": "rate.speech_ai_per_10min",
+    "reading_ai": "rate.reading_ai_per_10min",
+    "media_learning": "rate.media_learning_per_hour",
+}
+
+
+def _effective_limit(name: str, limit: int) -> int:
+    key = RATE_POLICY_KEYS.get(name)
+    if key is None:
+        return limit
+    from writing_coach import policies
+
+    return int(policies.value(key))
+
+
 def rate_group(method: str, path: str) -> tuple[str, int, int] | None:
+    """(group, requests, window seconds) of the group this request counts against, with the requests the effective
+    policy allows now."""
+    found = _rate_group(method, path)
+    if found is None:
+        return None
+    name, limit, window = found
+    return name, _effective_limit(name, limit), window
+
+
+def _rate_group(method: str, path: str) -> tuple[str, int, int] | None:
     if method.upper() not in STATE_CHANGING:
         return None
     for name, prefixes, limit, window in RATE_GROUPS:

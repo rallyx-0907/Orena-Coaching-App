@@ -23,6 +23,7 @@ pytest.importorskip("fastapi")
 from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
+import policy_support  # noqa: E402
 from test_quota_gate import FakeQuotaRepository, enforced_runtime  # noqa: E402
 
 from writing_coach import speech_api  # noqa: E402
@@ -404,10 +405,11 @@ def test_a_silent_take_azure_processed_is_charged_its_seconds(monkeypatch, recor
 
 def test_a_silent_take_is_free_when_the_human_decides_so(monkeypatch):
     repo = enforced_runtime(env=ENV)
-    monkeypatch.setattr(speech_api, "NO_SPEECH_CHARGED", False)
-    speech_api.configure_speech_pronunciation(azure(AzureSession(200, SILENT)))
-    assert assess(build_client(), take(3.2)).status_code == 422
-    assert used(repo) == 0
+    # The decision is the `speech.no_speech_charged` policy now (Platform Admin, D-17P), not a constant in the code.
+    with policy_support.installed(policy_support.MemoryPolicyStore({"speech.no_speech_charged": False})):
+        speech_api.configure_speech_pronunciation(azure(AzureSession(200, SILENT)))
+        assert assess(build_client(), take(3.2)).status_code == 422
+        assert used(repo) == 0
 
 
 def test_a_silent_take_of_a_provider_that_cannot_say_how_long_is_not_guessed():

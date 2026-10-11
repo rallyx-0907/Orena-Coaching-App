@@ -79,6 +79,12 @@ export const adminApi = {
   grammarStatus: (id, action, reason) => request(`/api/admin/grammar/points/${encodeURIComponent(id)}/status`, json('POST', { action, reason })),
   aiCosts: (days = 30) => request(`/api/admin/ai/costs${query({ days })}`),
   plans: () => request('/api/product/admin/plans'),
+  /* Operational policies (D-17P): limits, switches and caps edited without a code change. The quota switch is its
+     own document (D-161) and keeps its own route. */
+  policies: () => request('/api/product/admin/policies'),
+  savePolicies: (change) => request('/api/product/admin/policies', json('PUT', change)),
+  quota: () => request('/api/product/admin/quota'),
+  saveQuota: (change) => request('/api/product/admin/quota', json('PUT', change)),
   savePlans: (doc) => request('/api/product/admin/plans', json('PUT', doc)),
   membership: (id) => request(`/api/product/admin/accounts/${encodeURIComponent(id)}/membership`),
   saveMembership: (id, change) => request(`/api/product/admin/accounts/${encodeURIComponent(id)}/membership`, json('PUT', change)),

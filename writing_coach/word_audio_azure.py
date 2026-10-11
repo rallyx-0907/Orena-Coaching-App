@@ -30,6 +30,7 @@ import urllib.request
 from collections.abc import Callable
 from xml.sax.saxutils import escape, quoteattr
 
+from writing_coach import policies
 from writing_coach.word_audio import MAX_AUDIO_BYTES, REQUEST_TIMEOUT, USER_AGENT, Spoken
 
 _log = logging.getLogger(__name__)
@@ -130,12 +131,16 @@ class AzureVoice:
         self._post = post or self._request
         self._spent = spent or _ledger_spent
         self._record = record or _record_operation
-        cap = cap_usd if cap_usd is not None else os.getenv("WORD_TTS_SPEND_CAP_USD", "")
-        try:
-            self._cap = float(cap) if str(cap).strip() else DEFAULT_CAP_USD
-        except ValueError:
-            self._cap = DEFAULT_CAP_USD
+        self._cap_override = cap_usd
         self._state = threading.local()
+
+    @property
+    def _cap(self) -> float:
+        """The lifetime spend cap: the constructor's, else the effective `word_tts.spend_cap_usd` (WORD_TTS_SPEND_CAP_USD
+        when set, else Admin, else the default), read at each synthesis (D-17P)."""
+        if self._cap_override is not None:
+            return float(self._cap_override)
+        return float(policies.value("word_tts.spend_cap_usd"))
 
     @property
     def configured(self) -> bool:

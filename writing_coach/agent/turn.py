@@ -252,17 +252,20 @@ class AgentRuntime:
     opening_limiter: SlidingWindowLimiter = field(init=False)
 
     def __post_init__(self) -> None:
+        # The limits are read at each check, not once here: `self.limits` may be a LiveAgentLimits (D-17P), and an
+        # operator's change in Admin then applies to the next request.
         limits = self.limits
         self.opening_limiter = SlidingWindowLimiter(
-            limits.model_openings_per_window, limits.opening_window_seconds,
+            lambda: limits.model_openings_per_window, lambda: limits.opening_window_seconds,
             max_keys=limits.rate_limited_learners, clock=self.clock,
         )
         self.turn_limiter = SlidingWindowLimiter(
-            limits.turns_per_window, limits.rate_window_seconds, max_keys=limits.rate_limited_learners, clock=self.clock
+            lambda: limits.turns_per_window, lambda: limits.rate_window_seconds,
+            max_keys=limits.rate_limited_learners, clock=self.clock,
         )
         self.read_limiter = SlidingWindowLimiter(
-            limits.capability_reads_per_window,
-            limits.rate_window_seconds,
+            lambda: limits.capability_reads_per_window,
+            lambda: limits.rate_window_seconds,
             max_keys=limits.rate_limited_learners,
             clock=self.clock,
         )

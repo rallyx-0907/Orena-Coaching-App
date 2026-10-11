@@ -180,7 +180,8 @@ def voice_resumption(env: Mapping[str, str]) -> bool:
 
 
 def _voice(runtime: AgentRuntime) -> VoiceService:
-    if runtime.voice is None:
+    # Absent, or switched off in Platform Admin (D-17P: `voice.enabled`, read now, not at start-up): the route is not there.
+    if runtime.voice is None or not runtime.voice.is_enabled():
         raise HTTPException(status_code=404, detail="Not Found")
     return runtime.voice
 

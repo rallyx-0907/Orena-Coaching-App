@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 
 from auth_support import AUTH_ENABLED, auth_user, require_admin
+from writing_coach import policies
 from writing_coach.persistence.platform_repository import SettingConflict
 from writing_coach.core.request_context import current_user_key as request_user_key
 from writing_coach.product import quota
@@ -162,7 +163,7 @@ async def product_admin_plans_save(request: Request) -> dict[str, Any]:
 def product_admin_quota(request: Request) -> dict[str, Any]:
     """The quota enforcement switch and where it comes from (D-160)."""
     require_admin(request)
-    return quota.switch()
+    return {**quota.switch(), **quota.stored_meta()}
 
 
 @router.put("/admin/quota")
@@ -175,14 +176,54 @@ async def product_admin_quota_save(request: Request) -> dict[str, Any]:
     except Exception:
         raise HTTPException(400, "The switch must be JSON.")
     actor = str(admin.get("google_sub") or "")
+    body = document if isinstance(document, dict) else {}
     audit = {"action": "product.quota.update", "actor": actor, "entity_type": "platform_setting",
-             "entity_id": quota.SETTING_KEY, "payload": document if isinstance(document, dict) else {}}
+             "entity_id": quota.SETTING_KEY, "payload": {k: v for k, v in body.items() if k != "expected_updated_at"}}
     try:
-        return quota.save_switch(document, updated_by=str(admin.get("email") or actor), audit=audit)
+        # `expected_updated_at` is optional (D-17P): the policies page sends it, so two editors cannot overwrite one another.
+        saved = quota.save_switch(
+            {k: v for k, v in body.items() if k != "expected_updated_at"} if body else document,
+            updated_by=str(admin.get("email") or actor), audit=audit,
+            expected_updated_at=body.get("expected_updated_at", ...))
+        return {**saved, **quota.stored_meta()}
     except ValueError as error:
         raise HTTPException(422, str(error))
+    except SettingConflict:
+        raise HTTPException(409, "The switch was changed by someone else since you opened this page. Reload to see it.")
     except RuntimeError:
         raise HTTPException(503, "The quota switch is not editable on this deployment.")
+
+
+@router.get("/admin/policies")
+def product_admin_policies(request: Request) -> dict[str, Any]:
+    """Every operational policy with its effective value, source (default / admin / env) and bounds (D-17P)."""
+    require_admin(request)
+    return policies.snapshot()
+
+
+@router.put("/admin/policies")
+async def product_admin_policies_save(request: Request) -> dict[str, Any]:
+    """Apply `{set: {key: value}, reset: [key], expected_updated_at, confirm: {key: true}}` to the policies document.
+    It applies from this moment in every worker within a few seconds; the audit row commits with the change (D-17P)."""
+    admin = require_admin(request)
+    try:
+        change = await request.json()
+    except Exception:
+        raise HTTPException(400, "The change must be JSON.")
+    if not isinstance(change, dict):
+        raise HTTPException(422, "The change must be an object.")
+    actor = str(admin.get("google_sub") or "")
+    try:
+        return policies.save(change, updated_by=str(admin.get("email") or actor), actor=actor,
+                             expected_updated_at=change.get("expected_updated_at", ...), confirm=change.get("confirm"))
+    except policies.PolicyConfirmationRequired as error:
+        raise HTTPException(422, {"code": "confirmation_required", "message": str(error), "keys": error.keys})
+    except policies.PolicyInvalid as error:
+        raise HTTPException(422, str(error))
+    except SettingConflict:
+        raise HTTPException(409, "The policies were changed by someone else since you opened this page. Reload to see them.")
+    except RuntimeError:
+        raise HTTPException(503, "Policies are not editable on this deployment.")
 
 
 def _membership_store():

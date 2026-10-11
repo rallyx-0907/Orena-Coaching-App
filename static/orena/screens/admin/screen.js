@@ -23,7 +23,9 @@ const AREA_PAGES = {
     : routeId === 'adminFeedback'
     ? import('./feedback.js').then((module) => module.mountFeedback)
     : import('./control.js').then((module) => module.mountControl)),
-  operations: () => import('./control.js').then((module) => module.mountControl),
+  operations: (routeId) => (routeId === 'adminPolicies'
+    ? import('./policies.js').then((module) => module.mountPolicies)
+    : import('./control.js').then((module) => module.mountControl)),
   ai: (routeId) => (routeId === 'adminAiCosts'
     ? import('./costs.js').then((module) => module.mountCosts)
     : import('./ai.js').then((module) => module.mountAi)),

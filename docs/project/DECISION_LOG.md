@@ -5351,3 +5351,45 @@ implementer may not self-approve). No schema change, no migration.
     a support language and then Chinese (holds only Chinese). (F9) The limit is read when the adoption is made, before the row
     lock: a downgrade committed in that window can miss one in-flight adoption; the next mutation sees it (accepted). (F10) The
     middleware asks whether the count is enforced only for a request that has no language of its own and goes to `/api/`.
+
+## D-17P - Operational policies are edited in Admin
+
+2026-10-11, explicit human requirement: "All tuning must be in Admin; changing something must never require touching code."
+Implemented on branch `feat/admin-policies` (from `main` at a514dba9). **Needs independent architecture review before merge**
+(it changes retention, spend-cap and quota-settlement behaviour; deletion switches become runtime-editable).
+
+1. **One document.** The operational parameters the server carried as constants or environment reads that govern product
+   behaviour, cost and limits are the `platform.policies` row of `platform_settings` (`writing_coach/policies.py`): versioned
+   JSON `{version, values: {key: value}}`, a typed registry (kind, range, unit, default, optional environment variable),
+   unknown keys rejected, defaults equal to the constants they replace (a test pins each one), an empty document is the
+   defaults. The audit (`docs/project/UI_BACKEND_GAPS.md` "ADM-POL") classifies every parameter: 38 are operator policy (A), the
+   rest are safety internals that stay in code with their reasons (B) or deployment/secret configuration that stays in the
+   environment (C).
+2. **Same contract as the plan catalogue (D-153).** Save is a compare-and-set on the stored version
+   (`expected_updated_at`, 409 on a stale page) with the audit row (`platform.policies.update`: who, each key's from/to, what
+   was confirmed) committed in the same transaction. Reads are cached 5 s per process; the process that saves sees it at once.
+3. **Precedence: environment > Admin > default.** A variable that is explicitly set pins its policy (the policies that had
+   one keep it - `AGENT_VOICE_ENABLED`, `AGENT_DAILY_SPEND_CAP_USD`, `FEEDBACK_RETENTION_SWEEP`, ...), the page shows it
+   "locked by environment" and the server refuses to change it. Production pins stay authoritative.
+4. **Read at use time, no restart.** Every class-(A) consumer reads the effective value when it acts: the agent limits
+   through `LiveAgentLimits`, the limiters through callables, the daily spend guard, voice (`VoiceService` now always exists
+   where the agent does and asks `voice.enabled` per request), speech take/brake/concurrency/no-speech charge, media caps and
+   estimates, route rate limits, feedback limit, the three retention jobs (the schedule threads always run and ask the switch;
+   nothing is deleted unless it is on), the word-audio cap and the quota settlement choice. An empty document behaves exactly
+   as before (the existing suites pass unchanged except where a test asserted the old start-up-only wiring).
+5. **Danger.** A switch or period that deletes data, and a spend cap raised past its sane maximum (or removed), is 422
+   `confirmation_required` until the request carries `confirm[key]: true`; the page asks in a dialog first, and the audit row
+   records the confirmation.
+6. **Fail-safe.** A settings store that cannot be read never raises into a request: the last values this process read stay in
+   force (the defaults if it never read any), a warning is logged, and a failed read is cached as briefly as a good one so a
+   down store is not asked on every request. (Deliberately stronger than "use the defaults": a blip must not lift an
+   Admin-set spend cap back to none.) A stored value that is not valid now, or a key this build does not know, is ignored and
+   logged, never half-applied. The quota enforcement switch keeps its own fail-closed rule (D-161 point 8) and is not a policy
+   of this document.
+7. **The quota switch joins the page.** `GET`/`PUT /api/product/admin/quota` (D-161) are reused, not duplicated; they gain
+   `updated_at`/`updated_by` and an optional `expected_updated_at` (409), and the page shows the switch, its meters and who
+   last changed it. Environment variables still win there.
+8. **The page.** Admin > Operations > Policies & limits (`#/admin/operations/policies`, `screens/admin/policies.js`), kit
+   blocks only, EN/VI/ZH, gate `scripts/test_orena_admin_policies.mjs`; routes added to the admin authorization matrix.
+9. **Not done, recorded.** Provider wiring, keys, URLs and activation gates stay in the environment (C); `AGENT_ENABLED` as a
+   runtime kill switch and the Groq/Azure model names as Admin settings are later slices; per-process limiters stay per worker.

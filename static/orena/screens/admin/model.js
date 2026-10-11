@@ -23,7 +23,7 @@ export const AREAS = Object.freeze([
 const ROUTES_OF = {
   overview: ['adminOverview', 'adminTraffic'],
   users: ['adminUsers', 'adminUser', 'adminPlans', 'adminFeedback'],
-  operations: ['adminOperations', 'adminWorkers', 'adminPolling', 'adminErrors'],
+  operations: ['adminOperations', 'adminWorkers', 'adminPolling', 'adminErrors', 'adminPolicies'],
   ai: ['adminAi', 'adminProvider', 'adminProviderKey', 'adminCapability', 'adminAiCosts'],
   content: ['adminContent', 'adminBooks', 'adminBook', 'adminMedia', 'adminMediaItem', 'adminVocab', 'adminCollection',
     'adminGrammar', 'adminGrammarPoint',

@@ -20,6 +20,7 @@ from datetime import UTC, datetime, timedelta
 from writing_coach.feedback import FEEDBACK_RETENTION_DAYS
 
 SWEEP_INTERVAL_SECONDS = 24 * 3600
+CHECK_SECONDS = 3600  # with an Admin switch the thread asks this often whether a sweep is due and wanted
 SWEEP_BATCH = 1000
 MAX_BATCHES = 50  # a larger backlog goes over the next ticks
 
@@ -43,29 +44,51 @@ class FeedbackRetentionSchedule:
     """Sweeps at start and then every `interval` seconds until `stop()`, on its own daemon thread."""
 
     def __init__(self, delete_before: Callable[[datetime, int], int], *,
-                 interval: float = SWEEP_INTERVAL_SECONDS) -> None:
+                 interval: float = SWEEP_INTERVAL_SECONDS,
+                 enabled: Callable[[], bool] | None = None,
+                 days: int | Callable[[], int] = FEEDBACK_RETENTION_DAYS) -> None:
+        """`enabled` and `days` may be callables (Platform Admin, D-17P: the switch and the period are an
+        administrator's). With `enabled` the thread wakes at least hourly, asks, and sweeps only when the switch is on
+        and the last sweep began `interval` ago - so turning it on needs no restart, and off nothing is deleted. Without
+        it every tick sweeps, as before."""
         self._delete_before = delete_before
         self._interval = interval
+        self._enabled = enabled
+        self._days = days
+        self._last: datetime | None = None
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self.sweeps = 0
 
     def tick(self) -> int | None:
+        if self._enabled is not None:
+            try:
+                if not self._enabled():
+                    return None
+            except Exception:
+                _log.warning("learner feedback retention switch unreadable; not sweeping", exc_info=True)
+                return None
+            now = datetime.now(UTC)
+            if self._last is not None and (now - self._last).total_seconds() < self._interval:
+                return None
+            self._last = now
+        days = self._days() if callable(self._days) else self._days
         try:
-            removed = sweep_once(self._delete_before)
+            removed = sweep_once(self._delete_before, days=days)
         except Exception:
             _log.warning("learner feedback retention sweep failed; retried at the next tick", exc_info=True)
             return None
         finally:
             self.sweeps += 1
         if removed:
-            _log.info("learner feedback: %d reviews past %d days removed", removed, FEEDBACK_RETENTION_DAYS)
+            _log.info("learner feedback: %d reviews past %d days removed", removed, days)
         return removed
 
     def _loop(self) -> None:
+        wait = self._interval if self._enabled is None else min(self._interval, CHECK_SECONDS)
         while not self._stop.is_set():
             self.tick()
-            self._stop.wait(self._interval)
+            self._stop.wait(wait)
 
     def start(self) -> None:
         if self._thread is None or not self._thread.is_alive():

@@ -223,6 +223,21 @@ def test_retention_is_a_periodic_job_independent_of_sends():
     assert failing.tick() is None and failing.sweeps == 1
 
 
-def test_the_app_starts_the_schedule_only_when_switched_on():
+def test_the_app_starts_the_schedule_but_it_deletes_only_when_switched_on():
+    """D-17P: the thread always starts (so a switch turned on in Admin needs no restart) and asks the effective
+    `feedback.retention_sweep` policy each tick; an unclear FEEDBACK_RETENTION_SWEEP still refuses to start."""
     source = open("app.py", encoding="utf-8").read()
-    assert "_feedback_retention.start()" in source and "if _feedback_retention_enabled(os.environ):" in source
+    assert "_feedback_retention.start()" in source and "_feedback_retention_enabled(os.environ)" in source
+    assert 'enabled=lambda: _policies.value("feedback.retention_sweep")' in source
+
+    from writing_coach.feedback_retention import FeedbackRetentionSchedule
+
+    deleted = []
+    switch = {"on": False}
+    schedule = FeedbackRetentionSchedule(lambda before, limit: deleted.append(before) or 0, enabled=lambda: switch["on"],
+                                         days=lambda: 100)
+    assert schedule.tick() is None and deleted == [] and schedule.sweeps == 0, "off: nothing is asked of the store"
+    switch["on"] = True
+    assert schedule.tick() == 0 and len(deleted) == 1
+    assert timedelta(days=99) < datetime.now(UTC) - deleted[0] < timedelta(days=101), "the period is read when it runs"
+    assert schedule.tick() is None and len(deleted) == 1, "once a day, not once a tick"

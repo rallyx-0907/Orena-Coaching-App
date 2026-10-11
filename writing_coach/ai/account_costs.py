@@ -24,7 +24,9 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-RETENTION_DAYS = 396  # 13 months
+from writing_coach import policies
+
+RETENTION_DAYS = policies.default("ai_costs.retention_days")  # 13 months; the effective period is `ai_costs.retention_days`
 SWEEP_INTERVAL = timedelta(days=1)
 RETRY_AFTER = timedelta(minutes=5)
 # Calls made for the operator, not the account in whose request they ran.
@@ -39,8 +41,10 @@ _log = logging.getLogger(__name__)
 
 class AccountCostRecorder:
     def __init__(self, repository: Any, *, now: Callable[[], datetime] = lambda: datetime.now(UTC),
-                 run: Callable[[Callable[[], None]], None] | None = None) -> None:
+                 run: Callable[[Callable[[], None]], None] | None = None,
+                 days: int | Callable[[], int] = RETENTION_DAYS) -> None:
         self._repository = repository
+        self._days = days
         self._now = now
         self._run = run or (lambda work: threading.Thread(target=work, name="ai-cost-retention", daemon=True).start())
         self._lock = threading.Lock()
@@ -75,9 +79,10 @@ class AccountCostRecorder:
             if self._last_sweep is not None and now - self._last_sweep < SWEEP_INTERVAL:
                 return
             self._last_sweep = now  # claimed before it runs: once a day, even when it fails
-        self._run(lambda: self.sweep(now - timedelta(days=RETENTION_DAYS)))
+        days = self._days() if callable(self._days) else self._days
+        self._run(lambda: self.sweep(now - timedelta(days=days), days))
 
-    def sweep(self, before: datetime) -> int | None:
+    def sweep(self, before: datetime, days: int | None = None) -> int | None:
         delete = getattr(self._repository, "delete_ai_costs_before", None)
         if not callable(delete):
             return 0
@@ -92,7 +97,7 @@ class AccountCostRecorder:
             _log.warning("AI cost retention sweep failed after %d rows", removed, exc_info=True)
             return None
         if removed:
-            _log.info("AI cost records: %d older than %d days removed", removed, RETENTION_DAYS)
+            _log.info("AI cost records: %d older than %d days removed", removed, days if days is not None else RETENTION_DAYS)
         return removed
 
 
@@ -101,7 +106,8 @@ _recorder: AccountCostRecorder | None = None
 
 def install(repository: Any) -> None:
     global _recorder
-    _recorder = AccountCostRecorder(repository) if repository is not None else None
+    _recorder = (AccountCostRecorder(repository, days=lambda: policies.value("ai_costs.retention_days"))
+                 if repository is not None else None)
 
 
 def record_for_current_account(event: dict[str, Any]) -> None:
