@@ -5955,4 +5955,13 @@ items above, and what PR 2 leaves open for the human:
   word's one voice - `/api/vocabulary/{word}/audio` has no accent choice); the reference's line-art illustrations (no
   assets; the frame is drawn only for an uploaded image). The Daily Feed keeps its pinned frame-36 front face; the
   two-face card is its turned side.
+- **VC-15 Word-detail lookup labels a foreign reading as pinyin (server).** `writing_coach/word_detail.py:203-206`
+  (`project_word_detail`) sets `pinyin` to the lookup's `pronunciation` whenever the headword is Han
+  (`script_of`, :127), whatever language the lookup ran in (`source_language`, the route at :389). Word Detail sent
+  the learner's current learning language, so a Chinese word opened while learning English (`松树`) was looked up as
+  English and its English IPA ("/paɪn triː/") came back as `pinyin`. Fixed on the client (D-17W): Word Detail looks a
+  word up in its own language (`screens/word/model.js#lookupLanguage`), and the card mapper accepts only a
+  pinyin-shaped reading for a Han word and never pinyin or Hanzi for a Latin word. The server should label
+  `pinyin` only for a Chinese lookup; a one-line change with a pytest, not made here (no Docker run on this host
+  with under 2 GB free).
 

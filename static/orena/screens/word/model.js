@@ -94,8 +94,9 @@ export function contextFor(word, item) {
 export function pronunciationOf(detail, item, seed = null) {
   const fallback = text(item?.phonetic) || text(seed?.pronunciation);
   if (!detail) return fallback;
-  if (detail.script === 'hanzi') return text(detail.pinyin) || fallback;
-  return text(detail.ipa) || fallback;
+  // Only a reading of the word's own kind (D-17W): never an English IPA as a Chinese word's pinyin.
+  if (detail.script === 'hanzi') return [text(detail.pinyin), fallback].find((value) => isPinyin(value)) || '';
+  return [text(detail.ipa), fallback].find((value) => isLatinReading(value)) || '';
 }
 
 export function savedTone(saved) {
@@ -121,7 +122,15 @@ export function stageCopyKey(item) {
    (product/vocabulary-card.js#highlightExample - whole-word for Latin script, D-17W), re-exported so
    the Quick Sheet and the older callers keep their import. */
 export { highlightExample } from '../../product/vocabulary-card.js';
-import { highlightExample } from '../../product/vocabulary-card.js';
+import { highlightExample, scriptOf, isPinyin, isLatinReading } from '../../product/vocabulary-card.js';
+
+/* The language a word is looked up in: Chinese for a Han word, otherwise the learner's language unless
+   that is Chinese and the word is not (an English word met while learning Chinese). */
+export function lookupLanguage(word, learning) {
+  if (scriptOf(word) === 'hanzi') return 'zh';
+  return learning === 'zh' ? 'en' : learning || 'en';
+}
+
 
 /* The word card (`wdWC`): the header, the meaning block, the example and the mastery footer, from
    whichever of the two answers actually carries each field. `detail` may be null (the lookup

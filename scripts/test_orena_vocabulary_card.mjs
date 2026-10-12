@@ -342,6 +342,37 @@ assert.match(cardCss, /\.c-vcard__hanviet \{[^}]*align-items: flex-start/, 'the 
 // Review neither saves nor removes a word (D-17W point 4).
 assert.doesNotMatch(reviewSrc, /data-save|deleteLibraryVocabulary|saveLibraryVocabulary/, 'Review has no save or remove action');
 
+/* --- a reading is only ever the word's own kind (:8021 check: "/paɪn triː/" drawn over 松树) --- */
+const { isPinyin, isLatinReading } = await import('../static/orena/product/vocabulary-card.js');
+assert.ok(isPinyin('sēnlín') && isPinyin('sōng shù') && isPinyin('ni3 hao3') && isPinyin("xī'ān"));
+assert.ok(!isPinyin('/paɪn triː/') && !isPinyin('[paɪn]') && !isPinyin('松树'));
+assert.ok(isLatinReading('/ˈbʌfər/') && !isLatinReading('sēnlín') && !isLatinReading('森林'));
+const ipaLookup = { available: true, headword: '松树', script: 'hanzi', pinyin: '/paɪn triː/', ipa: '/paɪn triː/' };
+// With the entry's pinyin: the entry's pinyin, never the lookup's IPA.
+const pineEntry = { word: '松树', language_code: 'zh', readings: [{ text: 'sōngshù', kind: 'reading' }], short_meanings: [{ language: 'vi', text: 'cây thông' }] };
+const pineModel = toVocabularyModel(pineEntry, { word: '松树', supportLanguage: 'vi', lookup: ipaLookup });
+assert.equal(pineModel.pronunciation.pinyin, 'sōngshù');
+const pineCard = String(vocabularyCard(pineModel, { mode: 'detail' }));
+assert.ok(!pineCard.includes('paɪn') && pineCard.includes('<rt>sōngshù</rt>'), 'the ruby is the entry\'s pinyin');
+// No pinyin anywhere but the lookup's IPA: no reading at all, and no ruby.
+const pineBare = toVocabularyModel({ word: '松树', language_code: 'zh' }, { word: '松树', supportLanguage: 'vi', lookup: ipaLookup, seed: { pronunciation: '/paɪn triː/' } });
+assert.equal(pineBare.pronunciation.pinyin, '');
+const bareCard = String(vocabularyCard(pineBare, { mode: 'detail' }));
+assert.ok(!bareCard.includes('paɪn') && !bareCard.includes('<rt>'), 'never an English IPA over Hanzi');
+assert.ok(!String(vocabularyCard(pineBare, { mode: 'review-front' })).includes('paɪn'));
+// Character units: their pinyin, one per character.
+assert.ok(String(vocabularyCard(toVocabularyModel(ZH, { supportLanguage: 'vi', lookup: { ...ipaLookup, headword: '森林' } }), { mode: 'detail' })).includes('<ruby>森<rt>sēn</rt></ruby>'));
+// A Latin word never shows pinyin (or Hanzi) as its IPA.
+const latin = toVocabularyModel({ word: 'forest', language_code: 'en', readings: [{ text: 'sēnlín' }], phonetic: '森林' }, { supportLanguage: 'vi', lookup: { available: true, headword: 'forest', script: 'latin', ipa: 'sēnlín' } });
+assert.equal(latin.pronunciation.text, '');
+assert.ok(!String(vocabularyCard(latin, { mode: 'detail' })).includes('sēnlín'));
+// Word Detail looks a word up in the word's own language, not the learner's current one.
+const { lookupLanguage } = await import('../static/orena/screens/word/model.js');
+assert.equal(lookupLanguage('松树', 'en'), 'zh');
+assert.equal(lookupLanguage('copper', 'en'), 'en');
+assert.equal(lookupLanguage('copper', 'zh'), 'en');
+assert.match(readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8'), /source_language: lookupLanguage\(word, language\)/);
+
 /* --- the two review buttons --- */
 assert.deepEqual(REVIEW_BUTTONS, ['again', 'got_it']);
 assert.ok(GRADES.includes('unsure'), 'unsure stays a grade the API accepts');

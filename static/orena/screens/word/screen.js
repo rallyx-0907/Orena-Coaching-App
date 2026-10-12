@@ -25,6 +25,7 @@ import {
   mapMasteryEvidence,
   restorePayload,
   stageCopyKey,
+  lookupLanguage,
 } from './model.js';
 import { toVocabularyModel, learnerState, savePayloadOf, highlightParts } from '../../product/vocabulary-card.js';
 import { mountStrokeSheet } from './stroke-sheet.js';
@@ -155,7 +156,9 @@ export default async function mountWordDetail(element, ctx) {
   let clips = [];
   let clipsReady = false;
   const pending = Promise.all([
-    api.wordDetail({ depth: 'full', text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch(() => null),
+    // The lookup runs in the word's own language, not the learner's current one: a Chinese word opened while
+    // learning English was looked up as English and came back with an English IPA labelled pinyin (D-17W).
+    api.wordDetail({ depth: 'full', text: word, context: contextFor(word, item), source_language: lookupLanguage(word, language), target_language: languages().support }).catch(() => null),
     api.wordClips(word, 6).catch(() => null),
   ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
   const hasSomethingToShow = Boolean(item || seed);

@@ -97,18 +97,44 @@ export function highlightExample(example, word) {
 }
 
 /* ---- Pronunciation ---------------------------------------------------------------------------- */
+/* Readings are only ever the word's own kind (D-17W, :8021 check): a Chinese word's reading is pinyin -
+   Latin letters with tone marks or tone digits, spaces, apostrophes, middle dots, hyphens - never an IPA
+   string (slashes, ɪ ː ə ˈ …), which a lookup run in another language can hand back ("/paɪn triː/" for
+   松树); a Latin word's reading is never pinyin or Hanzi. A value of the wrong kind is dropped, and a
+   Chinese word with no pinyin is drawn without a reading rather than with the wrong one. */
+const PINYIN = /^[a-zA-ZüÜāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙńňǹḿ1-5\s'’·-]+$/;
+const TONE_MARK = /[āáǎàēěèīíǐìōóǒòūúǔùǖǘǚǜ]/;
+
+export function isPinyin(value) {
+  const candidate = text(value);
+  return Boolean(candidate) && PINYIN.test(candidate) && /[a-zA-Zü]/.test(candidate);
+}
+
+/* A Latin word's reading: not Hanzi, and not toned pinyin. */
+export function isLatinReading(value) {
+  const candidate = text(value);
+  return Boolean(candidate) && !HAN.test(candidate) && !(TONE_MARK.test(candidate) && isPinyin(candidate));
+}
+
 function pronunciationOf(source, { lookup, seed, script }) {
+  const pick = (values, accept) => values.map(text).find((value) => value && accept(value)) || '';
+  const readings = list(source?.readings).map((item) => text(typeof item === 'object' ? item?.text : item)).filter(Boolean);
+  const fallbacks = [text(source?.phonetic), text(source?.pronunciation), text(seed?.pronunciation)];
+  if (script === 'hanzi') {
+    const units = list(source?.orthography?.units);
+    const fromUnits = units.length && units.every((unit) => isPinyin(unitReading(unit, 'pinyin')))
+      ? units.map((unit) => unitReading(unit, 'pinyin')).join(' ')
+      : '';
+    const pinyin = pick([...readings, fromUnits, text(lookup?.pinyin), ...fallbacks], isPinyin);
+    return { text: pinyin, ipa: [], pinyin };
+  }
   const ipa = [];
   for (const item of list(source?.pronunciations)) {
     const value = text(typeof item === 'object' ? item?.text : item);
-    if (value && !ipa.some((entry) => entry.text === value)) ipa.push({ region: lower(item?.region), text: value });
+    if (value && isLatinReading(value) && !ipa.some((entry) => entry.text === value)) ipa.push({ region: lower(item?.region), text: value });
   }
-  const readings = list(source?.readings).map((item) => text(typeof item === 'object' ? item?.text : item)).filter(Boolean);
-  const fromLookup = lookup ? (script === 'hanzi' ? text(lookup.pinyin) : text(lookup.ipa)) : '';
-  const fallback = text(source?.phonetic) || text(source?.pronunciation) || text(seed?.pronunciation);
-  const pinyin = script === 'hanzi' ? readings[0] || fromLookup || fallback : '';
-  const first = script === 'hanzi' ? pinyin : ipa[0]?.text || fromLookup || readings[0] || fallback;
-  return { text: first, ipa: script === 'hanzi' ? [] : ipa, pinyin };
+  const first = ipa[0]?.text || pick([text(lookup?.ipa), ...readings, ...fallbacks], isLatinReading);
+  return { text: first, ipa, pinyin: '' };
 }
 
 /* ---- Meaning ----------------------------------------------------------------------------------
