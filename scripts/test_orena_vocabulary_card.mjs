@@ -390,6 +390,25 @@ const searched = toVocabularyModel({ word: '松树', normalized_word: '松树', 
 assert.equal(searched.pronunciation.pinyin, 'sōng shù');
 assert.equal(searched.meaning.text, 'pine tree');
 
+/* --- meaning precedence (:8021 check, 松树): a support-language meaning from the lookup leads another language's --- */
+setLanguages({ ui: 'vi', support: 'vi' });
+const pineEn = { word: '松树', language_code: 'zh', readings: [{ text: 'sōng shù' }], short_meanings: [{ language: 'en', text: 'pine; pine tree' }] };
+const pineLookup = { available: true, headword: '松树', script: 'hanzi', contextMeaning: 'chỉ loài cây thông' };
+const pineMeaning = toVocabularyModel(pineEn, { word: '松树', supportLanguage: 'vi', lookup: pineLookup });
+assert.deepEqual(pineMeaning.meaning, { text: 'chỉ loài cây thông', language: '' }, 'the lookup\'s Vietnamese meaning leads');
+assert.equal(pineMeaning.english, 'pine; pine tree', 'the English meaning is the second line');
+const pineFront = faceOf(vocabularyCard(pineMeaning, { mode: 'detail', slots: { meaningTag: (l) => `[${l}]` } }), 'front');
+assert.ok(pineFront.indexOf('chỉ loài cây thông') < pineFront.indexOf('pine; pine tree'));
+assert.ok(!pineFront.includes('chỉ loài cây thông[') , 'the support-language meaning carries no language tag');
+// Without the lookup, the other language's meaning is the meaning, tagged (step 5).
+const pineAlone = toVocabularyModel(pineEn, { word: '松树', supportLanguage: 'vi' });
+assert.deepEqual(pineAlone.meaning, { text: 'pine; pine tree', language: 'en' });
+// The entry's own support-language sense always leads the lookup (D-124), and a learner's note leads it too.
+assert.equal(toVocabularyModel({ ...pineEn, short_meanings: [...pineEn.short_meanings, { language: 'vi', text: 'cây thông' }] }, { supportLanguage: 'vi', lookup: pineLookup }).meaning.text, 'cây thông');
+assert.equal(toVocabularyModel({ ...pineEn, definition: 'my note' }, { supportLanguage: 'vi', lookup: pineLookup }).meaning.text, 'my note');
+// A seed's support-language sense comes after the lookup, before another language.
+assert.equal(toVocabularyModel(pineEn, { supportLanguage: 'vi', seed: { short_meanings: [{ language: 'vi', text: 'thông' }] } }).meaning.text, 'thông');
+
 /* --- the two review buttons --- */
 assert.deepEqual(REVIEW_BUTTONS, ['again', 'got_it']);
 assert.ok(GRADES.includes('unsure'), 'unsure stays a grade the API accepts');

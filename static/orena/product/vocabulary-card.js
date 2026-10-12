@@ -142,14 +142,21 @@ function pronunciationOf(source, { lookup, seed, script }) {
    language's localization come next (vocabularyMeaning), then the lookup's meaning, then the seed's,
    then a definition. `definition` is the English definition line of an English word (the authored
    format's `meanings[].en` for EN), shown under the meaning when it says something else. */
+/* Precedence (D-124 kept: a support-language localization always leads): 1 the entry's sense in the support
+   language, 2 the learner's own note, 3 the lookup's meaning (asked for in the support language), 4 the seed's sense
+   in the support language, 5 only then a meaning in another language, tagged with it, 6 a definition written in a
+   language other than the word's own. */
 function meaningOf(source, { supportLanguage, lookup, seed, language }) {
   const sense = vocabularyMeaning(source, supportLanguage);
-  if (sense?.text) return sense;
+  const inSupportLanguage = (found) => found?.text && (found.source === 'localization' || found.source === 'saved');
+  if (inSupportLanguage(sense)) return sense;
+  if (sense?.text && sense.source === 'note') return sense;
   const looked = text(lookup?.contextMeaning);
   if (looked) return { text: looked, language: '' };
   const seeded = vocabularyMeaning(seed, supportLanguage);
+  if (inSupportLanguage(seeded)) return seeded;
+  if (sense?.text) return sense;
   if (seeded?.text) return seeded;
-  // A definition written in a support language other than the word's own is still a meaning, tagged.
   for (const entry of list(source?.detailed_definitions)) {
     const tagged = lower(entry?.language);
     if (text(entry?.text) && tagged && tagged !== language) return { text: text(entry.text), language: tagged };
