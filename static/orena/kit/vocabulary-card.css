@@ -5,13 +5,14 @@
    - English: a 1px `line` border, 20px radius, the `surface` ground; 36/40/32 padding and 22px between blocks; the C1
      tag filled with `accent`, the part-of-speech pill outlined in `line`; the 60px headword; 17px IPA; 12px uppercase
      section labels tracked 0.08em in `ink3`; the 22px meaning over its 15px definition; pairs under a `line` rule;
-     14px-radius example panels on `surface-alt`; the highlight bold in `accent` over a 2px `accent` underline; the
-     48px buttons, primary filled with the button colours (10px radius), secondary outlined in `line`.
+     14px-radius example panels on `surface-alt`; the highlight bold in `accent` over a 2px `accent` underline.
    - Chinese: the `bg` paper with 14px around a ruled frame - a 1.5px `gold` border and a 1px `gold` line 6px inside
      it (approved by the human; a gold rule, not a violet ring, D-147) - and a 6px radius; 30/34/26 padding and 18px
      between blocks; the HSK tag on `seal`; the 104px Hanzi (weight 900) with 22px pinyin above; labels tracked 0.12em;
      the radical box outlined 1.5px in `seal`; square example panels; the highlight in `seal` at weight 900 and the
-     pinyin span bold in `seal`; 46px buttons with a 3px radius, the secondary outlined 1.5px in `gold`.
+     pinyin span bold in `seal`.
+   BUTTONS are not skinned (the human, 2026-10-12, D-17X): the turn actions, the play / save discs and the stroke
+   button keep the app's kit design and tokens; the skin is the content only.
    Fonts (human decision): no download. English uses the app's sans; on the Chinese card ALL content text is serif -
    Hanzi and mixed lines on the Song stack, Latin-only lines (pinyin, the English meaning, Hán Việt) on Noto Serif /
    Georgia ahead of the same stack - and only the controls keep the app's sans. On Windows that is SimSun / NSimSun and
@@ -135,43 +136,11 @@
 .c-vcard__foot--back {
   justify-content: flex-start;
 }
-/* The design's buttons: primary filled with the button colours, secondary outlined; the kit's focus ring. */
-.c-vcard__turn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+/* Buttons keep the app's kit design (the human, 2026-10-12, D-17X): the turn actions are `o-btn` primary / secondary
+   in the app's tokens; the card only places them. */
+.c-vcard__turn.o-btn {
   min-height: 48px;
   margin-left: auto;
-  padding: 0 20px;
-  border: 0;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.15s;
-}
-.c-vcard__turn:hover {
-  opacity: 0.9;
-}
-.c-vcard__turn:active {
-  transform: scale(0.97);
-}
-.c-vcard__turn--primary {
-  background: var(--vcard-btn-bg);
-  color: var(--vcard-btn-ink);
-}
-.c-vcard__turn--secondary {
-  background: transparent;
-  color: var(--vcard-ink);
-  border: 1px solid var(--vcard-line);
-}
-.c-vcard--han .c-vcard__turn {
-  min-height: 46px;
-  border-radius: 3px;
-}
-.c-vcard--han .c-vcard__turn--secondary {
-  border: 1.5px solid var(--vcard-gold);
 }
 
 /* ---- Top row: level and source on the left, the discs on the right ---- */
@@ -221,23 +190,22 @@
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  border: 1px solid var(--vcard-line);
+  border: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  background: transparent;
-  color: var(--vcard-ink2);
+  background: var(--surface2);
+  color: var(--muted);
   cursor: pointer;
 }
 .c-vcard__disc--play {
-  background: var(--vcard-surface-alt);
-  color: var(--vcard-accent);
+  background: var(--accent-soft);
+  color: var(--accent-on-photo, var(--accent));
 }
 .c-vcard__disc.is-saved {
-  border-color: var(--vcard-accent);
-  background: var(--vcard-accent);
-  color: var(--vcard-on-accent);
+  background: var(--amber-soft);
+  color: var(--amber);
 }
 
 /* ---- The word ---- */
@@ -674,14 +642,4 @@
 }
 .c-vcard .c-vcard__body .stroke-glyph__rad {
   fill: var(--vcard-seal);
-}
-.c-vcard .c-vcard__body [class$='-strokes'] .o-btn--secondary {
-  background: transparent;
-  color: var(--vcard-ink);
-  border: 1px solid var(--vcard-line);
-  box-shadow: none;
-}
-.c-vcard--han .c-vcard__body [class$='-strokes'] .o-btn--secondary {
-  border: 1.5px solid var(--vcard-gold);
-  border-radius: 3px;
 }

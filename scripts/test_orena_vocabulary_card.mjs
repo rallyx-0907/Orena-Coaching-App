@@ -328,7 +328,7 @@ const sized = [...cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{(
   .filter(([, , body]) => /(^|\s|;)(width|height|min-width|min-height):\s*\d+px/.test(body))
   .map(([, selector]) => selector.trim());
 // Only controls, the svg's own width and the radical tile are sized in plain px; no card or face height is.
-assert.deepEqual(sized, ['.c-vcard__turn', '.c-vcard--han .c-vcard__turn', '.c-vcard__disc', '.c-vcard__art svg', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
+assert.deepEqual(sized, ['.c-vcard__turn.o-btn', '.c-vcard__disc', '.c-vcard__art svg', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
 assert.doesNotMatch(cardCss.replace(/\/\*[\s\S]*?\*\//g, ''), /\.c-vcard(--[\w-]+)? \{[^}]*(^|[\s;])height:\s*\d+px/, 'no fixed card height');
 // One viewport (rule 49, CLAUDE.md 6b): spacing scales with the card's width AND the viewport's height, the design's
 // value the ceiling.
@@ -400,9 +400,17 @@ assert.match(wordScreenSrc, /window\.addEventListener\('resize', onResize\)/);
 assert.match(wordScreenSrc, /window\.removeEventListener\('resize', onResize\)/);
 assert.match(readFileSync(new URL('../static/orena/screens/review/screen.js', import.meta.url), 'utf8'), /fitVocabularyCards\(element\)/);
 assert.match(readFileSync(new URL('../static/orena/screens/feed/screen.js', import.meta.url), 'utf8'), /fitVocabularyCards\(element\)/);
-// The card's colours are its scoped tokens only (D-17X).
-for (const [, prop, value] of cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/(color|background|border(?:-\w+)?|outline|fill|stroke):\s*([^;]+);/g)) {
-  for (const used of value.matchAll(/var\(--([\w-]+)/g)) assert.ok(used[1].startsWith('vcard-'), `${prop}: ${value} uses an app token inside the card`);
+// The card's CONTENT colours are its scoped tokens only; its BUTTONS keep the app's kit design and tokens (the human,
+// 2026-10-12, D-17X: the flashcard skin is the content only).
+const cssRules = [...cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)].map(([, selector, body]) => [selector.trim(), body]);
+const isButtonRule = (selector) => /\.c-vcard__(turn|disc)|o-btn/.test(selector);
+for (const [selector, body] of cssRules) {
+  for (const [, prop, value] of body.matchAll(/(color|background|border(?:-\w+)?|outline|fill|stroke):\s*([^;]+);/g)) {
+    for (const used of value.matchAll(/var\(--([\w-]+)/g)) {
+      if (isButtonRule(selector)) assert.ok(!used[1].startsWith('vcard-'), `${selector}: a button uses the app's tokens, not ${used[1]}`);
+      else assert.ok(used[1].startsWith('vcard-'), `${selector} ${prop}: ${value} uses an app token on the card's content`);
+    }
+  }
 }
 // The Hanzi row wraps instead of overlapping (lead's 360x740 check): Hán Việt goes under the Hanzi.
 assert.match(cardCss, /\.c-vcard__hanrow \{[^}]*flex-wrap: wrap/, 'the Hanzi row wraps');
@@ -505,12 +513,16 @@ for (const card of [enCard, zhCard]) {
   assert.ok(!top.includes('data-save') && !top.includes('data-play'), 'no disc pushes the part of speech down: the actions sit under the reading');
 }
 const kitCardSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
-for (const [name, source] of [['kit/vocabulary-card.js', kitCardSrc.replace(/\/\*[\s\S]*?\*\//g, '')], ['kit/vocabulary-card.css', cardCss.replace(/\/\*[\s\S]*?\*\//g, '')]]) {
-  assert.doesNotMatch(source, /o-tag|--accent|accent-fill|accent-soft|accent-ink/, `${name}: no kit tag and no app accent inside the card`);
+assert.doesNotMatch(kitCardSrc.replace(/\/\*[\s\S]*?\*\//g, ''), /o-tag/, 'no kit tag on the content');
+const contentCss = cssRules.filter(([selector]) => !isButtonRule(selector)).map(([selector, body]) => `${selector}{${body}}`).join('');
+assert.doesNotMatch(contentCss, /--accent|accent-fill|accent-soft|accent-ink/, 'no app accent on the card content');
+for (const card of [enCard, zhCard, String(vocabularyCard(zh, { mode: 'review-back', learner: learnerState({ review_stage: 1, next_review_at: '' }) }))]) {
+  assert.doesNotMatch(card, /o-tag|var\(--accent|accent-fill|accent-soft|accent-ink/, 'the rendered content carries no kit tag or app accent');
+  // The buttons are the app's kit buttons.
+  assert.ok(card.includes('class="o-btn o-btn--primary c-vcard__turn" data-vcard-turn="back"'), 'See examples is the kit primary button');
+  assert.ok(card.includes('class="o-btn o-btn--secondary c-vcard__turn" data-vcard-turn="front"'), 'Front is the kit secondary button');
 }
-for (const card of [enCard, zhCard, String(vocabularyCard(en, { mode: 'review-front' })), String(vocabularyCard(zh, { mode: 'review-back', learner: learnerState({ review_stage: 1, next_review_at: '' }) }))]) {
-  assert.doesNotMatch(card, /o-tag|o-btn--primary|var\(--accent|accent-fill|accent-soft|accent-ink/, 'the rendered card carries no kit tag, primary kit button or app accent');
-}
+assert.doesNotMatch(String(vocabularyCard(en, { mode: 'review-front' })), /o-tag|var\(--accent/);
 const tagged2 = String(vocabularyCard(pineAlone, { mode: 'detail', slots: { meaningLabel: () => 'Tiếng Anh' } }));
 assert.ok(tagged2.includes('<span class="c-vcard__lang">Tiếng Anh</span>'), 'the meaning language tag is drawn by the card');
 // Touch targets: the discs are 44px.

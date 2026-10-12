@@ -5693,8 +5693,13 @@ like the design, not only follow its layout".
    `--vcard-*` (bg, surface, surface-alt, line, ink, ink2, ink3, accent, on-accent, gold, seal, on-seal, btn-bg,
    btn-ink) with the design's light and dark values exactly. This is a human-approved exception to "one palette, no
    colour skin" (AGENTS.md "Theme", D-089). The tokens still live in `kit/tokens.css`, the one colour owner, and
-   `kit/vocabulary-card.css` reads no other colour token (gated). The rest of the app, and in Review the screen around
-   the card (header, progress, the grade buttons), keeps the app's tokens.
+   the card's content reads no other colour token (gated). **Buttons keep the app's kit design** (the human,
+   2026-10-12: "Các nút bấm là giữ nguyên thiết kế của app. Flashcard chỉ tập trung phần nội dung thôi"): the turn
+   actions are the kit's `o-btn` primary / secondary, the play and save discs the app's icon-button colours, the
+   stroke-practice button the kit's, and in Review the grades, Reveal and Hint keep the screen's own styles - no
+   `--vcard-*` token on any button (gated). The skin is the content: card surface and rules, headword, readings,
+   sections, tags and pills, chips, examples, highlights, the illustration frame. The rest of the app, and in Review
+   the screen around the card, keeps the app's tokens.
 3. **AA.** Every pair the design draws as text holds 4.5:1 in both themes as designed - no value changed
    (`scripts/test_orena_kit.mjs` VOCABULARY CARD, 16 pairs per theme). One deviation: the design's focus ring is a 2px
    gold outline, and light gold `#C9A24B` is 2.25:1 on the card surface (2.10:1 on the paper), under the 3:1 a focus
@@ -5706,8 +5711,8 @@ like the design, not only follow its layout".
 5. **Shapes as drawn.** English: 1px line border, 20px radius, the accent C1 tag, the outlined part-of-speech pill.
    Chinese: the paper with 14px around a ruled frame - a 1.5px gold border and a 1px gold line inside it - 6px radius
    (approved: a gold rule, not a violet ring, D-147), the seal HSK tag, the 1.5px seal radical box. Highlights: English
-   bold accent over a 2px accent underline; Chinese seal at 900, the pinyin span bold seal. Buttons: primary filled with
-   the button colours, secondary outlined (line on English, gold on Chinese).
+   bold accent over a 2px accent underline; Chinese seal at 900, the pinyin span bold seal. Buttons: the app's kit
+   buttons, not the design's (point 2).
 6. **Illustrations.** A frame only when there is an image: an upload, or a library drawing named by the stored
    `provenance.illustration.ref` in `kit/vocabulary-art.js`. The two drawings are the design's own, ported as reference
    art for the two docs/vocab samples only; production artwork stays under the Art Bible (`assets/brand/orena/`) and
@@ -5721,25 +5726,26 @@ like the design, not only follow its layout".
      Vietnamese, and a missing letter fell back glyph by glyph ("huǒ" drawn as o and a detached caron); Cambria and
      Times New Roman ship on Windows and carry both. This orders mixed Vietnamese/Hanzi lines Latin-first, a deviation
      from "Song stack first for mixed text" for that reason. Only the controls keep the app's sans. No web font.
-   - *Review grades in the card's palette:* "Đã nhớ" is the card's primary button (`--vcard-btn-bg` /
-     `--vcard-btn-ink`), "Chưa nhớ" the card's seal outlined on the card surface; both and their interval line hold AA
-     in both themes (gated), and they no longer use the app's accent (gated). Focus is the kit's ring.
-   - *No app palette inside the card:* every tag, chip and accent is `--vcard-*` - the level tag, the collocation
-     chips, the meaning's language tag ("Tiếng Anh", drawn by the card; the screen only names the language), the
-     buttons (no kit `o-tag` / `o-btn--primary`), the mastery bars and the stroke-order block a screen places inside.
+   - *Buttons:* superseded the same day by the human - every button keeps the app's kit design (point 2): the Review
+     grades are the screen's own pre-2c "Chưa nhớ" (red soft) / "Đã nhớ" (accent fill), the card's turn actions
+     `o-btn`, the discs the app's icon-button colours.
+   - *No app palette on the content:* every content tag, chip and accent is `--vcard-*` - the level tag, the
+     collocation chips, the meaning's language tag ("Tiếng Anh", drawn by the card; the screen only names the language),
+     the mastery bars and the stroke-order tiles a screen places inside (no kit `o-tag`).
    - *Header as drawn:* the top row is the level tag (and source) on the left and the part of speech on the right, on
      one row (it may wrap at 360, the part of speech staying the last item). Play and Save leave the top row for a quiet
      action row under the reading (44px discs); the IPA rows are plain readings as the design draws them. Derivation:
      the design draws neither control, and of the options (under the reading, beside the turn action, top-right of the
      headword line) this one keeps the drawn hierarchy and the turn action alone in its foot.
-9. **One viewport, and Reveal in the card's palette (human, 2026-10-12).** The card fits inside one viewport in every
+9. **One viewport (human, 2026-10-12).** The card fits inside one viewport in every
    mode (Design Contract rule 49, CLAUDE.md 6b): each face is a head (the design's top row / the back's title line)
    and a foot (the turn action) that stay, around the only scroll region, its body. Before the body scrolls the card
    recomposes: spacing and the headword scale with the viewport's height as well as the card's width (the design's
    values the ceiling), the illustration frame shrinks with the height and drops out on a short card. Word Detail
    gives its card the visible height of the column below it on arrival (`fitVocabularyCards`, again on resize), so the
-   card and its actions are in view without a page scroll; Review's and the feed's cards fill their slot. Review's
-   Reveal is the card's primary button and Hint its secondary, like the grades - no app accent under the card.
+   card and its actions are in view without a page scroll, stopping above the floating phone bar and its orb; Review's
+   and the feed's cards (focus routes, no phone bar) fill their slot. Review's Reveal and Hint keep the screen's own
+   (app) button styles, per point 2.
 7. **Kept.** Every D-179 behaviour (modes, the recall face, grades outside the card, no Review bookmark, meaning
    order, reading guards, the pure mapper), the copy packs, and rule 49 (a fluid card whose padding scales with its
    width, the design's values as the ceiling).

@@ -451,9 +451,7 @@ assert.match(
       ['ink', 'surface-alt'], ['ink2', 'surface-alt'], ['ink3', 'surface-alt'],
       ['ink', 'bg'], ['ink2', 'bg'], ['ink3', 'bg'],
       ['on-accent', 'accent'], ['accent', 'surface'], ['accent', 'surface-alt'],
-      ['btn-ink', 'btn-bg'], ['on-seal', 'seal'], ['seal', 'bg'], ['seal', 'surface-alt'],
-      // Review's grades (D-17X): "Chưa nhớ" seal on the card surface (and its hover), "Đã nhớ" the button colours.
-      ['seal', 'surface'],
+      ['btn-ink', 'btn-bg'], ['on-seal', 'seal'], ['seal', 'bg'], ['seal', 'surface-alt'], ['seal', 'surface'],
     ];
     for (const [ink, ground] of CARD_PAIRS) {
       const ratio = contrast(cardTokens[theme][`vcard-${ink}`], cardTokens[theme][`vcard-${ground}`]);
@@ -461,17 +459,20 @@ assert.match(
       assert.ok(ratio >= 4.5, `${theme}: --vcard-${ink} on --vcard-${ground} is ${ratio.toFixed(2)}:1, needs 4.5:1`);
     }
   }
-  // Review's grades use the card palette, not the app's violet accent.
+  // Buttons keep the app's kit design (the human, 2026-10-12, D-17X): the card skin is its content only. No button rule -
+  // Review's grades, Reveal, Hint, the card's turn actions and discs - uses a card token.
   const reviewCss = fs.readFileSync(path.join(ROOT, 'screens/review/review.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  for (const rule of reviewCss.split('}').filter((rule) => /\.s-review-(grade|btn)/.test(rule))) {
-    assert.ok(!/var\(--accent/.test(rule), `review grades use no app accent: ${rule.trim().split('{')[0]}`);
-    assert.ok(!/opacity:\s*0?\.\d/.test(rule.split('{')[0].includes(' b') ? rule : ''), 'the interval line is not faded below AA');
-  }
-  assert.match(reviewCss, /\.s-review-grade--gotit \{[^}]*background: var\(--vcard-btn-bg\);[^}]*color: var\(--vcard-btn-ink\)/);
-  assert.match(reviewCss, /\.s-review-grade--again \{[^}]*color: var\(--vcard-seal\)/);
-  // Reveal and Hint (under the recall face) in the card's palette too.
-  assert.match(reviewCss, /\.s-review-btn--primary \{[^}]*background: var\(--vcard-btn-bg\);[^}]*color: var\(--vcard-btn-ink\)/);
-  assert.match(reviewCss, /\.s-review-btn--secondary \{[^}]*background: var\(--vcard-surface\);[^}]*color: var\(--vcard-ink\)/);
+  const cardRules = fs.readFileSync(path.join(ROOT, 'kit/vocabulary-card.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const buttonRules = [
+    ...reviewCss.split('}').filter((rule) => /\.s-review-(grade|btn)/.test(rule.split('{')[0])),
+    ...cardRules.split('}').filter((rule) => /\.c-vcard__(turn|disc)|o-btn/.test(rule.split('{')[0])),
+  ];
+  assert.ok(buttonRules.length >= 6, 'the button rules are found');
+  for (const rule of buttonRules) assert.ok(!/--vcard-/.test(rule), `a button keeps the app's tokens: ${rule.trim().split('{')[0]}`);
+  assert.match(reviewCss, /\.s-review-grade--gotit \{[^}]*background: var\(--accent-fill\);[^}]*color: var\(--accent-ink\)/, 'Got it is the filled button of the app');
+  assert.match(reviewCss, /\.s-review-grade--again \{[^}]*background: var\(--red-soft\);[^}]*color: var\(--red\)/);
+  assert.match(reviewCss, /\.s-review-btn--primary \{[^}]*background: var\(--accent-fill\);[^}]*color: var\(--accent-ink\)/);
+  assert.match(reviewCss, /\.s-review-btn--secondary \{[^}]*background: var\(--surface\);[^}]*color: var\(--text\)/);
   // The gold never carries text or the focus ring (light 2.25:1 on the card, below the 3:1 a focus indicator needs).
   const cardCss = fs.readFileSync(path.join(ROOT, 'kit/vocabulary-card.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   for (const rule of cardCss.split('}')) {

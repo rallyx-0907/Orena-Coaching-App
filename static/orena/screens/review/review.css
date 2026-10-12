@@ -188,32 +188,20 @@
   justify-content: center;
   transition: background 0.15s;
 }
-/* D-17X: Reveal and Hint sit under the card, in the card's palette - Reveal the card's primary button (like
-   "Xem ví dụ" and "Đã nhớ"), Hint its secondary, outlined on the card surface. AA in both themes
-   (scripts/test_orena_kit.mjs: btn-ink/btn-bg, ink/surface); focus is the kit's ring. */
-.s-review-btn {
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.15s, background 0.15s;
-}
-.s-review-btn:active {
-  transform: scale(0.97);
-}
 .s-review-btn--secondary {
-  border: 1px solid var(--vcard-line);
-  background: var(--vcard-surface);
-  color: var(--vcard-ink);
-}
-.s-review-btn--secondary:hover {
-  background: var(--vcard-surface-alt);
+  border: 1px solid transparent;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--edge-light);
 }
 .s-review-btn--primary {
   flex: 1;
   border: 0;
-  background: var(--vcard-btn-bg);
-  color: var(--vcard-btn-ink);
+  background: var(--accent-fill);
+  color: var(--accent-ink);
 }
 .s-review-btn--primary:hover {
-  opacity: 0.9;
+  background: var(--accent-fill-hover);
 }
 
 /* ---- Revealed word card (D7 §4: identical content to Word Detail's) ---- */
@@ -321,31 +309,20 @@
 .s-review-grade b {
   font-size: 12px;
   font-weight: 400;
+  opacity: 0.8;
 }
-/* D-17X (human 2026-10-12): the grades take the card's palette, not the app's violet - "Đã nhớ" is the card's primary
-   button (like "Xem ví dụ"), "Chưa nhớ" the card's seal, outlined on the card surface. Both hold AA in both themes,
-   the interval line included (scripts/test_orena_kit.mjs: btn-ink/btn-bg, seal/surface); focus is the kit's ring. */
-.s-review-grade {
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.15s, background 0.15s;
-}
-.s-review-grade:active {
-  transform: scale(0.97);
-}
+/* The buttons keep the app's design (the human, 2026-10-12, D-17X): the card's skin is its content only. */
 .s-review-grade--again {
-  background: var(--vcard-surface);
-  color: var(--vcard-seal);
-  box-shadow: inset 0 0 0 1.5px var(--vcard-seal);
-}
-.s-review-grade--again:hover {
-  background: var(--vcard-surface-alt);
+  background: var(--red-soft);
+  color: var(--red);
 }
 .s-review-grade--gotit {
-  background: var(--vcard-btn-bg);
-  color: var(--vcard-btn-ink);
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--accent-fill) 30%, transparent);
 }
 .s-review-grade--gotit:hover {
-  opacity: 0.9;
+  background: var(--accent-fill-hover);
 }
 
 /* ---- Session complete ---- */

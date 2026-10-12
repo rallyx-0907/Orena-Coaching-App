@@ -13,7 +13,9 @@
    in D-179 / D-17X and UI_BACKEND_GAPS "Vocabulary card":
    the play and save discs sit in a quiet action row under the reading (the design draws neither; the top row stays
    level/source left, part of speech right, as drawn - D-17X point 8); collocations are chips; a section with no data
-   is left out. Every tag, chip and accent inside the card is `--vcard-*`: no global accent token, no kit `o-tag`.
+   is left out. Every tag, chip and accent of the CONTENT is `--vcard-*` (no kit `o-tag`); every BUTTON keeps the app's
+   kit design and tokens - the turn actions are `o-btn`, the discs the app's icon-button colours (the human,
+   2026-10-12: the flashcard skin is the content only).
 
    Faces, top to bottom as the reference draws them:
    - EN front: level tag + source; part of speech (its English name · the localized name); the headword;
@@ -335,14 +337,14 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
       <div class="c-vcard__body" data-scroll-region>${front}${slots.strokes || ''}</div>
       <div class="c-vcard__foot">
         ${footer(learner, slots.footer)}
-        <button type="button" class="c-vcard__turn c-vcard__turn--primary" data-vcard-turn="back" aria-controls="${id}-back">${t('seeExamples')}</button>
+        <button type="button" class="o-btn o-btn--primary c-vcard__turn" data-vcard-turn="back" aria-controls="${id}-back">${t('seeExamples')}</button>
       </div>
     </div>
     <div class="c-vcard__face c-vcard__face--back" id="${id}-back" hidden>
       ${backFace.head}
       <div class="c-vcard__body" data-scroll-region>${backFace.body}</div>
       <div class="c-vcard__foot c-vcard__foot--back">
-        <button type="button" class="c-vcard__turn c-vcard__turn--secondary" data-vcard-turn="front" aria-controls="${id}-front">${t('backToFront')}</button>
+        <button type="button" class="o-btn o-btn--secondary c-vcard__turn" data-vcard-turn="front" aria-controls="${id}-front">${t('backToFront')}</button>
       </div>
     </div>
   </article>`;

@@ -312,7 +312,9 @@
    palette - light "watercolor paper", dark "night violet", the Chinese card's seal. A deliberate, human-approved
    exception to one-palette-everywhere (AGENTS.md "Theme", D-089), scoped to kit/vocabulary-card.css alone; the tokens
    still live here, the one colour owner. Values are exactly the design's `renderVals` (scripts/test_orena_kit.mjs
-   VOCABULARY CARD compares them and holds every text pair at AA in both themes). Single-quoted selectors: a scoped
+   VOCABULARY CARD compares them and holds every text pair at AA in both themes). They colour the card's content only;
+   no button reads them - buttons keep the app's design (the human, 2026-10-12) - so `--vcard-btn-*` are the design's
+   values kept for completeness. Single-quoted selectors: a scoped
    addition the exact-token gate for the app's theme blocks does not compare, like the backdrop above. */
 :root[data-theme='dark'] {
   --vcard-bg: #0B0618;
