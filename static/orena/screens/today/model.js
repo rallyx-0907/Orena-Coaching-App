@@ -12,6 +12,7 @@
 import { tidyTitle } from '../../product/tidy-title.js';
 import { placePercent } from '../../product/place-progress.js';
 import { speakingResumeTarget } from '../../product/speaking-resume.js';
+import { contentIdFor } from '../content/model.js';
 
 export const RECOMMEND_LIMIT = 3;
 export const FOR_YOU_LIMIT = 12;
@@ -94,7 +95,7 @@ export function buildRecommendationPool({ reading, listening = [], speaking = []
       tint: 'var(--skill-read)',
       icon: 'book-open',
       routeId: 'reader',
-      routeParams: { id: article.id },
+      routeParams: { id: contentIdFor('article', article.id) },
       routeQuery: reading.next.recommendation ? { rec: reading.next.recommendation } : {},
     });
   }

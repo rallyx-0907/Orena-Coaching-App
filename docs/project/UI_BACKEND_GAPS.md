@@ -5833,3 +5833,24 @@ they pin the switch (and the page shows it locked) but stay editable in Admin wh
   Removing an environment pin at a later deploy resurrects a previously stored Admin value (for example a sweep switched on
   earlier) without a fresh confirmation. A store that rejects a stored value drops it at the next rewrite with no audit entry.
   `voice.session_cap_seconds` is read twice in `extend`; a change between the reads can make `cap - minted < 1` (a 500, no charge).
+
+## READER-ID: Reader opened with a bare article id (2026-10-11)
+
+- **Bug.** The Practice Hub's Reading tile (`screens/practice/model.js` `readingModes`) and Today's "Recommended reading" card
+  (`screens/today/model.js` `buildRecommendationPool`) navigated to the Reader with the bare article UUID from
+  `GET /api/reading/practice/next`. The Reader requires a prefixed content id (`article:<id>`, `parseContentId`), so it threw
+  "Reader: unknown content id" and the router showed "Couldn't load this story".
+- **Fix.** Both models now pass `contentIdFor('article', article.id)` and keep `rec`. The Practice tile ("Start Reading
+  Practice") also passes `mode=practice`, as Content Detail and Check do; the Reader reads it (`ctx.query.mode === 'practice'`,
+  honoured only when the text has questions), so a text without questions simply opens as a plain reading. No behaviour beyond
+  the bug fix: no decision recorded. Gates: `test_orena_screen_practice.mjs` and `test_orena_screen_today.mjs` assert the
+  prefixed id and that `parseContentId` accepts it (kind `article`).
+- **Swept, no other bare id.** Every other navigation to `reader` (Content Detail, Check, Progress, Reader Complete, Import
+  sheet `text:<uuid>`, continuation rows, agent intent `reading.workspace`, whose contract emits `<kind>:<id>`) already passes a
+  prefixed id.
+- **Follow-up, not fixed here (1).** The signed `rec` token travels in the Reader link but neither the Reader nor Check reads
+  it, so a practice attempt started from a recommendation loses its "recommended" provenance server-side.
+- **Follow-up, not fixed here (2).** The router's generic load-error text says the server did not respond even for a
+  client-side failure (an unknown id, a thrown parse error); the message should distinguish them.
+- **Observation.** `screens/notifications/model.js` `continuationRoute` routes `published:` and `story:` ids to the Reader,
+  which `parseContentId` would reject; nothing in the client creates those prefixes today.
