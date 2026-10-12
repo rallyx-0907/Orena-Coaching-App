@@ -19,6 +19,7 @@ from writing_coach.orthography import (
     validate_orthography,
     validate_provenance,
 )
+from writing_coach.vocabulary_usage_notes import RELATION_TYPES, note_text, notes_of_type, texts_of_type
 
 
 class VocabularyCardError(ValueError):
@@ -137,23 +138,71 @@ def _source_encounters(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     return [encounter]
 
 
-def _examples_from(row: Mapping[str, Any], language: str) -> list[dict[str, str]]:
+# What an authored example may carry besides its text (D-178), passed through as
+# stored: the highlight to draw (`match`/`occurrence`, never character offsets),
+# the reading of the whole sentence and its own highlight (Chinese pinyin), and
+# the language-tagged label, translation and explanation.
+_EXAMPLE_CONTENT_KEYS = ("label", "highlight", "reading", "reading_highlight", "translation", "explanation")
+
+
+def _examples_from(row: Mapping[str, Any], language: str) -> list[dict[str, Any]]:
     """Keep authored, target-language examples in the canonical card shape."""
 
     raw_examples = row.get("examples")
     if not isinstance(raw_examples, list):
         return []
-    examples: list[dict[str, str]] = []
+    examples: list[dict[str, Any]] = []
     for raw_example in raw_examples:
+        extra: dict[str, Any] = {}
         if isinstance(raw_example, Mapping):
             text = _text(raw_example, "text")
             example_language = _text(raw_example, "language") or language or "unknown"
+            for key in _EXAMPLE_CONTENT_KEYS:
+                value = raw_example.get(key)
+                if isinstance(value, Mapping) and value:
+                    extra[key] = dict(value)
+                elif isinstance(value, str) and value.strip():
+                    extra[key] = value.strip()
         else:
             text = str(raw_example or "").strip()
             example_language = language or "unknown"
         if text:
-            examples.append({"language": example_language, "text": text})
+            examples.append({"language": example_language, "text": text, **extra})
     return examples
+
+
+def _typed_note_content(row: Mapping[str, Any]) -> dict[str, Any]:
+    """The card fields the entry's typed `usage_notes` fill (D-178), grouped by type.
+
+    Only content: nothing here knows about a learner. Free usage text is
+    `usage`; a note is a common mistake only when it says so.
+    """
+
+    notes = row.get("usage_notes")
+    out: dict[str, Any] = {}
+    collocations = notes_of_type(notes, "collocation")
+    if collocations:
+        out["collocations"] = collocations
+    related = notes_of_type(notes, *RELATION_TYPES)
+    if related:
+        out["related"] = related
+    classifiers = notes_of_type(notes, "classifier")
+    if classifiers:
+        out["classifiers"] = classifiers
+    mistakes = notes_of_type(notes, "common_mistake")
+    if mistakes:
+        out["common_mistakes"] = mistakes
+    tips = [
+        {"kind": "mnemonic", "text": note_text(note), **({"language": note["language"]} if note.get("language") else {})}
+        for note in notes_of_type(notes, "memory_tip")
+    ]
+    if tips:
+        out["explanation_artifacts"] = tips
+    usage = texts_of_type(notes, "usage")
+    if usage:
+        out["usage"] = usage[0]
+        out["usage_notes"] = usage
+    return out
 
 
 def _provided_orthography(row: Mapping[str, Any]) -> Mapping[str, Any] | None:
@@ -356,9 +405,7 @@ def vocabulary_card_from_saved_word(
     part_of_speech = _text(row, "part_of_speech")
     if part_of_speech:
         card["part_of_speech"] = part_of_speech
-    usage_notes = _structured_texts(row.get("usage_notes"))
-    if usage_notes:
-        card["usage"] = usage_notes[0]
+    card.update(_typed_note_content(row))
     resolved_orthography = (
         _provided_orthography(row)
         or orthography
@@ -438,9 +485,7 @@ def vocabulary_card_from_catalog_entry(
     topic = _text(entry, "topic")
     if topic:
         card["topic"] = topic
-    usage_notes = _structured_texts(entry.get("usage_notes"))
-    if usage_notes:
-        card["usage"] = usage_notes[0]
+    card.update(_typed_note_content(entry))
     resolved_orthography = (
         _provided_orthography(entry)
         or orthography

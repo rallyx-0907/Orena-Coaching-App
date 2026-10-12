@@ -50,6 +50,7 @@ from writing_coach.book_asset_store import AssetNotFound, BookAssetStore, Invali
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code
 from writing_coach.vocabulary_library import normalize_vocabulary_word
+from writing_coach.vocabulary_usage_notes import texts_of_type
 
 router = APIRouter(prefix="/api/library", tags=["vocabulary-deep"])
 
@@ -315,7 +316,11 @@ def project_word_deep(
         for row in neighbours[:COMBINATIONS]
     ]
     related = [row for row in neighbours[:RELATED] if row["note"]]
-    usage = _meaning_texts(entry, "usage_notes")
+    # Typed notes (D-178): free usage text is `usage`, and only a note that
+    # says it is a common mistake is shown as one. A legacy note with no type
+    # is usage, so it stays visible - under `usage`, not as a mistake.
+    usage = texts_of_type(entry.get("usage_notes"), "usage")
+    mistakes = texts_of_type(entry.get("usage_notes"), "common_mistake")
     return {
         "headword": _text(entry.get("term")) or _text(word),
         "reading": _text(reading) or _first(entry.get("readings")) or _text(saved.get("phonetic")),
@@ -325,9 +330,10 @@ def project_word_deep(
         "senses": senses,
         "combinations": combinations,
         "related": related,
-        # The catalogue's own usage note is the common mistake when it has one;
-        # the explanation only answers where the catalogue is silent.
-        "commonMistake": usage[0] if usage else _text(layer.get("commonMistake")),
+        # The catalogue's own common-mistake note when it has one; the
+        # explanation only answers where the catalogue is silent.
+        "commonMistake": mistakes[0] if mistakes else _text(layer.get("commonMistake")),
+        "usage": usage,
         "mentalModel": _text(layer.get("mentalModel")),
         "contrast": list(layer.get("contrast") or ()),
         "sources": _sources_of(saved),

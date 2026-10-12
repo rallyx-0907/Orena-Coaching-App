@@ -347,3 +347,68 @@ def test_card_rejects_unprovenanced_verified_etymology_but_allows_other_optional
 
     with pytest.raises(VocabularyCardError, match="trusted provenance"):
         validate_vocabulary_card(card)
+
+
+# --- D-178: the card is the existing entry; typed usage notes and authored example keys -----------------
+
+_LEARNER_STATE_KEYS = {"memory", "source_encounters", "saved", "review_stage", "due", "next_review_at",
+                       "successful_recalls", "lapse_count"}
+
+
+def _authored_entry() -> dict:
+    return {
+        "word": "森林",
+        "language_code": "zh",
+        "short_meanings": [{"language": "vi", "text": "rừng"}],
+        "examples": [{
+            "language": "zh", "text": "这片森林里住着很多动物。", "origin": "source",
+            "highlight": {"match": "森林"}, "reading": "Zhè piàn sēnlín lǐ zhùzhe hěn duō dòngwù.",
+            "reading_highlight": {"match": "sēnlín"}, "label": {"vi": "Nơi chốn"},
+            "translation": {"vi": "Trong khu rừng này có rất nhiều động vật."}, "explanation": {"vi": "片 là lượng từ."},
+        }],
+        "usage_notes": [
+            {"type": "collocation", "text": "保护森林"},
+            {"type": "synonym", "text": "树林"},
+            {"type": "classifier", "text": "片", "reading": "piàn"},
+            {"type": "memory_tip", "text": "木 → 林 → 森", "language": "vi"},
+            {"type": "common_mistake", "text": "Not 一个森林."},
+            {"text": "A legacy note with no type."},
+        ],
+    }
+
+
+def test_catalog_card_passes_authored_example_content_through() -> None:
+    card = vocabulary_card_from_catalog_entry(_authored_entry())
+    example = card["examples"][0]
+    assert example["highlight"] == {"match": "森林"}
+    assert example["reading_highlight"] == {"match": "sēnlín"}
+    assert example["reading"].startswith("Zhè piàn")
+    assert example["label"] == {"vi": "Nơi chốn"}
+    assert example["translation"]["vi"].startswith("Trong khu rừng")
+    assert example["explanation"] == {"vi": "片 là lượng từ."}
+    validate_vocabulary_card(card)
+
+
+def test_typed_notes_fill_their_own_card_fields_and_legacy_text_stays_usage() -> None:
+    card = vocabulary_card_from_catalog_entry(_authored_entry())
+    assert [item["text"] for item in card["collocations"]] == ["保护森林"]
+    assert [(item["type"], item["text"]) for item in card["related"]] == [("synonym", "树林")]
+    assert card["classifiers"][0]["reading"] == "piàn"
+    assert card["explanation_artifacts"] == [{"kind": "mnemonic", "text": "木 → 林 → 森", "language": "vi"}]
+    assert [item["text"] for item in card["common_mistakes"]] == ["Not 一个森林."]
+    # Free usage text is usage, never presented as a common mistake.
+    assert card["usage"] == "A legacy note with no type."
+    assert card["usage_notes"] == ["A legacy note with no type."]
+    validate_vocabulary_card(card)
+
+
+def test_catalog_card_is_pure_content_and_learner_state_lives_only_under_memory() -> None:
+    """D-178 pure-mapper rule, server side: the content projection carries no learner state; the
+    saved-word projection adds it under its own `memory` key, so a caller can always separate them."""
+
+    content = vocabulary_card_from_catalog_entry(_authored_entry())
+    assert not (_LEARNER_STATE_KEYS & set(content))
+    saved = vocabulary_card_from_saved_word({**_authored_entry(), "review_stage": 2, "successful_recalls": 3})
+    assert saved["memory"]["review_stage"] == 2
+    assert {key for key in saved if key in _LEARNER_STATE_KEYS} <= {"memory", "source_encounters"}
+    assert saved["collocations"] == content["collocations"]

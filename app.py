@@ -151,6 +151,11 @@ from writing_coach.vocabulary_localization import (
     localize_records,
     materialize_localizations,
 )
+from writing_coach.vocabulary_entry_format import (
+    LANGUAGE_CODES as AUTHORED_ENTRY_LANGUAGES,
+    is_authored_source,
+    normalize_authored_entries,
+)
 from writing_coach.vocabulary_source_import import (
     VocabularySourceError,
     detect_vocabulary_mapping,
@@ -177,7 +182,11 @@ from writing_coach.ai.control_plane import AIControlPlane
 from writing_coach.product.service import configure_product_repository
 from writing_coach.product.catalog import configure_plan_store
 from writing_coach.persistence.runtime import build_runtime
-from writing_coach.persistence.vocabulary_repository import VocabularyContentUnavailable
+from writing_coach.persistence.vocabulary_repository import (
+    AUTHORED_CONFLICTS,
+    AUTHORED_DUPLICATE_POLICIES,
+    VocabularyContentUnavailable,
+)
 from writing_coach.persistence.learning_repository import (
     SQLiteLearningCacheRepository,
     SQLiteLearningRepository,
@@ -3608,7 +3617,68 @@ async def _parse_uploaded_vocabulary_source(upload: UploadFile):
 
 def _vocabulary_source_format_hint(filename: str) -> str:
     suffix = Path(filename or "").suffix.casefold().lstrip(".")
-    return {"csv": "csv", "tsv": "tsv", "json": "json", "txt": "txt", "text": "txt", "xlsx": "xlsx", "xlsm": "xlsx"}.get(suffix, "")
+    return {"csv": "csv", "tsv": "tsv", "json": "json", "jsonl": "jsonl", "ndjson": "jsonl", "txt": "txt",
+            "text": "txt", "xlsx": "xlsx", "xlsm": "xlsx"}.get(suffix, "")  # fmt: skip
+
+
+def _authored_source_language(source: Any) -> str:
+    """The set language an authored file is in: its first row's, as the catalogue spells it."""
+
+    for row in source.rows:
+        language = AUTHORED_ENTRY_LANGUAGES.get(str(row.get("lang") or ""))
+        if language:
+            return language
+    return ""
+
+
+def _authored_preview(source: Any) -> dict[str, Any]:
+    """The README's checks for an authored entry file, and what each row would meet (D-178).
+
+    Read-only: rows are validated against the entry schema and the Chinese
+    spelling rule, highlights are checked, and each ready row is looked up so
+    the admin sees `new`, `duplicate` (overwrite or skip), or a refused
+    conflict with a published set - before anything is written.
+    """
+
+    language = _authored_source_language(source)
+    normalized = normalize_authored_entries(source, language_code=language or "und")
+    rows = [dict(row) for row in normalized["rows"]]
+    repository = _persistence_runtime.vocabulary_repository
+    lookups: list[dict[str, Any]] = []
+    try:
+        if normalized["records"] and repository.available():
+            lookups = repository.classify_authored_records(language, normalized["records"])
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        lookups = []
+    by_identity = {item["identity_key"]: item for item in lookups}
+    for row in rows:
+        found = by_identity.get(row.get("identity_key", ""))
+        if row["outcome"] != "ready":
+            continue
+        if found is None:
+            row["existing"] = "unknown" if not lookups else "new"
+            continue
+        row["existing"] = found["status"]
+        if found["status"] in AUTHORED_CONFLICTS:
+            row.update(outcome="conflict", reason=found["reason"])
+        if found["same_word"]:
+            row["warnings"] = [*row["warnings"], "another entry for this word is stored; this id is a separate entry"]
+    counts: dict[str, int] = {}
+    warnings = list(normalized["warnings"])
+    for row in rows:
+        counts[row["outcome"]] = counts.get(row["outcome"], 0) + 1
+        label = row.get("id") or row.get("term") or f"row {row['row']}"
+        if row["outcome"] in {"refused", "conflict"}:
+            warnings.append(f"{label}: {row['outcome']} - {row['reason']}")
+        elif row.get("existing") == "duplicate":
+            warnings.append(f"{label}: already stored in a set that is not published; skipped unless overwrite is chosen")
+    return {
+        "language_code": language,
+        "format": normalized["format"],
+        "rows": rows,
+        "counts": counts,
+        "warnings": warnings,
+    }
 
 
 @app.post("/api/admin/vocabulary/preview", name="admin_vocabulary_source_preview")
@@ -3626,6 +3696,26 @@ async def admin_vocabulary_source_preview(
         filename = str(upload.filename or "source").strip() or "source"
         try:
             source = await _parse_uploaded_vocabulary_source(upload)
+            if is_authored_source(source):
+                # The authored entry format needs no column mapping: it is
+                # validated against its schema instead (D-178).
+                authored = _authored_preview(source)
+                items.append(
+                    {
+                        "filename": source.filename,
+                        "format": source.format,
+                        "content_hash": source.content_hash,
+                        "row_count": len(source.rows),
+                        "headers": list(source.headers),
+                        "sample": [dict(row) for row in source.rows[:5]],
+                        "detected_mapping": {},
+                        "confidence": {},
+                        "warnings": authored["warnings"],
+                        "error": "",
+                        "authored": authored,
+                    }
+                )
+                continue
             detected = detect_vocabulary_mapping(source)
             items.append(
                 {
@@ -3736,12 +3826,21 @@ async def admin_vocabulary_source_import(
     files: list[UploadFile] = File(...),
     metadata: str = Form(default="{}"),
     mappings: str = Form(default="{}"),
+    duplicates: str = Form(default="skip"),
 ) -> dict[str, Any]:
-    """Import a batch one source at a time and return per-source outcomes."""
+    """Import a batch one source at a time and return per-source outcomes.
+
+    `duplicates` (`skip`, the default, or `overwrite`) is the admin's answer
+    for an authored entry that is already stored in a set that is not
+    published; an entry in a published set is always refused (D-178). Other
+    source formats keep their merge behaviour and ignore it.
+    """
 
     admin = require_admin(request)
     if not files:
         raise HTTPException(422, "Choose at least one vocabulary source file.")
+    if duplicates not in AUTHORED_DUPLICATE_POLICIES:
+        raise HTTPException(422, "duplicates must be 'skip' or 'overwrite'.")
     collection_metadata = _admin_vocabulary_metadata(metadata)
     mapping_by_filename = _json_form_object(mappings, "mappings")
     repository = _persistence_runtime.vocabulary_repository
@@ -3793,6 +3892,9 @@ async def admin_vocabulary_source_import(
     }
     results: list[dict[str, Any]] = []
     collection_persisted = False
+    # An authored entry file never publishes at import: its own `status` is not
+    # read, and the set it lands in waits for review (D-178).
+    authored_in_batch = False
 
     def failed_source_result(
         *,
@@ -3834,20 +3936,28 @@ async def admin_vocabulary_source_import(
         try:
             raw = await read_source_upload(upload)
             source = parse_vocabulary_source(filename, raw)
-            detected = detect_vocabulary_mapping(source)
-            raw_mapping = mapping_by_filename.get(filename)
-            if raw_mapping is None:
-                raw_mapping = mapping_by_filename.get(str(index))
-            mapping = raw_mapping if isinstance(raw_mapping, dict) else detected.mapping
-            normalized = normalize_vocabulary_rows(
-                source,
-                mapping=mapping,
-                language_code=collection_metadata["language_code"],
-                meaning_language=collection_metadata.get("meaning_language", ""),
-                collection_level=collection_metadata.get("level", ""),
-                collection_framework=collection_metadata.get("framework", ""),
-                collection_topic=collection_metadata.get("topic", ""),
-            )
+            authored = is_authored_source(source)
+            if authored:
+                authored_in_batch = True
+                normalized = normalize_authored_entries(source, language_code=collection_metadata["language_code"])
+                if not normalized["records"]:
+                    reasons = "; ".join(f"row {item['row']}: {item['reason']}" for item in normalized["skipped"][:5])
+                    raise VocabularySourceError(f"The source has no valid vocabulary entries to import. {reasons}".strip())
+            else:
+                detected = detect_vocabulary_mapping(source)
+                raw_mapping = mapping_by_filename.get(filename)
+                if raw_mapping is None:
+                    raw_mapping = mapping_by_filename.get(str(index))
+                mapping = raw_mapping if isinstance(raw_mapping, dict) else detected.mapping
+                normalized = normalize_vocabulary_rows(
+                    source,
+                    mapping=mapping,
+                    language_code=collection_metadata["language_code"],
+                    meaning_language=collection_metadata.get("meaning_language", ""),
+                    collection_level=collection_metadata.get("level", ""),
+                    collection_framework=collection_metadata.get("framework", ""),
+                    collection_topic=collection_metadata.get("topic", ""),
+                )
             if not normalized["records"]:
                 raise VocabularySourceError("The source has no valid vocabulary rows to import.")
             # Readings the source left out are dictionary facts, and a meaning in
@@ -3871,6 +3981,7 @@ async def admin_vocabulary_source_import(
                 records=records,
                 mapping=mapping,
                 imported_by=imported_by,
+                duplicates=duplicates if authored else None,
             )
             collection_persisted = True
             results.append({**result, "dictionary": dictionary_summary, "localizations": localization_report})
@@ -3928,6 +4039,8 @@ async def admin_vocabulary_source_import(
     )
     publication_failure = ""
     published_collection: dict[str, Any] | None = None
+    if authored_in_batch:
+        requested_catalog_status = "pending_review"
     if requested_catalog_status == "published" and collection_persisted and not batch_failed:
         try:
             published_collection = repository.finalize_collection_publication(

@@ -348,3 +348,96 @@ def test_a_vocabulary_collection_travels_in_a_content_pack_and_publishes_by_the_
     assert result == {"collection_id": "sample-pack", "status": "published", "imported": 2, "duplicates": 0, "failed": 0}
     landed = target_repo.get_collection("sample-pack", limit=10)
     assert {m["text"] for e in landed["entries"] for m in e["short_meanings"]} == {"vé", "bản đồ"}
+
+
+def _authored_repository(tmp_path, monkeypatch):
+    from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
+
+    repository = sqlite_vocabulary_repository(tmp_path / "vocabulary.db")
+    repository.initialize()
+    runtime = replace(app_module._persistence_runtime, vocabulary_repository=repository)
+    monkeypatch.setattr(app_module, "_persistence_runtime", runtime)
+    app_module.configure_becoming_library_content(repository)
+    return repository
+
+
+def _sample_bytes(name: str) -> bytes:
+    from pathlib import Path
+
+    return (Path(__file__).resolve().parents[1] / "docs" / "vocab" / "samples" / f"{name}.json").read_bytes()
+
+
+def _authored_import(filename: str, raw: bytes, *, collection_id: str, language: str, duplicates: str = "skip"):
+    return _request(
+        "POST",
+        "/api/admin/vocabulary/import",
+        data={
+            "metadata": json.dumps({
+                "title": collection_id, "language_code": language, "collection_id": collection_id,
+                # Cleared rights and a complete set would auto-publish a column import (D-111);
+                # an authored file still lands pending review (D-178).
+                "rights_status": "internal_curated", "completeness": "complete",
+            }),
+            "duplicates": duplicates,
+        },
+        files=[("files", (filename, raw, "application/json"))],
+    )
+
+
+def test_authored_entry_file_previews_its_checks_and_imports_pending_review(tmp_path, monkeypatch) -> None:
+    repository = _authored_repository(tmp_path, monkeypatch)
+    preview = _request("POST", "/api/admin/vocabulary/preview",
+                       files=[("files", ("zh_senlin.json", _sample_bytes("zh_senlin"), "application/json"))])  # fmt: skip
+    assert preview.status_code == 200, preview.text
+    item = preview.json()["items"][0]
+    assert item["authored"]["language_code"] == "zh"
+    assert item["authored"]["rows"][0]["outcome"] == "ready"
+    assert item["authored"]["rows"][0]["existing"] == "new"
+
+    imported = _authored_import("zh_senlin.json", _sample_bytes("zh_senlin"), collection_id="t-authored-zh", language="zh")
+    assert imported.status_code == 200, imported.text
+    body = imported.json()
+    assert body["collection"]["catalog_status"] == "pending_review"
+    assert body["items"][0]["imported"] == 1 and body["items"][0]["conflicts"] == 0
+    entry = repository.get_collection("t-authored-zh", limit=5, status=None)["entries"][0]
+    assert [reading["text"] for reading in entry["readings"]] == ["sēnlín"]
+
+    again = _request("POST", "/api/admin/vocabulary/preview",
+                     files=[("files", ("zh_senlin.json", _sample_bytes("zh_senlin"), "application/json"))])  # fmt: skip
+    assert again.json()["items"][0]["authored"]["rows"][0]["existing"] == "duplicate"
+
+
+def test_authored_import_refuses_a_published_duplicate_and_lists_it(tmp_path, monkeypatch) -> None:
+    repository = _authored_repository(tmp_path, monkeypatch)
+    first = _authored_import("en_resilient.json", _sample_bytes("en_resilient"), collection_id="t-authored-en", language="en")
+    assert first.status_code == 200, first.text
+    repository.finalize_collection_publication("t-authored-en", admission={
+        "review_status": "approved", "publication_attested": True, "attested_by": "test-admin",
+        "rights_status": "internal_curated", "completeness": "complete",
+    })
+    preview = _request("POST", "/api/admin/vocabulary/preview",
+                       files=[("files", ("en_resilient.json", _sample_bytes("en_resilient"), "application/json"))])  # fmt: skip
+    row = preview.json()["items"][0]["authored"]["rows"][0]
+    assert row["outcome"] == "conflict" and row["existing"] == "published_conflict"
+
+    second = _authored_import("en_resilient.json", _sample_bytes("en_resilient"), collection_id="t-authored-en-2",
+                              language="en", duplicates="overwrite")  # fmt: skip
+    result = second.json()["items"][0]
+    assert result["conflicts"] == 1 and result["imported"] == 0 and result["updated"] == 0
+    assert result["rows"][0]["conflict"] == "published_conflict"
+    assert second.json()["collection"]["catalog_status"] == "pending_review"
+
+
+def test_authored_import_rejects_an_unknown_duplicate_policy(tmp_path, monkeypatch) -> None:
+    _authored_repository(tmp_path, monkeypatch)
+    response = _authored_import("en_resilient.json", _sample_bytes("en_resilient"), collection_id="t-x",
+                                language="en", duplicates="replace")  # fmt: skip
+    assert response.status_code == 422
+
+
+def test_jsonl_authored_file_imports_through_the_same_route(tmp_path, monkeypatch) -> None:
+    _authored_repository(tmp_path, monkeypatch)
+    line = json.dumps(json.loads(_sample_bytes("en_resilient")), ensure_ascii=False)
+    response = _authored_import("entries.jsonl", (line + "\n").encode("utf-8"), collection_id="t-jsonl", language="en")
+    assert response.status_code == 200, response.text
+    assert response.json()["items"][0]["imported"] == 1

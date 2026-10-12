@@ -1,0 +1,47 @@
+{
+  "id": "en:resilient",
+  "lang": "en",
+  "headword": "resilient",
+  "level": { "scale": "CEFR", "value": "C1", "source": "Oxford 5000" },
+  "pos": [{ "code": "adjective", "label_native": "adjective", "label_vi": "tính từ" }],
+  "meanings": [
+    {
+      "vi": "kiên cường; có khả năng phục hồi nhanh",
+      "en": "able to recover quickly after something unpleasant, such as shock, injury or difficulty"
+    }
+  ],
+  "illustration": { "kind": "library", "ref": "sprout-through-crack", "alt_vi": "Mầm cây vươn lên qua khe nứt mặt đất trong gió" },
+  "audio": { "tts": true },
+  "examples": [
+    {
+      "label_vi": "Chỉ người",
+      "text": "Children are often more resilient than adults expect.",
+      "highlight": { "match": "resilient" },
+      "translation_vi": "Trẻ em thường kiên cường hơn người lớn nghĩ.",
+      "explanation_vi": "Nói về tinh thần: vượt qua cú sốc, khó khăn và lấy lại cân bằng."
+    },
+    {
+      "label_vi": "Chỉ hệ thống, vật",
+      "text": "The network is designed to be resilient to power failures.",
+      "highlight": { "match": "resilient" },
+      "translation_vi": "Mạng được thiết kế để chịu được sự cố mất điện.",
+      "explanation_vi": "Cấu trúc resilient to / against + N: chống chịu, vẫn hoạt động khi gặp sự cố."
+    }
+  ],
+  "related": [
+    { "word": "resilience", "relation": "family", "pos": "(n)" },
+    { "word": "resiliently", "relation": "family", "pos": "(adv)" },
+    { "word": "tough", "relation": "synonym" },
+    { "word": "hardy", "relation": "synonym" },
+    { "word": "fragile", "relation": "antonym" },
+    { "word": "vulnerable", "relation": "antonym" }
+  ],
+  "collocations": ["highly resilient", "remarkably resilient", "a resilient economy"],
+  "memory_tip_vi": "Latin resilire: re- (lại) + salire (nhảy) → “bật trở lại”.",
+  "tags": ["topic:character", "topic:systems"],
+  "status": "draft",
+  "en": {
+    "ipa": { "uk": "/rɪˈzɪliənt/", "us": "/rɪˈzɪljənt/" },
+    "etymology_vi": "Từ Latin resilire, “bật trở lại”."
+  }
+}

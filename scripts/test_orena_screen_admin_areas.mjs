@@ -167,6 +167,8 @@ assert.equal(match(reading.learnerAddress('reading', 'abc')).route.id, 'content'
 /* Imports. */
 assert.deepEqual(imports.vocabularyProblems({ files: [], metadata: {} }).map((p) => p.key), ['validationFiles', 'validationTitle']);
 assert.deepEqual(imports.vocabularyProblems({ files: [1], previews: [{ filename: 'a.csv' }], mappings: { 'a.csv': {} }, metadata: { title: 'T', publish: true, attested: false } }).map((p) => p.key), ['validationTerm', 'validationAttest']);
+// An authored entry file (docs/vocab, D-178) is schema-checked on the server, never column-mapped.
+assert.deepEqual(imports.vocabularyProblems({ files: [1], previews: [{ filename: 'a.jsonl', authored: { rows: [] } }], mappings: { 'a.jsonl': {} }, metadata: { title: 'T' } }).map((p) => p.key), []);
 assert.equal(imports.slugFor('Open Stories!'), 'open-stories');
 assert.equal(imports.sourceBody({ name: ' Open ', url: 'https://o.org', rights: { can_republish: true } }).attribution_required, true);
 assert.equal(imports.sourceBody({ name: 'x', rights: { attribution_required: false } }).attribution_required, false);

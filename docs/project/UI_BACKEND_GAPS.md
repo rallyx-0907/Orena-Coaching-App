@@ -5880,3 +5880,28 @@ they pin the switch (and the page shows it locked) but stay editable in Admin wh
   `resizes-visual`, so `100dvh` does not follow the keyboard and the room follows `visualViewport`; the viewport meta in
   `templates/orena/index.html` was not changed), touch scrolling of the Transcript with the keyboard open, and a desktop
   virtual-keyboard extension, which overlays the page without resizing `visualViewport` and so is not a faithful check.
+
+## Vocabulary card (D-178), 2026-10-12
+
+The EN/ZH flashcard artifact ("Flashcard từ vựng Anh – Trung") is a reference for the layout and the information a
+vocabulary card shows, not a new pinned frame; colours, type and components follow the current tokens. PR 1 (the
+authored-entry import) ships no learner UI. Open for the human before PR 2 / PR 3:
+
+- **VC-1 Rule 49 recomposition.** The artifact card is a fixed 520x880. In Review and Word Detail the card must work
+  at 1920x1080, 1366x768, 390x844 and 360x740 with only its own body scrolling; the front (meaning, relations,
+  radical, classifiers) is recomposed, not shrunk. Not yet drawn by the design.
+- **VC-2 The ZH "paper" look moves to tokens.** The artifact's Chinese card (cream paper, seal red, double-rule border,
+  serif faces) is a second visual system. ZH keeps its own typography and content order, in the semantic tokens only;
+  no outline ring (D-147).
+- **VC-3 Admin preview derivation.** The pinned Admin export draws no card preview. PR 3 derives it from A14 Vocabulary
+  detail and renders the production `VocabularyCard` with the shared mapper; the derivation is to be recorded per the
+  UI provenance gate before it is built.
+- **VC-4 Recall front.** The artifact front shows the meaning; the pinned Review Session hides the answer until Reveal.
+  `review-front` follows the pinned design (term, pronunciation, audio, non-revealing metadata, Reveal);
+  `review-back` is the rich card. Grades: "Not yet" / "Got it" (D-178 point 7), where the pinned frame draws four.
+- **VC-5 Illustration.** Optional; none of the referenced line-art (`sprout-through-crack`, `ink-pine-trees`) exists in
+  the repository. With no image no frame is drawn; the reference is kept in the entry's provenance. Artwork stays under
+  the Art Bible.
+- **VC-6 Duplicate choice in the Admin import.** The API takes `duplicates=skip|overwrite` (default skip); the Admin
+  import screen shows the per-row checks as warnings but has no control for the choice yet, so an import from the
+  screen skips duplicates. The control belongs to the PR 3 derivation.
