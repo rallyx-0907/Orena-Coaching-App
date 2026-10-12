@@ -19,7 +19,7 @@ pytestmark = pytest.mark.skipif(
     not stroke_order.installed(), reason="the vendored stroke pack is not installed"
 )
 
-CHARACTERS = sorted((character_parts._data().get("characters") or {}))
+CHARACTERS = sorted(character_parts._data().get("characters") or {})
 
 
 def test_the_file_carries_some_characters():
@@ -94,3 +94,14 @@ def test_a_character_with_no_curated_parts_answers_with_nothing():
 def test_every_character_in_the_file_is_one_character():
     for character in CHARACTERS:
         assert len(character) == 1, f"{character!r} is not a single character"
+
+
+def test_the_reference_sample_characters_are_curated():
+    """森 and 林 (docs/vocab/samples/zh_senlin.json): the tree radical, the rest of each character as parts."""
+
+    facts = character_parts.facts_for_word("森林", support="vi")
+    assert facts["森"]["radical"]["value"]["surface"] == "木"
+    assert [part["surface"] for part in facts["森"]["components"]["value"]] == ["木", "木"]
+    assert [part["surface"] for part in facts["林"]["components"]["value"]] == ["木"]
+    assert facts["林"]["radical"]["value"]["gloss"] == "cây, gỗ"
+    validate_orthography(build_chinese_orthography("森林", facts=facts))

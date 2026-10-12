@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://orena.app/schemas/vocab_entry.schema.json",
+  "title": "Orena vocabulary entry (flashcard)",
+  "description": "Một thẻ từ vựng. Dùng chung khung cho mọi ngôn ngữ; phần riêng nằm trong `en` hoặc `zh`. Mỗi ngôn ngữ giữ thang cấp độ riêng (CEFR / HSK 3.0), không quy đổi chéo.",
+  "type": "object",
+  "required": ["id", "lang", "headword", "level", "pos", "meanings", "examples", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z]{2}(-[A-Za-z]+)?:[a-z0-9_-]+$", "description": "Ví dụ: en:resilient, zh-Hans:senlin" },
+    "lang": { "enum": ["en", "zh-Hans"], "description": "Tiếng Trung chỉ dùng giản thể." },
+    "headword": { "type": "string", "minLength": 1 },
+    "level": {
+      "type": "object",
+      "required": ["scale", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "scale": { "enum": ["CEFR", "HSK3"] },
+        "value": { "type": "string" },
+        "source": { "type": "string", "description": "Nguồn xếp cấp, ví dụ \"Oxford 5000\", \"HSK 3.0 (2021)\"" }
+      }
+    },
+    "pos": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "required": ["code"], "additionalProperties": false,
+        "properties": {
+          "code": { "enum": ["noun", "verb", "adjective", "adverb", "pronoun", "preposition", "conjunction", "determiner", "interjection", "numeral", "measure_word", "particle", "phrase", "idiom"] },
+          "label_native": { "type": "string", "description": "Nhãn theo ngôn ngữ đích, ví dụ 名词" },
+          "label_vi": { "type": "string", "description": "Ví dụ: danh từ" }
+        }
+      }
+    },
+    "meanings": {
+      "type": "array", "minItems": 1,
+      "description": "Phần tử đầu tiên là nghĩa chính, hiện ở mặt trước.",
+      "items": {
+        "type": "object", "required": ["vi"], "additionalProperties": false,
+        "properties": {
+          "vi": { "type": "string" },
+          "en": { "type": "string", "description": "Định nghĩa/nghĩa tiếng Anh (tùy chọn với ZH)" },
+          "note_vi": { "type": "string" }
+        }
+      }
+    },
+    "illustration": {
+      "type": "object", "required": ["kind"], "additionalProperties": false,
+      "description": "Không có -> UI ẩn khung hình.",
+      "properties": {
+        "kind": { "enum": ["library", "upload", "none"] },
+        "ref": { "type": "string", "description": "library: mã hình trong thư viện SVG dùng chung; upload: asset id/URL" },
+        "alt_vi": { "type": "string", "description": "Mô tả cho trình đọc màn hình" }
+      }
+    },
+    "audio": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "url": { "type": "string" },
+        "tts": { "type": "boolean", "default": true, "description": "Không có url -> phát bằng TTS" }
+      }
+    },
+    "examples": {
+      "type": "array", "minItems": 1, "maxItems": 4,
+      "items": { "$ref": "#/$defs/example" }
+    },
+    "related": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["word", "relation"], "additionalProperties": false,
+        "properties": {
+          "word": { "type": "string" },
+          "relation": { "enum": ["family", "synonym", "antonym", "related", "compound"] },
+          "pos": { "type": "string", "description": "Ví dụ: (n), (adv)" },
+          "reading": { "type": "string", "description": "Pinyin nếu là từ tiếng Trung" },
+          "gloss_vi": { "type": "string" }
+        }
+      }
+    },
+    "collocations": { "type": "array", "items": { "type": "string" } },
+    "memory_tip_vi": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" }, "description": "Chủ đề, nguồn bài học (ví dụ topic:nature, lesson:early-market)" },
+    "status": { "enum": ["draft", "reviewed", "published"] },
+    "en": { "$ref": "#/$defs/en_fields" },
+    "zh": { "$ref": "#/$defs/zh_fields" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "lang": { "const": "en" } } },
+      "then": {
+        "required": ["en"],
+        "not": { "required": ["zh"] },
+        "properties": { "level": { "properties": { "scale": { "const": "CEFR" }, "value": { "enum": ["A1", "A2", "B1", "B2", "C1", "C2"] } } } }
+      }
+    },
+    {
+      "if": { "properties": { "lang": { "const": "zh-Hans" } } },
+      "then": {
+        "required": ["zh"],
+        "not": { "required": ["en"] },
+        "properties": { "level": { "properties": { "scale": { "const": "HSK3" }, "value": { "enum": ["1", "2", "3", "4", "5", "6", "7-9"] } } } }
+      }
+    }
+  ],
+  "$defs": {
+    "highlight": {
+      "type": "object", "required": ["match"], "additionalProperties": false,
+      "description": "Đoạn cần tô nổi bật. UI tự tìm `match` trong câu; `occurrence` chọn lần xuất hiện thứ mấy (mặc định 1). Không tìm thấy -> hiện câu không tô, Admin báo cảnh báo.",
+      "properties": {
+        "match": { "type": "string", "minLength": 1 },
+        "occurrence": { "type": "integer", "minimum": 1, "default": 1 }
+      }
+    },
+    "example": {
+      "type": "object", "required": ["text", "highlight", "translation_vi"], "additionalProperties": false,
+      "properties": {
+        "label_vi": { "type": "string", "description": "Nhãn ngắn, ví dụ \"Chỉ người\", \"Làm tân ngữ\"" },
+        "text": { "type": "string" },
+        "highlight": { "$ref": "#/$defs/highlight" },
+        "reading": { "type": "string", "description": "ZH: pinyin của cả câu" },
+        "reading_highlight": { "$ref": "#/$defs/highlight" },
+        "translation_vi": { "type": "string" },
+        "explanation_vi": { "type": "string", "description": "Giải thích cách dùng trong câu" }
+      }
+    },
+    "en_fields": {
+      "type": "object", "required": ["ipa"], "additionalProperties": false,
+      "properties": {
+        "ipa": {
+          "type": "object", "additionalProperties": false, "minProperties": 1,
+          "properties": { "uk": { "type": "string" }, "us": { "type": "string" } }
+        },
+        "etymology_vi": { "type": "string" }
+      }
+    },
+    "zh_fields": {
+      "type": "object", "required": ["pinyin", "chars"], "additionalProperties": false,
+      "properties": {
+        "pinyin": { "type": "string", "description": "Có dấu thanh, ví dụ sēnlín" },
+        "han_viet": { "type": "string", "description": "Âm Hán Việt, ví dụ SÂM LÂM" },
+        "chars": {
+          "type": "array", "minItems": 1,
+          "description": "Một phần tử cho mỗi chữ Hán, theo đúng thứ tự trong headword; dùng cho ruby pinyin và phần bộ thủ.",
+          "items": {
+            "type": "object", "required": ["hanzi", "pinyin"], "additionalProperties": false,
+            "properties": {
+              "hanzi": { "type": "string", "minLength": 1, "maxLength": 1 },
+              "pinyin": { "type": "string" },
+              "han_viet": { "type": "string" },
+              "strokes": { "type": "integer", "minimum": 1 },
+              "radical": {
+                "type": "object", "required": ["char"], "additionalProperties": false,
+                "properties": {
+                  "char": { "type": "string" },
+                  "pinyin": { "type": "string" },
+                  "name_vi": { "type": "string", "description": "Tên bộ, ví dụ Mộc" },
+                  "meaning_vi": { "type": "string" }
+                }
+              },
+              "components": { "type": "array", "items": { "type": "string" }, "description": "Cấu tạo, ví dụ [\"木\",\"木\",\"木\"]" }
+            }
+          }
+        },
+        "measure_words": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["mw"], "additionalProperties": false,
+            "properties": {
+              "mw": { "type": "string" },
+              "pinyin": { "type": "string" },
+              "phrase": { "type": "string", "description": "Ví dụ 一片森林" },
+              "phrase_pinyin": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

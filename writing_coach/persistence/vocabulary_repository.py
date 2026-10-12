@@ -152,7 +152,11 @@ class VocabularyRepository(Protocol):
         records: Iterable[Mapping[str, Any]],
         mapping: Mapping[str, Any],
         imported_by: str = "",
+        duplicates: str | None = None,
     ) -> dict[str, Any]: ...
+    def classify_authored_records(
+        self, language_code: str, records: Iterable[Mapping[str, Any]]
+    ) -> list[dict[str, Any]]: ...
     def record_source_failure(
         self,
         *,
@@ -617,8 +621,28 @@ class SQLAlchemyVocabularyRepository:
         records: Iterable[Mapping[str, Any]],
         mapping: Mapping[str, Any],
         imported_by: str = "",
+        duplicates: str | None = None,
     ) -> dict[str, Any]:
+        """Import one source's canonical records into a collection.
+
+        `duplicates` is the authored-entry policy (D-17V); `None` keeps the
+        original merge behaviour every other source uses. With `skip` or
+        `overwrite`, a record that matches a stored entry (its identity, or the
+        authored id it was imported under):
+
+        - is refused as a conflict when that entry belongs to any published
+          set - nothing is overwritten, no membership snapshot is written, and
+          nothing is unpublished; editing published content is a separate
+          workflow;
+        - otherwise is left as it is (`skip`, the default) or has its content
+          replaced by the record (`overwrite`).
+
+        A published target set refuses the whole source under this policy.
+        """
+
         self._require_available()
+        if duplicates not in (None, *AUTHORED_DUPLICATE_POLICIES):
+            raise ValueError(f"Unsupported duplicate policy '{duplicates}'.")
         collection_id = _text(collection.get("id"))
         if not collection_id:
             raise ValueError("A stable collection id is required.")
@@ -640,6 +664,8 @@ class SQLAlchemyVocabularyRepository:
         skipped_details = [item for item in source.get("skipped", []) if isinstance(item, Mapping)]
         imported_count = 0
         duplicate_count = 0
+        conflict_count = 0
+        updated_count = 0
         skipped_count = len(skipped_details)
         source_format = _text(source.get("format"))
         filename = _text(source.get("filename")) or "source"
@@ -672,6 +698,11 @@ class SQLAlchemyVocabularyRepository:
             elif collection_row.language_code != language_code:
                 raise ValueError(
                     f"Collection '{collection_id}' already belongs to language '{collection_row.language_code}'."
+                )
+            elif duplicates is not None and collection_was_published:
+                raise ValueError(
+                    f"Collection '{collection_id}' is published; authored entries are not imported into a "
+                    "published set. Editing published content is a separate workflow."
                 )
             else:
                 # Re-importing a collection may update human-entered display
@@ -755,6 +786,48 @@ class SQLAlchemyVocabularyRepository:
                         f"Vocabulary source row {source_position} has a normalized term "
                         "that does not match the canonical language-aware normalization."
                     )
+                if duplicates is not None:
+                    match = _authored_match(session, language_code, record)
+                    if match["status"] != "new":
+                        entry = match["entry"]
+                        if match["status"] in {"published_conflict", "identity_conflict"}:
+                            conflict_count += 1
+                            skipped_count += 1
+                            skipped_details.append(
+                                {"position": source_position, "reason": match["reason"], "term": term,
+                                 "id": match["source_id"], "conflict": match["status"]}  # fmt: skip
+                            )
+                            continue
+                        duplicate_count += 1
+                        if duplicates == "skip":
+                            skipped_count += 1
+                            skipped_details.append(
+                                {"position": source_position, "reason": "duplicate id; skipped", "term": term,
+                                 "id": match["source_id"]}  # fmt: skip
+                            )
+                            continue
+                        _overwrite_entry(entry, record)
+                        entry.updated_at = now
+                        updated_count += 1
+                        membership = session.scalar(
+                            select(VocabularyCollectionMembership).where(
+                                VocabularyCollectionMembership.collection_id == collection_id,
+                                VocabularyCollectionMembership.entry_id == entry.id,
+                            )
+                        )
+                        if membership is None:
+                            session.add(
+                                VocabularyCollectionMembership(
+                                    id=uuid.uuid4(), collection_id=collection_id, entry_id=entry.id,
+                                    source_import_id=source_id, position=next_position + 1,
+                                    membership_metadata=_membership_metadata(record),
+                                )  # fmt: skip
+                            )
+                            next_position += 1
+                        else:
+                            membership.source_import_id = source_id
+                            membership.membership_metadata = _membership_metadata(record)
+                        continue
                 entry = session.scalar(
                     select(VocabularyEntry).where(VocabularyEntry.identity_key == identity_key)
                 )
@@ -893,7 +966,7 @@ class SQLAlchemyVocabularyRepository:
                 imported_count += 1
                 next_position += 1
 
-            import_row.status = "imported" if imported_count else "skipped"
+            import_row.status = "imported" if imported_count or updated_count else "skipped"
             import_row.imported_count = imported_count
             import_row.skipped_count = skipped_count
             import_row.duplicate_count = duplicate_count
@@ -916,10 +989,10 @@ class SQLAlchemyVocabularyRepository:
                 )
                 collection_row.level_range = _level_range(levels, collection_row.level)
 
-        return {
+        result = {
             "source_import_id": str(source_id),
             "filename": filename,
-            "status": "imported" if imported_count else "skipped",
+            "status": "imported" if imported_count or updated_count else "skipped",
             "imported": imported_count,
             "skipped": skipped_count,
             "duplicates": duplicate_count,
@@ -927,6 +1000,59 @@ class SQLAlchemyVocabularyRepository:
             "failed": 0,
             "failure_reason": "",
         }
+        if duplicates is not None:
+            # The authored-entry policy's own counts, and every refused row
+            # with its reason, so the result lists the conflicts it refused.
+            result.update(
+                updated=updated_count,
+                conflicts=conflict_count,
+                rows=[dict(item) for item in skipped_details],
+            )
+        return result
+
+    def classify_authored_records(
+        self, language_code: str, records: Iterable[Mapping[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """What importing each record would meet, read-only, for the preview (D-17V).
+
+        One answer per record, in order: `new`, `duplicate` (a stored entry in
+        no published set - the admin's overwrite/skip applies),
+        `published_conflict` (a stored entry in a published set - refused) or
+        `identity_conflict` (the authored id is already used by an entry with
+        another identity - refused). `same_word` lists other stored entries for
+        the same word, which are not duplicates but are worth seeing.
+        """
+
+        self._require_available()
+        language = _text(language_code).casefold()
+        out: list[dict[str, Any]] = []
+        with Session(self.engine) as session:
+            for record in records:
+                match = _authored_match(session, language, record)
+                normalized = _text(record.get("normalized_term"))
+                others = session.scalars(
+                    select(VocabularyEntry).where(
+                        VocabularyEntry.language_code == language,
+                        VocabularyEntry.normalized_term == normalized,
+                    )
+                ).all()
+                matched_id = match["entry"].id if match["entry"] is not None else None
+                out.append(
+                    {
+                        "identity_key": _text(record.get("identity_key")),
+                        "source_id": match["source_id"],
+                        "status": match["status"],
+                        "reason": match["reason"],
+                        "entry_id": str(matched_id) if matched_id else "",
+                        "published_collections": match["published_collections"],
+                        "same_word": [
+                            {"entry_id": str(other.id), "identity_key": other.identity_key}
+                            for other in others
+                            if other.id != matched_id
+                        ],
+                    }
+                )
+        return out
 
     def set_collection_status(
         self, collection_id: str, status: str, *, actor: str
@@ -1444,6 +1570,109 @@ def _merge_existing_entry(
     if source_marker not in sources:
         sources.append(source_marker)
     entry.provenance = {**existing_provenance, "sources": sources}
+
+
+# The admin's answer for an authored entry that is already stored (D-17V).
+AUTHORED_DUPLICATE_POLICIES = ("skip", "overwrite")
+# The content an authored overwrite replaces. Identity (`term`, `normalized_term`,
+# `identity_key`, `sense_key`, `language_code`) is what matched, so it stays.
+_AUTHORED_CONTENT_FIELDS = (
+    "pronunciations", "readings", "short_meanings", "detailed_definitions", "examples", "usage_notes",
+    "orthography", "content_origins",
+)
+_AUTHORED_SCALAR_FIELDS = ("part_of_speech", "level", "framework", "topic")
+
+
+def _published_collection_ids(session: Session, entry_id: uuid.UUID) -> list[str]:
+    return list(
+        session.scalars(
+            select(VocabularyCollection.id)
+            .join(VocabularyCollectionMembership, VocabularyCollectionMembership.collection_id == VocabularyCollection.id)
+            .where(
+                VocabularyCollectionMembership.entry_id == entry_id,
+                VocabularyCollection.catalog_status == "published",
+            )
+            .order_by(VocabularyCollection.id)
+        )
+    )
+
+
+def _authored_match(session: Session, language_code: str, record: Mapping[str, Any]) -> dict[str, Any]:
+    """Which stored entry an authored record is, and whether it may be written.
+
+    A match is the record's own identity (which carries the authored id as its
+    sense), or an entry for the same word imported under the same authored id
+    with another identity - a changed part of speech - which is refused rather
+    than guessed at.
+    """
+
+    provenance = record.get("provenance") if isinstance(record.get("provenance"), Mapping) else {}
+    source_id = _text(provenance.get("source_id"))
+    identity_key = _text(record.get("identity_key"))
+    answer: dict[str, Any] = {
+        "status": "new", "entry": None, "source_id": source_id, "reason": "", "published_collections": [],
+    }  # fmt: skip
+    entry = session.scalar(select(VocabularyEntry).where(VocabularyEntry.identity_key == identity_key))
+    if entry is None and source_id:
+        same_word = session.scalars(
+            select(VocabularyEntry).where(
+                VocabularyEntry.language_code == _text(language_code).casefold(),
+                VocabularyEntry.normalized_term == _text(record.get("normalized_term")),
+            )
+        ).all()
+        for candidate in same_word:
+            stored = candidate.provenance if isinstance(candidate.provenance, Mapping) else {}
+            if _text(stored.get("source_id")) == source_id:
+                answer.update(
+                    status="identity_conflict",
+                    entry=candidate,
+                    reason=f"id '{source_id}' is already used by an entry with another identity "
+                    f"({candidate.identity_key}); change the id or edit that entry",
+                )
+                return answer
+        return answer
+    if entry is None:
+        return answer
+    answer["entry"] = entry
+    published = _published_collection_ids(session, entry.id)
+    if published:
+        answer.update(
+            status="published_conflict",
+            published_collections=published,
+            reason="the entry is in a published set (" + ", ".join(published) + "); "
+            "published content is not changed by an import",
+        )
+        return answer
+    answer["status"] = "duplicate"
+    return answer
+
+
+def _overwrite_entry(entry: VocabularyEntry, record: Mapping[str, Any]) -> None:
+    """Replace an unpublished entry's content with an authored record's."""
+
+    for field in _AUTHORED_CONTENT_FIELDS:
+        fallback: Any = {} if field in {"orthography", "content_origins"} else []
+        setattr(entry, field, _copy_json(record.get(field), fallback))
+    for field in _AUTHORED_SCALAR_FIELDS:
+        setattr(entry, field, _text(record.get(field)))
+    existing = _copy_json(entry.provenance, {}) or {}
+    incoming = _copy_json(record.get("provenance"), {}) or {}
+    sources = existing.get("sources", []) if isinstance(existing.get("sources"), list) else []
+    marker = {key: incoming.get(key) for key in ("filename", "format", "row", "content_hash")}
+    if marker not in sources:
+        sources.append(marker)
+    entry.provenance = {**incoming, "sources": sources}
+
+
+def _membership_metadata(record: Mapping[str, Any]) -> dict[str, Any]:
+    provenance = record.get("provenance") if isinstance(record.get("provenance"), Mapping) else {}
+    return {
+        "source_row": provenance.get("row"),
+        "origin": "source",
+        "level": _text(record.get("level")),
+        "framework": _text(record.get("framework")),
+        "topic": _text(record.get("topic")),
+    }
 
 
 def _collection_summary(

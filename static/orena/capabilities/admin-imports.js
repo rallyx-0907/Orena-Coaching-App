@@ -87,6 +87,8 @@ export function vocabularyProblems({ files = [], previews = [], mappings = {}, m
   if (!String(metadata.title || '').trim()) problems.push({ key: 'validationTitle' });
   for (const preview of previews) {
     if (preview.error) continue;
+    // An authored entry file (docs/vocab, D-17V) is checked against its schema, not mapped by column.
+    if (preview.authored) continue;
     if (!mappings[preview.filename]?.term) problems.push({ key: 'validationTerm', file: preview.filename });
   }
   if (metadata.publish && !metadata.attested) problems.push({ key: 'validationAttest' });

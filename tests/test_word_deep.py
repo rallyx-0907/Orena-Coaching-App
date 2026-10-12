@@ -83,10 +83,10 @@ def test_combinations_come_from_the_catalogue_and_keep_their_reading():
     assert payload["script"] == "hanzi"
 
 
-def test_the_catalogue_usage_note_outranks_the_explained_mistake():
+def test_the_catalogue_common_mistake_note_outranks_the_explained_mistake():
     payload = word_deep.project_word_deep(
         word="想",
-        entry={"term": "想", "usage_notes": [{"text": "Not directly with a noun."}]},
+        entry={"term": "想", "usage_notes": [{"type": "common_mistake", "text": "Not directly with a noun."}]},
         saved=None,
         neighbours=(),
         layer={"commonMistake": "Something a model said."},
@@ -95,6 +95,29 @@ def test_the_catalogue_usage_note_outranks_the_explained_mistake():
         reading="",
     )
     assert payload["commonMistake"] == "Not directly with a noun."
+    assert payload["usage"] == []
+
+
+def test_a_usage_note_is_usage_and_never_shown_as_a_common_mistake():
+    """D-17V: a legacy note with no type, and a typed `usage` one, are usage. They stay in the payload
+    (`usage`) instead of being presented as the mistake; the explained mistake answers that row."""
+
+    payload = word_deep.project_word_deep(
+        word="想",
+        entry={"term": "想", "usage_notes": [
+            {"text": "Often followed by a verb."},
+            {"type": "usage", "text": "Softer than 要."},
+            {"type": "collocation", "text": "想家"},
+        ]},
+        saved=None,
+        neighbours=(),
+        layer={"commonMistake": "Something a model said."},
+        sentences=(),
+        readings=(),
+        reading="",
+    )
+    assert payload["usage"] == ["Often followed by a verb.", "Softer than 要."]
+    assert payload["commonMistake"] == "Something a model said."
 
 
 def test_where_it_was_met_is_only_said_when_something_was_recorded():

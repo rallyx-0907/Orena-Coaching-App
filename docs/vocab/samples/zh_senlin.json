@@ -1,0 +1,56 @@
+{
+  "id": "zh-Hans:senlin",
+  "lang": "zh-Hans",
+  "headword": "森林",
+  "level": { "scale": "HSK3", "value": "4", "source": "CẦN KIỂM TRA với danh sách HSK 3.0 (2021) — hiện lấy theo HSK 2.0" },
+  "pos": [{ "code": "noun", "label_native": "名词", "label_vi": "danh từ" }],
+  "meanings": [{ "vi": "rừng, rừng rậm", "en": "forest" }],
+  "illustration": { "kind": "library", "ref": "ink-pine-trees", "alt_vi": "Ba cây thông trước dãy núi, vẽ nét mực" },
+  "audio": { "tts": true },
+  "examples": [
+    {
+      "label_vi": "Nơi chốn",
+      "text": "这片森林里住着很多动物。",
+      "highlight": { "match": "森林" },
+      "reading": "Zhè piàn sēnlín lǐ zhùzhe hěn duō dòngwù.",
+      "reading_highlight": { "match": "sēnlín" },
+      "translation_vi": "Trong khu rừng này có rất nhiều động vật sinh sống.",
+      "explanation_vi": "片 là lượng từ cho vùng rộng; 森林里 = “trong rừng”."
+    },
+    {
+      "label_vi": "Làm tân ngữ",
+      "text": "我们应该保护森林。",
+      "highlight": { "match": "森林" },
+      "reading": "Wǒmen yīnggāi bǎohù sēnlín.",
+      "reading_highlight": { "match": "sēnlín" },
+      "translation_vi": "Chúng ta nên bảo vệ rừng.",
+      "explanation_vi": "Cụm hay gặp: 保护森林 (bảo vệ rừng)."
+    }
+  ],
+  "related": [
+    { "word": "树林", "relation": "related", "reading": "shùlín", "gloss_vi": "rừng cây" },
+    { "word": "森林火灾", "relation": "compound", "reading": "sēnlín huǒzāi", "gloss_vi": "cháy rừng" }
+  ],
+  "memory_tip_vi": "木 một cây → 林 hai cây thành rừng → 森 ba cây thành rừng rậm.",
+  "tags": ["topic:nature"],
+  "status": "draft",
+  "zh": {
+    "pinyin": "sēnlín",
+    "han_viet": "SÂM LÂM",
+    "chars": [
+      {
+        "hanzi": "森", "pinyin": "sēn", "han_viet": "SÂM", "strokes": 12,
+        "radical": { "char": "木", "pinyin": "mù", "name_vi": "Mộc", "meaning_vi": "cây" },
+        "components": ["木", "木", "木"]
+      },
+      {
+        "hanzi": "林", "pinyin": "lín", "han_viet": "LÂM", "strokes": 8,
+        "radical": { "char": "木", "pinyin": "mù", "name_vi": "Mộc", "meaning_vi": "cây" },
+        "components": ["木", "木"]
+      }
+    ],
+    "measure_words": [
+      { "mw": "片", "pinyin": "piàn", "phrase": "一片森林", "phrase_pinyin": "yí piàn sēnlín" }
+    ]
+  }
+}

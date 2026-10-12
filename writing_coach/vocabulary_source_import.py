@@ -114,12 +114,14 @@ def _format_for_filename(filename: str) -> str:
         return "tsv"
     if suffix == ".json":
         return "json"
+    if suffix in {".jsonl", ".ndjson"}:
+        return "jsonl"
     if suffix in {".txt", ".text"}:
         return "txt"
     if suffix in {".xlsx", ".xlsm"}:
         return "xlsx"
     raise VocabularySourceError(
-        "Unsupported vocabulary source format. Use CSV, TSV, JSON, or TXT."
+        "Unsupported vocabulary source format. Use CSV, TSV, JSON, JSONL, or TXT."
     )
 
 
@@ -208,6 +210,23 @@ def parse_vocabulary_source(filename: str, raw: bytes) -> ParsedVocabularySource
         except json.JSONDecodeError as exc:
             raise VocabularySourceError(f"Invalid JSON: {exc.msg}.") from exc
         headers, rows = _rows_from_json(payload)
+    elif source_format == "jsonl":
+        # One JSON object per line (D-17V): the same rows a JSON array gives,
+        # so everything downstream of parsing is shared with the JSON path.
+        objects: list[Any] = []
+        for line_number, line in enumerate(_decode_source(raw).splitlines(), start=1):
+            if not line.strip():
+                continue
+            if len(objects) >= MAX_SOURCE_ROWS:
+                raise _too_many_rows()
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise VocabularySourceError(f"Invalid JSON on line {line_number}: {exc.msg}.") from exc
+            if not isinstance(item, Mapping):
+                raise VocabularySourceError(f"JSONL line {line_number} must be a JSON object.")
+            objects.append(item)
+        headers, rows = _rows_from_json(objects)
     elif source_format == "txt":
         rows = []
         for match in _LINE.finditer(_decode_source(raw)):

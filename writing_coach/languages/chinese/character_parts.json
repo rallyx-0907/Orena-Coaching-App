@@ -671,6 +671,47 @@
           "gloss_vi": ""
         }
       ]
+    },
+    "林": {
+      "radical": {
+        "surface": "木",
+        "reading": "mù",
+        "gloss_en": "tree, wood",
+        "gloss_vi": "cây, gỗ"
+      },
+      "components": [
+        {
+          "surface": "木",
+          "reading": "mù",
+          "role": "semantic",
+          "gloss_en": "tree, wood",
+          "gloss_vi": "cây, gỗ"
+        }
+      ]
+    },
+    "森": {
+      "radical": {
+        "surface": "木",
+        "reading": "mù",
+        "gloss_en": "tree, wood",
+        "gloss_vi": "cây, gỗ"
+      },
+      "components": [
+        {
+          "surface": "木",
+          "reading": "mù",
+          "role": "semantic",
+          "gloss_en": "tree, wood",
+          "gloss_vi": "cây, gỗ"
+        },
+        {
+          "surface": "木",
+          "reading": "mù",
+          "role": "semantic",
+          "gloss_en": "tree, wood",
+          "gloss_vi": "cây, gỗ"
+        }
+      ]
     }
   }
 }

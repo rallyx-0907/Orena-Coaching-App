@@ -5576,3 +5576,44 @@ absent.
    tree; one maintenance window (stop, backup, plan, apply, deploy, start - the 0030 image refuses to start on a 0026
    database); rollback = `alembic downgrade 20261008_0030` (drops the records) or restore; after start, the warning stops
    and one priced call writes one row; the human's authorization recorded.
+
+## D-17V - The vocabulary card is the existing vocabulary entry, shown differently
+
+(Placeholder D-17V until merge.)
+
+Date: 2026-10-12. Human decisions of 2026-10-12 (lane `claude/vocab-card-import`), after the request to bring the
+EN/ZH flashcard design (Claude Design artifact "Flashcard từ vựng Anh – Trung", `docs/vocab/`) into the Words screens.
+
+1. **No card entity.** A flashcard is a presentation of the existing `vocabulary_entries` row. No new table, column,
+   migration, card API or card lifecycle. `vocabulary_entries` stays the source of truth; Save, `saved_words`, the
+   scheduler, TTS (`/api/vocabulary/{word}/audio`), Word Detail, Collection Detail, search and Review are reused as they
+   are. `docs/vocab/` (schema, README, the two samples) is committed as the authored-entry contract and test fixtures;
+   `writing_coach/vocabulary_entry.schema.json` is its byte-identical runtime copy (a test holds the two equal).
+2. **Typed `usage_notes`.** Entry-level card facts live as typed items in the existing JSON list `usage_notes`, with a
+   closed `type`: `collocation | synonym | antonym | word_family | related | classifier | memory_tip | usage |
+   common_mistake` (`writing_coach/vocabulary_usage_notes.py`). A legacy item with no type is `usage`. Free usage text is
+   never presented as a common mistake: `/api/library/vocabulary/{word}/deep` `commonMistake` reads only
+   `type: "common_mistake"` items and the payload gains `usage`. Example-level content (`highlight`, `reading`,
+   `reading_highlight`, language-tagged `label`/`translation`/`explanation`) lives as keys of each `examples` item; a
+   Chinese character's pinyin and Hán-Việt are orthography unit readings (`notation` `pinyin`/`han_viet`) - Hán-Việt
+   never goes into `readings`, where a second reading would stop a saved word linking to its entry.
+3. **Moderation stays per set.** pending_review → approved → published on the collection. The file's `status` is never
+   read into server state; an authored import always lands pending review (no auto-publish, even with cleared rights).
+   No per-entry moderation.
+4. **Published duplicates are blocked.** An authored row matching an entry in any published set is refused as a
+   conflict, listed in the preview and the import result: no overwrite, no membership snapshot, no unpublish. Overwrite
+   or skip (default skip) applies only to entries in sets that are not published. Editing published content is a
+   separate workflow under the existing lifecycle. The authored id is the entry's `sense_key`, so it is part of the
+   lexical identity; the same id under another identity (a changed part of speech) is refused, not guessed.
+5. **Pure mapper.** The learner-side `toVocabularyModel()` (PR 2) is a pure content mapper; saved state, review stage
+   and due date are an optional decorator applied by the caller, so the Admin preview renders the same component and
+   mapper with no learner context. Server side, `vocabulary_card_from_catalog_entry` carries no learner state and the
+   saved-word projection keeps it under its own `memory` key (tested).
+6. **Save and Review are separate.** Word Detail and the Feed offer Save, never a grade. A Review session contains only
+   words already in `saved_words`; nothing is saved silently. Flow: card → Save → `saved_words` → scheduler → Review.
+7. **Two review buttons.** "Not yet" → `again`, "Got it" → `got_it` on the existing
+   `POST /api/library/vocabulary/{word}/review`. `unsure` stays in the API for compatibility and is not surfaced.
+8. **Order.** PR 1 import adapter and projection support (this entry); PR 2 the shared `VocabularyCard` (modes `detail`,
+   `feed`, `review-front`, `review-back`) beside the compact `VocabularyRow`; PR 3 the Admin preview derived from A14
+   with the production card; PR 4 the two samples loaded on :8021 only. Open design items: `UI_BACKEND_GAPS.md`
+   "Vocabulary card (D-17V)".

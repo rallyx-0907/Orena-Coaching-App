@@ -196,13 +196,18 @@ export function vocabularyPage({ vocab, t, ui, href }) {
   const blocks = [stepsBlock({ span: true, items: stages })];
   if (step === 0) {
     blocks.push(formBlock({ span: true, fields: [
-      { id: 'vfiles', kind: 'file', label: t('impWordList'), span: true, fileLabel: vocab.files.length ? vocab.files.map((file) => file.name).join(', ') : t('impChooseList'), accept: t('impListAccept'), acceptAttr: '.csv,.tsv,.json,.txt,.xlsx', multiple: true },
+      { id: 'vfiles', kind: 'file', label: t('impWordList'), span: true, fileLabel: vocab.files.length ? vocab.files.map((file) => file.name).join(', ') : t('impChooseList'), accept: t('impListAccept'), acceptAttr: '.csv,.tsv,.json,.jsonl,.txt,.xlsx', multiple: true },
     ], error: vocab.errors.join(' '), actions: [{ label: vocab.previewing ? t('impChecking') : t('impPreviewFile'), kind: 'primary', a: 'vocab-preview', disabled: !vocab.files.length || vocab.previewing }] }));
   }
   if (step >= 1 && !vocab.results) {
     vocab.previews.forEach((preview, index) => {
       if (preview.error) {
         blocks.push(stateBlock({ span: true, title: preview.filename, kind: 'error', heading: t('impPreviewFailed'), text: preview.error }));
+        return;
+      }
+      if (preview.authored) {
+        // An authored entry file needs no column mapping; its server checks arrive as warnings (D-17V).
+        for (const warning of preview.warnings || []) blocks.push(banner({ tone: 'warn', title: warning }));
         return;
       }
       const headers = preview.headers || [];
