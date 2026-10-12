@@ -178,6 +178,7 @@ export function createRouter({ frame, getContext }) {
     root.dataset.focus = route.focus ? '1' : '0';
     root.dataset.bare = route.bare ? '1' : '0';
     root.dataset.route = route.id;
+    root.dataset.chromeStart = route.chrome || ''; // D-17Y option 1: a route may arrive with the phone chrome collapsed
     paint();
 
     const main = frame.main;

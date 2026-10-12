@@ -371,9 +371,15 @@ export default async function mountWordDetail(element, ctx) {
 
   const onResize = () => fitVocabularyCards(element, { viewport: true });
   window.addEventListener('resize', onResize);
+  // D-17Y option 1: on a phone this page arrives with the shell chrome collapsed and the card fits the whole height;
+  // when the chrome comes back (scroll up, a pull or a tap at the top, focus) the column gives it its room again and
+  // the card fits again, so the header and the bar never cover the card's actions.
+  const shellRoot = document.documentElement;
+  shellRoot.addEventListener('orena:chrome', onResize);
 
   return () => {
     window.removeEventListener('resize', onResize);
+    shellRoot.removeEventListener('orena:chrome', onResize);
     audio?.pause();
     strokeTiles?.stop();
   };

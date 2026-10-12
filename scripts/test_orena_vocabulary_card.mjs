@@ -755,6 +755,24 @@ for (const screen of ['review', 'feed']) {
   assert.match(src, /window\.addEventListener\('resize', onResize\)/, `${screen} fits again on resize`);
   assert.match(src, /window\.removeEventListener\('resize', onResize\)/, `${screen} lets go of resize`);
 }
+// Word Detail on a phone arrives with the shell chrome collapsed (D-17Y option 1): the fit then has no bar to stop
+// above and the column's whole height, less its bottom inset (here 20px).
+{
+  const doc = { documentElement: { dataset: { chrome: 'hidden' } }, querySelectorAll: () => [rect(650), rect(616, 58)], defaultView: { getComputedStyle: () => ({ paddingBottom: '20px', transform: 'none' }) } };
+  const column = { getBoundingClientRect: () => ({ bottom: 740 }), scrollTop: 0, ownerDocument: doc };
+  const props = new Map();
+  const collapsedCard = { dataset: {}, style: { setProperty: (n, v) => props.set(n, v) }, closest: () => column, getBoundingClientRect: () => ({ top: 76 }), parentElement: null };
+  fitVocabularyCards({ querySelectorAll: () => [collapsedCard], ownerDocument: doc }, { viewport: true });
+  assert.equal(props.get('--vcard-fit'), '628px', 'collapsed: 740 - 20 inset - 76 top - 16 gap, no bar');
+  doc.documentElement.dataset.chrome = 'shown';
+  fitVocabularyCards({ querySelectorAll: () => [collapsedCard], ownerDocument: doc }, { viewport: true });
+  assert.equal(props.get('--vcard-fit'), '524px', 'chrome back: the fit stops above the bar and its orb again (616 - 76 - 16)');
+}
+{
+  const src = readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8');
+  assert.match(src, /addEventListener\('orena:chrome', onResize\)/, 'Word Detail fits again when the chrome comes or goes');
+  assert.match(src, /removeEventListener\('orena:chrome', onResize\)/);
+}
 // Review and the Daily Feed are learning workspaces (focus routes): no phone bar there (rule 47); they fit their slot.
 const routesSrc = readFileSync(new URL('../static/orena/shell/routes.js', import.meta.url), 'utf8');
 for (const id of ['review', 'feed']) assert.match(routesSrc, new RegExp(`\{ id: '${id}',[^}]*focus: true`), `${id} is a focus route`);

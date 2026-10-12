@@ -165,10 +165,30 @@ assert.equal(nextChrome({ ...base, top: 0, delta: 300 }), '', 'the top resets wh
 assert.equal(nextChrome({ ...base, phone: false }), '', 'desktop: never');
 assert.equal(nextChrome({ ...base, browsing: false }), '', 'a learning workspace: never');
 assert.equal(nextChrome({ ...base, focused: true }), 'shown', 'a focused chrome control is never hidden');
+// Option 1 (the human, 2026-10-12): Word Detail on a phone ARRIVES collapsed; every other route arrives as drawn.
+const { arrivalChrome } = await import('../static/orena/shell/chrome-scroll.js');
+const collapsedRoutes = ROUTES.filter((route) => route.chrome === 'collapsed').map((route) => route.id);
+assert.deepEqual(collapsedRoutes, ['word'], 'only Word Detail starts collapsed');
+for (const route of ROUTES) {
+  const browsingRoute = !route.focus && !route.bare;
+  const start = arrivalChrome({ phone: true, browsing: browsingRoute, collapsed: route.chrome === 'collapsed' });
+  assert.equal(start, route.id === 'word' ? 'hidden' : '', `${route.id}: arrives ${route.id === 'word' ? 'collapsed' : 'with its chrome as drawn'} on a phone`);
+  assert.equal(arrivalChrome({ phone: false, browsing: browsingRoute, collapsed: route.chrome === 'collapsed' }), '', `${route.id}: the desktop never collapses`);
+}
+const collapsedTop = { phone: true, browsing: true, top: 0, collapsed: true };
+assert.equal(nextChrome({ ...collapsedTop, delta: 0 }), null, 'a collapsed route stays collapsed at the top (the router\'s own scroll reset reveals nothing)');
+assert.equal(nextChrome({ ...collapsedTop, delta: -40 }), 'shown', 'scrolling up to the top brings the chrome back');
+assert.equal(nextChrome({ ...collapsedTop, delta: 0, focused: true }), 'shown', 'focusing the chrome brings it back');
+assert.equal(nextChrome({ ...collapsedTop, top: 300, delta: -40 }), 'shown', 'scrolling up anywhere brings it back');
+assert.equal(nextChrome({ ...collapsedTop, top: 300, delta: 40 }), 'hidden');
 const chromeSrc = fs.readFileSync('static/orena/shell/chrome-scroll.js', 'utf8');
 assert.match(chromeSrc, /main\.addEventListener\('scroll'/, 'one listener, on the main column');
 assert.match(chromeSrc, /root\.dataset\.chrome = /, 'the state is data-chrome on the shell root');
 assert.match(chromeSrc, /addEventListener\('focusin'/, 'focus brings the chrome back');
+// The reveal is always reachable at the top: a pull (wheel / touch) or a tap on the page outside a control.
+for (const event of ['wheel', 'touchmove', 'click']) assert.ok(chromeSrc.includes(`main.addEventListener('${event}'`), `${event} at the top reveals the chrome`);
+assert.match(chromeSrc, /CustomEvent\('orena:chrome'/, 'a change is announced, so a fitted screen fits again');
+assert.match(fs.readFileSync('static/orena/shell/router.js', 'utf8'), /root\.dataset\.chromeStart = route\.chrome \|\| ''/, 'the router carries the route\'s start');
 const frameSrc = fs.readFileSync('static/orena/shell/frame.js', 'utf8');
 assert.match(frameSrc, /bindChromeScroll\(handles\.main\)/);
 assert.match(fs.readFileSync('static/orena/shell/router.js', 'utf8'), /main\.scrollTop = 0;\s*\n\s*frame\.resetChrome\?\.\(\)/, 'every route arrives with its chrome in place');
@@ -184,6 +204,8 @@ for (const part of ['o-mhead', 'o-bnav']) {
   assert.match(hidden[2], /transform: translateY\(/, `${part} hides by a transform`);
   assert.doesNotMatch(hidden[2], /display|height|margin|padding|position/, `${part}: hiding changes no layout`);
 }
+// Collapsed Word Detail gives its page the whole height (the room returns with the chrome); phone browsing only.
+assert.match(shellCss, /:root\[data-device='mobile'\]:not\(\[data-focus='1'\]\):not\(\[data-bare='1'\]\)\[data-chrome-start='collapsed'\]\[data-chrome='hidden'\] \.o-main \{[^}]*padding-top: env\(safe-area-inset-top, 0px\)/);
 assert.match(shellCss, /@media \(prefers-reduced-motion: reduce\) \{[^@]*\.o-mhead,[^@]*\.o-bnav \{[^}]*transition: none/, 'reduced motion: shown and hidden without the slide');
 // Desktop and the learning workspaces keep their layout: every rule that lays the chrome over the column is phone browsing.
 for (const [, sel, body] of [...shellCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)]) {

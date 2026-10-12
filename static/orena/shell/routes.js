@@ -14,7 +14,9 @@
    - `bare`     drawn with no rail, top bar, phone header or bar at all: onboarding, whose frames
                 (Onboarding.dc.html) are a separate full-window flow.
    - `admin`    a Platform Admin place (Orena-Admin.dc.html): drawn `bare` (no learner frame) with the
-                Admin's own shell, and only for an admin. `design` is the Admin state script's route key. */
+                Admin's own shell, and only for an admin. `design` is the Admin state script's route key.
+   - `chrome`   'collapsed': on a phone the route arrives with the phone header and bar hidden (D-17Y option 1,
+                shell/chrome-scroll.js); scrolling up, a pull or a tap at the top brings them back. Word Detail only. */
 
 export const PRIMARY = Object.freeze(['today', 'discover', 'orena', 'practice', 'library', 'progress']);
 
@@ -28,7 +30,7 @@ export const ROUTES = Object.freeze([
   { id: 'skillhub', path: 'practice/:skill', design: 'skillhub', screen: 'practice', focus: false, crumb: 'practiceHub' },
   { id: 'library', path: 'library', design: 'library', screen: 'library', focus: false, crumb: 'myLibrary', intent: 'vocabulary.my_language' },
   { id: 'collection', path: 'collection/:id', design: 'collection', screen: 'collection', focus: false, crumb: 'collection' },
-  { id: 'word', path: 'word/:id', design: 'word', screen: 'word', focus: false, crumb: 'word', intent: 'vocabulary.word' },
+  { id: 'word', path: 'word/:id', design: 'word', screen: 'word', focus: false, crumb: 'word', intent: 'vocabulary.word', chrome: 'collapsed' },
   { id: 'grammarlib', path: 'grammar', design: 'grammarlib', screen: 'grammar', focus: false, crumb: 'grammar', intent: 'grammar.catalog' },
   { id: 'progress', path: 'progress', design: 'progress', screen: 'progress', focus: false, crumb: 'progress', intent: 'progress' },
   { id: 'profile', path: 'profile', design: 'profile', screen: 'profile', focus: false, crumb: 'profile' },

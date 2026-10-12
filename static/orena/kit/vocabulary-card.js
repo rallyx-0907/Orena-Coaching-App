@@ -457,11 +457,12 @@ export function containCard(card) {
   return { s, ...scales, need: heights.need, available: heights.available, natural: natural.need };
 }
 
-/* The top of the bottom chrome drawn over the page (the phone bar and its orb), or Infinity when there is none.
-   Measured where the chrome rests, not where a hide-on-scroll transform has moved it (D-17Y): the card fits the
-   page as it arrives, chrome visible. */
+/* The top of the bottom chrome drawn over the page (the phone bar and its orb), or Infinity when there is none. While
+   the shell holds its chrome hidden (D-17Y: :root[data-chrome='hidden'], how Word Detail arrives on a phone) there is
+   none; otherwise it is measured where the bar rests, not where a running slide has moved it. */
 export function bottomChromeTop(root) {
   const doc = root?.ownerDocument || (typeof document !== 'undefined' ? document : null);
+  if (doc?.documentElement?.dataset?.chrome === 'hidden') return Infinity;
   const parts = doc?.querySelectorAll?.('[data-part="bnav"], [data-part="bnav"] .o-bnav__disc') || [];
   const view = doc?.defaultView;
   let top = Infinity;
@@ -477,6 +478,17 @@ export function bottomChromeTop(root) {
   return top;
 }
 
+/* The bottom a card may reach in its column: the column's bottom less its own bottom padding (the home indicator's
+   inset when the chrome is collapsed), or the window's. */
+function columnBottom(column) {
+  if (!column) return window.innerHeight;
+  const rect = column.getBoundingClientRect();
+  const view = column.ownerDocument?.defaultView;
+  const padding = view?.getComputedStyle ? parseFloat(view.getComputedStyle(column).paddingBottom) || 0 : 0;
+  const hidden = column.ownerDocument?.documentElement?.dataset?.chrome === 'hidden';
+  return rect.bottom - (hidden ? padding : 0);
+}
+
 export function fitVocabularyCards(root, { viewport = false, bottomGap = 16 } = {}) {
   root?.querySelectorAll?.('.c-vcard').forEach((card) => {
     if (viewport) {
@@ -484,7 +496,7 @@ export function fitVocabularyCards(root, { viewport = false, bottomGap = 16 } = 
       // higher, the top of any bottom chrome over it - the phone bar and the Orena orb that rises above it (rule 47:
       // the browsing places have one) - so the card and its turn action never sit under it.
       const column = card.closest('.o-main');
-      const bottom = Math.min(column ? column.getBoundingClientRect().bottom : window.innerHeight, bottomChromeTop(root));
+      const bottom = Math.min(columnBottom(column), bottomChromeTop(root));
       const top = card.getBoundingClientRect().top + (column ? column.scrollTop : window.scrollY || 0);
       const available = Math.max(320, Math.floor(bottom - top - bottomGap));
       card.style.setProperty('--vcard-fit', `${available}px`);

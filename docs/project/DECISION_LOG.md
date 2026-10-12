@@ -5799,3 +5799,17 @@ the top of the page.
   surface so the page does not run through its controls; the design draws the header only at rest.
 - Gated in scripts/test_orena_shell.mjs (phone-only scope, the state attribute, the transform, reduced motion, the top
   reset, focus).
+- **Word Detail arrives collapsed (human decision 2026-10-12, option 1).** With the chrome showing on arrival the
+  card had about 474px at 360x740 (a thin illustration band, secondary text near its floors). On a phone, Word Detail
+  (`#/word/:id`, `route.chrome = 'collapsed'`, `:root[data-chrome-start='collapsed']`) now opens with the header and
+  the phone bar already hidden by the same `data-chrome="hidden"`; only the screen's own back row stays, at the top.
+  While collapsed the column gives up the chrome's room (padding-top the status-bar inset, padding-bottom the
+  home-indicator inset), so the card fits the whole height (card top to the window's bottom, less the inset and a
+  16px gap). The chrome comes back on scroll up, on a pull (wheel / touch) or a tap on the page outside a control at
+  the top, and when a chrome control takes the focus - the learner is never left without navigation. The rule when it
+  comes back: the column takes the chrome's room again and the card **fits again** (the shell announces every change as
+  `orena:chrome`; Word Detail re-runs `fitVocabularyCards`), so the header and bar never cover the card's actions.
+  Every other browsing place keeps "visible at the top, hidden on scroll"; desktop and learning workspaces unchanged.
+  Gated in scripts/test_orena_shell.mjs (only Word Detail arrives collapsed, only on a phone; the top stays collapsed
+  until the learner reveals it; the reveal listeners) and scripts/test_orena_vocabulary_card.mjs (the collapsed fit
+  has no bar and the column's whole height; it stops above the bar again when the chrome returns).

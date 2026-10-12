@@ -558,6 +558,13 @@
 :root[data-device='mobile']:not([data-focus='1']):not([data-bare='1'])[data-chrome='hidden'] .o-bnav {
   transform: translateY(calc(100% + 34px + max(18px, calc(env(safe-area-inset-bottom, 0px) - 10px))));
 }
+/* A route that arrives collapsed (Word Detail, D-17Y option 1): while the chrome is hidden the column does not keep its
+   room, so the page has the whole height - its own back row at the top, the window's bottom (less the home indicator)
+   below. When the chrome comes back the room returns and the screen fits again (the `orena:chrome` event). */
+:root[data-device='mobile']:not([data-focus='1']):not([data-bare='1'])[data-chrome-start='collapsed'][data-chrome='hidden'] .o-main {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 /* Back over a page that is not at its top, the header is the phone bar's surface, so the page does not run through
    its controls. At the top (no data-chrome) it is as the design draws it. */
 :root[data-device='mobile']:not([data-focus='1']):not([data-bare='1'])[data-chrome] .o-mhead {
