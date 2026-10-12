@@ -337,12 +337,12 @@ for (const [sel, body] of cssRulesAll) {
     assert.ok(!/^\d+(\.\d+)?px$/.test(value.trim()), `${sel}: content font-size ${value} is a fixed px, not the width scale`);
   }
 }
-function sizeOf(selector, prop, { width, height = 1080, len = 1, em = 16 }) {
+function sizeOf(selector, prop, { width, height = 1080, len = 1, em = 16, ks = 1, kt = 1 }) {
   const rule = cssRulesAll.find(([sel]) => sel === selector);
   assert.ok(rule, `${selector} is styled`);
   let expr = (rule[1].match(new RegExp(`(?:^|[;\\s])${prop}:\\s*([^;]+);`)) || [])[1];
   assert.ok(expr, `${selector} sets ${prop}`);
-  expr = expr.replace(/var\(--len, 1\)/g, String(len))
+  expr = expr.replace(/var\(--len, 1\)/g, String(len)).replace(/var\(--vc-ks, 1\)/g, String(ks)).replace(/var\(--vc-kt, 1\)/g, String(kt))
     .replace(/(\d+(?:\.\d+)?)px/g, '$1').replace(/(\d+(?:\.\d+)?)cqi/g, `($1*${width}/100)`)
     .replace(/(\d+(?:\.\d+)?)dvh/g, `($1*${height}/100)`).replace(/(\d+(?:\.\d+)?)em/g, `($1*${em})`)
     .replace(/\bcalc\(/g, '(').replace(/\bmin\(/g, 'Math.min(').replace(/\bmax\(/g, 'Math.max(').replace(/\bclamp\(/g, 'clampFn(');
@@ -395,13 +395,27 @@ assert.match(cardCss, /\.c-vcard--detail \{[^}]*max-height: var\(--vcard-fit, ca
 assert.match(cardCss, /\.c-vcard--feed,\s*\.c-vcard--review-back \{[^}]*max-height: 100%/);
 // All content stays on a phone: no rule drops the illustration (or anything) on a short card.
 assert.doesNotMatch(cardCss, /data-fit/, 'no short-card rule drops content');
-// The head and the foot are outside the face body (the only scroll region).
+// A face is head, body, foot - and NOTHING in it scrolls (the human, 2026-10-12, D-17X): no scroll region in the
+// markup, no overflow auto/scroll on the card, a face or its body.
 for (const face of ['front', 'back']) {
   const markup = faceOf(enCard, face);
-  const bodyAt = markup.indexOf('<div class="c-vcard__body" data-scroll-region>');
+  const bodyAt = markup.indexOf('<div class="c-vcard__body">');
+  assert.ok(bodyAt > -1, `${face}: has a body`);
   assert.ok(markup.indexOf('c-vcard__head') > -1 && markup.indexOf('c-vcard__head') < bodyAt, `${face}: the head is before the body, outside it`);
   assert.ok(markup.indexOf('c-vcard__foot') > bodyAt, `${face}: the foot is after the body`);
-  assert.equal((markup.match(/data-scroll-region/g) || []).length, 1, `${face}: one scroll region, the body`);
+  assert.doesNotMatch(markup, /data-scroll-region/, `${face}: no scroll region in a face`);
+}
+{
+  const noComments = cardCss.replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const [, selector, body] of noComments.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+    assert.doesNotMatch(body, /overflow(-[xy])?:\s*(auto|scroll)/, `${selector.trim()}: nothing on the card scrolls`);
+  }
+  for (const css of ['review/review.css', 'feed/feed.css', 'word/word.css']) {
+    const screenCss = readFileSync(new URL(`../static/orena/screens/${css}`, import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const [, selector, body] of screenCss.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+      if (/c-vcard/.test(selector)) assert.doesNotMatch(body, /overflow(-[xy])?:\s*(auto|scroll)/, `${css} ${selector.trim()}: a card face never scrolls`);
+    }
+  }
 }
 assert.ok(faceOf(enCard, 'front').indexOf('c-vcard__top') < faceOf(enCard, 'front').indexOf('c-vcard__body'), 'the top row stays in the head');
 assert.match(cardCss, /\.c-vcard__head \{[^}]*flex: none/);
@@ -438,10 +452,80 @@ const phoneRoot = {
 };
 fitVocabularyCards(phoneRoot, { viewport: true });
 assert.equal(underBar.props.get('--vcard-fit'), '474px', 'max-height ends above the bar and its orb (616 - 126 - 16)');
-assert.equal(underBar.dataset.fit, 'short', 'recorded as short; the body scrolls, nothing is dropped');
+assert.equal(underBar.dataset.fit, 'short', 'recorded as short; the face is contained, nothing is dropped');
 const hiddenBar = fakeCard({ top: 126, columnBottom: 740 });
 fitVocabularyCards({ querySelectorAll: () => [hiddenBar], ownerDocument: { querySelectorAll: () => [rect(0, 0)] } }, { viewport: true });
 assert.equal(hiddenBar.props.get('--vcard-fit'), '598px', 'a bar that is not displayed (desktop, focus routes) changes nothing');
+// CONTAIN (the human, 2026-10-12): s = min(widthScale, heightScale). The CSS gives the width scale; the fit gives the
+// height scale - spacing and the illustration (--vc-ks) first, the type (--vc-kt) last, never under the hard floors.
+const { containStep, containCard, CONTAIN_SPACE_MIN, CONTAIN_TYPE_MIN } = await import('../static/orena/kit/vocabulary-card.js');
+assert.deepEqual(containStep(500, 480), { ks: 1, kt: 1, done: true }, 'a face that fits is left at the width scale');
+{
+  const first = containStep(400, 500);
+  assert.equal(first.kt, 1, 'the type waits');
+  assert.ok(Math.abs(first.ks - 0.8) < 1e-9, 'spacing and art shrink first, by the ratio');
+  const floorSpace = containStep(100, 500, { ks: 0.8, kt: 1 });
+  assert.equal(floorSpace.ks, CONTAIN_SPACE_MIN, 'spacing stops at its minimum');
+  const typeNext = containStep(400, 500, { ks: CONTAIN_SPACE_MIN, kt: 1 });
+  assert.ok(typeNext.ks === CONTAIN_SPACE_MIN && Math.abs(typeNext.kt - 0.8) < 1e-9, 'then the type');
+  assert.equal(containStep(100, 500, { ks: CONTAIN_SPACE_MIN, kt: 0.9 }).kt, CONTAIN_TYPE_MIN, 'the type stops at its minimum');
+  assert.equal(containStep(100, 500, { ks: CONTAIN_SPACE_MIN, kt: CONTAIN_TYPE_MIN }).done, true, 'and the steps end');
+}
+// At the type minimum every floor is the hard floor: body / meaning / example 11px, labels and tags 9.5px, pinyin and
+// IPA 10px - and no lower, however narrow or short the card.
+for (const at of [{ width: 328, height: 740, kt: CONTAIN_TYPE_MIN, ks: CONTAIN_SPACE_MIN }, { width: 200, height: 400, kt: 0.2, ks: 0.2 }]) {
+  const small = sizes(at);
+  for (const key of ['meaning', 'definition', 'body', 'exampleEn', 'exampleZh']) assert.ok(small[key] >= 11 - 1e-9, `${key} >= 11px: ${small[key]}`);
+  for (const key of ['label', 'level', 'chip']) assert.ok(small[key] >= 9.5 - 1e-9, `${key} >= 9.5px: ${small[key]}`);
+  for (const key of ['ipa', 'regionLabel']) assert.ok(small[key] >= 10 - 1e-9, `${key} >= 10px: ${small[key]}`);
+  assert.ok(small.artEn > 0 && small.artZh > 0, 'the illustration stays, smaller');
+}
+{
+  const tight = sizes({ width: 328, height: 740, kt: CONTAIN_TYPE_MIN, ks: CONTAIN_SPACE_MIN });
+  assert.equal(tight.body, 11, 'body reaches exactly its hard floor');
+  assert.equal(tight.label, 9.5, 'labels reach exactly theirs');
+  assert.equal(tight.ipa, 10, 'IPA reaches exactly its');
+  assert.ok(Math.abs(tight.artEn - phoneSizes.artEn * CONTAIN_SPACE_MIN) < 0.01, 'the illustration follows the spacing knob');
+}
+// The buttons are not scaled: their rules never read the knobs.
+for (const [sel, body] of cssRulesAll) if (isButton(sel)) assert.doesNotMatch(body, /--vc-k[st]/, `${sel}: a button keeps its size`);
+// The loop on a fake face whose need follows the knobs: it lands inside the box and records s.
+function fakeFaceCard({ available, head, body, foot }) {
+  const props = new Map([['--vc-ks', '1'], ['--vc-kt', '1']]);
+  const k = (name) => Number(props.get(name));
+  // Spacing is 40% of the body's height, type 60%; head and foot are type and spacing half and half.
+  const bodyNeed = () => body * (0.4 * k('--vc-ks') + 0.6 * k('--vc-kt'));
+  const partNeed = (h) => h * (0.5 * k('--vc-ks') + 0.5 * k('--vc-kt'));
+  const parts = {
+    head: { getBoundingClientRect: () => ({ height: partNeed(head) }) },
+    foot: { getBoundingClientRect: () => ({ height: foot }) },
+    body: { get scrollHeight() { return bodyNeed(); } },
+  };
+  const face = { hidden: false, clientHeight: available, querySelector: (q) => parts[q.match(/c-vcard__(\w+)/)[1]] };
+  return { props, dataset: {}, style: { setProperty: (name, value) => props.set(name, String(value)) }, querySelectorAll: () => [face] };
+}
+{
+  const fits = fakeFaceCard({ available: 600, head: 60, body: 400, foot: 64 });
+  const result = containCard(fits);
+  assert.equal(result.s, 1, 'room enough: s = 1');
+  assert.equal(fits.props.get('--vc-ks'), '1.0000');
+  const tall = fakeFaceCard({ available: 520, head: 60, body: 560, foot: 64 });
+  const tallResult = containCard(tall);
+  assert.ok(tallResult.need <= 520.5, `contained: ${tallResult.need} <= 520`);
+  assert.ok(tallResult.s < 1 && Number(tall.props.get('--vcard-s')) === Number(tallResult.s.toFixed(4)), 'the height scale is recorded');
+  assert.equal(tall.dataset.vcardFits, 'yes');
+  assert.ok(tallResult.ks < 1, 'spacing moved');
+  const mild = containCard(fakeFaceCard({ available: 640, head: 60, body: 560, foot: 64 }));
+  assert.equal(mild.kt, 1, 'a small excess is taken from spacing and art only');
+}
+// It re-fits on resize (every screen) and on turn (the other face fits on its own).
+const kitSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
+assert.match(kitSrc.slice(kitSrc.indexOf('export function bindVocabularyCards')), /containCard\(card\)/, 'turning a card fits the face it shows');
+for (const screen of ['review', 'feed']) {
+  const src = readFileSync(new URL(`../static/orena/screens/${screen}/screen.js`, import.meta.url), 'utf8');
+  assert.match(src, /window\.addEventListener\('resize', onResize\)/, `${screen} fits again on resize`);
+  assert.match(src, /window\.removeEventListener\('resize', onResize\)/, `${screen} lets go of resize`);
+}
 // Review and the Daily Feed are learning workspaces (focus routes): no phone bar there (rule 47); they fit their slot.
 const routesSrc = readFileSync(new URL('../static/orena/shell/routes.js', import.meta.url), 'utf8');
 for (const id of ['review', 'feed']) assert.match(routesSrc, new RegExp(`\{ id: '${id}',[^}]*focus: true`), `${id} is a focus route`);
@@ -459,7 +543,8 @@ assert.match(readFileSync(new URL('../static/orena/screens/feed/screen.js', impo
 const cssRules = [...cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)].map(([, selector, body]) => [selector.trim(), body]);
 const isButtonRule = (selector) => /\.c-vcard__(turn|disc)|o-btn/.test(selector);
 for (const [selector, body] of cssRules) {
-  for (const [, prop, value] of body.matchAll(/(color|background|border(?:-\w+)?|outline|fill|stroke):\s*([^;]+);/g)) {
+  // A colour property (border-radius is a size: it reads the fit's spacing knob, not a colour).
+  for (const [, prop, value] of body.matchAll(/(color|background|border(?:-(?!radius)\w+)?|outline|fill|stroke):\s*([^;]+);/g)) {
     for (const used of value.matchAll(/var\(--([\w-]+)/g)) {
       if (isButtonRule(selector)) assert.ok(!used[1].startsWith('vcard-'), `${selector}: a button uses the app's tokens, not ${used[1]}`);
       else assert.ok(used[1].startsWith('vcard-'), `${selector} ${prop}: ${value} uses an app token on the card's content`);
@@ -472,10 +557,11 @@ assert.match(cardCss, /\.c-vcard__hanrow \.c-vcard__word \{[^}]*min-width: min-c
 assert.doesNotMatch(cardCss, /position:\s*absolute/, 'nothing on the card is absolutely positioned over another block');
 assert.ok(faceOf(vocabularyCard(toVocabularyModel({ word: '森林火灾', language_code: 'zh' }, { supportLanguage: 'vi' }), { mode: 'detail' }), 'front').includes('style="--len:4"'), 'a four-character word fits by its own length');
 assert.doesNotMatch(cardCss, /@media/, 'no width media query (rule 49 recomposes by the pairs\' own columns)');
-// Each face: a body that scrolls inside itself, a foot that keeps the turn action in view.
-assert.match(cardCss, /\.c-vcard__body \{[^}]*min-height: 0;[^}]*overflow-y: auto/, 'each face body is its own scroll region');
+// Each face: a body that never scrolls (the fit contains it), a foot that keeps the turn action in view.
+assert.match(cardCss, /\.c-vcard__body \{[^}]*min-height: 0;/, 'the body shares the face height');
+assert.doesNotMatch(cardCss.match(/\.c-vcard__body \{[^}]*\}/)[0], /overflow/, 'the face body does not scroll');
 assert.match(cardCss, /\.c-vcard__foot \{[^}]*flex: none/, 'the turn action never shrinks out of view');
-assert.ok(enCard.includes('<div class="c-vcard__body" data-scroll-region>'));
+assert.ok(enCard.includes('<div class="c-vcard__body">'));
 // Review: the card fills its face; the grades are outside the card and never shrink.
 assert.match(reviewSrc, /\$\{vocabularyCard\(model, \{ mode: 'review-back'/);
 const gradesAt = reviewSrc.indexOf('<div class="s-review-grades">');

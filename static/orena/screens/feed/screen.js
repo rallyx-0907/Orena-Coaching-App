@@ -121,7 +121,7 @@ export default async function mountFeed(element, ctx) {
     const rail = element.querySelector('.s-feed-rail');
     if (rail && scrolled) rail.scrollLeft = scrolled;
     bind();
-    hydrateStrokes(element, api.chineseStrokeOrder, ctx.isCurrent).catch(() => {});
+    hydrateStrokes(element, api.chineseStrokeOrder, ctx.isCurrent).then(() => fitVocabularyCards(element)).catch(() => {});
   }
 
   function bind() {
@@ -211,9 +211,14 @@ export default async function mountFeed(element, ctx) {
     });
   }
 
+  // A card face never scrolls: it fits its slot again whenever the window changes (D-17X).
+  const onResize = () => fitVocabularyCards(element);
+  window.addEventListener('resize', onResize);
+
   paint();
 
   return () => {
+    window.removeEventListener('resize', onResize);
     audio?.pause();
   };
 }

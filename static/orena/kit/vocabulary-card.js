@@ -334,7 +334,7 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
   return html`<article class="${cls('c-vcard', `c-vcard--${mode}`, han && 'c-vcard--han')}" data-vcard-mode="${mode}" data-face="front">
     <div class="c-vcard__face c-vcard__face--front" id="${id}-front">
       ${frontHead ? html`<div class="c-vcard__head">${frontHead}</div>` : ''}
-      <div class="c-vcard__body" data-scroll-region>${front}${slots.strokes || ''}</div>
+      <div class="c-vcard__body">${front}${slots.strokes || ''}</div>
       <div class="c-vcard__foot">
         ${footer(learner, slots.footer)}
         <button type="button" class="o-btn o-btn--primary c-vcard__turn" data-vcard-turn="back" aria-controls="${id}-back">${t('seeExamples')}</button>
@@ -342,7 +342,7 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
     </div>
     <div class="c-vcard__face c-vcard__face--back" id="${id}-back" hidden>
       ${backFace.head}
-      <div class="c-vcard__body" data-scroll-region>${backFace.body}</div>
+      <div class="c-vcard__body">${backFace.body}</div>
       <div class="c-vcard__foot c-vcard__foot--back">
         <button type="button" class="o-btn o-btn--secondary c-vcard__turn" data-vcard-turn="front" aria-controls="${id}-front">${t('backToFront')}</button>
       </div>
@@ -350,27 +350,107 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
   </article>`;
 }
 
-/* Fits each card to the height it has (rule 49, CLAUDE.md 6b). `viewport: true` (Word Detail, a browsing page): the
-   card's max-height is the visible height of its scrolling column below the card's top, so on arrival the whole card -
-   actions included - is in view. Otherwise the card already sits in a bounded slot (Review's face, the feed's card).
-   `data-fit` records whether the card had less than SHORT_CARD_PX (information only): no content is dropped on a short
-   card - its body scrolls inside it, head and foot fixed (the human, 2026-10-12). */
+/* Fits each card to the height it has (rule 49, CLAUDE.md 6b), and its face to the card: a face NEVER scrolls inside
+   (the human, 2026-10-12, D-17X). Two steps.
+   1. The box. `viewport: true` (Word Detail, a browsing page): the card's max-height is the visible height of its
+      scrolling column below the card's top, above the phone bar and its orb, so on arrival the whole card - actions
+      included - is in view. Otherwise the card already sits in a bounded slot (Review's face, the feed's card).
+      `data-fit` records whether the card had less than SHORT_CARD_PX (information only).
+   2. Contain. The composition is already scaled to the card's WIDTH by the CSS (cqi, from the 520px artboard). When
+      the face's natural height at that scale is taller than the box, the card scales it to the box's HEIGHT too:
+      s = min(widthScale, heightScale). Spacing and the illustration shrink first (--vc-ks), the type last (--vc-kt),
+      down to the hard floors kit/vocabulary-card.css sets (body / meaning / example 11px, labels and tags 9.5px,
+      pinyin and IPA 10px). Every element stays - the illustration included; the buttons keep 44px+. The achieved
+      height scale is recorded as --vcard-s and data-vcard-s. */
 export const SHORT_CARD_PX = 620;
+/* How far each knob may go. Spacing and the illustration first, to half; then the type, whose floors bind first. */
+export const CONTAIN_SPACE_MIN = 0.5;
+export const CONTAIN_TYPE_MIN = 0.55;
+const CONTAIN_STEPS = 8;
 
-/* The top of the bottom chrome drawn over the page (the phone bar and its orb), or Infinity when there is none. */
+/* One contain step (pure, so the gate can drive it): given the space the face has, the height its content needs at the
+   current knobs and, when there is one, the step before (its knobs and need), the next knobs. Spacing goes first; the
+   type moves only once spacing is at its minimum. The first move on a knob is by the ratio; after that the need is
+   taken as linear in the knob (secant), which lands on the box in a step or two. */
+export function containStep(available, need, { ks = 1, kt = 1 } = {}, previous = null) {
+  if (!(need > 0) || need <= available + 0.5) return { ks, kt, done: true };
+  const knob = ks > CONTAIN_SPACE_MIN + 1e-3 ? 'ks' : kt > CONTAIN_TYPE_MIN + 1e-3 ? 'kt' : null;
+  if (!knob) return { ks, kt, done: true };
+  const min = knob === 'ks' ? CONTAIN_SPACE_MIN : CONTAIN_TYPE_MIN;
+  const now = knob === 'ks' ? ks : kt;
+  let next = now * Math.max(0.2, available / need);
+  const before = previous?.[knob];
+  if (Number.isFinite(before) && before - now > 1e-4 && previous.need > need) {
+    const slope = (previous.need - need) / (before - now);
+    next = now - (need - available + 0.5) / slope;
+  }
+  next = Math.max(min, Math.min(now - 1e-3, next));
+  return knob === 'ks' ? { ks: next, kt, done: false } : { ks, kt: next, done: false };
+}
+
+/* The face showing: the height its content needs (head + the body's whole content + foot) and the height it has. */
+function faceHeights(card) {
+  const face = [...card.querySelectorAll('.c-vcard__face')].find((node) => !node.hidden);
+  if (!face) return null;
+  const part = (name) => face.querySelector(`:scope > .c-vcard__${name}`);
+  const head = part('head')?.getBoundingClientRect().height || 0;
+  const foot = part('foot')?.getBoundingClientRect().height || 0;
+  const body = part('body');
+  const need = head + (body ? body.scrollHeight : 0) + foot;
+  return { available: face.clientHeight, need };
+}
+
+function setScales(card, ks, kt) {
+  card.style.setProperty('--vc-ks', ks.toFixed(4));
+  card.style.setProperty('--vc-kt', kt.toFixed(4));
+}
+
+/* Step 2 for one card: from the width scale (knobs at 1), measure, step, repeat until the face fits. */
+export function containCard(card) {
+  if (typeof card?.querySelectorAll !== 'function') return null;
+  let scales = { ks: 1, kt: 1 };
+  setScales(card, 1, 1);
+  const natural = faceHeights(card);
+  if (!natural) return null;
+  let heights = natural;
+  let previous = null;
+  for (let step = 0; step < CONTAIN_STEPS; step += 1) {
+    const next = containStep(heights.available, heights.need, scales, previous);
+    if (next.done) break;
+    previous = { ...scales, need: heights.need };
+    scales = { ks: next.ks, kt: next.kt };
+    setScales(card, scales.ks, scales.kt);
+    heights = faceHeights(card);
+  }
+  const s = natural.need > 0 ? Math.min(1, heights.need / natural.need) : 1;
+  card.style.setProperty('--vcard-s', s.toFixed(4));
+  card.dataset.vcardS = s.toFixed(3);
+  card.dataset.vcardFits = heights.need <= heights.available + 0.5 ? 'yes' : 'no';
+  return { s, ...scales, need: heights.need, available: heights.available, natural: natural.need };
+}
+
+/* The top of the bottom chrome drawn over the page (the phone bar and its orb), or Infinity when there is none.
+   Measured where the chrome rests, not where a hide-on-scroll transform has moved it (D-17Y): the card fits the
+   page as it arrives, chrome visible. */
 export function bottomChromeTop(root) {
   const doc = root?.ownerDocument || (typeof document !== 'undefined' ? document : null);
   const parts = doc?.querySelectorAll?.('[data-part="bnav"], [data-part="bnav"] .o-bnav__disc') || [];
+  const view = doc?.defaultView;
   let top = Infinity;
   for (const part of parts) {
     const rect = part.getBoundingClientRect();
-    if (rect.height > 0 && rect.width > 0) top = Math.min(top, rect.top);
+    if (!(rect.height > 0 && rect.width > 0)) continue;
+    let shift = 0;
+    const bar = part.closest?.('[data-part="bnav"]');
+    const transform = bar && view?.getComputedStyle ? view.getComputedStyle(bar).transform : 'none';
+    if (transform && transform !== 'none' && typeof view.DOMMatrixReadOnly === 'function') shift = new view.DOMMatrixReadOnly(transform).m42;
+    top = Math.min(top, rect.top - shift);
   }
   return top;
 }
 
 export function fitVocabularyCards(root, { viewport = false, bottomGap = 16 } = {}) {
-  root?.querySelectorAll?.('.c-vcard:not(.c-vcard--review-front)').forEach((card) => {
+  root?.querySelectorAll?.('.c-vcard').forEach((card) => {
     if (viewport) {
       // Measured as if the column were at its top: arrival is what must fit. The limit is the column's bottom or,
       // higher, the top of any bottom chrome over it - the phone bar and the Orena orb that rises above it (rule 47:
@@ -386,7 +466,14 @@ export function fitVocabularyCards(root, { viewport = false, bottomGap = 16 } = 
       const slot = card.parentElement?.getBoundingClientRect().height || 0;
       card.dataset.fit = slot && slot < SHORT_CARD_PX ? 'short' : 'full';
     }
+    containCard(card);
   });
+  // Web fonts change the measure once they arrive: fit again then, once per document.
+  const fonts = root?.ownerDocument?.fonts;
+  if (fonts?.ready && !root.dataset?.vcardFontsFit) {
+    root.dataset.vcardFontsFit = '1';
+    fonts.ready.then(() => root.isConnected && fitVocabularyCards(root, { viewport, bottomGap })).catch(() => {});
+  }
 }
 
 /* Turns a card between its faces (a real button each way, so the keyboard does it too), and gives the
@@ -401,6 +488,7 @@ export function bindVocabularyCards(root) {
       card.dataset.face = to;
       card.querySelector('.c-vcard__face--front').hidden = to !== 'front';
       card.querySelector('.c-vcard__face--back').hidden = to !== 'back';
+      containCard(card); // the other face fits on its own (a face never scrolls)
       card.querySelector(`.c-vcard__face--${to} [data-vcard-turn]`)?.focus({ preventScroll: true });
     });
   });

@@ -361,7 +361,7 @@ export default async function mountReview(element, ctx) {
       return;
     }
 
-    hydrateStrokes(element, api.chineseStrokeOrder, ctx.isCurrent).catch(() => {});
+    hydrateStrokes(element, api.chineseStrokeOrder, ctx.isCurrent).then(() => fitVocabularyCards(element)).catch(() => {});
 
     element.querySelectorAll('[data-grade]').forEach((button) => {
       button.addEventListener('click', async () => {
@@ -408,11 +408,15 @@ export default async function mountReview(element, ctx) {
     drain().catch(() => {});
   };
   window.addEventListener('online', onOnline);
+  // A card face never scrolls: it fits its slot again whenever the window changes (D-17X).
+  const onResize = () => fitVocabularyCards(element);
+  window.addEventListener('resize', onResize);
 
   paint();
 
   return () => {
     window.removeEventListener('online', onOnline);
+    window.removeEventListener('resize', onResize);
     audio?.pause();
   };
 }
