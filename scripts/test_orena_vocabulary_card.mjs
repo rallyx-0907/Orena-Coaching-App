@@ -317,6 +317,11 @@ const sized = [...cardCss.matchAll(/([^{}]+)\{([^}]*)\}/g)]
   .filter(([, , body]) => /(^|\s|;)(width|height|min-width|min-height):\s*\d+px/.test(body))
   .map(([, selector]) => selector.trim());
 assert.deepEqual(sized, ['.c-vcard__turn', '.c-vcard__disc', '.c-vcard__ipa .c-vcard__disc', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
+// The Hanzi row wraps instead of overlapping (lead's 360x740 check): Hán Việt goes under the Hanzi.
+assert.match(cardCss, /\.c-vcard__hanrow \{[^}]*flex-wrap: wrap/, 'the Hanzi row wraps');
+assert.match(cardCss, /\.c-vcard__hanrow \.c-vcard__word \{[^}]*min-width: min-content/, 'the Hanzi never shrinks under its glyphs');
+assert.doesNotMatch(cardCss, /position:\s*absolute/, 'nothing on the card is absolutely positioned over another block');
+assert.ok(faceOf(vocabularyCard(toVocabularyModel({ word: '森林火灾', language_code: 'zh' }, { supportLanguage: 'vi' }), { mode: 'detail' }), 'front').includes('style="--len:4"'), 'a four-character word fits by its own length');
 assert.doesNotMatch(cardCss, /@media/, 'no width media query (rule 49 recomposes by the pairs\' own columns)');
 // Each face: a body that scrolls inside itself, a foot that keeps the turn action in view.
 assert.match(cardCss, /\.c-vcard__body \{[^}]*min-height: 0;[^}]*overflow-y: auto/, 'each face body is its own scroll region');

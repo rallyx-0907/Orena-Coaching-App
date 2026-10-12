@@ -161,15 +161,19 @@
   width: 32px;
   height: 32px;
 }
+/* The Hanzi and Hán Việt share a row while it holds both; when it cannot, Hán Việt wraps under the Hanzi.
+   The Hanzi never shrinks below its own glyphs (min-content), so the two can never overlap; the Hanzi's
+   type already fits the width (`--len`). */
 .c-vcard__hanrow {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
+  gap: 8px 16px;
 }
 .c-vcard__hanrow .c-vcard__word {
-  flex: 1;
-  min-width: 0;
+  flex: 0 1 auto;
+  min-width: min-content;
 }
 .c-vcard__hanviet {
   flex: none;
