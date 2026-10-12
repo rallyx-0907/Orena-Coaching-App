@@ -46,6 +46,12 @@
   color: var(--vcard-ink);
   text-align: left;
   width: 100%;
+  /* The card is the design's portrait artboard (docs/design/vocab-card/canvas.json: every board 520 x 880): it is
+     never wider than the board, where the width scale reaches s = 1 and the composition is exactly as drawn. Wider
+     only stretched it into a short panel (lead's 1355 x 855 check: 820px on Word Detail, 640px in Review; the human,
+     2026-10-12, option 1). Centred in whatever holds it; a phone is narrower, so nothing changes there. */
+  max-inline-size: 520px;
+  margin-inline: auto;
   min-width: 0;
   min-height: 0;
   display: flex;

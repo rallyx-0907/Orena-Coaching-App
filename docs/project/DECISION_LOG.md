@@ -5770,6 +5770,12 @@ like the design, not only follow its layout".
    included; the buttons keep their kit sizes (44px+). It fits again on resize (Word Detail, Review, the feed), on
    turn (the other face) and once the web fonts arrive. No `overflow: auto/scroll` on the card, a face or its body
    (scripts/test_orena_vocabulary_card.mjs).
+12. **Portrait on a wide screen (human, 2026-10-12, option 1).** At 1355x855 the Word Detail card was 820px wide and
+   Review's 640px: a wide, short panel with a thin art band. The card is capped at `max-inline-size: 520px` - the
+   design's artboard (docs/design/vocab-card/canvas.json, every board 520 x 880), the width where s = 1, so the cap adds
+   no stretch the design does not draw - and centred (`margin-inline: auto`). Word Detail's Context and Evidence keep
+   their layout; Review's session (header, card face, grades) takes the card's width when the row is a word card, so
+   the grades line up with it (a cloze row keeps 640px); the feed's slot is already narrower; phones are unaffected.
 7. **Kept.** Every D-179 behaviour (modes, the recall face, grades outside the card, no Review bookmark, meaning
    order, reading guards, the pure mapper), the copy packs, and rule 49 (a fluid card whose padding scales with its
    width, the design's values as the ceiling).

@@ -21,6 +21,13 @@
   overflow: hidden;
 }
 
+/* A word's card is capped at the design's 520px board (kit/vocabulary-card.css); the session around it - header,
+   card face, grade buttons - takes the same width, so the grades line up with the card's edges (D-17X, 2026-10-12).
+   A cloze row (the learner's sentence) keeps the screen's 640px. */
+.s-review-root:has(.c-vcard) {
+  max-width: 520px;
+}
+
 .s-review-head {
   flex: none;
   display: flex;

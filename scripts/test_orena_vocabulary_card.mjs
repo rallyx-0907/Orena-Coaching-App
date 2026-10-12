@@ -773,6 +773,26 @@ for (const screen of ['review', 'feed']) {
   assert.match(src, /addEventListener\('orena:chrome', onResize\)/, 'Word Detail fits again when the chrome comes or goes');
   assert.match(src, /removeEventListener\('orena:chrome', onResize\)/);
 }
+// The card keeps the design's portrait board on a wide screen (the human, 2026-10-12, option 1): never wider than the
+// 520px artboard (canvas.json) - the width at which s = 1 - centred in its column; Review's session (header, face,
+// grades) takes the same width so the grades follow the card.
+{
+  const boards = Object.values(JSON.parse(readFileSync(new URL('../docs/design/vocab-card/canvas.json', import.meta.url), 'utf8')).boards);
+  const boardWidth = boards[0].w;
+  assert.ok(boards.every((b) => b.w === boardWidth), 'one board width');
+  const cardRule = cardCss.match(/\.c-vcard \{[^}]*\}/)[0];
+  const cap = Number((cardRule.match(/max-inline-size: (\d+)px/) || [])[1]);
+  assert.ok(cap >= 520 && cap <= 560, `the card has a max inline size of about the board: ${cap}`);
+  assert.equal(cap, boardWidth, 'the cap is the artboard: wider than it only stretches the composition');
+  assert.match(cardRule, /margin-inline: auto/, 'the card is centred in its column (Word Detail)');
+  assert.equal(Math.round(sizeOf('.c-vcard__word', 'font-size', { width: cap, height: 1080, len: 9 })), 60, 's = 1 at the cap');
+  const reviewCss = readFileSync(new URL('../static/orena/screens/review/review.css', import.meta.url), 'utf8');
+  assert.ok(reviewCss.includes(`.s-review-root:has(.c-vcard) {
+  max-width: ${cap}px;`), 'Review: the session around a card takes its width');
+  assert.match(reviewCss, /\.s-review-grades \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/, 'the grades span that width');
+  const wordCss = readFileSync(new URL('../static/orena/screens/word/word.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.doesNotMatch(wordCss, /\.c-vcard[^{]*\{[^}]*(max-width|max-inline-size|margin)/, 'Word Detail does not override the cap or the centring');
+}
 // Review and the Daily Feed are learning workspaces (focus routes): no phone bar there (rule 47); they fit their slot.
 const routesSrc = readFileSync(new URL('../static/orena/shell/routes.js', import.meta.url), 'utf8');
 for (const id of ['review', 'feed']) assert.match(routesSrc, new RegExp(`\{ id: '${id}',[^}]*focus: true`), `${id} is a focus route`);
