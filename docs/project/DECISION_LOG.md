@@ -5497,3 +5497,36 @@ may be imported and published on :8000 through Admin.
    The expected result is EN 215 and ZH 380 published, with the same package hashes as :8021.
 3. **Why.** After migration 0030 (D-173), the learner Grammar surface on :8000 shows the honest empty state, because
    no package was imported. It needs no code change.
+
+## D-175 - Phone Dictation keeps the Transcript while typing; the hint is an eye
+
+2026-10-11, human bug report on the phone (Listening workspace, Dictation mode), branch `fix/mobile-dictation` on
+`origin/main` 9bf88666. The number is assigned at merge. Client only: no server, schema or contract change.
+
+1. **"While typing a word I cannot see the transcript below, and I cannot scroll."** Root cause: the typing state of
+   mobile QA BUG-02 (`.s-listening.is-typing`, set while the answer box has focus and sized to `visualViewport`) set
+   `display: none` on `.s-listening__transcript`, so the Transcript and its scroll region were gone for as long as the
+   keyboard was open, and the space under the card stayed empty. Measured at 390x844 with the keyboard at half height
+   (visible 422 px): before, Transcript `none` and 121 px of empty room under the card; after, the Transcript's rows
+   fill everything under the card as their own scroll region - 212 px at 390x844 (296 px with a 40% keyboard), 160 px
+   at 360x740, 124 px at 375x667 - and the current line is framed by the existing pane observer. While typing the room
+   holds only the task (transport, answer, hint, Check) and those rows; the header (title, meta, mode switch and its
+   Back), the picture, seek bar, the card's label and the Transcript's title and hint return when typing ends (the
+   keyboard's own dismiss, or a tap outside the answer, ends typing; LEX-043's Back-closes-the-keyboard is therefore not
+   reachable on the phone while typing). The Transcript takes what the task leaves (`min-height: 0`), so on the
+   shortest screens it yields, never the answer box. No page scroll, no horizontal overflow in any measured state.
+2. **"In Listening the transcript area is far too small to read."** In Dictation on the phone the picture (veiled while
+   a line is unchecked) is the compact 96 px strip short phones already use, and when the card can run long (a checked
+   line's comparison, or the hint's live strip) the Transcript keeps at least 30% of the body while the card's stage
+   scrolls inside it, actions in view. Transcript body, before -> after: 390x844 unchecked 185 -> 285 px, checked 49 -> 164
+   px; 360x740 unchecked 92 -> 181 px, checked 49 -> 132 px. Desktop is unchanged (1920x1080, 1366x768).
+3. **"The hint should be an eye icon only, as little text as possible."** Human decision, deviating from frame 07, which
+   draws the hint as a text button with its ladder note beside it. On the phone the hint is a 46 px button with Lucide
+   `eye` (pinned `lucide-static@0.525.0`, already in `kit/icons.js`), its label ("Hint", "More hint (2/3)", "Hint 3/3 used",
+   EN/VI/ZH) kept as its `aria-label`, tooltip and visually hidden text; the ladder note is no longer printed and is its
+   `aria-describedby`; the put-away toggle (LEX-033) is a chevron (`chevron-up` / `chevron-down`) named the same way, so
+   two eyes never sit side by side; Check is the one wide, filled action - the geometry of the result row (LEX-037). The
+   desk keeps the frame's words.
+4. Gate: `scripts/test_orena_dictation_workspace.mjs` (the eye and its names in EN/VI/ZH, the note as description, the
+   phone hiding words and note and the desk hiding the glyph, no typing rule hiding the Transcript, the visible-viewport
+   sizing, the Dictation share after the short-phone floors). Recorded in `UI_BACKEND_GAPS.md` "Phone Dictation".
