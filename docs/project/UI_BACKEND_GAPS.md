@@ -5932,3 +5932,15 @@ items above, and what PR 2 leaves open for the human:
   sees the entry without them until a pack in their support language exists.
 - **VC-10 The Quick Sheet** keeps its own compact word card (`screens/quick-sheet`, `mapWordCard`); it is a sheet,
   not a card surface of this PR.
+- **VC-11 Save on the Review back (decision for the human).** The lead's :8021 check asked to drop the bookmark from
+  `review-back`, since Save belongs to Word Detail and the Feed. The pinned Review Session draws it on the turned card
+  (`rvWC.savedBg` / `rvWC.savedColor`, Orena.dc.html, Review Session), so it is kept, as before PR 2, until the human
+  chooses. Removing it is one condition in `kit/vocabulary-card.js#heading`.
+- **VC-12 The Review corner disc.** The pinned frame draws its decorative corner disc on the turned card too, where it
+  sat under the play and save discs; on the revealed face it now sits at the bottom-left corner (review.css). An
+  adaptation, recorded here.
+- **VC-13 Phone sizes not measured.** The 360x740 and 390x844 composition is held structurally by
+  `scripts/test_orena_vocabulary_card.mjs` (no fixed card widths, the headword's type shrinks instead of breaking a
+  word, the feed's discs on their own row, the card body the only scroll region, the grades outside it). Still to
+  measure on a phone: Review at 360x740 with a long authored entry (the grades in view, only the card scrolling),
+  the feed's turned card with a long headword, and the ZH ruby headword at 360 wide.

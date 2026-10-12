@@ -192,10 +192,76 @@ assert.ok(String(vocabularyCard(uploaded, { mode: 'detail' })).includes('<figure
 assert.ok(!String(vocabularyCard(uploaded, { mode: 'review-front' })).includes('<figure'), 'never on the front');
 assert.throws(() => vocabularyCard(en, { mode: 'flip' }));
 
+const reviewSrc = readFileSync(new URL('../static/orena/screens/review/screen.js', import.meta.url), 'utf8');
+/* --- the meaning panel never claims an absence it has not established (lead's :8021 check, D-17W) --- */
+setLanguages({ ui: 'vi', support: 'vi' });
+const tagged = [];
+const meaningTag = (language) => { tagged.push(language); return `[${language}]`; };
+// copper: an English word whose only meaning is its own English definition (a collection card before Save).
+const copper = toVocabularyModel({ identity: { language: 'en', normalized: 'copper' }, headword: 'copper', pronunciation: '/ˈkɒpə/',
+  meanings: [{ language: 'en', text: 'A reddish metal.' }], short_meanings: [{ language: 'en', text: 'A reddish metal.' }],
+  examples: [{ language: 'en', text: 'The wire is made of copper.' }] }, { supportLanguage: 'vi' });
+assert.equal(copper.meaning, null);
+assert.equal(copper.definition, 'A reddish metal.');
+assert.equal(copper.definitionLanguage, 'en');
+const copperCard = String(vocabularyCard(copper, { mode: 'detail', slots: { meaningTag } }));
+assert.ok(!copperCard.includes('data-no-meaning'), 'an own-language definition is shown, not "no meaning"');
+assert.ok(copperCard.includes('A reddish metal.') && tagged.includes('en'), 'labelled with its language');
+// 松树: a Chinese word whose only meaning is a Chinese definition.
+const pine = toVocabularyModel({ identity: { language: 'zh', normalized: '松树' }, headword: '松树', pronunciation: 'sōngshù',
+  meanings: [{ language: 'zh', text: '一种常绿的树。' }] }, { supportLanguage: 'vi' });
+assert.equal(pine.definition, '一种常绿的树。');
+assert.equal(pine.definitionLanguage, 'zh');
+assert.ok(!String(vocabularyCard(pine, { mode: 'detail', slots: { meaningTag } })).includes('data-no-meaning'));
+// A saved item whose only meaning is the definition kept with it stays a meaning, as on main 947f744f.
+const savedCopper = toVocabularyModel({ word: 'copper', definition: 'A reddish metal.' }, { supportLanguage: 'vi' });
+assert.equal(savedCopper.meaning.text, 'A reddish metal.');
+assert.equal(savedCopper.definition, '', 'never the same text twice');
+// economy in the feed: the catalogue card's own-language meaning only.
+const economy = toVocabularyModel({ identity: { language: 'en', normalized: 'economy' }, headword: 'economy',
+  meanings: [{ language: 'en', text: 'the system of trade and industry' }], examples: [] }, { supportLanguage: 'vi' });
+assert.ok(!String(vocabularyCard(economy, { mode: 'feed', learner: { saved: false } })).includes('data-no-meaning'));
+// Still being looked up: the kit's skeleton bones, not "no meaning"; nothing at all and nothing pending: "no meaning".
+const bare = toVocabularyModel({ word: 'zzz' }, { supportLanguage: 'vi' });
+const pendingCard = String(vocabularyCard(bare, { mode: 'detail', slots: { meaningPending: true } }));
+assert.ok(pendingCard.includes('data-meaning-pending') && pendingCard.includes('o-bone') && !pendingCard.includes('data-no-meaning'));
+assert.ok(String(vocabularyCard(bare, { mode: 'detail' })).includes('data-no-meaning'));
+// A support-language meaning plus the own-language definition: both, the definition as the second line.
+assert.ok(String(vocabularyCard(en, { mode: 'detail' })).includes('c-vcard__definition'));
+
+/* --- the headword never breaks inside a word; 360x740 composition, structurally --- */
+const { headwordRun } = await import('../static/orena/kit/vocabulary-card.js');
+assert.equal(headwordRun('opportunity', 'latin'), 11);
+assert.equal(headwordRun('a resilient economy', 'latin'), 9, 'a phrase wraps between words: its longest word sets the size');
+assert.equal(headwordRun('森林火灾', 'hanzi'), 4);
+assert.ok(String(vocabularyCard(toVocabularyModel({ word: 'opportunity' }), { mode: 'feed' })).includes('style="--len:11"'));
+const cardCss = readFileSync(new URL('../static/orena/kit/vocabulary-card.css', import.meta.url), 'utf8');
+const wordRule = cardCss.match(/\.c-vcard__word \{[^}]*\}/)[0];
+assert.match(wordRule, /overflow-wrap: normal/);
+assert.match(wordRule, /word-break: keep-all/);
+assert.match(wordRule, /font-size: min\(32px, calc\(165cqi \/ var\(--len, 1\)\)\)/, 'the type shrinks to the width, the designed size is the ceiling');
+assert.doesNotMatch(cardCss, /overflow-wrap: anywhere|word-break: break-all/, 'nothing lets a word break mid-word');
+assert.match(cardCss, /\.c-vcard--feed \.c-vcard__head \{[^}]*flex-direction: column/, 'the feed card puts its discs on their own row');
+// No fixed widths or heights on the card: only the 44px discs and the 52px character glyph are sized.
+const sized = [...cardCss.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+  .filter(([, , body]) => /(^|\s|;)(width|height|min-width|min-height):\s*\d+px/.test(body))
+  .map(([, selector]) => selector.trim());
+assert.deepEqual(sized, ['.c-vcard__disc', '.c-vcard__unit-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
+assert.doesNotMatch(cardCss, /@media/, 'no width media query (rule 49 recomposes by the grid)');
+// Review: the card scrolls inside its face; the grades are outside that region and always in view.
+assert.match(reviewSrc, /<div class="s-review-face__scroll" data-scroll-region>\s*\$\{vocabularyCard\(model, \{ mode: 'review-back'/);
+const gradesAt = reviewSrc.indexOf('<div class="s-review-grades">');
+const stackEnd = reviewSrc.indexOf('</div>', reviewSrc.indexOf('backFaceMarkup(model, learner, row)'));
+assert.ok(gradesAt > stackEnd, 'the grades are drawn after the card stack closes, not inside its scroll region');
+const reviewCss = readFileSync(new URL('../static/orena/screens/review/review.css', import.meta.url), 'utf8');
+assert.match(reviewCss, /\.s-review-grades \{[^}]*flex: none/, 'the grades never shrink out of view');
+assert.match(reviewCss, /\.s-review-face__scroll \{[^}]*overflow-y: auto/, 'the card body is the scroll region');
+assert.match(reviewCss, /\.s-review-root \{[^}]*overflow: hidden/, 'the workspace does not scroll as a page');
+assert.match(reviewCss, /\.s-review-face--revealed > \.s-review-face__blob \{[^}]*bottom: -40px/, 'the corner disc is clear of the play and save discs');
+
 /* --- the two review buttons --- */
 assert.deepEqual(REVIEW_BUTTONS, ['again', 'got_it']);
 assert.ok(GRADES.includes('unsure'), 'unsure stays a grade the API accepts');
-const reviewSrc = readFileSync(new URL('../static/orena/screens/review/screen.js', import.meta.url), 'utf8');
 assert.match(reviewSrc, /mode: 'review-front'/);
 assert.match(reviewSrc, /mode: 'review-back'/);
 assert.doesNotMatch(reviewSrc, /gradeButton\('unsure'/, 'no Unsure button');

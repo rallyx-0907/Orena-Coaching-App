@@ -25,20 +25,27 @@
   align-items: flex-start;
   gap: 12px;
 }
+/* The headword never breaks inside a word: a phrase wraps between its words, and a word longer than
+   the width shrinks its type to fit (`--len`, its longest run, from the markup; `cqi` is this column's
+   width). The designed size is the ceiling. */
 .c-vcard__id {
+  flex: 1;
   min-width: 0;
+  container-type: inline-size;
 }
 .c-vcard__word {
   display: block;
-  font-size: 32px;
+  font-size: min(32px, calc(165cqi / var(--len, 1)));
   line-height: 1.1;
   font-weight: 700;
   letter-spacing: -0.02em;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: none;
 }
 .c-vcard__word--han {
   font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
-  font-size: 40px;
+  font-size: min(40px, calc(92cqi / var(--len, 1)));
   letter-spacing: 0.02em;
 }
 .c-vcard__word ruby {
@@ -284,11 +291,24 @@
   align-items: center;
   gap: 14px;
 }
+.c-vcard--review-front .c-vcard__id {
+  width: 100%;
+}
 .c-vcard--review-front .c-vcard__word {
-  font-size: 36px;
+  font-size: min(36px, calc(165cqi / var(--len, 1)));
 }
 .c-vcard--review-front .c-vcard__word--han {
-  font-size: 48px;
+  font-size: min(48px, calc(92cqi / var(--len, 1)));
+}
+
+/* The Daily Feed's turned card is narrow: the play and save discs take their own row under the word,
+   so the word has the card's whole width. */
+.c-vcard--feed .c-vcard__head {
+  flex-direction: column;
+  align-items: stretch;
+}
+.c-vcard--feed .c-vcard__id {
+  width: 100%;
 }
 .c-vcard--review-front .c-vcard__meta {
   justify-content: center;

@@ -123,19 +123,32 @@ function meaningOf(source, { supportLanguage, lookup, seed, language }) {
   if (looked) return { text: looked, language: '' };
   const seeded = vocabularyMeaning(seed, supportLanguage);
   if (seeded?.text) return seeded;
+  // A definition written in a support language other than the word's own is still a meaning, tagged.
   for (const entry of list(source?.detailed_definitions)) {
-    if (text(entry?.text)) return { text: text(entry.text), language: lower(entry.language) === lower(supportLanguage) ? '' : lower(entry.language || language) };
+    const tagged = lower(entry?.language);
+    if (text(entry?.text) && tagged && tagged !== language) return { text: text(entry.text), language: tagged };
   }
   return null;
 }
 
-function definitionOf(source, language, meaningText) {
-  for (const entry of list(source?.detailed_definitions)) {
+/* The word's own-language definition ("A reddish metal." for copper, 一种常绿的树。 for 松树): the line
+   under the meaning, tagged with its language when that is not the support language. When it is the
+   only meaning an entry has, it is what the card shows - never "no meaning" (rule 40). */
+function definitionOf(source, seed, language, meaningText) {
+  const candidates = [
+    ...list(source?.detailed_definitions),
+    ...list(source?.short_meanings),
+    ...list(source?.meanings),
+    ...list(seed?.short_meanings),
+  ];
+  for (const entry of candidates) {
     const value = text(typeof entry === 'object' ? entry?.text : entry);
     const tagged = lower(entry?.language);
-    if (value && (!tagged || tagged === language) && value !== meaningText) return value;
+    if (value && (tagged === language || (!tagged && entry === source?.detailed_definitions?.[0])) && value !== meaningText) return { text: value, language };
   }
-  return '';
+  const note = text(source?.definition);
+  if (note && note !== meaningText) return { text: note, language: HAN.test(note) ? 'zh' : language };
+  return null;
 }
 
 /* ---- Typed usage notes (D-178) ----------------------------------------------------------------
@@ -263,6 +276,7 @@ export function toVocabularyModel(source, { word = '', supportLanguage = '', loo
   const meaning = meaningOf(entry, { supportLanguage, lookup: resolvedLookup, seed, language });
   const meaningText = text(meaning?.text);
   const localized = text(localizedMeaning(entry, supportLanguage)?.text);
+  const definition = definitionOf(entry, seed, language, meaningText);
   const notes = notesOf(entry);
   const units = script === 'hanzi' ? unitsOf(entry, supportLanguage) : [];
   const etymology = inSupport(entry.provenance?.etymology, supportLanguage);
@@ -276,7 +290,8 @@ export function toVocabularyModel(source, { word = '', supportLanguage = '', loo
     pronunciation,
     meaning: meaningText ? { text: meaningText, language: lower(meaning.language) === lower(supportLanguage) ? '' : lower(meaning.language) } : null,
     support: localized && localized !== meaningText ? localized : '',
-    definition: script === 'hanzi' ? '' : definitionOf(entry, language, meaningText),
+    definition: definition?.text || '',
+    definitionLanguage: definition?.text ? definition.language : '',
     examples: examplesOf(entry, { language, script, word: headword, supportLanguage }),
     collocations: ofType(notes, 'collocation').map((note) => text(note.text)),
     synonyms: ofType(notes, 'synonym').map((note) => text(note.text)),

@@ -227,6 +227,14 @@
   justify-content: safe center;
   gap: 12px;
 }
+/* The pinned frame keeps its corner disc on the turned card too; there it sat under the play and save
+   discs, so on the revealed face it moves to the bottom-left corner, clear of every control. */
+.s-review-face--revealed > .s-review-face__blob {
+  top: auto;
+  right: auto;
+  left: -40px;
+  bottom: -40px;
+}
 /* The revealed card is the shared VocabularyCard (kit/vocabulary-card.css, D-17W); inside this face
    the face is the surface, so the card adds no second one. */
 .s-review-face .c-vcard--review-back {

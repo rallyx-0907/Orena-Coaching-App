@@ -113,7 +113,7 @@ function meaningTag(language) {
 
 /* The card: the entry's content (pure, D-17W) and, beside it, what the learner's own record adds -
    saved state, the mastery footer, and the sentence they met the word in when the entry has no example. */
-function cardMarkup(model, learner, item, strokes) {
+function cardMarkup(model, learner, item, strokes, meaningPending) {
   const stageKey = stageCopyKey(item);
   const footer = {
     stage: stageKey ? t(stageKey) : '',
@@ -121,7 +121,7 @@ function cardMarkup(model, learner, item, strokes) {
   };
   const latin = model.script !== 'hanzi';
   const decorated = { ...learner, contextParts: highlightParts(learner.context, { match: model.word, latin, caseless: latin }) };
-  return vocabularyCard(model, { mode: 'detail', learner: decorated, slots: { strokes, footer, meaningTag } });
+  return vocabularyCard(model, { mode: 'detail', learner: decorated, slots: { strokes, footer, meaningTag, meaningPending } });
 }
 
 export default async function mountWordDetail(element, ctx) {
@@ -159,6 +159,8 @@ export default async function mountWordDetail(element, ctx) {
     api.wordClips(word, 6).catch(() => null),
   ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
   const hasSomethingToShow = Boolean(item || seed);
+  // While the lookup is still out, a card with no meaning yet says so with the kit's skeleton, never "no meaning".
+  let lookupPending = hasSomethingToShow;
   if (!hasSomethingToShow) {
     const { found, clipsPayload } = await pending;
     if (!ctx.isCurrent()) return undefined;
@@ -233,7 +235,7 @@ export default async function mountWordDetail(element, ctx) {
     mount(
       element,
       html`<button type="button" class="o-iconbtn" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 19 }))}</button>
-      ${cardMarkup(model, learner, item, strokesMarkup)}
+      ${cardMarkup(model, learner, item, strokesMarkup, lookupPending)}
       <div class="s-word-grid">
         <div class="s-word-col">${clipsPanel}${deepWordMarkup(deepRows)}</div>
         ${evidencePanel}
@@ -346,6 +348,7 @@ export default async function mountWordDetail(element, ctx) {
   if (hasSomethingToShow) {
     pending.then(async ({ found, clipsPayload }) => {
       if (!ctx.isCurrent()) return;
+      lookupPending = false;
       detail = found;
       clips = mapClips(clipsPayload);
       clipsReady = true;

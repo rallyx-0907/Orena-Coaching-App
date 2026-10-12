@@ -66,12 +66,22 @@ function section(titleKey, body, extra = '') {
 
 /* The heading: the word (a Chinese word as its character units with their pinyin above when the
    entry carries them), the reading(s), the tags, the play and save discs. */
+/* How long the headword's longest unbreakable run is, so its type can shrink to fit the card's width
+   instead of breaking inside a word (CSS `--len`, kit/vocabulary-card.css). Han has no spaces: the whole
+   word is one run. A number, never a colour. */
+export function headwordRun(word, script) {
+  const value = String(word ?? '').trim();
+  if (script === 'hanzi') return Math.max(1, [...value].length);
+  return Math.max(1, ...value.split(/\s+/).map((part) => [...part].length));
+}
+
 function heading(model, { mode, learner }) {
   const lang = langAttr(model.language);
+  const run = headwordRun(model.word, model.script);
   const units = model.script === 'hanzi' ? model.units : [];
   const word = units.length
-    ? html`<span class="c-vcard__word c-vcard__word--han" lang="${lang}">${units.map((unit) => html`<ruby>${unit.hanzi}${unit.pinyin ? html`<rt>${unit.pinyin}</rt>` : ''}</ruby>`)}</span>`
-    : html`<span class="c-vcard__word${cls(model.script === 'hanzi' && ' c-vcard__word--han')}" lang="${lang}">${model.word}</span>`;
+    ? html`<span class="c-vcard__word c-vcard__word--han" lang="${lang}" style="--len:${run}">${units.map((unit) => html`<ruby>${unit.hanzi}${unit.pinyin ? html`<rt>${unit.pinyin}</rt>` : ''}</ruby>`)}</span>`
+    : html`<span class="c-vcard__word${cls(model.script === 'hanzi' && ' c-vcard__word--han')}" lang="${lang}" style="--len:${run}">${model.word}</span>`;
   const ipa = model.pronunciation.ipa.length > 1
     ? model.pronunciation.ipa.map((item) => html`<span class="c-vcard__ipa">${item.region === 'uk' || item.region === 'us' ? html`<b>${t(item.region === 'uk' ? 'regionUk' : 'regionUs')}</b> ` : ''}${item.text}</span>`)
     : (model.pronunciation.text ? html`<span class="c-vcard__ipa">${model.pronunciation.text}</span>` : '');
@@ -90,12 +100,24 @@ function heading(model, { mode, learner }) {
   </header>`;
 }
 
-function meaningBlock(model, meaningTag) {
-  if (!model.meaning) return html`<div class="c-vcard__meaning"><div class="c-vcard__support" data-no-meaning>${t('meaningUnavailable')}</div></div>`;
+/* The meaning panel. A meaning still being looked up shows the kit's skeleton bones, never a claim
+   that there is none; "no meaning" only when nothing at all exists (rule 40). The word's own-language
+   definition is the line under the meaning, or the panel's only line, tagged with its language. */
+function meaningBlock(model, { meaningTag, pending }) {
+  const tag = (language) => (language && meaningTag ? meaningTag(language) : '');
+  if (!model.meaning && !model.definition) {
+    if (pending) {
+      return html`<div class="c-vcard__meaning" aria-busy="true" data-meaning-pending><div class="o-bone o-bone--strong" style="height:12px;width:55%"></div><div class="o-bone" style="height:10px;width:32%"></div></div>`;
+    }
+    return html`<div class="c-vcard__meaning"><div class="c-vcard__support" data-no-meaning>${t('meaningUnavailable')}</div></div>`;
+  }
+  const definition = model.definition
+    ? html`<div class="${model.meaning ? 'c-vcard__definition' : 'c-vcard__meaning-text'}"><span lang="${langAttr(model.definitionLanguage)}">${model.definition}</span>${tag(model.definitionLanguage)}</div>`
+    : '';
   return html`<div class="c-vcard__meaning">
-    <div class="c-vcard__meaning-text">${model.meaning.text}${model.meaning.language && meaningTag ? meaningTag(model.meaning.language) : ''}</div>
+    ${model.meaning ? html`<div class="c-vcard__meaning-text">${model.meaning.text}${tag(model.meaning.language)}</div>` : ''}
     ${model.support ? html`<div class="c-vcard__support">${model.support}</div>` : ''}
-    ${model.definition ? html`<div class="c-vcard__definition" lang="${langAttr(model.language)}">${model.definition}</div>` : ''}
+    ${definition}
   </div>`;
 }
 
@@ -178,7 +200,7 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
   const body = front
     ? ''
     : html`${illustration}
-      ${meaningBlock(model, slots.meaningTag)}
+      ${meaningBlock(model, { meaningTag: slots.meaningTag, pending: slots.meaningPending })}
       ${examplesBlock(model, { mode, learner })}
       ${charactersBlock(model)}
       ${relationsGrid(model)}
