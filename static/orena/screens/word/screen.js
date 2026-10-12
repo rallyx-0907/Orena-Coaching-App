@@ -107,9 +107,8 @@ function deepWordMarkup(rows) {
 }
 
 /* A meaning that is not in the learner's support language says which language it is in (D-124). */
-function meaningTag(language) {
-  const label = language ? meaningLanguageLabel(language, languages().support, languages().ui) : '';
-  return label ? html` <span class="o-tag">${label}</span>` : '';
+function meaningLabel(language) {
+  return language ? meaningLanguageLabel(language, languages().support, languages().ui) : '';
 }
 
 /* The card: the entry's content (pure, D-179) and, beside it, what the learner's own record adds -
@@ -122,7 +121,7 @@ function cardMarkup(model, learner, item, strokes, meaningPending) {
   };
   const latin = model.script !== 'hanzi';
   const decorated = { ...learner, contextParts: highlightParts(learner.context, { match: model.word, latin, caseless: latin }) };
-  return vocabularyCard(model, { mode: 'detail', learner: decorated, slots: { strokes, footer, meaningTag, meaningPending } });
+  return vocabularyCard(model, { mode: 'detail', learner: decorated, slots: { strokes, footer, meaningLabel, meaningPending } });
 }
 
 export default async function mountWordDetail(element, ctx) {

@@ -5712,6 +5712,23 @@ like the design, not only follow its layout".
    `provenance.illustration.ref` in `kit/vocabulary-art.js`. The two drawings are the design's own, ported as reference
    art for the two docs/vocab samples only; production artwork stays under the Art Bible (`assets/brand/orena/`) and
    comes from Admin upload (PR 3). No schema change, no upload path.
+8. **Refinements after the lead's browser check (human decisions, 2026-10-12).**
+   - *Chinese typography:* all content text on the Chinese card is serif - Hanzi and mixed lines on
+     `"Noto Serif SC","Source Han Serif SC","Songti SC",STSong,SimSun,NSimSun,serif`, Latin-only lines (pinyin, the
+     English meaning, Hán Việt) on `"Noto Serif",Georgia,` ahead of the same stack; only the controls keep the app's
+     sans. No web font: on Windows SimSun/NSimSun and Georgia render, bold where the design is bold, 900 where the face
+     has it.
+   - *Review grades in the card's palette:* "Đã nhớ" is the card's primary button (`--vcard-btn-bg` /
+     `--vcard-btn-ink`), "Chưa nhớ" the card's seal outlined on the card surface; both and their interval line hold AA
+     in both themes (gated), and they no longer use the app's accent (gated). Focus is the kit's ring.
+   - *No app palette inside the card:* every tag, chip and accent is `--vcard-*` - the level tag, the collocation
+     chips, the meaning's language tag ("Tiếng Anh", drawn by the card; the screen only names the language), the
+     buttons (no kit `o-tag` / `o-btn--primary`), the mastery bars and the stroke-order block a screen places inside.
+   - *Header as drawn:* the top row is the level tag (and source) on the left and the part of speech on the right, on
+     one row (it may wrap at 360, the part of speech staying the last item). Play and Save leave the top row for a quiet
+     action row under the reading (44px discs); the IPA rows are plain readings as the design draws them. Derivation:
+     the design draws neither control, and of the options (under the reading, beside the turn action, top-right of the
+     headword line) this one keeps the drawn hierarchy and the turn action alone in its foot.
 7. **Kept.** Every D-179 behaviour (modes, the recall face, grades outside the card, no Review bookmark, meaning
    order, reading guards, the pure mapper), the copy packs, and rule 49 (a fluid card whose padding scales with its
    width, the design's values as the ceiling).

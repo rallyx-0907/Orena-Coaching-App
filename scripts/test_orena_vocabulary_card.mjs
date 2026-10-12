@@ -176,8 +176,9 @@ const enBack = faceOf(enCard, 'back');
 // EN front (Main.dc.html): level + source, POS (native · localized), headword, UK/US IPA rows with play,
 // Meaning (support meaning, English definition), Word family, Synonyms / antonyms, See examples ->.
 inOrder(enFront, [
-  'o-tag--accent c-vcard__level">C1<', 'Oxford 5000', 'c-vcard__pos', 'adjective', 'Tính từ',
-  'c-vcard__word', '>resilient<', '<b>Anh</b>', '/rɪˈzɪliənt/', 'data-region="uk"', '<b>Mỹ</b>', '/rɪˈzɪljənt/', 'data-region="us"',
+  'c-vcard__top', 'c-vcard__level">C1<', 'Oxford 5000', 'c-vcard__pos', 'adjective', 'Tính từ',
+  'c-vcard__word', '>resilient<', 'data-region="uk"', '<b>Anh</b>', '/rɪˈzɪliənt/', 'data-region="us"', '<b>Mỹ</b>', '/rɪˈzɪljənt/',
+  'c-vcard__actions', 'data-play', 'data-save',
   '<figure class="c-vcard__art" role="img" aria-label="Mầm cây vươn lên qua khe nứt mặt đất trong gió" data-art="sprout-through-crack">', '<svg',
   'data-section="sectionMeaning"', '>Nghĩa<', 'kiên cường; có khả năng phục hồi nhanh', 'able to recover quickly',
   'data-section="sectionWordFamily"', '>Họ từ<', 'resilience', '(n)', 'resiliently', '(adv)',
@@ -191,7 +192,7 @@ inOrder(enBack, [
   'c-vcard__backword', 'resilient', 'Ví dụ &amp; cách dùng',
   '01 · Chỉ người', 'Children are often more <mark class="c-vcard__hit">resilient</mark> than adults expect.', 'Trẻ em thường kiên cường', 'Nói về tinh thần',
   '02 · Chỉ hệ thống, vật', '<mark class="c-vcard__hit">resilient</mark> to power failures.', 'chịu được sự cố mất điện', 'resilient to / against + N',
-  'data-section="sectionCollocations"', 'Kết hợp thường gặp', '<span class="o-tag">highly resilient</span>', 'a resilient economy',
+  'data-section="sectionCollocations"', 'Kết hợp thường gặp', '<span class="c-vcard__chip">highly resilient</span>', 'a resilient economy',
   'data-section="sectionMemoryTip"', 'Mẹo nhớ', 'Latin resilire',
   'data-vcard-turn="front"', '← Mặt trước',
 ], 'EN back');
@@ -204,8 +205,9 @@ const zhBack = faceOf(zhCard, 'back');
 // ZH front (Chinese.dc.html): HSK tag, POS (名词 · danh từ), the Hanzi with each pinyin over it, Hán Việt,
 // Meaning (support + English), Radical (木 once, then each character = parts · strokes), Measure word, Related words.
 inOrder(zhFront, [
-  'c-vcard__level">HSK 4<', 'c-vcard__pos', '名词', 'Danh từ',
+  'c-vcard__top', 'c-vcard__level">HSK 4<', 'c-vcard__pos', '名词', 'Danh từ',
   '<ruby>森<rt>sēn</rt></ruby><ruby>林<rt>lín</rt></ruby>', 'Hán Việt', 'SÂM LÂM',
+  'c-vcard__actions', 'data-play', 'data-save',
   'data-art="ink-pine-trees"',
   'data-section="sectionMeaning"', 'rừng, rừng rậm', 'forest',
   'data-section="sectionRadical"', '>木<', 'mù', 'Mộc', '(cây)', '森 = 木 + 木 + 木', '12 nét', '林 = 木 + 木', '8 nét',
@@ -275,7 +277,7 @@ assert.throws(() => vocabularyCard(en, { mode: 'flip' }));
 /* --- the meaning panel never claims an absence it has not established (lead's :8021 check, D-179) --- */
 setLanguages({ ui: 'vi', support: 'vi' });
 const tagged = [];
-const meaningTag = (language) => { tagged.push(language); return `[${language}]`; };
+const meaningLabel = (language) => { tagged.push(language); return `[${language}]`; };
 // copper: an English word whose only meaning is its own English definition (a collection card before Save).
 const copper = toVocabularyModel({ identity: { language: 'en', normalized: 'copper' }, headword: 'copper', pronunciation: '/ˈkɒpə/',
   meanings: [{ language: 'en', text: 'A reddish metal.' }], short_meanings: [{ language: 'en', text: 'A reddish metal.' }],
@@ -283,7 +285,7 @@ const copper = toVocabularyModel({ identity: { language: 'en', normalized: 'copp
 assert.equal(copper.meaning, null);
 assert.equal(copper.definition, 'A reddish metal.');
 assert.equal(copper.definitionLanguage, 'en');
-const copperCard = String(vocabularyCard(copper, { mode: 'detail', slots: { meaningTag } }));
+const copperCard = String(vocabularyCard(copper, { mode: 'detail', slots: { meaningLabel } }));
 assert.ok(!copperCard.includes('data-no-meaning'), 'an own-language definition is shown, not "no meaning"');
 assert.ok(copperCard.includes('A reddish metal.') && tagged.includes('en'), 'labelled with its language');
 // 松树: a Chinese word whose only meaning is a Chinese definition.
@@ -291,7 +293,7 @@ const pine = toVocabularyModel({ identity: { language: 'zh', normalized: '松树
   meanings: [{ language: 'zh', text: '一种常绿的树。' }] }, { supportLanguage: 'vi' });
 assert.equal(pine.definition, '一种常绿的树。');
 assert.equal(pine.definitionLanguage, 'zh');
-assert.ok(!String(vocabularyCard(pine, { mode: 'detail', slots: { meaningTag } })).includes('data-no-meaning'));
+assert.ok(!String(vocabularyCard(pine, { mode: 'detail', slots: { meaningLabel } })).includes('data-no-meaning'));
 // A saved item whose only meaning is the definition kept with it stays a meaning, as on main 947f744f.
 const savedCopper = toVocabularyModel({ word: 'copper', definition: 'A reddish metal.' }, { supportLanguage: 'vi' });
 assert.equal(savedCopper.meaning.text, 'A reddish metal.');
@@ -325,7 +327,7 @@ const sized = [...cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{(
   .filter(([, , body]) => /(^|\s|;)(width|height|min-width|min-height):\s*\d+px/.test(body))
   .map(([, selector]) => selector.trim());
 // Only controls, the radical tile and the design's illustration frame (180px EN, 150px ZH, as drawn) are sized.
-assert.deepEqual(sized, ['.c-vcard__turn.o-btn', '.c-vcard--han .c-vcard__turn.o-btn', '.c-vcard__disc', '.c-vcard__ipa .c-vcard__disc', '.c-vcard__art', '.c-vcard--han .c-vcard__art', '.c-vcard__art svg', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
+assert.deepEqual(sized, ['.c-vcard__turn', '.c-vcard--han .c-vcard__turn', '.c-vcard__disc', '.c-vcard__art', '.c-vcard--han .c-vcard__art', '.c-vcard__art svg', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
 // The padding scales with the card's width, the design's value its ceiling (rule 49 at 360x740).
 assert.match(cardCss, /\.c-vcard__body \{[^}]*padding: clamp\(20px, 6\.9cqi, 36px\) clamp\(18px, 7\.7cqi, 40px\)/);
 // The card's colours are its scoped tokens only (D-17X).
@@ -414,7 +416,7 @@ const pineLookup = { available: true, headword: '松树', script: 'hanzi', conte
 const pineMeaning = toVocabularyModel(pineEn, { word: '松树', supportLanguage: 'vi', lookup: pineLookup });
 assert.deepEqual(pineMeaning.meaning, { text: 'chỉ loài cây thông', language: '' }, 'the lookup\'s Vietnamese meaning leads');
 assert.equal(pineMeaning.english, 'pine; pine tree', 'the English meaning is the second line');
-const pineFront = faceOf(vocabularyCard(pineMeaning, { mode: 'detail', slots: { meaningTag: (l) => `[${l}]` } }), 'front');
+const pineFront = faceOf(vocabularyCard(pineMeaning, { mode: 'detail', slots: { meaningLabel: (l) => `[${l}]` } }), 'front');
 assert.ok(pineFront.indexOf('chỉ loài cây thông') < pineFront.indexOf('pine; pine tree'));
 assert.ok(!pineFront.includes('chỉ loài cây thông[') , 'the support-language meaning carries no language tag');
 // Without the lookup, the other language's meaning is the meaning, tagged (step 5).
@@ -425,6 +427,28 @@ assert.equal(toVocabularyModel({ ...pineEn, short_meanings: [...pineEn.short_mea
 assert.equal(toVocabularyModel({ ...pineEn, definition: 'my note' }, { supportLanguage: 'vi', lookup: pineLookup }).meaning.text, 'my note');
 // A seed's support-language sense comes after the lookup, before another language.
 assert.equal(toVocabularyModel(pineEn, { supportLanguage: 'vi', seed: { short_meanings: [{ language: 'vi', text: 'thông' }] } }).meaning.text, 'thông');
+
+/* --- D-17X: the header as drawn, and nothing of the app's palette inside the card --- */
+for (const card of [enCard, zhCard]) {
+  const top = card.slice(card.indexOf('<div class="c-vcard__top">'), card.indexOf('</div>', card.indexOf('c-vcard__pos')) + 6);
+  assert.ok(top.indexOf('c-vcard__level') < top.indexOf('c-vcard__pos'), 'level tag on the left, part of speech on the right, one row');
+  assert.ok(!top.includes('data-save') && !top.includes('data-play'), 'no disc pushes the part of speech down: the actions sit under the reading');
+}
+const kitCardSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
+for (const [name, source] of [['kit/vocabulary-card.js', kitCardSrc.replace(/\/\*[\s\S]*?\*\//g, '')], ['kit/vocabulary-card.css', cardCss.replace(/\/\*[\s\S]*?\*\//g, '')]]) {
+  assert.doesNotMatch(source, /o-tag|--accent|accent-fill|accent-soft|accent-ink/, `${name}: no kit tag and no app accent inside the card`);
+}
+for (const card of [enCard, zhCard, String(vocabularyCard(en, { mode: 'review-front' })), String(vocabularyCard(zh, { mode: 'review-back', learner: learnerState({ review_stage: 1, next_review_at: '' }) }))]) {
+  assert.doesNotMatch(card, /o-tag|o-btn--primary|var\(--accent|accent-fill|accent-soft|accent-ink/, 'the rendered card carries no kit tag, primary kit button or app accent');
+}
+const tagged2 = String(vocabularyCard(pineAlone, { mode: 'detail', slots: { meaningLabel: () => 'Tiếng Anh' } }));
+assert.ok(tagged2.includes('<span class="c-vcard__lang">Tiếng Anh</span>'), 'the meaning language tag is drawn by the card');
+// Touch targets: the discs are 44px.
+assert.match(cardCss, /\.c-vcard__disc \{[^}]*width: 44px;[^}]*height: 44px/);
+// ZH: all content text serif; only controls keep the app's sans.
+assert.match(cardCss, /\.c-vcard--han \{[^}]*font-family: var\(--vcard-han\)/);
+assert.match(cardCss, /--vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;/);
+assert.match(cardCss, /\.c-vcard__turn,\s*\.c-vcard__disc \{\s*font-family: var\(--font-ui\);/, 'only the controls keep the app sans');
 
 /* --- the two review buttons --- */
 assert.deepEqual(REVIEW_BUTTONS, ['again', 'got_it']);

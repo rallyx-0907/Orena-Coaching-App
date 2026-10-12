@@ -12,17 +12,19 @@
      between blocks; the HSK tag on `seal`; the 104px Hanzi (weight 900) with 22px pinyin above; labels tracked 0.12em;
      the radical box outlined 1.5px in `seal`; square example panels; the highlight in `seal` at weight 900 and the
      pinyin span bold in `seal`; 46px buttons with a 3px radius, the secondary outlined 1.5px in `gold`.
-   Fonts (human decision): no download. English uses the app's sans; the Chinese card uses a local serif for Latin
-   text and a local Song/serif stack for Hanzi. Focus is the kit's own ring, not the design's gold (light gold is
-   2.25:1 on the card, under the 3:1 a focus indicator needs; D-17X).
+   Fonts (human decision): no download. English uses the app's sans; on the Chinese card ALL content text is serif -
+   Hanzi and mixed lines on the Song stack, Latin-only lines (pinyin, the English meaning, Hán Việt) on Noto Serif /
+   Georgia ahead of the same stack - and only the controls keep the app's sans. On Windows that is SimSun / NSimSun and
+   Georgia: bold where the design is bold, 900 where the face has it (synthesized otherwise). Focus is the kit's own
+   ring, not the design's gold (light gold is 2.25:1 on the card, under the 3:1 a focus indicator needs; D-17X).
    Rule 49: no width media query and no fixed card size. Padding scales with the card's width (container units, the
    design's value as the ceiling); the headword's type shrinks to its column instead of breaking a word; the pairs
    wrap by their own minimum column; each face is a body that scrolls inside itself above a foot that keeps the turn
    action in view. */
 
 .c-vcard {
-  --vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, serif;
-  --vcard-latin-serif: 'Noto Serif', Georgia, serif;
+  --vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;
+  --vcard-latin-serif: 'Noto Serif', Georgia, 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;
   border: 1px solid var(--vcard-line);
   border-radius: 20px;
   background: var(--vcard-surface);
@@ -41,12 +43,20 @@
   border-radius: 6px;
   background: var(--vcard-bg);
   padding: 14px;
+  font-family: var(--vcard-han);
+}
+/* Latin-only lines on the Chinese card lead with a Latin serif. */
+.c-vcard--han rt,
+.c-vcard--han [lang='zh-Latn'],
+.c-vcard--han [lang='en'],
+.c-vcard--han .c-vcard__hanviet,
+.c-vcard--han .c-vcard__muted {
   font-family: var(--vcard-latin-serif);
 }
-.c-vcard--han [lang='zh'],
-.c-vcard--han .c-vcard__word--han,
-.c-vcard--han .c-vcard__radical-glyph {
-  font-family: var(--vcard-han);
+/* Controls keep the app's sans. */
+.c-vcard__turn,
+.c-vcard__disc {
+  font-family: var(--font-ui);
 }
 .c-vcard__face {
   flex: 1 1 auto;
@@ -94,42 +104,52 @@
 .c-vcard__foot--back {
   justify-content: flex-start;
 }
-.c-vcard__turn.o-btn {
+/* The design's buttons: primary filled with the button colours, secondary outlined; the kit's focus ring. */
+.c-vcard__turn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 48px;
   margin-left: auto;
   padding: 0 20px;
+  border: 0;
   border-radius: 10px;
   font-size: 15px;
   font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
 }
-.c-vcard__turn.o-btn--primary,
-.c-vcard__turn.o-btn--primary:hover,
-.c-vcard__turn.o-btn--primary:active {
+.c-vcard__turn:hover {
+  opacity: 0.9;
+}
+.c-vcard__turn:active {
+  transform: scale(0.97);
+}
+.c-vcard__turn--primary {
   background: var(--vcard-btn-bg);
   color: var(--vcard-btn-ink);
 }
-.c-vcard__turn.o-btn--secondary,
-.c-vcard__turn.o-btn--secondary:hover {
+.c-vcard__turn--secondary {
   background: transparent;
   color: var(--vcard-ink);
   border: 1px solid var(--vcard-line);
-  box-shadow: none;
 }
-.c-vcard--han .c-vcard__turn.o-btn {
+.c-vcard--han .c-vcard__turn {
   min-height: 46px;
   border-radius: 3px;
-  font-family: var(--vcard-latin-serif);
 }
-.c-vcard--han .c-vcard__turn.o-btn--secondary {
+.c-vcard--han .c-vcard__turn--secondary {
   border: 1.5px solid var(--vcard-gold);
 }
 
 /* ---- Top row: level and source on the left, the discs on the right ---- */
 .c-vcard__top {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
 }
 .c-vcard__tags {
   display: flex;
@@ -138,7 +158,10 @@
   flex-wrap: wrap;
   min-width: 0;
 }
-.c-vcard__level.o-tag {
+.c-vcard__level {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -147,7 +170,7 @@
   background: var(--vcard-accent);
   color: var(--vcard-on-accent);
 }
-.c-vcard--han .c-vcard__level.o-tag {
+.c-vcard--han .c-vcard__level {
   font-family: var(--vcard-han);
   font-size: 14px;
   letter-spacing: 0.1em;
@@ -159,14 +182,14 @@
   font-size: 13px;
   color: var(--vcard-ink2);
 }
-.c-vcard__discs {
+/* The word's actions, quiet under its reading (play, and Save where a word is met). */
+.c-vcard__actions {
   display: flex;
   gap: 8px;
-  flex: none;
 }
 .c-vcard__disc {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 999px;
   border: 1px solid var(--vcard-line);
   display: inline-flex;
@@ -193,9 +216,13 @@
   flex-direction: column;
   gap: 8px;
 }
-/* English: the outlined part-of-speech pill; Chinese: the plain line (名词 · danh từ). */
+/* The top row's right-hand item. English: the outlined part-of-speech pill; Chinese: the plain line (名词 · danh từ). */
+.c-vcard__top .c-vcard__pos {
+  margin-left: auto;
+}
 .c-vcard__pos {
   align-self: flex-start;
+  white-space: nowrap;
   font-size: 13px;
   font-weight: 500;
   color: var(--vcard-ink2);
@@ -254,10 +281,6 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--vcard-ink3);
-}
-.c-vcard__ipa .c-vcard__disc {
-  width: 32px;
-  height: 32px;
 }
 /* The Hanzi and Hán Việt share a row while it holds both; when it cannot, Hán Việt wraps under the Hanzi.
    The Hanzi never shrinks below its own glyphs (min-content), so the two can never overlap; the Hanzi's
@@ -390,13 +413,28 @@
   flex-wrap: wrap;
   gap: 6px;
 }
-.c-vcard__chips .o-tag {
+.c-vcard__chip {
+  display: inline-flex;
+  align-items: center;
   font-size: 13px;
   font-weight: 500;
-  background: transparent;
+  padding: 3px 10px;
   color: var(--vcard-ink);
   border: 1px solid var(--vcard-line);
   border-radius: 999px;
+}
+/* The language a meaning is written in, when it is not the support language ("Tiếng Anh"). */
+.c-vcard__lang {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--vcard-surface-alt);
+  color: var(--vcard-ink2);
+  white-space: nowrap;
 }
 
 /* ---- Radical ---- */
@@ -571,10 +609,46 @@
 .c-vcard--review-front .c-vcard__word--han {
   font-size: min(88px, calc(78cqi / var(--len, 1)));
 }
+.c-vcard__recall-meta .c-vcard__pos {
+  align-self: center;
+}
 .c-vcard__recall-meta {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+/* ---- The stroke-order block a screen places inside the card (Chinese): in the card's colours ---- */
+.c-vcard .c-vcard__body [class$='-strokes__label'] {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--vcard-ink3);
+}
+.c-vcard .c-vcard__body [class$='-strokes__tile'],
+.c-vcard .c-vcard__body .o-stroke-tile {
+  background: var(--vcard-surface-alt);
+  color: var(--vcard-ink);
+}
+.c-vcard .c-vcard__body .stroke-glyph__on {
+  fill: var(--vcard-ink);
+}
+.c-vcard .c-vcard__body .stroke-glyph__off {
+  fill: var(--vcard-line);
+}
+.c-vcard .c-vcard__body .stroke-glyph__rad {
+  fill: var(--vcard-seal);
+}
+.c-vcard .c-vcard__body [class$='-strokes'] .o-btn--secondary {
+  font-family: var(--font-ui);
+  background: transparent;
+  color: var(--vcard-ink);
+  border: 1px solid var(--vcard-line);
+  box-shadow: none;
+}
+.c-vcard--han .c-vcard__body [class$='-strokes'] .o-btn--secondary {
+  border: 1.5px solid var(--vcard-gold);
+  border-radius: 3px;
 }

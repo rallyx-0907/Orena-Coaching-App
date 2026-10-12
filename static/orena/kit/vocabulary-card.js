@@ -11,8 +11,9 @@
    gold ruled frame, the seal tag and radical box), its highlights and buttons, and its two line drawings as library
    art for the samples (kit/vocabulary-art.js); local fonts only, the kit's focus ring (AA). Adaptations, each recorded
    in D-179 / D-17X and UI_BACKEND_GAPS "Vocabulary card":
-   the save disc joins the top row; a play disc sits on each IPA row; collocations are chips; a
-   section with no data is left out.
+   the play and save discs sit in a quiet action row under the reading (the design draws neither; the top row stays
+   level/source left, part of speech right, as drawn - D-17X point 8); collocations are chips; a section with no data
+   is left out. Every tag, chip and accent inside the card is `--vcard-*`: no global accent token, no kit `o-tag`.
 
    Faces, top to bottom as the reference draws them:
    - EN front: level tag + source; part of speech (its English name · the localized name); the headword;
@@ -129,20 +130,32 @@ export function levelLabel(model) {
 }
 
 /* The top row: the level tag (and, on the English card, its source), the discs on the right. */
-function topRow(model, { save, play }) {
+/* The top row as the design draws it: the level tag (and, on the English card, its source) on the left, the part of
+   speech on the right - one row; at a narrow width it may wrap, the part of speech staying the row's last item. */
+function topRow(model) {
   const tags = [
-    model.level ? html`<span class="o-tag o-tag--accent c-vcard__level">${levelLabel(model)}</span>` : '',
+    model.level ? html`<span class="c-vcard__level">${levelLabel(model)}</span>` : '',
     model.script !== 'hanzi' && model.levelSource ? html`<span class="c-vcard__source">${model.levelSource}</span>` : '',
   ];
-  const discs = [play ? playDisc() : '', save || ''];
-  if (!String(tags.join('')) && !String(discs.join(''))) return '';
-  return html`<div class="c-vcard__top"><div class="c-vcard__tags">${tags}</div><div class="c-vcard__discs">${discs}</div></div>`;
+  const pos = posLine(model);
+  if (!String(tags.join('')) && !String(pos)) return '';
+  return html`<div class="c-vcard__top"><div class="c-vcard__tags">${tags}</div>${pos}</div>`;
+}
+
+/* The word's actions - play, and Save on the cards a word is met on - in a quiet row under its reading, so the
+   design's header stays as drawn (D-17X: derivation recorded in this file's header). */
+function actionRow(save) {
+  return html`<div class="c-vcard__actions">${playDisc()}${save || ''}</div>`;
 }
 
 /* The meaning panel. Still being looked up: the kit's skeleton bones, never "no meaning". The word's
    own-language definition is the line under the meaning, or the only line, tagged with its language. */
-function meaningSection(model, { meaningTag, pending }) {
-  const tag = (language) => (language && meaningTag ? meaningTag(language) : '');
+function meaningSection(model, { meaningLabel, pending }) {
+  // The card draws the language tag itself (card colours); the screen only names the language, in its own words.
+  const tag = (language) => {
+    const label = language && meaningLabel ? meaningLabel(language) : '';
+    return label ? html` <span class="c-vcard__lang">${label}</span>` : '';
+  };
   let body;
   if (!model.meaning && !model.definition && !model.english) {
     body = pending
@@ -175,7 +188,7 @@ function illustration(model) {
 function ipaRows(model) {
   const rows = model.pronunciation.ipa;
   if (!rows.length) return '';
-  return html`<div class="c-vcard__ipa-rows">${rows.map((row) => html`<span class="c-vcard__ipa">${row.region === 'uk' || row.region === 'us' ? html`<b>${t(row.region === 'uk' ? 'regionUk' : 'regionUs')}</b>` : ''}<span>${row.text}</span>${playDisc(row.region)}</span>`)}</div>`;
+  return html`<div class="c-vcard__ipa-rows">${rows.map((row) => html`<span class="c-vcard__ipa" data-region="${row.region}">${row.region === 'uk' || row.region === 'us' ? html`<b>${t(row.region === 'uk' ? 'regionUk' : 'regionUs')}</b>` : ''}<span>${row.text}</span></span>`)}</div>`;
 }
 
 function enFront(model, ctx) {
@@ -189,11 +202,11 @@ function enFront(model, ctx) {
     : '';
   const pair = [section('sectionWordFamily', family), section('sectionSynAnt', synAnt)].filter((cell) => String(cell));
   return html`
-    ${topRow(model, { save: ctx.save, play: !hasIpaRows })}
+    ${topRow(model)}
     <div class="c-vcard__ident">
-      ${posLine(model)}
       ${headword(model)}
       ${hasIpaRows ? ipaRows(model) : (model.pronunciation.text ? html`<div class="c-vcard__ipa"><span>${model.pronunciation.text}</span></div>` : '')}
+      ${actionRow(ctx.save)}
     </div>
     ${illustration(model)}
     ${meaningSection(model, ctx)}
@@ -231,12 +244,12 @@ function zhFront(model, ctx) {
     : '';
   const pair = [section('sectionMeasureWord', measure), section('sectionRelated', related)].filter((cell) => String(cell));
   return html`
-    ${topRow(model, { save: ctx.save, play: true })}
-    ${posLine(model)}
+    ${topRow(model)}
     <div class="c-vcard__hanrow">
       ${headword(model)}
       ${model.hanViet ? html`<div class="c-vcard__hanviet"><span class="c-vcard__label">${t('hanVietLabel')}</span><span>${model.hanViet}</span></div>` : ''}
     </div>
+    ${actionRow(ctx.save)}
     ${illustration(model)}
     ${meaningSection(model, ctx)}
     ${radicalSection(model)}
@@ -276,7 +289,7 @@ function back(model, { learner, mode }) {
     : '';
   const notes = [
     model.script !== 'hanzi' ? section('sectionStructure', model.usage.length ? html`<div class="c-vcard__lines">${model.usage.map((note) => html`<div>${note}</div>`)}</div>` : '') : '',
-    model.collocations.length ? section('sectionCollocations', html`<div class="c-vcard__chips" lang="${lang}">${model.collocations.map((item) => html`<span class="o-tag">${item}</span>`)}</div>`) : '',
+    model.collocations.length ? section('sectionCollocations', html`<div class="c-vcard__chips" lang="${lang}">${model.collocations.map((item) => html`<span class="c-vcard__chip">${item}</span>`)}</div>`) : '',
     model.memoryTip ? section('sectionMemoryTip', html`<p class="c-vcard__note">${model.memoryTip.text}</p>`) : '',
     model.script === 'hanzi' && model.usage.length ? section('sectionStructure', html`<div class="c-vcard__lines">${model.usage.map((note) => html`<div>${note}</div>`)}</div>`) : '',
     model.commonMistakes.length ? section('sectionCommonMistake', html`<div class="c-vcard__lines">${model.commonMistakes.map((note) => html`<div>${note}</div>`)}</div>`) : '',
@@ -293,7 +306,8 @@ function footer(learner, labels) {
 let cardSeq = 0;
 
 /* `slots`: `strokes` (the Chinese stroke-order block, a screen's), `footer` ({ stage, due } in the
-   screen's words), `meaningTag(language)`, `meaningPending` (the lookup is still out). */
+   screen's words), `meaningLabel(language)` (the name of a meaning's language when it is not the support language,
+   or ''), `meaningPending` (the lookup is still out). */
 export function vocabularyCard(model, { mode = 'detail', learner = null, slots = {} } = {}) {
   if (!CARD_MODES.includes(mode)) throw new Error(`VocabularyCard: unknown mode ${mode}`);
   const han = model.script === 'hanzi';
@@ -301,9 +315,8 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
     const reading = han ? model.pronunciation.pinyin : model.pronunciation.text;
     return html`<article class="c-vcard c-vcard--review-front${cls(han && ' c-vcard--han')}" data-vcard-mode="review-front">
       <div class="c-vcard__recall">
-        ${posLine(model)}
         <h2 class="${cls('c-vcard__word', han && 'c-vcard__word--han')}" lang="${langAttr(model.language)}" style="--len:${headwordRun(model.word, model.script)}">${model.word}</h2>
-        <div class="c-vcard__recall-meta">${reading ? html`<span class="c-vcard__ipa"><span>${reading}</span></span>` : ''}${model.level ? html`<span class="o-tag o-tag--accent c-vcard__level">${levelLabel(model)}</span>` : ''}${playDisc()}</div>
+        <div class="c-vcard__recall-meta">${posLine(model)}${reading ? html`<span class="c-vcard__ipa"><span>${reading}</span></span>` : ''}${model.level ? html`<span class="c-vcard__level">${levelLabel(model)}</span>` : ''}${playDisc()}</div>
       </div>
     </article>`;
   }
@@ -312,20 +325,20 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
   // Save on the cards a word is met on; in Review, where every word is already saved, the bookmark is only a
   // remove toggle, drawn saved (D-179, the exception to "Save is not Review"; the pinned frame draws it).
   const save = mode === 'detail' || mode === 'feed' ? saveDisc(learner) : '';
-  const ctx = { save, meaningTag: slots.meaningTag, pending: slots.meaningPending };
+  const ctx = { save, meaningLabel: slots.meaningLabel, pending: slots.meaningPending };
   const front = han ? zhFront(model, ctx) : enFront(model, ctx);
   return html`<article class="${cls('c-vcard', `c-vcard--${mode}`, han && 'c-vcard--han')}" data-vcard-mode="${mode}" data-face="front">
     <div class="c-vcard__face c-vcard__face--front" id="${id}-front">
       <div class="c-vcard__body" data-scroll-region>${front}${slots.strokes || ''}</div>
       <div class="c-vcard__foot">
         ${footer(learner, slots.footer)}
-        <button type="button" class="o-btn o-btn--primary c-vcard__turn" data-vcard-turn="back" aria-controls="${id}-back">${t('seeExamples')}</button>
+        <button type="button" class="c-vcard__turn c-vcard__turn--primary" data-vcard-turn="back" aria-controls="${id}-back">${t('seeExamples')}</button>
       </div>
     </div>
     <div class="c-vcard__face c-vcard__face--back" id="${id}-back" hidden>
       <div class="c-vcard__body" data-scroll-region>${back(model, { learner, mode })}</div>
       <div class="c-vcard__foot c-vcard__foot--back">
-        <button type="button" class="o-btn o-btn--secondary c-vcard__turn" data-vcard-turn="front" aria-controls="${id}-front">${t('backToFront')}</button>
+        <button type="button" class="c-vcard__turn c-vcard__turn--secondary" data-vcard-turn="front" aria-controls="${id}-front">${t('backToFront')}</button>
       </div>
     </div>
   </article>`;

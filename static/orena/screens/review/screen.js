@@ -53,9 +53,8 @@ import {
 } from './model.js';
 
 /* The kit's small tag naming a meaning's language when it is not the support language (D-124). */
-function meaningTag(language) {
-  const label = meaningLanguageLabel(language, languages().support, languages().ui);
-  return label ? html` <span class="o-tag">${label}</span>` : '';
+function meaningLabel(language) {
+  return meaningLanguageLabel(language, languages().support, languages().ui);
 }
 
 /* The task the card asks, in plain words. The position in the session is shown once, in the header (LEX-064). */
@@ -76,7 +75,7 @@ function backFaceMarkup(model, learner, row) {
     : '';
   // No corner disc here: every corner of the turned card holds text or a control (UI_BACKEND_GAPS VC-12).
   return html`<div class="s-review-face s-review-face--revealed">
-    ${vocabularyCard(model, { mode: 'review-back', learner, slots: { strokes, footer, meaningTag } })}
+    ${vocabularyCard(model, { mode: 'review-back', learner, slots: { strokes, footer, meaningLabel } })}
   </div>`;
 }
 
