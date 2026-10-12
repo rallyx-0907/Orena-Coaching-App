@@ -354,12 +354,26 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
    Either way a card with little height drops its illustration first (`data-fit="short"`) before its body scrolls. */
 export const SHORT_CARD_PX = 620;
 
+/* The top of the bottom chrome drawn over the page (the phone bar and its orb), or Infinity when there is none. */
+export function bottomChromeTop(root) {
+  const doc = root?.ownerDocument || (typeof document !== 'undefined' ? document : null);
+  const parts = doc?.querySelectorAll?.('[data-part="bnav"], [data-part="bnav"] .o-bnav__disc') || [];
+  let top = Infinity;
+  for (const part of parts) {
+    const rect = part.getBoundingClientRect();
+    if (rect.height > 0 && rect.width > 0) top = Math.min(top, rect.top);
+  }
+  return top;
+}
+
 export function fitVocabularyCards(root, { viewport = false, bottomGap = 16 } = {}) {
   root?.querySelectorAll?.('.c-vcard:not(.c-vcard--review-front)').forEach((card) => {
     if (viewport) {
-      // Measured as if the column were at its top: arrival is what must fit.
+      // Measured as if the column were at its top: arrival is what must fit. The limit is the column's bottom or,
+      // higher, the top of any bottom chrome over it - the phone bar and the Orena orb that rises above it (rule 47:
+      // the browsing places have one) - so the card and its turn action never sit under it.
       const column = card.closest('.o-main');
-      const bottom = column ? column.getBoundingClientRect().bottom : window.innerHeight;
+      const bottom = Math.min(column ? column.getBoundingClientRect().bottom : window.innerHeight, bottomChromeTop(root));
       const top = card.getBoundingClientRect().top + (column ? column.scrollTop : window.scrollY || 0);
       const available = Math.max(320, Math.floor(bottom - top - bottomGap));
       card.style.setProperty('--vcard-fit', `${available}px`);

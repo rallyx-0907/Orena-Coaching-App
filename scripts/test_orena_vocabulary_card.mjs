@@ -374,6 +374,23 @@ assert.equal(tall.props.get('--vcard-fit'), '864px');
 assert.equal(tall.dataset.fit, 'full');
 assert.equal(phone.props.get('--vcard-fit'), '444px', 'measured as if the column were at its top');
 assert.equal(phone.dataset.fit, 'short', 'a short card drops its illustration first');
+// The phone bar floats over the column's bottom (lead's 360x740 check: the column ran to 740, the bar from ~650 and
+// its orb higher): the fit stops above the highest of them, so the card and its turn action are never under it.
+const underBar = fakeCard({ top: 126, columnBottom: 740 });
+const rect = (top, height = 72) => ({ getBoundingClientRect: () => ({ top, height, width: 300 }) });
+const phoneRoot = {
+  querySelectorAll: () => [underBar],
+  ownerDocument: { querySelectorAll: () => [rect(650), rect(616, 58)] },
+};
+fitVocabularyCards(phoneRoot, { viewport: true });
+assert.equal(underBar.props.get('--vcard-fit'), '474px', 'max-height ends above the bar and its orb (616 - 126 - 16)');
+assert.equal(underBar.dataset.fit, 'short', 'so the illustration drops and the meaning shows on arrival');
+const hiddenBar = fakeCard({ top: 126, columnBottom: 740 });
+fitVocabularyCards({ querySelectorAll: () => [hiddenBar], ownerDocument: { querySelectorAll: () => [rect(0, 0)] } }, { viewport: true });
+assert.equal(hiddenBar.props.get('--vcard-fit'), '598px', 'a bar that is not displayed (desktop, focus routes) changes nothing');
+// Review and the Daily Feed are learning workspaces (focus routes): no phone bar there (rule 47); they fit their slot.
+const routesSrc = readFileSync(new URL('../static/orena/shell/routes.js', import.meta.url), 'utf8');
+for (const id of ['review', 'feed']) assert.match(routesSrc, new RegExp(`\{ id: '${id}',[^}]*focus: true`), `${id} is a focus route`);
 const slotted = fakeCard({ top: 0, slot: 480 });
 fitVocabularyCards({ querySelectorAll: () => [slotted] });
 assert.equal(slotted.dataset.fit, 'short');
