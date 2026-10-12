@@ -23,6 +23,12 @@
    action in view. */
 
 .c-vcard {
+  /* Spacing that scales with BOTH the card's width (cqi) and the viewport's height (dvh); the design's value is the
+     ceiling (rule 49: the card fits one viewport before its body scrolls). */
+  --vc-pad-x: clamp(18px, 7.7cqi, 40px);
+  --vc-pad-top: min(clamp(20px, 6.9cqi, 36px), clamp(12px, 3.4dvh, 36px));
+  --vc-pad-bottom: min(clamp(18px, 6.2cqi, 32px), clamp(10px, 3dvh, 32px));
+  --vc-gap: clamp(10px, 2.4dvh, 22px);
   --vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;
   /* Latin-led serif: Cambria and Times New Roman ship on Windows and carry the pinyin tone letters (ǎ ǐ ǒ ǔ ǖ ǘ ǚ ǜ)
      and Vietnamese, which Georgia and SimSun do not - a missing letter fell back glyph by glyph ("huǒ" drawn as o and
@@ -41,7 +47,21 @@
   overflow: hidden;
   container-type: inline-size;
 }
+/* The card is never taller than the height it is given. Word Detail (a page): the visible height of its column below
+   the card's top, measured by kit/vocabulary-card.js#fitVocabularyCards into --vcard-fit, else the viewport less the
+   app's chrome; Review and the feed: the slot the card fills. */
+.c-vcard--detail {
+  max-height: var(--vcard-fit, calc(100dvh - 180px));
+}
+.c-vcard--feed,
+.c-vcard--review-back {
+  max-height: 100%;
+}
 .c-vcard--han {
+  --vc-pad-x: clamp(16px, 6.5cqi, 34px);
+  --vc-pad-top: min(clamp(18px, 5.8cqi, 30px), clamp(10px, 3dvh, 30px));
+  --vc-pad-bottom: min(clamp(16px, 5cqi, 26px), clamp(10px, 2.6dvh, 26px));
+  --vc-gap: clamp(10px, 2dvh, 18px);
   border: 0;
   border-radius: 6px;
   background: var(--vcard-bg);
@@ -85,19 +105,21 @@
   outline: 1px solid var(--vcard-gold);
   outline-offset: -6px;
 }
+/* A face: the head (the design's top row, or the back's title line) and the foot (the turn action) stay; only the
+   body between them scrolls, and only when the face holds more than the card's height. */
+.c-vcard__head {
+  flex: none;
+  padding: var(--vc-pad-top) var(--vc-pad-x) 0;
+}
 .c-vcard__body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: clamp(20px, 6.9cqi, 36px) clamp(18px, 7.7cqi, 40px) 8px;
+  padding: var(--vc-gap) var(--vc-pad-x) 8px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: var(--vc-gap);
   container-type: inline-size;
-}
-.c-vcard--han .c-vcard__body {
-  padding: clamp(18px, 5.8cqi, 30px) clamp(16px, 6.5cqi, 34px) 8px;
-  gap: 18px;
 }
 /* The foot wraps as whole items: the mastery line on one line, the turn action on its own when the two do
    not fit; nothing breaks inside a word. */
@@ -108,10 +130,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  padding: 12px clamp(18px, 7.7cqi, 40px) clamp(18px, 6.2cqi, 32px);
-}
-.c-vcard--han .c-vcard__foot {
-  padding: 10px clamp(16px, 6.5cqi, 34px) clamp(16px, 5cqi, 26px);
+  padding: 10px var(--vc-pad-x) var(--vc-pad-bottom);
 }
 .c-vcard__foot--back {
   justify-content: flex-start;
@@ -251,7 +270,7 @@
    the column (`--len`, its longest run; `cqi`, the face's width). The design's size is the ceiling. */
 .c-vcard__word {
   margin: 0;
-  font-size: min(60px, calc(165cqi / var(--len, 1)));
+  font-size: min(60px, calc(165cqi / var(--len, 1)), 7.5dvh);
   line-height: 1;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -260,7 +279,7 @@
   hyphens: none;
 }
 .c-vcard__word--han {
-  font-size: min(104px, calc(78cqi / var(--len, 1)));
+  font-size: min(104px, calc(78cqi / var(--len, 1)), 12dvh);
   font-weight: 900;
   line-height: 1.05;
   letter-spacing: 0;
@@ -319,9 +338,12 @@
 }
 
 /* ---- Illustration: only when there is one ---- */
+/* The frame shrinks with the viewport's height (the design's 180px / 150px the ceiling) and drops out on a card with
+   little height (`data-fit="short"`) rather than pushing the content out. */
 .c-vcard__art {
   margin: 0;
-  height: 180px;
+  flex: none;
+  height: clamp(72px, calc(24dvh - 60px), 180px);
   border-radius: 14px;
   background: var(--vcard-surface-alt);
   overflow: hidden;
@@ -329,8 +351,11 @@
   align-items: center;
   justify-content: center;
 }
+.c-vcard[data-fit='short'] .c-vcard__art {
+  display: none;
+}
 .c-vcard--han .c-vcard__art {
-  height: 150px;
+  height: clamp(64px, calc(20dvh - 48px), 150px);
   border-radius: 0;
   background: transparent;
   border-top: 1px solid var(--vcard-line);

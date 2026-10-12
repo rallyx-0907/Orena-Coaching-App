@@ -463,12 +463,15 @@ assert.match(
   }
   // Review's grades use the card palette, not the app's violet accent.
   const reviewCss = fs.readFileSync(path.join(ROOT, 'screens/review/review.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  for (const rule of reviewCss.split('}').filter((rule) => /\.s-review-grade/.test(rule))) {
+  for (const rule of reviewCss.split('}').filter((rule) => /\.s-review-(grade|btn)/.test(rule))) {
     assert.ok(!/var\(--accent/.test(rule), `review grades use no app accent: ${rule.trim().split('{')[0]}`);
     assert.ok(!/opacity:\s*0?\.\d/.test(rule.split('{')[0].includes(' b') ? rule : ''), 'the interval line is not faded below AA');
   }
   assert.match(reviewCss, /\.s-review-grade--gotit \{[^}]*background: var\(--vcard-btn-bg\);[^}]*color: var\(--vcard-btn-ink\)/);
   assert.match(reviewCss, /\.s-review-grade--again \{[^}]*color: var\(--vcard-seal\)/);
+  // Reveal and Hint (under the recall face) in the card's palette too.
+  assert.match(reviewCss, /\.s-review-btn--primary \{[^}]*background: var\(--vcard-btn-bg\);[^}]*color: var\(--vcard-btn-ink\)/);
+  assert.match(reviewCss, /\.s-review-btn--secondary \{[^}]*background: var\(--vcard-surface\);[^}]*color: var\(--vcard-ink\)/);
   // The gold never carries text or the focus ring (light 2.25:1 on the card, below the 3:1 a focus indicator needs).
   const cardCss = fs.readFileSync(path.join(ROOT, 'kit/vocabulary-card.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   for (const rule of cardCss.split('}')) {

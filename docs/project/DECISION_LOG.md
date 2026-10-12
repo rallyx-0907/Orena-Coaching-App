@@ -5732,6 +5732,14 @@ like the design, not only follow its layout".
      action row under the reading (44px discs); the IPA rows are plain readings as the design draws them. Derivation:
      the design draws neither control, and of the options (under the reading, beside the turn action, top-right of the
      headword line) this one keeps the drawn hierarchy and the turn action alone in its foot.
+9. **One viewport, and Reveal in the card's palette (human, 2026-10-12).** The card fits inside one viewport in every
+   mode (Design Contract rule 49, CLAUDE.md 6b): each face is a head (the design's top row / the back's title line)
+   and a foot (the turn action) that stay, around the only scroll region, its body. Before the body scrolls the card
+   recomposes: spacing and the headword scale with the viewport's height as well as the card's width (the design's
+   values the ceiling), the illustration frame shrinks with the height and drops out on a short card. Word Detail
+   gives its card the visible height of the column below it on arrival (`fitVocabularyCards`, again on resize), so the
+   card and its actions are in view without a page scroll; Review's and the feed's cards fill their slot. Review's
+   Reveal is the card's primary button and Hint its secondary, like the grades - no app accent under the card.
 7. **Kept.** Every D-179 behaviour (modes, the recall face, grades outside the card, no Review bookmark, meaning
    order, reading guards, the pure mapper), the copy packs, and rule 49 (a fluid card whose padding scales with its
    width, the design's values as the ceiling).

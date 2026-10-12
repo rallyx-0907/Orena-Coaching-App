@@ -202,7 +202,6 @@ function enFront(model, ctx) {
     : '';
   const pair = [section('sectionWordFamily', family), section('sectionSynAnt', synAnt)].filter((cell) => String(cell));
   return html`
-    ${topRow(model)}
     <div class="c-vcard__ident">
       ${headword(model)}
       ${hasIpaRows ? ipaRows(model) : (model.pronunciation.text ? html`<div class="c-vcard__ipa"><span>${model.pronunciation.text}</span></div>` : '')}
@@ -244,7 +243,6 @@ function zhFront(model, ctx) {
     : '';
   const pair = [section('sectionMeasureWord', measure), section('sectionRelated', related)].filter((cell) => String(cell));
   return html`
-    ${topRow(model)}
     <div class="c-vcard__hanrow">
       ${headword(model)}
       ${model.hanViet ? html`<div class="c-vcard__hanviet"><span class="c-vcard__label">${t('hanVietLabel')}</span><span>${model.hanViet}</span></div>` : ''}
@@ -278,7 +276,7 @@ function back(model, { learner, mode }) {
   const context = !examples.length && learner?.context
     ? html`<li class="c-vcard__example"><p class="c-vcard__example-text" lang="${lang}">${parts(learner.contextParts || [{ value: learner.context, hit: false }])}</p></li>`
     : '';
-  const head = html`<div class="c-vcard__backhead">
+  const head = html`<div class="c-vcard__backhead c-vcard__head">
     ${model.script === 'hanzi'
       ? html`<span class="c-vcard__backword"><span lang="${lang}">${model.word}</span> <span class="c-vcard__muted">${model.pronunciation.pinyin}</span></span>`
       : html`<span class="c-vcard__backword" lang="${lang}">${model.word}</span>`}
@@ -295,7 +293,7 @@ function back(model, { learner, mode }) {
     model.commonMistakes.length ? section('sectionCommonMistake', html`<div class="c-vcard__lines">${model.commonMistakes.map((note) => html`<div>${note}</div>`)}</div>`) : '',
     model.etymology ? section('sectionEtymology', html`<p class="c-vcard__note">${model.etymology}</p>`) : '',
   ].filter((cell) => String(cell));
-  return html`${head}${list}${notes.length ? html`<div class="c-vcard__pair c-vcard__pair--back">${notes}</div>` : ''}`;
+  return { head, body: html`${list}${notes.length ? html`<div class="c-vcard__pair c-vcard__pair--back">${notes}</div>` : ''}` };
 }
 
 function footer(learner, labels) {
@@ -327,8 +325,13 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
   const save = mode === 'detail' || mode === 'feed' ? saveDisc(learner) : '';
   const ctx = { save, meaningLabel: slots.meaningLabel, pending: slots.meaningPending };
   const front = han ? zhFront(model, ctx) : enFront(model, ctx);
+  // Each face: a head that stays (the design's top row / the back's title line), a body that alone scrolls when the
+  // face holds more than fits, and a foot with the turn action (rule 49).
+  const frontHead = topRow(model);
+  const backFace = back(model, { learner, mode });
   return html`<article class="${cls('c-vcard', `c-vcard--${mode}`, han && 'c-vcard--han')}" data-vcard-mode="${mode}" data-face="front">
     <div class="c-vcard__face c-vcard__face--front" id="${id}-front">
+      ${frontHead ? html`<div class="c-vcard__head">${frontHead}</div>` : ''}
       <div class="c-vcard__body" data-scroll-region>${front}${slots.strokes || ''}</div>
       <div class="c-vcard__foot">
         ${footer(learner, slots.footer)}
@@ -336,12 +339,37 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
       </div>
     </div>
     <div class="c-vcard__face c-vcard__face--back" id="${id}-back" hidden>
-      <div class="c-vcard__body" data-scroll-region>${back(model, { learner, mode })}</div>
+      ${backFace.head}
+      <div class="c-vcard__body" data-scroll-region>${backFace.body}</div>
       <div class="c-vcard__foot c-vcard__foot--back">
         <button type="button" class="c-vcard__turn c-vcard__turn--secondary" data-vcard-turn="front" aria-controls="${id}-front">${t('backToFront')}</button>
       </div>
     </div>
   </article>`;
+}
+
+/* Fits each card to the height it has (rule 49, CLAUDE.md 6b). `viewport: true` (Word Detail, a browsing page): the
+   card's max-height is the visible height of its scrolling column below the card's top, so on arrival the whole card -
+   actions included - is in view. Otherwise the card already sits in a bounded slot (Review's face, the feed's card).
+   Either way a card with little height drops its illustration first (`data-fit="short"`) before its body scrolls. */
+export const SHORT_CARD_PX = 620;
+
+export function fitVocabularyCards(root, { viewport = false, bottomGap = 16 } = {}) {
+  root?.querySelectorAll?.('.c-vcard:not(.c-vcard--review-front)').forEach((card) => {
+    if (viewport) {
+      // Measured as if the column were at its top: arrival is what must fit.
+      const column = card.closest('.o-main');
+      const bottom = column ? column.getBoundingClientRect().bottom : window.innerHeight;
+      const top = card.getBoundingClientRect().top + (column ? column.scrollTop : window.scrollY || 0);
+      const available = Math.max(320, Math.floor(bottom - top - bottomGap));
+      card.style.setProperty('--vcard-fit', `${available}px`);
+      card.dataset.fit = available < SHORT_CARD_PX ? 'short' : 'full';
+    } else {
+      // The slot the card fills (Review's face, the feed's card), not the card's own content height.
+      const slot = card.parentElement?.getBoundingClientRect().height || 0;
+      card.dataset.fit = slot && slot < SHORT_CARD_PX ? 'short' : 'full';
+    }
+  });
 }
 
 /* Turns a card between its faces (a real button each way, so the keyboard does it too), and gives the

@@ -188,20 +188,32 @@
   justify-content: center;
   transition: background 0.15s;
 }
+/* D-17X: Reveal and Hint sit under the card, in the card's palette - Reveal the card's primary button (like
+   "Xem ví dụ" and "Đã nhớ"), Hint its secondary, outlined on the card surface. AA in both themes
+   (scripts/test_orena_kit.mjs: btn-ink/btn-bg, ink/surface); focus is the kit's ring. */
+.s-review-btn {
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s, background 0.15s;
+}
+.s-review-btn:active {
+  transform: scale(0.97);
+}
 .s-review-btn--secondary {
-  border: 1px solid transparent;
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: var(--edge-light);
+  border: 1px solid var(--vcard-line);
+  background: var(--vcard-surface);
+  color: var(--vcard-ink);
+}
+.s-review-btn--secondary:hover {
+  background: var(--vcard-surface-alt);
 }
 .s-review-btn--primary {
   flex: 1;
   border: 0;
-  background: var(--accent-fill);
-  color: var(--accent-ink);
+  background: var(--vcard-btn-bg);
+  color: var(--vcard-btn-ink);
 }
 .s-review-btn--primary:hover {
-  background: var(--accent-fill-hover);
+  opacity: 0.9;
 }
 
 /* ---- Revealed word card (D7 §4: identical content to Word Detail's) ---- */

@@ -21,7 +21,7 @@ import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
 import { openLessonComplete } from '../lesson-complete/sheet.js';
 import { langAttr } from '../../kit/lang.js';
-import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
+import { vocabularyCard, bindVocabularyCards, fitVocabularyCards } from '../../kit/vocabulary-card.js';
 import { toVocabularyModel, learnerState } from '../../product/vocabulary-card.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
@@ -342,6 +342,7 @@ export default async function mountReview(element, ctx) {
       play();
     }));
     bindVocabularyCards(element);
+    fitVocabularyCards(element);
 
     if (!state.revealed) {
       element.querySelector('[data-card-tap]')?.addEventListener('click', (event) => {

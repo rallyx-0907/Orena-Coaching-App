@@ -13,7 +13,7 @@ import { loadingMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
 import { rowBadge } from '../../kit/components.js';
-import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
+import { vocabularyCard, bindVocabularyCards, fitVocabularyCards } from '../../kit/vocabulary-card.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
@@ -257,6 +257,8 @@ export default async function mountWordDetail(element, ctx) {
     // a text when it is not in the catalogue, and the device's own voice - said to be the device's - only when
     // the server's voice failed or could not be reached.
     bindVocabularyCards(element);
+    // The card is fully in view on arrival, actions included (rule 49, CLAUDE.md 6b).
+    fitVocabularyCards(element, { viewport: true });
     // One play action per reading row (UK, US) and one on a card without them: the same word's voice.
     element.querySelectorAll('[data-play]').forEach((playButton) => playButton.addEventListener('click', async () => {
       const onDevice = () => {
@@ -367,7 +369,11 @@ export default async function mountWordDetail(element, ctx) {
     });
   }
 
+  const onResize = () => fitVocabularyCards(element, { viewport: true });
+  window.addEventListener('resize', onResize);
+
   return () => {
+    window.removeEventListener('resize', onResize);
     audio?.pause();
     strokeTiles?.stop();
   };

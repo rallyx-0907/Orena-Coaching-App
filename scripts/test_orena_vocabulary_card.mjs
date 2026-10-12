@@ -320,16 +320,69 @@ const cardCss = readFileSync(new URL('../static/orena/kit/vocabulary-card.css', 
 const wordRule = cardCss.match(/\.c-vcard__word \{[^}]*\}/)[0];
 assert.match(wordRule, /overflow-wrap: normal/);
 assert.match(wordRule, /word-break: keep-all/);
-assert.match(wordRule, /font-size: min\(60px, calc\(165cqi \/ var\(--len, 1\)\)\)/, 'the reference size (60px) is the ceiling; the type shrinks to the width');
+assert.match(wordRule, /font-size: min\(60px, calc\(165cqi \/ var\(--len, 1\)\), 7\.5dvh\)/, 'the reference size (60px) is the ceiling; the type shrinks to the width and to the viewport height');
+assert.match(cardCss, /\.c-vcard__word--han \{[^}]*font-size: min\(104px, calc\(78cqi \/ var\(--len, 1\)\), 12dvh\)/);
 assert.doesNotMatch(cardCss, /overflow-wrap: anywhere|word-break: break-all/, 'nothing lets a word break mid-word');
 // No fixed card size: only controls and glyph tiles are sized.
 const sized = [...cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)]
   .filter(([, , body]) => /(^|\s|;)(width|height|min-width|min-height):\s*\d+px/.test(body))
   .map(([, selector]) => selector.trim());
-// Only controls, the radical tile and the design's illustration frame (180px EN, 150px ZH, as drawn) are sized.
-assert.deepEqual(sized, ['.c-vcard__turn', '.c-vcard--han .c-vcard__turn', '.c-vcard__disc', '.c-vcard__art', '.c-vcard--han .c-vcard__art', '.c-vcard__art svg', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
-// The padding scales with the card's width, the design's value its ceiling (rule 49 at 360x740).
-assert.match(cardCss, /\.c-vcard__body \{[^}]*padding: clamp\(20px, 6\.9cqi, 36px\) clamp\(18px, 7\.7cqi, 40px\)/);
+// Only controls, the svg's own width and the radical tile are sized in plain px; no card or face height is.
+assert.deepEqual(sized, ['.c-vcard__turn', '.c-vcard--han .c-vcard__turn', '.c-vcard__disc', '.c-vcard__art svg', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
+assert.doesNotMatch(cardCss.replace(/\/\*[\s\S]*?\*\//g, ''), /\.c-vcard(--[\w-]+)? \{[^}]*(^|[\s;])height:\s*\d+px/, 'no fixed card height');
+// One viewport (rule 49, CLAUDE.md 6b): spacing scales with the card's width AND the viewport's height, the design's
+// value the ceiling.
+assert.match(cardCss, /--vc-pad-top: min\(clamp\(20px, 6\.9cqi, 36px\), clamp\(12px, 3\.4dvh, 36px\)\)/);
+assert.match(cardCss, /--vc-gap: clamp\(10px, 2\.4dvh, 22px\)/);
+// Word Detail's card is never taller than the visible column below it; Review's and the feed's fill their slot.
+assert.match(cardCss, /\.c-vcard--detail \{[^}]*max-height: var\(--vcard-fit, calc\(100dvh - 180px\)\)/, 'the detail card has a max-height tied to the viewport');
+assert.match(cardCss, /\.c-vcard--feed,\s*\.c-vcard--review-back \{[^}]*max-height: 100%/);
+// The illustration's height is clamped against the viewport and drops out on a short card.
+assert.match(cardCss, /\.c-vcard__art \{[^}]*height: clamp\(72px, calc\(24dvh - 60px\), 180px\)/);
+assert.match(cardCss, /\.c-vcard--han \.c-vcard__art \{[^}]*height: clamp\(64px, calc\(20dvh - 48px\), 150px\)/);
+assert.match(cardCss, /\.c-vcard\[data-fit='short'\] \.c-vcard__art \{[^}]*display: none/);
+// The head and the foot are outside the face body (the only scroll region).
+for (const face of ['front', 'back']) {
+  const markup = faceOf(enCard, face);
+  const bodyAt = markup.indexOf('<div class="c-vcard__body" data-scroll-region>');
+  assert.ok(markup.indexOf('c-vcard__head') > -1 && markup.indexOf('c-vcard__head') < bodyAt, `${face}: the head is before the body, outside it`);
+  assert.ok(markup.indexOf('c-vcard__foot') > bodyAt, `${face}: the foot is after the body`);
+  assert.equal((markup.match(/data-scroll-region/g) || []).length, 1, `${face}: one scroll region, the body`);
+}
+assert.ok(faceOf(enCard, 'front').indexOf('c-vcard__top') < faceOf(enCard, 'front').indexOf('c-vcard__body'), 'the top row stays in the head');
+assert.match(cardCss, /\.c-vcard__head \{[^}]*flex: none/);
+// Each screen fits its cards: Word Detail to the viewport (and again on resize), Review and the feed to their slot.
+const { fitVocabularyCards, SHORT_CARD_PX } = await import('../static/orena/kit/vocabulary-card.js');
+assert.equal(typeof fitVocabularyCards, 'function');
+assert.ok(SHORT_CARD_PX > 400);
+// The measurement itself: the visible column below the card's top on arrival, less a gap; short below SHORT_CARD_PX.
+function fakeCard({ top, columnBottom, scrollTop = 0, slot = 0 }) {
+  const props = new Map();
+  return {
+    dataset: {},
+    style: { setProperty: (name, value) => props.set(name, value) },
+    props,
+    closest: () => (columnBottom ? { getBoundingClientRect: () => ({ bottom: columnBottom }), scrollTop } : null),
+    getBoundingClientRect: () => ({ top }),
+    parentElement: { getBoundingClientRect: () => ({ height: slot }) },
+  };
+}
+const tall = fakeCard({ top: 120, columnBottom: 1000 });
+const phone = fakeCard({ top: 150, columnBottom: 650, scrollTop: 40 });
+fitVocabularyCards({ querySelectorAll: () => [tall, phone] }, { viewport: true });
+assert.equal(tall.props.get('--vcard-fit'), '864px');
+assert.equal(tall.dataset.fit, 'full');
+assert.equal(phone.props.get('--vcard-fit'), '444px', 'measured as if the column were at its top');
+assert.equal(phone.dataset.fit, 'short', 'a short card drops its illustration first');
+const slotted = fakeCard({ top: 0, slot: 480 });
+fitVocabularyCards({ querySelectorAll: () => [slotted] });
+assert.equal(slotted.dataset.fit, 'short');
+const wordScreenSrc = readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8');
+assert.match(wordScreenSrc, /fitVocabularyCards\(element, \{ viewport: true \}\)/);
+assert.match(wordScreenSrc, /window\.addEventListener\('resize', onResize\)/);
+assert.match(wordScreenSrc, /window\.removeEventListener\('resize', onResize\)/);
+assert.match(readFileSync(new URL('../static/orena/screens/review/screen.js', import.meta.url), 'utf8'), /fitVocabularyCards\(element\)/);
+assert.match(readFileSync(new URL('../static/orena/screens/feed/screen.js', import.meta.url), 'utf8'), /fitVocabularyCards\(element\)/);
 // The card's colours are its scoped tokens only (D-17X).
 for (const [, prop, value] of cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/(color|background|border(?:-\w+)?|outline|fill|stroke):\s*([^;]+);/g)) {
   for (const used of value.matchAll(/var\(--([\w-]+)/g)) assert.ok(used[1].startsWith('vcard-'), `${prop}: ${value} uses an app token inside the card`);

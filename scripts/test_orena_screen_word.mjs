@@ -263,7 +263,7 @@ const screenSrc = readFileSync(new URL('../static/orena/screens/word/screen.js',
 // languages-5 / finding A: the card is the shared VocabularyCard (D-179), which marks the headword and
 // every example with the shared kit/lang.js helper (never the old ad-hoc `? 'zh' : ''` ternary).
 const kitCardSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
-assert.match(screenSrc, /import\s*\{\s*vocabularyCard,\s*bindVocabularyCards\s*\}\s*from\s*'\.\.\/\.\.\/kit\/vocabulary-card\.js'/, 'Word Detail draws the shared VocabularyCard');
+assert.match(screenSrc, /import\s*\{\s*vocabularyCard,\s*bindVocabularyCards,\s*fitVocabularyCards\s*\}\s*from\s*'\.\.\/\.\.\/kit\/vocabulary-card\.js'/, 'Word Detail draws the shared VocabularyCard');
 assert.match(screenSrc, /mode:\s*'detail'/, 'in its detail mode');
 assert.match(kitCardSrc, /import\s*\{\s*langAttr\s*\}\s*from\s*'\.\/lang\.js'/, 'the card imports the shared lang helper from kit/lang.js');
 assert.doesNotMatch(screenSrc + kitCardSrc, /'hanzi'\s*\?\s*'zh'\s*:\s*''/, 'no ad-hoc script-to-lang ternary left inline');
