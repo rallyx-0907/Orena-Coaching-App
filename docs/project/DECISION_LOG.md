@@ -5677,3 +5677,41 @@ Date: 2026-10-12. Human decisions of 2026-10-12 for PR 2 of D-178 (lane `claude/
    reference draws them; the meaning panel shows the kit's skeleton while the lookup is out and the word's
    own-language definition, tagged, when it is the only meaning. Open items: `UI_BACKEND_GAPS.md` "Vocabulary card
    (D-178)".
+
+## D-17X - The vocabulary card wears its design's own palette (a scoped colour exception)
+
+(Placeholder D-17X until merge.)
+
+Date: 2026-10-12. Human decisions of 2026-10-12, PR 2c of D-178 (lane `claude/vocab-card-skin`): "the card must LOOK
+like the design, not only follow its layout".
+
+1. **Source.** The human's flashcard design, now pinned in `docs/design/vocab-card/` (`Main.dc.html` English,
+   `Chinese.dc.html` Chinese, `MainDark.dc.html` / `ChineseDark.dc.html` importing them with `theme="dark"`). Its
+   `renderVals` palettes - light "watercolor paper", dark "night violet", the Chinese card's `seal` - supersede the
+   earlier blue/red screenshot.
+2. **A deliberate exception, scoped.** The vocabulary card - and nothing else - takes that palette: card-scoped tokens
+   `--vcard-*` (bg, surface, surface-alt, line, ink, ink2, ink3, accent, on-accent, gold, seal, on-seal, btn-bg,
+   btn-ink) with the design's light and dark values exactly. This is a human-approved exception to "one palette, no
+   colour skin" (AGENTS.md "Theme", D-089). The tokens still live in `kit/tokens.css`, the one colour owner, and
+   `kit/vocabulary-card.css` reads no other colour token (gated). The rest of the app, and in Review the screen around
+   the card (header, progress, the grade buttons), keeps the app's tokens.
+3. **AA.** Every pair the design draws as text holds 4.5:1 in both themes as designed - no value changed
+   (`scripts/test_orena_kit.mjs` VOCABULARY CARD, 16 pairs per theme). One deviation: the design's focus ring is a 2px
+   gold outline, and light gold `#C9A24B` is 2.25:1 on the card surface (2.10:1 on the paper), under the 3:1 a focus
+   indicator needs; the card keeps the kit's own focus ring instead (light `#5A55E3`, 4.46-5.12:1 on the card grounds;
+   dark `#847FF6`, 5.74-6.03:1). Gold draws rules and borders only, never text (gated).
+4. **Type.** No font download (human decision). English uses the app's sans; the Chinese card uses a local serif for
+   Latin text (Noto Serif, Georgia) and a local Song stack for Hanzi (Noto Serif SC, Source Han Serif SC, Songti SC,
+   STSong, SimSun), weight 900 where the system font has it.
+5. **Shapes as drawn.** English: 1px line border, 20px radius, the accent C1 tag, the outlined part-of-speech pill.
+   Chinese: the paper with 14px around a ruled frame - a 1.5px gold border and a 1px gold line inside it - 6px radius
+   (approved: a gold rule, not a violet ring, D-147), the seal HSK tag, the 1.5px seal radical box. Highlights: English
+   bold accent over a 2px accent underline; Chinese seal at 900, the pinyin span bold seal. Buttons: primary filled with
+   the button colours, secondary outlined (line on English, gold on Chinese).
+6. **Illustrations.** A frame only when there is an image: an upload, or a library drawing named by the stored
+   `provenance.illustration.ref` in `kit/vocabulary-art.js`. The two drawings are the design's own, ported as reference
+   art for the two docs/vocab samples only; production artwork stays under the Art Bible (`assets/brand/orena/`) and
+   comes from Admin upload (PR 3). No schema change, no upload path.
+7. **Kept.** Every D-179 behaviour (modes, the recall face, grades outside the card, no Review bookmark, meaning
+   order, reading guards, the pure mapper), the copy packs, and rule 49 (a fluid card whose padding scales with its
+   width, the design's values as the ceiling).

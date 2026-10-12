@@ -5,10 +5,12 @@
    component, the Claude Design canvas "Flashcard từ vựng Anh – Trung" (claude.ai/artifact/
    9wmYKVJVn8cBuX8ButSryF): artboard `Main.dc.html` (English, "resilient") and `Chinese.dc.html` (Chinese,
    "森林") - a two-face card, the front with the word and its facts, the back with the examples, turned by
-   "See examples ->" / "<- Front". COLOURS, TYPE and COMPONENTS: the current theme only - semantic tokens
-   (kit/tokens.css), the kit's `o-tag`, `o-btn`, play/save discs and highlight; the reference's blue accent,
-   its Be Vietnam Pro / Noto Serif faces, the Chinese card's paper, seal red and double rule are not carried
-   (D-147: no outline ring). Adaptations, each recorded in D-179 and UI_BACKEND_GAPS "Vocabulary card":
+   "See examples ->" / "<- Front". LOOK (D-17X, human 2026-10-12): the same design, now pinned in
+   docs/design/vocab-card/ - its own palette as card-scoped tokens (`--vcard-*`, kit/tokens.css; light "watercolor
+   paper", dark "night violet", the Chinese seal), its shapes (the English line border and pill, the Chinese paper and
+   gold ruled frame, the seal tag and radical box), its highlights and buttons, and its two line drawings as library
+   art for the samples (kit/vocabulary-art.js); local fonts only, the kit's focus ring (AA). Adaptations, each recorded
+   in D-179 / D-17X and UI_BACKEND_GAPS "Vocabulary card":
    the save disc joins the top row; a play disc sits on each IPA row; collocations are chips; a
    section with no data is left out.
 
@@ -36,6 +38,7 @@ import { html, raw, cls } from './html.js';
 import { icon } from './icons.js';
 import { langAttr } from './lang.js';
 import { masteryBars } from './components.js';
+import { libraryArt } from './vocabulary-art.js';
 import { registeredCopy } from '../copy/index.js';
 import { t } from '../copy/vocabulary-card.js';
 
@@ -156,10 +159,16 @@ function meaningSection(model, { meaningTag, pending }) {
   return section('sectionMeaning', body);
 }
 
+/* The illustration frame, only when there is an image: an upload, or a library drawing the kit knows by its `ref`
+   (kit/vocabulary-art.js). EN: the design's 180px rounded box on the alternate surface; ZH: the 150px band between two
+   rules. Nothing at all otherwise. */
 function illustration(model) {
-  return model.illustration
-    ? html`<figure class="c-vcard__art"><img src="${model.illustration.src}" alt="${model.illustration.alt}" loading="lazy" /></figure>`
-    : '';
+  const art = model.illustration;
+  if (!art) return '';
+  const label = art.alt || model.word;
+  if (art.kind === 'upload') return html`<figure class="c-vcard__art"><img src="${art.src}" alt="${label}" loading="lazy" /></figure>`;
+  const drawing = libraryArt(art.ref);
+  return drawing ? html`<figure class="c-vcard__art" role="img" aria-label="${label}" data-art="${art.ref}">${raw(drawing)}</figure>` : '';
 }
 
 /* ---- English front ---- */
@@ -278,7 +287,7 @@ function back(model, { learner, mode }) {
 
 function footer(learner, labels) {
   if (!learner?.hasSchedule) return '';
-  return html`<div class="c-vcard__mastery"><span class="c-vcard__bars">${masteryBars({ filled: learner.filled, total: 4 })}</span>${labels?.stage ? html`<span class="c-vcard__stage">${labels.stage}</span>` : ''}${labels?.due ? html`<span class="c-vcard__due">· ${labels.due}</span>` : ''}</div>`;
+  return html`<div class="c-vcard__mastery"><span class="c-vcard__bars">${masteryBars({ filled: learner.filled, total: 4, color: 'var(--vcard-accent)', emptyColor: 'var(--vcard-line)' })}</span>${labels?.stage ? html`<span class="c-vcard__stage">${labels.stage}</span>` : ''}${labels?.due ? html`<span class="c-vcard__due">· ${labels.due}</span>` : ''}</div>`;
 }
 
 let cardSeq = 0;
@@ -294,7 +303,7 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
       <div class="c-vcard__recall">
         ${posLine(model)}
         <h2 class="${cls('c-vcard__word', han && 'c-vcard__word--han')}" lang="${langAttr(model.language)}" style="--len:${headwordRun(model.word, model.script)}">${model.word}</h2>
-        <div class="c-vcard__recall-meta">${reading ? html`<span class="c-vcard__ipa"><span>${reading}</span></span>` : ''}${model.level ? html`<span class="o-tag o-tag--accent">${levelLabel(model)}</span>` : ''}${playDisc()}</div>
+        <div class="c-vcard__recall-meta">${reading ? html`<span class="c-vcard__ipa"><span>${reading}</span></span>` : ''}${model.level ? html`<span class="o-tag o-tag--accent c-vcard__level">${levelLabel(model)}</span>` : ''}${playDisc()}</div>
       </div>
     </article>`;
   }

@@ -5955,6 +5955,14 @@ items above, and what PR 2 leaves open for the human:
   word's one voice - `/api/vocabulary/{word}/audio` has no accent choice); the reference's line-art illustrations (no
   assets; the frame is drawn only for an uploaded image). The Daily Feed keeps its pinned frame-36 front face; the
   two-face card is its turned side.
+- **VC-16 Skinned to the design's palette (D-17X, PR 2c).** The card now wears the design's colours, shapes and
+  highlights (VC-14's "theme by design" items are closed by it) and draws the two samples' line drawings from
+  `kit/vocabulary-art.js` (reference art for the docs/vocab samples only; the Art Bible governs production art).
+  Still not reproduced: the design's web fonts (Be Vietnam Pro, Noto Sans, Noto Serif SC are not downloaded - local
+  fonts by decision, so a system without a Song face shows its own serif), the gold focus ring (AA, D-17X point 3),
+  the translation's highlight and the bold pattern inside an explanation (no field for them), separate UK/US audio.
+  A collection card opened in Word Detail before Save carries no `provenance` (the catalogue card projection does not
+  pass it), so it shows no level source and no library drawing until the word is saved or the projection passes them.
 - **VC-15 Word-detail lookup labels a foreign reading as pinyin (server).** `writing_coach/word_detail.py:203-206`
   (`project_word_detail`) sets `pinyin` to the lookup's `pronunciation` whenever the headword is Han
   (`script_of`, :127), whatever language the lookup ran in (`source_language`, the route at :389). Word Detail sent

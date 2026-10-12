@@ -1,23 +1,52 @@
-/* VocabularyCard (kit/vocabulary-card.js, D-179). Layout and rhythm measured from the human's flashcard
-   reference (Main.dc.html / Chinese.dc.html, 520 wide): 36/40/32 face padding (here 28/28/24, the kit's
-   card inset), 22px between blocks, the 60px headword (Hanzi 104px with 22px pinyin above), the 17px IPA
-   rows, the 12px small-caps section labels, the 22px meaning over its definition, the two-column pair
-   under a rule, the 14px-radius example panels, the 48px turn action. Colours, type and components are
-   the current theme's only (tokens.css, the kit's o-tag / o-btn / discs / highlight); no outline ring
-   (D-147). No width media query and no fixed card size: the headword's type shrinks to its column
-   (container units) instead of breaking a word, the pairs wrap by their own minimum column, and each face
-   is a body that scrolls inside itself above a foot that keeps the turn action in view (rule 49). */
+/* VocabularyCard (kit/vocabulary-card.js, D-179), skinned as the human's flashcard design draws it (D-17X):
+   docs/design/vocab-card/Main.dc.html (English) and Chinese.dc.html (Chinese), light "watercolor paper" and dark
+   "night violet". Colours are the card-scoped tokens (`--vcard-*`, kit/tokens.css, the one colour owner); the rest of
+   the app keeps its own. Measured from the 520-wide artboards:
+   - English: a 1px `line` border, 20px radius, the `surface` ground; 36/40/32 padding and 22px between blocks; the C1
+     tag filled with `accent`, the part-of-speech pill outlined in `line`; the 60px headword; 17px IPA; 12px uppercase
+     section labels tracked 0.08em in `ink3`; the 22px meaning over its 15px definition; pairs under a `line` rule;
+     14px-radius example panels on `surface-alt`; the highlight bold in `accent` over a 2px `accent` underline; the
+     48px buttons, primary filled with the button colours (10px radius), secondary outlined in `line`.
+   - Chinese: the `bg` paper with 14px around a ruled frame - a 1.5px `gold` border and a 1px `gold` line 6px inside
+     it (approved by the human; a gold rule, not a violet ring, D-147) - and a 6px radius; 30/34/26 padding and 18px
+     between blocks; the HSK tag on `seal`; the 104px Hanzi (weight 900) with 22px pinyin above; labels tracked 0.12em;
+     the radical box outlined 1.5px in `seal`; square example panels; the highlight in `seal` at weight 900 and the
+     pinyin span bold in `seal`; 46px buttons with a 3px radius, the secondary outlined 1.5px in `gold`.
+   Fonts (human decision): no download. English uses the app's sans; the Chinese card uses a local serif for Latin
+   text and a local Song/serif stack for Hanzi. Focus is the kit's own ring, not the design's gold (light gold is
+   2.25:1 on the card, under the 3:1 a focus indicator needs; D-17X).
+   Rule 49: no width media query and no fixed card size. Padding scales with the card's width (container units, the
+   design's value as the ceiling); the headword's type shrinks to its column instead of breaking a word; the pairs
+   wrap by their own minimum column; each face is a body that scrolls inside itself above a foot that keeps the turn
+   action in view. */
 
 .c-vcard {
-  border-radius: 24px;
-  background: var(--surface);
-  box-shadow: var(--sh1);
+  --vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, serif;
+  --vcard-latin-serif: 'Noto Serif', Georgia, serif;
+  border: 1px solid var(--vcard-line);
+  border-radius: 20px;
+  background: var(--vcard-surface);
+  color: var(--vcard-ink);
   text-align: left;
   width: 100%;
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  container-type: inline-size;
+}
+.c-vcard--han {
+  border: 0;
+  border-radius: 6px;
+  background: var(--vcard-bg);
+  padding: 14px;
+  font-family: var(--vcard-latin-serif);
+}
+.c-vcard--han [lang='zh'],
+.c-vcard--han .c-vcard__word--han,
+.c-vcard--han .c-vcard__radical-glyph {
+  font-family: var(--vcard-han);
 }
 .c-vcard__face {
   flex: 1 1 auto;
@@ -28,15 +57,25 @@
 .c-vcard__face[hidden] {
   display: none;
 }
+/* The Chinese card's ruled frame: drawn by whichever face is showing. */
+.c-vcard--han .c-vcard__face {
+  border: 1.5px solid var(--vcard-gold);
+  outline: 1px solid var(--vcard-gold);
+  outline-offset: -6px;
+}
 .c-vcard__body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 28px 28px 8px;
+  padding: clamp(20px, 6.9cqi, 36px) clamp(18px, 7.7cqi, 40px) 8px;
   display: flex;
   flex-direction: column;
   gap: 22px;
   container-type: inline-size;
+}
+.c-vcard--han .c-vcard__body {
+  padding: clamp(18px, 5.8cqi, 30px) clamp(16px, 6.5cqi, 34px) 8px;
+  gap: 18px;
 }
 /* The foot wraps as whole items: the mastery line on one line, the turn action on its own when the two do
    not fit; nothing breaks inside a word. */
@@ -47,14 +86,42 @@
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  padding: 12px 28px 24px;
+  padding: 12px clamp(18px, 7.7cqi, 40px) clamp(18px, 6.2cqi, 32px);
+}
+.c-vcard--han .c-vcard__foot {
+  padding: 10px clamp(16px, 6.5cqi, 34px) clamp(16px, 5cqi, 26px);
 }
 .c-vcard__foot--back {
   justify-content: flex-start;
 }
-.c-vcard__turn {
+.c-vcard__turn.o-btn {
   min-height: 48px;
   margin-left: auto;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.c-vcard__turn.o-btn--primary,
+.c-vcard__turn.o-btn--primary:hover,
+.c-vcard__turn.o-btn--primary:active {
+  background: var(--vcard-btn-bg);
+  color: var(--vcard-btn-ink);
+}
+.c-vcard__turn.o-btn--secondary,
+.c-vcard__turn.o-btn--secondary:hover {
+  background: transparent;
+  color: var(--vcard-ink);
+  border: 1px solid var(--vcard-line);
+  box-shadow: none;
+}
+.c-vcard--han .c-vcard__turn.o-btn {
+  min-height: 46px;
+  border-radius: 3px;
+  font-family: var(--vcard-latin-serif);
+}
+.c-vcard--han .c-vcard__turn.o-btn--secondary {
+  border: 1.5px solid var(--vcard-gold);
 }
 
 /* ---- Top row: level and source on the left, the discs on the right ---- */
@@ -71,9 +138,26 @@
   flex-wrap: wrap;
   min-width: 0;
 }
+.c-vcard__level.o-tag {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: var(--vcard-accent);
+  color: var(--vcard-on-accent);
+}
+.c-vcard--han .c-vcard__level.o-tag {
+  font-family: var(--vcard-han);
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  border-radius: 3px;
+  background: var(--vcard-seal);
+  color: var(--vcard-on-seal);
+}
 .c-vcard__source {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--vcard-ink2);
 }
 .c-vcard__discs {
   display: flex;
@@ -84,22 +168,23 @@
   width: 40px;
   height: 40px;
   border-radius: 999px;
-  border: 0;
+  border: 1px solid var(--vcard-line);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  background: var(--surface2);
-  color: var(--muted);
+  background: transparent;
+  color: var(--vcard-ink2);
   cursor: pointer;
 }
 .c-vcard__disc--play {
-  background: var(--accent-soft);
-  color: var(--accent-on-photo, var(--accent));
+  background: var(--vcard-surface-alt);
+  color: var(--vcard-accent);
 }
 .c-vcard__disc.is-saved {
-  background: var(--amber-soft);
-  color: var(--amber);
+  border-color: var(--vcard-accent);
+  background: var(--vcard-accent);
+  color: var(--vcard-on-accent);
 }
 
 /* ---- The word ---- */
@@ -108,13 +193,24 @@
   flex-direction: column;
   gap: 8px;
 }
+/* English: the outlined part-of-speech pill; Chinese: the plain line (名词 · danh từ). */
 .c-vcard__pos {
+  align-self: flex-start;
   font-size: 13px;
   font-weight: 500;
-  color: var(--muted);
+  color: var(--vcard-ink2);
+  border: 1px solid var(--vcard-line);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.c-vcard--han .c-vcard__pos {
+  border: 0;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 400;
 }
 /* The headword never breaks inside a word: a phrase wraps between words, a long word shrinks its type to
-   the column (`--len`, its longest run; `cqi`, the face's width). The reference's size is the ceiling. */
+   the column (`--len`, its longest run; `cqi`, the face's width). The design's size is the ceiling. */
 .c-vcard__word {
   margin: 0;
   font-size: min(60px, calc(165cqi / var(--len, 1)));
@@ -126,7 +222,7 @@
   hyphens: none;
 }
 .c-vcard__word--han {
-  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-family: var(--vcard-han);
   font-size: min(104px, calc(78cqi / var(--len, 1)));
   font-weight: 900;
   line-height: 1.05;
@@ -136,10 +232,10 @@
   ruby-position: over;
 }
 .c-vcard__word rt {
-  font-family: inherit;
+  font-family: var(--vcard-latin-serif);
   font-size: max(13px, 0.21em);
   font-weight: 400;
-  color: var(--muted);
+  color: var(--vcard-ink2);
   padding-bottom: 4px;
 }
 .c-vcard__ipa-rows {
@@ -151,15 +247,13 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'JetBrains Mono', monospace;
   font-size: 17px;
-  color: var(--text);
+  color: var(--vcard-ink2);
 }
 .c-vcard__ipa b {
-  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--vcard-ink3);
 }
 .c-vcard__ipa .c-vcard__disc {
   width: 32px;
@@ -195,18 +289,39 @@
 /* ---- Illustration: only when there is one ---- */
 .c-vcard__art {
   margin: 0;
+  height: 180px;
   border-radius: 14px;
-  background: var(--surface2);
+  background: var(--vcard-surface-alt);
   overflow: hidden;
-  max-height: 180px;
   display: flex;
+  align-items: center;
   justify-content: center;
 }
-.c-vcard__art img {
+.c-vcard--han .c-vcard__art {
+  height: 150px;
+  border-radius: 0;
+  background: transparent;
+  border-top: 1px solid var(--vcard-line);
+  border-bottom: 1px solid var(--vcard-line);
+}
+.c-vcard__art img,
+.c-vcard__art svg {
   max-width: 100%;
-  max-height: 180px;
+  max-height: calc(100% - 10px);
   object-fit: contain;
 }
+.c-vcard__art svg {
+  width: 440px;
+  height: auto;
+}
+.va-ink { stroke: var(--vcard-ink); }
+.va-ink3 { stroke: var(--vcard-ink3); }
+.va-gold { stroke: var(--vcard-gold); }
+.va-accent { stroke: var(--vcard-accent); }
+.va-fill-alt { fill: var(--vcard-surface-alt); }
+.va-fill-bg { fill: var(--vcard-bg); }
+.va-fill-accent { fill: var(--vcard-accent); }
+.va-sun { fill: var(--vcard-seal); stroke: none; opacity: 0.9; }
 
 /* ---- Sections ---- */
 .c-vcard__section {
@@ -221,7 +336,11 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--vcard-ink3);
+}
+.c-vcard--han .c-vcard__label {
+  font-weight: 400;
+  letter-spacing: 0.12em;
 }
 .c-vcard__meaning {
   display: flex;
@@ -239,14 +358,20 @@
 .c-vcard__definition {
   font-size: 15px;
   line-height: 1.5;
-  color: var(--muted);
+  color: var(--vcard-ink2);
+}
+.c-vcard--han .c-vcard__definition[lang='en'] {
+  font-style: italic;
 }
 .c-vcard__pair {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 16px 20px;
   padding-top: 18px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--vcard-line);
+}
+.c-vcard--han .c-vcard__pair {
+  padding-top: 14px;
 }
 .c-vcard__lines,
 .c-vcard__note {
@@ -255,12 +380,23 @@
   line-height: 1.55;
 }
 .c-vcard__muted {
-  color: var(--muted);
+  color: var(--vcard-ink3);
+}
+.c-vcard--han .c-vcard__muted {
+  color: var(--vcard-ink2);
 }
 .c-vcard__chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+.c-vcard__chips .o-tag {
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--vcard-ink);
+  border: 1px solid var(--vcard-line);
+  border-radius: 999px;
 }
 
 /* ---- Radical ---- */
@@ -276,13 +412,11 @@
   flex: none;
   width: 56px;
   height: 56px;
-  border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--accent-on-photo, var(--accent));
+  border: 1.5px solid var(--vcard-seal);
+  color: var(--vcard-seal);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
   font-size: 36px;
   font-weight: 600;
 }
@@ -302,7 +436,6 @@
   overflow-wrap: normal;
 }
 .c-vcard--han .c-vcard__backword > span:first-child {
-  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
   font-size: 34px;
   font-weight: 900;
 }
@@ -312,6 +445,7 @@
 }
 .c-vcard__backtitle {
   font-size: 13px;
+  color: var(--vcard-ink2);
 }
 .c-vcard__examples {
   list-style: none;
@@ -327,7 +461,12 @@
   gap: 10px;
   padding: 20px;
   border-radius: 14px;
-  background: var(--surface2);
+  background: var(--vcard-surface-alt);
+}
+.c-vcard--han .c-vcard__example {
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 0;
 }
 .c-vcard__example p {
   margin: 0;
@@ -335,7 +474,10 @@
 .c-vcard__example-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--vcard-ink3);
+}
+.c-vcard--han .c-vcard__example-label {
+  font-weight: 400;
 }
 .c-vcard__example-text {
   font-size: 19px;
@@ -343,7 +485,6 @@
   font-weight: 500;
 }
 .c-vcard--han .c-vcard__example-text {
-  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
   font-size: 24px;
   line-height: 1.5;
   font-weight: 400;
@@ -354,19 +495,33 @@
   line-height: 1.5;
 }
 .c-vcard__example-reading {
-  color: var(--muted);
+  color: var(--vcard-ink2);
+}
+.c-vcard__example-translation {
+  color: var(--vcard-ink2);
+}
+.c-vcard--han .c-vcard__example-translation {
+  color: var(--vcard-ink);
 }
 .c-vcard__example-note {
   font-size: 14px;
   line-height: 1.5;
-  color: var(--muted);
+  color: var(--vcard-ink2);
 }
-/* The kit's highlight (the pinned exParts treatment): weight and a soft amber patch. */
+/* The design's highlight: English bold in `accent` over a 2px `accent` underline; Chinese `seal` at weight 900, the
+   pinyin span bold in `seal`. */
 .c-vcard__hit {
-  background: var(--amber-soft);
-  color: inherit;
-  border-radius: 4px;
-  padding: 0 2px;
+  background: transparent;
+  color: var(--vcard-accent);
+  font-weight: 700;
+  border-bottom: 2px solid var(--vcard-accent);
+}
+.c-vcard--han .c-vcard__hit {
+  color: var(--vcard-seal);
+  font-weight: 900;
+  border-bottom: 0;
+}
+.c-vcard--han .c-vcard__example-reading .c-vcard__hit {
   font-weight: 700;
 }
 
@@ -386,16 +541,21 @@
 }
 .c-vcard__due {
   font-size: 13px;
-  color: var(--text3);
+  color: var(--vcard-ink3);
   white-space: nowrap;
 }
 
 /* ---- The recall face (review-front): the word alone, centred; nothing that answers ---- */
 .c-vcard--review-front {
+  border: 0;
   background: transparent;
-  box-shadow: none;
   align-items: center;
   text-align: center;
+  overflow: visible;
+}
+.c-vcard--review-front.c-vcard--han {
+  padding: 0;
+  background: transparent;
 }
 .c-vcard__recall {
   width: 100%;

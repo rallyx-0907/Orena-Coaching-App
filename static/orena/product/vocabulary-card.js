@@ -297,12 +297,16 @@ function examplesOf(source, { language, script, word, supportLanguage }) {
   return out;
 }
 
-function illustrationOf(source) {
+/* An uploaded image with a real address, or a library drawing by its `ref` (the card draws the frame only when the
+   kit's art map knows the `ref`, kit/vocabulary-art.js). `kind: none`, or nothing, is no illustration (D-17X). The
+   description is the entry's support-language text when it is in the learner's support language. */
+function illustrationOf(source, supportLanguage) {
   const art = source?.illustration || source?.provenance?.illustration;
-  // Only an uploaded image with a real address is drawn; a library reference with no asset behind it,
-  // `kind: none`, or nothing at all draws no frame (D-178 point 9).
-  if (!art || art.kind !== 'upload' || !/^(https?:\/\/|\/)/.test(text(art.ref))) return null;
-  return { src: text(art.ref), alt: text(art.alt_vi) };
+  if (!art) return null;
+  const alt = lower(supportLanguage) === 'vi' ? text(art.alt_vi) : '';
+  if (art.kind === 'upload' && /^(https?:\/\/|\/)/.test(text(art.ref))) return { kind: 'upload', src: text(art.ref), alt };
+  if (art.kind === 'library' && text(art.ref)) return { kind: 'library', ref: text(art.ref), alt };
+  return null;
 }
 
 /* ---- The model -------------------------------------------------------------------------------- */
@@ -351,7 +355,7 @@ export function toVocabularyModel(source, { word = '', supportLanguage = '', loo
     etymology: etymology?.text ? etymology.text : '',
     units,
     hanViet: units.every((unit) => unit.hanViet) && units.length ? units.map((unit) => unit.hanViet).join(' ') : '',
-    illustration: illustrationOf(entry),
+    illustration: illustrationOf(entry, supportLanguage),
     audioUrl: text(resolvedLookup?.audioUrl),
   };
 }

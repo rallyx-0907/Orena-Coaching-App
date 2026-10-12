@@ -92,7 +92,7 @@ assert.deepEqual(en.wordFamily.map((item) => item.word), ['resilience', 'resilie
 assert.ok(en.memoryTip.text.startsWith('Latin resilire'));
 assert.ok(en.etymology.startsWith('Từ Latin'));
 assert.deepEqual(en.units, []);
-assert.equal(en.illustration, null, 'a library reference with no asset behind it is no illustration');
+assert.deepEqual(en.illustration, { kind: 'library', ref: 'sprout-through-crack', alt: 'Mầm cây vươn lên qua khe nứt mặt đất trong gió' }, 'the library drawing of the sample, by its ref (D-17X)');
 
 /* Support-language content shows only in the support language; the meaning falls back, tagged. */
 const enForEnglish = toVocabularyModel(EN, { supportLanguage: 'en' });
@@ -178,12 +178,13 @@ const enBack = faceOf(enCard, 'back');
 inOrder(enFront, [
   'o-tag--accent c-vcard__level">C1<', 'Oxford 5000', 'c-vcard__pos', 'adjective', 'Tính từ',
   'c-vcard__word', '>resilient<', '<b>Anh</b>', '/rɪˈzɪliənt/', 'data-region="uk"', '<b>Mỹ</b>', '/rɪˈzɪljənt/', 'data-region="us"',
+  '<figure class="c-vcard__art" role="img" aria-label="Mầm cây vươn lên qua khe nứt mặt đất trong gió" data-art="sprout-through-crack">', '<svg',
   'data-section="sectionMeaning"', '>Nghĩa<', 'kiên cường; có khả năng phục hồi nhanh', 'able to recover quickly',
   'data-section="sectionWordFamily"', '>Họ từ<', 'resilience', '(n)', 'resiliently', '(adv)',
   'data-section="sectionSynAnt"', 'Đồng / trái nghĩa', '≈ tough, hardy', '≠ fragile, vulnerable',
   'data-vcard-turn="back"', 'Xem ví dụ →',
 ], 'EN front');
-for (const absent of ['c-vcard__example', 'Kết hợp thường gặp', 'Mẹo nhớ', '<figure']) assert.ok(!enFront.includes(absent), `EN front has no ${absent}`);
+for (const absent of ['c-vcard__example', 'Kết hợp thường gặp', 'Mẹo nhớ']) assert.ok(!enFront.includes(absent), `EN front has no ${absent}`);
 // EN back: the headword and "Examples & usage", numbered examples (label, sentence with the highlight,
 // translation, explanation), Common collocations as chips, Memory tip, <- Front.
 inOrder(enBack, [
@@ -205,6 +206,7 @@ const zhBack = faceOf(zhCard, 'back');
 inOrder(zhFront, [
   'c-vcard__level">HSK 4<', 'c-vcard__pos', '名词', 'Danh từ',
   '<ruby>森<rt>sēn</rt></ruby><ruby>林<rt>lín</rt></ruby>', 'Hán Việt', 'SÂM LÂM',
+  'data-art="ink-pine-trees"',
   'data-section="sectionMeaning"', 'rừng, rừng rậm', 'forest',
   'data-section="sectionRadical"', '>木<', 'mù', 'Mộc', '(cây)', '森 = 木 + 木 + 木', '12 nét', '林 = 木 + 木', '8 nét',
   'data-section="sectionMeasureWord"', 'Lượng từ', '一片森林', 'yí piàn sēnlín',
@@ -229,7 +231,15 @@ for (const key of ['sectionWordFamily', 'sectionSynAnt', 'sectionCollocations', 
   assert.ok(!sparse.includes(`data-section="${key}"`), `no empty ${key}`);
 }
 assert.ok(!sparse.includes('<ol class="c-vcard__examples">'), 'no empty example list');
-assert.ok(!enCard.includes('<figure') && !zhCard.includes('<figure'), 'no illustration, no frame');
+assert.ok(!faceOf(enCard, 'back').includes('<figure'), 'the drawing is on the front only');
+const unknownArt = toVocabularyModel({ ...EN, provenance: { ...EN.provenance, illustration: { kind: 'library', ref: 'no-such-drawing' } } }, { supportLanguage: 'vi' });
+assert.ok(!String(vocabularyCard(unknownArt, { mode: 'detail' })).includes('<figure'), 'a ref the art map does not know draws no frame');
+const noArt = toVocabularyModel({ ...EN, provenance: { ...EN.provenance, illustration: { kind: 'none' } } }, { supportLanguage: 'vi' });
+assert.ok(!String(vocabularyCard(noArt, { mode: 'detail' })).includes('<figure'), 'kind none: no frame');
+assert.ok(!String(vocabularyCard(en, { mode: 'review-front' })).includes('<figure'), 'never on the recall face');
+const artSource = readFileSync(new URL('../static/orena/kit/vocabulary-art.js', import.meta.url), 'utf8');
+assert.match(artSource, /Art Bible/, 'the art map names the Art Bible boundary');
+assert.doesNotMatch(artSource.replace(/\/\*[\s\S]*?\*\//g, ''), /#[0-9a-fA-F]{3,8}|rgba?\(/, 'the drawings carry no colour: the card tokens colour them');
 const uploaded = toVocabularyModel({ ...EN, illustration: { kind: 'upload', ref: '/assets/x.png', alt_vi: 'x' } }, { supportLanguage: 'vi' });
 assert.ok(faceOf(vocabularyCard(uploaded, { mode: 'detail' }), 'front').includes('<figure class="c-vcard__art">'), 'an uploaded image is drawn on the front');
 
@@ -311,10 +321,17 @@ assert.match(wordRule, /word-break: keep-all/);
 assert.match(wordRule, /font-size: min\(60px, calc\(165cqi \/ var\(--len, 1\)\)\)/, 'the reference size (60px) is the ceiling; the type shrinks to the width');
 assert.doesNotMatch(cardCss, /overflow-wrap: anywhere|word-break: break-all/, 'nothing lets a word break mid-word');
 // No fixed card size: only controls and glyph tiles are sized.
-const sized = [...cardCss.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+const sized = [...cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)]
   .filter(([, , body]) => /(^|\s|;)(width|height|min-width|min-height):\s*\d+px/.test(body))
   .map(([, selector]) => selector.trim());
-assert.deepEqual(sized, ['.c-vcard__turn', '.c-vcard__disc', '.c-vcard__ipa .c-vcard__disc', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
+// Only controls, the radical tile and the design's illustration frame (180px EN, 150px ZH, as drawn) are sized.
+assert.deepEqual(sized, ['.c-vcard__turn.o-btn', '.c-vcard--han .c-vcard__turn.o-btn', '.c-vcard__disc', '.c-vcard__ipa .c-vcard__disc', '.c-vcard__art', '.c-vcard--han .c-vcard__art', '.c-vcard__art svg', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
+// The padding scales with the card's width, the design's value its ceiling (rule 49 at 360x740).
+assert.match(cardCss, /\.c-vcard__body \{[^}]*padding: clamp\(20px, 6\.9cqi, 36px\) clamp\(18px, 7\.7cqi, 40px\)/);
+// The card's colours are its scoped tokens only (D-17X).
+for (const [, prop, value] of cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/(color|background|border(?:-\w+)?|outline|fill|stroke):\s*([^;]+);/g)) {
+  for (const used of value.matchAll(/var\(--([\w-]+)/g)) assert.ok(used[1].startsWith('vcard-'), `${prop}: ${value} uses an app token inside the card`);
+}
 // The Hanzi row wraps instead of overlapping (lead's 360x740 check): Hán Việt goes under the Hanzi.
 assert.match(cardCss, /\.c-vcard__hanrow \{[^}]*flex-wrap: wrap/, 'the Hanzi row wraps');
 assert.match(cardCss, /\.c-vcard__hanrow \.c-vcard__word \{[^}]*min-width: min-content/, 'the Hanzi never shrinks under its glyphs');
