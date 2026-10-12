@@ -5955,15 +5955,15 @@ items above, and what PR 2 leaves open for the human:
   word's one voice - `/api/vocabulary/{word}/audio` has no accent choice); the reference's line-art illustrations (no
   assets; the frame is drawn only for an uploaded image). The Daily Feed keeps its pinned frame-36 front face; the
   two-face card is its turned side.
-- **VC-16 Skinned to the design's palette (D-17X, PR 2c).** The card now wears the design's colours, shapes and
+- **VC-16 Skinned to the design's palette (D-180, PR 2c).** The card now wears the design's colours, shapes and
   highlights (VC-14's "theme by design" items are closed by it) and draws the two samples' line drawings from
   `kit/vocabulary-art.js` (reference art for the docs/vocab samples only; the Art Bible governs production art).
   Still not reproduced: the design's web fonts (Be Vietnam Pro, Noto Sans, Noto Serif SC are not downloaded - local
-  fonts by decision, so a system without a Song face shows its own serif), the gold focus ring (AA, D-17X point 3),
+  fonts by decision, so a system without a Song face shows its own serif), the gold focus ring (AA, D-180 point 3),
   the translation's highlight and the bold pattern inside an explanation (no field for them), separate UK/US audio.
   A collection card opened in Word Detail before Save carries no `provenance` (the catalogue card projection does not
   pass it), so it shows no level source and no library drawing until the word is saved or the projection passes them.
-- **VC-17 The phone header over a scrolled page (D-17Y).** When the phone chrome comes back over a page that is not
+- **VC-17 The phone header over a scrolled page (D-181).** When the phone chrome comes back over a page that is not
   at its top, the header lies over the page; the design draws the header only at rest (transparent, the page below
   it). Chosen to keep it readable: it takes the phone bar's own chrome surface (`--bd-chrome` and its blur) while
   `data-chrome` is set, and is exactly as drawn at the top. A human decision whether that surface is right.

@@ -178,12 +178,12 @@ export function createRouter({ frame, getContext }) {
     root.dataset.focus = route.focus ? '1' : '0';
     root.dataset.bare = route.bare ? '1' : '0';
     root.dataset.route = route.id;
-    root.dataset.chromeStart = route.chrome || ''; // D-17Y option 1: a route may arrive with the phone chrome collapsed
+    root.dataset.chromeStart = route.chrome || ''; // D-181 option 1: a route may arrive with the phone chrome collapsed
     paint();
 
     const main = frame.main;
     main.scrollTop = 0;
-    frame.resetChrome?.(); // a page arrives with its chrome in place (D-17Y)
+    frame.resetChrome?.(); // a page arrives with its chrome in place (D-181)
     const element = document.createElement('section');
     element.className = 'o-screen';
     element.dataset.screen = route.id;

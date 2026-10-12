@@ -1,4 +1,4 @@
-/* Library illustrations for the vocabulary card (D-17X), keyed by the `ref` the authored-entry importer stores
+/* Library illustrations for the vocabulary card (D-180), keyed by the `ref` the authored-entry importer stores
    (`provenance.illustration`, `kind: "library"`). The card draws an illustration frame only for a `ref` this map knows
    or for an uploaded image; otherwise no frame at all.
 

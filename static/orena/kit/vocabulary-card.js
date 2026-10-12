@@ -5,14 +5,14 @@
    component, the Claude Design canvas "Flashcard từ vựng Anh – Trung" (claude.ai/artifact/
    9wmYKVJVn8cBuX8ButSryF): artboard `Main.dc.html` (English, "resilient") and `Chinese.dc.html` (Chinese,
    "森林") - a two-face card, the front with the word and its facts, the back with the examples, turned by
-   "See examples ->" / "<- Front". LOOK (D-17X, human 2026-10-12): the same design, now pinned in
+   "See examples ->" / "<- Front". LOOK (D-180, human 2026-10-12): the same design, now pinned in
    docs/design/vocab-card/ - its own palette as card-scoped tokens (`--vcard-*`, kit/tokens.css; light "watercolor
    paper", dark "night violet", the Chinese seal), its shapes (the English line border and pill, the Chinese paper and
    gold ruled frame, the seal tag and radical box), its highlights and buttons, and its two line drawings as library
    art for the samples (kit/vocabulary-art.js); local fonts only, the kit's focus ring (AA). Adaptations, each recorded
-   in D-179 / D-17X and UI_BACKEND_GAPS "Vocabulary card":
+   in D-179 / D-180 and UI_BACKEND_GAPS "Vocabulary card":
    the play and save discs sit in a quiet action row under the reading (the design draws neither; the top row stays
-   level/source left, part of speech right, as drawn - D-17X point 8); collocations are chips; a section with no data
+   level/source left, part of speech right, as drawn - D-180 point 8); collocations are chips; a section with no data
    is left out. Every tag, chip and accent of the CONTENT is `--vcard-*` (no kit `o-tag`); every BUTTON keeps the app's
    kit design and tokens - the turn actions are `o-btn`, the discs the app's icon-button colours (the human,
    2026-10-12: the flashcard skin is the content only).
@@ -145,7 +145,7 @@ function topRow(model) {
 }
 
 /* The word's actions - play, and Save on the cards a word is met on - in a quiet row under its reading, so the
-   design's header stays as drawn (D-17X: derivation recorded in this file's header). */
+   design's header stays as drawn (D-180: derivation recorded in this file's header). */
 function actionRow(save) {
   return html`<div class="c-vcard__actions">${playDisc()}${save || ''}</div>`;
 }
@@ -351,7 +351,7 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
 }
 
 /* Fits each card to the height it has (rule 49, CLAUDE.md 6b), and its face to the card: a face NEVER scrolls inside
-   (the human, 2026-10-12, D-17X). Two steps.
+   (the human, 2026-10-12, D-180). Two steps.
    1. The box. `viewport: true` (Word Detail, a browsing page): the card's max-height is the visible height of its
       scrolling column below the card's top, above the phone bar and its orb, so on arrival the whole card - actions
       included - is in view. Otherwise the card already sits in a bounded slot (Review's face, the feed's card).
@@ -480,7 +480,7 @@ export function containCard(card) {
 }
 
 /* The top of the bottom chrome drawn over the page (the phone bar and its orb), or Infinity when there is none. While
-   the shell holds its chrome hidden (D-17Y: :root[data-chrome='hidden'], how Word Detail arrives on a phone) there is
+   the shell holds its chrome hidden (D-181: :root[data-chrome='hidden'], how Word Detail arrives on a phone) there is
    none; otherwise it is measured where the bar rests, not where a running slide has moved it. */
 export function bottomChromeTop(root) {
   const doc = root?.ownerDocument || (typeof document !== 'undefined' ? document : null);

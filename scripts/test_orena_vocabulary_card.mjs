@@ -92,7 +92,7 @@ assert.deepEqual(en.wordFamily.map((item) => item.word), ['resilience', 'resilie
 assert.ok(en.memoryTip.text.startsWith('Latin resilire'));
 assert.ok(en.etymology.startsWith('Từ Latin'));
 assert.deepEqual(en.units, []);
-assert.deepEqual(en.illustration, { kind: 'library', ref: 'sprout-through-crack', alt: 'Mầm cây vươn lên qua khe nứt mặt đất trong gió' }, 'the library drawing of the sample, by its ref (D-17X)');
+assert.deepEqual(en.illustration, { kind: 'library', ref: 'sprout-through-crack', alt: 'Mầm cây vươn lên qua khe nứt mặt đất trong gió' }, 'the library drawing of the sample, by its ref (D-180)');
 
 /* Support-language content shows only in the support language; the meaning falls back, tagged. */
 const enForEnglish = toVocabularyModel(EN, { supportLanguage: 'en' });
@@ -395,7 +395,7 @@ assert.match(cardCss, /\.c-vcard--detail \{[^}]*max-height: var\(--vcard-fit, ca
 assert.match(cardCss, /\.c-vcard--feed,\s*\.c-vcard--review-back \{[^}]*max-height: 100%/);
 // All content stays on a phone: no rule drops the illustration (or anything) on a short card.
 assert.doesNotMatch(cardCss, /data-fit/, 'no short-card rule drops content');
-// A face is head, body, foot - and NOTHING in it scrolls (the human, 2026-10-12, D-17X): no scroll region in the
+// A face is head, body, foot - and NOTHING in it scrolls (the human, 2026-10-12, D-180): no scroll region in the
 // markup, no overflow auto/scroll on the card, a face or its body.
 for (const face of ['front', 'back']) {
   const markup = faceOf(enCard, face);
@@ -781,7 +781,7 @@ for (const screen of ['review', 'feed']) {
   assert.match(src, /window\.addEventListener\('resize', onResize\)/, `${screen} fits again on resize`);
   assert.match(src, /window\.removeEventListener\('resize', onResize\)/, `${screen} lets go of resize`);
 }
-// Word Detail on a phone arrives with the shell chrome collapsed (D-17Y option 1): the fit then has no bar to stop
+// Word Detail on a phone arrives with the shell chrome collapsed (D-181 option 1): the fit then has no bar to stop
 // above and the column's whole height, less its bottom inset (here 20px).
 {
   const doc = { documentElement: { dataset: { chrome: 'hidden' } }, querySelectorAll: () => [rect(650), rect(616, 58)], defaultView: { getComputedStyle: () => ({ paddingBottom: '20px', transform: 'none' }) } };
@@ -832,7 +832,7 @@ assert.match(wordScreenSrc, /window\.removeEventListener\('resize', onResize\)/)
 assert.match(readFileSync(new URL('../static/orena/screens/review/screen.js', import.meta.url), 'utf8'), /fitVocabularyCards\(element\)/);
 assert.match(readFileSync(new URL('../static/orena/screens/feed/screen.js', import.meta.url), 'utf8'), /fitVocabularyCards\(element\)/);
 // The card's CONTENT colours are its scoped tokens only; its BUTTONS keep the app's kit design and tokens (the human,
-// 2026-10-12, D-17X: the flashcard skin is the content only).
+// 2026-10-12, D-180: the flashcard skin is the content only).
 const cssRules = [...cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)].map(([, selector, body]) => [selector.trim(), body]);
 const isButtonRule = (selector) => /\.c-vcard__(turn|disc)|o-btn/.test(selector);
 for (const [selector, body] of cssRules) {
@@ -939,7 +939,7 @@ assert.equal(toVocabularyModel({ ...pineEn, definition: 'my note' }, { supportLa
 // A seed's support-language sense comes after the lookup, before another language.
 assert.equal(toVocabularyModel(pineEn, { supportLanguage: 'vi', seed: { short_meanings: [{ language: 'vi', text: 'thông' }] } }).meaning.text, 'thông');
 
-/* --- D-17X: the header as drawn, and nothing of the app's palette inside the card --- */
+/* --- D-180: the header as drawn, and nothing of the app's palette inside the card --- */
 for (const card of [enCard, zhCard]) {
   const top = card.slice(card.indexOf('<div class="c-vcard__top">'), card.indexOf('</div>', card.indexOf('c-vcard__pos')) + 6);
   assert.ok(top.indexOf('c-vcard__level') < top.indexOf('c-vcard__pos'), 'level tag on the left, part of speech on the right, one row');

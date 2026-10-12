@@ -5678,9 +5678,9 @@ Date: 2026-10-12. Human decisions of 2026-10-12 for PR 2 of D-178 (lane `claude/
    own-language definition, tagged, when it is the only meaning. Open items: `UI_BACKEND_GAPS.md` "Vocabulary card
    (D-178)".
 
-## D-17X - The vocabulary card wears its design's own palette (a scoped colour exception)
+## D-180 - The vocabulary card wears its design's own palette (a scoped colour exception)
 
-(Placeholder D-17X until merge.)
+(Placeholder D-180 until merge.)
 
 Date: 2026-10-12. Human decisions of 2026-10-12, PR 2c of D-178 (lane `claude/vocab-card-skin`): "the card must LOOK
 like the design, not only follow its layout".
@@ -5783,9 +5783,9 @@ like the design, not only follow its layout".
    order, reading guards, the pure mapper), the copy packs, and rule 49 (a fluid card whose padding scales with its
    width, the design's values as the ceiling).
 
-## D-17Y - The phone shell hides on scroll
+## D-181 - The phone shell hides on scroll
 
-(Placeholder D-17Y until merge.) Human decision, 2026-10-12.
+(Placeholder D-181 until merge.) Human decision, 2026-10-12.
 
 On a phone, in the browsing places that have the phone header and the phone bar (Design Contract rule 47: the
 non-focus routes - Today, Discover, a content detail, Orena, Practice and its skill hubs, Library, a collection, Word
@@ -5803,7 +5803,7 @@ the top of the page.
   nothing reflows. Under `prefers-reduced-motion` there is no slide, only show / hide.
 - **Accessible:** a control of the chrome that has the focus is never hidden (focus brings the chrome back); nothing is
   hidden at the top; every route arrives with the chrome in place (the router resets the state), so Word Detail's card
-  fit (D-17X) is measured with the chrome visible.
+  fit (D-180) is measured with the chrome visible.
 - **Open (UI_BACKEND_GAPS VC-17):** back over a page that is not at its top, the header takes the phone bar's chrome
   surface so the page does not run through its controls; the design draws the header only at rest.
 - Gated in scripts/test_orena_shell.mjs (phone-only scope, the state attribute, the transform, reduced motion, the top

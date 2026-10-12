@@ -1,11 +1,11 @@
-/* The phone shell hides on scroll (the human, 2026-10-12, D-17Y). On a phone, in the browsing places that have the
+/* The phone shell hides on scroll (the human, 2026-10-12, D-181). On a phone, in the browsing places that have the
    phone header and the phone bar (rule 47: never on a learning workspace, never on the desktop), the header and the
    bar - with the Orena orb - slide away while the page scrolls down and come back when it scrolls up, and always at
    the top. The state is one attribute on the shell root, :root[data-chrome]:
      absent    the top of the page, a desktop, a learning workspace: the chrome as the design draws it;
      'hidden'  scrolled down: the header and the bar are moved out of view by a transform (no layout change);
      'shown'   scrolled up, away from the top: both are back, over the page.
-   A route may START collapsed (route.chrome = 'collapsed', :root[data-chrome-start='collapsed']; D-17Y option 1, the
+   A route may START collapsed (route.chrome = 'collapsed', :root[data-chrome-start='collapsed']; D-181 option 1, the
    human, 2026-10-12: Word Detail): on a phone it arrives 'hidden', so its card has the whole height; the chrome comes
    back when the page scrolls up, and at the top when the learner pulls down (wheel / touch) or taps the page outside
    a control. A control in the chrome that has the focus is never hidden: focusing one shows the chrome. Every change

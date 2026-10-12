@@ -525,7 +525,7 @@
   background: none;
 }
 
-/* The phone shell hides on scroll (the human, 2026-10-12, D-17Y; the state: shell/chrome-scroll.js). Only on a phone,
+/* The phone shell hides on scroll (the human, 2026-10-12, D-181; the state: shell/chrome-scroll.js). Only on a phone,
    only in the browsing places that have the header and the bar (rule 47) - a learning workspace and the desktop are
    untouched. There the header and the bar lie over the column instead of beside it, the column keeps their room as
    padding (so at the top the page sits exactly where it did), and hiding is a transform: nothing reflows. */
@@ -558,7 +558,7 @@
 :root[data-device='mobile']:not([data-focus='1']):not([data-bare='1'])[data-chrome='hidden'] .o-bnav {
   transform: translateY(calc(100% + 34px + max(18px, calc(env(safe-area-inset-bottom, 0px) - 10px))));
 }
-/* A route that arrives collapsed (Word Detail, D-17Y option 1): while the chrome is hidden the column does not keep its
+/* A route that arrives collapsed (Word Detail, D-181 option 1): while the chrome is hidden the column does not keep its
    room, so the page has the whole height - its own back row at the top, the window's bottom (less the home indicator)
    below. When the chrome comes back the room returns and the screen fits again (the `orena:chrome` event). */
 :root[data-device='mobile']:not([data-focus='1']):not([data-bare='1'])[data-chrome-start='collapsed'][data-chrome='hidden'] .o-main {

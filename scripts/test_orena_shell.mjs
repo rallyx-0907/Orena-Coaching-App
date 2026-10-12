@@ -153,7 +153,7 @@ for (const [, , folder] of registered) assert.ok(fs.existsSync(`static/orena/scr
 const shellCopy = fs.readFileSync('static/orena/copy/shell.js', 'utf8');
 for (const route of ROUTES) assert.ok(new RegExp(`'${route.crumb}'`).test(shellCopy), `${route.id}: title key ${route.crumb} declared`);
 
-// 9. The phone shell hides on scroll (D-17Y): phone-only, browsing places only, one attribute, a transform, no
+// 9. The phone shell hides on scroll (D-181): phone-only, browsing places only, one attribute, a transform, no
 //    motion under reduced motion, always shown at the top and when its own control has the focus.
 const { nextChrome, CHROME_SLACK_PX, CHROME_TOP_PX } = await import('../static/orena/shell/chrome-scroll.js');
 const base = { phone: true, browsing: true, top: 400, delta: 40 };

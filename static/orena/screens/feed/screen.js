@@ -211,7 +211,7 @@ export default async function mountFeed(element, ctx) {
     });
   }
 
-  // A card face never scrolls: it fits its slot again whenever the window changes (D-17X).
+  // A card face never scrolls: it fits its slot again whenever the window changes (D-180).
   const onResize = () => fitVocabularyCards(element);
   window.addEventListener('resize', onResize);
 

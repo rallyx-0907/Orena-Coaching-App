@@ -174,7 +174,7 @@ export function drawFrame(root) {
   root.addEventListener('click', (event) => {
     if (event.target.closest('[data-theme-toggle]')) toggleAppearance();
   });
-  // D-17Y: the phone header and bar hide on scroll down in the browsing places; the router resets it per route.
+  // D-181: the phone header and bar hide on scroll down in the browsing places; the router resets it per route.
   handles.resetChrome = bindChromeScroll(handles.main);
   onDeviceChange(() => {
     handles.resetChrome();

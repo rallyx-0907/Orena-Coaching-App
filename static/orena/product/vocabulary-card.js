@@ -298,7 +298,7 @@ function examplesOf(source, { language, script, word, supportLanguage }) {
 }
 
 /* An uploaded image with a real address, or a library drawing by its `ref` (the card draws the frame only when the
-   kit's art map knows the `ref`, kit/vocabulary-art.js). `kind: none`, or nothing, is no illustration (D-17X). The
+   kit's art map knows the `ref`, kit/vocabulary-art.js). `kind: none`, or nothing, is no illustration (D-180). The
    description is the entry's support-language text when it is in the learner's support language. */
 function illustrationOf(source, supportLanguage) {
   const art = source?.illustration || source?.provenance?.illustration;

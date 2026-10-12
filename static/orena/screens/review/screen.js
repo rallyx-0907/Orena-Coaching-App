@@ -408,7 +408,7 @@ export default async function mountReview(element, ctx) {
     drain().catch(() => {});
   };
   window.addEventListener('online', onOnline);
-  // A card face never scrolls: it fits its slot again whenever the window changes (D-17X).
+  // A card face never scrolls: it fits its slot again whenever the window changes (D-180).
   const onResize = () => fitVocabularyCards(element);
   window.addEventListener('resize', onResize);
 

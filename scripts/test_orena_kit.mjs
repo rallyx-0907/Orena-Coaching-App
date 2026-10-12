@@ -416,7 +416,7 @@ assert.match(
   console.log(`BACKDROP contrast (worst region): ${table.join('; ')}`);
 }
 
-// VOCABULARY CARD (D-17X): the card-scoped palette is exactly the human's flashcard design (docs/design/vocab-card,
+// VOCABULARY CARD (D-180): the card-scoped palette is exactly the human's flashcard design (docs/design/vocab-card,
 // `renderVals` LIGHT / DARK of Main.dc.html and Chinese.dc.html), and every pair the design draws as text holds AA in
 // both themes. The light gold (#C9A24B, 2.25:1 on the card) draws rules and borders only, never text or a focus ring.
 {
@@ -431,7 +431,7 @@ assert.match(
     bg: 'bg', surface: 'surface', surfaceAlt: 'surface-alt', line: 'line', text: 'ink', text2: 'ink2', text3: 'ink3',
     accent: 'accent', onAccent: 'on-accent', gold: 'gold', seal: 'seal', onSeal: 'on-seal', btnBg: 'btn-bg', btnText: 'btn-ink',
   };
-  const at = tokens.indexOf('The vocabulary card (D-17X');
+  const at = tokens.indexOf('The vocabulary card (D-180');
   assert.ok(at > 0, 'the vocabulary card token group is in kit/tokens.css');
   const section = tokens.slice(at);
   const cardTokens = {
@@ -459,7 +459,7 @@ assert.match(
       assert.ok(ratio >= 4.5, `${theme}: --vcard-${ink} on --vcard-${ground} is ${ratio.toFixed(2)}:1, needs 4.5:1`);
     }
   }
-  // Buttons keep the app's kit design (the human, 2026-10-12, D-17X): the card skin is its content only. No button rule -
+  // Buttons keep the app's kit design (the human, 2026-10-12, D-180): the card skin is its content only. No button rule -
   // Review's grades, Reveal, Hint, the card's turn actions and discs - uses a card token.
   const reviewCss = fs.readFileSync(path.join(ROOT, 'screens/review/review.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const cardRules = fs.readFileSync(path.join(ROOT, 'kit/vocabulary-card.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
