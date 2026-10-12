@@ -56,7 +56,7 @@ function stored(record) {
     })),
     usage_notes: notes,
     orthography: units.length ? { script: 'han', units } : {},
-    provenance: { source_id: record.id, illustration: record.illustration, ...(record.en?.etymology_vi ? { etymology: { vi: record.en.etymology_vi } } : {}) },
+    provenance: { source_id: record.id, level_source: record.level.source, illustration: record.illustration, ...(record.en?.etymology_vi ? { etymology: { vi: record.en.etymology_vi } } : {}) },
   };
 }
 
@@ -148,51 +148,122 @@ assert.deepEqual(fromItem.examples[0].parts.filter((p) => p.hit).map((p) => p.va
 assert.equal(savePayloadOf(fromCard, 'feed').source_kind, 'feed');
 assert.equal(savePayloadOf(fromCard).definition, 'vùng đệm');
 
-/* --- markup per mode --- */
+/* --- the artifact's two-face layout: every section on its face, in the reference's order --- */
+const { t } = await import('../static/orena/copy/vocabulary-card.js');
+const reviewSrc = readFileSync(new URL('../static/orena/screens/review/screen.js', import.meta.url), 'utf8');
+setLanguages({ ui: 'vi', support: 'vi' });
 const plain = (markup) => String(markup).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+const faceOf = (markup, face) => {
+  const out = String(markup);
+  const start = out.indexOf(`c-vcard__face--${face}`);
+  assert.ok(start > -1, `the card has a ${face} face`);
+  const end = face === 'front' ? out.indexOf('c-vcard__face--back') : out.length;
+  return out.slice(start, end);
+};
+/* Each marker, in order, is found after the previous one. */
+function inOrder(markup, markers, what) {
+  let at = -1;
+  for (const marker of markers) {
+    const found = markup.indexOf(marker, at + 1);
+    assert.ok(found > at, `${what}: "${marker}" appears, after the one before it`);
+    at = found;
+  }
+}
 assert.deepEqual(CARD_MODES, ['detail', 'feed', 'review-front', 'review-back']);
+const enCard = String(vocabularyCard(en, { mode: 'detail', learner: learnerState(null) }));
+const enFront = faceOf(enCard, 'front');
+const enBack = faceOf(enCard, 'back');
+// EN front (Main.dc.html): level + source, POS (native · localized), headword, UK/US IPA rows with play,
+// Meaning (support meaning, English definition), Word family, Synonyms / antonyms, See examples ->.
+inOrder(enFront, [
+  'o-tag--accent c-vcard__level">C1<', 'Oxford 5000', 'c-vcard__pos', 'adjective', 'Tính từ',
+  'c-vcard__word', '>resilient<', '<b>Anh</b>', '/rɪˈzɪliənt/', 'data-region="uk"', '<b>Mỹ</b>', '/rɪˈzɪljənt/', 'data-region="us"',
+  'data-section="sectionMeaning"', '>Nghĩa<', 'kiên cường; có khả năng phục hồi nhanh', 'able to recover quickly',
+  'data-section="sectionWordFamily"', '>Họ từ<', 'resilience', '(n)', 'resiliently', '(adv)',
+  'data-section="sectionSynAnt"', 'Đồng / trái nghĩa', '≈ tough, hardy', '≠ fragile, vulnerable',
+  'data-vcard-turn="back"', 'Xem ví dụ →',
+], 'EN front');
+for (const absent of ['c-vcard__example', 'Kết hợp thường gặp', 'Mẹo nhớ', '<figure']) assert.ok(!enFront.includes(absent), `EN front has no ${absent}`);
+// EN back: the headword and "Examples & usage", numbered examples (label, sentence with the highlight,
+// translation, explanation), Common collocations as chips, Memory tip, <- Front.
+inOrder(enBack, [
+  'c-vcard__backword', 'resilient', 'Ví dụ &amp; cách dùng',
+  '01 · Chỉ người', 'Children are often more <mark class="c-vcard__hit">resilient</mark> than adults expect.', 'Trẻ em thường kiên cường', 'Nói về tinh thần',
+  '02 · Chỉ hệ thống, vật', '<mark class="c-vcard__hit">resilient</mark> to power failures.', 'chịu được sự cố mất điện', 'resilient to / against + N',
+  'data-section="sectionCollocations"', 'Kết hợp thường gặp', '<span class="o-tag">highly resilient</span>', 'a resilient economy',
+  'data-section="sectionMemoryTip"', 'Mẹo nhớ', 'Latin resilire',
+  'data-vcard-turn="front"', '← Mặt trước',
+], 'EN back');
+assert.ok(enBack.includes('hidden'), 'the card starts on its front; the back is hidden until turned');
+assert.ok(!enBack.includes('data-section="sectionMeaning"'), 'the meaning is the front\'s');
+
+const zhCard = String(vocabularyCard(zh, { mode: 'detail', learner: learnerState(null) }));
+const zhFront = faceOf(zhCard, 'front');
+const zhBack = faceOf(zhCard, 'back');
+// ZH front (Chinese.dc.html): HSK tag, POS (名词 · danh từ), the Hanzi with each pinyin over it, Hán Việt,
+// Meaning (support + English), Radical (木 once, then each character = parts · strokes), Measure word, Related words.
+inOrder(zhFront, [
+  'c-vcard__level">HSK 4<', 'c-vcard__pos', '名词', 'Danh từ',
+  '<ruby>森<rt>sēn</rt></ruby><ruby>林<rt>lín</rt></ruby>', 'Hán Việt', 'SÂM LÂM',
+  'data-section="sectionMeaning"', 'rừng, rừng rậm', 'forest',
+  'data-section="sectionRadical"', '>木<', 'mù', 'Mộc', '(cây)', '森 = 木 + 木 + 木', '12 nét', '林 = 木 + 木', '8 nét',
+  'data-section="sectionMeasureWord"', 'Lượng từ', '一片森林', 'yí piàn sēnlín',
+  'data-section="sectionRelated"', 'Từ liên quan', '树林', 'shùlín', 'rừng cây', '森林火灾', 'cháy rừng',
+  'data-vcard-turn="back"',
+], 'ZH front');
+assert.equal((zhFront.match(/c-vcard__radical-glyph/g) || []).length, 1, 'a radical the characters share is shown once (docs/vocab README)');
+assert.ok(!zhFront.includes('CẦN KIỂM TRA'), 'the Chinese card draws no level source (the reference has none)');
+// ZH back: the Hanzi and pinyin, numbered examples (label, Hanzi span, pinyin span, translation, note), Memory tip.
+inOrder(zhBack, [
+  'c-vcard__backword', '森林', 'sēnlín', 'Ví dụ &amp; cách dùng',
+  '一 · Nơi chốn', '这片<mark class="c-vcard__hit">森林</mark>里住着很多动物。', 'Zhè piàn <mark class="c-vcard__hit">sēnlín</mark> lǐ', 'Trong khu rừng này', '片 là lượng từ',
+  '二 · Làm tân ngữ', '我们应该保护<mark class="c-vcard__hit">森林</mark>。', 'bǎohù <mark class="c-vcard__hit">sēnlín</mark>', 'Chúng ta nên bảo vệ rừng.',
+  'data-section="sectionMemoryTip"', '木 một cây',
+  'data-vcard-turn="front"',
+], 'ZH back');
+assert.ok(!zhBack.includes('Zhè piàn sēnlín lǐ zhùzhe hěn duō dòngwù.</mark>'), 'never the whole pinyin line');
+
+/* A section with no data is left out, heading and all; no illustration means no frame. */
+const sparse = String(vocabularyCard(toVocabularyModel({ word: 'copper', short_meanings: [{ language: 'vi', text: 'đồng' }] }, { supportLanguage: 'vi' }), { mode: 'detail' }));
+for (const key of ['sectionWordFamily', 'sectionSynAnt', 'sectionCollocations', 'sectionMemoryTip', 'sectionStructure', 'sectionRadical', 'sectionMeasureWord', 'sectionRelated']) {
+  assert.ok(!sparse.includes(`data-section="${key}"`), `no empty ${key}`);
+}
+assert.ok(!sparse.includes('<ol class="c-vcard__examples">'), 'no empty example list');
+assert.ok(!enCard.includes('<figure') && !zhCard.includes('<figure'), 'no illustration, no frame');
+const uploaded = toVocabularyModel({ ...EN, illustration: { kind: 'upload', ref: '/assets/x.png', alt_vi: 'x' } }, { supportLanguage: 'vi' });
+assert.ok(faceOf(vocabularyCard(uploaded, { mode: 'detail' }), 'front').includes('<figure class="c-vcard__art">'), 'an uploaded image is drawn on the front');
+
+/* Modes. */
 for (const model of [en, zh]) {
   const front = String(vocabularyCard(model, { mode: 'review-front' }));
   const frontText = plain(front);
   assert.ok(front.includes('data-play'), 'review-front plays the word');
-  assert.ok(!front.includes('data-save'), 'review-front has no save disc');
+  assert.ok(!front.includes('data-save') && !front.includes('data-vcard-turn'), 'review-front: no save, no turn');
   assert.ok(!frontText.includes(model.meaning.text), 'review-front never shows the meaning');
-  for (const example of model.examples) assert.ok(!frontText.includes(example.translation) || !example.translation, 'no translation on the front');
-  assert.ok(!front.includes('c-vcard__example') && !front.includes('c-vcard__grid') && !front.includes('c-vcard__units') && !front.includes('c-vcard__meaning'), 'no answer block on the front');
+  for (const blocked of ['c-vcard__example', 'c-vcard__pair', 'c-vcard__radical', 'c-vcard__meaning', 'data-section']) assert.ok(!front.includes(blocked), `no ${blocked} on the recall face`);
+  assert.ok(frontText.includes(model.word) && (frontText.includes(model.pronunciation.text) || frontText.includes(model.pronunciation.pinyin)));
   assert.deepEqual(Object.keys(frontFields(model)).sort(), ['language', 'level', 'pos', 'pronunciation', 'script', 'word']);
 
   const back = String(vocabularyCard(model, { mode: 'review-back', learner: learnerState({ review_stage: 2, next_review_at: '' }) }));
-  assert.ok(plain(back).includes(model.meaning.text), 'review-back shows the meaning');
-  assert.ok(back.includes('c-vcard__example'));
-  assert.ok(back.includes('c-vcard__footer'), 'the learner footer when there is a schedule');
-  assert.ok(!back.includes('<figure'), 'no illustration, no frame');
-  assert.ok(!back.includes('data-grade'), 'the grades are the screen\'s, under the card');
+  assert.ok(faceOf(back, 'front').includes('data-section="sectionMeaning"'), 'review-back opens on the reference front (the meaning)');
+  assert.ok(back.includes('data-vcard-turn="back"'), 'and can turn to the examples');
+  assert.ok(!back.includes('data-grade'), 'the grades are the screen\'s, outside the card');
+  assert.ok(back.includes('c-vcard__mastery'), 'the learner footer when there is a schedule');
+  // The Review bookmark (D-17W point 4): drawn saved, and only a remove toggle.
+  assert.ok(back.includes('data-save aria-pressed="true"') && back.includes(`aria-label="${t('unsaveWord')}"`), 'the review-back bookmark renders saved, as remove');
+  const removed = String(vocabularyCard(model, { mode: 'review-back', learner: learnerState(null) }));
+  assert.ok(!removed.includes('data-save'), 'once removed, Review offers no Save');
 
   const detail = String(vocabularyCard(model, { mode: 'detail', learner: learnerState(null) }));
-  assert.ok(detail.includes('data-save') && detail.includes('aria-pressed="false"'), 'detail offers Save');
-  assert.ok(!detail.includes('c-vcard__footer'), 'no schedule, no footer');
+  assert.ok(detail.includes('data-save aria-pressed="false"'), 'detail offers Save');
+  assert.ok(!detail.includes('c-vcard__mastery'), 'no schedule, no footer');
   assert.ok(!detail.includes('data-grade'), 'Word Detail never grades');
-
   const feed = String(vocabularyCard(model, { mode: 'feed', learner: { saved: true } }));
   assert.ok(feed.includes('aria-pressed="true"'));
-  assert.equal((feed.match(/class="c-vcard__example"/g) || []).length, 1, 'the feed shows the first example only');
+  assert.ok((faceOf(feed, 'back').match(/class="c-vcard__example"/g) || []).length <= 2, 'the feed shows at most two examples');
 }
-const enDetail = String(vocabularyCard(en, { mode: 'detail' }));
-assert.ok(enDetail.includes('<mark class="c-vcard__hit">resilient</mark>'));
-assert.ok(enDetail.includes('/rɪˈzɪliənt/') && enDetail.includes('/rɪˈzɪljənt/'), 'both IPA readings');
-assert.ok(!enDetail.includes('<ruby>'));
-const zhDetail = String(vocabularyCard(zh, { mode: 'detail' }));
-assert.ok(zhDetail.includes('<ruby>森<rt>sēn</rt></ruby><ruby>林<rt>lín</rt></ruby>'), 'Hanzi with their pinyin');
-assert.ok(zhDetail.includes('<mark class="c-vcard__hit">森林</mark>'));
-assert.ok(zhDetail.includes('<mark class="c-vcard__hit">sēnlín</mark>'));
-assert.ok(zhDetail.includes('lang="zh"'));
-assert.ok(zhDetail.includes('SÂM LÂM'));
-const uploaded = toVocabularyModel({ ...EN, illustration: { kind: 'upload', ref: '/assets/x.png', alt_vi: 'x' } }, { supportLanguage: 'vi' });
-assert.ok(String(vocabularyCard(uploaded, { mode: 'detail' })).includes('<figure class="c-vcard__art">'), 'an uploaded image is drawn');
-assert.ok(!String(vocabularyCard(uploaded, { mode: 'review-front' })).includes('<figure'), 'never on the front');
 assert.throws(() => vocabularyCard(en, { mode: 'flip' }));
 
-const reviewSrc = readFileSync(new URL('../static/orena/screens/review/screen.js', import.meta.url), 'utf8');
 /* --- the meaning panel never claims an absence it has not established (lead's :8021 check, D-17W) --- */
 setLanguages({ ui: 'vi', support: 'vi' });
 const tagged = [];
@@ -227,7 +298,7 @@ const pendingCard = String(vocabularyCard(bare, { mode: 'detail', slots: { meani
 assert.ok(pendingCard.includes('data-meaning-pending') && pendingCard.includes('o-bone') && !pendingCard.includes('data-no-meaning'));
 assert.ok(String(vocabularyCard(bare, { mode: 'detail' })).includes('data-no-meaning'));
 // A support-language meaning plus the own-language definition: both, the definition as the second line.
-assert.ok(String(vocabularyCard(en, { mode: 'detail' })).includes('c-vcard__definition'));
+assert.ok(faceOf(vocabularyCard(en, { mode: 'detail' }), 'front').includes('c-vcard__definition'));
 
 /* --- the headword never breaks inside a word; 360x740 composition, structurally --- */
 const { headwordRun } = await import('../static/orena/kit/vocabulary-card.js');
@@ -239,25 +310,32 @@ const cardCss = readFileSync(new URL('../static/orena/kit/vocabulary-card.css', 
 const wordRule = cardCss.match(/\.c-vcard__word \{[^}]*\}/)[0];
 assert.match(wordRule, /overflow-wrap: normal/);
 assert.match(wordRule, /word-break: keep-all/);
-assert.match(wordRule, /font-size: min\(32px, calc\(165cqi \/ var\(--len, 1\)\)\)/, 'the type shrinks to the width, the designed size is the ceiling');
+assert.match(wordRule, /font-size: min\(60px, calc\(165cqi \/ var\(--len, 1\)\)\)/, 'the reference size (60px) is the ceiling; the type shrinks to the width');
 assert.doesNotMatch(cardCss, /overflow-wrap: anywhere|word-break: break-all/, 'nothing lets a word break mid-word');
-assert.match(cardCss, /\.c-vcard--feed \.c-vcard__head \{[^}]*flex-direction: column/, 'the feed card puts its discs on their own row');
-// No fixed widths or heights on the card: only the 44px discs and the 52px character glyph are sized.
+// No fixed card size: only controls and glyph tiles are sized.
 const sized = [...cardCss.matchAll(/([^{}]+)\{([^}]*)\}/g)]
   .filter(([, , body]) => /(^|\s|;)(width|height|min-width|min-height):\s*\d+px/.test(body))
   .map(([, selector]) => selector.trim());
-assert.deepEqual(sized, ['.c-vcard__disc', '.c-vcard__unit-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
-assert.doesNotMatch(cardCss, /@media/, 'no width media query (rule 49 recomposes by the grid)');
-// Review: the card scrolls inside its face; the grades are outside that region and always in view.
-assert.match(reviewSrc, /<div class="s-review-face__scroll" data-scroll-region>\s*\$\{vocabularyCard\(model, \{ mode: 'review-back'/);
+assert.deepEqual(sized, ['.c-vcard__turn', '.c-vcard__disc', '.c-vcard__ipa .c-vcard__disc', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
+assert.doesNotMatch(cardCss, /@media/, 'no width media query (rule 49 recomposes by the pairs\' own columns)');
+// Each face: a body that scrolls inside itself, a foot that keeps the turn action in view.
+assert.match(cardCss, /\.c-vcard__body \{[^}]*min-height: 0;[^}]*overflow-y: auto/, 'each face body is its own scroll region');
+assert.match(cardCss, /\.c-vcard__foot \{[^}]*flex: none/, 'the turn action never shrinks out of view');
+assert.ok(enCard.includes('<div class="c-vcard__body" data-scroll-region>'));
+// Review: the card fills its face; the grades are outside the card and never shrink.
+assert.match(reviewSrc, /\$\{vocabularyCard\(model, \{ mode: 'review-back'/);
 const gradesAt = reviewSrc.indexOf('<div class="s-review-grades">');
-const stackEnd = reviewSrc.indexOf('</div>', reviewSrc.indexOf('backFaceMarkup(model, learner, row)'));
-assert.ok(gradesAt > stackEnd, 'the grades are drawn after the card stack closes, not inside its scroll region');
+assert.ok(gradesAt > reviewSrc.indexOf('backFaceMarkup(model, learner, row)'), 'the grades are drawn after the card stack, outside the card');
 const reviewCss = readFileSync(new URL('../static/orena/screens/review/review.css', import.meta.url), 'utf8');
 assert.match(reviewCss, /\.s-review-grades \{[^}]*flex: none/, 'the grades never shrink out of view');
-assert.match(reviewCss, /\.s-review-face__scroll \{[^}]*overflow-y: auto/, 'the card body is the scroll region');
+assert.match(reviewCss, /\.s-review-face--revealed > \.c-vcard--review-back \{[^}]*min-height: 0/, 'the card fills the revealed face and scrolls inside');
 assert.match(reviewCss, /\.s-review-root \{[^}]*overflow: hidden/, 'the workspace does not scroll as a page');
-assert.match(reviewCss, /\.s-review-face--revealed > \.s-review-face__blob \{[^}]*bottom: -40px/, 'the corner disc is clear of the play and save discs');
+assert.match(reviewCss, /\.s-review-face--revealed > \.s-review-face__blob \{[^}]*bottom: -40px/, 'the corner disc is clear of the card\'s controls');
+// The Review bookmark only removes: its handler deletes with Undo and never saves.
+const saveHandler = reviewSrc.slice(reviewSrc.indexOf("querySelector('[data-save]')"), reviewSrc.indexOf("querySelector('[data-practise-strokes]')"));
+assert.match(saveHandler, /deleteLibraryVocabulary/);
+assert.match(saveHandler, /restoreLibraryVocabulary/, 'with the existing Undo');
+assert.doesNotMatch(saveHandler, /saveLibraryVocabulary/, 'Review never saves a new word');
 
 /* --- the two review buttons --- */
 assert.deepEqual(REVIEW_BUTTONS, ['again', 'got_it']);
@@ -272,7 +350,7 @@ assert.doesNotMatch(feedSrc, /reviewLibraryVocabulary|data-grade/, 'the feed nev
 /* --- every label in three languages, with diacritics --- */
 for (const ui of ['en', 'vi', 'zh']) {
   setLanguages({ ui, support: ui });
-  const out = String(vocabularyCard(en, { mode: 'detail' }));
+  const out = plain(vocabularyCard(en, { mode: 'detail' }));
   assert.ok(!/section[A-Z]|pos[A-Z]|missing key/.test(out), `no raw key in ${ui}`);
 }
 setLanguages({ ui: 'vi', support: 'vi' });

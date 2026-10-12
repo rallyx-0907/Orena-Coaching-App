@@ -6,7 +6,7 @@
    overlays already do for the same shared Word Card primitive (D7 §4). The turned card is the shared
    VocabularyCard in `feed` mode (kit/vocabulary-card.js, D-17W): Save, never a grade. */
 import { html, mount, raw, cls } from '../../kit/html.js';
-import { vocabularyCard } from '../../kit/vocabulary-card.js';
+import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
 import { toVocabularyModel, savePayloadOf } from '../../product/vocabulary-card.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
@@ -63,7 +63,7 @@ function backMarkup(model, saved) {
   const strokes = model.script === 'hanzi'
     ? strokesMarkup({ word: model.word, prefix: 's-feed', label: t('strokeOrder'), buttonLabel: t('practiseStrokes'), buttonAttr: 'data-practise-strokes', buttonClass: 's-feed-strokes-btn' })
     : '';
-  return html`<div class="s-feed-face s-feed-face--back" data-scroll-region>
+  return html`<div class="s-feed-face s-feed-face--back">
     ${vocabularyCard(model, { mode: 'feed', learner: { saved, hasSchedule: false }, slots: { strokes } })}
   </div>`;
 }
@@ -126,6 +126,7 @@ export default async function mountFeed(element, ctx) {
 
   function bind() {
     element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
+    bindVocabularyCards(element);
     /* A card flips by tap or click, and by Enter / Space when it has the keyboard's focus (it is
        `role=button`); the repaint gives the focus back to the same card. */
     const flip = (index) => {

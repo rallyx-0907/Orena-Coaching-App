@@ -1,86 +1,75 @@
-/* VocabularyCard (kit/vocabulary-card.js, D-17W). Measured from the pinned word card (Orena.dc.html
-   Word Detail / Review Session: `.s-word-card`, `.s-review-card`): 24px radius surface, the 32px word,
-   the mono reading, `o-tag` chips, the 44px play/save discs, the tinted meaning panel, the soft amber
-   highlight, the small-caps block label, the bordered mastery footer. Tokens only (kit/tokens.css);
-   no outline ring - edges are `--edge-light` (D-147). No width media query: the relation grid wraps
-   by its own minimum column, so the card recomposes from 1920 wide down to a 360 phone (rule 49). The
-   card never sets its own height; a workspace that must not scroll as a page gives it a scroll region. */
+/* VocabularyCard (kit/vocabulary-card.js, D-17W). Layout and rhythm measured from the human's flashcard
+   reference (Main.dc.html / Chinese.dc.html, 520 wide): 36/40/32 face padding (here 28/28/24, the kit's
+   card inset), 22px between blocks, the 60px headword (Hanzi 104px with 22px pinyin above), the 17px IPA
+   rows, the 12px small-caps section labels, the 22px meaning over its definition, the two-column pair
+   under a rule, the 14px-radius example panels, the 48px turn action. Colours, type and components are
+   the current theme's only (tokens.css, the kit's o-tag / o-btn / discs / highlight); no outline ring
+   (D-147). No width media query and no fixed card size: the headword's type shrinks to its column
+   (container units) instead of breaking a word, the pairs wrap by their own minimum column, and each face
+   is a body that scrolls inside itself above a foot that keeps the turn action in view (rule 49). */
 
 .c-vcard {
   border-radius: 24px;
   background: var(--surface);
   box-shadow: var(--sh1);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
   text-align: left;
   width: 100%;
   min-width: 0;
-}
-
-.c-vcard__head {
+  min-height: 0;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
+  flex-direction: column;
 }
-/* The headword never breaks inside a word: a phrase wraps between its words, and a word longer than
-   the width shrinks its type to fit (`--len`, its longest run, from the markup; `cqi` is this column's
-   width). The designed size is the ceiling. */
-.c-vcard__id {
-  flex: 1;
-  min-width: 0;
+.c-vcard__face {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.c-vcard__face[hidden] {
+  display: none;
+}
+.c-vcard__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px 28px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
   container-type: inline-size;
 }
-.c-vcard__word {
-  display: block;
-  font-size: min(32px, calc(165cqi / var(--len, 1)));
-  line-height: 1.1;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  overflow-wrap: normal;
-  word-break: keep-all;
-  hyphens: none;
+.c-vcard__foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 28px 24px;
 }
-.c-vcard__word--han {
-  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
-  font-size: min(40px, calc(92cqi / var(--len, 1)));
-  letter-spacing: 0.02em;
+.c-vcard__foot--back {
+  justify-content: flex-start;
 }
-.c-vcard__word ruby {
-  ruby-position: over;
+.c-vcard__turn {
+  min-height: 48px;
 }
-.c-vcard__word rt {
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0;
-  color: var(--muted);
+
+/* ---- Top row: level and source on the left, the discs on the right ---- */
+.c-vcard__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
-.c-vcard__meta {
+.c-vcard__tags {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
   flex-wrap: wrap;
+  min-width: 0;
 }
-.c-vcard__ipa {
-  font-family: 'JetBrains Mono', monospace;
+.c-vcard__source {
   font-size: 13px;
   color: var(--muted);
-}
-.c-vcard__ipa b,
-.c-vcard__hanviet b {
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text3);
-}
-.c-vcard__hanviet {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
 }
 .c-vcard__discs {
   display: flex;
@@ -88,13 +77,14 @@
   flex: none;
 }
 .c-vcard__disc {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   border: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: none;
   background: var(--surface2);
   color: var(--muted);
   cursor: pointer;
@@ -108,9 +98,95 @@
   color: var(--amber);
 }
 
+/* ---- The word ---- */
+.c-vcard__ident {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.c-vcard__pos {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+/* The headword never breaks inside a word: a phrase wraps between words, a long word shrinks its type to
+   the column (`--len`, its longest run; `cqi`, the face's width). The reference's size is the ceiling. */
+.c-vcard__word {
+  margin: 0;
+  font-size: min(60px, calc(165cqi / var(--len, 1)));
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: none;
+}
+.c-vcard__word--han {
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-size: min(104px, calc(78cqi / var(--len, 1)));
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+.c-vcard__word ruby {
+  ruby-position: over;
+}
+.c-vcard__word rt {
+  font-family: inherit;
+  font-size: max(13px, 0.21em);
+  font-weight: 400;
+  color: var(--muted);
+  padding-bottom: 4px;
+}
+.c-vcard__ipa-rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+.c-vcard__ipa {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 17px;
+  color: var(--text);
+}
+.c-vcard__ipa b {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.c-vcard__ipa .c-vcard__disc {
+  width: 32px;
+  height: 32px;
+}
+.c-vcard__hanrow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.c-vcard__hanrow .c-vcard__word {
+  flex: 1;
+  min-width: 0;
+}
+.c-vcard__hanviet {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding-bottom: 14px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/* ---- Illustration: only when there is one ---- */
 .c-vcard__art {
   margin: 0;
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--surface2);
   overflow: hidden;
   max-height: 180px;
@@ -123,26 +199,7 @@
   object-fit: contain;
 }
 
-.c-vcard__meaning {
-  border-radius: 16px;
-  background: var(--surface2);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.c-vcard__meaning-text {
-  font-size: 16px;
-  line-height: 1.5;
-  font-weight: 600;
-}
-.c-vcard__support,
-.c-vcard__definition {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
+/* ---- Sections ---- */
 .c-vcard__section {
   display: flex;
   flex-direction: column;
@@ -153,18 +210,36 @@
   margin: 0;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.c-vcard__grid {
+.c-vcard__meaning {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.c-vcard__meaning p {
+  margin: 0;
+}
+.c-vcard__meaning-text {
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+.c-vcard__definition {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.c-vcard__pair {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 14px 20px;
-  padding-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px 20px;
+  padding-top: 18px;
   border-top: 1px solid var(--border);
 }
-.c-vcard__words,
+.c-vcard__lines,
 .c-vcard__note {
   margin: 0;
   font-size: 15px;
@@ -173,101 +248,126 @@
 .c-vcard__muted {
   color: var(--muted);
 }
+.c-vcard__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 
+/* ---- Radical ---- */
+.c-vcard__radical {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.c-vcard__radical + .c-vcard__radical {
+  margin-top: 10px;
+}
+.c-vcard__radical-glyph {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-on-photo, var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-size: 36px;
+  font-weight: 600;
+}
+
+/* ---- Back face ---- */
+.c-vcard__backhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.c-vcard__backword {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow-wrap: normal;
+}
+.c-vcard--han .c-vcard__backword > span:first-child {
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-size: 34px;
+  font-weight: 900;
+}
+.c-vcard--han .c-vcard__backword .c-vcard__muted {
+  font-size: 17px;
+  font-weight: 400;
+}
+.c-vcard__backtitle {
+  font-size: 13px;
+}
 .c-vcard__examples {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 .c-vcard__example {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--surface2);
 }
-.c-vcard__example + .c-vcard__example {
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
+.c-vcard__example p {
+  margin: 0;
 }
 .c-vcard__example-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text3);
-}
-.c-vcard__example-text {
-  font-family: Literata, 'Noto Serif SC', Georgia, serif;
-  font-size: 17px;
-  line-height: 1.6;
-}
-.c-vcard__example-reading {
-  font-size: 14px;
   color: var(--muted);
 }
+.c-vcard__example-text {
+  font-size: 19px;
+  line-height: 1.45;
+  font-weight: 500;
+}
+.c-vcard--han .c-vcard__example-text {
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-size: 24px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+.c-vcard__example-reading,
 .c-vcard__example-translation {
   font-size: 15px;
   line-height: 1.5;
 }
+.c-vcard__example-reading {
+  color: var(--muted);
+}
 .c-vcard__example-note {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--muted);
 }
-/* The pinned exParts treatment: weight and a soft amber patch, the ink stays the sentence's. */
+/* The kit's highlight (the pinned exParts treatment): weight and a soft amber patch. */
 .c-vcard__hit {
   background: var(--amber-soft);
   color: inherit;
   border-radius: 4px;
   padding: 0 2px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.c-vcard__units {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.c-vcard__unit {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-}
-.c-vcard__unit-glyph {
-  flex: none;
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  background: var(--surface2);
-  box-shadow: var(--edge-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
-  font-size: 30px;
-}
-.c-vcard__unit-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 14px;
-  line-height: 1.5;
+/* ---- The learner's mastery line, beside the turn action ---- */
+.c-vcard__mastery {
+  flex: 1;
   min-width: 0;
-}
-.c-vcard__unit-body b {
-  font-weight: 600;
-  color: var(--text3);
-}
-
-.c-vcard__footer {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+  gap: 8px;
 }
 .c-vcard__stage {
   font-size: 14px;
@@ -278,38 +378,31 @@
   color: var(--text3);
 }
 
-/* The recall face: the word alone, centred, larger - nothing below it (D-17W). */
+/* ---- The recall face (review-front): the word alone, centred; nothing that answers ---- */
 .c-vcard--review-front {
   background: transparent;
   box-shadow: none;
-  padding: 0;
   align-items: center;
   text-align: center;
 }
-.c-vcard--review-front .c-vcard__head {
+.c-vcard__recall {
+  width: 100%;
+  display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-}
-.c-vcard--review-front .c-vcard__id {
-  width: 100%;
+  gap: 12px;
+  container-type: inline-size;
 }
 .c-vcard--review-front .c-vcard__word {
-  font-size: min(36px, calc(165cqi / var(--len, 1)));
+  font-size: min(56px, calc(165cqi / var(--len, 1)));
 }
 .c-vcard--review-front .c-vcard__word--han {
-  font-size: min(48px, calc(92cqi / var(--len, 1)));
+  font-size: min(88px, calc(78cqi / var(--len, 1)));
 }
-
-/* The Daily Feed's turned card is narrow: the play and save discs take their own row under the word,
-   so the word has the card's whole width. */
-.c-vcard--feed .c-vcard__head {
-  flex-direction: column;
-  align-items: stretch;
-}
-.c-vcard--feed .c-vcard__id {
-  width: 100%;
-}
-.c-vcard--review-front .c-vcard__meta {
+.c-vcard__recall-meta {
+  display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }

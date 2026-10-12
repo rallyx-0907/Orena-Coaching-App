@@ -151,6 +151,14 @@ function definitionOf(source, seed, language, meaningText) {
   return null;
 }
 
+function englishOf(source, meaningText) {
+  for (const entry of [...list(source?.short_meanings), ...list(source?.meanings)]) {
+    const value = text(entry?.text);
+    if (value && lower(entry?.language) === 'en' && value !== meaningText) return value;
+  }
+  return text(source?.support_translations?.en) !== meaningText ? text(source?.support_translations?.en) : '';
+}
+
 /* ---- Typed usage notes (D-178) ----------------------------------------------------------------
    A raw entry carries `usage_notes` as typed items; a catalogue card has already grouped them
    (`collocations`, `related`, `classifiers`, `explanation_artifacts`, `common_mistakes`, and
@@ -287,10 +295,15 @@ export function toVocabularyModel(source, { word = '', supportLanguage = '', loo
     pos: text(resolvedLookup?.partOfSpeech) || text(entry.part_of_speech),
     level: text(entry.level),
     framework: text(entry.framework),
+    // Where the level comes from ("Oxford 5000"), as the entry records it.
+    levelSource: text(entry.provenance?.level_source),
     pronunciation,
     meaning: meaningText ? { text: meaningText, language: lower(meaning.language) === lower(supportLanguage) ? '' : lower(meaning.language) } : null,
     support: localized && localized !== meaningText ? localized : '',
     definition: definition?.text || '',
+    // The reference's Chinese card gives the meaning in English under the support-language one ("forest"):
+    // the entry's English localization, for a word that is not English and a learner whose support is not.
+    english: language !== 'en' && lower(supportLanguage) !== 'en' ? englishOf(entry, meaningText) : '',
     definitionLanguage: definition?.text ? definition.language : '',
     examples: examplesOf(entry, { language, script, word: headword, supportLanguage }),
     collocations: ofType(notes, 'collocation').map((note) => text(note.text)),

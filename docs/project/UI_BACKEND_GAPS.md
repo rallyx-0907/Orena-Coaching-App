@@ -5932,10 +5932,8 @@ items above, and what PR 2 leaves open for the human:
   sees the entry without them until a pack in their support language exists.
 - **VC-10 The Quick Sheet** keeps its own compact word card (`screens/quick-sheet`, `mapWordCard`); it is a sheet,
   not a card surface of this PR.
-- **VC-11 Save on the Review back (decision for the human).** The lead's :8021 check asked to drop the bookmark from
-  `review-back`, since Save belongs to Word Detail and the Feed. The pinned Review Session draws it on the turned card
-  (`rvWC.savedBg` / `rvWC.savedColor`, Orena.dc.html, Review Session), so it is kept, as before PR 2, until the human
-  chooses. Removing it is one condition in `kit/vocabulary-card.js#heading`.
+- **VC-11 Save on the Review back - closed (human decision 2026-10-12).** Kept as the pinned frame draws it, as a
+  remove-only toggle drawn saved, with the existing Undo; recorded in D-17W point 4.
 - **VC-12 The Review corner disc.** The pinned frame draws its decorative corner disc on the turned card too, where it
   sat under the play and save discs; on the revealed face it now sits at the bottom-left corner (review.css). An
   adaptation, recorded here.
@@ -5944,3 +5942,12 @@ items above, and what PR 2 leaves open for the human:
   word, the feed's discs on their own row, the card body the only scroll region, the grades outside it). Still to
   measure on a phone: Review at 360x740 with a long authored entry (the grades in view, only the card scrolling),
   the feed's turned card with a long headword, and the ZH ruby headword at 360 wide.
+- **VC-14 Rebuilt to the flashcard reference's two-face layout (2026-10-12).** Not reproduced with current tokens and
+  components, by design or by data: the reference's blue accent, Be Vietnam Pro / Noto Serif faces and the Chinese
+  card's cream paper, seal red and double rule (theme and D-147); the translation's own highlight (the reference bolds
+  "kiên cường" in the Vietnamese line - the entry format has no field for it); the bold pattern inside an explanation
+  ("resilient to / against + N" - plain text in the data); separate UK and US recordings (both play discs say the
+  word's one voice - `/api/vocabulary/{word}/audio` has no accent choice); the reference's line-art illustrations (no
+  assets; the frame is drawn only for an uploaded image). The Daily Feed keeps its pinned frame-36 front face; the
+  two-face card is its turned side.
+

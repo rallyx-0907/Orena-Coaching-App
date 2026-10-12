@@ -5646,19 +5646,32 @@ Date: 2026-10-12. Human decisions of 2026-10-12 for PR 2 of D-178 (lane `claude/
    what the card draws. It is pure content: no saved state, stage, due date or learner sentence goes in or comes out;
    `learnerState(item)` is a separate decorator the screen applies. `kit/vocabulary-card.js` draws it; the Admin preview
    (PR 3) renders the same component and mapper with no learner state.
-2. **Modes.** `detail` (Word Detail: the whole card, Save), `feed` (the Daily Feed's turned card: the whole card with
-   the first example, Save), `review-front` (the word or Hanzi, its reading, part of speech, level and audio - nothing
-   that answers the card), `review-back` (the whole card; the grades are drawn under it). Compact rows stay rows
-   (`VocabularyRow`, PR 2b); a rich card never replaces a row.
+2. **Layout is the human's flashcard reference; style is the theme.** The card's layout and information come from the
+   human's design reference for this component, the Claude Design canvas "Flashcard từ vựng Anh – Trung" (artboards
+   `Main.dc.html`, English, and `Chinese.dc.html`, Chinese): a two-face card - the front with the level and source,
+   part of speech, headword, readings, meaning, word family and synonyms/antonyms (Chinese: per-character pinyin over
+   the Hanzi, Hán Việt, meaning, radical, measure word, related words), the back with numbered examples, structure,
+   collocations and the memory tip - turned by "See examples ->" / "<- Front". Colours, type and components are the
+   current theme's (tokens, `o-tag`, `o-btn`, the kit's discs and highlight); the reference's accent, faces and the
+   Chinese paper/seal look are not carried. A section with no data is left out. Modes: `detail` and `feed` (the two
+   faces, starting on the front, with Save), `review-front` (the recall face: the word, its reading, part of speech,
+   level and audio - nothing that answers), `review-back` (the two faces; the grades are outside the card). Compact
+   rows stay rows (`VocabularyRow`, PR 2b); a rich card never replaces a row.
 3. **Two review buttons.** "Not yet" sends `again`, "Got it" sends `got_it`, each labelled with the interval the
    scheduler reports for that card. `unsure` stays in `POST /api/library/vocabulary/{word}/review` and has no button;
    the session summary counts the two. Supersedes the three-button choice in Review's earlier surface report.
-4. **Save is not Review.** Word Detail and the Feed offer Save and never a grade; a Review session contains only words
-   already in `saved_words`; nothing is saved silently. Flow: card -> Save -> `saved_words` -> scheduler -> Review.
+4. **Save is not Review - with one exception.** Word Detail and the Feed offer Save and never a grade; a Review session
+   contains only words already in `saved_words`; nothing is saved silently. Flow: card -> Save -> `saved_words` ->
+   scheduler -> Review. The exception (human decision 2026-10-12, closing UI_BACKEND_GAPS VC-11): the Review back keeps
+   the bookmark the pinned Review frame draws, but there it is only a remove toggle, drawn saved; it uses the existing
+   remove flow with its Undo, never saves a new word, and is not drawn once the word is removed.
 5. **Content rules.** Highlights find the authored span (`match`/`occurrence`): Latin as a whole word, Hanzi where it
    stands; the pinyin span is lit only when it can be found, never the whole line. Support-language content shows only
    in the learner's support language; the meaning alone falls back to another language, tagged. No illustration, no
    frame. Tokens only; the ZH card differs by type and content order, not colour.
-6. **Provenance.** Orena.dc.html -> Word Detail / Review Session -> the word card (`wdWC` / `rvWC`) -> reused as
-   VocabularyCard; adaptations recorded in the component's header. Open items: `UI_BACKEND_GAPS.md` "Vocabulary card
-   (D-178)", PR 2 list.
+6. **Provenance.** Layout: the human's flashcard reference (point 2), recorded in the component's header. Style:
+   tokens and kit components. Adaptations: the save disc joins the reference's top row; each IPA row has its own play
+   disc (both play the word's one voice); collocations are `o-tag` chips; Chinese examples are numbered 一, 二 as the
+   reference draws them; the meaning panel shows the kit's skeleton while the lookup is out and the word's
+   own-language definition, tagged, when it is the only meaning. Open items: `UI_BACKEND_GAPS.md` "Vocabulary card
+   (D-178)".

@@ -1,32 +1,42 @@
-/* VocabularyCard (D-178, D-17W): the one rich vocabulary card, drawn from the model
-   `product/vocabulary-card.js#toVocabularyModel` makes, for Word Detail (`detail`), the Daily Feed
-   (`feed`) and Review (`review-front`, then `review-back`). The Admin preview (PR 3) renders the
-   same markup with no learner state.
+/* VocabularyCard (D-178, D-17W): the one vocabulary card, drawn from the model
+   `product/vocabulary-card.js#toVocabularyModel` makes.
 
-   Provenance (UI provenance gate): Orena.dc.html -> Word Detail / Review Session -> the word card
-   (`wdWC` / `rvWC`: header with word, reading, part-of-speech and level tags, the play and save
-   discs, the tinted meaning panel, the example with its tinted highlight, the stroke-order block,
-   the mastery footer) -> reused as this component. Adaptations: the meaning panel lists more than one
-   example; the further entry facts (collocations, synonyms and opposites, word family, related
-   words, measure words, the Chinese character units, the memory tip) are drawn as the card's own
-   small-caps section label over plain text - the stroke-order block's label pattern - in a two-column
-   grid that drops to one column on a phone; the layout and information follow the human's flashcard
-   reference ("Flashcard từ vựng Anh – Trung", D-178), its colours, faces and paper look do not.
-   Tokens only (kit/tokens.css); edges are `--edge-light` (D-147).
+   Provenance (UI provenance gate). LAYOUT and INFORMATION: the human's design reference for this
+   component, the Claude Design canvas "Flashcard từ vựng Anh – Trung" (claude.ai/artifact/
+   9wmYKVJVn8cBuX8ButSryF): artboard `Main.dc.html` (English, "resilient") and `Chinese.dc.html` (Chinese,
+   "森林") - a two-face card, the front with the word and its facts, the back with the examples, turned by
+   "See examples ->" / "<- Front". COLOURS, TYPE and COMPONENTS: the current theme only - semantic tokens
+   (kit/tokens.css), the kit's `o-tag`, `o-btn`, play/save discs and highlight; the reference's blue accent,
+   its Be Vietnam Pro / Noto Serif faces, the Chinese card's paper, seal red and double rule are not carried
+   (D-147: no outline ring). Adaptations, each recorded in D-17W and UI_BACKEND_GAPS "Vocabulary card":
+   the save disc joins the top row; a play disc sits on each IPA row; collocations are chips; a
+   section with no data is left out.
 
-   Modes:
-   - `review-front`: the word or Hanzi, its reading, part of speech and level, the play disc.
-     Nothing that answers the card (no meaning, example, translation, relation or character facts).
-   - `review-back`: the whole card; the screen draws the grades under it.
-   - `detail`: the whole card with the save disc.
-   - `feed`: the whole card with the save disc, the first example only.
+   Faces, top to bottom as the reference draws them:
+   - EN front: level tag + source; part of speech (its English name · the localized name); the headword;
+     the UK and US IPA rows; "Meaning" (support-language meaning, the English definition); "Word family";
+     "Synonyms / antonyms" (≈ / ≠); "See examples ->".
+   - EN back: the headword and "Examples & usage"; numbered examples (label, sentence with its highlight,
+     translation, explanation); "Structure"; "Common collocations"; "Memory tip"; "<- Front".
+   - ZH front: HSK tag; part of speech (中文名 · localized); the Hanzi with each character's pinyin above
+     it, Hán Việt beside; "Meaning"; "Radical" (the radical, its pinyin and name, then each character =
+     its components · strokes); "Measure word"; "Related words"; "See examples ->".
+   - ZH back: the Hanzi and pinyin and "Examples & usage"; numbered examples (label, sentence with the
+     Hanzi span, pinyin with the matching span, translation, note); "Memory tip"; "<- Front".
 
-   Learner state is a separate decorator (`learner`, from `learnerState`), drawn only as the
-   footer and the save disc's state; the content never depends on it. No illustration means no frame. */
+   Modes: `detail` and `feed` draw the two faces, starting on the front, with Save. `review-front` is the
+   recall face (D-17W point 2): the word or Hanzi, its reading, part of speech and level, play - nothing
+   that answers. `review-back` is the two faces; its bookmark is only a remove toggle, drawn saved, and it
+   is not drawn once the word is removed (D-17W point 4). The grades are the screen's, outside the card.
+
+   Each face is a body that scrolls inside itself and a foot that holds the turn action, so the action
+   stays in view when a long entry fills a phone (rule 49). Learner state (`learner`, from
+   `learnerState`) only sets the save disc and the mastery footer; the content never depends on it. */
 import { html, raw, cls } from './html.js';
 import { icon } from './icons.js';
 import { langAttr } from './lang.js';
 import { masteryBars } from './components.js';
+import { registeredCopy } from '../copy/index.js';
 import { t } from '../copy/vocabulary-card.js';
 
 export const CARD_MODES = Object.freeze(['detail', 'feed', 'review-front', 'review-back']);
@@ -38,177 +48,293 @@ const POS_KEY = Object.freeze({
   classifier: 'posClassifier', measure_word: 'posMeasureWord', phrase: 'posPhrase', idiom: 'posIdiom',
   proper_noun: 'posProperNoun', other: 'posOther',
 });
+const ZH_NUMERALS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
-/* A part of speech in the interface language when it is one of the known codes; otherwise the
-   value as the source wrote it, marked as English content metadata (the word/copy.js precedent). */
-export function posLabel(value) {
-  const raw0 = String(value ?? '').trim();
-  const parts = raw0.split(/\s*[/,;|]\s*/).filter(Boolean);
+function posKeys(value) {
+  const parts = String(value ?? '').trim().split(/\s*[/,;|]\s*/).filter(Boolean);
   const keys = parts.map((part) => POS_KEY[part.toLowerCase().replace(/\s+/g, '_')]);
-  if (parts.length && keys.every(Boolean)) return { text: keys.map((key) => t(key)).join(t('posJoin')), known: true };
-  return { text: raw0, known: false };
+  return parts.length && keys.every(Boolean) ? keys : null;
 }
 
-function posTag(value) {
-  if (!value) return '';
-  const label = posLabel(value);
-  return html`<span class="o-tag"${label.known ? '' : raw(` lang="${langAttr('en')}"`)}>${label.text}</span>`;
+/* A part of speech in the interface language when it is a known code; otherwise as the source wrote it,
+   marked as English content metadata. */
+export function posLabel(value) {
+  const keys = posKeys(value);
+  if (keys) return { text: keys.map((key) => t(key)).join(t('posJoin')), known: true };
+  return { text: String(value ?? '').trim(), known: false };
 }
 
-function parts(list, hitClass = 'c-vcard__hit') {
-  return list.map((part) => (part.hit ? html`<mark class="${hitClass}">${part.value}</mark>` : part.value));
+/* The part of speech's name in the word's own language - "adjective", "名词" - the reference's first half
+   of the part-of-speech line. Read from this table's own pack for that language, not the interface's. */
+export function posNative(value, language) {
+  const keys = posKeys(value);
+  if (!keys) return '';
+  const pack = registeredCopy().get('vocabularyCard')?.packs?.[language === 'zh' ? 'zh' : 'en'] || {};
+  return keys.map((key) => pack[key] || '').filter(Boolean).join(pack.posJoin || ' / ').toLowerCase();
 }
 
-function section(titleKey, body, extra = '') {
-  if (!body) return '';
-  return html`<section class="${cls('c-vcard__section', extra)}"><h3 class="c-vcard__label">${t(titleKey)}</h3>${body}</section>`;
-}
-
-/* The heading: the word (a Chinese word as its character units with their pinyin above when the
-   entry carries them), the reading(s), the tags, the play and save discs. */
-/* How long the headword's longest unbreakable run is, so its type can shrink to fit the card's width
-   instead of breaking inside a word (CSS `--len`, kit/vocabulary-card.css). Han has no spaces: the whole
-   word is one run. A number, never a colour. */
+/* How long the headword's longest unbreakable run is, so its type can shrink to fit the width instead of
+   breaking inside a word (CSS `--len`). Han has no spaces: the whole word is one run. */
 export function headwordRun(word, script) {
   const value = String(word ?? '').trim();
   if (script === 'hanzi') return Math.max(1, [...value].length);
   return Math.max(1, ...value.split(/\s+/).map((part) => [...part].length));
 }
 
-function heading(model, { mode, learner }) {
+function parts(list) {
+  return list.map((part) => (part.hit ? html`<mark class="c-vcard__hit">${part.value}</mark>` : part.value));
+}
+
+function section(titleKey, body, extra = '') {
+  if (!body || !String(body)) return '';
+  return html`<section class="${cls('c-vcard__section', extra)}" data-section="${titleKey}"><h3 class="c-vcard__label">${t(titleKey)}</h3>${body}</section>`;
+}
+
+function playDisc(region = '') {
+  return html`<button type="button" class="c-vcard__disc c-vcard__disc--play" data-play${region ? raw(` data-region="${region}"`) : ''} aria-label="${t('playWord')}">${raw(icon('volume-2', { size: 17 }))}</button>`;
+}
+
+function saveDisc(learner) {
+  return html`<button type="button" class="${cls('c-vcard__disc', learner?.saved && 'is-saved')}" data-save aria-pressed="${learner?.saved ? 'true' : 'false'}" aria-label="${t(learner?.saved ? 'unsaveWord' : 'saveWord')}">${raw(icon('bookmark-check', { size: 17 }))}</button>`;
+}
+
+function headword(model, size = '') {
   const lang = langAttr(model.language);
   const run = headwordRun(model.word, model.script);
-  const units = model.script === 'hanzi' ? model.units : [];
-  const word = units.length
-    ? html`<span class="c-vcard__word c-vcard__word--han" lang="${lang}" style="--len:${run}">${units.map((unit) => html`<ruby>${unit.hanzi}${unit.pinyin ? html`<rt>${unit.pinyin}</rt>` : ''}</ruby>`)}</span>`
-    : html`<span class="c-vcard__word${cls(model.script === 'hanzi' && ' c-vcard__word--han')}" lang="${lang}" style="--len:${run}">${model.word}</span>`;
-  const ipa = model.pronunciation.ipa.length > 1
-    ? model.pronunciation.ipa.map((item) => html`<span class="c-vcard__ipa">${item.region === 'uk' || item.region === 'us' ? html`<b>${t(item.region === 'uk' ? 'regionUk' : 'regionUs')}</b> ` : ''}${item.text}</span>`)
-    : (model.pronunciation.text ? html`<span class="c-vcard__ipa">${model.pronunciation.text}</span>` : '');
-  const save = mode === 'detail' || mode === 'feed' || (mode === 'review-back' && learner)
-    ? html`<button type="button" class="${cls('c-vcard__disc', learner?.saved && 'is-saved')}" data-save aria-pressed="${learner?.saved ? 'true' : 'false'}" aria-label="${t(learner?.saved ? 'unsaveWord' : 'saveWord')}">${raw(icon('bookmark-check', { size: 19 }))}</button>`
-    : '';
-  return html`<header class="c-vcard__head">
-    <div class="c-vcard__id">
-      ${word}
-      <div class="c-vcard__meta">${ipa}${posTag(model.pos)}${model.level ? html`<span class="o-tag">${model.level}</span>` : ''}${model.hanViet ? html`<span class="c-vcard__hanviet"><b>${t('hanVietLabel')}</b> ${model.hanViet}</span>` : ''}</div>
-    </div>
-    <div class="c-vcard__discs">
-      <button type="button" class="c-vcard__disc c-vcard__disc--play" data-play aria-label="${t('playWord')}">${raw(icon('volume-2', { size: 19 }))}</button>
-      ${save}
-    </div>
-  </header>`;
-}
-
-/* The meaning panel. A meaning still being looked up shows the kit's skeleton bones, never a claim
-   that there is none; "no meaning" only when nothing at all exists (rule 40). The word's own-language
-   definition is the line under the meaning, or the panel's only line, tagged with its language. */
-function meaningBlock(model, { meaningTag, pending }) {
-  const tag = (language) => (language && meaningTag ? meaningTag(language) : '');
-  if (!model.meaning && !model.definition) {
-    if (pending) {
-      return html`<div class="c-vcard__meaning" aria-busy="true" data-meaning-pending><div class="o-bone o-bone--strong" style="height:12px;width:55%"></div><div class="o-bone" style="height:10px;width:32%"></div></div>`;
-    }
-    return html`<div class="c-vcard__meaning"><div class="c-vcard__support" data-no-meaning>${t('meaningUnavailable')}</div></div>`;
+  if (model.script !== 'hanzi') return html`<h2 class="${cls('c-vcard__word', size)}" lang="${lang}" style="--len:${run}">${model.word}</h2>`;
+  const units = model.units.length ? model.units : null;
+  if (!units) {
+    // No character units: the word's reading above it, whole.
+    return html`<h2 class="${cls('c-vcard__word c-vcard__word--han', size)}" lang="${lang}" style="--len:${run}">${model.pronunciation.pinyin ? html`<ruby>${model.word}<rt>${model.pronunciation.pinyin}</rt></ruby>` : model.word}</h2>`;
   }
-  const definition = model.definition
-    ? html`<div class="${model.meaning ? 'c-vcard__definition' : 'c-vcard__meaning-text'}"><span lang="${langAttr(model.definitionLanguage)}">${model.definition}</span>${tag(model.definitionLanguage)}</div>`
-    : '';
-  return html`<div class="c-vcard__meaning">
-    ${model.meaning ? html`<div class="c-vcard__meaning-text">${model.meaning.text}${tag(model.meaning.language)}</div>` : ''}
-    ${model.support ? html`<div class="c-vcard__support">${model.support}</div>` : ''}
-    ${definition}
-  </div>`;
+  return html`<h2 class="${cls('c-vcard__word c-vcard__word--han', size)}" lang="${lang}" style="--len:${run}">${units.map((unit) => html`<ruby>${unit.hanzi}${unit.pinyin ? html`<rt>${unit.pinyin}</rt>` : ''}</ruby>`)}</h2>`;
 }
 
-function exampleItem(example, model) {
+function posLine(model) {
+  if (!model.pos) return '';
+  const native = posNative(model.pos, model.language);
+  const local = posLabel(model.pos);
+  const localText = local.text.toLowerCase();
+  return html`<div class="c-vcard__pos">${native && native !== localText ? html`<span lang="${langAttr(model.language)}">${native}</span> · ` : ''}<span${local.known ? '' : raw(` lang="${langAttr('en')}"`)}>${local.text}</span></div>`;
+}
+
+/* "HSK 4" for an HSK level stored as its number; a level that already names its scale stays as it is. */
+export function levelLabel(model) {
+  const level = String(model.level || '').trim();
+  if (/^hsk/i.test(level) || !/^hsk/i.test(String(model.framework || ''))) return level;
+  return `HSK ${level}`;
+}
+
+/* The top row: the level tag (and, on the English card, its source), the discs on the right. */
+function topRow(model, { save, play }) {
+  const tags = [
+    model.level ? html`<span class="o-tag o-tag--accent c-vcard__level">${levelLabel(model)}</span>` : '',
+    model.script !== 'hanzi' && model.levelSource ? html`<span class="c-vcard__source">${model.levelSource}</span>` : '',
+  ];
+  const discs = [play ? playDisc() : '', save || ''];
+  if (!String(tags.join('')) && !String(discs.join(''))) return '';
+  return html`<div class="c-vcard__top"><div class="c-vcard__tags">${tags}</div><div class="c-vcard__discs">${discs}</div></div>`;
+}
+
+/* The meaning panel. Still being looked up: the kit's skeleton bones, never "no meaning". The word's
+   own-language definition is the line under the meaning, or the only line, tagged with its language. */
+function meaningSection(model, { meaningTag, pending }) {
+  const tag = (language) => (language && meaningTag ? meaningTag(language) : '');
+  let body;
+  if (!model.meaning && !model.definition && !model.english) {
+    body = pending
+      ? html`<div class="c-vcard__meaning" aria-busy="true" data-meaning-pending><div class="o-bone o-bone--strong" style="height:12px;width:55%"></div><div class="o-bone" style="height:10px;width:32%"></div></div>`
+      : html`<div class="c-vcard__meaning"><p class="c-vcard__definition" data-no-meaning>${t('meaningUnavailable')}</p></div>`;
+  } else {
+    body = html`<div class="c-vcard__meaning">
+      ${model.meaning ? html`<p class="c-vcard__meaning-text">${model.meaning.text}${tag(model.meaning.language)}</p>` : ''}
+      ${model.support ? html`<p class="c-vcard__definition">${model.support}</p>` : ''}
+      ${model.english ? html`<p class="c-vcard__definition" lang="en">${model.english}</p>` : ''}
+      ${model.definition ? html`<p class="${model.meaning ? 'c-vcard__definition' : 'c-vcard__meaning-text'}"><span lang="${langAttr(model.definitionLanguage)}">${model.definition}</span>${tag(model.definitionLanguage)}</p>` : ''}
+    </div>`;
+  }
+  return section('sectionMeaning', body);
+}
+
+function illustration(model) {
+  return model.illustration
+    ? html`<figure class="c-vcard__art"><img src="${model.illustration.src}" alt="${model.illustration.alt}" loading="lazy" /></figure>`
+    : '';
+}
+
+/* ---- English front ---- */
+function ipaRows(model) {
+  const rows = model.pronunciation.ipa;
+  if (!rows.length) return '';
+  return html`<div class="c-vcard__ipa-rows">${rows.map((row) => html`<span class="c-vcard__ipa">${row.region === 'uk' || row.region === 'us' ? html`<b>${t(row.region === 'uk' ? 'regionUk' : 'regionUs')}</b>` : ''}<span>${row.text}</span>${playDisc(row.region)}</span>`)}</div>`;
+}
+
+function enFront(model, ctx) {
+  const lang = langAttr(model.language);
+  const hasIpaRows = model.pronunciation.ipa.length > 0;
+  const family = model.wordFamily.length
+    ? html`<div class="c-vcard__lines" lang="${lang}">${model.wordFamily.map((item) => html`<div>${item.word}${item.pos ? html` <span class="c-vcard__muted">${item.pos}</span>` : ''}</div>`)}</div>`
+    : '';
+  const synAnt = model.synonyms.length || model.antonyms.length
+    ? html`<div class="c-vcard__lines" lang="${lang}">${model.synonyms.length ? html`<div>≈ ${model.synonyms.join(', ')}</div>` : ''}${model.antonyms.length ? html`<div>≠ ${model.antonyms.join(', ')}</div>` : ''}</div>`
+    : '';
+  const pair = [section('sectionWordFamily', family), section('sectionSynAnt', synAnt)].filter((cell) => String(cell));
+  return html`
+    ${topRow(model, { save: ctx.save, play: !hasIpaRows })}
+    <div class="c-vcard__ident">
+      ${posLine(model)}
+      ${headword(model)}
+      ${hasIpaRows ? ipaRows(model) : (model.pronunciation.text ? html`<div class="c-vcard__ipa"><span>${model.pronunciation.text}</span></div>` : '')}
+    </div>
+    ${illustration(model)}
+    ${meaningSection(model, ctx)}
+    ${pair.length ? html`<div class="c-vcard__pair">${pair}</div>` : ''}`;
+}
+
+/* ---- Chinese front ---- */
+function radicalSection(model) {
+  const withRadical = model.units.filter((unit) => unit.radical);
+  if (!withRadical.length) return '';
+  const lang = langAttr(model.language);
+  // One box per distinct radical; a word whose characters share it (森林 -> 木) shows it once (docs/vocab README).
+  const groups = [];
+  for (const unit of withRadical) {
+    const group = groups.find((item) => item.radical.surface === unit.radical.surface);
+    if (group) group.units.push(unit);
+    else groups.push({ radical: unit.radical, units: [unit] });
+  }
+  return section('sectionRadical', html`${groups.map((group) => html`<div class="c-vcard__radical">
+    <span class="c-vcard__radical-glyph" lang="${lang}">${group.radical.surface}</span>
+    <div class="c-vcard__lines">
+      <div>${group.radical.reading ? html`<b>${group.radical.reading}</b>` : ''}${group.radical.name ? html` · ${group.radical.name}` : ''}${group.radical.gloss ? html` (${group.radical.gloss})` : ''}</div>
+      ${group.units.map((unit) => html`<div><span lang="${lang}">${unit.hanzi}${unit.components.length ? ` = ${unit.components.join(' + ')}` : ''}</span>${unit.strokes ? html` · ${t.plural('strokeCount', unit.strokes)}` : ''}</div>`)}
+    </div>
+  </div>`)}`);
+}
+
+function zhFront(model, ctx) {
+  const lang = langAttr(model.language);
+  const measure = model.classifiers.length
+    ? html`<div class="c-vcard__lines">${model.classifiers.map((item) => html`<div><span lang="${lang}">${item.phrase || item.mw}</span>${item.phraseReading || item.reading ? html`<br /><span class="c-vcard__muted">${item.phraseReading || item.reading}</span>` : ''}</div>`)}</div>`
+    : '';
+  const related = model.related.length
+    ? html`<div class="c-vcard__lines">${model.related.map((item) => html`<div><span lang="${lang}">${item.word}</span>${item.reading ? html` <span class="c-vcard__muted">${item.reading}</span>` : ''}${item.gloss ? html` · ${item.gloss}` : ''}</div>`)}</div>`
+    : '';
+  const pair = [section('sectionMeasureWord', measure), section('sectionRelated', related)].filter((cell) => String(cell));
+  return html`
+    ${topRow(model, { save: ctx.save, play: true })}
+    ${posLine(model)}
+    <div class="c-vcard__hanrow">
+      ${headword(model)}
+      ${model.hanViet ? html`<div class="c-vcard__hanviet"><span class="c-vcard__label">${t('hanVietLabel')}</span><span>${model.hanViet}</span></div>` : ''}
+    </div>
+    ${illustration(model)}
+    ${meaningSection(model, ctx)}
+    ${radicalSection(model)}
+    ${pair.length ? html`<div class="c-vcard__pair">${pair}</div>` : ''}`;
+}
+
+/* ---- Backs ---- */
+function exampleNumber(index, model) {
+  return model.script === 'hanzi' ? ZH_NUMERALS[index] || String(index + 1) : String(index + 1).padStart(2, '0');
+}
+
+function examplePanel(example, index, model) {
   const lang = langAttr(model.language);
   return html`<li class="c-vcard__example">
-    ${example.label ? html`<div class="c-vcard__example-label">${example.label}</div>` : ''}
-    <div class="c-vcard__example-text" lang="${lang}">${parts(example.parts)}</div>
-    ${example.reading ? html`<div class="c-vcard__example-reading" lang="zh-Latn">${parts(example.readingParts)}</div>` : ''}
-    ${example.translation ? html`<div class="c-vcard__example-translation">${example.translation}</div>` : ''}
-    ${example.explanation ? html`<div class="c-vcard__example-note">${example.explanation}</div>` : ''}
+    <div class="c-vcard__example-label">${exampleNumber(index, model)}${example.label ? ` · ${example.label}` : ''}</div>
+    <p class="c-vcard__example-text" lang="${lang}">${parts(example.parts)}</p>
+    ${example.reading ? html`<p class="c-vcard__example-reading" lang="zh-Latn">${parts(example.readingParts)}</p>` : ''}
+    ${example.translation ? html`<p class="c-vcard__example-translation">${example.translation}</p>` : ''}
+    ${example.explanation ? html`<p class="c-vcard__example-note">${example.explanation}</p>` : ''}
   </li>`;
 }
 
-function examplesBlock(model, { mode, learner }) {
-  const list = mode === 'feed' ? model.examples.slice(0, 1) : model.examples;
-  if (list.length) return section('sectionExamples', html`<ul class="c-vcard__examples">${list.map((example) => exampleItem(example, model))}</ul>`, 'c-vcard__section--wide');
-  // No authored example: the sentence the learner met the word in, when there is one (theirs, so a decorator).
-  const context = learner?.context;
-  if (!context) return '';
-  return section('sectionMetIn', html`<div class="c-vcard__example-text" lang="${langAttr(model.language)}">${parts(learner.contextParts || [{ value: context, hit: false }])}</div>`, 'c-vcard__section--wide');
-}
-
-function wordList(words, lang) {
-  return words.length ? html`<div class="c-vcard__words" lang="${langAttr(lang)}">${words.join(', ')}</div>` : '';
-}
-
-function charactersBlock(model) {
-  if (!model.units.length) return '';
+function back(model, { learner, mode }) {
   const lang = langAttr(model.language);
-  return section('sectionCharacters', html`<ul class="c-vcard__units">${model.units.map((unit) => html`<li class="c-vcard__unit">
-    <span class="c-vcard__unit-glyph" lang="${lang}">${unit.hanzi}</span>
-    <span class="c-vcard__unit-body">
-      <span>${unit.pinyin}${unit.hanViet ? html` · ${unit.hanViet}` : ''}${unit.strokes ? html` · ${t.plural('strokeCount', unit.strokes)}` : ''}</span>
-      ${unit.radical ? html`<span><b>${t('radicalLabel')}</b> <span lang="${lang}">${unit.radical.surface}</span>${unit.radical.reading ? ` ${unit.radical.reading}` : ''}${unit.radical.name ? ` · ${unit.radical.name}` : ''}${unit.radical.gloss ? ` (${unit.radical.gloss})` : ''}</span>` : ''}
-      ${unit.components.length ? html`<span lang="${lang}">${unit.hanzi} = ${unit.components.join(' + ')}</span>` : ''}
-    </span>
-  </li>`)}</ul>`, 'c-vcard__section--wide');
-}
-
-function relationsGrid(model) {
-  const lang = model.language;
-  const cells = [
-    section('sectionCollocations', wordList(model.collocations, lang)),
-    section('sectionClassifiers', model.classifiers.length ? html`<div class="c-vcard__words">${model.classifiers.map((item) => html`<div><span lang="${langAttr(lang)}">${item.phrase || item.mw}</span>${item.phraseReading || item.reading ? html` <span class="c-vcard__muted">${item.phraseReading || item.reading}</span>` : ''}</div>`)}</div>` : ''),
-    section('sectionWordFamily', model.wordFamily.length ? html`<div class="c-vcard__words" lang="${langAttr(lang)}">${model.wordFamily.map((item, index) => html`${index ? ', ' : ''}${item.word}${item.pos ? html` <span class="c-vcard__muted">${item.pos}</span>` : ''}`)}</div>` : ''),
-    section('sectionSynonyms', wordList(model.synonyms, lang)),
-    section('sectionAntonyms', wordList(model.antonyms, lang)),
-    section('sectionRelated', model.related.length ? html`<div class="c-vcard__words">${model.related.map((item) => html`<div><span lang="${langAttr(lang)}">${item.word}</span>${item.reading ? html` <span class="c-vcard__muted">${item.reading}</span>` : ''}${item.gloss ? html` · ${item.gloss}` : ''}</div>`)}</div>` : ''),
+  const examples = mode === 'feed' ? model.examples.slice(0, 2) : model.examples;
+  const context = !examples.length && learner?.context
+    ? html`<li class="c-vcard__example"><p class="c-vcard__example-text" lang="${lang}">${parts(learner.contextParts || [{ value: learner.context, hit: false }])}</p></li>`
+    : '';
+  const head = html`<div class="c-vcard__backhead">
+    ${model.script === 'hanzi'
+      ? html`<span class="c-vcard__backword"><span lang="${lang}">${model.word}</span> <span class="c-vcard__muted">${model.pronunciation.pinyin}</span></span>`
+      : html`<span class="c-vcard__backword" lang="${lang}">${model.word}</span>`}
+    <span class="c-vcard__muted c-vcard__backtitle">${t('sectionExamplesUsage')}</span>
+  </div>`;
+  const list = examples.length || context
+    ? html`<ol class="c-vcard__examples">${examples.map((example, index) => examplePanel(example, index, model))}${context}</ol>`
+    : '';
+  const notes = [
+    model.script !== 'hanzi' ? section('sectionStructure', model.usage.length ? html`<div class="c-vcard__lines">${model.usage.map((note) => html`<div>${note}</div>`)}</div>` : '') : '',
+    model.collocations.length ? section('sectionCollocations', html`<div class="c-vcard__chips" lang="${lang}">${model.collocations.map((item) => html`<span class="o-tag">${item}</span>`)}</div>`) : '',
+    model.memoryTip ? section('sectionMemoryTip', html`<p class="c-vcard__note">${model.memoryTip.text}</p>`) : '',
+    model.script === 'hanzi' && model.usage.length ? section('sectionStructure', html`<div class="c-vcard__lines">${model.usage.map((note) => html`<div>${note}</div>`)}</div>`) : '',
+    model.commonMistakes.length ? section('sectionCommonMistake', html`<div class="c-vcard__lines">${model.commonMistakes.map((note) => html`<div>${note}</div>`)}</div>`) : '',
+    model.etymology ? section('sectionEtymology', html`<p class="c-vcard__note">${model.etymology}</p>`) : '',
   ].filter((cell) => String(cell));
-  return cells.length ? html`<div class="c-vcard__grid">${cells}</div>` : '';
+  return html`${head}${list}${notes.length ? html`<div class="c-vcard__pair c-vcard__pair--back">${notes}</div>` : ''}`;
 }
 
-function notesBlock(model) {
-  return [
-    model.memoryTip ? section('sectionMemoryTip', html`<p class="c-vcard__note">${model.memoryTip.text}</p>`, 'c-vcard__section--wide') : '',
-    model.usage.length ? section('sectionUsage', html`${model.usage.map((note) => html`<p class="c-vcard__note">${note}</p>`)}`, 'c-vcard__section--wide') : '',
-    model.commonMistakes.length ? section('sectionCommonMistake', html`${model.commonMistakes.map((note) => html`<p class="c-vcard__note">${note}</p>`)}`, 'c-vcard__section--wide') : '',
-    model.etymology ? section('sectionEtymology', html`<p class="c-vcard__note">${model.etymology}</p>`, 'c-vcard__section--wide') : '',
-  ];
-}
-
-function footerBlock(learner, labels) {
+function footer(learner, labels) {
   if (!learner?.hasSchedule) return '';
-  const items = [html`<span class="c-vcard__bars">${masteryBars({ filled: learner.filled, total: 4 })}</span>`];
-  if (labels?.stage) items.push(html`<span class="c-vcard__stage">${labels.stage}</span>`);
-  if (labels?.due) items.push(html`<span class="c-vcard__due">· ${labels.due}</span>`);
-  return html`<footer class="c-vcard__footer">${items}</footer>`;
+  return html`<div class="c-vcard__mastery"><span class="c-vcard__bars">${masteryBars({ filled: learner.filled, total: 4 })}</span>${labels?.stage ? html`<span class="c-vcard__stage">${labels.stage}</span>` : ''}${labels?.due ? html`<span class="c-vcard__due">· ${labels.due}</span>` : ''}</div>`;
 }
 
-/* `slots`: markup a screen owns and places inside the card - `strokes` (the stroke-order block,
-   Chinese), `footer` labels for the learner footer ({ stage, due } already in the screen's words),
-   and `meaningTag(language)` to name a meaning's language when it is not the support language. */
+let cardSeq = 0;
+
+/* `slots`: `strokes` (the Chinese stroke-order block, a screen's), `footer` ({ stage, due } in the
+   screen's words), `meaningTag(language)`, `meaningPending` (the lookup is still out). */
 export function vocabularyCard(model, { mode = 'detail', learner = null, slots = {} } = {}) {
   if (!CARD_MODES.includes(mode)) throw new Error(`VocabularyCard: unknown mode ${mode}`);
-  const front = mode === 'review-front';
-  const illustration = !front && model.illustration
-    ? html`<figure class="c-vcard__art"><img src="${model.illustration.src}" alt="${model.illustration.alt}" loading="lazy" /></figure>`
-    : '';
-  const body = front
-    ? ''
-    : html`${illustration}
-      ${meaningBlock(model, { meaningTag: slots.meaningTag, pending: slots.meaningPending })}
-      ${examplesBlock(model, { mode, learner })}
-      ${charactersBlock(model)}
-      ${relationsGrid(model)}
-      ${notesBlock(model)}
-      ${slots.strokes || ''}`;
-  return html`<article class="${cls('c-vcard', `c-vcard--${mode}`, model.script === 'hanzi' && 'c-vcard--han')}" data-vcard-mode="${mode}">
-    ${heading(model, { mode, learner })}
-    ${body}
-    ${front ? '' : footerBlock(learner, slots.footer)}
+  const han = model.script === 'hanzi';
+  if (mode === 'review-front') {
+    const reading = han ? model.pronunciation.pinyin : model.pronunciation.text;
+    return html`<article class="c-vcard c-vcard--review-front${cls(han && ' c-vcard--han')}" data-vcard-mode="review-front">
+      <div class="c-vcard__recall">
+        ${posLine(model)}
+        <h2 class="${cls('c-vcard__word', han && 'c-vcard__word--han')}" lang="${langAttr(model.language)}" style="--len:${headwordRun(model.word, model.script)}">${model.word}</h2>
+        <div class="c-vcard__recall-meta">${reading ? html`<span class="c-vcard__ipa"><span>${reading}</span></span>` : ''}${model.level ? html`<span class="o-tag o-tag--accent">${levelLabel(model)}</span>` : ''}${playDisc()}</div>
+      </div>
+    </article>`;
+  }
+  cardSeq += 1;
+  const id = `vcard-${cardSeq}`;
+  // Save on the cards a word is met on; in Review, where every word is already saved, the bookmark is only a
+  // remove toggle, drawn saved (D-17W, the exception to "Save is not Review"; the pinned frame draws it).
+  const save = mode === 'detail' || mode === 'feed' ? saveDisc(learner) : (mode === 'review-back' && learner?.saved ? saveDisc(learner) : '');
+  const ctx = { save, meaningTag: slots.meaningTag, pending: slots.meaningPending };
+  const front = han ? zhFront(model, ctx) : enFront(model, ctx);
+  return html`<article class="${cls('c-vcard', `c-vcard--${mode}`, han && 'c-vcard--han')}" data-vcard-mode="${mode}" data-face="front">
+    <div class="c-vcard__face c-vcard__face--front" id="${id}-front">
+      <div class="c-vcard__body" data-scroll-region>${front}${slots.strokes || ''}</div>
+      <div class="c-vcard__foot">
+        ${footer(learner, slots.footer)}
+        <button type="button" class="o-btn o-btn--primary c-vcard__turn" data-vcard-turn="back" aria-controls="${id}-back">${t('seeExamples')}</button>
+      </div>
+    </div>
+    <div class="c-vcard__face c-vcard__face--back" id="${id}-back" hidden>
+      <div class="c-vcard__body" data-scroll-region>${back(model, { learner, mode })}</div>
+      <div class="c-vcard__foot c-vcard__foot--back">
+        <button type="button" class="o-btn o-btn--secondary c-vcard__turn" data-vcard-turn="front" aria-controls="${id}-front">${t('backToFront')}</button>
+      </div>
+    </div>
   </article>`;
+}
+
+/* Turns a card between its faces (a real button each way, so the keyboard does it too), and gives the
+   focus to the other face's turn action. A screen calls it once after mounting its cards. */
+export function bindVocabularyCards(root) {
+  root?.querySelectorAll?.('[data-vcard-turn]').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const card = button.closest('.c-vcard');
+      if (!card) return;
+      const to = button.dataset.vcardTurn;
+      card.dataset.face = to;
+      card.querySelector('.c-vcard__face--front').hidden = to !== 'front';
+      card.querySelector('.c-vcard__face--back').hidden = to !== 'back';
+      card.querySelector(`.c-vcard__face--${to} [data-vcard-turn]`)?.focus({ preventScroll: true });
+    });
+  });
 }

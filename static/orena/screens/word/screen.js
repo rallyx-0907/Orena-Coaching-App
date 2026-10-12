@@ -13,7 +13,7 @@ import { loadingMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
 import { rowBadge } from '../../kit/components.js';
-import { vocabularyCard } from '../../kit/vocabulary-card.js';
+import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
@@ -250,7 +250,9 @@ export default async function mountWordDetail(element, ctx) {
     // The same pronunciation the Quick Sheet plays (LEX-020): the word at its reading, looked up as a word met in
     // a text when it is not in the catalogue, and the device's own voice - said to be the device's - only when
     // the server's voice failed or could not be reached.
-    element.querySelector('[data-play]')?.addEventListener('click', async () => {
+    bindVocabularyCards(element);
+    // One play action per reading row (UK, US) and one on a card without them: the same word's voice.
+    element.querySelectorAll('[data-play]').forEach((playButton) => playButton.addEventListener('click', async () => {
       const onDevice = () => {
         if (speakOnDevice(word, language)) toast(t('sourceDevice'));
         else toast(t('noAudio'));
@@ -263,7 +265,7 @@ export default async function mountWordDetail(element, ctx) {
       } catch {
         onDevice();
       }
-    });
+    }));
     element.querySelector('[data-save]')?.addEventListener('click', async () => {
       const button = element.querySelector('[data-save]');
       button.disabled = true;

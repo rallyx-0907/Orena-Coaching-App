@@ -21,8 +21,8 @@ import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
 import { openLessonComplete } from '../lesson-complete/sheet.js';
 import { langAttr } from '../../kit/lang.js';
-import { vocabularyCard } from '../../kit/vocabulary-card.js';
-import { toVocabularyModel, learnerState, savePayloadOf } from '../../product/vocabulary-card.js';
+import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
+import { toVocabularyModel, learnerState } from '../../product/vocabulary-card.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
@@ -63,8 +63,8 @@ function eyebrowOf(row) {
   return t(cardMode(row) === 'cloze' ? 'modeCloze' : 'modeTarget');
 }
 
-/* The revealed face: the whole card (`review-back`), its own scroll region so a long card scrolls
-   inside itself and the grades below stay in view (rule 49). */
+/* The revealed face: the two-face card (`review-back`, no Save). Each face scrolls inside its own body
+   and keeps its turn action in view; the grades are below the card, outside it (rule 49). */
 function backFaceMarkup(model, learner, row) {
   const stageKey = stageCopyKey(learner.saved ? row : null);
   const footer = {
@@ -76,9 +76,7 @@ function backFaceMarkup(model, learner, row) {
     : '';
   return html`<div class="s-review-face s-review-face--revealed">
     <span class="s-review-face__blob" aria-hidden="true"></span>
-    <div class="s-review-face__scroll" data-scroll-region>
-      ${vocabularyCard(model, { mode: 'review-back', learner, slots: { strokes, footer, meaningTag } })}
-    </div>
+    ${vocabularyCard(model, { mode: 'review-back', learner, slots: { strokes, footer, meaningTag } })}
   </div>`;
 }
 
@@ -342,10 +340,11 @@ export default async function mountReview(element, ctx) {
         toast(t('noAudio'));
       }
     }
-    element.querySelector('[data-play]')?.addEventListener('click', (event) => {
+    element.querySelectorAll('[data-play]').forEach((button) => button.addEventListener('click', (event) => {
       event.stopPropagation();
       play();
-    });
+    }));
+    bindVocabularyCards(element);
 
     if (!state.revealed) {
       element.querySelector('[data-card-tap]')?.addEventListener('click', (event) => {
@@ -408,12 +407,8 @@ export default async function mountReview(element, ctx) {
                 }
               : {},
           );
-        } else {
-          const saved = await api.saveLibraryVocabulary(savePayloadOf(model, 'dictionary')).catch(() => null);
-          if (saved?.item) queue[savedIndex] = saved.item;
-          state.unsaved.delete(savedIndex);
-          toast(t('savedToast'));
         }
+        // Review never saves a new word (D-17W point 4): the bookmark here only removes, with Undo.
       } finally {
         paint();
       }

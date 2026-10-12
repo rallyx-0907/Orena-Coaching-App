@@ -1,15 +1,17 @@
-/* The shared VocabularyCard's own words (kit/vocabulary-card.js, D-17W). Section titles, the card's
-   controls and the part-of-speech labels are chrome ('interface'); the content inside the sections
-   is the entry's own (learning language) or its support-language layer, never copy from here.
-   Rule 50: a section title is one or two words; nothing explains what a section is for. */
+/* The shared VocabularyCard's own words (kit/vocabulary-card.js, D-17W). Section titles and the card's
+   controls are chrome ('interface'), named as the human's flashcard reference names them ("Nghĩa",
+   "Họ từ", "Đồng / trái nghĩa", "Xem ví dụ →", "← Mặt trước", "Ví dụ & cách dùng", "Kết hợp thường gặp",
+   "Mẹo nhớ", "Bộ thủ", "Lượng từ", "Từ liên quan", "Hán Việt"). The content inside the sections is the
+   entry's own or its support-language layer, never copy from here. The part-of-speech labels double as
+   the part of speech's name in the word's own language (`posNative`, read from the en/zh pack). */
 import { defineCopy } from './index.js';
 
 const KEYS = [
-  'playWord', 'saveWord', 'unsaveWord', 'meaningUnavailable',
-  'sectionMeaning', 'sectionExamples', 'sectionCollocations', 'sectionSynonyms', 'sectionAntonyms',
-  'sectionWordFamily', 'sectionRelated', 'sectionMemoryTip', 'sectionClassifiers', 'sectionCharacters',
-  'sectionUsage', 'sectionCommonMistake', 'sectionEtymology', 'sectionMetIn',
-  'hanVietLabel', 'radicalLabel', 'regionUk', 'regionUs', 'strokeCount',
+  'playWord', 'saveWord', 'unsaveWord', 'meaningUnavailable', 'seeExamples', 'backToFront',
+  'sectionMeaning', 'sectionWordFamily', 'sectionSynAnt', 'sectionExamplesUsage', 'sectionStructure',
+  'sectionCollocations', 'sectionMemoryTip', 'sectionRadical', 'sectionMeasureWord', 'sectionRelated',
+  'sectionCommonMistake', 'sectionEtymology',
+  'hanVietLabel', 'regionUk', 'regionUs', 'strokeCount',
   'posNoun', 'posVerb', 'posAdjective', 'posAdverb', 'posPronoun', 'posDeterminer', 'posPreposition',
   'posConjunction', 'posNumeral', 'posParticle', 'posAuxiliary', 'posInterjection', 'posClassifier',
   'posMeasureWord', 'posPhrase', 'posIdiom', 'posProperNoun', 'posOther', 'posJoin',
@@ -19,13 +21,12 @@ export const t = defineCopy('vocabularyCard', {
   layers: Object.fromEntries(KEYS.map((key) => [key, 'interface'])),
   en: {
     playWord: 'Play pronunciation', saveWord: 'Save word', unsaveWord: 'Remove from saved words',
-    meaningUnavailable: 'No meaning yet',
-    sectionMeaning: 'Meaning', sectionExamples: 'Examples', sectionCollocations: 'Collocations',
-    sectionSynonyms: 'Synonyms', sectionAntonyms: 'Opposites', sectionWordFamily: 'Word family',
-    sectionRelated: 'Related words', sectionMemoryTip: 'Memory tip', sectionClassifiers: 'Measure words',
-    sectionCharacters: 'Characters', sectionUsage: 'Usage', sectionCommonMistake: 'Common mistake',
-    sectionEtymology: 'Origin', sectionMetIn: 'Where you met it',
-    hanVietLabel: 'Sino-Vietnamese', radicalLabel: 'Radical', regionUk: 'UK', regionUs: 'US',
+    meaningUnavailable: 'No meaning yet', seeExamples: 'See examples →', backToFront: '← Front',
+    sectionMeaning: 'Meaning', sectionWordFamily: 'Word family', sectionSynAnt: 'Synonyms / antonyms',
+    sectionExamplesUsage: 'Examples & usage', sectionStructure: 'Structure', sectionCollocations: 'Common collocations',
+    sectionMemoryTip: 'Memory tip', sectionRadical: 'Radical', sectionMeasureWord: 'Measure word',
+    sectionRelated: 'Related words', sectionCommonMistake: 'Common mistake', sectionEtymology: 'Origin',
+    hanVietLabel: 'Sino-Vietnamese', regionUk: 'UK', regionUs: 'US',
     strokeCount_one: '{n} stroke', strokeCount_other: '{n} strokes',
     posNoun: 'Noun', posVerb: 'Verb', posAdjective: 'Adjective', posAdverb: 'Adverb', posPronoun: 'Pronoun',
     posDeterminer: 'Determiner', posPreposition: 'Preposition', posConjunction: 'Conjunction',
@@ -35,13 +36,12 @@ export const t = defineCopy('vocabularyCard', {
   },
   vi: {
     playWord: 'Phát âm', saveWord: 'Lưu từ', unsaveWord: 'Bỏ khỏi từ đã lưu',
-    meaningUnavailable: 'Chưa có nghĩa',
-    sectionMeaning: 'Nghĩa', sectionExamples: 'Ví dụ', sectionCollocations: 'Kết hợp thường gặp',
-    sectionSynonyms: 'Đồng nghĩa', sectionAntonyms: 'Trái nghĩa', sectionWordFamily: 'Họ từ',
-    sectionRelated: 'Từ liên quan', sectionMemoryTip: 'Mẹo nhớ', sectionClassifiers: 'Lượng từ',
-    sectionCharacters: 'Chữ Hán', sectionUsage: 'Cách dùng', sectionCommonMistake: 'Lỗi thường gặp',
-    sectionEtymology: 'Nguồn gốc', sectionMetIn: 'Nơi bạn gặp từ này',
-    hanVietLabel: 'Hán Việt', radicalLabel: 'Bộ thủ', regionUk: 'Anh', regionUs: 'Mỹ',
+    meaningUnavailable: 'Chưa có nghĩa', seeExamples: 'Xem ví dụ →', backToFront: '← Mặt trước',
+    sectionMeaning: 'Nghĩa', sectionWordFamily: 'Họ từ', sectionSynAnt: 'Đồng / trái nghĩa',
+    sectionExamplesUsage: 'Ví dụ & cách dùng', sectionStructure: 'Cấu trúc', sectionCollocations: 'Kết hợp thường gặp',
+    sectionMemoryTip: 'Mẹo nhớ', sectionRadical: 'Bộ thủ', sectionMeasureWord: 'Lượng từ',
+    sectionRelated: 'Từ liên quan', sectionCommonMistake: 'Lỗi thường gặp', sectionEtymology: 'Nguồn gốc',
+    hanVietLabel: 'Hán Việt', regionUk: 'Anh', regionUs: 'Mỹ',
     strokeCount_other: '{n} nét',
     posNoun: 'Danh từ', posVerb: 'Động từ', posAdjective: 'Tính từ', posAdverb: 'Trạng từ', posPronoun: 'Đại từ',
     posDeterminer: 'Hạn định từ', posPreposition: 'Giới từ', posConjunction: 'Liên từ',
@@ -51,13 +51,12 @@ export const t = defineCopy('vocabularyCard', {
   },
   zh: {
     playWord: '播放发音', saveWord: '收藏单词', unsaveWord: '从收藏中移除',
-    meaningUnavailable: '暂无释义',
-    sectionMeaning: '释义', sectionExamples: '例句', sectionCollocations: '常见搭配',
-    sectionSynonyms: '近义词', sectionAntonyms: '反义词', sectionWordFamily: '同族词',
-    sectionRelated: '相关词', sectionMemoryTip: '记忆技巧', sectionClassifiers: '量词',
-    sectionCharacters: '汉字', sectionUsage: '用法', sectionCommonMistake: '常见错误',
-    sectionEtymology: '词源', sectionMetIn: '你遇到它的地方',
-    hanVietLabel: '汉越音', radicalLabel: '部首', regionUk: '英', regionUs: '美',
+    meaningUnavailable: '暂无释义', seeExamples: '查看例句 →', backToFront: '← 正面',
+    sectionMeaning: '释义', sectionWordFamily: '词族', sectionSynAnt: '近义词 / 反义词',
+    sectionExamplesUsage: '例句与用法', sectionStructure: '结构', sectionCollocations: '常见搭配',
+    sectionMemoryTip: '记忆技巧', sectionRadical: '部首', sectionMeasureWord: '量词',
+    sectionRelated: '相关词', sectionCommonMistake: '常见错误', sectionEtymology: '词源',
+    hanVietLabel: '汉越音', regionUk: '英', regionUs: '美',
     strokeCount_other: '{n} 画',
     posNoun: '名词', posVerb: '动词', posAdjective: '形容词', posAdverb: '副词', posPronoun: '代词',
     posDeterminer: '限定词', posPreposition: '介词', posConjunction: '连词',
