@@ -26,8 +26,8 @@
 
    Modes: `detail` and `feed` draw the two faces, starting on the front, with Save. `review-front` is the
    recall face (D-17W point 2): the word or Hanzi, its reading, part of speech and level, play - nothing
-   that answers. `review-back` is the two faces; its bookmark is only a remove toggle, drawn saved, and it
-   is not drawn once the word is removed (D-17W point 4). The grades are the screen's, outside the card.
+   that answers. `review-back` is the two faces, with no bookmark: Save and
+   remove belong to Word Detail and the Feed (D-17W point 4). The grades are the screen's, outside the card.
 
    Each face is a body that scrolls inside itself and a foot that holds the turn action, so the action
    stays in view when a long entry fills a phone (rule 49). Learner state (`learner`, from
@@ -302,7 +302,7 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
   const id = `vcard-${cardSeq}`;
   // Save on the cards a word is met on; in Review, where every word is already saved, the bookmark is only a
   // remove toggle, drawn saved (D-17W, the exception to "Save is not Review"; the pinned frame draws it).
-  const save = mode === 'detail' || mode === 'feed' ? saveDisc(learner) : (mode === 'review-back' && learner?.saved ? saveDisc(learner) : '');
+  const save = mode === 'detail' || mode === 'feed' ? saveDisc(learner) : '';
   const ctx = { save, meaningTag: slots.meaningTag, pending: slots.meaningPending };
   const front = han ? zhFront(model, ctx) : enFront(model, ctx);
   return html`<article class="${cls('c-vcard', `c-vcard--${mode}`, han && 'c-vcard--han')}" data-vcard-mode="${mode}" data-face="front">

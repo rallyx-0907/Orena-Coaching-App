@@ -30,7 +30,7 @@ import { api } from '../../infrastructure/api.js';
 import { readCollection } from '../collection/actions.js';
 import { flushQueue, withWaiting } from '../../product/review-queue.js';
 import { t } from './copy.js';
-import { restorePayload, stageCopyKey } from '../word/model.js';
+import { stageCopyKey } from '../word/model.js';
 import { mountStrokeSheet } from '../word/stroke-sheet.js';
 import { strokesMarkup, hydrateStrokes } from './strokes.js';
 import {
@@ -172,7 +172,7 @@ export default async function mountReview(element, ctx) {
   }
   if (!ctx.isCurrent()) return undefined;
 
-  const state = { index: 0, revealed: false, hintOn: false, stats: initialStats(), grading: false, unsaved: new Set(), nextTimes: [] };
+  const state = { index: 0, revealed: false, hintOn: false, stats: initialStats(), grading: false, nextTimes: [] };
   let audio = null;
 
   function currentRow() {
@@ -184,7 +184,6 @@ export default async function mountReview(element, ctx) {
     state.revealed = false;
     state.hintOn = false;
     state.stats = initialStats();
-    state.unsaved = new Set();
     state.nextTimes = [];
   }
 
@@ -301,9 +300,8 @@ export default async function mountReview(element, ctx) {
     }
 
     const row = currentRow();
-    const unsaved = state.unsaved.has(state.index);
     const model = toVocabularyModel(row, { word: row.word, supportLanguage: support });
-    const learner = learnerState(unsaved ? null : row);
+    const learner = learnerState(row);
     const canHint = Boolean(hintFor(cardMode(row), { word: model.word, support: model.support }));
 
     mount(
@@ -382,36 +380,6 @@ export default async function mountReview(element, ctx) {
         paint();
         if (state.index >= total) finishSession();
       });
-    });
-
-    element.querySelector('[data-save]')?.addEventListener('click', async () => {
-      const button = element.querySelector('[data-save]');
-      const savedIndex = state.index;
-      button.disabled = true;
-      try {
-        if (learner.saved) {
-          const payload = restorePayload(row);
-          await api.deleteLibraryVocabulary(row.word);
-          state.unsaved.add(savedIndex);
-          toast(
-            t('removedToast'),
-            payload
-              ? {
-                  undo: async () => {
-                    const restored = await api.restoreLibraryVocabulary(payload).catch(() => null);
-                    if (restored?.item) queue[savedIndex] = restored.item;
-                    state.unsaved.delete(savedIndex);
-                    paint();
-                  },
-                  undoLabel: shellCopy('undo'),
-                }
-              : {},
-          );
-        }
-        // Review never saves a new word (D-17W point 4): the bookmark here only removes, with Undo.
-      } finally {
-        paint();
-      }
     });
 
     element.querySelector('[data-practise-strokes]')?.addEventListener('click', async () => {

@@ -5932,8 +5932,12 @@ items above, and what PR 2 leaves open for the human:
   sees the entry without them until a pack in their support language exists.
 - **VC-10 The Quick Sheet** keeps its own compact word card (`screens/quick-sheet`, `mapWordCard`); it is a sheet,
   not a card surface of this PR.
-- **VC-11 Save on the Review back - closed (human decision 2026-10-12).** Kept as the pinned frame draws it, as a
-  remove-only toggle drawn saved, with the existing Undo; recorded in D-17W point 4.
+- **VC-11 Bookmark on the Review back - OPEN (design deviation, human gate 2026-10-12).** The pinned Review frame draws
+  a bookmark on the turned card. It is not drawn in PR 2: the human allowed a remove-only toggle only if removing a word
+  mid-session provably keeps the queue, session and scheduler intact, and it did not - grading a word just removed answers
+  `missing` and the screen shows a save-failure toast. To restore it: a removed word leaves the session cleanly (skipped,
+  not graded, not counted, no failure toast) and Undo puts it back in place with its schedule, with tests; then draw the
+  remove-only toggle. D-17W point 4.
 - **VC-12 The Review corner disc.** The pinned frame draws its decorative corner disc on the turned card too. On the
   two-face card every corner of the revealed face holds text or a control (the play and bookmark discs top-right, the
   mastery line bottom-left, the turn action bottom-right), so the disc is drawn on the recall face only, not on

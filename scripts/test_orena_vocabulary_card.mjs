@@ -249,10 +249,8 @@ for (const model of [en, zh]) {
   assert.ok(back.includes('data-vcard-turn="back"'), 'and can turn to the examples');
   assert.ok(!back.includes('data-grade'), 'the grades are the screen\'s, outside the card');
   assert.ok(back.includes('c-vcard__mastery'), 'the learner footer when there is a schedule');
-  // The Review bookmark (D-17W point 4): drawn saved, and only a remove toggle.
-  assert.ok(back.includes('data-save aria-pressed="true"') && back.includes(`aria-label="${t('unsaveWord')}"`), 'the review-back bookmark renders saved, as remove');
-  const removed = String(vocabularyCard(model, { mode: 'review-back', learner: learnerState(null) }));
-  assert.ok(!removed.includes('data-save'), 'once removed, Review offers no Save');
+  // Review has no bookmark (D-17W point 4): Save and remove belong to Word Detail and the Feed.
+  assert.ok(!back.includes('data-save'), 'review-back draws no bookmark');
 
   const detail = String(vocabularyCard(model, { mode: 'detail', learner: learnerState(null) }));
   assert.ok(detail.includes('data-save aria-pressed="false"'), 'detail offers Save');
@@ -341,11 +339,8 @@ assert.match(cardCss, /\.c-vcard__foot \{[^}]*flex-wrap: wrap/, 'the foot wraps 
 assert.match(cardCss, /\.c-vcard__stage \{[^}]*white-space: nowrap/, 'the stage label never breaks inside a word');
 assert.match(cardCss, /\.c-vcard__due \{[^}]*white-space: nowrap/);
 assert.match(cardCss, /\.c-vcard__hanviet \{[^}]*align-items: flex-start/, 'the Hán Việt label and value share the start edge');
-// The Review bookmark only removes: its handler deletes with Undo and never saves.
-const saveHandler = reviewSrc.slice(reviewSrc.indexOf("querySelector('[data-save]')"), reviewSrc.indexOf("querySelector('[data-practise-strokes]')"));
-assert.match(saveHandler, /deleteLibraryVocabulary/);
-assert.match(saveHandler, /restoreLibraryVocabulary/, 'with the existing Undo');
-assert.doesNotMatch(saveHandler, /saveLibraryVocabulary/, 'Review never saves a new word');
+// Review neither saves nor removes a word (D-17W point 4).
+assert.doesNotMatch(reviewSrc, /data-save|deleteLibraryVocabulary|saveLibraryVocabulary/, 'Review has no save or remove action');
 
 /* --- the two review buttons --- */
 assert.deepEqual(REVIEW_BUTTONS, ['again', 'got_it']);
