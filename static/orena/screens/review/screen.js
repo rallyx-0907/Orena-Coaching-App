@@ -21,7 +21,7 @@ import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
 import { openLessonComplete } from '../lesson-complete/sheet.js';
 import { langAttr } from '../../kit/lang.js';
-import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
+import { vocabularyCard, bindVocabularyCards, fitVocabularyCards } from '../../kit/vocabulary-card.js';
 import { toVocabularyModel, learnerState } from '../../product/vocabulary-card.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
@@ -53,9 +53,8 @@ import {
 } from './model.js';
 
 /* The kit's small tag naming a meaning's language when it is not the support language (D-124). */
-function meaningTag(language) {
-  const label = meaningLanguageLabel(language, languages().support, languages().ui);
-  return label ? html` <span class="o-tag">${label}</span>` : '';
+function meaningLabel(language) {
+  return meaningLanguageLabel(language, languages().support, languages().ui);
 }
 
 /* The task the card asks, in plain words. The position in the session is shown once, in the header (LEX-064). */
@@ -76,7 +75,7 @@ function backFaceMarkup(model, learner, row) {
     : '';
   // No corner disc here: every corner of the turned card holds text or a control (UI_BACKEND_GAPS VC-12).
   return html`<div class="s-review-face s-review-face--revealed">
-    ${vocabularyCard(model, { mode: 'review-back', learner, slots: { strokes, footer, meaningTag } })}
+    ${vocabularyCard(model, { mode: 'review-back', learner, slots: { strokes, footer, meaningLabel } })}
   </div>`;
 }
 
@@ -343,6 +342,7 @@ export default async function mountReview(element, ctx) {
       play();
     }));
     bindVocabularyCards(element);
+    fitVocabularyCards(element);
 
     if (!state.revealed) {
       element.querySelector('[data-card-tap]')?.addEventListener('click', (event) => {
@@ -361,7 +361,7 @@ export default async function mountReview(element, ctx) {
       return;
     }
 
-    hydrateStrokes(element, api.chineseStrokeOrder, ctx.isCurrent).catch(() => {});
+    hydrateStrokes(element, api.chineseStrokeOrder, ctx.isCurrent).then(() => fitVocabularyCards(element)).catch(() => {});
 
     element.querySelectorAll('[data-grade]').forEach((button) => {
       button.addEventListener('click', async () => {
@@ -408,11 +408,15 @@ export default async function mountReview(element, ctx) {
     drain().catch(() => {});
   };
   window.addEventListener('online', onOnline);
+  // A card face never scrolls: it fits its slot again whenever the window changes (D-180).
+  const onResize = () => fitVocabularyCards(element);
+  window.addEventListener('resize', onResize);
 
   paint();
 
   return () => {
     window.removeEventListener('online', onOnline);
+    window.removeEventListener('resize', onResize);
     audio?.pause();
   };
 }

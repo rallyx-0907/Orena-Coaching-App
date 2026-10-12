@@ -5677,3 +5677,148 @@ Date: 2026-10-12. Human decisions of 2026-10-12 for PR 2 of D-178 (lane `claude/
    reference draws them; the meaning panel shows the kit's skeleton while the lookup is out and the word's
    own-language definition, tagged, when it is the only meaning. Open items: `UI_BACKEND_GAPS.md` "Vocabulary card
    (D-178)".
+
+## D-180 - The vocabulary card wears its design's own palette (a scoped colour exception)
+
+(Placeholder D-180 until merge.)
+
+Date: 2026-10-12. Human decisions of 2026-10-12, PR 2c of D-178 (lane `claude/vocab-card-skin`): "the card must LOOK
+like the design, not only follow its layout".
+
+1. **Source.** The human's flashcard design, now pinned in `docs/design/vocab-card/` (`Main.dc.html` English,
+   `Chinese.dc.html` Chinese, `MainDark.dc.html` / `ChineseDark.dc.html` importing them with `theme="dark"`). Its
+   `renderVals` palettes - light "watercolor paper", dark "night violet", the Chinese card's `seal` - supersede the
+   earlier blue/red screenshot.
+2. **A deliberate exception, scoped.** The vocabulary card - and nothing else - takes that palette: card-scoped tokens
+   `--vcard-*` (bg, surface, surface-alt, line, ink, ink2, ink3, accent, on-accent, gold, seal, on-seal, btn-bg,
+   btn-ink) with the design's light and dark values exactly. This is a human-approved exception to "one palette, no
+   colour skin" (AGENTS.md "Theme", D-089). The tokens still live in `kit/tokens.css`, the one colour owner, and
+   the card's content reads no other colour token (gated). **Buttons keep the app's kit design** (the human,
+   2026-10-12: "Các nút bấm là giữ nguyên thiết kế của app. Flashcard chỉ tập trung phần nội dung thôi"): the turn
+   actions are the kit's `o-btn` primary / secondary, the play and save discs the app's icon-button colours, the
+   stroke-practice button the kit's, and in Review the grades, Reveal and Hint keep the screen's own styles - no
+   `--vcard-*` token on any button (gated). The skin is the content: card surface and rules, headword, readings,
+   sections, tags and pills, chips, examples, highlights, the illustration frame. The rest of the app, and in Review
+   the screen around the card, keeps the app's tokens.
+3. **AA.** Every pair the design draws as text holds 4.5:1 in both themes as designed - no value changed
+   (`scripts/test_orena_kit.mjs` VOCABULARY CARD, 16 pairs per theme). One deviation: the design's focus ring is a 2px
+   gold outline, and light gold `#C9A24B` is 2.25:1 on the card surface (2.10:1 on the paper), under the 3:1 a focus
+   indicator needs; the card keeps the kit's own focus ring instead (light `#5A55E3`, 4.46-5.12:1 on the card grounds;
+   dark `#847FF6`, 5.74-6.03:1). Gold draws rules and borders only, never text (gated).
+4. **Type.** No font download (human decision). English uses the app's sans; the Chinese card uses a local serif for
+   Latin text (Noto Serif, Georgia) and a local Song stack for Hanzi (Noto Serif SC, Source Han Serif SC, Songti SC,
+   STSong, SimSun), weight 900 where the system font has it.
+5. **Shapes as drawn.** English: 1px line border, 20px radius, the accent C1 tag, the outlined part-of-speech pill.
+   Chinese: the paper with 14px around a ruled frame - a 1.5px gold border and a 1px gold line inside it - 6px radius
+   (approved: a gold rule, not a violet ring, D-147), the seal HSK tag, the 1.5px seal radical box. Highlights: English
+   bold accent over a 2px accent underline; Chinese seal at 900, the pinyin span bold seal. Buttons: the app's kit
+   buttons, not the design's (point 2).
+6. **Illustrations.** A frame only when there is an image: an upload, or a library drawing named by the stored
+   `provenance.illustration.ref` in `kit/vocabulary-art.js`. The two drawings are the design's own, ported as reference
+   art for the two docs/vocab samples only; production artwork stays under the Art Bible (`assets/brand/orena/`) and
+   comes from Admin upload (PR 3). No schema change, no upload path.
+8. **Refinements after the lead's browser check (human decisions, 2026-10-12).**
+   - *Chinese typography:* all content text on the Chinese card is serif, set on every element of the card (the app's
+     `:lang(vi)` rule sets the interface face on each Vietnamese element, which an inherited family loses to). Hanzi-only
+     text and the headword: `"Noto Serif SC","Source Han Serif SC","Songti SC",STSong,SimSun,NSimSun,serif`. Every other
+     line - Vietnamese, English, pinyin, and mixed lines whose Hanzi fall through to the same Song stack - leads with
+     `"Noto Serif",Cambria,"Times New Roman"`: SimSun and Georgia lack the pinyin tone letters (ǎ ǐ ǒ ǔ ǖ ǘ ǚ ǜ) and
+     Vietnamese, and a missing letter fell back glyph by glyph ("huǒ" drawn as o and a detached caron); Cambria and
+     Times New Roman ship on Windows and carry both. This orders mixed Vietnamese/Hanzi lines Latin-first, a deviation
+     from "Song stack first for mixed text" for that reason. Only the controls keep the app's sans. No web font.
+   - *Buttons:* superseded the same day by the human - every button keeps the app's kit design (point 2): the Review
+     grades are the screen's own pre-2c "Chưa nhớ" (red soft) / "Đã nhớ" (accent fill), the card's turn actions
+     `o-btn`, the discs the app's icon-button colours.
+   - *No app palette on the content:* every content tag, chip and accent is `--vcard-*` - the level tag, the
+     collocation chips, the meaning's language tag ("Tiếng Anh", drawn by the card; the screen only names the language),
+     the mastery bars and the stroke-order tiles a screen places inside (no kit `o-tag`).
+   - *Header as drawn:* the top row is the level tag (and source) on the left and the part of speech on the right, on
+     one row (it may wrap at 360, the part of speech staying the last item). Play and Save leave the top row for a quiet
+     action row under the reading (44px discs); the IPA rows are plain readings as the design draws them. Derivation:
+     the design draws neither control, and of the options (under the reading, beside the turn action, top-right of the
+     headword line) this one keeps the drawn hierarchy and the turn action alone in its foot.
+9. **One viewport (human, 2026-10-12).** The card fits inside one viewport in every
+   mode (Design Contract rule 49, CLAUDE.md 6b): each face is a head (the design's top row / the back's title line)
+   and a foot (the turn action) that stay, around the only scroll region, its body. Before the body scrolls the card
+   recomposes: spacing and the headword scale with the viewport's height as well as the card's width (the design's
+   values the ceiling), the illustration frame shrinks with the height and drops out on a short card. Word Detail
+   gives its card the visible height of the column below it on arrival (`fitVocabularyCards`, again on resize), so the
+   card and its actions are in view without a page scroll, stopping above the floating phone bar and its orb; Review's
+   and the feed's cards (focus routes, no phone bar) fill their slot. Review's Reveal and Hint keep the screen's own
+   (app) button styles, per point 2.
+10. **The card scales as one composition (human, 2026-10-12, after a phone review: "too big and coarse ... loses the
+   card's designed look").** The design's 520px artboard is the reference: every content measurement - headword,
+   readings, labels, meaning, body and example text, tags, pills, chips, radical box, padding, gaps, radii, the double
+   rule's inset, the illustration's height - is `min(design px, design px / 5.2 cqi)`, i.e. the design value times
+   s = min(1, card width / 520) (cqi = the card's own width). Desktop (a card 520px or wider) is exactly as drawn; a
+   328px phone card is s = 0.63, the same card smaller (headword EN 37.8px, ZH 65.6px, meaning 13.9px, illustration
+   EN 113.5px / ZH 94.6px). Readability floors only: body, meaning and example text 13px, labels and tags 11px, pinyin
+   and IPA 12px. All content stays on a phone - the illustration no longer drops on a short card; a face taller than
+   its card scrolls in its body only, head and foot fixed. Buttons are exempt (the app's kit sizes, 44px targets).
+11. **A face never scrolls (human, 2026-10-12: "A card face must NEVER scroll internally, in any mode. The whole face
+   must be fully visible on screen, especially on mobile").** Supersedes the body scroll of points 9 and 10. The card
+   fits the composition to its box by "contain": s = min(widthScale, heightScale). The CSS gives the width scale
+   (point 10); `fitVocabularyCards` measures the showing face's natural height at it and, when that is taller than the
+   box, sets the height scale in three phases, measuring again each step: (1) spacing, gaps and radii (`--vc-ks`, to
+   0.5) with the illustration (`--vc-ka`) following but held at 60% of its width-scaled height; (2) the type
+   (`--vc-kt`, to 0.55) with the illustration shrinking in proportion (ka = 0.6 x kt); (3) spacing alone, to 0.3. It
+   fits to a pixel inside the box, so a face is never left a hair over (lead's 360x740 check: the ZH front stopped at
+   s 0.803 with `fits` no). `--vcard-s` / `data-vcard-s` record the achieved height scale, `data-vcard-fits` whether it
+   fits. The radical box stays a square beside its text: it follows spacing down to a 32px floor (or its width-scaled
+   size when smaller) and its glyph is sized from the box (36/56), so the glyph never runs onto the text. The face's need is
+   its head, foot and the body's CONTENT (to its lowest child), not the body's scrollHeight: a card that fills a taller
+   slot (Review's revealed face) has a stretched body, which read as always full and was shrunk while it fit (lead's
+   check of e9e5f3d1: s 0.933, fits no); within a pixel of the box counts as inside. Hard floors, reached only when the box needs them: body, meaning and example text 11px, labels and
+   tags 9.5px, pinyin and IPA 10px (point 10's 13/11/12 hold at full height). Every element stays, the illustration
+   included; the buttons keep their kit sizes (44px+). It fits again on resize (Word Detail, Review, the feed), on
+   turn (the other face) and once the web fonts arrive. No `overflow: auto/scroll` on the card, a face or its body
+   (scripts/test_orena_vocabulary_card.mjs).
+12. **Portrait on a wide screen (human, 2026-10-12, option 1).** At 1355x855 the Word Detail card was 820px wide and
+   Review's 640px: a wide, short panel with a thin art band. The card is capped at `max-inline-size: 520px` - the
+   design's artboard (docs/design/vocab-card/canvas.json, every board 520 x 880), the width where s = 1, so the cap adds
+   no stretch the design does not draw - and centred (`margin-inline: auto`). Word Detail's Context and Evidence keep
+   their layout; Review's session (header, card face, grades) takes the card's width when the row is a word card, so
+   the grades line up with it (a cloze row keeps 640px); the feed's slot is already narrower; phones are unaffected.
+7. **Kept.** Every D-179 behaviour (modes, the recall face, grades outside the card, no Review bookmark, meaning
+   order, reading guards, the pure mapper), the copy packs, and rule 49 (a fluid card whose padding scales with its
+   width, the design's values as the ceiling).
+
+## D-181 - The phone shell hides on scroll
+
+(Placeholder D-181 until merge.) Human decision, 2026-10-12.
+
+On a phone, in the browsing places that have the phone header and the phone bar (Design Contract rule 47: the
+non-focus routes - Today, Discover, a content detail, Orena, Practice and its skill hubs, Library, a collection, Word
+Detail, Grammar, Progress, Profile, Coming soon), the header and
+the bar - with the Orena orb - slide away while the page scrolls down and come back when it scrolls up, and always at
+the top of the page.
+
+- **Rule 47 is unchanged in what it decides:** which places have the chrome. A learning workspace (focus route) still
+  has none, and the desktop rail and top bar never move. This decision only adds a scroll behaviour to the phone
+  chrome where rule 47 draws it.
+- **Mechanism (static/orena/shell/, a protected area; minimum change):** one scroll listener on the main column
+  (`shell/chrome-scroll.js`, bound by `shell/frame.js`); the state is `data-chrome` on the shell root (absent at the
+  top, `hidden`, `shown`); `shell/shell.css` lays the header and bar over the column on phone browsing places (the
+  column keeps their room as padding, so a page at its top sits where it did) and hides them by a transform, so
+  nothing reflows. Under `prefers-reduced-motion` there is no slide, only show / hide.
+- **Accessible:** a control of the chrome that has the focus is never hidden (focus brings the chrome back); nothing is
+  hidden at the top; every route arrives with the chrome in place (the router resets the state), so Word Detail's card
+  fit (D-180) is measured with the chrome visible.
+- **Open (UI_BACKEND_GAPS VC-17):** back over a page that is not at its top, the header takes the phone bar's chrome
+  surface so the page does not run through its controls; the design draws the header only at rest.
+- Gated in scripts/test_orena_shell.mjs (phone-only scope, the state attribute, the transform, reduced motion, the top
+  reset, focus).
+- **Word Detail arrives collapsed (human decision 2026-10-12, option 1).** With the chrome showing on arrival the
+  card had about 474px at 360x740 (a thin illustration band, secondary text near its floors). On a phone, Word Detail
+  (`#/word/:id`, `route.chrome = 'collapsed'`, `:root[data-chrome-start='collapsed']`) now opens with the header and
+  the phone bar already hidden by the same `data-chrome="hidden"`; only the screen's own back row stays, at the top.
+  While collapsed the column gives up the chrome's room (padding-top the status-bar inset, padding-bottom the
+  home-indicator inset), so the card fits the whole height (card top to the window's bottom, less the inset and a
+  16px gap). The chrome comes back on scroll up, on a pull (wheel / touch) or a tap on the page outside a control at
+  the top, and when a chrome control takes the focus - the learner is never left without navigation. The rule when it
+  comes back: the column takes the chrome's room again and the card **fits again** (the shell announces every change as
+  `orena:chrome`; Word Detail re-runs `fitVocabularyCards`), so the header and bar never cover the card's actions.
+  Every other browsing place keeps "visible at the top, hidden on scroll"; desktop and learning workspaces unchanged.
+  Gated in scripts/test_orena_shell.mjs (only Word Detail arrives collapsed, only on a phone; the top stays collapsed
+  until the learner reveals it; the reveal listeners) and scripts/test_orena_vocabulary_card.mjs (the collapsed fit
+  has no bar and the column's whole height; it stops above the bar again when the chrome returns).

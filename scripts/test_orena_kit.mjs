@@ -416,4 +416,69 @@ assert.match(
   console.log(`BACKDROP contrast (worst region): ${table.join('; ')}`);
 }
 
+// VOCABULARY CARD (D-180): the card-scoped palette is exactly the human's flashcard design (docs/design/vocab-card,
+// `renderVals` LIGHT / DARK of Main.dc.html and Chinese.dc.html), and every pair the design draws as text holds AA in
+// both themes. The light gold (#C9A24B, 2.25:1 on the card) draws rules and borders only, never text or a focus ring.
+{
+  const designPalette = (file) => {
+    const source = fs.readFileSync(`docs/design/vocab-card/${file}`, 'utf8');
+    const read = (name) => Object.fromEntries([...new RegExp(`const ${name}\\s*=\\s*\\{([^}]+)\\}`).exec(source)[1].matchAll(/(\w+)\s*:\s*'(#[\dA-Fa-f]{6})'/g)].map((m) => [m[1], m[2].toLowerCase()]));
+    return { light: read('LIGHT'), dark: read('DARK') };
+  };
+  const en = designPalette('Main.dc.html');
+  const zh = designPalette('Chinese.dc.html');
+  const NAMES = {
+    bg: 'bg', surface: 'surface', surfaceAlt: 'surface-alt', line: 'line', text: 'ink', text2: 'ink2', text3: 'ink3',
+    accent: 'accent', onAccent: 'on-accent', gold: 'gold', seal: 'seal', onSeal: 'on-seal', btnBg: 'btn-bg', btnText: 'btn-ink',
+  };
+  const at = tokens.indexOf('The vocabulary card (D-180');
+  assert.ok(at > 0, 'the vocabulary card token group is in kit/tokens.css');
+  const section = tokens.slice(at);
+  const cardTokens = {
+    dark: vars(block(section, ":root[data-theme='dark']")),
+    light: vars(block(section, ":root:not([data-theme='dark'])")),
+  };
+  for (const theme of ['light', 'dark']) {
+    const design = { ...en[theme], ...zh[theme] };
+    for (const [key, value] of Object.entries(design)) {
+      // The two artboards share every key they both draw; the Chinese adds the seal.
+      if (en[theme][key] && zh[theme][key]) assert.equal(en[theme][key], zh[theme][key], `${theme} ${key}: one value across the EN and ZH artboards`);
+      assert.equal(cardTokens[theme][`vcard-${NAMES[key]}`], value, `${theme} --vcard-${NAMES[key]} is the design's ${key}`);
+    }
+    assert.deepEqual(Object.keys(cardTokens[theme]).sort(), Object.values(NAMES).map((name) => `vcard-${name}`).sort(), `${theme}: the card's tokens are the design's, no more`);
+    const CARD_PAIRS = [
+      ['ink', 'surface'], ['ink2', 'surface'], ['ink3', 'surface'],
+      ['ink', 'surface-alt'], ['ink2', 'surface-alt'], ['ink3', 'surface-alt'],
+      ['ink', 'bg'], ['ink2', 'bg'], ['ink3', 'bg'],
+      ['on-accent', 'accent'], ['accent', 'surface'], ['accent', 'surface-alt'],
+      ['btn-ink', 'btn-bg'], ['on-seal', 'seal'], ['seal', 'bg'], ['seal', 'surface-alt'], ['seal', 'surface'],
+    ];
+    for (const [ink, ground] of CARD_PAIRS) {
+      const ratio = contrast(cardTokens[theme][`vcard-${ink}`], cardTokens[theme][`vcard-${ground}`]);
+      measured.push(`${theme} vcard ${ink}/${ground} ${ratio.toFixed(2)}`);
+      assert.ok(ratio >= 4.5, `${theme}: --vcard-${ink} on --vcard-${ground} is ${ratio.toFixed(2)}:1, needs 4.5:1`);
+    }
+  }
+  // Buttons keep the app's kit design (the human, 2026-10-12, D-180): the card skin is its content only. No button rule -
+  // Review's grades, Reveal, Hint, the card's turn actions and discs - uses a card token.
+  const reviewCss = fs.readFileSync(path.join(ROOT, 'screens/review/review.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const cardRules = fs.readFileSync(path.join(ROOT, 'kit/vocabulary-card.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const buttonRules = [
+    ...reviewCss.split('}').filter((rule) => /\.s-review-(grade|btn)/.test(rule.split('{')[0])),
+    ...cardRules.split('}').filter((rule) => /\.c-vcard__(turn|disc)|o-btn/.test(rule.split('{')[0])),
+  ];
+  assert.ok(buttonRules.length >= 6, 'the button rules are found');
+  for (const rule of buttonRules) assert.ok(!/--vcard-/.test(rule), `a button keeps the app's tokens: ${rule.trim().split('{')[0]}`);
+  assert.match(reviewCss, /\.s-review-grade--gotit \{[^}]*background: var\(--accent-fill\);[^}]*color: var\(--accent-ink\)/, 'Got it is the filled button of the app');
+  assert.match(reviewCss, /\.s-review-grade--again \{[^}]*background: var\(--red-soft\);[^}]*color: var\(--red\)/);
+  assert.match(reviewCss, /\.s-review-btn--primary \{[^}]*background: var\(--accent-fill\);[^}]*color: var\(--accent-ink\)/);
+  assert.match(reviewCss, /\.s-review-btn--secondary \{[^}]*background: var\(--surface\);[^}]*color: var\(--text\)/);
+  // The gold never carries text or the focus ring (light 2.25:1 on the card, below the 3:1 a focus indicator needs).
+  const cardCss = fs.readFileSync(path.join(ROOT, 'kit/vocabulary-card.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const rule of cardCss.split('}')) {
+    assert.ok(!/(^|[^-])color:\s*var\(--vcard-gold\)/.test(rule), 'the card gold is never a text colour');
+    if (/:focus/.test(rule)) assert.ok(!/--vcard-gold/.test(rule), 'the card focus ring is the kit\'s, not the gold');
+  }
+}
+
 console.log(`Orena kit: tokens and device variables are the pinned design's, AA holds in both themes (${measured.length} pairs; D-093 adjustments), icons are lucide-static@${release}, one colour owner, no old UI imported: PASS`);

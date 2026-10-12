@@ -21,6 +21,13 @@
   overflow: hidden;
 }
 
+/* A word's card is capped at the design's 520px board (kit/vocabulary-card.css); the session around it - header,
+   card face, grade buttons - takes the same width, so the grades line up with the card's edges (D-180, 2026-10-12).
+   A cloze row (the learner's sentence) keeps the screen's 640px. */
+.s-review-root:has(.c-vcard) {
+  max-width: 520px;
+}
+
 .s-review-head {
   flex: none;
   display: flex;
@@ -221,8 +228,26 @@
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
+}
+/* D-180: the recall and revealed faces take the card's own colours (the flashcard design's paper / night violet);
+   the screen around them - header, progress, grade buttons - stays on the app's tokens. A cloze face (the learner's
+   sentence, not the card) keeps the app's. */
+.s-review-face--revealed:has(> .c-vcard) {
   background: transparent;
   box-shadow: none;
+}
+.s-review-face--hidden:has(.c-vcard) {
+  background: var(--vcard-surface);
+  color: var(--vcard-ink);
+  box-shadow: inset 0 0 0 1px var(--vcard-line);
+}
+.s-review-face--hidden:has(.c-vcard--han) {
+  background: var(--vcard-bg);
+  box-shadow: inset 0 0 0 1.5px var(--vcard-gold);
+}
+.s-review-face--hidden:has(.c-vcard) .s-review-eyebrow,
+.s-review-face--hidden:has(.c-vcard) .s-review-hint {
+  color: var(--vcard-accent);
 }
 /* The Word Card's Hanzi block: label, one tile per character (the vendored stroke pack, drawn
    finished), then the practice button - the frame's 12px/600 caps label and 76px tiles. */
@@ -293,6 +318,7 @@
   font-weight: 400;
   opacity: 0.8;
 }
+/* The buttons keep the app's design (the human, 2026-10-12, D-180): the card's skin is its content only. */
 .s-review-grade--again {
   background: var(--red-soft);
   color: var(--red);

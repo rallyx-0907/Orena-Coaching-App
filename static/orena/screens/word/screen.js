@@ -13,7 +13,7 @@ import { loadingMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
 import { rowBadge } from '../../kit/components.js';
-import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
+import { vocabularyCard, bindVocabularyCards, fitVocabularyCards } from '../../kit/vocabulary-card.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
@@ -107,9 +107,8 @@ function deepWordMarkup(rows) {
 }
 
 /* A meaning that is not in the learner's support language says which language it is in (D-124). */
-function meaningTag(language) {
-  const label = language ? meaningLanguageLabel(language, languages().support, languages().ui) : '';
-  return label ? html` <span class="o-tag">${label}</span>` : '';
+function meaningLabel(language) {
+  return language ? meaningLanguageLabel(language, languages().support, languages().ui) : '';
 }
 
 /* The card: the entry's content (pure, D-179) and, beside it, what the learner's own record adds -
@@ -122,7 +121,7 @@ function cardMarkup(model, learner, item, strokes, meaningPending) {
   };
   const latin = model.script !== 'hanzi';
   const decorated = { ...learner, contextParts: highlightParts(learner.context, { match: model.word, latin, caseless: latin }) };
-  return vocabularyCard(model, { mode: 'detail', learner: decorated, slots: { strokes, footer, meaningTag, meaningPending } });
+  return vocabularyCard(model, { mode: 'detail', learner: decorated, slots: { strokes, footer, meaningLabel, meaningPending } });
 }
 
 export default async function mountWordDetail(element, ctx) {
@@ -258,6 +257,8 @@ export default async function mountWordDetail(element, ctx) {
     // a text when it is not in the catalogue, and the device's own voice - said to be the device's - only when
     // the server's voice failed or could not be reached.
     bindVocabularyCards(element);
+    // The card is fully in view on arrival, actions included (rule 49, CLAUDE.md 6b).
+    fitVocabularyCards(element, { viewport: true });
     // One play action per reading row (UK, US) and one on a card without them: the same word's voice.
     element.querySelectorAll('[data-play]').forEach((playButton) => playButton.addEventListener('click', async () => {
       const onDevice = () => {
@@ -368,7 +369,17 @@ export default async function mountWordDetail(element, ctx) {
     });
   }
 
+  const onResize = () => fitVocabularyCards(element, { viewport: true });
+  window.addEventListener('resize', onResize);
+  // D-181 option 1: on a phone this page arrives with the shell chrome collapsed and the card fits the whole height;
+  // when the chrome comes back (scroll up, a pull or a tap at the top, focus) the column gives it its room again and
+  // the card fits again, so the header and the bar never cover the card's actions.
+  const shellRoot = document.documentElement;
+  shellRoot.addEventListener('orena:chrome', onResize);
+
   return () => {
+    window.removeEventListener('resize', onResize);
+    shellRoot.removeEventListener('orena:chrome', onResize);
     audio?.pause();
     strokeTiles?.stop();
   };

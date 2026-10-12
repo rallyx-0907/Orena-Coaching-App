@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Flashcard tiếng Trung — 森林</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;900&amp;family=Noto+Serif:ital,wght@0,400;0,600;1,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B4573A}a:hover{color:#26332D}
+button:focus-visible{outline:2px solid #C9A24B;outline-offset:3px}
+</style>
+</helmet>
+<div style="width: 520px; height: 880px; box-sizing: border-box; background: {{t.bg}}; color: {{t.text}}; font-family: 'Noto Serif', serif; padding: 14px; border-radius: 6px">
+<div style="height: 100%; box-sizing: border-box; border: 1.5px solid {{t.gold}}; outline: 1px solid {{t.gold}}; outline-offset: -6px; display: flex; flex-direction: column">
+
+<sc-if value="{{front}}" hint-placeholder-val="{{ true }}">
+<div style="flex-grow: 1; display: flex; flex-direction: column; padding: 30px 34px 26px; gap: 18px; box-sizing: border-box">
+  <div style="display: flex; justify-content: space-between; align-items: center">
+    <span style="font-family: 'Noto Serif SC', serif; font-size: 14px; font-weight: 600; letter-spacing: 0.1em; padding: 5px 10px; background: {{t.seal}}; color: {{t.onSeal}}; border-radius: 3px">HSK 4</span>
+    <span style="font-size: 14px; color: {{t.text2}}"><span style="font-family: 'Noto Serif SC', serif">名词</span> · danh từ</span>
+  </div>
+
+  <div style="display: flex; align-items: flex-end; justify-content: space-between">
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 6px; text-align: center">
+      <div style="font-size: 22px; color: {{t.text2}}">sēn</div>
+      <div style="font-size: 22px; color: {{t.text2}}">lín</div>
+      <div style="font-family: 'Noto Serif SC', serif; font-size: 104px; font-weight: 900; line-height: 1.05">森</div>
+      <div style="font-family: 'Noto Serif SC', serif; font-size: 104px; font-weight: 900; line-height: 1.05">林</div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding-bottom: 14px">
+      <div style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text3}}">Hán Việt</div>
+      <div style="font-size: 20px; font-weight: 600; letter-spacing: 0.08em">SÂM LÂM</div>
+    </div>
+  </div>
+
+  <div style="height: 150px; border-top: 1px solid {{t.line}}; border-bottom: 1px solid {{t.line}}; display: flex; align-items: center; justify-content: center">
+    <svg width="440" height="140" viewBox="0 0 440 140" role="img" aria-label="Ba cây thông trước dãy núi, vẽ nét mực" fill="none" stroke="{{t.text}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M0 118 L70 70 L120 100 L190 50 L262 104 L320 76 L440 120" stroke="{{t.accent}}" stroke-width="1.5"></path>
+      <circle cx="372" cy="36" r="15" fill="{{t.seal}}" stroke="none" opacity="0.9"></circle>
+      <path d="M150 50 L126 98 H174 Z M150 70 L118 118 H182 Z" fill="{{t.bg}}"></path>
+      <path d="M150 118 V132"></path>
+      <path d="M220 22 L190 80 H250 Z M220 48 L180 112 H260 Z" fill="{{t.bg}}"></path>
+      <path d="M220 112 V132"></path>
+      <path d="M290 58 L268 100 H312 Z M290 76 L262 120 H318 Z" fill="{{t.bg}}"></path>
+      <path d="M290 120 V132"></path>
+      <path d="M90 132 H360" stroke="{{t.gold}}"></path>
+    </svg>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <div style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text3}}">Nghĩa</div>
+    <div style="font-size: 22px; font-weight: 600; line-height: 1.35">rừng, rừng rậm</div>
+    <div style="font-size: 15px; font-style: italic; color: {{t.text2}}">forest</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid {{t.line}}; padding-top: 14px">
+    <div style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text3}}">Bộ thủ</div>
+    <div style="display: flex; gap: 16px; align-items: center">
+      <div style="width: 56px; height: 56px; border: 1.5px solid {{t.seal}}; color: {{t.seal}}; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif SC', serif; font-size: 36px; font-weight: 600">木</div>
+      <div style="font-size: 15px; line-height: 1.55"><b>mù</b> · bộ <b>Mộc</b> (cây)<br><span style="font-family: 'Noto Serif SC', serif">森</span> = 木 + 木 + 木 · 12 nét<br><span style="font-family: 'Noto Serif SC', serif">林</span> = 木 + 木 · 8 nét</div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; font-size: 15px; line-height: 1.55">
+    <div><div style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text3}}">Lượng từ</div><span style="font-family: 'Noto Serif SC', serif">一片森林</span><br><span style="color: {{t.text2}}">yí piàn sēnlín</span></div>
+    <div><div style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text3}}">Từ liên quan</div><span style="font-family: 'Noto Serif SC', serif">树林</span> shùlín · rừng cây<br><span style="font-family: 'Noto Serif SC', serif">森林火灾</span> · cháy rừng</div>
+  </div>
+
+  <div style="margin-top: auto; display: flex; justify-content: flex-end">
+    <button onClick="{{flip}}" style="font-family: 'Noto Serif', serif; font-size: 15px; font-weight: 600; color: {{t.btnText}}; background: {{t.btnBg}}; border: 0; border-radius: 3px; padding: 0 20px; height: 46px; cursor: pointer">Xem ví dụ →</button>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{back}}" hint-placeholder-val="{{ false }}">
+<div style="flex-grow: 1; display: flex; flex-direction: column; padding: 30px 34px 26px; gap: 20px; box-sizing: border-box">
+  <div style="display: flex; justify-content: space-between; align-items: baseline">
+    <div><span style="font-family: 'Noto Serif SC', serif; font-size: 34px; font-weight: 900">森林</span> <span style="font-size: 17px; color: {{t.text2}}">sēnlín</span></div>
+    <div style="font-size: 13px; color: {{t.text2}}">Ví dụ &amp; cách dùng</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; background: {{t.surfaceAlt}}">
+    <div style="font-size: 12px; color: {{t.text3}}">一 · Làm chủ ngữ / nơi chốn</div>
+    <div style="font-family: 'Noto Serif SC', serif; font-size: 24px; line-height: 1.5">这片<span style="color: {{t.seal}}; font-weight: 900">森林</span>里住着很多动物。</div>
+    <div style="font-size: 15px; color: {{t.text2}}">Zhè piàn <b style="color: {{t.seal}}">sēnlín</b> lǐ zhùzhe hěn duō dòngwù.</div>
+    <div style="font-size: 15px; line-height: 1.5">Trong khu rừng này có rất nhiều động vật sinh sống.</div>
+    <div style="font-size: 14px; line-height: 1.5; color: {{t.text2}}">片 là lượng từ cho vùng rộng; <span style="font-family: 'Noto Serif SC', serif">森林里</span> = “trong rừng”.</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; background: {{t.surfaceAlt}}">
+    <div style="font-size: 12px; color: {{t.text3}}">二 · Làm tân ngữ</div>
+    <div style="font-family: 'Noto Serif SC', serif; font-size: 24px; line-height: 1.5">我们应该保护<span style="color: {{t.seal}}; font-weight: 900">森林</span>。</div>
+    <div style="font-size: 15px; color: {{t.text2}}">Wǒmen yīnggāi bǎohù <b style="color: {{t.seal}}">sēnlín</b>.</div>
+    <div style="font-size: 15px; line-height: 1.5">Chúng ta nên bảo vệ rừng.</div>
+    <div style="font-size: 14px; line-height: 1.5; color: {{t.text2}}">Cụm hay gặp: <span style="font-family: 'Noto Serif SC', serif">保护森林</span> (bảo vệ rừng).</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid {{t.line}}; padding-top: 14px">
+    <div style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text3}}">Mẹo nhớ</div>
+    <div style="font-size: 15px; line-height: 1.6"><span style="font-family: 'Noto Serif SC', serif">木</span> một cây → <span style="font-family: 'Noto Serif SC', serif">林</span> hai cây thành rừng → <span style="font-family: 'Noto Serif SC', serif">森</span> ba cây thành rừng rậm.</div>
+  </div>
+
+  <div style="margin-top: auto; display: flex; justify-content: flex-start">
+    <button onClick="{{flip}}" style="font-family: 'Noto Serif', serif; font-size: 15px; font-weight: 600; color: {{t.text}}; background: transparent; border: 1.5px solid {{t.gold}}; border-radius: 3px; padding: 0 20px; height: 46px; cursor: pointer">← Mặt trước</button>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"startSide":{"editor":"enum","options":["front","back"],"default":"front"},"$preview":{"width":520,"height":880}}'>
+class Component extends DCLogic {
+  renderVals() {
+    // Same Orena tokens as the EN card; ZH adds `seal` (terracotta / peach-gold) for radicals and highlights.
+    const LIGHT = { bg:'#F8EFDE', surface:'#FCF7EE', surfaceAlt:'#F2E7D2', line:'#E3D4B8', text:'#26332D', text2:'#4E5A50', text3:'#5C6153', accent:'#44675A', gold:'#C9A24B', seal:'#9E4A2F', onSeal:'#FFF8EE', btnBg:'#26332D', btnText:'#FCF7EE' };
+    const DARK  = { bg:'#0B0618', surface:'#140B26', surfaceAlt:'#1E1235', line:'#33224F', text:'#EEE8F7', text2:'#C3B8D9', text3:'#9488AE', accent:'#A98BEA', gold:'#E8B57E', seal:'#F0A882', onSeal:'#140B26', btnBg:'#EEE8F7', btnText:'#140B26' };
+    const t = (this.props.theme ?? 'light') === 'dark' ? DARK : LIGHT;
+    const start = (this.props.startSide ?? 'front') === 'back';
+    const flipped = this.state && this.state.flipped !== undefined ? this.state.flipped : start;
+    return {
+      t,
+      front: !flipped,
+      back: flipped,
+      flip: () => this.setState({ flipped: !flipped })
+    };
+  }
+}
+</script>
+</body>
+</html>

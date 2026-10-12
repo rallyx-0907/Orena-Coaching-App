@@ -6,7 +6,7 @@
    overlays already do for the same shared Word Card primitive (D7 §4). The turned card is the shared
    VocabularyCard in `feed` mode (kit/vocabulary-card.js, D-179): Save, never a grade. */
 import { html, mount, raw, cls } from '../../kit/html.js';
-import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
+import { vocabularyCard, bindVocabularyCards, fitVocabularyCards } from '../../kit/vocabulary-card.js';
 import { toVocabularyModel, savePayloadOf } from '../../product/vocabulary-card.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
@@ -121,12 +121,13 @@ export default async function mountFeed(element, ctx) {
     const rail = element.querySelector('.s-feed-rail');
     if (rail && scrolled) rail.scrollLeft = scrolled;
     bind();
-    hydrateStrokes(element, api.chineseStrokeOrder, ctx.isCurrent).catch(() => {});
+    hydrateStrokes(element, api.chineseStrokeOrder, ctx.isCurrent).then(() => fitVocabularyCards(element)).catch(() => {});
   }
 
   function bind() {
     element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
     bindVocabularyCards(element);
+    fitVocabularyCards(element);
     /* A card flips by tap or click, and by Enter / Space when it has the keyboard's focus (it is
        `role=button`); the repaint gives the focus back to the same card. */
     const flip = (index) => {
@@ -210,9 +211,14 @@ export default async function mountFeed(element, ctx) {
     });
   }
 
+  // A card face never scrolls: it fits its slot again whenever the window changes (D-180).
+  const onResize = () => fitVocabularyCards(element);
+  window.addEventListener('resize', onResize);
+
   paint();
 
   return () => {
+    window.removeEventListener('resize', onResize);
     audio?.pause();
   };
 }
