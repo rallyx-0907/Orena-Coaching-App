@@ -445,10 +445,29 @@ const tagged2 = String(vocabularyCard(pineAlone, { mode: 'detail', slots: { mean
 assert.ok(tagged2.includes('<span class="c-vcard__lang">Tiếng Anh</span>'), 'the meaning language tag is drawn by the card');
 // Touch targets: the discs are 44px.
 assert.match(cardCss, /\.c-vcard__disc \{[^}]*width: 44px;[^}]*height: 44px/);
-// ZH: all content text serif; only controls keep the app's sans.
-assert.match(cardCss, /\.c-vcard--han \{[^}]*font-family: var\(--vcard-han\)/);
+// ZH (lead's :8021 check: the content computed the app sans, `:lang(vi)` sets it on every Vietnamese element):
+// the family is set on EVERY element of the Chinese card, and only by these four rules - no content class re-sets it.
 assert.match(cardCss, /--vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;/);
-assert.match(cardCss, /\.c-vcard__turn,\s*\.c-vcard__disc \{\s*font-family: var\(--font-ui\);/, 'only the controls keep the app sans');
+// Pinyin and Vietnamese need tone letters: a Latin-led stack whose first Windows font carries them (no Georgia).
+assert.match(cardCss, /--vcard-latin-serif: 'Noto Serif', Cambria, 'Times New Roman', 'Noto Serif SC'/);
+assert.doesNotMatch(cardCss.replace(/\/\*[\s\S]*?\*\//g, ''), /Georgia/, 'no Georgia in any stack');
+const familyRules = [...cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)]
+  .filter(([, , body]) => /font-family/.test(body))
+  .map(([, selector, body]) => [selector.replace(/\s+/g, ' ').trim(), body.match(/font-family:\s*([^;]+);/)[1].trim()]);
+assert.deepEqual(familyRules, [
+  ['.c-vcard.c-vcard--han, .c-vcard.c-vcard--han *', 'var(--vcard-latin-serif)'],
+  [".c-vcard.c-vcard--han :is([lang='zh'], .c-vcard__word--han, .c-vcard__radical-glyph, .c-vcard__level), .c-vcard.c-vcard--han :is([lang='zh'], .c-vcard__word--han, .c-vcard__radical-glyph, .c-vcard__level) *", 'var(--vcard-han)'],
+  [".c-vcard.c-vcard--han :is([lang='zh'], .c-vcard__word--han) :is(rt, rt *)", 'var(--vcard-latin-serif)'],
+  [".c-vcard .c-vcard__turn, .c-vcard .c-vcard__disc, .c-vcard.c-vcard--han .c-vcard__turn, .c-vcard.c-vcard--han .c-vcard__disc, .c-vcard.c-vcard--han [class$='-strokes'] .o-btn--secondary", 'var(--font-ui)'],
+], 'the only font-family rules on the card');
+// The universal rule outranks the app's `:lang(vi)` (0,1,0) by specificity, not by load order.
+// Every pinyin carrier on the Chinese card is outside the Hanzi rule: example readings are lang="zh-Latn", the
+// headword's pinyin is <rt> (re-set to the Latin stack), measure-word and related readings are plain muted spans.
+const zhFrontMarkup = faceOf(zhCard, 'front');
+assert.ok(zhFrontMarkup.includes('<rt>sēn</rt>'));
+assert.ok(!/<span lang="zh">[^<]*yí piàn/.test(zhFrontMarkup) && zhFrontMarkup.includes('<span class="c-vcard__muted">yí piàn sēnlín</span>'), 'measure-word pinyin is not in a Hanzi span');
+assert.ok(zhFrontMarkup.includes('<span class="c-vcard__muted">shùlín</span>'), 'a related reading is not in a Hanzi span');
+assert.ok(faceOf(zhCard, 'back').includes('<p class="c-vcard__example-reading" lang="zh-Latn">'));
 
 /* --- the two review buttons --- */
 assert.deepEqual(REVIEW_BUTTONS, ['again', 'got_it']);

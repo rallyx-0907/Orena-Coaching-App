@@ -24,7 +24,10 @@
 
 .c-vcard {
   --vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;
-  --vcard-latin-serif: 'Noto Serif', Georgia, 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;
+  /* Latin-led serif: Cambria and Times New Roman ship on Windows and carry the pinyin tone letters (ǎ ǐ ǒ ǔ ǖ ǘ ǚ ǜ)
+     and Vietnamese, which Georgia and SimSun do not - a missing letter fell back glyph by glyph ("huǒ" drawn as o and
+     a detached caron). Hanzi in a mixed line fall through to the Song stack after them. */
+  --vcard-latin-serif: 'Noto Serif', Cambria, 'Times New Roman', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;
   border: 1px solid var(--vcard-line);
   border-radius: 20px;
   background: var(--vcard-surface);
@@ -43,19 +46,28 @@
   border-radius: 6px;
   background: var(--vcard-bg);
   padding: 14px;
-  font-family: var(--vcard-han);
 }
-/* Latin-only lines on the Chinese card lead with a Latin serif. */
-.c-vcard--han rt,
-.c-vcard--han [lang='zh-Latn'],
-.c-vcard--han [lang='en'],
-.c-vcard--han .c-vcard__hanviet,
-.c-vcard--han .c-vcard__muted {
+/* The Chinese card's type, set on EVERY element of the card (not inherited): the app sets the interface face on each
+   Vietnamese element through `:lang(vi)` (kit/base.css), which an inherited family would lose to. The text is serif -
+   Latin-led for Vietnamese, English and pinyin (and mixed lines, whose Hanzi fall through to the Song stack), the Song
+   stack first for Hanzi-only text and the headword; the controls keep the app's sans. These four rules are the only
+   ones on the Chinese card that set a family (scripts/test_orena_vocabulary_card.mjs). */
+.c-vcard.c-vcard--han,
+.c-vcard.c-vcard--han * {
   font-family: var(--vcard-latin-serif);
 }
-/* Controls keep the app's sans. */
-.c-vcard__turn,
-.c-vcard__disc {
+.c-vcard.c-vcard--han :is([lang='zh'], .c-vcard__word--han, .c-vcard__radical-glyph, .c-vcard__level),
+.c-vcard.c-vcard--han :is([lang='zh'], .c-vcard__word--han, .c-vcard__radical-glyph, .c-vcard__level) * {
+  font-family: var(--vcard-han);
+}
+.c-vcard.c-vcard--han :is([lang='zh'], .c-vcard__word--han) :is(rt, rt *) {
+  font-family: var(--vcard-latin-serif);
+}
+.c-vcard .c-vcard__turn,
+.c-vcard .c-vcard__disc,
+.c-vcard.c-vcard--han .c-vcard__turn,
+.c-vcard.c-vcard--han .c-vcard__disc,
+.c-vcard.c-vcard--han [class$='-strokes'] .o-btn--secondary {
   font-family: var(--font-ui);
 }
 .c-vcard__face {
@@ -171,7 +183,6 @@
   color: var(--vcard-on-accent);
 }
 .c-vcard--han .c-vcard__level {
-  font-family: var(--vcard-han);
   font-size: 14px;
   letter-spacing: 0.1em;
   border-radius: 3px;
@@ -249,7 +260,6 @@
   hyphens: none;
 }
 .c-vcard__word--han {
-  font-family: var(--vcard-han);
   font-size: min(104px, calc(78cqi / var(--len, 1)));
   font-weight: 900;
   line-height: 1.05;
@@ -259,7 +269,6 @@
   ruby-position: over;
 }
 .c-vcard__word rt {
-  font-family: var(--vcard-latin-serif);
   font-size: max(13px, 0.21em);
   font-weight: 400;
   color: var(--vcard-ink2);
@@ -642,7 +651,6 @@
   fill: var(--vcard-seal);
 }
 .c-vcard .c-vcard__body [class$='-strokes'] .o-btn--secondary {
-  font-family: var(--font-ui);
   background: transparent;
   color: var(--vcard-ink);
   border: 1px solid var(--vcard-line);

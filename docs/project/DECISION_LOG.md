@@ -5713,11 +5713,14 @@ like the design, not only follow its layout".
    art for the two docs/vocab samples only; production artwork stays under the Art Bible (`assets/brand/orena/`) and
    comes from Admin upload (PR 3). No schema change, no upload path.
 8. **Refinements after the lead's browser check (human decisions, 2026-10-12).**
-   - *Chinese typography:* all content text on the Chinese card is serif - Hanzi and mixed lines on
-     `"Noto Serif SC","Source Han Serif SC","Songti SC",STSong,SimSun,NSimSun,serif`, Latin-only lines (pinyin, the
-     English meaning, Hán Việt) on `"Noto Serif",Georgia,` ahead of the same stack; only the controls keep the app's
-     sans. No web font: on Windows SimSun/NSimSun and Georgia render, bold where the design is bold, 900 where the face
-     has it.
+   - *Chinese typography:* all content text on the Chinese card is serif, set on every element of the card (the app's
+     `:lang(vi)` rule sets the interface face on each Vietnamese element, which an inherited family loses to). Hanzi-only
+     text and the headword: `"Noto Serif SC","Source Han Serif SC","Songti SC",STSong,SimSun,NSimSun,serif`. Every other
+     line - Vietnamese, English, pinyin, and mixed lines whose Hanzi fall through to the same Song stack - leads with
+     `"Noto Serif",Cambria,"Times New Roman"`: SimSun and Georgia lack the pinyin tone letters (ǎ ǐ ǒ ǔ ǖ ǘ ǚ ǜ) and
+     Vietnamese, and a missing letter fell back glyph by glyph ("huǒ" drawn as o and a detached caron); Cambria and
+     Times New Roman ship on Windows and carry both. This orders mixed Vietnamese/Hanzi lines Latin-first, a deviation
+     from "Song stack first for mixed text" for that reason. Only the controls keep the app's sans. No web font.
    - *Review grades in the card's palette:* "Đã nhớ" is the card's primary button (`--vcard-btn-bg` /
      `--vcard-btn-ink`), "Chưa nhớ" the card's seal outlined on the card surface; both and their interval line hold AA
      in both themes (gated), and they no longer use the app's accent (gated). Focus is the kit's ring.
