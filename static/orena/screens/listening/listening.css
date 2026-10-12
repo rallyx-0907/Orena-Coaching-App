@@ -776,9 +776,20 @@
 .s-listening__dict .s-dict__hintnote { flex: 1 1 auto; min-width: 0; }
 .s-listening__dict .s-dict__spacer { display: none; }
 :root[data-device="mobile"] .s-listening__dict .s-dict__input { height: 64px; }
-:root[data-device="mobile"] .s-listening__dict .s-dict__hint { padding: 10px 14px; }
-:root[data-device="mobile"] .s-listening__dict .s-dict__hintnote { font-size: 12.5px; line-height: 1.35; }
-:root[data-device="mobile"] .s-listening__dict .s-dict__check { padding-left: 18px; padding-right: 18px; }
+/* The phone's hint row is the result row's geometry (human decision 2026-10-11, D-175): the hint is an eye and its
+   put-away toggle a chevron, 46px glyph buttons whose words are their accessible names; the ladder note is read to
+   assistive technology (aria-describedby), not printed; Check is the one wide, filled action. */
+:root[data-device="mobile"] .s-listening__dict .s-dict__hintrow { gap: 8px; }
+:root[data-device="mobile"] .s-listening__dict .s-dict__hint,
+:root[data-device="mobile"] .s-listening__dict .s-dict__hinttoggle:not([hidden]) {
+  flex: none; width: 46px; height: 46px; min-height: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+}
+:root[data-device="mobile"] .s-listening__dict .s-dict__hint > .ic,
+:root[data-device="mobile"] .s-listening__dict .s-dict__hinttoggle > .s-dict__glyph { display: flex; }
+:root[data-device="mobile"] .s-listening__dict .s-dict__hintnote {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+:root[data-device="mobile"] .s-listening__dict .s-dict__check { flex: 1 1 auto; height: 46px; min-width: 0; }
 
 /* Dictation keeps the hidden transcript as a quiet line map, not reading content (LEX-035). */
 .s-listening.is-dictation .s-listening__row { padding-top: 6px; padding-bottom: 6px; }
@@ -789,13 +800,18 @@
 :root[data-device="mobile"] .s-listening.is-dictation .s-listening__transcript { min-height: 96px; }
 :root[data-device="mobile"] .s-listening__dict .s-dict__actions { gap: 8px; }
 
-/* Typing with the phone keyboard open (mobile QA BUG-02): the room fits the visible area above the keyboard and
-   keeps only the task - transport, answer, hint, Check. Video, seek bar and the line map return when typing ends. */
+/* Typing with the phone keyboard open (mobile QA BUG-02, human review 2026-10-11): the room fits the visible area
+   above the keyboard and holds only the task - transport, answer, hint, Check - and the Transcript's lines under
+   it, which take everything left and scroll in their own region, so the lines already written stay readable while
+   typing. What only orients (the header with its title and Back, the picture, the seek bar, the card's label, the
+   Transcript's title and hint) returns when typing ends; the keyboard's own dismiss, or a tap outside the answer,
+   ends typing. */
 :root[data-device="mobile"] .s-listening.is-typing {
   /* The visible area above the keyboard, less the status-bar clearance the column already starts below: anything
      taller makes iOS scroll the page and lift the answer out of sight. */
   height: calc(var(--ls-visible-h, 100%) - env(safe-area-inset-top, 0px));
   padding-bottom: 8px;
+  --ls-ggap: 8px;
 }
 /* The player stays rendered (Replay still plays it), only out of sight: a hidden iframe can stop its media. */
 :root[data-device="mobile"] .s-listening.is-typing .s-listening__player {
@@ -806,10 +822,12 @@
   opacity: 0;
   pointer-events: none;
 }
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__head,
 :root[data-device="mobile"] .s-listening.is-typing .s-listening__seek,
-:root[data-device="mobile"] .s-listening.is-typing .s-listening__transcript,
-:root[data-device="mobile"] .s-listening.is-typing .s-listening__modes { display: none; }
-:root[data-device="mobile"] .s-listening.is-typing .s-listening__dict .s-dict__input { height: 72px; }
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__dict .s-listening__selected-head,
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__transcript-head { display: none; }
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__body { padding-top: 8px; }
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__dict { padding-top: 10px; padding-bottom: 10px; }
 
 /* Phone (mobile QA BUG-07): a long title wraps to two lines and then ends with an ellipsis, rather than being cut
    on one line; the clock sits on its own scrim so it never mixes with the video's own overlay text. */
@@ -975,3 +993,15 @@
 @media (max-height: 600px) {
   :root[data-device="mobile"] .s-listening__selected:has(.s-listening__extra-acts.is-open) .s-listening__selected-scroll { max-height: 2.9em; }
 }
+
+/* Dictation on the phone (human review 2026-10-11): the Transcript is where the learner reads the lines already
+   checked, so it keeps real room. The picture, veiled while a line is unchecked, is the compact strip a short phone
+   already uses (it still plays and shows the time), which gives the Transcript the rest under an unchecked line's
+   card. When the card can run long - a checked line's comparison, or the hint's live strip - the Transcript keeps at
+   least 30% of the body, on short phones too, and the card's stage scrolls inside it, its actions in view. */
+:root[data-device="mobile"] .s-listening.is-dictation:not(.is-typing) .s-listening__player { flex: none; height: 96px; min-height: 0; aspect-ratio: auto; }
+:root[data-device="mobile"] .s-listening.is-dictation:not(.is-typing):has(.s-dict__result) .s-listening__transcript,
+:root[data-device="mobile"] .s-listening.is-dictation:not(.is-typing):has(.s-dict__live:not([hidden])) .s-listening__transcript { min-height: 30%; }
+/* Typing: the task is never cut - the Transcript takes exactly what the answer, hint and Check leave above the
+   keyboard (no floor of its own, so on the shortest screens it yields, never the answer box). */
+:root[data-device="mobile"] .s-listening.is-typing .s-listening__transcript { min-height: 0; }

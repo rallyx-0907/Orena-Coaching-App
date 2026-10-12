@@ -697,9 +697,10 @@ export default async function listening(element, ctx) {
     playerEl.classList.toggle('is-veiled', mode === 'dictation' && !practice.revealed(currentId));
   }
 
-  /* Typing on a phone (mobile QA BUG-02): while the answer box has focus the on-screen keyboard takes half the
-     screen, so the room keeps only what the task needs - the line's transport, the answer, the hint and Check -
-     and gives the rest back when typing ends. The class is removed a moment after focus leaves, so a tap on Check
+  /* Typing on a phone (mobile QA BUG-02, human review 2026-10-11): while the answer box has focus the on-screen
+     keyboard takes half the screen, so the room keeps the line's transport, the answer, the hint and Check, with
+     the Transcript under them in what is left (its own scroll region; the pane observer above frames the current
+     line as it shrinks), and gives the rest back when typing ends. The class is removed a moment after focus leaves, so a tap on Check
      or Hint lands before the layout returns. The visible height follows `visualViewport`, so the card is laid out
      above the keyboard rather than behind it. */
   let typingTimer = 0;

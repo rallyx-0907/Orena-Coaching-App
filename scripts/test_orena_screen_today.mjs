@@ -32,6 +32,7 @@ const {
   buildHeadSubtitle,
   RECOMMEND_LIMIT,
 } = await import('../static/orena/screens/today/model.js');
+const { parseContentId } = await import('../static/orena/screens/content/model.js');
 
 // 1. formatDuration: the locale-invariant "M:SS" clock, empty for an unmeasured duration - never
 // an invented figure (rule 40).
@@ -68,7 +69,8 @@ assert.equal(pickMeaning([], 'en'), '', 'no meanings at all is empty, not invent
   assert.equal(available.length, 3, 'reading + listening + speaking = 3, matching RECOMMEND_LIMIT');
   assert.equal(available.length, RECOMMEND_LIMIT);
   assert.equal(available[0].routeId, 'reader');
-  assert.deepEqual(available[0].routeParams, { id: 'art-1' });
+  assert.deepEqual(available[0].routeParams, { id: 'article:art-1' }, 'the Reader takes a prefixed content id, not the bare article id');
+  assert.equal(parseContentId(available[0].routeParams.id).kind, 'article', 'the Reader own parser accepts the id this card builds');
   assert.deepEqual(available[0].routeQuery, { rec: 'sig-1' }, 'the signed recommendation travels with the reader link');
   assert.equal(available[0].durationLabel, '', 'the reading payload carries no duration - none is shown, not an invented one');
 
