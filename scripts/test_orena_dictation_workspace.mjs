@@ -44,7 +44,7 @@ assert.doesNotMatch(replay, /holdEndMs=null|releaseSegment/, 'replaying inside a
 assert.match(segmentPlayer, /holdSegment\(root,\s*from,\s*to\)|holdSegment\(root,from,to\)/,
   'the original-segment player holds the line through the shared player');
 
-/* --- The phone: the keyboard never hides the Transcript, the hint is an eye (2026-10-11, D-17D) --------------
+/* --- The phone: the keyboard never hides the Transcript, the hint is an eye (2026-10-11, D-175) --------------
    A learner typing on a phone could not see or scroll the Transcript under the answer (the typing state hid
    it), the Transcript had one row left after Check, and the hint row was mostly words. Structure, read from
    source: the browser check in docs/project/UI_BACKEND_GAPS.md measures the result. */

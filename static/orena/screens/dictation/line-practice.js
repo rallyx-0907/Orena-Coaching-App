@@ -96,7 +96,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
       mount(toggle.querySelector('[data-glyph]'), html`${raw(icon(hintHidden ? 'chevron-down' : 'chevron-up', { size: 20 }))}`);
     }
   }
-  /* A control that is a glyph on the phone (human decision 2026-10-11, D-17D): its words stay its accessible
+  /* A control that is a glyph on the phone (human decision 2026-10-11, D-175): its words stay its accessible
      name (aria-label, and the visually hidden label the desk shows as text) and its tooltip. */
   function labelControl(button, label) {
     setText(button.querySelector('[data-label]'), label);
@@ -116,7 +116,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
   function paintPre() {
     mount(stageEl, html`<textarea class="s-dict__input" data-input rows="3" lang="${langAttr(lesson.language)}" aria-label="${t('placeholder')}" placeholder="${t('placeholder')}">${answer}</textarea>
       <div class="s-dict__live" data-live hidden></div>`);
-    // The hint is an eye on the phone, its ladder note read to assistive technology rather than printed (D-17D).
+    // The hint is an eye on the phone, its ladder note read to assistive technology rather than printed (D-175).
     mount(dockEl, html`<div class="s-dict__hintrow">
       <button type="button" class="s-dict__hint" data-hint aria-describedby="${noteId}">${raw(icon('eye', { size: 20 }))}<span class="s-dict__actlabel" data-label></span></button>
       <button type="button" class="s-dict__hinttoggle" data-hint-toggle hidden><span class="s-dict__glyph" data-glyph></span><span class="s-dict__actlabel" data-label></span></button>

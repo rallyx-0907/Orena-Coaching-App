@@ -9,6 +9,7 @@ import {
   speakModes, writeModes, listenModes, vocabularyModes, grammarModes, readingModes, buildSkillSections, weakestLines, vocabularyRecommendation,
   continuationTarget, continuationRows, writeRecommendation,
 } from '../static/orena/screens/practice/model.js';
+import { parseContentId } from '../static/orena/screens/content/model.js';
 
 // --- Skill order / icon / tint tables agree with each other -----------------------------------
 {
@@ -135,10 +136,13 @@ import {
     available: true,
     next: { set: { article: { id: 'art-1', level: 'B2' } }, recommendation: 'sig-abc' },
   });
-  assert.deepEqual(modes, [{ key: 'reader', routeId: 'reader', params: { id: 'art-1' }, level: 'B2', query: { rec: 'sig-abc' } }]);
+  assert.deepEqual(modes, [{ key: 'reader', routeId: 'reader', params: { id: 'article:art-1' }, level: 'B2', query: { rec: 'sig-abc', mode: 'practice' } }], 'the Reader takes a prefixed content id (article:<id>), never the bare article id; Start Reading Practice opens it in practice mode like Content Detail and Check do');
+  assert.equal(parseContentId(modes[0].params.id).kind, 'article', 'the Reader own parser accepts the id this tile builds');
+  assert.equal(parseContentId(modes[0].params.id).id, 'art-1');
 
   const noRec = readingModes({ available: true, next: { set: { article: { id: 'art-2', level: '' } } } });
-  assert.deepEqual(noRec, [{ key: 'reader', routeId: 'reader', params: { id: 'art-2' }, level: '' }], 'no recommendation signature -> no query, never an invented one');
+  assert.deepEqual(noRec, [{ key: 'reader', routeId: 'reader', params: { id: 'article:art-2' }, level: '', query: { mode: 'practice' } }], 'no recommendation signature -> no rec, never an invented one; practice mode stays');
+  assert.equal(parseContentId(noRec[0].params.id).kind, 'article');
 }
 
 // --- Grammar: only the one real entry point -----------------------------------------------------

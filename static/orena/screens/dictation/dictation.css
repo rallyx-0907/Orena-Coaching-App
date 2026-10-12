@@ -252,7 +252,7 @@
   font-weight: 600;
 }
 .s-dict__hinttoggle[hidden] { display: none; }
-/* The desk draws the hint and its toggle as words (frame 07); their glyphs are the phone's (D-17D, listening.css). */
+/* The desk draws the hint and its toggle as words (frame 07); their glyphs are the phone's (D-175, listening.css). */
 .s-dict__hint > .ic,
 .s-dict__hinttoggle > .s-dict__glyph { display: none; }
 

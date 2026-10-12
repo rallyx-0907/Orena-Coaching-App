@@ -776,7 +776,7 @@
 .s-listening__dict .s-dict__hintnote { flex: 1 1 auto; min-width: 0; }
 .s-listening__dict .s-dict__spacer { display: none; }
 :root[data-device="mobile"] .s-listening__dict .s-dict__input { height: 64px; }
-/* The phone's hint row is the result row's geometry (human decision 2026-10-11, D-17D): the hint is an eye and its
+/* The phone's hint row is the result row's geometry (human decision 2026-10-11, D-175): the hint is an eye and its
    put-away toggle a chevron, 46px glyph buttons whose words are their accessible names; the ladder note is read to
    assistive technology (aria-describedby), not printed; Check is the one wide, filled action. */
 :root[data-device="mobile"] .s-listening__dict .s-dict__hintrow { gap: 8px; }
