@@ -24,19 +24,24 @@
    action in view. */
 
 .c-vcard {
-  /* Spacing that scales with BOTH the card's width (cqi) and the viewport's height (dvh); the design's value is the
-     ceiling (rule 49: the card fits one viewport before its body scrolls). */
-  --vc-pad-x: clamp(18px, 7.7cqi, 40px);
-  --vc-pad-top: min(clamp(20px, 6.9cqi, 36px), clamp(12px, 3.4dvh, 36px));
-  --vc-pad-bottom: min(clamp(18px, 6.2cqi, 32px), clamp(10px, 3dvh, 32px));
-  --vc-gap: clamp(10px, 2.4dvh, 22px);
+  /* THE SCALE (the human, 2026-10-12): the design's 520px artboard is the reference, and every content measurement is
+     `min(Npx, N/5.2 cqi)` - the drawn value at a card 520px wide or wider (s = 1, desktop as drawn) and the same
+     proportion below it (s = width / 520: a 328px card is s = 0.63), so a phone shows a smaller copy of the same card,
+     not a desktop card squeezed. `cqi` is the card's own width (.c-vcard is the size container). Readability floors
+     only where needed: body, meaning and example text 13px, labels and tags 11px, pinyin and IPA 12px. Spacing also
+     yields to a short viewport (dvh) so the card fits one screen before its body scrolls (rule 49). Buttons are exempt:
+     the app's kit sizes. */
+  --vc-pad-x: min(40px, 7.692cqi);
+  --vc-pad-top: min(36px, 6.923cqi, clamp(12px, 3.4dvh, 36px));
+  --vc-pad-bottom: min(32px, 6.154cqi, clamp(10px, 3dvh, 32px));
+  --vc-gap: min(22px, 4.231cqi, clamp(10px, 2.4dvh, 22px));
   --vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;
   /* Latin-led serif: Cambria and Times New Roman ship on Windows and carry the pinyin tone letters (ǎ ǐ ǒ ǔ ǖ ǘ ǚ ǜ)
      and Vietnamese, which Georgia and SimSun do not - a missing letter fell back glyph by glyph ("huǒ" drawn as o and
      a detached caron). Hanzi in a mixed line fall through to the Song stack after them. */
   --vcard-latin-serif: 'Noto Serif', Cambria, 'Times New Roman', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;
   border: 1px solid var(--vcard-line);
-  border-radius: 20px;
+  border-radius: min(20px, 3.846cqi);
   background: var(--vcard-surface);
   color: var(--vcard-ink);
   text-align: left;
@@ -59,14 +64,14 @@
   max-height: 100%;
 }
 .c-vcard--han {
-  --vc-pad-x: clamp(16px, 6.5cqi, 34px);
-  --vc-pad-top: min(clamp(18px, 5.8cqi, 30px), clamp(10px, 3dvh, 30px));
-  --vc-pad-bottom: min(clamp(16px, 5cqi, 26px), clamp(10px, 2.6dvh, 26px));
-  --vc-gap: clamp(10px, 2dvh, 18px);
+  --vc-pad-x: min(34px, 6.538cqi);
+  --vc-pad-top: min(30px, 5.769cqi, clamp(10px, 3dvh, 30px));
+  --vc-pad-bottom: min(26px, 5cqi, clamp(10px, 2.6dvh, 26px));
+  --vc-gap: min(18px, 3.462cqi, clamp(10px, 2dvh, 18px));
   border: 0;
-  border-radius: 6px;
+  border-radius: min(6px, 1.154cqi);
   background: var(--vcard-bg);
-  padding: 14px;
+  padding: min(14px, 2.692cqi);
 }
 /* The Chinese card's type, set on EVERY element of the card (not inherited): the app sets the interface face on each
    Vietnamese element through `:lang(vi)` (kit/base.css), which an inherited family would lose to. The text is serif -
@@ -104,7 +109,7 @@
 .c-vcard--han .c-vcard__face {
   border: 1.5px solid var(--vcard-gold);
   outline: 1px solid var(--vcard-gold);
-  outline-offset: -6px;
+  outline-offset: calc(-1 * min(6px, 1.154cqi));
 }
 /* A face: the head (the design's top row, or the back's title line) and the foot (the turn action) stay; only the
    body between them scrolls, and only when the face holds more than the card's height. */
@@ -116,11 +121,10 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--vc-gap) var(--vc-pad-x) 8px;
+  padding: var(--vc-gap) var(--vc-pad-x) min(8px, 1.538cqi);
   display: flex;
   flex-direction: column;
   gap: var(--vc-gap);
-  container-type: inline-size;
 }
 /* The foot wraps as whole items: the mastery line on one line, the turn action on its own when the two do
    not fit; nothing breaks inside a word. */
@@ -130,8 +134,8 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-  padding: 10px var(--vc-pad-x) var(--vc-pad-bottom);
+  gap: min(12px, 2.308cqi);
+  padding: min(10px, 1.923cqi) var(--vc-pad-x) var(--vc-pad-bottom);
 }
 .c-vcard__foot--back {
   justify-content: flex-start;
@@ -149,12 +153,12 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 8px 12px;
+  gap: min(8px, 1.538cqi) min(12px, 2.308cqi);
 }
 .c-vcard__tags {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: min(8px, 1.538cqi);
   flex-wrap: wrap;
   min-width: 0;
 }
@@ -162,29 +166,29 @@
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: max(11px, min(13px, 2.5cqi));
   font-weight: 600;
   letter-spacing: 0.04em;
-  padding: 5px 10px;
-  border-radius: 6px;
+  padding: min(5px, 0.962cqi) min(10px, 1.923cqi);
+  border-radius: min(6px, 1.154cqi);
   background: var(--vcard-accent);
   color: var(--vcard-on-accent);
 }
 .c-vcard--han .c-vcard__level {
-  font-size: 14px;
+  font-size: max(11px, min(14px, 2.692cqi));
   letter-spacing: 0.1em;
-  border-radius: 3px;
+  border-radius: min(3px, 0.577cqi);
   background: var(--vcard-seal);
   color: var(--vcard-on-seal);
 }
 .c-vcard__source {
-  font-size: 13px;
+  font-size: max(11px, min(13px, 2.5cqi));
   color: var(--vcard-ink2);
 }
 /* The word's actions, quiet under its reading (play, and Save where a word is met). */
 .c-vcard__actions {
   display: flex;
-  gap: 8px;
+  gap: min(8px, 1.538cqi);
 }
 .c-vcard__disc {
   width: 44px;
@@ -212,7 +216,7 @@
 .c-vcard__ident {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: min(8px, 1.538cqi);
 }
 /* The top row's right-hand item. English: the outlined part-of-speech pill; Chinese: the plain line (名词 · danh từ). */
 .c-vcard__top .c-vcard__pos {
@@ -221,24 +225,24 @@
 .c-vcard__pos {
   align-self: flex-start;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: max(11px, min(13px, 2.5cqi));
   font-weight: 500;
   color: var(--vcard-ink2);
   border: 1px solid var(--vcard-line);
-  padding: 4px 10px;
+  padding: min(4px, 0.769cqi) min(10px, 1.923cqi);
   border-radius: 999px;
 }
 .c-vcard--han .c-vcard__pos {
   border: 0;
   padding: 0;
-  font-size: 14px;
+  font-size: max(11px, min(14px, 2.692cqi));
   font-weight: 400;
 }
 /* The headword never breaks inside a word: a phrase wraps between words, a long word shrinks its type to
    the column (`--len`, its longest run; `cqi`, the face's width). The design's size is the ceiling. */
 .c-vcard__word {
   margin: 0;
-  font-size: min(60px, calc(165cqi / var(--len, 1)), 7.5dvh);
+  font-size: min(60px, 11.538cqi, calc(140cqi / var(--len, 1)), 7.5dvh);
   line-height: 1;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -247,7 +251,7 @@
   hyphens: none;
 }
 .c-vcard__word--han {
-  font-size: min(104px, calc(78cqi / var(--len, 1)), 12dvh);
+  font-size: min(104px, 20cqi, calc(70cqi / var(--len, 1)), 12dvh);
   font-weight: 900;
   line-height: 1.05;
   letter-spacing: 0;
@@ -256,25 +260,25 @@
   ruby-position: over;
 }
 .c-vcard__word rt {
-  font-size: max(13px, 0.21em);
+  font-size: max(12px, 0.21em);
   font-weight: 400;
   color: var(--vcard-ink2);
-  padding-bottom: 4px;
+  padding-bottom: min(4px, 0.769cqi);
 }
 .c-vcard__ipa-rows {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 18px;
+  gap: min(8px, 1.538cqi) min(18px, 3.462cqi);
 }
 .c-vcard__ipa {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 17px;
+  gap: min(8px, 1.538cqi);
+  font-size: max(12px, min(17px, 3.269cqi));
   color: var(--vcard-ink2);
 }
 .c-vcard__ipa b {
-  font-size: 12px;
+  font-size: max(12px, min(12px, 2.308cqi));
   font-weight: 600;
   color: var(--vcard-ink3);
 }
@@ -286,7 +290,7 @@
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 8px 16px;
+  gap: min(8px, 1.538cqi) min(16px, 3.077cqi);
 }
 .c-vcard__hanrow .c-vcard__word {
   flex: 0 1 auto;
@@ -298,32 +302,29 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-  padding-bottom: 14px;
-  font-size: 20px;
+  gap: min(4px, 0.769cqi);
+  padding-bottom: min(14px, 2.692cqi);
+  font-size: min(20px, 3.846cqi);
   font-weight: 600;
   letter-spacing: 0.08em;
 }
 
 /* ---- Illustration: only when there is one ---- */
-/* The frame shrinks with the viewport's height (the design's 180px / 150px the ceiling) and drops out on a card with
-   little height (`data-fit="short"`) rather than pushing the content out. */
+/* The frame is always drawn when there is an image: it scales with the card (the design's 180px / 150px at s = 1) and
+   yields to a short viewport; it never drops out - the body scrolls instead (the human, 2026-10-12). */
 .c-vcard__art {
   margin: 0;
   flex: none;
-  height: clamp(72px, calc(24dvh - 60px), 180px);
-  border-radius: 14px;
+  height: min(34.615cqi, clamp(72px, calc(24dvh - 60px), 180px));
+  border-radius: min(14px, 2.692cqi);
   background: var(--vcard-surface-alt);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.c-vcard[data-fit='short'] .c-vcard__art {
-  display: none;
-}
 .c-vcard--han .c-vcard__art {
-  height: clamp(64px, calc(20dvh - 48px), 150px);
+  height: min(28.846cqi, clamp(64px, calc(20dvh - 48px), 150px));
   border-radius: 0;
   background: transparent;
   border-top: 1px solid var(--vcard-line);
@@ -352,12 +353,12 @@
 .c-vcard__section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: min(6px, 1.154cqi);
   min-width: 0;
 }
 .c-vcard__label {
   margin: 0;
-  font-size: 12px;
+  font-size: max(11px, min(12px, 2.308cqi));
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -370,18 +371,18 @@
 .c-vcard__meaning {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: min(6px, 1.154cqi);
 }
 .c-vcard__meaning p {
   margin: 0;
 }
 .c-vcard__meaning-text {
-  font-size: 22px;
+  font-size: max(13px, min(22px, 4.231cqi));
   line-height: 1.35;
   font-weight: 600;
 }
 .c-vcard__definition {
-  font-size: 15px;
+  font-size: max(13px, min(15px, 2.885cqi));
   line-height: 1.5;
   color: var(--vcard-ink2);
 }
@@ -390,18 +391,18 @@
 }
 .c-vcard__pair {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 16px 20px;
-  padding-top: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 32.692cqi), 1fr));
+  gap: min(16px, 3.077cqi) min(20px, 3.846cqi);
+  padding-top: min(18px, 3.462cqi);
   border-top: 1px solid var(--vcard-line);
 }
 .c-vcard--han .c-vcard__pair {
-  padding-top: 14px;
+  padding-top: min(14px, 2.692cqi);
 }
 .c-vcard__lines,
 .c-vcard__note {
   margin: 0;
-  font-size: 15px;
+  font-size: max(13px, min(15px, 2.885cqi));
   line-height: 1.55;
 }
 .c-vcard__muted {
@@ -413,14 +414,14 @@
 .c-vcard__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: min(6px, 1.154cqi);
 }
 .c-vcard__chip {
   display: inline-flex;
   align-items: center;
-  font-size: 13px;
+  font-size: max(11px, min(13px, 2.5cqi));
   font-weight: 500;
-  padding: 3px 10px;
+  padding: min(3px, 0.577cqi) min(10px, 1.923cqi);
   color: var(--vcard-ink);
   border: 1px solid var(--vcard-line);
   border-radius: 999px;
@@ -430,10 +431,10 @@
   display: inline-flex;
   align-items: center;
   vertical-align: middle;
-  font-size: 12px;
+  font-size: max(11px, min(12px, 2.308cqi));
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 2px min(8px, 1.538cqi);
+  border-radius: min(6px, 1.154cqi);
   background: var(--vcard-surface-alt);
   color: var(--vcard-ink2);
   white-space: nowrap;
@@ -442,22 +443,22 @@
 /* ---- Radical ---- */
 .c-vcard__radical {
   display: flex;
-  gap: 16px;
+  gap: min(16px, 3.077cqi);
   align-items: center;
 }
 .c-vcard__radical + .c-vcard__radical {
-  margin-top: 10px;
+  margin-top: min(10px, 1.923cqi);
 }
 .c-vcard__radical-glyph {
   flex: none;
-  width: 56px;
-  height: 56px;
+  width: min(56px, 10.769cqi);
+  height: min(56px, 10.769cqi);
   border: 1.5px solid var(--vcard-seal);
   color: var(--vcard-seal);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36px;
+  font-size: min(36px, 6.923cqi);
   font-weight: 600;
 }
 
@@ -466,25 +467,25 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
+  gap: min(12px, 2.308cqi);
   flex-wrap: wrap;
 }
 .c-vcard__backword {
-  font-size: 26px;
+  font-size: min(26px, 5cqi);
   font-weight: 700;
   letter-spacing: -0.01em;
   overflow-wrap: normal;
 }
 .c-vcard--han .c-vcard__backword > span:first-child {
-  font-size: 34px;
+  font-size: min(34px, 6.538cqi);
   font-weight: 900;
 }
 .c-vcard--han .c-vcard__backword .c-vcard__muted {
-  font-size: 17px;
+  font-size: max(13px, min(17px, 3.269cqi));
   font-weight: 400;
 }
 .c-vcard__backtitle {
-  font-size: 13px;
+  font-size: max(11px, min(13px, 2.5cqi));
   color: var(--vcard-ink2);
 }
 .c-vcard__examples {
@@ -493,26 +494,26 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: min(14px, 2.692cqi);
 }
 .c-vcard__example {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 20px;
-  border-radius: 14px;
+  gap: min(10px, 1.923cqi);
+  padding: min(20px, 3.846cqi);
+  border-radius: min(14px, 2.692cqi);
   background: var(--vcard-surface-alt);
 }
 .c-vcard--han .c-vcard__example {
-  gap: 8px;
-  padding: 18px 20px;
+  gap: min(8px, 1.538cqi);
+  padding: min(18px, 3.462cqi) min(20px, 3.846cqi);
   border-radius: 0;
 }
 .c-vcard__example p {
   margin: 0;
 }
 .c-vcard__example-label {
-  font-size: 12px;
+  font-size: max(11px, min(12px, 2.308cqi));
   font-weight: 600;
   color: var(--vcard-ink3);
 }
@@ -520,18 +521,18 @@
   font-weight: 400;
 }
 .c-vcard__example-text {
-  font-size: 19px;
+  font-size: max(13px, min(19px, 3.654cqi));
   line-height: 1.45;
   font-weight: 500;
 }
 .c-vcard--han .c-vcard__example-text {
-  font-size: 24px;
+  font-size: max(13px, min(24px, 4.615cqi));
   line-height: 1.5;
   font-weight: 400;
 }
 .c-vcard__example-reading,
 .c-vcard__example-translation {
-  font-size: 15px;
+  font-size: max(13px, min(15px, 2.885cqi));
   line-height: 1.5;
 }
 .c-vcard__example-reading {
@@ -544,7 +545,7 @@
   color: var(--vcard-ink);
 }
 .c-vcard__example-note {
-  font-size: 14px;
+  font-size: max(13px, min(14px, 2.692cqi));
   line-height: 1.5;
   color: var(--vcard-ink2);
 }
@@ -572,15 +573,15 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
+  gap: min(4px, 0.769cqi) min(8px, 1.538cqi);
 }
 .c-vcard__stage {
-  font-size: 14px;
+  font-size: max(11px, min(14px, 2.692cqi));
   font-weight: 600;
   white-space: nowrap;
 }
 .c-vcard__due {
-  font-size: 13px;
+  font-size: max(11px, min(13px, 2.5cqi));
   color: var(--vcard-ink3);
   white-space: nowrap;
 }
@@ -602,7 +603,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: min(12px, 2.308cqi);
   container-type: inline-size;
 }
 .c-vcard--review-front .c-vcard__word {
@@ -618,13 +619,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: min(10px, 1.923cqi);
   flex-wrap: wrap;
 }
 
 /* ---- The stroke-order block a screen places inside the card (Chinese): in the card's colours ---- */
 .c-vcard .c-vcard__body [class$='-strokes__label'] {
-  font-size: 12px;
+  font-size: max(11px, min(12px, 2.308cqi));
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--vcard-ink3);

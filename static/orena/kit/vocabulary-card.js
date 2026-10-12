@@ -353,7 +353,8 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
 /* Fits each card to the height it has (rule 49, CLAUDE.md 6b). `viewport: true` (Word Detail, a browsing page): the
    card's max-height is the visible height of its scrolling column below the card's top, so on arrival the whole card -
    actions included - is in view. Otherwise the card already sits in a bounded slot (Review's face, the feed's card).
-   Either way a card with little height drops its illustration first (`data-fit="short"`) before its body scrolls. */
+   `data-fit` records whether the card had less than SHORT_CARD_PX (information only): no content is dropped on a short
+   card - its body scrolls inside it, head and foot fixed (the human, 2026-10-12). */
 export const SHORT_CARD_PX = 620;
 
 /* The top of the bottom chrome drawn over the page (the phone bar and its orb), or Infinity when there is none. */

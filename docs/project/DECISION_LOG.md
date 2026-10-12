@@ -5746,6 +5746,15 @@ like the design, not only follow its layout".
    card and its actions are in view without a page scroll, stopping above the floating phone bar and its orb; Review's
    and the feed's cards (focus routes, no phone bar) fill their slot. Review's Reveal and Hint keep the screen's own
    (app) button styles, per point 2.
+10. **The card scales as one composition (human, 2026-10-12, after a phone review: "too big and coarse ... loses the
+   card's designed look").** The design's 520px artboard is the reference: every content measurement - headword,
+   readings, labels, meaning, body and example text, tags, pills, chips, radical box, padding, gaps, radii, the double
+   rule's inset, the illustration's height - is `min(design px, design px / 5.2 cqi)`, i.e. the design value times
+   s = min(1, card width / 520) (cqi = the card's own width). Desktop (a card 520px or wider) is exactly as drawn; a
+   328px phone card is s = 0.63, the same card smaller (headword EN 37.8px, ZH 65.6px, meaning 13.9px, illustration
+   EN 113.5px / ZH 94.6px). Readability floors only: body, meaning and example text 13px, labels and tags 11px, pinyin
+   and IPA 12px. All content stays on a phone - the illustration no longer drops on a short card; a face taller than
+   its card scrolls in its body only, head and foot fixed. Buttons are exempt (the app's kit sizes, 44px targets).
 7. **Kept.** Every D-179 behaviour (modes, the recall face, grades outside the card, no Review bookmark, meaning
    order, reading guards, the pure mapper), the copy packs, and rule 49 (a fluid card whose padding scales with its
    width, the design's values as the ceiling).

@@ -320,27 +320,81 @@ const cardCss = readFileSync(new URL('../static/orena/kit/vocabulary-card.css', 
 const wordRule = cardCss.match(/\.c-vcard__word \{[^}]*\}/)[0];
 assert.match(wordRule, /overflow-wrap: normal/);
 assert.match(wordRule, /word-break: keep-all/);
-assert.match(wordRule, /font-size: min\(60px, calc\(165cqi \/ var\(--len, 1\)\), 7\.5dvh\)/, 'the reference size (60px) is the ceiling; the type shrinks to the width and to the viewport height');
-assert.match(cardCss, /\.c-vcard__word--han \{[^}]*font-size: min\(104px, calc\(78cqi \/ var\(--len, 1\)\), 12dvh\)/);
 assert.doesNotMatch(cardCss, /overflow-wrap: anywhere|word-break: break-all/, 'nothing lets a word break mid-word');
-// No fixed card size: only controls and glyph tiles are sized.
+// No fixed card size: only the kit-sized controls and the svg's own width are plain px.
 const sized = [...cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)]
   .filter(([, , body]) => /(^|\s|;)(width|height|min-width|min-height):\s*\d+px/.test(body))
   .map(([, selector]) => selector.trim());
-// Only controls, the svg's own width and the radical tile are sized in plain px; no card or face height is.
-assert.deepEqual(sized, ['.c-vcard__turn.o-btn', '.c-vcard__disc', '.c-vcard__art svg', '.c-vcard__radical-glyph'], `only fixed-size controls: ${sized.join(', ')}`);
+assert.deepEqual(sized, ['.c-vcard__turn.o-btn', '.c-vcard__disc', '.c-vcard__art svg'], `only fixed-size controls: ${sized.join(', ')}`);
 assert.doesNotMatch(cardCss.replace(/\/\*[\s\S]*?\*\//g, ''), /\.c-vcard(--[\w-]+)? \{[^}]*(^|[\s;])height:\s*\d+px/, 'no fixed card height');
-// One viewport (rule 49, CLAUDE.md 6b): spacing scales with the card's width AND the viewport's height, the design's
-// value the ceiling.
-assert.match(cardCss, /--vc-pad-top: min\(clamp\(20px, 6\.9cqi, 36px\), clamp\(12px, 3\.4dvh, 36px\)\)/);
-assert.match(cardCss, /--vc-gap: clamp\(10px, 2\.4dvh, 22px\)/);
+// THE SCALE (the human, 2026-10-12): every content size is the design's 520px artboard value scaled by the card's
+// width, s = min(1, width / 520), with readability floors only (body 13, labels 11, pinyin/IPA 12). Evaluated here.
+const cssRulesAll = [...cardCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)].map(([, sel, body]) => [sel.trim(), body]);
+const isButton = (sel) => /\.c-vcard__(turn|disc)|o-btn/.test(sel);
+for (const [sel, body] of cssRulesAll) {
+  if (isButton(sel)) continue;
+  for (const [, value] of body.matchAll(/font-size:\s*([^;]+);/g)) {
+    assert.ok(!/^\d+(\.\d+)?px$/.test(value.trim()), `${sel}: content font-size ${value} is a fixed px, not the width scale`);
+  }
+}
+function sizeOf(selector, prop, { width, height = 1080, len = 1, em = 16 }) {
+  const rule = cssRulesAll.find(([sel]) => sel === selector);
+  assert.ok(rule, `${selector} is styled`);
+  let expr = (rule[1].match(new RegExp(`(?:^|[;\\s])${prop}:\\s*([^;]+);`)) || [])[1];
+  assert.ok(expr, `${selector} sets ${prop}`);
+  expr = expr.replace(/var\(--len, 1\)/g, String(len))
+    .replace(/(\d+(?:\.\d+)?)px/g, '$1').replace(/(\d+(?:\.\d+)?)cqi/g, `($1*${width}/100)`)
+    .replace(/(\d+(?:\.\d+)?)dvh/g, `($1*${height}/100)`).replace(/(\d+(?:\.\d+)?)em/g, `($1*${em})`)
+    .replace(/\bcalc\(/g, '(').replace(/\bmin\(/g, 'Math.min(').replace(/\bmax\(/g, 'Math.max(').replace(/\bclamp\(/g, 'clampFn(');
+  return Function('clampFn', `return ${expr};`)((a, b, c) => Math.min(Math.max(a, b), c));
+}
+const at520 = { width: 520, height: 1080 };
+const at328 = { width: 328, height: 740 };
+const sizes = (at) => ({
+  headwordEn: sizeOf('.c-vcard__word', 'font-size', { ...at, len: 9 }),
+  headwordZh: sizeOf('.c-vcard__word--han', 'font-size', { ...at, len: 2 }),
+  meaning: sizeOf('.c-vcard__meaning-text', 'font-size', at),
+  definition: sizeOf('.c-vcard__definition', 'font-size', at),
+  body: sizeOf('.c-vcard__lines,\n.c-vcard__note', 'font-size', at),
+  exampleEn: sizeOf('.c-vcard__example-text', 'font-size', at),
+  exampleZh: sizeOf('.c-vcard--han .c-vcard__example-text', 'font-size', at),
+  label: sizeOf('.c-vcard__label', 'font-size', at),
+  level: sizeOf('.c-vcard__level', 'font-size', at),
+  chip: sizeOf('.c-vcard__chip', 'font-size', at),
+  ipa: sizeOf('.c-vcard__ipa', 'font-size', at),
+  regionLabel: sizeOf('.c-vcard__ipa b', 'font-size', at),
+  artEn: sizeOf('.c-vcard__art', 'height', at),
+  artZh: sizeOf('.c-vcard--han .c-vcard__art', 'height', at),
+  radical: sizeOf('.c-vcard__radical-glyph', 'width', at),
+  pad: sizeOf('.c-vcard', '--vc-pad-x', at),
+});
+const desk = sizes(at520);
+// s = 1 at a 520px card: the design's own values.
+assert.deepEqual(
+  Object.fromEntries(Object.entries(desk).map(([k, v]) => [k, Math.round(v * 100) / 100])),
+  { headwordEn: 60, headwordZh: 104, meaning: 22, definition: 15, body: 15, exampleEn: 19, exampleZh: 24, label: 12, level: 13, chip: 13, ipa: 17, regionLabel: 12, artEn: 180, artZh: 150, radical: 56, pad: 40 },
+  'at a 520px card everything is the design value (s = 1)',
+);
+const phoneSizes = sizes(at328);
+const s328 = 328 / 520;
+assert.ok(Math.abs(phoneSizes.headwordEn - 60 * s328) < 0.1, `EN headword scales: ${phoneSizes.headwordEn}`);
+assert.ok(Math.abs(phoneSizes.headwordZh - 104 * s328) < 0.1, `ZH headword scales: ${phoneSizes.headwordZh}`);
+assert.ok(Math.abs(phoneSizes.artEn - 180 * s328) < 0.1, `EN illustration scales: ${phoneSizes.artEn}`);
+assert.ok(Math.abs(phoneSizes.artZh - 150 * s328) < 0.1, `ZH illustration scales: ${phoneSizes.artZh}`);
+assert.ok(Math.abs(phoneSizes.radical - 56 * s328) < 0.1 && Math.abs(phoneSizes.pad - 40 * s328) < 0.1);
+for (const key of ['meaning', 'definition', 'body', 'exampleEn', 'exampleZh']) assert.ok(phoneSizes[key] >= 13, `${key} keeps 13px: ${phoneSizes[key]}`);
+for (const key of ['label', 'level', 'chip']) assert.ok(phoneSizes[key] >= 11, `${key} keeps 11px: ${phoneSizes[key]}`);
+for (const key of ['ipa', 'regionLabel']) assert.ok(phoneSizes[key] >= 12, `${key} keeps 12px: ${phoneSizes[key]}`);
+assert.ok(phoneSizes.meaning < 22 && phoneSizes.body < 15 && phoneSizes.label < 12, 'no old larger mobile sizes');
+console.log(`  at a 328px card: ${Object.entries(phoneSizes).map(([k, v]) => `${k} ${v.toFixed(1)}`).join(', ')}`);
+// The card is its own size container (cqi = the card's width): no container inside it but the recall face.
+assert.match(cardCss, /\.c-vcard \{[^}]*container-type: inline-size/);
+assert.doesNotMatch(cardCss.match(/\.c-vcard__body \{[^}]*\}/)[0], /container-type/);
 // Word Detail's card is never taller than the visible column below it; Review's and the feed's fill their slot.
 assert.match(cardCss, /\.c-vcard--detail \{[^}]*max-height: var\(--vcard-fit, calc\(100dvh - 180px\)\)/, 'the detail card has a max-height tied to the viewport');
 assert.match(cardCss, /\.c-vcard--feed,\s*\.c-vcard--review-back \{[^}]*max-height: 100%/);
-// The illustration's height is clamped against the viewport and drops out on a short card.
-assert.match(cardCss, /\.c-vcard__art \{[^}]*height: clamp\(72px, calc\(24dvh - 60px\), 180px\)/);
-assert.match(cardCss, /\.c-vcard--han \.c-vcard__art \{[^}]*height: clamp\(64px, calc\(20dvh - 48px\), 150px\)/);
-assert.match(cardCss, /\.c-vcard\[data-fit='short'\] \.c-vcard__art \{[^}]*display: none/);
+// All content stays on a phone: no rule drops the illustration (or anything) on a short card.
+assert.doesNotMatch(cardCss, /data-fit/, 'no short-card rule drops content');
 // The head and the foot are outside the face body (the only scroll region).
 for (const face of ['front', 'back']) {
   const markup = faceOf(enCard, face);
@@ -373,7 +427,7 @@ fitVocabularyCards({ querySelectorAll: () => [tall, phone] }, { viewport: true }
 assert.equal(tall.props.get('--vcard-fit'), '864px');
 assert.equal(tall.dataset.fit, 'full');
 assert.equal(phone.props.get('--vcard-fit'), '444px', 'measured as if the column were at its top');
-assert.equal(phone.dataset.fit, 'short', 'a short card drops its illustration first');
+assert.equal(phone.dataset.fit, 'short', 'recorded as short (information only; nothing is dropped)');
 // The phone bar floats over the column's bottom (lead's 360x740 check: the column ran to 740, the bar from ~650 and
 // its orb higher): the fit stops above the highest of them, so the card and its turn action are never under it.
 const underBar = fakeCard({ top: 126, columnBottom: 740 });
@@ -384,7 +438,7 @@ const phoneRoot = {
 };
 fitVocabularyCards(phoneRoot, { viewport: true });
 assert.equal(underBar.props.get('--vcard-fit'), '474px', 'max-height ends above the bar and its orb (616 - 126 - 16)');
-assert.equal(underBar.dataset.fit, 'short', 'so the illustration drops and the meaning shows on arrival');
+assert.equal(underBar.dataset.fit, 'short', 'recorded as short; the body scrolls, nothing is dropped');
 const hiddenBar = fakeCard({ top: 126, columnBottom: 740 });
 fitVocabularyCards({ querySelectorAll: () => [hiddenBar], ownerDocument: { querySelectorAll: () => [rect(0, 0)] } }, { viewport: true });
 assert.equal(hiddenBar.props.get('--vcard-fit'), '598px', 'a bar that is not displayed (desktop, focus routes) changes nothing');
