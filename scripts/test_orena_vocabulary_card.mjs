@@ -747,6 +747,32 @@ console.log(`  model fit at 328 x 474: ${fitReport.join('; ')}`);
   containCard(jumpy);
   assert.equal(jumpy.dataset.vcardFits, 'yes', 'a re-wrapping face still fits');
 }
+// Review's revealed card (review-back, the learner's mastery footer in its foot) fills a face TALLER than its content:
+// its body is stretched, so its scrollHeight is the slot. The fit reads the content (the body's children), not the
+// stretch: a card that fits is left at s = 1 with fits = yes (lead's check of e9e5f3d1: s 0.933, fits no, all visible).
+{
+  const props = new Map();
+  const k = (n) => Number(props.get(n) ?? 1);
+  const available = 560;
+  const head = 0;
+  const foot = () => 64; // the mastery line and the turn action (not scaled)
+  const contentHeight = () => 300 * (0.4 * k('--vc-ks') + 0.6 * k('--vc-kt'));
+  const bodyTop = 0;
+  const body = {
+    ownerDocument: { defaultView: { getComputedStyle: () => ({ paddingTop: '12', paddingBottom: '8', marginBottom: '0' }) } },
+    getBoundingClientRect: () => ({ top: bodyTop, height: available - foot() }),
+    get scrollHeight() { return available - foot(); }, // stretched: the slot, not the content
+    get children() { return [{ getBoundingClientRect: () => ({ bottom: bodyTop + 12 + contentHeight(), height: contentHeight(), width: 300 }) }]; },
+  };
+  const parts = { head: { getBoundingClientRect: () => ({ height: head }) }, foot: { getBoundingClientRect: () => ({ height: foot() }) }, body };
+  const face = { hidden: false, clientHeight: available, querySelector: (q) => parts[q.match(/c-vcard__(\w+)/)[1]] };
+  const reviewBack = { props, dataset: {}, style: { setProperty: (n, v) => props.set(n, String(v)) }, querySelectorAll: () => [face] };
+  const result = containCard(reviewBack);
+  assert.equal(result.s, 1, `a stretched review-back card that fits is not shrunk (need ${result.need})`);
+  assert.equal(reviewBack.props.get('--vc-ks'), '1.0000');
+  assert.equal(reviewBack.dataset.vcardFits, 'yes');
+  assert.match(String(vocabularyCard(en, { mode: 'review-back', learner: learnerState({ review_stage: 2, next_review_at: '' }), slots: { footer: { stage: 'Mới', due: 'Hôm nay' } } })), /<div class="c-vcard__foot">\s*<div class="c-vcard__mastery">/, 'the review-back card carries the mastery footer, in its foot (counted once, with the foot)');
+}
 // It re-fits on resize (every screen) and on turn (the other face fits on its own).
 const kitSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
 assert.match(kitSrc.slice(kitSrc.indexOf('export function bindVocabularyCards')), /containCard\(card\)/, 'turning a card fits the face it shows');

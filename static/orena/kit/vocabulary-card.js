@@ -413,15 +413,36 @@ export function containStep(available, need, { ks = 1, kt = 1, ka = 1 } = {}, pr
   return { ...knobsFor(phase, next, { ks, kt }), done: false };
 }
 
-/* The face showing: the height its content needs (head + the body's whole content + foot) and the height it has. */
+/* The height a face body's CONTENT takes: from the body's top to its lowest child's bottom, plus its bottom padding.
+   Not scrollHeight: a body that fills a slot taller than its content (Review's revealed face, the feed) is stretched,
+   and its scrollHeight is then the slot - the face would always read as exactly full, and the loop would shrink a card
+   that already fits (lead's check of e9e5f3d1: Review's card at s 0.933 with `fits` no, though wholly visible). */
+function bodyContentHeight(body) {
+  const children = body?.children;
+  if (!children || typeof body.getBoundingClientRect !== 'function') return body ? body.scrollHeight || 0 : 0;
+  const view = body.ownerDocument?.defaultView;
+  const style = view?.getComputedStyle ? view.getComputedStyle(body) : null;
+  const top = body.getBoundingClientRect().top;
+  const paddingTop = style ? parseFloat(style.paddingTop) || 0 : 0;
+  const paddingBottom = style ? parseFloat(style.paddingBottom) || 0 : 0;
+  let bottom = top + paddingTop;
+  for (const child of children) {
+    const rect = child.getBoundingClientRect();
+    if (rect.height <= 0 && rect.width <= 0) continue;
+    const margin = view?.getComputedStyle ? parseFloat(view.getComputedStyle(child).marginBottom) || 0 : 0;
+    bottom = Math.max(bottom, rect.bottom + margin);
+  }
+  return bottom - top + paddingBottom;
+}
+
+/* The face showing: the height its content needs (head + the body's content + foot) and the height it has. */
 function faceHeights(card) {
   const face = [...card.querySelectorAll('.c-vcard__face')].find((node) => !node.hidden);
   if (!face) return null;
   const part = (name) => face.querySelector(`:scope > .c-vcard__${name}`);
   const head = part('head')?.getBoundingClientRect().height || 0;
   const foot = part('foot')?.getBoundingClientRect().height || 0;
-  const body = part('body');
-  const need = head + (body ? body.scrollHeight : 0) + foot;
+  const need = head + bodyContentHeight(part('body')) + foot;
   return { available: face.clientHeight, need };
 }
 
@@ -453,7 +474,8 @@ export function containCard(card) {
   const s = natural.need > 0 ? Math.min(1, heights.need / natural.need) : 1;
   card.style.setProperty('--vcard-s', s.toFixed(4));
   card.dataset.vcardS = s.toFixed(3);
-  card.dataset.vcardFits = heights.need <= heights.available + 0.5 ? 'yes' : 'no';
+  // clientHeight is whole pixels, the rects are not: within a pixel is inside.
+  card.dataset.vcardFits = heights.need <= heights.available + 1 ? 'yes' : 'no';
   return { s, ...scales, need: heights.need, available: heights.available, natural: natural.need };
 }
 

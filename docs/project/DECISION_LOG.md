@@ -5765,7 +5765,10 @@ like the design, not only follow its layout".
    fits to a pixel inside the box, so a face is never left a hair over (lead's 360x740 check: the ZH front stopped at
    s 0.803 with `fits` no). `--vcard-s` / `data-vcard-s` record the achieved height scale, `data-vcard-fits` whether it
    fits. The radical box stays a square beside its text: it follows spacing down to a 32px floor (or its width-scaled
-   size when smaller) and its glyph is sized from the box (36/56), so the glyph never runs onto the text. Hard floors, reached only when the box needs them: body, meaning and example text 11px, labels and
+   size when smaller) and its glyph is sized from the box (36/56), so the glyph never runs onto the text. The face's need is
+   its head, foot and the body's CONTENT (to its lowest child), not the body's scrollHeight: a card that fills a taller
+   slot (Review's revealed face) has a stretched body, which read as always full and was shrunk while it fit (lead's
+   check of e9e5f3d1: s 0.933, fits no); within a pixel of the box counts as inside. Hard floors, reached only when the box needs them: body, meaning and example text 11px, labels and
    tags 9.5px, pinyin and IPA 10px (point 10's 13/11/12 hold at full height). Every element stays, the illustration
    included; the buttons keep their kit sizes (44px+). It fits again on resize (Word Detail, Review, the feed), on
    turn (the other face) and once the web fonts arrive. No `overflow: auto/scroll` on the card, a face or its body
