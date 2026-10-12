@@ -225,3 +225,60 @@ def test_admin_reads(world):
     assert world.client.get("/api/admin/grammar/coverage", params={"language": "en"}).json()["complete"] is True
     assert world.client.get("/api/admin/grammar/points", params={"language": "en", "status": "published"}).json()[
         "points"][0]["id"] == "en.a"
+
+
+def _imported_version_ids(world, bodies):
+    m = manifest(bodies)
+    response = world.upload(zip_package(m, bodies), package_hash=m["package_hash"])
+    assert response.status_code == 201, response.text
+    return [next(v for v in world.client.get(f"/api/admin/grammar/points/{b['id']}").json()["versions"]
+                 if v["version"] == b["version"])["id"] for b in bodies]
+
+
+def _review_status(world, point_id):
+    return world.client.get(f"/api/admin/grammar/points/{point_id}").json()["versions"][0]["review_status"]
+
+
+def test_bulk_review_accepts_a_queue_in_one_request_and_reports_refusals(world):
+    ids = _imported_version_ids(world, [body("en.a"), body("en.b", sequence=2), body("en.c", sequence=3)])
+    world.audits.clear()
+    unknown = "00000000-0000-0000-0000-000000000000"
+    done = world.client.post("/api/admin/grammar/review", headers=ORIGIN,
+                             json={"version_ids": [*ids, unknown, ids[0]], "decision": "accept", "reason": "ok"})
+    assert done.status_code == 200 and done.headers["cache-control"] == "no-store"
+    assert done.json()["reviewed"] == ids
+    assert [f["version_id"] for f in done.json()["failed"]] == [unknown]
+    assert done.json()["failed"][0]["code"] == "grammar_version_not_found"
+    assert [_review_status(world, p) for p in ("en.a", "en.b", "en.c")] == ["accepted"] * 3
+    assert len(world.audits) == 1
+    action, kw = world.audits[0]
+    assert action == "admin.grammar_review_bulk" and kw["payload"] == {"decision": "accept", "count": 3, "failed": 1}
+    # already closed: refused per item, never hidden
+    again = world.client.post("/api/admin/grammar/review", headers=ORIGIN,
+                              json={"version_ids": ids[:1], "decision": "accept"}).json()
+    assert again["reviewed"] == [] and again["failed"][0]["code"] == "grammar_review_closed"
+
+
+def test_bulk_review_refuses_a_wrong_decision_and_malformed_bodies(world):
+    ids = _imported_version_ids(world, [body("en.a")])
+
+    def post(payload):
+        return world.client.post("/api/admin/grammar/review", headers=ORIGIN, json=payload)
+
+    refused = post({"version_ids": ids, "decision": "maybe"}).json()
+    assert refused["reviewed"] == [] and refused["failed"][0]["code"] == "grammar_review_invalid"
+    reject = post({"version_ids": ids, "decision": "reject"}).json()
+    assert reject["failed"][0]["code"] == "grammar_review_reason_required"
+    assert _review_status(world, "en.a") == "imported"
+    assert post({"version_ids": [], "decision": "accept"}).status_code == 422
+    assert post({"version_ids": ["x" * 65], "decision": "accept"}).status_code == 422
+    assert post({"version_ids": ["a"] * 1001, "decision": "accept"}).status_code == 422
+
+
+def test_bulk_review_needs_the_admin_and_the_console_origin(world):
+    payload = {"version_ids": ["a"], "decision": "accept"}
+    assert world.client.post("/api/admin/grammar/review", json=payload).status_code == 403
+    assert world.client.post("/api/admin/grammar/review", headers={"origin": "http://evil.example"},
+                             json=payload).status_code == 403
+    world.admin = False
+    assert world.client.post("/api/admin/grammar/review", headers=ORIGIN, json=payload).status_code == 403

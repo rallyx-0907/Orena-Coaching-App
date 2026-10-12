@@ -5458,7 +5458,93 @@ Delegated Architecture Reviewer): APPROVE WITH CONDITIONS at b962e957, APPROVE a
 12. **Strict cap read refuses turns on a cold worker.** A worker that has never read the settings store refuses agent
    turns until it can, even on a deployment with no cap set; this is the safe direction (review P3 note).
 
-## D-17H - AI cost per account: migration 0026 promoted into the chain (source control only)
+## D-173 - First public-beta release of main 9bf88666 to :8000, with migration 20261008_0030
+
+2026-10-11, explicit human authorizations, after release gates 1-4 passed (`docs/reviews/RELEASE_GATE_8021_2026-10-11.md`):
+"Authorize deploy 9bf88666 to :8000" and "Cho phép áp migration 0030 lên :8000".
+
+1. **Release.** Image `orena:main-9bf88666`, built from `git archive 9bf88666a6b521124f8adf4f8df301b93efcc093` after
+   `node scripts/build_public_pages.mjs --release --effective-date 2026-10-11`. The repository keeps `effective_date`
+   null; the stamped date exists only in the release tree and image (D-162).
+2. **Migration.** `20261008_0030` (grammar content store, additive; independent review REV3) is applied to :8000 by
+   `scripts/product_migration_pack.py apply` with `--authorization D-173`, after a fresh `product_backup.ps1` backup and a
+   passing `product_migration_rehearsal.ps1` on a copy of that backup, with web and worker stopped.
+3. **Pinned in the :8000 operator env.**
+   - `AGENT_VOICE_ENABLED=false`: voice is off for the first release. ADM-POL P2-3 blocks voice activation.
+   - `ORENA_QUOTA_ENFORCEMENT=on` and `ORENA_QUOTA_METERS` = all five meters.
+   - `FEEDBACK_RETENTION_SWEEP=on` and `AGENT_TURN_RETENTION_SWEEP=on`. Pinning keeps these deletion gates in the
+     environment rather than in Admin (D-172).
+4. **Operator.** The human runs every :8000 step (D-127), using the operator script prepared by the Claude lane. Daily
+   backup rotation (`runtime_backup.py rotate --days 30`) is scheduled after the deploy.
+
+## D-174 - Grammar corpus published on :8000
+
+2026-10-11, explicit human authorization ("cho phép"). The authorization answers the question whether the two Grammar packages
+may be imported and published on :8000 through Admin.
+
+1. **Packages.** These are the packages already published on :8021. The zips are kept outside Git in
+   `%LOCALAPPDATA%\orena-product\content\grammar\2026-10-08\`:
+   - `en-complete.zip`: batch `2026-10-08.en.complete`, package hash `66a941e6…`, 215 points.
+   - `zh-complete.zip`: batch `2026-10-08.zh.complete`, package hash `6ae62b58…`, 380 points.
+2. **Procedure.** The reviewed Admin path (`proposals/ADMIN_GRAMMAR_UI.md`), run by the human on :8000 (D-127), EN then
+   ZH:
+   1. `#/admin/imports/grammar` → Check (a dry run).
+   2. Rights basis Orena original, attested (HG-3).
+   3. Import.
+   4. `#/admin/grammar` → Accept all shown, with a reason.
+   5. Publish accepted, attested.
+
+   The expected result is EN 215 and ZH 380 published, with the same package hashes as :8021.
+3. **Why.** After migration 0030 (D-173), the learner Grammar surface on :8000 shows the honest empty state, because
+   no package was imported. It needs no code change.
+
+## D-175 - Phone Dictation keeps the Transcript while typing; the hint is an eye
+
+2026-10-11, human bug report on the phone (Listening workspace, Dictation mode), branch `fix/mobile-dictation` on
+`origin/main` 9bf88666. The number is assigned at merge. Client only: no server, schema or contract change.
+
+1. **"While typing a word I cannot see the transcript below, and I cannot scroll."** Root cause: the typing state of
+   mobile QA BUG-02 (`.s-listening.is-typing`, set while the answer box has focus and sized to `visualViewport`) set
+   `display: none` on `.s-listening__transcript`, so the Transcript and its scroll region were gone for as long as the
+   keyboard was open, and the space under the card stayed empty. Measured at 390x844 with the keyboard at half height
+   (visible 422 px): before, Transcript `none` and 121 px of empty room under the card; after, the Transcript's rows
+   fill everything under the card as their own scroll region - 212 px at 390x844 (296 px with a 40% keyboard), 160 px
+   at 360x740, 124 px at 375x667 - and the current line is framed by the existing pane observer. While typing the room
+   holds only the task (transport, answer, hint, Check) and those rows; the header (title, meta, mode switch and its
+   Back), the picture, seek bar, the card's label and the Transcript's title and hint return when typing ends (the
+   keyboard's own dismiss, or a tap outside the answer, ends typing; LEX-043's Back-closes-the-keyboard is therefore not
+   reachable on the phone while typing). The Transcript takes what the task leaves (`min-height: 0`), so on the
+   shortest screens it yields, never the answer box. No page scroll, no horizontal overflow in any measured state.
+2. **"In Listening the transcript area is far too small to read."** In Dictation on the phone the picture (veiled while
+   a line is unchecked) is the compact 96 px strip short phones already use, and when the card can run long (a checked
+   line's comparison, or the hint's live strip) the Transcript keeps at least 30% of the body while the card's stage
+   scrolls inside it, actions in view. Transcript body, before -> after: 390x844 unchecked 185 -> 285 px, checked 49 -> 164
+   px; 360x740 unchecked 92 -> 181 px, checked 49 -> 132 px. Desktop is unchanged (1920x1080, 1366x768).
+3. **"The hint should be an eye icon only, as little text as possible."** Human decision, deviating from frame 07, which
+   draws the hint as a text button with its ladder note beside it. On the phone the hint is a 46 px button with Lucide
+   `eye` (pinned `lucide-static@0.525.0`, already in `kit/icons.js`), its label ("Hint", "More hint (2/3)", "Hint 3/3 used",
+   EN/VI/ZH) kept as its `aria-label`, tooltip and visually hidden text; the ladder note is no longer printed and is its
+   `aria-describedby`; the put-away toggle (LEX-033) is a chevron (`chevron-up` / `chevron-down`) named the same way, so
+   two eyes never sit side by side; Check is the one wide, filled action - the geometry of the result row (LEX-037). The
+   desk keeps the frame's words.
+4. Gate: `scripts/test_orena_dictation_workspace.mjs` (the eye and its names in EN/VI/ZH, the note as description, the
+   phone hiding words and note and the desk hiding the glyph, no typing rule hiding the Transcript, the visible-viewport
+   sizing, the Dictation share after the short-phone floors). Recorded in `UI_BACKEND_GAPS.md` "Phone Dictation".
+
+## D-176 - Grammar "Accept all" is one server request, not a browser loop
+
+2026-10-12, human bug report (public Admin: 380 Chinese points stopped when another Admin section was opened).
+`POST /api/admin/grammar/review` takes `{version_ids (1..1000), decision, reason}` and applies each through the same store
+method as the single route (its own transaction and history event, same rules), per item and not all-or-nothing, because a
+refused version (closed, unknown, reason missing) must not block or hide the rest: the answer is `{reviewed, failed:
+[{version_id, code, message}]}`. One audit row per batch (`admin.grammar_review_bulk`: decision, count, failed); the
+per-version history events remain in the store. No schema change. The screen sends one request, so leaving it no longer
+stops the work. Publishing stays all-or-nothing (`/publish`).
+
+## D-177 - AI cost per account: migration 0026 promoted into the chain (source control only)
+
+(Placeholder D-17H until merge. The migration's own docstring keeps "D-17H": the file is bound to the rehearsal's
+execution digest, and editing it would void the rehearsal.)
 
 Date: 2026-10-12. Human instruction 2026-10-12 ("Chuẩn bị bước 1 và 2 cho 0026"), after :8000 logged
 "AI cost per account not recorded (ProgrammingError)": the AC-2 recorder (D-decision of 2026-10-04,
@@ -5475,7 +5561,7 @@ absent.
    step, D-127); evidence recorded with the review.
 4. **Not authorized here.** Merging, and applying 0026 to any runtime, are separate human gates. Once merged, every
    PostgreSQL runtime that takes the code must apply 0026 before it starts (startup refuses a schema below head), the same
-   operator path as 0030 (D-173, recorded on PR #128): backup, rehearsal, `product_migration_pack.py apply`.
+   operator path as 0030 (D-173): backup, rehearsal, `product_migration_pack.py apply`.
 5. **Legal text.** The published privacy page already states AI use and cost records are kept without content for 13
    months and deleted with the account (`docs/legal/public/privacy.*.json`, `account-deletion.*.json`); no public text
    changes. `docs/legal/DRAFT_PRIVACY.md` is a superseded draft and is not edited.

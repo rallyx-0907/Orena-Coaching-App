@@ -1,6 +1,6 @@
 # AI cost per account (AC-2) — proposal
 
-Status: PROMOTED in source control (D-17H, 2026-10-12): `migrations/versions/20261005_0026_ai_cost_records.py`.
+Status: PROMOTED in source control (D-177, 2026-10-12): `migrations/versions/20261005_0026_ai_cost_records.py`.
 Applied to no runtime by that change; applying it is the human's gate per runtime, after a backup and a rehearsal on a
 copy.
 
