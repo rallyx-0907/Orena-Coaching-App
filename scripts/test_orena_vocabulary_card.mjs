@@ -337,12 +337,12 @@ for (const [sel, body] of cssRulesAll) {
     assert.ok(!/^\d+(\.\d+)?px$/.test(value.trim()), `${sel}: content font-size ${value} is a fixed px, not the width scale`);
   }
 }
-function sizeOf(selector, prop, { width, height = 1080, len = 1, em = 16, ks = 1, kt = 1 }) {
+function sizeOf(selector, prop, { width, height = 1080, len = 1, em = 16, ks = 1, kt = 1, ka = 1 }) {
   const rule = cssRulesAll.find(([sel]) => sel === selector);
   assert.ok(rule, `${selector} is styled`);
   let expr = (rule[1].match(new RegExp(`(?:^|[;\\s])${prop}:\\s*([^;]+);`)) || [])[1];
   assert.ok(expr, `${selector} sets ${prop}`);
-  expr = expr.replace(/var\(--len, 1\)/g, String(len)).replace(/var\(--vc-ks, 1\)/g, String(ks)).replace(/var\(--vc-kt, 1\)/g, String(kt))
+  expr = expr.replace(/var\(--len, 1\)/g, String(len)).replace(/var\(--vc-ks, 1\)/g, String(ks)).replace(/var\(--vc-kt, 1\)/g, String(kt)).replace(/var\(--vc-ka, 1\)/g, String(ka))
     .replace(/(\d+(?:\.\d+)?)px/g, '$1').replace(/(\d+(?:\.\d+)?)cqi/g, `($1*${width}/100)`)
     .replace(/(\d+(?:\.\d+)?)dvh/g, `($1*${height}/100)`).replace(/(\d+(?:\.\d+)?)em/g, `($1*${em})`)
     .replace(/\bcalc\(/g, '(').replace(/\bmin\(/g, 'Math.min(').replace(/\bmax\(/g, 'Math.max(').replace(/\bclamp\(/g, 'clampFn(');
@@ -457,23 +457,32 @@ const hiddenBar = fakeCard({ top: 126, columnBottom: 740 });
 fitVocabularyCards({ querySelectorAll: () => [hiddenBar], ownerDocument: { querySelectorAll: () => [rect(0, 0)] } }, { viewport: true });
 assert.equal(hiddenBar.props.get('--vcard-fit'), '598px', 'a bar that is not displayed (desktop, focus routes) changes nothing');
 // CONTAIN (the human, 2026-10-12): s = min(widthScale, heightScale). The CSS gives the width scale; the fit gives the
-// height scale - spacing and the illustration (--vc-ks) first, the type (--vc-kt) last, never under the hard floors.
-const { containStep, containCard, CONTAIN_SPACE_MIN, CONTAIN_TYPE_MIN } = await import('../static/orena/kit/vocabulary-card.js');
-assert.deepEqual(containStep(500, 480), { ks: 1, kt: 1, done: true }, 'a face that fits is left at the width scale');
+// height scale in three phases - spacing first with the illustration held at >= 60% of its width-scaled height, then
+// the type with the illustration in proportion, then spacing alone - never under the hard floors.
+const { containStep, containCard, CONTAIN_SPACE_MIN, CONTAIN_ART_MIN, CONTAIN_TYPE_MIN, CONTAIN_SPACE_FLOOR } = await import('../static/orena/kit/vocabulary-card.js');
+const near = (a, b, eps = 1e-6) => Math.abs(a - b) < eps;
+assert.deepEqual(containStep(500, 480), { ks: 1, kt: 1, ka: 1, done: true }, 'a face that fits is left at the width scale');
 {
   const first = containStep(400, 500);
-  assert.equal(first.kt, 1, 'the type waits');
-  assert.ok(Math.abs(first.ks - 0.8) < 1e-9, 'spacing and art shrink first, by the ratio');
-  const floorSpace = containStep(100, 500, { ks: 0.8, kt: 1 });
-  assert.equal(floorSpace.ks, CONTAIN_SPACE_MIN, 'spacing stops at its minimum');
-  const typeNext = containStep(400, 500, { ks: CONTAIN_SPACE_MIN, kt: 1 });
-  assert.ok(typeNext.ks === CONTAIN_SPACE_MIN && Math.abs(typeNext.kt - 0.8) < 1e-9, 'then the type');
-  assert.equal(containStep(100, 500, { ks: CONTAIN_SPACE_MIN, kt: 0.9 }).kt, CONTAIN_TYPE_MIN, 'the type stops at its minimum');
-  assert.equal(containStep(100, 500, { ks: CONTAIN_SPACE_MIN, kt: CONTAIN_TYPE_MIN }).done, true, 'and the steps end');
+  assert.ok(first.kt === 1 && first.ks < 0.81 && first.ks > 0.79, `phase 1: spacing moves first, by the ratio (${first.ks})`);
+  assert.equal(first.ka, first.ks, 'the illustration follows spacing ...');
+  const deep = containStep(100, 500, { ks: 0.7, kt: 1, ka: 0.7 });
+  assert.equal(deep.ks, CONTAIN_SPACE_MIN, 'spacing stops at its minimum');
+  assert.equal(deep.ka, CONTAIN_ART_MIN, '... but stays at >= 60% of its width-scaled height while only spacing moves');
+  const typeNext = containStep(400, 500, { ks: CONTAIN_SPACE_MIN, kt: 1, ka: CONTAIN_ART_MIN });
+  assert.ok(typeNext.ks === CONTAIN_SPACE_MIN && typeNext.kt < 0.81 && typeNext.kt > 0.79, 'phase 2: then the type');
+  assert.ok(near(typeNext.ka, CONTAIN_ART_MIN * typeNext.kt), 'with the illustration in proportion');
+  const typeMin = containStep(100, 500, { ks: CONTAIN_SPACE_MIN, kt: 0.9, ka: 0.54 });
+  assert.equal(typeMin.kt, CONTAIN_TYPE_MIN, 'the type stops at its minimum');
+  const last = containStep(400, 500, { ks: CONTAIN_SPACE_MIN, kt: CONTAIN_TYPE_MIN, ka: CONTAIN_ART_MIN * CONTAIN_TYPE_MIN });
+  assert.ok(last.ks < CONTAIN_SPACE_MIN && last.kt === CONTAIN_TYPE_MIN, 'phase 3: spacing alone again');
+  const end = { ks: CONTAIN_SPACE_FLOOR, kt: CONTAIN_TYPE_MIN, ka: CONTAIN_ART_MIN * CONTAIN_TYPE_MIN };
+  assert.equal(containStep(100, 500, end).done, true, 'and the steps end');
+  assert.equal(containStep(500, 499.5).done, false, 'a face within a pixel of its box is fitted, not left a hair over');
 }
 // At the type minimum every floor is the hard floor: body / meaning / example 11px, labels and tags 9.5px, pinyin and
 // IPA 10px - and no lower, however narrow or short the card.
-for (const at of [{ width: 328, height: 740, kt: CONTAIN_TYPE_MIN, ks: CONTAIN_SPACE_MIN }, { width: 200, height: 400, kt: 0.2, ks: 0.2 }]) {
+for (const at of [{ width: 328, height: 740, kt: CONTAIN_TYPE_MIN, ks: CONTAIN_SPACE_FLOOR, ka: 0.33 }, { width: 200, height: 400, kt: 0.2, ks: 0.2, ka: 0.1 }]) {
   const small = sizes(at);
   for (const key of ['meaning', 'definition', 'body', 'exampleEn', 'exampleZh']) assert.ok(small[key] >= 11 - 1e-9, `${key} >= 11px: ${small[key]}`);
   for (const key of ['label', 'level', 'chip']) assert.ok(small[key] >= 9.5 - 1e-9, `${key} >= 9.5px: ${small[key]}`);
@@ -481,42 +490,262 @@ for (const at of [{ width: 328, height: 740, kt: CONTAIN_TYPE_MIN, ks: CONTAIN_S
   assert.ok(small.artEn > 0 && small.artZh > 0, 'the illustration stays, smaller');
 }
 {
-  const tight = sizes({ width: 328, height: 740, kt: CONTAIN_TYPE_MIN, ks: CONTAIN_SPACE_MIN });
+  const tight = sizes({ width: 328, height: 740, kt: CONTAIN_TYPE_MIN, ks: CONTAIN_SPACE_MIN, ka: CONTAIN_ART_MIN });
   assert.equal(tight.body, 11, 'body reaches exactly its hard floor');
   assert.equal(tight.label, 9.5, 'labels reach exactly theirs');
   assert.equal(tight.ipa, 10, 'IPA reaches exactly its');
-  assert.ok(Math.abs(tight.artEn - phoneSizes.artEn * CONTAIN_SPACE_MIN) < 0.01, 'the illustration follows the spacing knob');
+  assert.ok(near(tight.artEn, phoneSizes.artEn * CONTAIN_ART_MIN, 0.01) && near(tight.artZh, phoneSizes.artZh * CONTAIN_ART_MIN, 0.01), 'the illustration is on its own knob, held at 60% through phase 1');
 }
+// THE RADICAL BOX (lead's 360x740 check: at s 0.8 it fell to ~16px and its glyph ran over the text). A square, beside
+// its text block: it follows spacing to a 32px floor (or its width-scaled size, if smaller), and its glyph is sized from
+// the box, so the glyph never leaves it.
+for (const width of [328, 520, 260]) {
+  for (const ks of [1, CONTAIN_SPACE_MIN, CONTAIN_SPACE_FLOOR, 0.1]) {
+    const at = { width, height: 740, ks, kt: CONTAIN_TYPE_MIN, ka: 0.3 };
+    const box = sizeOf('.c-vcard__radical-glyph', 'width', at);
+    assert.equal(box, sizeOf('.c-vcard__radical-glyph', 'height', at), 'square');
+    assert.ok(box >= Math.min(32, width * 0.10769) - 1e-9, `radical box >= its floor at ${width}px, ks ${ks}: ${box}`);
+    assert.ok(sizeOf('.c-vcard__radical-glyph', 'font-size', at) <= box * 0.65, 'the glyph fits inside its box');
+  }
+}
+assert.equal(Math.round(sizeOf('.c-vcard__radical-glyph', 'width', { width: 520, height: 1080 })), 56, 'the design\'s 56px at s = 1');
+assert.match(cardCss, /\.c-vcard__radical-glyph \{[^}]*flex: none;[^}]*box-sizing: border-box;[^}]*aspect-ratio: 1/, 'the box never shrinks out of square');
+assert.match(cardCss, /\.c-vcard__radical > \.c-vcard__lines \{[^}]*flex: 1 1 auto;[^}]*min-width: 0/, 'its text takes the rest of the row, beside the box');
 // The buttons are not scaled: their rules never read the knobs.
-for (const [sel, body] of cssRulesAll) if (isButton(sel)) assert.doesNotMatch(body, /--vc-k[st]/, `${sel}: a button keeps its size`);
-// The loop on a fake face whose need follows the knobs: it lands inside the box and records s.
-function fakeFaceCard({ available, head, body, foot }) {
-  const props = new Map([['--vc-ks', '1'], ['--vc-kt', '1']]);
-  const k = (name) => Number(props.get(name));
-  // Spacing is 40% of the body's height, type 60%; head and foot are type and spacing half and half.
-  const bodyNeed = () => body * (0.4 * k('--vc-ks') + 0.6 * k('--vc-kt'));
-  const partNeed = (h) => h * (0.5 * k('--vc-ks') + 0.5 * k('--vc-kt'));
-  const parts = {
-    head: { getBoundingClientRect: () => ({ height: partNeed(head) }) },
-    foot: { getBoundingClientRect: () => ({ height: foot }) },
-    body: { get scrollHeight() { return bodyNeed(); } },
-  };
-  const face = { hidden: false, clientHeight: available, querySelector: (q) => parts[q.match(/c-vcard__(\w+)/)[1]] };
-  return { props, dataset: {}, style: { setProperty: (name, value) => props.set(name, String(value)) }, querySelectorAll: () => [face] };
+for (const [sel, body] of cssRulesAll) if (isButton(sel)) assert.doesNotMatch(body, /--vc-k[sta]/, `${sel}: a button keeps its size`);
+
+/* THE SAMPLES IN THE BOX. A block-layout model of a face (the gate has no browser): it reads the face's markup and
+   this stylesheet's own values (font-size, line-height, gap, padding, heights, flex rows) at the knobs, estimates
+   line breaks from the text (a Han glyph 1em, other letters 0.55em, plus slack for word breaks), and returns head,
+   body and foot heights. Conservative, not exact: the browser check stays the human's and the lead's. Both full
+   samples - EN with its two examples, collocations and memory tip; ZH with its two examples - must fit a 328 x 474
+   card on both faces (Word Detail at 360 x 740), the loop ending with fits = yes and the foot below the body's last
+   line. */
+const VOID = new Set(['img', 'br', 'input', 'path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'ellipse', 'use']);
+const INLINE = new Set(['span', 'b', 'i', 'em', 'strong', 'mark', 'a', 'ruby', 'rt', 'rp', 'small', 'sup', 'sub', 'abbr', 'bdi', 'q']);
+function parseMarkup(markup) {
+  const root = { tag: 'root', cls: [], attrs: '', children: [] };
+  const stack = [root];
+  for (const [, close, tag, attrs, text] of String(markup).matchAll(/<(\/?)([a-zA-Z][\w-]*)([^>]*)>|([^<]+)/g)) {
+    const top = stack[stack.length - 1];
+    if (text !== undefined) {
+      if (top.tag !== 'svg' && !stack.some((n) => n.tag === 'svg')) top.children.push({ text: text.replace(/&[a-z#0-9]+;/g, 'x') });
+      continue;
+    }
+    const name = tag.toLowerCase();
+    if (close) {
+      const at = stack.map((n) => n.tag).lastIndexOf(name);
+      if (at > 0) stack.length = at;
+      continue;
+    }
+    const node = { tag: name, cls: ((attrs.match(/class="([^"]*)"/) || [])[1] || '').split(/\s+/).filter(Boolean), attrs, children: [] };
+    top.children.push(node);
+    if (!VOID.has(name) && !/\/$/.test(attrs.trim())) stack.push(node);
+  }
+  return root;
 }
+// Simple selectors only (matches() skips :is(), attributes, *, + and ~): enough for the layout values.
+const ruleList = cssRulesAll.flatMap(([sel, body]) => sel.split(',').map((one) => [one.trim(), body]));
+function compoundMatches(compound, node) {
+  if (!node || !node.tag) return false;
+  for (const part of compound.match(/(^[a-z][\w-]*)|\.[\w-]+/gi) || []) {
+    if (part.startsWith('.')) { if (!node.cls.includes(part.slice(1))) return false; }
+    else if (part.toLowerCase() !== node.tag) return false;
+  }
+  return true;
+}
+function matches(selector, node, ancestors) {
+  const parts = selector.replace(/>/g, ' ').split(/\s+/).filter(Boolean);
+  if (parts.some((p) => /[:\[*+~]/.test(p))) return false;
+  if (!compoundMatches(parts[parts.length - 1], node)) return false;
+  let i = ancestors.length - 1;
+  for (let k = parts.length - 2; k >= 0; k -= 1) {
+    while (i >= 0 && !compoundMatches(parts[k], ancestors[i])) i -= 1;
+    if (i < 0) return false;
+    i -= 1;
+  }
+  return true;
+}
+function declarations(node, ancestors) {
+  const out = {};
+  for (const [sel, body] of ruleList) {
+    if (!matches(sel, node, ancestors)) continue;
+    for (const [, prop, value] of body.matchAll(/(?:^|[;\s])([\w-]+):\s*([^;]+);/g)) out[prop] = value.trim();
+  }
+  if (node.attrs && /style="[^"]*--len:\s*(\d+)/.test(node.attrs)) out['--len'] = node.attrs.match(/--len:\s*(\d+)/)[1];
+  return out;
+}
+function evalCss(expr, at, vars, em) {
+  let e = String(expr);
+  for (let guard = 0; guard < 6 && /var\(--/.test(e); guard += 1) {
+    e = e.replace(/var\(--([\w-]+)(?:,\s*([^()]+))?\)/g, (m, name, fallback) => {
+      if (name === 'vc-ks') return String(at.ks ?? 1);
+      if (name === 'vc-kt') return String(at.kt ?? 1);
+      if (name === 'vc-ka') return String(at.ka ?? 1);
+      if (vars[name] !== undefined) return `(${vars[name]})`;
+      return fallback !== undefined ? fallback : '0';
+    });
+  }
+  e = e.replace(/(\d+(?:\.\d+)?)px/g, '$1').replace(/(\d+(?:\.\d+)?)cqi/g, `($1*${at.width}/100)`)
+    .replace(/(\d+(?:\.\d+)?)dvh/g, `($1*${at.height}/100)`).replace(/(\d+(?:\.\d+)?)em\b/g, `($1*${em})`)
+    .replace(/\bcalc\(/g, '(').replace(/\bmin\(/g, 'Math.min(').replace(/\bmax\(/g, 'Math.max(').replace(/\bclamp\(/g, 'clampFn(');
+  try {
+    const value = Function('clampFn', `return ${e};`)((a, b, c) => Math.min(Math.max(a, b), c));
+    return Number.isFinite(value) ? value : null;
+  } catch { return null; }
+}
+const firstLength = (value) => String(value).trim().split(/\s+(?![^(]*\))/);
+function textOf(node) {
+  if (node.text !== undefined) return node.text;
+  if (node.tag === 'rt' || node.tag === 'svg') return '';
+  return node.children.map(textOf).join('');
+}
+function textWidth(text, fs) {
+  let w = 0;
+  for (const ch of text.replace(/\s+/g, ' ').trim()) w += /[㐀-鿿豈-﫿　-〿＀-￯]/.test(ch) ? fs : fs * 0.55;
+  return w;
+}
+const isBlock = (node, decl) => node.tag && !INLINE.has(node.tag) && node.tag !== 'button' || (decl && /flex|block|grid/.test(decl.display || ''));
+function layout(node, ancestors, ctx, width, inherited) {
+  if (node.text !== undefined) return 0;
+  if (/\bhidden\b/.test(node.attrs || '') && node.tag !== 'root') return 0;
+  const decl = declarations(node, ancestors);
+  if ((decl.display || '') === 'none') return 0;
+  const vars = { ...inherited.vars };
+  for (const [k, v] of Object.entries(decl)) if (k.startsWith('--')) vars[k.slice(2)] = v;
+  const fs = decl['font-size'] ? (evalCss(decl['font-size'], ctx.at, { ...vars, len: vars.len || '1' }, inherited.fs) ?? inherited.fs) : inherited.fs;
+  const lhRaw = decl['line-height'];
+  const lh = lhRaw ? (/px/.test(lhRaw) ? evalCss(lhRaw, ctx.at, vars, fs) / fs : Number(lhRaw) || inherited.lh) : inherited.lh;
+  const self = { vars, fs, lh };
+  const side = (prop) => {
+    const v = decl[prop];
+    if (!v) return [0, 0, 0, 0];
+    const parts = firstLength(v).map((p) => evalCss(p, ctx.at, vars, fs) ?? 0);
+    const [t, r = t, b = t, l = r] = parts;
+    return [t, r, b, l];
+  };
+  const [pt, pr, pb, pl] = side('padding');
+  const extraTop = (decl['padding-top'] ? evalCss(decl['padding-top'], ctx.at, vars, fs) : 0) + (decl['margin-top'] ? evalCss(decl['margin-top'], ctx.at, vars, fs) ?? 0 : 0);
+  const extraBottom = decl['padding-bottom'] ? evalCss(decl['padding-bottom'], ctx.at, vars, fs) ?? 0 : 0;
+  const pad = pt + pb + extraTop + extraBottom;
+  const inner = Math.max(40, width - pr - pl);
+  if (node.tag === 'button') return Math.max(44, evalCss(decl['min-height'] || decl.height || '44px', ctx.at, vars, fs) ?? 44);
+  if (decl.height && node.tag !== 'root') {
+    const h = evalCss(decl.height, ctx.at, vars, fs);
+    if (h !== null) return h + extraTop;
+  }
+  const kids = node.children.filter((c) => c.text === undefined ? true : c.text.trim());
+  const blockKids = kids.filter((c) => c.text === undefined && isBlock(c, declarations(c, [...ancestors, node])));
+  const gapValue = decl.gap ? evalCss(firstLength(decl.gap)[0], ctx.at, vars, fs) ?? 0 : 0;
+  const display = decl.display || '';
+  if (!blockKids.length) {
+    // A text leaf: its lines, and a ruby line over it when it carries one.
+    const text = textOf(node);
+    if (!text.trim() && !kids.some((c) => c.tag === 'button' || c.tag === 'img')) return pad;
+    const lines = Math.max(1, Math.ceil((textWidth(text, fs) * 1.1) / inner));
+    const ruby = JSON.stringify(node).includes('"tag":"rt"') ? Math.max(10, 12 * (ctx.at.kt ?? 1), 0.21 * fs) * 1.3 : 0;
+    const buttons = kids.filter((c) => c.tag === 'button').length ? 44 : 0;
+    return pad + Math.max(lines * fs * lh + ruby, buttons);
+  }
+  const childAncestors = [...ancestors, node];
+  const row = /flex/.test(display) && !/column/.test(decl['flex-direction'] || '');
+  if (row) {
+    // A flex row: side by side; when it wraps, greedy rows by the children's own text widths.
+    const items = kids.map((c) => {
+      const h = layout(c, childAncestors, ctx, c.cls.includes('c-vcard__lines') ? inner - (ctx.radicalBox || 0) - gapValue : inner, self);
+      const w = c.tag === 'button' ? 44 : c.cls.includes('c-vcard__radical-glyph') ? h : Math.min(inner, textWidth(textOf(c), fs) + 8);
+      return { h, w, fill: c.cls.includes('c-vcard__lines') };
+    });
+    if (!/wrap/.test(decl['flex-wrap'] || '')) return pad + Math.max(0, ...items.map((i) => i.h));
+    let total = 0; let lineW = 0; let lineH = 0;
+    for (const item of items) {
+      if (lineW && lineW + gapValue + item.w > inner) { total += lineH + gapValue; lineW = 0; lineH = 0; }
+      lineW += (lineW ? gapValue : 0) + item.w;
+      lineH = Math.max(lineH, item.h);
+    }
+    return pad + total + lineH;
+  }
+  let sum = 0;
+  let inlineRun = '';
+  const flush = () => {
+    if (inlineRun.trim()) sum += Math.ceil((textWidth(inlineRun, fs) * 1.1) / inner) * fs * lh;
+    inlineRun = '';
+  };
+  const heights = [];
+  for (const c of kids) {
+    if (blockKids.includes(c)) {
+      flush();
+      if (c.cls.includes('c-vcard__radical-glyph')) ctx.radicalBox = evalCss(declarations(c, childAncestors).width, ctx.at, vars, fs);
+      heights.push(layout(c, childAncestors, ctx, inner, self));
+    } else inlineRun += c.text !== undefined ? c.text : textOf(c);
+  }
+  flush();
+  const gaps = /flex|grid/.test(display) ? gapValue * Math.max(0, heights.filter((h) => h > 0).length - 1) : 0;
+  return pad + sum + heights.reduce((a, b) => a + b, 0) + gaps;
+}
+function faceModel(cardMarkup, face) {
+  const tree = parseMarkup(cardMarkup);
+  const card = tree.children.find((n) => n.cls?.includes('c-vcard'));
+  const faceNode = card.children.find((n) => n.cls?.includes(`c-vcard__face--${face}`));
+  return { card, faceNode };
+}
+function modelHeights(cardMarkup, face, at) {
+  const { card, faceNode } = faceModel(cardMarkup, face);
+  const cardDecl = declarations(card, []);
+  const vars = {};
+  for (const [k, v] of Object.entries(cardDecl)) if (k.startsWith('--')) vars[k.slice(2)] = v;
+  const base = { vars, fs: 16, lh: 1.4 };
+  const han = card.cls.includes('c-vcard--han');
+  const cardPad = han ? (evalCss(cardDecl.padding, at, vars, 16) ?? 0) : 0;
+  const ctx = { at };
+  const width = at.width - 2 - 2 * cardPad - (han ? 3 : 0);
+  const part = (name) => faceNode.children.find((n) => n.cls?.includes(`c-vcard__${name}`));
+  const h = (node) => (node ? layout(node, [card, faceNode], ctx, width, base) : 0);
+  return { head: h(part('head')), body: h(part('body')), foot: h(part('foot')), boxLoss: 2 + 2 * cardPad + (han ? 3 : 0) };
+}
+function modelCard(cardMarkup, face, { width = 328, height = 474, viewportHeight = 740 } = {}) {
+  const props = new Map();
+  const knobs = () => ({ width, height: viewportHeight, ks: Number(props.get('--vc-ks') ?? 1), kt: Number(props.get('--vc-kt') ?? 1), ka: Number(props.get('--vc-ka') ?? 1) });
+  const measure = () => modelHeights(cardMarkup, face, knobs());
+  const faceStub = {
+    hidden: false,
+    get clientHeight() { return height - measure().boxLoss; },
+    querySelector: (q) => {
+      const name = q.match(/c-vcard__(\w+)/)[1];
+      return { getBoundingClientRect: () => ({ height: measure()[name] }), get scrollHeight() { return measure()[name]; } };
+    },
+  };
+  return { props, dataset: {}, style: { setProperty: (name, value) => props.set(name, String(value)) }, querySelectorAll: () => [faceStub], measure, knobs };
+}
+const fullEn = String(vocabularyCard(en, { mode: 'detail', learner: learnerState(null) }));
+const fullZh = String(vocabularyCard(zh, { mode: 'detail', learner: learnerState(null) }));
+assert.ok(EN.examples.length >= 2 && EN.usage_notes.some((n) => n.type === 'collocation') && EN.usage_notes.some((n) => n.type === 'memory_tip'), 'the full EN sample: two examples, collocations, memory tip');
+assert.ok(ZH.examples.length >= 2, 'the full ZH sample: two examples');
+const fitReport = [];
+for (const [name, markup] of [['EN', fullEn], ['ZH', fullZh]]) {
+  for (const face of ['front', 'back']) {
+    const card = modelCard(markup, face);
+    const natural = card.measure();
+    const result = containCard(card);
+    const final = card.measure();
+    assert.equal(card.dataset.vcardFits, 'yes', `${name} ${face}: the full sample fits 328 x 474 (need ${result.need.toFixed(1)} / ${result.available.toFixed(1)}, ks ${result.ks.toFixed(2)} kt ${result.kt.toFixed(2)} ka ${result.ka.toFixed(2)})`);
+    // The foot sits below the body's last line: head + body content + foot inside the face.
+    assert.ok(final.head + final.body + final.foot <= result.available + 0.5, `${name} ${face}: the foot does not cover the body`);
+    const knobs = card.knobs();
+    if (knobs.ks < 1) assert.ok(knobs.ka >= CONTAIN_ART_MIN * knobs.kt - 1e-3, `${name} ${face}: the illustration kept its share (${JSON.stringify(knobs)})`);
+    fitReport.push(`${name} ${face} natural ${(natural.head + natural.body + natural.foot).toFixed(0)} -> ${result.need.toFixed(0)}/${result.available.toFixed(0)} s ${result.s.toFixed(3)}`);
+  }
+}
+console.log(`  model fit at 328 x 474: ${fitReport.join('; ')}`);
+// The loop on a face whose need jumps (a line re-wraps) still lands inside its box.
 {
-  const fits = fakeFaceCard({ available: 600, head: 60, body: 400, foot: 64 });
-  const result = containCard(fits);
-  assert.equal(result.s, 1, 'room enough: s = 1');
-  assert.equal(fits.props.get('--vc-ks'), '1.0000');
-  const tall = fakeFaceCard({ available: 520, head: 60, body: 560, foot: 64 });
-  const tallResult = containCard(tall);
-  assert.ok(tallResult.need <= 520.5, `contained: ${tallResult.need} <= 520`);
-  assert.ok(tallResult.s < 1 && Number(tall.props.get('--vcard-s')) === Number(tallResult.s.toFixed(4)), 'the height scale is recorded');
-  assert.equal(tall.dataset.vcardFits, 'yes');
-  assert.ok(tallResult.ks < 1, 'spacing moved');
-  const mild = containCard(fakeFaceCard({ available: 640, head: 60, body: 560, foot: 64 }));
-  assert.equal(mild.kt, 1, 'a small excess is taken from spacing and art only');
+  const props = new Map();
+  const k = (n) => Number(props.get(n) ?? 1);
+  const need = () => 380 * (0.35 * k('--vc-ks') + 0.15 * k('--vc-ka') + 0.5 * k('--vc-kt')) + (k('--vc-kt') > 0.9 ? 24 : 0) + 64;
+  const face = { hidden: false, clientHeight: 420, querySelector: (q) => (q.includes('body') ? { scrollHeight: need() } : { getBoundingClientRect: () => ({ height: 0 }) }) };
+  const jumpy = { props, dataset: {}, style: { setProperty: (n, v) => props.set(n, String(v)) }, querySelectorAll: () => [face] };
+  containCard(jumpy);
+  assert.equal(jumpy.dataset.vcardFits, 'yes', 'a re-wrapping face still fits');
 }
 // It re-fits on resize (every screen) and on turn (the other face fits on its own).
 const kitSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');

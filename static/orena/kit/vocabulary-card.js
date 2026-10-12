@@ -363,29 +363,54 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
       pinyin and IPA 10px). Every element stays - the illustration included; the buttons keep 44px+. The achieved
       height scale is recorded as --vcard-s and data-vcard-s. */
 export const SHORT_CARD_PX = 620;
-/* How far each knob may go. Spacing and the illustration first, to half; then the type, whose floors bind first. */
+/* How far each knob may go, in the order they move (the human, 2026-10-12):
+   1. spacing (--vc-ks) to CONTAIN_SPACE_MIN, the illustration (--vc-ka) following it but held at CONTAIN_ART_MIN of
+      its width-scaled height;
+   2. then the type (--vc-kt) to CONTAIN_TYPE_MIN, the illustration shrinking with it in proportion (ka = ART_MIN x kt);
+   3. last, spacing alone again, to CONTAIN_SPACE_FLOOR.
+   The type's own floors (kit/vocabulary-card.css) bind before CONTAIN_TYPE_MIN on every line of reading text. */
 export const CONTAIN_SPACE_MIN = 0.5;
+export const CONTAIN_ART_MIN = 0.6;
 export const CONTAIN_TYPE_MIN = 0.55;
-const CONTAIN_STEPS = 8;
+export const CONTAIN_SPACE_FLOOR = 0.3;
+/* The face is fitted to the box less this, so a sub-pixel or a font's rounding never leaves it a hair over. */
+const CONTAIN_MARGIN = 1;
+const CONTAIN_STEPS = 16;
+
+function phaseOf({ ks, kt }) {
+  if (ks > CONTAIN_SPACE_MIN + 1e-3 && kt >= 1 - 1e-6) return 1;
+  if (kt > CONTAIN_TYPE_MIN + 1e-3) return 2;
+  if (ks > CONTAIN_SPACE_FLOOR + 1e-3) return 3;
+  return 0;
+}
+
+function knobsFor(phase, value, { ks, kt }) {
+  if (phase === 1) return { ks: value, kt, ka: Math.max(CONTAIN_ART_MIN, value) };
+  if (phase === 2) return { ks: Math.min(ks, CONTAIN_SPACE_MIN), kt: value, ka: CONTAIN_ART_MIN * value };
+  return { ks: value, kt, ka: CONTAIN_ART_MIN * kt };
+}
 
 /* One contain step (pure, so the gate can drive it): given the space the face has, the height its content needs at the
-   current knobs and, when there is one, the step before (its knobs and need), the next knobs. Spacing goes first; the
-   type moves only once spacing is at its minimum. The first move on a knob is by the ratio; after that the need is
-   taken as linear in the knob (secant), which lands on the box in a step or two. */
-export function containStep(available, need, { ks = 1, kt = 1 } = {}, previous = null) {
-  if (!(need > 0) || need <= available + 0.5) return { ks, kt, done: true };
-  const knob = ks > CONTAIN_SPACE_MIN + 1e-3 ? 'ks' : kt > CONTAIN_TYPE_MIN + 1e-3 ? 'kt' : null;
-  if (!knob) return { ks, kt, done: true };
-  const min = knob === 'ks' ? CONTAIN_SPACE_MIN : CONTAIN_TYPE_MIN;
+   current knobs and, when there is one, the step before (its knobs and need), the next knobs. The first move in a
+   phase is by the ratio; after that the need is taken as linear in the knob (secant), falling back to the ratio when
+   a reflow makes the secant useless. */
+export function containStep(available, need, { ks = 1, kt = 1, ka = 1 } = {}, previous = null) {
+  const target = available - CONTAIN_MARGIN;
+  if (!(need > 0) || need <= target) return { ks, kt, ka, done: true };
+  const phase = phaseOf({ ks, kt });
+  if (!phase) return { ks, kt, ka, done: true };
+  const knob = phase === 2 ? 'kt' : 'ks';
+  const min = phase === 1 ? CONTAIN_SPACE_MIN : phase === 2 ? CONTAIN_TYPE_MIN : CONTAIN_SPACE_FLOOR;
   const now = knob === 'ks' ? ks : kt;
-  let next = now * Math.max(0.2, available / need);
+  const byRatio = now * Math.max(0.2, target / need);
+  let next = byRatio;
   const before = previous?.[knob];
   if (Number.isFinite(before) && before - now > 1e-4 && previous.need > need) {
-    const slope = (previous.need - need) / (before - now);
-    next = now - (need - available + 0.5) / slope;
+    const secant = now - (need - target) / ((previous.need - need) / (before - now));
+    if (Number.isFinite(secant) && secant < now) next = Math.min(secant, now - 0.01);
   }
-  next = Math.max(min, Math.min(now - 1e-3, next));
-  return knob === 'ks' ? { ks: next, kt, done: false } : { ks, kt: next, done: false };
+  next = Math.max(min, Math.min(now - 0.005, next));
+  return { ...knobsFor(phase, next, { ks, kt }), done: false };
 }
 
 /* The face showing: the height its content needs (head + the body's whole content + foot) and the height it has. */
@@ -400,26 +425,29 @@ function faceHeights(card) {
   return { available: face.clientHeight, need };
 }
 
-function setScales(card, ks, kt) {
+function setScales(card, { ks, kt, ka }) {
   card.style.setProperty('--vc-ks', ks.toFixed(4));
   card.style.setProperty('--vc-kt', kt.toFixed(4));
+  card.style.setProperty('--vc-ka', ka.toFixed(4));
 }
 
 /* Step 2 for one card: from the width scale (knobs at 1), measure, step, repeat until the face fits. */
 export function containCard(card) {
   if (typeof card?.querySelectorAll !== 'function') return null;
-  let scales = { ks: 1, kt: 1 };
-  setScales(card, 1, 1);
+  let scales = { ks: 1, kt: 1, ka: 1 };
+  setScales(card, scales);
   const natural = faceHeights(card);
   if (!natural) return null;
   let heights = natural;
-  let previous = null;
+  let prior = null;
   for (let step = 0; step < CONTAIN_STEPS; step += 1) {
+    // The secant only within one phase: a new phase starts by the ratio.
+    const previous = prior && phaseOf(prior) === phaseOf(scales) ? prior : null;
     const next = containStep(heights.available, heights.need, scales, previous);
     if (next.done) break;
-    previous = { ...scales, need: heights.need };
-    scales = { ks: next.ks, kt: next.kt };
-    setScales(card, scales.ks, scales.kt);
+    prior = { ...scales, need: heights.need };
+    scales = { ks: next.ks, kt: next.kt, ka: next.ka };
+    setScales(card, scales);
     heights = faceHeights(card);
   }
   const s = natural.need > 0 ? Math.min(1, heights.need / natural.need) : 1;

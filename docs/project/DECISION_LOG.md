@@ -5759,9 +5759,13 @@ like the design, not only follow its layout".
    must be fully visible on screen, especially on mobile").** Supersedes the body scroll of points 9 and 10. The card
    fits the composition to its box by "contain": s = min(widthScale, heightScale). The CSS gives the width scale
    (point 10); `fitVocabularyCards` measures the showing face's natural height at it and, when that is taller than the
-   box, sets the height scale - spacing, gaps, radii and the illustration first (`--vc-ks`, down to 0.5), the type
-   last (`--vc-kt`, down to 0.55) - measuring again each step (`--vcard-s` / `data-vcard-s` record the achieved
-   height scale). Hard floors, reached only when the box needs them: body, meaning and example text 11px, labels and
+   box, sets the height scale in three phases, measuring again each step: (1) spacing, gaps and radii (`--vc-ks`, to
+   0.5) with the illustration (`--vc-ka`) following but held at 60% of its width-scaled height; (2) the type
+   (`--vc-kt`, to 0.55) with the illustration shrinking in proportion (ka = 0.6 x kt); (3) spacing alone, to 0.3. It
+   fits to a pixel inside the box, so a face is never left a hair over (lead's 360x740 check: the ZH front stopped at
+   s 0.803 with `fits` no). `--vcard-s` / `data-vcard-s` record the achieved height scale, `data-vcard-fits` whether it
+   fits. The radical box stays a square beside its text: it follows spacing down to a 32px floor (or its width-scaled
+   size when smaller) and its glyph is sized from the box (36/56), so the glyph never runs onto the text. Hard floors, reached only when the box needs them: body, meaning and example text 11px, labels and
    tags 9.5px, pinyin and IPA 10px (point 10's 13/11/12 hold at full height). Every element stays, the illustration
    included; the buttons keep their kit sizes (44px+). It fits again on resize (Word Detail, Review, the feed), on
    turn (the other face) and once the web fonts arrive. No `overflow: auto/scroll` on the card, a face or its body

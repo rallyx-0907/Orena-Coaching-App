@@ -315,7 +315,7 @@
 .c-vcard__art {
   margin: 0;
   flex: none;
-  height: calc(var(--vc-ks, 1) * min(34.615cqi, clamp(72px, calc(24dvh - 60px), 180px)));
+  height: calc(var(--vc-ka, 1) * min(34.615cqi, clamp(72px, calc(24dvh - 60px), 180px)));
   border-radius: calc(var(--vc-ks, 1) * min(14px, 2.692cqi));
   background: var(--vcard-surface-alt);
   overflow: hidden;
@@ -324,7 +324,7 @@
   justify-content: center;
 }
 .c-vcard--han .c-vcard__art {
-  height: calc(var(--vc-ks, 1) * min(28.846cqi, clamp(64px, calc(20dvh - 48px), 150px)));
+  height: calc(var(--vc-ka, 1) * min(28.846cqi, clamp(64px, calc(20dvh - 48px), 150px)));
   border-radius: 0;
   background: transparent;
   border-top: 1px solid var(--vcard-line);
@@ -449,16 +449,26 @@
 .c-vcard__radical + .c-vcard__radical {
   margin-top: calc(var(--vc-ks, 1) * min(10px, 1.923cqi));
 }
+/* The radical box: a square beside its text block, never under it. It follows the spacing knob down to its floor
+   (32px, or its width-scaled size when that is smaller), and its glyph is sized from the box (36/56 of it, as drawn),
+   so the glyph never spills out of the box onto the text. */
+.c-vcard__radical > .c-vcard__lines {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .c-vcard__radical-glyph {
   flex: none;
-  width: calc(var(--vc-ks, 1) * min(56px, 10.769cqi));
-  height: calc(var(--vc-ks, 1) * min(56px, 10.769cqi));
+  box-sizing: border-box;
+  aspect-ratio: 1;
+  width: max(min(32px, 10.769cqi), calc(var(--vc-ks, 1) * min(56px, 10.769cqi)));
+  height: max(min(32px, 10.769cqi), calc(var(--vc-ks, 1) * min(56px, 10.769cqi)));
+  line-height: 1;
   border: 1.5px solid var(--vcard-seal);
   color: var(--vcard-seal);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(var(--vc-kt, 1) * min(36px, 6.923cqi));
+  font-size: calc(0.643 * max(min(32px, 10.769cqi), calc(var(--vc-ks, 1) * min(56px, 10.769cqi))));
   font-weight: 600;
 }
 
