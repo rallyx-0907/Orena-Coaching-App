@@ -438,12 +438,19 @@ assert.match(
     dark: vars(block(section, ":root[data-theme='dark']")),
     light: vars(block(section, ":root:not([data-theme='dark'])")),
   };
+  // D-17Z (the human, 2026-10-12): the dark card is disabled until it is redesigned (VC-18). The card wears the
+  // design's LIGHT palette under BOTH app themes; the design's dark values are recorded in the comment, applied nowhere.
+  assert.deepEqual(cardTokens.dark, cardTokens.light, 'under data-theme="dark" the card tokens resolve to their light values');
+  const recordedDark = section.slice(section.indexOf('dark variant is DISABLED'), section.indexOf(":root[data-theme='dark']"));
+  for (const [key, value] of Object.entries({ ...en.dark, ...zh.dark })) {
+    assert.ok(recordedDark.toLowerCase().includes(`--vcard-${NAMES[key]}: ${value}`), `the design's dark ${key} is recorded for the redesign`);
+  }
   for (const theme of ['light', 'dark']) {
-    const design = { ...en[theme], ...zh[theme] };
+    const design = { ...en.light, ...zh.light };
     for (const [key, value] of Object.entries(design)) {
       // The two artboards share every key they both draw; the Chinese adds the seal.
-      if (en[theme][key] && zh[theme][key]) assert.equal(en[theme][key], zh[theme][key], `${theme} ${key}: one value across the EN and ZH artboards`);
-      assert.equal(cardTokens[theme][`vcard-${NAMES[key]}`], value, `${theme} --vcard-${NAMES[key]} is the design's ${key}`);
+      if (en.light[key] && zh.light[key]) assert.equal(en.light[key], zh.light[key], `${key}: one value across the EN and ZH artboards`);
+      assert.equal(cardTokens[theme][`vcard-${NAMES[key]}`], value, `app theme ${theme}: --vcard-${NAMES[key]} is the design's LIGHT ${key}`);
     }
     assert.deepEqual(Object.keys(cardTokens[theme]).sort(), Object.values(NAMES).map((name) => `vcard-${name}`).sort(), `${theme}: the card's tokens are the design's, no more`);
     const CARD_PAIRS = [
@@ -473,6 +480,35 @@ assert.match(
   assert.match(reviewCss, /\.s-review-grade--again \{[^}]*background: var\(--red-soft\);[^}]*color: var\(--red\)/);
   assert.match(reviewCss, /\.s-review-btn--primary \{[^}]*background: var\(--accent-fill\);[^}]*color: var\(--accent-ink\)/);
   assert.match(reviewCss, /\.s-review-btn--secondary \{[^}]*background: var\(--surface\);[^}]*color: var\(--text\)/);
+  // The app's buttons follow the app theme, so in the dark app they sit on the LIGHT card (D-17Z). Each keeps AA for
+  // its own label / icon on its own fill, and its fill stands off the card's grounds at 3:1 (non-text contrast).
+  {
+    const dark = { ...vars(block(tokens, ':root {')), ...vars(block(tokens, ':root[data-theme="dark"]')) };
+    const pageAccent = vars(block(tokens.slice(tokens.indexOf('The backdrop (PUB-4')), ":root[data-theme='dark']"))['bd-page-accent'];
+    const BUTTONS = [
+      ['o-btn--primary (turn)', 'accent-ink', 'accent-fill', 4.5],
+      ['o-btn--secondary (turn back, strokes)', 'text', 'surface', 4.5],
+      ['disc (save)', 'muted', 'surface2', 3],
+      ['disc (play)', pageAccent ? null : 'accent', 'accent-soft', 3],
+      ['disc (saved)', 'amber', 'amber-soft', 3],
+    ];
+    for (const [name, ink, fill, need] of BUTTONS) {
+      const inkValue = ink ? dark[ink] : pageAccent;
+      assert.ok(/^#[\da-f]{3,6}$/i.test(inkValue || '') && /^#[\da-f]{3,6}$/i.test(dark[fill] || ''), `${name}: dark ${ink || 'bd-page-accent'} / ${fill} are plain colours`);
+      const label = contrast(inkValue, dark[fill]);
+      measured.push(`dark ${name} ${label.toFixed(2)}`);
+      assert.ok(label >= need, `dark app, ${name}: ${label.toFixed(2)}:1, needs ${need}:1`);
+      for (const ground of ['surface', 'surface-alt', 'bg']) {
+        const edge = contrast(dark[fill], cardTokens.dark[`vcard-${ground}`]);
+        assert.ok(edge >= 3, `dark app, ${name} fill on the light card ${ground}: ${edge.toFixed(2)}:1, needs 3:1`);
+      }
+    }
+    // The light card's edge on a dark page: its own line, not the app's violet.
+    assert.match(cardRules, /:root\[data-theme='dark'\] \.c-vcard:not\(\.c-vcard--review-front\) \{[^}]*box-shadow: 0 0 0 1px var\(--vcard-line\)/, 'a clean edge on the dark shell');
+    for (const rule of cardRules.split('}').filter((r) => r.includes('{') && !/\.c-vcard__(turn|disc)|o-btn/.test(r.split('{')[0]))) {
+      assert.doesNotMatch(rule, /var\(--(accent|violet|purple)/, `the card's content never borrows the app accent to blend into dark: ${rule.trim().split('{')[0]}`);
+    }
+  }
   // The gold never carries text or the focus ring (light 2.25:1 on the card, below the 3:1 a focus indicator needs).
   const cardCss = fs.readFileSync(path.join(ROOT, 'kit/vocabulary-card.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   for (const rule of cardCss.split('}')) {

@@ -5967,7 +5967,7 @@ items above, and what PR 2 leaves open for the human:
   at its top, the header lies over the page; the design draws the header only at rest (transparent, the page below
   it). Chosen to keep it readable: it takes the phone bar's own chrome surface (`--bd-chrome` and its blur) while
   `data-chrome` is set, and is exactly as drawn at the top. A human decision whether that surface is right.
-- **VC-15 Word-detail lookup labels a foreign reading as pinyin (server).** `writing_coach/word_detail.py:203-206`
+- **VC-15 Word-detail lookup labels a foreign reading as pinyin (server). FIXED in PR 4 (branch `claude/vocab-card-e2e`):** `project_word_detail` now labels a reading `pinyin` only for a Chinese lookup of a Han headword; any other lookup's reading is `ipa` (`tests/test_word_detail.py`, the 松树 / resilient regressions). History: `writing_coach/word_detail.py:203-206`
   (`project_word_detail`) sets `pinyin` to the lookup's `pronunciation` whenever the headword is Han
   (`script_of`, :127), whatever language the lookup ran in (`source_language`, the route at :389). Word Detail sent
   the learner's current learning language, so a Chinese word opened while learning English (`松树`) was looked up as
@@ -5980,3 +5980,10 @@ items above, and what PR 2 leaves open for the human:
   reverted). The server should label `pinyin` only for a Chinese lookup; a one-line change with a pytest, not made
   here (no Docker run on this host with under 2 GB free).
 
+
+- **VC-18 The dark card, redesigned (D-17Z, follow-up).** The card's dark variant ("night violet") is disabled: the
+  card is light in both app themes, with its own 1px line as its edge on a dark page. Its dark values are recorded,
+  unapplied, in `kit/tokens.css`. Open: a dark card the human approves (palette, the Chinese seal and gold rules, the
+  illustration on a dark ground), then the tokens return under `data-theme='dark'` and the kit gate compares them
+  again. Until then the app's buttons (dark in the dark app) sit on the light card - AA holds (the primary turn action's
+  fill is the closest edge, 3.70:1 on the card's surface-alt).

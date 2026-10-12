@@ -316,21 +316,39 @@
    no button reads them - buttons keep the app's design (the human, 2026-10-12) - so `--vcard-btn-*` are the design's
    values kept for completeness. Single-quoted selectors: a scoped
    addition the exact-token gate for the app's theme blocks does not compare, like the backdrop above. */
+/* The card's dark variant is DISABLED (the human, 2026-10-12, D-17Z): the card always wears its LIGHT palette, in both
+   app themes; the shell and the app around it keep following the learner's theme. Until the dark card is redesigned
+   (UI_BACKEND_GAPS VC-18) the design's dark values are recorded here and applied nowhere:
+     --vcard-bg: #0B0618;
+     --vcard-surface: #140B26;
+     --vcard-surface-alt: #1E1235;
+     --vcard-line: #33224F;
+     --vcard-ink: #EEE8F7;
+     --vcard-ink2: #C3B8D9;
+     --vcard-ink3: #9488AE;
+     --vcard-accent: #A98BEA;
+     --vcard-on-accent: #140B26;
+     --vcard-gold: #E8B57E;
+     --vcard-seal: #F0A882;
+     --vcard-on-seal: #140B26;
+     --vcard-btn-bg: #EEE8F7;
+     --vcard-btn-ink: #140B26;
+   */
 :root[data-theme='dark'] {
-  --vcard-bg: #0B0618;
-  --vcard-surface: #140B26;
-  --vcard-surface-alt: #1E1235;
-  --vcard-line: #33224F;
-  --vcard-ink: #EEE8F7;
-  --vcard-ink2: #C3B8D9;
-  --vcard-ink3: #9488AE;
-  --vcard-accent: #A98BEA;
-  --vcard-on-accent: #140B26;
-  --vcard-gold: #E8B57E;
-  --vcard-seal: #F0A882;
-  --vcard-on-seal: #140B26;
-  --vcard-btn-bg: #EEE8F7;
-  --vcard-btn-ink: #140B26;
+  --vcard-bg: #F8EFDE;
+  --vcard-surface: #FCF7EE;
+  --vcard-surface-alt: #F2E7D2;
+  --vcard-line: #E3D4B8;
+  --vcard-ink: #26332D;
+  --vcard-ink2: #4E5A50;
+  --vcard-ink3: #5C6153;
+  --vcard-accent: #44675A;
+  --vcard-on-accent: #FFFFFF;
+  --vcard-gold: #C9A24B;
+  --vcard-seal: #9E4A2F;
+  --vcard-on-seal: #FFF8EE;
+  --vcard-btn-bg: #26332D;
+  --vcard-btn-ink: #FCF7EE;
 }
 :root:not([data-theme='dark']) {
   --vcard-bg: #F8EFDE;
