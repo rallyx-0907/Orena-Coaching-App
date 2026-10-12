@@ -197,13 +197,16 @@ def project_word_detail(
         for item in said.get("vocabulary") or ()
         if _text(item.get("fragment")).casefold() != _text(selection).casefold()
     ]
+    # A reading is pinyin only when a Chinese lookup gave it for a Han headword. Any
+    # other lookup's reading is that dictionary's phonetic (IPA), even for a Han
+    # headword looked up in another language (VC-15: 松树 looked up as English came
+    # back with "/paɪn triː/" labelled pinyin). Nothing here invents the one absent.
+    is_pinyin = script == "hanzi" and _text(language).casefold().startswith("zh")
     return {
         "headword": headword,
         "script": script,
-        # A Chinese reading is pinyin; for an alphabetic language it is the
-        # dictionary's phonetic. Nothing here invents the one that is absent.
-        "pinyin": pronunciation if script == "hanzi" and pronunciation else None,
-        "ipa": pronunciation if script == "latin" and pronunciation else None,
+        "pinyin": pronunciation if is_pinyin and pronunciation else None,
+        "ipa": pronunciation if not is_pinyin and pronunciation else None,
         "partOfSpeech": part_of_speech or None,
         "contextMeaning": meaning,
         "generalMeaning": general,

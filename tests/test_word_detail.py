@@ -135,6 +135,45 @@ def test_chinese_reading_is_pinyin_and_never_an_invented_ipa() -> None:
     assert detail["saved"] is True
 
 
+def test_a_han_headword_looked_up_in_another_language_is_never_given_pinyin() -> None:
+    # VC-15: Word Detail looked a Chinese word up in the learner's English; the English
+    # IPA came back labelled pinyin. Only a Chinese lookup's reading is pinyin.
+    looked_up_as_english = word_detail.project_word_detail(
+        selection="松树",
+        context="山上有很多松树。",
+        language="en",
+        lookup={"pronunciation": "/paɪn triː/", "meanings": [{"text": "pine tree"}]},
+        explanation=None,
+        saved=False,
+    )
+    assert looked_up_as_english["script"] == "hanzi"
+    assert looked_up_as_english["pinyin"] is None
+    assert looked_up_as_english["ipa"] == "/paɪn triː/"
+
+    looked_up_as_chinese = word_detail.project_word_detail(
+        selection="松树",
+        context="山上有很多松树。",
+        language="zh",
+        lookup={"pronunciation": "sōngshù", "meanings": [{"text": "pine tree"}]},
+        explanation=None,
+        saved=False,
+    )
+    assert looked_up_as_chinese["pinyin"] == "sōngshù" and looked_up_as_chinese["ipa"] is None
+
+
+def test_an_english_word_keeps_its_ipa() -> None:
+    detail = word_detail.project_word_detail(
+        selection="resilient",
+        context="She is resilient.",
+        language="en",
+        lookup={"pronunciation": "/rɪˈzɪliənt/", "meanings": [{"text": "able to recover"}]},
+        explanation=None,
+        saved=False,
+    )
+    assert detail["script"] == "latin"
+    assert detail["ipa"] == "/rɪˈzɪliənt/" and detail["pinyin"] is None
+
+
 def test_without_the_explanation_the_sheet_answers_from_the_dictionary_and_says_so() -> None:
     detail = word_detail.project_word_detail(
         selection="slukket", context="slukket", language="en", lookup=EN_LOOKUP, explanation=None, saved=False
