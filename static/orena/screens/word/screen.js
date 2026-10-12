@@ -1,5 +1,5 @@
 /* Word Detail (frame 22, `#/word/:id`; D-091). The saved-word reference page: the shared
-   VocabularyCard in `detail` mode (kit/vocabulary-card.js, D-17W - the entry's content from
+   VocabularyCard in `detail` mode (kit/vocabulary-card.js, D-179 - the entry's content from
    product/vocabulary-card.js#toVocabularyModel, the learner's saved state beside it), real context clips from the listening
    catalogue, the Deep Word explanation, mastery evidence, and - for a Chinese headword - the
    Stroke Practice sheet (frame 60). Every binding maps to a real answer (`POST
@@ -112,7 +112,7 @@ function meaningTag(language) {
   return label ? html` <span class="o-tag">${label}</span>` : '';
 }
 
-/* The card: the entry's content (pure, D-17W) and, beside it, what the learner's own record adds -
+/* The card: the entry's content (pure, D-179) and, beside it, what the learner's own record adds -
    saved state, the mastery footer, and the sentence they met the word in when the entry has no example. */
 function cardMarkup(model, learner, item, strokes, meaningPending) {
   const stageKey = stageCopyKey(item);

@@ -4,7 +4,7 @@
    `screens/word/model.js#highlightExample`/`cardLanguage`/`posLabel` and
    `screens/word/stroke-sheet.js#mountStrokeSheet`, exactly as Review Session and the Wave B
    overlays already do for the same shared Word Card primitive (D7 §4). The turned card is the shared
-   VocabularyCard in `feed` mode (kit/vocabulary-card.js, D-17W): Save, never a grade. */
+   VocabularyCard in `feed` mode (kit/vocabulary-card.js, D-179): Save, never a grade. */
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
 import { toVocabularyModel, savePayloadOf } from '../../product/vocabulary-card.js';
@@ -58,7 +58,7 @@ function frontMarkup(card, index, saved) {
 }
 
 /* The turned card: the shared VocabularyCard (`feed` mode) - the entry's content, the play disc and
-   the save disc; a feed word is never graded here (D-17W). */
+   the save disc; a feed word is never graded here (D-179). */
 function backMarkup(model, saved) {
   const strokes = model.script === 'hanzi'
     ? strokesMarkup({ word: model.word, prefix: 's-feed', label: t('strokeOrder'), buttonLabel: t('practiseStrokes'), buttonAttr: 'data-practise-strokes', buttonClass: 's-feed-strokes-btn' })

@@ -151,7 +151,7 @@ export function nextDueLabel(isoTimes, now, t) {
 }
 
 export const GRADES = Object.freeze(['again', 'unsure', 'got_it']);
-/* The grades the screen draws (D-17W): "Not yet" -> `again`, "Got it" -> `got_it`. `unsure` stays a
+/* The grades the screen draws (D-179): "Not yet" -> `again`, "Got it" -> `got_it`. `unsure` stays a
    grade the API accepts (an older client, an offline answer still waiting) but has no button. */
 export const REVIEW_BUTTONS = Object.freeze(['again', 'got_it']);
 

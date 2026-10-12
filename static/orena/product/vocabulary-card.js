@@ -1,4 +1,4 @@
-/* The vocabulary card's content model (D-178, D-17W): one pure mapper from whatever a surface holds
+/* The vocabulary card's content model (D-178, D-179): one pure mapper from whatever a surface holds
    about a word to what the shared VocabularyCard (kit/vocabulary-card.js) draws.
 
    A "flashcard" is the existing vocabulary entry shown differently, so the inputs are the shapes the
@@ -97,7 +97,7 @@ export function highlightExample(example, word) {
 }
 
 /* ---- Pronunciation ---------------------------------------------------------------------------- */
-/* Readings are only ever the word's own kind (D-17W, :8021 check): a Chinese word's reading is pinyin -
+/* Readings are only ever the word's own kind (D-179, :8021 check): a Chinese word's reading is pinyin -
    Latin letters with tone marks or tone digits, spaces, apostrophes, middle dots, hyphens - never an IPA
    string (slashes, ɪ ː ə ˈ …), which a lookup run in another language can hand back ("/paɪn triː/" for
    松树); a Latin word's reading is never pinyin or Hanzi. A value of the wrong kind is dropped, and a
@@ -371,7 +371,7 @@ export function learnerState(item, { saved = undefined } = {}) {
   };
 }
 
-/* What review-front may show: nothing that answers the card (D-17W). */
+/* What review-front may show: nothing that answers the card (D-179). */
 export function frontFields(model) {
   return {
     word: model.word,

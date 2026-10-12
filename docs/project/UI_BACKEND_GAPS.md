@@ -5909,7 +5909,7 @@ authored-entry import) ships no learner UI. Open for the human before PR 2 / PR 
 (The VC-1..VC-6 labels in this section are its own; the Vocabulary table's VC-1..VC-13 earlier in this file are a
 different series.)
 
-**PR 2, the shared VocabularyCard (D-17W), 2026-10-12.** Built and wired: Word Detail (`detail`), Review
+**PR 2, the shared VocabularyCard (D-179), 2026-10-12.** Built and wired: Word Detail (`detail`), Review
 (`review-front` -> Reveal -> `review-back`, "Not yet" / "Got it"), the Daily Feed's turned card (`feed`). State of the
 items above, and what PR 2 leaves open for the human:
 
@@ -5937,7 +5937,7 @@ items above, and what PR 2 leaves open for the human:
   mid-session provably keeps the queue, session and scheduler intact, and it did not - grading a word just removed answers
   `missing` and the screen shows a save-failure toast. To restore it: a removed word leaves the session cleanly (skipped,
   not graded, not counted, no failure toast) and Undo puts it back in place with its schedule, with tests; then draw the
-  remove-only toggle. D-17W point 4.
+  remove-only toggle. D-179 point 4.
 - **VC-12 The Review corner disc.** The pinned frame draws its decorative corner disc on the turned card too. On the
   two-face card every corner of the revealed face holds text or a control (the play and bookmark discs top-right, the
   mastery line bottom-left, the turn action bottom-right), so the disc is drawn on the recall face only, not on
@@ -5959,7 +5959,7 @@ items above, and what PR 2 leaves open for the human:
   (`project_word_detail`) sets `pinyin` to the lookup's `pronunciation` whenever the headword is Han
   (`script_of`, :127), whatever language the lookup ran in (`source_language`, the route at :389). Word Detail sent
   the learner's current learning language, so a Chinese word opened while learning English (`松树`) was looked up as
-  English and its English IPA ("/paɪn triː/") came back as `pinyin`. Covered on the client (D-17W): the card mapper
+  English and its English IPA ("/paɪn triː/") came back as `pinyin`. Covered on the client (D-179): the card mapper
   accepts only a pinyin-shaped reading for a Han word and never pinyin or Hanzi for a Latin word, and Word Detail
   reads the catalogue in the word's own language (`screens/word/model.js#catalogueLanguage`) so a direct link finds
   the entry's pinyin and meaning. The lookup itself must stay in the learner's current learning language: any other is

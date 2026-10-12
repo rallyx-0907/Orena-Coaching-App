@@ -1,4 +1,4 @@
-/* VocabularyCard (D-178, D-17W): the one vocabulary card, drawn from the model
+/* VocabularyCard (D-178, D-179): the one vocabulary card, drawn from the model
    `product/vocabulary-card.js#toVocabularyModel` makes.
 
    Provenance (UI provenance gate). LAYOUT and INFORMATION: the human's design reference for this
@@ -8,7 +8,7 @@
    "See examples ->" / "<- Front". COLOURS, TYPE and COMPONENTS: the current theme only - semantic tokens
    (kit/tokens.css), the kit's `o-tag`, `o-btn`, play/save discs and highlight; the reference's blue accent,
    its Be Vietnam Pro / Noto Serif faces, the Chinese card's paper, seal red and double rule are not carried
-   (D-147: no outline ring). Adaptations, each recorded in D-17W and UI_BACKEND_GAPS "Vocabulary card":
+   (D-147: no outline ring). Adaptations, each recorded in D-179 and UI_BACKEND_GAPS "Vocabulary card":
    the save disc joins the top row; a play disc sits on each IPA row; collocations are chips; a
    section with no data is left out.
 
@@ -25,9 +25,9 @@
      Hanzi span, pinyin with the matching span, translation, note); "Memory tip"; "<- Front".
 
    Modes: `detail` and `feed` draw the two faces, starting on the front, with Save. `review-front` is the
-   recall face (D-17W point 2): the word or Hanzi, its reading, part of speech and level, play - nothing
+   recall face (D-179 point 2): the word or Hanzi, its reading, part of speech and level, play - nothing
    that answers. `review-back` is the two faces, with no bookmark: Save and
-   remove belong to Word Detail and the Feed (D-17W point 4). The grades are the screen's, outside the card.
+   remove belong to Word Detail and the Feed (D-179 point 4). The grades are the screen's, outside the card.
 
    Each face is a body that scrolls inside itself and a foot that holds the turn action, so the action
    stays in view when a long entry fills a phone (rule 49). Learner state (`learner`, from
@@ -301,7 +301,7 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
   cardSeq += 1;
   const id = `vcard-${cardSeq}`;
   // Save on the cards a word is met on; in Review, where every word is already saved, the bookmark is only a
-  // remove toggle, drawn saved (D-17W, the exception to "Save is not Review"; the pinned frame draws it).
+  // remove toggle, drawn saved (D-179, the exception to "Save is not Review"; the pinned frame draws it).
   const save = mode === 'detail' || mode === 'feed' ? saveDisc(learner) : '';
   const ctx = { save, meaningTag: slots.meaningTag, pending: slots.meaningPending };
   const front = han ? zhFront(model, ctx) : enFront(model, ctx);

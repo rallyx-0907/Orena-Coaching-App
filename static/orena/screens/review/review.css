@@ -214,7 +214,7 @@
   flex-direction: column;
   overflow: hidden;
 }
-/* The revealed card is the shared VocabularyCard (kit/vocabulary-card.css, D-17W). Inside this face the
+/* The revealed card is the shared VocabularyCard (kit/vocabulary-card.css, D-179). Inside this face the
    face is the surface, so the card adds no second one; it fills the face, and each of its faces scrolls
    inside its own body. */
 .s-review-face--revealed > .c-vcard--review-back {
@@ -268,7 +268,7 @@
   font-size: 13.5px;
 }
 
-/* ---- Grades (D-17W: "Not yet" and "Got it", the two the screen draws - model.js#REVIEW_BUTTONS) ---- */
+/* ---- Grades (D-179: "Not yet" and "Got it", the two the screen draws - model.js#REVIEW_BUTTONS) ---- */
 .s-review-grades {
   flex: none;
   display: grid;

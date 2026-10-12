@@ -1,4 +1,4 @@
-/* The shared VocabularyCard's own words (kit/vocabulary-card.js, D-17W). Section titles and the card's
+/* The shared VocabularyCard's own words (kit/vocabulary-card.js, D-179). Section titles and the card's
    controls are chrome ('interface'), named as the human's flashcard reference names them ("Nghĩa",
    "Họ từ", "Đồng / trái nghĩa", "Xem ví dụ →", "← Mặt trước", "Ví dụ & cách dùng", "Kết hợp thường gặp",
    "Mẹo nhớ", "Bộ thủ", "Lượng từ", "Từ liên quan", "Hán Việt"). The content inside the sections is the

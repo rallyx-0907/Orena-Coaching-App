@@ -260,7 +260,7 @@ assert.deepEqual(posLabel('', fakeT), { text: '', known: false }, 'no part of sp
    and Collection Detail already use, rule 40's "reuse before inventing") is painted before either
    async lookup starts, not only after both resolve. --- */
 const screenSrc = readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8');
-// languages-5 / finding A: the card is the shared VocabularyCard (D-17W), which marks the headword and
+// languages-5 / finding A: the card is the shared VocabularyCard (D-179), which marks the headword and
 // every example with the shared kit/lang.js helper (never the old ad-hoc `? 'zh' : ''` ternary).
 const kitCardSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
 assert.match(screenSrc, /import\s*\{\s*vocabularyCard,\s*bindVocabularyCards\s*\}\s*from\s*'\.\.\/\.\.\/kit\/vocabulary-card\.js'/, 'Word Detail draws the shared VocabularyCard');

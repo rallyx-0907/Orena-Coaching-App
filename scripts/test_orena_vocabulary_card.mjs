@@ -1,4 +1,4 @@
-/* Gate for the shared vocabulary card (D-178, D-17W): the pure mapper
+/* Gate for the shared vocabulary card (D-178, D-179): the pure mapper
    (static/orena/product/vocabulary-card.js#toVocabularyModel) and the VocabularyCard markup per mode
    (static/orena/kit/vocabulary-card.js), on the two reference entries in docs/vocab/samples as the
    importer stores them, plus the shapes the screens already hold (a catalogue card, a saved item).
@@ -249,7 +249,7 @@ for (const model of [en, zh]) {
   assert.ok(back.includes('data-vcard-turn="back"'), 'and can turn to the examples');
   assert.ok(!back.includes('data-grade'), 'the grades are the screen\'s, outside the card');
   assert.ok(back.includes('c-vcard__mastery'), 'the learner footer when there is a schedule');
-  // Review has no bookmark (D-17W point 4): Save and remove belong to Word Detail and the Feed.
+  // Review has no bookmark (D-179 point 4): Save and remove belong to Word Detail and the Feed.
   assert.ok(!back.includes('data-save'), 'review-back draws no bookmark');
 
   const detail = String(vocabularyCard(model, { mode: 'detail', learner: learnerState(null) }));
@@ -262,7 +262,7 @@ for (const model of [en, zh]) {
 }
 assert.throws(() => vocabularyCard(en, { mode: 'flip' }));
 
-/* --- the meaning panel never claims an absence it has not established (lead's :8021 check, D-17W) --- */
+/* --- the meaning panel never claims an absence it has not established (lead's :8021 check, D-179) --- */
 setLanguages({ ui: 'vi', support: 'vi' });
 const tagged = [];
 const meaningTag = (language) => { tagged.push(language); return `[${language}]`; };
@@ -339,7 +339,7 @@ assert.match(cardCss, /\.c-vcard__foot \{[^}]*flex-wrap: wrap/, 'the foot wraps 
 assert.match(cardCss, /\.c-vcard__stage \{[^}]*white-space: nowrap/, 'the stage label never breaks inside a word');
 assert.match(cardCss, /\.c-vcard__due \{[^}]*white-space: nowrap/);
 assert.match(cardCss, /\.c-vcard__hanviet \{[^}]*align-items: flex-start/, 'the Hán Việt label and value share the start edge');
-// Review neither saves nor removes a word (D-17W point 4).
+// Review neither saves nor removes a word (D-179 point 4).
 assert.doesNotMatch(reviewSrc, /data-save|deleteLibraryVocabulary|saveLibraryVocabulary/, 'Review has no save or remove action');
 
 /* --- a reading is only ever the word's own kind (:8021 check: "/paɪn triː/" drawn over 松树) --- */

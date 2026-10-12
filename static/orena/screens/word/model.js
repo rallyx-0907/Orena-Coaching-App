@@ -94,7 +94,7 @@ export function contextFor(word, item) {
 export function pronunciationOf(detail, item, seed = null) {
   const fallback = text(item?.phonetic) || text(seed?.pronunciation);
   if (!detail) return fallback;
-  // Only a reading of the word's own kind (D-17W): never an English IPA as a Chinese word's pinyin.
+  // Only a reading of the word's own kind (D-179): never an English IPA as a Chinese word's pinyin.
   if (detail.script === 'hanzi') return [text(detail.pinyin), fallback].find((value) => isPinyin(value)) || '';
   return [text(detail.ipa), fallback].find((value) => isLatinReading(value)) || '';
 }
@@ -119,7 +119,7 @@ export function stageCopyKey(item) {
 }
 
 /* The example sentence split around the headword (`exParts`): now the shared mapper's
-   (product/vocabulary-card.js#highlightExample - whole-word for Latin script, D-17W), re-exported so
+   (product/vocabulary-card.js#highlightExample - whole-word for Latin script, D-179), re-exported so
    the Quick Sheet and the older callers keep their import. */
 export { highlightExample } from '../../product/vocabulary-card.js';
 import { highlightExample, scriptOf, isPinyin, isLatinReading } from '../../product/vocabulary-card.js';

@@ -5635,9 +5635,9 @@ EN/ZH flashcard design (Claude Design artifact "Flashcard từ vựng Anh – Tr
    with the production card; PR 4 the two samples loaded on :8021 only. Open design items: `UI_BACKEND_GAPS.md`
    "Vocabulary card (D-178)".
 
-## D-17W - One VocabularyCard: four modes, two review buttons, Save apart from Review
+## D-179 - One VocabularyCard: four modes, two review buttons, Save apart from Review
 
-(Placeholder D-17W until merge.)
+(Placeholder D-179 until merge.)
 
 Date: 2026-10-12. Human decisions of 2026-10-12 for PR 2 of D-178 (lane `claude/vocab-card-ui`).
 

@@ -5,7 +5,7 @@
    (shell/routes.js): the router paints the loading skeleton while this awaits and the load-error
    state if it throws, so this never paints its own.
 
-   Both faces are the shared VocabularyCard (kit/vocabulary-card.js, D-17W): `review-front` asks the
+   Both faces are the shared VocabularyCard (kit/vocabulary-card.js, D-179): `review-front` asks the
    word - its reading, part of speech, level and audio, nothing that answers it - and Reveal turns it
    to `review-back`, the same content Word Detail draws (D7 §4), from the same pure mapper
    (product/vocabulary-card.js). Two grades: "Not yet" (`again`) and "Got it" (`got_it`); `unsure`

@@ -3,7 +3,7 @@
    being asked stays in the content language, what the screen says about it follows the interface language.
 
    Rule 50 drops recorded in the surface report: the frame's "Items marked Again come back sooner…"
-   explainer line (obvious scheduler behaviour) is not built. The frame's four grades are two (D-17W):
+   explainer line (obvious scheduler behaviour) is not built. The frame's four grades are two (D-179):
    "Not yet" sends `again` and "Got it" sends `got_it`; `unsure` stays in the API
    (POST /api/library/vocabulary/{word}/review) and has no button. */
 import { defineCopy } from '../../copy/index.js';

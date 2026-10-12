@@ -87,7 +87,7 @@
 .s-feed-face--front {
   justify-content: flex-start;
 }
-/* The flipped card is the frame's inner panel: the shared VocabularyCard (D-17W), filling the deck card;
+/* The flipped card is the frame's inner panel: the shared VocabularyCard (D-179), filling the deck card;
    each of its faces scrolls inside its own body and keeps its turn action in view. */
 .s-feed-face--back {
   overflow: hidden;
