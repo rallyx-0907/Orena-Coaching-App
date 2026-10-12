@@ -117,21 +117,11 @@ export function stageCopyKey(item) {
   return STAGE_COPY_KEY[text(item?.stage_label)] || '';
 }
 
-/* The example sentence split around the headword, for the frame's tinted-highlight treatment
-   (`exParts`). A word that is not actually in the sentence (or no sentence at all) renders as one
-   plain part - never a fabricated match. */
-export function highlightExample(example, word) {
-  const value = text(example);
-  if (!value) return [];
-  const w = text(word);
-  const at = w ? value.toLowerCase().indexOf(w.toLowerCase()) : -1;
-  if (at < 0) return [{ value, hit: false }];
-  const parts = [];
-  if (at > 0) parts.push({ value: value.slice(0, at), hit: false });
-  parts.push({ value: value.slice(at, at + w.length), hit: true });
-  if (at + w.length < value.length) parts.push({ value: value.slice(at + w.length), hit: false });
-  return parts;
-}
+/* The example sentence split around the headword (`exParts`): now the shared mapper's
+   (product/vocabulary-card.js#highlightExample - whole-word for Latin script, D-17W), re-exported so
+   the Quick Sheet and the older callers keep their import. */
+export { highlightExample } from '../../product/vocabulary-card.js';
+import { highlightExample } from '../../product/vocabulary-card.js';
 
 /* The word card (`wdWC`): the header, the meaning block, the example and the mastery footer, from
    whichever of the two answers actually carries each field. `detail` may be null (the lookup

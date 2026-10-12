@@ -5905,3 +5905,30 @@ authored-entry import) ships no learner UI. Open for the human before PR 2 / PR 
 - **VC-6 Duplicate choice in the Admin import.** The API takes `duplicates=skip|overwrite` (default skip); the Admin
   import screen shows the per-row checks as warnings but has no control for the choice yet, so an import from the
   screen skips duplicates. The control belongs to the PR 3 derivation.
+
+(The VC-1..VC-6 labels in this section are its own; the Vocabulary table's VC-1..VC-13 earlier in this file are a
+different series.)
+
+**PR 2, the shared VocabularyCard (D-17W), 2026-10-12.** Built and wired: Word Detail (`detail`), Review
+(`review-front` -> Reveal -> `review-back`, "Not yet" / "Got it"), the Daily Feed's turned card (`feed`). State of the
+items above, and what PR 2 leaves open for the human:
+
+- VC-1: the card sets no height and no fixed width; its relation grid wraps by its own minimum column, and Review keeps
+  its card in the face's own scroll region with the grades below it. Not measured in a browser by this lane (the
+  browser check is the lead's on :8021, at 1920x1080, 1366x768, 390x844 and 360x740).
+- VC-2: done in tokens only; the ZH card differs by type (a serif face for Hanzi, pinyin as ruby over each character)
+  and content order, not by colour.
+- VC-4: done as listed. The source-aware (cloze) front keeps the pinned frame's sentence prompt, with no audio button,
+  which would say the answer.
+- VC-5: done (an `upload` with a real address is drawn; a `library` reference, `none` or nothing draws no frame).
+- **VC-7 The compact `VocabularyRow`.** Not in PR 2: Collection Detail, Saved language and Search keep their current
+  rows (they already open Word Detail). Moving the three onto one `kit/vocabulary-row.js` is PR 2b.
+- **VC-8 Direct link to an unsaved word.** Word Detail draws the entry's full content from the saved record or from
+  the card the list left behind (Collection Detail, the Feed). Opened by a direct link with neither, it has only what
+  `/api/vocabulary/catalogue/search` returns (word, reading, meanings, level, part of speech) - no examples or
+  relations - until that response carries the entry's content (a small backend change, not made here).
+- **VC-9 Support-language content.** Example translations, labels, explanations and memory tips are authored in
+  Vietnamese (`{vi: ...}`); they show only to a Vietnamese-support learner. An English- or Chinese-support learner
+  sees the entry without them until a pack in their support language exists.
+- **VC-10 The Quick Sheet** keeps its own compact word card (`screens/quick-sheet`, `mapWordCard`); it is a sheet,
+  not a card surface of this PR.

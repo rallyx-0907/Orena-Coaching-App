@@ -160,6 +160,7 @@ jobs:
           node scripts/test_orena_screen_speak-summary.mjs
           node scripts/test_orena_screen_review.mjs
           node scripts/test_orena_screen_feed.mjs
+          node scripts/test_orena_vocabulary_card.mjs
           node scripts/test_orena_screen_errors.mjs
           node scripts/test_orena_screen_reader.mjs
           node scripts/test_orena_screen_reader-complete.mjs

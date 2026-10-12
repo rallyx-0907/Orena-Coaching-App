@@ -40,6 +40,7 @@ The learner UI runs on :8021 (dev/QA, `codex/work`) and on :8000 (public product
 | Import | `screens/import/` (opened from Discover's "+ Import") | `scripts/test_orena_screen_sheets.mjs` | reviewable |
 | Notifications | `screens/notifications/` (opened from the shell bell, `shell/router.js`) | `scripts/test_orena_screen_sheets.mjs` | reviewable |
 | Stroke Practice | `screens/word/stroke-sheet.js`, `screens/word/stroke-tiles.js` | `scripts/test_orena_screen_word.mjs` | reviewable (styled from Word and Review, browser-checked in the Vocabulary batch 1ce3b816) |
+| VocabularyCard (Word Detail `detail`, Review `review-front` / `review-back`, Daily Feed `feed`; D-17W) | `kit/vocabulary-card.js`, `kit/vocabulary-card.css`, `product/vocabulary-card.js` (pure mapper), `copy/vocabulary-card.js` | `scripts/test_orena_vocabulary_card.mjs` | building (PR 2; browser check on :8021 pending) |
 | Prompt Setup (writing setup) | `screens/writing/` (its setup sheet) | `scripts/test_orena_screen_writing.mjs` | reviewable |
 | Mic state | `screens/mic/` | `scripts/test_orena_screen_mic.mjs` | reviewable |
 | Lesson complete | `screens/lesson-complete/` | `scripts/test_orena_screen_lesson-complete.mjs` | reviewable |

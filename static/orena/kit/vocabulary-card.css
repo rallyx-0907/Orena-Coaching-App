@@ -1,0 +1,295 @@
+/* VocabularyCard (kit/vocabulary-card.js, D-17W). Measured from the pinned word card (Orena.dc.html
+   Word Detail / Review Session: `.s-word-card`, `.s-review-card`): 24px radius surface, the 32px word,
+   the mono reading, `o-tag` chips, the 44px play/save discs, the tinted meaning panel, the soft amber
+   highlight, the small-caps block label, the bordered mastery footer. Tokens only (kit/tokens.css);
+   no outline ring - edges are `--edge-light` (D-147). No width media query: the relation grid wraps
+   by its own minimum column, so the card recomposes from 1920 wide down to a 360 phone (rule 49). The
+   card never sets its own height; a workspace that must not scroll as a page gives it a scroll region. */
+
+.c-vcard {
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+  width: 100%;
+  min-width: 0;
+}
+
+.c-vcard__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.c-vcard__id {
+  min-width: 0;
+}
+.c-vcard__word {
+  display: block;
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.c-vcard__word--han {
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-size: 40px;
+  letter-spacing: 0.02em;
+}
+.c-vcard__word ruby {
+  ruby-position: over;
+}
+.c-vcard__word rt {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+.c-vcard__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.c-vcard__ipa {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+.c-vcard__ipa b,
+.c-vcard__hanviet b {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+}
+.c-vcard__hanviet {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.c-vcard__discs {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+.c-vcard__disc {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface2);
+  color: var(--muted);
+  cursor: pointer;
+}
+.c-vcard__disc--play {
+  background: var(--accent-soft);
+  color: var(--accent-on-photo, var(--accent));
+}
+.c-vcard__disc.is-saved {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.c-vcard__art {
+  margin: 0;
+  border-radius: 16px;
+  background: var(--surface2);
+  overflow: hidden;
+  max-height: 180px;
+  display: flex;
+  justify-content: center;
+}
+.c-vcard__art img {
+  max-width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+}
+
+.c-vcard__meaning {
+  border-radius: 16px;
+  background: var(--surface2);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.c-vcard__meaning-text {
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+.c-vcard__support,
+.c-vcard__definition {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.c-vcard__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.c-vcard__label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.c-vcard__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.c-vcard__words,
+.c-vcard__note {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.c-vcard__muted {
+  color: var(--muted);
+}
+
+.c-vcard__examples {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.c-vcard__example {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.c-vcard__example + .c-vcard__example {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.c-vcard__example-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text3);
+}
+.c-vcard__example-text {
+  font-family: Literata, 'Noto Serif SC', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+.c-vcard__example-reading {
+  font-size: 14px;
+  color: var(--muted);
+}
+.c-vcard__example-translation {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.c-vcard__example-note {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+/* The pinned exParts treatment: weight and a soft amber patch, the ink stays the sentence's. */
+.c-vcard__hit {
+  background: var(--amber-soft);
+  color: inherit;
+  border-radius: 4px;
+  padding: 0 2px;
+  font-weight: 600;
+}
+
+.c-vcard__units {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.c-vcard__unit {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.c-vcard__unit-glyph {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: var(--surface2);
+  box-shadow: var(--edge-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-size: 30px;
+}
+.c-vcard__unit-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  line-height: 1.5;
+  min-width: 0;
+}
+.c-vcard__unit-body b {
+  font-weight: 600;
+  color: var(--text3);
+}
+
+.c-vcard__footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.c-vcard__stage {
+  font-size: 14px;
+  font-weight: 600;
+}
+.c-vcard__due {
+  font-size: 13px;
+  color: var(--text3);
+}
+
+/* The recall face: the word alone, centred, larger - nothing below it (D-17W). */
+.c-vcard--review-front {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  align-items: center;
+  text-align: center;
+}
+.c-vcard--review-front .c-vcard__head {
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.c-vcard--review-front .c-vcard__word {
+  font-size: 36px;
+}
+.c-vcard--review-front .c-vcard__word--han {
+  font-size: 48px;
+}
+.c-vcard--review-front .c-vcard__meta {
+  justify-content: center;
+}

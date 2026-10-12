@@ -5634,3 +5634,31 @@ EN/ZH flashcard design (Claude Design artifact "Flashcard từ vựng Anh – Tr
    `feed`, `review-front`, `review-back`) beside the compact `VocabularyRow`; PR 3 the Admin preview derived from A14
    with the production card; PR 4 the two samples loaded on :8021 only. Open design items: `UI_BACKEND_GAPS.md`
    "Vocabulary card (D-178)".
+
+## D-17W - One VocabularyCard: four modes, two review buttons, Save apart from Review
+
+(Placeholder D-17W until merge.)
+
+Date: 2026-10-12. Human decisions of 2026-10-12 for PR 2 of D-178 (lane `claude/vocab-card-ui`).
+
+1. **One card, one mapper.** `static/orena/product/vocabulary-card.js#toVocabularyModel` is the only mapping from what a
+   surface holds about a word (a saved item, a catalogue card, a raw entry, the list's seed, the Word Detail lookup) to
+   what the card draws. It is pure content: no saved state, stage, due date or learner sentence goes in or comes out;
+   `learnerState(item)` is a separate decorator the screen applies. `kit/vocabulary-card.js` draws it; the Admin preview
+   (PR 3) renders the same component and mapper with no learner state.
+2. **Modes.** `detail` (Word Detail: the whole card, Save), `feed` (the Daily Feed's turned card: the whole card with
+   the first example, Save), `review-front` (the word or Hanzi, its reading, part of speech, level and audio - nothing
+   that answers the card), `review-back` (the whole card; the grades are drawn under it). Compact rows stay rows
+   (`VocabularyRow`, PR 2b); a rich card never replaces a row.
+3. **Two review buttons.** "Not yet" sends `again`, "Got it" sends `got_it`, each labelled with the interval the
+   scheduler reports for that card. `unsure` stays in `POST /api/library/vocabulary/{word}/review` and has no button;
+   the session summary counts the two. Supersedes the three-button choice in Review's earlier surface report.
+4. **Save is not Review.** Word Detail and the Feed offer Save and never a grade; a Review session contains only words
+   already in `saved_words`; nothing is saved silently. Flow: card -> Save -> `saved_words` -> scheduler -> Review.
+5. **Content rules.** Highlights find the authored span (`match`/`occurrence`): Latin as a whole word, Hanzi where it
+   stands; the pinyin span is lit only when it can be found, never the whole line. Support-language content shows only
+   in the learner's support language; the meaning alone falls back to another language, tagged. No illustration, no
+   frame. Tokens only; the ZH card differs by type and content order, not colour.
+6. **Provenance.** Orena.dc.html -> Word Detail / Review Session -> the word card (`wdWC` / `rvWC`) -> reused as
+   VocabularyCard; adaptations recorded in the component's header. Open items: `UI_BACKEND_GAPS.md` "Vocabulary card
+   (D-178)", PR 2 list.

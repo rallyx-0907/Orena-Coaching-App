@@ -3,8 +3,11 @@
    `writing_coach/vocabulary_feed.py`). Reuses `screens/collection/model.js#supportMeaning`,
    `screens/word/model.js#highlightExample`/`cardLanguage`/`posLabel` and
    `screens/word/stroke-sheet.js#mountStrokeSheet`, exactly as Review Session and the Wave B
-   overlays already do for the same shared Word Card primitive (D7 §4). */
+   overlays already do for the same shared Word Card primitive (D7 §4). The turned card is the shared
+   VocabularyCard in `feed` mode (kit/vocabulary-card.js, D-17W): Save, never a grade. */
 import { html, mount, raw, cls } from '../../kit/html.js';
+import { vocabularyCard } from '../../kit/vocabulary-card.js';
+import { toVocabularyModel, savePayloadOf } from '../../product/vocabulary-card.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { emptyMarkup } from '../../kit/states.js';
@@ -18,16 +21,10 @@ import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { t } from './copy.js';
-import { mapFeedCards, savePayload } from './model.js';
+import { mapFeedCards } from './model.js';
 import { cardLanguage, posLabel } from '../word/model.js';
 import { mountStrokeSheet } from '../word/stroke-sheet.js';
 import { strokesMarkup, hydrateStrokes } from '../review/strokes.js';
-
-function posMarkup(pos) {
-  if (!pos) return '';
-  const label = posLabel(pos, t);
-  return html`<span class="o-tag"${label.known ? '' : raw(` lang="${langAttr('en')}"`)}>${label.text}</span>`;
-}
 
 /* A feed candidate was never saved, so it has no schedule: its mastery meter is the canonical
    component at its measured value - no bars filled and the real stage-0 label ("New") - never an
@@ -60,34 +57,25 @@ function frontMarkup(card, index, saved) {
   </div>`;
 }
 
-function backMarkup(card, index, saved) {
-  const cardLang = cardLanguage(card.script);
-  return html`<div class="s-feed-face s-feed-face--back">
-    <div class="s-feed-card__top">
-      <div class="s-feed-card__id">
-        <div class="s-feed-card__word s-feed-card__word--big" lang="${langAttr(cardLang)}">${card.word}</div>
-        <div class="s-feed-card__meta">${card.ipa ? html`<span class="s-feed-card__ipa">${card.ipa}</span>` : ''}${posMarkup(card.pos)}${card.hasLevel ? html`<span class="o-tag">${card.level}</span>` : ''}</div>
-      </div>
-      <div class="s-feed-card__actions">
-        <button type="button" class="s-feed-icon s-feed-icon--play" data-play="${index}" aria-label="${t('playWord')}">${raw(icon('volume-2', { size: 19 }))}</button>
-        <button type="button" class="s-feed-icon" data-save="${index}" style="${saved ? 'background:var(--amber-soft);color:var(--amber)' : 'background:var(--surface2);color:var(--muted)'}" aria-pressed="${saved ? 'true' : 'false'}" aria-label="${t(saved ? 'unsaveWord' : 'saveWord')}">${raw(icon('bookmark-check', { size: 19 }))}</button>
-      </div>
-    </div>
-    ${card.hasMeaning ? html`<div class="s-feed-card__meaning">${card.meaning}</div>` : ''}
-    ${card.hasExample ? html`<div class="s-feed-card__example" lang="${langAttr(cardLang)}">“${card.exampleParts.map((part) => html`<span class="${cls(part.hit && 's-feed-card__hit')}">${part.value}</span>`)}”</div>` : ''}
-    ${card.script === 'hanzi' ? strokesMarkup({ word: card.word, prefix: 's-feed', label: t('strokeOrder'), buttonLabel: t('practiseStrokes'), buttonAttr: `data-practise-strokes="${index}"`, buttonClass: 's-feed-strokes-btn' }) : ''}
-    <div class="s-feed-card__footer">${masteryMarkup()}</div>
+/* The turned card: the shared VocabularyCard (`feed` mode) - the entry's content, the play disc and
+   the save disc; a feed word is never graded here (D-17W). */
+function backMarkup(model, saved) {
+  const strokes = model.script === 'hanzi'
+    ? strokesMarkup({ word: model.word, prefix: 's-feed', label: t('strokeOrder'), buttonLabel: t('practiseStrokes'), buttonAttr: 'data-practise-strokes', buttonClass: 's-feed-strokes-btn' })
+    : '';
+  return html`<div class="s-feed-face s-feed-face--back" data-scroll-region>
+    ${vocabularyCard(model, { mode: 'feed', learner: { saved, hasSchedule: false }, slots: { strokes } })}
   </div>`;
 }
 
-function cardMarkup(card, index, flipped, saved) {
+function cardMarkup(card, model, index, flipped, saved) {
   return html`<div class="s-feed-card${cls(flipped && ' is-flipped')}" data-card="${index}" role="button" tabindex="0">
-    ${flipped ? backMarkup(card, index, saved) : frontMarkup(card, index, saved)}
+    ${flipped ? backMarkup(model, saved) : frontMarkup(card, index, saved)}
   </div>`;
 }
 
 export default async function mountFeed(element, ctx) {
-  await useStyles('screens/feed/feed.css');
+  await Promise.all([useStyles('screens/feed/feed.css'), useStyles('kit/vocabulary-card.css')]);
   element.classList.add('s-feed-root');
   const context = ctx.context || {};
   const language = context.language || 'en';
@@ -97,6 +85,8 @@ export default async function mountFeed(element, ctx) {
   if (!ctx.isCurrent()) return undefined;
 
   const cards = mapFeedCards(payload, support);
+  const models = (payload?.items || []).filter((entry) => String(entry?.headword || '').trim())
+    .map((entry) => toVocabularyModel(entry, { supportLanguage: support }));
   for (const entry of payload?.items || []) rememberWordSeed(entry);
   const flipped = new Set();
   const savedIdx = new Set();
@@ -124,7 +114,7 @@ export default async function mountFeed(element, ctx) {
       element,
       html`${header}${
         cards.length
-          ? html`<div class="s-feed-rail" data-scroll-region>${cards.map((card, index) => cardMarkup(card, index, flipped.has(index), savedIdx.has(index)))}</div>`
+          ? html`<div class="s-feed-rail" data-scroll-region>${cards.map((card, index) => cardMarkup(card, models[index], index, flipped.has(index), savedIdx.has(index)))}</div>`
           : emptyMarkup({ text: t('empty'), iconName: 'flame' })
       }`,
     );
@@ -155,10 +145,12 @@ export default async function mountFeed(element, ctx) {
         flip(Number(node.dataset.card));
       });
     });
+    // A control on either face names its card through the card it sits in.
+    const indexOf = (button) => Number(button.closest('[data-card]')?.dataset.card);
     element.querySelectorAll('[data-play]').forEach((button) => {
       button.addEventListener('click', async (event) => {
         event.stopPropagation();
-        const card = cards[Number(button.dataset.play)];
+        const card = cards[indexOf(button)];
         try {
           const info = await api.wordAudio(card.word);
           if (info?.available && info.url) playUrl(info.url);
@@ -178,16 +170,16 @@ export default async function mountFeed(element, ctx) {
     element.querySelectorAll('[data-save]').forEach((button) => {
       button.addEventListener('click', async (event) => {
         event.stopPropagation();
-        const index = Number(button.dataset.save);
-        const card = cards[index];
+        const index = indexOf(button);
+        const model = models[index];
         button.disabled = true;
         try {
           if (savedIdx.has(index)) {
-            await api.deleteLibraryVocabulary(card.word);
+            await api.deleteLibraryVocabulary(model.word);
             savedIdx.delete(index);
             toast(t('removedToast'));
           } else {
-            await api.saveLibraryVocabulary(savePayload(card));
+            await api.saveLibraryVocabulary(savePayloadOf(model, 'feed'));
             savedIdx.add(index);
             toast(t('savedToast'));
           }
@@ -199,7 +191,7 @@ export default async function mountFeed(element, ctx) {
     element.querySelectorAll('[data-practise-strokes]').forEach((button) => {
       button.addEventListener('click', async (event) => {
         event.stopPropagation();
-        const card = cards[Number(button.dataset.practiseStrokes)];
+        const card = cards[indexOf(button)];
         await useStyles('screens/word/word.css');
         const titleWord = card.ipa ? `${card.word} · ${card.ipa}` : card.word;
         openSheet({

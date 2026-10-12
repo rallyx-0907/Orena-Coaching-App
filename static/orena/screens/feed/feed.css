@@ -87,13 +87,17 @@
 .s-feed-face--front {
   justify-content: flex-start;
 }
-/* The flipped card is the frame's inner panel: 18px radius, 16px inset, on the card's surface. */
+/* The flipped card is the frame's inner panel: the shared VocabularyCard (D-17W), scrolling inside the
+   card when the entry is long. */
 .s-feed-face--back {
   overflow: auto;
+  border-radius: 18px;
+  gap: 16px;
+}
+.s-feed-face--back .c-vcard {
   padding: 16px;
   border-radius: 18px;
-  background: var(--surface);
-  gap: 16px;
+  box-shadow: none;
 }
 
 .s-feed-card__word {
@@ -104,9 +108,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.s-feed-card__word--big {
-  font-size: 32px;
 }
 .s-feed-card__reading {
   font-family: 'JetBrains Mono', monospace;
@@ -158,17 +159,6 @@
   font-size: 13.5px;
   font-weight: 600;
   color: var(--accent-text);
-}
-.s-feed-card__meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.s-feed-card__ipa {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  color: var(--muted);
 }
 
 .s-feed-front-actions {
@@ -229,69 +219,10 @@
   align-items: flex-start;
   gap: 12px;
 }
-.s-feed-card__meta .o-tag {
-  height: 22px;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-}
-.s-feed-card__footer {
-  flex: none;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-.s-feed-card__footer .s-feed-mastery {
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-}
-.s-feed-card__footer .s-feed-mastery__stage {
-  font-size: 14px;
-  color: var(--text);
-}
 .s-feed-card__id {
   min-width: 0;
 }
-.s-feed-card__id .s-feed-card__meta {
-  margin-top: 8px;
-}
-.s-feed-card__actions {
-  display: flex;
-  gap: 8px;
-  flex: none;
-}
-.s-feed-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  border: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.s-feed-icon--play {
-  background: var(--accent-soft);
-  color: var(--accent-on-photo, var(--accent));
-}
 
-.s-feed-card__meaning {
-  font-size: 16px;
-  line-height: 1.5;
-  flex: none;
-}
-.s-feed-card__example {
-  font-family: Literata, 'Noto Serif SC', Georgia, serif;
-  font-size: 17px;
-  line-height: 1.7;
-  color: var(--muted);
-  flex: none;
-}
-.s-feed-card__hit {
-  background: var(--amber-soft);
-  border-radius: 4px;
-  padding: 0 2px;
-  font-weight: 600;
-}
 /* The Word Card's Hanzi block: label, one tile per character (the vendored stroke pack, drawn
    finished), then the practice button - the frame's 12px/600 caps label and 76px tiles. */
 .s-feed-strokes {

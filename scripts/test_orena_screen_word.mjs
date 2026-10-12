@@ -260,11 +260,14 @@ assert.deepEqual(posLabel('', fakeT), { text: '', known: false }, 'no part of sp
    and Collection Detail already use, rule 40's "reuse before inventing") is painted before either
    async lookup starts, not only after both resolve. --- */
 const screenSrc = readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8');
-// languages-5 / finding A: wires the shared kit/lang.js helper (never the old ad-hoc
-// `? 'zh' : ''` ternary, which left a Latin card with no lang attribute at all).
-assert.match(screenSrc, /import\s*\{\s*langAttr\s*\}\s*from\s*'\.\.\/\.\.\/kit\/lang\.js'/, 'imports the shared lang helper from kit/lang.js');
-assert.doesNotMatch(screenSrc, /'hanzi'\s*\?\s*'zh'\s*:\s*''/, 'no ad-hoc script-to-lang ternary left inline (kit/lang.js + model.js#cardLanguage own this now)');
-assert.match(screenSrc, /lang="\$\{langAttr\(cardLang\)\}"/, 'both the headword and the example carry a real lang attribute via the shared helper');
+// languages-5 / finding A: the card is the shared VocabularyCard (D-17W), which marks the headword and
+// every example with the shared kit/lang.js helper (never the old ad-hoc `? 'zh' : ''` ternary).
+const kitCardSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
+assert.match(screenSrc, /import\s*\{\s*vocabularyCard\s*\}\s*from\s*'\.\.\/\.\.\/kit\/vocabulary-card\.js'/, 'Word Detail draws the shared VocabularyCard');
+assert.match(screenSrc, /mode:\s*'detail'/, 'in its detail mode');
+assert.match(kitCardSrc, /import\s*\{\s*langAttr\s*\}\s*from\s*'\.\/lang\.js'/, 'the card imports the shared lang helper from kit/lang.js');
+assert.doesNotMatch(screenSrc + kitCardSrc, /'hanzi'\s*\?\s*'zh'\s*:\s*''/, 'no ad-hoc script-to-lang ternary left inline');
+assert.match(kitCardSrc, /lang="\$\{lang\}"/, 'the headword and the examples carry a real lang attribute via the shared helper');
 assert.match(screenSrc, /import\s*\{\s*loadingMarkup\s*\}\s*from\s*'\.\.\/\.\.\/kit\/states\.js'/, 'imports the shared loading skeleton primitive, not a bespoke one');
 assert.match(screenSrc, /loadingMarkup\(t\('wordLoading'\)\)/, 'paints the loading skeleton with a real, translated status label');
 const loadingCallIndex = screenSrc.indexOf("loadingMarkup(t('wordLoading'))");
