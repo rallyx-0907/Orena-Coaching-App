@@ -5475,7 +5475,18 @@ absent.
    step, D-127); evidence recorded with the review.
 4. **Not authorized here.** Merging, and applying 0026 to any runtime, are separate human gates. Once merged, every
    PostgreSQL runtime that takes the code must apply 0026 before it starts (startup refuses a schema below head), the same
-   operator path as 0030 (D-173): backup, rehearsal, `product_migration_pack.py apply`.
+   operator path as 0030 (D-173, recorded on PR #128): backup, rehearsal, `product_migration_pack.py apply`.
 5. **Legal text.** The published privacy page already states AI use and cost records are kept without content for 13
    months and deleted with the account (`docs/legal/public/privacy.*.json`, `account-deletion.*.json`); no public text
    changes. `docs/legal/DRAFT_PRIVACY.md` is a superseded draft and is not edited.
+6. **Review outcome (Opus, delegated reviewer, at `af7b957b`): APPROVE WITH CONDITIONS**, no P0/P1. Required before merge
+   and done in the next commit: (finding 1) account deletion keeps the `users` row, so the FK cascade never fires -
+   `ai_cost_records` joins the deletion enumeration as `ACCOUNT_ID_KEYED_TABLES`, with a test, and the "deleted with the
+   account by cascade" wording is corrected everywhere; (3-6) stale or forward-dated text fixed. Not blocking, recorded:
+   one write error pauses recording for every account in that process for 5 minutes - revisit before any quota reads
+   this table (2); the published "13 months" is literal while `ai_costs.retention_days` can shorten it (7); ORM
+   `server_default` for provider/model (8); `scripts/rehearse_grammar_content_store.py` is a one-off 0030 record whose
+   head checks fail if re-run (9). Conditions before apply on :8000: rehearsal on a fresh backup against the final merged
+   tree; one maintenance window (stop, backup, plan, apply, deploy, start - the 0030 image refuses to start on a 0026
+   database); rollback = `alembic downgrade 20261008_0030` (drops the records) or restore; after start, the warning stops
+   and one priced call writes one row; the human's authorization recorded.

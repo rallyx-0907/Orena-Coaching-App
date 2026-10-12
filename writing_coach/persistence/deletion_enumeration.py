@@ -36,6 +36,12 @@ ACCOUNT_KEYED_TABLES = (
     "vocabulary_decks",
 )
 
+# Owner tables keyed by the account through `account_id` (users.id): deleted for the deleted account. Their
+# ON DELETE CASCADE never fires, because the `users` row survives deletion (review of migration 0026, finding 1).
+ACCOUNT_ID_KEYED_TABLES = (
+    "ai_cost_records",  # AI cost per account (AC-2): a recreated account must not inherit the deleted one's spend
+)
+
 # Deleted through their essay's cascade; listed so the enumeration is complete.
 CASCADED_TABLES = {"essay_review_history": "essays"}
 

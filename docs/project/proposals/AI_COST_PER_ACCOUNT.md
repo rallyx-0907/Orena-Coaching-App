@@ -16,7 +16,7 @@ One row of `ai_cost_records` per provider call that answered, made inside a sign
 
 | Column | Meaning |
 | --- | --- |
-| `account_id` | `users.id`, `ON DELETE CASCADE` — the record is the account's and goes with it |
+| `account_id` | `users.id`, `ON DELETE CASCADE` — the record is the account's; account deletion keeps the `users` row, so the deletion workflow deletes these rows explicitly (`deletion_enumeration.ACCOUNT_ID_KEYED_TABLES`) |
 | `occurred_at` | server time of the call |
 | `feature` | the capability (`writing_review`, `speech_asr`, `agent_turn_fast`, ...) |
 | `provider`, `model` | as already in the anonymous `ai.operation` telemetry |

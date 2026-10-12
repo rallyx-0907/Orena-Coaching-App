@@ -631,10 +631,12 @@ class VocabularyCollectionMembership(Base):
 
 
 class AICostRecord(Base):
-    """One priced provider call made for a signed-in account (AC-2, proposed migration 20261005_0026).
+    """One priced provider call made for a signed-in account (AC-2, migration 20261005_0026).
 
     The account, the feature, provider and model, the estimated cost and the units it was priced on - nothing the
-    learner wrote or said. Kept 13 months (writing_coach/ai/account_costs.py); deleted with the account."""
+    learner wrote or said. Kept 13 months (writing_coach/ai/account_costs.py); deleted by the account-deletion
+    workflow (persistence/deletion_enumeration.py): the `users` row survives deletion, so the FK cascade only covers a
+    hard delete of `users`."""
 
     __tablename__ = "ai_cost_records"
     __table_args__ = (

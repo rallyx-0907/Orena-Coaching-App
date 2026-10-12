@@ -876,7 +876,7 @@ class PostgresPlatformRepository:
             for row in rows
         ]
 
-    # ---- AI cost per account (AC-2; proposed migration 20261005_0026) -------------------------------------
+    # ---- AI cost per account (AC-2; migration 20261005_0026) -------------------------------------
 
     def record_ai_cost(self, user_key: str, event: dict) -> bool:
         """One priced call for a signed-in account: account, feature, provider, model, cost and units - no learner

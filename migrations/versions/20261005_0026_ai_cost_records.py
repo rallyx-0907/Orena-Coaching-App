@@ -5,20 +5,22 @@ provider and model, the estimated cost and its state, the units it was priced on
 when. Nothing a learner wrote or said is stored - no prompt, answer, transcript or audio. It is the shared record
 for the Admin cost page (totals by default; per account for an administrator) and for per-plan quota.
 
-Retention: 13 months, then deleted automatically in bounded batches (writing_coach/ai/account_costs.py). A deleted
-account's rows go with it (ON DELETE CASCADE): the record is the account's, not an archive.
+Retention: 13 months, then deleted automatically in bounded batches (writing_coach/ai/account_costs.py). The record is
+the account's, not an archive: the account-deletion workflow deletes its rows explicitly
+(writing_coach/persistence/deletion_enumeration.py), because the `users` row survives deletion (incarnation barrier,
+D-054/D-055); ON DELETE CASCADE covers only a hard delete of `users`.
 
 Indexes: (account_id, occurred_at) for an account's history and quota windows; (occurred_at) for the totals and
 the retention sweep.
 
 Review and gate. Promoted from `migrations/proposed/` into the chain (D-17H, branch schema/ai-cost-0026) after the
-independent review of 2026-10-05 (APPROVE WITH CONDITIONS, conditions met in e54a2aa3) and a delta review recorded
-in docs/reviews/architecture/AI_COST_0026_REVIEW_2026-10-12.md. Promotion is source control only: every PostgreSQL
-runtime that takes this code must apply it (operator step, after a backup and a rehearsal on a copy, on the runtime
-the human names) before it starts - startup refuses a schema below head. Startup never applies it (D-002). The recorder still
-tolerates a missing table (recording skipped, the per-account view says it is not available), which is how every
-runtime ran before this promotion. `downgrade()` drops the table and every record in it; it exists
-for rehearsal and rollback only.
+independent review of 2026-10-05 (APPROVE WITH CONDITIONS, conditions met in e54a2aa3) and the review of the
+promotion, docs/reviews/architecture/AI_COST_0026_REVIEW_2026-10-12.md. Promotion is source control only: every
+PostgreSQL runtime that takes this code must apply it (operator step, after a backup and a rehearsal on a copy, on the
+runtime the human names) before it starts - startup refuses a schema below head. Startup never applies it (D-002). The
+recorder still tolerates a missing table (recording skipped, the per-account view says it is not available), which is
+how every runtime ran before this promotion. `downgrade()` drops the table and every record in it; it exists for
+rehearsal and rollback only.
 
 Revision ID: 20261005_0026
 Revises: 20261008_0030
