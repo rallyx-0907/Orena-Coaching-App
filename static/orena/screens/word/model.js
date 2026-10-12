@@ -124,9 +124,11 @@ export function stageCopyKey(item) {
 export { highlightExample } from '../../product/vocabulary-card.js';
 import { highlightExample, scriptOf, isPinyin, isLatinReading } from '../../product/vocabulary-card.js';
 
-/* The language a word is looked up in: Chinese for a Han word, otherwise the learner's language unless
-   that is Chinese and the word is not (an English word met while learning Chinese). */
-export function lookupLanguage(word, learning) {
+/* The catalogue language a word belongs to: Chinese for a Han word, otherwise the learner's language unless
+   that is Chinese and the word is not (an English word met while learning Chinese). Only for catalogue reads
+   (`/api/vocabulary/catalogue/search` allows any enabled language); the word-detail lookup must use the learner's
+   current learning language, which the server enforces (409 otherwise). */
+export function catalogueLanguage(word, learning) {
   if (scriptOf(word) === 'hanzi') return 'zh';
   return learning === 'zh' ? 'en' : learning || 'en';
 }

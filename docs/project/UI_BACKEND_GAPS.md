@@ -5959,9 +5959,12 @@ items above, and what PR 2 leaves open for the human:
   (`project_word_detail`) sets `pinyin` to the lookup's `pronunciation` whenever the headword is Han
   (`script_of`, :127), whatever language the lookup ran in (`source_language`, the route at :389). Word Detail sent
   the learner's current learning language, so a Chinese word opened while learning English (`松树`) was looked up as
-  English and its English IPA ("/paɪn triː/") came back as `pinyin`. Fixed on the client (D-17W): Word Detail looks a
-  word up in its own language (`screens/word/model.js#lookupLanguage`), and the card mapper accepts only a
-  pinyin-shaped reading for a Han word and never pinyin or Hanzi for a Latin word. The server should label
-  `pinyin` only for a Chinese lookup; a one-line change with a pytest, not made here (no Docker run on this host
-  with under 2 GB free).
+  English and its English IPA ("/paɪn triː/") came back as `pinyin`. Covered on the client (D-17W): the card mapper
+  accepts only a pinyin-shaped reading for a Han word and never pinyin or Hanzi for a Latin word, and Word Detail
+  reads the catalogue in the word's own language (`screens/word/model.js#catalogueLanguage`) so a direct link finds
+  the entry's pinyin and meaning. The lookup itself must stay in the learner's current learning language: any other is
+  refused with 409 by `media_interaction.py:119-126` (`_validated_source_language`), reached through
+  `word_detail.py:322-337` (`_explain` re-raises it), and the screen must not send it (a 286aa389 regression,
+  reverted). The server should label `pinyin` only for a Chinese lookup; a one-line change with a pytest, not made
+  here (no Docker run on this host with under 2 GB free).
 

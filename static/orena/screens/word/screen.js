@@ -25,7 +25,7 @@ import {
   mapMasteryEvidence,
   restorePayload,
   stageCopyKey,
-  lookupLanguage,
+  catalogueLanguage,
 } from './model.js';
 import { toVocabularyModel, learnerState, savePayloadOf, highlightParts } from '../../product/vocabulary-card.js';
 import { mountStrokeSheet } from './stroke-sheet.js';
@@ -149,16 +149,19 @@ export default async function mountWordDetail(element, ctx) {
   let item = await fetchItem(word);
   if (!ctx.isCurrent()) return undefined;
   let seed = wordSeed(word);
-  if (!item && !seed) seed = await catalogueSeed(word, language);
+  // The catalogue is asked in the word's own language (a Hanzi word is in the Chinese catalogue, whatever the
+  // learner is learning now); it is a read, which the server allows for any enabled language.
+  if (!item && !seed) seed = await catalogueSeed(word, catalogueLanguage(word, language));
   if (!ctx.isCurrent()) return undefined;
 
   let detail = null;
   let clips = [];
   let clipsReady = false;
   const pending = Promise.all([
-    // The lookup runs in the word's own language, not the learner's current one: a Chinese word opened while
-    // learning English was looked up as English and came back with an English IPA labelled pinyin (D-17W).
-    api.wordDetail({ depth: 'full', text: word, context: contextFor(word, item), source_language: lookupLanguage(word, language), target_language: languages().support }).catch(() => null),
+    // The lookup runs in the learner's current learning language: the server refuses any other (409,
+    // media_interaction.py#_validated_source_language). A Chinese word looked up under English can answer with an
+    // English IPA labelled pinyin (UI_BACKEND_GAPS VC-15); the card mapper drops a reading of the wrong kind.
+    api.wordDetail({ depth: 'full', text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch(() => null),
     api.wordClips(word, 6).catch(() => null),
   ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
   const hasSomethingToShow = Boolean(item || seed);
@@ -167,7 +170,8 @@ export default async function mountWordDetail(element, ctx) {
   if (!hasSomethingToShow) {
     const { found, clipsPayload } = await pending;
     if (!ctx.isCurrent()) return undefined;
-    if (!found) throw new Error(`Word Detail: no lookup and no saved record for "${word}"`);
+    // A refused or empty lookup never fails the page: the card is drawn from whatever exists - here only the
+    // word itself - with no reading rather than a wrong one (rule 40).
     detail = found;
     clips = mapClips(clipsPayload);
     clipsReady = true;

@@ -366,12 +366,29 @@ assert.ok(String(vocabularyCard(toVocabularyModel(ZH, { supportLanguage: 'vi', l
 const latin = toVocabularyModel({ word: 'forest', language_code: 'en', readings: [{ text: 'sēnlín' }], phonetic: '森林' }, { supportLanguage: 'vi', lookup: { available: true, headword: 'forest', script: 'latin', ipa: 'sēnlín' } });
 assert.equal(latin.pronunciation.text, '');
 assert.ok(!String(vocabularyCard(latin, { mode: 'detail' })).includes('sēnlín'));
-// Word Detail looks a word up in the word's own language, not the learner's current one.
-const { lookupLanguage } = await import('../static/orena/screens/word/model.js');
-assert.equal(lookupLanguage('松树', 'en'), 'zh');
-assert.equal(lookupLanguage('copper', 'en'), 'en');
-assert.equal(lookupLanguage('copper', 'zh'), 'en');
-assert.match(readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8'), /source_language: lookupLanguage\(word, language\)/);
+// Word Detail: the lookup runs in the learner's current learning language (the server refuses any other with a
+// 409, media_interaction.py#_validated_source_language); the catalogue is read in the word's own language; a
+// refused or empty lookup never fails the page.
+const { catalogueLanguage } = await import('../static/orena/screens/word/model.js');
+assert.equal(catalogueLanguage('松树', 'en'), 'zh');
+assert.equal(catalogueLanguage('copper', 'en'), 'en');
+assert.equal(catalogueLanguage('copper', 'zh'), 'en');
+const wordSrc = readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8');
+assert.match(wordSrc, /source_language: language,/, 'the lookup uses the learning language of the account');
+assert.match(wordSrc, /catalogueSeed\(word, catalogueLanguage\(word, language\)\)/, 'the catalogue is asked in the language of the word');
+assert.doesNotMatch(wordSrc, /throw new Error\(`Word Detail/, 'no lookup and no record still draws a card, never a load error');
+for (const refused of [null, { available: false, headword: '松树', script: 'hanzi', pinyin: '/paɪn triː/' }]) {
+  const degraded = toVocabularyModel(null, { word: '松树', supportLanguage: 'vi', lookup: refused });
+  assert.equal(degraded.word, '松树');
+  assert.equal(degraded.script, 'hanzi');
+  assert.equal(degraded.pronunciation.pinyin, '', 'no reading rather than a wrong one');
+  const degradedCard = String(vocabularyCard(degraded, { mode: 'detail', learner: learnerState(null) }));
+  assert.ok(degradedCard.includes('>松树<') && !degradedCard.includes('<rt>') && degradedCard.includes('data-save'));
+}
+// The catalogue's own answer for a direct link (the search's trimmed shape) gives the pinyin and the meaning.
+const searched = toVocabularyModel({ word: '松树', normalized_word: '松树', language_code: 'zh', part_of_speech: 'noun', readings: [{ text: 'sōng shù', kind: 'reading' }], short_meanings: [{ language: 'en', text: 'pine tree' }] }, { word: '松树', supportLanguage: 'vi', lookup: { available: true, headword: '松树', script: 'hanzi', pinyin: '/paɪn triː/' } });
+assert.equal(searched.pronunciation.pinyin, 'sōng shù');
+assert.equal(searched.meaning.text, 'pine tree');
 
 /* --- the two review buttons --- */
 assert.deepEqual(REVIEW_BUTTONS, ['again', 'got_it']);
