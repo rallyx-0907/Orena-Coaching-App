@@ -8,7 +8,7 @@ estimated cost and the units - never what the learner wrote or said. It is the o
 Kept 13 months, then deleted automatically: the write path starts a sweep at most once a day per process, off the
 request thread, in bounded batches through a repository method that deletes cost records and nothing else.
 
-Before the table exists (the migration is a proposal until the human authorizes it), or on any database error,
+Before the table exists (migration 20261005_0026, applied per runtime by the operator), or on any database error,
 recording pauses for five minutes and then tries again; nothing a learner does ever fails because of it. An
 administrator's connection test and configuration checks are not an account's spend and are not recorded.
 

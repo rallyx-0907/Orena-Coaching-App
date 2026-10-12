@@ -274,7 +274,7 @@ def test_postgres_prepaid_orders_extend_refund_and_record_access():
         cfg.set_main_option("sqlalchemy.url", schema_url.replace("%", "%%"))
         command.upgrade(cfg, "head")
         engine = create_engine(schema_url, future=True)
-        migrations = [_proposed("20261005_0026_ai_cost_records"), _proposed("20261005_0027_billing_orders")]
+        migrations = [_proposed("20261005_0027_billing_orders")]  # 0026 is in the chain (head) since its promotion
         try:
             with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
                 for migration in migrations:

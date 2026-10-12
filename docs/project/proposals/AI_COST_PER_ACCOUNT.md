@@ -1,8 +1,8 @@
 # AI cost per account (AC-2) — proposal
 
-Status: PROPOSED. The migration `migrations/proposed/20261005_0026_ai_cost_records.py` waits for an
-independent review, a rehearsal on a copy, and the human's authorization (AGENTS.md §1 "Architecture review
-authority", §7).
+Status: PROMOTED in source control (D-177, 2026-10-12): `migrations/versions/20261005_0026_ai_cost_records.py`.
+Applied to no runtime by that change; applying it is the human's gate per runtime, after a backup and a rehearsal on a
+copy.
 
 ## The human's decision (2026-10-04)
 
@@ -16,7 +16,7 @@ One row of `ai_cost_records` per provider call that answered, made inside a sign
 
 | Column | Meaning |
 | --- | --- |
-| `account_id` | `users.id`, `ON DELETE CASCADE` — the record is the account's and goes with it |
+| `account_id` | `users.id`, `ON DELETE CASCADE` — the record is the account's; account deletion keeps the `users` row, so the deletion workflow deletes these rows explicitly (`deletion_enumeration.ACCOUNT_ID_KEYED_TABLES`) |
 | `occurred_at` | server time of the call |
 | `feature` | the capability (`writing_review`, `speech_asr`, `agent_turn_fast`, ...) |
 | `provider`, `model` | as already in the anonymous `ai.operation` telemetry |

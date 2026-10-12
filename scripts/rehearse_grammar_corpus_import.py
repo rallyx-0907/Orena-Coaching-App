@@ -61,7 +61,10 @@ def main() -> int:
     with engine.connect() as connection:
         head = connection.execute(text("SELECT version_num FROM alembic_version")).scalar()
         server = connection.execute(text("SHOW server_version")).scalar()
-    check("database migrated to the chain head 20261008_0030", head == "20261008_0030", f"{head}; PostgreSQL {server}")
+    from alembic.script import ScriptDirectory
+
+    expected = ScriptDirectory.from_config(cfg).get_current_head()
+    check(f"database migrated to the chain head {expected}", head == expected, f"{head}; PostgreSQL {server}")
 
     store = GrammarStoreRepository(engine)
     language = {"value": "en"}

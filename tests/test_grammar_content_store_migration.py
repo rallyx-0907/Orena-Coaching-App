@@ -73,11 +73,12 @@ def store():
     engine.dispose()
 
 
-def test_the_migration_is_promoted_and_is_the_chain_head_on_0029():
+def test_the_migration_is_promoted_on_0029_and_is_in_the_single_chain():
     assert MIGRATION.exists()
     assert not (ROOT / "migrations" / "proposed" / NAME).exists()
     script = _script()
-    assert script.get_heads() == ["20261008_0030"]
+    assert len(script.get_heads()) == 1
+    assert "20261008_0030" in {rev.revision for rev in script.walk_revisions()}
     assert script.get_revision("20261008_0030").down_revision == "20261007_0029"
     revisions = [
         re.search(r'^revision = "([^"]+)"', path.read_text(encoding="utf-8"), re.M).group(1)

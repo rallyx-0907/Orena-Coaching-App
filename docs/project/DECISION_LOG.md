@@ -5540,3 +5540,39 @@ refused version (closed, unknown, reason missing) must not block or hide the res
 [{version_id, code, message}]}`. One audit row per batch (`admin.grammar_review_bulk`: decision, count, failed); the
 per-version history events remain in the store. No schema change. The screen sends one request, so leaving it no longer
 stops the work. Publishing stays all-or-nothing (`/publish`).
+
+## D-177 - AI cost per account: migration 0026 promoted into the chain (source control only)
+
+(Placeholder D-17H until merge. The migration's own docstring keeps "D-17H": the file is bound to the rehearsal's
+execution digest, and editing it would void the rehearsal.)
+
+Date: 2026-10-12. Human instruction 2026-10-12 ("Chuẩn bị bước 1 và 2 cho 0026"), after :8000 logged
+"AI cost per account not recorded (ProgrammingError)": the AC-2 recorder (D-decision of 2026-10-04,
+`proposals/AI_COST_PER_ACCOUNT.md`) shipped before its table, by design, and skips recording while `ai_cost_records` is
+absent.
+
+1. **Promotion.** `20261005_0026_ai_cost_records.py` moves from `migrations/proposed/` to `migrations/versions/` unchanged
+   except its docstring; it becomes the single head, on `20261008_0030`. Revision id and file name are kept (no runtime has
+   ever applied it). The proposed `20261005_0027_billing_orders.py` stays proposed and still chains on 0026.
+2. **Reviews.** The 2026-10-05 independent review (APPROVE WITH CONDITIONS on `50e66c2` plus the uncommitted AC-2 files;
+   conditions met in `e54a2aa3`) is not bound to a committed SHA, so a delta review of this promotion at its exact SHA is
+   recorded in `docs/reviews/architecture/AI_COST_0026_REVIEW_2026-10-12.md` before merge.
+3. **Rehearsal.** On a fresh backup of :8000, with `scripts/product_migration_rehearsal.ps1` against this tree (operator
+   step, D-127); evidence recorded with the review.
+4. **Not authorized here.** Merging, and applying 0026 to any runtime, are separate human gates. Once merged, every
+   PostgreSQL runtime that takes the code must apply 0026 before it starts (startup refuses a schema below head), the same
+   operator path as 0030 (D-173): backup, rehearsal, `product_migration_pack.py apply`.
+5. **Legal text.** The published privacy page already states AI use and cost records are kept without content for 13
+   months and deleted with the account (`docs/legal/public/privacy.*.json`, `account-deletion.*.json`); no public text
+   changes. `docs/legal/DRAFT_PRIVACY.md` is a superseded draft and is not edited.
+6. **Review outcome (Opus, delegated reviewer, at `af7b957b`): APPROVE WITH CONDITIONS**, no P0/P1. Required before merge
+   and done in the next commit: (finding 1) account deletion keeps the `users` row, so the FK cascade never fires -
+   `ai_cost_records` joins the deletion enumeration as `ACCOUNT_ID_KEYED_TABLES`, with a test, and the "deleted with the
+   account by cascade" wording is corrected everywhere; (3-6) stale or forward-dated text fixed. Not blocking, recorded:
+   one write error pauses recording for every account in that process for 5 minutes - revisit before any quota reads
+   this table (2); the published "13 months" is literal while `ai_costs.retention_days` can shorten it (7); ORM
+   `server_default` for provider/model (8); `scripts/rehearse_grammar_content_store.py` is a one-off 0030 record whose
+   head checks fail if re-run (9). Conditions before apply on :8000: rehearsal on a fresh backup against the final merged
+   tree; one maintenance window (stop, backup, plan, apply, deploy, start - the 0030 image refuses to start on a 0026
+   database); rollback = `alembic downgrade 20261008_0030` (drops the records) or restore; after start, the warning stops
+   and one priced call writes one row; the human's authorization recorded.

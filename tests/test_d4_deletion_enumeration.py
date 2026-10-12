@@ -59,3 +59,12 @@ def test_every_language_scoped_table_the_target_language_count_reads_is_in_the_e
     counted = {table.name for table in language_scoped_tables()}
     covered = set(enumeration.ACCOUNT_KEYED_TABLES) | set(enumeration.CASCADED_TABLES)
     assert counted <= covered, sorted(counted - covered)
+
+
+def test_the_ai_cost_records_are_enumerated_by_account_id_because_their_cascade_does_not_fire():
+    """Migration 0026 review, finding 1: the `users` row survives deletion, so `ai_cost_records` is deleted explicitly."""
+    assert "ai_cost_records" in enumeration.ACCOUNT_ID_KEYED_TABLES
+    for table in enumeration.ACCOUNT_ID_KEYED_TABLES:
+        columns = Base.metadata.tables[table].c
+        assert "account_id" in columns, table
+        assert {fk.column.table.name for fk in columns["account_id"].foreign_keys} == {"users"}, table
