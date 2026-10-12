@@ -10,6 +10,7 @@ import { href } from './routes.js';
 import { orenaPresent, onOrenaPresence } from '../agent/presence.js';
 import { probe } from '../agent/transport.js';
 import { theme, toggleAppearance, onDeviceChange } from '../kit/device.js';
+import { bindChromeScroll } from './chrome-scroll.js';
 
 const RAIL = [
   { id: 'today', icon: 'house', label: 'today' },
@@ -173,7 +174,10 @@ export function drawFrame(root) {
   root.addEventListener('click', (event) => {
     if (event.target.closest('[data-theme-toggle]')) toggleAppearance();
   });
+  // D-17Y: the phone header and bar hide on scroll down in the browsing places; the router resets it per route.
+  handles.resetChrome = bindChromeScroll(handles.main);
   onDeviceChange(() => {
+    handles.resetChrome();
     if (lastState) handles.paint(lastState);
   });
   void probe();

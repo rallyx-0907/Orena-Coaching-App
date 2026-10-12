@@ -5755,6 +5755,43 @@ like the design, not only follow its layout".
    EN 113.5px / ZH 94.6px). Readability floors only: body, meaning and example text 13px, labels and tags 11px, pinyin
    and IPA 12px. All content stays on a phone - the illustration no longer drops on a short card; a face taller than
    its card scrolls in its body only, head and foot fixed. Buttons are exempt (the app's kit sizes, 44px targets).
+11. **A face never scrolls (human, 2026-10-12: "A card face must NEVER scroll internally, in any mode. The whole face
+   must be fully visible on screen, especially on mobile").** Supersedes the body scroll of points 9 and 10. The card
+   fits the composition to its box by "contain": s = min(widthScale, heightScale). The CSS gives the width scale
+   (point 10); `fitVocabularyCards` measures the showing face's natural height at it and, when that is taller than the
+   box, sets the height scale - spacing, gaps, radii and the illustration first (`--vc-ks`, down to 0.5), the type
+   last (`--vc-kt`, down to 0.55) - measuring again each step (`--vcard-s` / `data-vcard-s` record the achieved
+   height scale). Hard floors, reached only when the box needs them: body, meaning and example text 11px, labels and
+   tags 9.5px, pinyin and IPA 10px (point 10's 13/11/12 hold at full height). Every element stays, the illustration
+   included; the buttons keep their kit sizes (44px+). It fits again on resize (Word Detail, Review, the feed), on
+   turn (the other face) and once the web fonts arrive. No `overflow: auto/scroll` on the card, a face or its body
+   (scripts/test_orena_vocabulary_card.mjs).
 7. **Kept.** Every D-179 behaviour (modes, the recall face, grades outside the card, no Review bookmark, meaning
    order, reading guards, the pure mapper), the copy packs, and rule 49 (a fluid card whose padding scales with its
    width, the design's values as the ceiling).
+
+## D-17Y - The phone shell hides on scroll
+
+(Placeholder D-17Y until merge.) Human decision, 2026-10-12.
+
+On a phone, in the browsing places that have the phone header and the phone bar (Design Contract rule 47: the
+non-focus routes - Today, Discover, a content detail, Orena, Practice and its skill hubs, Library, a collection, Word
+Detail, Grammar, Progress, Profile, Coming soon), the header and
+the bar - with the Orena orb - slide away while the page scrolls down and come back when it scrolls up, and always at
+the top of the page.
+
+- **Rule 47 is unchanged in what it decides:** which places have the chrome. A learning workspace (focus route) still
+  has none, and the desktop rail and top bar never move. This decision only adds a scroll behaviour to the phone
+  chrome where rule 47 draws it.
+- **Mechanism (static/orena/shell/, a protected area; minimum change):** one scroll listener on the main column
+  (`shell/chrome-scroll.js`, bound by `shell/frame.js`); the state is `data-chrome` on the shell root (absent at the
+  top, `hidden`, `shown`); `shell/shell.css` lays the header and bar over the column on phone browsing places (the
+  column keeps their room as padding, so a page at its top sits where it did) and hides them by a transform, so
+  nothing reflows. Under `prefers-reduced-motion` there is no slide, only show / hide.
+- **Accessible:** a control of the chrome that has the focus is never hidden (focus brings the chrome back); nothing is
+  hidden at the top; every route arrives with the chrome in place (the router resets the state), so Word Detail's card
+  fit (D-17X) is measured with the chrome visible.
+- **Open (UI_BACKEND_GAPS VC-17):** back over a page that is not at its top, the header takes the phone bar's chrome
+  surface so the page does not run through its controls; the design draws the header only at rest.
+- Gated in scripts/test_orena_shell.mjs (phone-only scope, the state attribute, the transform, reduced motion, the top
+  reset, focus).

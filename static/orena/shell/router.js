@@ -182,6 +182,7 @@ export function createRouter({ frame, getContext }) {
 
     const main = frame.main;
     main.scrollTop = 0;
+    frame.resetChrome?.(); // a page arrives with its chrome in place (D-17Y)
     const element = document.createElement('section');
     element.className = 'o-screen';
     element.dataset.screen = route.id;

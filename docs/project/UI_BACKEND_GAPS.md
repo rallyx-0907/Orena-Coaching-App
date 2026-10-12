@@ -5963,6 +5963,10 @@ items above, and what PR 2 leaves open for the human:
   the translation's highlight and the bold pattern inside an explanation (no field for them), separate UK/US audio.
   A collection card opened in Word Detail before Save carries no `provenance` (the catalogue card projection does not
   pass it), so it shows no level source and no library drawing until the word is saved or the projection passes them.
+- **VC-17 The phone header over a scrolled page (D-17Y).** When the phone chrome comes back over a page that is not
+  at its top, the header lies over the page; the design draws the header only at rest (transparent, the page below
+  it). Chosen to keep it readable: it takes the phone bar's own chrome surface (`--bd-chrome` and its blur) while
+  `data-chrome` is set, and is exactly as drawn at the top. A human decision whether that surface is right.
 - **VC-15 Word-detail lookup labels a foreign reading as pinyin (server).** `writing_coach/word_detail.py:203-206`
   (`project_word_detail`) sets `pinyin` to the lookup's `pronunciation` whenever the headword is Han
   (`script_of`, :127), whatever language the lookup ran in (`source_language`, the route at :389). Word Detail sent

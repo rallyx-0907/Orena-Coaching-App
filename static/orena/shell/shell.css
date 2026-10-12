@@ -525,6 +525,53 @@
   background: none;
 }
 
+/* The phone shell hides on scroll (the human, 2026-10-12, D-17Y; the state: shell/chrome-scroll.js). Only on a phone,
+   only in the browsing places that have the header and the bar (rule 47) - a learning workspace and the desktop are
+   untouched. There the header and the bar lie over the column instead of beside it, the column keeps their room as
+   padding (so at the top the page sits exactly where it did), and hiding is a transform: nothing reflows. */
+:root[data-device='mobile']:not([data-focus='1']):not([data-bare='1']) .o-mhead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  transition: transform 0.24s ease, background-color 0.24s ease;
+}
+:root[data-device='mobile']:not([data-focus='1']):not([data-bare='1']) .o-bnav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  transition: transform 0.24s ease;
+}
+:root[data-device='mobile']:not([data-focus='1']):not([data-bare='1']) .o-main {
+  /* The header's own height (its padding and its 40px controls), and the bar's (72px, its bottom margin) under the
+     column's own 32px. */
+  padding-top: calc(50px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(32px + 72px + max(18px, calc(env(safe-area-inset-bottom, 0px) - 10px)));
+}
+:root[data-device='mobile']:not([data-focus='1']):not([data-bare='1'])[data-chrome='hidden'] .o-mhead {
+  transform: translateY(-100%);
+}
+/* The bar goes below the window with its margin and the orb that rises 34px above it. */
+:root[data-device='mobile']:not([data-focus='1']):not([data-bare='1'])[data-chrome='hidden'] .o-bnav {
+  transform: translateY(calc(100% + 34px + max(18px, calc(env(safe-area-inset-bottom, 0px) - 10px))));
+}
+/* Back over a page that is not at its top, the header is the phone bar's surface, so the page does not run through
+   its controls. At the top (no data-chrome) it is as the design draws it. */
+:root[data-device='mobile']:not([data-focus='1']):not([data-bare='1'])[data-chrome] .o-mhead {
+  background: var(--bd-chrome);
+  backdrop-filter: var(--bd-chrome-blur);
+  -webkit-backdrop-filter: var(--bd-chrome-blur);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-device='mobile'] .o-mhead,
+  :root[data-device='mobile'] .o-bnav {
+    transition: none;
+  }
+}
+
 /* ---- The backdrop (PUB-4, D-166; Orena.dc.html body[data-backdrop=on], Orena-Admin.dc.html) ----
    The design's default is ON and it has no learner control (its "Backdrop" button is the prototype strip), so this
    ships on. The kill switch is a non-UI attribute only: <html data-backdrop="off">. Two layers behind the frame - the
