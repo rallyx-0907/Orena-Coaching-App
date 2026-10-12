@@ -335,7 +335,12 @@ const reviewCss = readFileSync(new URL('../static/orena/screens/review/review.cs
 assert.match(reviewCss, /\.s-review-grades \{[^}]*flex: none/, 'the grades never shrink out of view');
 assert.match(reviewCss, /\.s-review-face--revealed > \.c-vcard--review-back \{[^}]*min-height: 0/, 'the card fills the revealed face and scrolls inside');
 assert.match(reviewCss, /\.s-review-root \{[^}]*overflow: hidden/, 'the workspace does not scroll as a page');
-assert.match(reviewCss, /\.s-review-face--revealed > \.s-review-face__blob \{[^}]*bottom: -40px/, 'the corner disc is clear of the card\'s controls');
+assert.ok(!reviewSrc.slice(reviewSrc.indexOf('function backFaceMarkup'), reviewSrc.indexOf('function hiddenFaceMarkup')).includes('s-review-face__blob'), 'no corner disc on the turned card: no corner is free of text or controls (VC-12)');
+assert.doesNotMatch(reviewCss, /\.s-review-face--revealed > \.s-review-face__blob/);
+assert.match(cardCss, /\.c-vcard__foot \{[^}]*flex-wrap: wrap/, 'the foot wraps as whole items');
+assert.match(cardCss, /\.c-vcard__stage \{[^}]*white-space: nowrap/, 'the stage label never breaks inside a word');
+assert.match(cardCss, /\.c-vcard__due \{[^}]*white-space: nowrap/);
+assert.match(cardCss, /\.c-vcard__hanviet \{[^}]*align-items: flex-start/, 'the Hán Việt label and value share the start edge');
 // The Review bookmark only removes: its handler deletes with Undo and never saves.
 const saveHandler = reviewSrc.slice(reviewSrc.indexOf("querySelector('[data-save]')"), reviewSrc.indexOf("querySelector('[data-practise-strokes]')"));
 assert.match(saveHandler, /deleteLibraryVocabulary/);

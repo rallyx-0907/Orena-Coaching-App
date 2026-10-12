@@ -5934,9 +5934,10 @@ items above, and what PR 2 leaves open for the human:
   not a card surface of this PR.
 - **VC-11 Save on the Review back - closed (human decision 2026-10-12).** Kept as the pinned frame draws it, as a
   remove-only toggle drawn saved, with the existing Undo; recorded in D-17W point 4.
-- **VC-12 The Review corner disc.** The pinned frame draws its decorative corner disc on the turned card too, where it
-  sat under the play and save discs; on the revealed face it now sits at the bottom-left corner (review.css). An
-  adaptation, recorded here.
+- **VC-12 The Review corner disc.** The pinned frame draws its decorative corner disc on the turned card too. On the
+  two-face card every corner of the revealed face holds text or a control (the play and bookmark discs top-right, the
+  mastery line bottom-left, the turn action bottom-right), so the disc is drawn on the recall face only, not on
+  `review-back`. An adaptation, recorded here.
 - **VC-13 Phone sizes not measured.** The 360x740 and 390x844 composition is held structurally by
   `scripts/test_orena_vocabulary_card.mjs` (no fixed card widths, the headword's type shrinks instead of breaking a
   word, the feed's discs on their own row, the card body the only scroll region, the grades outside it). Still to

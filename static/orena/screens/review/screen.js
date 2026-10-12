@@ -74,8 +74,8 @@ function backFaceMarkup(model, learner, row) {
   const strokes = model.script === 'hanzi'
     ? strokesMarkup({ word: model.word, prefix: 's-review', label: t('strokeOrder'), buttonLabel: t('practiseStrokes'), buttonAttr: 'data-practise-strokes', buttonClass: 's-review-strokes-btn' })
     : '';
+  // No corner disc here: every corner of the turned card holds text or a control (UI_BACKEND_GAPS VC-12).
   return html`<div class="s-review-face s-review-face--revealed">
-    <span class="s-review-face__blob" aria-hidden="true"></span>
     ${vocabularyCard(model, { mode: 'review-back', learner, slots: { strokes, footer, meaningTag } })}
   </div>`;
 }

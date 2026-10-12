@@ -38,9 +38,12 @@
   gap: 22px;
   container-type: inline-size;
 }
+/* The foot wraps as whole items: the mastery line on one line, the turn action on its own when the two do
+   not fit; nothing breaks inside a word. */
 .c-vcard__foot {
   flex: none;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
@@ -51,6 +54,7 @@
 }
 .c-vcard__turn {
   min-height: 48px;
+  margin-left: auto;
 }
 
 /* ---- Top row: level and source on the left, the discs on the right ---- */
@@ -175,11 +179,12 @@
   flex: 0 1 auto;
   min-width: min-content;
 }
+/* Label and value share one edge (start), beside the Hanzi or wrapped under it. */
 .c-vcard__hanviet {
   flex: none;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 4px;
   padding-bottom: 14px;
   font-size: 20px;
@@ -367,19 +372,22 @@
 
 /* ---- The learner's mastery line, beside the turn action ---- */
 .c-vcard__mastery {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: min-content;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px 8px;
 }
 .c-vcard__stage {
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
 }
 .c-vcard__due {
   font-size: 13px;
   color: var(--text3);
+  white-space: nowrap;
 }
 
 /* ---- The recall face (review-front): the word alone, centred; nothing that answers ---- */
