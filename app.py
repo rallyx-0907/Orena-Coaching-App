@@ -3632,7 +3632,7 @@ def _authored_source_language(source: Any) -> str:
 
 
 def _authored_preview(source: Any) -> dict[str, Any]:
-    """The README's checks for an authored entry file, and what each row would meet (D-17V).
+    """The README's checks for an authored entry file, and what each row would meet (D-178).
 
     Read-only: rows are validated against the entry schema and the Chinese
     spelling rule, highlights are checked, and each ready row is looked up so
@@ -3698,7 +3698,7 @@ async def admin_vocabulary_source_preview(
             source = await _parse_uploaded_vocabulary_source(upload)
             if is_authored_source(source):
                 # The authored entry format needs no column mapping: it is
-                # validated against its schema instead (D-17V).
+                # validated against its schema instead (D-178).
                 authored = _authored_preview(source)
                 items.append(
                     {
@@ -3832,7 +3832,7 @@ async def admin_vocabulary_source_import(
 
     `duplicates` (`skip`, the default, or `overwrite`) is the admin's answer
     for an authored entry that is already stored in a set that is not
-    published; an entry in a published set is always refused (D-17V). Other
+    published; an entry in a published set is always refused (D-178). Other
     source formats keep their merge behaviour and ignore it.
     """
 
@@ -3893,7 +3893,7 @@ async def admin_vocabulary_source_import(
     results: list[dict[str, Any]] = []
     collection_persisted = False
     # An authored entry file never publishes at import: its own `status` is not
-    # read, and the set it lands in waits for review (D-17V).
+    # read, and the set it lands in waits for review (D-178).
     authored_in_batch = False
 
     def failed_source_result(

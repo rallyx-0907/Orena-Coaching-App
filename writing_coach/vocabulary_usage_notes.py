@@ -1,4 +1,4 @@
-"""Typed items in `vocabulary_entries.usage_notes` (D-17V).
+"""Typed items in `vocabulary_entries.usage_notes` (D-178).
 
 `usage_notes` is a JSON list on the shared lexical entry. It used to hold only
 free usage text (`{"language", "text", "origin"}`); it now also carries the

@@ -99,7 +99,7 @@ def test_the_catalogue_common_mistake_note_outranks_the_explained_mistake():
 
 
 def test_a_usage_note_is_usage_and_never_shown_as_a_common_mistake():
-    """D-17V: a legacy note with no type, and a typed `usage` one, are usage. They stay in the payload
+    """D-178: a legacy note with no type, and a typed `usage` one, are usage. They stay in the payload
     (`usage`) instead of being presented as the mistake; the explained mistake answers that row."""
 
     payload = word_deep.project_word_deep(

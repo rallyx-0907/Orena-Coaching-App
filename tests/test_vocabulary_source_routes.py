@@ -375,7 +375,7 @@ def _authored_import(filename: str, raw: bytes, *, collection_id: str, language:
             "metadata": json.dumps({
                 "title": collection_id, "language_code": language, "collection_id": collection_id,
                 # Cleared rights and a complete set would auto-publish a column import (D-111);
-                # an authored file still lands pending review (D-17V).
+                # an authored file still lands pending review (D-178).
                 "rights_status": "internal_curated", "completeness": "complete",
             }),
             "duplicates": duplicates,

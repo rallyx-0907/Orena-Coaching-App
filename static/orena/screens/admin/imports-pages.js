@@ -206,7 +206,7 @@ export function vocabularyPage({ vocab, t, ui, href }) {
         return;
       }
       if (preview.authored) {
-        // An authored entry file needs no column mapping; its server checks arrive as warnings (D-17V).
+        // An authored entry file needs no column mapping; its server checks arrive as warnings (D-178).
         for (const warning of preview.warnings || []) blocks.push(banner({ tone: 'warn', title: warning }));
         return;
       }

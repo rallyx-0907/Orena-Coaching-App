@@ -1,4 +1,4 @@
-"""The authored vocabulary entry format (docs/vocab) read into the existing catalogue record (D-17V).
+"""The authored vocabulary entry format (docs/vocab) read into the existing catalogue record (D-178).
 
 The fixtures are the reference contract itself, `docs/vocab/samples/*.json`, not copies.
 """
@@ -69,7 +69,7 @@ def test_english_sample_lands_in_existing_columns_and_json_keys():
     assert record["part_of_speech"] == "adjective"
     assert (record["level"], record["framework"]) == ("C1", "CEFR")
     assert record["provenance"]["level_source"] == "Oxford 5000"
-    # The authored id is an editorial handle, not a sense: no identity inflation (D-17V).
+    # The authored id is an editorial handle, not a sense: no identity inflation (D-178).
     assert record["identity_key"] == "en|resilient|adjective|"
     assert record["sense_key"] == "" and record["provenance"]["source_id"] == "en:resilient"
     assert [(p["region"], p["text"]) for p in record["pronunciations"]] == [

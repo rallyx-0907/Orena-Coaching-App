@@ -5577,9 +5577,9 @@ absent.
    database); rollback = `alembic downgrade 20261008_0030` (drops the records) or restore; after start, the warning stops
    and one priced call writes one row; the human's authorization recorded.
 
-## D-17V - The vocabulary card is the existing vocabulary entry, shown differently
+## D-178 - The vocabulary card is the existing vocabulary entry, shown differently
 
-(Placeholder D-17V until merge.)
+(Placeholder D-178 until merge.)
 
 Date: 2026-10-12. Human decisions of 2026-10-12 (lane `claude/vocab-card-import`), after the request to bring the
 EN/ZH flashcard design (Claude Design artifact "Flashcard từ vựng Anh – Trung", `docs/vocab/`) into the Words screens.
@@ -5633,4 +5633,4 @@ EN/ZH flashcard design (Claude Design artifact "Flashcard từ vựng Anh – Tr
 8. **Order.** PR 1 import adapter and projection support (this entry); PR 2 the shared `VocabularyCard` (modes `detail`,
    `feed`, `review-front`, `review-back`) beside the compact `VocabularyRow`; PR 3 the Admin preview derived from A14
    with the production card; PR 4 the two samples loaded on :8021 only. Open design items: `UI_BACKEND_GAPS.md`
-   "Vocabulary card (D-17V)".
+   "Vocabulary card (D-178)".

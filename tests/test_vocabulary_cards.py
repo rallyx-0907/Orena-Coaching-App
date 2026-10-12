@@ -349,7 +349,7 @@ def test_card_rejects_unprovenanced_verified_etymology_but_allows_other_optional
         validate_vocabulary_card(card)
 
 
-# --- D-17V: the card is the existing entry; typed usage notes and authored example keys -----------------
+# --- D-178: the card is the existing entry; typed usage notes and authored example keys -----------------
 
 _LEARNER_STATE_KEYS = {"memory", "source_encounters", "saved", "review_stage", "due", "next_review_at",
                        "successful_recalls", "lapse_count"}
@@ -403,7 +403,7 @@ def test_typed_notes_fill_their_own_card_fields_and_legacy_text_stays_usage() ->
 
 
 def test_catalog_card_is_pure_content_and_learner_state_lives_only_under_memory() -> None:
-    """D-17V pure-mapper rule, server side: the content projection carries no learner state; the
+    """D-178 pure-mapper rule, server side: the content projection carries no learner state; the
     saved-word projection adds it under its own `memory` key, so a caller can always separate them."""
 
     content = vocabulary_card_from_catalog_entry(_authored_entry())

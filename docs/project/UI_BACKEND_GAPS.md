@@ -5881,7 +5881,7 @@ they pin the switch (and the page shows it locked) but stay editable in Admin wh
   `templates/orena/index.html` was not changed), touch scrolling of the Transcript with the keyboard open, and a desktop
   virtual-keyboard extension, which overlays the page without resizing `visualViewport` and so is not a faithful check.
 
-## Vocabulary card (D-17V), 2026-10-12
+## Vocabulary card (D-178), 2026-10-12
 
 The EN/ZH flashcard artifact ("Flashcard từ vựng Anh – Trung") is a reference for the layout and the information a
 vocabulary card shows, not a new pinned frame; colours, type and components follow the current tokens. PR 1 (the
@@ -5898,7 +5898,7 @@ authored-entry import) ships no learner UI. Open for the human before PR 2 / PR 
   UI provenance gate before it is built.
 - **VC-4 Recall front.** The artifact front shows the meaning; the pinned Review Session hides the answer until Reveal.
   `review-front` follows the pinned design (term, pronunciation, audio, non-revealing metadata, Reveal);
-  `review-back` is the rich card. Grades: "Not yet" / "Got it" (D-17V point 7), where the pinned frame draws four.
+  `review-back` is the rich card. Grades: "Not yet" / "Got it" (D-178 point 7), where the pinned frame draws four.
 - **VC-5 Illustration.** Optional; none of the referenced line-art (`sprout-through-crack`, `ink-pine-trees`) exists in
   the repository. With no image no frame is drawn; the reference is kept in the entry's provenance. Artwork stays under
   the Art Bible.

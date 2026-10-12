@@ -138,7 +138,7 @@ def _source_encounters(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     return [encounter]
 
 
-# What an authored example may carry besides its text (D-17V), passed through as
+# What an authored example may carry besides its text (D-178), passed through as
 # stored: the highlight to draw (`match`/`occurrence`, never character offsets),
 # the reading of the whole sentence and its own highlight (Chinese pinyin), and
 # the language-tagged label, translation and explanation.
@@ -172,7 +172,7 @@ def _examples_from(row: Mapping[str, Any], language: str) -> list[dict[str, Any]
 
 
 def _typed_note_content(row: Mapping[str, Any]) -> dict[str, Any]:
-    """The card fields the entry's typed `usage_notes` fill (D-17V), grouped by type.
+    """The card fields the entry's typed `usage_notes` fill (D-178), grouped by type.
 
     Only content: nothing here knows about a learner. Free usage text is
     `usage`; a note is a common mistake only when it says so.

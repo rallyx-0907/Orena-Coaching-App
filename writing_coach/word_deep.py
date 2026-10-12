@@ -316,7 +316,7 @@ def project_word_deep(
         for row in neighbours[:COMBINATIONS]
     ]
     related = [row for row in neighbours[:RELATED] if row["note"]]
-    # Typed notes (D-17V): free usage text is `usage`, and only a note that
+    # Typed notes (D-178): free usage text is `usage`, and only a note that
     # says it is a common mistake is shown as one. A legacy note with no type
     # is usage, so it stays visible - under `usage`, not as a mistake.
     usage = texts_of_type(entry.get("usage_notes"), "usage")

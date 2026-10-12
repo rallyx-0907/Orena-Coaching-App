@@ -211,7 +211,7 @@ def parse_vocabulary_source(filename: str, raw: bytes) -> ParsedVocabularySource
             raise VocabularySourceError(f"Invalid JSON: {exc.msg}.") from exc
         headers, rows = _rows_from_json(payload)
     elif source_format == "jsonl":
-        # One JSON object per line (D-17V): the same rows a JSON array gives,
+        # One JSON object per line (D-178): the same rows a JSON array gives,
         # so everything downstream of parsing is shared with the JSON path.
         objects: list[Any] = []
         for line_number, line in enumerate(_decode_source(raw).splitlines(), start=1):

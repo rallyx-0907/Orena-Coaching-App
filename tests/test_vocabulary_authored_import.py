@@ -1,4 +1,4 @@
-"""Authored entries through the existing repository import, on SQLite and (when set) PostgreSQL (D-17V).
+"""Authored entries through the existing repository import, on SQLite and (when set) PostgreSQL (D-178).
 
 The duplicate rule: an authored entry that is already stored is skipped (the
 default) or overwritten only while it belongs to no published set. One that is

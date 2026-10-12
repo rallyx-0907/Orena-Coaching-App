@@ -625,7 +625,7 @@ class SQLAlchemyVocabularyRepository:
     ) -> dict[str, Any]:
         """Import one source's canonical records into a collection.
 
-        `duplicates` is the authored-entry policy (D-17V); `None` keeps the
+        `duplicates` is the authored-entry policy (D-178); `None` keeps the
         original merge behaviour every other source uses. With `skip` or
         `overwrite`, a record that matches a stored entry (its identity, or the
         authored id it was imported under):
@@ -1021,7 +1021,7 @@ class SQLAlchemyVocabularyRepository:
     def classify_authored_records(
         self, language_code: str, records: Iterable[Mapping[str, Any]]
     ) -> list[dict[str, Any]]:
-        """What importing each record would meet, read-only, for the preview (D-17V).
+        """What importing each record would meet, read-only, for the preview (D-178).
 
         One answer per record, in order: `new`, `duplicate` (a stored entry in
         no published set - the admin's overwrite/skip applies),
@@ -1580,7 +1580,7 @@ def _merge_existing_entry(
     entry.provenance = {**existing_provenance, "sources": sources}
 
 
-# The admin's answer for an authored entry that is already stored (D-17V).
+# The admin's answer for an authored entry that is already stored (D-178).
 AUTHORED_DUPLICATE_POLICIES = ("skip", "overwrite")
 # What an authored record may meet that refuses it outright.
 AUTHORED_CONFLICTS = ("published_conflict", "identity_conflict", "ambiguous_conflict")
@@ -1593,7 +1593,7 @@ _AUTHORED_CONTENT_FIELDS = (
 )
 _AUTHORED_SCALAR_FIELDS = ("level", "framework", "topic")
 # Localizations a person wrote or reviewed. An overwrite never deletes them; it
-# unselects them, so they stop showing and stay for review (D-17V). Every other
+# unselects them, so they stop showing and stay for review (D-178). Every other
 # method (`source`, `dictionary`, `pivot_translation`) was derived from the
 # content being replaced and is deleted, for the import's localization pass to
 # derive again from the new content.
@@ -1615,7 +1615,7 @@ def _published_collection_ids(session: Session, entry_id: uuid.UUID) -> list[str
 
 
 def _authored_match(session: Session, language_code: str, record: Mapping[str, Any]) -> dict[str, Any]:
-    """Which stored entry an authored record is, and whether it may be written (D-17V).
+    """Which stored entry an authored record is, and whether it may be written (D-178).
 
     The rule: an authored record is the same lexical entry as any stored entry
     for the same language, normalized term and part of speech - whatever that
@@ -1714,7 +1714,7 @@ def _overwrite_entry(entry: VocabularyEntry, record: Mapping[str, Any]) -> None:
 
 
 def _retire_localizations(session: Session, entry_id: uuid.UUID, *, filename: str, now: datetime) -> dict[str, int]:
-    """After an overwrite, no localization of the old content may still show (D-17V).
+    """After an overwrite, no localization of the old content may still show (D-178).
 
     Read precedence (`_merge_localization_rows`): an entry's own
     `short_meanings` win for every language they carry; a selected

@@ -1,4 +1,4 @@
-"""The authored vocabulary entry format (`docs/vocab/`), read into the shared catalogue (D-17V).
+"""The authored vocabulary entry format (`docs/vocab/`), read into the shared catalogue (D-178).
 
 `docs/vocab/vocab_entry.schema.json` describes one vocabulary card as an editor
 writes it. A card is not a new thing in Orena: it is the existing shared
