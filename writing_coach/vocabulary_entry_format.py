@@ -19,8 +19,12 @@ and every field lands in a column or JSON key that already exists:
                                                           `translation`, `explanation`
 - `collocations`, `related`, `zh.measure_words`,       -> typed `usage_notes` items (`vocabulary_usage_notes`)
   `memory_tip_vi`
-- `id`                                                 -> `sense_key` (so it is part of the lexical identity)
-                                                          and `provenance.source_id`
+- `id`                                                 -> `provenance.source_id` only. It is an editorial
+                                                          handle, not a sense: the entry's identity is
+                                                          (language, term, part of speech) with an empty
+                                                          sense, so an authored row for a word the
+                                                          catalogue already has is that entry, never a
+                                                          second one (see `_authored_match`)
 - `level.source`, `tags`, `illustration`, `audio`,     -> `provenance` (kept, not shown; nothing here decides
   `en.etymology_vi`                                       presentation)
 
@@ -348,9 +352,9 @@ def canonical_record(
         "language_code": language,
         "normalized_term": canonical_vocabulary_normalized_term(language_code=language, term=term),
         "identity_key": canonical_vocabulary_identity(
-            language_code=language, term=term, part_of_speech=pos, sense_key=source_id
+            language_code=language, term=term, part_of_speech=pos, sense_key=""
         ),
-        "sense_key": source_id,
+        "sense_key": "",
         "content_origins": {field: "source" for field, value in values.items() if value},
         "provenance": {
             "filename": filename,

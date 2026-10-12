@@ -5603,8 +5603,25 @@ EN/ZH flashcard design (Claude Design artifact "Flashcard từ vựng Anh – Tr
 4. **Published duplicates are blocked.** An authored row matching an entry in any published set is refused as a
    conflict, listed in the preview and the import result: no overwrite, no membership snapshot, no unpublish. Overwrite
    or skip (default skip) applies only to entries in sets that are not published. Editing published content is a
-   separate workflow under the existing lifecycle. The authored id is the entry's `sense_key`, so it is part of the
-   lexical identity; the same id under another identity (a changed part of speech) is refused, not guessed.
+   separate workflow under the existing lifecycle.
+   **Identity (human review of PR #133).** The authored id is an editorial handle in `provenance.source_id`, not a
+   sense: an authored entry's identity is `lang|term|pos|` with an empty sense, so ids never inflate identities. An
+   authored row is the same lexical entry as any stored entry with the same language, normalized term and part of
+   speech, whatever that entry's sense key (a CSV row's sense is its meaning fingerprint), or with no part of speech:
+   one such entry is the duplicate (skip / overwrite / published conflict); several are an `ambiguous_conflict`,
+   refused, because writing would have to pick one; the same id under another part of speech is an
+   `identity_conflict`, refused. So the importer never creates a second entry for a (language, term, part of speech).
+   Another part of speech is a distinct entry; retrieval is already deterministic and needs no new `ORDER BY`:
+   `find_entry`, `list_entries_for_language` (and the saved-list resolver built on it) order by `identity_key`, and
+   search and neighbours by term length then `identity_key`. The authored format has no sense field, so two senses of
+   one word and part of speech cannot both be authored; adding one is a schema decision for the human.
+   **Localizations after an overwrite.** Read precedence (`_merge_localization_rows`): an entry's own
+   `short_meanings` win for every language they carry and a selected localization only fills a language they lack,
+   so a localization of replaced content would keep showing in exactly those languages. In the overwrite's own
+   transaction, localization rows derived from the old content (`source`, `dictionary`, `pivot_translation`) are
+   deleted - the import's localization pass derives them again - and rows a person wrote or reviewed (`curated`,
+   `reviewed_batch`) are kept but unselected and marked `validation.stale`, never shown until someone selects them
+   again. No schema change.
 5. **Pure mapper.** The learner-side `toVocabularyModel()` (PR 2) is a pure content mapper; saved state, review stage
    and due date are an optional decorator applied by the caller, so the Admin preview renders the same component and
    mapper with no learner context. Server side, `vocabulary_card_from_catalog_entry` carries no learner state and the

@@ -643,6 +643,9 @@ class SQLAlchemyVocabularyRepository:
         self._require_available()
         if duplicates not in (None, *AUTHORED_DUPLICATE_POLICIES):
             raise ValueError(f"Unsupported duplicate policy '{duplicates}'.")
+        # Asked before the write transaction opens: the inspector uses its own connection.
+        localizations_present = duplicates == "overwrite" and self.localizations_available()
+        localizations_retired = {"deleted": 0, "unselected": 0}
         collection_id = _text(collection.get("id"))
         if not collection_id:
             raise ValueError("A stable collection id is required.")
@@ -790,7 +793,7 @@ class SQLAlchemyVocabularyRepository:
                     match = _authored_match(session, language_code, record)
                     if match["status"] != "new":
                         entry = match["entry"]
-                        if match["status"] in {"published_conflict", "identity_conflict"}:
+                        if match["status"] in AUTHORED_CONFLICTS:
                             conflict_count += 1
                             skipped_count += 1
                             skipped_details.append(
@@ -809,6 +812,10 @@ class SQLAlchemyVocabularyRepository:
                         _overwrite_entry(entry, record)
                         entry.updated_at = now
                         updated_count += 1
+                        if localizations_present:
+                            retired = _retire_localizations(session, entry.id, filename=filename, now=now)
+                            localizations_retired["deleted"] += retired["deleted"]
+                            localizations_retired["unselected"] += retired["unselected"]
                         membership = session.scalar(
                             select(VocabularyCollectionMembership).where(
                                 VocabularyCollectionMembership.collection_id == collection_id,
@@ -1006,6 +1013,7 @@ class SQLAlchemyVocabularyRepository:
             result.update(
                 updated=updated_count,
                 conflicts=conflict_count,
+                localizations_retired=localizations_retired,
                 rows=[dict(item) for item in skipped_details],
             )
         return result
@@ -1574,13 +1582,22 @@ def _merge_existing_entry(
 
 # The admin's answer for an authored entry that is already stored (D-17V).
 AUTHORED_DUPLICATE_POLICIES = ("skip", "overwrite")
+# What an authored record may meet that refuses it outright.
+AUTHORED_CONFLICTS = ("published_conflict", "identity_conflict", "ambiguous_conflict")
 # The content an authored overwrite replaces. Identity (`term`, `normalized_term`,
-# `identity_key`, `sense_key`, `language_code`) is what matched, so it stays.
+# `identity_key`, `sense_key`, `language_code`, and `part_of_speech`, which is part
+# of the identity) is what matched, so it stays.
 _AUTHORED_CONTENT_FIELDS = (
     "pronunciations", "readings", "short_meanings", "detailed_definitions", "examples", "usage_notes",
     "orthography", "content_origins",
 )
-_AUTHORED_SCALAR_FIELDS = ("part_of_speech", "level", "framework", "topic")
+_AUTHORED_SCALAR_FIELDS = ("level", "framework", "topic")
+# Localizations a person wrote or reviewed. An overwrite never deletes them; it
+# unselects them, so they stop showing and stay for review (D-17V). Every other
+# method (`source`, `dictionary`, `pivot_translation`) was derived from the
+# content being replaced and is deleted, for the import's localization pass to
+# derive again from the new content.
+_KEPT_LOCALIZATION_METHODS = ("curated", "reviewed_batch")
 
 
 def _published_collection_ids(session: Session, entry_id: uuid.UUID) -> list[str]:
@@ -1598,31 +1615,64 @@ def _published_collection_ids(session: Session, entry_id: uuid.UUID) -> list[str
 
 
 def _authored_match(session: Session, language_code: str, record: Mapping[str, Any]) -> dict[str, Any]:
-    """Which stored entry an authored record is, and whether it may be written.
+    """Which stored entry an authored record is, and whether it may be written (D-17V).
 
-    A match is the record's own identity (which carries the authored id as its
-    sense), or an entry for the same word imported under the same authored id
-    with another identity - a changed part of speech - which is refused rather
-    than guessed at.
+    The rule: an authored record is the same lexical entry as any stored entry
+    for the same language, normalized term and part of speech - whatever that
+    entry's sense key says, because the authored format has no sense field to
+    tell two senses apart, and an authored id is an editorial handle, not a
+    sense. A stored entry with no part of speech for the same word is the same
+    entry too: nothing distinguishes it. So:
+
+    - one such entry: it is the match (`duplicate`, or `published_conflict`
+      when it belongs to a published set);
+    - more than one: `ambiguous_conflict` - refused, because writing would
+      have to pick one of them;
+    - none, but an entry of this word was imported under the same authored id
+      with another part of speech: `identity_conflict` - refused, not guessed;
+    - otherwise `new`.
+
+    The importer therefore never adds a second entry for a (language, term,
+    part of speech) the catalogue already has.
     """
 
     provenance = record.get("provenance") if isinstance(record.get("provenance"), Mapping) else {}
     source_id = _text(provenance.get("source_id"))
-    identity_key = _text(record.get("identity_key"))
+    language = _text(language_code).casefold()
+    term = _text(record.get("term"))
     answer: dict[str, Any] = {
         "status": "new", "entry": None, "source_id": source_id, "reason": "", "published_collections": [],
     }  # fmt: skip
-    entry = session.scalar(select(VocabularyEntry).where(VocabularyEntry.identity_key == identity_key))
-    if entry is None and source_id:
-        same_word = session.scalars(
-            select(VocabularyEntry).where(
-                VocabularyEntry.language_code == _text(language_code).casefold(),
+    same_pos = canonical_vocabulary_identity(
+        language_code=language, term=term, part_of_speech=_text(record.get("part_of_speech"))
+    )
+    no_pos = canonical_vocabulary_identity(language_code=language, term=term)
+    same_word = list(
+        session.scalars(
+            select(VocabularyEntry)
+            .where(
+                VocabularyEntry.language_code == language,
                 VocabularyEntry.normalized_term == _text(record.get("normalized_term")),
             )
-        ).all()
+            .order_by(VocabularyEntry.identity_key)
+        )
+    )
+    matches = [
+        candidate for candidate in same_word
+        if candidate.identity_key.startswith(same_pos) or candidate.identity_key.startswith(no_pos)
+    ]  # fmt: skip
+    if len(matches) > 1:
+        answer.update(
+            status="ambiguous_conflict",
+            reason="several stored entries share this word and part of speech ("
+            + ", ".join(candidate.identity_key for candidate in matches)
+            + "); edit the one that is meant instead of importing another",
+        )
+        return answer
+    if not matches:
         for candidate in same_word:
             stored = candidate.provenance if isinstance(candidate.provenance, Mapping) else {}
-            if _text(stored.get("source_id")) == source_id:
+            if source_id and _text(stored.get("source_id")) == source_id:
                 answer.update(
                     status="identity_conflict",
                     entry=candidate,
@@ -1631,8 +1681,7 @@ def _authored_match(session: Session, language_code: str, record: Mapping[str, A
                 )
                 return answer
         return answer
-    if entry is None:
-        return answer
+    entry = matches[0]
     answer["entry"] = entry
     published = _published_collection_ids(session, entry.id)
     if published:
@@ -1662,6 +1711,43 @@ def _overwrite_entry(entry: VocabularyEntry, record: Mapping[str, Any]) -> None:
     if marker not in sources:
         sources.append(marker)
     entry.provenance = {**incoming, "sources": sources}
+
+
+def _retire_localizations(session: Session, entry_id: uuid.UUID, *, filename: str, now: datetime) -> dict[str, int]:
+    """After an overwrite, no localization of the old content may still show (D-17V).
+
+    Read precedence (`_merge_localization_rows`): an entry's own
+    `short_meanings` win for every language they carry; a selected
+    localization only fills a language they lack. So a localization of the
+    replaced content would keep showing in exactly the languages the new
+    content does not carry. In the same transaction as the overwrite:
+    derived rows are deleted (the import's localization pass derives them
+    again from the new content), and rows a person wrote or reviewed are
+    unselected - kept, marked stale, never shown until someone selects them
+    again.
+    """
+
+    counts = {"deleted": 0, "unselected": 0}
+    rows = session.scalars(
+        select(VocabularySenseLocalization).where(VocabularySenseLocalization.entry_id == entry_id)
+    ).all()
+    for row in rows:
+        if row.method in _KEPT_LOCALIZATION_METHODS:
+            validation = _copy_json(row.validation, {}) or {}
+            validation["stale"] = {"reason": "entry content overwritten", "source": filename, "at": now.isoformat()}
+            row.validation = validation
+            if row.selected:
+                row.selected = False
+                row.selection_reason = (
+                    f"unselected: the entry was overwritten by {filename} at {now.isoformat()}; "
+                    "review this gloss against the new meaning before selecting it again"
+                )
+                counts["unselected"] += 1
+            row.updated_at = now
+        else:
+            session.delete(row)
+            counts["deleted"] += 1
+    return counts
 
 
 def _membership_metadata(record: Mapping[str, Any]) -> dict[str, Any]:

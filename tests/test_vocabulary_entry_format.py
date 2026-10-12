@@ -69,8 +69,9 @@ def test_english_sample_lands_in_existing_columns_and_json_keys():
     assert record["part_of_speech"] == "adjective"
     assert (record["level"], record["framework"]) == ("C1", "CEFR")
     assert record["provenance"]["level_source"] == "Oxford 5000"
-    assert record["identity_key"] == "en|resilient|adjective|en:resilient"
-    assert record["sense_key"] == "en:resilient" and record["provenance"]["source_id"] == "en:resilient"
+    # The authored id is an editorial handle, not a sense: no identity inflation (D-17V).
+    assert record["identity_key"] == "en|resilient|adjective|"
+    assert record["sense_key"] == "" and record["provenance"]["source_id"] == "en:resilient"
     assert [(p["region"], p["text"]) for p in record["pronunciations"]] == [
         ("uk", "/rɪˈzɪliənt/"), ("us", "/rɪˈzɪljənt/"),
     ]

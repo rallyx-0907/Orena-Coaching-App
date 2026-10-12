@@ -183,6 +183,7 @@ from writing_coach.product.service import configure_product_repository
 from writing_coach.product.catalog import configure_plan_store
 from writing_coach.persistence.runtime import build_runtime
 from writing_coach.persistence.vocabulary_repository import (
+    AUTHORED_CONFLICTS,
     AUTHORED_DUPLICATE_POLICIES,
     VocabularyContentUnavailable,
 )
@@ -3658,7 +3659,7 @@ def _authored_preview(source: Any) -> dict[str, Any]:
             row["existing"] = "unknown" if not lookups else "new"
             continue
         row["existing"] = found["status"]
-        if found["status"] in {"published_conflict", "identity_conflict"}:
+        if found["status"] in AUTHORED_CONFLICTS:
             row.update(outcome="conflict", reason=found["reason"])
         if found["same_word"]:
             row["warnings"] = [*row["warnings"], "another entry for this word is stored; this id is a separate entry"]
