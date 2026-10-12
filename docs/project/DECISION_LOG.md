@@ -5530,3 +5530,13 @@ may be imported and published on :8000 through Admin.
 4. Gate: `scripts/test_orena_dictation_workspace.mjs` (the eye and its names in EN/VI/ZH, the note as description, the
    phone hiding words and note and the desk hiding the glyph, no typing rule hiding the Transcript, the visible-viewport
    sizing, the Dictation share after the short-phone floors). Recorded in `UI_BACKEND_GAPS.md` "Phone Dictation".
+
+## D-176 - Grammar "Accept all" is one server request, not a browser loop
+
+2026-10-12, human bug report (public Admin: 380 Chinese points stopped when another Admin section was opened).
+`POST /api/admin/grammar/review` takes `{version_ids (1..1000), decision, reason}` and applies each through the same store
+method as the single route (its own transaction and history event, same rules), per item and not all-or-nothing, because a
+refused version (closed, unknown, reason missing) must not block or hide the rest: the answer is `{reviewed, failed:
+[{version_id, code, message}]}`. One audit row per batch (`admin.grammar_review_bulk`: decision, count, failed); the
+per-version history events remain in the store. No schema change. The screen sends one request, so leaving it no longer
+stops the work. Publishing stays all-or-nothing (`/publish`).

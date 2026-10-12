@@ -73,6 +73,7 @@ export const adminApi = {
   grammarPoint: (id) => request(`/api/admin/grammar/points/${encodeURIComponent(id)}`),
   grammarPreview: (versionId) => request(`/api/admin/grammar/versions/${encodeURIComponent(versionId)}/preview`),
   grammarReview: (versionId, decision, reason) => request(`/api/admin/grammar/versions/${encodeURIComponent(versionId)}/review`, json('POST', { decision, reason })),
+  grammarReviewMany: (versionIds, decision, reason) => request('/api/admin/grammar/review', json('POST', { version_ids: versionIds, decision, reason })),
   grammarVersionRights: (versionId, status, reason) => request(`/api/admin/grammar/versions/${encodeURIComponent(versionId)}/rights`, json('POST', { status, reason })),
   grammarPublishPoint: (id, versionId, reason) => request(`/api/admin/grammar/points/${encodeURIComponent(id)}/publish`, json('POST', { version_id: versionId, attested: true, reason })),
   grammarPublish: (items, reason) => request('/api/admin/grammar/publish', json('POST', { items, attested: true, reason })),
