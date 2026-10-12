@@ -1,0 +1,420 @@
+/* VocabularyCard (kit/vocabulary-card.js, D-179). Layout and rhythm measured from the human's flashcard
+   reference (Main.dc.html / Chinese.dc.html, 520 wide): 36/40/32 face padding (here 28/28/24, the kit's
+   card inset), 22px between blocks, the 60px headword (Hanzi 104px with 22px pinyin above), the 17px IPA
+   rows, the 12px small-caps section labels, the 22px meaning over its definition, the two-column pair
+   under a rule, the 14px-radius example panels, the 48px turn action. Colours, type and components are
+   the current theme's only (tokens.css, the kit's o-tag / o-btn / discs / highlight); no outline ring
+   (D-147). No width media query and no fixed card size: the headword's type shrinks to its column
+   (container units) instead of breaking a word, the pairs wrap by their own minimum column, and each face
+   is a body that scrolls inside itself above a foot that keeps the turn action in view (rule 49). */
+
+.c-vcard {
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  text-align: left;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.c-vcard__face {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.c-vcard__face[hidden] {
+  display: none;
+}
+.c-vcard__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px 28px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  container-type: inline-size;
+}
+/* The foot wraps as whole items: the mastery line on one line, the turn action on its own when the two do
+   not fit; nothing breaks inside a word. */
+.c-vcard__foot {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 28px 24px;
+}
+.c-vcard__foot--back {
+  justify-content: flex-start;
+}
+.c-vcard__turn {
+  min-height: 48px;
+  margin-left: auto;
+}
+
+/* ---- Top row: level and source on the left, the discs on the right ---- */
+.c-vcard__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.c-vcard__tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.c-vcard__source {
+  font-size: 13px;
+  color: var(--muted);
+}
+.c-vcard__discs {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+.c-vcard__disc {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: var(--surface2);
+  color: var(--muted);
+  cursor: pointer;
+}
+.c-vcard__disc--play {
+  background: var(--accent-soft);
+  color: var(--accent-on-photo, var(--accent));
+}
+.c-vcard__disc.is-saved {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+/* ---- The word ---- */
+.c-vcard__ident {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.c-vcard__pos {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+/* The headword never breaks inside a word: a phrase wraps between words, a long word shrinks its type to
+   the column (`--len`, its longest run; `cqi`, the face's width). The reference's size is the ceiling. */
+.c-vcard__word {
+  margin: 0;
+  font-size: min(60px, calc(165cqi / var(--len, 1)));
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: none;
+}
+.c-vcard__word--han {
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-size: min(104px, calc(78cqi / var(--len, 1)));
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+.c-vcard__word ruby {
+  ruby-position: over;
+}
+.c-vcard__word rt {
+  font-family: inherit;
+  font-size: max(13px, 0.21em);
+  font-weight: 400;
+  color: var(--muted);
+  padding-bottom: 4px;
+}
+.c-vcard__ipa-rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+.c-vcard__ipa {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 17px;
+  color: var(--text);
+}
+.c-vcard__ipa b {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.c-vcard__ipa .c-vcard__disc {
+  width: 32px;
+  height: 32px;
+}
+/* The Hanzi and Hán Việt share a row while it holds both; when it cannot, Hán Việt wraps under the Hanzi.
+   The Hanzi never shrinks below its own glyphs (min-content), so the two can never overlap; the Hanzi's
+   type already fits the width (`--len`). */
+.c-vcard__hanrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.c-vcard__hanrow .c-vcard__word {
+  flex: 0 1 auto;
+  min-width: min-content;
+}
+/* Label and value share one edge (start), beside the Hanzi or wrapped under it. */
+.c-vcard__hanviet {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding-bottom: 14px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/* ---- Illustration: only when there is one ---- */
+.c-vcard__art {
+  margin: 0;
+  border-radius: 14px;
+  background: var(--surface2);
+  overflow: hidden;
+  max-height: 180px;
+  display: flex;
+  justify-content: center;
+}
+.c-vcard__art img {
+  max-width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+}
+
+/* ---- Sections ---- */
+.c-vcard__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.c-vcard__label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.c-vcard__meaning {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.c-vcard__meaning p {
+  margin: 0;
+}
+.c-vcard__meaning-text {
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+.c-vcard__definition {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.c-vcard__pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.c-vcard__lines,
+.c-vcard__note {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.c-vcard__muted {
+  color: var(--muted);
+}
+.c-vcard__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---- Radical ---- */
+.c-vcard__radical {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.c-vcard__radical + .c-vcard__radical {
+  margin-top: 10px;
+}
+.c-vcard__radical-glyph {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-on-photo, var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-size: 36px;
+  font-weight: 600;
+}
+
+/* ---- Back face ---- */
+.c-vcard__backhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.c-vcard__backword {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow-wrap: normal;
+}
+.c-vcard--han .c-vcard__backword > span:first-child {
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-size: 34px;
+  font-weight: 900;
+}
+.c-vcard--han .c-vcard__backword .c-vcard__muted {
+  font-size: 17px;
+  font-weight: 400;
+}
+.c-vcard__backtitle {
+  font-size: 13px;
+}
+.c-vcard__examples {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.c-vcard__example {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--surface2);
+}
+.c-vcard__example p {
+  margin: 0;
+}
+.c-vcard__example-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.c-vcard__example-text {
+  font-size: 19px;
+  line-height: 1.45;
+  font-weight: 500;
+}
+.c-vcard--han .c-vcard__example-text {
+  font-family: 'Noto Serif SC', 'Noto Sans SC', serif;
+  font-size: 24px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+.c-vcard__example-reading,
+.c-vcard__example-translation {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.c-vcard__example-reading {
+  color: var(--muted);
+}
+.c-vcard__example-note {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+/* The kit's highlight (the pinned exParts treatment): weight and a soft amber patch. */
+.c-vcard__hit {
+  background: var(--amber-soft);
+  color: inherit;
+  border-radius: 4px;
+  padding: 0 2px;
+  font-weight: 700;
+}
+
+/* ---- The learner's mastery line, beside the turn action ---- */
+.c-vcard__mastery {
+  flex: 1 1 auto;
+  min-width: min-content;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.c-vcard__stage {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.c-vcard__due {
+  font-size: 13px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+
+/* ---- The recall face (review-front): the word alone, centred; nothing that answers ---- */
+.c-vcard--review-front {
+  background: transparent;
+  box-shadow: none;
+  align-items: center;
+  text-align: center;
+}
+.c-vcard__recall {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  container-type: inline-size;
+}
+.c-vcard--review-front .c-vcard__word {
+  font-size: min(56px, calc(165cqi / var(--len, 1)));
+}
+.c-vcard--review-front .c-vcard__word--han {
+  font-size: min(88px, calc(78cqi / var(--len, 1)));
+}
+.c-vcard__recall-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}

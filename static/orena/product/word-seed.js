@@ -16,6 +16,9 @@ export function rememberWordSeed(card) {
     pronunciation: String(card.pronunciation || card.readings?.[0]?.text || '').trim(),
     short_meanings: Array.isArray(card.short_meanings) && card.short_meanings.length ? card.short_meanings : (Array.isArray(card.meanings) ? card.meanings : []),
     identity: card.identity || null,
+    // The whole catalogue card, so Word Detail can draw the entry's full content (D-179) before
+    // anything is saved - content only, no learner state.
+    entry: card,
   });
   if (seeds.size > 600) seeds.delete(seeds.keys().next().value);
 }

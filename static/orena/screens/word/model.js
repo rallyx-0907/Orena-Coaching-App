@@ -94,8 +94,9 @@ export function contextFor(word, item) {
 export function pronunciationOf(detail, item, seed = null) {
   const fallback = text(item?.phonetic) || text(seed?.pronunciation);
   if (!detail) return fallback;
-  if (detail.script === 'hanzi') return text(detail.pinyin) || fallback;
-  return text(detail.ipa) || fallback;
+  // Only a reading of the word's own kind (D-179): never an English IPA as a Chinese word's pinyin.
+  if (detail.script === 'hanzi') return [text(detail.pinyin), fallback].find((value) => isPinyin(value)) || '';
+  return [text(detail.ipa), fallback].find((value) => isLatinReading(value)) || '';
 }
 
 export function savedTone(saved) {
@@ -117,21 +118,21 @@ export function stageCopyKey(item) {
   return STAGE_COPY_KEY[text(item?.stage_label)] || '';
 }
 
-/* The example sentence split around the headword, for the frame's tinted-highlight treatment
-   (`exParts`). A word that is not actually in the sentence (or no sentence at all) renders as one
-   plain part - never a fabricated match. */
-export function highlightExample(example, word) {
-  const value = text(example);
-  if (!value) return [];
-  const w = text(word);
-  const at = w ? value.toLowerCase().indexOf(w.toLowerCase()) : -1;
-  if (at < 0) return [{ value, hit: false }];
-  const parts = [];
-  if (at > 0) parts.push({ value: value.slice(0, at), hit: false });
-  parts.push({ value: value.slice(at, at + w.length), hit: true });
-  if (at + w.length < value.length) parts.push({ value: value.slice(at + w.length), hit: false });
-  return parts;
+/* The example sentence split around the headword (`exParts`): now the shared mapper's
+   (product/vocabulary-card.js#highlightExample - whole-word for Latin script, D-179), re-exported so
+   the Quick Sheet and the older callers keep their import. */
+export { highlightExample } from '../../product/vocabulary-card.js';
+import { highlightExample, scriptOf, isPinyin, isLatinReading } from '../../product/vocabulary-card.js';
+
+/* The catalogue language a word belongs to: Chinese for a Han word, otherwise the learner's language unless
+   that is Chinese and the word is not (an English word met while learning Chinese). Only for catalogue reads
+   (`/api/vocabulary/catalogue/search` allows any enabled language); the word-detail lookup must use the learner's
+   current learning language, which the server enforces (409 otherwise). */
+export function catalogueLanguage(word, learning) {
+  if (scriptOf(word) === 'hanzi') return 'zh';
+  return learning === 'zh' ? 'en' : learning || 'en';
 }
+
 
 /* The word card (`wdWC`): the header, the meaning block, the example and the mastery footer, from
    whichever of the two answers actually carries each field. `detail` may be null (the lookup

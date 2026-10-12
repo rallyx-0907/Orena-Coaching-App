@@ -5905,3 +5905,66 @@ authored-entry import) ships no learner UI. Open for the human before PR 2 / PR 
 - **VC-6 Duplicate choice in the Admin import.** The API takes `duplicates=skip|overwrite` (default skip); the Admin
   import screen shows the per-row checks as warnings but has no control for the choice yet, so an import from the
   screen skips duplicates. The control belongs to the PR 3 derivation.
+
+(The VC-1..VC-6 labels in this section are its own; the Vocabulary table's VC-1..VC-13 earlier in this file are a
+different series.)
+
+**PR 2, the shared VocabularyCard (D-179), 2026-10-12.** Built and wired: Word Detail (`detail`), Review
+(`review-front` -> Reveal -> `review-back`, "Not yet" / "Got it"), the Daily Feed's turned card (`feed`). State of the
+items above, and what PR 2 leaves open for the human:
+
+- VC-1: the card sets no height and no fixed width; its relation grid wraps by its own minimum column, and Review keeps
+  its card in the face's own scroll region with the grades below it. Not measured in a browser by this lane (the
+  browser check is the lead's on :8021, at 1920x1080, 1366x768, 390x844 and 360x740).
+- VC-2: done in tokens only; the ZH card differs by type (a serif face for Hanzi, pinyin as ruby over each character)
+  and content order, not by colour.
+- VC-4: done as listed. The source-aware (cloze) front keeps the pinned frame's sentence prompt, with no audio button,
+  which would say the answer.
+- VC-5: done (an `upload` with a real address is drawn; a `library` reference, `none` or nothing draws no frame).
+- **VC-7 The compact `VocabularyRow`.** Not in PR 2: Collection Detail, Saved language and Search keep their current
+  rows (they already open Word Detail). Moving the three onto one `kit/vocabulary-row.js` is PR 2b.
+- **VC-8 Direct link to an unsaved word.** Word Detail draws the entry's full content from the saved record or from
+  the card the list left behind (Collection Detail, the Feed). Opened by a direct link with neither, it has only what
+  `/api/vocabulary/catalogue/search` returns (word, reading, meanings, level, part of speech) - no examples or
+  relations - until that response carries the entry's content (a small backend change, not made here).
+- **VC-9 Support-language content.** Example translations, labels, explanations and memory tips are authored in
+  Vietnamese (`{vi: ...}`); they show only to a Vietnamese-support learner. An English- or Chinese-support learner
+  sees the entry without them until a pack in their support language exists.
+- **VC-10 The Quick Sheet** keeps its own compact word card (`screens/quick-sheet`, `mapWordCard`); it is a sheet,
+  not a card surface of this PR.
+- **VC-11 Bookmark on the Review back - OPEN (design deviation, human gate 2026-10-12).** The pinned Review frame draws
+  a bookmark on the turned card. It is not drawn in PR 2: the human allowed a remove-only toggle only if removing a word
+  mid-session provably keeps the queue, session and scheduler intact, and it did not - grading a word just removed answers
+  `missing` and the screen shows a save-failure toast. To restore it: a removed word leaves the session cleanly (skipped,
+  not graded, not counted, no failure toast) and Undo puts it back in place with its schedule, with tests; then draw the
+  remove-only toggle. D-179 point 4.
+- **VC-12 The Review corner disc.** The pinned frame draws its decorative corner disc on the turned card too. On the
+  two-face card every corner of the revealed face holds text or a control (the play and bookmark discs top-right, the
+  mastery line bottom-left, the turn action bottom-right), so the disc is drawn on the recall face only, not on
+  `review-back`. An adaptation, recorded here.
+- **VC-13 Phone sizes not measured.** The 360x740 and 390x844 composition is held structurally by
+  `scripts/test_orena_vocabulary_card.mjs` (no fixed card widths, the headword's type shrinks instead of breaking a
+  word, the feed's discs on their own row, the card body the only scroll region, the grades outside it). Still to
+  measure on a phone: Review at 360x740 with a long authored entry (the grades in view, only the card scrolling),
+  the feed's turned card with a long headword, and the ZH ruby headword at 360 wide.
+- **VC-14 Rebuilt to the flashcard reference's two-face layout (2026-10-12).** Not reproduced with current tokens and
+  components, by design or by data: the reference's blue accent, Be Vietnam Pro / Noto Serif faces and the Chinese
+  card's cream paper, seal red and double rule (theme and D-147); the translation's own highlight (the reference bolds
+  "kiên cường" in the Vietnamese line - the entry format has no field for it); the bold pattern inside an explanation
+  ("resilient to / against + N" - plain text in the data); separate UK and US recordings (both play discs say the
+  word's one voice - `/api/vocabulary/{word}/audio` has no accent choice); the reference's line-art illustrations (no
+  assets; the frame is drawn only for an uploaded image). The Daily Feed keeps its pinned frame-36 front face; the
+  two-face card is its turned side.
+- **VC-15 Word-detail lookup labels a foreign reading as pinyin (server).** `writing_coach/word_detail.py:203-206`
+  (`project_word_detail`) sets `pinyin` to the lookup's `pronunciation` whenever the headword is Han
+  (`script_of`, :127), whatever language the lookup ran in (`source_language`, the route at :389). Word Detail sent
+  the learner's current learning language, so a Chinese word opened while learning English (`松树`) was looked up as
+  English and its English IPA ("/paɪn triː/") came back as `pinyin`. Covered on the client (D-179): the card mapper
+  accepts only a pinyin-shaped reading for a Han word and never pinyin or Hanzi for a Latin word, and Word Detail
+  reads the catalogue in the word's own language (`screens/word/model.js#catalogueLanguage`) so a direct link finds
+  the entry's pinyin and meaning. The lookup itself must stay in the learner's current learning language: any other is
+  refused with 409 by `media_interaction.py:119-126` (`_validated_source_language`), reached through
+  `word_detail.py:322-337` (`_explain` re-raises it), and the screen must not send it (a 286aa389 regression,
+  reverted). The server should label `pinyin` only for a Chinese lookup; a one-line change with a pytest, not made
+  here (no Docker run on this host with under 2 GB free).
+

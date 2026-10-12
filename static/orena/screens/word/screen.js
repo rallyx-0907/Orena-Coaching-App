@@ -1,33 +1,33 @@
-/* Word Detail (frame 22, `#/word/:id`; D-091). The saved-word reference page: the word card
-   (pronunciation, meaning, example, mastery footer), real context clips from the listening
+/* Word Detail (frame 22, `#/word/:id`; D-091). The saved-word reference page: the shared
+   VocabularyCard in `detail` mode (kit/vocabulary-card.js, D-179 - the entry's content from
+   product/vocabulary-card.js#toVocabularyModel, the learner's saved state beside it), real context clips from the listening
    catalogue, the Deep Word explanation, mastery evidence, and - for a Chinese headword - the
    Stroke Practice sheet (frame 60). Every binding maps to a real answer (`POST
    /api/dictionary/word-detail`, `GET /api/library/vocabulary`, `.../clips`, `.../audio`,
    `/api/chinese/stroke-order`); a field none of them carries is left out (rule 40), never
    invented. */
-import { html, mount, raw, cls } from '../../kit/html.js';
+import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { loadingMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
-import { masteryBars, rowBadge } from '../../kit/components.js';
-import { langAttr } from '../../kit/lang.js';
+import { rowBadge } from '../../kit/components.js';
+import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { t } from './copy.js';
 import {
   contextFor,
-  mapWordCard,
   mapDeepWord,
   mapClips,
   mapMasteryEvidence,
   restorePayload,
-  savePayload,
-  cardLanguage,
-  posLabel,
+  stageCopyKey,
+  catalogueLanguage,
 } from './model.js';
+import { toVocabularyModel, learnerState, savePayloadOf, highlightParts } from '../../product/vocabulary-card.js';
 import { mountStrokeSheet } from './stroke-sheet.js';
 import { createStrokeTiles } from './stroke-tiles.js';
 import { speakOnDevice } from '../../kit/device-voice.js';
@@ -51,7 +51,7 @@ async function catalogueSeed(word, language) {
     const found = await api.vocabularyCatalogueSearch(word, language, 5);
     const norm = String(word).trim().toLowerCase();
     const hit = (found?.items || []).find((row) => String(row.normalized_word || row.word || '').trim().toLowerCase() === norm);
-    return hit ? { pronunciation: String(hit.readings?.[0]?.text || '').trim(), short_meanings: hit.short_meanings || [], identity: { language } } : null;
+    return hit ? { pronunciation: String(hit.readings?.[0]?.text || '').trim(), short_meanings: hit.short_meanings || [], identity: { language }, entry: { ...hit, language_code: language } } : null;
   } catch {
     return null;
   }
@@ -106,62 +106,28 @@ function deepWordMarkup(rows) {
   </details>`;
 }
 
-/* languages-4 (2): the pos chip's closed-space translation, honest about what it could not
-   translate (model.js#posLabel's own comment) - an unmapped value is marked `lang="en"` as
-   untranslated content metadata rather than shown as if it were interface copy. */
-function posMarkup(pos) {
-  if (!pos) return '';
-  const label = posLabel(pos, t);
-  return html`<span class="o-tag"${label.known ? '' : raw(` lang="${langAttr('en')}"`)}>${label.text}</span>`;
-}
-
 /* A meaning that is not in the learner's support language says which language it is in (D-124). */
 function meaningTag(language) {
   const label = language ? meaningLanguageLabel(language, languages().support, languages().ui) : '';
   return label ? html` <span class="o-tag">${label}</span>` : '';
 }
 
-function cardMarkup(card, strokeTiles) {
-  const cardLang = cardLanguage(card.script);
-  const meta = [
-    card.ipa ? html`<span class="s-word-card__ipa">${card.ipa}</span>` : '',
-    posMarkup(card.pos),
-    card.hasLevel ? html`<span class="o-tag s-word-card__level">${card.level}</span>` : '',
-  ];
-  const footer = [];
-  if (card.hasSchedule) {
-    footer.push(html`<span class="s-word-card__bars">${masteryBars({ filled: card.filled, total: 4 })}</span>`);
-    if (card.stageKey) footer.push(html`<span class="s-word-card__stage">${t(card.stageKey)}</span>`);
-    if (card.due) footer.push(html`<span class="s-word-card__due">· ${card.due.key === 'dueToday' ? t('dueToday') : t.plural('dueInDays', card.due.n)}</span>`);
-  }
-  return html`<div class="s-word-card">
-    <div class="s-word-card__top">
-      <div class="s-word-card__id">
-        <div class="s-word-card__word" lang="${langAttr(cardLang)}">${card.word}</div>
-        <div class="s-word-card__meta">${meta}</div>
-      </div>
-      <div class="s-word-card__actions">
-        <button type="button" class="s-word-icon s-word-icon--play" data-play aria-label="${t('playWord')}">${raw(icon('volume-2', { size: 19 }))}</button>
-        <button type="button" class="s-word-icon" data-save style="background:${card.savedBg};color:${card.savedColor}" aria-label="${t(card.saved ? 'unsaveWord' : 'saveWord')}" aria-pressed="${card.saved ? 'true' : 'false'}">${raw(icon('bookmark-check', { size: 19 }))}</button>
-      </div>
-    </div>
-    ${
-      card.hasMeaning
-        ? html`<div class="s-word-card__meaning"><div class="s-word-card__meaning-text">${card.meaning}${meaningTag(card.meaningLanguage)}</div>${card.hasSupport ? html`<div class="s-word-card__support">${card.support}</div>` : ''}</div>`
-        : html`<div class="s-word-card__meaning"><div class="s-word-card__support" data-no-meaning>${t('meaningUnavailable')}</div></div>`
-    }
-    ${
-      card.hasExample
-        ? html`<div class="s-word-card__example" lang="${langAttr(cardLang)}">“${card.exampleParts.map((part) => html`<span class="${cls(part.hit && 's-word-card__hit')}">${part.value}</span>`)}”</div>`
-        : ''
-    }
-    ${strokeTiles}
-    ${footer.length ? html`<div class="s-word-card__footer">${footer}</div>` : ''}
-  </div>`;
+/* The card: the entry's content (pure, D-179) and, beside it, what the learner's own record adds -
+   saved state, the mastery footer, and the sentence they met the word in when the entry has no example. */
+function cardMarkup(model, learner, item, strokes, meaningPending) {
+  const stageKey = stageCopyKey(item);
+  const footer = {
+    stage: stageKey ? t(stageKey) : '',
+    due: learner.due ? (learner.due.key === 'dueToday' ? t('dueToday') : t.plural('dueInDays', learner.due.n)) : '',
+  };
+  const latin = model.script !== 'hanzi';
+  const decorated = { ...learner, contextParts: highlightParts(learner.context, { match: model.word, latin, caseless: latin }) };
+  return vocabularyCard(model, { mode: 'detail', learner: decorated, slots: { strokes, footer, meaningTag, meaningPending } });
 }
 
 export default async function mountWordDetail(element, ctx) {
   await useStyles('screens/word/word.css');
+  await useStyles('kit/vocabulary-card.css');
   const word = String(ctx.params?.id || '').trim();
   const language = ctx.context?.language || 'en';
 
@@ -183,37 +149,50 @@ export default async function mountWordDetail(element, ctx) {
   let item = await fetchItem(word);
   if (!ctx.isCurrent()) return undefined;
   let seed = wordSeed(word);
-  if (!item && !seed) seed = await catalogueSeed(word, language);
+  // The catalogue is asked in the word's own language (a Hanzi word is in the Chinese catalogue, whatever the
+  // learner is learning now); it is a read, which the server allows for any enabled language.
+  if (!item && !seed) seed = await catalogueSeed(word, catalogueLanguage(word, language));
   if (!ctx.isCurrent()) return undefined;
 
   let detail = null;
   let clips = [];
   let clipsReady = false;
   const pending = Promise.all([
+    // The lookup runs in the learner's current learning language: the server refuses any other (409,
+    // media_interaction.py#_validated_source_language). A Chinese word looked up under English can answer with an
+    // English IPA labelled pinyin (UI_BACKEND_GAPS VC-15); the card mapper drops a reading of the wrong kind.
     api.wordDetail({ depth: 'full', text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch(() => null),
     api.wordClips(word, 6).catch(() => null),
   ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
   const hasSomethingToShow = Boolean(item || seed);
+  // While the lookup is still out, a card with no meaning yet says so with the kit's skeleton, never "no meaning".
+  let lookupPending = hasSomethingToShow;
   if (!hasSomethingToShow) {
     const { found, clipsPayload } = await pending;
     if (!ctx.isCurrent()) return undefined;
-    if (!found) throw new Error(`Word Detail: no lookup and no saved record for "${word}"`);
+    // A refused or empty lookup never fails the page: the card is drawn from whatever exists - here only the
+    // word itself - with no reading rather than a wrong one (rule 40).
     detail = found;
     clips = mapClips(clipsPayload);
     clipsReady = true;
   }
 
-  let card = mapWordCard(word, { detail, item, supportLanguage: languages().support, seed });
+  // The entry's content: the saved record (which reads the catalogue entry through), else the card the
+  // list left behind, else the catalogue's own search answer.
+  const contentOf = () => toVocabularyModel(item || seed?.entry || null, { word, supportLanguage: languages().support, lookup: detail, seed });
+  const learnerOf = () => learnerState(item, { saved: item ? true : Boolean(detail?.saved) });
+  let model = contentOf();
+  let learner = learnerOf();
   let deepRows = mapDeepWord(detail);
 
-  ctx.setCrumb(card.word);
+  ctx.setCrumb(model.word);
 
   // Word Detail's stroke order is frame 53's: the same looping tiles as the Quick Sheet (LEX-021).
   let strokeTiles = null;
   async function loadStrokeTiles() {
     if (strokeTiles) return strokeTiles;
     try {
-      const payload = await api.chineseStrokeOrder(card.word);
+      const payload = await api.chineseStrokeOrder(model.word);
       strokeTiles = createStrokeTiles(payload?.characters || []);
     } catch {
       strokeTiles = createStrokeTiles([]);
@@ -240,9 +219,9 @@ export default async function mountWordDetail(element, ctx) {
     // evidence panel must always reflect the item this render's `card` was built from, never a
     // frozen snapshot from the first load (rule 40 - a deleted item leaves no evidence to show).
     const evidence = mapMasteryEvidence(item);
-    const tiles = card.script === 'hanzi' ? await loadStrokeTiles() : null;
+    const tiles = model.script === 'hanzi' ? await loadStrokeTiles() : null;
     const strokesMarkup =
-      card.script === 'hanzi'
+      model.script === 'hanzi'
         ? html`<div class="s-word-strokes">
         <div class="s-word-strokes__label">${t('strokeOrder')}</div>
         ${tiles.markup()}
@@ -263,7 +242,7 @@ export default async function mountWordDetail(element, ctx) {
     mount(
       element,
       html`<button type="button" class="o-iconbtn" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 19 }))}</button>
-      ${cardMarkup(card, strokesMarkup)}
+      ${cardMarkup(model, learner, item, strokesMarkup, lookupPending)}
       <div class="s-word-grid">
         <div class="s-word-col">${clipsPanel}${deepWordMarkup(deepRows)}</div>
         ${evidencePanel}
@@ -278,25 +257,27 @@ export default async function mountWordDetail(element, ctx) {
     // The same pronunciation the Quick Sheet plays (LEX-020): the word at its reading, looked up as a word met in
     // a text when it is not in the catalogue, and the device's own voice - said to be the device's - only when
     // the server's voice failed or could not be reached.
-    element.querySelector('[data-play]')?.addEventListener('click', async () => {
+    bindVocabularyCards(element);
+    // One play action per reading row (UK, US) and one on a card without them: the same word's voice.
+    element.querySelectorAll('[data-play]').forEach((playButton) => playButton.addEventListener('click', async () => {
       const onDevice = () => {
         if (speakOnDevice(word, language)) toast(t('sourceDevice'));
         else toast(t('noAudio'));
       };
       try {
-        const audioInfo = await api.wordAudio(word, card.ipa || '', true);
+        const audioInfo = await api.wordAudio(word, model.pronunciation.text || '', true);
         if (audioInfo?.available && audioInfo.url) playUrl(audioInfo.url);
         else if (audioInfo?.reason === 'synthesis_unavailable') onDevice();
         else toast(t('noAudio'));
       } catch {
         onDevice();
       }
-    });
+    }));
     element.querySelector('[data-save]')?.addEventListener('click', async () => {
       const button = element.querySelector('[data-save]');
       button.disabled = true;
       try {
-        if (card.saved) {
+        if (learner.saved) {
           // Only offer Undo when we hold the exact record to restore (rule 40: never
           // reconstruct source_kind/added_at/schedule from the word card's own display fields).
           const payload = restorePayload(item);
@@ -310,7 +291,9 @@ export default async function mountWordDetail(element, ctx) {
           // it with the delete we just confirmed, the one signal `mapWordCard` cannot get right
           // on its own for this transition (rule 40 - don't let a stale snapshot outrank a real
           // action that just happened).
-          card = mapWordCard(word, { detail: detail ? { ...detail, saved: false } : detail, item, supportLanguage: languages().support, seed });
+          detail = detail ? { ...detail, saved: false } : detail;
+          model = contentOf();
+          learner = learnerOf();
           await paint();
           toast(
             t('removedToast'),
@@ -319,7 +302,8 @@ export default async function mountWordDetail(element, ctx) {
                   undo: async () => {
                     const restored = await api.restoreLibraryVocabulary(payload).catch(() => null);
                     item = restored?.item || item;
-                    card = mapWordCard(word, { detail, item, supportLanguage: languages().support, seed });
+                    model = contentOf();
+                    learner = learnerOf();
                     await paint();
                   },
                   undoLabel: shellCopy('undo'),
@@ -327,9 +311,10 @@ export default async function mountWordDetail(element, ctx) {
               : {},
           );
         } else {
-          const saved = await api.saveLibraryVocabulary(savePayload(card));
+          const saved = await api.saveLibraryVocabulary(savePayloadOf(model, 'dictionary'));
           item = saved?.item || item;
-          card = mapWordCard(word, { detail, item, supportLanguage: languages().support, seed });
+          model = contentOf();
+          learner = learnerOf();
           await paint();
           toast(t('savedToast'));
         }
@@ -340,12 +325,12 @@ export default async function mountWordDetail(element, ctx) {
     element.querySelector('[data-practise-strokes]')?.addEventListener('click', () => {
       // The frame's sheet title is the word plus its own pinyin when the lookup has one
       // (`skWord`, E4 §7) - not a second, disconnected reading.
-      const titleWord = card.ipa ? `${card.word} · ${card.ipa}` : card.word;
+      const titleWord = model.pronunciation.text ? `${model.word} · ${model.pronunciation.text}` : model.word;
       openSheet({
         label: t('strokePracticeTitle', { word: titleWord }),
         render: (sheetEl, handle) =>
           mountStrokeSheet(sheetEl, handle, {
-            word: card.word,
+            word: model.word,
             titleWord,
             chineseStrokeOrder: api.chineseStrokeOrder,
             t,
@@ -372,11 +357,13 @@ export default async function mountWordDetail(element, ctx) {
   if (hasSomethingToShow) {
     pending.then(async ({ found, clipsPayload }) => {
       if (!ctx.isCurrent()) return;
+      lookupPending = false;
       detail = found;
       clips = mapClips(clipsPayload);
       clipsReady = true;
       deepRows = mapDeepWord(detail);
-      card = mapWordCard(word, { detail, item, supportLanguage: languages().support, seed });
+      model = contentOf();
+      learner = learnerOf();
       await paint();
     });
   }

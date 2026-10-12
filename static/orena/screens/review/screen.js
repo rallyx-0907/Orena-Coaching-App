@@ -5,23 +5,24 @@
    (shell/routes.js): the router paints the loading skeleton while this awaits and the load-error
    state if it throws, so this never paints its own.
 
-   The revealed card is the same Word Card content Word Detail draws (D7 §4: "byte-identical inner
-   content, only the outer wrapper differs") - this screen's own `model.js#reviewCard` wraps
-   `screens/word/model.js#mapWordCard` (and backfills a real catalogue meaning/example when the
-   saved item's own fields are empty - see that function's header), reuses its save/restore payload
-   helpers directly rather than re-deriving the shape, and reuses
+   Both faces are the shared VocabularyCard (kit/vocabulary-card.js, D-179): `review-front` asks the
+   word - its reading, part of speech, level and audio, nothing that answers it - and Reveal turns it
+   to `review-back`, the same content Word Detail draws (D7 §4), from the same pure mapper
+   (product/vocabulary-card.js). Two grades: "Not yet" (`again`) and "Got it" (`got_it`); `unsure`
+   stays in the API and is not drawn. Only saved words are ever in the queue. It reuses
    `screens/word/stroke-sheet.js#mountStrokeSheet` for "Practise strokes", exactly as Word Detail and
    the Wave B overlays already do. "Mark known" is not built here either, for the same reason Word
    Detail leaves it out (no real backend action - see that screen's own header). */
-import { html, mount, raw, cls } from '../../kit/html.js';
+import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
 import { openSheet } from '../../kit/overlay.js';
 import { openLessonComplete } from '../lesson-complete/sheet.js';
-import { masteryBars } from '../../kit/components.js';
 import { langAttr } from '../../kit/lang.js';
+import { vocabularyCard, bindVocabularyCards } from '../../kit/vocabulary-card.js';
+import { toVocabularyModel, learnerState } from '../../product/vocabulary-card.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
@@ -29,12 +30,7 @@ import { api } from '../../infrastructure/api.js';
 import { readCollection } from '../collection/actions.js';
 import { flushQueue, withWaiting } from '../../product/review-queue.js';
 import { t } from './copy.js';
-import {
-  cardLanguage,
-  posLabel,
-  restorePayload,
-  savePayload,
-} from '../word/model.js';
+import { stageCopyKey } from '../word/model.js';
 import { mountStrokeSheet } from '../word/stroke-sheet.js';
 import { strokesMarkup, hydrateStrokes } from './strokes.js';
 import {
@@ -46,7 +42,7 @@ import {
   scheduleLabel,
   initialStats,
   tally,
-  reviewCard,
+  REVIEW_BUTTONS,
   cardMode,
   clozeFor,
   hintFor,
@@ -62,87 +58,62 @@ function meaningTag(language) {
   return label ? html` <span class="o-tag">${label}</span>` : '';
 }
 
-function posMarkup(pos) {
-  if (!pos) return '';
-  const label = posLabel(pos, t);
-  return html`<span class="o-tag"${label.known ? '' : raw(` lang="${langAttr('en')}"`)}>${label.text}</span>`;
-}
-
 /* The task the card asks, in plain words. The position in the session is shown once, in the header (LEX-064). */
 function eyebrowOf(row) {
   return t(cardMode(row) === 'cloze' ? 'modeCloze' : 'modeTarget');
 }
 
-/* The revealed card: the eyebrow, then the same content Word Detail draws (D7 §4), review-scoped
-   classes. The scroll region is the card's own, so a long definition or example scrolls in the card
-   and the grades below it stay in view (rule 49). */
-function wordCardMarkup(card) {
-  const cardLang = cardLanguage(card.script);
-  const meta = [
-    card.ipa ? html`<span class="s-review-card__ipa">${card.ipa}</span>` : '',
-    posMarkup(card.pos),
-    card.hasLevel ? html`<span class="o-tag s-review-card__level">${card.level}</span>` : '',
-  ];
-  const footer = [];
-  if (card.hasSchedule) {
-    footer.push(html`<span class="s-review-card__bars">${masteryBars({ filled: card.filled, total: 4 })}</span>`);
-    if (card.stageKey) footer.push(html`<span class="s-review-card__stage">${t(card.stageKey)}</span>`);
-    if (card.due) footer.push(html`<span class="s-review-card__due">· ${card.due.key === 'dueToday' ? t('dueToday') : t.plural('dueInDays', card.due.n)}</span>`);
-  }
+/* The revealed face: the two-face card (`review-back`, no Save). Each face scrolls inside its own body
+   and keeps its turn action in view; the grades are below the card, outside it (rule 49). */
+function backFaceMarkup(model, learner, row) {
+  const stageKey = stageCopyKey(learner.saved ? row : null);
+  const footer = {
+    stage: stageKey ? t(stageKey) : '',
+    due: learner.due ? (learner.due.key === 'dueToday' ? t('dueToday') : t.plural('dueInDays', learner.due.n)) : '',
+  };
+  const strokes = model.script === 'hanzi'
+    ? strokesMarkup({ word: model.word, prefix: 's-review', label: t('strokeOrder'), buttonLabel: t('practiseStrokes'), buttonAttr: 'data-practise-strokes', buttonClass: 's-review-strokes-btn' })
+    : '';
+  // No corner disc here: every corner of the turned card holds text or a control (UI_BACKEND_GAPS VC-12).
   return html`<div class="s-review-face s-review-face--revealed">
-    <span class="s-review-face__blob" aria-hidden="true"></span>
-    <div class="s-review-face__scroll" data-scroll-region>
-    <div class="s-review-card">
-    <div class="s-review-card__top">
-      <div class="s-review-card__id">
-        <div class="s-review-card__word" lang="${langAttr(cardLang)}">${card.word}</div>
-        <div class="s-review-card__meta">${meta}</div>
-      </div>
-      <div class="s-review-card__actions">
-        <button type="button" class="s-review-icon s-review-icon--play" data-play aria-label="${t('playWord')}">${raw(icon('volume-2', { size: 19 }))}</button>
-        <button type="button" class="s-review-icon" data-save style="background:${card.savedBg};color:${card.savedColor}" aria-label="${t(card.saved ? 'unsaveWord' : 'saveWord')}" aria-pressed="${card.saved ? 'true' : 'false'}">${raw(icon('bookmark-check', { size: 19 }))}</button>
-      </div>
-    </div>
-    ${card.hasMeaning ? html`<div class="s-review-card__meaning"><div class="s-review-card__meaning-text">${card.meaning}${meaningTag(card.meaningLanguage)}</div>${card.hasSupport ? html`<div class="s-review-card__support">${card.support}</div>` : ''}</div>` : ''}
-    ${card.hasExample ? html`<div class="s-review-card__example" lang="${langAttr(cardLang)}">“${card.exampleParts.map((part) => html`<span class="${cls(part.hit && 's-review-card__hit')}">${part.value}</span>`)}”</div>` : ''}
-    ${card.script === 'hanzi' ? strokesMarkup({ word: card.word, prefix: 's-review', label: t('strokeOrder'), buttonLabel: t('practiseStrokes'), buttonAttr: 'data-practise-strokes', buttonClass: 's-review-strokes-btn' }) : ''}
-    ${footer.length ? html`<div class="s-review-card__footer">${footer}</div>` : ''}
-    </div>
-    </div>
+    ${vocabularyCard(model, { mode: 'review-back', learner, slots: { strokes, footer, meaningTag } })}
   </div>`;
 }
 
-/* The frame's hidden face (`rvHidden`): `n of total · mode`, the prompt, a cue line, the hint once
-   asked for, and "Tap to reveal". Target -> meaning asks the word and cues it with its reading and
-   part of speech; a source-aware card asks the sentence the learner met the word in, the word taken
-   out, and cues it with where the sentence came from (model.js#cardMode). */
-function hiddenFaceMarkup(card, row, hintOn) {
+/* The hidden face (`rvHidden`). Target -> meaning: the card's `review-front` - the word, its reading,
+   part of speech, level and audio; nothing that answers it. A source-aware card asks the sentence the
+   learner met the word in, the word taken out, cued with where it came from (model.js#cardMode) - no
+   audio there, which would say the answer. Tapping the face (not one of its buttons) reveals. */
+function hiddenFaceMarkup(model, row, hintOn) {
   const cloze = cardMode(row) === 'cloze' ? clozeFor(row) : null;
-  const lang = langAttr(cardLanguage(card.script));
-  const sourceKey = cloze ? sourceLabelKey(row.source_kind) : '';
-  const cue = cloze
-    ? (sourceKey ? t(sourceKey) : '')
-    : '';
-  const reading = cloze ? '' : card.ipa;
-  const pos = cloze || !card.pos ? '' : posLabel(card.pos, t).text;
-  const hint = hintOn ? hintFor(cloze ? 'cloze' : 'typing', card) : '';
-  const promptText = cloze ? cloze.text : card.word;
-  const size = promptText.length > 220 ? ' s-review-prompt--longest' : promptText.length > 90 ? ' s-review-prompt--long' : '';
-  return html`<button type="button" class="s-review-face s-review-face--hidden" data-card-tap>
+  const lang = langAttr(model.language);
+  const hint = hintOn ? hintFor(cloze ? 'cloze' : 'typing', { word: model.word, support: model.support }) : '';
+  if (!cloze) {
+    return html`<div class="s-review-face s-review-face--hidden" data-card-tap>
+      <span class="s-review-face__blob" aria-hidden="true"></span>
+      <span class="s-review-eyebrow">${eyebrowOf(row)}</span>
+      ${vocabularyCard(model, { mode: 'review-front' })}
+      ${hint ? html`<span class="s-review-hint">${hint}</span>` : ''}
+    </div>`;
+  }
+  const sourceKey = sourceLabelKey(row.source_kind);
+  const size = cloze.text.length > 220 ? ' s-review-prompt--longest' : cloze.text.length > 90 ? ' s-review-prompt--long' : '';
+  return html`<div class="s-review-face s-review-face--hidden" data-card-tap>
     <span class="s-review-face__blob" aria-hidden="true"></span>
     <span class="s-review-eyebrow">${eyebrowOf(row)}</span>
-    <span class="s-review-prompt${size}" lang="${lang}"${cloze ? raw(' data-scroll-region') : ''}>${cloze ? cloze.parts.map((part) => (part.blank ? html`<span class="s-review-blank">${part.value}</span>` : part.value)) : promptText}</span>
-    ${reading || pos || cue ? html`<span class="s-review-cue">${reading ? html`<span class="s-review-cue__reading">${reading}</span>` : ''}${reading && pos ? ' · ' : ''}${pos}${cue}</span>` : ''}
-    ${hint ? html`<span class="s-review-hint"${cloze ? raw(` lang="${lang}"`) : ''}>${hint}</span>` : ''}
-  </button>`;
+    <span class="s-review-prompt${size}" lang="${lang}" data-scroll-region>${cloze.parts.map((part) => (part.blank ? html`<span class="s-review-blank">${part.value}</span>` : part.value))}</span>
+    ${sourceKey ? html`<span class="s-review-cue">${t(sourceKey)}</span>` : ''}
+    ${hint ? html`<span class="s-review-hint" lang="${lang}">${hint}</span>` : ''}
+  </div>`;
 }
 
-const GRADE_CSS_SUFFIX = { again: 'again', unsure: 'unsure', got_it: 'gotit' };
+const GRADE_COPY = { again: 'gradeNotYet', got_it: 'gradeGotIt' };
+const GRADE_CSS_SUFFIX = { again: 'again', got_it: 'gotit' };
 
-function gradeButton(grade, key, schedule) {
+function gradeButton(grade, schedule) {
   const label = scheduleLabel(schedule, grade, t);
   return html`<button type="button" class="s-review-grade s-review-grade--${GRADE_CSS_SUFFIX[grade]}" data-grade="${grade}">
-    <span>${t(key)}</span>${label ? html`<b>${label}</b>` : ''}
+    <span>${t(GRADE_COPY[grade])}</span>${label ? html`<b>${label}</b>` : ''}
   </button>`;
 }
 
@@ -151,7 +122,7 @@ function statTile(key, n, tone) {
 }
 
 export default async function mountReview(element, ctx) {
-  await useStyles('screens/review/review.css');
+  await Promise.all([useStyles('screens/review/review.css'), useStyles('kit/vocabulary-card.css')]);
   element.classList.add('s-review-root');
 
   const support = languages().support;
@@ -201,7 +172,7 @@ export default async function mountReview(element, ctx) {
   }
   if (!ctx.isCurrent()) return undefined;
 
-  const state = { index: 0, revealed: false, hintOn: false, stats: initialStats(), grading: false, unsaved: new Set(), nextTimes: [] };
+  const state = { index: 0, revealed: false, hintOn: false, stats: initialStats(), grading: false, nextTimes: [] };
   let audio = null;
 
   function currentRow() {
@@ -213,7 +184,6 @@ export default async function mountReview(element, ctx) {
     state.revealed = false;
     state.hintOn = false;
     state.stats = initialStats();
-    state.unsaved = new Set();
     state.nextTimes = [];
   }
 
@@ -307,8 +277,7 @@ export default async function mountReview(element, ctx) {
           <div class="s-review-eyebrow">${t('sessionCompleteTitle')}</div>
           <div class="s-review-stats">
             ${statTile('statGotIt', state.stats.got_it, 'good')}
-            ${statTile('statUnsure', state.stats.unsure, 'unsure')}
-            ${statTile('statAgain', state.stats.again, 'again')}
+            ${statTile('statNotYet', state.stats.again, 'again')}
           </div>
           <div class="s-review-done__actions">
             <button type="button" class="o-btn o-btn--secondary" data-restart>${t('reviewAgainAction')}</button>
@@ -331,8 +300,9 @@ export default async function mountReview(element, ctx) {
     }
 
     const row = currentRow();
-    const card = reviewCard(row.word, state.unsaved.has(state.index) ? null : row, support);
-    const canHint = Boolean(hintFor(cardMode(row), card));
+    const model = toVocabularyModel(row, { word: row.word, supportLanguage: support });
+    const learner = learnerState(row);
+    const canHint = Boolean(hintFor(cardMode(row), { word: model.word, support: model.support }));
 
     mount(
       element,
@@ -340,11 +310,11 @@ export default async function mountReview(element, ctx) {
       <div class="s-review-body">
         <div class="s-review-stack">
           <div class="s-review-stack__back" aria-hidden="true"></div>
-          ${state.revealed ? wordCardMarkup(card) : hiddenFaceMarkup(card, row, state.hintOn)}
+          ${state.revealed ? backFaceMarkup(model, learner, row) : hiddenFaceMarkup(model, row, state.hintOn)}
         </div>
         ${
           state.revealed
-            ? html`<div class="s-review-grades">${gradeButton('again', 'gradeAgain', row.schedule)}${gradeButton('unsure', 'gradeUnsure', row.schedule)}${gradeButton('got_it', 'gradeGotIt', row.schedule)}</div>`
+            ? html`<div class="s-review-grades">${REVIEW_BUTTONS.map((grade) => gradeButton(grade, row.schedule))}</div>`
             : html`<div class="s-review-hidden-actions">
                 ${canHint ? html`<button type="button" class="s-review-btn s-review-btn--secondary" data-hint>${t('hintLabel')}</button>` : ''}
                 <button type="button" class="s-review-btn s-review-btn--primary" data-reveal>${t('revealLabel')}</button>
@@ -354,8 +324,29 @@ export default async function mountReview(element, ctx) {
     );
     bindHeader();
 
+    async function play() {
+      try {
+        const info = await api.wordAudio(row.word);
+        if (info?.available && info.url) {
+          audio?.pause();
+          audio = new Audio(info.url);
+          audio.play().catch(() => {});
+        } else {
+          toast(t('noAudio'));
+        }
+      } catch {
+        toast(t('noAudio'));
+      }
+    }
+    element.querySelectorAll('[data-play]').forEach((button) => button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      play();
+    }));
+    bindVocabularyCards(element);
+
     if (!state.revealed) {
-      element.querySelector('[data-card-tap]')?.addEventListener('click', () => {
+      element.querySelector('[data-card-tap]')?.addEventListener('click', (event) => {
+        if (event.target.closest('button')) return;
         state.revealed = true;
         paint();
       });
@@ -391,64 +382,15 @@ export default async function mountReview(element, ctx) {
       });
     });
 
-    element.querySelector('[data-play]')?.addEventListener('click', async () => {
-      try {
-        const info = await api.wordAudio(row.word);
-        if (info?.available && info.url) {
-          audio?.pause();
-          audio = new Audio(info.url);
-          audio.play().catch(() => {});
-        } else {
-          toast(t('noAudio'));
-        }
-      } catch {
-        toast(t('noAudio'));
-      }
-    });
-
-    element.querySelector('[data-save]')?.addEventListener('click', async () => {
-      const button = element.querySelector('[data-save]');
-      const savedIndex = state.index;
-      button.disabled = true;
-      try {
-        if (card.saved) {
-          const payload = restorePayload(row);
-          await api.deleteLibraryVocabulary(row.word);
-          state.unsaved.add(savedIndex);
-          toast(
-            t('removedToast'),
-            payload
-              ? {
-                  undo: async () => {
-                    const restored = await api.restoreLibraryVocabulary(payload).catch(() => null);
-                    if (restored?.item) queue[savedIndex] = restored.item;
-                    state.unsaved.delete(savedIndex);
-                    paint();
-                  },
-                  undoLabel: shellCopy('undo'),
-                }
-              : {},
-          );
-        } else {
-          const saved = await api.saveLibraryVocabulary(savePayload(card)).catch(() => null);
-          if (saved?.item) queue[savedIndex] = saved.item;
-          state.unsaved.delete(savedIndex);
-          toast(t('savedToast'));
-        }
-      } finally {
-        paint();
-      }
-    });
-
     element.querySelector('[data-practise-strokes]')?.addEventListener('click', async () => {
       // The sheet's own rules (.s-word-*) live in word.css, which only the Word screen loads (V-09).
       await useStyles('screens/word/word.css');
-      const titleWord = card.ipa ? `${card.word} · ${card.ipa}` : card.word;
+      const titleWord = model.pronunciation.text ? `${model.word} · ${model.pronunciation.text}` : model.word;
       openSheet({
         label: t('strokePracticeTitle', { word: titleWord }),
         render: (sheetEl, handle) =>
           mountStrokeSheet(sheetEl, handle, {
-            word: card.word,
+            word: model.word,
             titleWord,
             chineseStrokeOrder: api.chineseStrokeOrder,
             t,

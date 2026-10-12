@@ -214,107 +214,15 @@
   flex-direction: column;
   overflow: hidden;
 }
-.s-review-face__scroll {
+/* The revealed card is the shared VocabularyCard (kit/vocabulary-card.css, D-179). Inside this face the
+   face is the surface, so the card adds no second one; it fills the face, and each of its faces scrolls
+   inside its own body. */
+.s-review-face--revealed > .c-vcard--review-back {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* `safe`: centred while it fits, top-aligned (so the top can be scrolled to) when it does not. */
-  justify-content: safe center;
-  gap: 12px;
-}
-.s-review-card {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  text-align: left;
-}
-.s-review-card__top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-}
-.s-review-card__id {
-  min-width: 0;
-}
-.s-review-card__word {
-  font-size: 32px;
-  line-height: 1.1;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.s-review-card__meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-.s-review-card__ipa {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  color: var(--muted);
-}
-.s-review-card__meta .o-tag {
-  height: 22px;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-}
-.s-review-card__level {
-  color: var(--text);
-}
-.s-review-card__actions {
-  display: flex;
-  gap: 8px;
-  flex: none;
-}
-.s-review-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  border: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.s-review-icon--play {
-  background: var(--accent-soft);
-  color: var(--accent-on-photo, var(--accent));
-}
-.s-review-card__meaning {
-  border-radius: 16px;
-  background: var(--surface2);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.s-review-card__meaning-text {
-  font-size: 16px;
-  line-height: 1.5;
-}
-.s-review-card__support {
-  font-size: 13px;
-  color: var(--muted);
-}
-.s-review-card__example {
-  font-family: Literata, 'Noto Serif SC', Georgia, serif;
-  font-size: 17px;
-  line-height: 1.7;
-  color: var(--muted);
-}
-.s-review-card__hit {
-  background: var(--amber-soft);
-  border-radius: 4px;
-  padding: 0 2px;
-  font-weight: 600;
+  background: transparent;
+  box-shadow: none;
 }
 /* The Word Card's Hanzi block: label, one tile per character (the vendored stroke pack, drawn
    finished), then the practice button - the frame's 12px/600 caps label and 76px tiles. */
@@ -359,30 +267,12 @@
   border-radius: 12px;
   font-size: 13.5px;
 }
-.s-review-card__footer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-.s-review-card__bars {
-  display: flex;
-}
-.s-review-card__stage {
-  font-size: 14px;
-  font-weight: 600;
-}
-.s-review-card__due {
-  font-size: 13px;
-  color: var(--text3);
-}
 
-/* ---- Grades (rule 40: three real grades, not the frame's four invented ones - model.js) ---- */
+/* ---- Grades (D-179: "Not yet" and "Got it", the two the screen draws - model.js#REVIEW_BUTTONS) ---- */
 .s-review-grades {
   flex: none;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: 6px;
 }
@@ -406,10 +296,6 @@
 .s-review-grade--again {
   background: var(--red-soft);
   color: var(--red);
-}
-.s-review-grade--unsure {
-  background: var(--amber-soft);
-  color: var(--amber);
 }
 .s-review-grade--gotit {
   background: var(--accent-fill);
@@ -453,7 +339,7 @@
 .s-review-stats {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 .s-review-stat {
@@ -467,9 +353,6 @@
 }
 .s-review-stat__n--good {
   color: var(--green);
-}
-.s-review-stat__n--unsure {
-  color: var(--amber);
 }
 .s-review-stat__n--again {
   color: var(--red);
