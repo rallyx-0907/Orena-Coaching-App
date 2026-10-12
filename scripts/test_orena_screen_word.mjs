@@ -287,4 +287,9 @@ assert.equal(seeded.meaning, 'rail station; bus stop');
 assert.equal(seeded.meaningLanguage, 'en');
 assert.equal(mapWordCard('车站', { detail: null, item: null, supportLanguage: 'vi' }).hasMeaning, false);
 
+/* The device's own voice speaks the word in the word's language, not the learner's learning language: a Hanzi
+   word opened while learning English was read by an en-US voice (PR 4, :8021 森林). */
+assert.match(screenSrc, /speakOnDevice\(word,\s*catalogueLanguage\(word,\s*language\)\)/, 'the device voice takes the word\'s own language');
+assert.doesNotMatch(screenSrc, /speakOnDevice\(word,\s*language\)/, 'never the learning language alone');
+
 console.log('test_orena_screen_word.mjs: Word Detail data mapping - real backend contracts, rule 40 throughout: PASS');
