@@ -38,13 +38,22 @@ The file carries no credentials, no secrets and no instance ids; after importing
          - N8N_RESTRICT_FILE_ACCESS_TO=/files        # n8n 2.x only touches files under this path
        volumes:
          - n8n_data:/home/node/.n8n
-         - orena_vocab:/files/orena                  # or ./orena-vocab:/files/orena (the folder must be writable by uid 1000)
+         - ./orena-files:/files                      # a bind mount of the PARENT; the generator writes to /files/orena
    volumes:
      n8n_data:
-     orena_vocab:
    ```
 
-   `docker run`: add `-e N8N_RESTRICT_FILE_ACCESS_TO=/files -v orena_vocab:/files/orena`.
+   **Create the output folder yourself, before the first run** - n8n's Read/Write Files node does not create folders
+   (a fresh install otherwise fails with `ENOENT realpath '/files/orena'`), and it must be writable by the n8n user (uid 1000):
+
+   ```
+   mkdir -p ./orena-files/orena
+   ```
+
+   The workflow checks this first: it writes a small `.orena-write-check` marker and, if that fails, stops at once with
+   a message naming the folder, before anything is downloaded.
+
+   `docker run`: add `-e N8N_RESTRICT_FILE_ACCESS_TO=/files -v "$PWD/orena-files:/files"` (after the `mkdir`).
 2. **Run it.** Open the workflow and press **Execute workflow** (the *Run test* path: two sample words), or edit
    *Test input*. To use the form, see "The form is protected" below.
 3. **Import the result.** In Orena Admin, import `/files/orena/<collection>.<hash>.ready.jsonl` (one file per

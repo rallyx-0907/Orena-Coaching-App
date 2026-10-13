@@ -103,6 +103,9 @@ async function pipeline(opts) {
   const env = opts.env || {};
   const o = {};
   o.Config = await runNode('Config', o, [{ json: opts.form }], env);
+  o['Output folder probe'] = await runNode('Output folder probe', o, o.Config);
+  assert.equal(o['Output folder probe'][0].json.path, `${o.Config[0].json.output.dir}/.orena-write-check`);
+  o['Check output folder'] = await runNode('Check output folder', o, [{ json: opts.probeFails ? { error: "ENOENT: no such file or directory, realpath '/files/orena'" } : {} }]);
   o['Parse words'] = await runNode('Parse words', o, o.Config);
   const parsed = o['Parse words'][0].json;
   o.Words = await runNode('Words', o, o['Parse words']);
@@ -614,6 +617,17 @@ await test('an api run with nothing ready sends nothing', async () => {
   assert.equal(o['Prepare sync'][0].json.reason, 'no_ready_records');
   const report = JSON.parse(decode(o['Final report'].find(f => f.json.role === 'report_json')));
   assert.equal(report.sync_status, 'skipped_no_ready_records');
+});
+
+await test('a missing output folder stops the run first, naming the folder to create (n8n does not create it)', async () => {
+  await assert.rejects(() => pipeline({ form: MANUAL(), enrich: ENRICH, probeFails: true }),
+    /\/files\/orena is not writable.*ENOENT.*mkdir -p .*Nothing was generated/s);
+  const o = await pipeline({ form: MANUAL(), enrich: ENRICH });
+  assert.equal(o['Check output folder'][0].json.ok, true);
+  // the probe runs before any download / enrichment node
+  const order = ['Config', 'Output folder probe', 'Save probe', 'Check output folder', 'Parse words'];
+  for (let i = 0; i < order.length - 1; i++) assert.ok(workflow.connections[order[i]].main[0].some(c => c.node === order[i + 1]), order[i]);
+  assert.equal(byName['Save probe'].onError, 'continueRegularOutput');
 });
 
 // ================================================================ 9. critical vs non-critical writes

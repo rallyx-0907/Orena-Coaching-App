@@ -148,6 +148,11 @@ def build() -> dict:
     add("Run test", "n8n-nodes-base.manualTrigger", 1, [0, 200], {})
     add("Test input", "n8n-nodes-base.code", 2, [220, 200], {"mode": "runOnceForAllItems", "jsCode": TEST_INPUT})
     code_node("Config", "config.js", [440, 80])
+    code_node("Output folder probe", "probe_output.js", [550, 80])
+    add("Save probe", "n8n-nodes-base.readWriteFile", 1, [600, 80],
+        {"operation": "write", "fileName": "={{ $json.path }}", "dataPropertyName": "data", "options": {}},
+        onError="continueRegularOutput")
+    code_node("Check output folder", "check_output.js", [640, 80])
     code_node("Parse words", "parse_words.js", [660, 80])
     if_node("Has Chinese?", "={{ $json.hasZh }}", [880, 80])
     add("Read ZH lookup", "n8n-nodes-base.readWriteFile", 1, [1100, -120],
@@ -234,7 +239,10 @@ def build() -> dict:
     connect("Form", "Config")
     connect("Run test", "Test input")
     connect("Test input", "Config")
-    connect("Config", "Parse words")
+    connect("Config", "Output folder probe")
+    connect("Output folder probe", "Save probe")
+    connect("Save probe", "Check output folder")
+    connect("Check output folder", "Parse words")
     connect("Parse words", "Has Chinese?")
     connect("Has Chinese?", "Read ZH lookup", output=0)
     connect("Has Chinese?", "Words", output=1)

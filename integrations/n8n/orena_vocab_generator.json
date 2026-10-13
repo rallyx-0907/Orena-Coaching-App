@@ -108,6 +108,51 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
+        "jsCode": "// Code node \"Output folder probe\" - n8n's Read/Write Files node does not create folders, so a fresh install would fail\n// on the first write (ENOENT realpath). This writes a tiny marker into the output folder FIRST; \"Check output folder\"\n// turns a failure into one clear message before any download or enrichment is spent.\nconst cfg = $('Config').first().json;\nconst path = `${cfg.output.dir}/.orena-write-check`;\nreturn [{\n  json: { path },\n  binary: { data: await this.helpers.prepareBinaryData(Buffer.from('ok\\n', 'utf8'), '.orena-write-check', 'text/plain') },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        550,
+        80
+      ],
+      "id": "1ba11759-eacb-578b-8587-6b7ace73aee0",
+      "name": "Output folder probe"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $json.path }}",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        600,
+        80
+      ],
+      "id": "c94821c8-bf2e-5c82-9fa7-3df732d72de8",
+      "name": "Save probe",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Code node \"Check output folder\" - stops the run early, with the folder to create, when the probe could not be written.\nconst cfg = $('Config').first().json;\nconst r = $input.first();\nconst err = !r ? 'no result from the write node' : (r.json && r.json.error);\nif (err) {\n  const msg = String((err && (err.message || err.description)) || err).slice(0, 300);\n  throw new Error(`The output folder ${cfg.output.dir} is not writable (${msg}). n8n does not create it: create the folder inside the ` +\n    `mounted volume first (for example: mkdir -p ./orena-files/orena for a mount of ./orena-files at /files), make it writable ` +\n    `by the n8n user, and set N8N_RESTRICT_FILE_ACCESS_TO to a parent of it. Nothing was generated.`);\n}\nreturn [{ json: { ok: true } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        80
+      ],
+      "id": "b134ee49-3471-5eec-9244-a0a32277da5d",
+      "name": "Check output folder"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
         "jsCode": "// ===== Orena vocabulary generator | shared helpers (inlined into every Code node that needs them) =====\nconst TONE_MARKS = { a: 'āáǎà', e: 'ēéěè', i: 'īíǐì', o: 'ōóǒò', u: 'ūúǔù', 'ü': 'ǖǘǚǜ' };\n\nfunction syllableToMark(syl) {\n  const m = /^([A-Za-zü:]+)([1-5])$/.exec(syl);\n  if (!m) return syl.replace(/u:/g, 'ü').replace(/v/g, 'ü');\n  const body = m[1].replace(/u:/g, 'ü').replace(/U:/g, 'Ü').replace(/v/g, 'ü');\n  const tone = +m[2];\n  if (tone === 5) return body;\n  const low = body.toLowerCase();\n  let idx;\n  if (low.includes('a')) idx = low.indexOf('a');\n  else if (low.includes('e')) idx = low.indexOf('e');\n  else if (low.includes('ou')) idx = low.indexOf('o');\n  else idx = Math.max(...['i', 'o', 'u', 'ü'].map(v => low.lastIndexOf(v)));\n  if (idx < 0) return body;\n  let mk = TONE_MARKS[low[idx]][tone - 1];\n  if (body[idx] !== low[idx]) mk = mk.toUpperCase();\n  return body.slice(0, idx) + mk + body.slice(idx + 1);\n}\n\nfunction joinSyllables(arr) {\n  let out = '';\n  arr.forEach((s, i) => {\n    if (i && s && 'aeo'.includes(s.normalize('NFD')[0].toLowerCase())) out += \"'\";\n    out += s;\n  });\n  return out;\n}\n\nfunction slug(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }\n\nfunction fnv1a(str) {\n  let h = 0x811c9dc5;\n  for (const ch of String(str)) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }\n  return h.toString(16).padStart(8, '0');\n}\n\nconst CJK_RE = /[\\u3400-\\u9fff\\uf900-\\ufaff]/;\nfunction isCjk(s) { return CJK_RE.test(s); }\n\n// Deterministic id, a function of the language and the headword only (never of the run, the time or the order):\n// a rerun with the same input yields the same ids. The id pattern of the repo schema is ^[a-z]{2}(-[A-Za-z]+)?:[a-z0-9_-]+$.\n// Orena itself keys an entry by (language, term, first part of speech); this id is its editorial handle (provenance.source_id).\nfunction makeId(lang, word) {\n  if (lang === 'zh-Hans') return 'zh-Hans:' + Array.from(String(word).trim()).map(c => c.codePointAt(0).toString(16)).join('-');\n  const w = String(word).trim();\n  const s = slug(w);\n  const clean = /^[a-z0-9]+(?:[ '-][a-z0-9]+)*$/i.test(w);\n  return 'en:' + ((s && clean) ? s : (s ? s + '-' : 'w-') + fnv1a(w.toLowerCase()).slice(0, 6));\n}\n\nfunction normLevel(lang, raw) {\n  let v = String(raw || '').trim().toUpperCase().replace(/\\s+/g, '');\n  if (!v) return null;\n  if (lang === 'zh-Hans') {\n    v = v.replace(/^HSK/, '');\n    if (/^[789]$|^7-9$|^7–9$/.test(v)) return '7-9';\n    return /^[1-6]$/.test(v) ? v : null;\n  }\n  v = v.replace(/^CEFR/, '');\n  return /^(A1|A2|B1|B2|C1|C2)$/.test(v) ? v : null;\n}\n\nfunction cleanGlosses(glosses, limit = 3) {\n  const out = [];\n  for (let g of glosses || []) {\n    if (/^(CL:|variant of|old variant|see |also written|surname )/.test(g)) continue;\n    g = g.replace(/\\s*\\[[^\\]]*\\]/g, '').replace(/\\|[^\\s,;)]+/g, '').trim();\n    if (g) out.push(g);\n  }\n  return out.slice(0, limit);\n}\n\nfunction measureWords(glosses) {\n  const res = [];\n  for (const g of glosses || []) {\n    const m = /^CL:(.*)$/.exec(g);\n    if (!m) continue;\n    const re = /([^\\s,|\\[]+?)(?:\\|([^\\s,\\[]+))?\\[([^\\]]+)\\]/g;\n    let mm;\n    while ((mm = re.exec(m[1]))) res.push({ mw: mm[2] || mm[1], pinyin: joinSyllables(mm[3].split(/\\s+/).map(syllableToMark)) });\n  }\n  return res;\n}\n\n// lookup.cedict[simp] = [[pinyinWithToneNumbers, [glosses...]], ...]\nfunction pickEntry(entries) {\n  if (!entries || !entries.length) return null;\n  return entries.find(e => e[0] && /^[a-z]/.test(e[0])) || entries[0];\n}\n\nfunction kangxiRadicalChar(rs) {\n  const n = parseInt(String(rs || '').split(/\\s+/)[0].split('.')[0], 10);\n  if (!(n >= 1 && n <= 214)) return null;\n  return String.fromCodePoint(0x2F00 + n - 1).normalize('NFKC');\n}\n\nfunction components(decomp) { return Array.from((decomp || '').replace(/[\\u2FF0-\\u2FFF？?]/g, '')); }\n\nconst ZH_PUNCT = { '。': '.', '，': ',', '、': ',', '？': '?', '！': '!', '：': ':', '；': ';', '“': '\"', '”': '\"', '（': '(', '）': ')', '《': '\"', '》': '\"' };\n\n// Sentence pinyin: longest-match segmentation over CC-CEDICT; the headword is always one word.\n// Returns ['', headPy] when any CJK character is unknown, so no half-guessed reading is ever written.\nfunction sentencePinyin(text, headword, cedict) {\n  const wordPy = w => { const e = pickEntry(cedict[w]); return e ? joinSyllables(e[0].split(/\\s+/).map(syllableToMark)) : null; };\n  const headPy = wordPy(headword) || '';\n  const tokens = [];\n  let unknown = false;\n  text.split(headword).forEach((seg, si) => {\n    if (si) tokens.push(headPy || headword);\n    const chars = Array.from(seg);\n    let i = 0;\n    while (i < chars.length) {\n      let done = false;\n      for (let L = Math.min(8, chars.length - i); L > 0; L--) {\n        const p = wordPy(chars.slice(i, i + L).join(''));\n        if (p) { tokens.push(p); i += L; done = true; break; }\n      }\n      if (!done) {\n        const ch = chars[i];\n        if (ZH_PUNCT[ch]) tokens.push('\\u0000' + ZH_PUNCT[ch]);\n        else if (/\\s/.test(ch)) { /* drop whitespace */ }\n        else { tokens.push(ch); if (isCjk(ch)) unknown = true; }\n        i++;\n      }\n    }\n  });\n  let out = '';\n  for (const t of tokens) out += t.startsWith('\\u0000') ? t.slice(1) : (out && !/[\"(]$/.test(out) ? ' ' : '') + t;\n  out = out.trim();\n  if (unknown || !headPy) return ['', headPy];\n  return [out ? out[0].toUpperCase() + out.slice(1) : '', headPy];\n}\n\n// Tatoeba api_v0: results[].translations[][]; newer API: data[].translations[]\nfunction parseTatoeba(raw) {\n  let o; try { o = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return []; }\n  const arr = (o && (o.results || o.data)) || [];\n  return arr.map(r => {\n    const tr = [];\n    const walk = x => {\n      if (Array.isArray(x)) x.forEach(walk);\n      else if (x && typeof x === 'object') { if (x.lang === 'vie' && x.text) tr.push(x.text); if (x.translations) walk(x.translations); }\n    };\n    walk(r.translations);\n    return { text: String(r.text || '').trim(), vi: tr[0] || '', source: 'tatoeba' };\n  }).filter(x => x.text);\n}\n\nfunction pickExamples(cands, matchFn, max) {\n  const seen = new Set();\n  return cands\n    .filter(c => { if (seen.has(c.text)) return false; seen.add(c.text); return c.text.length >= 4 && c.text.length <= 120 && matchFn(c.text); })\n    .sort((a, b) => (!a.vi - !b.vi) || (Math.abs(a.text.length - 35) - Math.abs(b.text.length - 35)) || (a.text < b.text ? -1 : a.text > b.text ? 1 : 0))\n    .slice(0, max);\n}\n\nfunction parseJsonSafe(raw) { try { return typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return null; } }\nfunction escRe(s) { return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'); }\n\n// An IPA transcription as the card stores it: slash-delimited (\"/rɪˈzɪliənt/\"). A bare transcription is wrapped;\n// anything else (brackets, empty) is returned unchanged so the validator rejects it rather than the workflow guessing.\nfunction normIpa(s) {\n  const t = String(s || '').trim();\n  if (!t) return '';\n  if (/^\\/[^\\/]+\\/$/.test(t)) return t;\n  if (/^[\\[(]/.test(t) || /[\\])]$/.test(t) || t.includes('/')) return t;\n  return '/' + t + '/';\n}\n\nconst POS_CODES = ['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'determiner', 'interjection', 'numeral', 'measure_word', 'particle', 'phrase', 'idiom'];\nconst POS_VI = { noun: 'danh từ', verb: 'động từ', adjective: 'tính từ', adverb: 'trạng từ', pronoun: 'đại từ', preposition: 'giới từ',\n  conjunction: 'liên từ', interjection: 'thán từ', determiner: 'từ hạn định', numeral: 'số từ', measure_word: 'lượng từ', particle: 'trợ từ',\n  phrase: 'cụm từ', idiom: 'thành ngữ' };\nconst POS_ZH = { noun: '名词', verb: '动词', adjective: '形容词', adverb: '副词', pronoun: '代词', preposition: '介词', conjunction: '连词',\n  interjection: '叹词', numeral: '数词', measure_word: '量词', particle: '助词', phrase: '短语', idiom: '成语' };\nconst posObj = (code, lang) => ({ code, label_native: lang === 'zh-Hans' ? (POS_ZH[code] || code) : code, label_vi: POS_VI[code] || code });\n// ===== end of shared helpers =====\n\n\n// Code node \"Parse words\" - reads the list, detects each line's language, normalises the level, derives the deterministic id.\n// Line format:  word - level [- Vietnamese meaning]   (separators: tab, an em/en dash, \" - \", comma, semicolon, pipe)\nconst cfg = $('Config').first().json;\nconst words = [], inputIssues = [], seen = new Map();\nString(cfg.input.text || '').split(/\\r?\\n/).forEach((raw, lineNo) => {\n  const line = raw.trim();\n  if (!line || line.startsWith('#')) return;\n  const parts = line.split(/\\t|\\s+[—–]\\s+|\\s*[—–]\\s*|\\s+-\\s+|\\s*[,;|]\\s*/).map(s => s.trim()).filter(Boolean);\n  const word = parts[0];\n  const lang = isCjk(word) ? 'zh-Hans' : 'en';\n  const levelRaw = parts[1] || '';\n  const level = normLevel(lang, levelRaw);\n  const meaningVi = parts.slice(2).join(', ');\n  const id = makeId(lang, word);\n  if (seen.has(id)) { inputIssues.push({ line: lineNo + 1, word, issue: `same id as line ${seen.get(id)}; this line was ignored` }); return; }\n  seen.set(id, lineNo + 1);\n  words.push({ line: lineNo + 1, word, lang, level, levelRaw, meaningVi, id });\n});\nif (!words.length) throw new Error('The word list is empty');\nreturn [{ json: { words, inputIssues, hasZh: words.some(w => w.lang === 'zh-Hans'), hasEn: words.some(w => w.lang === 'en') } }];\n"
       },
       "type": "n8n-nodes-base.code",
@@ -952,6 +997,39 @@
       ]
     },
     "Config": {
+      "main": [
+        [
+          {
+            "node": "Output folder probe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output folder probe": {
+      "main": [
+        [
+          {
+            "node": "Save probe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save probe": {
+      "main": [
+        [
+          {
+            "node": "Check output folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check output folder": {
       "main": [
         [
           {
