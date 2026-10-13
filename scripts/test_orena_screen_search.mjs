@@ -200,4 +200,23 @@ assert.equal(totalItems([{ items: [1, 2] }, { items: [] }, { items: [3] }]), 3);
   assert.match(screenSrc, /langSpan\(item\.topic,\s*'en'\)/, 'an article/media result\'s topic is marked lang="en", mirroring Discover\'s card tag');
 }
 
+// The catalogue is asked in the query's own language, whatever the learner is learning now.
+{
+  const { catalogueLanguage } = await import('../static/orena/product/vocabulary-card.js');
+  assert.equal(catalogueLanguage('勇敢', 'en'), 'zh', 'a Han query searches the Chinese catalogue while learning English');
+  assert.equal(catalogueLanguage('steadfast', 'zh'), 'en', 'a Latin query searches the English catalogue while learning Chinese');
+  assert.equal(catalogueLanguage('steadfast', 'en'), 'en');
+  const src = (await import('node:fs')).readFileSync('static/orena/screens/search/screen.js', 'utf8');
+  assert.match(src, /catalogueLanguage\(q, language\)/);
+  assert.match(src, /vocabularyCatalogueSearch\(q, wordLanguage, 8\)/, 'the request carries the query language, not the learning language');
+  assert.match(src, /wordItems\(catalogue, wordLanguage\)/);
+}
+
+// `#/search?q=…` prefills the field and runs the search.
+{
+  const src = (await import('node:fs')).readFileSync('static/orena/screens/search/screen.js', 'utf8');
+  assert.match(src, /normalizeQuery\(ctx\.query\?\.get\('q'\)\)/);
+  assert.match(src, /if \(initial\) setQuery\(initial, \{ immediate: true \}\)/);
+}
+
 console.log('Orena search screen: recent searches, real-source mapping, rule-40 fallbacks: PASS');

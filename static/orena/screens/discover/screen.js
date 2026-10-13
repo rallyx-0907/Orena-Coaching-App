@@ -21,7 +21,7 @@ import { overviewMarkup } from './overview.js';
 import {
   entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
   entryFromTextImport, entryFromMediaImport, filterOptions, visibleEntries,
-  presentCard, hrefFor, overviewSections, typeLabel, topicLabel, hasAnyFilter, filterCount, practiceCandidates, practiceHref, preparedMediaEntry,
+  presentCard, hrefFor, overviewSections, typeLabel, topicLabel, hasAnyFilter, filterCount, readPlace, writePlace, searchEverywhereHref, practiceCandidates, practiceHref, preparedMediaEntry,
 } from './model.js';
 
 // The skill order (D-152): Listen before Read, on the tab bar and in the All overview alike.
@@ -54,7 +54,14 @@ export default async function discover(element, ctx) {
   if (practice) ctx.setCrumb(ts(practiceLabel));
   const practicePlace = { source: ctx.query.get('source'), segment: ctx.query.get('segment'), intent: practice };
 
-  const state = { tab: practice ? 'all' : TABS.includes(ctx.query.get('tab')) ? ctx.query.get('tab') : 'all', query: '', filters: emptyFilters(), entries: [], loading: true, failed: false };
+  const place = readPlace(ctx.query, TABS);
+  const state = { tab: practice ? 'all' : place.tab, query: place.query, filters: place.filters, entries: [], loading: true, failed: false };
+  /* The tab, search and filters are the address (history.replaceState, as My Library keeps its tab): Back from a
+     collection or a card returns to this same view, and the router restores its scroll under the same address. */
+  function keepPlace() {
+    const next = `${ctx.href('discover')}${(() => { const qs = writePlace(ctx.query, state); return qs ? `?${qs}` : ''; })()}`;
+    if (next !== location.hash) history.replaceState(history.state, '', next);
+  }
   let sheetHandle = null;
 
   mount(
@@ -87,6 +94,7 @@ export default async function discover(element, ctx) {
   const resultsEl = root.querySelector('[data-results]');
   const filterCountEl = root.querySelector('[data-filtercount]');
   const queryInput = root.querySelector('[data-query]');
+  queryInput.value = state.query;
 
   function visible() {
     return visibleEntries(state.entries, { tab: state.tab, query: state.query, filters: state.filters });
@@ -107,6 +115,7 @@ export default async function discover(element, ctx) {
   function openTab(id) {
     if (!TABS.includes(id) || id === state.tab) return;
     state.tab = id;
+    keepPlace();
     paintTabs();
     paintResults();
   }
@@ -140,8 +149,12 @@ export default async function discover(element, ctx) {
     // The overview always draws its Imported section, so an un-narrowed All is never "nothing matches".
     const narrowed = hasFilters || Boolean(state.query.trim());
     if (!list.length && !state.loading && !(overview && !narrowed)) {
-      mount(resultsEl, emptyMarkup({ text: t('emptyText'), actionLabel: hasFilters || state.query.trim() ? t('clearFilters') : '', iconName: 'inbox' }));
-      resultsEl.querySelector('[data-empty-action]')?.addEventListener('click', clearFilters);
+      const typed = state.query.trim();
+      // A typed query that finds no content says what this box searches and offers global search (#/search), which also finds words.
+      mount(resultsEl, typed
+        ? emptyMarkup({ text: t('emptySearchText'), actionLabel: t('searchEverywhere'), iconName: 'inbox' })
+        : emptyMarkup({ text: t('emptyText'), actionLabel: hasFilters ? t('clearFilters') : '', iconName: 'inbox' }));
+      resultsEl.querySelector('[data-empty-action]')?.addEventListener('click', typed ? () => ctx.go(searchEverywhereHref(typed, ctx.href)) : clearFilters);
     } else if (overview) {
       /* D-167: All is an overview of four sections, never one grid of every type. Each section
          draws the same cards its own tab draws (cardFor) and a "See all" that opens that tab. */
@@ -166,6 +179,7 @@ export default async function discover(element, ctx) {
     state.filters = emptyFilters();
     state.query = '';
     queryInput.value = '';
+    keepPlace();
     paintResults();
   }
 
@@ -173,6 +187,7 @@ export default async function discover(element, ctx) {
     const set = state.filters[group];
     if (set.has(value)) set.delete(value);
     else set.add(value);
+    keepPlace();
     paintResults();
   }
 
@@ -234,7 +249,7 @@ export default async function discover(element, ctx) {
   queryInput.addEventListener('input', () => {
     state.query = queryInput.value;
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(paintResults, 120);
+    searchTimer = setTimeout(() => { keepPlace(); paintResults(); }, 120);
   });
 
   paintTabs();
