@@ -6,20 +6,20 @@
 | | |
 | --- | --- |
 | Branch | `feature/monetization-billing-v1` |
-| Main | `172ae216397e6dfaa1f74aa32417f48b7c2365fd` (`origin/main`, checked 2026-10-13) |
-| Last completed slice | PR-MON-1 P1-2 re-verification fix: committed-but-unsynced payOS payment/refund holds the account (D-MON-014) |
-| Active PR | **PR-MON-1 Canonical Effective Entitlement** - P1-1 VERIFIED FIXED; P1-2 payOS window fix awaiting focused re-verification |
-| Current slice | none in progress — PR-MON-1 waits for independent architecture review |
-| Exact next action | reviewer re-verifies P1-1 and P1-2 only; on APPROVE: rebase on latest `main`, resolve conflicts, re-run targeted + PostgreSQL batch, open PR-MON-1 |
+| Main | `948fd871e5f43d94f3b9a41848f6ae2cbccf47b6` (`origin/main`, 2026-10-13); lane rebased onto it with no conflicts |
+| Last completed slice | PR-MON-1 architecture-APPROVED (independent reviewer, final at `5f18a3f2`); rebased on `948fd871`, billing/entitlement files byte-identical to the approved commit |
+| Active PR | **PR-MON-1 Canonical Effective Entitlement** - APPROVED (architecture), PR opened against `main`; human merge decision pending |
+| Current slice | none - PR-MON-1 waits for CI and the human's merge |
+| Exact next action | watch PR-MON-1 CI; after the human merges, start PR-MON-2 (price integrity + truthful runtime readiness, incl. review P2 R-MON-010) |
 | Blockers | none. Carried to PR-MON-2: review P2 startup discovery (R-MON-010) |
-| Test status | local only (not CI): throwaway PostgreSQL 16 batch 701 passed / 0 skipped; pending-sync mutation fails exactly the new regression; earlier mutations: billing read 17, precedence 3, grace 12, P1-1 14, P1-2 2 |
+| Test status | local only (not CI), rebased tree: throwaway PostgreSQL 16, 746 run: 745 passed, 1 failed = INHERITED `test_quota_voice_postgres.py::test_the_reconciler_has_nothing_to_settle_for_a_vanished_session` (fails identically on clean `origin/main` when quota PG files share one DB; passes alone 3/3 on both trees); project-memory validator and browser ESM graph pass |
 | Next human checkpoint | PR-MON-1 architecture-review-ready report |
 
 ## Revised sequence (human, 2026-10-13)
 
 | PR | Scope | State |
 | --- | --- | --- |
-| PR-MON-1 | **Canonical Effective Entitlement.** One resolver with explicit precedence; Product UI, quota admission and entitlement checks all derive from it. No migration, no checkout UI, no provider config, no credits. | REVIEWABLE |
+| PR-MON-1 | **Canonical Effective Entitlement** (APPROVED, PR open). One resolver with explicit precedence; Product UI, quota admission and entitlement checks all derive from it. No migration, no checkout UI, no provider config, no credits. | APPROVED (architecture) |
 | PR-MON-2 | **Price Integrity + Runtime Readiness.** One server-side price truth or a strict consistency gate; checkout only at a server-offered price that exactly matches the effective catalogue entry (a mismatch blocks checkout); browser amounts never trusted; `billing_ready` reflects real capability. | PLANNED |
 | PR-MON-3 | **Billing Orders + Reconciliation Safety.** Re-review/promote 0027; settle 0028's parent explicitly; abandoned-order expiry; durable payment anomaly/reconciliation state; Polar refund matching where safe; payment-without-entitlement detection. Exact webhook HTTP/retry semantics are designed here, per provider. | PLANNED |
 | PR-MON-4 | **Prepaid Credit Ledger.** Credit account, append-only ledger, idempotent credit/debit/reversal, deterministic balance, never negative. No commercial credit prices. | PLANNED |
