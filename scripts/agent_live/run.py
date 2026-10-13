@@ -775,6 +775,7 @@ class Sandbox:
         self.started = True  # from here on, down() must run, even if up fails halfway
         atexit.register(self.down)
         self._compose("up", "-d")
+        self.assert_loopback()
         deadline = time.monotonic() + wait_seconds
         while time.monotonic() < deadline:
             try:
@@ -785,6 +786,17 @@ class Sandbox:
                 pass
             time.sleep(1)
         raise RuntimeError("the sandbox did not become ready")
+
+    def assert_loopback(self) -> None:
+        """Host-side check of Docker's real published address of the web container (issue #140); stops it and raises if not loopback."""
+        listed = subprocess.run(["docker", "compose", "-p", PROJECT, "-f", str(COMPOSE_FILE), "ps", "-q", "web"],
+                                env=self.env, capture_output=True, text=True, encoding="utf-8", check=False)
+        web = listed.stdout.strip()
+        if not web:
+            raise RuntimeError("the web container was not found; its published address cannot be verified")
+        checked = subprocess.run([sys.executable, str(ROOT / "scripts/assert_published_loopback.py"), "--container", web, "--port", "8000"], check=False)
+        if checked.returncode != 0:
+            raise RuntimeError("the web container is not published on loopback; it was stopped")
 
     def provider_errors(self) -> list[str]:
         """What the provider answered when a round failed, from the web log (the learner only sees
