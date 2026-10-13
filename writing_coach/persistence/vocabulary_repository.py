@@ -1093,6 +1093,10 @@ class SQLAlchemyVocabularyRepository:
                 provenance = _copy_json(collection.provenance, {}) or {}
                 if not isinstance(provenance, Mapping):
                     provenance = {}
+                if wanted == "published":
+                    # Reaching learners is gated by the same admission record as
+                    # `finalize_collection_publication`, whichever route asks.
+                    _publication_admission(provenance)
                 history = list(provenance.get("status_history") or [])
                 history.append({"from": current, "to": wanted, "actor": actor, "at": now.isoformat()})
                 collection.catalog_status = wanted
