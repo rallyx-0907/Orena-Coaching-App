@@ -94,7 +94,7 @@ _HIDDEN_STYLE_RE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden", re.
 MIN_PROSE_UNITS = 120
 # Recorded with every extraction so a stored candidate can be traced to the
 # strategy that produced it. Bump on any change to what is kept or dropped.
-EXTRACTOR_VERSION = "article-extract/2"
+EXTRACTOR_VERSION = "article-extract/3"
 
 
 def units(text: str) -> int:
@@ -104,7 +104,7 @@ def units(text: str) -> int:
 
 
 class _Node:
-    __slots__ = ("tag", "attrs", "children", "parent", "_text", "_link", "_prose")
+    __slots__ = ("tag", "attrs", "children", "parent", "_text", "_raw", "_link", "_prose")
 
     def __init__(self, tag: str, attrs: dict[str, str], parent: _Node | None) -> None:
         self.tag = tag
@@ -112,6 +112,7 @@ class _Node:
         self.children: list[_Node | str] = []
         self.parent = parent
         self._text: str | None = None
+        self._raw: str | None = None
         self._link: int | None = None
         self._prose: float | None = None
 
@@ -151,17 +152,41 @@ class _TreeBuilder(HTMLParser):
         self._stack[-1].children.append(data)
 
 
-def _text(node: _Node) -> str:
-    if node._text is None:
+_BREAK = "\n"  # a <br>: one is a line break, two in a row are a paragraph break
+_CJK_GAP_RE = re.compile(r"(?<=[㐀-䶿一-鿿豈-﫿]) +(?=[㐀-䶿一-鿿豈-﫿])")
+
+
+def _raw(node: _Node) -> str:
+    """Inline text with whitespace collapsed but NOT stripped, so a space that
+    sits inside `<em>first </em>` still separates it from the next word."""
+    if node._raw is None:
         parts: list[str] = []
         for child in node.children:
             if isinstance(child, str):
-                parts.append(child)
+                parts.append(re.sub(r"\s+", " ", child))
             elif child.tag == "br":
-                parts.append(" ")
+                parts.append(_BREAK)
+            elif child.tag in _INLINE:
+                parts.append(_raw(child))
             else:
-                parts.append(" " + _text(child) + " " if child.tag not in _INLINE else _text(child))
-        node._text = re.sub(r"\s+", " ", "".join(parts)).strip()
+                parts.append(" " + _raw(child) + " ")
+        node._raw = "".join(parts)
+    return node._raw
+
+
+def _flat(raw: str) -> str:
+    """One line of text: breaks become spaces; no space is invented between Hanzi."""
+    return _CJK_GAP_RE.sub("", re.sub(r"\s+", " ", raw)).strip()
+
+
+def _split_paragraphs(raw: str) -> list[str]:
+    raw = re.sub(r" *\n *", "\n", raw)
+    return [piece for piece in (_flat(part) for part in re.split(r"\n{2,}", raw)) if piece]
+
+
+def _text(node: _Node) -> str:
+    if node._text is None:
+        node._text = _flat(_raw(node))
     return node._text
 
 
@@ -408,23 +433,29 @@ def _collect(node: _Node, out: list[_Block]) -> None:
     run: list[str] = []
 
     def flush() -> None:
-        text = re.sub(r"\s+", " ", " ".join(run)).strip()
+        pieces = _split_paragraphs("".join(run))
         run.clear()
-        if text:
+        for text in pieces:
             out.append(_Block(text, "p", 0.0))
 
     for child in node.children:
         if isinstance(child, str):
-            run.append(child)
+            run.append(re.sub(r"\s+", " ", child))
+        elif child.tag == "br":
+            run.append(_BREAK)
         elif not _is_block(child):
-            run.append(_text(child))
+            run.append(_raw(child))
         elif _has_block_child(child) and child.tag not in {"li", "dd", "p", "blockquote"}:
             flush()
             _collect(child, out)
         else:
             flush()
             text = _text(child)
-            if text:
+            pieces = _split_paragraphs(_raw(child)) if not _has_block_child(child) and child.tag not in _HEADINGS else [text]
+            if len(pieces) > 1:
+                density = _link_density(child)
+                out.extend(_Block(piece, child.tag, density) for piece in pieces)
+            elif text:
                 term, definition = _leading_term(child)
                 if child.tag == "dt":
                     term = text

@@ -378,7 +378,7 @@ def test_the_extractor_version_is_recorded_with_the_method():
     from writing_coach.reading_article_extraction import EXTRACTOR_VERSION
 
     item = _item(VOA_LIKE)
-    assert EXTRACTOR_VERSION == "article-extract/2"
+    assert EXTRACTOR_VERSION == "article-extract/3"
     assert item.metadata["extraction"]["extractor_version"] == EXTRACTOR_VERSION
     assert item.metadata["extraction"]["method"] == "dominant_container"
 
