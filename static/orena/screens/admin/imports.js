@@ -3,6 +3,8 @@
    so a failure never holds up the rest; a vocabulary batch is one request because publication is
    decided for the collection as a whole. */
 import { html } from '../../kit/html.js';
+import { useStyles } from '../../kit/styles.js';
+import { bindVocabularyCards, fitVocabularyCards } from '../../kit/vocabulary-card.js';
 import { languages } from '../../copy/index.js';
 import { adminApi } from '../../capabilities/admin-api.js';
 import { watch as watchJob } from '../../capabilities/admin-tray.js';
@@ -20,6 +22,7 @@ import { importPage as grammarImportPage } from './grammar-pages.js';
 
 export async function mountImports(shell, ctx) {
   const routeId = ctx.route.id;
+  if (routeId === 'adminImportVocab') await useStyles('kit/vocabulary-card.css');
   const host = createHost(shell, ctx);
   const api = adminApi;
   const ui = () => languages().ui;
@@ -29,7 +32,7 @@ export async function mountImports(shell, ctx) {
     books: { items: [], language: learning, running: false },
     media: { tab: 'url', urls: '', items: [], language: learning, rights: 'unknown', checking: false, running: false },
     vocab: {
-      files: [], previews: [], mappings: {}, step: 0, showAll: false, running: false, previewing: false, errors: [], results: null,
+      files: [], previews: [], mappings: {}, step: 0, showAll: false, running: false, previewing: false, errors: [], results: null, selected: {}, duplicates: 'skip',
       metadata: { title: '', language: learning, meaning_language: languages().support || '', framework: '', level: '', topic: '', collection_id: '', rights_status: '', completeness: 'unknown', publish: false, attested: false },
     },
     grammar: { file: null, check: null, result: null, error: '', checking: false, importing: false, showAll: false, basis: 'orena_original', attestation: t('grImpAttestDefault') },
@@ -58,7 +61,7 @@ export async function mountImports(shell, ctx) {
   }
 
   function build() {
-    const base = { t, ui: ui(), href: ctx.href };
+    const base = { t, ui: ui(), href: ctx.href, support: languages().support || 'en' };
     if (view.loading) return { title: t('impTitle'), markup: html`<section class="a-page">${pageHead({ title: t('impTitle') })}${skeleton(t('loading'))}</section>` };
     if (view.failed) return { title: t('impTitle'), markup: html`<section class="a-page">${pageHead({ title: t('impTitle') })}${loadFailedBlock(t)}</section>` };
     switch (routeId) {
@@ -75,6 +78,10 @@ export async function mountImports(shell, ctx) {
     }
   }
   host.setBuilder(build);
+  // The preview's production card turns and fits in its slot after every paint (kit/vocabulary-card.js).
+  host.afterMount((root) => { bindVocabularyCards(root); fitVocabularyCards(root); });
+  const onResize = () => fitVocabularyCards(shell.page);
+  window.addEventListener?.('resize', onResize);
 
   const jobStatus = () => ({ all: '', running: 'running', failed: 'failed', completed: 'completed' }[view.jobFilter] || '');
 
@@ -185,6 +192,7 @@ export async function mountImports(shell, ctx) {
     try {
       const found = await previewVocabulary(api, vocab.files);
       vocab.previews = found.previews;
+      vocab.selected = {};
       vocab.mappings = found.mappings;
       if (!vocab.metadata.title) vocab.metadata.title = found.title || defaultCollectionTitle(vocab.files[0]?.name);
       vocab.step = 1;
@@ -194,9 +202,14 @@ export async function mountImports(shell, ctx) {
     vocab.previewing = false;
     host.paint();
   });
+  host.on('vocab-row', (control, dataset) => {
+    const [file, row] = String(dataset.id).split(':').map(Number);
+    view.vocab.selected = { ...view.vocab.selected, [file]: row };
+    host.paint();
+  });
   host.on('vocab-more', () => { view.vocab.showAll = !view.vocab.showAll; host.paint(); });
   host.on('vocab-reset', () => {
-    Object.assign(view.vocab, { files: [], previews: [], mappings: {}, step: 0, results: null, errors: [], showAll: false });
+    Object.assign(view.vocab, { files: [], previews: [], mappings: {}, step: 0, results: null, errors: [], showAll: false, selected: {}, duplicates: 'skip' });
     view.vocab.metadata = { ...view.vocab.metadata, title: '', publish: false, attested: false };
     host.paint();
   });
@@ -212,7 +225,7 @@ export async function mountImports(shell, ctx) {
     vocab.errors = [];
     host.paint();
     try {
-      vocab.results = await importVocabulary(api, { files: vocab.files, metadata: vocab.metadata, mappings: vocab.mappings });
+      vocab.results = await importVocabulary(api, { files: vocab.files, metadata: vocab.metadata, mappings: vocab.mappings, previews: vocab.previews, duplicates: vocab.duplicates });
     } catch (error) {
       vocab.errors = [explain(error)];
     }
@@ -234,6 +247,7 @@ export async function mountImports(shell, ctx) {
       view.media[field] = value;
       if (field === 'language') view.media.items = view.media.items.map((item) => ({ ...item, level: '' }));
     } else if (routeId === 'adminImportVocab' && field.startsWith('meta:')) view.vocab.metadata[field.slice(5)] = value;
+    else if (routeId === 'adminImportVocab' && field === 'duplicates') view.vocab.duplicates = value === 'overwrite' ? 'overwrite' : 'skip';
     else if (routeId === 'adminImportSource') view.source[field] = value;
     else if (routeId === 'adminImportPack') view.pack[field] = value;
     else if (routeId === 'adminImportGrammar') view.grammar[field] = value;
@@ -350,5 +364,5 @@ export async function mountImports(shell, ctx) {
   } else {
     load();
   }
-  return () => { clearTimeout(mediaTimer); host.cleanup(); };
+  return () => { clearTimeout(mediaTimer); window.removeEventListener?.('resize', onResize); host.cleanup(); };
 }
