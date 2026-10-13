@@ -12,8 +12,9 @@ reach, and it is a separate, explicit request.
 from __future__ import annotations
 
 import re
+import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeout
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -38,7 +39,18 @@ _LATIN = re.compile(r"[A-Za-zÀ-ɏ]")
 # shorter timeout of its own, the local translator gets what is left, and a miss falls back to the deterministic answer.
 TAP_BUDGET_SECONDS = 2.0
 _MIN_TRANSLATION_WAIT = 0.25
-_translation_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="lookup-mt")
+# The local translator on the tap path is bounded three ways: the call itself is cut off at a short timeout (the
+# provider's own 90 s stays for every other caller), at most _MT_SLOTS calls run at once with no queue behind them
+# (a full house skips the translation and the raw definition stands), and a request already running for the same
+# word is joined, not repeated. A failure is remembered briefly so repeated taps on a missing word cost nothing.
+_MT_CALL_TIMEOUT = 1.5
+_MT_SLOTS = 4
+_MT_FAILURE_SECONDS = 60.0
+_translation_pool = ThreadPoolExecutor(max_workers=_MT_SLOTS, thread_name_prefix="lookup-mt")
+_mt_slots = threading.BoundedSemaphore(_MT_SLOTS)
+_mt_lock = threading.Lock()
+_mt_inflight: dict[tuple[str, str, str], Future] = {}
+_mt_failed: dict[tuple[str, str, str], float] = {}
 
 
 def lexical_language(selection: str, fallback: str) -> str:
@@ -47,12 +59,13 @@ def lexical_language(selection: str, fallback: str) -> str:
     Any Han character -> Chinese (a Han word tapped in English text is looked up as Chinese, CC-CEDICT and the
     Chinese pipeline); otherwise Latin letters -> English (a Latin word tapped in Chinese text is English). A
     genuinely mixed selection ("AI技术", "Wi-Fi密码") is Chinese: its Han part is what needs the Chinese dictionary,
-    and CC-CEDICT also holds such mixed entries. Any other script keeps the surrounding text's language."""
+    and CC-CEDICT also holds such mixed entries. Any other script (Cyrillic, Hangul, kana, Arabic, digits only) has
+    no local dictionary: the result is "" (unsupported), never the surrounding text's language."""
     if _HAN.search(selection or ""):
         return "zh"
     if _LATIN.search(selection or ""):
         return "en"
-    return fallback
+    return ""
 
 
 class VocabularyLookup(Protocol):
@@ -209,6 +222,43 @@ def _safe_english_dictionary(
     return payload if isinstance(payload, dict) else None
 
 
+def _start_local_translation(service, source, target, segments, text) -> Future | None:
+    """The in-flight local translation for this word (started if none), or None when it should not run now."""
+    key = (source, target, " ".join(text.casefold().split()))
+    with _mt_lock:
+        if _mt_failed.get(key, 0.0) > time.monotonic():
+            return None
+        running = _mt_inflight.get(key)
+        if running is not None:
+            return running
+        if not _mt_slots.acquire(blocking=False):
+            return None  # every slot is busy: skip, the raw definition stands
+
+        def job():
+            try:
+                result = service.translate(source, target, segments, provider_timeout=_MT_CALL_TIMEOUT)
+                if result.status is not ReadingTranslationStatus.READY:
+                    _mt_failed[key] = time.monotonic() + _MT_FAILURE_SECONDS
+                return result
+            except Exception:
+                _mt_failed[key] = time.monotonic() + _MT_FAILURE_SECONDS
+                raise
+            finally:
+                with _mt_lock:
+                    _mt_inflight.pop(key, None)
+                    _mt_slots.release()
+                    if len(_mt_failed) > 2000:
+                        _mt_failed.clear()
+
+        try:
+            future = _translation_pool.submit(job)
+        except Exception:
+            _mt_slots.release()
+            return None
+        _mt_inflight[key] = future
+        return future
+
+
 def _safe_machine_translation(
     service: ReadingTranslationService, source: str, target: str, text: str, wait: float | None = None
 ) -> str | None:
@@ -226,9 +276,10 @@ def _safe_machine_translation(
         if wait is None:
             result = service.translate(source, target, segments)
         else:
-            # The local translator can be slow or hung; the tap does not wait for it. The call keeps running in the
-            # background and its answer is cached, so the next tap on the word is instant.
-            result = _translation_pool.submit(service.translate, source, target, segments).result(timeout=wait)
+            future = _start_local_translation(service, source, target, segments, text)
+            if future is None:
+                return None
+            result = future.result(timeout=wait)
     except (FutureTimeout, Exception):
         return None
     if result.status is not ReadingTranslationStatus.READY or not result.translations:
@@ -264,6 +315,13 @@ class ReadingLookupService:
         surrounding = primary_language(source_language)
         source = lexical_language(selection, surrounding)
         target = normalize_support_language(target_language)
+        if not source:
+            # Neither Han nor Latin (Cyrillic, Hangul, kana, Arabic, digits only): no local dictionary exists for it, so
+            # the answer is "unavailable" at once - no dictionary request, no translator, no AI.
+            return LookupResult(
+                selected_text=selection, source_language=surrounding, target_language=target, base_form="",
+                part_of_speech="", pronunciation="", audio_url="", meanings=(), definitions=(),
+            )
 
         local = _local_token_facts(source, context if source == surrounding else selection, selection)
         part_of_speech = local["part_of_speech"]

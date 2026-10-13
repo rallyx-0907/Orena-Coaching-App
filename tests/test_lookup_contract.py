@@ -90,7 +90,7 @@ def test_deep_word_full_depth_is_still_ai_backed(ai_calls):
 
 @pytest.mark.parametrize("selection,fallback,expected", [
     ("坚持", "en", "zh"), ("coffee", "zh", "en"), ("AI技术", "en", "zh"), ("Wi-Fi密码", "en", "zh"),
-    ("Wi-Fi", "zh", "en"), ("café", "zh", "en"), ("123", "en", "en"), ("123", "zh", "zh"),
+    ("Wi-Fi", "zh", "en"), ("café", "zh", "en"), ("123", "en", ""), ("123", "zh", ""), ("привет", "en", ""), ("한국어", "en", ""), ("ひらがな", "zh", ""),
 ])
 def test_lexical_language_rule(selection, fallback, expected):
     assert lexical_language(selection, fallback) == expected
@@ -156,7 +156,7 @@ def test_a_catalogue_meaning_does_not_wait_for_the_external_dictionary():
 # 7: bounded latency --------------------------------------------------------------------------------------------
 
 def test_a_hung_local_translator_does_not_hold_the_tap():
-    engine = _Engine(delay=3.0)
+    engine = _Engine(delay=0.8)
     service = ReadingLookupService(None, lambda w: _DEF, ReadingTranslationService(engine, cache=DerivedCache()), budget_seconds=0.4)
     started = time.perf_counter()
     result = service.lookup("coffee", "I drink coffee.", "en", "vi").to_dict()

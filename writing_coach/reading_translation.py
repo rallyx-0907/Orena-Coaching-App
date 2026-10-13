@@ -204,8 +204,12 @@ class ReadingTranslationService:
         segments: Sequence[TextSegment],
         *,
         persist: bool = False,
+        provider_timeout: float | None = None,
     ) -> ReadingTranslation:
-        """`persist` lets the shared table hold the answers; the caller sets it only for published text."""
+        """`persist` lets the shared table hold the answers; the caller sets it only for published text.
+
+        `provider_timeout` shortens the provider's own timeout for this call (a word lookup's); it is passed only to a
+        provider that accepts it, and every other caller keeps the provider's default."""
         source = primary_language(source_language)
         target = normalize_support_language(target_language)
 
@@ -234,7 +238,12 @@ class ReadingTranslationService:
             generated: dict[str, str] = {}
             try:
                 for batch in batches:
-                    translated = self._provider.translate_batch(source, target, batch)
+                    extra = (
+                        {"timeout": provider_timeout}
+                        if provider_timeout is not None and getattr(self._provider, "accepts_timeout", False)
+                        else {}
+                    )
+                    translated = self._provider.translate_batch(source, target, batch, **extra)
                     expected = {segment.segment_id for segment in batch}
                     if set(translated) != expected or any(
                         not str(value).strip() for value in translated.values()

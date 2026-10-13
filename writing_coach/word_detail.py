@@ -444,7 +444,7 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
     _lookup_ms = (time.perf_counter() - _started) * 1000
     # The language of the selection's own words (by script), not of the sentence around it: it labels the reading
     # (pinyin / IPA) and the original definition. The contextual asks below keep the sentence's language.
-    lexical = _text(lookup.get("source_language")) or lexical_language(text, source)
+    lexical = _text(lookup.get("source_language")) or lexical_language(text, source) or source
     if payload.question.strip():
         # The learner's own question is a conversation with a tutor, not a request for the fixed
         # explanation: the answer is the tutor's, whatever the question is about.
