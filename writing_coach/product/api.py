@@ -20,6 +20,7 @@ from writing_coach.product.catalog import (
     stored_catalog,
 )
 from writing_coach.product.commerce import accountCommerce
+from writing_coach.product.entitlement import resolve
 from writing_coach.product.membership import ROLES, MembershipConflict, MembershipInvalid, apply_change
 from writing_coach.product.service import product_service
 
@@ -226,11 +227,43 @@ async def product_admin_policies_save(request: Request) -> dict[str, Any]:
         raise HTTPException(503, "Policies are not editable on this deployment.")
 
 
+class billing_aware_membership:
+    """The membership store as Admin sees it: when billing owns the account (D-MON-006), the account reads with the
+    billing plan and `billing_owned`, so the D-154 guard refuses a hand-set plan and the page does not show Free
+    for a paying learner. Without a billing record it is the store unchanged (`billing_owned` False).
+
+    The guard is a pre-check: a payment that lands between it and the write cannot be overwritten, because billing
+    outranks a manual grant in the effective entitlement, so that race leaves only a shadowed manual row."""
+
+    def __init__(self, inner: Any, service: Any = None) -> None:
+        self.inner = inner
+        self._service = service or product_service
+
+    def account_membership(self, user_id: str) -> dict | None:
+        account = self.inner.account_membership(user_id)
+        if account is None:
+            return None
+        account = {**account, "billing_owned": False}
+        if getattr(self._service, "billing", None) is None:
+            return account
+        billing = self._service.billing.subscription_for_user(account["user_key"])
+        owned = resolve(legacy=None, billing=billing, now=self._service.clock())
+        if not owned.billing_live:
+            return account
+        until = billing.get("paid_through")
+        return {**account, "billing_owned": True, "plan_id": str(billing.get("plan_id") or ""), "status": owned.status,
+                "provider": str(billing.get("provider") or ""),
+                "until": until.isoformat() if hasattr(until, "isoformat") else (str(until) if until else None)}
+
+    def apply_membership(self, user_id: str, **change: Any) -> None:
+        self.inner.apply_membership(user_id, **change)
+
+
 def _membership_store():
     store = product_service.repository
     if store is None or not hasattr(store, "account_membership"):
         raise HTTPException(503, "Accounts are not editable on this deployment.")
-    return store
+    return billing_aware_membership(store)
 
 
 def _membership_body(account: dict[str, Any]) -> dict[str, Any]:

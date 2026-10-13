@@ -1,0 +1,133 @@
+"""PR-MON-1 / D-MON-006 against real PostgreSQL: a billing event recorded through the commerce repository changes the
+effective plan that the Plan screen, quota admission and the Admin guard read - through the production wiring
+(`CommerceEntitlementSource` over `PostgresCommerceRepository.subscription_for_account`).
+
+Skips unless `ORENA_TEST_POSTGRES_URL` names a THROWAWAY database (the fixture upgrades it to head, like
+`tests/test_quota_gate_postgres.py`). CI has no PostgreSQL service, so these run locally.
+"""
+from __future__ import annotations
+
+import os
+import uuid
+from datetime import UTC, datetime, timedelta
+
+import pytest
+
+sqlalchemy = pytest.importorskip("sqlalchemy")
+pytest.importorskip("fastapi")
+
+from sqlalchemy import create_engine, text  # noqa: E402
+
+from writing_coach.persistence.commerce_repository import PostgresCommerceRepository, SubscriptionUpdate  # noqa: E402
+from writing_coach.persistence.ids import stable_uuid  # noqa: E402
+from writing_coach.persistence.incarnation_repository import PostgresIncarnationRepository  # noqa: E402
+from writing_coach.persistence.product_repository import PostgresProductRepository  # noqa: E402
+from writing_coach.product import catalog, quota  # noqa: E402
+from writing_coach.product.api import billing_aware_membership  # noqa: E402
+from writing_coach.product.entitlement import CommerceEntitlementSource  # noqa: E402
+from writing_coach.product.membership import MembershipConflict, apply_change  # noqa: E402
+from writing_coach.product.service import ProductService  # noqa: E402
+
+URL = os.getenv("ORENA_TEST_POSTGRES_URL", "")
+pytestmark = pytest.mark.skipif(not URL, reason="ORENA_TEST_POSTGRES_URL is not set; PostgreSQL proof not run")
+
+
+@pytest.fixture(scope="module")
+def engine():
+    from alembic import command
+
+    from writing_coach.persistence.runtime import _runtime_alembic_config
+
+    cfg = _runtime_alembic_config()
+    cfg.set_main_option("sqlalchemy.url", URL.replace("%", "%%"))
+    command.upgrade(cfg, "head")
+    engine = create_engine(URL, future=True)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture()
+def world(engine):
+    key = f"entitlement-{uuid.uuid4()}"
+    account = stable_uuid("user", key)
+    with engine.begin() as connection:
+        connection.execute(
+            text("INSERT INTO users (id, user_key, email, name, picture, role, created_at) "
+                 "VALUES (:id, :key, '', '', '', 'user', :now)"),
+            {"id": account, "key": key, "now": datetime.now(UTC)},
+        )
+    incarnations = PostgresIncarnationRepository(engine)
+    incarnation = incarnations.ensure_active(str(account))
+    commerce = PostgresCommerceRepository(engine)
+    products = PostgresProductRepository(engine)
+    service = ProductService(products, billing=CommerceEntitlementSource(commerce))
+    catalog.configure_plan_store(None)
+    return {"key": key, "account": str(account), "incarnation": incarnation, "commerce": commerce,
+            "products": products, "service": service, "incarnations": incarnations}
+
+
+def record(world, *, version, state="active", plan="plus", paid_through=None, provider="payos", external=None):
+    external = external or f"prepaid:{world['incarnation']}"
+    outcome = world["commerce"].record_event(
+        incarnation_id=world["incarnation"], provider=provider, external_event_id=f"{provider}:{uuid.uuid4()}",
+        event_object_version=version, external_object_reference=external,
+        update=SubscriptionUpdate(state=state, plan_id=plan, external_customer_id=None, external_subscription_id=external,
+                                  paid_through=paid_through, cancel_at_period_end=provider == "payos",
+                                  provider_state="prepaid" if provider == "payos" else state),
+    )
+    assert outcome["status"] == "apply", outcome
+    return outcome
+
+
+def test_no_billing_record_is_the_legacy_answer(world):
+    assert world["commerce"].subscription_for_account(world["account"]) is None
+    assert world["service"].plan_for_user(world["key"]).id == "free"
+    assert world["service"].account_state(world["key"])["subscription"] == {"state": "inactive", "status": "inactive"}
+
+
+def test_a_recorded_prepaid_payment_is_the_effective_plan_everywhere(world, monkeypatch):
+    record(world, version=1, plan="plus", paid_through=datetime.now(UTC) + timedelta(days=30))
+    service = world["service"]
+    assert service.entitlement(world["key"]).source == "billing"
+    assert service.plan_for_user(world["key"], strict=True).id == "plus"
+    assert service.account_state(world["key"])["plan"]["id"] == "plus"
+    previous = quota.runtime()
+    try:
+        quota.configure_quota(repository=object(), incarnations=world["incarnations"], plan_for=service.plan_for_user,
+                              settings=None, env={})
+        from writing_coach.product import language_limit
+
+        assert language_limit._limit(world["key"])[1] == "plus", "the language limit reads the same plan"
+    finally:
+        quota.configure_quota(**{f: getattr(previous, f) for f in
+                                 ("repository", "incarnations", "plan_for", "settings", "reason", "env", "clock")})
+
+
+def test_a_refunded_prepaid_purchase_reads_free(world):
+    record(world, version=1, plan="plus", paid_through=datetime.now(UTC) + timedelta(days=30))
+    record(world, version=2, state="ended", plan="plus", paid_through=datetime.now(UTC))
+    assert world["service"].plan_for_user(world["key"]).id == "free"
+    assert world["service"].account_state(world["key"])["subscription"]["status"] == "ended"
+
+
+def test_a_polar_subscription_is_the_effective_plan(world):
+    record(world, version=1, plan="pro", provider="polar", external="sub_polar_1",
+           paid_through=datetime.now(UTC) + timedelta(days=30))
+    assert world["service"].plan_for_user(world["key"]).id == "pro"
+
+
+def test_a_deleted_incarnations_billing_record_is_not_the_accounts(world):
+    record(world, version=1, plan="pro", paid_through=datetime.now(UTC) + timedelta(days=30))
+    world["incarnations"].mark_deleted(world["incarnation"])
+    assert world["commerce"].subscription_for_account(world["account"]) is None
+    assert world["service"].plan_for_user(world["key"]).id == "free"
+
+
+def test_an_admin_cannot_hand_set_a_plan_billing_owns(world):
+    record(world, version=1, plan="plus", paid_through=datetime.now(UTC) + timedelta(days=30))
+    store = billing_aware_membership(world["products"], world["service"])
+    with pytest.raises(MembershipConflict):
+        apply_change(store, world["account"], {"plan_id": "pro"}, actor_key="admin", protected_emails=set())
+    assert world["products"].get_subscription(world["key"]) is None, "nothing was written"
+    account = store.account_membership(world["account"])
+    assert (account["plan_id"], account["status"], account["billing_owned"]) == ("plus", "active", True)

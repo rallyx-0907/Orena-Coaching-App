@@ -136,6 +136,26 @@ class PostgresCommerceRepository:
             ).mappings().first()
         return dict(row) if row else None
 
+    def subscription_for_account(self, account_id: str) -> dict[str, Any] | None:
+        """The current subscription of the account's ACTIVE incarnation, in one read (the effective entitlement's
+        billing record, D-MON-006). Never creates an incarnation: an account with none, or only a deleted one, has
+        no billing record. A deleted incarnation's subscription is never this account's."""
+        with self._engine.connect() as connection:
+            row = connection.execute(
+                text(
+                    'SELECT s.provider, s.plan_id, s.state, s.paid_through, s.cancel_at_period_end, '
+                    's.external_subscription_id, '
+                    "CASE WHEN EXISTS (SELECT 1 FROM commerce_billing_event_receipts r "
+                    "WHERE r.incarnation_id = s.incarnation_id AND r.processing_state = 'received') "
+                    "THEN 'pending' ELSE 'current' END AS reconciliation_state "
+                    'FROM commerce_subscriptions s '
+                    'JOIN account_incarnations i ON i.id = s.incarnation_id '
+                    "WHERE i.user_id = :account AND i.status = 'active'"
+                ),
+                {'account': account_id},
+            ).mappings().first()
+        return dict(row) if row else None
+
     def reconciliation_state(self, incarnation_id: str) -> str:
         """`pending` while any event of this incarnation is undecided, else
         `current` - also for an incarnation with no subscription row yet."""
