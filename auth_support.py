@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import base64
 import json
 import os
@@ -147,7 +148,11 @@ def request_is_local(request: Request) -> bool:
 
     Decided from the transport peer of the connection under writing_coach/core/request_boundary.py, never from Host,
     Origin, forwarding headers or PUBLIC_BASE_URL. Read per request: a deployment-wide flag cannot say who is calling."""
-    return request_boundary.request_is_local(request_boundary.peer_host(request.scope), request.headers)
+    peer = request_boundary.peer_host(request.scope)
+    local = request_boundary.request_is_local(peer, request.headers)
+    if not local and not AUTH_ENABLED:
+        request_boundary.note_denied_peer(peer)
+    return local
 
 
 def request_is_local_admin(request: Request) -> bool:
@@ -701,6 +706,8 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
 def install_auth(app: FastAPI, db_initializer: Callable[[], None]) -> None:
     global _db_initializer
     _db_initializer = db_initializer
+    if not AUTH_ENABLED:
+        logging.getLogger("orena.request_boundary").warning("%s", request_boundary.trust_state_line())
     init_auth_db()
     app.include_router(router)
     app.add_middleware(UserIsolationMiddleware)

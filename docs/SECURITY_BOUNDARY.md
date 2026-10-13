@@ -67,6 +67,47 @@ set `ORENA_INSECURE_DEV_LAN_BIND_HOST`. `start_public.ps1` runs it before `docke
 Behind a tunnel, a development runtime would also refuse the caller at request time (forwarding headers, non-local
 peer), so the preflight is not the only layer.
 
+## Lane runtimes
+
+A signed-out runtime started with `docker run` (for example the :8011 sandbox `orena-foundation-web`) answers 403 to
+the host browser after this change until it is recreated (only the human restarts Docker) with all of:
+`-p 127.0.0.1:PORT:8000`, `-e ORENA_PUBLISHED_BIND_HOST=127.0.0.1`, `-e ORENA_TRUST_DOCKER_PUBLISHED_PORT=1`, and a
+loopback `PUBLIC_BASE_URL` (an HTTPS or public origin with sign-in off is refused at startup). :8021 (sign-in on) and
+:8000 staging are unchanged. The boot line and the once-per-address refusal log say which part is missing.
+
+## Startup refusal and diagnostics
+
+`resolve_deployment_config` (so the app and the preflight alike) refuses to start when `APP_ENV` is not
+staging/production, Google sign-in is off, and the configuration marks the runtime as public: an HTTPS
+`PUBLIC_BASE_URL`, a public host name or address (private addresses, single-label names and `.local`/`.lan`/`.internal`
+are allowed), or `CLOUDFLARE_TUNNEL_TOKEN` in the process environment. `docker compose --profile public up` run
+directly, without `start_public.ps1`, therefore cannot serve an unauthenticated development runtime that is configured
+for the public (the web container does not receive the tunnel token, so the origin is the marker there); request-time
+denial remains the second layer.
+
+With sign-in off, the app logs one boot line naming the gateway-trust state (on/off, gateway address, declared bind
+host) and logs each refused non-local peer address once per process, with a hint when the refused peer is the
+container gateway but the trust is off. Addresses only; no headers, no secrets.
+
+The forwarding-header list also includes `Via`, `Client-IP`, `X-Client-IP`, `X-Cluster-Client-IP`, `X-Forwarded`,
+`Forwarded-For`, `X-Forwarded-Server`, `X-Original-Forwarded-For`, `Fastly-Client-IP`, `X-Envoy-External-Address`.
+
+## Known residuals and follow-ups (architecture review 2026-10-13)
+
+- **Self-declared bind host.** The app cannot observe how Docker publishes the port; `ORENA_PUBLISHED_BIND_HOST` is
+  configuration. A `compose.override.yaml`, a hand-edited `ports:` entry or a `docker run -p 0.0.0.0:...` that copies
+  the two variables defeats it, and on Docker Desktop LAN traffic to a `0.0.0.0` publish also arrives from the
+  gateway. `tests/test_local_boundary_deployment.py` keeps the repository's own launchers consistent; it cannot see an
+  operator's override. Pending human acceptance (D-18X). A stronger mechanism: a per-run secret injected by the launch
+  script and checked against a header only a trusted local forwarder adds.
+- **Same-host reverse proxy.** A proxy on the same host that forwards to a loopback or gateway address and adds no
+  forwarding header makes remote callers look local. Never front an auth-off runtime with a reverse proxy.
+- **Other containers via `host.docker.internal`.** A container on another network that dials the host's published
+  loopback port arrives from the gateway and is trusted. Accepted residual risk of the published-port rule.
+- **DNS rebinding (follow-up, no code yet).** A page in the developer's browser can rebind its name to 127.0.0.1;
+  the peer is then loopback with a foreign `Host`. `Host` can safely restrict locality (loopback names, the
+  `PUBLIC_BASE_URL` host, `host.docker.internal`); not implemented here.
+
 ## Tests
 
 `tests/test_request_boundary.py` (policy, spoofed Host/Origin/X-Forwarded-For, config-local is not request-local, real

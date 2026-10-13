@@ -104,6 +104,33 @@ def _is_local_or_unsafe_host(url: str) -> bool:
     return address.is_loopback or address.is_unspecified
 
 
+_PRIVATE_NAME_SUFFIXES = (".local", ".lan", ".internal", ".home.arpa", ".localhost")
+
+
+def public_exposure_markers(public_base_url: str, values: Mapping[str, str]) -> list[str]:
+    """Signs in the configuration that the runtime is meant to be reached from outside the developer's machine.
+
+    Used only to refuse an unauthenticated development runtime (issue #137): an HTTPS origin, a name or address that
+    is not private, or a tunnel token in the process environment. The names carry no secret value."""
+    markers: list[str] = []
+    parsed = urlsplit(public_base_url)
+    hostname = str(parsed.hostname or "").casefold().rstrip(".")
+    if parsed.scheme == "https":
+        markers.append("PUBLIC_BASE_URL is an HTTPS origin")
+    try:
+        address = ipaddress.ip_address(hostname)
+    except ValueError:
+        private_name = "." not in hostname or hostname.endswith(_PRIVATE_NAME_SUFFIXES)
+        if not private_name:
+            markers.append("PUBLIC_BASE_URL names a public host")
+    else:
+        if not (address.is_private or address.is_loopback or address.is_link_local):
+            markers.append("PUBLIC_BASE_URL is a public address")
+    if str(values.get("CLOUDFLARE_TUNNEL_TOKEN", "")).strip():
+        markers.append("CLOUDFLARE_TUNNEL_TOKEN is set")
+    return markers
+
+
 def resolve_deployment_config(env: Mapping[str, str] | None = None) -> DeploymentConfig:
     """Resolve non-secret deployment settings with fail-fast guards for public (staging, production) runtimes."""
     values = os.environ if env is None else env
@@ -148,6 +175,17 @@ def resolve_deployment_config(env: Mapping[str, str] | None = None) -> Deploymen
             raise RuntimeError(f"SESSION_SECRET must be at least 32 characters when APP_ENV={app_env}.")
     elif auth_enabled and not str(values.get("SESSION_SECRET", "")).strip():
         raise RuntimeError("SESSION_SECRET is required when Google authentication is enabled.")
+
+    if not public and not auth_enabled:
+        # Fail closed at startup (issue #137): a development runtime with sign-in off is the developer's alone. If its
+        # configuration says it faces the public, refuse to start rather than serve it.
+        markers = public_exposure_markers(public_base_url, values)
+        if markers:
+            raise RuntimeError(
+                "Refusing to start: APP_ENV=" + app_env + " with Google authentication disabled is configured for "
+                "public exposure (" + "; ".join(markers) + "). Use APP_ENV=staging or production with sign-in, "
+                "or a local PUBLIC_BASE_URL."
+            )
 
     return DeploymentConfig(
         app_env=app_env,

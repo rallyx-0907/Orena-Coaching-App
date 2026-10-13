@@ -5867,8 +5867,18 @@ Human decisions, 2026-10-13, after reviewing the two real cards (resilient, æ£®æ
 
 ## D-18X - Signed-out local-admin belongs to the request boundary, not to configuration (issue #137)
 
-Placeholder id; the lead renumbers at merge. **Status: proposed. Independent architecture review required before
-merge** (auth boundary; the implementer does not approve it, `AGENTS.md` "Architecture review authority").
+Placeholder id; the lead renumbers at merge. **Status: independently reviewed, APPROVED WITH CONDITIONS
+(`docs/reviews/architecture/SEC_137_LOCAL_ADMIN_REVIEW_2026-10-13.md`, commit f7a9dc77); conditions addressed in
+follow-up commits; human acceptance of the residual risk below is pending.** Not merged, not product approval.
+
+- **Residual risk, pending human acceptance (not accepted).** The Docker-gateway trust rests on a self-declared
+  `ORENA_PUBLISHED_BIND_HOST`; the app cannot observe the real publish. A hand-edited `ports:` entry, a
+  `compose.override.yaml` or a `docker run -p 0.0.0.0:...` that copies the two variables defeats it, and on Docker
+  Desktop LAN traffic to such a publish arrives from the trusted gateway. Mitigations in place: the repository's own
+  launchers are tested for declared bind host == published host == loopback; a boot line names the trust state; a
+  refused peer is logged once. The human decides whether this declared-boundary mechanism is acceptable or a stronger
+  one (per-run secret with a trusted local forwarder) is required. Also pending: DNS rebinding (follow-up) and the
+  `host.docker.internal` cross-network case (documented residual).
 
 - **Finding.** With sign-in off, `require_admin()` and the shared `legacy` learner scope were granted from
   deployment configuration (`APP_ENV`, `PUBLIC_BASE_URL`), and Compose published port 8000 on `0.0.0.0`: any LAN host

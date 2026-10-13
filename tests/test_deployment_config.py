@@ -31,9 +31,13 @@ def test_production_https_callback_and_secure_cookie() -> None:
 
 
 def test_same_origin_explicit_callback_override_is_supported() -> None:
+    # A development runtime with a public HTTPS origin must have sign-in (startup refusal, issue #137).
     resolved = resolve_deployment_config(config(
         PUBLIC_BASE_URL="https://preview.example.com",
         GOOGLE_REDIRECT_URI="https://preview.example.com/auth/google/callback",
+        GOOGLE_CLIENT_ID="client-id",
+        GOOGLE_CLIENT_SECRET="client-secret",
+        SESSION_SECRET="session-secret-for-tests-0123456789abcdef",
     ))
     assert resolved.google_redirect_uri == "https://preview.example.com/auth/google/callback"
 

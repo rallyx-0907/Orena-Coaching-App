@@ -26,6 +26,7 @@ No peer (a unix socket, a missing scope entry) or an unparsable one is not local
 from __future__ import annotations
 
 import ipaddress
+import logging
 import os
 import socket
 import struct
@@ -39,6 +40,10 @@ from writing_coach.core.deployment import is_public_environment
 TRUST_DOCKER_PUBLISHED_PORT_ENV = "ORENA_TRUST_DOCKER_PUBLISHED_PORT"
 # Where the container's port is published on the host (compose.yaml writes the host it really publishes on).
 PUBLISHED_BIND_HOST_ENV = "ORENA_PUBLISHED_BIND_HOST"
+
+log = logging.getLogger("orena.request_boundary")
+_LOGGED_DENIED: set[str] = set()
+_LOGGED_DENIED_LIMIT = 32
 
 _TRUTHY = {"1", "true", "yes", "on"}
 _LOOPBACK_BIND_HOSTS = {"127.0.0.1", "::1", "localhost"}
@@ -56,6 +61,15 @@ FORWARDING_HEADERS = (
     "cf-ray",
     "cf-visitor",
     "true-client-ip",
+    "via",
+    "client-ip",
+    "x-client-ip",
+    "x-cluster-client-ip",
+    "x-forwarded",
+    "forwarded-for",
+    "x-forwarded-server",
+    "fastly-client-ip",
+    "x-envoy-external-address",
 )
 
 
@@ -149,3 +163,29 @@ def request_is_local(
     address = _parse_ip(peer)
     gateway = default_gateway(route_table)
     return address is not None and gateway is not None and str(address) == gateway
+
+
+def trust_state_line(environ: Mapping[str, str] | None = None, *, route_table: str | None = None) -> str:
+    """One boot line naming the Docker-gateway trust state: on/off, the gateway address, the declared bind host."""
+    values = os.environ if environ is None else environ
+    state = "on" if docker_published_port_trusted(values) else "off"
+    declared = str(values.get(PUBLISHED_BIND_HOST_ENV, "")).strip() or "(undeclared)"
+    gateway = default_gateway(route_table) or "(none)"
+    return f"signed-out local boundary: docker-gateway trust {state}, gateway {gateway}, declared published bind host {declared}"
+
+
+def note_denied_peer(peer: object, environ: Mapping[str, str] | None = None) -> None:
+    """Log a refused non-local peer once per address per process (address only; no headers, no secrets)."""
+    key = str(peer or "(none)")
+    if key in _LOGGED_DENIED or len(_LOGGED_DENIED) >= _LOGGED_DENIED_LIMIT:
+        return
+    _LOGGED_DENIED.add(key)
+    values = os.environ if environ is None else environ
+    hint = ""
+    gateway = default_gateway()
+    if gateway is not None and key == gateway and not docker_published_port_trusted(values):
+        hint = (
+            f"; this is the container gateway but the trust is off - a runtime published on 127.0.0.1 needs "
+            f"{PUBLISHED_BIND_HOST_ENV}=127.0.0.1 and {TRUST_DOCKER_PUBLISHED_PORT_ENV}=1"
+        )
+    log.warning("signed-out request refused: peer %s is not local%s", key, hint)

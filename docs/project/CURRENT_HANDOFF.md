@@ -75,6 +75,8 @@ Foundation/Wave A/B REVIEWABLE; history: PROJECT_STATE.md "New learner UI migrat
   (`f30044a`); flag-on QA round 2 (`9a7b190`) six flows PASS. Open for the human: delete for
   an imported text, media-import bound. Before public release (D-143): ACCOUNT_RECORD_LIMITS, upload deletion/limits.
 
+- #137 (unmerged): signed-out `docker run` lanes need new env: SECURITY_BOUNDARY.md "Lane runtimes".
+
 ## PENDING
 
 Human: none for :8011 (deferred, D-102);

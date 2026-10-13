@@ -219,3 +219,43 @@ def test_the_peer_comes_from_the_connection_scope_only():
     assert request_boundary.peer_host({"client": ("10.1.2.3", 80)}) == "10.1.2.3"
     assert request_boundary.peer_host({"client": None}) is None
     assert request_boundary.peer_host({}) is None
+
+
+# ---- extended forwarding headers, diagnostics ------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "header",
+    ["Via", "X-Client-IP", "Client-IP", "X-Cluster-Client-IP", "X-Forwarded", "Forwarded-For", "X-Original-Forwarded-For",
+     "Fastly-Client-IP", "X-Envoy-External-Address", "X-Forwarded-Server", "True-Client-IP"],
+)
+def test_more_proxy_headers_revoke_locality(signed_out_dev, header):
+    assert _get("/api/admin-probe", "127.0.0.1", {header: "1.1.1.1"}).status_code == 403
+    assert request_boundary.request_is_local("127.0.0.1", {header: "x"}, {}) is False
+
+
+def test_the_boot_line_names_the_trust_state_and_no_secret():
+    off = request_boundary.trust_state_line({}, route_table=ROUTE_TABLE)
+    assert "trust off" in off and GATEWAY in off and "(undeclared)" in off
+    on = request_boundary.trust_state_line(
+        {"ORENA_TRUST_DOCKER_PUBLISHED_PORT": "1", "ORENA_PUBLISHED_BIND_HOST": "127.0.0.1", "SESSION_SECRET": "s3cret"},
+        route_table=ROUTE_TABLE,
+    )
+    assert "trust on" in on and "127.0.0.1" in on and "s3cret" not in on
+
+
+def test_a_denied_peer_is_logged_once_by_address_only(signed_out_dev, caplog):
+    request_boundary._LOGGED_DENIED.clear()
+    with caplog.at_level("WARNING", logger="orena.request_boundary"):
+        _get("/api/admin-probe", LAN_PEER, {"Authorization": "Bearer hunter2"})
+        _get("/api/learner-probe", LAN_PEER)
+    lines = [r.getMessage() for r in caplog.records if LAN_PEER in r.getMessage()]
+    assert len(lines) == 1
+    assert "hunter2" not in caplog.text
+
+
+def test_a_gateway_peer_refused_for_missing_trust_says_what_to_set(signed_out_dev, caplog):
+    request_boundary._LOGGED_DENIED.clear()
+    with caplog.at_level("WARNING", logger="orena.request_boundary"):
+        _get("/api/admin-probe", GATEWAY)
+    assert "ORENA_TRUST_DOCKER_PUBLISHED_PORT=1" in caplog.text
