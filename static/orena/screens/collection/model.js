@@ -16,6 +16,7 @@
    Both are recorded in the surface report as backend gaps, not guessed at. */
 
 import { collectionWordKey } from './actions.js';
+import { collectionTitle } from '../../copy/general-catalogue.js';
 
 /* A word's meaning in the learner's support language. `card.meanings` is a flat
    {language,text}[] the backend already resolved (support_translations + short/detailed
@@ -77,7 +78,7 @@ export function collectionViewModel(collection = {}, support = '') {
   const percent = wordCount > 0 ? Math.max(0, Math.min(100, Math.round((learned / wordCount) * 100))) : 0;
   return {
     id: String(collection.id || ''),
-    title: String(collection.title || ''),
+    title: collectionTitle(collection),
     // languages-5 / finding A: the collection's own field (writing_coach/vocabulary_library.py
     // `_summary`'s `language_code`).
     language: String(collection.language_code || ''),

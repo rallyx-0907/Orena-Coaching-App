@@ -18,6 +18,7 @@
 import { duration } from '../../product/duration.js';
 import { placePercent } from '../../product/place-progress.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
+import { collectionTitle } from '../../copy/general-catalogue.js';
 
 export const TABS = Object.freeze(['all', 'listen', 'read', 'collections', 'imported']); // D-152: Listen before Read
 
@@ -124,7 +125,8 @@ export function entryFromCollection(item) {
   return {
     id,
     kind: 'collection',
-    title: item.title || '',
+    // The General catalogue (D-188) is named in the interface language; every other collection by its stored title.
+    title: collectionTitle(item),
     // languages-5 / finding A: `language_code` (writing_coach/vocabulary_library.py `_summary`) -
     // the collection's own field.
     language: item.language_code || '',

@@ -128,3 +128,4 @@ scripts/test_orena_screen_respond.mjs
 scripts/test_orena_agent.mjs
 scripts/test_orena_surfaces.mjs
 scripts/test_orena_public_pages.mjs
+scripts/test_orena_general_catalogue.mjs

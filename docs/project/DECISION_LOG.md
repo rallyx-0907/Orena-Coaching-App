@@ -6002,3 +6002,52 @@ because a re-import would also move them back to `pending_review` and undo a mod
 closing that race needs the guard inside the `import_source` transaction.
 - **Without the token.** File mode and a manual import through Orena Admin; see
   `integrations/n8n/README.md`.
+
+## D-188 - A derived "General catalogue" collection per language (Option A)
+
+**Status: ACCEPTED.** Changes what reaches learners; independently reviewed (Delegated Architecture Reviewer, Claude
+Opus 5.5, independent of the implementer), `docs/reviews/architecture/VOCAB_GENERAL_CATALOGUE_REVIEW_2026-10-13.md`:
+design APPROVED WITH CONDITIONS at 1c30c70d; code review APPROVED at a1f06e48; re-review of the published-snapshot fix
+APPROVED at a8c06b59. Design: `docs/reviews/architecture/VOCAB_GENERAL_CATALOGUE_DESIGN_2026-10-13.md`. Human
+decisions 2026-10-13: Option A, derived and persisted-only, D-111 sets count (H2), no "publish into General only" (H1),
+kill switch on by default (H3), no cache (H4); merge authorized after CI and a 390x844 phone check. Verified on :8021
+(PostgreSQL): every General item equals its published collection item. Remaining P2: the level filter matches any
+qualifying membership while the card shows the chosen one.
+
+- **Decision (human, Option A).** One automatically maintained "General catalogue" collection per learning language,
+  shown to learners as an ordinary collection. Rejected: B (per-word review lifecycle, schema change), C (search and
+  word page only). H1 rejected: there is no "publish into General only" act. H2 yes: D-111 rule-attested sets count.
+- **Rule.** Derived at read time, never stored. An entry is in General(L) iff it has a membership in a collection of
+  language L that is `published` AND whose admission passes `_publication_admission` (rights cleared, complete, approved,
+  attested with a reviewer identity), evaluated defensively per collection (a malformed record does not qualify). It
+  leaves the moment its last such set stops qualifying. A token import (D-187) never qualifies until a human publishes
+  the set. No free (pending, unpublished, archived-only) word becomes reachable.
+- **Scope: persisted only.** General(L) is the persisted, admission-valid subset. It is **not** "the union of words
+  learners can reach": it excludes static seed collections (not rows of `vocabulary_entries`), words of a set that is
+  `published` without a valid admission (F1), and the raw static paths of F3. The F1 and F3 fixes are separate and do
+  not change this scope.
+- **Withdrawal is by set, not by word or content.** A shared entry row has no rights field and `import_source` merges a
+  pending set's data into an existing entry that has no published membership. So an entry first created or enriched by
+  set B (later withdrawn for a rights reason) and then included in published set A is in General with B's text; A's
+  attestation never covered it. This was already true of the word page and search; General makes it bulk-browsable.
+  Accepted; pinned by a test so a later fix is a deliberate change. The emergency lever is the kill switch below.
+- **Persistence.** No migration, no schema change, no stored row, no cache. Reserved id `orena-general-<language_code>`
+  (NFKC, trim, case-folded prefix match), refused inside `import_source` and at the Admin import, the service-token import
+  and the content-pack importer; a stored row under it is ignored (fail closed). Not editable, not exportable, no Admin row.
+- **Content shown (fix after browser verification).** A General item is drawn from a QUALIFYING membership (a
+  published collection with a valid admission), exactly as a real collection page draws from its own: that membership's
+  `content_snapshot` is applied, and its level, framework and topic override the shared row's. The shared entry row is
+  never shown when a qualifying snapshot exists, because text merged into it after a set's attestation (or left by a
+  withdrawn set) is not covered by any qualifying attestation. When an entry has several qualifying memberships the
+  choice is fixed: a membership carrying a snapshot comes first, then the lowest collection id (no publication time is
+  stored, so "earliest published" is not available). A non-qualifying membership is never used. It is chosen set-wise per
+  page (one query per 500 entries, no query per entry). The levels list and the level filter read the effective level
+  of any qualifying membership (the membership's own level, else the entry's), as `_collection_stats` does, instead of
+  the shared row's level alone; search and `general_contains` use the term, which a snapshot cannot change (same identity).
+- **Kill switch.** The D-172 policy `vocabulary.general_catalogue_enabled` (default on, read per request). Off hides only
+  General: absent from the list, detail 404; search, the word page and real collections unchanged.
+- **Query.** One combined predicate (OR of chunked `EXISTS ... IN`), ordered `(normalized_term, identity_key)`; more than
+  20,000 qualifying collections withholds General and logs rather than truncating. Keyset paging at about 100k entries
+  per language.
+- **Clients.** `system_kind: "general_catalogue"` plus an English fallback title; one copy key in EN, VI and ZH shared by
+  Discover, Library and Collection Detail. General sorts last. No new component.

@@ -91,6 +91,7 @@ const fixture = () => ({
     row('voice.chunk_units', 'voice', 'int', 2, { unit: 'count', low: 1, high: 10, danger: 'charging' }),
     row('speech.take_max_seconds', 'speech', 'int', 300, { unit: 'seconds', low: 10, high: 900 }),
     row('media.model_clips_enabled', 'media', 'bool', true),
+    row('vocabulary.general_catalogue_enabled', 'vocabulary', 'bool', true),
     row('rate.writing_ai_per_10min', 'rates', 'int', 30, { unit: 'count', low: 1, high: 5000 }),
     row('feedback.retention_sweep', 'feedback', 'bool', false, { danger: 'delete', env: 'FEEDBACK_RETENTION_SWEEP' }),
     row('feedback.retention_days', 'feedback', 'int', 730, { unit: 'days', low: 30, high: 3650, danger: 'delete' }),

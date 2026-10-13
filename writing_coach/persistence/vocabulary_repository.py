@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
+import unicodedata
 import uuid
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
@@ -24,7 +26,7 @@ from typing import Any, Protocol
 
 from alembic.config import Config
 from alembic.script import ScriptDirectory
-from sqlalchemy import create_engine, func, inspect, or_, select, text
+from sqlalchemy import and_, create_engine, exists, func, inspect, or_, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -105,6 +107,82 @@ _VOCABULARY_CONTENT_SNAPSHOT_FIELDS = (
     "content_origins",
     "provenance",
 )
+
+# D-188: the derived "General catalogue". It is never a stored row, so its id is reserved: no import, from any caller,
+# may create a collection under it (checked on the NFKC / trimmed / case-folded spelling).
+GENERAL_ID_PREFIX = "orena-general-"
+GENERAL_SYSTEM_KIND = "general_catalogue"
+# The title is an English fallback only; the clients translate `system_kind` (EN, VI, ZH) and use this when a UI
+# language has no key.
+GENERAL_FALLBACK_TITLE = "General catalogue"
+# One predicate holds every qualifying collection id, as an OR of `IN` chunks of this size, so COUNT, OFFSET and LIMIT
+# see one set. A module value so a test can lower it and run the multi-chunk path.
+_GENERAL_ID_CHUNK = 500
+# More qualifying collections than this is an error, never a silent truncation: General fails closed and logs.
+_GENERAL_ID_LIMIT = 20_000
+_GENERAL_TERM_CHUNK = 500
+_logger = logging.getLogger(__name__)
+_RESERVED_ID_MESSAGE = (
+    "This id belongs to the General catalogue, which is derived from published collections and cannot be imported into, "
+    "published or changed."
+)
+
+
+def _reserved_key(value: Any) -> str:
+    return unicodedata.normalize("NFKC", value if isinstance(value, str) else "").strip().casefold()
+
+
+def is_reserved_collection_id(value: Any) -> bool:
+    """True for any spelling of an id in the General catalogue's reserved space."""
+
+    return _reserved_key(value).startswith(GENERAL_ID_PREFIX)
+
+
+def general_collection_id(language_code: str) -> str:
+    return f"{GENERAL_ID_PREFIX}{_text(language_code).casefold()}"
+
+
+def general_collection_language(collection_id: Any) -> str | None:
+    """The language of a General id, from the exact lower-case spelling only; anything else is not General."""
+
+    if not isinstance(collection_id, str) or not collection_id.startswith(GENERAL_ID_PREFIX):
+        return None
+    language = collection_id[len(GENERAL_ID_PREFIX):]
+    if not language or language != language.strip().casefold() or any(ch.isspace() for ch in language):
+        return None
+    return language
+
+
+def _admission_qualifies(provenance: Any) -> bool:
+    """The publish gate (`_publication_admission`), evaluated defensively: any malformed record just does not qualify."""
+
+    data = _copy_json(provenance, {})
+    if not isinstance(data, Mapping):
+        return False
+    try:
+        _publication_admission(data)
+    except (ValueError, TypeError, AttributeError):
+        return False
+    return True
+
+
+def _in_collections(collection_ids: list[str]):
+    """One predicate over a membership's collection: an OR of `IN` chunks, so COUNT, OFFSET and LIMIT see one set."""
+
+    step = max(1, int(_GENERAL_ID_CHUNK))
+    return or_(*[
+        VocabularyCollectionMembership.collection_id.in_(collection_ids[i:i + step])
+        for i in range(0, len(collection_ids), step)
+    ])
+
+
+def _effective_level():
+    """A membership's level when it has one, else the entry's: what `_collection_stats` calls the effective level."""
+
+    return func.coalesce(
+        func.nullif(VocabularyCollectionMembership.membership_metadata["level"].as_string(), ""),
+        VocabularyEntry.level,
+    )
 
 
 @lru_cache(maxsize=32)
@@ -649,6 +727,8 @@ class SQLAlchemyVocabularyRepository:
         collection_id = _text(collection.get("id"))
         if not collection_id:
             raise ValueError("A stable collection id is required.")
+        if is_reserved_collection_id(collection_id):
+            raise ValueError(_RESERVED_ID_MESSAGE)
         language_code = _text(collection.get("language_code")).casefold()
         if not language_code:
             raise ValueError("A collection language_code is required.")
@@ -1076,6 +1156,8 @@ class SQLAlchemyVocabularyRepository:
         """
         self._require_available()
         clean_id = _text(collection_id)
+        if is_reserved_collection_id(clean_id):
+            raise ValueError(_RESERVED_ID_MESSAGE)
         wanted = _text(status).casefold()
         if wanted not in _VOCABULARY_CATALOG_STATUSES:
             raise ValueError(f"'{status}' is not a collection state.")
@@ -1120,6 +1202,8 @@ class SQLAlchemyVocabularyRepository:
         clean_collection_id = _text(collection_id)
         if not clean_collection_id:
             raise ValueError("A collection id is required for publication.")
+        if is_reserved_collection_id(clean_collection_id):
+            raise ValueError(_RESERVED_ID_MESSAGE)
         final_admission = _publication_admission({"admission": admission})
         now = _now()
         with Session(self.engine) as session, session.begin():
@@ -1471,6 +1555,189 @@ class SQLAlchemyVocabularyRepository:
                 seen.add(entry.id)
                 result.append(_entry_dict(entry))
             return self._with_localizations(session, result)
+
+    # -- the derived General catalogue (D-188) ---------------------------------------------------------------------
+    # Read-only, and separate from list_collections / get_collection / _collection_stats on purpose: nothing that
+    # enumerates real collections (the operator listing, content packs, the service-token guard) can ever see it.
+
+    def _general_predicate(self, session: Session, language: str):
+        """`(predicate, ids)`: entries of `language` with a membership in a published collection whose admission passes
+        the publish gate, and those qualifying collection ids; `(None, [])` when there are none."""
+
+        rows = session.execute(
+            select(VocabularyCollection.id, VocabularyCollection.provenance).where(
+                VocabularyCollection.language_code == language,
+                VocabularyCollection.catalog_status == "published",
+            )
+        ).all()
+        ids = sorted(
+            collection_id for collection_id, provenance in rows
+            if not is_reserved_collection_id(collection_id) and _admission_qualifies(provenance)
+        )
+        if not ids:
+            return None, []
+        if len(ids) > _GENERAL_ID_LIMIT:
+            _logger.error("General catalogue (%s): %d qualifying collections exceed %d; withheld, not truncated",
+                          language, len(ids), _GENERAL_ID_LIMIT)
+            raise VocabularyContentUnavailable("Too many published collections for the General catalogue.")
+        member = exists().where(VocabularyCollectionMembership.entry_id == VocabularyEntry.id, _in_collections(ids))
+        return and_(VocabularyEntry.language_code == language, member), ids
+
+    def _general_summary_in(self, session: Session, language: str, predicate: Any, ids: list[str]) -> dict[str, Any]:
+        count = int(session.scalar(select(func.count()).select_from(VocabularyEntry).where(predicate)) or 0)
+        # The effective levels of the qualifying memberships (a membership's own level wins over the entry's), as
+        # `_collection_stats` reads them for a real collection - never the shared row's level alone.
+        levels = [
+            value for value in session.scalars(
+                select(_effective_level()).select_from(VocabularyCollectionMembership)
+                .join(VocabularyEntry, VocabularyEntry.id == VocabularyCollectionMembership.entry_id)
+                .where(VocabularyEntry.language_code == language, _in_collections(ids))
+                .distinct()
+            ) if value
+        ]
+        clean = sorted({_text(value) for value in levels if _text(value)}, key=_level_sort_key)
+        return {
+            "id": general_collection_id(language),
+            "language_code": language,
+            "framework": "",
+            "level": "",
+            "topic": "",
+            "title": GENERAL_FALLBACK_TITLE,
+            "item_count": count,
+            "levels": clean,
+            "level_range": _level_range(clean, ""),
+            "catalog_status": "published",
+            "origin": "system",
+            "system_kind": GENERAL_SYSTEM_KIND,
+        }
+
+    def general_summary(self, language_code: str) -> dict[str, Any] | None:
+        """The General catalogue's card for one language, or None when it has no qualifying entry.
+
+        No `provenance`: nothing about the sets behind it, or who attested them, is carried to a learner."""
+
+        self._require_available()
+        language = _text(language_code).casefold()
+        if not language:
+            return None
+        with Session(self.engine) as session:
+            predicate, ids = self._general_predicate(session, language)
+            if predicate is None:
+                return None
+            summary = self._general_summary_in(session, language, predicate, ids)
+            return summary if summary["item_count"] > 0 else None
+
+    def general_page(
+        self, language_code: str, *, search: str = "", level: str = "", limit: int = 100, offset: int = 0
+    ) -> dict[str, Any] | None:
+        """One page of the General catalogue, ordered by (normalized_term, identity_key) so paging is total."""
+
+        self._require_available()
+        language = _text(language_code).casefold()
+        if not language:
+            return None
+        with Session(self.engine) as session:
+            predicate, ids = self._general_predicate(session, language)
+            if predicate is None:
+                return None
+            summary = self._general_summary_in(session, language, predicate, ids)
+            if summary["item_count"] <= 0:
+                return None
+            conditions = [predicate]
+            needle = _text(search).casefold()
+            if needle:
+                pattern = f"%{needle}%"
+                conditions.append(or_(VocabularyEntry.term.ilike(pattern), VocabularyEntry.normalized_term.ilike(pattern)))
+            wanted_level = _text(level).casefold()
+            if wanted_level:
+                # Any qualifying membership's effective level, the same reading the levels list uses.
+                conditions.append(exists().where(
+                    VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+                    _in_collections(ids),
+                    func.lower(_effective_level()) == wanted_level,
+                ))
+            total = int(session.scalar(select(func.count()).select_from(VocabularyEntry).where(*conditions)) or 0)
+            start = max(0, offset)
+            size = max(0, min(limit, 5000))
+            rows = list(
+                session.scalars(
+                    select(VocabularyEntry).where(*conditions)
+                    .order_by(VocabularyEntry.normalized_term, VocabularyEntry.identity_key)
+                    .offset(start).limit(size)
+                )
+            )
+            # Each item is drawn from a QUALIFYING membership, as a real collection page draws from its own: the
+            # shared row can carry text merged in after a set's attestation, which the membership snapshot protects.
+            chosen = self._general_memberships(session, [entry.id for entry in rows], ids)
+            items = []
+            for index, entry in enumerate(rows, start=1):
+                item = _entry_dict(entry)
+                membership = chosen.get(entry.id)
+                if membership is not None:
+                    metadata = _copy_json(membership.membership_metadata, {}) or {}
+                    _apply_content_snapshot(item, metadata.get("content_snapshot"))
+                    for field in ("level", "framework", "topic"):
+                        if metadata.get(field):
+                            item[field] = metadata[field]
+                item["collection_id"] = summary["id"]
+                item["position"] = start + index
+                items.append(item)
+            summary["entries"] = self._with_localizations(session, items)
+            summary["pagination"] = {"limit": size, "offset": start, "total": total, "has_more": start + len(rows) < total}
+            return summary
+
+    @staticmethod
+    def _general_memberships(
+        session: Session, entry_ids: list[uuid.UUID], collection_ids: list[str]
+    ) -> dict[uuid.UUID, VocabularyCollectionMembership]:
+        """The membership each entry of a page is drawn from, chosen set-wise (no query per entry).
+
+        Only memberships of qualifying collections are considered. Among an entry's qualifying memberships the rule is
+        fixed and deterministic: one that carries a content snapshot comes before one that does not (so the shared row
+        is never shown when a qualifying snapshot exists), then the lowest collection id."""
+
+        chosen: dict[uuid.UUID, VocabularyCollectionMembership] = {}
+        step = max(1, int(_GENERAL_TERM_CHUNK))
+        for i in range(0, len(entry_ids), step):
+            rows = session.scalars(
+                select(VocabularyCollectionMembership).where(
+                    VocabularyCollectionMembership.entry_id.in_(entry_ids[i:i + step]),
+                    _in_collections(collection_ids),
+                )
+            )
+            for membership in rows:
+                has_snapshot = isinstance(
+                    (_copy_json(membership.membership_metadata, {}) or {}).get("content_snapshot"), Mapping
+                )
+                rank = (0 if has_snapshot else 1, membership.collection_id)
+                current = chosen.get(membership.entry_id)
+                if current is None or rank < current[0]:
+                    chosen[membership.entry_id] = (rank, membership)
+        return {entry_id: pair[1] for entry_id, pair in chosen.items()}
+
+    def general_contains(self, language_code: str, normalized_terms: Iterable[str]) -> set[str]:
+        """Which of these normalized terms are in the General catalogue (bounded by what the caller asks about)."""
+
+        self._require_available()
+        language = _text(language_code).casefold()
+        wanted = sorted({_text(term) for term in normalized_terms if _text(term)})
+        found: set[str] = set()
+        if not language or not wanted:
+            return found
+        with Session(self.engine) as session:
+            predicate, _ids = self._general_predicate(session, language)
+            if predicate is None:
+                return found
+            step = max(1, int(_GENERAL_TERM_CHUNK))
+            for i in range(0, len(wanted), step):
+                found.update(
+                    session.scalars(
+                        select(VocabularyEntry.normalized_term).where(
+                            predicate, VocabularyEntry.normalized_term.in_(wanted[i:i + step])
+                        )
+                    )
+                )
+        return found
 
     def _list_entries_in_session(
         self,
