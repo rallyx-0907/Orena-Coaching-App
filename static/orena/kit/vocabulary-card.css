@@ -223,16 +223,16 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  background: var(--surface2);
+  background-color: var(--surface2);
   color: var(--muted);
   cursor: pointer;
 }
 .c-vcard__disc--play {
-  background: var(--accent-soft);
+  background-color: var(--accent-soft);
   color: var(--accent-on-photo, var(--accent));
 }
 .c-vcard__disc.is-saved {
-  background: var(--amber-soft);
+  background-color: var(--amber-soft);
   color: var(--amber);
 }
 

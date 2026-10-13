@@ -978,6 +978,10 @@ const tagged2 = String(vocabularyCard(pineAlone, { mode: 'detail', slots: { mean
 assert.ok(tagged2.includes('<span class="c-vcard__lang">Tiếng Anh</span>'), 'the meaning language tag is drawn by the card');
 // The discs are drawn 34px (the human, 2026-10-13: smaller, top right) and still take a 44px touch target.
 assert.match(cardCss, /\.c-vcard__disc \{[^}]*box-sizing: border-box;[^}]*width: 44px;[^}]*height: 44px;[^}]*padding: 5px;[^}]*margin: -5px;[^}]*background-clip: content-box/, 'a 44px target, drawn and laid out at 34px');
+// A `background` shorthand after it would reset the clip and paint the whole 44px: the discs set only the colour.
+for (const [selector, body] of cssRules.filter(([selector]) => /\.c-vcard__disc/.test(selector))) {
+  assert.doesNotMatch(body, /(^|[;\s])background:/, `${selector} sets background-color, never the shorthand`);
+}
 // ZH (lead's :8021 check: the content computed the app sans, `:lang(vi)` sets it on every Vietnamese element):
 // the family is set on EVERY element of the Chinese card, and only by these four rules - no content class re-sets it.
 assert.match(cardCss, /--vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;/);
