@@ -401,3 +401,6 @@ export function writePlace(base, { tab, query, filters }) {
   for (const key of PLACE_FILTER_KEYS) for (const value of filters?.[key] || []) params.append(filterParam(key), value);
   return params.toString();
 }
+
+/* Global search (#/search) with this query already typed: what the empty Discover search offers. */
+export const searchEverywhereHref = (query, href) => href('search', {}, { q: String(query || '').trim() });

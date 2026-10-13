@@ -459,4 +459,18 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal((src.match(/keepPlace\(\)/g) || []).length >= 5, true, 'tab, filter, clear and search each write the address');
 }
 
+// A Discover search with no result says what the box searches and offers global search with the query.
+{
+  const { searchEverywhereHref } = await import('../static/orena/screens/discover/model.js');
+  const href = (route, params, query) => `#/${route}?${new URLSearchParams(query)}`;
+  assert.equal(searchEverywhereHref(' 勇敢 ', href), '#/search?q=%E5%8B%87%E6%95%A2');
+  const { default: copyApi } = await import('../static/orena/screens/discover/copy.js').catch(() => ({}));
+  const copySrc = fs.readFileSync('static/orena/screens/discover/copy.js', 'utf8');
+  for (const lang of ['en', 'vi', 'zh']) assert.equal((copySrc.match(/emptySearchText:/g) || []).length, 3, lang);
+  assert.equal((copySrc.match(/searchEverywhere:/g) || []).length, 3);
+  const src = fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8');
+  assert.match(src, /t\('emptySearchText'\)[\s\S]*t\('searchEverywhere'\)/);
+  assert.match(src, /ctx\.go\(searchEverywhereHref\(typed, ctx\.href\)\)/);
+}
+
 console.log('Orena Discover: data mapping, filters, tabs, search and presentation all pure, no invented data: PASS');

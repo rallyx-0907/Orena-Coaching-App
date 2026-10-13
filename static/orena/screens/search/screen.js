@@ -214,6 +214,9 @@ export default async function search(element, ctx) {
   });
 
   renderBody();
+  // `#/search?q=…` (Discover's "Search everywhere") opens with the query typed and run.
+  const initial = normalizeQuery(ctx.query?.get('q'));
+  if (initial) setQuery(initial, { immediate: true });
   /* The router focuses `<main>` right after this mount resolves (route-change a11y, shell/
      router.js); the design's own openSearch handler beats that with the same 150ms delay
      (orena-script.js: `setTimeout(()=>this.searchEl&&this.searchEl.focus(),150)`), so this

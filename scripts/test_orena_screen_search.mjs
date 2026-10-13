@@ -212,4 +212,11 @@ assert.equal(totalItems([{ items: [1, 2] }, { items: [] }, { items: [3] }]), 3);
   assert.match(src, /wordItems\(catalogue, wordLanguage\)/);
 }
 
+// `#/search?q=…` prefills the field and runs the search.
+{
+  const src = (await import('node:fs')).readFileSync('static/orena/screens/search/screen.js', 'utf8');
+  assert.match(src, /normalizeQuery\(ctx\.query\?\.get\('q'\)\)/);
+  assert.match(src, /if \(initial\) setQuery\(initial, \{ immediate: true \}\)/);
+}
+
 console.log('Orena search screen: recent searches, real-source mapping, rule-40 fallbacks: PASS');

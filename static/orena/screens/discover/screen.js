@@ -21,7 +21,7 @@ import { overviewMarkup } from './overview.js';
 import {
   entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
   entryFromTextImport, entryFromMediaImport, filterOptions, visibleEntries,
-  presentCard, hrefFor, overviewSections, typeLabel, topicLabel, hasAnyFilter, filterCount, readPlace, writePlace, practiceCandidates, practiceHref, preparedMediaEntry,
+  presentCard, hrefFor, overviewSections, typeLabel, topicLabel, hasAnyFilter, filterCount, readPlace, writePlace, searchEverywhereHref, practiceCandidates, practiceHref, preparedMediaEntry,
 } from './model.js';
 
 // The skill order (D-152): Listen before Read, on the tab bar and in the All overview alike.
@@ -149,8 +149,12 @@ export default async function discover(element, ctx) {
     // The overview always draws its Imported section, so an un-narrowed All is never "nothing matches".
     const narrowed = hasFilters || Boolean(state.query.trim());
     if (!list.length && !state.loading && !(overview && !narrowed)) {
-      mount(resultsEl, emptyMarkup({ text: t('emptyText'), actionLabel: hasFilters || state.query.trim() ? t('clearFilters') : '', iconName: 'inbox' }));
-      resultsEl.querySelector('[data-empty-action]')?.addEventListener('click', clearFilters);
+      const typed = state.query.trim();
+      // A typed query that finds no content says what this box searches and offers global search (#/search), which also finds words.
+      mount(resultsEl, typed
+        ? emptyMarkup({ text: t('emptySearchText'), actionLabel: t('searchEverywhere'), iconName: 'inbox' })
+        : emptyMarkup({ text: t('emptyText'), actionLabel: hasFilters ? t('clearFilters') : '', iconName: 'inbox' }));
+      resultsEl.querySelector('[data-empty-action]')?.addEventListener('click', typed ? () => ctx.go(searchEverywhereHref(typed, ctx.href)) : clearFilters);
     } else if (overview) {
       /* D-167: All is an overview of four sections, never one grid of every type. Each section
          draws the same cards its own tab draws (cardFor) and a "See all" that opens that tab. */
