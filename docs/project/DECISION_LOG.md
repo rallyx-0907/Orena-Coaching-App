@@ -6007,18 +6007,35 @@ closing that race needs the guard inside the `import_source` transaction.
 
 (Placeholder D-18X until merge.)
 
-**Status: PROPOSED.** Design: `docs/reviews/architecture/VOCAB_GENERAL_CATALOGUE_DESIGN_2026-10-13.md`. Not implemented;
-needs independent review and the human decisions H1-H5 in the design before code. Changes what reaches learners.
+**Status: PROPOSED.** Design: `docs/reviews/architecture/VOCAB_GENERAL_CATALOGUE_DESIGN_2026-10-13.md`; independent review
+`docs/reviews/architecture/VOCAB_GENERAL_CATALOGUE_REVIEW_2026-10-13.md` (Delegated Architecture Reviewer, Claude Opus 5.5):
+APPROVED WITH CONDITIONS at 1c30c70d. Implemented on `claude/vocab-general-catalogue`; awaiting code review and the
+learner-surface verification. Changes what reaches learners.
 
 - **Decision (human, Option A).** One automatically maintained "General catalogue" collection per learning language,
   shown to learners as an ordinary collection. Rejected: B (per-word review lifecycle, schema change), C (search and
-  word page only).
-- **Rule.** Derived at read time, never stored. An entry is in General(L) iff it has a membership in a collection that
-  is `published` AND whose admission passes `_publication_admission` (rights cleared, complete, approved, attested with
-  a reviewer identity). It leaves the moment its last such set stops qualifying. A token import (D-187) never
-  qualifies until a human publishes the set. No free (pending, unpublished, archived-only) word becomes reachable.
-- **Persistence.** No migration, no schema change, no stored row. Reserved id `orena-general-<language_code>`,
-  refused on every import path. Not editable, not exportable in content packs, read-only in Admin.
-- **Open for the human.** H1: whether draft words must become reachable (needs a human "publish into General" act, not
-  a rule); H2: D-111 rule-attested sets count as attested; H3: operator kill switch; H4: migration stops for approval;
-  H5: findings F1 (status route skips the admission check) and F3 (unpublished static seeds reach the Feed).
+  word page only). H1 rejected: there is no "publish into General only" act. H2 yes: D-111 rule-attested sets count.
+- **Rule.** Derived at read time, never stored. An entry is in General(L) iff it has a membership in a collection of
+  language L that is `published` AND whose admission passes `_publication_admission` (rights cleared, complete, approved,
+  attested with a reviewer identity), evaluated defensively per collection (a malformed record does not qualify). It
+  leaves the moment its last such set stops qualifying. A token import (D-187) never qualifies until a human publishes
+  the set. No free (pending, unpublished, archived-only) word becomes reachable.
+- **Scope: persisted only.** General(L) is the persisted, admission-valid subset. It is **not** "the union of words
+  learners can reach": it excludes static seed collections (not rows of `vocabulary_entries`), words of a set that is
+  `published` without a valid admission (F1), and the raw static paths of F3. The F1 and F3 fixes are separate and do
+  not change this scope.
+- **Withdrawal is by set, not by word or content.** A shared entry row has no rights field and `import_source` merges a
+  pending set's data into an existing entry that has no published membership. So an entry first created or enriched by
+  set B (later withdrawn for a rights reason) and then included in published set A is in General with B's text; A's
+  attestation never covered it. This was already true of the word page and search; General makes it bulk-browsable.
+  Accepted; pinned by a test so a later fix is a deliberate change. The emergency lever is the kill switch below.
+- **Persistence.** No migration, no schema change, no stored row, no cache. Reserved id `orena-general-<language_code>`
+  (NFKC, trim, case-folded prefix match), refused inside `import_source` and at the Admin import, the service-token import
+  and the content-pack importer; a stored row under it is ignored (fail closed). Not editable, not exportable, no Admin row.
+- **Kill switch.** The D-172 policy `vocabulary.general_catalogue_enabled` (default on, read per request). Off hides only
+  General: absent from the list, detail 404; search, the word page and real collections unchanged.
+- **Query.** One combined predicate (OR of chunked `EXISTS ... IN`), ordered `(normalized_term, identity_key)`; more than
+  20,000 qualifying collections withholds General and logs rather than truncating. Keyset paging at about 100k entries
+  per language.
+- **Clients.** `system_kind: "general_catalogue"` plus an English fallback title; one copy key in EN, VI and ZH shared by
+  Discover, Library and Collection Detail. General sorts last. No new component.

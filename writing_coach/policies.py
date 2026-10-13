@@ -85,7 +85,7 @@ def _p(key: str, group: str, kind: str, default: Any, **extra: Any) -> Policy:
     return Policy(key=key, group=group, kind=kind, default=default, **extra)
 
 
-GROUPS: tuple[str, ...] = ("quota", "agent", "voice", "speech", "media", "rates", "feedback", "spend")
+GROUPS: tuple[str, ...] = ("quota", "agent", "voice", "speech", "media", "vocabulary", "rates", "feedback", "spend")
 
 POLICIES: tuple[Policy, ...] = (
     # --- quota (the enforcement switch itself is product.quota_enforcement, D-161; this is what the reconciler decides)
@@ -119,6 +119,8 @@ POLICIES: tuple[Policy, ...] = (
     _p("media.model_clip_max_lines", "media", "int", 500, unit="count", low=10, high=5000,
        env="MEDIA_MODEL_CLIP_MAX_LINES", env_min=1),
     _p("rate.media_learning_per_hour", "media", "int", 30, unit="count", low=1, high=1000),
+    # --- vocabulary (D-188): the operator's switch for the derived General catalogue; on by default
+    _p("vocabulary.general_catalogue_enabled", "vocabulary", "bool", True),
     # --- request rates on the other paid routes (per account, per 10 minutes)
     _p("rate.writing_ai_per_10min", "rates", "int", 30, unit="count", low=1, high=5000),
     _p("rate.essay_ai_per_10min", "rates", "int", 30, unit="count", low=1, high=5000),

@@ -188,6 +188,8 @@ from writing_coach.persistence.vocabulary_repository import (
     AUTHORED_CONFLICTS,
     AUTHORED_DUPLICATE_POLICIES,
     VocabularyContentUnavailable,
+    general_collection_language,
+    is_reserved_collection_id,
 )
 from writing_coach.persistence.learning_repository import (
     SQLiteLearningCacheRepository,
@@ -3589,6 +3591,16 @@ def _admin_vocabulary_metadata(raw: str) -> dict[str, Any]:
         raise HTTPException(422, "metadata.language_code is required.")
     if not title:
         raise HTTPException(422, "metadata.title is required for a learner-facing collection.")
+    if is_reserved_collection_id(str(metadata.get("collection_id") or "")):
+        # D-188: the General catalogue is derived; its id space is not importable (any spelling).
+        raise HTTPException(
+            422,
+            detail={
+                "category": "vocabulary_collection_id_reserved",
+                "retryable": False,
+                "message": "This collection id is reserved for the General catalogue.",
+            },
+        )
     if len(language_code) > 20 or not re.fullmatch(r"[a-zA-Z][a-zA-Z0-9-]{1,19}", language_code):
         raise HTTPException(422, "metadata.language_code is invalid.")
     if not is_enabled(language_code):
@@ -3864,6 +3876,8 @@ def _vocabulary_pack_import(data: dict[str, Any], *, imported_by: str, pack_id: 
     """One pack collection through the same path a CSV import takes after parsing: the metadata normaliser, the
     D-111 publication rule, `import_source`, localization, and publication only when every entry imported."""
 
+    if is_reserved_collection_id(str(data.get("id") or "")):
+        raise ValueError("The pack's collection id is reserved for the General catalogue.")
     metadata = {key: data.get(key) for key in ("title", "framework", "level", "topic", "meaning_language",
                                                 "rights_status", "completeness")}  # fmt: skip
     metadata.update(language_code=data.get("language_code"), collection_id=data.get("id"),
@@ -4506,6 +4520,9 @@ def becoming_vocabulary_library_collections(language_code: str = Query(default="
     code = _require_vocabulary_language_code(language_code)
     by_id = {summary["id"]: dict(summary) for summary in list_vocabulary_collections(code)}
     for summary in _persisted_vocabulary_collections(code):
+        if is_reserved_collection_id(summary.get("id")):
+            # Fail closed: a stored row under the General id space never reaches a learner as a collection.
+            continue
         by_id[summary["id"]] = dict(summary)
     catalogs = {
         summary["id"]: (
@@ -4536,7 +4553,69 @@ def becoming_vocabulary_library_collections(language_code: str = Query(default="
         )
         summaries.append(summary)
     summaries.sort(key=lambda item: (str(item.get("framework") or ""), str(item.get("title") or "")))
+    general = _general_catalogue_summary(code)
+    if general is not None:
+        # Last: the curated packs come first and the aggregate after them (D-188).
+        summaries.append(general)
     return {"items": summaries}
+
+
+def _general_catalogue_enabled() -> bool:
+    """The operator's switch for the General catalogue (D-188, policy `vocabulary.general_catalogue_enabled`), read per
+    request. Off hides only General: search, the word page and every real collection are untouched."""
+
+    return _policies.value("vocabulary.general_catalogue_enabled") is not False
+
+
+def _general_progress(code: str) -> dict[str, int]:
+    """The requesting learner's progress through General: their own saved words that General contains, asked about
+    those words only (never a read of the catalogue)."""
+
+    repository = _persistence_runtime.vocabulary_repository
+    token = LANGUAGE_CODE_CTX.set(code)
+    try:
+        saved = saved_vocabulary_words()
+        inside = repository.general_contains(code, saved) if saved else set()
+        state = saved_vocabulary_state(tuple(sorted(inside))) if inside else {}
+    finally:
+        LANGUAGE_CODE_CTX.reset(token)
+    return _vocabulary_collection_progress([{"normalized_word": word} for word in inside], state)
+
+
+def _general_catalogue_summary(code: str) -> dict[str, Any] | None:
+    if not _general_catalogue_enabled():
+        return None
+    repository = _persistence_runtime.vocabulary_repository
+    try:
+        if not repository.available():
+            return None
+        summary = repository.general_summary(code)
+        if summary is None:
+            return None
+        summary = dict(summary)
+        summary["progress"] = _general_progress(code)
+        return summary
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        return None
+
+
+def _general_catalogue_page(
+    collection_id: str, *, search: str, level: str, limit: int, offset: int
+) -> dict[str, Any]:
+    """The detail of a General id. 404 for every spelling that is not exactly an enabled language's id, and when the
+    operator's switch is off; never a fall-through to the static catalogue or to a stored row."""
+
+    language = general_collection_language(collection_id)
+    if language is None or not is_enabled(language) or not _general_catalogue_enabled():
+        raise HTTPException(404, "Vocabulary collection not found.")
+    repository = _persistence_runtime.vocabulary_repository
+    try:
+        page = repository.general_page(language, search=search, level=level, limit=limit, offset=offset) if repository.available() else None
+    except (VocabularyContentUnavailable, RuntimeError, OSError):
+        page = None
+    if page is None:
+        raise HTTPException(404, "Vocabulary collection not found.")
+    return page
 
 
 def _vocabulary_collection_progress(
@@ -4567,15 +4646,19 @@ def becoming_vocabulary_library_collection_detail(
     offset: int = Query(default=0, ge=0),
     include_review: bool = Query(default=False),
 ) -> dict[str, Any]:
-    collection = _persisted_vocabulary_collection(
-        collection_id,
-        search=search,
-        level=level,
-        limit=limit,
-        offset=offset,
-    )
-    if collection is None:
-        collection = get_vocabulary_collection(collection_id)
+    is_general = is_reserved_collection_id(collection_id)
+    if is_general:
+        collection = _general_catalogue_page(collection_id, search=search, level=level, limit=limit, offset=offset)
+    else:
+        collection = _persisted_vocabulary_collection(
+            collection_id,
+            search=search,
+            level=level,
+            limit=limit,
+            offset=offset,
+        )
+        if collection is None:
+            collection = get_vocabulary_collection(collection_id)
     if collection is None:
         raise HTTPException(404, "Vocabulary collection not found.")
     entries = collection.pop("entries")
@@ -4607,7 +4690,11 @@ def becoming_vocabulary_library_collection_detail(
         card["lapse_count"] = int(saved.get("lapse_count") or 0) if saved else 0
         items.append(card)
     collection["items"] = items
-    collection["progress"] = _vocabulary_collection_progress(entries, saved_by_word)
+    collection["progress"] = (
+        _general_progress(collection["language_code"])
+        if is_general
+        else _vocabulary_collection_progress(entries, saved_by_word)
+    )
     if include_review:
         # The collection's own saved rows, resolved by the existing owner above.
         # No scan of the learner's whole library and no dictionary generation.

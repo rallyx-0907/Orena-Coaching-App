@@ -10,6 +10,7 @@
 
 import { placeFor } from '../content/model.js';
 import { vocabularyMeaning } from '../../product/vocabulary-meaning.js';
+import { collectionTitle } from '../../copy/general-catalogue.js';
 import { buildQueue, cardMode, sourceLabelKey } from '../review/model.js';
 
 /* ---- Content tab: reading + media entries from GET /api/collection?domains=reading,media ---- */
@@ -136,7 +137,7 @@ export function deckRows(decks = []) {
 export function curatedRows(items = []) {
   return (items || []).filter((item) => item && item.id).map((item) => ({
     collectionId: `curated:${item.id}`,
-    title: item.title || '',
+    title: collectionTitle(item),
     size: Number(item.item_count) || 0,
   }));
 }

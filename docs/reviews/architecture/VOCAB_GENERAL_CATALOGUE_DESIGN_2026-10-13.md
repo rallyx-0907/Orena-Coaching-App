@@ -1,6 +1,6 @@
 # Vocabulary "General catalogue" per language - design (Option A)
 
-Status: PROPOSED, design only. No code written. Branch `claude/vocab-general-catalogue`, from `origin/main` 172ae216.
+Status: PROPOSED. Design APPROVED WITH CONDITIONS (`VOCAB_GENERAL_CATALOGUE_REVIEW_2026-10-13.md`, reviewed at 1c30c70d); implemented on the branch, awaiting code review. Section 10 records how each condition was met and supersedes anything above it. Branch `claude/vocab-general-catalogue`, from `origin/main` 172ae216.
 Decision record: D-188 (placeholder D-18X until merge), PROPOSED, in `docs/project/DECISION_LOG.md`.
 Author: implementer lane. Not self-approved: this changes what reaches learners (a content-visibility rule), so it
 needs the independent review the lead has asked for, and the human decisions in section 9.
@@ -14,7 +14,7 @@ schema `writing_coach/vocabulary_entry.schema.json`, which never reads `status`)
 through a set that passes them, and a set that passes them and is not withdrawn **is a published collection**.
 
 Consequence: under those gates, **no word that is free today becomes reachable**. A "General catalogue" built to that
-rule is the per-language union of the words learners can already reach, as one browsable collection. It adds a place
+rule is the per-language, **persisted and admission-valid** subset of the words learners can already reach (section 10, P1-4: static seeds and sets published without a valid admission are excluded), as one browsable collection. It adds a place
 to browse and page them; it does not release a single draft, unpublished or archived word. If the human wants free
 (draft) words to reach learners, that needs a new human act (section 9, H1), not a different automatic rule. Anything
 automatic that released them would bypass attestation, which D-111, D-178 point 3 and D-187 say it must not.
@@ -230,3 +230,42 @@ a missing key fails the copy-parity gate; Discover order puts General last.
 - **H4. Performance escape hatch.** If the derived query is too slow at the real catalogue size, the next step is a
   cache (no schema change) and only then an index migration. Confirm that crossing into a migration stops for approval.
 - **H5. F1 and F3** are separate fixes; say whether to open them.
+
+## 10. After the independent review (APPROVED WITH CONDITIONS) - what was decided and built
+
+Human decisions: derived General, no migration; H1 rejected (no "publish into General only"); H2 yes (D-111 rule-attested
+sets count). Lead decisions: H3 kill switch yes, default on; H4 no cache in this slice; F1 and F3 are fixed on other
+branches and are not touched here.
+
+- **P1-1 reserved id.** `is_reserved_collection_id` matches `NFKC + strip + casefold` with prefix `orena-general-`.
+  Enforced inside `import_source` (every caller), `finalize_collection_publication` and `set_collection_status` (own
+  message), and earlier with a clean 422 in `_admin_vocabulary_metadata` (Admin import, preview and the service-token
+  import all pass through it before the token guard's `get_collection`) and in `_vocabulary_pack_import`. The resolver
+  `general_collection_language` accepts only the exact lower-case id; the language must pass `is_enabled`, else 404. A
+  stored row under the reserved id is **fail-closed**: the synthetic id wins, the row is never listed to learners and
+  never contributes.
+- **P1-2 separate methods.** `general_summary`, `general_page`, `general_contains` on the repository; composed only in
+  the two learner routes in `app.py`. `list_collections`, `get_collection`, `_collection_stats`, the pack code and the
+  Admin repository are unchanged. **No Admin row** (revised from section 5).
+- **P1-3 defensive admission.** `_admission_qualifies` coerces provenance with `_copy_json`, requires a mapping and
+  catches `ValueError`, `TypeError` and `AttributeError` per collection; the gate itself is `_publication_admission`.
+- **P1-4 scope.** General(L) is the **persisted, admission-valid subset**. It excludes static seed collections
+  (`vocabulary_library.py`, not rows of `vocabulary_entries`, no admission record), words of a set that reached
+  `published` without a valid admission (F1), and the raw Feed and word-page seed paths (F3). It is not "the union of
+  reachable words". After F3 is fixed, nothing in that fix changes this scope, because General reads persisted rows only.
+- **P1-5 withdrawal is by set.** Pinned by `test_withdrawal_is_by_set_not_by_content_and_this_is_pinned`; recorded in D-188.
+- **P2-1 query.** One combined predicate: an OR of `EXISTS ... IN (chunk)` (chunk size `_GENERAL_ID_CHUNK = 500`, lowered
+  in a test), so COUNT, OFFSET and LIMIT see one set. More than `_GENERAL_ID_LIMIT = 20000` qualifying collections is a
+  logged error and General is withheld (`VocabularyContentUnavailable`), never truncated. Order `(normalized_term,
+  identity_key)`; level filter on the entry's own level only. Measurement trigger for keyset paging: about 100k entries
+  per language.
+- **P2-2 progress.** The list and the detail route both compute General's progress from the requesting learner's own saved
+  words (`saved_vocabulary_words()` then `general_contains`, chunked) and `saved_vocabulary_state` for those words only.
+- **P2-3** the General summary carries no `provenance` or `attested_by` (tested).
+- **P2-4 clients.** `static/orena/copy/general-catalogue.js` holds the one key in EN, VI and ZH, and
+  `collectionTitle(item)` (English `title` is the fallback) is used by the Discover, Library and Collection models.
+  General sorts last on the server (appended after the sort), and no client re-sorts.
+- **P2-5 kill switch (H3).** The D-172 operational policy `vocabulary.general_catalogue_enabled` (bool, default true,
+  group `vocabulary`), read per request through `policies.value`. Off: General is absent from the list and its detail
+  answers 404; search, the word page, the Feed and every real collection are unchanged. No cache (H4).
+- **P2-6** the "published with an invalid admission" case is a live test; the gate is not weakened to the status flag.
