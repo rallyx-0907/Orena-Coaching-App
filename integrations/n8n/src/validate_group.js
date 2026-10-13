@@ -18,11 +18,18 @@ if (!first.noop) {
   $input.all().forEach((it, k) => {
     const job = jobs[k]; if (!job) return;
     const b = built[job.recIndex]; const r = b.record;
-    if (it.json.error) { b.warnings.push('AI request failed: ' + (it.json.error.message || 'unknown')); return; }
-    const resp = parseJsonSafe(it.json.data);
+    if (it.json.error) { b.warnings.push('AI request failed: ' + String((it.json.error && (it.json.error.message || it.json.error.description)) || it.json.error).slice(0, 200)); return; }
+    const status = it.json.statusCode;
+    const rawBody = it.json.body !== undefined ? it.json.body : it.json.data;
+    if (Number.isInteger(status) && (status < 200 || status >= 300)) {
+      b.warnings.push(`AI request failed: HTTP ${status}: ${String(typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody)).replace(/\s+/g, ' ').slice(0, 200)}`);
+      return;
+    }
+    const resp = parseJsonSafe(rawBody);
+    if (resp && resp.error) { b.warnings.push('AI request failed: ' + String(resp.error.message || JSON.stringify(resp.error)).slice(0, 200)); return; }
     const content = resp && resp.choices && resp.choices[0] && resp.choices[0].message && resp.choices[0].message.content;
     const ai = parseJsonSafe(typeof content === 'string' ? content.replace(/^```(?:json)?\s*|\s*```$/g, '') : content);
-    if (!ai || typeof ai !== 'object') { b.warnings.push('AI did not return JSON'); return; }
+    if (!ai || typeof ai !== 'object') { b.warnings.push('AI did not return a JSON answer: ' + String(typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody)).replace(/\s+/g, ' ').slice(0, 120)); return; }
     if (job.want.includes('pos') && !r.pos.length && Array.isArray(ai.pos)) {
       const codes = [...new Set(ai.pos.map(x => String(x).toLowerCase().trim()))].filter(c => POS_CODES.includes(c));
       if (codes.length) { r.pos = codes.map(c => posObj(c, r.lang)); aiTag(r, 'pos'); b.warnings.push('AI filled: pos'); }
@@ -76,9 +83,9 @@ for (const b of built) {
   if (r.lang === 'en' && r.en && r.en.ipa && !Object.keys(r.en.ipa).length) delete r.en.ipa;
   const errs = [...b.errors, ...validateRecord(r, cfg.record.allowedStatuses)];
   if (errs.length) {
-    const hint = cfg.ai.active ? '' : ' (AI is not configured, so nothing filled it)';
+    const hint = cfg.ai.active ? '' : ' (AI off)';
     if (!r.pos.length) errs.unshift('no part of speech' + hint);
-    if (!r.meanings.length) errs.unshift('no Vietnamese meaning' + hint);
+    if (!r.meanings.length) errs.unshift('no Vietnamese meaning' + (cfg.ai.active ? '' : ' (AI off; add it on the input line)'));
     if (!r.examples.length) errs.unshift('no example sentence with a Vietnamese translation' + hint);
     if (r.lang === 'en' && !(r.en && r.en.ipa)) errs.unshift('no IPA (uk/us)' + hint);
   }

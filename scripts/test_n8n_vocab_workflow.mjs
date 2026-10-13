@@ -434,6 +434,44 @@ await test('AI answers never overwrite a value that exists, and bad AI output is
   assert.ok(o2['Validate & group'][0].json.rejected[0].reasons.length >= 3);
 });
 
+await test('AI is configured only by a valid endpoint AND a model; otherwise it is off, said so, and rows say why', async () => {
+  const words = { 'Word list': 'resilient — C1' };
+  for (const env of [{}, { AI_MODEL: 'm' }, { AI_ENDPOINT: 'https://llm.example/v1' }, { AI_ENDPOINT: 'not a url', AI_MODEL: 'm' }]) {
+    const o = await pipeline({ form: MANUAL(words), enrich: ENRICH, env });
+    assert.equal(o.Config[0].json.ai.active, false, JSON.stringify(env));
+    assert.equal(o['Prepare AI'][0].json.noop, true, 'the AI node must be skipped');
+    const report = JSON.parse(decode(buildFile(o, 'report_json')));
+    assert.equal(report.ai.configured, false); assert.match(report.ai.reason, /^AI not configured: missing /);
+    const rej = o['Validate & group'][0].json.rejected[0];
+    assert.ok(rej.reasons.includes('no Vietnamese meaning (AI off; add it on the input line)'), rej.reasons.join('|'));
+  }
+  const on = await pipeline({ form: MANUAL({ 'Word list': 'resilient — C1 — kiên cường' }), enrich: ENRICH, env: { AI_ENDPOINT: 'https://llm.example:8443/v1/x', AI_MODEL: 'm' } });
+  const report = JSON.parse(decode(buildFile(on, 'report_json')));
+  assert.deepEqual([report.ai.configured, report.ai.endpoint_host, report.ai.reason], [true, 'llm.example:8443', '']);
+});
+
+await test('a failing AI call reports its real cause, and a dictionary gap says which gap', async () => {
+  const env = { AI_ENDPOINT: 'https://llm.example/v1', AI_MODEL: 'm' };
+  const causes = [
+    [{ json: { error: 'ECONNREFUSED 127.0.0.1:1' } }, /AI request failed: ECONNREFUSED/],
+    [{ json: { statusCode: 401, body: '{"error":{"message":"bad key"}}' } }, /AI request failed: HTTP 401: .*bad key/],
+    [{ json: { statusCode: 200, body: '{"error":{"message":"quota exceeded"}}' } }, /AI request failed: quota exceeded/],
+    [{ json: { statusCode: 200, body: '<html>proxy</html>' } }, /AI did not return a JSON answer: <html>proxy/],
+  ];
+  for (const [reply, re] of causes) {
+    const o = await pipeline({ form: MANUAL({ 'Word list': 'zzzword — B1' }), enrich: {}, env, ai: jobs => jobs.map(() => reply) });
+    const w = o['Validate & group'][0].json.rejected[0].warnings.join('|');
+    assert.match(w, re); assert.ok(!/unknown/.test(w));
+  }
+  const noIpa = [{ word: 'resilient', phonetic: '/rɪˈzɪliənt/', phonetics: [{ text: '/rɪˈzɪliənt/', audio: '' }], meanings: FREE_DICT_RESILIENT[0].meanings }];
+  let o = await pipeline({ form: MANUAL({ 'Word list': 'resilient — C1 — kiên cường' }), enrich: { resilient: [text(noIpa), text(TATOEBA_EN)] } });
+  assert.match(o['Validate & group'][0].json.rejected[0].warnings.join('|'), /IPA \/rɪˈzɪliənt\/ is not tagged UK\/US, so it was not used \(set untaggedIpaAs/);
+  o = await pipeline({ form: MANUAL({ 'Word list': 'resilient — C1 — kiên cường' }), enrich: { resilient: [{ json: { error: 'getaddrinfo ENOTFOUND api.dictionaryapi.dev' } }, text(TATOEBA_EN)] } });
+  assert.match(o['Validate & group'][0].json.rejected[0].warnings.join('|'), /Free Dictionary request failed: getaddrinfo ENOTFOUND/);
+  o = await pipeline({ form: MANUAL({ 'Word list': 'resilient — C1 — kiên cường' }), enrich: { resilient: [text({ title: 'No Definitions Found' }), text(TATOEBA_EN)] } });
+  assert.match(o['Validate & group'][0].json.rejected[0].warnings.join('|'), /Free Dictionary: no entry \(No Definitions Found\)/);
+});
+
 // ================================================================ 6. stable ids, idempotent reruns
 await test('rerun with the same input gives the same ids, the same bytes and the same file names', async () => {
   const a = await pipeline({ form: MANUAL(), enrich: ENRICH });

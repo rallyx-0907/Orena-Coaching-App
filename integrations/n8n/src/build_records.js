@@ -31,7 +31,9 @@ words.forEach((w, i) => {
     const d1 = dataOf(call1[i]);
     const parsed = parseJsonSafe(d1);
     const entries = Array.isArray(parsed) ? parsed : [];
-    if (!entries.length) warnings.push('Free Dictionary: no entry');
+    const call1Err = call1[i] && call1[i].error;
+    if (call1Err) warnings.push('Free Dictionary request failed: ' + String((call1Err && (call1Err.message || call1Err.description)) || call1Err).slice(0, 200));
+    else if (!entries.length) warnings.push('Free Dictionary: no entry' + (parsed && parsed.title ? ` (${String(parsed.title).slice(0, 80)})` : ''));
     else tags.add('src:free-dictionary');
     const ipa = {}; let untagged = '';
     const syn = [], ant = [];
@@ -56,6 +58,11 @@ words.forEach((w, i) => {
       }
     }
     if (!ipa.uk && !ipa.us && untagged && ['uk', 'us'].includes(cfg.untaggedIpaAs)) { ipa[cfg.untaggedIpaAs] = normIpa(untagged); warnings.push(`IPA is not tagged UK/US; assigned to ${cfg.untaggedIpaAs}`); }
+    if (entries.length && !ipa.uk && !ipa.us) {
+      warnings.push(untagged
+        ? `Free Dictionary: IPA ${untagged} is not tagged UK/US, so it was not used (set untaggedIpaAs in Config to use it)`
+        : 'Free Dictionary: the entry has no IPA text');
+    }
     rec.en = Object.keys(ipa).length ? { ipa } : {};
     // The dictionary's audio file is a third-party URL; the card plays text-to-speech instead of hot-linking it.
     rec.audio = { tts: true };

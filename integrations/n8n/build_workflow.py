@@ -186,7 +186,7 @@ def build() -> dict:
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.body) }}",
         "options": {
-            "response": {"response": {"neverError": True, "responseFormat": "text", "outputPropertyName": "data"}},
+            "response": {"response": {"neverError": True, "responseFormat": "text", "outputPropertyName": "data", "fullResponse": True}},
             "timeout": 90000,
             "batching": {"batch": {"batchSize": 2, "batchInterval": 1000}},
         },

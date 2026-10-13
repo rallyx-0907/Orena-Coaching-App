@@ -26,7 +26,7 @@ function buildReport(cfg, batch, sync, writes) {
     duplicates: cfg.duplicates,
     duplicates_note: cfg.duplicatesNote || '',
     totals: { input: batch.ready.length + batch.rejected.length, ready: batch.ready.length, rejected: batch.rejected.length },
-    ai: { configured: !!cfg.ai.active, endpoint_host: cfg.ai.active ? (() => { try { return new URL(cfg.ai.endpoint).host; } catch (e) { return ''; } })() : '' },
+    ai: { configured: !!cfg.ai.active, endpoint_host: cfg.ai.host || '', reason: cfg.ai.active ? '' : (cfg.ai.reason || 'AI not configured: missing endpoint/model') },
     rights_status: cfg.metadata.rights_status,
     completeness: cfg.metadata.completeness,
     sync_status: overall,

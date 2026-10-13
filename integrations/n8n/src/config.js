@@ -119,7 +119,11 @@ const config = {
 
 config.record.maxExamples = Math.min(4, Math.max(1, config.record.maxExamples | 0));
 if (config.record.status === 'published') throw new Error('The generator never publishes: record.status cannot be published');
-config.ai.active = !!(config.ai.enabled && config.ai.endpoint && config.ai.model);
-if (config.ai.active && !/^https?:\/\//i.test(config.ai.endpoint)) throw new Error('AI endpoint must be an http(s) URL');
+// AI is on only with a valid http(s) endpoint AND a model. A credential on the HTTP node never counts as configuration.
+const aiUrlOk = /^https?:\/\/[^\s/]+/i.test(config.ai.endpoint);
+config.ai.active = !!(config.ai.enabled && aiUrlOk && config.ai.model);
+config.ai.reason = config.ai.active ? '' : (!config.ai.enabled ? 'AI not configured: disabled in Config' :
+  `AI not configured: missing ${[!aiUrlOk && (config.ai.endpoint ? 'a valid http(s) endpoint' : 'endpoint'), !config.ai.model && 'model'].filter(Boolean).join('/')}`);
+config.ai.host = config.ai.active ? (/^https?:\/\/([^\s/]+)/i.exec(config.ai.endpoint) || [])[1] || '' : '';
 
 return [{ json: config }];
