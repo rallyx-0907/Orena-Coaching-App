@@ -107,6 +107,8 @@ copyIndex.setLanguages({ ui: 'en', support: 'en' });
 }
 
 /* ---- the CI gate list runs this file ---- */
-assert.ok(fs.readFileSync('.github/workflows/ci.yml', 'utf8').includes('scripts/test_orena_screen_admin_grammar.mjs'), 'CI runs this gate');
+// The gates are listed in scripts/node_gates.txt and CI runs that list through scripts/run_node_gates.sh.
+assert.ok(fs.readFileSync('scripts/node_gates.txt', 'utf8').split('\n').includes('scripts/test_orena_screen_admin_grammar.mjs'), 'CI runs this gate');
+assert.ok(fs.readFileSync('.github/workflows/ci.yml', 'utf8').includes('scripts/run_node_gates.sh'), 'CI runs the gate list');
 
 console.log('Orena Admin Grammar: routes in Imports and Content, queue tabs, per-language publish, point actions and blockers, import/queue/point pages in 3 languages, learner preview read-only: PASS');
