@@ -160,8 +160,8 @@ def test_explicit_contextual_ask_still_reaches_the_capability_once_and_is_cached
         return {"context_meaning": "ran out", "why_here": "The lamp stopped."}
 
     monkeypatch.setattr(media_interaction, "_run_structured", structured)
-    first = word_detail.word_detail(_body())  # contextual defaults true: the explicit "Why here?"
-    second = word_detail.word_detail(_body())
+    first = word_detail.word_detail(_body(contextual=True))  # contextual defaults true: the explicit "Why here?"
+    second = word_detail.word_detail(_body(contextual=True))
     assert first["meaningSource"] == "context" and first["contextStatus"] == "ready"
     assert second["contextMeaning"] == "ran out"
     assert calls == ["learner_dictionary"]  # the second ask was a cache hit

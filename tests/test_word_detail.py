@@ -316,7 +316,7 @@ def test_the_first_layer_asks_only_for_a_short_gloss(monkeypatch) -> None:
 
     monkeypatch.setattr(media_interaction, "_run_structured", fake)
 
-    body = word_detail.word_detail(_request(depth="sheet"))
+    body = word_detail.word_detail(_request(depth="sheet", contextual=True))
 
     # LEX-018: the same short call also gives the word's common meaning; still one small answer.
     assert seen["properties"] == ["context_meaning", "why_here", "common_meaning"] and seen["tokens"] <= 200

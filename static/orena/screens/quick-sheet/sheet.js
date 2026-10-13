@@ -419,7 +419,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             contextualPending = true;
             contextualFailed = false;
             paint();
-            withinTime(api.wordDetail({depth: 'sheet', text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined}), CONTEXT_WAIT_MS).then(enriched => {
+            withinTime(api.wordDetail({depth: 'sheet', contextual: true, text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined}), CONTEXT_WAIT_MS).then(enriched => {
               if (!alive) return;
               contextualFailed = enriched?.contextStatus === 'provider_error' && Boolean(enriched?.retryable);
               const next = mapWordCard(target, {detail: enriched, item});
