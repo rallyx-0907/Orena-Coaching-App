@@ -81,3 +81,17 @@ Scope: `git diff 1d4c7e9a..96e23d35` (8 files). Read-only; pytest not run, tests
 ### Final verdict: CHANGES REQUIRED (narrow)
 
 P1-1 and P2-1 are properly fixed. One small P1 (P1-2) remains; after it and its test land, a one-diff re-check will give APPROVED. No approved head SHA is issued yet. Not product approval and not activation authorization.
+
+---
+
+## Re-review of d4c3e135 (2026-10-13)
+
+Scope: `git diff 41e71bf3..d4c3e135` (app.py, D-18X text, tests). Read-only; pytest not run, tests read only. Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5 (independent of the implementer).
+
+- **P1-2 - fixed.** For the service principal, the route looks the target up with `repository.get_collection(collection_id, limit=1, status=None)` and returns 422 when it exists with any status other than `pending_review` (published, unpublished, archived). It runs before `_vocabulary_admission` and before `import_source`, so nothing is written; it uses the same `collection_id` variable the import then uses (supplied id, or the derived `stable_collection_id`), after the availability check, for every source format and for the whole batch (one collection per request). Id handling is consistent: metadata strips the id, `get_collection` strips it, and the repository looks it up exactly, so whitespace variants normalise identically and a case variant is a different collection in both the check and the write. Session admins are unaffected (`is_service` only), and a test pins that a session re-import into a published set still works.
+- **Tests.** The 9 parametrized cases (csv, authored, csv with derived id, each over published, unpublished, archived) seed a real collection, move it to the state, then import with the token and require 422 plus an unchanged snapshot of title/framework/level/topic/status/entries. Without the fix the CSV cases would overwrite title/topic (the repository only protects status and provenance), so they would fail.
+- **Residual (P2, accepted).** The check and the write are separate calls; a reviewer publishing between them in the same millisecond window could let one token import update display fields of a just-published set. Closing it needs the guard inside the `import_source` transaction; track as a follow-up.
+
+### Final verdict: APPROVED
+
+No remaining condition on the auth change. **Approved head for merge: d4c3e135f86a29b2fce29d242cc1245590fa3df2.** Later commits on the branch must be this review file only; a further change to `auth_support.py`, `service_auth.py`, the two routes or the token tests voids this approval. Renumber D-18X at merge and update its status to this outcome. Not product approval and not activation authorization.
