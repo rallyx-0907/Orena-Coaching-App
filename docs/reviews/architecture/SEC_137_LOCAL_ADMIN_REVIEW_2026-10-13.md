@@ -139,3 +139,9 @@ Operational note (not a blocker): a lane runtime that is development with sign-i
 ### Verdict: APPROVED
 
 No blocker. **Approved head for merge: 0b464eb9259619065cd699415ffc3d5ca751735c** (the security-sensitive code, tests and docs are exactly this SHA). Later commits on the branch must be this review file only; any further change to `deployment.py`, `request_boundary.py`, `auth_support.py`, a launcher or the boundary tests invalidates this approval. The merge gate stays with the human: CI green, launcher and binding gates green, startup trust-state tests green (not verified here). Not product approval and not activation authorization.
+
+---
+
+## Review of 83654330 (conftest CI fix) (2026-10-13)
+
+`git diff 7df9b516..83654330` is one line: `yield` after `monkeypatch.setattr(TestClient, "__init__", init)` in `conftest.py`. The fixture had a generator branch that never yielded on the patching path; the fix is correct and monkeypatch teardown now runs after each test. It cannot mask a denial test: the default only applies via `kwargs.setdefault("client", ...)`, so a TestClient given its own `client=` keeps it, and the boundary tests in `tests/test_request_boundary.py` use httpx `ASGITransport(client=...)` and do not touch TestClient. Security-sensitive files (`auth_support.py`, `writing_coach/core/*`, the boundary and launcher tests) show no diff against the approved 0b464eb9. Verdict: APPROVED; the approval of 0b464eb9 stands. Not run: pytest and CI.
