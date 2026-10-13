@@ -226,7 +226,7 @@ export function relatednessScore(current, candidate) {
   const norm = (value) => String(value || '').trim().toLowerCase();
   let points = 0;
   if (norm(current?.topic) && norm(current.topic) === norm(candidate?.topic)) points += 2;
-  if (norm(current?.source) && norm(current.source) === norm(candidate?.author || publisherOf(candidate) || candidate?.source?.creator)) points += 2;
+  if (norm(current?.source) && norm(current.source) === norm(publisherOf(candidate) || candidate?.author || candidate?.source?.creator)) points += 2;
   if (points > 0 && norm(current?.level) && norm(current.level) === norm(candidate?.level)) points += 1;
   return points;
 }

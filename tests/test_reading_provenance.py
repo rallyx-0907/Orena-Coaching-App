@@ -10,6 +10,7 @@ that fall short without changing anything.
 from __future__ import annotations
 
 import importlib.util
+import json
 import uuid
 from pathlib import Path
 
@@ -25,7 +26,7 @@ from writing_coach.reading_provenance import (
     build_provenance,
     missing_fields,
     provenance_blockers,
-    split_license,
+    recognise_license,
 )
 from writing_coach.reading_source_import import SubmittedInput
 
@@ -63,10 +64,23 @@ def _load_checker():
 # -- the pure derivation ---------------------------------------------------------------
 
 
-def test_a_licence_note_is_split_into_a_name_and_an_address():
-    assert split_license(f"CC BY 3.0 - {LICENCE_URL}") == {"name": "CC BY 3.0", "url": LICENCE_URL}
-    assert split_license("CC BY 3.0") == {"name": "CC BY 3.0", "url": ""}
-    assert split_license("", LICENCE_URL) == {"name": "", "url": LICENCE_URL}
+def test_only_a_recognised_licence_is_named_and_the_note_is_never_passed_on():
+    cc = "https://creativecommons.org/licenses/by/3.0/"
+    assert recognise_license(f"CC BY 3.0 - {cc}") == {"name": "CC BY 3.0", "url": cc, "recorded": True}
+    # Without an address in the note, the Creative Commons one is derived.
+    assert recognise_license("CC BY-SA 4.0.") == {
+        "name": "CC BY-SA 4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/", "recorded": True}
+    assert recognise_license("cc0")["name"] == "CC0 1.0"
+    assert recognise_license("Public Domain") == {"name": "Public domain", "url": "", "recorded": True}
+    # A note that is only an address names nothing but keeps the (Creative Commons) address.
+    assert recognise_license(cc) == {"name": "", "url": cc, "recorded": True}
+    # An explicit address is used, but only a Creative Commons one.
+    assert recognise_license("CC BY 3.0", "https://creativecommons.org/licenses/by/2.0/")["url"].endswith("/by/2.0/")
+    assert recognise_license("CC BY 3.0", "https://evil.example/x")["url"] == "https://creativecommons.org/licenses/by/3.0/"
+    assert recognise_license("", "https://creativecommons.org/licenses/by/2.0/")["recorded"] is True
+    # Free text that names no recognised licence is recorded, never exposed.
+    assert recognise_license("internal: ask Bob before reuse") == {"name": "", "url": "", "recorded": True}
+    assert recognise_license("") == {"name": "", "url": "", "recorded": False}
 
 
 def test_provenance_names_the_publisher_the_original_the_author_and_the_licence():
@@ -76,7 +90,8 @@ def test_provenance_names_the_publisher_the_original_the_author_and_the_licence(
     assert credit["publisher"] == "Global Voices"
     assert credit["url"] == "https://globalvoices.org/a"
     assert credit["author"] == "Peace News"
-    assert credit["license"] == {"name": "CC BY 3.0", "url": ""}
+    assert credit["license"] == {
+        "name": "CC BY 3.0", "url": "https://creativecommons.org/licenses/by/3.0/", "recorded": True}
     assert credit["attribution_required"] == "required"
     assert credit["text"] == "Originally published by Global Voices (by Peace News), CC BY 3.0."
     assert provenance_blockers(credit) == []
@@ -109,7 +124,7 @@ def test_the_learner_list_and_detail_carry_the_provenance(setup, language, body)
     assert content.get_article(article_id)["status"] == "published"
     expected = {
         "publisher": "Global Voices", "url": "https://globalvoices.org/2026/10/rain", "author": "Peace News",
-        "license": {"name": "CC BY 3.0", "url": LICENCE_URL}, "attribution_required": "required",
+        "license": {"name": "CC BY 3.0", "url": LICENCE_URL, "recorded": True}, "attribution_required": "required",
         "text": "Originally published by Global Voices (by Peace News), CC BY 3.0.",
     }
     listed = call(setup["learner"], "GET", f"/api/reading/articles?language={language}", admin=False).json()
@@ -124,7 +139,7 @@ def test_a_recorded_licence_answer_reaches_the_learner_and_moves_the_cache_revis
     article_id = _submit(setup, source)
     content.set_status(article_id, "published", actor="admin")
     before = content.get_published_article(article_id)
-    assert before["provenance"]["license"] == {"name": "", "url": ""}
+    assert before["provenance"]["license"] == {"name": "", "url": "", "recorded": False}
     content.set_rights(article_id, {"license_note": "CC BY 3.0"}, actor="admin")
     after = content.get_published_article(article_id)
     assert after["provenance"]["license"]["name"] == "CC BY 3.0"
@@ -203,3 +218,106 @@ def test_the_checker_lists_published_articles_missing_required_attribution_and_c
     assert content.get_article(legacy)["status"] == "published"
     assert checker.main(["--url", ""]) == 2
     capsys.readouterr()
+
+# -- review conditions (P1-2 and the negative cases) ------------------------------------------------
+
+INTERNAL_NOTE = "INTERNAL-ONLY: legal said ask Bob before reuse, contract ref 4471 " + "x" * 1500
+FORBIDDEN_KEYS = {"rights_effective", "rights", "rights_state", "rights_review", "actor", "notes", "license_note",
+                  "analysis", "source", "automation", "admin"}
+
+
+def _keys(value):
+    if isinstance(value, dict):
+        for key, item in value.items():
+            yield key
+            yield from _keys(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from _keys(item)
+
+
+def test_an_internal_licence_note_never_reaches_a_learner_payload(setup):  # noqa: F811
+    content = setup["content"]
+    source = _source(content, slug="gv", automation=False, license_note=INTERNAL_NOTE)
+    article_id = _submit(setup, source)
+    # The administrator recorded a licence statement, so the credit is complete, but none of its words leak.
+    assert content.set_status(article_id, "published", actor="admin")["status"] == "published"
+    listed = call(setup["learner"], "GET", "/api/reading/articles?language=en", admin=False)
+    detail = call(setup["learner"], "GET", f"/api/reading/articles/{article_id}", admin=False)
+    for response in (listed, detail):
+        assert "INTERNAL-ONLY" not in response.text and "4471" not in response.text and "xxxx" not in response.text
+        assert len(response.text) < 20000
+    credit = detail.json()["provenance"]
+    assert credit["license"] == {"name": "", "url": "", "recorded": True}
+    assert credit["text"] == "Originally published by Global Voices (by Peace News)."
+    assert len(credit["text"]) < 300
+
+
+def test_the_learner_payload_carries_no_rights_or_review_keys(setup):  # noqa: F811
+    content = setup["content"]
+    article_id = _submit(setup, _source(content, slug="gv", automation=True, license_note="CC BY 3.0"))
+    content.set_rights(article_id, {"license_note": "CC BY 3.0"}, actor="reviewer@example.com", reason="checked")
+    listed = call(setup["learner"], "GET", "/api/reading/articles?language=en", admin=False).json()
+    detail = call(setup["learner"], "GET", f"/api/reading/articles/{article_id}", admin=False).json()
+    assert set(listed["items"][0]["provenance"]) == {
+        "publisher", "url", "author", "license", "attribution_required", "text"}
+    assert not FORBIDDEN_KEYS & set(_keys(listed)) and not FORBIDDEN_KEYS & set(_keys(detail["provenance"]))
+    assert "reviewer@example.com" not in json.dumps(listed) + json.dumps(detail)
+
+
+def test_an_unanswered_attribution_question_still_publishes_by_an_administrator(setup):  # noqa: F811
+    # The current policy, pinned and not decided here: `unknown` is advice (P1-1 is a human decision).
+    content = setup["content"]
+    snapshot = content.record_source_item(
+        source_id=content.built_in_source_id("manual"), source_native_id="", canonical_url="", title="T",
+        author="", published_at=None, language="en", body=ARTICLE, content_hash="e" * 64, metadata={},
+        rights={"can_republish": True})
+    article_id = content.create_article(
+        source_item_id=snapshot["id"], title="T", body=ARTICLE, excerpt="", language="en", topic="",
+        estimated_level="B1", estimated_confidence=0.5, word_count=60, reading_time_seconds=60,
+        analysis={}, targets=[])["id"]
+    assert content.get_article(article_id)["provenance"]["attribution_required"] == "unknown"
+    assert content.set_status(article_id, "published", actor="admin")["status"] == "published"
+
+
+def test_a_note_that_is_only_an_address_and_a_later_answer_both_satisfy_the_gate(setup):  # noqa: F811
+    content = setup["content"]
+    first = _submit(setup, _source(content, slug="a", automation=False, license_note=LICENCE_URL))
+    assert content.get_article(first)["provenance"]["license"] == {"name": "", "url": LICENCE_URL, "recorded": True}
+    assert content.set_status(first, "published", actor="admin")["status"] == "published"
+    second = _submit(setup, _source(content, slug="b", automation=False), title="Second", body=ARTICLE + "More. ")
+    content.set_rights(second, {"license_note": "CC BY 4.0"}, actor="admin")
+    assert content.get_article(second)["provenance"]["license"]["url"].endswith("/by/4.0/")
+
+
+def test_republishing_is_refused_when_the_credit_was_removed_in_the_meantime(setup):  # noqa: F811
+    content = setup["content"]
+    article_id = _submit(setup, _source(content, slug="gv", automation=False, license_note="CC BY 3.0"))
+    content.set_status(article_id, "published", actor="admin")
+    content.set_status(article_id, "unpublished", actor="admin")
+    content.set_rights(article_id, {"license_note": None}, actor="admin")
+    with pytest.raises(ProvenanceRefused):
+        content.set_status(article_id, "published", actor="admin")
+    assert content.get_article(article_id)["status"] == "unpublished"
+
+
+def test_a_rights_answer_on_an_unpublished_article_does_not_move_the_cache_revision(setup):  # noqa: F811
+    content = setup["content"]
+    article_id = _submit(setup, _source(content, slug="gv", automation=False, license_note="CC BY 3.0"))
+    before = content.get_article(article_id)["content_revision"]
+    content.set_rights(article_id, {"license_note": "CC BY 4.0"}, actor="admin")
+    assert content.get_article(article_id)["content_revision"] == before
+
+
+def test_a_text_that_needs_both_adaptation_and_a_credit_returns_both_blockers(setup):  # noqa: F811
+    content = setup["content"]
+    article_id = _submit(setup, _source(content, slug="gv", automation=False))
+    with content.engine.begin() as connection:
+        connection.execute(update(ReadingArticle).where(ReadingArticle.id == uuid.UUID(article_id))
+                           .values(is_adapted=True))
+    refused = call(setup["admin"], "POST", f"/api/admin/reading/articles/{article_id}/status",
+                   json={"status": "published"})
+    assert refused.status_code == 409
+    blockers = refused.json()["detail"]["context"]["blockers"]
+    assert {"code": "adaptation_not_cleared", "question": "can_adapt"} in blockers
+    assert {"code": "provenance_missing", "question": "attribution_required", "field": "license"} in blockers

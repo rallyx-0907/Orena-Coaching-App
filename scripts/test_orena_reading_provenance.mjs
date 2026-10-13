@@ -41,6 +41,8 @@ assert.equal(entryFromArticle({ id: 'a2', title: 'T' }, []).author, '', 'no prov
 assert.equal(normalizeArticle({ title: 'T', provenance, attribution: { author: 'Peace News' } }).source, 'Global Voices');
 assert.equal(normalizeArticle({ title: 'T', attribution: { author: 'Aesop' } }).source, 'Aesop');
 assert.ok(relatednessScore({ source: 'Global Voices' }, { provenance }) > 0, 'two articles of one publisher are related');
+assert.ok(relatednessScore({ source: 'Global Voices' }, { author: 'Someone Else', provenance }) > 0, 'the candidate publisher is compared before any author field');
+assert.ok(relatednessScore({ source: 'M. Okafor' }, { author: 'M. Okafor' }) > 0, 'a book candidate still matches on its author');
 
 // 4. The Reader toolbar draws the publisher where the frame draws `rdDocMeta`.
 assert.equal(

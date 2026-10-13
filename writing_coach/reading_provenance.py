@@ -28,14 +28,46 @@ def _text(value: Any) -> str:
     return str(value).strip() if value is not None else ""
 
 
-def split_license(note: Any, explicit_url: Any = "") -> dict[str, str]:
-    """A licence note is free text ("CC BY 3.0 - https://..."): the name is what
-    is left of it once the address is taken out."""
+_CC = re.compile(r"\bCC[ -]?BY(?:[ -](NC-SA|NC-ND|SA|NC|ND))?(?:[ -]?v?(\d\.\d))?(?!\w)", re.IGNORECASE)
+_CC0 = re.compile(r"\bCC0(?:[ -]?(1\.0))?(?!\w)", re.IGNORECASE)
+_PUBLIC_DOMAIN = re.compile(r"\bpublic[ -]domain\b", re.IGNORECASE)
+_CC_HOST = re.compile(r"https?://(?:www\.)?creativecommons\.org/[A-Za-z0-9/._-]{1,160}", re.IGNORECASE)
+MAX_LICENSE_URL = 200
+MAX_NAME = 200
+MAX_URL = 600
+
+
+def recognise_license(note: Any, explicit_url: Any = "") -> dict[str, Any]:
+    """The licence a learner is shown: a recognised name and address, never the note.
+
+    `license_note` is administrator free text (up to 2000 characters) and may hold
+    anything, so it never reaches a learner payload or a cache as written. Only a
+    Creative Commons licence or a public-domain statement found in it is named, in a
+    fixed spelling, with a Creative Commons address (the note's own, else derived).
+    `recorded` says only that the administrator recorded some licence statement, which
+    is what the publication gate needs; it carries none of its words.
+    """
     raw = _text(note)
-    found = _URL.search(raw)
-    url = _text(explicit_url) or (found.group(0).rstrip(".,;") if found else "")
-    name = _URL.sub("", raw).strip(_EDGE)
-    return {"name": name, "url": url}
+    explicit = _text(explicit_url)
+    name, url = "", ""
+    cc0 = _CC0.search(raw)
+    cc = None if cc0 else _CC.search(raw)
+    if cc0:
+        name, url = "CC0 1.0", "https://creativecommons.org/publicdomain/zero/1.0/"
+    elif cc:
+        kind = (cc.group(1) or "").upper()
+        version = cc.group(2) or ""
+        name = " ".join(part for part in ("CC BY" + (f"-{kind}" if kind else ""), version) if part)
+        slug = "by" + (f"-{kind.lower()}" if kind else "")
+        url = f"https://creativecommons.org/licenses/{slug}/" + (f"{version}/" if version else "")
+    elif _PUBLIC_DOMAIN.search(raw):
+        name = "Public domain"
+    embedded = _CC_HOST.search(raw)
+    for candidate in (explicit, embedded.group(0) if embedded else ""):
+        if candidate and _CC_HOST.fullmatch(candidate) and len(candidate) <= MAX_LICENSE_URL:
+            url = candidate
+            break
+    return {"name": name, "url": url, "recorded": bool(raw or explicit)}
 
 
 def attribution_state(rights: Mapping[str, Any] | None) -> str:
@@ -55,10 +87,10 @@ def build_provenance(
 ) -> dict[str, Any]:
     """The credit a learner sees, from the source record and the effective rights."""
     answered = rights if isinstance(rights, Mapping) else {}
-    publisher_name = _text(publisher)
-    original_url = _text(url)
-    author_name = _text(author)
-    licence = split_license(answered.get("license_note"), answered.get("license_url"))
+    publisher_name = _text(publisher)[:MAX_NAME]
+    original_url = _text(url)[:MAX_URL]
+    author_name = _text(author)[:MAX_NAME]
+    licence = recognise_license(answered.get("license_note"), answered.get("license_url"))
     text = ""
     if publisher_name:
         text = f"Originally published by {publisher_name}"
@@ -88,7 +120,7 @@ def missing_fields(provenance: Mapping[str, Any]) -> list[str]:
     if not _text(provenance.get("url")):
         missing.append("url")
     licence = provenance.get("license") or {}
-    if not (_text(licence.get("name")) or _text(licence.get("url"))):
+    if not (licence.get("recorded") or _text(licence.get("name")) or _text(licence.get("url"))):
         missing.append("license")
     return missing
 

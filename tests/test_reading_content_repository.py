@@ -319,7 +319,9 @@ def test_neither_list_asks_the_database_for_a_body(repository):
     """A projection that drops the body in Python still read it from disk and
     carried it across the connection for every row on the page. Both lists -
     the learner's and the admin queue - name their columns, so the cost of a
-    page stops depending on how long the articles on it are."""
+    page stops depending on how long the articles on it are. The learner page
+    costs a constant number of reads, whatever its size: the list, one set-wise
+    credit lookup and one rights-decisions read."""
     from sqlalchemy import event
 
     statements: list[str] = []
@@ -328,23 +330,28 @@ def test_neither_list_asks_the_database_for_a_body(repository):
     def record(conn, cursor, statement, parameters, context, executemany):  # noqa: ANN001
         statements.append(" ".join(statement.split()))
 
+    def selects_of(call):
+        statements.clear()
+        call()
+        return [s for s in statements if s.upper().startswith("SELECT")]
+
     article = _article(repository)
     repository.set_status(article["id"], "published", actor="admin@example.com")
-    statements.clear()
-    repository.list_published(language="en")
-    repository.list_queue()
+    one_row_page = selects_of(lambda: repository.list_published(language="en"))
+    queue = selects_of(repository.list_queue)
+    for index in range(3):
+        extra = _article(repository, body=BODY + f"Page {index}. ")
+        repository.set_status(extra["id"], "published", actor="admin@example.com")
+    four_row_page = selects_of(lambda: repository.list_published(language="en"))
     event.remove(repository.engine, "before_cursor_execute", record)
 
-    selects = [s for s in statements if s.upper().startswith("SELECT") and "reading_articles" in s]
-    # The learner list, the credit lookup for its page (one set-wise read), the queue.
-    assert len(selects) == 3
-    for statement in selects:
+    assert len(one_row_page) == len(four_row_page) == 3, "a page costs the same however many rows it holds"
+    assert len(queue) == 1
+    assert len(one_row_page) + len(queue) == 4
+    for statement in (*four_row_page, *queue):
         assert "reading_articles.body" not in statement, statement
         assert "reading_articles.analysis_json" not in statement, statement
-    cards = [s for s in selects if "original_author" not in s]
-    assert len(cards) == 2
-    for statement in cards:
-        assert "reading_articles.title" in statement
+    assert "reading_articles.title" in four_row_page[0] and "reading_articles.title" in queue[0]
 
 
 def test_the_learner_list_filters_in_the_database_by_level_and_topic(repository):

@@ -6079,5 +6079,14 @@ Readiness" item P0-A.
   The licence and the original link have no place in the pinned design's Reading frames; they reach the learner in
   Settings > Licences and data sources (`GET /api/licences`, whose Reading rows now credit the publisher). Recorded in
   `UI_BACKEND_GAPS.md`.
+- **Independent review (2026-10-13).** Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer, on
+  b94f4129: APPROVED WITH CONDITIONS, `docs/reviews/architecture/READING_PROVENANCE_REVIEW_2026-10-13.md`. Conditions met
+  on the same branch: the learner payload names only a recognised licence (Creative Commons or public domain, fixed
+  spelling, Creative Commons address) and never the free-text `license_note`, which only sets `license.recorded` for the gate
+  (P1-2); negative and leak tests; an exact, size-independent query-count test; `relatednessScore` compares the
+  candidate's publisher before its author, on purpose. P1-1 (the `unknown` attribution policy) is left to the human.
+  Follow-ups: a source rename should bump its published articles' `content_revision` (no rename path exists today, so
+  nothing bumps), the check-then-write in `set_status` (P2-1), scheduling the checker (P2-3), and the Global Voices
+  original-publisher fields after PR #157 merges.
 - **Review needed.** Whether the gate should also refuse an unanswered attribution question for a real corpus, and whether
   the reader needs a per-text licence line (a design decision).
