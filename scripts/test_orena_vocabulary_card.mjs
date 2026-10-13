@@ -176,8 +176,8 @@ const enBack = faceOf(enCard, 'back');
 // EN front (Main.dc.html): level + source, POS (native · localized), headword, UK/US IPA rows with play,
 // Meaning (support meaning, English definition), Word family, Synonyms / antonyms, See examples ->.
 inOrder(enFront, [
-  'c-vcard__top', 'c-vcard__level">C1<', 'Oxford 5000', 'c-vcard__top-end', 'c-vcard__pos', 'adjective', 'Tính từ',
-  'c-vcard__actions', 'data-play', 'data-save',
+  'c-vcard__top', 'c-vcard__level">C1<', 'Oxford 5000', 'c-vcard__pos', 'adjective', 'Tính từ',
+  'c-vcard__top-end', 'c-vcard__actions', 'data-play', 'data-save',
   'c-vcard__word', '>resilient<', 'data-region="uk"', '<b>Anh</b>', '/rɪˈzɪliənt/', 'data-region="us"', '<b>Mỹ</b>', '/rɪˈzɪljənt/',
   '<figure class="c-vcard__art" role="img" aria-label="Mầm cây vươn lên qua khe nứt mặt đất trong gió" data-art="sprout-through-crack">', '<svg',
   'data-section="sectionMeaning"', '>Nghĩa<', 'kiên cường; có khả năng phục hồi nhanh', 'able to recover quickly',
@@ -205,8 +205,8 @@ const zhBack = faceOf(zhCard, 'back');
 // ZH front (Chinese.dc.html): HSK tag, POS (名词 · danh từ), the Hanzi with each pinyin over it, Hán Việt,
 // Meaning (support + English), Radical (木 once, then each character = parts · strokes), Measure word, Related words.
 inOrder(zhFront, [
-  'c-vcard__top', 'c-vcard__level">HSK 4<', 'c-vcard__top-end', 'c-vcard__pos', '名词', 'Danh từ',
-  'c-vcard__actions', 'data-play', 'data-save',
+  'c-vcard__top', 'c-vcard__level">HSK 4<', 'c-vcard__pos', '名词', 'Danh từ',
+  'c-vcard__top-end', 'c-vcard__actions', 'data-play', 'data-save',
   '<ruby>森<rt>sēn</rt></ruby><ruby>林<rt>lín</rt></ruby>', 'Hán Việt', 'SÂM LÂM',
   'data-art="ink-pine-trees"',
   'c-vcard__lead', 'data-section="sectionMeaning"', 'rừng, rừng rậm', 'forest',
@@ -954,17 +954,25 @@ for (const card of [enCard, zhCard]) {
   // takes the room the old action row had.
   const front = faceOf(card, 'front');
   const head = front.slice(front.indexOf('<div class="c-vcard__top">'), front.indexOf('c-vcard__body'));
-  assert.ok(head.indexOf('c-vcard__level') < head.indexOf('c-vcard__pos'), 'level tag on the left, part of speech on the right, one row');
-  assert.ok(head.indexOf('c-vcard__pos') < head.indexOf('data-play') && head.indexOf('data-play') < head.indexOf('data-save'), 'play and Save after the part of speech, in the top row');
+  // The human, 2026-10-13: the part of speech beside the level, on the left; the discs alone on the right.
+  const tags = head.slice(head.indexOf('c-vcard__tags'), head.indexOf('c-vcard__top-end'));
+  assert.ok(tags.indexOf('c-vcard__level') < tags.indexOf('c-vcard__pos') && tags.includes('c-vcard__pos'), 'part of speech beside the level, in the left group');
+  const end = head.slice(head.indexOf('c-vcard__top-end'));
+  assert.ok(!end.includes('c-vcard__pos') && end.indexOf('data-play') < end.indexOf('data-save'), 'only play and Save on the right');
   assert.equal((front.match(/data-play/g) || []).length, 1, 'one play disc on the face');
   assert.ok(!front.slice(front.indexOf('c-vcard__body')).includes('c-vcard__actions'), 'no action row left in the body');
 }
 // Chinese: Meaning and Radical side by side (two columns), not stacked.
 const lead = zhFront.slice(zhFront.indexOf('c-vcard__lead'));
 assert.ok(lead.indexOf('sectionMeaning') < lead.indexOf('sectionRadical') && lead.indexOf('sectionRadical') < lead.indexOf('sectionMeasureWord'), 'Meaning and Radical share the lead grid');
-assert.match(cardCss, /\.c-vcard__lead \{[^}]*display: grid;[^}]*grid-template-columns: repeat\(auto-fit, minmax\(min\(150px, 28\.846cqi\), 1fr\)\)/, 'two columns while each keeps its width');
-assert.ok(zhFront.includes('c-vcard__lead c-vcard__lead--two'), 'both present: the two-column lead');
-assert.match(cardCss, /\.c-vcard__lead--two \{[^}]*grid-template-columns: fit-content\(46%\) minmax\(0, 1fr\)/, 'the meaning as wide as its words, the radical the rest');
+// The human, 2026-10-13: Radical lines up with Related words below it - the lead uses the pair's own columns and
+// column gap, so a long meaning wraps inside its column and never moves the radical.
+const ruleBody = (selector) => (cssRules.find(([sel]) => sel === selector) || [])[1] || '';
+const declOf = (selector, prop) => (ruleBody(selector).match(new RegExp(`(?:^|[;\\s])${prop}:\\s*([^;]+);`)) || [])[1];
+assert.equal(declOf('.c-vcard__lead', 'display'), 'grid');
+assert.equal(declOf('.c-vcard__lead', 'grid-template-columns'), declOf('.c-vcard__pair', 'grid-template-columns'), 'the same columns as the pair below');
+assert.equal(declOf('.c-vcard__lead', 'column-gap'), declOf('.c-vcard__pair', 'column-gap'), 'and the same gap between them');
+assert.ok(!cardCss.includes('c-vcard__lead--two') && !zhFront.includes('c-vcard__lead--two'), 'no content-sized meaning column');
 const kitCardSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
 assert.doesNotMatch(kitCardSrc.replace(/\/\*[\s\S]*?\*\//g, ''), /o-tag/, 'no kit tag on the content');
 const contentCss = cssRules.filter(([selector]) => !isButtonRule(selector)).map(([selector, body]) => `${selector}{${body}}`).join('');

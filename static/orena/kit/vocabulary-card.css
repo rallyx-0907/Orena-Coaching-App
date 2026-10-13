@@ -203,7 +203,7 @@
   align-items: center;
   gap: calc(var(--vc-ks, 1) * min(10px, 1.923cqi));
 }
-/* The word's actions, top right after the part of speech (play, and Save where a word is met). Drawn 34px - smaller,
+/* The word's actions, alone at the top right (play, and Save where a word is met). Drawn 34px - smaller,
    so the illustration has the room (the human, 2026-10-13) - each still a 44px touch target: a 44px button whose
    5px padding is unpainted (content-box background) and taken back by a -5px margin, so it lays out at 34px. */
 .c-vcard__actions {
@@ -410,21 +410,20 @@
 .c-vcard--han .c-vcard__definition[lang='en'] {
   font-style: italic;
 }
-/* Chinese: Meaning and Radical side by side, two columns while each keeps its width (the human, 2026-10-13). */
+/* Chinese: Meaning and Radical side by side, in exactly the pair's columns and column gap (below), so Radical lines
+   up with Related words whatever the meaning's length (the human, 2026-10-13). */
 .c-vcard__lead {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(150px, 28.846cqi), 1fr));
-  gap: calc(var(--vc-ks, 1) * min(14px, 2.692cqi)) calc(var(--vc-ks, 1) * min(20px, 3.846cqi));
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 32.692cqi), 1fr));
+  row-gap: calc(var(--vc-ks, 1) * min(14px, 2.692cqi));
+  column-gap: calc(var(--vc-ks, 1) * min(20px, 3.846cqi));
   align-items: start;
-}
-/* Both present: the meaning as wide as its words (at most 46%), the radical - glyph box and its lines - the rest. */
-.c-vcard__lead--two {
-  grid-template-columns: fit-content(46%) minmax(0, 1fr);
 }
 .c-vcard__pair {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(170px, 32.692cqi), 1fr));
-  gap: calc(var(--vc-ks, 1) * min(16px, 3.077cqi)) calc(var(--vc-ks, 1) * min(20px, 3.846cqi));
+  row-gap: calc(var(--vc-ks, 1) * min(16px, 3.077cqi));
+  column-gap: calc(var(--vc-ks, 1) * min(20px, 3.846cqi));
   padding-top: calc(var(--vc-ks, 1) * min(18px, 3.462cqi));
   border-top: 1px solid var(--vcard-line);
 }

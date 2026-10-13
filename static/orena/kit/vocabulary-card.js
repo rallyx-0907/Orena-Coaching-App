@@ -131,16 +131,16 @@ export function levelLabel(model) {
   return `HSK ${level}`;
 }
 
-/* The top row: the level tag (and, on the English card, its source) on the left; the part of speech, then the
-   word's actions - play, and Save on the cards a word is met on - on the right, one row (the human, 2026-10-13: the
-   actions top right and smaller, so the illustration takes the room their own row had). At a narrow width the row
-   may wrap, the part of speech and the actions staying together as its last item. */
+/* The top row (the human, 2026-10-13): the level tag, on the English card its source, and the part of speech beside
+   them on the left; the word's actions - play, and Save on the cards a word is met on - alone on the right, smaller,
+   so the illustration takes the room their own row had. */
 function topRow(model, save) {
   const tags = [
     model.level ? html`<span class="c-vcard__level">${levelLabel(model)}</span>` : '',
     model.script !== 'hanzi' && model.levelSource ? html`<span class="c-vcard__source">${model.levelSource}</span>` : '',
+    posLine(model),
   ];
-  return html`<div class="c-vcard__top"><div class="c-vcard__tags">${tags}</div><div class="c-vcard__top-end">${posLine(model)}<div class="c-vcard__actions">${playDisc()}${save || ''}</div></div></div>`;
+  return html`<div class="c-vcard__top"><div class="c-vcard__tags">${tags}</div><div class="c-vcard__top-end"><div class="c-vcard__actions">${playDisc()}${save || ''}</div></div></div>`;
 }
 
 /* The meaning panel. Still being looked up: the kit's skeleton bones, never "no meaning". The word's
@@ -227,11 +227,11 @@ function radicalSection(model) {
   </div>`)}`);
 }
 
-/* Meaning and Radical side by side (the human, 2026-10-13): two columns while each keeps its width, one under the
-   other when the card is too narrow for both. */
+/* Meaning and Radical side by side (the human, 2026-10-13), in the columns of the Measure word / Related words pair
+   below, so Radical lines up with Related words and a long meaning wraps in its own column. */
 function lead(...cells) {
   const present = cells.filter((cell) => String(cell));
-  return present.length ? html`<div class="${cls('c-vcard__lead', present.length > 1 && 'c-vcard__lead--two')}">${present}</div>` : '';
+  return present.length ? html`<div class="c-vcard__lead">${present}</div>` : '';
 }
 
 function zhFront(model, ctx) {
