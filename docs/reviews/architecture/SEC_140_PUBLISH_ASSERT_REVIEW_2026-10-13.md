@@ -58,3 +58,17 @@ The script is sound: it reads only the two port fields, decides with the app's l
 - PowerShell scripts were parsed, not executed.
 
 Architecture review is not product approval and is not activation authorization.
+
+---
+
+## Re-review of 894046e8 (2026-10-13)
+
+Scope: `git diff d5e76d60..894046e8` (11 files). Read-only; local run of the two test files with `--noconftest`: **160 passed**; py_compile, ruff, `validate_project_memory.py` and the PowerShell parser (0 errors in all 7 scripts) are clean. Nothing was executed against Docker, and CI was not run.
+
+- **P1-1 - met.** All seven call sites (`start_docker`, `start_dev`, `start_public`, `mobile_qa_runtime`, `product_restore_rehearsal`, `staging_update`, `staging_8000_deploy`) now set `$global:LASTEXITCODE = 1` on the line before the call and run python only inside `if (Get-Command python -ErrorAction SilentlyContinue)`; the else branch leaves the code at 1, so a missing interpreter is a refusal, and each script checks the code right after (`Get-Command` does not alter it; in `product_restore_rehearsal.ps1` the code is read on the next line). The :8000 change in `staging_8000_deploy.ps1` is only that guard (2 insertions, 1 deletion around the same `--no-stop` call); publish, env and rollback are untouched. The new parametrized test `test_every_powershell_call_site_fails_closed_without_python` fails if the reset line, the `Get-Command` guard or the exit-code check is removed (it asserts the line directly before the call and the guard text on the call line). Its "code is checked after" assertion is loose (any `$LASTEXITCODE` within five lines); acceptable.
+- **P2-1 - met.** `stop()` returns "" on success or a reason for non-zero exit, timeout or OSError; `main` prints `STOP FAILED ... may still be publishing ... stop it by hand` and returns **4**, and prints "Stopped container" only on success. Tests cover success, non-zero, timeout and OSError, and assert "Stopped" never appears on failure. Every launcher treats any non-zero code as a refusal (exit 4 included).
+- **P2-2 - left documented** in SECURITY_BOUNDARY.md (Ctrl+C after `watch` is not a clean stop). Remaining P2-3 to P2-6 stay tracked; D-18X must still be renumbered at merge.
+
+### Final verdict: APPROVED
+
+No remaining condition. **Approved head for merge: 894046e8** (script, launchers, tests and docs are exactly this SHA; later commits may touch this review file only). Not product approval and not activation authorization.
