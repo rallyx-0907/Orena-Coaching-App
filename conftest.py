@@ -27,3 +27,4 @@ def _testclient_defaults_to_a_loopback_peer(monkeypatch):
         original(self, *args, **kwargs)
 
     monkeypatch.setattr(TestClient, "__init__", init)
+    yield
