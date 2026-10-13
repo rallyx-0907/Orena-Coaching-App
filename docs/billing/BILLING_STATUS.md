@@ -7,12 +7,12 @@
 | --- | --- |
 | Branch | `feature/monetization-billing-v1` |
 | Main | `172ae216397e6dfaa1f74aa32417f48b7c2365fd` (`origin/main`, checked 2026-10-13) |
-| Last completed slice | PR-MON-1 incl. D-MON-010/011 amendment (Polar past_due grace 48 h, policy in `product/billing_grace.py`) |
-| Active PR | **PR-MON-1 Canonical Effective Entitlement** - REVIEWABLE, awaiting independent Principal Architect review (GPT-6/Codex preferred; review only, no edits in the same pass; this agent does not approve) |
+| Last completed slice | PR-MON-1 review fixes P1-1 (owned billing suppresses manual, D-MON-012) and P1-2 (transactional ownership re-check, D-MON-013) |
+| Active PR | **PR-MON-1 Canonical Effective Entitlement** - REQUEST CHANGES answered; awaiting focused re-verification of P1-1/P1-2 (`docs/reviews/architecture/PR_MON_1_ENTITLEMENT_REVIEW_2026-10-13.md`) |
 | Current slice | none in progress — PR-MON-1 waits for independent architecture review |
-| Exact next action | route `docs/billing/PR-MON-1_REVIEW_REQUEST.md` to the independent reviewer; on APPROVE: rebase on latest `main`, resolve conflicts, re-run the targeted + PostgreSQL batch, open PR-MON-1 |
-| Blockers | none |
-| Test status | local only (not CI): throwaway PostgreSQL 16 batch 689 passed / 0 skipped (entitlement unit + PG proof, billing, product, membership, quota gate + PG, language limit + PG, commerce PG, persistence runtime, admin policies, product foundation, admin authorization matrix); mutation checks bite (billing read off 17, precedence flip 3, grace off 12); ruff clean on new code |
+| Exact next action | reviewer re-verifies P1-1 and P1-2 only; on APPROVE: rebase on latest `main`, resolve conflicts, re-run targeted + PostgreSQL batch, open PR-MON-1 |
+| Blockers | none. Carried to PR-MON-2: review P2 startup discovery (R-MON-010) |
+| Test status | local only (not CI): throwaway PostgreSQL 16 batch 700 passed / 0 skipped; PG entitlement file 11/11 twice on one DB; mutation checks: billing read off 17, precedence flip 3, grace off 12, P1-1 suppression off 14, P1-2 re-check off 2 |
 | Next human checkpoint | PR-MON-1 architecture-review-ready report |
 
 ## Revised sequence (human, 2026-10-13)

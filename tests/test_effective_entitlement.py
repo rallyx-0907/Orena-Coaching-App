@@ -7,8 +7,10 @@ the Plan screen (`account_state`), quota admission and the language limit all re
 Precedence, pinned here so it cannot drift:
   1. a valid billing grant (state active/trialing, `paid_through` absent or in the future; or a recoverable state
      inside its grace - Polar `past_due`, 2 days from `paid_through`, D-MON-011)
-  2. a valid manual / legacy subscription (today's rule, unchanged)
-  3. Free
+  2. a billing relationship still owned but granting nothing (past_due outside grace, paused, pending, unknown): Free,
+     billing-owned, and NO manual/legacy fallback (review of PR-MON-1, P1-1)
+  3. a valid manual / legacy subscription, only when billing is absent or ended (today's rule, unchanged)
+  4. Free
 The billing source here is a TEST DOUBLE of `CommerceEntitlementSource`; the PostgreSQL read is proved in
 `tests/test_effective_entitlement_postgres.py`.
 """
@@ -158,7 +160,7 @@ def test_no_entitlement_is_free():
 def test_a_billing_state_without_an_approved_grace_policy_grants_nothing(state):
     effective = service(None, billing("pro", state, paid_through=NOW - timedelta(hours=1))).entitlement("learner")
     assert (effective.plan_id, effective.active, effective.status) == ("free", False, state)
-    assert effective.billing_live is (state != "unknown")
+    assert effective.billing_live, "billing still owns the account: only `ended` or no row releases it"
 
 
 # ----------------------------------------------------------------------------- grace (D-MON-011) --
@@ -230,11 +232,25 @@ def test_precedence_a_valid_billing_grant_outranks_a_manual_grant():
     assert (effective.plan_id, effective.source) == ("plus", "billing")
 
 
-def test_precedence_a_billing_subscription_that_grants_nothing_falls_through_to_a_valid_manual_grant():
-    for row in (billing("plus", "ended"), billing("plus", "past_due", paid_through=NOW - timedelta(days=3)),
-                billing("plus", "paused"), prepaid("plus", paid_through=PAST)):
+@pytest.mark.parametrize("row", [billing("plus", "past_due", paid_through=NOW - timedelta(days=3)),
+                                 billing("plus", "past_due", paid_through=None), billing("plus", "paused"),
+                                 billing("plus", "pending"), billing("plus", "unknown"), billing("plus", "weird")],
+                         ids=["past_due_after_grace", "past_due_no_anchor", "paused", "pending", "unknown", "unrecognised"])
+def test_precedence_a_billing_relationship_still_owned_suppresses_a_manual_grant(row):
+    """Review P1-1: `Polar past_due > 48 h + old manual Pro` is Free and billing-owned, never Pro."""
+    for legacy in (manual("pro", FUTURE), manual("pro"), Legacy("pro", "active", provider="stripe")):
+        effective = service(legacy, row).entitlement("learner")
+        assert (effective.plan_id, effective.active, effective.billing_live) == ("free", False, True), (row["state"], legacy)
+        assert effective.status == row["state"]
+        assert service(legacy, row).plan_for_user("learner").id == "free"
+
+
+def test_precedence_a_billing_relationship_that_ended_releases_the_manual_grant():
+    """Ended (or a granting state past its paid_through) is a genuinely ended relationship: the existing manual
+    policy applies again."""
+    for row in (billing("plus", "ended"), prepaid("plus", paid_through=PAST), prepaid("plus", "ended", paid_through=PAST)):
         effective = service(manual("pro", FUTURE), row).entitlement("learner")
-        assert (effective.plan_id, effective.source) == ("pro", "manual"), row["state"]
+        assert (effective.plan_id, effective.source, effective.billing_live) == ("pro", "manual", False), row["state"]
 
 
 def test_precedence_a_valid_billing_grant_outranks_a_legacy_provider_row():
@@ -378,7 +394,7 @@ class MembershipStore:
         self.applied.append(change)
 
 
-@pytest.mark.parametrize("state", ["active", "trialing", "past_due", "paused", "pending"])
+@pytest.mark.parametrize("state", ["active", "trialing", "past_due", "paused", "pending", "unknown"])
 def test_an_admin_cannot_set_a_plan_by_hand_on_an_account_billing_owns(state):
     from writing_coach.product.api import billing_aware_membership
 

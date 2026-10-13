@@ -8,6 +8,8 @@ Skips unless `ORENA_TEST_POSTGRES_URL` names a THROWAWAY database (the fixture u
 from __future__ import annotations
 
 import os
+import threading
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -63,6 +65,7 @@ def world(engine):
     service = ProductService(products, billing=CommerceEntitlementSource(commerce))
     catalog.configure_plan_store(None)
     return {"key": key, "account": str(account), "incarnation": incarnation, "commerce": commerce,
+            "polar": f"sub_polar_{uuid.uuid4().hex[:12]}",
             "products": products, "service": service, "incarnations": incarnations}
 
 
@@ -111,7 +114,7 @@ def test_a_refunded_prepaid_purchase_reads_free(world):
 
 
 def test_a_polar_subscription_is_the_effective_plan(world):
-    record(world, version=1, plan="pro", provider="polar", external="sub_polar_1",
+    record(world, version=1, plan="pro", provider="polar", external=world["polar"],
            paid_through=datetime.now(UTC) + timedelta(days=30))
     assert world["service"].plan_for_user(world["key"]).id == "pro"
 
@@ -120,18 +123,96 @@ def test_a_polar_past_due_keeps_the_plan_for_the_grace_from_the_last_paid_end(wo
     """A past-due event that carries no paid-through keeps the stored end of the last paid period (the commerce
     record's own rule), and the 2-day grace (D-MON-011) counts from it."""
     paid_end = datetime.now(UTC) - timedelta(hours=6)
-    record(world, version=1, plan="pro", provider="polar", external="sub_polar_g", paid_through=paid_end)
-    record(world, version=2, state="past_due", plan="pro", provider="polar", external="sub_polar_g", paid_through=None)
+    record(world, version=1, plan="pro", provider="polar", external=world["polar"], paid_through=paid_end)
+    record(world, version=2, state="past_due", plan="pro", provider="polar", external=world["polar"], paid_through=None)
     stored = world["commerce"].subscription_for_account(world["account"])
     assert (stored["state"], stored["paid_through"]) == ("past_due", paid_end)
     effective = world["service"].entitlement(world["key"])
     assert (effective.plan_id, effective.status, effective.valid_until) == ("pro", "past_due", paid_end + timedelta(hours=48))
-    record(world, version=3, state="past_due", plan="pro", provider="polar", external="sub_polar_g",
+    record(world, version=3, state="past_due", plan="pro", provider="polar", external=world["polar"],
            paid_through=datetime.now(UTC) - timedelta(days=3))
     assert world["service"].plan_for_user(world["key"]).id == "free", "the grace ended"
-    record(world, version=4, state="active", plan="pro", provider="polar", external="sub_polar_g",
+    record(world, version=4, state="active", plan="pro", provider="polar", external=world["polar"],
            paid_through=datetime.now(UTC) + timedelta(days=30))
     assert world["service"].plan_for_user(world["key"]).id == "pro", "a recovered payment restores the plan"
+
+
+def test_a_live_billing_relationship_suppresses_an_existing_manual_grant(world):
+    """Review P1-1 on PostgreSQL: a manual Pro granted before the purchase never shows through while billing owns the
+    account (past due outside the grace); it applies again only once billing has ended."""
+    world["products"].apply_membership(world["account"], plan="pro", until=datetime.now(UTC) + timedelta(days=60))
+    record(world, version=1, plan="plus", provider="polar", external=world["polar"],
+           paid_through=datetime.now(UTC) + timedelta(days=30))
+    assert world["service"].plan_for_user(world["key"]).id == "plus"
+    record(world, version=2, state="past_due", plan="plus", provider="polar", external=world["polar"],
+           paid_through=datetime.now(UTC) - timedelta(days=3))
+    effective = world["service"].entitlement(world["key"])
+    assert (effective.plan_id, effective.status, effective.billing_live) == ("free", "past_due", True)
+    record(world, version=3, state="ended", plan="plus", provider="polar", external=world["polar"],
+           paid_through=datetime.now(UTC) - timedelta(days=1))
+    assert world["service"].entitlement(world["key"]).source == "manual", "ended billing releases the earlier manual grant"
+
+
+def test_a_manual_write_after_billing_took_ownership_is_refused_inside_its_transaction(world):
+    """Review P1-2, step 3: the Admin pre-check saw no billing, then the payment committed. The write itself must
+    refuse and create no manual row - calling the store directly is that write without the pre-check."""
+    record(world, version=1, plan="plus", paid_through=datetime.now(UTC) + timedelta(days=30))
+    with pytest.raises(MembershipConflict):
+        world["products"].apply_membership(world["account"], plan="pro", until=None,
+                                           audit={"action": "product.account.membership", "actor": "admin",
+                                                  "entity_type": "account", "entity_id": world["account"], "payload": {}})
+    assert world["products"].get_subscription(world["key"]) is None, "no latent manual grant"
+    with world["commerce"]._engine.connect() as connection:
+        audits = connection.execute(text("SELECT count(*) FROM audit_logs WHERE entity_id = :id"),
+                                    {"id": world["account"]}).scalar_one()
+    assert audits == 0, "the refused change wrote no audit row either"
+
+
+def test_a_payment_in_flight_serializes_the_manual_write_and_leaves_no_latent_grant(world, engine):
+    """Review P1-2 race: a provider event holds the incarnation FOR SHARE (as `record_event` does) while it makes
+    billing the owner; the Admin write blocks on the incarnation lock, then sees the committed billing and refuses.
+    When billing later ends, no stale manual plan appears."""
+    webhook = engine.connect()
+    transaction = webhook.begin()
+    webhook.execute(text("SELECT status FROM account_incarnations WHERE id = :inc FOR SHARE"), {"inc": world["incarnation"]})
+    webhook.execute(text(
+        "INSERT INTO commerce_subscriptions (id, incarnation_id, provider, plan_id, state, paid_through, created_at, "
+        "updated_at) VALUES (:id, :inc, 'payos', 'plus', 'active', :until, :now, :now)"),
+        {"id": uuid.uuid4(), "inc": world["incarnation"], "until": datetime.now(UTC) + timedelta(days=30),
+         "now": datetime.now(UTC)})
+    outcome: dict = {}
+
+    def admin_write():
+        try:
+            world["products"].apply_membership(world["account"], plan="pro", until=None)
+            outcome["result"] = "written"
+        except MembershipConflict:
+            outcome["result"] = "refused"
+        except Exception as error:  # noqa: BLE001 - reported below
+            outcome["result"] = repr(error)
+
+    writer = threading.Thread(target=admin_write)
+    writer.start()
+    time.sleep(1.0)
+    assert writer.is_alive(), "the Admin write waits for the in-flight billing event"
+    transaction.commit()
+    webhook.close()
+    writer.join(timeout=15)
+    assert outcome.get("result") == "refused", outcome
+    assert world["products"].get_subscription(world["key"]) is None, "no latent manual grant"
+    with engine.begin() as connection:
+        connection.execute(text("UPDATE commerce_subscriptions SET state = 'ended', paid_through = :past "
+                                "WHERE incarnation_id = :inc"),
+                           {"past": datetime.now(UTC) - timedelta(minutes=1), "inc": world["incarnation"]})
+    assert world["service"].plan_for_user(world["key"]).id == "free", "billing ended: Free, not a stale manual Pro"
+
+
+def test_a_manual_write_that_commits_first_is_not_blocked_by_a_later_payment(world):
+    """The other order: the Admin decision committed before billing existed. It is a real grant (not a race), it
+    is shadowed while billing owns the account, and applies again only when billing ends - the existing policy."""
+    world["products"].apply_membership(world["account"], plan="pro", until=datetime.now(UTC) + timedelta(days=60))
+    record(world, version=1, plan="plus", paid_through=datetime.now(UTC) + timedelta(days=30))
+    assert world["service"].plan_for_user(world["key"]).id == "plus"
 
 
 def test_a_deleted_incarnations_billing_record_is_not_the_accounts(world):

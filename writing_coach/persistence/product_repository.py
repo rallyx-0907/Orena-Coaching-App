@@ -141,6 +141,29 @@ class PostgresProductRepository(ProductRepository):
                 "until": row.current_period_end.isoformat() if row and row.current_period_end else None,
             }
 
+    @staticmethod
+    def _billing_owns(session: Session, identifier, now: datetime) -> bool:
+        """Under the incarnation lock: does a billing subscription own this account right now (D-MON-006)?"""
+        from sqlalchemy import text
+
+        from writing_coach.product.entitlement import resolve
+
+        if session.get_bind().dialect.name != "postgresql":
+            # Billing exists only on PostgreSQL with the account backbone (app.py installs no billing source
+            # elsewhere), so no other backend has a billing owner to find.
+            return False
+        incarnation = session.execute(
+            text("SELECT id FROM account_incarnations WHERE user_id = :account AND status = 'active' FOR NO KEY UPDATE"),
+            {"account": identifier},
+        ).scalar_one_or_none()
+        if incarnation is None:
+            return False
+        billing = session.execute(
+            text("SELECT provider, plan_id, state, paid_through FROM commerce_subscriptions WHERE incarnation_id = :inc"),
+            {"inc": incarnation},
+        ).mappings().first()
+        return billing is not None and resolve(legacy=None, billing=billing, now=now).billing_live
+
     def apply_membership(self, user_id: str, *, role: str | None = None, plan: object = ..., until=None,
                          audit: dict | None = None) -> None:
         """Role and/or plan for one account, and its audit row, in ONE transaction (review of #112).
@@ -148,6 +171,13 @@ class PostgresProductRepository(ProductRepository):
         The account and subscription rows are locked (`SELECT ... FOR UPDATE`) and the subscription is read again under
         the lock: a billing subscription that became active after the caller validated is refused here, never
         overwritten. Any failure - the refusal, a write, the audit row - rolls the whole change back.
+
+        A plan change also re-checks BILLING ownership (`commerce_subscriptions`) inside this transaction (review of
+        PR-MON-1, P1-2): the account's active incarnation is locked `FOR NO KEY UPDATE`, which conflicts with the
+        `FOR SHARE` a provider event holds for its whole transaction (`commerce_repository.record_event`) and with
+        `billing_repository.mark_paid`'s own `FOR NO KEY UPDATE`. A payment that commits first is seen here and the
+        change is refused with nothing written; one still in flight waits for this commit. Lock order is users ->
+        incarnation, and no billing path locks `users`, so the two cannot deadlock.
         `plan`: `...` leaves the plan alone, None removes a manual subscription (Free), an id sets a manual one."""
         from writing_coach.persistence.platform_repository import _add_audit
         from writing_coach.product.membership import MANUAL_PROVIDER, MembershipConflict
@@ -158,6 +188,8 @@ class PostgresProductRepository(ProductRepository):
             user = session.scalar(select(User).where(User.id == identifier).with_for_update()) if identifier else None
             if user is None:
                 raise LookupError("No account has this identifier.")
+            if plan is not ... and self._billing_owns(session, identifier, now):
+                raise MembershipConflict("This account's plan is managed by billing; it cannot be set by hand.")
             if plan is not ...:
                 row = session.scalar(select(Subscription).where(Subscription.user_id == identifier).with_for_update())
                 if row is not None and row.provider and row.provider != MANUAL_PROVIDER and row.status in {"active", "trialing"}:

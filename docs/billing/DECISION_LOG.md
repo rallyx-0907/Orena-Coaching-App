@@ -75,3 +75,17 @@ Polar advances the cycle before charging, so a past-due `current_period_end` is 
 failed renewals should not cut a paying learner off at once; arrival time cannot anchor the window (commerce §3). |
 `paused`/`pending`/`unknown` and payOS still have no grace. The policy is environment-configured until the Admin
 policies page gains its EN/VI/ZH copy (UI lane); `subscription.past_due` is now a handled Polar event.
+
+D-MON-012 | 2026-10-13 | A still-owned billing relationship suppresses manual/legacy (independent review of PR-MON-1,
+P1-1). Supersedes D-MON-006's "falls through to manual/legacy" for non-granting billing states. Billing releases the
+account only when its effective state is `ended` (including a granting state past `paid_through`) or the row is
+absent; every other state (`past_due` outside grace, `paused`, `pending`, `unknown`, anything unrecognised) reads
+Free, stays billing-owned, and no manual or legacy plan applies. | A manual Pro must never surface because a paid
+subscription is temporarily failing. | One predicate (`entitlement.billing_owns`) serves the resolver, the Admin
+pre-check and the transactional re-check.
+
+D-MON-013 | 2026-10-13 | Manual plan writes re-check billing ownership inside their transaction (review P1-2).
+`apply_membership` locks the account's active incarnation `FOR NO KEY UPDATE` and refuses any plan change while
+billing owns the account; nothing is written. | The pre-check alone left a window in which a payment could land and
+the manual row would later resurface. | A manual grant exists only if it committed before billing took ownership;
+then the existing policy applies when billing ends.
