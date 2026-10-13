@@ -118,14 +118,26 @@ deployed Orena never allows. So today:
 routes (`writing_coach/service_auth.py`). If it is merged and enabled:
 
 ```
+# 1. generate a token: 32 random bytes (never a typed passphrase)
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+# 2. hash it; only the digest goes on the server
 python -c "import getpass,hashlib;print(hashlib.sha256(getpass.getpass('token: ').encode()).hexdigest())"
-# set on the Orena server:  VOCAB_INGEST_TOKEN_SHA256=<that hex digest>   (comma-separate to rotate)
+# set on the Orena server:  VOCAB_INGEST_TOKEN_SHA256=<that hex digest>
 # in n8n: Header Auth credential, Name "Authorization", Value "Bearer <the token>"
 ```
 
 The server stores only the digest, compares in constant time, logs nothing, and the token works on
 `POST /api/admin/vocabulary/preview` and `/import` only (every other route, method and path answers it as anonymous).
-Remove the digest and restart to revoke. It still imports into `pending_review` sets; it cannot publish.
+For this caller Orena **always** imports into a `pending_review` set, whatever the file format or metadata: `publish`,
+`publication_attested` and the cleared-rights auto-publish rule are ignored, and `duplicates=overwrite` is refused
+with a 422 (the workflow therefore always uses `skip` in api mode).
+
+Rotation: put both digests in the variable, comma-separated (`old,new`), deploy, move n8n to the new token, then remove
+the old digest and deploy again. Revocation is the same removal. Residuals (D-18X): every service import appears under
+one fixed actor (`service:vocabulary-ingest`); wrong tokens (401) are not throttled, so the token must be high-entropy;
+a session administrator whose browser sends a stray `Authorization: Bearer` header to these two routes gets a 401; the
+service request skips the per-user database initialiser, which these routes do not use (the vocabulary catalogue is
+global on PostgreSQL and in the SQLite dev adapter, and the tests run them on SQLite).
 
 ## Validation: what makes a record `ready`
 
@@ -177,7 +189,7 @@ The **Form** trigger is a webhook. It is set to **Basic Auth**: attach an *HTTP 
 the workflow, and check that the form URL asks for a password before you share it. Whatever the form sends:
 
 - `overwrite` from the form is **ignored** (forced to `skip`) unless you set `allowFormOverwrite` in *Config* or
-  `ORENA_VOCAB_ALLOW_FORM_OVERWRITE=true`. Only the *Run test* path (an operator in the editor) can choose it.
+  `ORENA_VOCAB_ALLOW_FORM_OVERWRITE=true`. Only the *Run test* path (an operator in the editor) can choose it, and only in file mode: api mode always skips.
 - `api` mode from the form still needs the Orena URL and credential, and still only creates `pending_review` sets.
 - The output folder and Orena URL cannot be set from the form.
 

@@ -48,6 +48,12 @@ if (duplicates === 'overwrite' && !overwriteAllowed) {
   duplicatesNote = "'overwrite' was requested through the form, which is not allowed to overwrite; 'skip' was used instead";
 }
 
+// api mode talks to Orena with a service credential, which Orena only lets add pending-review content with duplicates=skip.
+if (duplicates === 'overwrite' && mode === 'api') {
+  duplicates = 'skip';
+  duplicatesNote = "'overwrite' is not available in api mode (the service credential may only skip duplicates); 'skip' was used";
+}
+
 const dir = String(SETTINGS.output.dir || env('ORENA_VOCAB_OUT_DIR') || DEFAULT_OUTPUT_DIR).replace(/\/+$/, '');
 if (!/^\/[A-Za-z0-9_\-. \/]+$/.test(dir) || dir.split('/').includes('..')) throw new Error('output.dir must be an absolute path without ".."');
 

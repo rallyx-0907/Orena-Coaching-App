@@ -3923,7 +3923,14 @@ async def admin_vocabulary_source_import(
         raise HTTPException(422, "Choose at least one vocabulary source file.")
     if duplicates not in AUTHORED_DUPLICATE_POLICIES:
         raise HTTPException(422, "duplicates must be 'skip' or 'overwrite'.")
+    # The scoped service credential (D-18X) may add pending-review content and nothing more: it never overwrites,
+    # never publishes and never attests, whatever the source format or the metadata it sends.
+    is_service = admin.get("role") == "service"
+    if is_service and duplicates != "skip":
+        raise HTTPException(422, "A service credential may only import with duplicates='skip'.")
     collection_metadata = _admin_vocabulary_metadata(metadata)
+    if is_service:
+        collection_metadata = {**collection_metadata, "publish": False, "publication_attested": False}
     mapping_by_filename = _json_form_object(mappings, "mappings")
     repository = _persistence_runtime.vocabulary_repository
     try:
@@ -3951,6 +3958,15 @@ async def admin_vocabulary_source_import(
         collection_metadata,
         imported_by=imported_by,
     )
+    if is_service:
+        # No auto-publish rule (cleared rights + complete) and no attestation record for the service principal.
+        requested_catalog_status = "pending_review"
+        admission = {
+            "rights_status": admission.get("rights_status", ""),
+            "completeness": admission.get("completeness", ""),
+            "review_status": "pending_review",
+            "publication_attested": False,
+        }
     # Every source in a batch is imported into a non-published collection.
     # Publication is a finalization step below, so a later failed file cannot
     # expose the earlier successful files to learners.

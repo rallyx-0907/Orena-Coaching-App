@@ -279,3 +279,57 @@ def test_the_routes_ask_the_scoped_guard_and_the_guard_falls_back_to_the_admin_s
     # no other route in the app uses the scoped guard
     source = inspect.getsource(app_module)
     assert source.count("require_vocabulary_ingest(request)") == 2
+
+
+# ---------------------------------------------------------------- review 1d4c7e9a: the service principal never publishes
+
+CSV_BYTES = b"English|Vietnamese\nabandon|bo di\nbenefit|loi ich\n"
+
+
+def csv_import_data(**metadata) -> dict:
+    base = {"title": "csv ingest", "language_code": "en", "collection_id": "t-csv-ingest", "level": "A1"}
+    return {"metadata": json.dumps({**base, **metadata}), "duplicates": "skip"}
+
+
+def csv_file():
+    return [("files", ("batch.csv", CSV_BYTES, "text/csv"))]
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        {"rights_status": "licensed", "completeness": "complete", "publish": True, "publication_attested": True},
+        {"rights_status": "internal_curated", "completeness": "complete"},  # the auto-publish rule
+        {"rights_status": "licensed", "completeness": "complete", "publish": True},
+    ],
+    ids=["publish+attested", "auto-publish rule", "publish without attestation"],
+)
+def test_a_token_csv_import_never_publishes(secured, repository, token_on, metadata) -> None:
+    response = call(secured, "POST", IMPORT, token=TOKEN, files=csv_file(), data=csv_import_data(**metadata))
+    assert response.status_code == 200, response.text
+    assert response.json()["collection"]["catalog_status"] == "pending_review"
+    assert repository.get_collection("t-csv-ingest", limit=5) is None, "never learner-visible"
+    stored = repository.get_collection("t-csv-ingest", limit=5, status=None)
+    assert stored["catalog_status"] == "pending_review" and len(stored["entries"]) == 2
+    admission = (stored.get("provenance") or {}).get("admission") or {}
+    assert not admission.get("publication_attested") and admission.get("review_status") != "approved"
+    assert "attested_by" not in admission and not admission.get("auto_published")
+
+
+def test_session_admin_csv_publish_is_unchanged(secured, repository, monkeypatch) -> None:
+    monkeypatch.delenv(service_auth.ENV_NAME, raising=False)
+    response = call(
+        secured, "POST", IMPORT, who=ADMIN, files=csv_file(), headers={"origin": "http://testserver"},
+        data=csv_import_data(rights_status="licensed", completeness="complete", publish=True, publication_attested=True),
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["collection"]["catalog_status"] == "published"
+
+
+@pytest.mark.parametrize("kind", ["authored", "csv"])
+def test_the_service_principal_may_only_skip_duplicates(secured, repository, token_on, kind) -> None:
+    files, body = (sample_file(), import_data()) if kind == "authored" else (csv_file(), csv_import_data())
+    body["duplicates"] = "overwrite"
+    response = call(secured, "POST", IMPORT, token=TOKEN, files=files, data=body)
+    assert response.status_code == 422 and "skip" in response.text
+    assert repository.get_collection(json.loads(body["metadata"])["collection_id"], limit=5, status=None) is None

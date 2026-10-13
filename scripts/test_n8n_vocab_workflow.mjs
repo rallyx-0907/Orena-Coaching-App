@@ -467,6 +467,8 @@ await test('the form can never trigger overwrite; the operator path can; a delib
   assert.equal(manual[0].json.duplicates, 'overwrite');
   const allowed = await runNode('Config', {}, [{ json: { 'Word list': 'a — A1', 'When already stored': 'overwrite' } }], { ORENA_VOCAB_ALLOW_FORM_OVERWRITE: 'true' });
   assert.equal(allowed[0].json.duplicates, 'overwrite');
+  const apiOverwrite = await runNode('Config', {}, [{ json: MANUAL({ 'When already stored': 'overwrite', 'Delivery mode': 'api' }) }]);
+  assert.equal(apiOverwrite[0].json.duplicates, 'skip'); assert.match(apiOverwrite[0].json.duplicatesNote, /api mode/);
   const dflt = await runNode('Config', {}, [{ json: { 'Word list': 'a — A1' } }]);
   assert.equal(dflt[0].json.duplicates, 'skip'); assert.equal(dflt[0].json.mode, 'file');
   await assert.rejects(() => runNode('Config', {}, [{ json: { 'Word list': 'a — A1', 'Delivery mode': 'cloud' } }]), /Delivery mode/);

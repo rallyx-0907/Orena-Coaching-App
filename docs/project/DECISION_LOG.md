@@ -5957,6 +5957,9 @@ Placeholder id; the lead renumbers at merge. **Status: PROPOSED. This changes au
 architecture review is REQUIRED before merge (AGENTS.md "Architecture review authority"); the implementer does not
 approve it.** Not product approval. The reviewer, the reviewed commit and the outcome are recorded here in Git when it
 is reviewed: reviewer `<pending>`, commit `<pending>`, outcome `<pending>`.
+**Independent review: CHANGES REQUIRED at 6ec68757 (1d4c7e9a, `docs/reviews/architecture/VOCAB_INGEST_TOKEN_REVIEW_2026-10-13.md`);
+fixes in the commit that follows 1d4c7e9a on this branch (P1-1 no publish on any format, P2-1 skip only, P2-2/P2-3 token
+guidance and rotation, P2-4/P2-5 documented residuals); re-review pending.**
 
 - **Finding.** `require_admin()` is session-based (a Google sign-in cookie), and `UserIsolationMiddleware` refuses any
   `/api/*` request without a session before a route runs. The only unattended path is the signed-out local admin, which
@@ -5973,8 +5976,11 @@ is reviewed: reviewer `<pending>`, commit `<pending>`, outcome `<pending>`.
   - Revocation: remove the digest and restart. Nothing is logged by the credential code; the token is never stored.
   - Who the caller is: a fixed service principal (`service:vocabulary-ingest`, role `service`), never a user. Its request context has a user key of its own (not the shared `legacy` scope); it reads
     and writes no learner scope. `imported_by` of the receipt records it.
-  - Lifecycle is unchanged: an authored batch always lands in a set that is `pending_review` (D-178), a published-set
-    conflict is refused, and the file's `status` is ignored. The credential cannot publish.
+  - Lifecycle: for the service principal, on EVERY source format (CSV/TSV/XLSX/TXT/JSON/JSONL, authored or not), the
+    import route forces `pending_review`, ignores `publish` and `publication_attested`, skips the cleared-rights +
+    complete auto-publish rule and records no attestation. (The first version only forced it for authored entries, so a
+    CSV with `publish` published: found by the review below and fixed.) `duplicates=overwrite` is refused with 422;
+    the service principal only skips. Authored-entry rules (D-178) are as before.
   - Session administrators are untouched: a request without a bearer token takes the same path as before.
 - **Where.** `UserIsolationMiddleware.dispatch` checks the token first, for those two paths only, and sets
   `request.state.service_principal`; `require_vocabulary_ingest` (used by those two routes only) returns it, else

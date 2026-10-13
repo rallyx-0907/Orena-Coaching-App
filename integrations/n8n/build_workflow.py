@@ -121,7 +121,7 @@ TEST_INPUT = (
     "  'Word list': 'resilient — C1\\n森林 — HSK4',\n"
     "  'Batch title': 'Test Batch 01',\n"
     "  'Delivery mode': 'file',          // 'file' or 'api'\n"
-    "  'When already stored': 'skip',    // 'skip' or 'overwrite' (overwrite is honoured only from this manual path)\n"
+    "  'When already stored': 'skip',    // 'skip' or 'overwrite' (overwrite is honoured only in file mode; api mode always skips)\n"
     "  _trigger: 'manual',               // marks an operator-run execution; the form never sets it\n"
     "} }];\n"
 )
