@@ -6051,3 +6051,29 @@ qualifying membership while the card shows the chosen one.
   per language.
 - **Clients.** `system_kind: "general_catalogue"` plus an English fallback title; one copy key in EN, VI and ZH shared by
   Discover, Library and Collection Detail. General sorts last. No new component.
+
+## D-189 - Reading source policy after the real-source trial (2026-10-13)
+
+**Status: ACCEPTED (human decision, 2026-10-13).** Evidence: `docs/content/READ_SOURCE_CATALOG.md`,
+`READ_SOURCE_TRIAL_2026-10-13.md`, `READ_SOURCE_LEARNER_UI_2026-10-13.md`, `READ_SOURCE_ACCEPTANCE_2026-10-13.md`.
+This is not activation authorization: no source is published to production by this decision.
+
+1. **Wikipedia / CC BY-SA:** accepted as policy, but the sources stay REJECT_TEMPORARY in the catalogue until extraction
+   and attribution/licence handling meet the bar.
+2. **NonCommercial (NC) sources:** never published into the commercial or paid Orena catalogue. Internal use only, or
+   with an explicit separate permission.
+3. **Traditional script:** allowed, but it must carry Traditional metadata and a label, and is never mixed silently with
+   Simplified. Global Voices 中文 stays MANUAL_ONLY until the learner UI distinguishes the script.
+4. **Attribution / source line:** required before any real corpus is published.
+5. **Thumbnail:** not a publish blocker.
+6. **The 8 :8021 trial publishes:** kept for the owner's review, then unpublished or archived.
+7. **Next milestone, "Reading Sources - Production Readiness":** acceptance target is NASA, Global Voices EN and VOA 中文
+   running end to end (source, poll/import, extraction, quality gate, review, publish, attribution, learner card,
+   reader) with shippable content. Fix order:
+   - P0: A provenance end to end, B the Admin Reading 403, C extraction corruption, D source cleanup, E quality admission.
+   - P1: F manual reviewer level, G automatic level, H Chinese kinsoku, I simplified/traditional detection and label,
+     J source-specific rules.
+   - P2: K thumbnail, L long titles, M Wikipedia.
+
+   The catalogue is not widened until the three sources pass; the next candidates are Chinese public-domain sources
+   such as zh Wikisource.
