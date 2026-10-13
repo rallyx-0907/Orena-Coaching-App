@@ -46,7 +46,7 @@
     "failure_reason": "",
     "updated": 0,
     "conflicts": 0,
-    "localizations_retired": 0,
+    "localizations_retired": {},
     "rows": [],
     "dictionary": { "source": "", "readings": 0, "not_found": 0 },
     "localizations": []
@@ -63,7 +63,7 @@
     "failure_reason": "",
     "updated": 0,
     "conflicts": 0,
-    "localizations_retired": 0,
+    "localizations_retired": {},
     "rows": [],
     "dictionary": { "source": "", "readings": 0, "not_found": 0 },
     "localizations": []
