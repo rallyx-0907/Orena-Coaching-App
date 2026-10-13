@@ -174,6 +174,37 @@ def test_a_page_with_no_readable_text_is_refused_not_stored_empty():
     assert failure.value.code == "empty_source"
 
 
+def _page(paragraph: str, count: int, padding: int = 0) -> str:
+    return ("<html><body><script>" + "x" * padding + "</script><article>"
+            + "".join(f"<p>{paragraph}</p>" for _ in range(count)) + "</article></body></html>")
+
+
+SENTENCE = "The river rose overnight and the fields were green again by morning."
+
+
+def test_a_page_with_large_markup_but_a_short_article_is_ingested():
+    html = _page(SENTENCE, 3, padding=MAX_TEXT_CHARS + 10)
+    assert len(html) > MAX_TEXT_CHARS
+    adapter = DirectUrlAdapter(fetcher=_fetcher(html))
+    item = adapter.normalize(adapter.fetch(SubmittedInput(kind="url", url="https://example.com/big", rights=RIGHTS)))
+    assert SENTENCE in item.body
+
+
+def test_an_extracted_article_over_the_limit_is_refused():
+    html = _page(SENTENCE, MAX_TEXT_CHARS // len(SENTENCE) + 50)
+    adapter = DirectUrlAdapter(fetcher=_fetcher(html))
+    with pytest.raises(ReadingSourceError) as failure:
+        adapter.normalize(adapter.fetch(SubmittedInput(kind="url", url="https://example.com/long", rights=RIGHTS)))
+    assert failure.value.code == "source_too_large"
+
+
+def test_plain_text_over_the_limit_is_still_refused():
+    adapter = DirectUrlAdapter(fetcher=_fetcher("a " * MAX_TEXT_CHARS, content_type="text/plain"))
+    with pytest.raises(ReadingSourceError) as failure:
+        adapter.fetch(SubmittedInput(kind="url", url="https://example.com/t", rights=RIGHTS))
+    assert failure.value.code == "source_too_large"
+
+
 # ---- file -------------------------------------------------------------------
 
 @pytest.mark.parametrize("filename", ["story.txt", "story.md", "story.html"])
