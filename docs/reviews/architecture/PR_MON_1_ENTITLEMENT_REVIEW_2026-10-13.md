@@ -203,3 +203,28 @@ The fixing commit is titled "fix(billing): PR-MON-1 P1-2 payOS mark_paid -> sync
 - **Results** (local, throwaway PostgreSQL 16):
   - The targeted batch gives 701 passed, 0 skipped.
   - Mutation: with the pending-sync check disabled, exactly this regression fails (1 failed, 11 passed in the file).
+
+---
+
+## Final focused re-verification (reviewer, 2026-10-13), recorded
+
+Reviewer: ChatGPT — independent reviewer. Reviewed HEAD: `5f18a3f21f7c537987237c69223eef71dae7dc94`.
+
+**Verdict: APPROVE.**
+
+- **P1-1:** verified fixed earlier. Owned but non-granting billing suppresses manual/legacy and resolves to Free
+  until billing has genuinely ended or is absent.
+- **P1-2:** verified fixed. Inside the Admin membership transaction, under the incarnation lock, the change checks
+  two things: current commerce billing ownership, and whether committed prepaid order state is ahead of the applied
+  `prepaid:<incarnation>` commerce version. A payment or refund committed but not yet synchronized therefore counts
+  as billing ownership and refuses the manual plan change. This closes the latent-manual-grant race without a
+  billing redesign.
+- The fail-safe behaviour after a crash between payment/refund and synchronization is acceptable for v1: the
+  account stays billing-owned until reconciliation repairs it. It is tracked under the PR-MON-3 reconciliation risk
+  (R-MON-002).
+- **No P0 or P1 remains.** P2 residuals outside PR-MON-1:
+  - startup commerce discovery and fail-safe readiness go to PR-MON-2 (R-MON-010);
+  - verifying the real Polar `past_due` sandbox payload goes to PR-MON-8 (R-MON-009).
+- **Merge readiness: architecture-approved.** Rebase onto the latest `main`. If the rebase resolves only unrelated
+  or mainline conflicts, without materially changing billing/entitlement semantics, no further architecture review
+  is required.
