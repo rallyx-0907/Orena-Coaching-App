@@ -56,16 +56,19 @@ def _reset():
 
 
 _OP = {"operationId": "op-00000000"}
+# Fixed ids, not uuid4(): the ids are in the parametrized test ids, and pytest-xdist needs every worker to collect
+# identical ids. These routes are called with the backbone off, so the ids name nothing.
+_ABSENT_WORK, _ABSENT_IMPORT_PUT, _ABSENT_IMPORT_DELETE = (uuid.UUID(int=n) for n in (1, 2, 3))
 OFF_CALLS = [
     ("get", "/api/works", None),
-    ("get", f"/api/works/{uuid.uuid4()}", None),
+    ("get", f"/api/works/{_ABSENT_WORK}", None),
     ("get", "/api/conversations/conversation:x", None),
     ("post", "/api/conversations/conversation:x/turns", {**_OP, "expectedHead": 0, "id": "t1", "role": "learner", "text": "Hi"}),
     ("get", "/api/annotations/reading:1", None),
     ("put", "/api/annotations/reading:1", {**_OP, "expectedVersion": 0}),
     ("get", "/api/imports", None),
-    ("put", f"/api/imports/{uuid.uuid4()}", {**_OP, "expectedVersion": 0, "form": "text", "title": "t", "text": "x"}),
-    ("delete", f"/api/imports/{uuid.uuid4()}?operationId=op-00000000&expectedVersion=1", None),
+    ("put", f"/api/imports/{_ABSENT_IMPORT_PUT}", {**_OP, "expectedVersion": 0, "form": "text", "title": "t", "text": "x"}),
+    ("delete", f"/api/imports/{_ABSENT_IMPORT_DELETE}?operationId=op-00000000&expectedVersion=1", None),
     ("get", "/api/responses/transfer:a:b:1", None),
     ("put", "/api/responses/transfer:a:b:1", {**_OP, "expectedVersion": 0, "mode": "paraphrase"}),
     ("get", "/api/library/vocabulary/harbour/provenance", None),

@@ -4,8 +4,42 @@ on:
     branches: [main]
   pull_request:
 
+# A newer push to the same pull request supersedes the run in flight. Runs on main are never cancelled: every
+# merge keeps its own complete verdict.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  test:
+  # Decides whether a pull request changes anything but Markdown. A push to main is always "code", so every merge
+  # gets the full verdict. The validators and the Node gates run for every change either way.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.scope.outputs.code }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          code=true
+          if [ "$EVENT" = "pull_request" ]; then
+            changed=$(git diff --name-only "$BASE_SHA...$HEAD_SHA")
+            echo "$changed"
+            if [ -n "$changed" ] && ! echo "$changed" | grep -qvE '\.md$'; then
+              code=false
+            fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "code changes: $code"
+
+  # Project-memory and architecture validators, the contract scripts and the Listening catalog check. Always run.
+  python-gates:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -18,16 +52,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-      # The media pipeline integration tests probe real files with ffprobe, as the
-      # application image does (its Dockerfile installs ffmpeg); the runner needs it too.
-      - name: Install ffmpeg (ffprobe) for media integration tests
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg
-          ffprobe -version | head -n 1
+          cache: pip
+          cache-dependency-path: requirements.txt
       - run: pip install -r requirements.txt pytest
       - run: python -m nltk.downloader -q averaged_perceptron_tagger_eng
       - run: python scripts/validate_project_memory.py
@@ -40,142 +66,61 @@ jobs:
       - run: python scripts/test_orena_account_backbone.py
       - run: python scripts/test_runtime_backup.py
       - run: python scripts/build_listening_dev_catalog.py --check
+
+  # Browser ESM graph and the .mjs contract gates. Always run. The gates are listed in scripts/node_gates.txt (the
+  # D-046 reset deleted the old Listening-mode/Shadowing-Studio gates along with the product they guarded; these are
+  # their replacements at the new product boundary: the encounter/practice-intent layer, the shared capability
+  # primitives, and the media contracts that outlived the reset). They are independent processes, so
+  # scripts/run_node_gates.sh runs four at a time; a failing gate prints its own output and does not hide the others.
+  node-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
       - run: node --experimental-vm-modules scripts/validate_browser_esm_graph.mjs
-      # The D-046 reset deleted the old Listening-mode/Shadowing-Studio gates
-      # along with the product they guarded. These are their replacements at the
-      # new product boundary: the encounter/practice-intent layer, the shared
-      # capability primitives, and the media contracts that outlived the reset.
-      - run: |
-          node scripts/test_orena_primitives.mjs
-          node scripts/test_orena_product.mjs
-          node scripts/test_orena_foundation.mjs
-          node scripts/test_orena_follow_clock.mjs
-          node scripts/test_orena_word_follow.mjs
-          node scripts/test_orena_dictation_hints.mjs
-          node scripts/test_orena_understanding.mjs
-          node scripts/test_orena_writing_review.mjs
-          node scripts/test_orena_reading.mjs
-          node scripts/test_orena_free_voice.mjs
-          node scripts/test_orena_spoken_coaching.mjs
-          node scripts/test_orena_pure_listening.mjs
-          node scripts/test_orena_conversation.mjs
-          node scripts/test_orena_learner_memory.mjs
-          node scripts/test_orena_draft_sync.mjs
-          node scripts/test_orena_account_settings.mjs
-          node scripts/test_orena_continue_sync.mjs
-          node scripts/test_orena_saved_state.mjs
-          node scripts/test_orena_language_switch.mjs
-          node scripts/test_orena_import_delete.mjs
-          node scripts/test_orena_annotations_sync.mjs
-          node scripts/test_orena_account_records.mjs
-          node scripts/test_dictation_golden.mjs
-          node scripts/test_orena_growth_summary.mjs
-          node scripts/test_orena_continuation.mjs
-          node scripts/test_orena_brand_library.mjs
-          node scripts/test_orena_workspace.mjs
-          node scripts/test_orena_reading_library.mjs
-          node scripts/test_orena_dictation_screen.mjs
-          node scripts/test_orena_reading_room.mjs
-          node scripts/test_orena_extension_patterns.mjs
-          node scripts/test_transcript_display_units.mjs
-          node scripts/test_transcript_playback.mjs
-          node scripts/test_dictation_evaluator.mjs
-          node scripts/test_audio_recorder.mjs
-          node scripts/test_m3_pronunciation_contract.mjs
-          node scripts/test_speaking_take.mjs
-          node scripts/test_media_import_quota.mjs
-          node scripts/test_language_limit_notice.mjs
-          node scripts/test_speaking_workspace.mjs
-          node scripts/test_orena_language_layers.mjs
-          node scripts/test_orena_copy_layers.mjs
-          node scripts/test_audio_analysis.mjs
-          node scripts/test_speaking_attempts.mjs
-          node scripts/test_media_learning_quality.mjs
-          node scripts/test_real_media_catalog_contract.mjs
-          node scripts/test_media_status_compact_accessor.mjs
-          node scripts/test_orena_reference.mjs
-          node scripts/test_orena_learning_stage.mjs
-          node scripts/test_orena_dictation_workspace.mjs
-          node scripts/test_orena_learner_language.mjs
-          node scripts/test_orena_writing_workspace.mjs
-          node scripts/test_orena_language_and_recall.mjs
-          node scripts/test_orena_admin_entry.mjs
-          node scripts/test_orena_vocabulary_feed.mjs
-          node scripts/test_orena_vocabulary_paging.mjs
-          node scripts/test_orena_my_library.mjs
-          node scripts/test_orena_rank_frame.mjs
-          node scripts/test_orena_room_navigation_cancellation.mjs
-          node scripts/test_orena_scroll_memory.mjs
-          node scripts/test_orena_kit.mjs
-          node scripts/test_orena_shell.mjs
-          node scripts/test_orena_session.mjs
-          node scripts/test_orena_former_addresses.mjs
-          node scripts/test_orena_vocabulary_contracts.mjs
-          node scripts/test_orena_admin_control.mjs
-          node scripts/test_orena_admin_policies.mjs
-          node scripts/test_orena_copy.mjs
-          node scripts/test_orena_legal.mjs
-          node scripts/test_orena_copy_engine.mjs
-          node scripts/test_orena_components.mjs
-          node scripts/test_orena_screen_today.mjs
-          node scripts/test_orena_screen_discover.mjs
-          node scripts/test_orena_screen_content.mjs
-          node scripts/test_orena_screen_practice.mjs
-          node scripts/test_orena_practice_continuation.mjs
-          node scripts/test_orena_listening_entries.mjs
-          node scripts/test_orena_listening_questions.mjs
-          node scripts/test_orena_screen_library.mjs
-          node scripts/test_orena_screen_collection.mjs
-          node scripts/test_orena_collection_actions.mjs
-          node scripts/test_orena_vocabulary_meaning.mjs
-          node scripts/test_orena_screen_word.mjs
-          node scripts/test_orena_screen_grammar.mjs
-          node scripts/test_orena_screen_search.mjs
-          node scripts/test_orena_screen_progress.mjs
-          node scripts/test_orena_screen_profile.mjs
-          node scripts/test_orena_screen_admin.mjs
-          node scripts/test_orena_screen_admin_areas.mjs
-          node scripts/test_orena_screen_admin_grammar.mjs
-          node scripts/test_orena_screen_settings.mjs
-          node scripts/test_orena_screen_plan.mjs
-          node scripts/test_orena_screen_feedback.mjs
-          node scripts/test_orena_screen_sheets.mjs
-          node scripts/test_orena_screen_quick-sheet.mjs
-          node scripts/test_orena_screen_mic.mjs
-          node scripts/test_orena_screen_lesson-complete.mjs
-          node scripts/test_orena_screen_check.mjs
-          node scripts/test_orena_screen_discussion.mjs
-          node scripts/test_orena_screen_reading-transfer.mjs
-          node scripts/test_orena_screen_dictation.mjs
-          node scripts/test_orena_screen_shadowing.mjs
-          node scripts/test_orena_screen_free-talk.mjs
-          node scripts/test_orena_screen_conversation.mjs
-          node scripts/test_orena_screen_situation.mjs
-          node scripts/test_orena_screen_speak.mjs
-          node scripts/test_orena_screen_compare.mjs
-          node scripts/test_orena_compare_reference.mjs
-          node scripts/test_orena_content_readiness.mjs
-          node scripts/test_orena_media_speaking.mjs
-          node scripts/test_orena_screen_attempts.mjs
-          node scripts/test_orena_screen_speak-summary.mjs
-          node scripts/test_orena_screen_review.mjs
-          node scripts/test_orena_screen_feed.mjs
-          node scripts/test_orena_vocabulary_card.mjs
-          node scripts/test_orena_screen_errors.mjs
-          node scripts/test_orena_screen_reader.mjs
-          node scripts/test_orena_screen_reader-complete.mjs
-          node scripts/test_orena_screen_onboarding.mjs
-          node scripts/test_orena_screen_orena.mjs
-          node scripts/test_orena_live_voice.mjs
-          node scripts/test_orena_screen_writing.mjs
-          node scripts/test_orena_screen_writing-compare.mjs
-          node scripts/test_orena_screen_listening.mjs
-          node scripts/test_orena_screen_react.mjs
-          node scripts/test_orena_screen_respond.mjs
-          node scripts/test_orena_agent.mjs
-          node scripts/test_orena_surfaces.mjs
-          node scripts/test_orena_public_pages.mjs
-      - run: python -m pytest -q test_app.py tests
+      - run: sh scripts/run_node_gates.sh
+
+  # The whole Python suite, split across the runner's CPUs by pytest-xdist (whole files per worker). Each worker has
+  # its own databases and temp directory (conftest.py). A push to main and any pull request that changes more than
+  # Markdown run the complete suite. A Markdown-only pull request runs just the test files that mention docs/ or .md.
+  pytest:
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      # The media pipeline integration tests probe real files with ffprobe, as the
+      # application image does (its Dockerfile installs ffmpeg); the runner needs it too.
+      - name: Install ffmpeg (ffprobe) for media integration tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffprobe -version | head -n 1
+      - run: pip install -r requirements.txt pytest pytest-xdist==3.8.0
+      - run: python -m nltk.downloader -q averaged_perceptron_tagger_eng
+      - name: Full suite
+        if: needs.changes.outputs.code == 'true'
+        run: python -m pytest -q -n auto --dist loadfile --durations=15 test_app.py tests
         env:
           PERSISTENCE_BACKEND: sqlite
+      - name: Document-reading tests (Markdown-only change)
+        if: needs.changes.outputs.code != 'true'
+        run: |
+          files=$(grep -rlE 'docs/|\.md' test_app.py tests --include='*.py')
+          python -m pytest -q -n auto --dist loadfile $files
+        env:
+          PERSISTENCE_BACKEND: sqlite
+
+  docker-build:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
       - run: docker build -t ai-writing-coach:test .
