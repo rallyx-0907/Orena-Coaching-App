@@ -98,3 +98,24 @@ Remaining conditions before merge:
 3. Tracked follow-ups, not blocking: Host-header restriction against DNS rebinding; `CLOUDFLARE_TUNNEL_TOKEN` is not visible to the app container.
 
 Not product approval and not activation authorization. Reviewed commit: 907ab88d.
+
+---
+
+## Final review of 9c0db535 (2026-10-13)
+
+Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5 (independent of the implementer). Scope: `git diff f7822f8b..9c0db535`. Read-only; pytest, Docker and the app were not run (reading and independent `git grep` only).
+
+### Human decision conditions
+
+- **(a) Launcher inventory complete and loopback-locked: met.** I independently listed every tracked compose file, `.ps1`, `.sh` and Dockerfile and grepped for `ports:`, `-p`, `--publish`, `docker run`. Publishing launchers: `compose.yaml`, `scripts/agent_e2e/compose.yaml`, `scripts/agent_live/compose.yaml`, `scripts/mobile_qa_runtime.ps1`, `scripts/product_restore_rehearsal.ps1`, `scripts/staging_8000_deploy.ps1`, `scripts/staging_update.ps1`. That is exactly the `LAUNCHERS` set in `tests/test_local_boundary_deployment.py`; no official launcher is missing. `compose.dev.yaml`, `start_*.ps1/.sh`, `stop_docker.ps1` publish nothing (compose wrappers are asserted empty); `persist_orena_sandbox_db.ps1` runs Postgres with no `-p`. The inventory test fails on any unlisted launcher the scan finds, a publish with no host fails, and each host must resolve to loopback; the only variable allowed in a host is `${ORENA_INSECURE_DEV_LAN_BIND_HOST:-127.0.0.1}` (loopback default, empty in `.env.example`). Limit: the scan reads the repository's own files, not an operator's override or ad-hoc `docker run` (the accepted residual).
+- **staging_update.ps1: not a blocker.** It operates the human's :8011 staging (`$Port = 8011`, header "Update the :8011 staging"), not :8000 (`staging_8000_deploy.ps1`, D-127, untouched and already `127.0.0.1:8000`). The change narrows the publish from every interface to loopback (stricter) and adds the gateway-trust variables, consistent with the published host; they are inert if the runtime's `APP_ENV` is public. :8000 behaviour is unchanged. `scripts/agent_live/compose.yaml` additions match its loopback publish and are covered by the consistency test.
+- **(b) SECURITY_BOUNDARY.md "Layers": met.** Primary boundary is the deployment config and launcher, second layer the per-request peer check, third the startup refusal; the residual is recorded as accepted by the human on 2026-10-13, conditioned on local/development-only auth-off lanes and the test lock.
+- **(c) Follow-up: partially met.** Both SECURITY_BOUNDARY.md and D-18X describe the host-side runtime assertion as a follow-up, but neither text names GitHub issue #140 (grep finds no "140" in either). Housekeeping required before merge: add "#140" to both. Not a security blocker.
+
+### Startup matrix (false positives)
+
+`test_startup_matrix` covers the human's cases: dev + sign-in off + localhost -> start; dev + off + public -> refuse; dev + on + public -> start; staging + off + public -> refuse (staging contract, asserted separately); staging + on + public (the :8000 shape) -> start; dev + on + loopback (the :8021 shape) -> start. The refusal only runs when the runtime is non-public and sign-in is off, so :8000 and :8021 cannot be refused. No false positive found.
+
+### Final verdict: APPROVED WITH DOCUMENTED RESIDUAL RISK
+
+Residual risk (accepted by the human): the declared bind host is operator configuration and a hand-edited publish defeats it; mitigated by the launcher lock, tracked for a host-side runtime assertion. Remaining non-blocking items: add the issue #140 reference to SECURITY_BOUNDARY.md and D-18X; renumber D-18X at merge; the DNS-rebinding Host restriction stays a follow-up. Not product approval and not activation authorization. Reviewed commit: 9c0db535.
