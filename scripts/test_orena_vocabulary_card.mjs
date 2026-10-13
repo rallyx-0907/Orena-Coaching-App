@@ -782,6 +782,37 @@ console.log(`  model fit at 328 x 474: ${fitReport.join('; ')}`);
   assert.equal(reviewBack.dataset.vcardFits, 'yes');
   assert.match(String(vocabularyCard(en, { mode: 'review-back', learner: learnerState({ review_stage: 2, next_review_at: '' }), slots: { footer: { stage: 'Mới', due: 'Hôm nay' } } })), /<div class="c-vcard__foot">\s*<div class="c-vcard__mastery">/, 'the review-back card carries the mastery footer, in its foot (counted once, with the foot)');
 }
+// Both faces are one card, one size (the human, 2026-10-13: on :8021 森林's front was 582px, its back 311px). Turning
+// keeps the tallest height the card has had, so the back never shrinks below the front, and a taller back makes the
+// front as tall when turned back - within the box, never past it.
+{
+  const { bindVocabularyCards } = await import('../static/orena/kit/vocabulary-card.js');
+  const handlers = {};
+  let height = 582;
+  const face = (name) => ({ hidden: name === 'back', focus() {} });
+  const faces = { front: face('front'), back: face('back') };
+  const card = {
+    dataset: { face: 'front' },
+    style: { minHeight: '', setProperty() {} },
+    getBoundingClientRect: () => ({ height }),
+    querySelector: (selector) => faces[selector.includes('front') ? 'front' : 'back'],
+    querySelectorAll: () => [],
+  };
+  const turn = (to) => ({ dataset: { vcardTurn: to }, closest: () => card, addEventListener: (_, fn) => { handlers[to] = fn; } });
+  bindVocabularyCards({ querySelectorAll: () => [turn('back'), turn('front')] });
+  handlers.back({ stopPropagation() {} });
+  assert.equal(card.style.minHeight, '582px', 'the back keeps the front\'s height');
+  height = 640;
+  handlers.front({ stopPropagation() {} });
+  assert.equal(card.style.minHeight, '640px', 'a taller back makes the front as tall');
+  height = 600;
+  handlers.back({ stopPropagation() {} });
+  assert.equal(card.style.minHeight, '640px', 'never smaller again');
+  const boxed = fakeCard({ top: 100, columnBottom: 616 });
+  boxed.style.minHeight = '640px';
+  fitVocabularyCards({ querySelectorAll: () => [boxed] }, { viewport: true });
+  assert.equal(boxed.style.minHeight, '500px', 'a re-fit to a smaller box caps the kept height at the box (616 - 100 - 16)');
+}
 // It re-fits on resize (every screen) and on turn (the other face fits on its own).
 const kitSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
 assert.match(kitSrc.slice(kitSrc.indexOf('export function bindVocabularyCards')), /containCard\(card\)/, 'turning a card fits the face it shows');

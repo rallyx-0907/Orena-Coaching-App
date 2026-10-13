@@ -519,6 +519,8 @@ export function fitVocabularyCards(root, { viewport = false, bottomGap = 16 } = 
       const top = card.getBoundingClientRect().top + (column ? column.scrollTop : window.scrollY || 0);
       const available = Math.max(320, Math.floor(bottom - top - bottomGap));
       card.style.setProperty('--vcard-fit', `${available}px`);
+      // The height kept across turns never outgrows the box (min-height would win over max-height).
+      if (parseFloat(card.style.minHeight) > available) card.style.minHeight = `${available}px`;
       card.dataset.fit = available < SHORT_CARD_PX ? 'short' : 'full';
     } else {
       // The slot the card fills (Review's face, the feed's card), not the card's own content height.
@@ -544,6 +546,10 @@ export function bindVocabularyCards(root) {
       const card = button.closest('.c-vcard');
       if (!card) return;
       const to = button.dataset.vcardTurn;
+      // One card, one size (the human, 2026-10-13): the card keeps the tallest height it has had, so neither face is
+      // drawn smaller than the other. fitVocabularyCards caps it at the box.
+      const kept = parseFloat(card.style.minHeight) || 0;
+      card.style.minHeight = `${Math.round(Math.max(kept, card.getBoundingClientRect().height))}px`;
       card.dataset.face = to;
       card.querySelector('.c-vcard__face--front').hidden = to !== 'front';
       card.querySelector('.c-vcard__face--back').hidden = to !== 'back';
