@@ -6058,6 +6058,8 @@ etymology - the provenance gap is exactly the projection named there. Open, serv
   - a short sub-heading followed only by link-heavy content is dropped as an orphan;
   - prose split evenly across separate wrappers can widen the container to include non-article prose;
   - a UI scrap of four or more words with no link and no telling class/id survives;
-  - text inside `<header>` (a dek or standfirst) is dropped;
+  - a `<header>` inside the article's `<article>`/`<main>` is kept (its dek/standfirst opens the passage, its title is
+    metadata, its hero image is a `hero` candidate) unless it carries a banner/chrome role; a page-level `<header>`
+    is dropped, so a dek or hero that a page places only in its site-level header is lost;
   - pages rendered by JavaScript, and non-UTF-8 pages, are not handled;
   - media candidates inside the article scope include teaser-card images that carry no boilerplate token.
