@@ -1,7 +1,8 @@
 /* The stroke-order tiles frame 53 (Word Quick Sheet) and Word Detail both draw: each character in a 76px tile
    writing itself stroke by stroke on a loop (the design's looping stroke writer), its radical's strokes in the
    radical colour. One implementation for both surfaces, so the order reads the same wherever the word is opened
-   (LEX-021). Reduced motion shows the whole character still.
+   (LEX-021). Reduced motion writes each character once, stroke by stroke, then holds it: the order is the content,
+   only the loop is decoration.
 
    `createStrokeTiles(characters)` takes the stroke pack's characters (`/api/chinese/stroke-order`). `markup()`
    renders the tiles at their current step and may be called on every repaint; `start(root)` runs the loop on the
@@ -28,7 +29,7 @@ export function createStrokeTiles(characters = []) {
   function glyph(index) {
     const character = list[index];
     const count = strokeCount(character);
-    const at = reducedMotion() ? count : Math.min(upto[index] ?? 0, count);
+    const at = Math.min(upto[index] ?? 0, count);
     return raw(glyphSvg(character, { upto: at, animate: at < count, radical: true }));
   }
 
@@ -60,6 +61,8 @@ export function createStrokeTiles(characters = []) {
     if (finished) {
       clearInterval(timer);
       timer = 0;
+      // Reduced motion: written once, then held whole - the order is still shown, the loop is not.
+      if (reducedMotion()) return;
       hold = window.setTimeout(() => start(root), STROKE_LOOP_HOLD_MS);
     }
   }
@@ -67,7 +70,7 @@ export function createStrokeTiles(characters = []) {
   function start(element) {
     stop();
     root = element || root;
-    if (!root || !list.length || reducedMotion()) return;
+    if (!root || !list.length) return;
     upto.fill(0);
     timer = window.setInterval(tick, STROKE_STEP_MS);
   }

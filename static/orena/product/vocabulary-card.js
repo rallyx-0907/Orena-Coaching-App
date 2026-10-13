@@ -180,7 +180,9 @@ function definitionOf(source, seed, language, meaningText) {
     if (value && (tagged === language || (!tagged && entry === source?.detailed_definitions?.[0])) && value !== meaningText) return { text: value, language };
   }
   const note = text(source?.definition);
-  if (note && note !== meaningText) return { text: note, language: HAN.test(note) ? 'zh' : language };
+  // A saved note carries no language: it is the meaning shown when the word was saved, in whatever support language
+  // that was. Han text is known to be Chinese; anything else is shown untagged, never labelled with a guess.
+  if (note && note !== meaningText) return { text: note, language: HAN.test(note) ? 'zh' : '' };
   return null;
 }
 

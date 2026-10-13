@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta
 from collections.abc import Mapping
 from typing import Any
@@ -108,11 +109,28 @@ def _stage_label(stage: int) -> str:
 CATALOG_INDEX_LIMIT = 5000
 
 
+_HAN = re.compile(r"[㐀-鿿豈-﫿]")
+
+
+def _word_language(word: str, learning: str) -> str:
+    """The catalogue a saved word's entry lives in: a Han word's is the Chinese one, whatever the learner is
+    learning now (森林 saved while learning English); a Latin word saved while learning Chinese is English. The
+    rule Word Detail's catalogue read uses (`screens/word/model.js#catalogueLanguage`)."""
+
+    if _HAN.search(word or ""):
+        return "zh"
+    return "en" if learning == "zh" else learning
+
+
 def _catalog_entry_for(word: str, resolve: Any = None) -> dict[str, Any] | None:
     normalized = normalize_vocabulary_word(word)
     if not normalized:
         return None
-    language = current_language_code().strip().casefold()
+    learning = current_language_code().strip().casefold()
+    language = _word_language(word, learning)
+    # The list's resolver was decided for the learning language only; a word in another language asks its own.
+    if language != learning:
+        resolve = None
     if resolve is not None:
         persisted = resolve(normalized)
     elif _content_repository is not None:
@@ -219,7 +237,7 @@ def _row_to_item(row: dict[str, Any], resolve: Any = None) -> dict[str, Any]:
         if isinstance(catalog_entry.get("orthography"), dict) and catalog_entry["orthography"]:
             orthography = dict(catalog_entry["orthography"])
     if orthography is None:
-        orthography = orthography_for_word(word, language)
+        orthography = orthography_for_word(word, _word_language(word, language))
     if orthography is not None:
         item["orthography"] = orthography
     return item

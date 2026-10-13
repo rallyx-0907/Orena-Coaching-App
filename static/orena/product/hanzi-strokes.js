@@ -24,6 +24,8 @@ function escapeAttr(value) {
   return String(value ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
+let maskSerial = 0;
+
 /* The character as it stands after `upto` strokes: the strokes written so far
    in full, and the rest of it faint (or absent when `faint` is false). The
    pack's glyph box has y running upward, so every renderer flips it once -
@@ -34,10 +36,13 @@ export function glyphSvg(character, { upto = 0, size = 1024, faint = true, class
   // stroke writer draws them (radicalColor).
   const radicalSet = new Set(radical ? (character?.radical_strokes || []).map(Number) : []);
   const on = (at) => (radicalSet.has(at) ? 'stroke-glyph__on stroke-glyph__rad' : 'stroke-glyph__on');
+  // Each drawing's own mask id: two characters at the same stroke number (森林 in two tiles), or a tile and the
+  // practice stage open together, would otherwise reveal a stroke through another character's median.
+  const maskId = `stroke-watch-${(maskSerial += 1)}`;
   const drawn = paths
     .map((path, at) =>
       animate && at === upto && character?.medians?.[at]?.length
-        ? `<defs><mask id="stroke-watch-${at}" maskUnits="userSpaceOnUse" x="0" y="-200" width="1024" height="1400"><path d="${character.medians[at].map(([x,y], index) => `${index ? 'L' : 'M'}${Number(x)} ${Number(y)}`).join(' ')}" fill="none" stroke="white" stroke-width="200" stroke-linecap="round" stroke-linejoin="round" pathLength="1" class="stroke-glyph__reveal"></path></mask></defs>${faint ? `<path d="${escapeAttr(path)}" class="stroke-glyph__off"></path>` : ''}<path d="${escapeAttr(path)}" class="${on(at)}" mask="url(#stroke-watch-${at})"></path>`
+        ? `<defs><mask id="${maskId}" maskUnits="userSpaceOnUse" x="0" y="-200" width="1024" height="1400"><path d="${character.medians[at].map(([x,y], index) => `${index ? 'L' : 'M'}${Number(x)} ${Number(y)}`).join(' ')}" fill="none" stroke="white" stroke-width="200" stroke-linecap="round" stroke-linejoin="round" pathLength="1" class="stroke-glyph__reveal"></path></mask></defs>${faint ? `<path d="${escapeAttr(path)}" class="stroke-glyph__off"></path>` : ''}<path d="${escapeAttr(path)}" class="${on(at)}" mask="url(#${maskId})"></path>`
         : at < upto
         ? `<path d="${escapeAttr(path)}" class="${on(at)}"></path>`
         : faint

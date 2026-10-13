@@ -5822,3 +5822,26 @@ the top of the page.
   Gated in scripts/test_orena_shell.mjs (only Word Detail arrives collapsed, only on a phone; the top stays collapsed
   until the learner reveals it; the reveal listeners) and scripts/test_orena_vocabulary_card.mjs (the collapsed fit
   has no bar and the column's whole height; it stops above the bar again when the chrome returns).
+
+## D-182 - The vocabulary card is light in both app themes (its dark variant disabled)
+
+Human decision, 2026-10-12.
+
+- **The card is always light.** `VocabularyCard` renders with the design's LIGHT card palette whatever the app theme,
+  on every surface: Word Detail, the Daily Feed, Review's recall and revealed faces (and Admin's preview, later). Under
+  `:root[data-theme='dark']` the `--vcard-*` tokens resolve to their light values (`kit/tokens.css`); the content -
+  serif Chinese, chips, highlights, the line drawings - reads only those. The shell and the app around the card keep
+  following the learner's theme.
+- **Disabled, not deleted.** The design's dark ("night violet") values are recorded in a comment in `kit/tokens.css`,
+  applied nowhere, until the dark card is redesigned (UI_BACKEND_GAPS VC-18). D-180's two-theme palette stands
+  otherwise.
+- **Edge on a dark page.** In the dark app the card draws its own 1px line round itself (the Chinese card included),
+  so the light card sits cleanly on the dark shell; never the app's violet (D-147), and no app accent or dark token is
+  used to blend the card into dark.
+- **Buttons.** The turn actions and discs stay the app's kit buttons (D-180) and follow the app theme, so in the dark
+  app they are dark buttons on the light card. Measured (scripts/test_orena_kit.mjs): labels primary 4.54, secondary
+  16.06, save disc 7.12, play disc 9.35, saved disc 8.40; fills against the card's surface / bg / surface-alt at least
+  3.70:1 (the primary's, on surface-alt). No clash; nothing restyled.
+- Gated: the card tokens equal the light values under `data-theme="dark"`; the recorded dark values are the design's;
+  AA for card text is one set in both themes; the kit buttons hold AA (label) and 3:1 (fill on the card) in the dark
+  app; the edge rule uses the card's line.

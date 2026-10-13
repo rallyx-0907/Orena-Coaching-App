@@ -62,6 +62,12 @@
 /* The card is never taller than the height it is given. Word Detail (a page): the visible height of its column below
    the card's top, measured by kit/vocabulary-card.js#fitVocabularyCards into --vcard-fit, else the viewport less the
    app's chrome; Review and the feed: the slot the card fills. */
+/* The card is light in both app themes (D-182). On a dark page its edge is the card's own 1px line, drawn round the
+   Chinese card too (whose board has no border of its own), so the light card sits cleanly on the dark shell - the
+   card's beige line, never the app's violet (D-147). */
+:root[data-theme='dark'] .c-vcard:not(.c-vcard--review-front) {
+  box-shadow: 0 0 0 1px var(--vcard-line);
+}
 .c-vcard--detail {
   max-height: var(--vcard-fit, calc(100dvh - 180px));
 }

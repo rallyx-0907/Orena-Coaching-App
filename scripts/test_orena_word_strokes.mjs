@@ -70,4 +70,25 @@ assert.doesNotMatch(parts, /"etymology"/, 'and never claims etymology');
    measured against the verified pack, so a wrong one fails a test. */
 assert.match(parts, /tests\/test_character_parts\.py/, 'and names the test that checks it');
 
+/* --- A stroke is written from its start to its end, always ----------------
+   The stroke being written is revealed along its own median. Two characters at the same stroke number (森林 in two
+   tiles), or a tile and the practice stage open together, once shared one mask id, so a stroke was revealed through
+   another character's median or appeared whole. And under the OS's reduced motion the reveal was cut to ~0 s, so
+   every stroke popped in at once: the order and the direction - what the learner is there to see - were lost. */
+const writing = { stroke_paths: ['M0 0', 'M1 1'], medians: [[[0, 0], [10, 10]], [[5, 5], [20, 20]]] };
+const maskIds = (svg) => [...svg.matchAll(/<mask id="([^"]+)"/g)].map((m) => m[1]);
+const first = glyphSvg(writing, { upto: 1, animate: true });
+const second = glyphSvg(writing, { upto: 1, animate: true });
+assert.equal(maskIds(first).length, 1, 'the stroke being written has its reveal mask');
+assert.notEqual(maskIds(first)[0], maskIds(second)[0], 'every drawing has its own mask id');
+assert.ok(first.includes(`mask="url(#${maskIds(first)[0]})"`), 'and the stroke uses its own drawing\'s mask');
+const components = read('kit/components.css');
+const reducedReveal = components.match(/@media \(prefers-reduced-motion: reduce\) \{\s*\.stroke-glyph__reveal \{([^}]*)\}/);
+assert.ok(reducedReveal, 'the reveal keeps a rule of its own under reduced motion');
+assert.match(reducedReveal[1], /animation-duration:\s*\.7s\s*!important/, 'and is still written over 0.7 s - essential motion (WCAG 2.3.3)');
+assert.match(reducedReveal[1], /animation-iteration-count:\s*1\s*!important/, 'once per stroke');
+const tiles = read('screens/word/stroke-tiles.js');
+assert.doesNotMatch(tiles, /reducedMotion\(\)\s*\?\s*count/, 'reduced motion no longer shows the tiles\' characters whole and still');
+assert.match(tiles, /if \(reducedMotion\(\)\) return;/, 'under reduced motion the tiles write once and do not loop');
+
 console.log('test_orena_word_strokes.mjs: one stroke source, tracing judged on direction and order, parts as decomposition');

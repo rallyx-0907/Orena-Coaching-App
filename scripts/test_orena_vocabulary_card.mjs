@@ -294,6 +294,15 @@ const pine = toVocabularyModel({ identity: { language: 'zh', normalized: '松树
 assert.equal(pine.definition, '一种常绿的树。');
 assert.equal(pine.definitionLanguage, 'zh');
 assert.ok(!String(vocabularyCard(pine, { mode: 'detail', slots: { meaningLabel } })).includes('data-no-meaning'));
+// A saved note says nothing about its own language (PR 4, :8021): 森林 saved with the Vietnamese meaning, then read
+// with English support, labelled "rừng, rừng rậm" Chinese. Only Han text is known to be Chinese; any other note is
+// shown without a language tag rather than with a guessed one.
+const savedForest = toVocabularyModel({ word: '森林', definition: 'rừng, rừng rậm', short_meanings: [{ language: 'en', text: 'forest' }] }, { supportLanguage: 'en' });
+assert.equal(savedForest.meaning.text, 'forest');
+assert.equal(savedForest.definition, 'rừng, rừng rậm');
+assert.equal(savedForest.definitionLanguage, '', 'a Latin-script note is not claimed to be Chinese');
+const savedEnglishNote = toVocabularyModel({ word: 'resilient', definition: 'kiên cường', short_meanings: [{ language: 'en', text: 'able to recover' }] }, { supportLanguage: 'en' });
+assert.equal(savedEnglishNote.definitionLanguage, '', 'nor English, for an English word');
 // A saved item whose only meaning is the definition kept with it stays a meaning, as on main 947f744f.
 const savedCopper = toVocabularyModel({ word: 'copper', definition: 'A reddish metal.' }, { supportLanguage: 'vi' });
 assert.equal(savedCopper.meaning.text, 'A reddish metal.');

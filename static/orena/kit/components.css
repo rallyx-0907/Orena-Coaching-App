@@ -430,7 +430,9 @@
 .o-stroke-tile .stroke-glyph__on { fill: var(--accent); }
 .o-stroke-tile .stroke-glyph__off { fill: var(--border2); }
 .o-stroke-tile .stroke-glyph__rad { fill: var(--hz-radical); }
-@media (prefers-reduced-motion: reduce) { .stroke-glyph__reveal { animation-duration: .01s; } }
+/* Reduced motion keeps it: how a stroke is written - where it starts, which way it goes - is the content, not
+   decoration (WCAG 2.3.3 essential motion). base.css cuts every animation to ~0 there, so this one is restored. */
+@media (prefers-reduced-motion: reduce) { .stroke-glyph__reveal { animation-duration: .7s !important; animation-iteration-count: 1 !important; } }
 
 /* A card with no cover (HP-3 A): a --tint2 tile and the type's icon on its skill hue, as Today's hero draws it. */
 .c-media__img--blank {

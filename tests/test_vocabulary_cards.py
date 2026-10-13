@@ -230,6 +230,52 @@ def test_saved_library_projection_prefers_imported_orthography(monkeypatch) -> N
     assert item["orthography"] == source_orthography
 
 
+def _saved_row(word: str) -> dict:
+    return {
+        "word": word, "phonetic": "", "part_of_speech": "", "definition": "", "translation_vi": "",
+        "added_at": "", "source_essay_id": None, "source_fragment": "", "source_kind": "manual",
+        "focus_note": "", "review_stage": 0, "successful_recalls": 0, "lapse_count": 0,
+        "last_reviewed_at": "", "next_review_at": "",
+    }
+
+
+def test_saved_word_in_another_language_reads_its_own_language_catalogue(monkeypatch) -> None:
+    """森林 saved while learning English (PR 4, :8021): the join asked the English catalogue, found nothing, and
+    Word Detail and Review drew the word without its examples, Han-Viet, radicals or level. A Han word's entry is
+    in the Chinese catalogue, whatever the learner is learning now - the rule Word Detail's catalogue read uses."""
+
+    asked: list[tuple[str, str]] = []
+    entries = {
+        ("zh", "森林"): {
+            "level": "4",
+            "examples": [{"language": "zh", "text": "我们应该保护森林。"}],
+            "orthography": {"script": "han", "units": [{"text": "森"}, {"text": "林"}]},
+        },
+        ("en", "resilient"): {"level": "C1", "examples": [{"language": "en", "text": "Children are resilient."}]},
+    }
+
+    class Catalogue:
+        def find_entry(self, language: str, normalized: str):
+            asked.append((language, normalized))
+            return entries.get((language, normalized))
+
+    monkeypatch.setattr(becoming_library, "current_language_code", lambda: "en")
+    monkeypatch.setattr(becoming_library, "_content_repository", Catalogue())
+    english_page = {"resilient": entries[("en", "resilient")]}
+
+    chinese = becoming_library._row_to_item(_saved_row("森林"), english_page.get)
+    assert ("zh", "森林") in asked
+    assert chinese["level"] == "4"
+    assert chinese["examples"] == [{"language": "zh", "text": "我们应该保护森林。"}]
+    assert chinese["orthography"]["units"] == [{"text": "森"}, {"text": "林"}]
+
+    # A word in the learning language still reads the page decided once for the whole list.
+    asked.clear()
+    english = becoming_library._row_to_item(_saved_row("resilient"), english_page.get)
+    assert english["level"] == "C1"
+    assert asked == []
+
+
 def test_catalog_entry_card_has_no_memory_or_source_encounters() -> None:
     entry = {
         "word": "curious",

@@ -5967,7 +5967,7 @@ items above, and what PR 2 leaves open for the human:
   at its top, the header lies over the page; the design draws the header only at rest (transparent, the page below
   it). Chosen to keep it readable: it takes the phone bar's own chrome surface (`--bd-chrome` and its blur) while
   `data-chrome` is set, and is exactly as drawn at the top. A human decision whether that surface is right.
-- **VC-15 Word-detail lookup labels a foreign reading as pinyin (server).** `writing_coach/word_detail.py:203-206`
+- **VC-15 Word-detail lookup labels a foreign reading as pinyin (server). FIXED in PR 4 (branch `claude/vocab-card-e2e`):** `project_word_detail` now labels a reading `pinyin` only for a Chinese lookup of a Han headword; any other lookup's reading is `ipa` (`tests/test_word_detail.py`, the 松树 / resilient regressions). History: `writing_coach/word_detail.py:203-206`
   (`project_word_detail`) sets `pinyin` to the lookup's `pronunciation` whenever the headword is Han
   (`script_of`, :127), whatever language the lookup ran in (`source_language`, the route at :389). Word Detail sent
   the learner's current learning language, so a Chinese word opened while learning English (`松树`) was looked up as
@@ -5980,3 +5980,44 @@ items above, and what PR 2 leaves open for the human:
   reverted). The server should label `pinyin` only for a Chinese lookup; a one-line change with a pytest, not made
   here (no Docker run on this host with under 2 GB free).
 
+
+- **VC-18 The dark card, redesigned (D-182, follow-up).** The card's dark variant ("night violet") is disabled: the
+  card is light in both app themes, with its own 1px line as its edge on a dark page. Its dark values are recorded,
+  unapplied, in `kit/tokens.css`. Open: a dark card the human approves (palette, the Chinese seal and gold rules, the
+  illustration on a dark ground), then the tokens return under `data-theme='dark'` and the kit gate compares them
+  again. Until then the app's buttons (dark in the dark app) sit on the light card - AA holds (the primary turn action's
+  fill is the closest edge, 3.70:1 on the card's surface-alt).
+
+**PR 4 end-to-end on :8021 (2026-10-13).** `docs/vocab/samples/en_resilient.json` and `zh_senlin.json` went through the
+merged importer (preview: both `ready`/`new`; import into `qa-vocab-card-samples-en` / `-zh`, `pending_review`, 1
+imported, 0 failed, 0 conflicts) and the Admin lifecycle publish (`internal_curated`, `complete`, attested). Checked
+on Word Detail, Feed (the API answer, and the production feed-mode card over it), Review front/reveal/back, audio,
+Save -> saved words -> Review, at desktop and 360x740 touch, in the light and dark app (the card light in both).
+Every card fitted (`data-vcard-fits=yes`), no page or horizontal scroll at 360x740, the grades in view (VC-13 measured
+for these two entries). Fixed in PR 4: Word Detail's device voice spoke a Hanzi word with an en-US voice (it took the
+learning language; now `catalogueLanguage`). VC-16 evidence: before Save, the collection/feed card has no level
+source and no drawing; after Save, Review and Word Detail show "Oxford 5000", the drawing, UK and US IPA and the
+etymology - the provenance gap is exactly the projection named there. Open, server-side, not PR 4:
+
+- **VC-19 Word Detail opened directly, word not saved: the back face is empty.** With no list before it (a link, a
+  reload) the page seeds from `/api/vocabulary/catalogue/search`, whose rows carry only word, part of speech,
+  `readings`, `short_meanings` and level (app.py `becoming_vocabulary_catalogue_search`): no examples, related,
+  collocations, memory tip, definition - and no `pronunciations`, so an English word's IPA waits for the AI lookup.
+  Opened from the collection or the feed the same word is complete. Needs the full entry for a direct open (a
+  read-only entry route or a fuller search row).
+- **VC-20 The collection / feed card projection drops authored fields.** `illustration`, the second (US) IPA,
+  `level.source`, `en.etymology_vi` and all but the first `topic:` tag are stored (Review shows them after Save) but the
+  collection and feed cards do not carry them (see VC-16).
+- **VC-21 A saved word in another language loses its catalogue content. FIXED in PR 4:** the join now reads a Han
+  word from the Chinese catalogue and a Latin word saved while learning Chinese from the English one
+  (`becoming_library._word_language`, `tests/test_vocabulary_cards.py`); checked on :8021, 森林's back face shows its
+  examples again. With it, a saved note (the meaning shown at Save, in that day's support language) is no longer
+  tagged with the word's language - "rừng, rừng rậm" was labelled Chinese. History: `becoming_library._row_to_item` joins a
+  saved word with the catalogue of the current learning language only. `森林` saved while learning English comes back
+  without level, Han-Viet, radicals, measure words, related words, the English gloss or examples, so its Review card
+  and its Word Detail (which prefers the saved record) are poorer than before Save. Word Detail already reads the
+  catalogue in the word's own language (`catalogueLanguage`); the join should too. Not checked under a Chinese
+  learning language: this account's plan allows one target language.
+- **VC-22 With support language English, the AI lookup's meaning leads the authored English definition** on Word
+  Detail (`meaningOf` order: support-language localization, note, lookup, ...). The entry's `meanings[].en` is a
+  definition, not an `en` localization, so it never leads. A precedence decision for the human.

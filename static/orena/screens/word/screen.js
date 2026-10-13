@@ -262,7 +262,7 @@ export default async function mountWordDetail(element, ctx) {
     // One play action per reading row (UK, US) and one on a card without them: the same word's voice.
     element.querySelectorAll('[data-play]').forEach((playButton) => playButton.addEventListener('click', async () => {
       const onDevice = () => {
-        if (speakOnDevice(word, language)) toast(t('sourceDevice'));
+        if (speakOnDevice(word, catalogueLanguage(word, language))) toast(t('sourceDevice'));
         else toast(t('noAudio'));
       };
       try {
