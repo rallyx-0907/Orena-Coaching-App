@@ -5,7 +5,8 @@ A verified payment is recorded in `commerce_subscriptions` (billing); a hand-set
 the Plan screen (`account_state`), quota admission and the language limit all read that one answer.
 
 Precedence, pinned here so it cannot drift:
-  1. a valid billing grant (state active/trialing, `paid_through` absent or in the future)
+  1. a valid billing grant (state active/trialing, `paid_through` absent or in the future; or a recoverable state
+     inside its grace - Polar `past_due`, 2 days from `paid_through`, D-MON-011)
   2. a valid manual / legacy subscription (today's rule, unchanged)
   3. Free
 The billing source here is a TEST DOUBLE of `CommerceEntitlementSource`; the PostgreSQL read is proved in
@@ -18,7 +19,8 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from writing_coach.product import catalog
+from writing_coach.product import billing_grace, catalog
+from writing_coach.product.billing_grace import NO_GRACE
 from writing_coach.product.entitlement import resolve
 from writing_coach.product.membership import MembershipConflict, apply_change
 from writing_coach.product.service import ProductService
@@ -81,10 +83,13 @@ class BillingSource:
         return None if self.row is None else dict(self.row)
 
 
+GRACE = billing_grace.current({})   # the approved Billing v1 policy: Polar past_due, 48 hours
+
+
 def service(legacy: Legacy | None = None, bill: dict | None = None, *, billing_source: BillingSource | None = None,
-            usage=None) -> ProductService:
+            usage=None, grace=GRACE) -> ProductService:
     source = billing_source if billing_source is not None else (BillingSource(bill) if bill is not None else None)
-    return ProductService(LegacyRepo(legacy), usage=usage, billing=source, clock=lambda: NOW)
+    return ProductService(LegacyRepo(legacy), usage=usage, billing=source, clock=lambda: NOW, grace=lambda: grace)
 
 
 @pytest.fixture(autouse=True)
@@ -149,11 +154,64 @@ def test_no_entitlement_is_free():
     assert service(None, None, billing_source=BillingSource(None)).entitlement("learner") == effective
 
 
-@pytest.mark.parametrize("state", ["past_due", "paused", "pending", "unknown"])
+@pytest.mark.parametrize("state", ["paused", "pending", "unknown"])
 def test_a_billing_state_without_an_approved_grace_policy_grants_nothing(state):
-    effective = service(None, billing("pro", state)).entitlement("learner")
+    effective = service(None, billing("pro", state, paid_through=NOW - timedelta(hours=1))).entitlement("learner")
     assert (effective.plan_id, effective.active, effective.status) == ("free", False, state)
     assert effective.billing_live is (state != "unknown")
+
+
+# ----------------------------------------------------------------------------- grace (D-MON-011) --
+
+def test_a_polar_past_due_subscription_keeps_its_plan_inside_the_two_day_grace():
+    failed = NOW - timedelta(days=1)
+    effective = service(None, billing("pro", "past_due", paid_through=failed)).entitlement("learner")
+    assert (effective.plan_id, effective.source, effective.status, effective.active) == ("pro", "billing", "past_due", True)
+    assert effective.valid_until == failed + timedelta(hours=48)
+
+
+def test_a_polar_past_due_subscription_reads_free_when_the_grace_ends():
+    for failed in (NOW - timedelta(hours=48), NOW - timedelta(days=3)):
+        effective = service(None, billing("pro", "past_due", paid_through=failed)).entitlement("learner")
+        assert (effective.plan_id, effective.active, effective.status) == ("free", False, "past_due"), failed
+        assert effective.billing_live, "still billing-owned: Polar is retrying, an Admin cannot hand-set a plan"
+    just_inside = NOW - timedelta(hours=48) + timedelta(seconds=1)
+    assert service(None, billing("pro", "past_due", paid_through=just_inside)).plan_for_user("learner").id == "pro"
+
+
+def test_a_recovered_payment_restores_the_plan_from_polars_state():
+    lapsed = service(None, billing("pro", "past_due", paid_through=NOW - timedelta(days=3)))
+    recovered = service(None, billing("pro", "active", paid_through=NOW + timedelta(days=30)))
+    assert (lapsed.plan_for_user("learner").id, recovered.plan_for_user("learner").id) == ("free", "pro")
+
+
+def test_a_past_due_subscription_without_an_anchor_has_no_grace():
+    assert service(None, billing("pro", "past_due", paid_through=None)).plan_for_user("learner").id == "free"
+
+
+def test_grace_is_the_policys_not_the_resolvers():
+    row = billing("pro", "past_due", paid_through=NOW - timedelta(days=3))
+    assert resolve(legacy=None, billing=row, now=NOW).plan_id == "free", "no policy, no grace"
+    assert resolve(legacy=None, billing=row, now=NOW, grace=billing_grace.current({billing_grace.ENV: "168"})).plan_id == "pro"
+    one_hour = billing("pro", "past_due", paid_through=NOW - timedelta(hours=1))
+    assert resolve(legacy=None, billing=one_hour, now=NOW, grace=billing_grace.current({billing_grace.ENV: "0"})).plan_id == "free"
+    assert service(None, row, grace=NO_GRACE).plan_for_user("learner").id == "free"
+
+
+def test_only_polar_past_due_has_grace():
+    recent = NOW - timedelta(hours=1)
+    assert service(None, billing("pro", "past_due", provider="payos", paid_through=recent)).plan_for_user("learner").id == "free"
+    for state in ("paused", "pending"):
+        assert service(None, billing("pro", state, paid_through=recent)).plan_for_user("learner").id == "free", state
+
+
+@pytest.mark.parametrize(("raw", "hours"), [(None, 48), ("", 48), ("48", 48), ("0", 0), ("336", 336), ("337", 48),
+                                            ("-1", 48), ("two days", 48), ("1.5", 48)])
+def test_the_grace_hours_come_from_the_environment_within_range(raw, hours):
+    env = {} if raw is None else {billing_grace.ENV: raw}
+    assert billing_grace.past_due_hours(env) == hours
+    window = billing_grace.current(env).window("polar", "past_due")
+    assert window == (timedelta(hours=hours) if hours else None)
 
 
 def test_an_unknown_plan_id_on_a_billing_grant_is_reported_unknown_and_admits_as_free():
@@ -173,7 +231,8 @@ def test_precedence_a_valid_billing_grant_outranks_a_manual_grant():
 
 
 def test_precedence_a_billing_subscription_that_grants_nothing_falls_through_to_a_valid_manual_grant():
-    for row in (billing("plus", "ended"), billing("plus", "past_due"), prepaid("plus", paid_through=PAST)):
+    for row in (billing("plus", "ended"), billing("plus", "past_due", paid_through=NOW - timedelta(days=3)),
+                billing("plus", "paused"), prepaid("plus", paid_through=PAST)):
         effective = service(manual("pro", FUTURE), row).entitlement("learner")
         assert (effective.plan_id, effective.source) == ("pro", "manual"), row["state"]
 
@@ -213,6 +272,26 @@ def test_the_plan_screen_reads_each_record_once():
     legacy, source = LegacyRepo(manual("pro", FUTURE)), BillingSource(billing("plus"))
     ProductService(legacy, billing=source, clock=lambda: NOW).account_state("learner")
     assert (legacy.reads, source.reads) == (1, 1)
+
+
+def test_inside_the_grace_quota_and_the_plan_screen_still_read_the_paid_plan(monkeypatch):
+    from tests.test_quota_gate import FakeIncarnations, FakeQuotaRepository, MemorySettings
+    from writing_coach.product import language_limit, quota
+
+    svc = service(None, billing("plus", "past_due", paid_through=NOW - timedelta(hours=12)))
+    previous = quota.runtime()
+    monkeypatch.setattr(quota, "current_user_key", lambda: "learner")
+    try:
+        quota.configure_quota(repository=FakeQuotaRepository(), incarnations=FakeIncarnations(), plan_for=svc.plan_for_user,
+                              settings=MemorySettings(), env={quota.FLAG: "on", quota.METERS_FLAG: "writing.review"},
+                              clock=lambda: NOW)
+        assert (svc.account_state("learner")["plan"]["id"], language_limit._limit("learner")[1]) == ("plus", "plus")
+        with quota.admit("writing.review", request_digest="in-grace") as ticket:
+            ticket.dispatch("p")
+            ticket.settle(1)
+    finally:
+        quota.configure_quota(**{f: getattr(previous, f) for f in
+                                 ("repository", "incarnations", "plan_for", "settings", "reason", "env", "clock")})
 
 
 def test_plan_resolution_quota_admission_and_the_language_limit_agree(monkeypatch):

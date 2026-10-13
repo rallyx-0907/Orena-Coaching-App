@@ -116,6 +116,24 @@ def test_a_polar_subscription_is_the_effective_plan(world):
     assert world["service"].plan_for_user(world["key"]).id == "pro"
 
 
+def test_a_polar_past_due_keeps_the_plan_for_the_grace_from_the_last_paid_end(world):
+    """A past-due event that carries no paid-through keeps the stored end of the last paid period (the commerce
+    record's own rule), and the 2-day grace (D-MON-011) counts from it."""
+    paid_end = datetime.now(UTC) - timedelta(hours=6)
+    record(world, version=1, plan="pro", provider="polar", external="sub_polar_g", paid_through=paid_end)
+    record(world, version=2, state="past_due", plan="pro", provider="polar", external="sub_polar_g", paid_through=None)
+    stored = world["commerce"].subscription_for_account(world["account"])
+    assert (stored["state"], stored["paid_through"]) == ("past_due", paid_end)
+    effective = world["service"].entitlement(world["key"])
+    assert (effective.plan_id, effective.status, effective.valid_until) == ("pro", "past_due", paid_end + timedelta(hours=48))
+    record(world, version=3, state="past_due", plan="pro", provider="polar", external="sub_polar_g",
+           paid_through=datetime.now(UTC) - timedelta(days=3))
+    assert world["service"].plan_for_user(world["key"]).id == "free", "the grace ended"
+    record(world, version=4, state="active", plan="pro", provider="polar", external="sub_polar_g",
+           paid_through=datetime.now(UTC) + timedelta(days=30))
+    assert world["service"].plan_for_user(world["key"]).id == "pro", "a recovered payment restores the plan"
+
+
 def test_a_deleted_incarnations_billing_record_is_not_the_accounts(world):
     record(world, version=1, plan="pro", paid_through=datetime.now(UTC) + timedelta(days=30))
     world["incarnations"].mark_deleted(world["incarnation"])

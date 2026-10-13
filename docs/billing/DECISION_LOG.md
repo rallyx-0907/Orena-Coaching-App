@@ -58,3 +58,20 @@ the plan would take money for nothing. | One PR at a time; PR-MON-1 first.
 D-MON-009 | 2026-10-13 | One documentation tree (human). The brief's `docs/monetization/{MASTER_PLAN,STATUS,
 DECISION_LOG,RISK_REGISTER}.md` map onto `docs/billing/{BILLING_LANE,BILLING_STATUS,DECISION_LOG,RISK_REGISTER}.md`;
 `BILLING_STATUS.md` is the only resume point. | No parallel documentation. | `docs/monetization/` is not created.
+
+D-MON-010 | 2026-10-13 | Billing outranks manual, confirmed (human). D-MON-006's precedence stands: a paid billing
+entitlement outranks a manual/legacy row and cannot be overridden from Admin in PR-MON-1. A future support override
+is a separate break-glass mechanism with authorization, a reason, an audit trail and an expiry. | D-154 intent; a
+paid entitlement must not be silently replaced by hand. | No override path is built now; break-glass is out of
+PR-MON-1's scope.
+
+D-MON-011 | 2026-10-13 | Polar past_due grace, 2 days (human). Supersedes the part of D-MON-006 that made `past_due`
+grant nothing. A Polar subscription in `past_due` (Polar `past_due`/`unpaid`) keeps its paid entitlement for 48 hours
+from the end of its paid period; after that it reads as Free while it stays past due; a recovered payment restores
+the plan from Polar's own state. The number is policy, not resolver code (`writing_coach/product/billing_grace.py`,
+`BILLING_PAST_DUE_GRACE_HOURS`, 0..336, default 48). The anchor is `paid_through`, which the Polar adapter records
+for a past-due event as `past_due_at`, else `current_period_start`, else the stored end of the last paid period:
+Polar advances the cycle before charging, so a past-due `current_period_end` is the unpaid cycle's end. | Recoverable
+failed renewals should not cut a paying learner off at once; arrival time cannot anchor the window (commerce §3). |
+`paused`/`pending`/`unknown` and payOS still have no grace. The policy is environment-configured until the Admin
+policies page gains its EN/VI/ZH copy (UI lane); `subscription.past_due` is now a handled Polar event.

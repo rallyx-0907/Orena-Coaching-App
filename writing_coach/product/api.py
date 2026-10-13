@@ -247,7 +247,7 @@ class billing_aware_membership:
         if getattr(self._service, "billing", None) is None:
             return account
         billing = self._service.billing.subscription_for_user(account["user_key"])
-        owned = resolve(legacy=None, billing=billing, now=self._service.clock())
+        owned = resolve(legacy=None, billing=billing, now=self._service.clock(), grace=self._service.grace())
         if not owned.billing_live:
             return account
         until = billing.get("paid_through")

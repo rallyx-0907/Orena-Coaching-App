@@ -19,12 +19,17 @@ Precedence, explicit and tested (`tests/test_effective_entitlement.py`):
 3. **Free**.
 
 Billing outranks a manual grant because D-154 says a subscription billing owns is never overridden by hand; no Admin
-override of a paid entitlement exists. A billing subscription in `past_due`, `paused`, `pending` or `unknown` grants
-nothing: grace is unset commercial policy, and missing policy blocks paid admissions (§3). It falls through to 2, and
-the reported status is still the billing one, so the account does not read as "no subscription". The placeholder row
-`state='none'`, placed before any event is decided, is no subscription at all.
+override of a paid entitlement exists (a future support override is a separate break-glass mechanism, D-MON-010).
 
-`resolve` is pure: the two rows and the clock in, the decision out. `ProductService` does the reads.
+A billing subscription in a recoverable state keeps its plan only inside the grace the policy gives that provider and
+state, counted from its `paid_through` (D-MON-011: Polar `past_due`, 2 days). Outside it - and for `paused`,
+`pending`, `unknown`, which have no approved policy (§3: missing policy blocks paid admissions) - it grants nothing
+and falls through to 2. The reported status stays the billing one, so the account does not read as "no
+subscription", and the account stays billing-owned. A past-due subscription with no `paid_through` has no anchor, so
+no grace. The placeholder row `state='none'`, placed before any event is decided, is no subscription at all.
+
+`resolve` is pure: the two rows, the clock and the grace policy in, the decision out; it knows no grace number
+(`writing_coach.product.billing_grace` does). `ProductService` does the reads.
 """
 from __future__ import annotations
 
@@ -33,6 +38,7 @@ from datetime import UTC, datetime
 from collections.abc import Mapping
 from typing import Any, Protocol
 
+from writing_coach.product.billing_grace import NO_GRACE, GracePolicy
 from writing_coach.product.catalog import DEFAULT_PLAN_ID, Plan, known_plan_id, plan_by_id
 from writing_coach.product.membership import manual_expired
 
@@ -100,24 +106,33 @@ def _moment(value: Any) -> datetime | None:
     return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
 
 
-def _billing_state(row: Mapping[str, Any], now: datetime) -> tuple[str, datetime | None]:
-    """The billing row's effective state: a granting or live state past its `paid_through` has ended."""
+def _billing_grant(row: Mapping[str, Any], now: datetime, grace: GracePolicy) -> tuple[str, datetime | None, bool]:
+    """(effective state, valid until, grants now). A granting state past its `paid_through` has ended; a recoverable
+    state grants until `paid_through` + its grace, and only with a `paid_through` to count from."""
     state = _text(row.get("state")) or "unknown"
     until = _moment(row.get("paid_through"))
-    if state in LIVE and until is not None and until <= now:
-        return "ended", until
-    return state, until
+    if state in GRANTING:
+        if until is not None and until <= now:
+            return "ended", until, False
+        return state, until, True
+    window = grace.window(_text(row.get("provider")), state)
+    if window is not None and until is not None:
+        grace_end = until + window
+        return state, grace_end, grace_end > now
+    return state, until, False
 
 
-def resolve(*, legacy: object | None, billing: Mapping[str, Any] | None, now: datetime) -> EffectiveEntitlement:
-    """The effective entitlement from the legacy row, the billing row and the clock (module docstring)."""
+def resolve(*, legacy: object | None, billing: Mapping[str, Any] | None, now: datetime,
+            grace: GracePolicy = NO_GRACE) -> EffectiveEntitlement:
+    """The effective entitlement from the legacy row, the billing row, the clock and the grace policy (module
+    docstring). Without a grace policy no recoverable state grants."""
     billing_status = None
     billing_live = False
     if billing is not None and _text(billing.get("state")) != _ABSENT:
-        state, until = _billing_state(billing, now)
+        state, until, grants = _billing_grant(billing, now, grace)
         billing_live = state in LIVE
         reconciliation = _text(billing.get("reconciliation_state")) or "current"
-        if state in GRANTING:
+        if grants:
             return EffectiveEntitlement(_text(billing.get("plan_id")) or DEFAULT_PLAN_ID, "billing", state, True,
                                         billing_live=True, valid_until=until, reconciliation=reconciliation)
         billing_status = state

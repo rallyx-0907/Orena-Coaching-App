@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from writing_coach.product.catalog import Plan
+from writing_coach.product import billing_grace
 from writing_coach.product.entitlement import BillingEntitlementSource, EffectiveEntitlement, resolve
 from writing_coach.product.repository import ProductRepository
 
@@ -61,12 +62,14 @@ UsageReader = Callable[[str, Plan], dict[str, dict[str, Any]]]
 class ProductService:
     def __init__(self, repository: ProductRepository | None = None, usage: UsageReader | None = None, *,
                  billing: BillingEntitlementSource | None = None,
-                 clock: Callable[[], datetime] = lambda: datetime.now(UTC)) -> None:
+                 clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+                 grace: Callable[[], billing_grace.GracePolicy] = billing_grace.current) -> None:
         self.repository = repository
         self.usage = usage
         # The billing record (`commerce_subscriptions`); None where the runtime has no commerce store (D-MON-006).
         self.billing = billing
         self.clock = clock
+        self.grace = grace   # the billing grace policy in force (D-MON-011), read at each resolution
 
     def _repository(self) -> ProductRepository:
         if self.repository is None:
@@ -79,7 +82,8 @@ class ProductService:
         cannot be read raises; nothing guesses a plan."""
         legacy = self._repository().get_subscription(user_key)
         billing = self.billing.subscription_for_user(user_key) if self.billing is not None else None
-        return resolve(legacy=legacy, billing=billing, now=self.clock())
+        return resolve(legacy=legacy, billing=billing, now=self.clock(),
+                       grace=self.grace() if billing is not None else billing_grace.NO_GRACE)
 
     def plan_for_user(self, user_key: str, *, strict: bool = False) -> Plan:
         """The effective plan. `strict` (enforcement) raises when the catalogue cannot be read."""
