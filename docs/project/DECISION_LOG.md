@@ -5845,3 +5845,22 @@ Human decision, 2026-10-12.
 - Gated: the card tokens equal the light values under `data-theme="dark"`; the recorded dark values are the design's;
   AA for card text is one set in both themes; the kit buttons hold AA (label) and 3:1 (fill on the card) in the dark
   app; the edge rule uses the card's line.
+
+## D-183 - The vocabulary card's header, illustration and lead, as the human placed them
+
+Human decisions, 2026-10-13, after reviewing the two real cards (resilient, 森林) on :8021.
+
+- **Header.** The level tag, on the English card its source, and the part of speech sit together on the left; play
+  and Save sit alone at the top right, drawn 34px (each still a 44px touch target: a 44px button whose 5px padding is
+  unpainted and taken back by a -5px margin). The discs never leave the first line; the left group wraps in its own
+  column when the card is narrow. The action row under the reading is gone.
+- **Illustration.** It takes the room that row had: 220px (EN) / 190px (ZH) at a 520px card, was 180 / 150 - "the
+  picture is what the card is remembered by". Still scaled by the card's width and contained to the viewport.
+- **Chinese lead.** Meaning and Radical are two columns, in exactly the columns and column gap of the Measure word /
+  Related words pair below, so Radical lines up with Related words and a longer meaning wraps in its own column.
+- **One card, one size.** Both faces have the card's one height from the first paint: the fit measures both faces and
+  keeps the taller (never past the box), and a turn keeps it.
+- **Support language.** The QA account's support language is Vietnamese (the samples' translations, explanations,
+  example labels and memory tips are Vietnamese); a learner whose support language has no translation still sees
+  none - no other-language fallback for example content.
+- Gated in `scripts/test_orena_vocabulary_card.mjs`.

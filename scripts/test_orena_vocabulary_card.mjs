@@ -177,8 +177,8 @@ const enBack = faceOf(enCard, 'back');
 // Meaning (support meaning, English definition), Word family, Synonyms / antonyms, See examples ->.
 inOrder(enFront, [
   'c-vcard__top', 'c-vcard__level">C1<', 'Oxford 5000', 'c-vcard__pos', 'adjective', 'Tính từ',
+  'c-vcard__top-end', 'c-vcard__actions', 'data-play', 'data-save',
   'c-vcard__word', '>resilient<', 'data-region="uk"', '<b>Anh</b>', '/rɪˈzɪliənt/', 'data-region="us"', '<b>Mỹ</b>', '/rɪˈzɪljənt/',
-  'c-vcard__actions', 'data-play', 'data-save',
   '<figure class="c-vcard__art" role="img" aria-label="Mầm cây vươn lên qua khe nứt mặt đất trong gió" data-art="sprout-through-crack">', '<svg',
   'data-section="sectionMeaning"', '>Nghĩa<', 'kiên cường; có khả năng phục hồi nhanh', 'able to recover quickly',
   'data-section="sectionWordFamily"', '>Họ từ<', 'resilience', '(n)', 'resiliently', '(adv)',
@@ -206,10 +206,10 @@ const zhBack = faceOf(zhCard, 'back');
 // Meaning (support + English), Radical (木 once, then each character = parts · strokes), Measure word, Related words.
 inOrder(zhFront, [
   'c-vcard__top', 'c-vcard__level">HSK 4<', 'c-vcard__pos', '名词', 'Danh từ',
+  'c-vcard__top-end', 'c-vcard__actions', 'data-play', 'data-save',
   '<ruby>森<rt>sēn</rt></ruby><ruby>林<rt>lín</rt></ruby>', 'Hán Việt', 'SÂM LÂM',
-  'c-vcard__actions', 'data-play', 'data-save',
   'data-art="ink-pine-trees"',
-  'data-section="sectionMeaning"', 'rừng, rừng rậm', 'forest',
+  'c-vcard__lead', 'data-section="sectionMeaning"', 'rừng, rừng rậm', 'forest',
   'data-section="sectionRadical"', '>木<', 'mù', 'Mộc', '(cây)', '森 = 木 + 木 + 木', '12 nét', '林 = 木 + 木', '8 nét',
   'data-section="sectionMeasureWord"', 'Lượng từ', '一片森林', 'yí piàn sēnlín',
   'data-section="sectionRelated"', 'Từ liên quan', '树林', 'shùlín', 'rừng cây', '森林火灾', 'cháy rừng',
@@ -381,15 +381,15 @@ const desk = sizes(at520);
 // s = 1 at a 520px card: the design's own values.
 assert.deepEqual(
   Object.fromEntries(Object.entries(desk).map(([k, v]) => [k, Math.round(v * 100) / 100])),
-  { headwordEn: 60, headwordZh: 104, meaning: 22, definition: 15, body: 15, exampleEn: 19, exampleZh: 24, label: 12, level: 13, chip: 13, ipa: 17, regionLabel: 12, artEn: 180, artZh: 150, radical: 56, pad: 40 },
+  { headwordEn: 60, headwordZh: 104, meaning: 22, definition: 15, body: 15, exampleEn: 19, exampleZh: 24, label: 12, level: 13, chip: 13, ipa: 17, regionLabel: 12, artEn: 220, artZh: 190, radical: 56, pad: 40 },
   'at a 520px card everything is the design value (s = 1)',
 );
 const phoneSizes = sizes(at328);
 const s328 = 328 / 520;
 assert.ok(Math.abs(phoneSizes.headwordEn - 60 * s328) < 0.1, `EN headword scales: ${phoneSizes.headwordEn}`);
 assert.ok(Math.abs(phoneSizes.headwordZh - 104 * s328) < 0.1, `ZH headword scales: ${phoneSizes.headwordZh}`);
-assert.ok(Math.abs(phoneSizes.artEn - 180 * s328) < 0.1, `EN illustration scales: ${phoneSizes.artEn}`);
-assert.ok(Math.abs(phoneSizes.artZh - 150 * s328) < 0.1, `ZH illustration scales: ${phoneSizes.artZh}`);
+assert.ok(Math.abs(phoneSizes.artEn - 220 * s328) < 0.1, `EN illustration scales: ${phoneSizes.artEn}`);
+assert.ok(Math.abs(phoneSizes.artZh - 190 * s328) < 0.1, `ZH illustration scales: ${phoneSizes.artZh}`);
 assert.ok(Math.abs(phoneSizes.radical - 56 * s328) < 0.1 && Math.abs(phoneSizes.pad - 40 * s328) < 0.1);
 for (const key of ['meaning', 'definition', 'body', 'exampleEn', 'exampleZh']) assert.ok(phoneSizes[key] >= 13, `${key} keeps 13px: ${phoneSizes[key]}`);
 for (const key of ['label', 'level', 'chip']) assert.ok(phoneSizes[key] >= 11, `${key} keeps 11px: ${phoneSizes[key]}`);
@@ -782,6 +782,55 @@ console.log(`  model fit at 328 x 474: ${fitReport.join('; ')}`);
   assert.equal(reviewBack.dataset.vcardFits, 'yes');
   assert.match(String(vocabularyCard(en, { mode: 'review-back', learner: learnerState({ review_stage: 2, next_review_at: '' }), slots: { footer: { stage: 'Mới', due: 'Hôm nay' } } })), /<div class="c-vcard__foot">\s*<div class="c-vcard__mastery">/, 'the review-back card carries the mastery footer, in its foot (counted once, with the foot)');
 }
+// Both faces are one card, one size (the human, 2026-10-13: on :8021 森林's front was 582px, its back 311px). Turning
+// keeps the tallest height the card has had, so the back never shrinks below the front, and a taller back makes the
+// front as tall when turned back - within the box, never past it.
+{
+  const { bindVocabularyCards } = await import('../static/orena/kit/vocabulary-card.js');
+  const handlers = {};
+  let height = 582;
+  const face = (name) => ({ hidden: name === 'back', focus() {} });
+  const faces = { front: face('front'), back: face('back') };
+  const card = {
+    dataset: { face: 'front' },
+    style: { minHeight: '', setProperty() {} },
+    getBoundingClientRect: () => ({ height }),
+    querySelector: (selector) => faces[selector.includes('front') ? 'front' : 'back'],
+    querySelectorAll: () => [],
+  };
+  const turn = (to) => ({ dataset: { vcardTurn: to }, closest: () => card, addEventListener: (_, fn) => { handlers[to] = fn; } });
+  bindVocabularyCards({ querySelectorAll: () => [turn('back'), turn('front')] });
+  handlers.back({ stopPropagation() {} });
+  assert.equal(card.style.minHeight, '582px', 'the back keeps the front\'s height');
+  height = 640;
+  handlers.front({ stopPropagation() {} });
+  assert.equal(card.style.minHeight, '640px', 'a taller back makes the front as tall');
+  height = 600;
+  handlers.back({ stopPropagation() {} });
+  assert.equal(card.style.minHeight, '640px', 'never smaller again');
+  const boxed = fakeCard({ top: 100, columnBottom: 616 });
+  boxed.style.minHeight = '640px';
+  fitVocabularyCards({ querySelectorAll: () => [boxed] }, { viewport: true });
+  assert.equal(boxed.style.minHeight, '500px', 'a re-fit to a smaller box caps the kept height at the box (616 - 100 - 16)');
+}
+// From the first paint, not only after a turn (:8021 resilient: front 638px, back 650px, so the first turn jumped
+// 12px): the fit measures the hidden face too and gives the card the taller height, then shows the face it was on.
+{
+  const heights = { front: 638, back: 650 };
+  const face = (hidden) => ({ hidden, clientHeight: 700, querySelector: () => null });
+  const faces = { front: face(false), back: face(true) };
+  const shown = () => (faces.front.hidden ? 'back' : 'front');
+  const card = {
+    dataset: {},
+    style: { minHeight: '', setProperty() {} },
+    closest: () => ({ getBoundingClientRect: () => ({ bottom: 900 }), scrollTop: 0 }),
+    getBoundingClientRect: () => ({ top: 100, height: Math.max(heights[shown()], parseFloat(card.style.minHeight) || 0) }),
+    querySelectorAll: (selector) => (selector === '.c-vcard__face' ? [faces.front, faces.back] : []),
+  };
+  fitVocabularyCards({ querySelectorAll: () => [card] }, { viewport: true });
+  assert.equal(card.style.minHeight, '650px', 'the card takes the taller face\'s height before any turn');
+  assert.ok(!faces.front.hidden && faces.back.hidden, 'and still shows the face it was on');
+}
 // It re-fits on resize (every screen) and on turn (the other face fits on its own).
 const kitSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
 assert.match(kitSrc.slice(kitSrc.indexOf('export function bindVocabularyCards')), /containCard\(card\)/, 'turning a card fits the face it shows');
@@ -950,10 +999,30 @@ assert.equal(toVocabularyModel(pineEn, { supportLanguage: 'vi', seed: { short_me
 
 /* --- D-180: the header as drawn, and nothing of the app's palette inside the card --- */
 for (const card of [enCard, zhCard]) {
-  const top = card.slice(card.indexOf('<div class="c-vcard__top">'), card.indexOf('</div>', card.indexOf('c-vcard__pos')) + 6);
-  assert.ok(top.indexOf('c-vcard__level') < top.indexOf('c-vcard__pos'), 'level tag on the left, part of speech on the right, one row');
-  assert.ok(!top.includes('data-save') && !top.includes('data-play'), 'no disc pushes the part of speech down: the actions sit under the reading');
+  // The human, 2026-10-13: play and Save sit top right, on the part of speech's row, smaller, so the illustration
+  // takes the room the old action row had.
+  const front = faceOf(card, 'front');
+  const head = front.slice(front.indexOf('<div class="c-vcard__top">'), front.indexOf('c-vcard__body'));
+  // The human, 2026-10-13: the part of speech beside the level, on the left; the discs alone on the right.
+  const tags = head.slice(head.indexOf('c-vcard__tags'), head.indexOf('c-vcard__top-end'));
+  assert.ok(tags.indexOf('c-vcard__level') < tags.indexOf('c-vcard__pos') && tags.includes('c-vcard__pos'), 'part of speech beside the level, in the left group');
+  const end = head.slice(head.indexOf('c-vcard__top-end'));
+  assert.ok(!end.includes('c-vcard__pos') && end.indexOf('data-play') < end.indexOf('data-save'), 'only play and Save on the right');
+  assert.match(cardCss, /\.c-vcard__top \{[^}]*flex-wrap: nowrap/, 'the discs stay on the first line; the left group wraps in its own column');
+  assert.equal((front.match(/data-play/g) || []).length, 1, 'one play disc on the face');
+  assert.ok(!front.slice(front.indexOf('c-vcard__body')).includes('c-vcard__actions'), 'no action row left in the body');
 }
+// Chinese: Meaning and Radical side by side (two columns), not stacked.
+const lead = zhFront.slice(zhFront.indexOf('c-vcard__lead'));
+assert.ok(lead.indexOf('sectionMeaning') < lead.indexOf('sectionRadical') && lead.indexOf('sectionRadical') < lead.indexOf('sectionMeasureWord'), 'Meaning and Radical share the lead grid');
+// The human, 2026-10-13: Radical lines up with Related words below it - the lead uses the pair's own columns and
+// column gap, so a long meaning wraps inside its column and never moves the radical.
+const ruleBody = (selector) => (cssRules.find(([sel]) => sel === selector) || [])[1] || '';
+const declOf = (selector, prop) => (ruleBody(selector).match(new RegExp(`(?:^|[;\\s])${prop}:\\s*([^;]+);`)) || [])[1];
+assert.equal(declOf('.c-vcard__lead', 'display'), 'grid');
+assert.equal(declOf('.c-vcard__lead', 'grid-template-columns'), declOf('.c-vcard__pair', 'grid-template-columns'), 'the same columns as the pair below');
+assert.equal(declOf('.c-vcard__lead', 'column-gap'), declOf('.c-vcard__pair', 'column-gap'), 'and the same gap between them');
+assert.ok(!cardCss.includes('c-vcard__lead--two') && !zhFront.includes('c-vcard__lead--two'), 'no content-sized meaning column');
 const kitCardSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
 assert.doesNotMatch(kitCardSrc.replace(/\/\*[\s\S]*?\*\//g, ''), /o-tag/, 'no kit tag on the content');
 const contentCss = cssRules.filter(([selector]) => !isButtonRule(selector)).map(([selector, body]) => `${selector}{${body}}`).join('');
@@ -967,8 +1036,12 @@ for (const card of [enCard, zhCard, String(vocabularyCard(zh, { mode: 'review-ba
 assert.doesNotMatch(String(vocabularyCard(en, { mode: 'review-front' })), /o-tag|var\(--accent/);
 const tagged2 = String(vocabularyCard(pineAlone, { mode: 'detail', slots: { meaningLabel: () => 'Tiếng Anh' } }));
 assert.ok(tagged2.includes('<span class="c-vcard__lang">Tiếng Anh</span>'), 'the meaning language tag is drawn by the card');
-// Touch targets: the discs are 44px.
-assert.match(cardCss, /\.c-vcard__disc \{[^}]*width: 44px;[^}]*height: 44px/);
+// The discs are drawn 34px (the human, 2026-10-13: smaller, top right) and still take a 44px touch target.
+assert.match(cardCss, /\.c-vcard__disc \{[^}]*box-sizing: border-box;[^}]*width: 44px;[^}]*height: 44px;[^}]*padding: 5px;[^}]*margin: -5px;[^}]*background-clip: content-box/, 'a 44px target, drawn and laid out at 34px');
+// A `background` shorthand after it would reset the clip and paint the whole 44px: the discs set only the colour.
+for (const [selector, body] of cssRules.filter(([selector]) => /\.c-vcard__disc/.test(selector))) {
+  assert.doesNotMatch(body, /(^|[;\s])background:/, `${selector} sets background-color, never the shorthand`);
+}
 // ZH (lead's :8021 check: the content computed the app sans, `:lang(vi)` sets it on every Vietnamese element):
 // the family is set on EVERY element of the Chinese card, and only by these four rules - no content class re-sets it.
 assert.match(cardCss, /--vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;/);
