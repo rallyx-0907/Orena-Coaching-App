@@ -5917,3 +5917,36 @@ follow-up commits; the human accepted the residual risk below on 2026-10-13.** N
   to keep signed-out use from the host; otherwise they answer 403. Staging :8000 is unchanged (public, auth on).
 - Full policy and threat model: `docs/SECURITY_BOUNDARY.md`. Not done here: non-root container, CSP/`innerHTML`
   inventory.
+
+## D-186 - Official launchers assert Docker's real published address on the host (issue #140)
+
+**Status: independently reviewed and APPROVED (Delegated Architecture Reviewer, Claude Opus 5.5, independent of the
+implementer; docs/reviews/architecture/SEC_140_PUBLISH_ASSERT_REVIEW_2026-10-13.md, approved head `894046e8`); merge
+authorized by the human on 2026-10-13 when CI is green. Architecture review is not product approval.**
+Closes the follow-up recorded in D-185.
+
+- **Decision.** After an official launcher starts the app container, a host-side check
+  (`scripts/assert_published_loopback.py`, stdlib only) reads Docker's ACTUAL binding of the app port and refuses the
+  lane when any binding is not loopback: it prints the container and the offending address, stops the container and
+  exits non-zero. Rule: every binding of the app port (container 8000/tcp) must be 127.0.0.0/8, `::1` or `localhost`
+  (the `is_loopback_host` rule); `0.0.0.0`, `::`, an empty `HostIp` (Docker's "all interfaces"), a private or any other
+  address, an unpublished port, or an unreadable Docker answer is a refusal (fail closed).
+- **Reads.** Only the container's `.NetworkSettings.Ports` and `.HostConfig.PortBindings`, each through a `--format`
+  template. Never the whole config, never the environment; no secret is read or printed. Both documents are consulted
+  so a stopped container or a hand-edited request is also caught.
+- **LAN opt-in.** The only non-loopback path stays `ORENA_INSECURE_DEV_LAN_BIND_HOST` (D-185), which requires Google
+  sign-in. A wrapper passes `--lan-opt-in` only when that variable is set in the launching shell, and the check then
+  accepts a wide publish only if an unauthenticated `GET /api/me` on the loopback port answers 401 (sign-in is on); it
+  does not read container env. A wide publish whose app answers signed-out is refused and stopped. An opt-in set only in
+  `.env` is not seen by the wrapper and fails closed; export it in the shell.
+- **Coverage.** All seven launchers of `tests/test_local_boundary_deployment.py`: `compose.yaml` (via `start_docker.ps1`,
+  `start_dev.ps1`, `start_public.ps1`), `scripts/agent_e2e`, `scripts/agent_live`, `scripts/mobile_qa_runtime.ps1`,
+  `scripts/product_restore_rehearsal.ps1`, `scripts/staging_update.ps1`, and `scripts/staging_8000_deploy.ps1`, which
+  gets a READ-ONLY check (`--no-stop`) that fails loudly before success is declared; its publish, env and rollback are
+  unchanged (human-operated, D-127). A test fails if a listed launcher does not run the assertion after its start.
+- **Changed behaviour.** `start_dev.ps1` now runs `up -d --build` then `watch` (a blocking `up --watch` could not be
+  followed by a check). `mobile_qa_runtime.ps1` runs detached under the name `orena-mobile-qa-<Port>`, checks, follows
+  the log, and removes the container on exit (replacing `--rm`).
+- **Not covered.** A container started by hand outside the official launchers; a publish edited after the check ran;
+  `docker run` helpers not in the inventory. Same-host proxy, `host.docker.internal` and DNS-rebinding residuals of D-185
+  are unchanged. See `docs/SECURITY_BOUNDARY.md`.

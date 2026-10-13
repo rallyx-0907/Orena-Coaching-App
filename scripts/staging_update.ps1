@@ -220,6 +220,10 @@ $run = @('run', '-d', '--name', $Web, '--label', 'orena.staging=1', '--label', "
          $Image)
 & docker @run | Out-Null
 if ($LASTEXITCODE -ne 0) { Die "the web container did not start. Previous container: $Web-before-$stamp" }
+# Host-side assertion of Docker's REAL published address (issue #140); refuses and stops the new container.
+$global:LASTEXITCODE = 1
+if (Get-Command python -ErrorAction SilentlyContinue) { & python (Join-Path $PSScriptRoot 'assert_published_loopback.py') --container $Web --port 8000 } else { Write-Host "python was not found; the published address cannot be verified." -ForegroundColor Red }
+if ($LASTEXITCODE -ne 0) { Die "$Web is not published on loopback and was stopped. Previous container: $Web-before-$stamp" }
 
 Step "7. Health"
 $healthy = $true

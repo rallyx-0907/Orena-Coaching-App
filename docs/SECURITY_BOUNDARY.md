@@ -12,8 +12,12 @@ learner scope. Config-local does not imply request-local.
 1. **Primary boundary: the deployment config and launcher.** Every official launcher publishes the app on loopback
    (`127.0.0.1`) by default; the only route to anything wider is the insecure-named `ORENA_INSECURE_DEV_LAN_BIND_HOST`.
    This is test-locked across all compose files and launch scripts, not left to environment variables inside the app.
-2. **Second layer: the app's per-request peer check** (below), which keeps a remote caller from being treated as local.
-3. **Defense-in-depth: the startup refusal** of an unauthenticated development runtime configured for the public.
+2. **Second layer: the host-side publish assertion (issue #140).** After each official launcher starts the app
+   container, `scripts/assert_published_loopback.py` reads Docker's actual port bindings (only the two port fields,
+   never the container config or environment) and stops the container, with a clear message and a non-zero exit, when
+   any binding of the app port is not loopback. See "Host-side publish assertion".
+3. **Third layer: the app's per-request peer check** (below), which keeps a remote caller from being treated as local.
+4. **Defense-in-depth: the startup refusal** of an unauthenticated development runtime configured for the public.
 
 ## What "local" means now
 
@@ -83,6 +87,31 @@ the host browser after this change until it is recreated (only the human restart
 loopback `PUBLIC_BASE_URL` (an HTTPS or public origin with sign-in off is refused at startup). :8021 (sign-in on) and
 :8000 staging are unchanged. The boot line and the once-per-address refusal log say which part is missing.
 
+## Host-side publish assertion
+
+The app cannot see where Docker publishes its port; the host can. After `docker compose up` or `docker run`, each
+official launcher runs `python scripts/assert_published_loopback.py --container <id> --port 8000`:
+
+- Reads only the container's `.NetworkSettings.Ports` and `.HostConfig.PortBindings`, each through a `--format`
+  template. Never the container config or environment.
+- Passes only when every binding of 8000/tcp is loopback (127.0.0.0/8, `::1`, `localhost`: the `is_loopback_host`
+  rule). Refuses `0.0.0.0`, `::`, an empty `HostIp` (Docker's all interfaces), any other address, an unpublished port
+  and an unreadable Docker answer. A mixed IPv4 + IPv6 list passes only if every entry does.
+- On refusal it names the container and address, stops the container and exits non-zero (2 refused, 3 unreadable, 4 refused and the
+  stop itself failed or timed out, reported as STOP FAILED, never as stopped); the launcher exits non-zero (the Python
+  runners raise). Every PowerShell call site resets `$LASTEXITCODE` to 1 just before the call and runs it only when
+  `python` exists, so a missing interpreter is a refusal, not a silent pass. `start_dev.ps1`'s `watch` is not followed
+  by a clean stop on Ctrl+C (tracked, not changed here).
+- The LAN opt-in (`ORENA_INSECURE_DEV_LAN_BIND_HOST` set in the launching shell) lets a wide publish pass only when an
+  unauthenticated `GET /api/me` on the loopback port answers 401, i.e. sign-in is on. The wrapper does not read
+  container env. An opt-in only in `.env` fails closed.
+- Launchers: `start_docker.ps1`, `start_dev.ps1`, `start_public.ps1` (compose.yaml), `scripts/agent_e2e/run.py`,
+  `scripts/agent_live/run.py`, `scripts/mobile_qa_runtime.ps1`, `scripts/product_restore_rehearsal.ps1`,
+  `scripts/staging_update.ps1`. `scripts/staging_8000_deploy.ps1` (human-operated) gets a read-only `--no-stop` check
+  that fails before success is declared and changes nothing else.
+- Not covered: a container started by hand or by a script outside this inventory; a publish edited after the check
+  ran (it is a point-in-time check at launch); every other residual below.
+
 ## Startup refusal and diagnostics
 
 Development with sign-in off is **loopback-only**. `resolve_deployment_config` (so the app and the preflight alike)
@@ -115,9 +144,8 @@ The forwarding-header list also includes `Via`, `Client-IP`, `X-Client-IP`, `X-C
   misconfiguration. **Accepted by the human on 2026-10-13 as a documented residual risk**, on these conditions:
   signed-out lanes are local/development only, and every official launcher is test-locked to a loopback publish
   (`tests/test_local_boundary_deployment.py` scans all of them). It is not a P1 blocker.
-- **Follow-up (not in this change, GitHub issue #140): host-side runtime assertion.** The launcher or preflight should run
-  `docker inspect` (or equivalent) on the real published address and refuse or stop an auth-disabled lane bound to
-  `0.0.0.0`, `::` or any non-loopback address. A stronger in-app alternative: a per-run secret injected by the launch
+- **Host-side runtime assertion (GitHub issue #140): done for the official launchers** (see "Host-side publish
+  assertion"); a hand-started container outside them remains uncovered. A stronger in-app alternative: a per-run secret injected by the launch
   script and checked against a header only a trusted local forwarder adds.
 - **Same-host reverse proxy.** A proxy on the same host that forwards to a loopback or gateway address and adds no
   forwarding header makes remote callers look local. Never front an auth-off runtime with a reverse proxy.
@@ -131,7 +159,8 @@ The forwarding-header list also includes `Via`, `Client-IP`, `X-Client-IP`, `X-C
 
 `tests/test_request_boundary.py` (policy, spoofed Host/Origin/X-Forwarded-For, config-local is not request-local, real
 ASGI requests with a client address), `tests/test_deployment_config.py` (default bind), and
-`tests/test_public_staging_readiness.py` (preflight refusal).
+`tests/test_public_staging_readiness.py` (preflight refusal), `tests/test_assert_published_loopback.py` (the publish
+decision and command-line contract) and the assertion inventory in `tests/test_local_boundary_deployment.py`.
 
 ## Not covered here (follow-ups)
 

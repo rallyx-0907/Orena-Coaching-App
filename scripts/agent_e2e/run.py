@@ -19,6 +19,7 @@ import os
 import signal
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.error
@@ -40,6 +41,16 @@ def free(port: int) -> bool:
     with socket.socket() as probe:
         probe.settimeout(0.5)
         return probe.connect_ex(("127.0.0.1", port)) != 0
+
+
+def assert_loopback(env: dict, port: int) -> None:
+    """Host-side check of Docker's real published address of the web container (issue #140); stops it and raises if not loopback."""
+    web = compose(env, "ps", "-q", "web", capture=True).stdout.strip()
+    if not web:
+        raise RuntimeError("the web container was not found; its published address cannot be verified")
+    checked = subprocess.run([sys.executable, str(ROOT / "scripts/assert_published_loopback.py"), "--container", web, "--port", "8000"], check=False)
+    if checked.returncode != 0:
+        raise RuntimeError("the web container is not published on loopback; it was stopped")
 
 
 def down(env: dict) -> None:
@@ -76,6 +87,7 @@ def run_pass(name: str, base_env: dict, port: int, *, backbone: str, agent: bool
     result: dict = {"pass": name, "backbone": backbone or "off", "agent": agent}
     try:
         compose(env, "up", "-d")
+        assert_loopback(env, port)
         url = f"http://127.0.0.1:{port}"
         wait_ready(url)
         if agent:
