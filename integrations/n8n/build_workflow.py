@@ -117,6 +117,8 @@ FORM_FIELDS = [
 ]
 
 TEST_INPUT = (
+    "// CHOOSE HERE: the word list, the batch title and the DELIVERY MODE ('file' or 'api') are set on this node (or on the Form).\n"
+    "// Config only holds a default mode, used when this item does not set one.\n"
     "return [{ json: {\n"
     "  'Word list': 'resilient — C1\\n森林 — HSK4',\n"
     "  'Batch title': 'Test Batch 01',\n"

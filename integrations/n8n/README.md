@@ -55,7 +55,10 @@ The file carries no credentials, no secrets and no instance ids; after importing
 
    `docker run`: add `-e N8N_RESTRICT_FILE_ACCESS_TO=/files -v "$PWD/orena-files:/files"` (after the `mkdir`).
 2. **Run it.** Open the workflow and press **Execute workflow** (the *Run test* path: two sample words), or edit
-   *Test input*. To use the form, see "The form is protected" below.
+   *Test input*. **The word list, batch title and delivery mode (`file` / `api`) are chosen on the *Test input* node (or
+   the Form), not in *Config*.** *Config* has only a default `mode`, used when the input item does not set one; the
+   input wins, and the run summary and report say where the mode came from (`mode_source`). To use the form, see "The
+   form is protected" below.
 3. **Import the result.** In Orena Admin, import `/files/orena/<collection>.<hash>.ready.jsonl` (one file per
    language: Orena keeps one language per set). It lands in a set that is **pending review**; you publish it there.
 
@@ -106,6 +109,22 @@ published set; an entry in a published set is refused by Orena in both modes.
 | AI endpoint / model (optional) | *Config* `ai.endpoint` / `ai.model`, or env `AI_ENDPOINT` / `AI_MODEL` |
 | AI key | n8n credential **Header Auth**, selected on *AI · Fill gaps* |
 | Output folder | *Config* `output.dir`, or env `ORENA_VOCAB_OUT_DIR` |
+
+AI is on only when the endpoint is a valid http(s) URL **and** a model is set; a credential alone never turns it on
+(the report says `ai.configured: false` and why). AI only fills gaps and every field it writes is tagged `ai-filled:*`.
+
+#### Example: OpenRouter (free tier)
+
+- Endpoint `https://openrouter.ai/api/v1/chat/completions` (*Config* `ai.endpoint`), and a model id in `ai.model`.
+- Credential: **Header Auth**, Name exactly `Authorization`, Value `Bearer sk-or-...`. The Name must be only
+  `Authorization` - no colon, no spaces; otherwise Node fails with `ERR_INVALID_HTTP_TOKEN`.
+- Pick a **non-reasoning** `:free` model that supports `response_format` (JSON mode). A reasoning model can return an
+  empty `content` with its answer in `reasoning`; the workflow then accepts only a complete JSON object found there and
+  otherwise reports "AI returned no content (reasoning-only model? ...)". An upstream `error.message`/`code` in a 200
+  answer is shown in the row warning.
+- Free models are rate limited (per minute and per day) and may be busy; the AI node calls two at a time, one second
+  apart. A 429 shows as `AI request failed: HTTP 429` or `Provider returned error (code 429)`: wait, or retry the run
+  (the files are rewritten identically).
 
 n8n 2.x blocks `$env` inside Code nodes by default (`N8N_BLOCK_ENV_ACCESS_IN_NODE`). Either set it to `false` or put the
 values straight into the *Config* node; nothing else in the workflow reads the environment. Secrets are never

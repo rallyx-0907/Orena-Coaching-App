@@ -15,7 +15,7 @@ const writes = [
   }),
 ];
 return [{ json: {
-  run_id: cfg.runId, mode: cfg.mode, duplicates: cfg.duplicates, duplicates_note: cfg.duplicatesNote || undefined,
+  run_id: cfg.runId, mode: cfg.mode, mode_source: cfg.modeSource, duplicates: cfg.duplicates, duplicates_note: cfg.duplicatesNote || undefined,
   ready: batch.ready.length, rejected: batch.rejected.length,
   files: writes.filter(w => w.ok).map(w => w.path),
   non_critical_write_failures: writes.filter(w => !w.ok),

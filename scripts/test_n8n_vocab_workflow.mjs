@@ -456,7 +456,7 @@ await test('a failing AI call reports its real cause, and a dictionary gap says 
     [{ json: { error: 'ECONNREFUSED 127.0.0.1:1' } }, /AI request failed: ECONNREFUSED/],
     [{ json: { statusCode: 401, body: '{"error":{"message":"bad key"}}' } }, /AI request failed: HTTP 401: .*bad key/],
     [{ json: { statusCode: 200, body: '{"error":{"message":"quota exceeded"}}' } }, /AI request failed: quota exceeded/],
-    [{ json: { statusCode: 200, body: '<html>proxy</html>' } }, /AI did not return a JSON answer: <html>proxy/],
+    [{ json: { statusCode: 200, body: '<html>proxy</html>' } }, /AI did not return JSON: <html>proxy/],
   ];
   for (const [reply, re] of causes) {
     const o = await pipeline({ form: MANUAL({ 'Word list': 'zzzword — B1' }), enrich: {}, env, ai: jobs => jobs.map(() => reply) });
@@ -470,6 +470,38 @@ await test('a failing AI call reports its real cause, and a dictionary gap says 
   assert.match(o['Validate & group'][0].json.rejected[0].warnings.join('|'), /Free Dictionary request failed: getaddrinfo ENOTFOUND/);
   o = await pipeline({ form: MANUAL({ 'Word list': 'resilient — C1 — kiên cường' }), enrich: { resilient: [text({ title: 'No Definitions Found' }), text(TATOEBA_EN)] } });
   assert.match(o['Validate & group'][0].json.rejected[0].warnings.join('|'), /Free Dictionary: no entry \(No Definitions Found\)/);
+});
+
+await test('a reasoning model (empty content) is read only from a complete JSON object; otherwise a clear cause', async () => {
+  const env = { AI_ENDPOINT: 'https://openrouter.example/api/v1/chat/completions', AI_MODEL: 'x/reasoner:free' };
+  const answer = { pos: ['noun'], meaning_vi: 'một từ thử', examples: [{ text: 'This is a zzzword in a sentence.', translation_vi: 'Đây là một từ thử trong câu.' }], ipa: { uk: '/ˈzɪzwɜːd/', us: '/ˈzɪzwɝːd/' } };
+  const reply = message => ({ json: { statusCode: 200, body: JSON.stringify({ id: 'gen-1', object: 'chat.completion', choices: [{ message }] }) } });
+  const run = async message => pipeline({ form: MANUAL({ 'Word list': 'zzzword — B1' }), enrich: {}, env, ai: jobs => jobs.map(() => reply(message)) });
+  let o = await run({ role: 'assistant', content: null, reasoning: 'Let me think. Final: ' + JSON.stringify(answer) + ' done' });
+  assert.equal(o['Validate & group'][0].json.ready.length, 1, JSON.stringify(o['Validate & group'][0].json.rejected));
+  o = await run({ role: 'assistant', content: '', reasoning_content: JSON.stringify(answer) });
+  assert.equal(o['Validate & group'][0].json.ready.length, 1);
+  for (const message of [{ content: null, reasoning: 'I would say the meaning is a test word, ipa unknown.' }, { content: '  ', reasoning: '{"pos": ["noun"' }]) {
+    o = await run(message);
+    const w = o['Validate & group'][0].json.rejected[0].warnings.join('|');
+    assert.match(w, /AI returned no content \(reasoning-only model\? choose a non-reasoning model that supports response_format\)/);
+    assert.ok(!/gen-1|chat\.completion/.test(w), 'the raw response is not printed');
+  }
+  const bad = await pipeline({ form: MANUAL({ 'Word list': 'zzzword — B1' }), enrich: {}, env, ai: jobs => jobs.map(() => ({ json: { statusCode: 200, body: JSON.stringify({ error: { message: 'Provider returned error', code: 429 } }) } })) });
+  assert.match(bad['Validate & group'][0].json.rejected[0].warnings.join('|'), /AI request failed: Provider returned error \(code 429\)/);
+  const prose = await run({ content: 'x'.repeat(400) });
+  assert.ok(prose['Validate & group'][0].json.rejected[0].warnings.join('|').length < 400, 'long raw text is truncated');
+});
+
+await test('the delivery mode comes from the input item first, then a Config default, and the report says which', async () => {
+  const fromInput = await pipeline({ form: MANUAL({ 'Delivery mode': 'file' }), enrich: ENRICH });
+  assert.equal(fromInput.Config[0].json.modeSource, 'input (Test input node / Form)');
+  const dflt = await pipeline({ form: { 'Word list': 'resilient — C1 — kiên cường', _trigger: 'manual' }, enrich: ENRICH });
+  assert.equal(dflt.Config[0].json.modeSource, 'default (file)');
+  const report = JSON.parse(decode(buildFile(fromInput, 'report_json')));
+  assert.equal(report.mode_source, 'input (Test input node / Form)');
+  assert.equal(fromInput['Run summary'][0].json.mode_source, 'input (Test input node / Form)');
+  assert.match(byName['Test input'].parameters.jsCode, /^\/\/ CHOOSE HERE:.*DELIVERY MODE/);
 });
 
 // ================================================================ 6. stable ids, idempotent reruns

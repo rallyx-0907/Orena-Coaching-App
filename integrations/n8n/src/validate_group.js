@@ -11,6 +11,37 @@ try { const p = $('Parse ZH lookup').first().json.data; cedict = ((p && p.lookup
 const inputIssues = $('Parse words').first().json.inputIssues || [];
 const aiTag = (r, field) => { r.tags = [...new Set([...(r.tags || []), 'ai-filled:' + field])].sort(); };
 
+// The model's answer: `content` first. A reasoning model may leave `content` empty and put its answer in `reasoning` /
+// `reasoning_content`: that is used ONLY if the first complete JSON object in it parses (no other scraping).
+function firstJsonObject(text) {
+  const s = String(text || ''); const start = s.indexOf('{');
+  if (start < 0) return null;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true; else if (c === '{') depth++; else if (c === '}' && --depth === 0) { const o = parseJsonSafe(s.slice(start, i + 1)); return o && typeof o === 'object' && !Array.isArray(o) ? o : null; }
+  }
+  return null;
+}
+function pickAiAnswer(resp) {
+  const clip = v => String(typeof v === 'string' ? v : JSON.stringify(v)).replace(/\s+/g, ' ').slice(0, 160);
+  const msg = resp && resp.choices && resp.choices[0] && resp.choices[0].message;
+  if (!msg) return { problem: 'AI answer has no choices: ' + clip(resp) };
+  const content = msg.content;
+  if (typeof content === 'string' && content.trim()) {
+    const o = parseJsonSafe(content.replace(/^```(?:json)?\s*|\s*```$/g, '').trim());
+    if (o && typeof o === 'object' && !Array.isArray(o)) return { answer: o };
+    return { problem: 'AI did not return a JSON object: ' + clip(content) };
+  }
+  if (content && typeof content === 'object' && !Array.isArray(content)) return { answer: content };
+  for (const k of ['reasoning', 'reasoning_content']) {
+    const o = typeof msg[k] === 'string' ? firstJsonObject(msg[k]) : null;
+    if (o) return { answer: o };
+  }
+  return { problem: 'AI returned no content (reasoning-only model? choose a non-reasoning model that supports response_format)' };
+}
+
 // ---- 1. AI answers (gap fill only; the AI never overwrites a value that exists) ----
 const first = $input.first().json;
 if (!first.noop) {
@@ -26,10 +57,15 @@ if (!first.noop) {
       return;
     }
     const resp = parseJsonSafe(rawBody);
-    if (resp && resp.error) { b.warnings.push('AI request failed: ' + String(resp.error.message || JSON.stringify(resp.error)).slice(0, 200)); return; }
-    const content = resp && resp.choices && resp.choices[0] && resp.choices[0].message && resp.choices[0].message.content;
-    const ai = parseJsonSafe(typeof content === 'string' ? content.replace(/^```(?:json)?\s*|\s*```$/g, '') : content);
-    if (!ai || typeof ai !== 'object') { b.warnings.push('AI did not return a JSON answer: ' + String(typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody)).replace(/\s+/g, ' ').slice(0, 120)); return; }
+    if (resp && resp.error) {
+      const e = resp.error;
+      b.warnings.push('AI request failed: ' + String((typeof e === 'string' ? e : e.message) || JSON.stringify(e)).slice(0, 160) + (e && e.code !== undefined ? ` (code ${String(e.code).slice(0, 40)})` : ''));
+      return;
+    }
+    if (!resp || typeof resp !== 'object') { b.warnings.push('AI did not return JSON: ' + String(typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody)).replace(/\s+/g, ' ').slice(0, 160)); return; }
+    const picked = pickAiAnswer(resp);
+    const ai = picked.answer;
+    if (!ai) { b.warnings.push(picked.problem); return; }
     if (job.want.includes('pos') && !r.pos.length && Array.isArray(ai.pos)) {
       const codes = [...new Set(ai.pos.map(x => String(x).toLowerCase().trim()))].filter(c => POS_CODES.includes(c));
       if (codes.length) { r.pos = codes.map(c => posObj(c, r.lang)); aiTag(r, 'pos'); b.warnings.push('AI filled: pos'); }

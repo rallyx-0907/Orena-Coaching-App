@@ -23,6 +23,7 @@ function buildReport(cfg, batch, sync, writes) {
   return {
     run_id: cfg.runId,
     mode: cfg.mode,
+    mode_source: cfg.modeSource,
     duplicates: cfg.duplicates,
     duplicates_note: cfg.duplicatesNote || '',
     totals: { input: batch.ready.length + batch.rejected.length, ready: batch.ready.length, rejected: batch.rejected.length },

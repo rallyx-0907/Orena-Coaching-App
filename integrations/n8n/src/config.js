@@ -4,6 +4,7 @@
 // Where a value comes from (first match wins): the form / manual input -> the SETTINGS block below -> an n8n
 // environment variable. n8n 2.x may block $env in Code nodes (N8N_BLOCK_ENV_ACCESS_IN_NODE); then edit SETTINGS.
 const SETTINGS = {
+  mode: '',                         // '' = file. 'file' | 'api'. Only a default: "Delivery mode" on the Test input node / Form wins.
   output: {
     dir: '',                        // '' = /files/orena, inside the n8n container: mount a Docker volume there (README). Env: ORENA_VOCAB_OUT_DIR
   },
@@ -36,7 +37,10 @@ const trusted = form._trigger === 'manual';
 const now = new Date();
 const runId = now.toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');   // 20261013-091500
 
-let mode = (pick('Delivery mode', 'mode') || 'file').toLowerCase();
+// Delivery mode: the input item wins ("Delivery mode" on the Test input node or the Form); else SETTINGS.mode; else file.
+const modeFromInput = pick('Delivery mode', 'mode');
+let mode = (modeFromInput || SETTINGS.mode || 'file').toLowerCase();
+const modeSource = modeFromInput ? 'input (Test input node / Form)' : (SETTINGS.mode ? 'Config default' : 'default (file)');
 if (!['file', 'api'].includes(mode)) throw new Error("Delivery mode must be 'file' or 'api'");
 
 let duplicates = (pick('When already stored', 'duplicates') || 'skip').toLowerCase();
@@ -67,6 +71,7 @@ const config = {
   runId,
   trusted,
   mode,
+  modeSource,
   duplicates,
   duplicatesNote,
 
