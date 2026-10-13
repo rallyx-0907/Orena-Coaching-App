@@ -5981,7 +5981,7 @@ items above, and what PR 2 leaves open for the human:
   here (no Docker run on this host with under 2 GB free).
 
 
-- **VC-18 The dark card, redesigned (D-17Z, follow-up).** The card's dark variant ("night violet") is disabled: the
+- **VC-18 The dark card, redesigned (D-182, follow-up).** The card's dark variant ("night violet") is disabled: the
   card is light in both app themes, with its own 1px line as its edge on a dark page. Its dark values are recorded,
   unapplied, in `kit/tokens.css`. Open: a dark card the human approves (palette, the Chinese seal and gold rules, the
   illustration on a dark ground), then the tokens return under `data-theme='dark'` and the kit gate compares them

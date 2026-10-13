@@ -316,7 +316,7 @@
    no button reads them - buttons keep the app's design (the human, 2026-10-12) - so `--vcard-btn-*` are the design's
    values kept for completeness. Single-quoted selectors: a scoped
    addition the exact-token gate for the app's theme blocks does not compare, like the backdrop above. */
-/* The card's dark variant is DISABLED (the human, 2026-10-12, D-17Z): the card always wears its LIGHT palette, in both
+/* The card's dark variant is DISABLED (the human, 2026-10-12, D-182): the card always wears its LIGHT palette, in both
    app themes; the shell and the app around it keep following the learner's theme. Until the dark card is redesigned
    (UI_BACKEND_GAPS VC-18) the design's dark values are recorded here and applied nowhere:
      --vcard-bg: #0B0618;

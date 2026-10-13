@@ -5823,9 +5823,9 @@ the top of the page.
   until the learner reveals it; the reveal listeners) and scripts/test_orena_vocabulary_card.mjs (the collapsed fit
   has no bar and the column's whole height; it stops above the bar again when the chrome returns).
 
-## D-17Z - The vocabulary card is light in both app themes (its dark variant disabled)
+## D-182 - The vocabulary card is light in both app themes (its dark variant disabled)
 
-(Placeholder D-17Z until merge.) Human decision, 2026-10-12.
+Human decision, 2026-10-12.
 
 - **The card is always light.** `VocabularyCard` renders with the design's LIGHT card palette whatever the app theme,
   on every surface: Word Detail, the Daily Feed, Review's recall and revealed faces (and Admin's preview, later). Under

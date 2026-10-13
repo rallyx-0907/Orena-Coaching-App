@@ -438,7 +438,7 @@ assert.match(
     dark: vars(block(section, ":root[data-theme='dark']")),
     light: vars(block(section, ":root:not([data-theme='dark'])")),
   };
-  // D-17Z (the human, 2026-10-12): the dark card is disabled until it is redesigned (VC-18). The card wears the
+  // D-182 (the human, 2026-10-12): the dark card is disabled until it is redesigned (VC-18). The card wears the
   // design's LIGHT palette under BOTH app themes; the design's dark values are recorded in the comment, applied nowhere.
   assert.deepEqual(cardTokens.dark, cardTokens.light, 'under data-theme="dark" the card tokens resolve to their light values');
   const recordedDark = section.slice(section.indexOf('dark variant is DISABLED'), section.indexOf(":root[data-theme='dark']"));
@@ -480,7 +480,7 @@ assert.match(
   assert.match(reviewCss, /\.s-review-grade--again \{[^}]*background: var\(--red-soft\);[^}]*color: var\(--red\)/);
   assert.match(reviewCss, /\.s-review-btn--primary \{[^}]*background: var\(--accent-fill\);[^}]*color: var\(--accent-ink\)/);
   assert.match(reviewCss, /\.s-review-btn--secondary \{[^}]*background: var\(--surface\);[^}]*color: var\(--text\)/);
-  // The app's buttons follow the app theme, so in the dark app they sit on the LIGHT card (D-17Z). Each keeps AA for
+  // The app's buttons follow the app theme, so in the dark app they sit on the LIGHT card (D-182). Each keeps AA for
   // its own label / icon on its own fill, and its fill stands off the card's grounds at 3:1 (non-text contrast).
   {
     const dark = { ...vars(block(tokens, ':root {')), ...vars(block(tokens, ':root[data-theme="dark"]')) };
