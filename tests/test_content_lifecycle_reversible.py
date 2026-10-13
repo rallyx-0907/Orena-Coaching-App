@@ -59,6 +59,14 @@ def _collection(repository, collection_id="pack", status="pending_review"):
     return collection_id
 
 
+def _admit(repository, collection_id):
+    """Publish through the admission gate, as a real publication does."""
+    repository.finalize_collection_publication(collection_id, admission={
+        "rights_status": "licensed", "completeness": "complete", "review_status": "approved",
+        "publication_attested": True, "attested_by": "admin@example.com",
+    })
+
+
 @pytest.fixture()
 def repository(tmp_path):
     repo = sqlite_vocabulary_repository(tmp_path / "vocabulary.db")
@@ -70,7 +78,7 @@ def repository(tmp_path):
 
 def test_a_published_collection_can_be_taken_back_and_put_out_again(repository):
     collection_id = _collection(repository)
-    repository.set_collection_status(collection_id, "published", actor="admin@example.com")
+    _admit(repository, collection_id)
     assert repository.get_collection(collection_id, status=None)["catalog_status"] == "published"
 
     taken = repository.set_collection_status(collection_id, "unpublished", actor="admin@example.com")
@@ -86,7 +94,7 @@ def test_restoring_an_archived_collection_does_not_put_it_in_front_of_learners(r
     """The human's rule: restore returns it to the shelf, not to the learner.
     Publishing again is a separate, deliberate act."""
     collection_id = _collection(repository)
-    repository.set_collection_status(collection_id, "published", actor="a@b.c")
+    _admit(repository, collection_id)
     repository.set_collection_status(collection_id, "archived", actor="a@b.c")
     assert repository.get_collection(collection_id, status=None)["catalog_status"] == "archived"
 
@@ -98,7 +106,7 @@ def test_a_transition_the_flow_does_not_allow_is_refused(repository):
     collection_id = _collection(repository)
     # Straight from archived to published would put content in front of a
     # learner that nobody looked at again.
-    repository.set_collection_status(collection_id, "published", actor="a@b.c")
+    _admit(repository, collection_id)
     repository.set_collection_status(collection_id, "archived", actor="a@b.c")
     with pytest.raises(ValueError, match="archived"):
         repository.set_collection_status(collection_id, "published", actor="a@b.c")
