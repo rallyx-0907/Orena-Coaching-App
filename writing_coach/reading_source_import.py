@@ -29,12 +29,14 @@ import hashlib
 import json
 import posixpath
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
+from html import escape
 from html.parser import HTMLParser
 from typing import Any, Protocol
 
 from writing_coach.media_safe_fetch import UnsafeMediaFetch, fetch_bounded
+from writing_coach.reading_article_extraction import extract_article
 from writing_coach.reading_processing import (
     clean_source_text,
     content_fingerprint,
@@ -53,6 +55,7 @@ ALLOWED_CONTENT_TYPES = frozenset({"text/html", "text/plain", "application/xhtml
 ALLOWED_FILE_SUFFIXES = frozenset({".txt", ".md", ".markdown", ".html", ".htm"})
 
 _META_DATE_FORMATS = ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%d")
+_PARAGRAPH_BREAK = "\n\n"
 _CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
 
@@ -317,14 +320,26 @@ class DirectUrlAdapter:
         )
 
     def normalize(self, raw: RawPayload) -> NormalizedSourceItem:
+        if raw.content_type == "text/plain":
+            return _finish(raw, title="", author="", published=None)
+        # fetch -> extract the main article -> clean -> (the engine) analyse.
+        # Boilerplate never reaches the cleaning, hashing or analysis below.
         metadata = _HtmlMetadata()
         metadata.feed(raw.body)
         metadata.close()
-        return _finish(
+        article = extract_article(raw.body, base_url=raw.metadata.get("fetched_url") or raw.submitted.url)
+        if not article.body.strip():
+            raise ReadingSourceError("empty_source", "There is no readable article in this page.")
+        extracted = replace(
             raw,
-            title=" ".join(metadata.title.split()),
-            author=metadata.author,
-            published=_parse_published(metadata.published),
+            body="".join(f"<p>{escape(part)}</p>" for part in article.body.split(_PARAGRAPH_BREAK)),
+            metadata={**raw.metadata, **article.metadata()},
+        )
+        return _finish(
+            extracted,
+            title=article.title or " ".join(metadata.title.split()),
+            author=article.author or metadata.author,  # structured byline / JSON-LD before a generic meta tag
+            published=_parse_published(metadata.published) or _parse_published(article.published),
         )
 
 

@@ -375,6 +375,9 @@ class ReadingContentEngine:
         language = item.language or "en"
         analysis = analyze_article(item.body, language)
         issues = quality_issues(item.body, language)
+        confidence = item.metadata.get("extraction_confidence", "")
+        if confidence == "low":
+            issues.append("extraction_low_confidence")
         suggestions = suggest_targets(item.body, language, limit=MAX_TARGETS)
         excerpt = " ".join(item.body.split())[:280]
         return self.content.create_article(
@@ -395,6 +398,7 @@ class ReadingContentEngine:
                 "long_word_ratio": analysis.long_word_ratio,
                 "level_confidence": analysis.confidence,
                 "quality_issues": issues,
+                "extraction": item.metadata.get("extraction") or {},
                 "detected_language": item.metadata.get("detected_language", ""),
                 "rights_known": item.metadata.get("rights_known", False),
             },
