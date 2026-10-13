@@ -11,6 +11,9 @@ import { icon } from '../../kit/icons.js';
 import { bytes, dateTime, latency, num, relative } from '../../capabilities/admin-format.js';
 import { HISTORY_PAGE, MEDIA_LEVELS, PRIMARY_FIELDS, RIGHTS_STATUSES, VOCABULARY_FIELDS } from '../../capabilities/admin-imports.js';
 import { STAGES } from '../../capabilities/admin-tray.js';
+import { posLabel, vocabularyCard } from '../../kit/vocabulary-card.js';
+import { toVocabularyModel } from '../../product/vocabulary-card.js';
+import { vocabularyMeaning } from '../../product/vocabulary-meaning.js';
 import { banner, block, button, chipRow, formBlock, futureCard, kv, metrics, pageHead, pill, rowList, stateBlock, stepsBlock, tabs } from './blocks.js';
 
 const OUTCOME = {
@@ -189,7 +192,48 @@ export function packPage({ pack, t, href }) {
 
 /* ---- vocabulary --------------------------------------------------------------------------------- */
 
-export function vocabularyPage({ vocab, t, ui, href }) {
+/* An authored entry file's rows, as the design's step 2 draws them (Orena-Admin.dc.html "Import vocabulary": word,
+   `pos · meaning`, the example, a pill each) with the production VocabularyCard of the selected row beside them - a
+   deviation the human asked for (UI_BACKEND_GAPS VC-23). The card is the authored record as the importer will read
+   it; dictionary completion and localization happen at import. */
+function previewRow({ title, meta, detail, pills, pick }) {
+  const body = html`<span class="a-row__body"><span class="a-row__title">${title}</span>${meta ? html`<span class="a-row__meta">${meta}</span>` : ''}${detail ? html`<span class="a-row__detail">${detail}</span>` : ''}</span><span class="a-pills a-pills--row">${pills.map(pill)}</span>`;
+  return pick
+    ? html`<button type="button" class="a-row a-row--open a-row--pick" data-a="vocab-row" data-id="${pick.id}" aria-pressed="${pick.on ? 'true' : 'false'}">${body}</button>`
+    : html`<div class="a-row">${body}</div>`;
+}
+
+const exampleText = (example) => String((example && typeof example === 'object' ? example.text : example) ?? '').trim();
+
+function authoredPreviewBlock({ preview, index, vocab, support, t }) {
+  const rows = preview.authored.rows;
+  const duplicates = vocab.duplicates || 'skip';
+  const firstReady = rows.findIndex((row) => row.outcome === 'ready' && row.record);
+  const chosen = vocab.selected?.[index];
+  const selected = rows[chosen]?.record ? chosen : firstReady;
+  const items = rows.map((row, at) => {
+    const record = row.record;
+    const title = row.term || row.id || String(row.row);
+    // A conflict's reason is the server's warning, already a banner above, and its pill says it in the admin's
+    // language; a refusal keeps its reason (the schema's own words) as the row's line.
+    if (!record) return previewRow({ title, meta: row.outcome === 'conflict' ? '' : row.reason || '', pills: [{ label: t(row.outcome === 'conflict' ? 'impRowConflict' : 'impRowRefused'), tone: 'warn' }] });
+    const meaning = vocabularyMeaning(record, support)?.text || String((record.short_meanings || [])[0]?.text || '').trim();
+    const pos = record.part_of_speech ? posLabel(record.part_of_speech).text : '';
+    const example = (record.examples || []).map(exampleText).find(Boolean) || '';
+    const pills = [];
+    if (row.existing === 'duplicate') pills.push(duplicates === 'overwrite' ? { label: t('impRowDupOverwrite'), tone: 'warn' } : { label: t('impRowDupSkip'), tone: 'mute' });
+    if (!example) pills.push({ label: t('impRowNoExample'), tone: 'warn' });
+    if (!pills.length) pills.push({ label: t('impRowOk'), tone: 'ok' });
+    return previewRow({ title: record.term || title, meta: [pos, meaning].filter(Boolean).join(' · '), detail: example, pills, pick: { id: `${index}:${at}`, on: at === selected } });
+  });
+  const card = selected >= 0
+    ? html`<div class="a-vpreview__card" role="region" aria-label="${t('impCardPreview')}">${vocabularyCard(toVocabularyModel(rows[selected].record, { word: rows[selected].record.term, supportLanguage: support }), { mode: 'detail', learner: false })}</div>`
+    : '';
+  return block({ span: true, title: t('impPreviewRows', { n: rows.length }), sub: preview.filename, body: html`<div class="a-vpreview"><div class="a-rows">${items}</div>${card}</div>` });
+}
+
+export function vocabularyPage({ vocab, t, ui, href, support = 'en' }) {
+  const duplicates = vocab.duplicates || 'skip';
   const step = vocab.results ? 3 : vocab.previews.length ? (vocab.step === 2 ? 2 : 1) : 0;
   const meta = vocab.metadata;
   const stages = [t('impVStepChoose'), t('impVStepMap'), t('impVStepPreview'), t('impVStepImport')].map((label, index) => ({ label, state: index < step ? 'done' : index === step ? 'active' : 'todo' }));
@@ -208,6 +252,7 @@ export function vocabularyPage({ vocab, t, ui, href }) {
       if (preview.authored) {
         // An authored entry file needs no column mapping; its server checks arrive as warnings (D-178).
         for (const warning of preview.warnings || []) blocks.push(banner({ tone: 'warn', title: warning }));
+        if ((preview.authored.rows || []).length) blocks.push(authoredPreviewBlock({ preview, index, vocab, support, t }));
         return;
       }
       const headers = preview.headers || [];
@@ -224,6 +269,12 @@ export function vocabularyPage({ vocab, t, ui, href }) {
       }
       for (const warning of preview.warnings || []) blocks.push(banner({ tone: 'warn', title: warning }));
     });
+    // Only a file that holds a duplicate has a choice to make; a published-set conflict is refused whatever is picked.
+    if (vocab.previews.some((preview) => (preview.authored?.rows || []).some((row) => row.existing === 'duplicate'))) {
+      blocks.push(formBlock({ span: true, fields: [
+        { id: 'duplicates', kind: 'seg', label: t('impDuplicates'), span: true, options: ['skip', 'overwrite'].map((value) => ({ id: value, label: t(value === 'skip' ? 'impDupSkip' : 'impDupOverwrite'), on: duplicates === value })) },
+      ], actions: [] }));
+    }
     blocks.push(formBlock({ span: true, title: t('impCollection'), fields: [
       { id: 'meta:title', kind: 'text', label: t('impCollectionTitle'), span: true, value: meta.title },
       { id: 'meta:language', kind: 'seg', label: t('impLanguage'), options: ['en', 'zh'].map((code) => ({ id: code, label: t(code === 'en' ? 'langEn' : 'langZh'), on: meta.language === code })) },

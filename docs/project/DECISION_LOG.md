@@ -5865,7 +5865,21 @@ Human decisions, 2026-10-13, after reviewing the two real cards (resilient, æ£®æ
   none - no other-language fallback for example content.
 - Gated in `scripts/test_orena_vocabulary_card.mjs`.
 
-## D-18X - Signed-out local-admin belongs to the request boundary, not to configuration (issue #137)
+
+## D-184 - Admin vocabulary import previews the production card
+
+Human decision, 2026-10-13: PR 3 scope.
+
+- The admin vocabulary import previews an authored entry file with the production VocabularyCard, beside the design's
+  rows list (UI_BACKEND_GAPS VC-23). The preview response carries each ready row's normalized record (admin-only, no
+  schema or route change); the card shows the authored content, before dictionary completion and localization.
+- Duplicates skip / overwrite surfaces the importer's existing behaviour (the `duplicates` form field, default skip);
+  a published-set conflict stays refused.
+- Image upload is split out of this PR. The preview works without an image.
+- Gated in `scripts/test_orena_screen_admin_areas.mjs`, `scripts/test_orena_vocabulary_card.mjs` and
+  `tests/test_vocabulary_source_routes.py`.
+
+## D-185 - Signed-out local-admin belongs to the request boundary, not to configuration (issue #137)
 
 Placeholder id; the lead renumbers at merge. **Status: independently reviewed, APPROVED WITH CONDITIONS
 (`docs/reviews/architecture/SEC_137_LOCAL_ADMIN_REVIEW_2026-10-13.md`, commit f7a9dc77); conditions addressed in

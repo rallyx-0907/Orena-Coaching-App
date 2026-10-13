@@ -321,7 +321,8 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
   const id = `vcard-${cardSeq}`;
   // Save on the cards a word is met on; in Review, where every word is already saved, the bookmark is only a
   // remove toggle, drawn saved (D-179, the exception to "Save is not Review"; the pinned frame draws it).
-  const save = mode === 'detail' || mode === 'feed' ? saveDisc(learner) : '';
+  // `learner: false` is a card with no learner (the admin import preview): nothing to save to, so no disc.
+  const save = (mode === 'detail' || mode === 'feed') && learner !== false ? saveDisc(learner) : '';
   const ctx = { meaningLabel: slots.meaningLabel, pending: slots.meaningPending };
   const front = han ? zhFront(model, ctx) : enFront(model, ctx);
   // Each face: a head that stays (the design's top row / the back's title line), a body that alone scrolls when the

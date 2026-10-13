@@ -681,6 +681,42 @@ a.a-btn--primary:hover {
   flex: none;
   font-variant-numeric: tabular-nums;
 }
+/* The vocabulary import preview: its rows (each a button that picks the card) beside the production card. */
+.a-vpreview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+  gap: 18px;
+  align-items: start;
+}
+.a-row--pick {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+}
+/* Every preview row's lines stack (the refused rows are not buttons, but the same spans). */
+.a-vpreview .a-row__body > span {
+  display: block;
+}
+/* The picked row as the admin's own selected nav item draws it: the soft accent ground, no outline (D-147). */
+.a-row--pick[aria-pressed='true'] {
+  background: var(--accent-soft);
+}
+.a-vpreview__card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: clamp(420px, 72dvh, 640px);
+}
+.a-vpreview__card > .c-vcard {
+  flex: 1 1 auto;
+  max-height: 100%;
+}
+@media (max-width: 900px) {
+  .a-vpreview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 /* Key / value */
 .a-kv {
   display: grid;

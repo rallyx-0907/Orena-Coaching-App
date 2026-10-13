@@ -119,10 +119,12 @@ export const adminApi = {
   },
   mediaPreview: (urls, language) => request('/api/media/admin/preview', json('POST', { urls, language })),
   vocabularyPreview: (list) => request('/api/admin/vocabulary/preview', { method: 'POST', body: files('files', list) }),
-  vocabularyImport: (list, metadata, mappings) => {
+  vocabularyImport: (list, metadata, mappings, duplicates = '') => {
     const form = files('files', list);
     form.append('metadata', JSON.stringify(metadata));
     form.append('mappings', JSON.stringify(mappings));
+    // Only an authored batch chooses (skip or overwrite); the server's default is skip.
+    if (duplicates) form.append('duplicates', duplicates);
     return request('/api/admin/vocabulary/import', { method: 'POST', body: form });
   },
   history: (params) => request(`/api/admin/console/imports/history${query(params)}`),

@@ -268,6 +268,9 @@ for (const model of [en, zh]) {
   assert.ok(detail.includes('data-save aria-pressed="false"'), 'detail offers Save');
   assert.ok(!detail.includes('c-vcard__mastery'), 'no schedule, no footer');
   assert.ok(!detail.includes('data-grade'), 'Word Detail never grades');
+  // A card shown with no learner at all (the admin import preview) has nothing to save to: `learner: false`.
+  const bare = String(vocabularyCard(model, { mode: 'detail', learner: false }));
+  assert.ok(!bare.includes('data-save') && bare.includes('data-vcard-turn="back"'), 'learner: false draws no Save and still turns');
   const feed = String(vocabularyCard(model, { mode: 'feed', learner: { saved: true } }));
   assert.ok(feed.includes('aria-pressed="true"'));
   assert.ok((faceOf(feed, 'back').match(/class="c-vcard__example"/g) || []).length <= 2, 'the feed shows at most two examples');
