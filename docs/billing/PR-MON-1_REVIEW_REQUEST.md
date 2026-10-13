@@ -1,0 +1,94 @@
+# PR-MON-1 Canonical Effective Entitlement — independent architecture review request
+
+The change is payment/entitlement, so `AGENTS.md` §1 requires independent architecture review: the implementer
+may not approve it. Record the reviewer, the reviewed commit and the verdict in Git, in
+`docs/reviews/architecture/PR_MON_1_ENTITLEMENT_REVIEW_<date>.md`.
+
+| | |
+| --- | --- |
+| Branch | `feature/monetization-billing-v1` |
+| Base | `main` `172ae216` |
+| Change | commit `0a440695` (code and tests); lane docs `b161c74f`, `c804600d` |
+| Decision under review | D-MON-006 (`docs/billing/DECISION_LOG.md`) |
+| Schema | none |
+| Runtime effect with no commerce rows | none (proved by the regression oracle, below) |
+
+## Problem
+
+`BillingService` writes access only to `commerce_subscriptions` (`persistence/commerce_repository.record_event`).
+Before this change, every plan reader used the legacy `subscriptions` row instead:
+`ProductService.plan_for_user` (`product/service.py`), `account_state`, quota (`product/quota.py:640`), the
+language limit (`product/language_limit.py:108`) and the D-154 Admin guard (`membership.py:111`). A verified
+payment therefore changed no plan, and the manual-grant guard could not see billing ownership.
+
+## Change
+
+1. `writing_coach/product/entitlement.py` (new):
+   - **`resolve(legacy, billing, now)`**: pure, with the precedence in the module docstring.
+   - **`EffectiveEntitlement`**: the decision.
+   - **`CommerceEntitlementSource`**: the PostgreSQL billing read.
+2. `ProductService.entitlement(user_key)` does the two reads and calls `resolve`. `plan_for_user` and
+   `account_state` derive from it, and the duplicated status/plan logic is removed. Response shapes are unchanged.
+3. `PostgresCommerceRepository.subscription_for_account(account_id)` is one query: `commerce_subscriptions`
+   joined to the account's **active** `account_incarnations` row. It never creates an incarnation, and a deleted
+   incarnation's subscription is not the account's.
+4. `app.py` installs the source (`configure_product_billing`) when the runtime has PostgreSQL, an active account
+   backbone and the tables `commerce_subscriptions`, `commerce_billing_event_receipts` and `account_incarnations`.
+5. Admin membership: `product/api.py` adds `billing_aware_membership`, which overlays the billing plan, status and
+   provider plus `billing_owned`. The guard in `membership.apply_change` refuses a hand-set plan when
+   `billing_owned` is true (409).
+
+## Semantics to review
+
+| Case | Effective | Status reported |
+| --- | --- | --- |
+| billing `active`/`trialing`, `paid_through` absent or > now | billing plan | billing state |
+| billing granting state, `paid_through` ≤ now | falls through | `ended` |
+| billing `past_due`/`paused`/`pending`/`unknown`/`ended` | falls through (manual/legacy, else Free) | billing state |
+| billing placeholder `state='none'` | treated as absent | legacy rule |
+| valid billing **and** valid manual grant | **billing** (even if manual ranks higher) | billing state |
+| manual grant, end date passed | Free | `active` (as before) |
+| unknown plan id on a granting record | admits as Free, `plan_state: unknown` (as before for legacy) | |
+
+## Questions for the reviewer
+
+1. **Billing outranks manual** (D-154 intent). Is a support/testing override of a paid entitlement needed? None
+   existed before, and none is added.
+2. **Grace.** `past_due`/`paused` grant nothing. This follows ORENA_COMMERCE_ARCHITECTURE.md §3 ("missing policy
+   ... blocks new paid admissions"), but a Polar dunning period then drops the learner to Free immediately.
+   R-MON-006 records this.
+3. **Install by store presence, not by `BILLING_ENABLED`.** A recorded paid entitlement keeps applying when
+   checkout is switched off. If `BILLING_ENABLED` should also act as a kill switch for entitlements, say so.
+4. **Startup table read.** If the table listing fails at startup, no source is installed. Paid accounts would then
+   read the legacy row (Free) rather than 503. The quota store uses the same startup pattern; should this one fail
+   closed instead?
+5. **Guard race.** The billing-ownership check is a pre-check outside the membership transaction. A payment landing
+   between check and write leaves a shadowed manual row, which is harmless under the precedence. Is that
+   acceptable, or should `apply_membership` take the incarnation lock?
+6. **Status for a lapsed grant.** `active` with `paid_through` passed reports `ended`, a derived state rather
+   than the stored one. Acceptable for the Plan screen and `accountCommerce`?
+
+## Evidence (local execution, not CI)
+
+- `tests/test_effective_entitlement.py`, 37 tests. They cover:
+  - payOS prepaid, Polar, trialing, no boundary, manual valid and expired, ended and placeholder billing rows;
+  - a lapsed `paid_through`, a fully refunded prepaid account, the four no-grace states, an unknown plan id;
+  - precedence in four directions, and the pure resolver;
+  - the Plan screen reading billing, one read per record;
+  - **plan, quota (429 context `plan`) and language limit agreeing on a paid plan**;
+  - billing store failure failing closed;
+  - a **billing-off regression oracle**: without a source, or with an empty one, answers equal the pre-change rule,
+    restated independently, and `account_state` is identical;
+  - the app installing no source on SQLite;
+  - the Admin guard refusing for all five live states, the Admin read showing the billing plan, and Admin still
+    allowed when billing owns nothing.
+- **Mutation checks:**
+  - With the billing read disabled (today's P0), 17 tests fail.
+  - With the precedence flipped (manual before billing), 3 tests fail: both precedence tests and the agreement test.
+- **Targeted regression:** the product, commerce, membership, plans-transaction, quota-gate, language-limit,
+  billing, persistence-runtime, admin-policies and product-foundation suites. Result: 314 passed, 7 skipped
+  (PostgreSQL), with the `ai-writing-coach:local` image on SQLite.
+- `tests/test_effective_entitlement_postgres.py` covers prepaid, refund, Polar, a deleted incarnation and the
+  Admin guard against real PostgreSQL. **Not yet run:** host RAM was below the 2 GB Docker rule. It is run before
+  merge, against a throwaway database.
+- Ruff is clean on the new code. Four UP017 findings in `membership.py` predate this change.

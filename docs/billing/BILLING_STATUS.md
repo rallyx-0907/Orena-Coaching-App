@@ -7,19 +7,19 @@
 | --- | --- |
 | Branch | `feature/monetization-billing-v1` |
 | Main | `172ae216397e6dfaa1f74aa32417f48b7c2365fd` (`origin/main`, checked 2026-10-13) |
-| Last completed slice | inventory + lane context (`b161c74f`); Master Brief folded into lane docs |
-| Active PR | **PR-MON-1 Canonical Effective Entitlement** — IMPLEMENTING |
-| Current slice | failing tests for the resolver (`tests/test_effective_entitlement.py`), then the resolver |
-| Exact next action | write the resolver tests; see "PR-MON-1 — design" |
+| Last completed slice | PR-MON-1 code + tests (`0a440695`); review request `docs/billing/PR-MON-1_REVIEW_REQUEST.md` |
+| Active PR | **PR-MON-1 Canonical Effective Entitlement** — REVIEWABLE (architecture-review-ready; not approved) |
+| Current slice | PostgreSQL proof `tests/test_effective_entitlement_postgres.py` + `test_admin_authorization_matrix.py` (waiting for host RAM > 2 GB) |
+| Exact next action | run the PostgreSQL proof on a throwaway database, then hand PR-MON-1 to an independent architecture reviewer |
 | Blockers | none |
-| Test status | baseline not yet run on this branch |
+| Test status | local, SQLite image: 314 passed / 7 skipped (targeted suites); mutation checks bite (17 and 3 failures); ruff clean on new code; Node admin-control gate PASS; PostgreSQL proof not yet run |
 | Next human checkpoint | PR-MON-1 architecture-review-ready report |
 
 ## Revised sequence (human, 2026-10-13)
 
 | PR | Scope | State |
 | --- | --- | --- |
-| PR-MON-1 | **Canonical Effective Entitlement.** One resolver with explicit precedence; Product UI, quota admission and entitlement checks all derive from it. No migration, no checkout UI, no provider config, no credits. | ACTIVE |
+| PR-MON-1 | **Canonical Effective Entitlement.** One resolver with explicit precedence; Product UI, quota admission and entitlement checks all derive from it. No migration, no checkout UI, no provider config, no credits. | REVIEWABLE |
 | PR-MON-2 | **Price Integrity + Runtime Readiness.** One server-side price truth or a strict consistency gate; checkout only at a server-offered price that exactly matches the effective catalogue entry (a mismatch blocks checkout); browser amounts never trusted; `billing_ready` reflects real capability. | PLANNED |
 | PR-MON-3 | **Billing Orders + Reconciliation Safety.** Re-review/promote 0027; settle 0028's parent explicitly; abandoned-order expiry; durable payment anomaly/reconciliation state; Polar refund matching where safe; payment-without-entitlement detection. Exact webhook HTTP/retry semantics are designed here, per provider. | PLANNED |
 | PR-MON-4 | **Prepaid Credit Ledger.** Credit account, append-only ledger, idempotent credit/debit/reversal, deterministic balance, never negative. No commercial credit prices. | PLANNED |
