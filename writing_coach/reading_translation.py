@@ -171,6 +171,11 @@ class ReadingTranslationService:
         """Whether this engine is the platform AI. Word lookup stays non-AI (its contextual meaning is /word-detail)."""
         return self._provider.engine_id == "ai"
 
+    @property
+    def uses_paid_provider(self) -> bool:
+        """Whether this engine is a paid external service (the platform AI or Groq). A basic word tap never uses one."""
+        return self._provider.engine_id in {"ai", "groq"}
+
     def translate(
         self,
         source_language: str,

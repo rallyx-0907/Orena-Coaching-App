@@ -165,6 +165,14 @@ def project_word_detail(
         dictionary_meaning = _text(meanings[0].get("text"))
     elif found.get("definitions"):
         dictionary_meaning = _text(found["definitions"][0].get("definition"))
+    # The original dictionary definition (CC-CEDICT / dictionaryapi.dev, English) stays as secondary data when the
+    # main meaning is a localization of it (catalogue or local translation), never replaced by it.
+    is_zh = _text(language).casefold().startswith("zh")
+    original_text = "; ".join(
+        filter(None, (_text(item.get("definition")) for item in (found.get("definitions") or ())[: 3 if is_zh else 1]))
+    )
+    if not meanings or _fold(original_text) == _fold(dictionary_meaning):
+        original_text = ""
     # The short gloss is the meaning in this sentence; the summary is the longer
     # explanation and only stands in when the gloss is absent.
     contextual = _text(said.get("context_meaning")) or _text(said.get("summary"))
@@ -212,6 +220,12 @@ def project_word_detail(
         "ipa": pronunciation if not is_pinyin and pronunciation else None,
         "partOfSpeech": part_of_speech or None,
         "contextMeaning": meaning,
+        # The language the main line is written in (a dictionary definition without a localization is English),
+        # and the original definition behind a localized one.
+        "meaningLanguage": (_text(found.get("target_language")) if meanings else "en") if source == "dictionary" else "",
+        "originalDefinition": (
+            {"text": original_text, "language": "en", "source": "cc-cedict" if is_zh else "dictionary"} if original_text else None
+        ),
         "generalMeaning": general,
         "contextSentence": _text(context),
         "audioUrl": _text(found.get("audio_url")),

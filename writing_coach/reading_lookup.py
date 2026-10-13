@@ -188,8 +188,10 @@ def _safe_english_dictionary(
 def _safe_machine_translation(
     service: ReadingTranslationService, source: str, target: str, text: str
 ) -> str | None:
-    if getattr(service, "uses_ai", False):
-        return None  # a word's meaning in its sentence is /word-detail's; this lookup never reaches the AI platform
+    if getattr(service, "uses_ai", False) or getattr(service, "uses_paid_provider", False):
+        # A word's meaning in its sentence is /word-detail's; a basic tap never reaches the AI platform or any
+        # paid translation service. The free local engine (Marian) is the only machine source here.
+        return None
     try:
         result = service.translate(source, target, [TextSegment("selection", text)])
     except Exception:

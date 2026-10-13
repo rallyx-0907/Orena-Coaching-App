@@ -268,6 +268,24 @@ assert.equal(noteTypeColorKey('anything-else'), 'var(--muted)');
   }
 }
 
+/* --- Support-language meaning: main line = the localized meaning, secondary = the dictionary's original --- */
+{
+  const detail = {
+    headword: 'resilient', script: 'latin', pinyin: null, ipa: null, partOfSpeech: 'adjective',
+    contextMeaning: 'kiên cường; có khả năng phục hồi nhanh', meaningLanguage: 'vi', generalMeaning: '',
+    originalDefinition: { text: 'able to recover quickly from difficult conditions', language: 'en', source: 'dictionary' },
+    contextSentence: 'She is resilient.', audioUrl: '', saved: false,
+    deeper: { whyHere: '', examples: [] }, meaningSource: 'dictionary', contextStatus: 'skipped', available: true,
+  };
+  const card = mapWordCard('resilient', { detail, item: null });
+  assert.equal(card.meaning, 'kiên cường; có khả năng phục hồi nhanh');
+  assert.equal(card.meaningIsContextual, false, 'a dictionary meaning is never labelled as this sentence\'s');
+  assert.deepEqual(card.originalDefinition, { text: 'able to recover quickly from difficult conditions', language: 'en' });
+  assert.equal(mapWordCard('resilient', { detail: { ...detail, originalDefinition: null } }).originalDefinition, null);
+  const sheetSrc = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');
+  assert.match(sheetSrc, /card\.originalDefinition\s*\?\s*html`<div class="s-qs__general" lang=/, 'the original is the quieter second line, tagged with its own language');
+}
+
 /* --- A tap is deterministic: the contextual (AI-backed) meaning is the learner's own "Why here?" ask only --- */
 {
   const sheetSrc = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');

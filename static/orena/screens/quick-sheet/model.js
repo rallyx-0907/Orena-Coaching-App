@@ -141,6 +141,8 @@ export function mapWordCard(word, { detail = null, item = null } = {}) {
     // "Meaning here" (frame 53) only when the meaning is this sentence's own, not a dictionary sense.
     meaningIsContextual: detail?.meaningSource === 'context' || detail?.meaningSource === 'contextual',
     contextSentence: text(detail?.contextSentence),
+    // The dictionary's own definition behind a localized meaning: secondary data, never the main line.
+    originalDefinition: detail?.originalDefinition?.text ? { text: text(detail.originalDefinition.text), language: text(detail.originalDefinition.language) || 'en' } : null,
     saved,
     savedBg: tone.bg,
     savedColor: tone.color,
