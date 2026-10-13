@@ -88,7 +88,10 @@ payment therefore changed no plan, and the manual-grant guard could not see bill
 - **Targeted regression:** the product, commerce, membership, plans-transaction, quota-gate, language-limit,
   billing, persistence-runtime, admin-policies and product-foundation suites. Result: 314 passed, 7 skipped
   (PostgreSQL), with the `ai-writing-coach:local` image on SQLite.
-- `tests/test_effective_entitlement_postgres.py` covers prepaid, refund, Polar, a deleted incarnation and the
-  Admin guard against real PostgreSQL. **Not yet run:** host RAM was below the 2 GB Docker rule. It is run before
-  merge, against a throwaway database.
+- **PostgreSQL proof**: a throwaway PostgreSQL 16 (tmpfs, private network, no published port, removed
+  afterwards), upgraded to head. 432 passed, 0 skipped. That run covers:
+  - `tests/test_effective_entitlement_postgres.py`: prepaid, refund, Polar, a deleted incarnation, the Admin guard;
+  - the existing `test_quota_gate_postgres.py`, `test_language_limit_postgres.py`,
+    `test_orena_commerce_persistence_postgres.py` and `test_billing.py` (including its PostgreSQL test);
+  - `test_admin_authorization_matrix.py`, and the unit file again.
 - Ruff is clean on the new code. Four UP017 findings in `membership.py` predate this change.

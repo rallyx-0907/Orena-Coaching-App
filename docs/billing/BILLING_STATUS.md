@@ -9,10 +9,10 @@
 | Main | `172ae216397e6dfaa1f74aa32417f48b7c2365fd` (`origin/main`, checked 2026-10-13) |
 | Last completed slice | PR-MON-1 code + tests (`0a440695`); review request `docs/billing/PR-MON-1_REVIEW_REQUEST.md` |
 | Active PR | **PR-MON-1 Canonical Effective Entitlement** — REVIEWABLE (architecture-review-ready; not approved) |
-| Current slice | PostgreSQL proof `tests/test_effective_entitlement_postgres.py` + `test_admin_authorization_matrix.py` (waiting for host RAM > 2 GB) |
-| Exact next action | run the PostgreSQL proof on a throwaway database, then hand PR-MON-1 to an independent architecture reviewer |
+| Current slice | none in progress — PR-MON-1 waits for independent architecture review |
+| Exact next action | hand `docs/billing/PR-MON-1_REVIEW_REQUEST.md` to an independent architecture reviewer; on APPROVE, rebase on `main` and open the PR; then start PR-MON-2 (price integrity + readiness) |
 | Blockers | none |
-| Test status | local, SQLite image: 314 passed / 7 skipped (targeted suites); mutation checks bite (17 and 3 failures); ruff clean on new code; Node admin-control gate PASS; PostgreSQL proof not yet run |
+| Test status | local only (not CI): SQLite image 314 passed / 7 skipped; throwaway PostgreSQL 16 (tmpfs, no port) 432 passed / 0 skipped incl. new PG proof, quota/language/commerce/billing PG suites, admin authorization matrix; mutation checks bite (17, 3); ruff clean on new code; Node admin-control gate PASS |
 | Next human checkpoint | PR-MON-1 architecture-review-ready report |
 
 ## Revised sequence (human, 2026-10-13)
