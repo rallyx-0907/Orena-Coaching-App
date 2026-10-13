@@ -6077,3 +6077,22 @@ This is not activation authorization: no source is published to production by th
 
    The catalogue is not widened until the three sources pass; the next candidates are Chinese public-domain sources
    such as zh Wikisource.
+
+## D-18X - Reading quality admission: non-articles cannot be published (PROPOSED, 2026-10-13)
+
+**Status: PROPOSED.** Number to be assigned at merge. Changes the Reading publish lifecycle, so it needs an independent
+architecture review before it is accepted (`AGENTS.md`, "Architecture review authority"). No schema or migration change.
+Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-E, D-189).
+
+1. **One definition.** `writing_coach/reading_page_quality.py` owns every quality signal, threshold and code. The
+   extractor stores raw-page facts (`analysis.extraction.page_facts`); `quality_flags` turns them, the cleaned body and
+   the extraction confidence into stable codes appended to `analysis.quality_issues`.
+2. **Hard codes** (the page is not an article): `empty_body`, `media_page`, `index_page`, `bot_challenge`,
+   `special_page`. `reading_admin_api.publication_blockers` returns them as `{code, gate: "quality"}`, and a reviewer's
+   publish is refused `409 reading_quality_not_cleared`. An explicit `quality_override: true` with a reason publishes
+   anyway and is audited (`admin.reading_article_quality_override`); it never clears the rights gate.
+3. **Soft codes** (uncertain, still reviewable): `body_below_minimum`, `extraction_medium_confidence`, `generic_title`,
+   plus the existing `too_short`, `too_long`, `language_*`, `repetitive`, `extraction_low_confidence`.
+4. **D-111 is unchanged:** any quality issue, hard or soft, means `review`; automatic admission never publishes a
+   flagged item.
+5. **Empty body** keeps the existing refusal (`empty_source`, "no readable article"); the flag covers other entry paths.

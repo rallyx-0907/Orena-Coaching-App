@@ -38,6 +38,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import SQLAlchemyError
 
 from writing_coach.core.errors import orena_http_error
+from writing_coach.reading_page_quality import hard_issues
 from writing_coach.persistence.reading_content_repository import (
     CONTENT_KINDS,
     MAX_ARTICLE_PAGE,
@@ -214,6 +215,9 @@ def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
             blockers.append({"code": "adaptation_not_cleared", "question": "can_adapt"})
         elif adapt != "allowed":
             blockers.append({"code": "adaptation_unknown", "question": "can_adapt"})
+    # Hard quality failures (reading_page_quality.HARD_ISSUES): the page is not an article.
+    for code in hard_issues((article.get("analysis") or {}).get("quality_issues")):
+        blockers.append({"code": code, "gate": "quality"})
     return blockers
 
 
@@ -334,6 +338,8 @@ class ArticleStatusBody(BaseModel):
 
     status: str
     reason: str = Field(default="", max_length=2000)
+    # An explicit, reasoned decision to publish despite hard quality failures (D-18X).
+    quality_override: bool = False
 
 
 class ArticleRightsBody(BaseModel):
@@ -767,6 +773,20 @@ def set_article_status(
         if current is None:
             raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
         blockers = publication_blockers(current)
+        quality_blockers = [item for item in blockers if item.get("gate") == "quality"]
+        if payload.quality_override and quality_blockers:
+            if not payload.reason.strip():
+                raise orena_http_error(
+                    422, "reading_reason_required", "Publishing past a quality failure keeps its reason - say why."
+                )
+            blockers = [item for item in blockers if item.get("gate") != "quality"]
+            _audit(
+                admin,
+                "admin.reading_article_quality_override",
+                entity_type="reading_article",
+                entity_id=article_id,
+                payload={"codes": [item["code"] for item in quality_blockers], "reason": payload.reason.strip()},
+            )
         if blockers:
             _audit(
                 admin,
@@ -775,6 +795,13 @@ def set_article_status(
                 entity_id=article_id,
                 payload={"blockers": blockers},
             )
+            if all(item.get("gate") == "quality" for item in blockers):
+                raise orena_http_error(
+                    409,
+                    "reading_quality_not_cleared",
+                    "This page does not look like an article, so it cannot be published.",
+                    context={"blockers": blockers},
+                )
             raise orena_http_error(
                 409,
                 "reading_rights_not_cleared",

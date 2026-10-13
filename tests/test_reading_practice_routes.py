@@ -148,7 +148,7 @@ def call(app, method, path, *, admin=True, **kwargs):
     return asyncio.run(run())
 
 
-def _article(setup, language="en", *, rights=None, level="B1", content_hash=None):
+def _article(setup, language="en", *, rights=None, level="B1", content_hash=None, analysis=None):
     snapshot = setup.content.record_source_item(
         source_id=setup.content.built_in_source_id("manual"), source_native_id="", canonical_url="",
         title="Train", author="", published_at=None, language=language, body=BODIES[language],
@@ -158,7 +158,7 @@ def _article(setup, language="en", *, rights=None, level="B1", content_hash=None
     article = setup.content.create_article(
         source_item_id=snapshot["id"], title="The late train", body=BODIES[language], excerpt="",
         language=language, topic="travel", estimated_level=level, estimated_confidence=0.7,
-        word_count=30, reading_time_seconds=60, analysis={}, targets=[],
+        word_count=30, reading_time_seconds=60, analysis=analysis or {}, targets=[],
     )
     return article["id"]
 
@@ -735,3 +735,53 @@ def test_without_automation_permission_a_new_set_stays_a_draft(setup):
                    json={"support_language": "vi"}).json()
     assert created["status"] == "draft"
     assert created["automatic_approval"]["reasons"] == ["automation_not_allowed"]
+
+
+# ---- quality gate (D-18X, PROPOSED) ---------------------------------------------
+
+def _quality_refused(setup, article_id, **extra):
+    return call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/status",
+                json={"status": "published", **extra})
+
+
+@pytest.mark.parametrize("code", ["empty_body", "media_page", "index_page", "bot_challenge", "special_page"])
+def test_a_reviewer_cannot_publish_a_hard_quality_failure(setup, code):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": [code]})
+    response = _quality_refused(setup, article_id)
+    assert response.status_code == 409, response.text
+    detail = response.json()["detail"]
+    assert detail["category"] == "reading_quality_not_cleared"
+    assert detail["context"]["blockers"] == [{"code": code, "gate": "quality"}]
+    assert _visible(setup, article_id) != "published"
+    assert setup.audited[-1]["action"] == "admin.reading_article_publish_refused"
+
+
+def test_soft_quality_flags_stay_publishable_by_a_reviewer(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": ["extraction_medium_confidence", "body_below_minimum"]})
+    assert _publish(setup, article_id)["status"] == "published"
+
+
+def test_a_clean_article_publishes(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": []})
+    assert _publish(setup, article_id)["status"] == "published"
+
+
+def test_a_quality_override_needs_a_reason_and_is_audited(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": ["media_page"]})
+    assert _quality_refused(setup, article_id, quality_override=True).status_code == 422
+    assert _visible(setup, article_id) != "published"
+    done = _quality_refused(setup, article_id, quality_override=True, reason="a long-form video transcript")
+    assert done.status_code == 200, done.text
+    record = next(item for item in setup.audited if item["action"] == "admin.reading_article_quality_override")
+    assert record["payload"]["codes"] == ["media_page"]
+
+
+def test_a_quality_override_never_clears_the_rights_gate(setup):
+    article_id = _article(setup, rights={}, analysis={"quality_issues": ["media_page"]})
+    response = _quality_refused(setup, article_id, quality_override=True, reason="transcript")
+    assert response.status_code == 409
+    assert response.json()["detail"]["category"] == "reading_rights_not_cleared"

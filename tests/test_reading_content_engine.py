@@ -433,3 +433,38 @@ def test_worker_concurrency_is_configurable_and_bounded(monkeypatch):
     assert reading_worker.configured_concurrency() == 1
     monkeypatch.delenv("READING_WORKER_CONCURRENCY")
     assert reading_worker.configured_concurrency() == 1
+
+
+def _page_source(content):
+    source = content.create_source(slug="page-test", name="Page test", source_type="manual",
+        base_url="https://example.com", languages=["en", "zh"], rights={"can_republish": True,
+        "can_adapt": True, "attribution_required": False, "automation_allowed": True}, created_by="admin")
+    content.set_source_state(source["id"], "active", actor="admin")
+    return source
+
+
+def _source_url_candidate(engine_parts, page: str, url: str = "https://example.com/news/a"):
+    engine, content, jobs = engine_parts
+    source = _page_source(content)
+    engine.adapters["url"] = lambda: DirectUrlAdapter(fetcher=_fetcher(page))
+    engine.submit(SubmittedInput(kind="url", url=url, source_id=source["id"]), actor="admin@example.com")
+    return content.get_article(engine.process(jobs.claim("worker-1"))["article_id"]), content
+
+
+def test_a_media_page_is_flagged_and_d111_never_publishes_it(engine_parts):
+    from reading_quality_fixtures import VOA_ZH_VIDEO
+
+    article, content = _source_url_candidate(engine_parts, VOA_ZH_VIDEO)
+    assert "media_page" in article["analysis"]["quality_issues"]
+    assert article["status"] == "needs_review"
+    assert "media_page" in article["analysis"]["admission"]["reasons"]
+    assert content.get_published_article(article["id"]) is None
+
+
+def test_a_medium_confidence_page_is_flagged_and_held(engine_parts):
+    page = ("<html><head><title>Rain returns</title></head><body><div>"
+            + "".join(f"<p>{ARTICLE}</p>" for _ in range(2)) + "</div></body></html>")
+    article, _content = _source_url_candidate(engine_parts, page)
+    if article["analysis"]["extraction"]["confidence"] == "medium":
+        assert "extraction_medium_confidence" in article["analysis"]["quality_issues"]
+        assert article["status"] == "needs_review"

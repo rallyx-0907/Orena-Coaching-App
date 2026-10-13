@@ -6092,3 +6092,12 @@ The General catalogue kill switch (`vocabulary.general_catalogue_enabled`, D-172
 in Admin > Operations > Policies as a new "Vocabulary" group (EN/VI/ZH: Vocabulary / Từ vựng / 词汇) built only from the
 existing policy block, label, chip and toggle. The pinned `Orena Admin.dc.html` draws no such group. Recorded as a gap
 for the human; not changed in this batch.
+
+## Reading quality gate: no pre-click state or override control in Admin Reading (D-18X, 2026-10-13)
+
+The server now refuses a reviewer's publish of a page flagged with a hard quality code (`media_page`, `index_page`,
+`bot_challenge`, `special_page`, `empty_body`) with `409 reading_quality_not_cleared`, and the new codes are listed with
+translated labels in the existing "Quality" evidence row. The pinned `Orena Admin.dc.html` draws no disabled-publish
+state for quality (`publicationBlockers` in `static/orena/capabilities/admin-reading.js` mirrors only the rights gate, so
+the click is refused by the server and shown as an error), and no control for the audited `quality_override` request
+field. Recorded for the human; no UI was invented.
