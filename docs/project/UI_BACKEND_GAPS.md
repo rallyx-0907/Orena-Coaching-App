@@ -6063,3 +6063,18 @@ etymology - the provenance gap is exactly the projection named there. Open, serv
     is dropped, so a dek or hero that a page places only in its site-level header is lost;
   - pages rendered by JavaScript, and non-UTF-8 pages, are not handled;
   - media candidates inside the article scope include teaser-card images that carry no boilerplate token.
+
+## Reading source polling follow-ups (claude/reading-source-poller)
+
+`writing_coach/reading_source_poller.py` polls active, automation-allowed, polling-enabled `rss`/`feed` sources
+(feed URL = `base_url`) and submits each new article URL through the engine's normal URL job. Deliberately not done:
+
+- feed images / thumbnails; the poller discovers URLs only;
+- API sources and homepage/sitemap link discovery (only RSS 2.0 / Atom);
+- feed `source_native_id` (guid) is not stored: job input has no field for it, so dedupe is by canonical URL
+  (snapshot per source) plus any prior job for the same submission; a feed that changes URLs for the same guid is re-queued;
+- backoff state lives in `reading_sources.polling_cursor` as JSON (`failures`, `next_retry_at`) because there is no
+  `next_retry_at` column; a dedicated column or `polling_policy` interval per source needs a migration;
+- no per-source interval; one global `READING_SOURCE_POLL_INTERVAL_SECONDS` (default 900, 0 disables);
+- single poller thread inside the worker process, no distributed lock: run one worker container;
+- the admin source row already shows last-checked; last-success and last-error are returned by the API but not rendered.

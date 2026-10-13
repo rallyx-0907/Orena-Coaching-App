@@ -213,6 +213,23 @@ class ReadingJobRepository:
             ).first()
         return {**_job(row), "duplicate": False}
 
+    def known_request_hashes(self, source_id: str, hashes: list[str]) -> set[str]:
+        """Which of these submissions already have a job of any status.
+
+        `enqueue` only dedupes against live jobs; a recurring poller must also
+        not re-submit what already finished or failed (an admin retries those).
+        """
+        if not hashes:
+            return set()
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingIngestionJob.request_hash).where(
+                    ReadingIngestionJob.source_id == uuid.UUID(str(source_id)),
+                    ReadingIngestionJob.request_hash.in_(hashes),
+                )
+            ).all()
+        return {row[0] for row in rows}
+
     def retry(self, job_id: str, *, actor: str, now: datetime | None = None) -> dict[str, Any] | None:
         """Re-submit a finished job's input as a **new** job.
 

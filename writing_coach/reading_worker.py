@@ -157,6 +157,17 @@ def main() -> int:  # pragma: no cover - process entry point
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
     threads = [threading.Thread(target=worker.run_forever, daemon=False) for worker in workers]
+    # Source polling shares the worker process: one thread, off when the
+    # interval is 0. It only queues jobs; the workers above process them.
+    from writing_coach.reading_source_poller import ReadingSourcePoller, configured_interval
+
+    if configured_interval() > 0:
+        poller = ReadingSourcePoller(
+            content=ReadingContentRepository(database), jobs=jobs, engine=engine,
+            interval_seconds=configured_interval(),
+        )
+        threads.append(threading.Thread(
+            target=poller.run_forever, kwargs={"should_run": lambda: workers[0]._running}, daemon=True))
     for thread in threads:
         thread.start()
     for thread in threads:
