@@ -118,3 +118,61 @@ def test_the_repository_applies_the_same_gate_to_every_caller(repository):
     repository.finalize_collection_publication(cid, admission=GOOD)
     repository.set_collection_status(cid, "unpublished", actor="a@b.c")
     assert repository.set_collection_status(cid, "published", actor="a@b.c")["catalog_status"] == "published"
+
+
+# ---- negative paths named by the architecture review (P2-4) -----------------
+
+
+def _admit(repository, cid):
+    repository.finalize_collection_publication(cid, admission=GOOD)
+
+
+def _row(repository, cid):
+    with Session(repository.engine) as session:
+        row = session.get(VocabularyCollection, cid)
+        return {"status": row.catalog_status, "updated_at": row.updated_at,
+                "provenance": dict(row.provenance or {})}
+
+
+def test_a_reimport_that_dropped_the_admission_cannot_be_republished_by_status(console, repository):
+    cid = _collection(repository)
+    _admit(repository, cid)
+    assert move(console, cid, "unpublished", who=ADMIN).status_code == 200
+    _collection(repository, collection_id=cid)  # re-import into the unpublished set replaces provenance
+    assert "admission" not in _row(repository, cid)["provenance"]
+    assert move(console, cid, "published", who=ADMIN).status_code == 422
+    assert state(repository, cid) != "published"
+
+
+def test_restoring_an_archived_collection_then_publishing_without_admission_is_refused(console, repository):
+    cid = _collection(repository)
+    assert move(console, cid, "archived", who=ADMIN).status_code == 200
+    assert move(console, cid, "unpublished", who=ADMIN).status_code == 200
+    assert move(console, cid, "published", who=ADMIN).status_code == 422
+    assert state(repository, cid) == "unpublished"
+
+
+def test_a_valid_admission_is_kept_untouched_and_the_move_is_recorded(console, repository):
+    cid = _collection(repository)
+    with Session(repository.engine) as session, session.begin():
+        row = session.get(VocabularyCollection, cid)
+        row.provenance = {**dict(row.provenance or {}), "admission": dict(GOOD)}
+    assert move(console, cid, "published", who=ADMIN).status_code == 200
+    stored = _row(repository, cid)["provenance"]
+    assert stored["admission"] == GOOD
+    last = stored["status_history"][-1]
+    assert (last["from"], last["to"], last["actor"]) == ("pending_review", "published", ADMIN["google_sub"])
+
+
+def test_a_refused_move_leaves_history_and_timestamp_unchanged(console, repository):
+    cid = _collection(repository)
+    before = _row(repository, cid)
+    assert move(console, cid, "published", who=ADMIN).status_code == 422
+    assert _row(repository, cid) == before
+
+
+def test_the_status_route_refuses_a_request_without_a_same_origin_header(console, repository):
+    cid = _collection(repository)
+    response = call(console, "POST", status_url(cid), json={"status": "archived"}, who=ADMIN)
+    assert response.status_code == 403
+    assert state(repository, cid) == "pending_review"
