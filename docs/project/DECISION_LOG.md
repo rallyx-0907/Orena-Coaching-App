@@ -5950,3 +5950,55 @@ Closes the follow-up recorded in D-185.
 - **Not covered.** A container started by hand outside the official launchers; a publish edited after the check ran;
   `docker run` helpers not in the inventory. Same-host proxy, `host.docker.internal` and DNS-rebinding residuals of D-185
   are unchanged. See `docs/SECURITY_BOUNDARY.md`.
+
+## D-187 - A scoped machine credential for vocabulary ingestion (issue #145)
+
+**Status: ACCEPTED.** Changes authentication; independently reviewed (AGENTS.md "Architecture review authority").
+Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer. Review:
+`docs/reviews/architecture/VOCAB_INGEST_TOKEN_REVIEW_2026-10-13.md`. History: CHANGES REQUIRED at 6ec68757 (P1-1, a
+token could publish through a non-authored format), CHANGES REQUIRED at 96e23d35 (P1-2, a token re-import could rewrite
+an existing published collection), **APPROVED at d4c3e135** with no remaining condition. The auth code
+(`auth_support.py`, `writing_coach/service_auth.py`, the two routes in `app.py`, the token tests) is byte-identical to
+d4c3e135 at merge. Code comments written before the merge call this decision "D-18X"; it is this entry. Human
+merge authorization: 2026-10-13. Not product approval and not activation authorization: enabling it on a deployment
+(setting `VOCAB_INGEST_TOKEN_SHA256`) stays a human gate.
+
+Behaviour fixed by the reviews: no publish through the token on any source format (P1-1); `duplicates=overwrite` is
+refused, skip only; for the service principal the route returns 422 before any write when the target collection
+(supplied or derived id) exists and is not `pending_review` - published, unpublished and archived are all refused,
+because a re-import would also move them back to `pending_review` and undo a moderator's decision (P1-2).
+
+- **Finding.** `require_admin()` is session-based (a Google sign-in cookie), and `UserIsolationMiddleware` refuses any
+  `/api/*` request without a session before a route runs. The only unattended path is the signed-out local admin, which
+  is for the machine's own address only (D-185) and is never available to a public deployment (D-146). So a client with
+  no browser - the n8n Vocabulary Generator of `integrations/n8n` - cannot preview or import authored vocabulary into a
+  deployed Orena; the manual file import in Admin is the only route.
+- **Decision.** One capability, one credential, nothing else:
+  - Scope: `POST /api/admin/vocabulary/preview` and `POST /api/admin/vocabulary/import`, exactly. Defined once, in
+    `writing_coach/service_auth.py` (`VOCABULARY_INGEST_PATHS`). Any other path or method with the same token is
+    answered as an anonymous request (401).
+  - Credential: `Authorization: Bearer <token>`. The server holds no secret: `VOCAB_INGEST_TOKEN_SHA256` lists the
+    SHA-256 hex digest(s) of the allowed token(s), comma-separated to allow rotation. Compared by digest with
+    `hmac.compare_digest` against every configured digest. Unset or malformed means the feature is off.
+  - Revocation: remove the digest and restart. Nothing is logged by the credential code; the token is never stored.
+  - Who the caller is: a fixed service principal (`service:vocabulary-ingest`, role `service`), never a user. Its request context has a user key of its own (not the shared `legacy` scope); it reads
+    and writes no learner scope. `imported_by` of the receipt records it.
+  - Lifecycle: for the service principal, on EVERY source format (CSV/TSV/XLSX/TXT/JSON/JSONL, authored or not), the
+    import route forces `pending_review`, ignores `publish` and `publication_attested`, skips the cleared-rights +
+    complete auto-publish rule and records no attestation. (The first version only forced it for authored entries, so a
+    CSV with `publish` published: found by the review below and fixed.) `duplicates=overwrite` is refused with 422;
+    the service principal only skips. Authored-entry rules (D-178) are as before.
+  - Session administrators are untouched: a request without a bearer token takes the same path as before.
+- **Where.** `UserIsolationMiddleware.dispatch` checks the token first, for those two paths only, and sets
+  `request.state.service_principal`; `require_vocabulary_ingest` (used by those two routes only) returns it, else
+  falls back to `require_admin`. `tests/test_vocabulary_ingest_token.py` walks every route of the app with a valid
+  token and requires 401 for all but the two scoped POSTs.
+- **Residual risks (accepted in review, tracked as follow-ups).** (1) A leaked token imports `pending_review` sets and previews the catalogue's
+  duplicate status (it reveals which words exist, including published ones) until revoked; there is no per-token rate
+  limit, expiry or audit actor beyond the fixed principal. (2) The token is a long-lived shared secret in the n8n
+  credential store. (3) The middleware branch sits before language seeding and sets a service user key; confirm it cannot reach the `legacy`
+  scope. (4) Whether a deployment that wants this should instead use a short-lived, per-client token with an expiry
+  (a larger change, deliberately not done here). (5) The collection-state check and the write are separate calls;
+closing that race needs the guard inside the `import_source` transaction.
+- **Without the token.** File mode and a manual import through Orena Admin; see
+  `integrations/n8n/README.md`.

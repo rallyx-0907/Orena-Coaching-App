@@ -48,7 +48,7 @@ from writing_coach.writing_evaluator_contract import (
 from writing_coach.writing_contract import project_review as project_writing_review, project_revision as project_revision_compare
 from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
-from auth_support import APP_ENV, AUTH_ENABLED, DEPLOYMENT, SESSION_SECRET, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
+from auth_support import APP_ENV, AUTH_ENABLED, DEPLOYMENT, SESSION_SECRET, current_db_path, install_auth, require_admin, require_vocabulary_ingest, AUTH_DB_PATH, configure_auth_repository
 import auth_support
 from writing_coach.product.api import router as product_router
 from writing_coach.media_api import (
@@ -3770,7 +3770,7 @@ async def admin_vocabulary_source_preview(
 ) -> dict[str, Any]:
     """Parse uploads and suggest mappings without touching persistence."""
 
-    require_admin(request)
+    require_vocabulary_ingest(request)
     if not files:
         raise HTTPException(422, "Choose at least one vocabulary source file.")
     items: list[dict[str, Any]] = []
@@ -3918,12 +3918,19 @@ async def admin_vocabulary_source_import(
     source formats keep their merge behaviour and ignore it.
     """
 
-    admin = require_admin(request)
+    admin = require_vocabulary_ingest(request)
     if not files:
         raise HTTPException(422, "Choose at least one vocabulary source file.")
     if duplicates not in AUTHORED_DUPLICATE_POLICIES:
         raise HTTPException(422, "duplicates must be 'skip' or 'overwrite'.")
+    # The scoped service credential (D-18X) may add pending-review content and nothing more: it never overwrites,
+    # never publishes and never attests, whatever the source format or the metadata it sends.
+    is_service = admin.get("role") == "service"
+    if is_service and duplicates != "skip":
+        raise HTTPException(422, "A service credential may only import with duplicates='skip'.")
     collection_metadata = _admin_vocabulary_metadata(metadata)
+    if is_service:
+        collection_metadata = {**collection_metadata, "publish": False, "publication_attested": False}
     mapping_by_filename = _json_form_object(mappings, "mappings")
     repository = _persistence_runtime.vocabulary_repository
     try:
@@ -3947,10 +3954,30 @@ async def admin_vocabulary_source_import(
         collection_metadata.get("framework", ""),
     )
     imported_by = str(admin.get("google_sub") or admin.get("email") or "admin")
+    if is_service:
+        # The service principal may add to a new set or one still pending review, never to one a reviewer has
+        # published, unpublished or archived: a re-import would rewrite its title/framework/level/topic (or move its
+        # state back to pending_review). Refused before any write, for every source format, derived id or supplied.
+        existing = repository.get_collection(collection_id, limit=1, status=None)
+        if existing is not None and str(existing.get("catalog_status") or "") != "pending_review":
+            raise HTTPException(
+                422,
+                f"Collection '{collection_id}' is {existing.get('catalog_status')}; a service credential only "
+                "imports into new or pending-review collections.",
+            )
     requested_catalog_status, admission = _vocabulary_admission(
         collection_metadata,
         imported_by=imported_by,
     )
+    if is_service:
+        # No auto-publish rule (cleared rights + complete) and no attestation record for the service principal.
+        requested_catalog_status = "pending_review"
+        admission = {
+            "rights_status": admission.get("rights_status", ""),
+            "completeness": admission.get("completeness", ""),
+            "review_status": "pending_review",
+            "publication_attested": False,
+        }
     # Every source in a batch is imported into a non-published collection.
     # Publication is a finalization step below, so a later failed file cannot
     # expose the earlier successful files to learners.
