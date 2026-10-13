@@ -188,12 +188,18 @@ def _safe_english_dictionary(
 def _safe_machine_translation(
     service: ReadingTranslationService, source: str, target: str, text: str
 ) -> str | None:
-    if getattr(service, "uses_ai", False) or getattr(service, "uses_paid_provider", False):
-        # A word's meaning in its sentence is /word-detail's; a basic tap never reaches the AI platform or any
-        # paid translation service. The free local engine (Marian) is the only machine source here.
-        return None
+    segments = [TextSegment("selection", text)]
     try:
-        result = service.translate(source, target, [TextSegment("selection", text)])
+        # An existing cached translation is used whatever engine is configured now.
+        reader = getattr(service, "cached", None)
+        held = reader(source, target, segments) if reader else None
+        if held is not None:
+            return held.translations[0][1] if held.translations else None
+        if getattr(service, "uses_ai", False) or getattr(service, "uses_paid_provider", False):
+            # A word's meaning in its sentence is /word-detail's; a basic tap never creates a translation with the
+            # AI platform or any paid service. Only the free local engine (Marian) may create one here.
+            return None
+        result = service.translate(source, target, segments)
     except Exception:
         return None
     if result.status is not ReadingTranslationStatus.READY or not result.translations:

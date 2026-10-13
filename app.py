@@ -6,6 +6,7 @@ import os
 import re
 import time
 import statistics
+import unicodedata
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -2501,6 +2502,20 @@ def chinese_dictionary_ai(word: str) -> dict[str, Any]:
     return result
 
 
+def _english_dictionary_eligible(term: str) -> bool:
+    """Whether dictionaryapi.dev can plausibly hold `term`: Latin letters (diacritics included), apostrophes (straight
+    or curly), hyphens and spaces only. Han/CJK and other scripts are never sent (an 8 s network miss for nothing)."""
+    letters = 0
+    for ch in term:
+        if ch.isalpha():
+            if "LATIN" not in unicodedata.name(ch, ""):
+                return False
+            letters += 1
+        elif ch not in " '’-":
+            return False
+    return letters > 0
+
+
 def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool = True, persist: bool = True) -> dict[str, Any]:
     clean = normalise_lookup_word(word)
     cache_key = clean.casefold()
@@ -2530,6 +2545,8 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
     else:
         _external_started = time.perf_counter()
         try:
+            if not _english_dictionary_eligible(clean):
+                raise ValueError("not a selection an English dictionary can hold")  # no network; the miss path below
             response = requests.get(
                 f"https://api.dictionaryapi.dev/api/v2/entries/en/{quote(clean)}",
                 timeout=8,

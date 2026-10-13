@@ -176,6 +176,27 @@ class ReadingTranslationService:
         """Whether this engine is a paid external service (the platform AI or Groq). A basic word tap never uses one."""
         return self._provider.engine_id in {"ai", "groq"}
 
+    def cached(
+        self, source_language: str, target_language: str, segments: Sequence[TextSegment], *, persist: bool = False
+    ) -> ReadingTranslation | None:
+        """The translation already held for every segment, or None. Read-only: never calls the provider.
+
+        Same keys as `translate()` (it shares `_key`), so a hit here is exactly what `translate()` would reuse."""
+        source = primary_language(source_language)
+        target = normalize_support_language(target_language)
+        if source == target or not segments:
+            return None
+        keys = {segment.segment_id: self._key(source, segment.original_text) for segment in segments}
+        held = self._cache.get_many(KIND_TRANSLATION, target, keys.values(), persist=persist)
+        pairs = []
+        for segment in segments:
+            hit = held.get(keys[segment.segment_id])
+            text = str(hit.get("text") or "") if hit else ""
+            if not text:
+                return None
+            pairs.append((segment.segment_id, text))
+        return ReadingTranslation(ReadingTranslationStatus.READY, source, target, tuple(pairs))
+
     def translate(
         self,
         source_language: str,
