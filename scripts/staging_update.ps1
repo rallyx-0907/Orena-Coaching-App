@@ -215,7 +215,7 @@ if ($existing -eq $Web) {
 & docker run --rm -v 'orena-staging-appdata:/dst' -v "${Release}\data:/src:ro" $Image sh -c 'cp -a /src/. /dst/' | Out-Null
 if ($LASTEXITCODE -ne 0) { Die "could not copy the release's data into orena-staging-appdata." }
 $run = @('run', '-d', '--name', $Web, '--label', 'orena.staging=1', '--label', "orena.staging.sha=$Sha",
-         '--network', $Network, '-p', "${Port}:8000", '--env-file', $EnvFile, '--restart', 'unless-stopped',
+         '--network', $Network, '-p', "127.0.0.1:${Port}:8000", '-e', 'ORENA_PUBLISHED_BIND_HOST=127.0.0.1', '-e', 'ORENA_TRUST_DOCKER_PUBLISHED_PORT=1', '--env-file', $EnvFile, '--restart', 'unless-stopped',
          '-v', "${Release}:/app:ro", '-v', 'orena-staging-appdata:/app/data', '-v', 'orena-staging-data:/data',
          $Image)
 & docker @run | Out-Null

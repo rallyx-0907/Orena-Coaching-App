@@ -55,6 +55,9 @@ services:
     working_dir: /app
     environment:
       APP_ENV: development
+      # Published on loopback only (ports below), so a host client may count as local (request_boundary.py).
+      ORENA_PUBLISHED_BIND_HOST: 127.0.0.1
+      ORENA_TRUST_DOCKER_PUBLISHED_PORT: "1"
       PUBLIC_BASE_URL: http://127.0.0.1:${AGENT_LIVE_PORT:-8013}
       AGENT_ENABLED: "true"
       # Live voice (R28): only for the voice check (voice_check.py sets it); text runs leave it off.

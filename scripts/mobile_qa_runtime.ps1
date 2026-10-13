@@ -46,8 +46,10 @@ try {
 
   $env:MSYS_NO_PATHCONV = '1'
   docker compose run --rm --no-deps `
-    --publish "${Port}:8000" `
+    --publish "127.0.0.1:${Port}:8000" `
     --env APP_ENV=development `
+    --env ORENA_PUBLISHED_BIND_HOST=127.0.0.1 `
+    --env ORENA_TRUST_DOCKER_PUBLISHED_PORT=1 `
     --env GOOGLE_CLIENT_ID= `
     --env GOOGLE_CLIENT_SECRET= `
     --env PERSISTENCE_BACKEND=sqlite `

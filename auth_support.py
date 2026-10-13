@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import base64
 import json
 import os
@@ -24,6 +25,7 @@ from writing_coach.core.request_context import LANGUAGE_CODE_CTX, USER_KEY_CTX, 
 from writing_coach.core.storage import resolve_language_db_path
 from writing_coach.core.language_registry import DEFAULT_LANGUAGE, all_languages, enabled_language
 from writing_coach.core.deployment import DeploymentConfig, resolve_deployment_config
+from writing_coach.core import request_boundary
 from writing_coach import account_settings
 from writing_coach.persistence.auth_repository import AuthRepository
 
@@ -141,12 +143,32 @@ def _local_admin_allowed(environ: Any = None) -> bool:
 LOCAL_ADMIN_ALLOWED = _local_admin_allowed()
 
 
+def request_is_local(request: Request) -> bool:
+    """Whether THIS request comes from the machine's own developer (issue #137).
+
+    Decided from the transport peer of the connection under writing_coach/core/request_boundary.py, never from Host,
+    Origin, forwarding headers or PUBLIC_BASE_URL. Read per request: a deployment-wide flag cannot say who is calling."""
+    peer = request_boundary.peer_host(request.scope)
+    local = request_boundary.request_is_local(peer, request.headers)
+    if not local and not AUTH_ENABLED:
+        request_boundary.note_denied_peer(peer)
+    return local
+
+
+def request_is_local_admin(request: Request) -> bool:
+    """The signed-out local administrator: the configuration allows one (LOCAL_ADMIN_ALLOWED, which can only restrict)
+    AND the request is local. Config-local does not imply request-local."""
+    return bool(LOCAL_ADMIN_ALLOWED) and request_is_local(request)
+
+
 def require_admin(request: Request) -> dict[str, Any]:
     if not AUTH_ENABLED:
         if DEPLOYMENT.public:
             raise HTTPException(503, "Authentication is not configured for this public deployment.")
         if not LOCAL_ADMIN_ALLOWED:
             raise HTTPException(503, "Authentication is not configured for this address.")
+        if not request_is_local(request):
+            raise HTTPException(403, "Signed-out administration is available only from the machine running Orena.")
         return {"google_sub":"local-admin","email":"local","name":"Local developer","role":"admin"}
     sub = str(request.session.get("user_sub") or "")
     user = auth_user(sub)
@@ -449,7 +471,7 @@ def auth_logout(request: Request, next: str | None = None):
 @router.get("/api/me")
 def api_me(request: Request) -> dict[str, Any]:
     if not AUTH_ENABLED:
-        admin = LOCAL_ADMIN_ALLOWED
+        admin = request_is_local_admin(request)
         return {"authenticated":True,"mode":"local","name":"Local user","email":"","picture":"","role":"admin" if admin else "user","is_admin":admin}
     sub = str(request.session.get("user_sub") or "")
     user = auth_user(sub)
@@ -473,7 +495,7 @@ def api_session_bootstrap(request: Request, response: Response) -> dict[str, Any
     """Return the compact authenticated session contract for web/mobile clients."""
     response.headers["Cache-Control"] = "no-store"
     if not AUTH_ENABLED:
-        role = "admin" if LOCAL_ADMIN_ALLOWED else "user"
+        role = "admin" if request_is_local_admin(request) else "user"
         mode = "local"
     else:
         sub = str(request.session.get("user_sub") or "")
@@ -596,8 +618,10 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
+        # Signed-out and not the machine's own developer: nothing below may read or write the shared "legacy" scope.
+        foreign_signed_out = not AUTH_ENABLED and not request_is_local(request)
         # Only a request that has no language of its own, to an /api/ route, can need the count (review F10).
-        undecided = not request.session.get("language") and path.startswith("/api/")
+        undecided = not request.session.get("language") and path.startswith("/api/") and not foreign_signed_out
         enforced = self._language_count_enforced() if undecided else False
         mutating = request.method not in {"GET", "HEAD", "OPTIONS"}
         try:
@@ -636,6 +660,13 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
         )
 
         if not AUTH_ENABLED:
+            if foreign_signed_out and not public:
+                # With sign-in off every caller shares the one "legacy" learner scope. Only the machine's own
+                # developer may use it; a LAN or tunnelled caller gets nothing of it (issue #137).
+                return JSONResponse(
+                    {"detail": "Sign-in is not configured; this runtime answers only the machine running it."},
+                    status_code=403,
+                )
             user_token = _user_key.set("legacy")
             language_token = _language_key.set(requested_language)
             try:
@@ -675,6 +706,8 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
 def install_auth(app: FastAPI, db_initializer: Callable[[], None]) -> None:
     global _db_initializer
     _db_initializer = db_initializer
+    if not AUTH_ENABLED:
+        logging.getLogger("orena.request_boundary").warning("%s", request_boundary.trust_state_line())
     init_auth_db()
     app.include_router(router)
     app.add_middleware(UserIsolationMiddleware)

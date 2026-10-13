@@ -14,7 +14,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from writing_coach.core.deployment import CALLBACK_PATH, resolve_deployment_config
+from writing_coach.core.deployment import (
+    CALLBACK_PATH,
+    PUBLIC_ENVIRONMENTS,
+    environment_name,
+    resolve_deployment_config,
+)
 
 
 @dataclass(frozen=True)
@@ -90,6 +95,17 @@ def validate_public_staging_readiness(
             passed.append("canonical Google callback matches PUBLIC_BASE_URL")
         else:
             errors.append("Canonical Google callback does not match PUBLIC_BASE_URL.")
+
+    # Issue #137: the public/tunnel path must fail closed for an unauthenticated development runtime. A tunnel is a
+    # remote caller; sign-in is the only boundary left once the request is no longer the developer's own.
+    google_pair = bool(str(env.get("GOOGLE_CLIENT_ID", "")).strip() and str(env.get("GOOGLE_CLIENT_SECRET", "")).strip())
+    if environment_name(env.get("APP_ENV", "development")) not in PUBLIC_ENVIRONMENTS and not google_pair:
+        errors.append(
+            "Refusing to expose a development runtime with authentication disabled: set APP_ENV=staging (or "
+            "production) with Google sign-in before the tunnel starts."
+        )
+    if str(env.get("ORENA_INSECURE_DEV_LAN_BIND_HOST", "")).strip():
+        errors.append("ORENA_INSECURE_DEV_LAN_BIND_HOST (LAN development) must be unset for public staging.")
 
     backend = str(env.get("PERSISTENCE_BACKEND", "")).strip().casefold()
     if backend == "postgresql":

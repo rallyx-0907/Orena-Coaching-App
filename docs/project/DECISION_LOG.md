@@ -5878,3 +5878,42 @@ Human decision, 2026-10-13: PR 3 scope.
 - Image upload is split out of this PR. The preview works without an image.
 - Gated in `scripts/test_orena_screen_admin_areas.mjs`, `scripts/test_orena_vocabulary_card.mjs` and
   `tests/test_vocabulary_source_routes.py`.
+
+## D-185 - Signed-out local-admin belongs to the request boundary, not to configuration (issue #137)
+
+Placeholder id; the lead renumbers at merge. **Status: independently reviewed, APPROVED WITH CONDITIONS
+(`docs/reviews/architecture/SEC_137_LOCAL_ADMIN_REVIEW_2026-10-13.md`, commit f7a9dc77); conditions addressed in
+follow-up commits; the human accepted the residual risk below on 2026-10-13.** Not merged, not product approval.
+
+- **Residual risk, accepted by the human 2026-10-13 as a documented residual risk.** The Docker-gateway trust rests
+  on a self-declared `ORENA_PUBLISHED_BIND_HOST`; the app cannot observe the real publish. An operator who hand-edits
+  the Docker publish from `127.0.0.1` to `0.0.0.0` without changing the variables the app reads defeats it (on Docker
+  Desktop LAN traffic then arrives from the trusted gateway). This is a manual, unsupported misconfiguration, not a P1
+  blocker, **on the conditions** that auth-off lanes are local/development only and every official launcher is
+  test-locked to a loopback publish (`tests/test_local_boundary_deployment.py` scans all compose files and launch
+  scripts; the primary boundary is the deployment config/launcher, the per-request peer check is the second layer, the
+  startup refusal is defense-in-depth). **Follow-up, not in this change (GitHub issue #140):** a host-side runtime assertion - the
+  launcher/preflight runs `docker inspect` (or equivalent) on the real published address and refuses or stops an
+  auth-disabled lane bound to `0.0.0.0`, `::` or any non-loopback address. DNS rebinding (follow-up) and the
+  `host.docker.internal` cross-network case remain documented residuals in `docs/SECURITY_BOUNDARY.md`.
+
+- **Finding.** With sign-in off, `require_admin()` and the shared `legacy` learner scope were granted from
+  deployment configuration (`APP_ENV`, `PUBLIC_BASE_URL`), and Compose published port 8000 on `0.0.0.0`: any LAN host
+  (or a tunnel to a development runtime) was the local administrator. Config-local was read as request-local.
+- **Decision.** Locality is decided per request from the transport peer (`writing_coach/core/request_boundary.py`):
+  loopback, or the container's own default gateway when the operator declared a loopback-only publish
+  (`ORENA_TRUST_DOCKER_PUBLISHED_PORT` with `ORENA_PUBLISHED_BIND_HOST` loopback; Docker's port proxy makes a host
+  browser arrive from the gateway). A forwarding header, a public environment, a missing peer all mean not local.
+  Host, Origin, `X-Forwarded-*` and `PUBLIC_BASE_URL` are never evidence. Configuration only restricts. A non-local
+  request to an auth-disabled runtime gets 403 outside public pages. No switch grants a remote peer signed-out access.
+- **Loopback-only (human, 2026-10-13).** Development with sign-in off is loopback-only: startup refuses any declared
+  non-loopback exposure (PUBLIC_BASE_URL / GOOGLE_REDIRECT_URI host, `ORENA_PUBLISHED_BIND_HOST`,
+  `ORENA_INSECURE_DEV_LAN_BIND_HOST`, the tunnel token); only localhost, 127.0.0.0/8, ::1 and ::ffff:127.x pass. The
+  in-container listen address and `APP_BIND_HOST` are not exposure. LAN development now requires Google sign-in.
+- **Default bind** is `127.0.0.1`; LAN needs `ORENA_INSECURE_DEV_LAN_BIND_HOST` and Google sign-in.
+  `APP_BIND_HOST` no longer widens the publish. The public preflight (`validate_public_staging_readiness.py`, run by
+  `start_public.ps1`) refuses development with sign-in off and the LAN opt-in.
+- **Operational effect.** Containers started outside `compose.yaml` (`docker run`) must set the two trust variables
+  to keep signed-out use from the host; otherwise they answer 403. Staging :8000 is unchanged (public, auth on).
+- Full policy and threat model: `docs/SECURITY_BOUNDARY.md`. Not done here: non-root container, CSP/`innerHTML`
+  inventory.

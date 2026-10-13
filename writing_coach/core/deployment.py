@@ -104,6 +104,45 @@ def _is_local_or_unsafe_host(url: str) -> bool:
     return address.is_loopback or address.is_unspecified
 
 
+def is_loopback_host(host: object) -> bool:
+    """Whether a declared host is this machine's own loopback: ``localhost``, 127.0.0.0/8, ::1, ::ffff:127.x.
+
+    Nothing else counts: not a private, link-local, CGNAT or unique-local address, not any other name."""
+    text = str(host or "").strip().casefold().rstrip(".")
+    if text.startswith("[") and text.endswith("]"):
+        text = text[1:-1]
+    if text == "localhost":
+        return True
+    try:
+        address = ipaddress.ip_address(text)
+    except ValueError:
+        return False
+    mapped = getattr(address, "ipv4_mapped", None)
+    return (mapped or address).is_loopback
+
+
+def public_exposure_markers(public_base_url: str, values: Mapping[str, str]) -> list[str]:
+    """Every declared exposure beyond this machine's loopback (issue #137): development with sign-in off is loopback-only.
+
+    Declared means configuration naming where the runtime is reached: PUBLIC_BASE_URL, GOOGLE_REDIRECT_URI,
+    ORENA_PUBLISHED_BIND_HOST (where the container's port is published), ORENA_INSECURE_DEV_LAN_BIND_HOST and the
+    tunnel token. The in-container listen address (uvicorn on 0.0.0.0, APP_BIND_HOST) is not read: a container must
+    listen on every interface inside its own network namespace, and what reaches it is decided by the publish above.
+    Only names are returned, never values."""
+    markers: list[str] = []
+    origins = {"PUBLIC_BASE_URL": public_base_url, "GOOGLE_REDIRECT_URI": str(values.get("GOOGLE_REDIRECT_URI", "")).strip()}
+    for name, origin in origins.items():
+        if origin and not is_loopback_host(urlsplit(origin).hostname):
+            markers.append(f"{name} is not a loopback host")
+    for name in ("ORENA_PUBLISHED_BIND_HOST", "ORENA_INSECURE_DEV_LAN_BIND_HOST"):
+        declared = str(values.get(name, "")).strip()
+        if declared and not is_loopback_host(declared):
+            markers.append(f"{name} is not a loopback host")
+    if str(values.get("CLOUDFLARE_TUNNEL_TOKEN", "")).strip():
+        markers.append("CLOUDFLARE_TUNNEL_TOKEN is set")
+    return markers
+
+
 def resolve_deployment_config(env: Mapping[str, str] | None = None) -> DeploymentConfig:
     """Resolve non-secret deployment settings with fail-fast guards for public (staging, production) runtimes."""
     values = os.environ if env is None else env
@@ -148,6 +187,17 @@ def resolve_deployment_config(env: Mapping[str, str] | None = None) -> Deploymen
             raise RuntimeError(f"SESSION_SECRET must be at least 32 characters when APP_ENV={app_env}.")
     elif auth_enabled and not str(values.get("SESSION_SECRET", "")).strip():
         raise RuntimeError("SESSION_SECRET is required when Google authentication is enabled.")
+
+    if not public and not auth_enabled:
+        # Fail closed at startup (issue #137): a development runtime with sign-in off is the developer's alone. If its
+        # configuration says it faces the public, refuse to start rather than serve it.
+        markers = public_exposure_markers(public_base_url, values)
+        if markers:
+            raise RuntimeError(
+                "Refusing to start: APP_ENV=" + app_env + " with Google authentication disabled is loopback-only "
+                "but is configured for exposure (" + "; ".join(markers) + "). Use Google sign-in (LAN or public), "
+                "or declare only localhost/127.0.0.1/::1."
+            )
 
     return DeploymentConfig(
         app_env=app_env,

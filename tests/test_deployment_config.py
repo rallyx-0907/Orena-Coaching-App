@@ -31,9 +31,13 @@ def test_production_https_callback_and_secure_cookie() -> None:
 
 
 def test_same_origin_explicit_callback_override_is_supported() -> None:
+    # A development runtime with a public HTTPS origin must have sign-in (startup refusal, issue #137).
     resolved = resolve_deployment_config(config(
         PUBLIC_BASE_URL="https://preview.example.com",
         GOOGLE_REDIRECT_URI="https://preview.example.com/auth/google/callback",
+        GOOGLE_CLIENT_ID="client-id",
+        GOOGLE_CLIENT_SECRET="client-secret",
+        SESSION_SECRET="session-secret-for-tests-0123456789abcdef",
     ))
     assert resolved.google_redirect_uri == "https://preview.example.com/auth/google/callback"
 
@@ -107,8 +111,10 @@ def test_readiness_and_compose_keep_public_deployment_non_sensitive_and_configur
     assert '"/api/readiness"' in auth_source
     assert "SESSION_SECRET" not in readiness
     assert "GOOGLE_CLIENT_SECRET" not in readiness
-    assert '"${APP_BIND_HOST:-0.0.0.0}:8000:8000"' in compose
-    assert "APP_BIND_HOST=0.0.0.0" in (root / ".env.example").read_text(encoding="utf-8")
+    # Issue #137: the published port defaults to loopback; only the insecure-named opt-in can widen it.
+    assert '"${ORENA_INSECURE_DEV_LAN_BIND_HOST:-127.0.0.1}:8000:8000"' in compose
+    assert "0.0.0.0:8000" not in compose and ":-0.0.0.0" not in compose
+    assert "APP_BIND_HOST=127.0.0.1" in (root / ".env.example").read_text(encoding="utf-8")
 
 
 def test_health_contract_retains_platform_admin_field() -> None:
@@ -123,7 +129,8 @@ def test_environment_example_remains_a_usable_development_configuration() -> Non
     resolved = resolve_deployment_config(values)
     assert resolved.app_env == "development"
     assert resolved.public_base_url == "http://127.0.0.1:8000"
-    assert values["APP_BIND_HOST"] == "0.0.0.0"
+    assert values["APP_BIND_HOST"] == "127.0.0.1"
+    assert "ORENA_INSECURE_DEV_LAN_BIND_HOST" not in values, "the LAN opt-in is never on by default"
     assert values["PERSISTENCE_BACKEND"] == "postgresql"
     assert values["POSTGRES_RUNTIME_URL"] == (
         "postgresql+psycopg://becoming:becoming-local-dev@postgres:5432/becoming"
