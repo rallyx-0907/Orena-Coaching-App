@@ -10,6 +10,7 @@ loopback.
 
 Exit 0: every binding of the app port is loopback (or the explicit LAN opt-in is on and the app answers 401, sign-in on).
 Exit 2: refused; the container was stopped. Exit 3: Docker could not be read; refused the same way (fail closed).
+Exit 4: refused, and the stop itself failed or timed out (the container may still be running).
 
 It never dumps the container config: the only Docker reads are the two port-field templates below. It reads no
 environment and prints no secret. Stdlib only, so a launcher can run it with the host Python."""
@@ -118,8 +119,16 @@ def signed_in_required(probe_url: str, wait_seconds: float = 60.0) -> bool:
         time.sleep(1)
 
 
-def stop(container: str) -> None:
-    subprocess.run(["docker", "stop", container], capture_output=True, check=False, timeout=120)
+def stop(container: str) -> str:
+    """Stop the container; returns "" on success, else why it did not stop."""
+    try:
+        done = subprocess.run(["docker", "stop", container], capture_output=True, text=True, encoding="utf-8",
+                              errors="replace", check=False, timeout=120)
+    except subprocess.TimeoutExpired:
+        return "docker stop timed out"
+    except OSError as exc:
+        return f"docker could not be run ({exc.__class__.__name__})"
+    return "" if done.returncode == 0 else f"docker stop exited {done.returncode}"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -153,7 +162,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"REFUSED: container {args.container}: {reason}. An official launcher publishes the app on loopback only "
           "(docs/SECURITY_BOUNDARY.md).", file=sys.stderr)
     if not args.no_stop:
-        stop(args.container)
+        failed = stop(args.container)
+        if failed:
+            print(f"STOP FAILED for container {args.container}: {failed}. It may still be publishing on a "
+                  "non-loopback address; stop it by hand.", file=sys.stderr)
+            return 4
         print(f"Stopped container {args.container}.", file=sys.stderr)
     return code
 

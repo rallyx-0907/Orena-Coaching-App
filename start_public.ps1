@@ -27,7 +27,8 @@ $optIn = @()
 if ($env:ORENA_INSECURE_DEV_LAN_BIND_HOST) { $optIn = @('--lan-opt-in', '--probe-url', 'http://127.0.0.1:8000/api/me') }
 $webId = (docker compose --profile public ps -q writing-coach | Out-String).Trim()
 if (-not $webId) { Write-Host "The app container was not found; cannot verify its published address." -ForegroundColor Red; exit 1 }
-python scripts/assert_published_loopback.py --container $webId --port 8000 @optIn
+$global:LASTEXITCODE = 1
+if (Get-Command python -ErrorAction SilentlyContinue) { python scripts/assert_published_loopback.py --container $webId --port 8000 @optIn } else { Write-Host "python was not found; the published address cannot be verified." -ForegroundColor Red }
 if ($LASTEXITCODE -ne 0) { Write-Host "The published address is not loopback; the app container was stopped." -ForegroundColor Red; exit 1 }
 Write-Host "Writing Coach + Cloudflare Tunnel are running." -ForegroundColor Green
 docker compose --profile public ps

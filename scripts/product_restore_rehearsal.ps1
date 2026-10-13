@@ -123,7 +123,8 @@ $arguments = @('run', '-d', '--name', $web, '--network', $network, '-p', "127.0.
 $webStarted = Invoke-Docker $arguments
 if (-not $webStarted.ok) { Note 'new web container' $false ($webStarted.out | Out-String); Finish 1 }
 # Host-side assertion of Docker's REAL published address (issue #140); refuses and stops the container.
-$published = & python (Join-Path $Repository 'scripts/assert_published_loopback.py') --container $web --port 8000 2>&1
+$global:LASTEXITCODE = 1
+$published = if (Get-Command python -ErrorAction SilentlyContinue) { & python (Join-Path $Repository 'scripts/assert_published_loopback.py') --container $web --port 8000 2>&1 } else { 'python was not found; the published address cannot be verified.' }
 $publishedCode = $LASTEXITCODE
 Note 'published on loopback only' ($publishedCode -eq 0) (($published | Out-String).Trim())
 if ($publishedCode -ne 0) { Finish 1 }

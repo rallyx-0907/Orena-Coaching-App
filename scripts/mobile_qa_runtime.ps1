@@ -69,7 +69,8 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "the QA runtime did not start" }
 
   # Host-side assertion of Docker's REAL published address (issue #140): refuse and stop unless loopback.
-  python scripts/assert_published_loopback.py --container $qaName --port 8000
+  $global:LASTEXITCODE = 1
+  if (Get-Command python -ErrorAction SilentlyContinue) { python scripts/assert_published_loopback.py --container $qaName --port 8000 } else { Write-Host "python was not found; the published address cannot be verified." -ForegroundColor Red }
   if ($LASTEXITCODE -ne 0) { & { $ErrorActionPreference = 'Continue'; docker rm -f $qaName 2>&1 | Out-Null }; throw "the QA runtime is not published on loopback; it was stopped" }
 
   docker logs -f $qaName

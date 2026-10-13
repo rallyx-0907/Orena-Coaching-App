@@ -97,8 +97,11 @@ official launcher runs `python scripts/assert_published_loopback.py --container 
 - Passes only when every binding of 8000/tcp is loopback (127.0.0.0/8, `::1`, `localhost`: the `is_loopback_host`
   rule). Refuses `0.0.0.0`, `::`, an empty `HostIp` (Docker's all interfaces), any other address, an unpublished port
   and an unreadable Docker answer. A mixed IPv4 + IPv6 list passes only if every entry does.
-- On refusal it names the container and address, stops the container and exits non-zero (2 refused, 3 unreadable); the
-  launcher exits non-zero (the Python runners raise).
+- On refusal it names the container and address, stops the container and exits non-zero (2 refused, 3 unreadable, 4 refused and the
+  stop itself failed or timed out, reported as STOP FAILED, never as stopped); the launcher exits non-zero (the Python
+  runners raise). Every PowerShell call site resets `$LASTEXITCODE` to 1 just before the call and runs it only when
+  `python` exists, so a missing interpreter is a refusal, not a silent pass. `start_dev.ps1`'s `watch` is not followed
+  by a clean stop on Ctrl+C (tracked, not changed here).
 - The LAN opt-in (`ORENA_INSECURE_DEV_LAN_BIND_HOST` set in the launching shell) lets a wide publish pass only when an
   unauthenticated `GET /api/me` on the loopback port answers 401, i.e. sign-in is on. The wrapper does not read
   container env. An opt-in only in `.env` fails closed.

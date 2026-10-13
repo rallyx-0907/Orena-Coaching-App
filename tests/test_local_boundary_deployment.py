@@ -355,3 +355,22 @@ def test_the_assertion_agrees_with_the_app_loopback_rule() -> None:
     for host in ["127.0.0.1", "127.9.9.9", "::1", "[::1]", "localhost", "LOCALHOST", "::ffff:127.0.0.1", "", "0.0.0.0", "::",
                  "192.168.1.5", "10.0.0.1", "fe80::1", "8.8.8.8", "mybox.local", "0:0:0:0:0:0:0:1"]:
         assert guard.is_loopback_host(host) == is_loopback_host(host), host
+
+
+# ---- P1-1: a missing or unlaunchable python must never read as "the assertion passed" -------------------------------
+PS_CALL_SITES = ["start_docker.ps1", "start_dev.ps1", "start_public.ps1", "scripts/mobile_qa_runtime.ps1",
+                 "scripts/product_restore_rehearsal.ps1", "scripts/staging_update.ps1", "scripts/staging_8000_deploy.ps1"]
+
+
+@pytest.mark.parametrize("name", PS_CALL_SITES)
+def test_every_powershell_call_site_fails_closed_without_python(name: str) -> None:
+    lines = (ROOT / name).read_text(encoding="utf-8").splitlines()
+    sites = [number for number, line in enumerate(lines) if ASSERT in line and not line.lstrip().startswith("#")]
+    assert len(sites) == 1, name
+    call = lines[sites[0]]
+    # A stale $LASTEXITCODE (often 0) is reset to a failure immediately before the call...
+    assert lines[sites[0] - 1].strip() == "$global:LASTEXITCODE = 1", f"{name}: reset LASTEXITCODE just before the call"
+    # ...and the call only runs when the interpreter exists, so its absence stays a refusal.
+    assert "Get-Command python -ErrorAction SilentlyContinue" in call, f"{name}: guard the interpreter"
+    after = "\n".join(lines[sites[0] + 1: sites[0] + 6])
+    assert "$LASTEXITCODE" in after or "$publishedCode" in after, name

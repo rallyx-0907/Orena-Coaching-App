@@ -174,3 +174,33 @@ def test_the_lan_opt_in_never_rescues_an_unpublished_or_unreadable_container(mon
     fake = FakeDocker(None, None)
     code, _out = run(monkeypatch, capsys, fake, "--lan-opt-in", "--probe-url", "http://127.0.0.1:8000/api/me")
     assert code == 2
+
+
+# ---- P2-1: a stop that did not happen is never reported as done ---------------------------------------------------
+
+
+def wide_with_stop(stop_result):
+    fake = FakeDocker(ports("0.0.0.0"), ports("0.0.0.0"))
+
+    def runner(command, **kwargs):
+        if command[1] == "stop":
+            fake.calls.append(list(command))
+            if isinstance(stop_result, Exception):
+                raise stop_result
+            return subprocess.CompletedProcess(command, stop_result, stdout="", stderr="no such container")
+        return fake(command, **kwargs)
+
+    return runner
+
+
+def test_a_successful_stop_is_reported_as_stopped(monkeypatch, capsys) -> None:
+    code, out = run(monkeypatch, capsys, wide_with_stop(0))
+    assert code == 2 and "Stopped container orena-web" in out.err and "FAILED" not in out.err
+
+
+@pytest.mark.parametrize("failure", [1, subprocess.TimeoutExpired("docker", 120), OSError("no docker")])
+def test_a_failed_stop_is_loud_distinct_and_never_reported_as_stopped(monkeypatch, capsys, failure) -> None:
+    code, out = run(monkeypatch, capsys, wide_with_stop(failure))
+    assert code == 4
+    assert "STOP FAILED" in out.err and "orena-web" in out.err
+    assert "Stopped container" not in out.err
