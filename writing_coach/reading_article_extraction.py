@@ -94,7 +94,7 @@ _HIDDEN_STYLE_RE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden", re.
 MIN_PROSE_UNITS = 120
 # Recorded with every extraction so a stored candidate can be traced to the
 # strategy that produced it. Bump on any change to what is kept or dropped.
-EXTRACTOR_VERSION = "article-extract/1"
+EXTRACTOR_VERSION = "article-extract/2"
 
 
 def units(text: str) -> int:
@@ -348,7 +348,8 @@ def _prune(root: _Node, glossary_nodes: list[_Node]) -> None:
     page_size = max(1, len(_visible_text(root)))
 
     def removable(node: _Node) -> bool:
-        if node.tag in _DROP_TAGS and node.tag != "head":
+        # A <header> inside the article carries its dek and lead image; the page's own is chrome.
+        if node.tag in _DROP_TAGS and node.tag != "head" and not (node.tag == "header" and _in_article(node)):
             return True
         attrs = node.attrs
         if "hidden" in attrs or attrs.get("aria-hidden", "").lower() == "true":
@@ -549,6 +550,7 @@ def extract_article(html: str, base_url: str = "") -> ExtractedArticle:
     info = _page_metadata(root)
     ld = _json_ld(root)
     figure_info = _figure_info(root)
+    document_base = _document_base(root, base_url)
     meta_images = _meta_images(root)
     page_units = units(_visible_text(root))
     titles = {_norm(t) for t in (ld["headline"], info["og_title"], info["h1"], info["title"]) if t}
@@ -580,6 +582,13 @@ def extract_article(html: str, base_url: str = "") -> ExtractedArticle:
 
     attribution: list[str] = []
     blocks = _clean_blocks_for(container, titles, attribution)
+    scope = _article_scope(container)
+    if scope is not container:  # the article's own header (dek, lead) sits beside the prose container
+        lead: list[_Block] = []
+        for node in _walk(scope):
+            if node.tag == "header" and not _is_inside(node, container):
+                lead += _clean_blocks_for(node, titles, [])
+        blocks = lead + blocks
     if sum(units(b.text) for b in blocks) < 60 and container is not body_node:
         wide = _clean_blocks_for(body_node, titles, [])
         if sum(units(b.text) for b in wide) > 2 * sum(units(b.text) for b in blocks):
@@ -633,7 +642,7 @@ def extract_article(html: str, base_url: str = "") -> ExtractedArticle:
         prose_paragraphs=paragraphs,
         coverage=coverage,
         media=_media_candidates(
-            _article_scope(container), figure_info, meta_images, urljoin(base_url, info["canonical"])
+            _article_scope(container), figure_info, meta_images, document_base
         ),
     )
 
@@ -708,6 +717,42 @@ def _credit_texts(scope: _Node) -> list[str]:
             if text and text not in found:
                 found.append(text)
     return found
+
+
+def _in_article(node: _Node) -> bool:
+    current = node.parent
+    while current is not None:
+        if current.tag in {"article", "main"} or current.attrs.get("role", "").lower() == "main":
+            return True
+        current = current.parent
+    return False
+
+
+def _is_inside(node: _Node, ancestor: _Node) -> bool:
+    current: _Node | None = node
+    while current is not None:
+        if current is ancestor:
+            return True
+        current = current.parent
+    return False
+
+
+def _document_base(root: _Node, fetched_url: str) -> str:
+    """What relative URLs resolve against: the fetched document, or its <base href> resolved against it.
+
+    Never the page's canonical link, which names an identity and not a location.
+    """
+    tag = next((n for n in _walk(root) if n.tag == "base" and n.attrs.get("href", "").strip()), None)
+    if tag is None:
+        return fetched_url
+    try:
+        parts = urlsplit(urljoin(fetched_url, tag.attrs["href"].strip()))
+        usable = parts.scheme.lower() in {"http", "https"} and bool(parts.hostname) and not (
+            parts.username or parts.password
+        )
+    except ValueError:
+        return fetched_url
+    return urlunsplit(parts) if usable else fetched_url
 
 
 def _article_scope(container: _Node) -> _Node:

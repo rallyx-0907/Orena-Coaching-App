@@ -378,7 +378,7 @@ def test_the_extractor_version_is_recorded_with_the_method():
     from writing_coach.reading_article_extraction import EXTRACTOR_VERSION
 
     item = _item(VOA_LIKE)
-    assert EXTRACTOR_VERSION == "article-extract/1"
+    assert EXTRACTOR_VERSION == "article-extract/2"
     assert item.metadata["extraction"]["extractor_version"] == EXTRACTOR_VERSION
     assert item.metadata["extraction"]["method"] == "dominant_container"
 
@@ -391,3 +391,106 @@ def test_the_extraction_module_never_fetches_anything():
     source = inspect.getsource(module)
     for fetcher in ("urlopen", "fetch_bounded", "requests", "httpx", "socket", "urllib.request"):
         assert fetcher not in source
+
+
+# ---- review fixes: resolution base, article-local header, structured author -----
+
+_PROSE = "".join(
+    f"<p>Paragraph {n} is a full sentence of real article prose about rivers, tides and the weather today.</p>"
+    for n in range(5)
+)
+
+
+def test_relative_media_urls_resolve_against_the_fetched_url_not_the_canonical_link():
+    html = (
+        '<html><head><link rel="canonical" href="https://news.example.org/story/rivers">'
+        '<meta property="og:image" content="images/og.jpg"></head><body><article><h1>T</h1>'
+        '<figure><img src="images/hero.jpg" width="800" height="600" alt="h"></figure>'
+        + _PROSE
+        + '<figure><img src="../img/x.jpg" srcset="../img/x-640.jpg 640w, ../img/x-1280.jpg 1280w" '
+        'width="640" height="480" alt="x"></figure></article></body></html>'
+    )
+    item = _item(html, "https://news.example.org/a/2026/rivers.html")
+    urls = [m["url"] for m in item.metadata["extraction"]["media"]]
+    assert urls == [
+        "https://news.example.org/a/2026/images/og.jpg",
+        "https://news.example.org/a/2026/images/hero.jpg",
+        "https://news.example.org/a/img/x-1280.jpg",
+    ]
+    assert item.metadata["page_canonical_url"] == "https://news.example.org/story/rivers"
+
+
+def test_a_base_href_is_followed_after_resolving_it_against_the_fetched_url():
+    html = (
+        '<html><head><base href="/assets/"><link rel="canonical" href="https://other.example.org/x/"></head>'
+        '<body><article>' + _PROSE + '<figure><img src="p.jpg" width="800" height="600"></figure>'
+        "</article></body></html>"
+    )
+    media = _item(html, "https://news.example.org/a/2026/rivers.html").metadata["extraction"]["media"]
+    assert [m["url"] for m in media] == ["https://news.example.org/assets/p.jpg"]
+
+
+def test_an_unusable_base_href_falls_back_to_the_fetched_url():
+    html = (
+        '<html><head><base href="javascript:alert(1)"></head><body><article>' + _PROSE
+        + '<figure><img src="p.jpg" width="800" height="600"></figure></article></body></html>'
+    )
+    media = _item(html, "https://news.example.org/a/2026/rivers.html").metadata["extraction"]["media"]
+    assert [m["url"] for m in media] == ["https://news.example.org/a/2026/p.jpg"]
+
+
+ARTICLE_HEADER_PAGE = (
+    '<html><head><title>River Report - News</title></head><body>'
+    '<header class="site-header"><img src="/logo.png" alt="News logo" width="200" height="60">'
+    '<nav><a href="/">Home</a><a href="/world">World</a></nav></header>'
+    '<article><header><h1>River Report</h1>'
+    '<p class="dek">Scientists say the rivers of the north are warming faster than anyone expected.</p>'
+    '<figure class="hero"><img src="hero.jpg" width="1200" height="800" alt="A river">'
+    '<figcaption>A river in spring. <span class="credit">Photo: Lee Park</span></figcaption></figure></header>'
+    + _PROSE
+    + "</article><footer><p>Copyright 2026 News Media</p></footer></body></html>"
+)
+
+
+def test_an_article_local_header_keeps_its_dek_and_hero_but_the_site_header_is_removed():
+    item = _item(ARTICLE_HEADER_PAGE, "https://news.example.org/a/river.html")
+    assert item.body.startswith("Scientists say the rivers of the north are warming")
+    assert "Paragraph 4" in item.body
+    assert "River Report" not in item.body  # the title is metadata, not passage
+    for chrome in ("Home", "World", "News logo", "Copyright", "Photo: Lee Park"):
+        assert chrome not in item.body
+    hero = next(m for m in item.metadata["extraction"]["media"] if m["role"] == "hero")
+    assert hero["url"] == "https://news.example.org/a/hero.jpg"
+    assert hero["credit"] == "Photo: Lee Park" and hero["caption"] == "A river in spring."
+    assert all("logo" not in m["url"] for m in item.metadata["extraction"]["media"])
+
+
+def test_a_dek_that_repeats_the_title_is_not_kept():
+    html = ARTICLE_HEADER_PAGE.replace(
+        "Scientists say the rivers of the north are warming faster than anyone expected.", "River Report"
+    )
+    assert not _item(html, "https://news.example.org/a/river.html").body.startswith("River Report")
+
+
+def test_a_banner_header_inside_main_is_still_site_chrome():
+    html = (
+        '<html><body><main><header role="banner"><p>Site navigation words go here for everyone today.</p></header>'
+        + _PROSE + "</main></body></html>"
+    )
+    assert "Site navigation" not in _item(html, "https://news.example.org/a/r.html").body
+
+
+def test_a_structured_author_wins_over_a_generic_meta_author():
+    html = (
+        '<html><head><meta name="author" content="Site Staff"></head><body><article>'
+        '<p class="byline">By Jane Writer</p>' + _PROSE + "</article></body></html>"
+    )
+    assert _item(html, "https://news.example.org/a/r.html").author == "Jane Writer"
+    ld = (
+        '<html><head><meta name="author" content="Site Staff">'
+        '<script type="application/ld+json">{"@type":"NewsArticle","author":{"name":"Ana Reporter"}}</script>'
+        "</head><body><article>" + _PROSE + "</article></body></html>"
+    )
+    assert _item(ld, "https://news.example.org/a/r.html").author == "Ana Reporter"
+    meta_only = html.replace('<p class="byline">By Jane Writer</p>', "")
+    assert _item(meta_only, "https://news.example.org/a/r.html").author == "Site Staff"

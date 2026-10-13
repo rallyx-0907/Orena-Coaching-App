@@ -338,7 +338,7 @@ class DirectUrlAdapter:
         return _finish(
             extracted,
             title=article.title or " ".join(metadata.title.split()),
-            author=metadata.author or article.author,
+            author=article.author or metadata.author,  # structured byline / JSON-LD before a generic meta tag
             published=_parse_published(metadata.published) or _parse_published(article.published),
         )
 
