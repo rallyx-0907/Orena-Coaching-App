@@ -3651,9 +3651,16 @@ def _authored_preview(source: Any) -> dict[str, Any]:
     except (VocabularyContentUnavailable, RuntimeError, OSError):
         lookups = []
     by_identity = {item["identity_key"]: item for item in lookups}
+    # Ready rows and records are appended together, so they line up in order. The record is what the admin
+    # preview draws as the production card: the authored content only - dictionary completion and
+    # localization happen at import, so the preview does not show them.
+    ready_rows = [row for row in rows if row["outcome"] == "ready"]
+    for row, record in zip(ready_rows, normalized["records"], strict=True):
+        row["record"] = record
     for row in rows:
         found = by_identity.get(row.get("identity_key", ""))
         if row["outcome"] != "ready":
+            row.pop("record", None)
             continue
         if found is None:
             row["existing"] = "unknown" if not lookups else "new"
@@ -3661,6 +3668,7 @@ def _authored_preview(source: Any) -> dict[str, Any]:
         row["existing"] = found["status"]
         if found["status"] in AUTHORED_CONFLICTS:
             row.update(outcome="conflict", reason=found["reason"])
+            row.pop("record", None)
         if found["same_word"]:
             row["warnings"] = [*row["warnings"], "another entry for this word is stored; this id is a separate entry"]
     counts: dict[str, int] = {}

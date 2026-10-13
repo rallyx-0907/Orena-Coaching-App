@@ -35,7 +35,7 @@ let fixtureFor = () => ({ status: 404, body: { detail: 'not found' } });
 globalThis.fetch = async (url, options = {}) => {
   const method = String(options.method || 'GET').toUpperCase();
   const path = String(url).split('?')[0];
-  requests.push({ method, path });
+  requests.push({ method, path, body: options.body });
   const { status = 200, body = {} } = fixtureFor(method, path, String(url)) || {};
   return { ok: status >= 200 && status < 300, status, headers: { get: () => 'application/json' }, json: async () => body, text: async () => JSON.stringify(body) };
 };
@@ -212,6 +212,18 @@ const ip = await import('../static/orena/screens/admin/imports-pages.js');
 const cp = await import('../static/orena/screens/admin/content-pages.js');
 const tp = await import('../static/orena/screens/admin/tray.js');
 const common = (ui) => ({ t, ui, href, now: Date.now() });
+/* An authored entry file's preview (D-178): a new word, a stored duplicate, a word with no example, a refused row. */
+const entry = (term, extra = {}) => ({ term, part_of_speech: 'adjective', language_code: 'en', short_meanings: [{ language: 'vi', text: `${term} (vi)` }, { language: 'en', text: `${term} (en)` }], examples: [{ text: `A sentence with ${term}.` }], usage_notes: [], provenance: {}, ...extra });
+const authoredVocab = (extra = {}) => ({
+  files: [{ name: 'e.json' }], mappings: {}, step: 1, errors: [], results: null, metadata: { title: 'E', language: 'en' },
+  previews: [{ filename: 'e.json', headers: [], row_count: 4, warnings: ['x: refused'], authored: { language_code: 'en', rows: [
+    { row: 1, id: 'a', term: 'resilient', outcome: 'ready', existing: 'new', warnings: [], record: entry('resilient') },
+    { row: 2, id: 'b', term: 'sturdy', outcome: 'ready', existing: 'duplicate', warnings: [], record: entry('sturdy') },
+    { row: 3, id: 'c', term: 'bare', outcome: 'ready', existing: 'new', warnings: [], record: entry('bare', { examples: [] }) },
+    { row: 4, id: 'd', term: 'bad', outcome: 'refused', reason: 'schema: meanings is required', warnings: [] },
+  ] } }],
+  ...extra,
+});
 const view = { q: '', level: 'all', dtab: 'article', edit: {}, newTarget: { text: '', type: 'word', meaning: '' }, support: 'vi', mode: 'text', rights: '', busy: false };
 const sourceRow = source();
 for (const ui of ['en', 'vi', 'zh']) {
@@ -237,6 +249,8 @@ for (const ui of ['en', 'vi', 'zh']) {
     ip.vocabularyPage({ ...c, vocab: { files: [], previews: [], mappings: {}, step: 0, errors: [], results: null, metadata: {} } }),
     ip.vocabularyPage({ ...c, vocab: { files: [{ name: 'w.csv' }], previews: [{ filename: 'w.csv', headers: ['word', 'meaning'], row_count: 3, sample: [{ word: 'a', meaning: 'b' }], warnings: ['one duplicate'] }], mappings: { 'w.csv': { term: 'word' } }, step: 1, errors: [], results: null, metadata: { title: 'W', language: 'en', publish: true, attested: false, completeness: 'unknown', rights_status: '' } } }),
     ip.vocabularyPage({ ...c, vocab: { files: [{ name: 'w.csv' }], previews: [{ filename: 'w.csv', headers: [], row_count: 0, error: 'unreadable' }], mappings: {}, step: 1, errors: [], results: { items: [{ filename: 'w.csv', status: 'imported', imported: 3, duplicates: 1, skipped: 0 }], collection: { collection_id: 'V' } }, metadata: {} } }),
+    ip.vocabularyPage({ ...c, support: 'vi', vocab: authoredVocab() }),
+    ip.vocabularyPage({ ...c, support: 'en', vocab: authoredVocab({ duplicates: 'overwrite', selected: { 0: 1 } }) }),
     ip.sourceFormPage({ ...c, form: { name: '', url: '', type: 'direct_url', language: 'en', can_republish: false, can_adapt: false, attribution_required: true, license: '', error: '', running: false } }),
     ip.jobsPage({ ...c, jobs: [job(), job({ id: 'J2', status: 'completed', stage: 'done', last_error_code: '' })], cursor: 'x', filter: 'failed' }),
     ip.jobPage({ ...c, job: job() }),
@@ -266,6 +280,28 @@ copyIndex.setLanguages({ ui: 'en', support: 'en' });
 {
   /* The behaviours the pages promise. */
   const c = common('en');
+  {
+    /* The authored preview: the design's rows, and the production card of the selected row (no learner, so no Save). */
+    const page = String(ip.vocabularyPage({ ...c, vocab: authoredVocab() }).markup);
+    assert.ok(page.includes(t('impPreviewRows', { n: 4 })), 'the rows are headed "Preview - N rows"');
+    for (const key of ['impRowOk', 'impRowDupSkip', 'impRowNoExample', 'impRowRefused']) assert.ok(page.includes(t(key)), `a row says ${key}`);
+    assert.ok(page.includes('adjective') === false && page.includes('Adjective'), 'the part of speech is the localized name');
+    assert.ok(page.includes('resilient (en)'), 'the meta line carries the support-language meaning');
+    assert.ok(page.includes('A sentence with resilient.'), 'the detail line is the first example');
+    assert.equal((page.match(/data-a="vocab-row"/g) || []).length, 3, 'a ready row is a button; a refused row is not');
+    assert.equal((page.match(/<article class="c-vcard /g) || []).length, 1, 'one card, the selected row');
+    assert.ok(page.includes('data-vcard-mode="detail"') && page.includes('data-vcard-turn="back"'), 'the production card, turnable');
+    assert.ok(!page.includes('data-save'), 'no learner, no Save disc');
+    assert.ok(page.includes('data-field="duplicates"') && page.includes(t('impDupSkip')) && page.includes(t('impDupOverwrite')), 'a duplicate offers the choice');
+    assert.match(page, /data-value="skip" aria-pressed="true"/, 'skip is the default');
+    const second = String(ip.vocabularyPage({ ...c, vocab: authoredVocab({ selected: { 0: 1 } }) }).markup);
+    assert.ok(second.includes('sturdy') && second.includes('c-vcard__word'), 'the picked card is drawn');
+    const overwrite = String(ip.vocabularyPage({ ...c, vocab: authoredVocab({ duplicates: 'overwrite' }) }).markup);
+    assert.ok(overwrite.includes(t('impRowDupOverwrite')) && !overwrite.includes(t('impRowDupSkip')), 'overwrite changes the duplicate pill');
+    const noDuplicate = authoredVocab();
+    noDuplicate.previews[0].authored.rows[1].existing = 'new';
+    assert.ok(!String(ip.vocabularyPage({ ...c, vocab: noDuplicate }).markup).includes('data-field="duplicates"'), 'no duplicate, no choice');
+  }
   const detail = String(rp.articlePage({ ...c, article: article({ status: 'needs_review', source: { ...article().source, rights_state: { can_republish: 'denied' } } }), sets: [], view }).markup);
   assert.match(detail, /data-action="publish"[^>]*disabled|disabled[^>]*data-action="publish"/, 'copyright blocks Publish (hard gate)');
   assert.ok(detail.includes(t('rdRightsAdviceDenied')), 'the refusal is said beside the button');
@@ -353,6 +389,12 @@ fixtureFor = () => ({ body: { ok: true, id: 'J', items: [], results: [{ status: 
   await imports.importMedia(adminApi, [{ url: 'https://x.org/v', state: 'ready' }, { file: new File(['x'], 'a.mp3'), state: 'to_import' }], 'en');
   await imports.previewVocabulary(adminApi, [new File(['a,b'], 'w.csv')]);
   await imports.importVocabulary(adminApi, { files: [new File(['a,b'], 'w.csv')], metadata: { title: 'W', language: 'en' }, mappings: {} });
+  assert.equal(requests.at(-1).body.get('duplicates'), null, 'a column import sends no duplicate policy');
+  const authoredFiles = [new File(['{}'], 'e.json')];
+  await imports.importVocabulary(adminApi, { files: authoredFiles, metadata: { title: 'E', language: 'en' }, mappings: {}, previews: [{ authored: {} }] });
+  assert.equal(requests.at(-1).body.get('duplicates'), 'skip', 'an authored import skips duplicates by default');
+  await imports.importVocabulary(adminApi, { files: authoredFiles, metadata: { title: 'E', language: 'en' }, mappings: {}, previews: [{ authored: {} }], duplicates: 'overwrite' });
+  assert.equal(requests.at(-1).body.get('duplicates'), 'overwrite', 'overwrite is sent when chosen');
   for (const intent of ['archive', 'restore']) await content.applyLifecycle(adminApi, 'book', 'B', intent);
   for (const intent of ['unpublish', 'archive', 'republish']) await content.applyLifecycle(adminApi, 'media', 'M', intent);
   await content.applyLifecycle(adminApi, 'media', 'M', 'reprocess');

@@ -193,8 +193,11 @@ export async function previewVocabulary(api = adminApi, files) {
   return { previews, mappings, title: defaultCollectionTitle(files[0]?.name) };
 }
 
-export async function importVocabulary(api = adminApi, { files, metadata, mappings }) {
-  return api.vocabularyImport(files, vocabularyMetadata(metadata), mappings);
+/* `duplicates` (skip | overwrite) is sent only when the batch holds an authored entry file; published-set
+   conflicts are refused by the server whatever it says. */
+export async function importVocabulary(api = adminApi, { files, metadata, mappings, previews = [], duplicates = 'skip' }) {
+  const authored = previews.some((preview) => preview.authored);
+  return api.vocabularyImport(files, vocabularyMetadata(metadata), mappings, authored ? (duplicates === 'overwrite' ? 'overwrite' : 'skip') : '');
 }
 
 export async function loadHistory(api = adminApi, { kind = '', status = '', offset = 0 } = {}) {

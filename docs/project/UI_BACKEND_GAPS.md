@@ -6021,3 +6021,13 @@ etymology - the provenance gap is exactly the projection named there. Open, serv
 - **VC-22 With support language English, the AI lookup's meaning leads the authored English definition** on Word
   Detail (`meaningOf` order: support-language localization, note, lookup, ...). The entry's `meanings[].en` is a
   definition, not an `en` localization, so it never leads. A precedence decision for the human.
+- **VC-23 The admin vocabulary import previews the production card (D-184).** The pinned admin frame ("Import
+  vocabulary", step 2) draws a ROWS list only: word, `pos · meaning`, the example and a pill (OK, Missing example,
+  Duplicate · will be skipped). The preview keeps that list and adds the selected row's production VocabularyCard
+  beside it, a deviation the human asked for. Three more things the design does not draw: the card is drawn from the
+  authored record with `learner: false` (no Save disc; a kit flag); the "Skip duplicates / Overwrite duplicates"
+  choice appears only when a row is a stored duplicate and surfaces the importer's existing `duplicates` field (a
+  published-set conflict is always refused); the refused / published-set rows say their server reason in the meta line.
+  The preview shows the authored content before dictionary completion and localization, which happen only at import,
+  so a card may gain content when imported. Image upload is deferred (it needs storage and an API); a record without an
+  illustration simply has no frame.

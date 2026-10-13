@@ -24,6 +24,7 @@ export function createHost(shell, ctx) {
   let builder = () => ({ title: '', markup: '' });
   let filterEnabled = false;
   let ask = null;
+  let afterMount = null;
   const handlers = new Map();
   const listeners = { input: () => {}, file: () => {}, filter: () => {} };
 
@@ -39,6 +40,7 @@ export function createHost(shell, ctx) {
     const scroll = shell.main.scrollTop;
     mount(shell.page, page.markup);
     if (page.keepScroll) shell.main.scrollTop = scroll;
+    afterMount?.(shell.page);
     if (!selector) return;
     const again = shell.page.querySelector(selector);
     if (!again) return;
@@ -180,6 +182,10 @@ export function createHost(shell, ctx) {
     },
     on(name, fn) {
       handlers.set(name, fn);
+    },
+    /* Called with the page's root after every paint, for what markup alone cannot do (binding a kit card). */
+    afterMount(fn) {
+      afterMount = fn;
     },
     onInput(fn) {
       listeners.input = fn;

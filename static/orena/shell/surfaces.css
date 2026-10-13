@@ -59,6 +59,7 @@
   .a-rights,
   .a-row,
   .a-row--open:hover,
+  .a-row--pick[aria-pressed='true'],
   .a-row__detail,
   .a-seg__option,
   .a-seg__option[aria-pressed='true'],
