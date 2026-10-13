@@ -5918,7 +5918,7 @@ follow-up commits; the human accepted the residual risk below on 2026-10-13.** N
 - Full policy and threat model: `docs/SECURITY_BOUNDARY.md`. Not done here: non-root container, CSP/`innerHTML`
   inventory.
 
-## D-18X - Official launchers assert Docker's real published address on the host (issue #140)
+## D-186 - Official launchers assert Docker's real published address on the host (issue #140)
 
 Placeholder id; the lead renumbers at merge. **Status: IMPLEMENTED on `claude/sec-140-publish-assert`; independent
 architecture review is required before merge (an implementer may not self-approve). Not merged, not product approval.**
