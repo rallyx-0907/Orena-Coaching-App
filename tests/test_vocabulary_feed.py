@@ -12,12 +12,23 @@ from datetime import date
 
 from writing_coach.vocabulary_feed import (
     LearnerFeedContext,
-    daily_feed_candidates,
+    daily_feed_candidates as _select_candidates,
     vocabulary_card_from_feed_candidate,
 )
 from writing_coach.vocabulary_library import all_vocabulary_entries, normalize_vocabulary_word
 
 _ON_DATE = date(2026, 9, 14)
+
+
+def daily_feed_candidates(language_code, **kwargs):
+    """The selector over the raw static seed as a fixed fixture pool.
+
+    The production default is the published pool only (tests/test_vocabulary_seed_visibility.py);
+    these tests exercise the selection algorithm, which needs a stable non-empty pool.
+    """
+
+    kwargs.setdefault("candidate_pool", all_vocabulary_entries(language_code))
+    return _select_candidates(language_code, **kwargs)
 
 
 def _context(**overrides: object) -> LearnerFeedContext:

@@ -16,11 +16,13 @@ from writing_coach.vocabulary_cards import vocabulary_card_from_catalog_entry
 from writing_coach.vocabulary_library import (
     VocabularyCatalogInvalid,
     _build_catalog,
+    _RAW_COLLECTIONS,
     _build_learner_catalog,
     all_vocabulary_entries,
     collection_ids_for_word,
     get_vocabulary_collection,
     get_vocabulary_source_collection,
+    install_static_catalog,
     list_vocabulary_collections,
     list_vocabulary_source_collections,
     normalize_vocabulary_word,
@@ -202,20 +204,24 @@ def test_all_vocabulary_entries_unknown_language_is_empty() -> None:
 # --- collection_ids_for_word: load-time index -------------------------------
 
 
-def test_collection_ids_for_word_finds_known_hsk1_word() -> None:
-    assert collection_ids_for_word("zh", "你好") == ["hsk-1"]
+def test_collection_ids_for_word_reports_no_unpublished_seed_collection() -> None:
+    assert collection_ids_for_word("zh", "你好") == []
+    assert collection_ids_for_word("en", "  Client ") == []
 
 
-def test_collection_ids_for_word_normalizes_before_lookup() -> None:
-    assert collection_ids_for_word("en", "  Client ") == ["toeic-600-essential"]
+def test_collection_ids_for_word_finds_a_word_of_a_published_collection() -> None:
+    raw = [dict(c, catalog_status="published") if c["id"] == "hsk-1" else c for c in _RAW_COLLECTIONS]
+    install_static_catalog(raw)
+    try:
+        assert collection_ids_for_word("zh", "你好") == ["hsk-1"]
+        assert collection_ids_for_word("zh", "  你好 ") == ["hsk-1"]
+        assert collection_ids_for_word("en", "你好") == []
+    finally:
+        install_static_catalog(_RAW_COLLECTIONS)
 
 
 def test_collection_ids_for_word_returns_empty_for_unknown_word() -> None:
     assert collection_ids_for_word("zh", "some-word-not-in-any-seed") == []
-
-
-def test_collection_ids_for_word_does_not_cross_languages() -> None:
-    assert collection_ids_for_word("en", "你好") == []
 
 
 # --- normalize_vocabulary_word ----------------------------------------------

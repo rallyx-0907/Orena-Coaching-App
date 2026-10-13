@@ -91,18 +91,17 @@ def test_saved_vocabulary_summary_exposes_overview_state_counts() -> None:
     assert summary["due"] >= 1
 
 
-def test_saved_catalog_word_reuses_static_card_content_without_new_persistence() -> None:
+def test_saved_word_is_not_enriched_from_an_unpublished_static_seed() -> None:
+    """Learner reads of catalogue content need a published collection (F3); the seed JSON is not one."""
+
     _seed_saved_word("en", "invoice")
 
     response = _get("/api/library/vocabulary")
     assert response.status_code == 200
     invoice = next(item for item in response.json()["items"] if item["word"] == "invoice")
-    assert invoice["level"] == "B1"
-    assert invoice["framework"] == "toeic"
-    assert invoice["phonetic"] == "/ˈɪnvɔɪs/"
-    assert invoice["examples"] == [
-        {"language": "en", "text": "Please send the invoice before Friday."}
-    ]
+    assert not invoice.get("framework")
+    assert not invoice.get("phonetic")
+    assert invoice.get("examples") in (None, [])
 
 
 def test_unpublished_collection_detail_never_leaks_an_internal_file_path() -> None:
