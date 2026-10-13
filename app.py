@@ -3655,7 +3655,7 @@ def _authored_preview(source: Any) -> dict[str, Any]:
     # preview draws as the production card: the authored content only - dictionary completion and
     # localization happen at import, so the preview does not show them.
     ready_rows = [row for row in rows if row["outcome"] == "ready"]
-    for row, record in zip(ready_rows, normalized["records"]):
+    for row, record in zip(ready_rows, normalized["records"], strict=True):
         row["record"] = record
     for row in rows:
         found = by_identity.get(row.get("identity_key", ""))
