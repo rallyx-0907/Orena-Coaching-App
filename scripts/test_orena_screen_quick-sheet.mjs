@@ -268,4 +268,20 @@ assert.equal(noteTypeColorKey('anything-else'), 'var(--muted)');
   }
 }
 
+/* --- A tap is deterministic: the contextual (AI-backed) meaning is the learner's own "Why here?" ask only --- */
+{
+  const sheetSrc = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');
+  const wordSheet = sheetSrc.slice(sheetSrc.indexOf('export async function openWordSheet'), sheetSrc.indexOf('Sentence Quick Sheet --'));
+  assert.ok(wordSheet.length > 1000, 'the word sheet source was located');
+  assert.match(wordSheet, /let contextualPending = false;/, 'nothing is pending when the sheet opens');
+  assert.match(wordSheet, /depth: 'sheet', contextual: false, text: target/, 'the opening lookup is the deterministic one');
+  const asks = [...wordSheet.matchAll(/askContextual\(\)/g)].map((m) => wordSheet.slice(Math.max(0, m.index - 40), m.index));
+  assert.ok(asks.length >= 2, 'the explicit asks exist');
+  for (const before of asks) assert.match(before, /addEventListener\('click', \(\) => $/, 'askContextual() runs only from a click handler, never on its own');
+  assert.doesNotMatch(wordSheet, /meaningPending/, 'no spinner replaces an available dictionary meaning');
+  assert.match(wordSheet, /data-why-ask/, "frame 53's always-drawn Why here? row is the trigger");
+  const listening = readFileSync(new URL('../static/orena/screens/listening/vocab-sheet.js', import.meta.url), 'utf8');
+  assert.match(listening, /depth: 'sheet', contextual: false/, 'the Listening vocabulary taps are deterministic too');
+}
+
 console.log('test_orena_screen_quick-sheet.mjs: Word/Sentence Quick Sheet data mapping - real backend contracts (captured + serializer-built), rule 40 throughout: PASS');

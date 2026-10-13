@@ -18,7 +18,9 @@ Two different questions stay two different paths (D-066 rule 8):
 
 from __future__ import annotations
 
+import logging
 import re
+import time
 from collections.abc import Callable, Mapping
 from typing import Any, Literal
 
@@ -35,6 +37,7 @@ from writing_coach.reading_derived import (
     normalize_text,
 )
 
+_log = logging.getLogger("orena.lookup")
 router = APIRouter(prefix="/api/dictionary", tags=["dictionary"])
 
 # The explanation's judgement (snake_case, the provider contract) to the
@@ -391,11 +394,13 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
         )
     source = media_interaction._primary_language(payload.source_language)
     lookup: dict[str, Any] = {}
+    _started = time.perf_counter()
     if _lookup is not None:
         try:
             lookup = _lookup(text, context, source, payload.target_language).to_dict()
         except Exception:  # noqa: BLE001 - a failed dictionary must not fail the sheet
             lookup = {}
+    _lookup_ms = (time.perf_counter() - _started) * 1000
     if payload.question.strip():
         # The learner's own question is a conversation with a tutor, not a request for the fixed
         # explanation: the answer is the tutor's, whatever the question is about.
@@ -425,6 +430,10 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
             KIND_EXPLANATION, source, target, text, context, payload.content_id,
             lambda: _explain(text, context, source, target, ""),
         )  # fmt: skip
+    _log.debug(
+        "word-detail depth=%s contextual=%s deterministic=%.0f ms contextual=%.0f ms status=%s",
+        payload.depth, payload.contextual, _lookup_ms, (time.perf_counter() - _started) * 1000 - _lookup_ms, status,
+    )
     detail = project_word_detail(
         selection=text,
         context=context,

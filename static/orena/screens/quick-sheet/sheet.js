@@ -141,7 +141,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   let audioBusy = false;
   let audioAttribution = '';
   let audioMissing = false; // asked, and no recording exists for this word (LEX-010)
-  let contextualPending = true; // the meaning in this sentence is still being asked for
+  let contextualPending = false; // true only while the learner's own "Why here?" is being answered (never on open)
   let contextualFailed = false; // the provider failed (contextStatus provider_error): offer Retry
 
   function posMarkup() {
@@ -199,13 +199,11 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         </div>
       </div>
       <div class="s-qs__card">
-        ${meaningPending()
-          ? html`<div class="s-qs__meaning" role="status"><span class="o-spinner"></span></div>`
-          : html`${card.meaningIsContextual ? html`<div class="s-qs__eyebrow">${t('meaningHere')}</div>` : ''}<div class="s-qs__meaning">${card.meaning}</div>${
-              card.generalMeaning
-                ? html`<div class="s-qs__general"><span class="s-qs__general-label">${t('commonMeaning')}</span> ${card.generalMeaning}</div>`
-                : ''
-            }`}
+        ${card.meaningIsContextual ? html`<div class="s-qs__eyebrow">${t('meaningHere')}</div>` : ''}<div class="s-qs__meaning">${card.meaning}</div>${
+          card.generalMeaning
+            ? html`<div class="s-qs__general"><span class="s-qs__general-label">${t('commonMeaning')}</span> ${card.generalMeaning}</div>`
+            : ''
+        }
       </div>
       ${sourceQuoteMarkup()}
       ${strokeMarkup()}
@@ -231,12 +229,9 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     `;
   }
 
-  /* LEX-007: while this sentence's own meaning is still being asked for, the meaning slot waits; the
-     quick dictionary answer (often in another language than the learner's support language) is shown
-     only if no contextual meaning arrives. */
-  function meaningPending() {
-    return contextualPending && !card.meaningIsContextual;
-  }
+  /* The dictionary / catalogue meaning is shown the moment the deterministic lookup answers and is never
+     replaced by a spinner: the sentence's own meaning is asked for only by the learner's "Why here?"
+     (frame 53), and arrives beside the basic meaning, not instead of it. */
 
   /* The word in the sentence it was met in, the word marked (frame 53's quote; LEX-003, R-16). */
   function sourceQuoteMarkup() {
@@ -251,7 +246,8 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     if (card.whyHere) return html`<button type="button" class="s-qs__why" data-why>${t('whyHere')} — <span class="s-qs__why-text">${card.whyHere}</span></button>`;
     if (contextualPending && !loading) return html`<div class="s-qs__why" role="status">${t('whyHere')} — <span class="s-qs__why-text"><span class="o-spinner"></span> ${t('whyHereLoading')}</span></div>`;
     if (contextualFailed) return html`<div class="s-qs__why">${t('whyHere')} — <span class="s-qs__why-text">${t('translationFailed')} <button type="button" class="s-qs__retry" data-why-retry>${t('retry')}</button></span></div>`;
-    return '';
+    // Frame 53 always draws the row. Pressing it is the learner's explicit request for the contextual meaning.
+    return html`<button type="button" class="s-qs__why" data-why-ask>${t('whyHere')}</button>`;
   }
 
   // "Source sentence" alone, or "Source sentence · {title}" once the caller has told us where the
@@ -331,6 +327,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
       if (typeof ctx.go === 'function') ctx.go(href('word', { id: card.word }));
     });
     sheetEl.querySelector('[data-practise-strokes]')?.addEventListener('click', openStroke);
+    sheetEl.querySelector('[data-why-ask]')?.addEventListener('click', () => askContextual());
     sheetEl.querySelector('[data-why-retry]')?.addEventListener('click', () => askContextual());
   }
 
@@ -430,7 +427,6 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
               if (alive) paint();
             });
           };
-          askContextual();
           if (detail?.saved) {
             item = await fetchSavedItem(target);
             if (!alive) return;

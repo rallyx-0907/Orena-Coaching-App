@@ -4,6 +4,7 @@ import logging
 import random
 import os
 import re
+import time
 import statistics
 import threading
 from datetime import datetime, timedelta
@@ -641,9 +642,14 @@ configure_reading_summary(ReadingSummaryService(_reading_derived_cache))
 
 
 def _reading_english_dictionary(word: str) -> dict[str, Any] | None:
-    """English-only dictionary facts for Reading lookup. Never Chinese/AI."""
+    """English-only dictionary facts for Reading lookup. Never Chinese/AI.
+
+    A tap is not a request for a paid provider: language is pinned to English (so the app's Chinese setting can
+    never route a tap to the Chinese dictionary AI) and allow_ai=False (a dictionaryapi.dev miss or failure
+    answers "no entry" instead of reaching the learner_dictionary capability). Cached answers are still read and
+    a dictionaryapi.dev hit is still cached."""
     try:
-        return lookup_dictionary(word)
+        return lookup_dictionary(word, language="en", allow_ai=False)
     except HTTPException:
         return None
 
@@ -2522,6 +2528,7 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
                 "Chinese dictionary AI is unavailable.",
             ) from exc
     else:
+        _external_started = time.perf_counter()
         try:
             response = requests.get(
                 f"https://api.dictionaryapi.dev/api/v2/entries/en/{quote(clean)}",
@@ -2570,6 +2577,9 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
                         }
         except Exception:
             payload = None
+        logging.getLogger("orena.lookup").debug(
+            "dictionaryapi.dev %s in %.0f ms", "hit" if payload else "miss", (time.perf_counter() - _external_started) * 1000
+        )
 
         if payload is None:
             if not allow_ai:
