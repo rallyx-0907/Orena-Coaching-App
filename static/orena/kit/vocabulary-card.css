@@ -160,14 +160,17 @@
 }
 
 /* ---- Top row: level and source on the left; part of speech, then the discs, on the right ---- */
+/* The discs never leave the first line: the row does not wrap, the left group (level, source, part of speech) wraps
+   inside its own column when it is longer than the room beside them. */
 .c-vcard__top {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: space-between;
   align-items: center;
   gap: calc(var(--vc-ks, 1) * min(8px, 1.538cqi)) calc(var(--vc-ks, 1) * min(12px, 2.308cqi));
 }
 .c-vcard__tags {
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   gap: calc(var(--vc-ks, 1) * min(8px, 1.538cqi));
@@ -198,6 +201,7 @@
   color: var(--vcard-ink2);
 }
 .c-vcard__top-end {
+  flex: none;
   margin-left: auto;
   display: flex;
   align-items: center;

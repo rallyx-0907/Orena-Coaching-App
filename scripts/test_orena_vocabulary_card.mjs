@@ -959,6 +959,7 @@ for (const card of [enCard, zhCard]) {
   assert.ok(tags.indexOf('c-vcard__level') < tags.indexOf('c-vcard__pos') && tags.includes('c-vcard__pos'), 'part of speech beside the level, in the left group');
   const end = head.slice(head.indexOf('c-vcard__top-end'));
   assert.ok(!end.includes('c-vcard__pos') && end.indexOf('data-play') < end.indexOf('data-save'), 'only play and Save on the right');
+  assert.match(cardCss, /\.c-vcard__top \{[^}]*flex-wrap: nowrap/, 'the discs stay on the first line; the left group wraps in its own column');
   assert.equal((front.match(/data-play/g) || []).length, 1, 'one play disc on the face');
   assert.ok(!front.slice(front.indexOf('c-vcard__body')).includes('c-vcard__actions'), 'no action row left in the body');
 }
