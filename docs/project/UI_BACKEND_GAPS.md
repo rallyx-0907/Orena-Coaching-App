@@ -6008,7 +6008,11 @@ etymology - the provenance gap is exactly the projection named there. Open, serv
 - **VC-20 The collection / feed card projection drops authored fields.** `illustration`, the second (US) IPA,
   `level.source`, `en.etymology_vi` and all but the first `topic:` tag are stored (Review shows them after Save) but the
   collection and feed cards do not carry them (see VC-16).
-- **VC-21 A saved word in another language loses its catalogue content.** `becoming_library._row_to_item` joins a
+- **VC-21 A saved word in another language loses its catalogue content. FIXED in PR 4:** the join now reads a Han
+  word from the Chinese catalogue and a Latin word saved while learning Chinese from the English one
+  (`becoming_library._word_language`, `tests/test_vocabulary_cards.py`); checked on :8021, 森林's back face shows its
+  examples again. With it, a saved note (the meaning shown at Save, in that day's support language) is no longer
+  tagged with the word's language - "rừng, rừng rậm" was labelled Chinese. History: `becoming_library._row_to_item` joins a
   saved word with the catalogue of the current learning language only. `森林` saved while learning English comes back
   without level, Han-Viet, radicals, measure words, related words, the English gloss or examples, so its Review card
   and its Word Detail (which prefers the saved record) are poorer than before Save. Word Detail already reads the
