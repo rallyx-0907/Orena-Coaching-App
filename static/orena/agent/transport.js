@@ -119,8 +119,9 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
     const local = new AbortController();
     const forward = () => local.abort();
     signal?.addEventListener('abort', forward, { once: true });
+    let idle = null;
     try {
-      const idle = idleAfter(idleMs);
+      idle = idleAfter(idleMs);
       const asked = fetchImpl('/api/agent/turn', {
         method: 'POST',
         credentials: 'same-origin',
@@ -138,6 +139,8 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
         return;
       }
     } catch {
+      // A request that failed outright leaves the idle timer running; clear it so nothing waits for it.
+      idle?.clear();
       if (!signal?.aborted) yield transportError();
       return;
     }
