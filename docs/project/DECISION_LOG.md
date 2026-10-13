@@ -6002,3 +6002,23 @@ because a re-import would also move them back to `pending_review` and undo a mod
 closing that race needs the guard inside the `import_source` transaction.
 - **Without the token.** File mode and a manual import through Orena Admin; see
   `integrations/n8n/README.md`.
+
+## D-188 - A derived "General catalogue" collection per language (Option A)
+
+(Placeholder D-18X until merge.)
+
+**Status: PROPOSED.** Design: `docs/reviews/architecture/VOCAB_GENERAL_CATALOGUE_DESIGN_2026-10-13.md`. Not implemented;
+needs independent review and the human decisions H1-H5 in the design before code. Changes what reaches learners.
+
+- **Decision (human, Option A).** One automatically maintained "General catalogue" collection per learning language,
+  shown to learners as an ordinary collection. Rejected: B (per-word review lifecycle, schema change), C (search and
+  word page only).
+- **Rule.** Derived at read time, never stored. An entry is in General(L) iff it has a membership in a collection that
+  is `published` AND whose admission passes `_publication_admission` (rights cleared, complete, approved, attested with
+  a reviewer identity). It leaves the moment its last such set stops qualifying. A token import (D-187) never
+  qualifies until a human publishes the set. No free (pending, unpublished, archived-only) word becomes reachable.
+- **Persistence.** No migration, no schema change, no stored row. Reserved id `orena-general-<language_code>`,
+  refused on every import path. Not editable, not exportable in content packs, read-only in Admin.
+- **Open for the human.** H1: whether draft words must become reachable (needs a human "publish into General" act, not
+  a rule); H2: D-111 rule-attested sets count as attested; H3: operator kill switch; H4: migration stops for approval;
+  H5: findings F1 (status route skips the admission check) and F3 (unpublished static seeds reach the Feed).
