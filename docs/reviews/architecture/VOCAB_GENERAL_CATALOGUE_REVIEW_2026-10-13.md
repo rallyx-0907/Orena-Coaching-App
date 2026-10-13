@@ -148,3 +148,38 @@ Confirmed: no migration or schema change is needed. Existing indexes cover the s
 Approved with conditions P1-1 to P1-5. After they are written into the design and D-188, implementation may proceed without a second design review. Implementation itself needs the normal code review and the learner-surface verification (EN, VI, ZH, light and dark, desktop and phone) before `REVIEWABLE`. This review is not product approval.
 
 Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer. Reviewed commit `1c30c70d`. Date 2026-10-13.
+
+---
+
+## Code review of a1f06e48
+
+- Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer.
+- Reviewed: `git diff 2fb25de8..a1f06e48` (15 files), read against the conditions above. Reading only: nothing was run, no Docker. The implementer's reported results (full suite 5672 passed, Node gates and ESM graph OK) were not re-verified by me and are local execution, not CI.
+
+### Conditions, checked in code
+
+- **P1-1 reserved id: met.** `is_reserved_collection_id` normalises with NFKC, trim and casefold. The refusal sits in `import_source`, `set_collection_status` and `finalize_collection_publication` (the repository choke point), and again early in `_admin_vocabulary_metadata` (this runs before the service-token `get_collection(status=None)` guard, so the token path is covered) and in `_vocabulary_pack_import`. The resolver `general_collection_language` accepts the exact lower-case id only and the detail route additionally requires `is_enabled`; every other spelling of the reserved space gets 404 from `_general_catalogue_page`, with no fall-through to the static catalogue or a stored row. Fail-closed for a pre-existing stored row: `_general_predicate` excludes reserved ids from the qualifying set, the list route skips such a row, and the detail route never reads it. Tests cover each of these.
+- **P1-2 structure: met.** General has its own methods (`general_summary`, `general_page`, `general_contains`). `list_collections`, `get_collection`, `_collection_stats`, the Admin repository, `_content_records` and the pack code are untouched, so export and Admin counts exclude it by construction. No Admin content row was added. A regression test pins the Admin list and the pack enumeration.
+- **P1-3 admission: met.** `_admission_qualifies` coerces with `_copy_json`, requires a Mapping, calls the unchanged `_publication_admission`, and treats `ValueError`, `TypeError` and `AttributeError` as "does not qualify". The strict gate (`is True`, rights set, `complete`, non-empty `attested_by`) is the existing function, not a copy. Parametrised tests cover malformed provenance with a valid sibling still listed.
+- **P1-4 scope: met in text.** The design and D-188 now state persisted-only. The human should still confirm that reading (a decision, not a code matter).
+- **P1-5 withdrawal: met.** D-188 records by-set withdrawal; `test_withdrawal_is_by_set_not_by_content_and_this_is_pinned` pins it. H3 is built.
+- **Chunked predicate and the 20,000 cap: met.** One `and_(language, or_(*EXISTS(entry_id = entry.id AND collection_id IN chunk)))` is shared by count, levels, page and `general_contains`, so COUNT/OFFSET/LIMIT see one set. `_GENERAL_ID_CHUNK = 500` and 20,000 ids is at most 20,000 bound parameters, under the PostgreSQL (32,767 server-side) and modern SQLite (32,766) limits; older SQLite builds (999) are not supported by this value and the repository already assumes a modern one elsewhere. Above 20,000 it raises `VocabularyContentUnavailable` and logs, and the routes turn that into no General (list) or 404 (detail): fail closed, not truncation. The only DISTINCT is over the text column `level`, not `json`. Order is `(normalized_term, identity_key)` with unique `identity_key`, so paging is total. The chunk size and the cap are module values that tests lower, so the multi-chunk path and the cap run in CI.
+- **Kill switch: met.** Policy `vocabulary.general_catalogue_enabled` (bool, default True, group `vocabulary`) is read per request by `_general_catalogue_enabled` (`value(...) is not False`); off removes General from the list and returns 404 on the detail, and nothing else changes. The new policies group is wired in `GROUPS`, `GROUP_ORDER` and the EN/VI/ZH admin copy with a fixture row in the Node gate.
+- **Progress: met.** `_general_progress` takes the learner's own saved words, asks `general_contains` for those only (casefolded matching, chunked), and uses `saved_vocabulary_state` on the hits. The list and detail routes now use the same method, which also removes the page-only mismatch for General. A test checks two learners.
+- **Client: met.** `collectionTitle(item)` maps `system_kind` to the EN/VI/ZH key with the server title as fallback and is used in Discover, Library and Collection models; a Node gate checks the three languages and that other collections keep their stored title. The server appends General last after the existing sort. The summary and page carry no `provenance`/`attested_by` (tested).
+- **Tests: no weakened assertion.** The diff adds one Python test file and one Node gate and changes no existing assertion; the only edit to an existing test file is one added fixture row in `test_orena_admin_policies.mjs`. The negative tests I listed are present, including spoofed spellings on every import path, a stored reserved row, cross-language membership, orphan entries, the cap, per-learner progress, the kill switch and unchanged Admin/pack output.
+
+### Findings
+
+No P0 and no P1.
+
+- **P2-A. PostgreSQL execution is not tested.** The chunked OR-of-EXISTS and the DISTINCT-on-level statement run only on the SQLite engine. They are standard SQL, and I found no PostgreSQL-specific risk by reading, but add a compiled-statement check on the PostgreSQL dialect (no DISTINCT over `json`), and exercise it once on the sandbox PostgreSQL when a lane may run Docker. Forty OR'd EXISTS at the cap is a heavier plan than one `IN`; measure on a realistic catalogue before relying on 20,000.
+- **P2-B. Cost per request.** `general_page` re-computes count and distinct levels for every page, and the list route computes them per Discover load. Acceptable now; if measurement says otherwise, use the summary-only cache keyed by a hash of the eligible ids (my H4 recommendation), not a TTL on entries.
+- **P2-C. Not verified here.** Discover's and Library's visual order with General last, and the card in EN/VI/ZH, light and dark, desktop and phone, need the usual browser verification before `REVIEWABLE`; the Node gate covers the title only. `include_review` on the General detail uses the page's saved words, as before.
+- **P2-D. Notes for the human, unchanged from the design review.** Persisted-only scope (P1-4) and by-set withdrawal (P1-5) are accepted behaviours that the human has to confirm. The content-pack `{"en","zh"}` hardcode is pre-existing and was correctly left alone.
+
+### Final verdict (code): APPROVED
+
+Each condition is met in the code, not only in the text. Remaining items are P2 and do not block merge into the lane; browser verification and a PostgreSQL run are required before the surface is called `REVIEWABLE`. CI evidence is still needed for any claim beyond local execution. This is architecture approval only, not product approval.
+
+Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer. Reviewed commit `a1f06e48`.
