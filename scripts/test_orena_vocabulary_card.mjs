@@ -963,6 +963,8 @@ for (const card of [enCard, zhCard]) {
 const lead = zhFront.slice(zhFront.indexOf('c-vcard__lead'));
 assert.ok(lead.indexOf('sectionMeaning') < lead.indexOf('sectionRadical') && lead.indexOf('sectionRadical') < lead.indexOf('sectionMeasureWord'), 'Meaning and Radical share the lead grid');
 assert.match(cardCss, /\.c-vcard__lead \{[^}]*display: grid;[^}]*grid-template-columns: repeat\(auto-fit, minmax\(min\(150px, 28\.846cqi\), 1fr\)\)/, 'two columns while each keeps its width');
+assert.ok(zhFront.includes('c-vcard__lead c-vcard__lead--two'), 'both present: the two-column lead');
+assert.match(cardCss, /\.c-vcard__lead--two \{[^}]*grid-template-columns: fit-content\(46%\) minmax\(0, 1fr\)/, 'the meaning as wide as its words, the radical the rest');
 const kitCardSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
 assert.doesNotMatch(kitCardSrc.replace(/\/\*[\s\S]*?\*\//g, ''), /o-tag/, 'no kit tag on the content');
 const contentCss = cssRules.filter(([selector]) => !isButtonRule(selector)).map(([selector, body]) => `${selector}{${body}}`).join('');

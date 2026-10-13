@@ -417,6 +417,10 @@
   gap: calc(var(--vc-ks, 1) * min(14px, 2.692cqi)) calc(var(--vc-ks, 1) * min(20px, 3.846cqi));
   align-items: start;
 }
+/* Both present: the meaning as wide as its words (at most 46%), the radical - glyph box and its lines - the rest. */
+.c-vcard__lead--two {
+  grid-template-columns: fit-content(46%) minmax(0, 1fr);
+}
 .c-vcard__pair {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(170px, 32.692cqi), 1fr));

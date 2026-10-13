@@ -231,7 +231,7 @@ function radicalSection(model) {
    other when the card is too narrow for both. */
 function lead(...cells) {
   const present = cells.filter((cell) => String(cell));
-  return present.length ? html`<div class="c-vcard__lead">${present}</div>` : '';
+  return present.length ? html`<div class="${cls('c-vcard__lead', present.length > 1 && 'c-vcard__lead--two')}">${present}</div>` : '';
 }
 
 function zhFront(model, ctx) {
