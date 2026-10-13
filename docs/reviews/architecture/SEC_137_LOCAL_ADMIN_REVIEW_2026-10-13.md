@@ -75,3 +75,26 @@ The core design is sound. Locality is decided per request from the ASGI transpor
 - Staging :8000 and :8021 runtime behaviour was inferred from code paths, not observed.
 
 Architecture review is not product approval and is not activation authorization.
+
+---
+
+## Re-review of 907ab88d (2026-10-13)
+
+Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5 (independent of the implementer). Scope: `git diff 72f371d9..907ab88d` (9 files). Read-only; pytest, Docker and the app were not run, so everything below is from reading code and tests.
+
+### Conditions
+
+- **C1 - met, risk acceptance still open.** `tests/test_local_boundary_deployment.py` discovers every launcher that mentions `ORENA_TRUST_DOCKER_PUBLISHED_PORT` (compose, agent_e2e compose, `mobile_qa_runtime.ps1`, scripts), asserts declared bind host == published host and loopback, and pins the known set, so a new launcher is picked up automatically. `compose.yaml` is pinned to a single expression for declaration and publish. The boot line (`trust_state_line`, called from `install_auth` when auth is off) names trust state, gateway and declared host and carries no secret (tested). D-18X says the residual risk is "pending human acceptance (not accepted)". That wording is correct and I hold the same position (below).
+- **C2 - met.** `resolve_deployment_config` now refuses when `not public and not auth_enabled` and `public_exposure_markers` is non-empty (HTTPS origin, public host or address, tunnel token). It cannot refuse staging/production (`public` skips it), :8021 (auth on skips it, tested with an https origin), or plain local dev (empty URL, loopback, RFC1918, `.local`/`.lan`, dotless names all yield no marker). It runs after the origin/callback checks, so the existing "same origin" and bad-URL tests still raise their original errors. The one changed existing test (`test_same_origin_explicit_callback_override_is_supported`) used an https dev origin with no sign-in, which is exactly the configuration now refused; it gained Google credentials and a session secret and its assertion is unchanged. Legitimate, not weakened. Limit: `CLOUDFLARE_TUNNEL_TOKEN` is not passed to the app container by `compose.yaml`, so that marker only fires if the token is in the app's own environment; in the compose path the effective marker is a public `PUBLIC_BASE_URL`. A plain `compose --profile public up` with a dev loopback origin still starts, and is protected only by request-time denial (non-local peer and CF-* headers). I accept this as the fail-closed layer for that residual (P2, tracked).
+- **C3 - met.** `SECURITY_BOUNDARY.md` gains the lane-runtime section, `CURRENT_HANDOFF.md` points to it, and a refused peer is logged once per address (cap 32, address only, no headers; tested with an Authorization header present). The log names the two variables to set when the peer is the gateway and trust is off.
+- **P2-1 met** (extra headers revoke locality, tested). **P2-2/P2-3 met** as documented threat-model entries (DNS rebinding remains a follow-up, not fixed). **P2-5 met** (D-18X status updated; id still a placeholder to renumber at merge).
+
+### Final verdict: APPROVED WITH CONDITIONS
+
+Remaining conditions before merge:
+
+1. **Human decision on the declared-bind-host residual risk (P1-1, unchanged in substance).** The mitigations reduce drift in the repository's own launchers, but the app still cannot observe how the port is really published; a hand-edited `ports:`, a `compose.override.yaml` or a `docker run -p 0.0.0.0:` that copies the two variables grants LAN callers local-admin on Docker Desktop. I do not consider this accepted. It needs the human's explicit acceptance (or a decision to require the stronger per-run-secret mechanism), recorded in D-18X, before merge.
+2. Renumber D-18X at merge and update its status line.
+3. Tracked follow-ups, not blocking: Host-header restriction against DNS rebinding; `CLOUDFLARE_TUNNEL_TOKEN` is not visible to the app container.
+
+Not product approval and not activation authorization. Reviewed commit: 907ab88d.
