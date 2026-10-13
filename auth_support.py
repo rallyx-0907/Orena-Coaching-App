@@ -26,7 +26,7 @@ from writing_coach.core.storage import resolve_language_db_path
 from writing_coach.core.language_registry import DEFAULT_LANGUAGE, all_languages, enabled_language
 from writing_coach.core.deployment import DeploymentConfig, resolve_deployment_config
 from writing_coach.core import request_boundary
-from writing_coach import account_settings
+from writing_coach import account_settings, service_auth
 from writing_coach.persistence.auth_repository import AuthRepository
 
 ROOT = Path(__file__).resolve().parent
@@ -177,6 +177,17 @@ def require_admin(request: Request) -> dict[str, Any]:
     if str(user.get("role") or "user") != "admin":
         raise HTTPException(403, "Platform administrator access required")
     return user
+
+def require_vocabulary_ingest(request: Request) -> dict[str, Any]:
+    """`require_admin` for the two vocabulary preview/import routes, which also accept the scoped service credential.
+
+    The principal is set only by `UserIsolationMiddleware` after a valid bearer token on exactly those paths
+    (`request.state` cannot be set by a client). Anyone else is held to `require_admin`, unchanged."""
+    principal = getattr(request.state, "service_principal", None)
+    if principal is not None:
+        return dict(principal)
+    return require_admin(request)
+
 
 def google_flow(code_verifier: str | None = None) -> Flow:
     config = {
@@ -616,8 +627,28 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
         refusal = language_limit.required_error()
         return JSONResponse({"detail": refusal.detail}, status_code=refusal.status_code)
 
+    @staticmethod
+    async def _serve_vocabulary_ingest(request: Request, call_next):
+        """The one machine credential (writing_coach/service_auth.py): a bearer token on the two vocabulary
+        preview/import routes. It is checked here, before any session logic, and only here; the routes then ask
+        `require_vocabulary_ingest`. A token that does not match is refused outright (never falls back to a session),
+        and nothing is read from, or written to, any learner scope."""
+        if not service_auth.token_matches(service_auth.bearer_token(request.headers), service_auth.configured_hashes()):
+            return JSONResponse({"detail": "Invalid service token"}, status_code=401)
+        request.state.service_principal = dict(service_auth.SERVICE_PRINCIPAL)
+        # A key of its own, so the request can never run in the shared "legacy" learner scope (the context default).
+        user_token = _user_key.set(service_auth.SERVICE_USER_KEY)
+        language_token = _language_key.set(DEFAULT_LANGUAGE)
+        try:
+            return await call_next(request)
+        finally:
+            _language_key.reset(language_token)
+            _user_key.reset(user_token)
+
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
+        if service_auth.is_vocabulary_ingest_request(request.method, path, request.headers):
+            return await self._serve_vocabulary_ingest(request, call_next)
         # Signed-out and not the machine's own developer: nothing below may read or write the shared "legacy" scope.
         foreign_signed_out = not AUTH_ENABLED and not request_is_local(request)
         # Only a request that has no language of its own, to an /api/ route, can need the count (review F10).
