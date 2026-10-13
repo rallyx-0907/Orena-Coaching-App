@@ -21,7 +21,7 @@ import { overviewMarkup } from './overview.js';
 import {
   entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
   entryFromTextImport, entryFromMediaImport, filterOptions, visibleEntries,
-  presentCard, hrefFor, overviewSections, typeLabel, topicLabel, hasAnyFilter, filterCount, practiceCandidates, practiceHref, preparedMediaEntry,
+  presentCard, hrefFor, overviewSections, typeLabel, topicLabel, hasAnyFilter, filterCount, readPlace, writePlace, practiceCandidates, practiceHref, preparedMediaEntry,
 } from './model.js';
 
 // The skill order (D-152): Listen before Read, on the tab bar and in the All overview alike.
@@ -54,7 +54,14 @@ export default async function discover(element, ctx) {
   if (practice) ctx.setCrumb(ts(practiceLabel));
   const practicePlace = { source: ctx.query.get('source'), segment: ctx.query.get('segment'), intent: practice };
 
-  const state = { tab: practice ? 'all' : TABS.includes(ctx.query.get('tab')) ? ctx.query.get('tab') : 'all', query: '', filters: emptyFilters(), entries: [], loading: true, failed: false };
+  const place = readPlace(ctx.query, TABS);
+  const state = { tab: practice ? 'all' : place.tab, query: place.query, filters: place.filters, entries: [], loading: true, failed: false };
+  /* The tab, search and filters are the address (history.replaceState, as My Library keeps its tab): Back from a
+     collection or a card returns to this same view, and the router restores its scroll under the same address. */
+  function keepPlace() {
+    const next = `${ctx.href('discover')}${(() => { const qs = writePlace(ctx.query, state); return qs ? `?${qs}` : ''; })()}`;
+    if (next !== location.hash) history.replaceState(history.state, '', next);
+  }
   let sheetHandle = null;
 
   mount(
@@ -87,6 +94,7 @@ export default async function discover(element, ctx) {
   const resultsEl = root.querySelector('[data-results]');
   const filterCountEl = root.querySelector('[data-filtercount]');
   const queryInput = root.querySelector('[data-query]');
+  queryInput.value = state.query;
 
   function visible() {
     return visibleEntries(state.entries, { tab: state.tab, query: state.query, filters: state.filters });
@@ -107,6 +115,7 @@ export default async function discover(element, ctx) {
   function openTab(id) {
     if (!TABS.includes(id) || id === state.tab) return;
     state.tab = id;
+    keepPlace();
     paintTabs();
     paintResults();
   }
@@ -166,6 +175,7 @@ export default async function discover(element, ctx) {
     state.filters = emptyFilters();
     state.query = '';
     queryInput.value = '';
+    keepPlace();
     paintResults();
   }
 
@@ -173,6 +183,7 @@ export default async function discover(element, ctx) {
     const set = state.filters[group];
     if (set.has(value)) set.delete(value);
     else set.add(value);
+    keepPlace();
     paintResults();
   }
 
@@ -234,7 +245,7 @@ export default async function discover(element, ctx) {
   queryInput.addEventListener('input', () => {
     state.query = queryInput.value;
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(paintResults, 120);
+    searchTimer = setTimeout(() => { keepPlace(); paintResults(); }, 120);
   });
 
   paintTabs();

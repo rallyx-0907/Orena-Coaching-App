@@ -441,4 +441,22 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.match(screenSource, /querySelector\('\[data-import-cta\]'\)\?\.addEventListener\('click', openImportFlow\)/, 'the call to action opens the same import flow');
 }
 
+// The learner's place is the address, so Back from a collection (or a card) restores the tab, search and filters.
+{
+  const { readPlace, writePlace } = await import('../static/orena/screens/discover/model.js');
+  const tabs = ['all', 'listen', 'read', 'collections', 'imported'];
+  const filters = { level: new Set(['C2']), topic: new Set(), type: new Set(['collection', 'article']) };
+  const qs = writePlace(new URLSearchParams(), { tab: 'collections', query: ' steadfast ', filters });
+  const back = readPlace(new URLSearchParams(qs), tabs);
+  assert.equal(back.tab, 'collections');
+  assert.equal(back.query, 'steadfast');
+  assert.deepEqual([...back.filters.level], ['C2']);
+  assert.deepEqual([...back.filters.type].sort(), ['article', 'collection']);
+  assert.equal(writePlace(new URLSearchParams('practice=dictation&tab=read'), { tab: 'all', query: '', filters: { level: new Set(), topic: new Set(), type: new Set() } }), 'practice=dictation', 'All with nothing set is the bare address, and a parameter Discover does not own is kept');
+  assert.equal(readPlace(new URLSearchParams('tab=nonsense'), tabs).tab, 'all');
+  const src = fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8');
+  assert.match(src, /readPlace\(ctx\.query, TABS\)/, 'the screen opens on the place the address names');
+  assert.equal((src.match(/keepPlace\(\)/g) || []).length >= 5, true, 'tab, filter, clear and search each write the address');
+}
+
 console.log('Orena Discover: data mapping, filters, tabs, search and presentation all pure, no invented data: PASS');

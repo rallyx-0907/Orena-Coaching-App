@@ -9,6 +9,7 @@ import { listRow } from '../../kit/components.js';
 import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
+import { catalogueLanguage } from '../../product/vocabulary-card.js';
 import { shellCopy as ts } from '../../copy/shell.js';
 import { t } from './copy.js';
 import {
@@ -163,8 +164,11 @@ export default async function search(element, ctx) {
 
   async function runSearch(q) {
     const mine = (token += 1);
+    // The catalogue is asked in the query's own language (a Han query is the Chinese catalogue, a Latin one the
+    // English catalogue), whatever the learner is learning now - the Word screen reads it the same way.
+    const wordLanguage = catalogueLanguage(q, language);
     const [catalogue, collection, articles, listening] = await Promise.all([
-      settled(api.vocabularyCatalogueSearch(q, language, 8)),
+      settled(api.vocabularyCatalogueSearch(q, wordLanguage, 8)),
       settled(api.collection({ query: q, limit: 20 })),
       settled(api.readingArticles(language)),
       settled(api.listeningLibrary(language)),
@@ -177,7 +181,7 @@ export default async function search(element, ctx) {
       ...deviceMediaItems(memoryValue, q),
     ];
     groups = [
-      { key: 'words', label: t('wordsGroup'), items: wordItems(catalogue, language) },
+      { key: 'words', label: t('wordsGroup'), items: wordItems(catalogue, wordLanguage) },
       { key: 'content', label: ts('content'), items: content },
       { key: 'library', label: ts('myLibrary'), items: collectionItems(collection, relationshipLabel) },
     ].filter((g) => g.items.length);
