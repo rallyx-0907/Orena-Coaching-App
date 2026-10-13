@@ -32,6 +32,8 @@ from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
+from writing_coach.reading_source_cleanup import Item, cleanup, host_of, rules_for
+
 _VOID = frozenset(
     {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
 )
@@ -94,7 +96,7 @@ _HIDDEN_STYLE_RE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden", re.
 MIN_PROSE_UNITS = 120
 # Recorded with every extraction so a stored candidate can be traced to the
 # strategy that produced it. Bump on any change to what is kept or dropped.
-EXTRACTOR_VERSION = "article-extract/3"
+EXTRACTOR_VERSION = "article-extract/4"
 
 
 def units(text: str) -> int:
@@ -253,6 +255,7 @@ class _Block:
     term: str = ""
     definition: str = ""
     in_glossary: bool = False
+    hrefs: tuple[str, ...] = ()
 
     @property
     def heading(self) -> bool:
@@ -277,6 +280,8 @@ class ExtractedArticle:
     units: int = 0
     prose_paragraphs: int = 0
     coverage: float = 0.0
+    removed: list[dict[str, str]] = field(default_factory=list)
+    provenance: list[dict[str, str]] = field(default_factory=list)
 
     def metadata(self) -> dict[str, Any]:
         """The evidence an admin sees next to the candidate."""
@@ -291,6 +296,10 @@ class ExtractedArticle:
         }
         if self.attribution:
             info["attribution_lines"] = list(self.attribution)
+        if self.removed:  # what cleanup took out of the body, and why
+            info["removed_blocks"] = [dict(item) for item in self.removed]
+        if self.provenance:  # editorial preface kept as data: original publisher and URL
+            info["provenance"] = [dict(item) for item in self.provenance]
         # Provenance only: image candidates are evidence for a later, reviewed
         # article-media contract. Nothing here is a learner-facing field.
         info["media"] = [dict(item) for item in self.media]
@@ -369,7 +378,7 @@ def _norm(text: str) -> str:
 # ---- pruning ---------------------------------------------------------------
 
 
-def _prune(root: _Node, glossary_nodes: list[_Node]) -> None:
+def _prune(root: _Node, glossary_nodes: list[_Node], extra_tokens: frozenset[str] = frozenset()) -> None:
     page_size = max(1, len(_visible_text(root)))
 
     def removable(node: _Node) -> bool:
@@ -386,7 +395,7 @@ def _prune(root: _Node, glossary_nodes: list[_Node]) -> None:
         if node.tag in {"html", "body", "main", "article"}:
             return False
         tokens = _tokens(node)
-        if not tokens & (_BOILERPLATE_TOKENS | _META_TOKENS):
+        if not tokens & (_BOILERPLATE_TOKENS | _META_TOKENS | extra_tokens):
             return False
         # A wrapper that holds most of the page is a layout, not boilerplate.
         return len(_text(node)) < 0.6 * page_size
@@ -452,14 +461,15 @@ def _collect(node: _Node, out: list[_Block]) -> None:
             flush()
             text = _text(child)
             pieces = _split_paragraphs(_raw(child)) if not _has_block_child(child) and child.tag not in _HEADINGS else [text]
+            hrefs = tuple(n.attrs["href"] for n in _walk(child) if n.tag == "a" and n.attrs.get("href"))
             if len(pieces) > 1:
                 density = _link_density(child)
-                out.extend(_Block(piece, child.tag, density) for piece in pieces)
+                out.extend(_Block(piece, child.tag, density, hrefs=hrefs) for piece in pieces)
             elif text:
                 term, definition = _leading_term(child)
                 if child.tag == "dt":
                     term = text
-                out.append(_Block(text, child.tag, _link_density(child), term, definition))
+                out.append(_Block(text, child.tag, _link_density(child), term, definition, hrefs=hrefs))
     flush()
 
 
@@ -587,7 +597,8 @@ def extract_article(html: str, base_url: str = "") -> ExtractedArticle:
     titles = {_norm(t) for t in (ld["headline"], info["og_title"], info["h1"], info["title"]) if t}
 
     glossary_nodes: list[_Node] = []
-    _prune(root, glossary_nodes)
+    page_url = base_url or ld["url"] or info["canonical"]
+    _prune(root, glossary_nodes, frozenset(rules_for(host_of(page_url))["drop_class_tokens"]))
     body_node = next((n for n in _walk(root) if n.tag == "body"), root)
 
     container = _dominant_container(body_node)
@@ -629,6 +640,10 @@ def extract_article(html: str, base_url: str = "") -> ExtractedArticle:
 
     for node in glossary_nodes:
         glossary.extend(_glossary_entries(node))
+
+    cleaned = cleanup([Item(b.text, b.heading, b.hrefs) for b in blocks], page_url)
+    removed = [{"kind": cleaned.removed[i], "text": blocks[i].text[:300]} for i in sorted(cleaned.removed)]
+    blocks = [b for i, b in enumerate(blocks) if i not in cleaned.removed]
 
     body = "\n\n".join(b.text for b in blocks)
     size = units(body)
@@ -672,6 +687,8 @@ def extract_article(html: str, base_url: str = "") -> ExtractedArticle:
         units=size,
         prose_paragraphs=paragraphs,
         coverage=coverage,
+        removed=removed,
+        provenance=cleaned.provenance,
         media=_media_candidates(
             _article_scope(container), figure_info, meta_images, document_base
         ),
