@@ -84,5 +84,9 @@ for ($i = 0; $i -lt 60; $i++) {
     if ($ready.ready -and $ready.environment -eq 'staging') { break }
 }
 if (-not $ready.ready -or $ready.environment -ne 'staging') { Fail 'readiness did not report ready staging' }
+# Host-side, READ-ONLY assertion of Docker's real published address (issue #140): fails loudly, never stops or
+# changes the human-operated runtime (D-127). Rollback stays the operator's.
+& python (Join-Path $PSScriptRoot 'assert_published_loopback.py') --container $Web --port 8000 --no-stop
+if ($LASTEXITCODE -ne 0) { Fail "$Web is not published on loopback only; investigate before treating staging as deployed" }
 Write-Host "readiness: ready=$($ready.ready) environment=$($ready.environment)"
 Write-Host "worker: $(& docker.exe inspect $Worker --format '{{.State.Status}} restarts={{.RestartCount}}')"

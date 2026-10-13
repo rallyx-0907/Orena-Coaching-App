@@ -45,7 +45,9 @@ try {
   Write-Host "PostgreSQL, the shared SQLite archive, and the runtime on 8000 are untouched." -ForegroundColor DarkGray
 
   $env:MSYS_NO_PATHCONV = '1'
-  docker compose run --rm --no-deps `
+  $qaName = "orena-mobile-qa-$Port"
+  & { $ErrorActionPreference = 'Continue'; docker rm -f $qaName 2>&1 | Out-Null }
+  docker compose run -d --name $qaName --no-deps `
     --publish "127.0.0.1:${Port}:8000" `
     --env APP_ENV=development `
     --env ORENA_PUBLISHED_BIND_HOST=127.0.0.1 `
@@ -63,8 +65,17 @@ try {
     --env PLATFORM_ADMIN_EMAILS= `
     --env BOOTSTRAP_OWNER_EMAIL= `
     writing-coach `
-    sh -lc 'mkdir -p /tmp/orena-qa/users && exec python -m uvicorn app:app --host 0.0.0.0 --port 8000'
+    sh -lc 'mkdir -p /tmp/orena-qa/users && exec python -m uvicorn app:app --host 0.0.0.0 --port 8000' | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "the QA runtime did not start" }
+
+  # Host-side assertion of Docker's REAL published address (issue #140): refuse and stop unless loopback.
+  python scripts/assert_published_loopback.py --container $qaName --port 8000
+  if ($LASTEXITCODE -ne 0) { & { $ErrorActionPreference = 'Continue'; docker rm -f $qaName 2>&1 | Out-Null }; throw "the QA runtime is not published on loopback; it was stopped" }
+
+  docker logs -f $qaName
 }
 finally {
+  # Detached run, so the former --rm is done here.
+  if ($qaName) { & { $ErrorActionPreference = 'Continue'; docker rm -f $qaName 2>&1 | Out-Null } }
   Pop-Location
 }

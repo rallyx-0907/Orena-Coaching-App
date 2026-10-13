@@ -122,6 +122,11 @@ $boot = 'tar xzf /backup/files.tar.gz -C /data && exec python -m uvicorn app:app
 $arguments = @('run', '-d', '--name', $web, '--network', $network, '-p', "127.0.0.1:${Port}:8000", '-v', '/data', '-v', "${Backup}:/backup:ro") + $mounts + $environment + @($AppImage, 'sh', '-c', $boot)
 $webStarted = Invoke-Docker $arguments
 if (-not $webStarted.ok) { Note 'new web container' $false ($webStarted.out | Out-String); Finish 1 }
+# Host-side assertion of Docker's REAL published address (issue #140); refuses and stops the container.
+$published = & python (Join-Path $Repository 'scripts/assert_published_loopback.py') --container $web --port 8000 2>&1
+$publishedCode = $LASTEXITCODE
+Note 'published on loopback only' ($publishedCode -eq 0) (($published | Out-String).Trim())
+if ($publishedCode -ne 0) { Finish 1 }
 $health = @{ status = 0 }
 for ($i = 0; $i -lt 90 -and $health.status -ne 200; $i++) { Start-Sleep -Seconds 1; $health = Get-Json '/api/health' }
 Note 'web answers /api/health' ($health.status -eq 200) "http://127.0.0.1:$Port"

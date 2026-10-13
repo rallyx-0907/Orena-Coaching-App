@@ -283,3 +283,75 @@ def test_compose_derives_the_declaration_and_the_publish_from_one_expression() -
     text = (ROOT / "compose.yaml").read_text(encoding="utf-8")
     assert f"ORENA_PUBLISHED_BIND_HOST: {OPT_IN}" in text
     assert f'"{OPT_IN}:8000:8000"' in text
+
+
+# ---- every official launcher asserts Docker's REAL published address after it starts the app (issue #140) -----------
+# The publish above is what the launcher asks for; this is what Docker reports back, read on the host.
+
+ASSERT = "assert_published_loopback.py"
+# launcher -> (the file that starts the app container, the text that starts it)
+START_AND_ASSERT = {
+    "compose.yaml": ("start_docker.ps1", "docker compose up -d --build"),
+    "scripts/agent_e2e/compose.yaml": ("scripts/agent_e2e/run.py", 'compose(env, "up", "-d")'),
+    "scripts/agent_live/compose.yaml": ("scripts/agent_live/run.py", 'self._compose("up", "-d")'),
+    "scripts/mobile_qa_runtime.ps1": ("scripts/mobile_qa_runtime.ps1", "docker compose run -d"),
+    "scripts/product_restore_rehearsal.ps1": ("scripts/product_restore_rehearsal.ps1", "$webStarted = Invoke-Docker"),
+    "scripts/staging_8000_deploy.ps1": ("scripts/staging_8000_deploy.ps1", "-p 127.0.0.1:8000:8000"),
+    "scripts/staging_update.ps1": ("scripts/staging_update.ps1", "& docker @run"),
+}
+# compose.yaml is started by three wrappers; each must assert after its own `up`.
+COMPOSE_STARTERS = {
+    "start_docker.ps1": "docker compose up -d --build",
+    "start_dev.ps1": "docker compose -f compose.yaml -f compose.dev.yaml up -d --build",
+    "start_public.ps1": "docker compose --profile public up -d --build",
+}
+
+
+def test_the_assertion_inventory_covers_every_launcher() -> None:
+    assert set(START_AND_ASSERT) == set(LAUNCHERS)
+
+
+@pytest.mark.parametrize("launcher", sorted(START_AND_ASSERT))
+def test_every_launcher_asserts_the_real_publish_after_starting_the_app(launcher: str) -> None:
+    runner, start = START_AND_ASSERT[launcher]
+    text = (ROOT / runner).read_text(encoding="utf-8")
+    assert start in text, f"{runner}: expected to start the app with {start!r}"
+    assert ASSERT in text, f"{runner} never runs {ASSERT}"
+    # The python runners call a helper that runs the script; the call must follow the start.
+    call = "assert_loopback(env, port)" if "agent_e2e" in runner else "self.assert_loopback()" if "agent_live" in runner else ASSERT
+    assert call in text[text.index(start):], f"{runner}: {call} must run after the start"
+
+
+@pytest.mark.parametrize("wrapper", sorted(COMPOSE_STARTERS))
+def test_every_compose_wrapper_asserts_after_its_up(wrapper: str) -> None:
+    text = (ROOT / wrapper).read_text(encoding="utf-8")
+    start = COMPOSE_STARTERS[wrapper]
+    assert start in text, wrapper
+    assert ASSERT in text[text.index(start):], f"{wrapper}: assertion must follow the compose up"
+    assert "exit 1" in text[text.index(ASSERT):], f"{wrapper}: a refusal must exit non-zero"
+    assert "up --watch" not in text, f"{wrapper}: a blocking foreground up would never reach the assertion"
+
+
+def test_wrappers_enable_the_lan_opt_in_only_from_the_named_variable() -> None:
+    for wrapper in COMPOSE_STARTERS:
+        text = (ROOT / wrapper).read_text(encoding="utf-8")
+        assert "$env:ORENA_INSECURE_DEV_LAN_BIND_HOST" in text and "--lan-opt-in" in text
+
+
+def test_the_8000_staging_check_is_read_only() -> None:
+    text = (ROOT / "scripts/staging_8000_deploy.ps1").read_text(encoding="utf-8")
+    line = next(row for row in text.splitlines() if ASSERT in row)
+    assert "--no-stop" in line
+
+
+def test_the_assertion_agrees_with_the_app_loopback_rule() -> None:
+    import importlib.util
+
+    from writing_coach.core.deployment import is_loopback_host
+
+    spec = importlib.util.spec_from_file_location("assert_published_loopback", ROOT / "scripts" / ASSERT)
+    guard = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(guard)
+    for host in ["127.0.0.1", "127.9.9.9", "::1", "[::1]", "localhost", "LOCALHOST", "::ffff:127.0.0.1", "", "0.0.0.0", "::",
+                 "192.168.1.5", "10.0.0.1", "fe80::1", "8.8.8.8", "mybox.local", "0:0:0:0:0:0:0:1"]:
+        assert guard.is_loopback_host(host) == is_loopback_host(host), host
