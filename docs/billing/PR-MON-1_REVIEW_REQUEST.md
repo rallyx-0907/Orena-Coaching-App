@@ -8,7 +8,7 @@ may not approve it. Record the reviewer, the reviewed commit and the verdict in 
 | --- | --- |
 | Branch | `feature/monetization-billing-v1` |
 | Base | `main` `172ae216` |
-| Change | commit `0a440695` (code and tests); lane docs `b161c74f`, `c804600d` |
+| Change | `172ae216..445c56ea` on `feature/monetization-billing-v1`. Code: `0a440695` (resolver) and `445c56ea` (grace amendment). Docs: `b161c74f`, `c804600d`, `e978ced6`, `56ad5b16`. |
 | Decision under review | D-MON-006, as amended by D-MON-010 (billing over manual, confirmed) and D-MON-011 (Polar past-due grace, 2 days) |
 | Schema | none |
 | Runtime effect with no commerce rows | none (proved by the regression oracle, below) |
@@ -86,6 +86,33 @@ payment therefore changed no plan, and the manual-grant guard could not see bill
 9. `billing/polar.py`: handles the `subscription.past_due` event and the past-due `paid_through` rule above.
 
 ## Evidence (local execution, not CI)
+
+- **Latest batch, after the grace amendment:** a throwaway PostgreSQL 16 (tmpfs, private network, no published port,
+  removed afterwards). 689 passed, 0 skipped. It covers:
+  - `test_effective_entitlement.py` (52 tests) and its PostgreSQL proof, which adds a Polar past-due case: the
+    stored last paid end is the anchor, the grace ends, and a recovery restores the plan;
+  - billing (with the Polar past-due anchor test), product account state, commerce, membership and plans
+    transactions;
+  - the quota gate and language limit, each with its PostgreSQL suite, and the commerce PostgreSQL suite;
+  - persistence runtime, admin policies, product foundation and the admin authorization matrix.
+- **Mutation checks:**
+  - With the billing read disabled (the original P0), 17 tests fail.
+  - With the precedence flipped, 3 tests fail.
+  - With the grace policy disabled, 12 tests fail.
+- Ruff is clean on new and changed code.
+
+## How to review (reviewer: independent Principal Architect; review only, no edits in the same pass)
+
+```
+git fetch origin feature/monetization-billing-v1
+git diff 172ae216..origin/feature/monetization-billing-v1 -- writing_coach app.py tests
+```
+
+Write the verdict (APPROVE / APPROVE WITH CONDITIONS / REQUEST CHANGES, with P0..P3 findings) to
+`docs/reviews/architecture/PR_MON_1_ENTITLEMENT_REVIEW_<date>.md`, naming the reviewer and the reviewed commit.
+
+## Earlier evidence (before the grace amendment)
+
 
 - `tests/test_effective_entitlement.py`, 37 tests. They cover:
   - payOS prepaid, Polar, trialing, no boundary, manual valid and expired, ended and placeholder billing rows;
