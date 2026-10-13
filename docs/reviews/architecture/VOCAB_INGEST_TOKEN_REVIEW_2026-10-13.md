@@ -95,3 +95,5 @@ Scope: `git diff 41e71bf3..d4c3e135` (app.py, D-18X text, tests). Read-only; pyt
 ### Final verdict: APPROVED
 
 No remaining condition on the auth change. **Approved head for merge: d4c3e135f86a29b2fce29d242cc1245590fa3df2.** Later commits on the branch must be this review file only; a further change to `auth_support.py`, `service_auth.py`, the two routes or the token tests voids this approval. Renumber D-18X at merge and update its status to this outcome. Not product approval and not activation authorization.
+
+Merge note: D-18X was renumbered **D-187** at merge; the auth files are unchanged from d4c3e135 (`git diff d4c3e135 -- auth_support.py writing_coach/service_auth.py app.py tests/test_vocabulary_ingest_token.py tests/test_admin_authorization_matrix.py` is empty).

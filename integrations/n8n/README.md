@@ -142,8 +142,9 @@ deployed Orena never allows. So today:
 - **Deployed Orena:** use **file mode** and import in Admin. Pasting a session cookie into a Header Auth credential
   would work briefly and is not a design; do not use it for production.
 
-**Proposed, needs architecture review (D-18X, not approved):** a scoped machine credential for exactly these two
-routes (`writing_coach/service_auth.py`). If it is merged and enabled:
+**Service token (D-187, architecture-reviewed and approved):** a scoped machine credential for exactly these two
+routes (`writing_coach/service_auth.py`). It is off until the server sets the digest; enabling it on a deployment is the
+operator's decision. To enable it:
 
 ```
 # 1. generate a token: 32 random bytes (never a typed passphrase)
@@ -161,7 +162,7 @@ For this caller Orena **always** imports into a `pending_review` set, whatever t
 with a 422 (the workflow therefore always uses `skip` in api mode).
 
 Rotation: put both digests in the variable, comma-separated (`old,new`), deploy, move n8n to the new token, then remove
-the old digest and deploy again. Revocation is the same removal. Residuals (D-18X): every service import appears under
+the old digest and deploy again. Revocation is the same removal. Residuals (D-187): every service import appears under
 one fixed actor (`service:vocabulary-ingest`); wrong tokens (401) are not throttled, so the token must be high-entropy;
 a session administrator whose browser sends a stray `Authorization: Bearer` header to these two routes gets a 401; the
 service request skips the per-user database initialiser, which these routes do not use (the vocabulary catalogue is
