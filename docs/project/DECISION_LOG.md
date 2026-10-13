@@ -5869,16 +5869,19 @@ Human decisions, 2026-10-13, after reviewing the two real cards (resilient, æ£®æ
 
 Placeholder id; the lead renumbers at merge. **Status: independently reviewed, APPROVED WITH CONDITIONS
 (`docs/reviews/architecture/SEC_137_LOCAL_ADMIN_REVIEW_2026-10-13.md`, commit f7a9dc77); conditions addressed in
-follow-up commits; human acceptance of the residual risk below is pending.** Not merged, not product approval.
+follow-up commits; the human accepted the residual risk below on 2026-10-13.** Not merged, not product approval.
 
-- **Residual risk, pending human acceptance (not accepted).** The Docker-gateway trust rests on a self-declared
-  `ORENA_PUBLISHED_BIND_HOST`; the app cannot observe the real publish. A hand-edited `ports:` entry, a
-  `compose.override.yaml` or a `docker run -p 0.0.0.0:...` that copies the two variables defeats it, and on Docker
-  Desktop LAN traffic to such a publish arrives from the trusted gateway. Mitigations in place: the repository's own
-  launchers are tested for declared bind host == published host == loopback; a boot line names the trust state; a
-  refused peer is logged once. The human decides whether this declared-boundary mechanism is acceptable or a stronger
-  one (per-run secret with a trusted local forwarder) is required. Also pending: DNS rebinding (follow-up) and the
-  `host.docker.internal` cross-network case (documented residual).
+- **Residual risk, accepted by the human 2026-10-13 as a documented residual risk.** The Docker-gateway trust rests
+  on a self-declared `ORENA_PUBLISHED_BIND_HOST`; the app cannot observe the real publish. An operator who hand-edits
+  the Docker publish from `127.0.0.1` to `0.0.0.0` without changing the variables the app reads defeats it (on Docker
+  Desktop LAN traffic then arrives from the trusted gateway). This is a manual, unsupported misconfiguration, not a P1
+  blocker, **on the conditions** that auth-off lanes are local/development only and every official launcher is
+  test-locked to a loopback publish (`tests/test_local_boundary_deployment.py` scans all compose files and launch
+  scripts; the primary boundary is the deployment config/launcher, the per-request peer check is the second layer, the
+  startup refusal is defense-in-depth). **Follow-up, not in this change:** a host-side runtime assertion - the
+  launcher/preflight runs `docker inspect` (or equivalent) on the real published address and refuses or stops an
+  auth-disabled lane bound to `0.0.0.0`, `::` or any non-loopback address. DNS rebinding (follow-up) and the
+  `host.docker.internal` cross-network case remain documented residuals in `docs/SECURITY_BOUNDARY.md`.
 
 - **Finding.** With sign-in off, `require_admin()` and the shared `legacy` learner scope were granted from
   deployment configuration (`APP_ENV`, `PUBLIC_BASE_URL`), and Compose published port 8000 on `0.0.0.0`: any LAN host

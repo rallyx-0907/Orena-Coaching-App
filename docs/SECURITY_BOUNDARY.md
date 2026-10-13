@@ -7,6 +7,14 @@ at deployment configuration (`APP_ENV`, `PUBLIC_BASE_URL`), and Compose publishe
 sign-in off, any machine that could reach port 8000 was then the local administrator and shared the one `legacy`
 learner scope. Config-local does not imply request-local.
 
+## Layers
+
+1. **Primary boundary: the deployment config and launcher.** Every official launcher publishes the app on loopback
+   (`127.0.0.1`) by default; the only route to anything wider is the insecure-named `ORENA_INSECURE_DEV_LAN_BIND_HOST`.
+   This is test-locked across all compose files and launch scripts, not left to environment variables inside the app.
+2. **Second layer: the app's per-request peer check** (below), which keeps a remote caller from being treated as local.
+3. **Defense-in-depth: the startup refusal** of an unauthenticated development runtime configured for the public.
+
 ## What "local" means now
 
 Signed-out developer behaviour (the `local-admin` administrator, the shared `legacy` learner scope) is decided per
@@ -95,10 +103,15 @@ The forwarding-header list also includes `Via`, `Client-IP`, `X-Client-IP`, `X-C
 ## Known residuals and follow-ups (architecture review 2026-10-13)
 
 - **Self-declared bind host.** The app cannot observe how Docker publishes the port; `ORENA_PUBLISHED_BIND_HOST` is
-  configuration. A `compose.override.yaml`, a hand-edited `ports:` entry or a `docker run -p 0.0.0.0:...` that copies
-  the two variables defeats it, and on Docker Desktop LAN traffic to a `0.0.0.0` publish also arrives from the
-  gateway. `tests/test_local_boundary_deployment.py` keeps the repository's own launchers consistent; it cannot see an
-  operator's override. Pending human acceptance (D-18X). A stronger mechanism: a per-run secret injected by the launch
+  configuration. An operator who hand-edits the publish from `127.0.0.1` to `0.0.0.0` (a `compose.override.yaml`, a
+  `ports:` edit, a `docker run -p 0.0.0.0:...`) without changing the variables the app reads defeats it, and on Docker
+  Desktop LAN traffic to such a publish arrives from the trusted gateway. This is a manual, unsupported
+  misconfiguration. **Accepted by the human on 2026-10-13 as a documented residual risk**, on these conditions:
+  signed-out lanes are local/development only, and every official launcher is test-locked to a loopback publish
+  (`tests/test_local_boundary_deployment.py` scans all of them). It is not a P1 blocker.
+- **Follow-up (not in this change): host-side runtime assertion.** The launcher or preflight should run
+  `docker inspect` (or equivalent) on the real published address and refuse or stop an auth-disabled lane bound to
+  `0.0.0.0`, `::` or any non-loopback address. A stronger in-app alternative: a per-run secret injected by the launch
   script and checked against a header only a trusted local forwarder adds.
 - **Same-host reverse proxy.** A proxy on the same host that forwards to a loopback or gateway address and adds no
   forwarding header makes remote callers look local. Never front an auth-off runtime with a reverse proxy.
