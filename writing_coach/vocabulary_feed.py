@@ -1,7 +1,7 @@
 """Task C: the Daily Vocabulary Feed candidate/selection foundation.
 
 The Feed is a filtered, day-seeded view over the canonical vocabulary catalog
-(``writing_coach.vocabulary_library.all_vocabulary_entries``) by default, or a
+(``writing_coach.vocabulary_library.published_vocabulary_entries``) by default, or a
 repository-supplied shared pool. It is not a second content set and it does
 not create a second card projection.
 ``vocabulary_card_from_feed_candidate`` is a direct, undecorated call into
@@ -41,7 +41,7 @@ from datetime import date
 from typing import Any
 
 from writing_coach import vocabulary_cards
-from writing_coach.vocabulary_library import all_vocabulary_entries, normalize_vocabulary_word
+from writing_coach.vocabulary_library import normalize_vocabulary_word, published_vocabulary_entries
 
 
 @dataclass(frozen=True)
@@ -114,7 +114,7 @@ def daily_feed_candidates(
     """Up to ``count`` catalog entries for ``language_code``, deterministically
     ordered per ``(learner_context, language_code, on_date)``.  An optional
     repository-provided ``candidate_pool`` keeps imported content on the same
-    deterministic selector; omission preserves the static compatibility pool.
+    deterministic selector; omission uses the published static pool, never an unpublished seed.
 
     Filters to ``learner_context.target_level``/``framework`` when supplied,
     falling back to the full per-language pool rather than returning an empty
@@ -124,7 +124,7 @@ def daily_feed_candidates(
 
     language = str(language_code or "").strip().casefold()
     pool = _narrowed_pool(
-        list(candidate_pool) if candidate_pool is not None else all_vocabulary_entries(language),
+        list(candidate_pool) if candidate_pool is not None else published_vocabulary_entries(language),
         learner_context,
     )
 

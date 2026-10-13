@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from dataclasses import replace
 
 import httpx
 import pytest
@@ -19,6 +20,48 @@ import pytest
 import app as app_module
 from writing_coach.becoming_library import LibraryVocabularyIn
 from writing_coach.core.request_context import LANGUAGE_CODE_CTX
+from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
+from writing_coach.vocabulary_source_import import (
+    detect_vocabulary_mapping,
+    normalize_vocabulary_rows,
+    parse_vocabulary_source,
+)
+
+_ADMISSION = {
+    "rights_status": "licensed", "completeness": "complete", "review_status": "approved",
+    "publication_attested": True, "attested_by": "admin@example.com",
+}
+_PUBLISHED = {
+    "en": ("feed-en", ["allocate,phan bo,A1", "benefit,loi ich,A1", "client,khach,B1", "draft,ban nhap,B1"]),
+    "zh": ("feed-zh", ["你好,xin chao,A1", "谢谢,cam on,A1", "再见,tam biet,A1"]),
+}
+
+
+@pytest.fixture(autouse=True)
+def _published_catalogue(tmp_path, monkeypatch):
+    """The Feed serves published collections only, so these routes need one per language."""
+
+    repository = sqlite_vocabulary_repository(tmp_path / "vocabulary.db")
+    repository.initialize()
+    for language, (collection_id, rows) in _PUBLISHED.items():
+        text = chr(10).join(["word,meaning,level", *rows]) + chr(10)
+        parsed = parse_vocabulary_source("pack.csv", text.encode("utf-8"))
+        detected = detect_vocabulary_mapping(parsed)
+        normalized = normalize_vocabulary_rows(
+            parsed, mapping=detected.mapping, language_code=language, meaning_language="vi",
+            collection_framework="TOEIC", collection_level="B1",
+        )
+        repository.import_source(
+            collection={
+                "id": collection_id, "title": collection_id, "language_code": language, "framework": "TOEIC",
+                "level": "B1", "catalog_status": "pending_review", "origin": "imported", "provenance": {"publisher": "test"},
+            },
+            source=normalized, records=normalized["records"], mapping=detected.mapping, imported_by="admin@example.com",
+        )
+        repository.finalize_collection_publication(collection_id, admission=_ADMISSION)
+    monkeypatch.setattr(
+        app_module, "_persistence_runtime", replace(app_module._persistence_runtime, vocabulary_repository=repository)
+    )
 
 
 def _seed_saved_word(language_code: str, word: str) -> None:
@@ -91,7 +134,7 @@ def test_feed_target_level_narrows_the_pool_when_matches_exist() -> None:
 
 
 def test_feed_target_level_does_not_starve_the_feed_when_nothing_matches() -> None:
-    # No seed entry currently carries level "C2"; the pool must fall back to
+    # No published entry carries level "C2"; the pool must fall back to
     # the full per-language catalog rather than returning nothing.
     response = _get("/api/vocabulary/feed?language_code=en&target_level=C2")
     body = response.json()

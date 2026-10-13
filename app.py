@@ -172,7 +172,7 @@ from writing_coach.vocabulary_feed import (
     vocabulary_card_from_feed_candidate,
 )
 from writing_coach.vocabulary_library import (
-    all_vocabulary_entries,
+    published_vocabulary_entries,
     get_vocabulary_collection,
     list_vocabulary_collections,
     normalize_vocabulary_word,
@@ -4454,7 +4454,7 @@ def _persisted_vocabulary_collection(
 
 
 def _vocabulary_feed_pool(language_code: str) -> list[dict[str, Any]]:
-    static_entries = all_vocabulary_entries(language_code)
+    static_entries = published_vocabulary_entries(language_code)
     repository = _persistence_runtime.vocabulary_repository
     persisted_entries: list[dict[str, Any]] = []
     try:

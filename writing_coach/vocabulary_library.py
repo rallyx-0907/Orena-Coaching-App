@@ -16,7 +16,9 @@ learner-facing Library publication.  ``list_vocabulary_collections`` and
 explicit ``catalog_status`` is ``published``.  This prevents a 35-word seed
 from being presented as a finished ``3000 Common Words`` or ``600 TOEIC
 Essential`` pack.  ``all_vocabulary_entries`` remains the raw static catalog
-for deterministic Feed/content tooling; it is not the public Library list.
+for authoring/test tooling only; it is not a learner source. Learner reads of
+static entries go through ``published_vocabulary_entries`` and
+``vocabulary_entry_for``.
 
 Level coverage is a property of a collection's entries, not an instruction to
 make one top-level Library card per level.  The small CEFR coverage sources are
@@ -313,6 +315,25 @@ _CATALOG_BY_ID = _build_catalog(_RAW_COLLECTIONS)
 _LEARNER_CATALOG_BY_ID = _build_learner_catalog(_CATALOG_BY_ID)
 _WORD_INDEX = _build_word_index(_CATALOG_BY_ID)
 _ENTRY_INDEX = _build_entry_index(_CATALOG_BY_ID)
+# What a learner may be shown: members of a published collection only.
+_LEARNER_ENTRY_INDEX = _build_entry_index(_LEARNER_CATALOG_BY_ID)
+_LEARNER_WORD_INDEX = _build_word_index(_LEARNER_CATALOG_BY_ID)
+
+
+def install_static_catalog(raw_collections: Sequence[Mapping[str, Any]]) -> None:
+    """Rebuild every static view from ``raw_collections``. For tests only.
+
+    Keeps the raw, learner-catalog, entry and word indexes consistent in one
+    call so a test never patches a private index by itself."""
+
+    global _CATALOG_BY_ID, _LEARNER_CATALOG_BY_ID, _WORD_INDEX, _ENTRY_INDEX
+    global _LEARNER_ENTRY_INDEX, _LEARNER_WORD_INDEX
+    _CATALOG_BY_ID = _build_catalog(raw_collections)
+    _LEARNER_CATALOG_BY_ID = _build_learner_catalog(_CATALOG_BY_ID)
+    _WORD_INDEX = _build_word_index(_CATALOG_BY_ID)
+    _ENTRY_INDEX = _build_entry_index(_CATALOG_BY_ID)
+    _LEARNER_ENTRY_INDEX = _build_entry_index(_LEARNER_CATALOG_BY_ID)
+    _LEARNER_WORD_INDEX = _build_word_index(_LEARNER_CATALOG_BY_ID)
 
 
 def _summary(collection: Mapping[str, Any]) -> dict[str, Any]:
@@ -405,23 +426,42 @@ def all_vocabulary_entries(language_code: str) -> list[dict[str, Any]]:
     return entries
 
 
-def vocabulary_entry_for(language_code: str, normalized_word: str) -> dict[str, Any] | None:
-    """The curated entry for one word, from the load-time index.
+def published_vocabulary_entries(language_code: str) -> list[dict[str, Any]]:
+    """Entries of the published static collections for ``language_code``.
 
-    Equivalent to searching `all_vocabulary_entries(language)` for the word,
-    without the scan - which is what made listing a learner's saved words cost
+    The learner-facing counterpart of ``all_vocabulary_entries``: a seed or
+    otherwise unpublished source contributes nothing, so a learner surface can
+    never show a word that no published collection carries.
+    """
+
+    language = str(language_code or "").strip().casefold()
+    entries: list[dict[str, Any]] = []
+    for collection in _LEARNER_CATALOG_BY_ID.values():
+        if collection["language_code"] == language:
+            entries.extend(dict(entry) for entry in collection["entries"])
+    return entries
+
+
+def vocabulary_entry_for(language_code: str, normalized_word: str) -> dict[str, Any] | None:
+    """The learner-visible static entry for one word, from the load-time index.
+
+    Only members of a published collection are indexed, so an unpublished seed
+    word is ``None`` here exactly as it is in the Library. Equivalent to
+    searching ``published_vocabulary_entries(language)`` for the word, without
+    the scan - which is what made listing a learner's saved words cost
     O(words x catalogue).
     """
 
     language = str(language_code or "").strip().casefold()
     word = normalize_vocabulary_word(normalized_word)
-    entry = _ENTRY_INDEX.get((language, word))
+    entry = _LEARNER_ENTRY_INDEX.get((language, word))
     return dict(entry) if entry is not None else None
 
 
 def collection_ids_for_word(language_code: str, normalized_word: str) -> list[str]:
-    """Curated collection ids containing ``normalized_word``, or ``[]`` when
-    the word is not in any curated collection for that language.
+    """Published curated collection ids containing ``normalized_word``, or
+    ``[]`` when the word is in no published collection for that language.
+    An unpublished seed collection is never reported.
 
     Built from the load-time index; no database membership table and no
     invented match.
@@ -429,4 +469,4 @@ def collection_ids_for_word(language_code: str, normalized_word: str) -> list[st
 
     language = str(language_code or "").strip().casefold()
     word = normalize_vocabulary_word(normalized_word)
-    return list(_WORD_INDEX.get((language, word), []))
+    return list(_LEARNER_WORD_INDEX.get((language, word), []))
