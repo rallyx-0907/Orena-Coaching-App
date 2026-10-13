@@ -281,6 +281,37 @@ def test_a_url_job_fetches_through_the_guarded_fetcher(engine_parts):
     assert article["source"]["canonical_url"] == "https://example.com/news/rain"
 
 
+def _url_candidate(engine_parts, page: str):
+    engine, content, jobs = engine_parts
+    engine.adapters["url"] = lambda: DirectUrlAdapter(fetcher=_fetcher(page))
+    engine.submit(SubmittedInput(kind="url", url="https://example.com/news/a", rights={}), actor="admin@example.com")
+    outcome = engine.process(jobs.claim("worker-1"))
+    return content.get_article(outcome["article_id"])
+
+
+def test_a_url_candidate_is_analysed_on_the_extracted_article_only(engine_parts):
+    from reading_article_fixtures import VOA_LIKE
+
+    article = _url_candidate(engine_parts, VOA_LIKE)
+    assert "Related" not in article["body"] and "Beginning Level" not in article["body"]
+    assert article["word_count"] == len(article["body"].split())
+    assert article["analysis"]["extraction"]["confidence"] == "high"
+    assert "extraction_low_confidence" not in article["analysis"]["quality_issues"]
+
+
+def test_an_uncertain_extraction_is_shown_to_the_admin_and_never_auto_published(engine_parts):
+    page = "<html><body>" + "".join(
+        f"<article><h2><a href='/s{n}'>Story headline number {n}</a></h2><p>Short teaser {n} about today.</p></article>"
+        for n in range(6)
+    ) + "</body></html>"
+    article = _url_candidate(engine_parts, page)
+    assert "extraction_low_confidence" in article["analysis"]["quality_issues"]
+    assert article["analysis"]["extraction"]["confidence"] == "low"
+    assert article["status"] == "needs_review"
+    assert article["analysis"]["admission"]["decision"] == "review"
+    assert "extraction_low_confidence" in article["analysis"]["admission"]["reasons"]
+
+
 def test_the_same_text_twice_never_becomes_two_candidates(engine_parts):
     engine, content, jobs = engine_parts
     engine.submit(SubmittedInput(kind="text", text=ARTICLE, rights={}), actor="admin@example.com")
