@@ -477,3 +477,77 @@ def test_admin_content_list_is_unchanged_by_the_feature(learner) -> None:
 
     assert all(not is_reserved_collection_id(c["id"]) for c in learner.list_collections("en", status=None))
     assert vocabulary_record({"id": "a", "status": "published"})["id"] == "a"
+
+
+# ------------------------------------------------------------------ content comes from a qualifying membership
+
+
+def put_csv(repository, collection_id, header, row, *, status="published", language="en"):
+    parsed = parse_vocabulary_source("w.csv", f"{header}\n{row}\n".encode())
+    mapping = detect_vocabulary_mapping(parsed).mapping
+    normalized = normalize_vocabulary_rows(parsed, mapping=mapping, language_code=language, meaning_language="vi")
+    repository.import_source(
+        collection={"id": collection_id, "title": collection_id, "language_code": language,
+                    "catalog_status": "pending_review", "origin": "imported", "provenance": {"admission": dict(VALID)}},
+        source=normalized, records=normalized["records"], mapping=mapping, imported_by="t",
+    )
+    _force_status(repository, collection_id, status)
+
+
+def definitions(item):
+    return [d.get("text", "") for d in item["detailed_definitions"]]
+
+
+def test_a_withdrawn_sets_text_in_the_shared_row_is_not_shown_when_a_qualifying_snapshot_exists(repo) -> None:
+    head = "English|Vietnamese|Definition|Level"
+    put_csv(repo, "a1", head, "shared|chung|definition of set A1|A1")
+    put_csv(repo, "a2", head, "shared|chung|definition of set A2|B2", status="pending_review")
+    repo.finalize_collection_publication("a2", admission=VALID)
+    repo.set_collection_status("a1", "unpublished", actor="mod")
+    shown = repo.general_page("en")["entries"][0]
+    assert definitions(shown) == ["definition of set A2"], "the published snapshot, not the withdrawn set's row"
+    # and a later change of the shared row (an unreviewed merge) does not reach General
+    from sqlalchemy import text
+
+    with repo.engine.begin() as connection:
+        connection.execute(text("UPDATE vocabulary_entries SET detailed_definitions = :d"),
+                           {"d": json.dumps([{"text": "UNREVIEWED text merged later", "origin": "source"}])})
+    assert definitions(repo.general_page("en")["entries"][0]) == ["definition of set A2"]
+    assert definitions(repo.get_collection("a2")["entries"][0]) == ["definition of set A2"], "same as the normal page"
+
+
+def test_the_chosen_snapshot_is_deterministic_snapshot_first_then_lowest_collection_id(repo) -> None:
+    head = "English|Vietnamese|Definition"
+    put_csv(repo, "a1", head, "shared|chung|raw definition of a1")
+    put_csv(repo, "a3", head, "shared|chung|snapshot of a3", status="pending_review")
+    put_csv(repo, "a2", head, "shared|chung|snapshot of a2", status="pending_review")
+    _force_status(repo, "a3", "published")
+    _force_status(repo, "a2", "published")
+    for _ in range(3):
+        assert definitions(repo.general_page("en")["entries"][0]) == ["snapshot of a2"]
+    repo.set_collection_status("a2", "unpublished", actor="mod")
+    assert definitions(repo.general_page("en")["entries"][0]) == ["snapshot of a3"], "a non-qualifying snapshot is never used"
+    repo.set_collection_status("a3", "unpublished", actor="mod")
+    assert definitions(repo.general_page("en")["entries"][0]) == ["raw definition of a1"]
+
+
+def test_a_membership_level_override_is_shown_filtered_and_listed(repo) -> None:
+    head = "English|Vietnamese|Level"
+    put_csv(repo, "a1", head, "shared|chung|A1")
+    put_csv(repo, "a2", head, "shared|chung|C1", status="pending_review")
+    repo.finalize_collection_publication("a2", admission=VALID)
+    both = repo.general_page("en")["entries"][0]
+    assert both["level"] == "C1", "the snapshot-bearing qualifying membership is the one drawn"
+    assert repo.general_summary("en")["levels"] == ["A1", "C1"]
+    repo.set_collection_status("a1", "unpublished", actor="mod")
+    assert repo.general_summary("en")["levels"] == ["C1"], "the entry row's own A1 is no longer a level of any qualifying set"
+    assert general_terms(repo, level="c1") == ["shared"] and general_terms(repo, level="a1") == []
+
+
+def test_a_general_item_equals_the_normal_collection_item_for_the_same_entry(repo) -> None:
+    put_csv(repo, "only", "English|Vietnamese|POS|Definition|Level", "table|bàn|noun|a piece of furniture|A2")
+    normal = repo.get_collection("only")["entries"][0]
+    general = repo.general_page("en")["entries"][0]
+    assert general["part_of_speech"] == normal["part_of_speech"] == "noun"
+    drop = {"collection_id", "position"}
+    assert {k: v for k, v in general.items() if k not in drop} == {k: v for k, v in normal.items() if k not in drop}

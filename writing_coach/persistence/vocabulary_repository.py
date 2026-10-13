@@ -166,6 +166,25 @@ def _admission_qualifies(provenance: Any) -> bool:
     return True
 
 
+def _in_collections(collection_ids: list[str]):
+    """One predicate over a membership's collection: an OR of `IN` chunks, so COUNT, OFFSET and LIMIT see one set."""
+
+    step = max(1, int(_GENERAL_ID_CHUNK))
+    return or_(*[
+        VocabularyCollectionMembership.collection_id.in_(collection_ids[i:i + step])
+        for i in range(0, len(collection_ids), step)
+    ])
+
+
+def _effective_level():
+    """A membership's level when it has one, else the entry's: what `_collection_stats` calls the effective level."""
+
+    return func.coalesce(
+        func.nullif(VocabularyCollectionMembership.membership_metadata["level"].as_string(), ""),
+        VocabularyEntry.level,
+    )
+
+
 @lru_cache(maxsize=32)
 def _vocabulary_revision_is_usable(current_revision: str) -> bool:
     """Accept the vocabulary migration and any later linear descendant.
@@ -1538,7 +1557,8 @@ class SQLAlchemyVocabularyRepository:
     # enumerates real collections (the operator listing, content packs, the service-token guard) can ever see it.
 
     def _general_predicate(self, session: Session, language: str):
-        """Entries of `language` with a membership in a published collection whose admission passes the publish gate."""
+        """`(predicate, ids)`: entries of `language` with a membership in a published collection whose admission passes
+        the publish gate, and those qualifying collection ids; `(None, [])` when there are none."""
 
         rows = session.execute(
             select(VocabularyCollection.id, VocabularyCollection.provenance).where(
@@ -1551,26 +1571,25 @@ class SQLAlchemyVocabularyRepository:
             if not is_reserved_collection_id(collection_id) and _admission_qualifies(provenance)
         )
         if not ids:
-            return None
+            return None, []
         if len(ids) > _GENERAL_ID_LIMIT:
             _logger.error("General catalogue (%s): %d qualifying collections exceed %d; withheld, not truncated",
                           language, len(ids), _GENERAL_ID_LIMIT)
             raise VocabularyContentUnavailable("Too many published collections for the General catalogue.")
-        step = max(1, int(_GENERAL_ID_CHUNK))
-        chunks = [ids[i:i + step] for i in range(0, len(ids), step)]
-        member = or_(*[
-            exists().where(
-                VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
-                VocabularyCollectionMembership.collection_id.in_(chunk),
-            )
-            for chunk in chunks
-        ])
-        return and_(VocabularyEntry.language_code == language, member)
+        member = exists().where(VocabularyCollectionMembership.entry_id == VocabularyEntry.id, _in_collections(ids))
+        return and_(VocabularyEntry.language_code == language, member), ids
 
-    def _general_summary_in(self, session: Session, language: str, predicate: Any) -> dict[str, Any]:
+    def _general_summary_in(self, session: Session, language: str, predicate: Any, ids: list[str]) -> dict[str, Any]:
         count = int(session.scalar(select(func.count()).select_from(VocabularyEntry).where(predicate)) or 0)
+        # The effective levels of the qualifying memberships (a membership's own level wins over the entry's), as
+        # `_collection_stats` reads them for a real collection - never the shared row's level alone.
         levels = [
-            value for value in session.scalars(select(VocabularyEntry.level).where(predicate).distinct()) if value
+            value for value in session.scalars(
+                select(_effective_level()).select_from(VocabularyCollectionMembership)
+                .join(VocabularyEntry, VocabularyEntry.id == VocabularyCollectionMembership.entry_id)
+                .where(VocabularyEntry.language_code == language, _in_collections(ids))
+                .distinct()
+            ) if value
         ]
         clean = sorted({_text(value) for value in levels if _text(value)}, key=_level_sort_key)
         return {
@@ -1598,10 +1617,10 @@ class SQLAlchemyVocabularyRepository:
         if not language:
             return None
         with Session(self.engine) as session:
-            predicate = self._general_predicate(session, language)
+            predicate, ids = self._general_predicate(session, language)
             if predicate is None:
                 return None
-            summary = self._general_summary_in(session, language, predicate)
+            summary = self._general_summary_in(session, language, predicate, ids)
             return summary if summary["item_count"] > 0 else None
 
     def general_page(
@@ -1614,10 +1633,10 @@ class SQLAlchemyVocabularyRepository:
         if not language:
             return None
         with Session(self.engine) as session:
-            predicate = self._general_predicate(session, language)
+            predicate, ids = self._general_predicate(session, language)
             if predicate is None:
                 return None
-            summary = self._general_summary_in(session, language, predicate)
+            summary = self._general_summary_in(session, language, predicate, ids)
             if summary["item_count"] <= 0:
                 return None
             conditions = [predicate]
@@ -1627,7 +1646,12 @@ class SQLAlchemyVocabularyRepository:
                 conditions.append(or_(VocabularyEntry.term.ilike(pattern), VocabularyEntry.normalized_term.ilike(pattern)))
             wanted_level = _text(level).casefold()
             if wanted_level:
-                conditions.append(func.lower(VocabularyEntry.level) == wanted_level)
+                # Any qualifying membership's effective level, the same reading the levels list uses.
+                conditions.append(exists().where(
+                    VocabularyCollectionMembership.entry_id == VocabularyEntry.id,
+                    _in_collections(ids),
+                    func.lower(_effective_level()) == wanted_level,
+                ))
             total = int(session.scalar(select(func.count()).select_from(VocabularyEntry).where(*conditions)) or 0)
             start = max(0, offset)
             size = max(0, min(limit, 5000))
@@ -1638,15 +1662,54 @@ class SQLAlchemyVocabularyRepository:
                     .offset(start).limit(size)
                 )
             )
+            # Each item is drawn from a QUALIFYING membership, as a real collection page draws from its own: the
+            # shared row can carry text merged in after a set's attestation, which the membership snapshot protects.
+            chosen = self._general_memberships(session, [entry.id for entry in rows], ids)
             items = []
             for index, entry in enumerate(rows, start=1):
                 item = _entry_dict(entry)
+                membership = chosen.get(entry.id)
+                if membership is not None:
+                    metadata = _copy_json(membership.membership_metadata, {}) or {}
+                    _apply_content_snapshot(item, metadata.get("content_snapshot"))
+                    for field in ("level", "framework", "topic"):
+                        if metadata.get(field):
+                            item[field] = metadata[field]
                 item["collection_id"] = summary["id"]
                 item["position"] = start + index
                 items.append(item)
             summary["entries"] = self._with_localizations(session, items)
             summary["pagination"] = {"limit": size, "offset": start, "total": total, "has_more": start + len(rows) < total}
             return summary
+
+    @staticmethod
+    def _general_memberships(
+        session: Session, entry_ids: list[uuid.UUID], collection_ids: list[str]
+    ) -> dict[uuid.UUID, VocabularyCollectionMembership]:
+        """The membership each entry of a page is drawn from, chosen set-wise (no query per entry).
+
+        Only memberships of qualifying collections are considered. Among an entry's qualifying memberships the rule is
+        fixed and deterministic: one that carries a content snapshot comes before one that does not (so the shared row
+        is never shown when a qualifying snapshot exists), then the lowest collection id."""
+
+        chosen: dict[uuid.UUID, VocabularyCollectionMembership] = {}
+        step = max(1, int(_GENERAL_TERM_CHUNK))
+        for i in range(0, len(entry_ids), step):
+            rows = session.scalars(
+                select(VocabularyCollectionMembership).where(
+                    VocabularyCollectionMembership.entry_id.in_(entry_ids[i:i + step]),
+                    _in_collections(collection_ids),
+                )
+            )
+            for membership in rows:
+                has_snapshot = isinstance(
+                    (_copy_json(membership.membership_metadata, {}) or {}).get("content_snapshot"), Mapping
+                )
+                rank = (0 if has_snapshot else 1, membership.collection_id)
+                current = chosen.get(membership.entry_id)
+                if current is None or rank < current[0]:
+                    chosen[membership.entry_id] = (rank, membership)
+        return {entry_id: pair[1] for entry_id, pair in chosen.items()}
 
     def general_contains(self, language_code: str, normalized_terms: Iterable[str]) -> set[str]:
         """Which of these normalized terms are in the General catalogue (bounded by what the caller asks about)."""
@@ -1658,7 +1721,7 @@ class SQLAlchemyVocabularyRepository:
         if not language or not wanted:
             return found
         with Session(self.engine) as session:
-            predicate = self._general_predicate(session, language)
+            predicate, _ids = self._general_predicate(session, language)
             if predicate is None:
                 return found
             step = max(1, int(_GENERAL_TERM_CHUNK))

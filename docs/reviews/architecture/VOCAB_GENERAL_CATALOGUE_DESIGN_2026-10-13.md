@@ -269,3 +269,6 @@ branches and are not touched here.
   group `vocabulary`), read per request through `policies.value`. Off: General is absent from the list and its detail
   answers 404; search, the word page, the Feed and every real collection are unchanged. No cache (H4).
 - **P2-6** the "published with an invalid admission" case is a live test; the gate is not weakened to the status flag.
+- **Fix after browser verification.** Items are drawn from a qualifying membership (snapshot, level, framework, topic),
+  chosen snapshot-first then lowest collection id; levels and the level filter use the effective level of qualifying
+  memberships. See D-188 "Content shown". Section 2's "Entry content shown: the entry row" is superseded.

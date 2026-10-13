@@ -6032,6 +6032,16 @@ learner-surface verification. Changes what reaches learners.
 - **Persistence.** No migration, no schema change, no stored row, no cache. Reserved id `orena-general-<language_code>`
   (NFKC, trim, case-folded prefix match), refused inside `import_source` and at the Admin import, the service-token import
   and the content-pack importer; a stored row under it is ignored (fail closed). Not editable, not exportable, no Admin row.
+- **Content shown (fix after browser verification).** A General item is drawn from a QUALIFYING membership (a
+  published collection with a valid admission), exactly as a real collection page draws from its own: that membership's
+  `content_snapshot` is applied, and its level, framework and topic override the shared row's. The shared entry row is
+  never shown when a qualifying snapshot exists, because text merged into it after a set's attestation (or left by a
+  withdrawn set) is not covered by any qualifying attestation. When an entry has several qualifying memberships the
+  choice is fixed: a membership carrying a snapshot comes first, then the lowest collection id (no publication time is
+  stored, so "earliest published" is not available). A non-qualifying membership is never used. It is chosen set-wise per
+  page (one query per 500 entries, no query per entry). The levels list and the level filter read the effective level
+  of any qualifying membership (the membership's own level, else the entry's), as `_collection_stats` does, instead of
+  the shared row's level alone; search and `general_contains` use the term, which a snapshot cannot change (same identity).
 - **Kill switch.** The D-172 policy `vocabulary.general_catalogue_enabled` (default on, read per request). Off hides only
   General: absent from the list, detail 404; search, the word page and real collections unchanged.
 - **Query.** One combined predicate (OR of chunked `EXISTS ... IN`), ordered `(normalized_term, identity_key)`; more than
