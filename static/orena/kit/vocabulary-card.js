@@ -97,11 +97,11 @@ function section(titleKey, body, extra = '') {
 }
 
 function playDisc(region = '') {
-  return html`<button type="button" class="c-vcard__disc c-vcard__disc--play" data-play${region ? raw(` data-region="${region}"`) : ''} aria-label="${t('playWord')}">${raw(icon('volume-2', { size: 17 }))}</button>`;
+  return html`<button type="button" class="c-vcard__disc c-vcard__disc--play" data-play${region ? raw(` data-region="${region}"`) : ''} aria-label="${t('playWord')}">${raw(icon('volume-2', { size: 15 }))}</button>`;
 }
 
 function saveDisc(learner) {
-  return html`<button type="button" class="${cls('c-vcard__disc', learner?.saved && 'is-saved')}" data-save aria-pressed="${learner?.saved ? 'true' : 'false'}" aria-label="${t(learner?.saved ? 'unsaveWord' : 'saveWord')}">${raw(icon('bookmark-check', { size: 17 }))}</button>`;
+  return html`<button type="button" class="${cls('c-vcard__disc', learner?.saved && 'is-saved')}" data-save aria-pressed="${learner?.saved ? 'true' : 'false'}" aria-label="${t(learner?.saved ? 'unsaveWord' : 'saveWord')}">${raw(icon('bookmark-check', { size: 15 }))}</button>`;
 }
 
 function headword(model, size = '') {
@@ -131,23 +131,16 @@ export function levelLabel(model) {
   return `HSK ${level}`;
 }
 
-/* The top row: the level tag (and, on the English card, its source), the discs on the right. */
-/* The top row as the design draws it: the level tag (and, on the English card, its source) on the left, the part of
-   speech on the right - one row; at a narrow width it may wrap, the part of speech staying the row's last item. */
-function topRow(model) {
+/* The top row: the level tag (and, on the English card, its source) on the left; the part of speech, then the
+   word's actions - play, and Save on the cards a word is met on - on the right, one row (the human, 2026-10-13: the
+   actions top right and smaller, so the illustration takes the room their own row had). At a narrow width the row
+   may wrap, the part of speech and the actions staying together as its last item. */
+function topRow(model, save) {
   const tags = [
     model.level ? html`<span class="c-vcard__level">${levelLabel(model)}</span>` : '',
     model.script !== 'hanzi' && model.levelSource ? html`<span class="c-vcard__source">${model.levelSource}</span>` : '',
   ];
-  const pos = posLine(model);
-  if (!String(tags.join('')) && !String(pos)) return '';
-  return html`<div class="c-vcard__top"><div class="c-vcard__tags">${tags}</div>${pos}</div>`;
-}
-
-/* The word's actions - play, and Save on the cards a word is met on - in a quiet row under its reading, so the
-   design's header stays as drawn (D-180: derivation recorded in this file's header). */
-function actionRow(save) {
-  return html`<div class="c-vcard__actions">${playDisc()}${save || ''}</div>`;
+  return html`<div class="c-vcard__top"><div class="c-vcard__tags">${tags}</div><div class="c-vcard__top-end">${posLine(model)}<div class="c-vcard__actions">${playDisc()}${save || ''}</div></div></div>`;
 }
 
 /* The meaning panel. Still being looked up: the kit's skeleton bones, never "no meaning". The word's
@@ -207,7 +200,6 @@ function enFront(model, ctx) {
     <div class="c-vcard__ident">
       ${headword(model)}
       ${hasIpaRows ? ipaRows(model) : (model.pronunciation.text ? html`<div class="c-vcard__ipa"><span>${model.pronunciation.text}</span></div>` : '')}
-      ${actionRow(ctx.save)}
     </div>
     ${illustration(model)}
     ${meaningSection(model, ctx)}
@@ -235,6 +227,13 @@ function radicalSection(model) {
   </div>`)}`);
 }
 
+/* Meaning and Radical side by side (the human, 2026-10-13): two columns while each keeps its width, one under the
+   other when the card is too narrow for both. */
+function lead(...cells) {
+  const present = cells.filter((cell) => String(cell));
+  return present.length ? html`<div class="c-vcard__lead">${present}</div>` : '';
+}
+
 function zhFront(model, ctx) {
   const lang = langAttr(model.language);
   const measure = model.classifiers.length
@@ -249,10 +248,8 @@ function zhFront(model, ctx) {
       ${headword(model)}
       ${model.hanViet ? html`<div class="c-vcard__hanviet"><span class="c-vcard__label">${t('hanVietLabel')}</span><span>${model.hanViet}</span></div>` : ''}
     </div>
-    ${actionRow(ctx.save)}
     ${illustration(model)}
-    ${meaningSection(model, ctx)}
-    ${radicalSection(model)}
+    ${lead(meaningSection(model, ctx), radicalSection(model))}
     ${pair.length ? html`<div class="c-vcard__pair">${pair}</div>` : ''}`;
 }
 
@@ -325,15 +322,15 @@ export function vocabularyCard(model, { mode = 'detail', learner = null, slots =
   // Save on the cards a word is met on; in Review, where every word is already saved, the bookmark is only a
   // remove toggle, drawn saved (D-179, the exception to "Save is not Review"; the pinned frame draws it).
   const save = mode === 'detail' || mode === 'feed' ? saveDisc(learner) : '';
-  const ctx = { save, meaningLabel: slots.meaningLabel, pending: slots.meaningPending };
+  const ctx = { meaningLabel: slots.meaningLabel, pending: slots.meaningPending };
   const front = han ? zhFront(model, ctx) : enFront(model, ctx);
   // Each face: a head that stays (the design's top row / the back's title line), a body that alone scrolls when the
   // face holds more than fits, and a foot with the turn action (rule 49).
-  const frontHead = topRow(model);
+  const frontHead = topRow(model, save);
   const backFace = back(model, { learner, mode });
   return html`<article class="${cls('c-vcard', `c-vcard--${mode}`, han && 'c-vcard--han')}" data-vcard-mode="${mode}" data-face="front">
     <div class="c-vcard__face c-vcard__face--front" id="${id}-front">
-      ${frontHead ? html`<div class="c-vcard__head">${frontHead}</div>` : ''}
+      <div class="c-vcard__head">${frontHead}</div>
       <div class="c-vcard__body">${front}${slots.strokes || ''}</div>
       <div class="c-vcard__foot">
         ${footer(learner, slots.footer)}

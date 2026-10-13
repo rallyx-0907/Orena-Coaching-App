@@ -176,9 +176,9 @@ const enBack = faceOf(enCard, 'back');
 // EN front (Main.dc.html): level + source, POS (native · localized), headword, UK/US IPA rows with play,
 // Meaning (support meaning, English definition), Word family, Synonyms / antonyms, See examples ->.
 inOrder(enFront, [
-  'c-vcard__top', 'c-vcard__level">C1<', 'Oxford 5000', 'c-vcard__pos', 'adjective', 'Tính từ',
-  'c-vcard__word', '>resilient<', 'data-region="uk"', '<b>Anh</b>', '/rɪˈzɪliənt/', 'data-region="us"', '<b>Mỹ</b>', '/rɪˈzɪljənt/',
+  'c-vcard__top', 'c-vcard__level">C1<', 'Oxford 5000', 'c-vcard__top-end', 'c-vcard__pos', 'adjective', 'Tính từ',
   'c-vcard__actions', 'data-play', 'data-save',
+  'c-vcard__word', '>resilient<', 'data-region="uk"', '<b>Anh</b>', '/rɪˈzɪliənt/', 'data-region="us"', '<b>Mỹ</b>', '/rɪˈzɪljənt/',
   '<figure class="c-vcard__art" role="img" aria-label="Mầm cây vươn lên qua khe nứt mặt đất trong gió" data-art="sprout-through-crack">', '<svg',
   'data-section="sectionMeaning"', '>Nghĩa<', 'kiên cường; có khả năng phục hồi nhanh', 'able to recover quickly',
   'data-section="sectionWordFamily"', '>Họ từ<', 'resilience', '(n)', 'resiliently', '(adv)',
@@ -205,11 +205,11 @@ const zhBack = faceOf(zhCard, 'back');
 // ZH front (Chinese.dc.html): HSK tag, POS (名词 · danh từ), the Hanzi with each pinyin over it, Hán Việt,
 // Meaning (support + English), Radical (木 once, then each character = parts · strokes), Measure word, Related words.
 inOrder(zhFront, [
-  'c-vcard__top', 'c-vcard__level">HSK 4<', 'c-vcard__pos', '名词', 'Danh từ',
-  '<ruby>森<rt>sēn</rt></ruby><ruby>林<rt>lín</rt></ruby>', 'Hán Việt', 'SÂM LÂM',
+  'c-vcard__top', 'c-vcard__level">HSK 4<', 'c-vcard__top-end', 'c-vcard__pos', '名词', 'Danh từ',
   'c-vcard__actions', 'data-play', 'data-save',
+  '<ruby>森<rt>sēn</rt></ruby><ruby>林<rt>lín</rt></ruby>', 'Hán Việt', 'SÂM LÂM',
   'data-art="ink-pine-trees"',
-  'data-section="sectionMeaning"', 'rừng, rừng rậm', 'forest',
+  'c-vcard__lead', 'data-section="sectionMeaning"', 'rừng, rừng rậm', 'forest',
   'data-section="sectionRadical"', '>木<', 'mù', 'Mộc', '(cây)', '森 = 木 + 木 + 木', '12 nét', '林 = 木 + 木', '8 nét',
   'data-section="sectionMeasureWord"', 'Lượng từ', '一片森林', 'yí piàn sēnlín',
   'data-section="sectionRelated"', 'Từ liên quan', '树林', 'shùlín', 'rừng cây', '森林火灾', 'cháy rừng',
@@ -381,15 +381,15 @@ const desk = sizes(at520);
 // s = 1 at a 520px card: the design's own values.
 assert.deepEqual(
   Object.fromEntries(Object.entries(desk).map(([k, v]) => [k, Math.round(v * 100) / 100])),
-  { headwordEn: 60, headwordZh: 104, meaning: 22, definition: 15, body: 15, exampleEn: 19, exampleZh: 24, label: 12, level: 13, chip: 13, ipa: 17, regionLabel: 12, artEn: 180, artZh: 150, radical: 56, pad: 40 },
+  { headwordEn: 60, headwordZh: 104, meaning: 22, definition: 15, body: 15, exampleEn: 19, exampleZh: 24, label: 12, level: 13, chip: 13, ipa: 17, regionLabel: 12, artEn: 220, artZh: 190, radical: 56, pad: 40 },
   'at a 520px card everything is the design value (s = 1)',
 );
 const phoneSizes = sizes(at328);
 const s328 = 328 / 520;
 assert.ok(Math.abs(phoneSizes.headwordEn - 60 * s328) < 0.1, `EN headword scales: ${phoneSizes.headwordEn}`);
 assert.ok(Math.abs(phoneSizes.headwordZh - 104 * s328) < 0.1, `ZH headword scales: ${phoneSizes.headwordZh}`);
-assert.ok(Math.abs(phoneSizes.artEn - 180 * s328) < 0.1, `EN illustration scales: ${phoneSizes.artEn}`);
-assert.ok(Math.abs(phoneSizes.artZh - 150 * s328) < 0.1, `ZH illustration scales: ${phoneSizes.artZh}`);
+assert.ok(Math.abs(phoneSizes.artEn - 220 * s328) < 0.1, `EN illustration scales: ${phoneSizes.artEn}`);
+assert.ok(Math.abs(phoneSizes.artZh - 190 * s328) < 0.1, `ZH illustration scales: ${phoneSizes.artZh}`);
 assert.ok(Math.abs(phoneSizes.radical - 56 * s328) < 0.1 && Math.abs(phoneSizes.pad - 40 * s328) < 0.1);
 for (const key of ['meaning', 'definition', 'body', 'exampleEn', 'exampleZh']) assert.ok(phoneSizes[key] >= 13, `${key} keeps 13px: ${phoneSizes[key]}`);
 for (const key of ['label', 'level', 'chip']) assert.ok(phoneSizes[key] >= 11, `${key} keeps 11px: ${phoneSizes[key]}`);
@@ -950,10 +950,19 @@ assert.equal(toVocabularyModel(pineEn, { supportLanguage: 'vi', seed: { short_me
 
 /* --- D-180: the header as drawn, and nothing of the app's palette inside the card --- */
 for (const card of [enCard, zhCard]) {
-  const top = card.slice(card.indexOf('<div class="c-vcard__top">'), card.indexOf('</div>', card.indexOf('c-vcard__pos')) + 6);
-  assert.ok(top.indexOf('c-vcard__level') < top.indexOf('c-vcard__pos'), 'level tag on the left, part of speech on the right, one row');
-  assert.ok(!top.includes('data-save') && !top.includes('data-play'), 'no disc pushes the part of speech down: the actions sit under the reading');
+  // The human, 2026-10-13: play and Save sit top right, on the part of speech's row, smaller, so the illustration
+  // takes the room the old action row had.
+  const front = faceOf(card, 'front');
+  const head = front.slice(front.indexOf('<div class="c-vcard__top">'), front.indexOf('c-vcard__body'));
+  assert.ok(head.indexOf('c-vcard__level') < head.indexOf('c-vcard__pos'), 'level tag on the left, part of speech on the right, one row');
+  assert.ok(head.indexOf('c-vcard__pos') < head.indexOf('data-play') && head.indexOf('data-play') < head.indexOf('data-save'), 'play and Save after the part of speech, in the top row');
+  assert.equal((front.match(/data-play/g) || []).length, 1, 'one play disc on the face');
+  assert.ok(!front.slice(front.indexOf('c-vcard__body')).includes('c-vcard__actions'), 'no action row left in the body');
 }
+// Chinese: Meaning and Radical side by side (two columns), not stacked.
+const lead = zhFront.slice(zhFront.indexOf('c-vcard__lead'));
+assert.ok(lead.indexOf('sectionMeaning') < lead.indexOf('sectionRadical') && lead.indexOf('sectionRadical') < lead.indexOf('sectionMeasureWord'), 'Meaning and Radical share the lead grid');
+assert.match(cardCss, /\.c-vcard__lead \{[^}]*display: grid;[^}]*grid-template-columns: repeat\(auto-fit, minmax\(min\(150px, 28\.846cqi\), 1fr\)\)/, 'two columns while each keeps its width');
 const kitCardSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
 assert.doesNotMatch(kitCardSrc.replace(/\/\*[\s\S]*?\*\//g, ''), /o-tag/, 'no kit tag on the content');
 const contentCss = cssRules.filter(([selector]) => !isButtonRule(selector)).map(([selector, body]) => `${selector}{${body}}`).join('');
@@ -967,8 +976,8 @@ for (const card of [enCard, zhCard, String(vocabularyCard(zh, { mode: 'review-ba
 assert.doesNotMatch(String(vocabularyCard(en, { mode: 'review-front' })), /o-tag|var\(--accent/);
 const tagged2 = String(vocabularyCard(pineAlone, { mode: 'detail', slots: { meaningLabel: () => 'Tiếng Anh' } }));
 assert.ok(tagged2.includes('<span class="c-vcard__lang">Tiếng Anh</span>'), 'the meaning language tag is drawn by the card');
-// Touch targets: the discs are 44px.
-assert.match(cardCss, /\.c-vcard__disc \{[^}]*width: 44px;[^}]*height: 44px/);
+// The discs are drawn 34px (the human, 2026-10-13: smaller, top right) and still take a 44px touch target.
+assert.match(cardCss, /\.c-vcard__disc \{[^}]*box-sizing: border-box;[^}]*width: 44px;[^}]*height: 44px;[^}]*padding: 5px;[^}]*margin: -5px;[^}]*background-clip: content-box/, 'a 44px target, drawn and laid out at 34px');
 // ZH (lead's :8021 check: the content computed the app sans, `:lang(vi)` sets it on every Vietnamese element):
 // the family is set on EVERY element of the Chinese card, and only by these four rules - no content class re-sets it.
 assert.match(cardCss, /--vcard-han: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, SimSun, NSimSun, serif;/);

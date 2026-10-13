@@ -159,7 +159,7 @@
   margin-left: auto;
 }
 
-/* ---- Top row: level and source on the left, the discs on the right ---- */
+/* ---- Top row: level and source on the left; part of speech, then the discs, on the right ---- */
 .c-vcard__top {
   display: flex;
   flex-wrap: wrap;
@@ -197,14 +197,26 @@
   font-size: max(9.5px, calc(11px * var(--vc-kt, 1)), calc(var(--vc-kt, 1) * min(13px, 2.5cqi)));
   color: var(--vcard-ink2);
 }
-/* The word's actions, quiet under its reading (play, and Save where a word is met). */
+.c-vcard__top-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--vc-ks, 1) * min(10px, 1.923cqi));
+}
+/* The word's actions, top right after the part of speech (play, and Save where a word is met). Drawn 34px - smaller,
+   so the illustration has the room (the human, 2026-10-13) - each still a 44px touch target: a 44px button whose
+   5px padding is unpainted (content-box background) and taken back by a -5px margin, so it lays out at 34px. */
 .c-vcard__actions {
   display: flex;
-  gap: calc(var(--vc-ks, 1) * min(8px, 1.538cqi));
+  gap: 8px;
 }
 .c-vcard__disc {
+  box-sizing: border-box;
   width: 44px;
   height: 44px;
+  padding: 5px;
+  margin: -5px;
+  background-clip: content-box;
   border-radius: 999px;
   border: 0;
   display: inline-flex;
@@ -231,11 +243,7 @@
   gap: calc(var(--vc-ks, 1) * min(8px, 1.538cqi));
 }
 /* The top row's right-hand item. English: the outlined part-of-speech pill; Chinese: the plain line (名词 · danh từ). */
-.c-vcard__top .c-vcard__pos {
-  margin-left: auto;
-}
 .c-vcard__pos {
-  align-self: flex-start;
   white-space: nowrap;
   font-size: max(9.5px, calc(11px * var(--vc-kt, 1)), calc(var(--vc-kt, 1) * min(13px, 2.5cqi)));
   font-weight: 500;
@@ -322,12 +330,13 @@
 }
 
 /* ---- Illustration: only when there is one ---- */
-/* The frame is always drawn when there is an image: it scales with the card (the design's 180px / 150px at s = 1) and
-   yields to a short viewport; it never drops out - the body scrolls instead (the human, 2026-10-12). */
+/* The frame is always drawn when there is an image: it scales with the card (220px / 190px at s = 1 - the design's
+   180 / 150 plus the old action row's room, the human, 2026-10-13: the picture is what the card is remembered by) and
+   yields to a short viewport; it never drops out (the human, 2026-10-12). */
 .c-vcard__art {
   margin: 0;
   flex: none;
-  height: calc(var(--vc-ka, 1) * min(34.615cqi, clamp(72px, calc(24dvh - 60px), 180px)));
+  height: calc(var(--vc-ka, 1) * min(42.308cqi, clamp(72px, calc(28dvh - 60px), 220px)));
   border-radius: calc(var(--vc-ks, 1) * min(14px, 2.692cqi));
   background: var(--vcard-surface-alt);
   overflow: hidden;
@@ -336,7 +345,7 @@
   justify-content: center;
 }
 .c-vcard--han .c-vcard__art {
-  height: calc(var(--vc-ka, 1) * min(28.846cqi, clamp(64px, calc(20dvh - 48px), 150px)));
+  height: calc(var(--vc-ka, 1) * min(36.538cqi, clamp(64px, calc(24dvh - 48px), 190px)));
   border-radius: 0;
   background: transparent;
   border-top: 1px solid var(--vcard-line);
@@ -400,6 +409,13 @@
 }
 .c-vcard--han .c-vcard__definition[lang='en'] {
   font-style: italic;
+}
+/* Chinese: Meaning and Radical side by side, two columns while each keeps its width (the human, 2026-10-13). */
+.c-vcard__lead {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 28.846cqi), 1fr));
+  gap: calc(var(--vc-ks, 1) * min(14px, 2.692cqi)) calc(var(--vc-ks, 1) * min(20px, 3.846cqi));
+  align-items: start;
 }
 .c-vcard__pair {
   display: grid;
