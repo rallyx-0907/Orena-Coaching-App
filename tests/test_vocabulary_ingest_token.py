@@ -326,6 +326,59 @@ def test_session_admin_csv_publish_is_unchanged(secured, repository, monkeypatch
     assert response.json()["collection"]["catalog_status"] == "published"
 
 
+def _publish(repository, collection_id: str) -> None:
+    repository.finalize_collection_publication(collection_id, admission={
+        "review_status": "approved", "publication_attested": True, "attested_by": "test-admin",
+        "rights_status": "licensed", "completeness": "complete"})
+
+
+def _snapshot(repository, collection_id: str) -> dict:
+    stored = repository.get_collection(collection_id, limit=50, status=None)
+    return {
+        "fields": {k: stored.get(k) for k in ("title", "framework", "level", "topic", "catalog_status")},
+        "entries": sorted(e["term"] for e in stored["entries"]),
+    }
+
+
+@pytest.mark.parametrize("kind", ["csv", "authored", "csv-derived-id"])
+@pytest.mark.parametrize("state", ["published", "unpublished", "archived"])
+def test_a_token_import_never_touches_a_collection_a_reviewer_has_moved_on(secured, repository, monkeypatch, kind, state) -> None:
+    monkeypatch.delenv(service_auth.ENV_NAME, raising=False)
+    derived = kind == "csv-derived-id"
+    seed = csv_import_data(framework="CEFR", topic="orig", rights_status="unknown", completeness="partial")
+    if derived:
+        meta = json.loads(seed["metadata"])
+        meta.pop("collection_id")
+        seed["metadata"] = json.dumps(meta)
+    first = call(secured, "POST", IMPORT, who=ADMIN, files=csv_file(), headers={"origin": "http://testserver"}, data=seed)
+    assert first.status_code == 200, first.text
+    collection_id = first.json()["collection"]["id"]
+    _publish(repository, collection_id)
+    if state != "published":
+        repository.set_collection_status(collection_id, state, actor="test")
+    before = _snapshot(repository, collection_id)
+    monkeypatch.setenv(service_auth.ENV_NAME, digest(TOKEN))
+    if kind == "authored":
+        meta = {"title": "HIJACK", "language_code": "en", "collection_id": collection_id, "framework": "X", "topic": "x"}
+        response = call(secured, "POST", IMPORT, token=TOKEN, files=sample_file(),
+                        data={"metadata": json.dumps(meta), "duplicates": "skip"})
+    else:
+        meta = json.loads(seed["metadata"]) if derived else {**json.loads(seed["metadata"]), "title": "HIJACK", "topic": "x"}
+        response = call(secured, "POST", IMPORT, token=TOKEN, files=[("files", ("batch.csv", CSV_BYTES + b"extra|more\n", "text/csv"))],
+                        data={"metadata": json.dumps(meta), "duplicates": "skip"})
+    assert response.status_code == 422, response.text
+    assert _snapshot(repository, collection_id) == before
+
+
+def test_session_admin_can_still_reimport_into_a_published_collection(secured, repository, monkeypatch) -> None:
+    monkeypatch.delenv(service_auth.ENV_NAME, raising=False)
+    h = {"origin": "http://testserver"}
+    assert call(secured, "POST", IMPORT, who=ADMIN, files=csv_file(), headers=h, data=csv_import_data()).status_code == 200
+    _publish(repository, "t-csv-ingest")
+    again = call(secured, "POST", IMPORT, who=ADMIN, files=csv_file(), headers=h, data=csv_import_data(topic="edited"))
+    assert again.status_code == 200, again.text
+
+
 @pytest.mark.parametrize("kind", ["authored", "csv"])
 def test_the_service_principal_may_only_skip_duplicates(secured, repository, token_on, kind) -> None:
     files, body = (sample_file(), import_data()) if kind == "authored" else (csv_file(), csv_import_data())

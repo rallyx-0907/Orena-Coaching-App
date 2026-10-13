@@ -3954,6 +3954,17 @@ async def admin_vocabulary_source_import(
         collection_metadata.get("framework", ""),
     )
     imported_by = str(admin.get("google_sub") or admin.get("email") or "admin")
+    if is_service:
+        # The service principal may add to a new set or one still pending review, never to one a reviewer has
+        # published, unpublished or archived: a re-import would rewrite its title/framework/level/topic (or move its
+        # state back to pending_review). Refused before any write, for every source format, derived id or supplied.
+        existing = repository.get_collection(collection_id, limit=1, status=None)
+        if existing is not None and str(existing.get("catalog_status") or "") != "pending_review":
+            raise HTTPException(
+                422,
+                f"Collection '{collection_id}' is {existing.get('catalog_status')}; a service credential only "
+                "imports into new or pending-review collections.",
+            )
     requested_catalog_status, admission = _vocabulary_admission(
         collection_metadata,
         imported_by=imported_by,

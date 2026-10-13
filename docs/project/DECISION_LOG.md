@@ -5960,6 +5960,11 @@ is reviewed: reviewer `<pending>`, commit `<pending>`, outcome `<pending>`.
 **Independent review: CHANGES REQUIRED at 6ec68757 (1d4c7e9a, `docs/reviews/architecture/VOCAB_INGEST_TOKEN_REVIEW_2026-10-13.md`);
 fixes in the commit that follows 1d4c7e9a on this branch (P1-1 no publish on any format, P2-1 skip only, P2-2/P2-3 token
 guidance and rotation, P2-4/P2-5 documented residuals); re-review pending.**
+**Re-review: CHANGES REQUIRED (narrow) at 96e23d35 (41e71bf3): P1-2, a token re-import could rewrite the display fields of
+an existing published collection. Fixed in the commit that follows 41e71bf3: for the service principal the route
+returns 422 before any write when the target collection (supplied or derived id, any source format) exists and is not
+`pending_review`. Chosen: unpublished and archived are refused too, because a re-import would also move them back to
+`pending_review`, undoing a moderator's decision; only new or pending-review sets accept the token. Re-review pending.**
 
 - **Finding.** `require_admin()` is session-based (a Google sign-in cookie), and `UserIsolationMiddleware` refuses any
   `/api/*` request without a session before a route runs. The only unattended path is the signed-out local admin, which
