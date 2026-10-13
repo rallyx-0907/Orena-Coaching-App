@@ -5920,8 +5920,9 @@ follow-up commits; the human accepted the residual risk below on 2026-10-13.** N
 
 ## D-186 - Official launchers assert Docker's real published address on the host (issue #140)
 
-Placeholder id; the lead renumbers at merge. **Status: IMPLEMENTED on `claude/sec-140-publish-assert`; independent
-architecture review is required before merge (an implementer may not self-approve). Not merged, not product approval.**
+**Status: independently reviewed and APPROVED (Delegated Architecture Reviewer, Claude Opus 5.5, independent of the
+implementer; docs/reviews/architecture/SEC_140_PUBLISH_ASSERT_REVIEW_2026-10-13.md, approved head `894046e8`); merge
+authorized by the human on 2026-10-13 when CI is green. Architecture review is not product approval.**
 Closes the follow-up recorded in D-185.
 
 - **Decision.** After an official launcher starts the app container, a host-side check
