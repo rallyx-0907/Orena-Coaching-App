@@ -327,7 +327,7 @@ class DirectUrlAdapter:
         metadata = _HtmlMetadata()
         metadata.feed(raw.body)
         metadata.close()
-        article = extract_article(raw.body)
+        article = extract_article(raw.body, base_url=raw.metadata.get("fetched_url") or raw.submitted.url)
         if not article.body.strip():
             raise ReadingSourceError("empty_source", "There is no readable article in this page.")
         extracted = replace(

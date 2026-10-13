@@ -6031,3 +6031,28 @@ etymology - the provenance gap is exactly the projection named there. Open, serv
   The preview shows the authored content before dictionary completion and localization, which happen only at import,
   so a card may gain content when imported. Image upload is deferred (it needs storage and an API); a record without an
   illustration simply has no frame.
+
+## Reading article extraction and article media (2026-10-13, branch `claude/reading-article-extraction`)
+
+- **RA-1 BLOCKER for Reading images: no article-media contract.** Reading requires a first-class article-media
+  contract supporting thumbnail, hero and multiple inline illustrations, with source / uploaded / commissioned /
+  generated origins, placement, alt text, caption, creator, license, attribution and independent rights review.
+  It must not be modelled as one `image_url` field. Until then no article image reaches learners; extraction keeps
+  candidates as provenance only (`analysis.extraction.media` and the source snapshot metadata: role og | twitter |
+  hero | inline, absolute original URL, alt, caption, credit, position, declared size, `rights: unreviewed`).
+  Text rights never imply image rights. Needs a human decision and an independent architecture review before any
+  schema (`[REVIEW]`, `[CONTENT]`).
+- **RA-2 Residual extraction cases that may still need admin review.** The extractor is deterministic and
+  site-agnostic (`writing_coach/reading_article_extraction.py`); a `low` confidence adds the quality issue
+  `extraction_low_confidence`. Known limits:
+  - byline / attribution edge heuristics are English-only ("By <Name>", "I'm <Name>", "<Name> wrote this story...");
+    a Chinese byline such as 记者… or 责任编辑… is not removed from the passage;
+  - the image credit split from a caption by a "Credit: / Photo: / Source:" label is English-only;
+  - a heading followed by two or more bold-term / definition blocks is treated as a glossary and kept out of the
+    passage (stored in snapshot metadata `glossary`), even when it is real article content;
+  - a short sub-heading followed only by link-heavy content is dropped as an orphan;
+  - prose split evenly across separate wrappers can widen the container to include non-article prose;
+  - a UI scrap of four or more words with no link and no telling class/id survives;
+  - text inside `<header>` (a dek or standfirst) is dropped;
+  - pages rendered by JavaScript, and non-UTF-8 pages, are not handled;
+  - media candidates inside the article scope include teaser-card images that carry no boilerplate token.

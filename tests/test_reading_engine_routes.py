@@ -469,3 +469,28 @@ def test_the_engine_answers_503_before_its_schema_is_active(setup):
     unavailable = call(setup["learner"], "GET", "/api/reading/articles?language=en", admin=False)
     assert unavailable.status_code == 503
     assert unavailable.json()["detail"]["category"] == "reading_articles_unavailable"
+
+
+def test_no_image_candidate_reaches_a_learner_payload(setup):
+    from reading_article_fixtures import VOA_LIKE
+
+    from writing_coach.reading_source_import import DirectUrlAdapter, SubmittedInput
+
+    setup["engine"].adapters["url"] = lambda: DirectUrlAdapter(
+        fetcher=lambda *a, **k: (VOA_LIKE.encode("utf-8"), "text/html")
+    )
+    setup["engine"].submit(
+        SubmittedInput(kind="url", url="https://news.example.org/a/rivers", language="en", rights={}),
+        actor="admin@example.com",
+    )
+    outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    article_id = outcome["article_id"]
+    stored = setup["content"].get_article(article_id)
+    assert len(stored["analysis"]["extraction"]["media"]) == 4  # kept as provenance
+    call(setup["admin"], "POST", f"/api/admin/reading/articles/{article_id}/status", json={"status": "published"})
+    listing = call(setup["learner"], "GET", "/api/reading/articles?language=en", admin=False).text
+    detail = call(setup["learner"], "GET", f"/api/reading/articles/{article_id}", admin=False).text
+    assert article_id in listing + detail
+    for text in (listing, detail):
+        for marker in ("river-1280", "stations-1600", "river-twitter", "cdn.example.org", "Jane Doe", "media"):
+            assert marker not in text

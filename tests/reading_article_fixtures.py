@@ -5,6 +5,9 @@ VOA_LIKE = """<!DOCTYPE html>
 <html lang="en"><head>
 <title>Scientists Warn Rivers Are Warming Faster - Learning English</title>
 <meta property="og:title" content="Scientists Warn Rivers Are Warming Faster">
+<meta property="og:image" content="https://cdn.example.org/img/river-1280.jpg?v=2#top">
+<meta property="og:image:alt" content="A river in a valley">
+<meta name="twitter:image" content="//cdn.example.org/img/river-twitter.jpg">
 <link rel="canonical" href="https://news.example.org/a/rivers-warming/7001.html">
 <script type="application/ld+json">{"@type":"NewsArticle","headline":"Scientists Warn Rivers Are Warming Faster",
 "datePublished":"2026-05-02T09:30:00+00:00","author":{"@type":"Person","name":"Andrew Smith"}}</script>
@@ -17,11 +20,17 @@ VOA_LIKE = """<!DOCTYPE html>
   <h1>Scientists Warn Rivers Are Warming Faster</h1>
   <div class="byline">By Andrew Smith</div>
   <video controls><source src="a.mp4">Your browser doesn't support HTML5</video>
-  <figure><img src="r.jpg" alt="river"><figcaption>FILE - A river flows through a valley, April 1, 2026. (Reuters/Jane Doe)</figcaption></figure>
+  <img class="avatar" src="/u/andrew.jpg" alt="Andrew Smith" width="120" height="120">
+  <figure class="hero-image"><img src="/img/river-640.jpg" srcset="/img/river-320.jpg 320w, /img/river-1280.jpg 1280w, /img/river-640.jpg 640w" width="1280" height="720" alt="A river in a valley"><figcaption>FILE - A river flows through a valley, April 1, 2026. <span class="credit">Reuters/Jane Doe</span></figcaption></figure>
+  <img src="https://stats.example.org/t.gif" width="1" height="1" alt="">
+  <img src="/assets/site-logo.png" alt="Learning English logo">
+  <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="">
+  <img src="/assets/mark.svg" alt="mark">
   <div class="wsw"><p>I'm Andrew Smith.</p></div>
   <div class="content">
     <p>Scientists say rivers around the world are warming faster than the air above them. The finding comes from a study of more than two thousand rivers over four decades.</p>
     <p>Warmer water holds less oxygen, which is a problem for fish. Many species need cold, clear water to lay their eggs, and they cannot easily move to new places.</p>
+    <figure><picture><source srcset="/img/stations-800.webp 800w, /img/stations-1600.webp 1600w"><img src="/img/stations-400.jpg" alt="Sensors on a bridge" width="400" height="300"></picture><figcaption>Sensors measure the water. <small>Photo: Lee Park</small></figcaption></figure>
     <h2>What researchers found</h2>
     <p>The team measured temperatures at hundreds of stations, and the numbers rose almost everywhere. "We did not expect the change to be this steady," said one of the lead researchers.</p>
     <p>Cities and farms make the problem worse because they send warm runoff into streams. Planting trees along the banks can cool the water by several degrees, the study said.</p>
@@ -52,7 +61,7 @@ VOA_LIKE = """<!DOCTYPE html>
 </body></html>"""
 
 NASA_LIKE = """<html><head><title>New Telescope Finds Water Vapor on Distant Planet | Space Agency</title>
-<meta name="author" content="Mia Torres"><meta property="article:published_time" content="2026-02-11T12:00:00Z">
+<meta name="author" content="Mia Torres"><meta property="og:image" content="/images/planet.jpg"><meta property="article:published_time" content="2026-02-11T12:00:00Z">
 </head><body>
 <div class="site-banner"><a href="/">Space Agency</a> <a href="/missions">Missions</a> <a href="/news">News</a></div>
 <div class="page">

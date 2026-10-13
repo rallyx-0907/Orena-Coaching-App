@@ -237,3 +237,86 @@ def test_a_plain_text_url_is_cleaned_like_before():
     adapter = DirectUrlAdapter(fetcher=fetch)
     item = adapter.normalize(adapter.fetch(SubmittedInput(kind="url", url="https://x.example.org/a.txt")))
     assert item.body == "Related\n\nA plain paragraph."
+
+
+# ---- media candidates: provenance only --------------------------------------
+
+VOA_URL = "https://news.example.org/a/rivers?utm_source=x"
+
+
+def _voa_media():
+    item = _item(VOA_LIKE, VOA_URL)
+    return item, item.metadata["extraction"]["media"]
+
+
+def test_media_candidates_roles_order_and_absolute_original_urls():
+    _, media = _voa_media()
+    assert [(m["role"], m["url"]) for m in media] == [
+        ("og", "https://cdn.example.org/img/river-1280.jpg?v=2"),
+        ("twitter", "https://cdn.example.org/img/river-twitter.jpg"),
+        ("hero", "https://news.example.org/img/river-1280.jpg"),  # largest srcset entry, resolved
+        ("inline", "https://news.example.org/img/stations-1600.webp"),  # <picture> source, largest
+    ]
+    assert [m["position"] for m in media if m["source"] == "article:img"] == [1, 2]
+
+
+def test_media_candidates_keep_alt_caption_credit_and_declared_size():
+    _, media = _voa_media()
+    hero, inline = media[2], media[3]
+    assert hero["alt"] == "A river in a valley"
+    assert hero["caption"] == "FILE - A river flows through a valley, April 1, 2026."
+    assert hero["credit"] == "Reuters/Jane Doe"
+    assert (hero["width"], hero["height"]) == (1280, 720)
+    assert inline["caption"] == "Sensors measure the water." and inline["credit"] == "Photo: Lee Park"
+    assert media[0]["alt"] == "A river in a valley"
+
+
+def test_decorative_and_tracking_images_are_not_candidates():
+    _, media = _voa_media()
+    urls = " ".join(m["url"] for m in media)
+    for decorative in ("andrew.jpg", "t.gif", "site-logo", "mark.svg", "data:"):
+        assert decorative not in urls
+    assert extract_article('<body><article><img src="/a.png" width="32" height="32"></article></body>').media == []
+
+
+def test_every_candidate_is_rights_unreviewed_whatever_the_text_rights_say():
+    submitted = SubmittedInput(kind="url", url=VOA_URL, rights={"can_republish": True})
+    adapter = DirectUrlAdapter(fetcher=lambda *a, **k: (VOA_LIKE.encode(), "text/html"))
+    result = adapter.normalize(adapter.fetch(submitted))
+    assert result.rights["can_republish"] is True
+    for candidate in result.metadata["extraction"]["media"]:
+        assert candidate["rights"] == {"status": "unreviewed", "cleared": False}
+
+
+def test_a_meta_image_also_in_the_article_is_one_candidate_with_the_article_details():
+    html = VOA_LIKE.replace(
+        "https://cdn.example.org/img/river-1280.jpg?v=2#top", "https://news.example.org/img/river-1280.jpg"
+    )
+    media = _item(html, VOA_URL).metadata["extraction"]["media"]
+    same = [m for m in media if m["url"] == "https://news.example.org/img/river-1280.jpg"]
+    assert len(same) == 1 and same[0]["role"] == "hero" and same[0]["credit"] == "Reuters/Jane Doe"
+    assert same[0]["also_declared_as"] == ["og"]
+    assert len(media) == 3
+
+
+def test_nasa_like_images_resolve_against_the_page_and_credit_is_split_from_caption():
+    item = _item(NASA_LIKE, "https://space.example.gov/news/telescope")
+    media = item.metadata["extraction"]["media"]
+    assert media[0]["url"] == "https://space.example.gov/images/planet.jpg" and media[0]["role"] == "og"
+    assert media[1]["caption"] == "An artist's idea of the planet."
+    assert media[1]["credit"] == "Space Agency/Art Team"
+
+
+def test_candidate_list_is_capped():
+    imgs = "".join(f'<figure><img src="/i/{n}.jpg" width="800" height="600" alt="a"></figure>' for n in range(30))
+    prose = "A full sentence of real article prose goes here today. " * 6
+    html = f"<html><body><article><p>{prose}</p>{imgs}</article></body></html>"
+    assert len(extract_article(html, "https://x.example.org/").media) == 12
+
+
+def test_media_text_never_reaches_the_passage():
+    item, media = _voa_media()
+    for candidate in media:
+        assert candidate["url"] not in item.body
+        assert not candidate["caption"] or candidate["caption"] not in item.body
+    assert "Reuters" not in item.body and "Lee Park" not in item.body

@@ -30,6 +30,7 @@ import re
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from typing import Any
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 _VOID = frozenset(
     {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
@@ -41,7 +42,7 @@ _DROP_TAGS = frozenset(
     {
         "script", "style", "noscript", "template", "svg", "head", "title", "nav", "footer", "aside",
         "form", "video", "audio", "iframe", "object", "embed", "canvas", "button", "select",
-        "input", "textarea", "dialog", "menu", "map", "figcaption", "header", "address", "picture",
+        "input", "textarea", "dialog", "menu", "map", "figcaption", "header", "address",
     }
 )
 _DROP_ROLES = frozenset(
@@ -240,6 +241,7 @@ class ExtractedArticle:
     published: str = ""
     canonical_url: str = ""
     glossary: list[dict[str, str]] = field(default_factory=list)
+    media: list[dict[str, Any]] = field(default_factory=list)
     attribution: list[str] = field(default_factory=list)
     confidence: str = "low"
     reasons: list[str] = field(default_factory=list)
@@ -260,6 +262,9 @@ class ExtractedArticle:
         }
         if self.attribution:
             info["attribution_lines"] = list(self.attribution)
+        # Provenance only: image candidates are evidence for a later, reviewed
+        # article-media contract. Nothing here is a learner-facing field.
+        info["media"] = [dict(item) for item in self.media]
         return {
             "extraction": info,
             "extraction_confidence": self.confidence,
@@ -530,7 +535,7 @@ def _semantic(node: _Node) -> bool:
     return False
 
 
-def extract_article(html: str) -> ExtractedArticle:
+def extract_article(html: str, base_url: str = "") -> ExtractedArticle:
     """The main article of `html`, or a low-confidence best effort."""
     builder = _TreeBuilder()
     builder.feed(html or "")
@@ -539,6 +544,8 @@ def extract_article(html: str) -> ExtractedArticle:
 
     info = _page_metadata(root)
     ld = _json_ld(root)
+    figure_info = _figure_info(root)
+    meta_images = _meta_images(root)
     page_units = units(_visible_text(root))
     titles = {_norm(t) for t in (ld["headline"], info["og_title"], info["h1"], info["title"]) if t}
 
@@ -621,6 +628,9 @@ def extract_article(html: str) -> ExtractedArticle:
         units=size,
         prose_paragraphs=paragraphs,
         coverage=coverage,
+        media=_media_candidates(
+            _article_scope(container), figure_info, meta_images, urljoin(base_url, info["canonical"])
+        ),
     )
 
 
@@ -642,3 +652,230 @@ def _visible_text(root: _Node) -> str:
 
     visit(root)
     return " ".join(parts)
+
+
+# ---- media candidates (provenance only) -------------------------------------
+
+MAX_MEDIA_CANDIDATES = 12
+_MIN_IMAGE_SIDE = 64
+_DECORATIVE_TOKENS = frozenset(
+    "logo icon icons avatar avatars share sharing social sprite badge emoji tracking pixel ad ads advert spacer button".split()
+)
+_HERO_TOKENS = frozenset({"hero", "lead", "featured", "headline", "primary", "cover"})
+_CREDIT_TOKENS = frozenset({"credit", "credits", "photographer", "copyright", "author", "source", "byline"})
+_CREDIT_ITEMPROPS = frozenset({"credittext", "copyrightholder", "author", "creator"})
+_IMG_URL_ATTRS = ("data-src", "data-original", "data-lazy-src", "src")
+_RIGHTS_UNREVIEWED = {"status": "unreviewed", "cleared": False}
+_SRCSET_SPLIT = re.compile(r",\s+|,$")
+_SRCSET_DESCRIPTOR = re.compile(r"\d+(?:\.\d+)?[wx]")
+
+
+def _best_srcset(value: str) -> tuple[str, int]:
+    """The original (largest) URL of a srcset and its declared width, if any."""
+    best, best_weight, best_width = "", -1.0, 0
+    for part in _SRCSET_SPLIT.split(value.strip()):
+        pieces = part.split()
+        if not pieces:
+            continue
+        weight, width = 0.0, 0
+        if len(pieces) > 1 and _SRCSET_DESCRIPTOR.fullmatch(pieces[1]):
+            number = float(pieces[1][:-1])
+            weight = number if pieces[1].endswith("w") else number * 1000
+            width = int(number) if pieces[1].endswith("w") else 0
+        if weight > best_weight:
+            best, best_weight, best_width = pieces[0], weight, width
+    return best, best_width
+
+
+def _int_attr(value: str) -> int:
+    match = re.match(r"\s*(\d+)", value or "")
+    return int(match.group(1)) if match else 0
+
+
+def _credit_texts(scope: _Node) -> list[str]:
+    found: list[str] = []
+    for node in _walk(scope):
+        marked = node.tag in {"small", "cite"} or node.attrs.get("itemprop", "").lower() in _CREDIT_ITEMPROPS
+        if marked or _tokens(node) & _CREDIT_TOKENS:
+            text = _text(node)
+            if text and text not in found:
+                found.append(text)
+    return found
+
+
+def _article_scope(container: _Node) -> _Node:
+    """The article element around the prose container: a lead image sits beside the prose, not in it."""
+    node: _Node | None = container
+    while node is not None:
+        if node.tag == "article":
+            return node
+        node = node.parent
+    node = container
+    while node is not None:
+        if node.tag == "main" or node.attrs.get("role", "").lower() == "main":
+            return node
+        node = node.parent
+    return container
+
+
+_CAPTION_CREDIT_RE = re.compile(r"(?i)(?:^|[.\s])(?:credit|photo|photograph|image|source)s?\s*:\s*(.+)$")
+
+
+def _figure_info(root: _Node) -> dict[int, dict[str, Any]]:
+    """Per image: alt, caption, credit, declared size, original URL - read before pruning."""
+    result: dict[int, dict[str, Any]] = {}
+
+    def visit(node: _Node, figure: _Node | None) -> None:
+        for child in node.children:
+            if not isinstance(child, _Node):
+                continue
+            inner = child if child.tag == "figure" else figure
+            if child.tag == "img":
+                result[id(child)] = _describe_image(child, node, inner)
+            visit(child, inner)
+
+    visit(root, None)
+    return result
+
+
+def _describe_image(img: _Node, parent: _Node, figure: _Node | None) -> dict[str, Any]:
+    srcsets = [img.attrs.get("srcset", "") or img.attrs.get("data-srcset", "")]
+    if parent.tag == "picture":
+        srcsets += [c.attrs.get("srcset", "") for c in parent.children if isinstance(c, _Node) and c.tag == "source"]
+    url, width = "", 0
+    for value in srcsets:
+        candidate, candidate_width = _best_srcset(value) if value else ("", 0)
+        if candidate and candidate_width >= width:
+            url, width = candidate, candidate_width
+    if not url:
+        url = next((img.attrs[a].strip() for a in _IMG_URL_ATTRS if img.attrs.get(a, "").strip()), "")
+    caption, credit = "", ""
+    if figure is not None:
+        figcaption = next((n for n in _walk(figure) if n.tag == "figcaption"), None)
+        caption = _text(figcaption) if figcaption is not None else ""
+        credits = _credit_texts(figcaption) if figcaption is not None else []
+        for text in _credit_texts(figure):
+            if text not in credits and text not in caption:
+                credits.append(text)
+        for text in credits:
+            caption = caption.replace(text, " ")
+        caption = re.sub(r"\s+", " ", caption).strip(" -–—|()")
+        if not credits and (tail := _CAPTION_CREDIT_RE.search(caption)):
+            credits = [tail.group(1).strip()]
+            caption = caption[: tail.start()].strip(" -–—|():")
+        credit = "; ".join(credits)
+    alt = img.attrs.get("alt", "").strip()
+    alt_tokens = {t for t in re.split(r"[^a-z0-9]+", alt.lower()) if t}
+    return {
+        "url": url,
+        "alt": alt,
+        "caption": caption,
+        "credit": credit,
+        "width": _int_attr(img.attrs.get("width", "")) or width,
+        "height": _int_attr(img.attrs.get("height", "")),
+        "decorative": bool((_tokens(img) | alt_tokens) & _DECORATIVE_TOKENS),
+    }
+
+
+def _meta_images(root: _Node) -> list[dict[str, Any]]:
+    found: list[dict[str, Any]] = []
+    alts: dict[str, str] = {}
+    for node in _walk(root):
+        if node.tag != "meta":
+            continue
+        name = (node.attrs.get("property") or node.attrs.get("name") or "").lower()
+        content = node.attrs.get("content", "").strip()
+        if name in {"og:image:alt", "twitter:image:alt"}:
+            alts[name.split(":")[0]] = content
+        elif content and name in {"og:image", "og:image:url", "og:image:secure_url", "twitter:image", "twitter:image:src"}:
+            role = name.split(":")[0]
+            if not any(item["role"] == role for item in found):
+                found.append({"role": role, "url": content})
+    for item in found:
+        item["alt"] = alts.get(item["role"], "")
+    return found
+
+
+def _normalized_image_url(url: str, base: str) -> str:
+    if not url or url.lower().startswith("data:"):
+        return ""
+    try:
+        parts = urlsplit(urljoin(base, url.strip()))
+    except ValueError:
+        return ""
+    if parts.scheme.lower() not in {"http", "https"} or not parts.hostname:
+        return ""
+    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path, parts.query, ""))
+
+
+def _decorative_url(url: str) -> bool:
+    path = urlsplit(url).path.lower()
+    if path.endswith(".svg"):
+        return True
+    stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    return bool(set(re.split(r"[^a-z0-9]+", stem)) & _DECORATIVE_TOKENS)
+
+
+def _media_candidates(
+    container: _Node, figure_info: dict[int, dict[str, Any]], meta_images: list[dict[str, Any]], base: str
+) -> list[dict[str, Any]]:
+    """og/twitter images, then the article's own images in reading order, de-duplicated."""
+    ordered: list[tuple[_Node, bool]] = []
+    seen_prose = [False]
+
+    def visit(node: _Node) -> None:
+        for child in node.children:
+            if not isinstance(child, _Node):
+                continue
+            if child.tag == "img":
+                ordered.append((child, seen_prose[0]))
+            elif _is_block(child) and not _has_block_child(child) and _is_prose(_text(child), _link_density(child)):
+                seen_prose[0] = True
+            visit(child)
+
+    visit(container)
+
+    position, hero_assigned = 0, False
+    article: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for img, after_prose in ordered:
+        details = figure_info.get(id(img))
+        if not details or details["decorative"]:
+            continue
+        url = _normalized_image_url(details["url"], base)
+        if not url or _decorative_url(url):
+            continue
+        width, height = details["width"], details["height"]
+        if (width and width <= _MIN_IMAGE_SIDE) or (height and height <= _MIN_IMAGE_SIDE) or url in seen:
+            continue
+        seen.add(url)
+        marks: set[str] = set()
+        node: _Node | None = img
+        while node is not None and node is not container.parent:
+            marks |= _tokens(node)
+            node = node.parent
+        position += 1
+        hero = not hero_assigned and (bool(marks & _HERO_TOKENS) or not after_prose)
+        hero_assigned = hero_assigned or hero
+        article.append(
+            {"role": "hero" if hero else "inline", "url": url, "alt": details["alt"], "caption": details["caption"],
+             "credit": details["credit"], "position": position, "width": width, "height": height,
+             "source": "article:img", "rights": dict(_RIGHTS_UNREVIEWED)}
+        )
+    by_url = {entry["url"]: entry for entry in article}
+    declared: list[dict[str, Any]] = []
+    for meta in meta_images:  # the page's own declaration of its lead image
+        url = _normalized_image_url(meta["url"], base)
+        if not url or _decorative_url(url):
+            continue
+        if url in by_url:  # the article's markup knows more (caption, credit): it wins
+            by_url[url].setdefault("also_declared_as", []).append(meta["role"])
+        elif url not in {entry["url"] for entry in declared}:
+            declared.append(
+                {"role": meta["role"], "url": url, "alt": meta["alt"], "caption": "", "credit": "",
+                 "position": 0, "width": 0, "height": 0, "source": f"meta:{meta['role']}:image",
+                 "rights": dict(_RIGHTS_UNREVIEWED)}
+            )
+        else:
+            next(e for e in declared if e["url"] == url).setdefault("also_declared_as", []).append(meta["role"])
+    return (declared + article)[:MAX_MEDIA_CANDIDATES]
