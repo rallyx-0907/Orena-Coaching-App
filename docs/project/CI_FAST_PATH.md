@@ -26,6 +26,9 @@ several things locally, run the relevant checks above once, then push once.
 ## What CI does
 
 - `python-gates`, `node-gates`, `pytest` and `docker-build` run concurrently; wall time is the slowest job.
+- The required status check on `main` is the aggregate job `test`. It needs all the others and passes only if each
+  succeeded (`docker-build` may be skipped on a Markdown-only change). A failed, cancelled or unexpectedly skipped
+  job fails `test`.
 - `pytest` uses pytest-xdist with `--dist loadfile`: a test file runs entirely on one worker. Each worker has its
   own SQLite files (`WRITING_DB`, `AUTH_DB`, `PLATFORM_DB`, `PRODUCT_DB`) and temp directory, set in `conftest.py`.
   A serial run (no `-n`) is unchanged.

@@ -1,7 +1,7 @@
 name: CI
 on:
   push:
-    branches: [main]
+    branches: [main, claude/ci-speed]
   pull_request:
 
 # A newer push to the same pull request supersedes the run in flight. Runs on main are never cancelled: every
@@ -127,3 +127,28 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: docker build -t ai-writing-coach:test .
+
+  # The single required status check for main ("test" in the repository ruleset). It passes only if every job passed;
+  # the one skip allowed is docker-build on a Markdown-only pull request, where the changes job says so.
+  test:
+    needs: [changes, python-gates, node-gates, pytest, docker-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every job
+        env:
+          CODE: ${{ needs.changes.outputs.code }}
+          CHANGES: ${{ needs.changes.result }}
+          PYTHON_GATES: ${{ needs.python-gates.result }}
+          NODE_GATES: ${{ needs.node-gates.result }}
+          PYTEST: ${{ needs.pytest.result }}
+          DOCKER_BUILD: ${{ needs.docker-build.result }}
+        run: |
+          echo "changes=$CHANGES python-gates=$PYTHON_GATES node-gates=$NODE_GATES pytest=$PYTEST docker-build=$DOCKER_BUILD code=$CODE"
+          for r in "$CHANGES" "$PYTHON_GATES" "$NODE_GATES" "$PYTEST"; do
+            [ "$r" = "success" ] || { echo "a required job did not succeed"; exit 1; }
+          done
+          if [ "$DOCKER_BUILD" = "success" ]; then exit 0; fi
+          if [ "$DOCKER_BUILD" = "skipped" ] && [ "$CODE" = "false" ]; then exit 0; fi
+          echo "docker-build did not succeed"
+          exit 1

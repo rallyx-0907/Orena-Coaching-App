@@ -387,7 +387,9 @@ gives each worker its own databases and temp directory) and `docker-build`. A
 pull request that changes only `*.md` files skips the full `pytest` and
 `docker-build` jobs and runs only the test files that mention `docs/` or `.md`;
 the validators and Node gates always run, and every push to `main` runs
-everything. A newer push to the same pull request cancels the run in flight.
+everything. The required status check is the aggregate job `test`, which passes
+only when every other job succeeded (`docker-build` may be skipped on a
+Markdown-only change). A newer push to the same pull request cancels the run in flight.
 `docs/project/CI_FAST_PATH.md` says how to iterate locally. When the local
 sequence and CI disagree, CI defines the gate and the local recipe is what is
 wrong.
