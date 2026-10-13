@@ -49,11 +49,20 @@ def test_invalid_or_ungrounded_targets_never_auto_publish(changes):
     assert "targets_invalid" in decision(target_changes=changes)["reasons"]
 
 
-def test_attribution_requires_visible_article_evidence_not_registry_name_or_url():
+def test_attribution_requires_a_complete_credit_not_an_author_alone():
+    # D-189: where the terms require attribution the credit is the publisher, the
+    # original address and the licence. An author name alone no longer admits.
+    required = {"can_republish": True, "attribution_required": True}
+    assert "attribution_missing" in decision(snapshot_changes={"rights": required})["reasons"]
+    assert "attribution_missing" in decision(snapshot_changes={"author": "QA author", "rights": required})["reasons"]
     assert "attribution_missing" in decision(snapshot_changes={
-        "rights": {"can_republish": True, "attribution_required": True}})["reasons"]
-    assert decision(snapshot_changes={"author": "QA author", "rights": {
-        "can_republish": True, "attribution_required": True}})["decision"] == "published"
+        "canonical_url": "https://owned.example/a", "rights": required})["reasons"]
+    assert decision(snapshot_changes={
+        "canonical_url": "https://owned.example/a", "author": "QA author",
+        "rights": {**required, "license_note": "CC BY 3.0"}})["decision"] == "published"
+    assert "attribution_missing" in decision(source_changes={"name": ""}, snapshot_changes={
+        "canonical_url": "https://owned.example/a",
+        "rights": {**required, "license_note": "CC BY 3.0"}})["reasons"]
 
 
 def test_missing_analysis_is_held():

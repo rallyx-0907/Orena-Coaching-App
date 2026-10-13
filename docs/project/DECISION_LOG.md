@@ -6051,3 +6051,33 @@ qualifying membership while the card shows the chosen one.
   per language.
 - **Clients.** `system_kind: "general_catalogue"` plus an English fallback title; one copy key in EN, VI and ZH shared by
   Discover, Library and Collection Detail. General sorts last. No new component.
+
+## D-18X - Required attribution is a Reading publication gate (PROPOSED, number to be assigned)
+
+**Status: PROPOSED.** A lifecycle change; it needs independent architecture review before it is ACCEPTED (the implementer
+may not approve it). It carries out the human decision recorded as D-189 (2026-10-13): attribution or a source line is
+required before any real corpus is published. Implemented on `claude/reading-provenance`, "Reading Sources - Production
+Readiness" item P0-A.
+
+- **Provenance object.** The learner Reading list (`GET /api/reading/articles`) and detail
+  (`GET /api/reading/articles/{id}`) return `provenance`: `publisher` (the source record's name), `url` (the item's
+  canonical address), `author`, `license` (`name`, `url`, split from the rights `license_note`), `attribution_required`
+  (`required` / `not_required` / `unknown`) and `text` ("Originally published by Global Voices (by Peace News), CC BY
+  3.0."). It is derived by one pure function (`writing_coach/reading_provenance.py`) from the source record, the source
+  item and the effective rights (the immutable snapshot with the recorded rights answers folded over it). No migration,
+  no schema change, no new stored field. A recorded rights answer on a published article bumps `content_revision`, so a
+  cached copy revalidates.
+- **Gate.** Where the effective rights say `attribution_required` is true, publishing needs the publisher, the original
+  address and a licence name or address. The same function (`provenance_blockers`) is applied on every path: the admin
+  publish route (`publication_blockers`, 409 `reading_rights_not_cleared`), the repository transition
+  (`ReadingContentRepository.set_status`, `ProvenanceRefused`, so a path that skips the route is still stopped) and the
+  D-111 automatic admission (`attribution_missing`). It is stricter than the previous admission rule, under which an
+  author name alone sufficed. An unanswered attribution question stays advice (`attribution_unknown`), as before.
+- **No retroactive unpublishing.** Published articles stay readable. `scripts/check_published_reading_provenance.py` is a
+  read-only checker that lists the published articles that fall short; what to do with each is a human decision.
+- **UI.** The publisher is the design's source line on the Discover card, the Content Detail hero and the Reader toolbar.
+  The licence and the original link have no place in the pinned design's Reading frames; they reach the learner in
+  Settings > Licences and data sources (`GET /api/licences`, whose Reading rows now credit the publisher). Recorded in
+  `UI_BACKEND_GAPS.md`.
+- **Review needed.** Whether the gate should also refuse an unanswered attribution question for a real corpus, and whether
+  the reader needs a per-text licence line (a design decision).

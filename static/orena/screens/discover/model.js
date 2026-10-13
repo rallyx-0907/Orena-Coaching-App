@@ -17,6 +17,7 @@
 
 import { duration } from '../../product/duration.js';
 import { placePercent } from '../../product/place-progress.js';
+import { publisherOf } from '../../product/provenance.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { collectionTitle } from '../../copy/general-catalogue.js';
 
@@ -44,7 +45,8 @@ export function progressFromContinuation(continuation, id, { idPrefix = '' } = {
 }
 
 /* GET /api/reading/articles item -> entry. No image field exists for an article today (a real
-   backend gap, not an oversight) and no source/publication name, so both are left out. */
+   backend gap, not an oversight). The card's muted source line (the design's `c.source`) is the
+   article's publisher from `provenance` (D-189), the same value the reader and Content Detail draw. */
 export function entryFromArticle(item, continuation) {
   const id = `article:${item.id}`;
   return {
@@ -55,7 +57,7 @@ export function entryFromArticle(item, continuation) {
     // `_learner_row`), not the learner's active learning language - an article's language never
     // changes with a later switch, and this is the value the data itself declares.
     language: item.language || '',
-    author: '',
+    author: publisherOf(item),
     level: item.level || '',
     topic: item.topic || '',
     readingSeconds: Number.isFinite(item.reading_time_seconds) ? item.reading_time_seconds : null,

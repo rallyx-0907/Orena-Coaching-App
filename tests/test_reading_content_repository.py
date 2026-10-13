@@ -283,7 +283,7 @@ def test_the_learner_list_is_lightweight_and_says_nothing_about_review(repositor
     item = repository.list_published(language="en")["items"][0]
     assert set(item) == {
         "id", "title", "language", "level", "topic", "reading_time_seconds",
-        "excerpt", "word_count", "published_at", "content_revision",
+        "excerpt", "word_count", "published_at", "content_revision", "provenance",
     }
     assert item["level"] == "B1"
 
@@ -336,10 +336,14 @@ def test_neither_list_asks_the_database_for_a_body(repository):
     event.remove(repository.engine, "before_cursor_execute", record)
 
     selects = [s for s in statements if s.upper().startswith("SELECT") and "reading_articles" in s]
-    assert len(selects) == 2
+    # The learner list, the credit lookup for its page (one set-wise read), the queue.
+    assert len(selects) == 3
     for statement in selects:
         assert "reading_articles.body" not in statement, statement
         assert "reading_articles.analysis_json" not in statement, statement
+    cards = [s for s in selects if "original_author" not in s]
+    assert len(cards) == 2
+    for statement in cards:
         assert "reading_articles.title" in statement
 
 

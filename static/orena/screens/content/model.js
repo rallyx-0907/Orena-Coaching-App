@@ -8,6 +8,8 @@
    uploaded media id), text (learner-imported text kept in device memory). A vocabulary
    collection is a different route ("#/collection/:id") and never reaches this screen. */
 
+import { publisherOf, sourceLine } from '../../product/provenance.js';
+
 export const KINDS = Object.freeze(['article', 'book', 'media', 'upload', 'text']);
 
 /* "article:abc" -> {kind:'article', id:'abc'}; "book:b1:c2" -> {kind:'book', id:'b1',
@@ -128,7 +130,8 @@ export function normalizeArticle(article) {
     // languages-5 / finding A: the article's own field (reading_content_repository.py's
     // `_article` projection), not the learner's current active learning language.
     language: String(article?.language || ''),
-    source: String(article?.attribution?.author || ''),
+    // D-189: the publisher the payload's `provenance` names; the author is only the fallback of an older payload.
+    source: sourceLine(article),
     level: String(article?.level || ''),
     minutes: minutesFrom(article?.reading_time_seconds),
     topic: String(article?.topic || ''),
@@ -223,7 +226,7 @@ export function relatednessScore(current, candidate) {
   const norm = (value) => String(value || '').trim().toLowerCase();
   let points = 0;
   if (norm(current?.topic) && norm(current.topic) === norm(candidate?.topic)) points += 2;
-  if (norm(current?.source) && norm(current.source) === norm(candidate?.author || candidate?.source?.creator)) points += 2;
+  if (norm(current?.source) && norm(current.source) === norm(candidate?.author || publisherOf(candidate) || candidate?.source?.creator)) points += 2;
   if (points > 0 && norm(current?.level) && norm(current.level) === norm(candidate?.level)) points += 1;
   return points;
 }

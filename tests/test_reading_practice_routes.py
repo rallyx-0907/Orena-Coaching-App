@@ -233,7 +233,7 @@ def test_a_cleared_article_publishes_and_unknown_attribution_is_only_advice(setu
 
 
 def test_an_adapted_article_also_needs_the_right_to_adapt(setup):
-    article_id = _article(setup, rights={"can_republish": True, "attribution_required": True})
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False})
     with setup.engine.begin() as connection:
         connection.execute(update(ReadingArticle).where(ReadingArticle.id == uuid.UUID(article_id))
                            .values(is_adapted=True))

@@ -63,6 +63,7 @@ from writing_coach.persistence.reading_job_repository import (
 )
 from writing_coach.reading_content_engine import ReadingContentEngine
 from writing_coach.reading_processing import content_fingerprint
+from writing_coach.reading_provenance import ProvenanceRefused, provenance_blockers
 from writing_coach.reading_source_import import (
     MAX_FILE_BYTES,
     ReadingSourceError,
@@ -214,6 +215,8 @@ def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
             blockers.append({"code": "adaptation_not_cleared", "question": "can_adapt"})
         elif adapt != "allowed":
             blockers.append({"code": "adaptation_unknown", "question": "can_adapt"})
+    # D-189: where the terms require attribution, the credit must be complete.
+    blockers.extend(provenance_blockers(article.get("provenance") or {}))
     return blockers
 
 
@@ -780,15 +783,23 @@ def set_article_status(
                 "reading_rights_not_cleared",
                 "Publishing needs the right to republish this text"
                 + (" and to adapt it" if current.get("is_adapted") else "")
+                + (" and a complete source credit (publisher, original address, licence)"
+                   if any(item["code"] == "provenance_missing" for item in blockers) else "")
                 + ". Answer the rights questions first.",
                 context={"blockers": blockers},
             )
         warnings = publication_warnings(current)
-    article = _guarded(
-        lambda: _content().set_status(
-            article_id, status, actor=_actor(admin), reason=payload.reason.strip(), warnings=warnings
+    try:
+        article = _guarded(
+            lambda: _content().set_status(
+                article_id, status, actor=_actor(admin), reason=payload.reason.strip(), warnings=warnings
+            )
         )
-    )
+    except ProvenanceRefused as exc:
+        raise orena_http_error(
+            409, "reading_rights_not_cleared", "Publishing needs a complete source credit.",
+            context={"blockers": exc.blockers},
+        ) from exc
     if article is None:
         raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
     audit_payload: dict[str, Any] = {"status": status, "reason": payload.reason.strip()}
