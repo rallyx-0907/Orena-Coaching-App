@@ -183,3 +183,32 @@ No P0 and no P1.
 Each condition is met in the code, not only in the text. Remaining items are P2 and do not block merge into the lane; browser verification and a PostgreSQL run are required before the surface is called `REVIEWABLE`. CI evidence is still needed for any claim beyond local execution. This is architecture approval only, not product approval.
 
 Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer. Reviewed commit `a1f06e48`.
+
+---
+
+## Re-review of a8c06b59
+
+- Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer.
+- Reviewed: `git diff 2ca7d54a..a8c06b59`. Reading only; nothing was run, no Docker. Whether the new tests fail without the fix is argued from the code, not by running them.
+
+### The leak was real and is closed for the cases it can be closed for
+
+The earlier code drew each General item from the shared entry row. A set's attestation protects its text only through the membership `content_snapshot` (written when an entry already had a published membership), so the shared row could show text merged after, or from outside, any qualifying set. `general_page` now draws each item the way a real collection page does: the membership's snapshot and its level/framework/topic overlay are applied to `_entry_dict`.
+
+### Checks
+
+- **Only qualifying memberships: yes.** `_general_memberships` filters on `_in_collections(collection_ids)` where the ids are exactly those returned by `_general_predicate` (published, valid admission, reserved ids excluded). A membership of a withdrawn or pending set is never read.
+- **Deterministic selection: yes.** Rank is `(0 if the membership carries a Mapping snapshot else 1, collection_id)`, minimum wins, independent of query row order. Snapshot-bearing first, then lowest collection id. (The `chosen` dict holds `(rank, membership)` pairs although the annotation says membership; harmless, tidy it.)
+- **Set-wise, no N+1: yes.** One `IN` query per chunk of up to 500 page entries, so a page of up to 5,000 costs at most 10 queries, plus the existing count and levels queries. Memberships loaded are bounded by page entries times their qualifying sets.
+- **Level semantics: right, with one accepted mismatch.** `_effective_level` is `coalesce(nullif(membership level,''), entry level)`, the same reading as `_collection_stats`. The levels list is now the distinct effective levels of qualifying memberships, so a level that only a withdrawn set or the shared row carries is no longer listed (tested). The filter matches an entry if ANY qualifying membership's effective level matches, while the card draws ONE membership. An entry in qualifying sets with levels A1 (chosen, lowest id) and C1 appears under filter C1 but is drawn as A1, and the levels list can include a level that no card displays. This is a display/filter inconsistency, not a leak (both levels are attested by qualifying sets). Accepted as P2; document it in D-188 or align the filter to the chosen membership later.
+- **Tests would fail without the fix.** Withdrawn-set text (first test) and snapshot determinism (second test): without the fix the shared row's text ("definition of set A1", "raw definition of a1") is shown, so both fail. Level override (third test): the old code listed and filtered by the entry row's level only, so `["A1","C1"]` and `level == "C1"` fail. The fourth test (General item equals the normal collection item) is a parity guard: in its single-set setup the shared row and the membership agree, so I expect it passes with or without the fix. It is still useful as a regression guard, but it is not evidence for the fix. The old pinned test (by-set withdrawal) was not weakened; D-188 text was updated for the new behaviour.
+
+### Remaining limit (P2, unchanged in kind)
+
+The snapshot exists only when the entry already had a published membership at import time. If a withdrawn or unattested set created or enriched the shared row first, and a later qualifying set had no published membership to trigger a snapshot, that set's membership has no snapshot and General still draws the shared row, including text from the earlier set. That is the by-set limitation of P1-5, now narrower, and it needs the human's acknowledgement already requested in D-188.
+
+### Verdict (re-review): APPROVED
+
+No P0 or P1. P2: the filter/display mismatch above, the annotation tidy-up, and the fourth test's limited strength. Local execution only; no CI evidence is claimed. This is architecture approval, not product approval.
+
+Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer. Reviewed commit `a8c06b59`.
