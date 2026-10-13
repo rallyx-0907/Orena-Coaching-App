@@ -58,3 +58,26 @@ The credential mechanics are sound (route scope, digest storage, constant-time c
 - The n8n workflow files were skimmed only for auth and secrets; the token is held as an n8n Header Auth credential per the README, not in the workflow JSON.
 
 Architecture review is not product approval and is not activation authorization.
+
+---
+
+## Re-review of 96e23d35 (2026-10-13)
+
+Scope: `git diff 1d4c7e9a..96e23d35` (8 files). Read-only; pytest not run, tests read only. Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5 (independent of the implementer).
+
+### Prior findings
+
+- **P1-1 (publish) - fixed.** In `admin_vocabulary_source_import`, `is_service = admin.get("role") == "service"` (only the token path produces that role) now sets `publish` and `publication_attested` to False before `_vocabulary_admission`, then overrides `requested_catalog_status` to `pending_review` and replaces `admission` with a pending, unattested record (no `attested_by`, no `auto_published`). This is route-level, so it holds for every format (CSV/TSV/XLSX/TXT/JSON/JSONL), authored or not, and mixed batches; `finalize_collection_publication` is only reached when the requested status is `published`. The explicit `catalog_status`, `origin` and `admission` keys in the route override anything the caller put in `metadata`. Session admins are untouched (the guard is the role). The scoped guard is still used by exactly the two routes; the collection publish/lifecycle routes use `require_admin`, so the token (401 on any other route) cannot reach them. New tests drive a CSV import with a token through the publish+attestation, the auto-publish rule (cleared rights + complete) and publish-without-attestation, and assert `pending_review`, not learner-visible, no attestation/`attested_by`/`auto_published`; a session-admin CSV publish test pins unchanged behaviour. They would fail without the fix (the unfixed route published the CSV).
+- **P2-1 (overwrite) - fixed.** The service principal gets 422 unless `duplicates == "skip"`, for authored and CSV alike (parametrized test, and nothing stored). The workflow downgrades `overwrite` to `skip` in api mode with a note; the README and config comment say so.
+- **P2-2/P2-3/P2-4/P2-5/P2-7 - documented.** D-18X and the README now carry the corrected lifecycle statement, token-generation and rotation guidance and the residuals; the status line records the review and "re-review pending" (to be updated to this outcome, and renumbered at merge).
+
+### New finding
+
+#### P1-2 - The token can alter the display metadata of an already published collection via a non-authored re-import
+- Where: `writing_coach/persistence/vocabulary_repository.py` `import_source`, existing-collection branch (lines ~704-726): for a non-authored source (`duplicates is None`) into an existing published collection id, the loop sets `title`, `framework`, `level`, `level_range` and `topic` from the caller's metadata (only `catalog_status` and `provenance` are protected). The authored path is refused for published sets (`duplicates is not None and collection_was_published`), but the CSV path is not. New entries and memberships are refused (good), so content words are safe; the learner-visible title, level and topic of a published set are not.
+- Issue: a leaked token (the review's threat) can rename or re-level a published collection by importing a CSV with its `collection_id`. Pre-existing for session admins, but the scoped credential must not widen what it can change on published content.
+- Required: for the service principal, refuse any import whose target collection already exists and is published (422 with a clear message), before `import_source`, for every format; add a test that a token CSV import into a published collection id leaves its title/level/topic unchanged and returns 422. Keep session-admin behaviour as is.
+
+### Final verdict: CHANGES REQUIRED (narrow)
+
+P1-1 and P2-1 are properly fixed. One small P1 (P1-2) remains; after it and its test land, a one-diff re-check will give APPROVED. No approved head SHA is issued yet. Not product approval and not activation authorization.
