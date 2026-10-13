@@ -813,6 +813,24 @@ console.log(`  model fit at 328 x 474: ${fitReport.join('; ')}`);
   fitVocabularyCards({ querySelectorAll: () => [boxed] }, { viewport: true });
   assert.equal(boxed.style.minHeight, '500px', 'a re-fit to a smaller box caps the kept height at the box (616 - 100 - 16)');
 }
+// From the first paint, not only after a turn (:8021 resilient: front 638px, back 650px, so the first turn jumped
+// 12px): the fit measures the hidden face too and gives the card the taller height, then shows the face it was on.
+{
+  const heights = { front: 638, back: 650 };
+  const face = (hidden) => ({ hidden, clientHeight: 700, querySelector: () => null });
+  const faces = { front: face(false), back: face(true) };
+  const shown = () => (faces.front.hidden ? 'back' : 'front');
+  const card = {
+    dataset: {},
+    style: { minHeight: '', setProperty() {} },
+    closest: () => ({ getBoundingClientRect: () => ({ bottom: 900 }), scrollTop: 0 }),
+    getBoundingClientRect: () => ({ top: 100, height: Math.max(heights[shown()], parseFloat(card.style.minHeight) || 0) }),
+    querySelectorAll: (selector) => (selector === '.c-vcard__face' ? [faces.front, faces.back] : []),
+  };
+  fitVocabularyCards({ querySelectorAll: () => [card] }, { viewport: true });
+  assert.equal(card.style.minHeight, '650px', 'the card takes the taller face\'s height before any turn');
+  assert.ok(!faces.front.hidden && faces.back.hidden, 'and still shows the face it was on');
+}
 // It re-fits on resize (every screen) and on turn (the other face fits on its own).
 const kitSrc = readFileSync(new URL('../static/orena/kit/vocabulary-card.js', import.meta.url), 'utf8');
 assert.match(kitSrc.slice(kitSrc.indexOf('export function bindVocabularyCards')), /containCard\(card\)/, 'turning a card fits the face it shows');

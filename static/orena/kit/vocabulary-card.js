@@ -508,6 +508,23 @@ function columnBottom(column) {
   return rect.bottom - (hidden ? padding : 0);
 }
 
+/* One card, one size from the first paint (the human, 2026-10-13): the hidden face is shown for one synchronous
+   measure, contained the same way, and the card keeps the taller height (min-height, never past its box); then the face
+   it was on is shown again. Turning keeps that height (bindVocabularyCards). */
+function equalFaces(card) {
+  const faces = typeof card?.querySelectorAll === 'function' ? [...card.querySelectorAll('.c-vcard__face')] : [];
+  if (faces.length !== 2) return;
+  const shown = faces.find((face) => !face.hidden) || faces[0];
+  const other = faces.find((face) => face !== shown);
+  let tallest = parseFloat(card.style.minHeight) || 0;
+  for (const face of [other, shown]) {
+    for (const each of faces) each.hidden = each !== face;
+    containCard(card);
+    tallest = Math.max(tallest, card.getBoundingClientRect().height);
+  }
+  card.style.minHeight = `${Math.round(tallest)}px`;
+}
+
 export function fitVocabularyCards(root, { viewport = false, bottomGap = 16 } = {}) {
   root?.querySelectorAll?.('.c-vcard').forEach((card) => {
     if (viewport) {
@@ -527,6 +544,7 @@ export function fitVocabularyCards(root, { viewport = false, bottomGap = 16 } = 
       const slot = card.parentElement?.getBoundingClientRect().height || 0;
       card.dataset.fit = slot && slot < SHORT_CARD_PX ? 'short' : 'full';
     }
+    equalFaces(card);
     containCard(card);
   });
   // Web fonts change the measure once they arrive: fit again then, once per document.
