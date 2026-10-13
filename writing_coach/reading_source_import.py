@@ -310,7 +310,12 @@ class DirectUrlAdapter:
             body = payload.decode("utf-8", errors="replace")
         except (UnicodeError, AttributeError) as exc:  # pragma: no cover - decode with replace
             raise ReadingSourceError("undecodable_source", "This page could not be read as text.") from exc
-        _require_text(body)
+        # The raw page is bounded by MAX_FETCH_BYTES; the text-length limit
+        # belongs to the extracted article (checked in normalize), not to markup.
+        if (content_type or "text/html") == "text/plain":
+            _require_text(body)
+        elif not _normalized_body(body):
+            raise ReadingSourceError("empty_source", "There is no readable text in this source.")
         return RawPayload(
             body=body,
             content_type=content_type or "text/html",
@@ -330,6 +335,7 @@ class DirectUrlAdapter:
         article = extract_article(raw.body, base_url=raw.metadata.get("fetched_url") or raw.submitted.url)
         if not article.body.strip():
             raise ReadingSourceError("empty_source", "There is no readable article in this page.")
+        _require_text(article.body)
         extracted = replace(
             raw,
             body="".join(f"<p>{escape(part)}</p>" for part in article.body.split(_PARAGRAPH_BREAK)),

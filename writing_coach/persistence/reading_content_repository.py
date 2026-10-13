@@ -163,6 +163,7 @@ def _source(row: Any) -> dict[str, Any]:
         "last_checked_at": _iso(row.last_checked_at),
         "last_success_at": _iso(row.last_success_at),
         "last_error": row.last_error,
+        "polling_cursor": row.polling_cursor,
         "created_at": _iso(row.created_at),
     }
 
@@ -507,6 +508,50 @@ class ReadingContentRepository:
                 .values(polling_enabled=bool(enabled), updated_at=_now(now))
             )
         return self.get_source(source_id)
+
+    def record_poll(
+        self,
+        source_id: str,
+        *,
+        error: str,
+        state: dict[str, Any],
+        now: datetime | None = None,
+    ) -> None:
+        """Store one poll's outcome on the existing source columns (no schema change).
+
+        `last_checked_at` always moves; `last_success_at` only on success. The
+        poller's backoff bookkeeping (`failures`, `next_retry_at`) is a small
+        JSON document in `polling_cursor`, the column reserved for "where the
+        poller got to".
+        """
+        if _lookup_uuid(source_id) is None:
+            return
+        moment = _now(now)
+        values: dict[str, Any] = {
+            "last_checked_at": moment,
+            "last_error": (error or "")[:2000],
+            "polling_cursor": json.dumps(state, separators=(",", ":"))[:600],
+        }
+        if not error:
+            values["last_success_at"] = moment
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(ReadingSource).where(ReadingSource.id == _uuid(source_id)).values(**values)
+            )
+
+    def known_source_urls(self, source_id: str, urls: Sequence[str]) -> set[str]:
+        """Which of these canonical URLs this source already holds a snapshot of."""
+        wanted = [url for url in urls if url]
+        if not wanted or _lookup_uuid(source_id) is None:
+            return set()
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingSourceItem.canonical_url).where(
+                    ReadingSourceItem.source_id == _uuid(source_id),
+                    ReadingSourceItem.canonical_url.in_(wanted),
+                )
+            ).all()
+        return {row[0] for row in rows}
 
     # ---- snapshots -------------------------------------------------------
     def record_source_item(
