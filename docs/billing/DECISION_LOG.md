@@ -89,3 +89,11 @@ D-MON-013 | 2026-10-13 | Manual plan writes re-check billing ownership inside th
 billing owns the account; nothing is written. | The pre-check alone left a window in which a payment could land and
 the manual row would later resurface. | A manual grant exists only if it committed before billing took ownership;
 then the existing policy applies when billing ends.
+
+D-MON-014 | 2026-10-13 | A committed prepaid payment or refund that is not yet synced to access counts as billing
+ownership (re-verification of PR-MON-1 P1-2). Extends D-MON-013. Inside the membership transaction, under the
+incarnation lock, the orders' prepaid version (`billing_orders` paid + refunded, the arithmetic `sync_prepaid`
+records) ahead of the version `commerce_provider_subscriptions` applied for `prepaid:<incarnation>` refuses a plan
+change. | payOS writes the payment (`mark_paid`) and the access (`sync_prepaid`) in two transactions; the window
+between them must not admit a latent manual grant. | The smallest change: no billing redesign; it also holds an
+account whose sync crashed until it is repaired (R-MON-002, PR-MON-3), which is the safe side.

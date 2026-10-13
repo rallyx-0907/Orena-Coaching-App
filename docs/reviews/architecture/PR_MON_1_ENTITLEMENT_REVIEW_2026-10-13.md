@@ -167,3 +167,39 @@ The fixing commit SHA is in `docs/billing/BILLING_STATUS.md` and the lane's `git
 - Mutation checks:
   - Removing the P1-1 suppression fails 14 tests, including the PostgreSQL one.
   - Removing the P1-2 transactional re-check fails 2 tests: the two PostgreSQL race tests.
+
+---
+
+## Focused re-verification 1 (reviewer, 2026-10-13), recorded
+
+On `70cc2ece`, the reviewer found **P1-1 VERIFIED FIXED**. **P1-2 was PARTIALLY FIXED**: the payOS path writes
+`mark_paid` (commit) and then `sync_prepaid` (a separate `record_event`), and an Admin write in that window could
+still create a latent manual grant. Required invariant: once a verified payOS payment has durably committed, an
+Admin plan write must not create a latent manual grant before prepaid synchronization finishes. Verdict: REQUEST
+CHANGES (that race only).
+
+## Fix response 2 (implementer, 2026-10-13)
+
+The fixing commit is titled "fix(billing): PR-MON-1 P1-2 payOS mark_paid -> sync_prepaid window"; its SHA is in
+`docs/billing/BILLING_STATUS.md`.
+
+- `PostgresProductRepository._prepaid_sync_pending`, called from `_billing_owns` under the same
+  `FOR NO KEY UPDATE` incarnation lock, compares two versions. One is the orders' prepaid version for each gateway
+  with paid orders, from `PostgresBillingRepository._chain`, the same arithmetic `sync_prepaid` records. The other
+  is the version `commerce_provider_subscriptions` applied for `prepaid:<incarnation>`. If the first is ahead, or no
+  applied version exists, billing owns the account and the change is refused with nothing written. With no
+  `billing_orders` table (0027 not applied), nothing is pending.
+- `mark_paid` locks the incarnation `FOR NO KEY UPDATE` too, so an in-flight payment serializes with the Admin
+  write. A refund committed but not yet synced is held the same way.
+- **Regression** (PostgreSQL, own schema at head plus the proposed 0027):
+  `test_a_committed_payos_payment_not_yet_synced_refuses_a_manual_write`. Each step is asserted:
+  1. a valid `mark_paid` commits;
+  2. with no `sync_prepaid` yet, the commerce record has no access;
+  3. `apply_membership(plan="pro")` raises `MembershipConflict` and writes no row;
+  4. `sync_prepaid` runs and the account reads `plus`;
+  5. the refund commits to the orders, and an Admin write before the refund sync is refused with no row;
+  6. the refund syncs and the account reads `free` with no manual row;
+  7. a new Admin decision then applies.
+- **Results** (local, throwaway PostgreSQL 16):
+  - The targeted batch gives 701 passed, 0 skipped.
+  - Mutation: with the pending-sync check disabled, exactly this regression fails (1 failed, 11 passed in the file).

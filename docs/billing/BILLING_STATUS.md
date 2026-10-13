@@ -7,12 +7,12 @@
 | --- | --- |
 | Branch | `feature/monetization-billing-v1` |
 | Main | `172ae216397e6dfaa1f74aa32417f48b7c2365fd` (`origin/main`, checked 2026-10-13) |
-| Last completed slice | PR-MON-1 review fixes P1-1 (owned billing suppresses manual, D-MON-012) and P1-2 (transactional ownership re-check, D-MON-013) |
-| Active PR | **PR-MON-1 Canonical Effective Entitlement** - REQUEST CHANGES answered; awaiting focused re-verification of P1-1/P1-2 (`docs/reviews/architecture/PR_MON_1_ENTITLEMENT_REVIEW_2026-10-13.md`) |
+| Last completed slice | PR-MON-1 P1-2 re-verification fix: committed-but-unsynced payOS payment/refund holds the account (D-MON-014) |
+| Active PR | **PR-MON-1 Canonical Effective Entitlement** - P1-1 VERIFIED FIXED; P1-2 payOS window fix awaiting focused re-verification |
 | Current slice | none in progress — PR-MON-1 waits for independent architecture review |
 | Exact next action | reviewer re-verifies P1-1 and P1-2 only; on APPROVE: rebase on latest `main`, resolve conflicts, re-run targeted + PostgreSQL batch, open PR-MON-1 |
 | Blockers | none. Carried to PR-MON-2: review P2 startup discovery (R-MON-010) |
-| Test status | local only (not CI): throwaway PostgreSQL 16 batch 700 passed / 0 skipped; PG entitlement file 11/11 twice on one DB; mutation checks: billing read off 17, precedence flip 3, grace off 12, P1-1 suppression off 14, P1-2 re-check off 2 |
+| Test status | local only (not CI): throwaway PostgreSQL 16 batch 701 passed / 0 skipped; pending-sync mutation fails exactly the new regression; earlier mutations: billing read 17, precedence 3, grace 12, P1-1 14, P1-2 2 |
 | Next human checkpoint | PR-MON-1 architecture-review-ready report |
 
 ## Revised sequence (human, 2026-10-13)

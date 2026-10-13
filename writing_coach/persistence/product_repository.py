@@ -162,7 +162,42 @@ class PostgresProductRepository(ProductRepository):
             text("SELECT provider, plan_id, state, paid_through FROM commerce_subscriptions WHERE incarnation_id = :inc"),
             {"inc": incarnation},
         ).mappings().first()
-        return billing is not None and resolve(legacy=None, billing=billing, now=now).billing_live
+        if billing is not None and resolve(legacy=None, billing=billing, now=now).billing_live:
+            return True
+        return PostgresProductRepository._prepaid_sync_pending(session, incarnation)
+
+    @staticmethod
+    def _prepaid_sync_pending(session: Session, incarnation) -> bool:
+        """A verified prepaid payment (or refund) is committed but not yet recorded as access (re-verification of P1-2).
+
+        payOS records a payment in `billing_orders` (`mark_paid`, its own transaction) and only then the access
+        (`BillingService.sync_prepaid` -> `record_event`). Between the two, `commerce_subscriptions` does not show the
+        owner yet. The orders' prepaid version (paid + refunded, `PostgresBillingRepository._chain`, the arithmetic
+        `sync_prepaid` records) ahead of the version the commerce record applied for `prepaid:<incarnation>` means
+        billing is taking ownership, so a plan change is refused. `mark_paid` holds this incarnation `FOR NO KEY
+        UPDATE` too, so a payment in flight is serialized by the caller's lock. Before the orders table exists
+        (proposed 0027) there is nothing to wait for."""
+        from sqlalchemy import text
+
+        from writing_coach.persistence.billing_repository import PostgresBillingRepository
+
+        connection = session.connection()
+        if connection.execute(text("SELECT to_regclass('billing_orders')")).scalar() is None:
+            return False
+        gateways = connection.execute(
+            text("SELECT DISTINCT gateway FROM billing_orders WHERE incarnation_id = :inc AND paid_sequence IS NOT NULL"),
+            {"inc": incarnation},
+        ).scalars().all()
+        for gateway in gateways:
+            ordered = PostgresBillingRepository._chain(connection, incarnation, gateway=gateway)["version"]
+            applied = connection.execute(
+                text("SELECT object_version FROM commerce_provider_subscriptions "
+                     "WHERE provider = :gateway AND external_subscription_id = :subscription"),
+                {"gateway": gateway, "subscription": f"prepaid:{incarnation}"},
+            ).scalar_one_or_none()
+            if applied is None or applied < ordered:
+                return True
+        return False
 
     def apply_membership(self, user_id: str, *, role: str | None = None, plan: object = ..., until=None,
                          audit: dict | None = None) -> None:

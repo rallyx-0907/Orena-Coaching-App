@@ -230,3 +230,85 @@ def test_an_admin_cannot_hand_set_a_plan_billing_owns(world):
     assert world["products"].get_subscription(world["key"]) is None, "nothing was written"
     account = store.account_membership(world["account"])
     assert (account["plan_id"], account["status"], account["billing_owned"]) == ("plus", "active", True)
+
+
+def test_a_committed_payos_payment_not_yet_synced_refuses_a_manual_write():
+    """Re-verification of P1-2: payOS commits the payment (`mark_paid`) and records the access in a second
+    transaction (`sync_prepaid`). An Admin plan write in between must not leave a latent manual grant.
+
+    Runs in its own schema at head plus the proposed `billing_orders` (0027), as `tests/test_billing.py` does."""
+    from urllib.parse import quote
+
+    from alembic import command
+    from alembic.config import Config
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+
+    from tests.test_billing import PAYOS, _proposed
+    from writing_coach.billing.service import BillingService
+    from writing_coach.persistence.billing_repository import PostgresBillingRepository
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    schema = f"entitle_{uuid.uuid4().hex[:10]}"
+    separator = "&" if "?" in URL else "?"
+    schema_url = f"{URL}{separator}options={quote(f'-csearch_path={schema}')}"
+    admin = create_engine(URL, future=True)
+    with admin.begin() as connection:
+        connection.execute(text(f'CREATE SCHEMA "{schema}"'))
+    try:
+        cfg = Config(os.path.join(root, "alembic.ini"))
+        cfg.set_main_option("script_location", os.path.join(root, "migrations"))
+        cfg.set_main_option("path_separator", "os")
+        cfg.set_main_option("sqlalchemy.url", schema_url.replace("%", "%%"))
+        command.upgrade(cfg, "head")
+        engine = create_engine(schema_url, future=True)
+        try:
+            with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
+                _proposed("20261005_0027_billing_orders").upgrade()
+            key = f"entitlement-sync-{uuid.uuid4()}"
+            account = stable_uuid("user", key)
+            with engine.begin() as connection:
+                connection.execute(text("INSERT INTO users (id, user_key, email, name, picture, role, created_at) "
+                                        "VALUES (:id, :key, '', '', '', 'user', :now)"),
+                                   {"id": account, "key": key, "now": datetime.now(UTC)})
+            incarnation = PostgresIncarnationRepository(engine).ensure_active(str(account))
+            orders, commerce = PostgresBillingRepository(engine), PostgresCommerceRepository(engine)
+            products = PostgresProductRepository(engine)
+            service = ProductService(products, billing=CommerceEntitlementSource(commerce))
+            billing = BillingService(orders=orders, commerce=commerce, gateways={"payos": PAYOS}, prices={})
+            order = orders.create_order(operation_id=str(uuid.uuid4()), incarnation_id=incarnation, gateway="payos",
+                                        plan_id="plus", period="month", currency="VND", amount_minor=99_000)
+
+            # 1. a valid payOS payment commits; 2. sync_prepaid has not run yet
+            paid = orders.mark_paid(order_code=int(order["order_code"]), event_id="payos:evt-1", amount_minor=99_000,
+                                    currency="VND")
+            assert paid["status"] == "applied"
+            assert commerce.subscription_for_account(str(account)) is None, "the access is not recorded yet"
+            # 3-4. the Admin plan write in that window is refused and writes nothing
+            with pytest.raises(MembershipConflict):
+                products.apply_membership(str(account), plan="pro", until=None)
+            assert products.get_subscription(key) is None, "no latent manual grant"
+            # 5. the sync completes: billing owns the account
+            assert billing.sync_prepaid(incarnation, "payos", event_id=f"payos:paid:{order['order_code']}").status == "apply"
+            assert service.plan_for_user(key).id == "plus"
+            with pytest.raises(MembershipConflict):
+                products.apply_membership(str(account), plan="pro", until=None)
+            # 6. billing ends later: the refund commits to the orders first, its access sync second - the same window
+            assert orders.mark_refunded(order_code=int(order["order_code"]), note="returned")["status"] == "applied"
+            with pytest.raises(MembershipConflict):
+                products.apply_membership(str(account), plan="pro", until=None)
+            assert products.get_subscription(key) is None, "no grant slips in before the refund is synced"
+            assert billing.sync_prepaid(incarnation, "payos", event_id=f"payos:refund:{order['order_code']}").status == "apply"
+            # 7. no unexpected manual plan appears, and the account is released to Admin again
+            assert service.entitlement(key).source in ("none", "billing")
+            assert service.plan_for_user(key).id == "free"
+            assert products.get_subscription(key) is None
+            products.apply_membership(str(account), plan="pro", until=None)
+            assert service.plan_for_user(key).id == "pro", "after billing ended, a NEW Admin decision applies"
+        finally:
+            engine.dispose()
+    finally:
+        with admin.begin() as connection:
+            connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
+        admin.dispose()
+
