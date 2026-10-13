@@ -376,10 +376,21 @@ pass.**
 
 # 9. Validation and completion
 
-`.github/workflows/ci.yml` is the canonical definition of the gate. It runs the
-project-memory and architecture validators, the listening-catalog check, the
-browser ESM graph, the `.mjs` contract gates, then
-`pytest -q test_app.py tests` with `PERSISTENCE_BACKEND=sqlite`. When the local
+`.github/workflows/ci.yml` is the canonical definition of the gate. It runs
+four jobs concurrently: `python-gates` (project-memory and architecture
+validators, the `scripts/test_orena_*.py` contract scripts, the listening-catalog
+check), `node-gates` (the browser ESM graph, then the `.mjs` gates listed in
+`scripts/node_gates.txt`, four at a time via `scripts/run_node_gates.sh`),
+`pytest` (`pytest -q -n auto --dist loadfile test_app.py tests` with
+`PERSISTENCE_BACKEND=sqlite`, split across CPUs by pytest-xdist; `conftest.py`
+gives each worker its own databases and temp directory) and `docker-build`. A
+pull request that changes only `*.md` files skips the full `pytest` and
+`docker-build` jobs and runs only the test files that mention `docs/` or `.md`;
+the validators and Node gates always run, and every push to `main` runs
+everything. The required status check is the aggregate job `test`, which passes
+only when every other job succeeded (`docker-build` may be skipped on a
+Markdown-only change). A newer push to the same pull request cancels the run in flight.
+`docs/project/CI_FAST_PATH.md` says how to iterate locally. When the local
 sequence and CI disagree, CI defines the gate and the local recipe is what is
 wrong.
 

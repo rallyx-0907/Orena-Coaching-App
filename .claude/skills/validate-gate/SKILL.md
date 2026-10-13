@@ -4,7 +4,9 @@ description: Run the Orena validation gate — project-memory and architecture v
 disable-model-invocation: true
 ---
 
-Reproduce the CI gate (`.github/workflows/ci.yml`) locally. Optional argument
+Reproduce the CI gate (`.github/workflows/ci.yml`) locally. CI runs its jobs concurrently, the Node gates come
+from `scripts/node_gates.txt` (`sh scripts/run_node_gates.sh`) and pytest runs under pytest-xdist; see
+`docs/project/CI_FAST_PATH.md`. Optional argument
 `$ARGUMENTS` narrows scope (e.g. a single test path); with no argument, run the
 full sequence.
 
