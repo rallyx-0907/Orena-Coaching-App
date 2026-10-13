@@ -317,6 +317,23 @@ _WORD_INDEX = _build_word_index(_CATALOG_BY_ID)
 _ENTRY_INDEX = _build_entry_index(_CATALOG_BY_ID)
 # What a learner may be shown: members of a published collection only.
 _LEARNER_ENTRY_INDEX = _build_entry_index(_LEARNER_CATALOG_BY_ID)
+_LEARNER_WORD_INDEX = _build_word_index(_LEARNER_CATALOG_BY_ID)
+
+
+def install_static_catalog(raw_collections: Sequence[Mapping[str, Any]]) -> None:
+    """Rebuild every static view from ``raw_collections``. For tests only.
+
+    Keeps the raw, learner-catalog, entry and word indexes consistent in one
+    call so a test never patches a private index by itself."""
+
+    global _CATALOG_BY_ID, _LEARNER_CATALOG_BY_ID, _WORD_INDEX, _ENTRY_INDEX
+    global _LEARNER_ENTRY_INDEX, _LEARNER_WORD_INDEX
+    _CATALOG_BY_ID = _build_catalog(raw_collections)
+    _LEARNER_CATALOG_BY_ID = _build_learner_catalog(_CATALOG_BY_ID)
+    _WORD_INDEX = _build_word_index(_CATALOG_BY_ID)
+    _ENTRY_INDEX = _build_entry_index(_CATALOG_BY_ID)
+    _LEARNER_ENTRY_INDEX = _build_entry_index(_LEARNER_CATALOG_BY_ID)
+    _LEARNER_WORD_INDEX = _build_word_index(_LEARNER_CATALOG_BY_ID)
 
 
 def _summary(collection: Mapping[str, Any]) -> dict[str, Any]:
@@ -442,8 +459,9 @@ def vocabulary_entry_for(language_code: str, normalized_word: str) -> dict[str, 
 
 
 def collection_ids_for_word(language_code: str, normalized_word: str) -> list[str]:
-    """Curated collection ids containing ``normalized_word``, or ``[]`` when
-    the word is not in any curated collection for that language.
+    """Published curated collection ids containing ``normalized_word``, or
+    ``[]`` when the word is in no published collection for that language.
+    An unpublished seed collection is never reported.
 
     Built from the load-time index; no database membership table and no
     invented match.
@@ -451,4 +469,4 @@ def collection_ids_for_word(language_code: str, normalized_word: str) -> list[st
 
     language = str(language_code or "").strip().casefold()
     word = normalize_vocabulary_word(normalized_word)
-    return list(_WORD_INDEX.get((language, word), []))
+    return list(_LEARNER_WORD_INDEX.get((language, word), []))
