@@ -1,0 +1,75 @@
+{
+  "_comment": "The shape of POST /api/admin/vocabulary/preview and /import for an authored-entry file, as app.py returns it. tests/test_n8n_vocab_workflow.py calls the real routes and fails if their key structure differs from this file; scripts/test_n8n_vocab_workflow.mjs feeds it to the workflow's strict readers. Volatile values (hashes, receipt ids, the record body) are placeholders.",
+  "preview": {
+    "items": [
+      {
+        "filename": "en-batch.jsonl",
+        "format": "jsonl",
+        "content_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "row_count": 1,
+        "headers": ["id", "lang", "headword"],
+        "sample": [{ "id": "en:resilient" }],
+        "detected_mapping": {},
+        "confidence": {},
+        "warnings": [],
+        "error": "",
+        "authored": {
+          "language_code": "en",
+          "format": "orena-vocab-entry",
+          "rows": [
+            {
+              "row": 1,
+              "id": "en:resilient",
+              "term": "resilient",
+              "warnings": [],
+              "outcome": "ready",
+              "identity_key": "en|resilient|adjective|",
+              "record": { "term": "resilient" },
+              "existing": "new"
+            }
+          ],
+          "counts": { "ready": 1 },
+          "warnings": []
+        }
+      }
+    ]
+  },
+  "import_item": {
+    "source_import_id": "00000000-0000-0000-0000-000000000000",
+    "filename": "en-batch.jsonl",
+    "status": "imported",
+    "imported": 1,
+    "skipped": 0,
+    "duplicates": 0,
+    "warnings": [],
+    "failed": 0,
+    "failure_reason": "",
+    "updated": 0,
+    "conflicts": 0,
+    "localizations_retired": 0,
+    "rows": [],
+    "dictionary": { "source": "", "readings": 0, "not_found": 0 },
+    "localizations": []
+  },
+  "import_skipped_item": {
+    "source_import_id": "00000000-0000-0000-0000-000000000000",
+    "filename": "en-batch.jsonl",
+    "status": "skipped",
+    "imported": 0,
+    "skipped": 1,
+    "duplicates": 1,
+    "warnings": [],
+    "failed": 0,
+    "failure_reason": "",
+    "updated": 0,
+    "conflicts": 0,
+    "localizations_retired": 0,
+    "rows": [],
+    "dictionary": { "source": "", "readings": 0, "not_found": 0 },
+    "localizations": []
+  },
+  "import": {
+    "collection": { "id": "en-batch", "title": "en-batch", "catalog_status": "pending_review" },
+    "items": []
+  }
+}

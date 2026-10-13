@@ -1,0 +1,1394 @@
+{
+  "name": "Orena · Vocabulary Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Orena · Vocabulary Generator",
+        "formDescription": "One word per line: word — level [— Vietnamese meaning]. Example: resilient — C1 or 森林 — HSK4. The language is detected from the characters.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Word list",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "resilient — C1\n森林 — HSK4"
+            },
+            {
+              "fieldLabel": "Batch title",
+              "fieldType": "text",
+              "placeholder": "HSK5 Batch 01"
+            },
+            {
+              "fieldLabel": "Collection ID",
+              "fieldType": "text",
+              "placeholder": "empty = made from the batch title"
+            },
+            {
+              "fieldLabel": "Delivery mode",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "file"
+                  },
+                  {
+                    "option": "api"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "When already stored",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "skip"
+                  },
+                  {
+                    "option": "overwrite"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "authentication": "basicAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d3be3dad-00c8-5fd9-90a7-6e78da66d0c3",
+      "name": "Form",
+      "webhookId": "886c5172-9f81-5e0e-bb82-e64d75baf284"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ],
+      "id": "044fc319-9ec2-594e-892d-5b324b7d223c",
+      "name": "Run test"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{ json: {\n  'Word list': 'resilient — C1\\n森林 — HSK4',\n  'Batch title': 'Test Batch 01',\n  'Delivery mode': 'file',          // 'file' or 'api'\n  'When already stored': 'skip',    // 'skip' or 'overwrite' (overwrite is honoured only from this manual path)\n  _trigger: 'manual',               // marks an operator-run execution; the form never sets it\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        200
+      ],
+      "id": "1192ac45-362b-5016-8210-486a5453335a",
+      "name": "Test input"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Code node \"Config\" - every setting of the workflow lives here. No secret belongs in this node:\n// the Orena token and the AI key are n8n Credentials (Header Auth) chosen on the HTTP nodes.\n//\n// Where a value comes from (first match wins): the form / manual input -> the SETTINGS block below -> an n8n\n// environment variable. n8n 2.x may block $env in Code nodes (N8N_BLOCK_ENV_ACCESS_IN_NODE); then edit SETTINGS.\nconst SETTINGS = {\n  output: {\n    dir: '',                        // '' = /files/orena, inside the n8n container: mount a Docker volume there (README). Env: ORENA_VOCAB_OUT_DIR\n  },\n  orena: {\n    baseUrl: '',                    // api mode only, e.g. https://orena.example (no trailing path). Env: ORENA_BASE_URL\n    allowFormOverwrite: false,      // true = a form submitter may choose duplicates=overwrite. Env: ORENA_VOCAB_ALLOW_FORM_OVERWRITE=true\n  },\n  ai: {\n    enabled: true,                  // AI only fills gaps the dictionaries leave; with no endpoint/model it is simply off\n    endpoint: '',                   // OpenAI-compatible chat completions URL. Env: AI_ENDPOINT\n    model: '',                      // Env: AI_MODEL\n  },\n  metadata: {\n    // What the generator can honestly claim. It reads Free Dictionary (Wiktionary, CC BY-SA), Tatoeba (CC BY 2.0 FR),\n    // CC-CEDICT / CVDICT (CC BY-SA), Unihan and Make Me a Hanzi: attribution / share-alike terms apply, and no one has\n    // cleared this batch. Authored entries land pending_review whatever is written here (D-178); raise these only\n    // after a human has actually checked the rights and the batch is a whole set.\n    rights_status: 'unknown',\n    completeness: 'partial',\n  },\n};\n\nconst DEFAULT_OUTPUT_DIR = '/files/orena';\nconst env = k => { try { return ($env && $env[k]) || ''; } catch (e) { return ''; } };\nconst flag = v => ['1', 'true', 'yes', 'on'].includes(String(v || '').trim().toLowerCase());\nconst form = $input.first().json || {};\nconst pick = (...keys) => { for (const k of keys) if (form[k] !== undefined && form[k] !== null && String(form[k]).trim() !== '') return String(form[k]); return ''; };\n// Only the manual \"Test input\" path is operator-controlled. Anything else arrives through the form trigger (a webhook).\nconst trusted = form._trigger === 'manual';\nconst now = new Date();\nconst runId = now.toISOString().replace(/[-:]/g, '').replace(/\\..+/, '').replace('T', '-');   // 20261013-091500\n\nlet mode = (pick('Delivery mode', 'mode') || 'file').toLowerCase();\nif (!['file', 'api'].includes(mode)) throw new Error(\"Delivery mode must be 'file' or 'api'\");\n\nlet duplicates = (pick('When already stored', 'duplicates') || 'skip').toLowerCase();\nif (!['skip', 'overwrite'].includes(duplicates)) throw new Error(\"duplicates must be 'skip' or 'overwrite'\");\nlet duplicatesNote = '';\nconst overwriteAllowed = trusted || SETTINGS.orena.allowFormOverwrite || flag(env('ORENA_VOCAB_ALLOW_FORM_OVERWRITE'));\nif (duplicates === 'overwrite' && !overwriteAllowed) {\n  duplicates = 'skip';\n  duplicatesNote = \"'overwrite' was requested through the form, which is not allowed to overwrite; 'skip' was used instead\";\n}\n\nconst dir = String(SETTINGS.output.dir || env('ORENA_VOCAB_OUT_DIR') || DEFAULT_OUTPUT_DIR).replace(/\\/+$/, '');\nif (!/^\\/[A-Za-z0-9_\\-. \\/]+$/.test(dir) || dir.split('/').includes('..')) throw new Error('output.dir must be an absolute path without \"..\"');\n\nconst baseUrl = String(SETTINGS.orena.baseUrl || env('ORENA_BASE_URL') || '').trim().replace(/\\/+$/, '');\nif (baseUrl && !/^https?:\\/\\/[^\\s/]+$/i.test(baseUrl)) throw new Error('orena.baseUrl must be an origin such as https://orena.example');\n\nconst aiEndpoint = String(SETTINGS.ai.endpoint || env('AI_ENDPOINT') || '').trim();\nconst aiModel = String(SETTINGS.ai.model || env('AI_MODEL') || '').trim();\n\nconst config = {\n  runId,\n  trusted,\n  mode,\n  duplicates,\n  duplicatesNote,\n\n  input: {\n    text: pick('Word list', 'words'),             // one per line: word - level [- Vietnamese meaning]\n    title: pick('Batch title', 'title'),\n    collectionId: pick('Collection ID', 'collection_id'),\n  },\n\n  orena: {\n    baseUrl,\n    previewUrl: baseUrl + '/api/admin/vocabulary/preview',\n    importUrl: baseUrl + '/api/admin/vocabulary/import',\n    configured: !!baseUrl,\n    fileFormat: 'jsonl',            // 'jsonl' | 'json'\n  },\n\n  metadata: { ...SETTINGS.metadata },\n\n  record: {\n    status: 'draft',                // the generator never publishes; Orena ignores the file's status and holds the set for review\n    allowedStatuses: ['draft'],\n    maxExamples: 2,                 // 1-4 (schema)\n    // The level is what the operator typed. Nothing here checks it against a word list, and the sources say so.\n    levelSourceEN: 'operator-supplied CEFR level (not checked against a word list)',\n    levelSourceZH: 'operator-supplied HSK level (not checked against the HSK 3.0 list)',\n  },\n\n  sources: {\n    freeDictionary: 'https://api.dictionaryapi.dev/api/v2/entries/en/',\n    tatoebaSearch: 'https://tatoeba.org/en/api_v0/search',\n    cedict: 'https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz',\n    cvdict: 'https://raw.githubusercontent.com/ph0ngp/CVDICT/main/CVDICT.u8',\n    makeMeAHanzi: 'https://raw.githubusercontent.com/skishore/makemeahanzi/master/dictionary.txt',\n    unihan: 'https://www.unicode.org/Public/UCD/latest/ucd/Unihan.zip',\n  },\n  zhLookup: { path: dir + '/zh_lookup.json', rebuild: false },\n\n  ai: {\n    enabled: !!SETTINGS.ai.enabled,\n    endpoint: aiEndpoint,\n    model: aiModel,\n    fill: { pos: true, meaning_vi: true, translation_vi: true, examples: true, ipa: true },\n  },\n  // IPA the dictionary does not tag as UK or US: 'none' = do not use it (AI fills or the word is rejected)\n  untaggedIpaAs: 'none',\n\n  output: { dir },\n};\n\nconfig.record.maxExamples = Math.min(4, Math.max(1, config.record.maxExamples | 0));\nif (config.record.status === 'published') throw new Error('The generator never publishes: record.status cannot be published');\nconfig.ai.active = !!(config.ai.enabled && config.ai.endpoint && config.ai.model);\nif (config.ai.active && !/^https?:\\/\\//i.test(config.ai.endpoint)) throw new Error('AI endpoint must be an http(s) URL');\n\nreturn [{ json: config }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        80
+      ],
+      "id": "2631d822-06b1-5a3a-9299-25bab57cb4af",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== Orena vocabulary generator | shared helpers (inlined into every Code node that needs them) =====\nconst TONE_MARKS = { a: 'āáǎà', e: 'ēéěè', i: 'īíǐì', o: 'ōóǒò', u: 'ūúǔù', 'ü': 'ǖǘǚǜ' };\n\nfunction syllableToMark(syl) {\n  const m = /^([A-Za-zü:]+)([1-5])$/.exec(syl);\n  if (!m) return syl.replace(/u:/g, 'ü').replace(/v/g, 'ü');\n  const body = m[1].replace(/u:/g, 'ü').replace(/U:/g, 'Ü').replace(/v/g, 'ü');\n  const tone = +m[2];\n  if (tone === 5) return body;\n  const low = body.toLowerCase();\n  let idx;\n  if (low.includes('a')) idx = low.indexOf('a');\n  else if (low.includes('e')) idx = low.indexOf('e');\n  else if (low.includes('ou')) idx = low.indexOf('o');\n  else idx = Math.max(...['i', 'o', 'u', 'ü'].map(v => low.lastIndexOf(v)));\n  if (idx < 0) return body;\n  let mk = TONE_MARKS[low[idx]][tone - 1];\n  if (body[idx] !== low[idx]) mk = mk.toUpperCase();\n  return body.slice(0, idx) + mk + body.slice(idx + 1);\n}\n\nfunction joinSyllables(arr) {\n  let out = '';\n  arr.forEach((s, i) => {\n    if (i && s && 'aeo'.includes(s.normalize('NFD')[0].toLowerCase())) out += \"'\";\n    out += s;\n  });\n  return out;\n}\n\nfunction slug(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }\n\nfunction fnv1a(str) {\n  let h = 0x811c9dc5;\n  for (const ch of String(str)) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }\n  return h.toString(16).padStart(8, '0');\n}\n\nconst CJK_RE = /[\\u3400-\\u9fff\\uf900-\\ufaff]/;\nfunction isCjk(s) { return CJK_RE.test(s); }\n\n// Deterministic id, a function of the language and the headword only (never of the run, the time or the order):\n// a rerun with the same input yields the same ids. The id pattern of the repo schema is ^[a-z]{2}(-[A-Za-z]+)?:[a-z0-9_-]+$.\n// Orena itself keys an entry by (language, term, first part of speech); this id is its editorial handle (provenance.source_id).\nfunction makeId(lang, word) {\n  if (lang === 'zh-Hans') return 'zh-Hans:' + Array.from(String(word).trim()).map(c => c.codePointAt(0).toString(16)).join('-');\n  const w = String(word).trim();\n  const s = slug(w);\n  const clean = /^[a-z0-9]+(?:[ '-][a-z0-9]+)*$/i.test(w);\n  return 'en:' + ((s && clean) ? s : (s ? s + '-' : 'w-') + fnv1a(w.toLowerCase()).slice(0, 6));\n}\n\nfunction normLevel(lang, raw) {\n  let v = String(raw || '').trim().toUpperCase().replace(/\\s+/g, '');\n  if (!v) return null;\n  if (lang === 'zh-Hans') {\n    v = v.replace(/^HSK/, '');\n    if (/^[789]$|^7-9$|^7–9$/.test(v)) return '7-9';\n    return /^[1-6]$/.test(v) ? v : null;\n  }\n  v = v.replace(/^CEFR/, '');\n  return /^(A1|A2|B1|B2|C1|C2)$/.test(v) ? v : null;\n}\n\nfunction cleanGlosses(glosses, limit = 3) {\n  const out = [];\n  for (let g of glosses || []) {\n    if (/^(CL:|variant of|old variant|see |also written|surname )/.test(g)) continue;\n    g = g.replace(/\\s*\\[[^\\]]*\\]/g, '').replace(/\\|[^\\s,;)]+/g, '').trim();\n    if (g) out.push(g);\n  }\n  return out.slice(0, limit);\n}\n\nfunction measureWords(glosses) {\n  const res = [];\n  for (const g of glosses || []) {\n    const m = /^CL:(.*)$/.exec(g);\n    if (!m) continue;\n    const re = /([^\\s,|\\[]+?)(?:\\|([^\\s,\\[]+))?\\[([^\\]]+)\\]/g;\n    let mm;\n    while ((mm = re.exec(m[1]))) res.push({ mw: mm[2] || mm[1], pinyin: joinSyllables(mm[3].split(/\\s+/).map(syllableToMark)) });\n  }\n  return res;\n}\n\n// lookup.cedict[simp] = [[pinyinWithToneNumbers, [glosses...]], ...]\nfunction pickEntry(entries) {\n  if (!entries || !entries.length) return null;\n  return entries.find(e => e[0] && /^[a-z]/.test(e[0])) || entries[0];\n}\n\nfunction kangxiRadicalChar(rs) {\n  const n = parseInt(String(rs || '').split(/\\s+/)[0].split('.')[0], 10);\n  if (!(n >= 1 && n <= 214)) return null;\n  return String.fromCodePoint(0x2F00 + n - 1).normalize('NFKC');\n}\n\nfunction components(decomp) { return Array.from((decomp || '').replace(/[\\u2FF0-\\u2FFF？?]/g, '')); }\n\nconst ZH_PUNCT = { '。': '.', '，': ',', '、': ',', '？': '?', '！': '!', '：': ':', '；': ';', '“': '\"', '”': '\"', '（': '(', '）': ')', '《': '\"', '》': '\"' };\n\n// Sentence pinyin: longest-match segmentation over CC-CEDICT; the headword is always one word.\n// Returns ['', headPy] when any CJK character is unknown, so no half-guessed reading is ever written.\nfunction sentencePinyin(text, headword, cedict) {\n  const wordPy = w => { const e = pickEntry(cedict[w]); return e ? joinSyllables(e[0].split(/\\s+/).map(syllableToMark)) : null; };\n  const headPy = wordPy(headword) || '';\n  const tokens = [];\n  let unknown = false;\n  text.split(headword).forEach((seg, si) => {\n    if (si) tokens.push(headPy || headword);\n    const chars = Array.from(seg);\n    let i = 0;\n    while (i < chars.length) {\n      let done = false;\n      for (let L = Math.min(8, chars.length - i); L > 0; L--) {\n        const p = wordPy(chars.slice(i, i + L).join(''));\n        if (p) { tokens.push(p); i += L; done = true; break; }\n      }\n      if (!done) {\n        const ch = chars[i];\n        if (ZH_PUNCT[ch]) tokens.push('\\u0000' + ZH_PUNCT[ch]);\n        else if (/\\s/.test(ch)) { /* drop whitespace */ }\n        else { tokens.push(ch); if (isCjk(ch)) unknown = true; }\n        i++;\n      }\n    }\n  });\n  let out = '';\n  for (const t of tokens) out += t.startsWith('\\u0000') ? t.slice(1) : (out && !/[\"(]$/.test(out) ? ' ' : '') + t;\n  out = out.trim();\n  if (unknown || !headPy) return ['', headPy];\n  return [out ? out[0].toUpperCase() + out.slice(1) : '', headPy];\n}\n\n// Tatoeba api_v0: results[].translations[][]; newer API: data[].translations[]\nfunction parseTatoeba(raw) {\n  let o; try { o = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return []; }\n  const arr = (o && (o.results || o.data)) || [];\n  return arr.map(r => {\n    const tr = [];\n    const walk = x => {\n      if (Array.isArray(x)) x.forEach(walk);\n      else if (x && typeof x === 'object') { if (x.lang === 'vie' && x.text) tr.push(x.text); if (x.translations) walk(x.translations); }\n    };\n    walk(r.translations);\n    return { text: String(r.text || '').trim(), vi: tr[0] || '', source: 'tatoeba' };\n  }).filter(x => x.text);\n}\n\nfunction pickExamples(cands, matchFn, max) {\n  const seen = new Set();\n  return cands\n    .filter(c => { if (seen.has(c.text)) return false; seen.add(c.text); return c.text.length >= 4 && c.text.length <= 120 && matchFn(c.text); })\n    .sort((a, b) => (!a.vi - !b.vi) || (Math.abs(a.text.length - 35) - Math.abs(b.text.length - 35)) || (a.text < b.text ? -1 : a.text > b.text ? 1 : 0))\n    .slice(0, max);\n}\n\nfunction parseJsonSafe(raw) { try { return typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return null; } }\nfunction escRe(s) { return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'); }\n\n// An IPA transcription as the card stores it: slash-delimited (\"/rɪˈzɪliənt/\"). A bare transcription is wrapped;\n// anything else (brackets, empty) is returned unchanged so the validator rejects it rather than the workflow guessing.\nfunction normIpa(s) {\n  const t = String(s || '').trim();\n  if (!t) return '';\n  if (/^\\/[^\\/]+\\/$/.test(t)) return t;\n  if (/^[\\[(]/.test(t) || /[\\])]$/.test(t) || t.includes('/')) return t;\n  return '/' + t + '/';\n}\n\nconst POS_CODES = ['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'determiner', 'interjection', 'numeral', 'measure_word', 'particle', 'phrase', 'idiom'];\nconst POS_VI = { noun: 'danh từ', verb: 'động từ', adjective: 'tính từ', adverb: 'trạng từ', pronoun: 'đại từ', preposition: 'giới từ',\n  conjunction: 'liên từ', interjection: 'thán từ', determiner: 'từ hạn định', numeral: 'số từ', measure_word: 'lượng từ', particle: 'trợ từ',\n  phrase: 'cụm từ', idiom: 'thành ngữ' };\nconst POS_ZH = { noun: '名词', verb: '动词', adjective: '形容词', adverb: '副词', pronoun: '代词', preposition: '介词', conjunction: '连词',\n  interjection: '叹词', numeral: '数词', measure_word: '量词', particle: '助词', phrase: '短语', idiom: '成语' };\nconst posObj = (code, lang) => ({ code, label_native: lang === 'zh-Hans' ? (POS_ZH[code] || code) : code, label_vi: POS_VI[code] || code });\n// ===== end of shared helpers =====\n\n\n// Code node \"Parse words\" - reads the list, detects each line's language, normalises the level, derives the deterministic id.\n// Line format:  word - level [- Vietnamese meaning]   (separators: tab, an em/en dash, \" - \", comma, semicolon, pipe)\nconst cfg = $('Config').first().json;\nconst words = [], inputIssues = [], seen = new Map();\nString(cfg.input.text || '').split(/\\r?\\n/).forEach((raw, lineNo) => {\n  const line = raw.trim();\n  if (!line || line.startsWith('#')) return;\n  const parts = line.split(/\\t|\\s+[—–]\\s+|\\s*[—–]\\s*|\\s+-\\s+|\\s*[,;|]\\s*/).map(s => s.trim()).filter(Boolean);\n  const word = parts[0];\n  const lang = isCjk(word) ? 'zh-Hans' : 'en';\n  const levelRaw = parts[1] || '';\n  const level = normLevel(lang, levelRaw);\n  const meaningVi = parts.slice(2).join(', ');\n  const id = makeId(lang, word);\n  if (seen.has(id)) { inputIssues.push({ line: lineNo + 1, word, issue: `same id as line ${seen.get(id)}; this line was ignored` }); return; }\n  seen.set(id, lineNo + 1);\n  words.push({ line: lineNo + 1, word, lang, level, levelRaw, meaningVi, id });\n});\nif (!words.length) throw new Error('The word list is empty');\nreturn [{ json: { words, inputIssues, hasZh: words.some(w => w.lang === 'zh-Hans'), hasEn: words.some(w => w.lang === 'en') } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        80
+      ],
+      "id": "d47f18cb-141e-58b7-b804-c21552440059",
+      "name": "Parse words"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bd1ddd95-a917-5c3a-8add-319706ef9f6a",
+              "leftValue": "={{ $json.hasZh }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        80
+      ],
+      "id": "0ba68e2a-b0c7-5ebf-adb0-1153aaefb804",
+      "name": "Has Chinese?"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $('Config').first().json.zhLookup.path }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        -120
+      ],
+      "id": "263c842a-e9e2-5729-aa7b-d466f5532ce2",
+      "name": "Read ZH lookup",
+      "executeOnce": true,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4d637282-b7ca-55dc-bb70-f9b07b78ab3c",
+              "leftValue": "={{ !$('Config').first().json.zhLookup.rebuild && !!($binary && $binary.data) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        -120
+      ],
+      "id": "2fe4b872-688e-56b0-a014-444a8a78b552",
+      "name": "ZH lookup cached?"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config').first().json.sources.cedict }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        -520
+      ],
+      "id": "1eaf048a-fa37-5fbe-b2c6-418c797ab04f",
+      "name": "Download CC-CEDICT",
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "decompress",
+        "binaryPropertyName": "data",
+        "outputPrefix": "file_"
+      },
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        -520
+      ],
+      "id": "225de4ef-18d6-5247-bc5b-005175912e45",
+      "name": "Gunzip CEDICT"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "file_0",
+        "destinationKey": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        -520
+      ],
+      "id": "61de3c66-d5d6-5520-8f7a-7e422620b92c",
+      "name": "CEDICT text"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config').first().json.sources.cvdict }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        -520
+      ],
+      "id": "89c9f01d-9269-5d24-9717-85256eeade2b",
+      "name": "Download CVDICT",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config').first().json.sources.makeMeAHanzi }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        -520
+      ],
+      "id": "bfd6f6ad-c097-5337-b2d7-b0c0397d4d64",
+      "name": "Download Make Me a Hanzi",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config').first().json.sources.unihan }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        -360
+      ],
+      "id": "4c0422a6-6ade-5d6f-821a-dee035ad1cca",
+      "name": "Download Unihan",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "decompress",
+        "binaryPropertyName": "data",
+        "outputPrefix": "file_"
+      },
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        -360
+      ],
+      "id": "f05b0baf-e840-5980-a7aa-e076e0c5d3dc",
+      "name": "Unzip Unihan"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== Orena vocabulary generator | shared helpers (inlined into every Code node that needs them) =====\nconst TONE_MARKS = { a: 'āáǎà', e: 'ēéěè', i: 'īíǐì', o: 'ōóǒò', u: 'ūúǔù', 'ü': 'ǖǘǚǜ' };\n\nfunction syllableToMark(syl) {\n  const m = /^([A-Za-zü:]+)([1-5])$/.exec(syl);\n  if (!m) return syl.replace(/u:/g, 'ü').replace(/v/g, 'ü');\n  const body = m[1].replace(/u:/g, 'ü').replace(/U:/g, 'Ü').replace(/v/g, 'ü');\n  const tone = +m[2];\n  if (tone === 5) return body;\n  const low = body.toLowerCase();\n  let idx;\n  if (low.includes('a')) idx = low.indexOf('a');\n  else if (low.includes('e')) idx = low.indexOf('e');\n  else if (low.includes('ou')) idx = low.indexOf('o');\n  else idx = Math.max(...['i', 'o', 'u', 'ü'].map(v => low.lastIndexOf(v)));\n  if (idx < 0) return body;\n  let mk = TONE_MARKS[low[idx]][tone - 1];\n  if (body[idx] !== low[idx]) mk = mk.toUpperCase();\n  return body.slice(0, idx) + mk + body.slice(idx + 1);\n}\n\nfunction joinSyllables(arr) {\n  let out = '';\n  arr.forEach((s, i) => {\n    if (i && s && 'aeo'.includes(s.normalize('NFD')[0].toLowerCase())) out += \"'\";\n    out += s;\n  });\n  return out;\n}\n\nfunction slug(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }\n\nfunction fnv1a(str) {\n  let h = 0x811c9dc5;\n  for (const ch of String(str)) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }\n  return h.toString(16).padStart(8, '0');\n}\n\nconst CJK_RE = /[\\u3400-\\u9fff\\uf900-\\ufaff]/;\nfunction isCjk(s) { return CJK_RE.test(s); }\n\n// Deterministic id, a function of the language and the headword only (never of the run, the time or the order):\n// a rerun with the same input yields the same ids. The id pattern of the repo schema is ^[a-z]{2}(-[A-Za-z]+)?:[a-z0-9_-]+$.\n// Orena itself keys an entry by (language, term, first part of speech); this id is its editorial handle (provenance.source_id).\nfunction makeId(lang, word) {\n  if (lang === 'zh-Hans') return 'zh-Hans:' + Array.from(String(word).trim()).map(c => c.codePointAt(0).toString(16)).join('-');\n  const w = String(word).trim();\n  const s = slug(w);\n  const clean = /^[a-z0-9]+(?:[ '-][a-z0-9]+)*$/i.test(w);\n  return 'en:' + ((s && clean) ? s : (s ? s + '-' : 'w-') + fnv1a(w.toLowerCase()).slice(0, 6));\n}\n\nfunction normLevel(lang, raw) {\n  let v = String(raw || '').trim().toUpperCase().replace(/\\s+/g, '');\n  if (!v) return null;\n  if (lang === 'zh-Hans') {\n    v = v.replace(/^HSK/, '');\n    if (/^[789]$|^7-9$|^7–9$/.test(v)) return '7-9';\n    return /^[1-6]$/.test(v) ? v : null;\n  }\n  v = v.replace(/^CEFR/, '');\n  return /^(A1|A2|B1|B2|C1|C2)$/.test(v) ? v : null;\n}\n\nfunction cleanGlosses(glosses, limit = 3) {\n  const out = [];\n  for (let g of glosses || []) {\n    if (/^(CL:|variant of|old variant|see |also written|surname )/.test(g)) continue;\n    g = g.replace(/\\s*\\[[^\\]]*\\]/g, '').replace(/\\|[^\\s,;)]+/g, '').trim();\n    if (g) out.push(g);\n  }\n  return out.slice(0, limit);\n}\n\nfunction measureWords(glosses) {\n  const res = [];\n  for (const g of glosses || []) {\n    const m = /^CL:(.*)$/.exec(g);\n    if (!m) continue;\n    const re = /([^\\s,|\\[]+?)(?:\\|([^\\s,\\[]+))?\\[([^\\]]+)\\]/g;\n    let mm;\n    while ((mm = re.exec(m[1]))) res.push({ mw: mm[2] || mm[1], pinyin: joinSyllables(mm[3].split(/\\s+/).map(syllableToMark)) });\n  }\n  return res;\n}\n\n// lookup.cedict[simp] = [[pinyinWithToneNumbers, [glosses...]], ...]\nfunction pickEntry(entries) {\n  if (!entries || !entries.length) return null;\n  return entries.find(e => e[0] && /^[a-z]/.test(e[0])) || entries[0];\n}\n\nfunction kangxiRadicalChar(rs) {\n  const n = parseInt(String(rs || '').split(/\\s+/)[0].split('.')[0], 10);\n  if (!(n >= 1 && n <= 214)) return null;\n  return String.fromCodePoint(0x2F00 + n - 1).normalize('NFKC');\n}\n\nfunction components(decomp) { return Array.from((decomp || '').replace(/[\\u2FF0-\\u2FFF？?]/g, '')); }\n\nconst ZH_PUNCT = { '。': '.', '，': ',', '、': ',', '？': '?', '！': '!', '：': ':', '；': ';', '“': '\"', '”': '\"', '（': '(', '）': ')', '《': '\"', '》': '\"' };\n\n// Sentence pinyin: longest-match segmentation over CC-CEDICT; the headword is always one word.\n// Returns ['', headPy] when any CJK character is unknown, so no half-guessed reading is ever written.\nfunction sentencePinyin(text, headword, cedict) {\n  const wordPy = w => { const e = pickEntry(cedict[w]); return e ? joinSyllables(e[0].split(/\\s+/).map(syllableToMark)) : null; };\n  const headPy = wordPy(headword) || '';\n  const tokens = [];\n  let unknown = false;\n  text.split(headword).forEach((seg, si) => {\n    if (si) tokens.push(headPy || headword);\n    const chars = Array.from(seg);\n    let i = 0;\n    while (i < chars.length) {\n      let done = false;\n      for (let L = Math.min(8, chars.length - i); L > 0; L--) {\n        const p = wordPy(chars.slice(i, i + L).join(''));\n        if (p) { tokens.push(p); i += L; done = true; break; }\n      }\n      if (!done) {\n        const ch = chars[i];\n        if (ZH_PUNCT[ch]) tokens.push('\\u0000' + ZH_PUNCT[ch]);\n        else if (/\\s/.test(ch)) { /* drop whitespace */ }\n        else { tokens.push(ch); if (isCjk(ch)) unknown = true; }\n        i++;\n      }\n    }\n  });\n  let out = '';\n  for (const t of tokens) out += t.startsWith('\\u0000') ? t.slice(1) : (out && !/[\"(]$/.test(out) ? ' ' : '') + t;\n  out = out.trim();\n  if (unknown || !headPy) return ['', headPy];\n  return [out ? out[0].toUpperCase() + out.slice(1) : '', headPy];\n}\n\n// Tatoeba api_v0: results[].translations[][]; newer API: data[].translations[]\nfunction parseTatoeba(raw) {\n  let o; try { o = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return []; }\n  const arr = (o && (o.results || o.data)) || [];\n  return arr.map(r => {\n    const tr = [];\n    const walk = x => {\n      if (Array.isArray(x)) x.forEach(walk);\n      else if (x && typeof x === 'object') { if (x.lang === 'vie' && x.text) tr.push(x.text); if (x.translations) walk(x.translations); }\n    };\n    walk(r.translations);\n    return { text: String(r.text || '').trim(), vi: tr[0] || '', source: 'tatoeba' };\n  }).filter(x => x.text);\n}\n\nfunction pickExamples(cands, matchFn, max) {\n  const seen = new Set();\n  return cands\n    .filter(c => { if (seen.has(c.text)) return false; seen.add(c.text); return c.text.length >= 4 && c.text.length <= 120 && matchFn(c.text); })\n    .sort((a, b) => (!a.vi - !b.vi) || (Math.abs(a.text.length - 35) - Math.abs(b.text.length - 35)) || (a.text < b.text ? -1 : a.text > b.text ? 1 : 0))\n    .slice(0, max);\n}\n\nfunction parseJsonSafe(raw) { try { return typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return null; } }\nfunction escRe(s) { return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'); }\n\n// An IPA transcription as the card stores it: slash-delimited (\"/rɪˈzɪliənt/\"). A bare transcription is wrapped;\n// anything else (brackets, empty) is returned unchanged so the validator rejects it rather than the workflow guessing.\nfunction normIpa(s) {\n  const t = String(s || '').trim();\n  if (!t) return '';\n  if (/^\\/[^\\/]+\\/$/.test(t)) return t;\n  if (/^[\\[(]/.test(t) || /[\\])]$/.test(t) || t.includes('/')) return t;\n  return '/' + t + '/';\n}\n\nconst POS_CODES = ['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'determiner', 'interjection', 'numeral', 'measure_word', 'particle', 'phrase', 'idiom'];\nconst POS_VI = { noun: 'danh từ', verb: 'động từ', adjective: 'tính từ', adverb: 'trạng từ', pronoun: 'đại từ', preposition: 'giới từ',\n  conjunction: 'liên từ', interjection: 'thán từ', determiner: 'từ hạn định', numeral: 'số từ', measure_word: 'lượng từ', particle: 'trợ từ',\n  phrase: 'cụm từ', idiom: 'thành ngữ' };\nconst POS_ZH = { noun: '名词', verb: '动词', adjective: '形容词', adverb: '副词', pronoun: '代词', preposition: '介词', conjunction: '连词',\n  interjection: '叹词', numeral: '数词', measure_word: '量词', particle: '助词', phrase: '短语', idiom: '成语' };\nconst posObj = (code, lang) => ({ code, label_native: lang === 'zh-Hans' ? (POS_ZH[code] || code) : code, label_vi: POS_VI[code] || code });\n// ===== end of shared helpers =====\n\n\n// Code node \"Build ZH lookup\" - merges CC-CEDICT + CVDICT + Make Me a Hanzi + Unihan into one compact lookup file.\nfunction parseCedict(txt) {\n  const d = {};\n  const re = /^(\\S+)\\s+(\\S+)\\s+\\[([^\\]]*)\\]\\s+\\/(.*)\\/\\s*$/;\n  for (const line of String(txt || '').split(/\\r?\\n/)) {\n    if (!line || line[0] === '#') continue;\n    const m = re.exec(line);\n    if (m) (d[m[2]] = d[m[2]] || []).push([m[3], m[4].split('/').filter(Boolean)]);\n  }\n  return d;\n}\nconst cedict = parseCedict($('CEDICT text').first().json.data);\nif (Object.keys(cedict).length < 1000) throw new Error('The CC-CEDICT download is not valid (too few entries)');\nconst cvdict = {};\nfor (const [k, v] of Object.entries(parseCedict($('Download CVDICT').first().json.data))) { const e = pickEntry(v); if (e) cvdict[k] = e[1]; }\nif (Object.keys(cvdict).length < 1000) throw new Error('The CVDICT download is not valid - check sources.cvdict in Config');\n\nconst hanzi = {};\nfor (const line of String($('Download Make Me a Hanzi').first().json.data || '').split(/\\r?\\n/)) {\n  if (!line.trim()) continue;\n  try { const o = JSON.parse(line); hanzi[o.character] = [o.decomposition || '', o.radical || '']; } catch (e) {}\n}\n\nconst want = new Set();\nfor (const k of Object.keys(cedict)) for (const ch of Array.from(k)) want.add(ch);\nfor (let n = 1; n <= 214; n++) want.add(String.fromCodePoint(0x2F00 + n - 1).normalize('NFKC'));\nconst FIELDS = { kRSUnicode: 0, kTotalStrokes: 1, kVietnamese: 2, kMandarin: 3 };\nconst unihan = {};\nconst item = $input.first();\nlet filesRead = 0;\nfor (const key of Object.keys(item.binary || {})) {\n  const name = (item.binary[key].fileName || '').split('/').pop();\n  if (!/^Unihan.*\\.txt$/.test(name)) continue;\n  const txt = (await this.helpers.getBinaryDataBuffer(0, key)).toString('utf8');\n  filesRead++;\n  for (const line of txt.split('\\n')) {\n    if (!line.startsWith('U+')) continue;\n    const [cp, field, val] = line.split('\\t');\n    if (!(field in FIELDS)) continue;\n    const ch = String.fromCodePoint(parseInt(cp.slice(2), 16));\n    if (want.has(ch)) (unihan[ch] = unihan[ch] || ['', '', '', ''])[FIELDS[field]] = (val || '').trim();\n  }\n}\nif (!filesRead) throw new Error('No Unihan_*.txt found after unzipping Unihan.zip');\nreturn [{ json: { lookup: { v: 1, built_at: new Date().toISOString(), cedict, cvdict, hanzi, unihan },\n  stats: { cedict: Object.keys(cedict).length, cvdict: Object.keys(cvdict).length, hanzi: Object.keys(hanzi).length, unihan: Object.keys(unihan).length } } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -360
+      ],
+      "id": "33da7246-f05c-55c3-975e-6abe0f0a08ac",
+      "name": "Build ZH lookup"
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "fileName": "zh_lookup.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1980,
+        -360
+      ],
+      "id": "0ec6790a-3313-506b-8730-fe48941ab775",
+      "name": "To JSON file"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $('Config').first().json.zhLookup.path }}",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        2200,
+        -360
+      ],
+      "id": "a56a86e1-08cb-5e57-bfcb-59459a51d055",
+      "name": "Save zh_lookup.json"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "binaryPropertyName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        2420,
+        -120
+      ],
+      "id": "98405a30-884b-5008-8754-6ca519d03c11",
+      "name": "Parse ZH lookup",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Code node \"Words\" - one item per word, with the URLs of the two enrichment calls.\n// Call 1: EN = Free Dictionary          | ZH = Tatoeba (sentences that have a Vietnamese translation)\n// Call 2: EN = Tatoeba (with Vietnamese) | ZH = Tatoeba (any sentence, for more candidates)\nconst cfg = $('Config').first().json;\nconst S = cfg.sources;\nconst tq = (from, q, viOnly) => `${S.tatoebaSearch}?from=${from}&to=vie&orphans=no&unapproved=no&sort=relevance` +\n  (viOnly ? '&trans_filter=limit&trans_to=vie' : '') + `&query=${encodeURIComponent(q)}`;\nreturn $('Parse words').first().json.words.map(w => ({ json: {\n  ...w,\n  url1: w.lang === 'en' ? S.freeDictionary + encodeURIComponent(w.word) : tq('cmn', w.word, true),\n  url2: w.lang === 'en' ? tq('eng', '=' + w.word, true) : tq('cmn', w.word, false),\n} }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        80
+      ],
+      "id": "eda3ba41-ea47-5dfd-831b-fe8bae0c5fb2",
+      "name": "Words"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url1 }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 30000,
+          "batching": {
+            "batch": {
+              "batchSize": 3,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2860,
+        80
+      ],
+      "id": "079aa176-01ee-5d15-adc0-a9190fd34bbf",
+      "name": "Enrich call 1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Words').item.json.url2 }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 30000,
+          "batching": {
+            "batch": {
+              "batchSize": 3,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3080,
+        80
+      ],
+      "id": "863af21b-8b60-5661-ba70-2ee974e15070",
+      "name": "Enrich call 2",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== Orena vocabulary generator | shared helpers (inlined into every Code node that needs them) =====\nconst TONE_MARKS = { a: 'āáǎà', e: 'ēéěè', i: 'īíǐì', o: 'ōóǒò', u: 'ūúǔù', 'ü': 'ǖǘǚǜ' };\n\nfunction syllableToMark(syl) {\n  const m = /^([A-Za-zü:]+)([1-5])$/.exec(syl);\n  if (!m) return syl.replace(/u:/g, 'ü').replace(/v/g, 'ü');\n  const body = m[1].replace(/u:/g, 'ü').replace(/U:/g, 'Ü').replace(/v/g, 'ü');\n  const tone = +m[2];\n  if (tone === 5) return body;\n  const low = body.toLowerCase();\n  let idx;\n  if (low.includes('a')) idx = low.indexOf('a');\n  else if (low.includes('e')) idx = low.indexOf('e');\n  else if (low.includes('ou')) idx = low.indexOf('o');\n  else idx = Math.max(...['i', 'o', 'u', 'ü'].map(v => low.lastIndexOf(v)));\n  if (idx < 0) return body;\n  let mk = TONE_MARKS[low[idx]][tone - 1];\n  if (body[idx] !== low[idx]) mk = mk.toUpperCase();\n  return body.slice(0, idx) + mk + body.slice(idx + 1);\n}\n\nfunction joinSyllables(arr) {\n  let out = '';\n  arr.forEach((s, i) => {\n    if (i && s && 'aeo'.includes(s.normalize('NFD')[0].toLowerCase())) out += \"'\";\n    out += s;\n  });\n  return out;\n}\n\nfunction slug(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }\n\nfunction fnv1a(str) {\n  let h = 0x811c9dc5;\n  for (const ch of String(str)) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }\n  return h.toString(16).padStart(8, '0');\n}\n\nconst CJK_RE = /[\\u3400-\\u9fff\\uf900-\\ufaff]/;\nfunction isCjk(s) { return CJK_RE.test(s); }\n\n// Deterministic id, a function of the language and the headword only (never of the run, the time or the order):\n// a rerun with the same input yields the same ids. The id pattern of the repo schema is ^[a-z]{2}(-[A-Za-z]+)?:[a-z0-9_-]+$.\n// Orena itself keys an entry by (language, term, first part of speech); this id is its editorial handle (provenance.source_id).\nfunction makeId(lang, word) {\n  if (lang === 'zh-Hans') return 'zh-Hans:' + Array.from(String(word).trim()).map(c => c.codePointAt(0).toString(16)).join('-');\n  const w = String(word).trim();\n  const s = slug(w);\n  const clean = /^[a-z0-9]+(?:[ '-][a-z0-9]+)*$/i.test(w);\n  return 'en:' + ((s && clean) ? s : (s ? s + '-' : 'w-') + fnv1a(w.toLowerCase()).slice(0, 6));\n}\n\nfunction normLevel(lang, raw) {\n  let v = String(raw || '').trim().toUpperCase().replace(/\\s+/g, '');\n  if (!v) return null;\n  if (lang === 'zh-Hans') {\n    v = v.replace(/^HSK/, '');\n    if (/^[789]$|^7-9$|^7–9$/.test(v)) return '7-9';\n    return /^[1-6]$/.test(v) ? v : null;\n  }\n  v = v.replace(/^CEFR/, '');\n  return /^(A1|A2|B1|B2|C1|C2)$/.test(v) ? v : null;\n}\n\nfunction cleanGlosses(glosses, limit = 3) {\n  const out = [];\n  for (let g of glosses || []) {\n    if (/^(CL:|variant of|old variant|see |also written|surname )/.test(g)) continue;\n    g = g.replace(/\\s*\\[[^\\]]*\\]/g, '').replace(/\\|[^\\s,;)]+/g, '').trim();\n    if (g) out.push(g);\n  }\n  return out.slice(0, limit);\n}\n\nfunction measureWords(glosses) {\n  const res = [];\n  for (const g of glosses || []) {\n    const m = /^CL:(.*)$/.exec(g);\n    if (!m) continue;\n    const re = /([^\\s,|\\[]+?)(?:\\|([^\\s,\\[]+))?\\[([^\\]]+)\\]/g;\n    let mm;\n    while ((mm = re.exec(m[1]))) res.push({ mw: mm[2] || mm[1], pinyin: joinSyllables(mm[3].split(/\\s+/).map(syllableToMark)) });\n  }\n  return res;\n}\n\n// lookup.cedict[simp] = [[pinyinWithToneNumbers, [glosses...]], ...]\nfunction pickEntry(entries) {\n  if (!entries || !entries.length) return null;\n  return entries.find(e => e[0] && /^[a-z]/.test(e[0])) || entries[0];\n}\n\nfunction kangxiRadicalChar(rs) {\n  const n = parseInt(String(rs || '').split(/\\s+/)[0].split('.')[0], 10);\n  if (!(n >= 1 && n <= 214)) return null;\n  return String.fromCodePoint(0x2F00 + n - 1).normalize('NFKC');\n}\n\nfunction components(decomp) { return Array.from((decomp || '').replace(/[\\u2FF0-\\u2FFF？?]/g, '')); }\n\nconst ZH_PUNCT = { '。': '.', '，': ',', '、': ',', '？': '?', '！': '!', '：': ':', '；': ';', '“': '\"', '”': '\"', '（': '(', '）': ')', '《': '\"', '》': '\"' };\n\n// Sentence pinyin: longest-match segmentation over CC-CEDICT; the headword is always one word.\n// Returns ['', headPy] when any CJK character is unknown, so no half-guessed reading is ever written.\nfunction sentencePinyin(text, headword, cedict) {\n  const wordPy = w => { const e = pickEntry(cedict[w]); return e ? joinSyllables(e[0].split(/\\s+/).map(syllableToMark)) : null; };\n  const headPy = wordPy(headword) || '';\n  const tokens = [];\n  let unknown = false;\n  text.split(headword).forEach((seg, si) => {\n    if (si) tokens.push(headPy || headword);\n    const chars = Array.from(seg);\n    let i = 0;\n    while (i < chars.length) {\n      let done = false;\n      for (let L = Math.min(8, chars.length - i); L > 0; L--) {\n        const p = wordPy(chars.slice(i, i + L).join(''));\n        if (p) { tokens.push(p); i += L; done = true; break; }\n      }\n      if (!done) {\n        const ch = chars[i];\n        if (ZH_PUNCT[ch]) tokens.push('\\u0000' + ZH_PUNCT[ch]);\n        else if (/\\s/.test(ch)) { /* drop whitespace */ }\n        else { tokens.push(ch); if (isCjk(ch)) unknown = true; }\n        i++;\n      }\n    }\n  });\n  let out = '';\n  for (const t of tokens) out += t.startsWith('\\u0000') ? t.slice(1) : (out && !/[\"(]$/.test(out) ? ' ' : '') + t;\n  out = out.trim();\n  if (unknown || !headPy) return ['', headPy];\n  return [out ? out[0].toUpperCase() + out.slice(1) : '', headPy];\n}\n\n// Tatoeba api_v0: results[].translations[][]; newer API: data[].translations[]\nfunction parseTatoeba(raw) {\n  let o; try { o = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return []; }\n  const arr = (o && (o.results || o.data)) || [];\n  return arr.map(r => {\n    const tr = [];\n    const walk = x => {\n      if (Array.isArray(x)) x.forEach(walk);\n      else if (x && typeof x === 'object') { if (x.lang === 'vie' && x.text) tr.push(x.text); if (x.translations) walk(x.translations); }\n    };\n    walk(r.translations);\n    return { text: String(r.text || '').trim(), vi: tr[0] || '', source: 'tatoeba' };\n  }).filter(x => x.text);\n}\n\nfunction pickExamples(cands, matchFn, max) {\n  const seen = new Set();\n  return cands\n    .filter(c => { if (seen.has(c.text)) return false; seen.add(c.text); return c.text.length >= 4 && c.text.length <= 120 && matchFn(c.text); })\n    .sort((a, b) => (!a.vi - !b.vi) || (Math.abs(a.text.length - 35) - Math.abs(b.text.length - 35)) || (a.text < b.text ? -1 : a.text > b.text ? 1 : 0))\n    .slice(0, max);\n}\n\nfunction parseJsonSafe(raw) { try { return typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return null; } }\nfunction escRe(s) { return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'); }\n\n// An IPA transcription as the card stores it: slash-delimited (\"/rɪˈzɪliənt/\"). A bare transcription is wrapped;\n// anything else (brackets, empty) is returned unchanged so the validator rejects it rather than the workflow guessing.\nfunction normIpa(s) {\n  const t = String(s || '').trim();\n  if (!t) return '';\n  if (/^\\/[^\\/]+\\/$/.test(t)) return t;\n  if (/^[\\[(]/.test(t) || /[\\])]$/.test(t) || t.includes('/')) return t;\n  return '/' + t + '/';\n}\n\nconst POS_CODES = ['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'determiner', 'interjection', 'numeral', 'measure_word', 'particle', 'phrase', 'idiom'];\nconst POS_VI = { noun: 'danh từ', verb: 'động từ', adjective: 'tính từ', adverb: 'trạng từ', pronoun: 'đại từ', preposition: 'giới từ',\n  conjunction: 'liên từ', interjection: 'thán từ', determiner: 'từ hạn định', numeral: 'số từ', measure_word: 'lượng từ', particle: 'trợ từ',\n  phrase: 'cụm từ', idiom: 'thành ngữ' };\nconst POS_ZH = { noun: '名词', verb: '动词', adjective: '形容词', adverb: '副词', pronoun: '代词', preposition: '介词', conjunction: '连词',\n  interjection: '叹词', numeral: '数词', measure_word: '量词', particle: '助词', phrase: '短语', idiom: '成语' };\nconst posObj = (code, lang) => ({ code, label_native: lang === 'zh-Hans' ? (POS_ZH[code] || code) : code, label_vi: POS_VI[code] || code });\n// ===== end of shared helpers =====\n\n\n// Code node \"Build records\" - assembles the deterministic data (Free Dictionary, Tatoeba, CC-CEDICT, CVDICT, Unihan,\n// Make Me a Hanzi) into the card shape of docs/vocab/vocab_entry.schema.json and records what is still missing (gaps).\n// Nothing here is invented: a field the sources do not give stays absent and becomes a gap (AI fills it, or the word is rejected).\nconst cfg = $('Config').first().json;\nconst words = $('Words').all().map(i => i.json);\nconst call1 = $('Enrich call 1').all().map(i => i.json);\nconst call2 = $input.all().map(i => i.json);\nlet L = null;\ntry { const p = $('Parse ZH lookup').first().json.data; L = (p && p.lookup) || p; } catch (e) { L = null; }\n\nconst POS_EN = { noun: 'noun', verb: 'verb', adjective: 'adjective', adverb: 'adverb', pronoun: 'pronoun', preposition: 'preposition',\n  conjunction: 'conjunction', interjection: 'interjection', exclamation: 'interjection', determiner: 'determiner', article: 'determiner',\n  numeral: 'numeral', number: 'numeral', phrase: 'phrase', idiom: 'idiom' };\nconst dataOf = j => (j && j.data !== undefined ? j.data : null);\n\nlet sortedKeys = null;\nconst lowerBound = (arr, x) => { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < x) lo = m + 1; else hi = m; } return lo; };\nconst out = [];\nwords.forEach((w, i) => {\n  const warnings = [], errors = [];\n  const tags = new Set(['gen:n8n-vocab-generator']);\n  const rec = { id: w.id, lang: w.lang, headword: w.word };\n  if (w.level) rec.level = { scale: w.lang === 'en' ? 'CEFR' : 'HSK3', value: w.level, source: w.lang === 'en' ? cfg.record.levelSourceEN : cfg.record.levelSourceZH };\n  else errors.push(w.levelRaw ? `level \"${w.levelRaw}\" is not a valid ${w.lang === 'en' ? 'CEFR (A1-C2)' : 'HSK (1-6, 7-9)'} level` : 'the level is missing');\n  rec.pos = []; rec.meanings = []; rec.examples = [];\n  let cands = [];\n\n  if (w.lang === 'en') {\n    const d1 = dataOf(call1[i]);\n    const parsed = parseJsonSafe(d1);\n    const entries = Array.isArray(parsed) ? parsed : [];\n    if (!entries.length) warnings.push('Free Dictionary: no entry');\n    else tags.add('src:free-dictionary');\n    const ipa = {}; let untagged = '';\n    const syn = [], ant = [];\n    for (const e of entries) {\n      for (const p of e.phonetics || []) {\n        const a = p.audio || '';\n        if (p.text && /-uk\\.mp3$/.test(a) && !ipa.uk) ipa.uk = normIpa(p.text);\n        else if (p.text && /-us\\.mp3$/.test(a) && !ipa.us) ipa.us = normIpa(p.text);\n        else if (p.text && !untagged) untagged = p.text;\n      }\n      if (e.phonetic && !untagged) untagged = e.phonetic;\n      for (const m of e.meanings || []) {\n        const code = POS_EN[(m.partOfSpeech || '').toLowerCase()];\n        if (code && !rec.pos.some(p => p.code === code)) rec.pos.push(posObj(code, 'en'));\n        const d0 = (m.definitions || [])[0];\n        if (d0 && rec.meanings.length < 2) rec.meanings.push({ vi: '', en: d0.definition });\n        syn.push(...(m.synonyms || [])); ant.push(...(m.antonyms || []));\n        for (const d of m.definitions || []) {\n          syn.push(...(d.synonyms || [])); ant.push(...(d.antonyms || []));\n          if (d.example) cands.push({ text: d.example.replace(/^[\"“]|[\"”]$/g, ''), vi: '', source: 'dictionary' });\n        }\n      }\n    }\n    if (!ipa.uk && !ipa.us && untagged && ['uk', 'us'].includes(cfg.untaggedIpaAs)) { ipa[cfg.untaggedIpaAs] = normIpa(untagged); warnings.push(`IPA is not tagged UK/US; assigned to ${cfg.untaggedIpaAs}`); }\n    rec.en = Object.keys(ipa).length ? { ipa } : {};\n    // The dictionary's audio file is a third-party URL; the card plays text-to-speech instead of hot-linking it.\n    rec.audio = { tts: true };\n    const rel = [];\n    [...new Set(syn)].filter(s => s.toLowerCase() !== w.word.toLowerCase()).slice(0, 3).forEach(s => rel.push({ word: s, relation: 'synonym' }));\n    [...new Set(ant)].slice(0, 3).forEach(s => rel.push({ word: s, relation: 'antonym' }));\n    if (rel.length) rec.related = rel;\n    cands = parseTatoeba(dataOf(call2[i])).concat(cands);\n    const re = new RegExp('\\\\b' + escRe(w.word) + '\\\\b', 'i');\n    const picked = pickExamples(cands, t => re.test(t), cfg.record.maxExamples);\n    picked.forEach(c => tags.add('src:' + (c.source === 'tatoeba' ? 'tatoeba' : 'free-dictionary')));\n    rec.examples = picked.map(c => ({ text: c.text, highlight: { match: re.exec(c.text)[0] }, translation_vi: c.vi }));\n  } else {\n    if (!L || !L.cedict) { errors.push('the Chinese dictionary (zh_lookup.json) could not be read'); L = { cedict: {}, cvdict: {}, hanzi: {}, unihan: {} }; }\n    const { cedict, cvdict, hanzi, unihan } = L;\n    const entries = cedict[w.word] || [];\n    const e = pickEntry(entries);\n    if (!e) warnings.push('CC-CEDICT: no entry');\n    else { tags.add('src:cc-cedict'); tags.add('src:unihan'); tags.add('src:makemeahanzi'); }\n    if (entries.length > 1) warnings.push('CC-CEDICT has several readings; the first was chosen');\n    const syl = e ? e[0].split(/\\s+/).map(syllableToMark) : [];\n    const chars = Array.from(w.word).map((ch, k) => {\n      const u = unihan[ch] || ['', '', '', ''];\n      const c = { hanzi: ch, pinyin: syl.length === Array.from(w.word).length ? syl[k] : '' };\n      if (u[2]) c.han_viet = u[2].split(/\\s+/)[0].toUpperCase();\n      if (u[1]) c.strokes = parseInt(u[1], 10);\n      const rad = kangxiRadicalChar(u[0]) || (hanzi[ch] || [])[1];\n      if (rad) {\n        const ru = unihan[rad] || ['', '', '', ''];\n        const r = { char: rad };\n        if (ru[3]) r.pinyin = ru[3].split(/\\s+/)[0];\n        if (ru[2]) r.name_vi = ru[2].split(/\\s+/)[0].replace(/^./, s => s.toUpperCase());\n        const g = cleanGlosses(cvdict[rad], 1);\n        if (g.length) r.meaning_vi = g[0];\n        c.radical = r;\n      }\n      const comp = components((hanzi[ch] || [])[0]);\n      if (comp.length) c.components = comp;\n      return c;\n    });\n    rec.zh = { pinyin: syl.length ? joinSyllables(syl) : '', chars };\n    const hv = chars.map(c => c.han_viet || '');\n    if (hv.every(Boolean)) rec.zh.han_viet = hv.join(' ');\n    const mws = e ? measureWords(e[1]) : [];\n    if (mws.length) rec.zh.measure_words = mws;\n    const viGloss = cleanGlosses(cvdict[w.word]).join('; ');\n    const enGloss = e ? cleanGlosses(e[1]).join('; ') : '';\n    if (viGloss) tags.add('src:cvdict');\n    if (viGloss || enGloss) rec.meanings.push(enGloss ? { vi: viGloss, en: enGloss } : { vi: viGloss });\n    // CC-CEDICT has no part of speech, so it is inferred from the gloss shape - and said so.\n    const g0 = e ? (cleanGlosses(e[1], 1)[0] || '') : '';\n    if (/^to /i.test(g0)) { rec.pos.push(posObj('verb', 'zh-Hans')); warnings.push('pos inferred from the gloss \"to ...\" (CC-CEDICT)'); }\n    else if (/^classifier/i.test(g0)) { rec.pos.push(posObj('measure_word', 'zh-Hans')); warnings.push('pos inferred from \"classifier\" (CC-CEDICT)'); }\n    else if (e && e[1].some(g => /^CL:/.test(g))) { rec.pos.push(posObj('noun', 'zh-Hans')); warnings.push('pos = noun because CC-CEDICT lists a classifier (CL:)'); }\n    cands = parseTatoeba(dataOf(call1[i])).concat(parseTatoeba(dataOf(call2[i])));\n    const picked = pickExamples(cands, t => t.includes(w.word), cfg.record.maxExamples);\n    if (picked.length) tags.add('src:tatoeba');\n    rec.examples = picked.map(c => {\n      const ex = { text: c.text, highlight: { match: w.word }, translation_vi: c.vi };\n      const [reading, headPy] = sentencePinyin(c.text, w.word, cedict);\n      if (reading) { ex.reading = reading; if (headPy && reading.includes(headPy)) ex.reading_highlight = { match: headPy }; }\n      return ex;\n    });\n    if (rec.examples.some(x => x.reading)) warnings.push('sentence pinyin was generated from CC-CEDICT');\n    const rel = [];\n    if (e) {\n      if (!sortedKeys) sortedKeys = Object.keys(cedict).sort();\n      const keys = [];\n      for (let k = lowerBound(sortedKeys, w.word); k < sortedKeys.length && sortedKeys[k].startsWith(w.word) && keys.length < 3; k++)\n        if (sortedKeys[k] !== w.word && Array.from(sortedKeys[k]).length <= Array.from(w.word).length + 2) keys.push(sortedKeys[k]);\n      for (const k of keys) {\n        let [rd] = sentencePinyin(k, w.word, cedict);\n        if (!rd) rd = joinSyllables(pickEntry(cedict[k])[0].split(/\\s+/).map(syllableToMark));\n        const it = { word: k, relation: 'compound', reading: rd[0].toLowerCase() + rd.slice(1) };\n        const g = cleanGlosses(cvdict[k], 1); if (g.length) it.gloss_vi = g[0];\n        rel.push(it);\n      }\n    }\n    if (rel.length) rec.related = rel;\n  }\n\n  // The Vietnamese meaning typed on the input line wins over any source.\n  if (w.meaningVi) {\n    if (rec.meanings.length) rec.meanings[0].vi = w.meaningVi; else rec.meanings.push({ vi: w.meaningVi });\n    tags.add('src:operator-meaning');\n  }\n  rec.status = cfg.record.status;\n  rec.tags = [...tags].sort();\n\n  const gaps = [];\n  if (!rec.pos.length) gaps.push('pos');\n  if (!rec.meanings.some(m => m.vi)) gaps.push('meaning_vi');\n  if (!rec.examples.length) gaps.push('examples');\n  rec.examples.forEach((x, k) => { if (!x.translation_vi) gaps.push('translation_vi:' + k); });\n  if (w.lang === 'en' && !(rec.en.ipa && (rec.en.ipa.uk || rec.en.ipa.us))) gaps.push('ipa');\n  if (w.lang === 'zh-Hans' && !rec.zh.pinyin) errors.push('no pinyin (the word is not in CC-CEDICT)');\n  out.push({ json: { word: w, record: rec, gaps, warnings, errors } });\n});\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        80
+      ],
+      "id": "8ede2f17-80bd-5c23-9ad7-7e6ed9b0e315",
+      "name": "Build records"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== Orena vocabulary generator | shared helpers (inlined into every Code node that needs them) =====\nconst TONE_MARKS = { a: 'āáǎà', e: 'ēéěè', i: 'īíǐì', o: 'ōóǒò', u: 'ūúǔù', 'ü': 'ǖǘǚǜ' };\n\nfunction syllableToMark(syl) {\n  const m = /^([A-Za-zü:]+)([1-5])$/.exec(syl);\n  if (!m) return syl.replace(/u:/g, 'ü').replace(/v/g, 'ü');\n  const body = m[1].replace(/u:/g, 'ü').replace(/U:/g, 'Ü').replace(/v/g, 'ü');\n  const tone = +m[2];\n  if (tone === 5) return body;\n  const low = body.toLowerCase();\n  let idx;\n  if (low.includes('a')) idx = low.indexOf('a');\n  else if (low.includes('e')) idx = low.indexOf('e');\n  else if (low.includes('ou')) idx = low.indexOf('o');\n  else idx = Math.max(...['i', 'o', 'u', 'ü'].map(v => low.lastIndexOf(v)));\n  if (idx < 0) return body;\n  let mk = TONE_MARKS[low[idx]][tone - 1];\n  if (body[idx] !== low[idx]) mk = mk.toUpperCase();\n  return body.slice(0, idx) + mk + body.slice(idx + 1);\n}\n\nfunction joinSyllables(arr) {\n  let out = '';\n  arr.forEach((s, i) => {\n    if (i && s && 'aeo'.includes(s.normalize('NFD')[0].toLowerCase())) out += \"'\";\n    out += s;\n  });\n  return out;\n}\n\nfunction slug(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }\n\nfunction fnv1a(str) {\n  let h = 0x811c9dc5;\n  for (const ch of String(str)) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }\n  return h.toString(16).padStart(8, '0');\n}\n\nconst CJK_RE = /[\\u3400-\\u9fff\\uf900-\\ufaff]/;\nfunction isCjk(s) { return CJK_RE.test(s); }\n\n// Deterministic id, a function of the language and the headword only (never of the run, the time or the order):\n// a rerun with the same input yields the same ids. The id pattern of the repo schema is ^[a-z]{2}(-[A-Za-z]+)?:[a-z0-9_-]+$.\n// Orena itself keys an entry by (language, term, first part of speech); this id is its editorial handle (provenance.source_id).\nfunction makeId(lang, word) {\n  if (lang === 'zh-Hans') return 'zh-Hans:' + Array.from(String(word).trim()).map(c => c.codePointAt(0).toString(16)).join('-');\n  const w = String(word).trim();\n  const s = slug(w);\n  const clean = /^[a-z0-9]+(?:[ '-][a-z0-9]+)*$/i.test(w);\n  return 'en:' + ((s && clean) ? s : (s ? s + '-' : 'w-') + fnv1a(w.toLowerCase()).slice(0, 6));\n}\n\nfunction normLevel(lang, raw) {\n  let v = String(raw || '').trim().toUpperCase().replace(/\\s+/g, '');\n  if (!v) return null;\n  if (lang === 'zh-Hans') {\n    v = v.replace(/^HSK/, '');\n    if (/^[789]$|^7-9$|^7–9$/.test(v)) return '7-9';\n    return /^[1-6]$/.test(v) ? v : null;\n  }\n  v = v.replace(/^CEFR/, '');\n  return /^(A1|A2|B1|B2|C1|C2)$/.test(v) ? v : null;\n}\n\nfunction cleanGlosses(glosses, limit = 3) {\n  const out = [];\n  for (let g of glosses || []) {\n    if (/^(CL:|variant of|old variant|see |also written|surname )/.test(g)) continue;\n    g = g.replace(/\\s*\\[[^\\]]*\\]/g, '').replace(/\\|[^\\s,;)]+/g, '').trim();\n    if (g) out.push(g);\n  }\n  return out.slice(0, limit);\n}\n\nfunction measureWords(glosses) {\n  const res = [];\n  for (const g of glosses || []) {\n    const m = /^CL:(.*)$/.exec(g);\n    if (!m) continue;\n    const re = /([^\\s,|\\[]+?)(?:\\|([^\\s,\\[]+))?\\[([^\\]]+)\\]/g;\n    let mm;\n    while ((mm = re.exec(m[1]))) res.push({ mw: mm[2] || mm[1], pinyin: joinSyllables(mm[3].split(/\\s+/).map(syllableToMark)) });\n  }\n  return res;\n}\n\n// lookup.cedict[simp] = [[pinyinWithToneNumbers, [glosses...]], ...]\nfunction pickEntry(entries) {\n  if (!entries || !entries.length) return null;\n  return entries.find(e => e[0] && /^[a-z]/.test(e[0])) || entries[0];\n}\n\nfunction kangxiRadicalChar(rs) {\n  const n = parseInt(String(rs || '').split(/\\s+/)[0].split('.')[0], 10);\n  if (!(n >= 1 && n <= 214)) return null;\n  return String.fromCodePoint(0x2F00 + n - 1).normalize('NFKC');\n}\n\nfunction components(decomp) { return Array.from((decomp || '').replace(/[\\u2FF0-\\u2FFF？?]/g, '')); }\n\nconst ZH_PUNCT = { '。': '.', '，': ',', '、': ',', '？': '?', '！': '!', '：': ':', '；': ';', '“': '\"', '”': '\"', '（': '(', '）': ')', '《': '\"', '》': '\"' };\n\n// Sentence pinyin: longest-match segmentation over CC-CEDICT; the headword is always one word.\n// Returns ['', headPy] when any CJK character is unknown, so no half-guessed reading is ever written.\nfunction sentencePinyin(text, headword, cedict) {\n  const wordPy = w => { const e = pickEntry(cedict[w]); return e ? joinSyllables(e[0].split(/\\s+/).map(syllableToMark)) : null; };\n  const headPy = wordPy(headword) || '';\n  const tokens = [];\n  let unknown = false;\n  text.split(headword).forEach((seg, si) => {\n    if (si) tokens.push(headPy || headword);\n    const chars = Array.from(seg);\n    let i = 0;\n    while (i < chars.length) {\n      let done = false;\n      for (let L = Math.min(8, chars.length - i); L > 0; L--) {\n        const p = wordPy(chars.slice(i, i + L).join(''));\n        if (p) { tokens.push(p); i += L; done = true; break; }\n      }\n      if (!done) {\n        const ch = chars[i];\n        if (ZH_PUNCT[ch]) tokens.push('\\u0000' + ZH_PUNCT[ch]);\n        else if (/\\s/.test(ch)) { /* drop whitespace */ }\n        else { tokens.push(ch); if (isCjk(ch)) unknown = true; }\n        i++;\n      }\n    }\n  });\n  let out = '';\n  for (const t of tokens) out += t.startsWith('\\u0000') ? t.slice(1) : (out && !/[\"(]$/.test(out) ? ' ' : '') + t;\n  out = out.trim();\n  if (unknown || !headPy) return ['', headPy];\n  return [out ? out[0].toUpperCase() + out.slice(1) : '', headPy];\n}\n\n// Tatoeba api_v0: results[].translations[][]; newer API: data[].translations[]\nfunction parseTatoeba(raw) {\n  let o; try { o = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return []; }\n  const arr = (o && (o.results || o.data)) || [];\n  return arr.map(r => {\n    const tr = [];\n    const walk = x => {\n      if (Array.isArray(x)) x.forEach(walk);\n      else if (x && typeof x === 'object') { if (x.lang === 'vie' && x.text) tr.push(x.text); if (x.translations) walk(x.translations); }\n    };\n    walk(r.translations);\n    return { text: String(r.text || '').trim(), vi: tr[0] || '', source: 'tatoeba' };\n  }).filter(x => x.text);\n}\n\nfunction pickExamples(cands, matchFn, max) {\n  const seen = new Set();\n  return cands\n    .filter(c => { if (seen.has(c.text)) return false; seen.add(c.text); return c.text.length >= 4 && c.text.length <= 120 && matchFn(c.text); })\n    .sort((a, b) => (!a.vi - !b.vi) || (Math.abs(a.text.length - 35) - Math.abs(b.text.length - 35)) || (a.text < b.text ? -1 : a.text > b.text ? 1 : 0))\n    .slice(0, max);\n}\n\nfunction parseJsonSafe(raw) { try { return typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return null; } }\nfunction escRe(s) { return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'); }\n\n// An IPA transcription as the card stores it: slash-delimited (\"/rɪˈzɪliənt/\"). A bare transcription is wrapped;\n// anything else (brackets, empty) is returned unchanged so the validator rejects it rather than the workflow guessing.\nfunction normIpa(s) {\n  const t = String(s || '').trim();\n  if (!t) return '';\n  if (/^\\/[^\\/]+\\/$/.test(t)) return t;\n  if (/^[\\[(]/.test(t) || /[\\])]$/.test(t) || t.includes('/')) return t;\n  return '/' + t + '/';\n}\n\nconst POS_CODES = ['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'determiner', 'interjection', 'numeral', 'measure_word', 'particle', 'phrase', 'idiom'];\nconst POS_VI = { noun: 'danh từ', verb: 'động từ', adjective: 'tính từ', adverb: 'trạng từ', pronoun: 'đại từ', preposition: 'giới từ',\n  conjunction: 'liên từ', interjection: 'thán từ', determiner: 'từ hạn định', numeral: 'số từ', measure_word: 'lượng từ', particle: 'trợ từ',\n  phrase: 'cụm từ', idiom: 'thành ngữ' };\nconst POS_ZH = { noun: '名词', verb: '动词', adjective: '形容词', adverb: '副词', pronoun: '代词', preposition: '介词', conjunction: '连词',\n  interjection: '叹词', numeral: '数词', measure_word: '量词', particle: '助词', phrase: '短语', idiom: '成语' };\nconst posObj = (code, lang) => ({ code, label_native: lang === 'zh-Hans' ? (POS_ZH[code] || code) : code, label_vi: POS_VI[code] || code });\n// ===== end of shared helpers =====\n\n\n// Code node \"Prepare AI\" - builds an AI request ONLY for a record that still has a gap the deterministic sources could not fill.\n// AI is a fill-gap layer: it never overwrites a field that already has a value. Nothing to ask, or AI not configured -> one {noop:true} item.\nconst cfg = $('Config').first().json;\nconst F = cfg.ai.fill;\nconst jobs = [];\nif (cfg.ai.active) {\n  $input.all().forEach((it, idx) => {\n    const { record: r, gaps, errors } = it.json;\n    if (errors.length) return;                       // hard errors (missing level, no pinyin ...) are not for AI to repair\n    const want = {};\n    if (gaps.includes('pos') && F.pos) want.pos = `array of part-of-speech codes, only from: ${POS_CODES.join(', ')}`;\n    if (gaps.includes('meaning_vi') && F.meaning_vi) want.meaning_vi = 'a short Vietnamese meaning, the most common sense';\n    const tIdx = gaps.filter(g => g.startsWith('translation_vi:')).map(g => +g.split(':')[1]);\n    if (tIdx.length && F.translation_vi) want.translations_vi = 'object {sentence index: natural Vietnamese translation} for the sentences: ' + JSON.stringify(Object.fromEntries(tIdx.map(k => [k, r.examples[k].text])));\n    if (gaps.includes('examples') && F.examples) want.examples = `array of 1-${cfg.record.maxExamples} short natural example sentences at level ${r.level ? r.level.value : ''}, each CONTAINING \"${r.headword}\" verbatim` +\n      (r.lang === 'zh-Hans' ? ', written in Simplified Chinese' : '') + '; each element {\"text\",\"translation_vi\"}';\n    if (gaps.includes('ipa') && F.ipa) want.ipa = 'object {\"uk\": \"/.../\", \"us\": \"/.../\"}, standard slash-delimited IPA';\n    if (!Object.keys(want).length) return;\n    const context = { headword: r.headword, lang: r.lang, level: r.level, pos: r.pos.map(p => p.code),\n      meanings: r.meanings, zh_pinyin: r.zh ? r.zh.pinyin : undefined };\n    const body = {\n      model: cfg.ai.model,\n      temperature: 0,\n      response_format: { type: 'json_object' },\n      messages: [\n        { role: 'system', content: 'You complete missing fields of a vocabulary card for Vietnamese learners of a foreign language. Reply with ONE JSON object holding exactly the requested keys, nothing else, no explanation. If you are not sure of a key, leave it out.' },\n        { role: 'user', content: 'Existing data (do not change):\\n' + JSON.stringify(context) + '\\n\\nReturn JSON with these keys:\\n' +\n          Object.entries(want).map(([k, v]) => `- \"${k}\": ${v}`).join('\\n') },\n      ],\n    };\n    jobs.push({ json: { recIndex: idx, want: Object.keys(want), body } });\n  });\n}\nreturn jobs.length ? jobs : [{ json: { noop: true } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        80
+      ],
+      "id": "40675115-d71f-5c70-97ad-1e78206980e0",
+      "name": "Prepare AI"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f76c7453-a72e-566c-ba7c-a18541bb9658",
+              "leftValue": "={{ $json.noop === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3740,
+        80
+      ],
+      "id": "c62f9a14-3bc5-5d3a-8a72-78aec635ac75",
+      "name": "No AI needed?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.ai.endpoint }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 90000,
+          "batching": {
+            "batch": {
+              "batchSize": 2,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3960,
+        240
+      ],
+      "id": "93787cf6-d5f0-52a3-bbf6-9ddbf08c6b99",
+      "name": "AI · Fill gaps",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== Orena vocabulary generator | shared helpers (inlined into every Code node that needs them) =====\nconst TONE_MARKS = { a: 'āáǎà', e: 'ēéěè', i: 'īíǐì', o: 'ōóǒò', u: 'ūúǔù', 'ü': 'ǖǘǚǜ' };\n\nfunction syllableToMark(syl) {\n  const m = /^([A-Za-zü:]+)([1-5])$/.exec(syl);\n  if (!m) return syl.replace(/u:/g, 'ü').replace(/v/g, 'ü');\n  const body = m[1].replace(/u:/g, 'ü').replace(/U:/g, 'Ü').replace(/v/g, 'ü');\n  const tone = +m[2];\n  if (tone === 5) return body;\n  const low = body.toLowerCase();\n  let idx;\n  if (low.includes('a')) idx = low.indexOf('a');\n  else if (low.includes('e')) idx = low.indexOf('e');\n  else if (low.includes('ou')) idx = low.indexOf('o');\n  else idx = Math.max(...['i', 'o', 'u', 'ü'].map(v => low.lastIndexOf(v)));\n  if (idx < 0) return body;\n  let mk = TONE_MARKS[low[idx]][tone - 1];\n  if (body[idx] !== low[idx]) mk = mk.toUpperCase();\n  return body.slice(0, idx) + mk + body.slice(idx + 1);\n}\n\nfunction joinSyllables(arr) {\n  let out = '';\n  arr.forEach((s, i) => {\n    if (i && s && 'aeo'.includes(s.normalize('NFD')[0].toLowerCase())) out += \"'\";\n    out += s;\n  });\n  return out;\n}\n\nfunction slug(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }\n\nfunction fnv1a(str) {\n  let h = 0x811c9dc5;\n  for (const ch of String(str)) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }\n  return h.toString(16).padStart(8, '0');\n}\n\nconst CJK_RE = /[\\u3400-\\u9fff\\uf900-\\ufaff]/;\nfunction isCjk(s) { return CJK_RE.test(s); }\n\n// Deterministic id, a function of the language and the headword only (never of the run, the time or the order):\n// a rerun with the same input yields the same ids. The id pattern of the repo schema is ^[a-z]{2}(-[A-Za-z]+)?:[a-z0-9_-]+$.\n// Orena itself keys an entry by (language, term, first part of speech); this id is its editorial handle (provenance.source_id).\nfunction makeId(lang, word) {\n  if (lang === 'zh-Hans') return 'zh-Hans:' + Array.from(String(word).trim()).map(c => c.codePointAt(0).toString(16)).join('-');\n  const w = String(word).trim();\n  const s = slug(w);\n  const clean = /^[a-z0-9]+(?:[ '-][a-z0-9]+)*$/i.test(w);\n  return 'en:' + ((s && clean) ? s : (s ? s + '-' : 'w-') + fnv1a(w.toLowerCase()).slice(0, 6));\n}\n\nfunction normLevel(lang, raw) {\n  let v = String(raw || '').trim().toUpperCase().replace(/\\s+/g, '');\n  if (!v) return null;\n  if (lang === 'zh-Hans') {\n    v = v.replace(/^HSK/, '');\n    if (/^[789]$|^7-9$|^7–9$/.test(v)) return '7-9';\n    return /^[1-6]$/.test(v) ? v : null;\n  }\n  v = v.replace(/^CEFR/, '');\n  return /^(A1|A2|B1|B2|C1|C2)$/.test(v) ? v : null;\n}\n\nfunction cleanGlosses(glosses, limit = 3) {\n  const out = [];\n  for (let g of glosses || []) {\n    if (/^(CL:|variant of|old variant|see |also written|surname )/.test(g)) continue;\n    g = g.replace(/\\s*\\[[^\\]]*\\]/g, '').replace(/\\|[^\\s,;)]+/g, '').trim();\n    if (g) out.push(g);\n  }\n  return out.slice(0, limit);\n}\n\nfunction measureWords(glosses) {\n  const res = [];\n  for (const g of glosses || []) {\n    const m = /^CL:(.*)$/.exec(g);\n    if (!m) continue;\n    const re = /([^\\s,|\\[]+?)(?:\\|([^\\s,\\[]+))?\\[([^\\]]+)\\]/g;\n    let mm;\n    while ((mm = re.exec(m[1]))) res.push({ mw: mm[2] || mm[1], pinyin: joinSyllables(mm[3].split(/\\s+/).map(syllableToMark)) });\n  }\n  return res;\n}\n\n// lookup.cedict[simp] = [[pinyinWithToneNumbers, [glosses...]], ...]\nfunction pickEntry(entries) {\n  if (!entries || !entries.length) return null;\n  return entries.find(e => e[0] && /^[a-z]/.test(e[0])) || entries[0];\n}\n\nfunction kangxiRadicalChar(rs) {\n  const n = parseInt(String(rs || '').split(/\\s+/)[0].split('.')[0], 10);\n  if (!(n >= 1 && n <= 214)) return null;\n  return String.fromCodePoint(0x2F00 + n - 1).normalize('NFKC');\n}\n\nfunction components(decomp) { return Array.from((decomp || '').replace(/[\\u2FF0-\\u2FFF？?]/g, '')); }\n\nconst ZH_PUNCT = { '。': '.', '，': ',', '、': ',', '？': '?', '！': '!', '：': ':', '；': ';', '“': '\"', '”': '\"', '（': '(', '）': ')', '《': '\"', '》': '\"' };\n\n// Sentence pinyin: longest-match segmentation over CC-CEDICT; the headword is always one word.\n// Returns ['', headPy] when any CJK character is unknown, so no half-guessed reading is ever written.\nfunction sentencePinyin(text, headword, cedict) {\n  const wordPy = w => { const e = pickEntry(cedict[w]); return e ? joinSyllables(e[0].split(/\\s+/).map(syllableToMark)) : null; };\n  const headPy = wordPy(headword) || '';\n  const tokens = [];\n  let unknown = false;\n  text.split(headword).forEach((seg, si) => {\n    if (si) tokens.push(headPy || headword);\n    const chars = Array.from(seg);\n    let i = 0;\n    while (i < chars.length) {\n      let done = false;\n      for (let L = Math.min(8, chars.length - i); L > 0; L--) {\n        const p = wordPy(chars.slice(i, i + L).join(''));\n        if (p) { tokens.push(p); i += L; done = true; break; }\n      }\n      if (!done) {\n        const ch = chars[i];\n        if (ZH_PUNCT[ch]) tokens.push('\\u0000' + ZH_PUNCT[ch]);\n        else if (/\\s/.test(ch)) { /* drop whitespace */ }\n        else { tokens.push(ch); if (isCjk(ch)) unknown = true; }\n        i++;\n      }\n    }\n  });\n  let out = '';\n  for (const t of tokens) out += t.startsWith('\\u0000') ? t.slice(1) : (out && !/[\"(]$/.test(out) ? ' ' : '') + t;\n  out = out.trim();\n  if (unknown || !headPy) return ['', headPy];\n  return [out ? out[0].toUpperCase() + out.slice(1) : '', headPy];\n}\n\n// Tatoeba api_v0: results[].translations[][]; newer API: data[].translations[]\nfunction parseTatoeba(raw) {\n  let o; try { o = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return []; }\n  const arr = (o && (o.results || o.data)) || [];\n  return arr.map(r => {\n    const tr = [];\n    const walk = x => {\n      if (Array.isArray(x)) x.forEach(walk);\n      else if (x && typeof x === 'object') { if (x.lang === 'vie' && x.text) tr.push(x.text); if (x.translations) walk(x.translations); }\n    };\n    walk(r.translations);\n    return { text: String(r.text || '').trim(), vi: tr[0] || '', source: 'tatoeba' };\n  }).filter(x => x.text);\n}\n\nfunction pickExamples(cands, matchFn, max) {\n  const seen = new Set();\n  return cands\n    .filter(c => { if (seen.has(c.text)) return false; seen.add(c.text); return c.text.length >= 4 && c.text.length <= 120 && matchFn(c.text); })\n    .sort((a, b) => (!a.vi - !b.vi) || (Math.abs(a.text.length - 35) - Math.abs(b.text.length - 35)) || (a.text < b.text ? -1 : a.text > b.text ? 1 : 0))\n    .slice(0, max);\n}\n\nfunction parseJsonSafe(raw) { try { return typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return null; } }\nfunction escRe(s) { return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'); }\n\n// An IPA transcription as the card stores it: slash-delimited (\"/rɪˈzɪliənt/\"). A bare transcription is wrapped;\n// anything else (brackets, empty) is returned unchanged so the validator rejects it rather than the workflow guessing.\nfunction normIpa(s) {\n  const t = String(s || '').trim();\n  if (!t) return '';\n  if (/^\\/[^\\/]+\\/$/.test(t)) return t;\n  if (/^[\\[(]/.test(t) || /[\\])]$/.test(t) || t.includes('/')) return t;\n  return '/' + t + '/';\n}\n\nconst POS_CODES = ['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'determiner', 'interjection', 'numeral', 'measure_word', 'particle', 'phrase', 'idiom'];\nconst POS_VI = { noun: 'danh từ', verb: 'động từ', adjective: 'tính từ', adverb: 'trạng từ', pronoun: 'đại từ', preposition: 'giới từ',\n  conjunction: 'liên từ', interjection: 'thán từ', determiner: 'từ hạn định', numeral: 'số từ', measure_word: 'lượng từ', particle: 'trợ từ',\n  phrase: 'cụm từ', idiom: 'thành ngữ' };\nconst POS_ZH = { noun: '名词', verb: '动词', adjective: '形容词', adverb: '副词', pronoun: '代词', preposition: '介词', conjunction: '连词',\n  interjection: '叹词', numeral: '数词', measure_word: '量词', particle: '助词', phrase: '短语', idiom: '成语' };\nconst posObj = (code, lang) => ({ code, label_native: lang === 'zh-Hans' ? (POS_ZH[code] || code) : code, label_vi: POS_VI[code] || code });\n// ===== end of shared helpers =====\n\n// ===== Orena vocabulary generator | admission validator =====\n// VOCAB_SCHEMA_TEXT is docs/vocab/vocab_entry.schema.json copied verbatim by build_workflow.py (never edited by hand).\n// The validator below interprets that schema generically, so the rules cannot drift from the repo schema.\nconst VOCAB_SCHEMA_TEXT = \"{\\n  \\\"$schema\\\": \\\"https://json-schema.org/draft/2020-12/schema\\\",\\n  \\\"$id\\\": \\\"https://orena.app/schemas/vocab_entry.schema.json\\\",\\n  \\\"title\\\": \\\"Orena vocabulary entry (flashcard)\\\",\\n  \\\"description\\\": \\\"Một thẻ từ vựng. Dùng chung khung cho mọi ngôn ngữ; phần riêng nằm trong `en` hoặc `zh`. Mỗi ngôn ngữ giữ thang cấp độ riêng (CEFR / HSK 3.0), không quy đổi chéo.\\\",\\n  \\\"type\\\": \\\"object\\\",\\n  \\\"required\\\": [\\\"id\\\", \\\"lang\\\", \\\"headword\\\", \\\"level\\\", \\\"pos\\\", \\\"meanings\\\", \\\"examples\\\", \\\"status\\\"],\\n  \\\"additionalProperties\\\": false,\\n  \\\"properties\\\": {\\n    \\\"id\\\": { \\\"type\\\": \\\"string\\\", \\\"pattern\\\": \\\"^[a-z]{2}(-[A-Za-z]+)?:[a-z0-9_-]+$\\\", \\\"description\\\": \\\"Ví dụ: en:resilient, zh-Hans:senlin\\\" },\\n    \\\"lang\\\": { \\\"enum\\\": [\\\"en\\\", \\\"zh-Hans\\\"], \\\"description\\\": \\\"Tiếng Trung chỉ dùng giản thể.\\\" },\\n    \\\"headword\\\": { \\\"type\\\": \\\"string\\\", \\\"minLength\\\": 1 },\\n    \\\"level\\\": {\\n      \\\"type\\\": \\\"object\\\",\\n      \\\"required\\\": [\\\"scale\\\", \\\"value\\\"],\\n      \\\"additionalProperties\\\": false,\\n      \\\"properties\\\": {\\n        \\\"scale\\\": { \\\"enum\\\": [\\\"CEFR\\\", \\\"HSK3\\\"] },\\n        \\\"value\\\": { \\\"type\\\": \\\"string\\\" },\\n        \\\"source\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Nguồn xếp cấp, ví dụ \\\\\\\"Oxford 5000\\\\\\\", \\\\\\\"HSK 3.0 (2021)\\\\\\\"\\\" }\\n      }\\n    },\\n    \\\"pos\\\": {\\n      \\\"type\\\": \\\"array\\\", \\\"minItems\\\": 1,\\n      \\\"items\\\": {\\n        \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"code\\\"], \\\"additionalProperties\\\": false,\\n        \\\"properties\\\": {\\n          \\\"code\\\": { \\\"enum\\\": [\\\"noun\\\", \\\"verb\\\", \\\"adjective\\\", \\\"adverb\\\", \\\"pronoun\\\", \\\"preposition\\\", \\\"conjunction\\\", \\\"determiner\\\", \\\"interjection\\\", \\\"numeral\\\", \\\"measure_word\\\", \\\"particle\\\", \\\"phrase\\\", \\\"idiom\\\"] },\\n          \\\"label_native\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Nhãn theo ngôn ngữ đích, ví dụ 名词\\\" },\\n          \\\"label_vi\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Ví dụ: danh từ\\\" }\\n        }\\n      }\\n    },\\n    \\\"meanings\\\": {\\n      \\\"type\\\": \\\"array\\\", \\\"minItems\\\": 1,\\n      \\\"description\\\": \\\"Phần tử đầu tiên là nghĩa chính, hiện ở mặt trước.\\\",\\n      \\\"items\\\": {\\n        \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"vi\\\"], \\\"additionalProperties\\\": false,\\n        \\\"properties\\\": {\\n          \\\"vi\\\": { \\\"type\\\": \\\"string\\\" },\\n          \\\"en\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Định nghĩa/nghĩa tiếng Anh (tùy chọn với ZH)\\\" },\\n          \\\"note_vi\\\": { \\\"type\\\": \\\"string\\\" }\\n        }\\n      }\\n    },\\n    \\\"illustration\\\": {\\n      \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"kind\\\"], \\\"additionalProperties\\\": false,\\n      \\\"description\\\": \\\"Không có -> UI ẩn khung hình.\\\",\\n      \\\"properties\\\": {\\n        \\\"kind\\\": { \\\"enum\\\": [\\\"library\\\", \\\"upload\\\", \\\"none\\\"] },\\n        \\\"ref\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"library: mã hình trong thư viện SVG dùng chung; upload: asset id/URL\\\" },\\n        \\\"alt_vi\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Mô tả cho trình đọc màn hình\\\" }\\n      }\\n    },\\n    \\\"audio\\\": {\\n      \\\"type\\\": \\\"object\\\", \\\"additionalProperties\\\": false,\\n      \\\"properties\\\": {\\n        \\\"url\\\": { \\\"type\\\": \\\"string\\\" },\\n        \\\"tts\\\": { \\\"type\\\": \\\"boolean\\\", \\\"default\\\": true, \\\"description\\\": \\\"Không có url -> phát bằng TTS\\\" }\\n      }\\n    },\\n    \\\"examples\\\": {\\n      \\\"type\\\": \\\"array\\\", \\\"minItems\\\": 1, \\\"maxItems\\\": 4,\\n      \\\"items\\\": { \\\"$ref\\\": \\\"#/$defs/example\\\" }\\n    },\\n    \\\"related\\\": {\\n      \\\"type\\\": \\\"array\\\",\\n      \\\"items\\\": {\\n        \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"word\\\", \\\"relation\\\"], \\\"additionalProperties\\\": false,\\n        \\\"properties\\\": {\\n          \\\"word\\\": { \\\"type\\\": \\\"string\\\" },\\n          \\\"relation\\\": { \\\"enum\\\": [\\\"family\\\", \\\"synonym\\\", \\\"antonym\\\", \\\"related\\\", \\\"compound\\\"] },\\n          \\\"pos\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Ví dụ: (n), (adv)\\\" },\\n          \\\"reading\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Pinyin nếu là từ tiếng Trung\\\" },\\n          \\\"gloss_vi\\\": { \\\"type\\\": \\\"string\\\" }\\n        }\\n      }\\n    },\\n    \\\"collocations\\\": { \\\"type\\\": \\\"array\\\", \\\"items\\\": { \\\"type\\\": \\\"string\\\" } },\\n    \\\"memory_tip_vi\\\": { \\\"type\\\": \\\"string\\\" },\\n    \\\"tags\\\": { \\\"type\\\": \\\"array\\\", \\\"items\\\": { \\\"type\\\": \\\"string\\\" }, \\\"description\\\": \\\"Chủ đề, nguồn bài học (ví dụ topic:nature, lesson:early-market)\\\" },\\n    \\\"status\\\": { \\\"enum\\\": [\\\"draft\\\", \\\"reviewed\\\", \\\"published\\\"] },\\n    \\\"en\\\": { \\\"$ref\\\": \\\"#/$defs/en_fields\\\" },\\n    \\\"zh\\\": { \\\"$ref\\\": \\\"#/$defs/zh_fields\\\" },\\n    \\\"created_at\\\": { \\\"type\\\": \\\"string\\\", \\\"format\\\": \\\"date-time\\\" },\\n    \\\"updated_at\\\": { \\\"type\\\": \\\"string\\\", \\\"format\\\": \\\"date-time\\\" }\\n  },\\n  \\\"allOf\\\": [\\n    {\\n      \\\"if\\\": { \\\"properties\\\": { \\\"lang\\\": { \\\"const\\\": \\\"en\\\" } } },\\n      \\\"then\\\": {\\n        \\\"required\\\": [\\\"en\\\"],\\n        \\\"not\\\": { \\\"required\\\": [\\\"zh\\\"] },\\n        \\\"properties\\\": { \\\"level\\\": { \\\"properties\\\": { \\\"scale\\\": { \\\"const\\\": \\\"CEFR\\\" }, \\\"value\\\": { \\\"enum\\\": [\\\"A1\\\", \\\"A2\\\", \\\"B1\\\", \\\"B2\\\", \\\"C1\\\", \\\"C2\\\"] } } } }\\n      }\\n    },\\n    {\\n      \\\"if\\\": { \\\"properties\\\": { \\\"lang\\\": { \\\"const\\\": \\\"zh-Hans\\\" } } },\\n      \\\"then\\\": {\\n        \\\"required\\\": [\\\"zh\\\"],\\n        \\\"not\\\": { \\\"required\\\": [\\\"en\\\"] },\\n        \\\"properties\\\": { \\\"level\\\": { \\\"properties\\\": { \\\"scale\\\": { \\\"const\\\": \\\"HSK3\\\" }, \\\"value\\\": { \\\"enum\\\": [\\\"1\\\", \\\"2\\\", \\\"3\\\", \\\"4\\\", \\\"5\\\", \\\"6\\\", \\\"7-9\\\"] } } } }\\n      }\\n    }\\n  ],\\n  \\\"$defs\\\": {\\n    \\\"highlight\\\": {\\n      \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"match\\\"], \\\"additionalProperties\\\": false,\\n      \\\"description\\\": \\\"Đoạn cần tô nổi bật. UI tự tìm `match` trong câu; `occurrence` chọn lần xuất hiện thứ mấy (mặc định 1). Không tìm thấy -> hiện câu không tô, Admin báo cảnh báo.\\\",\\n      \\\"properties\\\": {\\n        \\\"match\\\": { \\\"type\\\": \\\"string\\\", \\\"minLength\\\": 1 },\\n        \\\"occurrence\\\": { \\\"type\\\": \\\"integer\\\", \\\"minimum\\\": 1, \\\"default\\\": 1 }\\n      }\\n    },\\n    \\\"example\\\": {\\n      \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"text\\\", \\\"highlight\\\", \\\"translation_vi\\\"], \\\"additionalProperties\\\": false,\\n      \\\"properties\\\": {\\n        \\\"label_vi\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Nhãn ngắn, ví dụ \\\\\\\"Chỉ người\\\\\\\", \\\\\\\"Làm tân ngữ\\\\\\\"\\\" },\\n        \\\"text\\\": { \\\"type\\\": \\\"string\\\" },\\n        \\\"highlight\\\": { \\\"$ref\\\": \\\"#/$defs/highlight\\\" },\\n        \\\"reading\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"ZH: pinyin của cả câu\\\" },\\n        \\\"reading_highlight\\\": { \\\"$ref\\\": \\\"#/$defs/highlight\\\" },\\n        \\\"translation_vi\\\": { \\\"type\\\": \\\"string\\\" },\\n        \\\"explanation_vi\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Giải thích cách dùng trong câu\\\" }\\n      }\\n    },\\n    \\\"en_fields\\\": {\\n      \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"ipa\\\"], \\\"additionalProperties\\\": false,\\n      \\\"properties\\\": {\\n        \\\"ipa\\\": {\\n          \\\"type\\\": \\\"object\\\", \\\"additionalProperties\\\": false, \\\"minProperties\\\": 1,\\n          \\\"properties\\\": { \\\"uk\\\": { \\\"type\\\": \\\"string\\\" }, \\\"us\\\": { \\\"type\\\": \\\"string\\\" } }\\n        },\\n        \\\"etymology_vi\\\": { \\\"type\\\": \\\"string\\\" }\\n      }\\n    },\\n    \\\"zh_fields\\\": {\\n      \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"pinyin\\\", \\\"chars\\\"], \\\"additionalProperties\\\": false,\\n      \\\"properties\\\": {\\n        \\\"pinyin\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Có dấu thanh, ví dụ sēnlín\\\" },\\n        \\\"han_viet\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Âm Hán Việt, ví dụ SÂM LÂM\\\" },\\n        \\\"chars\\\": {\\n          \\\"type\\\": \\\"array\\\", \\\"minItems\\\": 1,\\n          \\\"description\\\": \\\"Một phần tử cho mỗi chữ Hán, theo đúng thứ tự trong headword; dùng cho ruby pinyin và phần bộ thủ.\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"hanzi\\\", \\\"pinyin\\\"], \\\"additionalProperties\\\": false,\\n            \\\"properties\\\": {\\n              \\\"hanzi\\\": { \\\"type\\\": \\\"string\\\", \\\"minLength\\\": 1, \\\"maxLength\\\": 1 },\\n              \\\"pinyin\\\": { \\\"type\\\": \\\"string\\\" },\\n              \\\"han_viet\\\": { \\\"type\\\": \\\"string\\\" },\\n              \\\"strokes\\\": { \\\"type\\\": \\\"integer\\\", \\\"minimum\\\": 1 },\\n              \\\"radical\\\": {\\n                \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"char\\\"], \\\"additionalProperties\\\": false,\\n                \\\"properties\\\": {\\n                  \\\"char\\\": { \\\"type\\\": \\\"string\\\" },\\n                  \\\"pinyin\\\": { \\\"type\\\": \\\"string\\\" },\\n                  \\\"name_vi\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Tên bộ, ví dụ Mộc\\\" },\\n                  \\\"meaning_vi\\\": { \\\"type\\\": \\\"string\\\" }\\n                }\\n              },\\n              \\\"components\\\": { \\\"type\\\": \\\"array\\\", \\\"items\\\": { \\\"type\\\": \\\"string\\\" }, \\\"description\\\": \\\"Cấu tạo, ví dụ [\\\\\\\"木\\\\\\\",\\\\\\\"木\\\\\\\",\\\\\\\"木\\\\\\\"]\\\" }\\n            }\\n          }\\n        },\\n        \\\"measure_words\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"object\\\", \\\"required\\\": [\\\"mw\\\"], \\\"additionalProperties\\\": false,\\n            \\\"properties\\\": {\\n              \\\"mw\\\": { \\\"type\\\": \\\"string\\\" },\\n              \\\"pinyin\\\": { \\\"type\\\": \\\"string\\\" },\\n              \\\"phrase\\\": { \\\"type\\\": \\\"string\\\", \\\"description\\\": \\\"Ví dụ 一片森林\\\" },\\n              \\\"phrase_pinyin\\\": { \\\"type\\\": \\\"string\\\" }\\n            }\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\\n\";\nconst VOCAB_SCHEMA = JSON.parse(VOCAB_SCHEMA_TEXT);\n\nconst _typeOf = v => Array.isArray(v) ? 'array' : v === null ? 'null' : Number.isInteger(v) ? 'integer' : typeof v;\nconst _cp = s => Array.from(s).length;\n\nfunction _resolve(root, ref) {\n  if (!ref.startsWith('#/')) throw new Error('unsupported $ref ' + ref);\n  return ref.slice(2).split('/').reduce((o, k) => o[k], root);\n}\n\n// JSON Schema (2020-12 subset used by the Orena schema): type, enum, const, pattern, min/maxLength, minimum,\n// min/maxItems, minProperties, required, properties, additionalProperties:false, items, $ref, allOf, if/then, not.\nfunction schemaErrors(value, schema, path, root, errs) {\n  if (schema.$ref) schema = _resolve(root, schema.$ref);\n  const here = path.length ? path.join('/') : '(record)';\n  const add = msg => errs.push(`${here}: ${msg}`);\n  if (schema.type) {\n    const vt = _typeOf(value);\n    const ok = schema.type === vt || (schema.type === 'number' && vt === 'integer');\n    if (!ok) { add(`${JSON.stringify(value)} is not of type '${schema.type}'`); return; }\n  }\n  if (schema.const !== undefined && value !== schema.const) add(`${JSON.stringify(schema.const)} was expected`);\n  if (schema.enum && !schema.enum.includes(value)) add(`${JSON.stringify(value)} is not one of ${JSON.stringify(schema.enum)}`);\n  if (typeof value === 'string') {\n    if (schema.minLength !== undefined && _cp(value) < schema.minLength) add('is too short');\n    if (schema.maxLength !== undefined && _cp(value) > schema.maxLength) add('is too long');\n    if (schema.pattern && !new RegExp(schema.pattern, 'u').test(value)) add(`does not match '${schema.pattern}'`);\n  }\n  if (typeof value === 'number' && schema.minimum !== undefined && value < schema.minimum) add(`is less than the minimum of ${schema.minimum}`);\n  if (Array.isArray(value)) {\n    if (schema.minItems !== undefined && value.length < schema.minItems) add(`needs at least ${schema.minItems} item(s)`);\n    if (schema.maxItems !== undefined && value.length > schema.maxItems) add(`allows at most ${schema.maxItems} item(s)`);\n    if (schema.items) value.forEach((v, i) => schemaErrors(v, schema.items, [...path, String(i)], root, errs));\n  }\n  if (value && typeof value === 'object' && !Array.isArray(value)) {\n    for (const k of schema.required || []) if (!(k in value)) add(`'${k}' is a required property`);\n    const props = schema.properties || {};\n    if (schema.additionalProperties === false) {\n      for (const k of Object.keys(value)) if (!(k in props)) add(`Additional properties are not allowed ('${k}' was unexpected)`);\n    }\n    if (schema.minProperties !== undefined && Object.keys(value).length < schema.minProperties) add(`needs at least ${schema.minProperties} propert(ies)`);\n    for (const [k, sub] of Object.entries(props)) if (k in value) schemaErrors(value[k], sub, [...path, k], root, errs);\n  }\n  for (const sub of schema.allOf || []) schemaErrors(value, sub, path, root, errs);\n  if (schema.if) {\n    const probe = [];\n    schemaErrors(value, schema.if, path, root, probe);\n    if (!probe.length && schema.then) schemaErrors(value, schema.then, path, root, errs);\n    if (probe.length && schema.else) schemaErrors(value, schema.else, path, root, errs);\n  }\n  if (schema.not) {\n    const probe = [];\n    schemaErrors(value, schema.not, path, root, probe);\n    if (!probe.length) add('should not be valid under the \"not\" schema');\n  }\n}\n\nfunction _occurrences(text, match) {\n  let count = 0, from = 0;\n  while (match) { const at = text.indexOf(match, from); if (at < 0) break; count++; from = at + match.length; }\n  return count;\n}\nconst _highlightOk = (text, h) => !!h && typeof h.match === 'string' && h.match.length > 0 && _occurrences(String(text || ''), h.match) >= (h.occurrence || 1);\nconst PINYIN_RE = /^[A-Za-zÜüāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ' ]+$/;\nconst _pyKey = s => String(s || '').normalize('NFC').toLowerCase().replace(/[\\s']/g, '');\n\n// Admission rules beyond the schema. Every failure is a reason the record is `rejected`; nothing is downgraded.\nfunction domainErrors(r, allowedStatuses) {\n  const errs = [];\n  if (!r || typeof r !== 'object') return errs;\n  if (r.lang && typeof r.headword === 'string' && r.id !== makeId(r.lang, r.headword)) errs.push(`id: '${r.id}' is not the deterministic id '${makeId(r.lang, r.headword)}' of this headword`);\n  if (allowedStatuses && !allowedStatuses.includes(r.status)) errs.push(`status: '${r.status}' is not allowed (only ${allowedStatuses.join('/')}); the generator never publishes`);\n  (r.meanings || []).forEach((m, i) => { if (!m || typeof m.vi !== 'string' || !m.vi.trim()) errs.push(`meanings/${i}/vi: a Vietnamese meaning is required`); });\n  (r.examples || []).forEach((ex, i) => {\n    if (!ex || typeof ex !== 'object') return;\n    if (typeof ex.text !== 'string' || !ex.text.trim()) errs.push(`examples/${i}/text: must not be empty`);\n    if (typeof ex.translation_vi !== 'string' || !ex.translation_vi.trim()) errs.push(`examples/${i}/translation_vi: a Vietnamese translation is required`);\n    if (ex.highlight && typeof ex.text === 'string' && !_highlightOk(ex.text, ex.highlight)) errs.push(`examples/${i}/highlight: the match is not in the sentence (or not that many times)`);\n    if (ex.reading_highlight) {\n      if (typeof ex.reading !== 'string' || !_highlightOk(ex.reading, ex.reading_highlight)) errs.push(`examples/${i}/reading_highlight: the match is not in the reading`);\n    }\n  });\n  if (r.lang === 'en' && r.en && r.en.ipa && typeof r.en.ipa === 'object') {\n    for (const [acc, v] of Object.entries(r.en.ipa)) if (typeof v === 'string' && !/^\\/[^\\/]+\\/$/.test(v)) errs.push(`en/ipa/${acc}: IPA must be slash-delimited, like /rɪˈzɪliənt/`);\n  }\n  if (r.lang === 'zh-Hans' && r.zh && typeof r.zh === 'object') {\n    const chars = Array.isArray(r.zh.chars) ? r.zh.chars : [];\n    const joined = chars.map(c => (c && c.hanzi) || '').join('');\n    if (typeof r.headword === 'string' && joined !== r.headword) errs.push(`zh/chars: spell '${joined}', not the headword '${r.headword}'`);\n    if (typeof r.zh.pinyin !== 'string' || !r.zh.pinyin.trim()) errs.push('zh/pinyin: required (the word has no CC-CEDICT reading)');\n    else if (!PINYIN_RE.test(r.zh.pinyin)) errs.push('zh/pinyin: must be pinyin letters with tone marks');\n    chars.forEach((c, i) => { if (!c || typeof c.pinyin !== 'string' || !c.pinyin.trim()) errs.push(`zh/chars/${i}/pinyin: required for every character`); });\n    if (typeof r.zh.pinyin === 'string' && chars.every(c => c && typeof c.pinyin === 'string' && c.pinyin.trim())\n        && _pyKey(chars.map(c => c.pinyin).join('')) !== _pyKey(r.zh.pinyin)) errs.push('zh/pinyin: does not equal the per-character pinyin joined');\n    if (r.zh.han_viet !== undefined && !String(r.zh.han_viet).trim()) errs.push('zh/han_viet: must not be empty when present');\n  }\n  return errs;\n}\n\nfunction validateRecord(r, allowedStatuses) {\n  const errs = [];\n  schemaErrors(r, VOCAB_SCHEMA, [], VOCAB_SCHEMA, errs);\n  return [...new Set([...errs.map(e => 'schema: ' + e), ...domainErrors(r, allowedStatuses)])];\n}\n// ===== end of admission validator =====\n\n\n// Code node \"Validate & group\" - applies the AI fill-gap answers (only into the gaps asked for), validates every record\n// STRICTLY against the repo schema plus the admission rules, splits READY / REJECTED, and groups READY by language into\n// one import file each. An invalid record is rejected with its reasons; it is never downgraded and carried on.\nconst cfg = $('Config').first().json;\nconst built = $('Build records').all().map(i => JSON.parse(JSON.stringify(i.json)));\nlet cedict = {};\ntry { const p = $('Parse ZH lookup').first().json.data; cedict = ((p && p.lookup) || p || {}).cedict || {}; } catch (e) {}\nconst inputIssues = $('Parse words').first().json.inputIssues || [];\nconst aiTag = (r, field) => { r.tags = [...new Set([...(r.tags || []), 'ai-filled:' + field])].sort(); };\n\n// ---- 1. AI answers (gap fill only; the AI never overwrites a value that exists) ----\nconst first = $input.first().json;\nif (!first.noop) {\n  const jobs = $('Prepare AI').all().map(i => i.json);\n  $input.all().forEach((it, k) => {\n    const job = jobs[k]; if (!job) return;\n    const b = built[job.recIndex]; const r = b.record;\n    if (it.json.error) { b.warnings.push('AI request failed: ' + (it.json.error.message || 'unknown')); return; }\n    const resp = parseJsonSafe(it.json.data);\n    const content = resp && resp.choices && resp.choices[0] && resp.choices[0].message && resp.choices[0].message.content;\n    const ai = parseJsonSafe(typeof content === 'string' ? content.replace(/^```(?:json)?\\s*|\\s*```$/g, '') : content);\n    if (!ai || typeof ai !== 'object') { b.warnings.push('AI did not return JSON'); return; }\n    if (job.want.includes('pos') && !r.pos.length && Array.isArray(ai.pos)) {\n      const codes = [...new Set(ai.pos.map(x => String(x).toLowerCase().trim()))].filter(c => POS_CODES.includes(c));\n      if (codes.length) { r.pos = codes.map(c => posObj(c, r.lang)); aiTag(r, 'pos'); b.warnings.push('AI filled: pos'); }\n    }\n    if (job.want.includes('meaning_vi') && typeof ai.meaning_vi === 'string' && ai.meaning_vi.trim() && ai.meaning_vi.length <= 200) {\n      if (!r.meanings.length) { r.meanings.push({ vi: ai.meaning_vi.trim() }); aiTag(r, 'meaning_vi'); b.warnings.push('AI filled: meanings[0].vi'); }\n      else if (!r.meanings[0].vi) { r.meanings[0].vi = ai.meaning_vi.trim(); aiTag(r, 'meaning_vi'); b.warnings.push('AI filled: meanings[0].vi'); }\n    }\n    if (job.want.includes('translations_vi') && ai.translations_vi && typeof ai.translations_vi === 'object') {\n      for (const [k2, v] of Object.entries(ai.translations_vi)) {\n        const ex = r.examples[+k2];\n        if (ex && !ex.translation_vi && typeof v === 'string' && v.trim()) { ex.translation_vi = v.trim(); aiTag(r, 'translation_vi'); b.warnings.push(`AI filled: examples[${k2}].translation_vi`); }\n      }\n    }\n    if (job.want.includes('examples') && !r.examples.length && Array.isArray(ai.examples)) {\n      for (const x of ai.examples) {\n        if (r.examples.length >= cfg.record.maxExamples) break;\n        if (!x || typeof x.text !== 'string' || typeof x.translation_vi !== 'string' || !x.translation_vi.trim()) continue;\n        const text = x.text.trim();\n        const match = r.lang === 'zh-Hans' ? (text.includes(r.headword) ? r.headword : null) : ((new RegExp('\\\\b' + escRe(r.headword) + '\\\\b', 'i').exec(text) || [])[0] || null);\n        if (!match) continue;\n        const ex = { text, highlight: { match }, translation_vi: x.translation_vi.trim() };\n        if (r.lang === 'zh-Hans') {\n          const [reading, headPy] = sentencePinyin(ex.text, r.headword, cedict);\n          if (reading) { ex.reading = reading; if (headPy && reading.includes(headPy)) ex.reading_highlight = { match: headPy }; }\n        }\n        r.examples.push(ex);\n        aiTag(r, 'examples');\n        b.warnings.push(`AI filled: examples[${r.examples.length - 1}]`);\n      }\n    }\n    if (job.want.includes('ipa') && ai.ipa && typeof ai.ipa === 'object' && r.en && !(r.en.ipa && Object.keys(r.en.ipa).length)) {\n      const ipa = {};\n      for (const acc of ['uk', 'us']) if (typeof ai.ipa[acc] === 'string' && ai.ipa[acc].trim()) ipa[acc] = normIpa(ai.ipa[acc]);\n      if (Object.keys(ipa).length) { r.en.ipa = ipa; aiTag(r, 'ipa'); b.warnings.push('AI filled: en.ipa'); }\n    }\n  });\n}\n\n// ---- 2. Tidy and validate strictly ----\nconst ready = [], rejected = [];\nfor (const b of built) {\n  const r = b.record;\n  const meaningsBefore = (r.meanings || []).length;\n  r.meanings = (r.meanings || []).filter(m => m.vi && m.vi.trim());\n  if (r.meanings.length < meaningsBefore) b.warnings.push(`dropped ${meaningsBefore - r.meanings.length} meaning(s) without a Vietnamese text`);\n  const before = r.examples.length;\n  r.examples = (r.examples || []).filter(x => x.translation_vi && x.translation_vi.trim()).slice(0, cfg.record.maxExamples);\n  if (r.examples.length < before) b.warnings.push(`dropped ${before - r.examples.length} example(s) without a Vietnamese translation`);\n  if (r.related && !r.related.length) delete r.related;\n  if (r.lang === 'en' && r.en && r.en.ipa && !Object.keys(r.en.ipa).length) delete r.en.ipa;\n  const errs = [...b.errors, ...validateRecord(r, cfg.record.allowedStatuses)];\n  if (errs.length) {\n    const hint = cfg.ai.active ? '' : ' (AI is not configured, so nothing filled it)';\n    if (!r.pos.length) errs.unshift('no part of speech' + hint);\n    if (!r.meanings.length) errs.unshift('no Vietnamese meaning' + hint);\n    if (!r.examples.length) errs.unshift('no example sentence with a Vietnamese translation' + hint);\n    if (r.lang === 'en' && !(r.en && r.en.ipa)) errs.unshift('no IPA (uk/us)' + hint);\n  }\n  const row = { id: r.id, headword: r.headword, lang: r.lang, line: b.word.line, warnings: b.warnings };\n  if (errs.length) rejected.push({ ...row, reasons: [...new Set(errs)], record: r });\n  else ready.push({ ...row, record: r });\n}\n\n// ---- 3. One import file per language (collection id and file name are deterministic) ----\nconst langs = [...new Set(built.map(b => b.record.lang))].sort();\nconst multi = langs.length > 1;\nconst allIds = built.map(b => b.record.id).sort();\nconst groups = langs.map(lang => {\n  const code = lang === 'zh-Hans' ? 'zh' : 'en';\n  const rs = ready.filter(x => x.record.lang === lang).map(x => x.record).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);\n  let collection_id = slug(cfg.input.collectionId || '') || (cfg.input.title ? slug(cfg.input.title) : `${code}-batch-${fnv1a(allIds.filter(id => id.startsWith(lang + ':')).join('|'))}`);\n  if (!collection_id) collection_id = `${code}-batch-${fnv1a(allIds.filter(id => id.startsWith(lang + ':')).join('|'))}`;\n  if (multi && (cfg.input.collectionId || cfg.input.title)) collection_id += '-' + code;\n  const title = (cfg.input.title || `Vocabulary ${code.toUpperCase()} ${collection_id}`) + (multi && cfg.input.title ? ` (${code.toUpperCase()})` : '');\n  const metadata = { title, language_code: code, collection_id, rights_status: cfg.metadata.rights_status, completeness: cfg.metadata.completeness, provenance: { label: 'n8n-vocab-generator' } };\n  const ext = cfg.orena.fileFormat === 'json' ? 'json' : 'jsonl';\n  const fileContent = ext === 'json' ? JSON.stringify(rs, null, 2) : rs.map(x => JSON.stringify(x)).join('\\n') + (rs.length ? '\\n' : '');\n  // Named by its content: the same input gives the same file name and bytes; changed input never overwrites an earlier file.\n  const fileName = `${collection_id}.${fnv1a(fileContent)}.ready.${ext}`;\n  return {\n    lang, language_code: code, collection_id, title, metadata,\n    fileName, readyPath: `${cfg.output.dir}/${fileName}`, fileContent,\n    readyIds: rs.map(x => x.id), readyCount: rs.length,\n    rejectedCount: rejected.filter(x => x.lang === lang).length,\n  };\n});\n\nreturn [{ json: {\n  groups,\n  ready: ready.map(({ record, ...x }) => x),\n  rejected,\n  inputIssues,\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4180,
+        80
+      ],
+      "id": "0465cd93-19b5-54b0-97f6-9618962d1084",
+      "name": "Validate & group"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== Orena vocabulary generator | report builders =====\nconst csvCell = v => { const s = String(v === undefined || v === null ? '' : v); return /[\",\\r\\n]/.test(s) ? '\"' + s.replace(/\"/g, '\"\"') + '\"' : s; };\n\n// batch  = the single item of \"Validate & group\"\n// sync   = { [collection_id]: { status, reasons[], preview?, import? } } (empty in file mode)\n// writes = [{ role, path, ok, error }]\nfunction buildReport(cfg, batch, sync, writes) {\n  const groupSync = id => sync[id] || { status: cfg.mode === 'api' ? 'pending' : 'not_requested', reasons: [] };\n  const statuses = batch.groups.map(g => groupSync(g.collection_id).status);\n  let overall = 'not_requested';\n  if (cfg.mode === 'api') {\n    if (!batch.groups.some(g => g.readyCount)) overall = 'skipped_no_ready_records';\n    else if (statuses.some(s => s === 'failed')) overall = 'failed';\n    else if (statuses.some(s => s === 'blocked')) overall = 'blocked';\n    else if (statuses.every(s => s === 'imported' || s === 'no_ready_records')) overall = 'imported';\n    else overall = 'pending';\n  }\n  const rowSync = lang => { const g = batch.groups.find(x => x.lang === lang); return g ? groupSync(g.collection_id).status : ''; };\n  const rows = [\n    ...batch.ready.map(x => ({ line: x.line, id: x.id, headword: x.headword, lang: x.lang, status: 'ready', reasons: '', warnings: (x.warnings || []).join(' | '), collection_id: (batch.groups.find(g => g.lang === x.lang) || {}).collection_id || '', sync: rowSync(x.lang) })),\n    ...batch.rejected.map(x => ({ line: x.line, id: x.id, headword: x.headword, lang: x.lang, status: 'rejected', reasons: x.reasons.join(' | '), warnings: (x.warnings || []).join(' | '), collection_id: '', sync: 'not_sent' })),\n  ].sort((a, b) => a.line - b.line);\n  return {\n    run_id: cfg.runId,\n    mode: cfg.mode,\n    duplicates: cfg.duplicates,\n    duplicates_note: cfg.duplicatesNote || '',\n    totals: { input: batch.ready.length + batch.rejected.length, ready: batch.ready.length, rejected: batch.rejected.length },\n    ai: { configured: !!cfg.ai.active, endpoint_host: cfg.ai.active ? (() => { try { return new URL(cfg.ai.endpoint).host; } catch (e) { return ''; } })() : '' },\n    rights_status: cfg.metadata.rights_status,\n    completeness: cfg.metadata.completeness,\n    sync_status: overall,\n    groups: batch.groups.map(g => ({ lang: g.lang, collection_id: g.collection_id, ready: g.readyCount, rejected: g.rejectedCount, ready_file: g.readyCount ? g.readyPath : '', sync: groupSync(g.collection_id) })),\n    input_issues: batch.inputIssues || [],\n    writes: writes || [],\n    rows,\n  };\n}\n\nfunction reportCsv(report) {\n  const head = ['line', 'id', 'headword', 'lang', 'status', 'reasons', 'warnings', 'collection_id', 'sync'];\n  return [head.join(','), ...report.rows.map(r => head.map(k => csvCell(r[k])).join(','))].join('\\n') + '\\n';\n}\n// ===== end of report builders =====\n\n\n// Code node \"Build files\" - the durable local result, written BEFORE anything is sent to Orena:\n//   ready file(s)  critical      <collection>.<content-hash>.ready.jsonl  (same input -> same name and bytes)\n//   rejected.json  non-critical  every rejected record with its reasons\n//   report.json / report.csv  non-critical  audit (rewritten with the sync outcome after an api run)\nconst cfg = $('Config').first().json;\nconst batch = $('Validate & group').first().json;\nconst items = [];\nconst add = async (role, path, text, mime) => items.push({\n  json: { role, path },\n  binary: { data: await this.helpers.prepareBinaryData(Buffer.from(text, 'utf8'), path.split('/').pop(), mime) },\n});\nfor (const g of batch.groups) if (g.readyCount) await add('ready', g.readyPath, g.fileContent, 'application/x-ndjson');\nawait add('rejected', `${cfg.output.dir}/${cfg.runId}_rejected.json`, JSON.stringify(batch.rejected, null, 2) + '\\n', 'application/json');\nconst report = buildReport(cfg, batch, {}, []);\nawait add('report_json', `${cfg.output.dir}/${cfg.runId}_report.json`, JSON.stringify(report, null, 2) + '\\n', 'application/json');\nawait add('report_csv', `${cfg.output.dir}/${cfg.runId}_report.csv`, reportCsv(report), 'text/csv');\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        80
+      ],
+      "id": "eea95c71-3934-5a6d-8932-c927a2b44e28",
+      "name": "Build files"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $json.path }}",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        4620,
+        80
+      ],
+      "id": "9ca21bcd-83e8-56df-a909-b2e5927e333a",
+      "name": "Save files",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Code node \"Check writes\" - which writes failed? The ready file is CRITICAL: if it was not written the run stops here,\n// says so, and nothing is sent to Orena. The rejected file and the reports are NON-critical: a failure is recorded and\n// reported, and never touches the generated batch (held in memory and in the ready file).\nconst planned = $('Build files').all().map(i => i.json);\nconst results = $input.all();\nconst msgOf = e => String((e && (e.message || e.description)) || e || 'unknown error').slice(0, 300);\nconst writes = planned.map((f, i) => {\n  const r = results[i];\n  const err = !r ? 'no result from the write node' : (r.json && r.json.error ? msgOf(r.json.error) : '');\n  return { role: f.role, path: f.path, ok: !err, error: err };\n});\nconst failedCritical = writes.filter(w => w.role === 'ready' && !w.ok);\nif (failedCritical.length) {\n  throw new Error('Critical write failed - the ready file could not be saved (' + failedCritical.map(w => `${w.path}: ${w.error}`).join('; ') +\n    '). Nothing was sent to Orena. Check that the output folder is a mounted volume and that N8N_RESTRICT_FILE_ACCESS_TO allows it.');\n}\nreturn [{ json: { writes, nonCriticalFailures: writes.filter(w => !w.ok) } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4840,
+        80
+      ],
+      "id": "484a288c-89e7-5855-a412-b330a1885c9f",
+      "name": "Check writes"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Code node \"Prepare sync\" - api mode only: one upload per language group that has READY records.\n// Anything that cannot be sent (file mode, no Orena URL, nothing ready) yields one {noop:true, reason} item.\nconst cfg = $('Config').first().json;\nconst batch = $('Validate & group').first().json;\nif (cfg.mode !== 'api') return [{ json: { noop: true, reason: 'file_mode' } }];\nif (!cfg.orena.configured) return [{ json: { noop: true, reason: 'api_mode_needs_orena_base_url' } }];\nconst out = [];\nfor (const g of batch.groups) {\n  if (!g.readyCount) continue;\n  out.push({\n    json: { collection_id: g.collection_id, language_code: g.language_code, fileName: g.fileName, ids: g.readyIds, metadata: g.metadata,\n      duplicates: cfg.duplicates, previewUrl: cfg.orena.previewUrl, importUrl: cfg.orena.importUrl },\n    binary: { data: await this.helpers.prepareBinaryData(Buffer.from(g.fileContent, 'utf8'), g.fileName, 'application/x-ndjson') },\n  });\n}\nreturn out.length ? out : [{ json: { noop: true, reason: 'no_ready_records' } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5060,
+        80
+      ],
+      "id": "2e6331ad-5b13-5356-a897-72d557a32f69",
+      "name": "Prepare sync"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "911bcd9b-207a-51d8-9dcf-f85ee10e075b",
+              "leftValue": "={{ $json.noop === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5280,
+        80
+      ],
+      "id": "45705ccb-a204-5453-b146-82568b1a0e08",
+      "name": "Nothing to sync?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.previewUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "data",
+              "fullResponse": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5500,
+        240
+      ],
+      "id": "473fa8d5-fa23-52c8-ba29-55c0dad00bba",
+      "name": "Orena · Preview",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== Orena vocabulary generator | strict readers of Orena's admin vocabulary responses =====\n// Contract source: app.py `admin_vocabulary_source_preview` / `admin_vocabulary_source_import` and\n// `_authored_preview` (see integrations/n8n/README.md). Anything that does not match EXACTLY blocks the import.\n\n// The HTTP Request node (full response, text format) hands over { statusCode, headers, body } (or { data } for the body).\nfunction readHttp(resp) {\n  if (!resp || typeof resp !== 'object') return { ok: false, reason: 'no response from Orena' };\n  if (resp.error) return { ok: false, reason: 'request to Orena failed: ' + String((resp.error && (resp.error.message || resp.error.description)) || JSON.stringify(resp.error)).slice(0, 300) };\n  const status = resp.statusCode;\n  if (!Number.isInteger(status)) return { ok: false, reason: 'the response has no HTTP status code' };\n  const raw = resp.body !== undefined ? resp.body : resp.data;\n  const snippet = String(typeof raw === 'string' ? raw : JSON.stringify(raw)).replace(/\\s+/g, ' ').slice(0, 200);\n  if (status < 200 || status >= 300) return { ok: false, status, reason: `HTTP ${status}: ${snippet}` };\n  const headers = resp.headers && typeof resp.headers === 'object' ? resp.headers : {};\n  const ctype = String(Object.entries(headers).find(([k]) => k.toLowerCase() === 'content-type')?.[1] || '').toLowerCase();\n  if (ctype && !ctype.includes('json')) return { ok: false, status, reason: `the response is not JSON (content-type '${ctype.slice(0, 60)}')` };\n  let body = raw;\n  if (typeof raw === 'string') { try { body = JSON.parse(raw); } catch (e) { return { ok: false, status, reason: 'the response body is not JSON: ' + snippet.slice(0, 80) }; } }\n  if (!body || typeof body !== 'object' || Array.isArray(body)) return { ok: false, status, reason: 'the response body is not a JSON object' };\n  return { ok: true, status, body };\n}\n\nconst _isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);\n\n// expected = { filename, language_code, ids: [ids in file order] }. Returns { ok, reasons[], counts, existing }.\n// `ok` is true only when the response has the exact preview shape AND every row is `ready` with a known `existing`.\nfunction checkPreview(resp, expected) {\n  const http = readHttp(resp);\n  const out = { ok: false, reasons: [], counts: {}, existing: {}, warnings: [], status: http.status || null };\n  if (!http.ok) { out.reasons.push(http.reason); return out; }\n  const items = http.body.items;\n  if (!Array.isArray(items) || items.length !== 1) { out.reasons.push(\"unexpected preview shape: 'items' must be an array with exactly one item\"); return out; }\n  const item = items[0];\n  if (!_isObj(item)) { out.reasons.push('unexpected preview shape: the item is not an object'); return out; }\n  if (item.error) { out.reasons.push('preview error: ' + String(item.error).slice(0, 300)); return out; }\n  if (item.error !== '') { out.reasons.push(\"unexpected preview shape: item.error must be ''\"); return out; }\n  if (item.filename !== expected.filename) out.reasons.push(`unexpected preview shape: filename '${item.filename}' is not '${expected.filename}'`);\n  if (typeof item.content_hash !== 'string' || !item.content_hash) out.reasons.push('unexpected preview shape: no content_hash');\n  const a = item.authored;\n  if (!_isObj(a)) { out.reasons.push(\"the file was not read as authored vocabulary entries (no 'authored' section)\"); return out; }\n  if (a.format !== 'orena-vocab-entry') out.reasons.push(`unexpected preview shape: authored.format is '${a.format}'`);\n  if (a.language_code !== expected.language_code) out.reasons.push(`the preview language '${a.language_code}' is not '${expected.language_code}'`);\n  if (!Array.isArray(a.rows) || !_isObj(a.counts) || !Array.isArray(a.warnings)) { out.reasons.push('unexpected preview shape: authored.rows/counts/warnings'); return out; }\n  if (a.rows.length !== expected.ids.length) out.reasons.push(`the preview has ${a.rows.length} row(s), the file has ${expected.ids.length}`);\n  const tally = {};\n  a.rows.forEach((row, i) => {\n    if (!_isObj(row)) { out.reasons.push(`row ${i + 1}: not an object`); return; }\n    const label = row.id || row.term || `row ${i + 1}`;\n    tally[row.outcome] = (tally[row.outcome] || 0) + 1;\n    if (row.outcome !== 'ready') { out.reasons.push(`${label}: outcome '${row.outcome}'${row.reason ? ' - ' + String(row.reason).slice(0, 200) : ''}`); return; }\n    if (row.id !== expected.ids[i]) out.reasons.push(`row ${i + 1}: id '${row.id}' is not the expected '${expected.ids[i]}'`);\n    if (row.existing !== 'new' && row.existing !== 'duplicate') out.reasons.push(`${label}: cannot tell what Orena already holds (existing '${row.existing}')`);\n    else out.existing[row.id] = row.existing;\n  });\n  for (const [k, n] of Object.entries(a.counts)) if (tally[k] !== n) out.reasons.push(`unexpected preview shape: counts.${k}=${n} disagrees with the rows`);\n  for (const k of Object.keys(tally)) if (!(k in a.counts)) out.reasons.push(`unexpected preview shape: counts is missing '${k}'`);\n  out.counts = a.counts;\n  out.warnings = a.warnings.map(w => String(w).slice(0, 300));\n  out.ok = out.reasons.length === 0;\n  return out;\n}\n\n// expected = { collection_id, ready: n }. The import response must show a pending_review set and no failed/conflicting row.\nfunction checkImport(resp, expected) {\n  const http = readHttp(resp);\n  const out = { ok: false, reasons: [], result: null, status: http.status || null };\n  if (!http.ok) { out.reasons.push(http.reason); return out; }\n  const { collection, items } = http.body;\n  if (!_isObj(collection) || collection.id !== expected.collection_id) out.reasons.push(`unexpected import shape: collection.id is not '${expected.collection_id}'`);\n  if (_isObj(collection) && collection.catalog_status !== 'pending_review') out.reasons.push(`the collection is '${collection.catalog_status}', not pending_review (authored vocabulary must wait for review)`);\n  if (!Array.isArray(items) || items.length !== 1 || !_isObj(items[0])) { out.reasons.push(\"unexpected import shape: 'items' must hold exactly one result\"); return out; }\n  const r = items[0];\n  for (const k of ['imported', 'skipped', 'duplicates', 'failed']) if (!Number.isInteger(r[k])) out.reasons.push(`unexpected import shape: '${k}' is not a number`);\n  if (r.status !== 'imported' && r.status !== 'skipped') out.reasons.push(`the source result is '${r.status}'${r.failure_reason ? ': ' + String(r.failure_reason).slice(0, 200) : ''}`);\n  if (r.failed) out.reasons.push(`${r.failed} source(s) failed${r.failure_reason ? ': ' + String(r.failure_reason).slice(0, 200) : ''}`);\n  if (Number.isInteger(r.conflicts) && r.conflicts > 0) out.reasons.push(`${r.conflicts} entr(ies) conflict with a published set and were refused`);\n  out.result = { status: r.status, imported: r.imported, updated: r.updated || 0, skipped: r.skipped, duplicates: r.duplicates, conflicts: r.conflicts || 0, catalog_status: _isObj(collection) ? collection.catalog_status : null };\n  out.ok = out.reasons.length === 0;\n  return out;\n}\n// ===== end of Orena response readers =====\n\n\n// Code node \"Check preview\" - fail closed. The import runs only if EVERY file's preview has the exact expected shape and\n// EVERY row is `ready`. HTML, an unknown shape, a missing status, any refused / conflict / unknown row, or a request error\n// blocks the whole batch (nothing is imported); the local files are untouched.\nconst sent = $('Prepare sync').all();\nconst replies = $input.all();\nconst checks = sent.map((s, k) => checkPreview((replies[k] || {}).json || null, { filename: s.json.fileName, language_code: s.json.language_code, ids: s.json.ids }));\nif (replies.length !== sent.length) checks.forEach(c => { c.ok = false; c.reasons.push(`Orena answered ${replies.length} of ${sent.length} preview request(s)`); });\nconst passed = checks.every(c => c.ok);\nreturn sent.map((s, k) => ({\n  json: { ...s.json, passed, preview: { ok: checks[k].ok, status: checks[k].status, reasons: checks[k].reasons, counts: checks[k].counts, existing: checks[k].existing, warnings: checks[k].warnings } },\n  ...(passed ? { binary: s.binary } : {}),\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5720,
+        240
+      ],
+      "id": "8774ee86-1846-5fc6-8404-bf8fd818aff3",
+      "name": "Check preview"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f07be714-4003-5a5b-ad87-2315531c0eb3",
+              "leftValue": "={{ $json.passed === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5940,
+        240
+      ],
+      "id": "a615b98f-38a2-5a6b-990f-acf030177220",
+      "name": "Preview passed?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.importUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "data"
+            },
+            {
+              "parameterType": "formData",
+              "name": "metadata",
+              "value": "={{ JSON.stringify($json.metadata) }}"
+            },
+            {
+              "parameterType": "formData",
+              "name": "mappings",
+              "value": "{}"
+            },
+            {
+              "parameterType": "formData",
+              "name": "duplicates",
+              "value": "={{ $json.duplicates }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "data",
+              "fullResponse": true
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6160,
+        120
+      ],
+      "id": "af72e1be-5d4d-59c1-8ad1-4486a90c839c",
+      "name": "Orena · Import",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== Orena vocabulary generator | strict readers of Orena's admin vocabulary responses =====\n// Contract source: app.py `admin_vocabulary_source_preview` / `admin_vocabulary_source_import` and\n// `_authored_preview` (see integrations/n8n/README.md). Anything that does not match EXACTLY blocks the import.\n\n// The HTTP Request node (full response, text format) hands over { statusCode, headers, body } (or { data } for the body).\nfunction readHttp(resp) {\n  if (!resp || typeof resp !== 'object') return { ok: false, reason: 'no response from Orena' };\n  if (resp.error) return { ok: false, reason: 'request to Orena failed: ' + String((resp.error && (resp.error.message || resp.error.description)) || JSON.stringify(resp.error)).slice(0, 300) };\n  const status = resp.statusCode;\n  if (!Number.isInteger(status)) return { ok: false, reason: 'the response has no HTTP status code' };\n  const raw = resp.body !== undefined ? resp.body : resp.data;\n  const snippet = String(typeof raw === 'string' ? raw : JSON.stringify(raw)).replace(/\\s+/g, ' ').slice(0, 200);\n  if (status < 200 || status >= 300) return { ok: false, status, reason: `HTTP ${status}: ${snippet}` };\n  const headers = resp.headers && typeof resp.headers === 'object' ? resp.headers : {};\n  const ctype = String(Object.entries(headers).find(([k]) => k.toLowerCase() === 'content-type')?.[1] || '').toLowerCase();\n  if (ctype && !ctype.includes('json')) return { ok: false, status, reason: `the response is not JSON (content-type '${ctype.slice(0, 60)}')` };\n  let body = raw;\n  if (typeof raw === 'string') { try { body = JSON.parse(raw); } catch (e) { return { ok: false, status, reason: 'the response body is not JSON: ' + snippet.slice(0, 80) }; } }\n  if (!body || typeof body !== 'object' || Array.isArray(body)) return { ok: false, status, reason: 'the response body is not a JSON object' };\n  return { ok: true, status, body };\n}\n\nconst _isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);\n\n// expected = { filename, language_code, ids: [ids in file order] }. Returns { ok, reasons[], counts, existing }.\n// `ok` is true only when the response has the exact preview shape AND every row is `ready` with a known `existing`.\nfunction checkPreview(resp, expected) {\n  const http = readHttp(resp);\n  const out = { ok: false, reasons: [], counts: {}, existing: {}, warnings: [], status: http.status || null };\n  if (!http.ok) { out.reasons.push(http.reason); return out; }\n  const items = http.body.items;\n  if (!Array.isArray(items) || items.length !== 1) { out.reasons.push(\"unexpected preview shape: 'items' must be an array with exactly one item\"); return out; }\n  const item = items[0];\n  if (!_isObj(item)) { out.reasons.push('unexpected preview shape: the item is not an object'); return out; }\n  if (item.error) { out.reasons.push('preview error: ' + String(item.error).slice(0, 300)); return out; }\n  if (item.error !== '') { out.reasons.push(\"unexpected preview shape: item.error must be ''\"); return out; }\n  if (item.filename !== expected.filename) out.reasons.push(`unexpected preview shape: filename '${item.filename}' is not '${expected.filename}'`);\n  if (typeof item.content_hash !== 'string' || !item.content_hash) out.reasons.push('unexpected preview shape: no content_hash');\n  const a = item.authored;\n  if (!_isObj(a)) { out.reasons.push(\"the file was not read as authored vocabulary entries (no 'authored' section)\"); return out; }\n  if (a.format !== 'orena-vocab-entry') out.reasons.push(`unexpected preview shape: authored.format is '${a.format}'`);\n  if (a.language_code !== expected.language_code) out.reasons.push(`the preview language '${a.language_code}' is not '${expected.language_code}'`);\n  if (!Array.isArray(a.rows) || !_isObj(a.counts) || !Array.isArray(a.warnings)) { out.reasons.push('unexpected preview shape: authored.rows/counts/warnings'); return out; }\n  if (a.rows.length !== expected.ids.length) out.reasons.push(`the preview has ${a.rows.length} row(s), the file has ${expected.ids.length}`);\n  const tally = {};\n  a.rows.forEach((row, i) => {\n    if (!_isObj(row)) { out.reasons.push(`row ${i + 1}: not an object`); return; }\n    const label = row.id || row.term || `row ${i + 1}`;\n    tally[row.outcome] = (tally[row.outcome] || 0) + 1;\n    if (row.outcome !== 'ready') { out.reasons.push(`${label}: outcome '${row.outcome}'${row.reason ? ' - ' + String(row.reason).slice(0, 200) : ''}`); return; }\n    if (row.id !== expected.ids[i]) out.reasons.push(`row ${i + 1}: id '${row.id}' is not the expected '${expected.ids[i]}'`);\n    if (row.existing !== 'new' && row.existing !== 'duplicate') out.reasons.push(`${label}: cannot tell what Orena already holds (existing '${row.existing}')`);\n    else out.existing[row.id] = row.existing;\n  });\n  for (const [k, n] of Object.entries(a.counts)) if (tally[k] !== n) out.reasons.push(`unexpected preview shape: counts.${k}=${n} disagrees with the rows`);\n  for (const k of Object.keys(tally)) if (!(k in a.counts)) out.reasons.push(`unexpected preview shape: counts is missing '${k}'`);\n  out.counts = a.counts;\n  out.warnings = a.warnings.map(w => String(w).slice(0, 300));\n  out.ok = out.reasons.length === 0;\n  return out;\n}\n\n// expected = { collection_id, ready: n }. The import response must show a pending_review set and no failed/conflicting row.\nfunction checkImport(resp, expected) {\n  const http = readHttp(resp);\n  const out = { ok: false, reasons: [], result: null, status: http.status || null };\n  if (!http.ok) { out.reasons.push(http.reason); return out; }\n  const { collection, items } = http.body;\n  if (!_isObj(collection) || collection.id !== expected.collection_id) out.reasons.push(`unexpected import shape: collection.id is not '${expected.collection_id}'`);\n  if (_isObj(collection) && collection.catalog_status !== 'pending_review') out.reasons.push(`the collection is '${collection.catalog_status}', not pending_review (authored vocabulary must wait for review)`);\n  if (!Array.isArray(items) || items.length !== 1 || !_isObj(items[0])) { out.reasons.push(\"unexpected import shape: 'items' must hold exactly one result\"); return out; }\n  const r = items[0];\n  for (const k of ['imported', 'skipped', 'duplicates', 'failed']) if (!Number.isInteger(r[k])) out.reasons.push(`unexpected import shape: '${k}' is not a number`);\n  if (r.status !== 'imported' && r.status !== 'skipped') out.reasons.push(`the source result is '${r.status}'${r.failure_reason ? ': ' + String(r.failure_reason).slice(0, 200) : ''}`);\n  if (r.failed) out.reasons.push(`${r.failed} source(s) failed${r.failure_reason ? ': ' + String(r.failure_reason).slice(0, 200) : ''}`);\n  if (Number.isInteger(r.conflicts) && r.conflicts > 0) out.reasons.push(`${r.conflicts} entr(ies) conflict with a published set and were refused`);\n  out.result = { status: r.status, imported: r.imported, updated: r.updated || 0, skipped: r.skipped, duplicates: r.duplicates, conflicts: r.conflicts || 0, catalog_status: _isObj(collection) ? collection.catalog_status : null };\n  out.ok = out.reasons.length === 0;\n  return out;\n}\n// ===== end of Orena response readers =====\n\n\n// Code node \"Check import\" - reads each import answer strictly. The set must be pending_review (authored entries never publish)\n// and no source may have failed or conflicted. The local files are never touched by this step.\nconst sent = $('Check preview').all();\nconst replies = $input.all();\nreturn sent.map((s, k) => {\n  const c = checkImport((replies[k] || {}).json || null, { collection_id: s.json.collection_id, ready: s.json.ids.length });\n  return { json: { collection_id: s.json.collection_id, ok: c.ok, reasons: c.reasons, result: c.result, status: c.status } };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6380,
+        120
+      ],
+      "id": "898fc6b1-200c-568e-98cc-cbec71adf86e",
+      "name": "Check import"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== Orena vocabulary generator | report builders =====\nconst csvCell = v => { const s = String(v === undefined || v === null ? '' : v); return /[\",\\r\\n]/.test(s) ? '\"' + s.replace(/\"/g, '\"\"') + '\"' : s; };\n\n// batch  = the single item of \"Validate & group\"\n// sync   = { [collection_id]: { status, reasons[], preview?, import? } } (empty in file mode)\n// writes = [{ role, path, ok, error }]\nfunction buildReport(cfg, batch, sync, writes) {\n  const groupSync = id => sync[id] || { status: cfg.mode === 'api' ? 'pending' : 'not_requested', reasons: [] };\n  const statuses = batch.groups.map(g => groupSync(g.collection_id).status);\n  let overall = 'not_requested';\n  if (cfg.mode === 'api') {\n    if (!batch.groups.some(g => g.readyCount)) overall = 'skipped_no_ready_records';\n    else if (statuses.some(s => s === 'failed')) overall = 'failed';\n    else if (statuses.some(s => s === 'blocked')) overall = 'blocked';\n    else if (statuses.every(s => s === 'imported' || s === 'no_ready_records')) overall = 'imported';\n    else overall = 'pending';\n  }\n  const rowSync = lang => { const g = batch.groups.find(x => x.lang === lang); return g ? groupSync(g.collection_id).status : ''; };\n  const rows = [\n    ...batch.ready.map(x => ({ line: x.line, id: x.id, headword: x.headword, lang: x.lang, status: 'ready', reasons: '', warnings: (x.warnings || []).join(' | '), collection_id: (batch.groups.find(g => g.lang === x.lang) || {}).collection_id || '', sync: rowSync(x.lang) })),\n    ...batch.rejected.map(x => ({ line: x.line, id: x.id, headword: x.headword, lang: x.lang, status: 'rejected', reasons: x.reasons.join(' | '), warnings: (x.warnings || []).join(' | '), collection_id: '', sync: 'not_sent' })),\n  ].sort((a, b) => a.line - b.line);\n  return {\n    run_id: cfg.runId,\n    mode: cfg.mode,\n    duplicates: cfg.duplicates,\n    duplicates_note: cfg.duplicatesNote || '',\n    totals: { input: batch.ready.length + batch.rejected.length, ready: batch.ready.length, rejected: batch.rejected.length },\n    ai: { configured: !!cfg.ai.active, endpoint_host: cfg.ai.active ? (() => { try { return new URL(cfg.ai.endpoint).host; } catch (e) { return ''; } })() : '' },\n    rights_status: cfg.metadata.rights_status,\n    completeness: cfg.metadata.completeness,\n    sync_status: overall,\n    groups: batch.groups.map(g => ({ lang: g.lang, collection_id: g.collection_id, ready: g.readyCount, rejected: g.rejectedCount, ready_file: g.readyCount ? g.readyPath : '', sync: groupSync(g.collection_id) })),\n    input_issues: batch.inputIssues || [],\n    writes: writes || [],\n    rows,\n  };\n}\n\nfunction reportCsv(report) {\n  const head = ['line', 'id', 'headword', 'lang', 'status', 'reasons', 'warnings', 'collection_id', 'sync'];\n  return [head.join(','), ...report.rows.map(r => head.map(k => csvCell(r[k])).join(','))].join('\\n') + '\\n';\n}\n// ===== end of report builders =====\n\n\n// Code node \"Final report\" - the audit files again, now carrying the outcome of the sync (api mode) and of the first writes.\nconst cfg = $('Config').first().json;\nconst batch = $('Validate & group').first().json;\nconst tried = name => { try { return $(name).all().map(i => i.json); } catch (e) { return null; } };\nconst writes = ((tried('Check writes') || [])[0] || {}).writes || [];\nconst prep = tried('Prepare sync') || [];\nconst previews = tried('Check preview');\nconst imports = tried('Check import');\nconst sync = {};\nif (cfg.mode === 'api') {\n  const noop = prep.length && prep[0].noop ? prep[0] : null;\n  for (const g of batch.groups) {\n    if (noop) { sync[g.collection_id] = { status: noop.reason === 'no_ready_records' || !g.readyCount ? 'no_ready_records' : 'blocked', reasons: [noop.reason] }; continue; }\n    if (!g.readyCount) { sync[g.collection_id] = { status: 'no_ready_records', reasons: [] }; continue; }\n    const p = (previews || []).find(x => x.collection_id === g.collection_id);\n    if (!p) { sync[g.collection_id] = { status: 'blocked', reasons: ['no preview result'] }; continue; }\n    if (!p.passed) {\n      sync[g.collection_id] = { status: 'blocked', reasons: p.preview.ok ? ['held: another file of this batch did not pass preview, so nothing was imported'] : p.preview.reasons, preview: p.preview };\n      continue;\n    }\n    const im = (imports || []).find(x => x.collection_id === g.collection_id);\n    if (!im) sync[g.collection_id] = { status: 'failed', reasons: ['no import result'], preview: p.preview };\n    else sync[g.collection_id] = { status: im.ok ? 'imported' : 'failed', reasons: im.reasons, preview: p.preview, import: im.result };\n  }\n}\nconst report = buildReport(cfg, batch, sync, writes);\nconst add = async (role, path, text, mime, extra) => ({\n  json: { role, path, ...(extra || {}) },\n  binary: { data: await this.helpers.prepareBinaryData(Buffer.from(text, 'utf8'), path.split('/').pop(), mime) },\n});\nreturn [\n  await add('report_json', `${cfg.output.dir}/${cfg.runId}_report.json`, JSON.stringify(report, null, 2) + '\\n', 'application/json', { sync_status: report.sync_status }),\n  await add('report_csv', `${cfg.output.dir}/${cfg.runId}_report.csv`, reportCsv(report), 'text/csv', { sync_status: report.sync_status }),\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6600,
+        80
+      ],
+      "id": "e10c9b62-f778-5a69-81b2-10cf1d6608a3",
+      "name": "Final report"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $json.path }}",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        6820,
+        80
+      ],
+      "id": "f82e44d7-40e5-54e8-b622-c4e2b1977743",
+      "name": "Save final reports",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Code node \"Run summary\" - what the operator sees at the end of a run: counts, the files, any non-critical write that\n// failed, and the sync outcome. A failed audit write never turns a good batch into a failed one; it is simply listed here.\nconst cfg = $('Config').first().json;\nconst batch = $('Validate & group').first().json;\nconst final = $('Final report').all().map(i => i.json);\nconst firstWrites = ((() => { try { return $('Check writes').first().json; } catch (e) { return {}; } })()).writes || [];\nconst msgOf = e => String((e && (e.message || e.description)) || e || 'unknown error').slice(0, 300);\nconst results = $input.all();\nconst writes = [\n  ...firstWrites.filter(w => w.role === 'ready' || w.role === 'rejected'),\n  ...final.map((f, i) => {\n    const r = results[i];\n    const err = !r ? 'no result from the write node' : (r.json && r.json.error ? msgOf(r.json.error) : '');\n    return { role: f.role, path: f.path, ok: !err, error: err };\n  }),\n];\nreturn [{ json: {\n  run_id: cfg.runId, mode: cfg.mode, duplicates: cfg.duplicates, duplicates_note: cfg.duplicatesNote || undefined,\n  ready: batch.ready.length, rejected: batch.rejected.length,\n  files: writes.filter(w => w.ok).map(w => w.path),\n  non_critical_write_failures: writes.filter(w => !w.ok),\n  sync_status: (final[0] || {}).sync_status || 'unknown',\n  note: cfg.mode === 'api' ? 'See sync_status and the report for the Orena preview/import. Imported sets wait for review in Orena Admin.' : 'File mode: import the ready file through Orena Admin (Vocabulary import).',\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7040,
+        80
+      ],
+      "id": "fcb52ba9-09e9-54c7-a33e-726273ffcefe",
+      "name": "Run summary"
+    },
+    {
+      "parameters": {
+        "content": "## Orena · Vocabulary Generator\n**word list -> enrich -> card -> strict validation -> local files -> (api mode) preview -> import -> report**\n\n- **file** (default): writes the ready JSONL, rejected.json, report.json and report.csv to `/files/orena`. No Orena URL or credential. Import the ready file in Orena Admin.\n- **api**: writes the same files first, then previews and imports. Needs the Orena base URL (Config) and a Header Auth credential on *Orena · Preview* and *Orena · Import*. A malformed, refused or unknown preview blocks the import.\n- Settings live in the **Config** node. The AI key is a Header Auth credential on *AI · Fill gaps* (optional; AI only fills gaps).\n- The **Form** is protected with Basic Auth: attach a credential before activating. Overwrite is never honoured from the form.\n\nRead integrations/n8n/README.md in the Orena repository before first use.",
+        "height": 440,
+        "width": 700
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        -620
+      ],
+      "id": "2af3e9d5-83fe-5ce3-9175-ea5407455631",
+      "name": "Guide"
+    },
+    {
+      "parameters": {
+        "content": "### Chinese dictionary\nRuns only when `zh_lookup.json` is not in the output folder yet (or `zhLookup.rebuild` is true). The first run downloads CC-CEDICT, CVDICT, Make Me a Hanzi and Unihan and takes a few minutes. Saving the cache is required on this path.",
+        "height": 160,
+        "width": 940,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        -680
+      ],
+      "id": "0e0263ee-54ff-544a-839a-65fa924a4648",
+      "name": "Chinese dictionary"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Form": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run test": {
+      "main": [
+        [
+          {
+            "node": "Test input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test input": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Parse words",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse words": {
+      "main": [
+        [
+          {
+            "node": "Has Chinese?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Chinese?": {
+      "main": [
+        [
+          {
+            "node": "Read ZH lookup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Words",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read ZH lookup": {
+      "main": [
+        [
+          {
+            "node": "ZH lookup cached?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ZH lookup cached?": {
+      "main": [
+        [
+          {
+            "node": "Parse ZH lookup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download CC-CEDICT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download CC-CEDICT": {
+      "main": [
+        [
+          {
+            "node": "Gunzip CEDICT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gunzip CEDICT": {
+      "main": [
+        [
+          {
+            "node": "CEDICT text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CEDICT text": {
+      "main": [
+        [
+          {
+            "node": "Download CVDICT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download CVDICT": {
+      "main": [
+        [
+          {
+            "node": "Download Make Me a Hanzi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Make Me a Hanzi": {
+      "main": [
+        [
+          {
+            "node": "Download Unihan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Unihan": {
+      "main": [
+        [
+          {
+            "node": "Unzip Unihan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unzip Unihan": {
+      "main": [
+        [
+          {
+            "node": "Build ZH lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build ZH lookup": {
+      "main": [
+        [
+          {
+            "node": "To JSON file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To JSON file": {
+      "main": [
+        [
+          {
+            "node": "Save zh_lookup.json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save zh_lookup.json": {
+      "main": [
+        [
+          {
+            "node": "Parse ZH lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse ZH lookup": {
+      "main": [
+        [
+          {
+            "node": "Words",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Words": {
+      "main": [
+        [
+          {
+            "node": "Enrich call 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich call 1": {
+      "main": [
+        [
+          {
+            "node": "Enrich call 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich call 2": {
+      "main": [
+        [
+          {
+            "node": "Build records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build records": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI": {
+      "main": [
+        [
+          {
+            "node": "No AI needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No AI needed?": {
+      "main": [
+        [
+          {
+            "node": "Validate & group",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI · Fill gaps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI · Fill gaps": {
+      "main": [
+        [
+          {
+            "node": "Validate & group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate & group": {
+      "main": [
+        [
+          {
+            "node": "Build files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build files": {
+      "main": [
+        [
+          {
+            "node": "Save files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save files": {
+      "main": [
+        [
+          {
+            "node": "Check writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check writes": {
+      "main": [
+        [
+          {
+            "node": "Prepare sync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare sync": {
+      "main": [
+        [
+          {
+            "node": "Nothing to sync?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nothing to sync?": {
+      "main": [
+        [
+          {
+            "node": "Final report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Orena · Preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orena · Preview": {
+      "main": [
+        [
+          {
+            "node": "Check preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check preview": {
+      "main": [
+        [
+          {
+            "node": "Preview passed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preview passed?": {
+      "main": [
+        [
+          {
+            "node": "Orena · Import",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Final report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orena · Import": {
+      "main": [
+        [
+          {
+            "node": "Check import",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check import": {
+      "main": [
+        [
+          {
+            "node": "Final report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final report": {
+      "main": [
+        [
+          {
+            "node": "Save final reports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save final reports": {
+      "main": [
+        [
+          {
+            "node": "Run summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
