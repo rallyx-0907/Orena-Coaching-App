@@ -5878,7 +5878,7 @@ follow-up commits; the human accepted the residual risk below on 2026-10-13.** N
   blocker, **on the conditions** that auth-off lanes are local/development only and every official launcher is
   test-locked to a loopback publish (`tests/test_local_boundary_deployment.py` scans all compose files and launch
   scripts; the primary boundary is the deployment config/launcher, the per-request peer check is the second layer, the
-  startup refusal is defense-in-depth). **Follow-up, not in this change:** a host-side runtime assertion - the
+  startup refusal is defense-in-depth). **Follow-up, not in this change (GitHub issue #140):** a host-side runtime assertion - the
   launcher/preflight runs `docker inspect` (or equivalent) on the real published address and refuses or stops an
   auth-disabled lane bound to `0.0.0.0`, `::` or any non-loopback address. DNS rebinding (follow-up) and the
   `host.docker.internal` cross-network case remain documented residuals in `docs/SECURITY_BOUNDARY.md`.

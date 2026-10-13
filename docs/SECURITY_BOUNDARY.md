@@ -109,7 +109,7 @@ The forwarding-header list also includes `Via`, `Client-IP`, `X-Client-IP`, `X-C
   misconfiguration. **Accepted by the human on 2026-10-13 as a documented residual risk**, on these conditions:
   signed-out lanes are local/development only, and every official launcher is test-locked to a loopback publish
   (`tests/test_local_boundary_deployment.py` scans all of them). It is not a P1 blocker.
-- **Follow-up (not in this change): host-side runtime assertion.** The launcher or preflight should run
+- **Follow-up (not in this change, GitHub issue #140): host-side runtime assertion.** The launcher or preflight should run
   `docker inspect` (or equivalent) on the real published address and refuse or stop an auth-disabled lane bound to
   `0.0.0.0`, `::` or any non-loopback address. A stronger in-app alternative: a per-run secret injected by the launch
   script and checked against a header only a trusted local forwarder adds.
