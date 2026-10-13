@@ -6085,3 +6085,10 @@ secondary button, no new component or colour. Search now reads `q` from its addr
 - no per-source interval; one global `READING_SOURCE_POLL_INTERVAL_SECONDS` (default 900, 0 disables);
 - single poller thread inside the worker process, no distributed lock: run one worker container;
 - the admin source row already shows last-checked; last-success and last-error are returned by the API but not rendered.
+
+## Admin Policies: "Vocabulary" group not in the design (D-188, 2026-10-13)
+
+The General catalogue kill switch (`vocabulary.general_catalogue_enabled`, D-172 operational policy, default on) renders
+in Admin > Operations > Policies as a new "Vocabulary" group (EN/VI/ZH: Vocabulary / Từ vựng / 词汇) built only from the
+existing policy block, label, chip and toggle. The pinned `Orena Admin.dc.html` draws no such group. Recorded as a gap
+for the human; not changed in this batch.

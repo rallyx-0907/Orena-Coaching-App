@@ -6005,12 +6005,14 @@ closing that race needs the guard inside the `import_source` transaction.
 
 ## D-188 - A derived "General catalogue" collection per language (Option A)
 
-(Placeholder D-18X until merge.)
-
-**Status: PROPOSED.** Design: `docs/reviews/architecture/VOCAB_GENERAL_CATALOGUE_DESIGN_2026-10-13.md`; independent review
-`docs/reviews/architecture/VOCAB_GENERAL_CATALOGUE_REVIEW_2026-10-13.md` (Delegated Architecture Reviewer, Claude Opus 5.5):
-APPROVED WITH CONDITIONS at 1c30c70d. Implemented on `claude/vocab-general-catalogue`; awaiting code review and the
-learner-surface verification. Changes what reaches learners.
+**Status: ACCEPTED.** Changes what reaches learners; independently reviewed (Delegated Architecture Reviewer, Claude
+Opus 5.5, independent of the implementer), `docs/reviews/architecture/VOCAB_GENERAL_CATALOGUE_REVIEW_2026-10-13.md`:
+design APPROVED WITH CONDITIONS at 1c30c70d; code review APPROVED at a1f06e48; re-review of the published-snapshot fix
+APPROVED at a8c06b59. Design: `docs/reviews/architecture/VOCAB_GENERAL_CATALOGUE_DESIGN_2026-10-13.md`. Human
+decisions 2026-10-13: Option A, derived and persisted-only, D-111 sets count (H2), no "publish into General only" (H1),
+kill switch on by default (H3), no cache (H4); merge authorized after CI and a 390x844 phone check. Verified on :8021
+(PostgreSQL): every General item equals its published collection item. Remaining P2: the level filter matches any
+qualifying membership while the card shows the chosen one.
 
 - **Decision (human, Option A).** One automatically maintained "General catalogue" collection per learning language,
   shown to learners as an ordinary collection. Rejected: B (per-word review lifecycle, schema change), C (search and

@@ -1,7 +1,7 @@
 # Vocabulary "General catalogue" per language - design (Option A)
 
 Status: PROPOSED. Design APPROVED WITH CONDITIONS (`VOCAB_GENERAL_CATALOGUE_REVIEW_2026-10-13.md`, reviewed at 1c30c70d); implemented on the branch, awaiting code review. Section 10 records how each condition was met and supersedes anything above it. Branch `claude/vocab-general-catalogue`, from `origin/main` 172ae216.
-Decision record: D-188 (placeholder D-18X until merge), PROPOSED, in `docs/project/DECISION_LOG.md`.
+Decision record: D-188, ACCEPTED, in `docs/project/DECISION_LOG.md`.
 Author: implementer lane. Not self-approved: this changes what reaches learners (a content-visibility rule), so it
 needs the independent review the lead has asked for, and the human decisions in section 9.
 
