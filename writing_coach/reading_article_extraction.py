@@ -92,6 +92,9 @@ _SENTENCE_END_RE = re.compile(r"[.!?。！？…][\"'”’)\]」』）]*$")
 _HIDDEN_STYLE_RE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden", re.IGNORECASE)
 
 MIN_PROSE_UNITS = 120
+# Recorded with every extraction so a stored candidate can be traced to the
+# strategy that produced it. Bump on any change to what is kept or dropped.
+EXTRACTOR_VERSION = "article-extract/1"
 
 
 def units(text: str) -> int:
@@ -253,6 +256,7 @@ class ExtractedArticle:
     def metadata(self) -> dict[str, Any]:
         """The evidence an admin sees next to the candidate."""
         info: dict[str, Any] = {
+            "extractor_version": EXTRACTOR_VERSION,
             "method": self.method,
             "confidence": self.confidence,
             "reasons": list(self.reasons),
@@ -665,6 +669,9 @@ _HERO_TOKENS = frozenset({"hero", "lead", "featured", "headline", "primary", "co
 _CREDIT_TOKENS = frozenset({"credit", "credits", "photographer", "copyright", "author", "source", "byline"})
 _CREDIT_ITEMPROPS = frozenset({"credittext", "copyrightholder", "author", "creator"})
 _IMG_URL_ATTRS = ("data-src", "data-original", "data-lazy-src", "src")
+MAX_MEDIA_URL_LENGTH = 2048
+MAX_MEDIA_TEXT_CHARS = 500
+_UNSAFE_URL_CHARS = re.compile(r"[\s\x00-\x1f\x7f]")
 _RIGHTS_UNREVIEWED = {"status": "unreviewed", "cleared": False}
 _SRCSET_SPLIT = re.compile(r",\s+|,$")
 _SRCSET_DESCRIPTOR = re.compile(r"\d+(?:\.\d+)?[wx]")
@@ -768,9 +775,9 @@ def _describe_image(img: _Node, parent: _Node, figure: _Node | None) -> dict[str
     alt_tokens = {t for t in re.split(r"[^a-z0-9]+", alt.lower()) if t}
     return {
         "url": url,
-        "alt": alt,
-        "caption": caption,
-        "credit": credit,
+        "alt": _bound(alt),
+        "caption": _bound(caption),
+        "credit": _bound(credit),
         "width": _int_attr(img.attrs.get("width", "")) or width,
         "height": _int_attr(img.attrs.get("height", "")),
         "decorative": bool((_tokens(img) | alt_tokens) & _DECORATIVE_TOKENS),
@@ -792,20 +799,31 @@ def _meta_images(root: _Node) -> list[dict[str, Any]]:
             if not any(item["role"] == role for item in found):
                 found.append({"role": role, "url": content})
     for item in found:
-        item["alt"] = alts.get(item["role"], "")
+        item["alt"] = _bound(alts.get(item["role"], ""))
     return found
 
 
 def _normalized_image_url(url: str, base: str) -> str:
-    if not url or url.lower().startswith("data:"):
+    """An absolute http(s) URL, or "" - candidates are recorded, never fetched, so be strict."""
+    url = (url or "").strip()
+    if not url or url.lower().startswith("data:") or len(url) > MAX_MEDIA_URL_LENGTH:
+        return ""
+    if _UNSAFE_URL_CHARS.search(url):  # whitespace or control characters inside
         return ""
     try:
-        parts = urlsplit(urljoin(base, url.strip()))
+        parts = urlsplit(urljoin(base, url))
+        credentials = parts.username or parts.password or "@" in parts.netloc
+        hostname = parts.hostname
     except ValueError:
         return ""
-    if parts.scheme.lower() not in {"http", "https"} or not parts.hostname:
+    if credentials or parts.scheme.lower() not in {"http", "https"} or not hostname:
         return ""
-    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path, parts.query, ""))
+    resolved = urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path, parts.query, ""))
+    return resolved if len(resolved) <= MAX_MEDIA_URL_LENGTH else ""
+
+
+def _bound(text: str) -> str:
+    return re.sub(r"\s+", " ", text or "").strip()[:MAX_MEDIA_TEXT_CHARS]
 
 
 def _decorative_url(url: str) -> bool:

@@ -320,3 +320,74 @@ def test_media_text_never_reaches_the_passage():
         assert candidate["url"] not in item.body
         assert not candidate["caption"] or candidate["caption"] not in item.body
     assert "Reuters" not in item.body and "Lee Park" not in item.body
+
+
+# ---- candidate URLs and text are bounded and sanitized; never fetched ------------
+
+BASE = "https://news.example.org/a/1"
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://user:pw@cdn.example.org/a.jpg",
+        "https://user@cdn.example.org/a.jpg",
+        "https://cdn.example.org/" + "a" * 2100 + ".jpg",
+        "https://cdn.example.org/a b.jpg",
+        "https://cdn.example.org/a\n.jpg",
+        "https://cdn.example.org/a\x00.jpg",
+        "javascript:alert(1)",
+        "ftp://cdn.example.org/a.jpg",
+        "data:image/png;base64,AAAA",
+    ],
+)
+def test_unsafe_image_urls_are_rejected_not_rewritten(url):
+    from writing_coach.reading_article_extraction import _normalized_image_url
+
+    assert _normalized_image_url(url, BASE) == ""
+
+
+def test_a_clean_relative_image_url_is_resolved():
+    from writing_coach.reading_article_extraction import _normalized_image_url
+
+    assert _normalized_image_url("/i/a.jpg#x", BASE) == "https://news.example.org/i/a.jpg"
+
+
+def test_candidate_text_is_whitespace_normalised_and_bounded():
+    long_text = "word " * 400
+    html = (
+        "<html><body><article><p>" + "A full sentence of real article prose goes here today. " * 6 + "</p>"
+        f'<figure><img src="/i/a.jpg" width="800" height="600" alt="{long_text}">'
+        f"<figcaption>{long_text} <small>{long_text}</small></figcaption></figure></article></body></html>"
+    )
+    (candidate,) = extract_article(html, BASE).media
+    for field in ("alt", "caption", "credit"):
+        assert len(candidate[field]) <= 500
+        assert "  " not in candidate[field]
+
+
+def test_an_image_with_credentials_in_its_url_is_not_a_candidate():
+    html = (
+        "<html><body><article><p>" + "A full sentence of real article prose goes here today. " * 6 + "</p>"
+        '<img src="https://u:p@cdn.example.org/a.jpg" width="800" height="600"></article></body></html>'
+    )
+    assert extract_article(html, BASE).media == []
+
+
+def test_the_extractor_version_is_recorded_with_the_method():
+    from writing_coach.reading_article_extraction import EXTRACTOR_VERSION
+
+    item = _item(VOA_LIKE)
+    assert EXTRACTOR_VERSION == "article-extract/1"
+    assert item.metadata["extraction"]["extractor_version"] == EXTRACTOR_VERSION
+    assert item.metadata["extraction"]["method"] == "dominant_container"
+
+
+def test_the_extraction_module_never_fetches_anything():
+    import inspect
+
+    from writing_coach import reading_article_extraction as module
+
+    source = inspect.getsource(module)
+    for fetcher in ("urlopen", "fetch_bounded", "requests", "httpx", "socket", "urllib.request"):
+        assert fetcher not in source

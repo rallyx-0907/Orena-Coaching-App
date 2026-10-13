@@ -6041,7 +6041,12 @@ etymology - the provenance gap is exactly the projection named there. Open, serv
   candidates as provenance only (`analysis.extraction.media` and the source snapshot metadata: role og | twitter |
   hero | inline, absolute original URL, alt, caption, credit, position, declared size, `rights: unreviewed`).
   Text rights never imply image rights. Needs a human decision and an independent architecture review before any
-  schema (`[REVIEW]`, `[CONTENT]`).
+  schema (`[REVIEW]`, `[CONTENT]`). Residual: dedupe hashes only the extracted body, so an image-only change on the
+  source page (a new hero or inline image, a changed credit) creates no new snapshot or candidate and is not
+  detected. The future article-media contract must define how image changes are versioned and reviewed
+  independently of the body hash. Candidate URLs and text are bounded and sanitised (http/https only, no
+  credentials, at most 2048 characters, no whitespace or control characters; alt/caption/credit at most 500
+  characters) and are never fetched; each extraction records `extractor_version`.
 - **RA-2 Residual extraction cases that may still need admin review.** The extractor is deterministic and
   site-agnostic (`writing_coach/reading_article_extraction.py`); a `low` confidence adds the quality issue
   `extraction_low_confidence`. Known limits:

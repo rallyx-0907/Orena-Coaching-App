@@ -308,6 +308,8 @@ def test_an_uncertain_extraction_is_shown_to_the_admin_and_never_auto_published(
     assert "extraction_low_confidence" in article["analysis"]["quality_issues"]
     assert article["analysis"]["extraction"]["confidence"] == "low"
     assert article["status"] == "needs_review"
+    assert article["analysis"]["admission"]["decision"] == "review"
+    assert "extraction_low_confidence" in article["analysis"]["admission"]["reasons"]
 
 
 def test_the_same_text_twice_never_becomes_two_candidates(engine_parts):
