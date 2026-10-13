@@ -72,6 +72,24 @@ def test_unsafe_public_staging_configuration_fails(
     assert_failed(valid_env(**updates), message)
 
 
+@pytest.mark.parametrize("app_env", ["development", "dev", ""])
+def test_the_public_path_refuses_a_development_runtime_with_authentication_off(app_env: str) -> None:
+    """Issue #137: the tunnel must not expose an unauthenticated development runtime."""
+    values = valid_env(APP_ENV=app_env, GOOGLE_CLIENT_ID="", GOOGLE_CLIENT_SECRET="", SESSION_SECRET="")
+    report = validate_public_staging_readiness(values)
+    assert report.ok is False
+    assert "Refusing to expose a development runtime with authentication disabled" in " ".join(report.errors)
+
+
+def test_the_public_path_refuses_the_lan_development_opt_in() -> None:
+    assert_failed(valid_env(ORENA_INSECURE_DEV_LAN_BIND_HOST="0.0.0.0"), "ORENA_INSECURE_DEV_LAN_BIND_HOST")
+
+
+def test_the_tunnel_launcher_runs_the_preflight_before_compose() -> None:
+    script = (Path(__file__).resolve().parents[1] / "start_public.ps1").read_text(encoding="utf-8")
+    assert script.index("validate_public_staging_readiness.py") < script.index("docker compose --profile public up")
+
+
 def test_shadow_url_alone_cannot_satisfy_runtime() -> None:
     values = valid_env(POSTGRES_RUNTIME_URL="")
     assert values["POSTGRES_SHADOW_URL"]

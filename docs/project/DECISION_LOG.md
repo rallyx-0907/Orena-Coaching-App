@@ -5864,3 +5864,25 @@ Human decisions, 2026-10-13, after reviewing the two real cards (resilient, æ£®æ
   example labels and memory tips are Vietnamese); a learner whose support language has no translation still sees
   none - no other-language fallback for example content.
 - Gated in `scripts/test_orena_vocabulary_card.mjs`.
+
+## D-18X - Signed-out local-admin belongs to the request boundary, not to configuration (issue #137)
+
+Placeholder id; the lead renumbers at merge. **Status: proposed. Independent architecture review required before
+merge** (auth boundary; the implementer does not approve it, `AGENTS.md` "Architecture review authority").
+
+- **Finding.** With sign-in off, `require_admin()` and the shared `legacy` learner scope were granted from
+  deployment configuration (`APP_ENV`, `PUBLIC_BASE_URL`), and Compose published port 8000 on `0.0.0.0`: any LAN host
+  (or a tunnel to a development runtime) was the local administrator. Config-local was read as request-local.
+- **Decision.** Locality is decided per request from the transport peer (`writing_coach/core/request_boundary.py`):
+  loopback, or the container's own default gateway when the operator declared a loopback-only publish
+  (`ORENA_TRUST_DOCKER_PUBLISHED_PORT` with `ORENA_PUBLISHED_BIND_HOST` loopback; Docker's port proxy makes a host
+  browser arrive from the gateway). A forwarding header, a public environment, a missing peer all mean not local.
+  Host, Origin, `X-Forwarded-*` and `PUBLIC_BASE_URL` are never evidence. Configuration only restricts. A non-local
+  request to an auth-disabled runtime gets 403 outside public pages. No switch grants a remote peer signed-out access.
+- **Default bind** is `127.0.0.1`; LAN needs `ORENA_INSECURE_DEV_LAN_BIND_HOST` and, for use, Google sign-in.
+  `APP_BIND_HOST` no longer widens the publish. The public preflight (`validate_public_staging_readiness.py`, run by
+  `start_public.ps1`) refuses development with sign-in off and the LAN opt-in.
+- **Operational effect.** Containers started outside `compose.yaml` (`docker run`) must set the two trust variables
+  to keep signed-out use from the host; otherwise they answer 403. Staging :8000 is unchanged (public, auth on).
+- Full policy and threat model: `docs/SECURITY_BOUNDARY.md`. Not done here: non-root container, CSP/`innerHTML`
+  inventory.

@@ -24,7 +24,11 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       APP_ENV: ${APP_ENV:-development}
-      APP_BIND_HOST: ${APP_BIND_HOST:-0.0.0.0}
+      # Where the port below is published on the host. The application reads it to decide whether a request that
+      # Docker's port proxy relays may count as the developer's own (writing_coach/core/request_boundary.py): that
+      # is true only while this is a loopback address. Never LAN-bound by default (issue #137).
+      ORENA_PUBLISHED_BIND_HOST: ${ORENA_INSECURE_DEV_LAN_BIND_HOST:-127.0.0.1}
+      ORENA_TRUST_DOCKER_PUBLISHED_PORT: ${ORENA_TRUST_DOCKER_PUBLISHED_PORT:-1}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
       SESSION_SECRET: ${SESSION_SECRET:-}
@@ -96,7 +100,9 @@ services:
       - ./static:/app/static:ro
       - ./templates:/app/templates:ro
     ports:
-      - "${APP_BIND_HOST:-0.0.0.0}:8000:8000"
+      # Loopback only. Reaching the app from another machine needs ORENA_INSECURE_DEV_LAN_BIND_HOST (see
+      # docs/SECURITY_BOUNDARY.md); APP_BIND_HOST is the staging contract's loopback value and cannot widen this.
+      - "${ORENA_INSECURE_DEV_LAN_BIND_HOST:-127.0.0.1}:8000:8000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

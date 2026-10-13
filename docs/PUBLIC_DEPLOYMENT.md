@@ -188,12 +188,14 @@ reverse-sync data to make a failed check pass.
 
 An isolated developer/test process may explicitly use
 `PERSISTENCE_BACKEND=sqlite`. That mode is not the deployed product authority
-and is never a production fallback. Host binding beyond loopback is permitted
-only for an intentional local LAN/Tailscale workflow with an appropriate local
-origin; public staging remains loopback-only behind Cloudflare Tunnel.
+and is never a production fallback. The published port is loopback-only by
+default. Binding beyond loopback is possible only through the explicitly
+insecure `ORENA_INSECURE_DEV_LAN_BIND_HOST` opt-in and gives a remote caller no
+signed-out access (`docs/SECURITY_BOUNDARY.md`); public staging remains
+loopback-only behind Cloudflare Tunnel.
 
 The checked-in `.env.example` intentionally uses this working developer mode:
-`APP_ENV=development`, `APP_BIND_HOST=0.0.0.0`,
+`APP_ENV=development`, `APP_BIND_HOST=127.0.0.1`,
 `PUBLIC_BASE_URL=http://127.0.0.1:8000`, and explicit SQLite. It does not alter
 the PostgreSQL-authoritative staging contract above.
 

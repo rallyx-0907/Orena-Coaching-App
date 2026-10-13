@@ -53,6 +53,10 @@ services:
     working_dir: /app
     environment:
       APP_ENV: development
+      # Published on loopback only (ports below); a host client then reaches the app through Docker's port proxy,
+      # which this declaration lets the request boundary count as local (writing_coach/core/request_boundary.py).
+      ORENA_PUBLISHED_BIND_HOST: 127.0.0.1
+      ORENA_TRUST_DOCKER_PUBLISHED_PORT: "1"
       PUBLIC_BASE_URL: http://127.0.0.1:${AGENT_E2E_PORT:-8016}
       AGENT_ENABLED: ${AGENT_ENABLED:-true}
       ORENA_ACCOUNT_BACKBONE: ${ORENA_ACCOUNT_BACKBONE:-}
