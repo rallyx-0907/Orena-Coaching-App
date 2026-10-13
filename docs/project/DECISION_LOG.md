@@ -5892,7 +5892,11 @@ follow-up commits; the human accepted the residual risk below on 2026-10-13.** N
   browser arrive from the gateway). A forwarding header, a public environment, a missing peer all mean not local.
   Host, Origin, `X-Forwarded-*` and `PUBLIC_BASE_URL` are never evidence. Configuration only restricts. A non-local
   request to an auth-disabled runtime gets 403 outside public pages. No switch grants a remote peer signed-out access.
-- **Default bind** is `127.0.0.1`; LAN needs `ORENA_INSECURE_DEV_LAN_BIND_HOST` and, for use, Google sign-in.
+- **Loopback-only (human, 2026-10-13).** Development with sign-in off is loopback-only: startup refuses any declared
+  non-loopback exposure (PUBLIC_BASE_URL / GOOGLE_REDIRECT_URI host, `ORENA_PUBLISHED_BIND_HOST`,
+  `ORENA_INSECURE_DEV_LAN_BIND_HOST`, the tunnel token); only localhost, 127.0.0.0/8, ::1 and ::ffff:127.x pass. The
+  in-container listen address and `APP_BIND_HOST` are not exposure. LAN development now requires Google sign-in.
+- **Default bind** is `127.0.0.1`; LAN needs `ORENA_INSECURE_DEV_LAN_BIND_HOST` and Google sign-in.
   `APP_BIND_HOST` no longer widens the publish. The public preflight (`validate_public_staging_readiness.py`, run by
   `start_public.ps1`) refuses development with sign-in off and the LAN opt-in.
 - **Operational effect.** Containers started outside `compose.yaml` (`docker run`) must set the two trust variables

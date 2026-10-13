@@ -104,28 +104,40 @@ def _is_local_or_unsafe_host(url: str) -> bool:
     return address.is_loopback or address.is_unspecified
 
 
-_PRIVATE_NAME_SUFFIXES = (".local", ".lan", ".internal", ".home.arpa", ".localhost")
+def is_loopback_host(host: object) -> bool:
+    """Whether a declared host is this machine's own loopback: ``localhost``, 127.0.0.0/8, ::1, ::ffff:127.x.
+
+    Nothing else counts: not a private, link-local, CGNAT or unique-local address, not any other name."""
+    text = str(host or "").strip().casefold().rstrip(".")
+    if text.startswith("[") and text.endswith("]"):
+        text = text[1:-1]
+    if text == "localhost":
+        return True
+    try:
+        address = ipaddress.ip_address(text)
+    except ValueError:
+        return False
+    mapped = getattr(address, "ipv4_mapped", None)
+    return (mapped or address).is_loopback
 
 
 def public_exposure_markers(public_base_url: str, values: Mapping[str, str]) -> list[str]:
-    """Signs in the configuration that the runtime is meant to be reached from outside the developer's machine.
+    """Every declared exposure beyond this machine's loopback (issue #137): development with sign-in off is loopback-only.
 
-    Used only to refuse an unauthenticated development runtime (issue #137): an HTTPS origin, a name or address that
-    is not private, or a tunnel token in the process environment. The names carry no secret value."""
+    Declared means configuration naming where the runtime is reached: PUBLIC_BASE_URL, GOOGLE_REDIRECT_URI,
+    ORENA_PUBLISHED_BIND_HOST (where the container's port is published), ORENA_INSECURE_DEV_LAN_BIND_HOST and the
+    tunnel token. The in-container listen address (uvicorn on 0.0.0.0, APP_BIND_HOST) is not read: a container must
+    listen on every interface inside its own network namespace, and what reaches it is decided by the publish above.
+    Only names are returned, never values."""
     markers: list[str] = []
-    parsed = urlsplit(public_base_url)
-    hostname = str(parsed.hostname or "").casefold().rstrip(".")
-    if parsed.scheme == "https":
-        markers.append("PUBLIC_BASE_URL is an HTTPS origin")
-    try:
-        address = ipaddress.ip_address(hostname)
-    except ValueError:
-        private_name = "." not in hostname or hostname.endswith(_PRIVATE_NAME_SUFFIXES)
-        if not private_name:
-            markers.append("PUBLIC_BASE_URL names a public host")
-    else:
-        if not (address.is_private or address.is_loopback or address.is_link_local):
-            markers.append("PUBLIC_BASE_URL is a public address")
+    origins = {"PUBLIC_BASE_URL": public_base_url, "GOOGLE_REDIRECT_URI": str(values.get("GOOGLE_REDIRECT_URI", "")).strip()}
+    for name, origin in origins.items():
+        if origin and not is_loopback_host(urlsplit(origin).hostname):
+            markers.append(f"{name} is not a loopback host")
+    for name in ("ORENA_PUBLISHED_BIND_HOST", "ORENA_INSECURE_DEV_LAN_BIND_HOST"):
+        declared = str(values.get(name, "")).strip()
+        if declared and not is_loopback_host(declared):
+            markers.append(f"{name} is not a loopback host")
     if str(values.get("CLOUDFLARE_TUNNEL_TOKEN", "")).strip():
         markers.append("CLOUDFLARE_TUNNEL_TOKEN is set")
     return markers
@@ -182,9 +194,9 @@ def resolve_deployment_config(env: Mapping[str, str] | None = None) -> Deploymen
         markers = public_exposure_markers(public_base_url, values)
         if markers:
             raise RuntimeError(
-                "Refusing to start: APP_ENV=" + app_env + " with Google authentication disabled is configured for "
-                "public exposure (" + "; ".join(markers) + "). Use APP_ENV=staging or production with sign-in, "
-                "or a local PUBLIC_BASE_URL."
+                "Refusing to start: APP_ENV=" + app_env + " with Google authentication disabled is loopback-only "
+                "but is configured for exposure (" + "; ".join(markers) + "). Use Google sign-in (LAN or public), "
+                "or declare only localhost/127.0.0.1/::1."
             )
 
     return DeploymentConfig(

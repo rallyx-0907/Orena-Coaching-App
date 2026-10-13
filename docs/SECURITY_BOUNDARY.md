@@ -63,9 +63,9 @@ that wants signed-out local use sets `ORENA_PUBLISHED_BIND_HOST=127.0.0.1 ORENA_
 
 The published port defaults to `127.0.0.1`. `APP_BIND_HOST` is the staging contract's loopback value and no longer
 widens the publish. To reach a dev runtime from another machine, set `ORENA_INSECURE_DEV_LAN_BIND_HOST=0.0.0.0` (or a
-LAN address). The name is deliberate: the port is then exposed to the network. Signed-out use is still refused for
-those callers (they are not local), so a LAN runtime needs Google sign-in. There is no switch that grants a remote
-peer signed-out access.
+LAN address). The name is deliberate: the port is then exposed to the network. An auth-disabled runtime with this
+opt-in refuses to start (startup refusal below), so a LAN runtime needs Google sign-in. There is no switch that grants
+a remote peer signed-out access.
 
 ## Public and tunnel path fails closed
 
@@ -85,13 +85,19 @@ loopback `PUBLIC_BASE_URL` (an HTTPS or public origin with sign-in off is refuse
 
 ## Startup refusal and diagnostics
 
-`resolve_deployment_config` (so the app and the preflight alike) refuses to start when `APP_ENV` is not
-staging/production, Google sign-in is off, and the configuration marks the runtime as public: an HTTPS
-`PUBLIC_BASE_URL`, a public host name or address (private addresses, single-label names and `.local`/`.lan`/`.internal`
-are allowed), or `CLOUDFLARE_TUNNEL_TOKEN` in the process environment. `docker compose --profile public up` run
-directly, without `start_public.ps1`, therefore cannot serve an unauthenticated development runtime that is configured
-for the public (the web container does not receive the tunnel token, so the origin is the marker there); request-time
-denial remains the second layer.
+Development with sign-in off is **loopback-only**. `resolve_deployment_config` (so the app and the preflight alike)
+refuses to start when `APP_ENV` is not staging/production, Google sign-in is off, and any declared exposure is not
+loopback. Declared means: the host of `PUBLIC_BASE_URL` and of `GOOGLE_REDIRECT_URI`, `ORENA_PUBLISHED_BIND_HOST`
+(where the container's port is published), `ORENA_INSECURE_DEV_LAN_BIND_HOST`, and `CLOUDFLARE_TUNNEL_TOKEN` in the
+process environment. Only `localhost`, 127.0.0.0/8, `::1` and `::ffff:127.x` are loopback. Refused: every other address
+(private 10/172.16/192.168, CGNAT 100.64/10, link-local, unique-local fc00::/7, `0.0.0.0`, `::`, public v4/v6) and
+every other name (single-label, `.local`, `.lan`, `.internal`, public names), whatever the scheme.
+
+`APP_BIND_HOST` and the uvicorn listen address inside the container are deliberately **not** read: a container must
+listen on 0.0.0.0 in its own network namespace, and what can reach it is decided by the publish, which is the declared
+`ORENA_PUBLISHED_BIND_HOST`. `docker compose --profile public up` run directly, without `start_public.ps1`, therefore
+cannot serve an unauthenticated development runtime configured for exposure; request-time denial remains the second
+layer. LAN development therefore **requires Google sign-in**; LAN with sign-in off is refused at startup.
 
 With sign-in off, the app logs one boot line naming the gateway-trust state (on/off, gateway address, declared bind
 host) and logs each refused non-local peer address once per process, with a hint when the refused peer is the

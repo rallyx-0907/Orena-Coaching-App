@@ -45,14 +45,87 @@ def test_an_unauthenticated_development_runtime_configured_for_the_public_refuse
         {},
         {"PUBLIC_BASE_URL": "http://127.0.0.1:8021"},
         {"PUBLIC_BASE_URL": "http://localhost:8011"},
-        {"PUBLIC_BASE_URL": "http://192.168.1.20:8000"},
-        {"PUBLIC_BASE_URL": "http://mybox.local:8000"},
         {"PUBLIC_BASE_URL": "http://127.0.0.1:8000", "CLOUDFLARE_TUNNEL_TOKEN": ""},
         {"PUBLIC_BASE_URL": "https://lane.example.com", **SIGN_IN},
     ],
 )
 def test_local_development_and_signed_in_runtimes_still_start(values) -> None:
     resolve_deployment_config(development(**values))
+
+
+# Development with sign-in off is LOOPBACK-ONLY: any declared non-loopback exposure refuses startup. What is declared
+# is PUBLIC_BASE_URL, GOOGLE_REDIRECT_URI, ORENA_PUBLISHED_BIND_HOST, ORENA_INSECURE_DEV_LAN_BIND_HOST and the tunnel
+# token. The in-container listen address (uvicorn 0.0.0.0, APP_BIND_HOST) is not exposure and is never read.
+LOOPBACK_ONLY_ALLOWED = [
+    {"PUBLIC_BASE_URL": "http://localhost:8000"},
+    {"PUBLIC_BASE_URL": "http://LOCALHOST:8000"},
+    {"PUBLIC_BASE_URL": "http://127.0.0.1:8000"},
+    {"PUBLIC_BASE_URL": "http://127.1.2.3:8000"},
+    {"PUBLIC_BASE_URL": "http://[::1]:8000"},
+    {"PUBLIC_BASE_URL": "http://[::ffff:127.0.0.1]:8000"},
+    {"ORENA_PUBLISHED_BIND_HOST": "127.0.0.1"},
+    {"ORENA_PUBLISHED_BIND_HOST": "::1"},
+    {"ORENA_PUBLISHED_BIND_HOST": "[::1]"},
+    {"ORENA_PUBLISHED_BIND_HOST": "localhost"},
+    {"ORENA_INSECURE_DEV_LAN_BIND_HOST": ""},
+    {"ORENA_INSECURE_DEV_LAN_BIND_HOST": "127.0.0.1"},
+    {"CLOUDFLARE_TUNNEL_TOKEN": ""},
+    {"APP_BIND_HOST": "0.0.0.0"},  # the in-container listen address is not exposure
+    {"APP_BIND_HOST": "127.0.0.1"},
+]
+LOOPBACK_ONLY_REFUSED = [
+    {"PUBLIC_BASE_URL": "http://192.168.1.20:8000"},
+    {"PUBLIC_BASE_URL": "http://10.0.0.5:8000"},
+    {"PUBLIC_BASE_URL": "http://172.16.0.9:8000"},
+    {"PUBLIC_BASE_URL": "http://172.31.255.1:8000"},
+    {"PUBLIC_BASE_URL": "http://100.64.0.7:8000"},  # CGNAT
+    {"PUBLIC_BASE_URL": "http://169.254.1.1:8000"},  # link-local
+    {"PUBLIC_BASE_URL": "http://[fe80::1]:8000"},
+    {"PUBLIC_BASE_URL": "http://[fd00::1]:8000"},  # unique-local fc00::/7
+    {"PUBLIC_BASE_URL": "http://[fc00::1]:8000"},
+    {"PUBLIC_BASE_URL": "http://8.8.8.8:8000"},
+    {"PUBLIC_BASE_URL": "http://[2001:4860:4860::8888]:8000"},
+    {"PUBLIC_BASE_URL": "http://0.0.0.0:8000"},
+    {"PUBLIC_BASE_URL": "http://mybox:8000"},  # single label
+    {"PUBLIC_BASE_URL": "http://mybox.local:8000"},
+    {"PUBLIC_BASE_URL": "http://mybox.lan:8000"},
+    {"PUBLIC_BASE_URL": "http://mybox.internal:8000"},
+    {"PUBLIC_BASE_URL": "http://orena.example.com:8000"},
+    {"PUBLIC_BASE_URL": "https://orena.example.com"},
+    {"PUBLIC_BASE_URL": "http://127.0.0.1:8000", "CLOUDFLARE_TUNNEL_TOKEN": "tunnel-token-value"},
+    {"PUBLIC_BASE_URL": "http://127.0.0.1:8000", "ORENA_PUBLISHED_BIND_HOST": "0.0.0.0"},
+    {"PUBLIC_BASE_URL": "http://127.0.0.1:8000", "ORENA_PUBLISHED_BIND_HOST": "192.168.1.5"},
+    {"PUBLIC_BASE_URL": "http://127.0.0.1:8000", "ORENA_PUBLISHED_BIND_HOST": "::"},
+    {"PUBLIC_BASE_URL": "http://127.0.0.1:8000", "ORENA_INSECURE_DEV_LAN_BIND_HOST": "0.0.0.0"},
+    {"PUBLIC_BASE_URL": "http://127.0.0.1:8000", "ORENA_INSECURE_DEV_LAN_BIND_HOST": "192.168.1.5"},
+    {"PUBLIC_BASE_URL": "http://127.0.0.1:8000", "ORENA_INSECURE_DEV_LAN_BIND_HOST": "mybox.local"},
+]
+
+
+@pytest.mark.parametrize("values", LOOPBACK_ONLY_ALLOWED, ids=lambda v: str(v))
+def test_development_without_sign_in_allows_loopback_declarations(values) -> None:
+    resolve_deployment_config(development(**values))
+
+
+@pytest.mark.parametrize("values", LOOPBACK_ONLY_REFUSED, ids=lambda v: str(v))
+def test_development_without_sign_in_refuses_any_non_loopback_declaration(values) -> None:
+    with pytest.raises(RuntimeError, match="Refusing to start") as raised:
+        resolve_deployment_config(development(**values))
+    assert "tunnel-token-value" not in str(raised.value)
+
+
+@pytest.mark.parametrize("values", [v for v in LOOPBACK_ONLY_REFUSED if v.get("PUBLIC_BASE_URL", "").startswith("http")],
+                         ids=lambda v: str(v))
+def test_development_with_sign_in_may_face_the_lan_or_the_public(values) -> None:
+    """LAN development needs Google sign-in; with it the same declarations start."""
+    resolve_deployment_config(development(**values, **SIGN_IN))
+
+
+def test_a_non_loopback_redirect_origin_is_refused_too() -> None:
+    # The redirect URI must match the origin, so a mismatch is refused earlier; a matching one is the origin's host.
+    with pytest.raises(RuntimeError):
+        resolve_deployment_config(development(
+            PUBLIC_BASE_URL="http://127.0.0.1:8000", GOOGLE_REDIRECT_URI="http://192.168.1.5:8000/auth/google/callback"))
 
 
 @pytest.mark.parametrize(
