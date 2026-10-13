@@ -48,6 +48,15 @@ export function scriptOf(word, language = '') {
   return lower(language).startsWith('zh') || HAN.test(text(word)) ? 'hanzi' : 'latin';
 }
 
+/* The catalogue language a word belongs to: Chinese for a Han word, otherwise the learner's language unless
+   that is Chinese and the word is not (an English word met while learning Chinese). Only for catalogue reads
+   (`/api/vocabulary/catalogue/search` allows any enabled language); the word-detail lookup must use the learner's
+   current learning language, which the server enforces (409 otherwise). */
+export function catalogueLanguage(word, learning) {
+  if (scriptOf(word) === 'hanzi') return 'zh';
+  return learning === 'zh' ? 'en' : learning || 'en';
+}
+
 /* ---- Highlight -------------------------------------------------------------------------------
    An example's highlight is a string to find (`highlight.match`, the `occurrence`-th time,
    default 1; docs/vocab README), never character offsets. Latin script is matched as a whole word

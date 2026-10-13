@@ -6063,3 +6063,11 @@ etymology - the provenance gap is exactly the projection named there. Open, serv
     is dropped, so a dek or hero that a page places only in its site-level header is lost;
   - pages rendered by JavaScript, and non-UTF-8 pages, are not handled;
   - media candidates inside the article scope include teaser-card images that carry no boilerplate token.
+
+## Discover search: empty state names its scope and offers global search (human decision, 2026-10-13)
+
+The design's Discover search box searches books, media and collections only, and global Search (`#/search`) also finds
+words. A learner typed a word into the Discover box and read "nothing found". By human decision, a Discover search that
+finds nothing says what the box searches and offers one action, "Search everywhere", opening `#/search?q=<query>` with
+the query typed and run. The design does not draw this hint or action; it uses the kit's existing empty state and
+secondary button, no new component or colour. Search now reads `q` from its address on open.

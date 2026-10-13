@@ -324,8 +324,11 @@ def test_every_admin_seam_is_wired_to_the_one_guard():
     assert "install_platform_ai(app, require_admin)" in source
     assert source.count("admin_guard=require_admin") >= 3  # media library, reading library, console
     assert "require_admin(request)" in inspect.getsource(app_module.admin_readiness_summary)
-    assert "require_admin(request)" in inspect.getsource(app_module.admin_vocabulary_source_preview)
-    assert "require_admin(request)" in inspect.getsource(app_module.admin_vocabulary_source_import)
+    # The two vocabulary routes also accept the scoped service credential (issue #145); everything else about their
+    # guard is `require_admin`, which `require_vocabulary_ingest` falls back to (tests/test_vocabulary_ingest_token.py).
+    assert "require_vocabulary_ingest(request)" in inspect.getsource(app_module.admin_vocabulary_source_preview)
+    assert "require_vocabulary_ingest(request)" in inspect.getsource(app_module.admin_vocabulary_source_import)
+    assert "return require_admin(request)" in inspect.getsource(auth_support.require_vocabulary_ingest)
 
 
 def test_an_administrator_session_survives_a_clock_step_back(secured, monkeypatch):

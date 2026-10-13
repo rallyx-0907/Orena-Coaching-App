@@ -90,6 +90,7 @@ scripts/test_orena_screen_admin_areas.mjs
 scripts/test_orena_screen_admin_grammar.mjs
 scripts/test_orena_screen_settings.mjs
 scripts/test_orena_screen_plan.mjs
+scripts/test_n8n_vocab_workflow.mjs
 scripts/test_orena_screen_feedback.mjs
 scripts/test_orena_screen_sheets.mjs
 scripts/test_orena_screen_quick-sheet.mjs

@@ -124,14 +124,9 @@ export function stageCopyKey(item) {
 export { highlightExample } from '../../product/vocabulary-card.js';
 import { highlightExample, scriptOf, isPinyin, isLatinReading } from '../../product/vocabulary-card.js';
 
-/* The catalogue language a word belongs to: Chinese for a Han word, otherwise the learner's language unless
-   that is Chinese and the word is not (an English word met while learning Chinese). Only for catalogue reads
-   (`/api/vocabulary/catalogue/search` allows any enabled language); the word-detail lookup must use the learner's
-   current learning language, which the server enforces (409 otherwise). */
-export function catalogueLanguage(word, learning) {
-  if (scriptOf(word) === 'hanzi') return 'zh';
-  return learning === 'zh' ? 'en' : learning || 'en';
-}
+/* The catalogue language a word belongs to now lives with the shared vocabulary mapper (Search asks the catalogue
+   the same way); re-exported so this screen's callers keep their import. */
+export { catalogueLanguage } from '../../product/vocabulary-card.js';
 
 
 /* The word card (`wdWC`): the header, the meaning block, the example and the mastery footer, from

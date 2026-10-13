@@ -377,3 +377,30 @@ export function preparedMediaEntry(itemId, payload, source, language, continuati
     sourceAliases:[itemId],
   };
 }
+
+/* The learner's place on Discover lives in the address, so a history entry restores it (Back from a collection or a
+   card lands on the same tab, search and filters). Pure: `read` takes the route's URLSearchParams, `write` returns the
+   query string to put in the hash, keeping every parameter it does not own (a practice chooser's own). */
+export const PLACE_FILTER_KEYS = ['level', 'topic', 'type'];
+const filterParam = (key) => `f_${key}`;
+
+export function readPlace(query, tabs) {
+  const tab = query.get('tab');
+  const filters = {};
+  for (const key of PLACE_FILTER_KEYS) filters[key] = new Set(query.getAll(filterParam(key)).filter(Boolean));
+  return { tab: tabs.includes(tab) ? tab : 'all', query: String(query.get('q') || ''), filters };
+}
+
+export function writePlace(base, { tab, query, filters }) {
+  const params = new URLSearchParams(base);
+  params.delete('tab');
+  params.delete('q');
+  for (const key of PLACE_FILTER_KEYS) params.delete(filterParam(key));
+  if (tab && tab !== 'all') params.set('tab', tab);
+  if (String(query || '').trim()) params.set('q', String(query).trim());
+  for (const key of PLACE_FILTER_KEYS) for (const value of filters?.[key] || []) params.append(filterParam(key), value);
+  return params.toString();
+}
+
+/* Global search (#/search) with this query already typed: what the empty Discover search offers. */
+export const searchEverywhereHref = (query, href) => href('search', {}, { q: String(query || '').trim() });
