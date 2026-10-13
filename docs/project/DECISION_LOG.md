@@ -5950,3 +5950,41 @@ Closes the follow-up recorded in D-185.
 - **Not covered.** A container started by hand outside the official launchers; a publish edited after the check ran;
   `docker run` helpers not in the inventory. Same-host proxy, `host.docker.internal` and DNS-rebinding residuals of D-185
   are unchanged. See `docs/SECURITY_BOUNDARY.md`.
+
+## D-18X - A scoped machine credential for vocabulary ingestion (issue #145)
+
+Placeholder id; the lead renumbers at merge. **Status: PROPOSED. This changes authentication. Independent
+architecture review is REQUIRED before merge (AGENTS.md "Architecture review authority"); the implementer does not
+approve it.** Not product approval. The reviewer, the reviewed commit and the outcome are recorded here in Git when it
+is reviewed: reviewer `<pending>`, commit `<pending>`, outcome `<pending>`.
+
+- **Finding.** `require_admin()` is session-based (a Google sign-in cookie), and `UserIsolationMiddleware` refuses any
+  `/api/*` request without a session before a route runs. The only unattended path is the signed-out local admin, which
+  is for the machine's own address only (D-185) and is never available to a public deployment (D-146). So a client with
+  no browser - the n8n Vocabulary Generator of `integrations/n8n` - cannot preview or import authored vocabulary into a
+  deployed Orena; the manual file import in Admin is the only route.
+- **Decision (proposed).** One capability, one credential, nothing else:
+  - Scope: `POST /api/admin/vocabulary/preview` and `POST /api/admin/vocabulary/import`, exactly. Defined once, in
+    `writing_coach/service_auth.py` (`VOCABULARY_INGEST_PATHS`). Any other path or method with the same token is
+    answered as an anonymous request (401).
+  - Credential: `Authorization: Bearer <token>`. The server holds no secret: `VOCAB_INGEST_TOKEN_SHA256` lists the
+    SHA-256 hex digest(s) of the allowed token(s), comma-separated to allow rotation. Compared by digest with
+    `hmac.compare_digest` against every configured digest. Unset or malformed means the feature is off.
+  - Revocation: remove the digest and restart. Nothing is logged by the credential code; the token is never stored.
+  - Who the caller is: a fixed service principal (`service:vocabulary-ingest`, role `service`), never a user. Its request context has a user key of its own (not the shared `legacy` scope); it reads
+    and writes no learner scope. `imported_by` of the receipt records it.
+  - Lifecycle is unchanged: an authored batch always lands in a set that is `pending_review` (D-178), a published-set
+    conflict is refused, and the file's `status` is ignored. The credential cannot publish.
+  - Session administrators are untouched: a request without a bearer token takes the same path as before.
+- **Where.** `UserIsolationMiddleware.dispatch` checks the token first, for those two paths only, and sets
+  `request.state.service_principal`; `require_vocabulary_ingest` (used by those two routes only) returns it, else
+  falls back to `require_admin`. `tests/test_vocabulary_ingest_token.py` walks every route of the app with a valid
+  token and requires 401 for all but the two scoped POSTs.
+- **For the reviewer to weigh.** (1) A leaked token imports `pending_review` sets and previews the catalogue's
+  duplicate status (it reveals which words exist, including published ones) until revoked; there is no per-token rate
+  limit, expiry or audit actor beyond the fixed principal. (2) The token is a long-lived shared secret in the n8n
+  credential store. (3) The middleware branch sits before language seeding and sets a service user key; confirm it cannot reach the `legacy`
+  scope. (4) Whether a deployment that wants this should instead use a short-lived, per-client token with an expiry
+  (a larger change, deliberately not done here).
+- **Interim without this change.** File mode and a manual import through Orena Admin; see
+  `integrations/n8n/README.md`.

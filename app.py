@@ -48,7 +48,7 @@ from writing_coach.writing_evaluator_contract import (
 from writing_coach.writing_contract import project_review as project_writing_review, project_revision as project_revision_compare
 from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
-from auth_support import APP_ENV, AUTH_ENABLED, DEPLOYMENT, SESSION_SECRET, current_db_path, install_auth, require_admin, AUTH_DB_PATH, configure_auth_repository
+from auth_support import APP_ENV, AUTH_ENABLED, DEPLOYMENT, SESSION_SECRET, current_db_path, install_auth, require_admin, require_vocabulary_ingest, AUTH_DB_PATH, configure_auth_repository
 import auth_support
 from writing_coach.product.api import router as product_router
 from writing_coach.media_api import (
@@ -3770,7 +3770,7 @@ async def admin_vocabulary_source_preview(
 ) -> dict[str, Any]:
     """Parse uploads and suggest mappings without touching persistence."""
 
-    require_admin(request)
+    require_vocabulary_ingest(request)
     if not files:
         raise HTTPException(422, "Choose at least one vocabulary source file.")
     items: list[dict[str, Any]] = []
@@ -3918,7 +3918,7 @@ async def admin_vocabulary_source_import(
     source formats keep their merge behaviour and ignore it.
     """
 
-    admin = require_admin(request)
+    admin = require_vocabulary_ingest(request)
     if not files:
         raise HTTPException(422, "Choose at least one vocabulary source file.")
     if duplicates not in AUTHORED_DUPLICATE_POLICIES:
