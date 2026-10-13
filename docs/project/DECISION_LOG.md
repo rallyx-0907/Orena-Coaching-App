@@ -6096,3 +6096,19 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
 4. **D-111 is unchanged:** any quality issue, hard or soft, means `review`; automatic admission never publishes a
    flagged item.
 5. **Empty body** keeps the existing refusal (`empty_source`, "no readable article"); the flag covers other entry paths.
+6. **The repository is the last gate.** `ReadingContentRepository.set_status` refuses a publish over a hard code
+   (`QualityRefused`) unless `quality_override=True` and a reason are given; the override, its codes and
+   `QUALITY_VERSION` are recorded on the article's own status event. The route only translates the refusal, so
+   `scripts/agent_e2e/harness.py` and any direct caller are stopped too.
+7. **Tightened after review.** `media_page` is hard for ZH only under 260 Hanzi (trial non-articles: 216-245).
+   `bot_challenge` needs a short page and a near-exact challenge phrase in the title (or a page under 40 units).
+   `index_page` is hard only on a listing title, a listing address, or a listing-shaped body on a page with no
+   article element and no prose; a dated listing alone is the soft `index_like`.
+8. **Known limitation.** Fact-based codes exist only for URL-extracted pages. Pasted and uploaded text get only the
+   body-derived codes, and articles stored before this change have no `page_facts`, so they are not blocked. The
+   read-only `scripts/check_reading_quality_backlog.py` lists them; it cannot backfill, so a human decides each one.
+9. **Review.** Independent architecture review of `ae8b96db`: APPROVED WITH CONDITIONS
+   (`docs/reviews/architecture/READING_QUALITY_GATE_REVIEW_2026-10-13.md`, Delegated Architecture Reviewer, Claude Opus
+   5.5). Conditions P1-1, P1-2 and P1-4 are addressed in the commit that records this line; P1-3 (merge with the
+   provenance gate) is settled at merge. Follow-ups, not done: recompute body-derived codes when a body is edited, and a
+   separate permission for the override.

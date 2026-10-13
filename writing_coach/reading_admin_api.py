@@ -38,7 +38,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import SQLAlchemyError
 
 from writing_coach.core.errors import orena_http_error
-from writing_coach.reading_page_quality import hard_issues
+from writing_coach.reading_page_quality import QualityRefused, hard_issues
 from writing_coach.persistence.reading_content_repository import (
     CONTENT_KINDS,
     MAX_ARTICLE_PAGE,
@@ -768,6 +768,7 @@ def set_article_status(
             422, "reading_reason_required", "A rejection keeps its reason - say why."
         )
     warnings: list[dict[str, str]] = []
+    overriding = False
     if status == "published":
         current = _guarded(lambda: _content().get_article(article_id))
         if current is None:
@@ -780,6 +781,7 @@ def set_article_status(
                     422, "reading_reason_required", "Publishing past a quality failure keeps its reason - say why."
                 )
             blockers = [item for item in blockers if item.get("gate") != "quality"]
+            overriding = True
             _audit(
                 admin,
                 "admin.reading_article_quality_override",
@@ -811,11 +813,22 @@ def set_article_status(
                 context={"blockers": blockers},
             )
         warnings = publication_warnings(current)
-    article = _guarded(
-        lambda: _content().set_status(
-            article_id, status, actor=_actor(admin), reason=payload.reason.strip(), warnings=warnings
+    try:
+        article = _guarded(
+            lambda: _content().set_status(
+                article_id, status, actor=_actor(admin), reason=payload.reason.strip(), warnings=warnings,
+                quality_override=overriding,
+            )
         )
-    )
+    except QualityRefused as exc:  # the repository is the last gate; the route only translates it
+        if exc.reason_missing:
+            raise orena_http_error(
+                422, "reading_reason_required", "Publishing past a quality failure keeps its reason - say why."
+            ) from exc
+        raise orena_http_error(
+            409, "reading_quality_not_cleared", "This page does not look like an article, so it cannot be published.",
+            context={"blockers": [{"code": code, "gate": "quality"} for code in exc.codes]},
+        ) from exc
     if article is None:
         raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
     audit_payload: dict[str, Any] = {"status": status, "reason": payload.reason.strip()}

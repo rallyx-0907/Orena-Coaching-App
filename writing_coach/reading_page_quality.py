@@ -19,12 +19,13 @@ D-111 automatic admission (any issue means review).
 """
 from __future__ import annotations
 
+import html as _html
 import re
 from collections.abc import Mapping
 from typing import Any
 from urllib.parse import unquote, urlsplit
 
-QUALITY_VERSION = "reading-quality/1"
+QUALITY_VERSION = "reading-quality/2"
 
 # ---- thresholds (per language: English words, Chinese Hanzi) -----------------
 # Set from the 2026-10-13 trial: the shortest genuine article was 248 English
@@ -34,11 +35,13 @@ QUALITY_VERSION = "reading-quality/1"
 # below every authored paste the engine already accepts; the page-shape signals
 # below (media, index, special page), not this number, catch the trial's stubs.
 MIN_BODY_UNITS = {"en": 80, "zh": 120}  # below: soft `body_below_minimum`
-MEDIA_PAGE_MAX_UNITS = {"en": 60, "zh": 400}  # player markup and a body this short: hard `media_page`
+# Player markup and a body this short: hard `media_page`. ZH sits just above the longest non-article of the
+# trial (245 Hanzi), so a genuine 300-Hanzi brief with an embedded video is not blocked.
+MEDIA_PAGE_MAX_UNITS = {"en": 60, "zh": 260}
 
 # ---- stable codes ------------------------------------------------------------
 HARD_ISSUES = frozenset({"empty_body", "media_page", "index_page", "bot_challenge", "special_page"})
-SOFT_ISSUES = frozenset({"body_below_minimum", "extraction_medium_confidence", "generic_title"})
+SOFT_ISSUES = frozenset({"body_below_minimum", "extraction_medium_confidence", "generic_title", "index_like"})
 
 _CJK_RE = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 _WORD_RE = re.compile(r"[^\W_]+(?:['’-][^\W_]+)*", re.UNICODE)
@@ -56,7 +59,17 @@ _CHALLENGE_RE = re.compile(
     r"|请稍候|请稍後|访问被拒绝|存取被拒|安全验证|安全驗證|验证您是人类|驗證您是人類",
     re.IGNORECASE,
 )
-_CHALLENGE_MAX_PAGE_UNITS = 300  # a real article that merely quotes "access denied" is longer than this
+# A challenge page is a handful of words. Its title is (almost) exactly one challenge phrase, and the page is short.
+_CHALLENGE_TITLE_RE = re.compile(
+    r"(?:client challenge|just a moment|access denied|attention required|verify you are (?:a )?human"
+    r"|checking your browser|403 forbidden|are you a robot|请稍候|请稍後|访问被拒绝|存取被拒|安全验证|安全驗證)",
+    re.IGNORECASE,
+)
+_CHALLENGE_MAX_PAGE_UNITS = 120  # title branch: the page is also short
+_CHALLENGE_TEXT_MAX_PAGE_UNITS = 40  # visible-text branch: a challenge page is a dozen words
+_INDEX_URL_SEGMENTS = frozenset(
+    {"archive", "archives", "all", "tag", "tags", "category", "categories", "topics", "sitemap", "search", "index"}
+)
 _INDEX_TITLE_RE = re.compile(
     r"^(?:所有内容|所有內容|全部内容|全部內容|所有文章|全部文章|所有报道|所有報導|最新内容|最新內容"
     r"|all content|all stories|all articles|all posts|archives?|latest news|latest stories|site map|sitemap)$",
@@ -96,7 +109,7 @@ def _meta(html: str, name: str) -> str:
         if re.search(rf"(?:property|name)\s*=\s*[\"']{re.escape(name)}[\"']", tag, re.IGNORECASE):
             content = re.search(r"content\s*=\s*(?:\"([^\"]*)\"|'([^']*)')", tag, re.IGNORECASE)
             if content:
-                return " ".join((content.group(1) or content.group(2) or "").split())
+                return " ".join(_html.unescape(content.group(1) or content.group(2) or "").split())
     return ""
 
 
@@ -108,18 +121,21 @@ def page_facts(html: str, *, url: str = "", title: str = "") -> dict[str, Any]:
     visible = re.sub(r"<(script|style|head|noscript|svg|template)\b.*?</\1>", " ", html, flags=re.IGNORECASE | re.DOTALL)
     visible = " ".join(re.sub(r"<[^>]+>", " ", visible).split())
     page_units = units(visible)
-    # A challenge page titles itself in a few words; a headline that merely quotes one is longer.
-    challenge = any(
-        units(text) <= 8 and bool(_CHALLENGE_RE.search(text)) for text in (page_title, h1)
-    ) or (
-        page_units < _CHALLENGE_MAX_PAGE_UNITS and bool(_CHALLENGE_RE.search(visible[:600]))
+    # Hard only on a short page, and a title branch only on a near-exact phrase: "Just a moment of silence for
+    # the victims" is a headline, "Just a moment..." is a Cloudflare page.
+    title_parts = [re.sub(r"[\W_]+", " ", part).strip() for text in (page_title, h1) for part in _TITLE_SPLIT_RE.split(text)]
+    challenge = page_units < _CHALLENGE_MAX_PAGE_UNITS and (
+        any(part and _CHALLENGE_TITLE_RE.fullmatch(part) for part in title_parts)
+        or (page_units < _CHALLENGE_TEXT_MAX_PAGE_UNITS and bool(_CHALLENGE_RE.search(visible[:600])))
     )
     path = unquote(urlsplit(url).path).casefold() if url else ""
+    last_segment = next((part for part in reversed(path.split("/")) if part), "")
     segments = [part for part in _TITLE_SPLIT_RE.split(page_title) if part] + [h1]
     return {
         "media_player": bool(_MEDIA_RE.search(html)),
         "bot_challenge": challenge,
         "special_page": "/special:" in path or "/特殊:" in path,
+        "index_url": last_segment.rsplit(".", 1)[0] in _INDEX_URL_SEGMENTS,
         "index_title": any(_INDEX_TITLE_RE.match(part.strip()) for part in segments if part.strip()),
         "site_name": _meta(html, "og:site_name"),
         "page_units": page_units,
@@ -165,8 +181,13 @@ def quality_flags(
         flags.append("special_page")
     if facts.get("media_player") and size < MEDIA_PAGE_MAX_UNITS[lang]:
         flags.append("media_page")
-    if facts.get("index_title") or _looks_like_listing(body or ""):
+    # Hard only on a strong signal: a listing title, a listing address, or a listing-shaped body on a page with
+    # no article element and no prose. A dated timeline or a poem alone is only `index_like` (soft).
+    listing = _looks_like_listing(body or "")
+    if facts.get("index_title") or facts.get("index_url") or (listing and facts.get("no_article_structure")):
         flags.append("index_page")
+    elif listing:
+        flags.append("index_like")
     if 0 < size < MIN_BODY_UNITS[lang]:
         flags.append("body_below_minimum")
     if confidence == "medium":
@@ -174,6 +195,15 @@ def quality_flags(
     if _generic_title(title, str(facts.get("site_name") or "")):
         flags.append("generic_title")
     return flags
+
+
+class QualityRefused(Exception):
+    """A hard quality failure stood in the way of a publish, and no reasoned override was given."""
+
+    def __init__(self, codes: list[str], *, reason_missing: bool = False) -> None:
+        super().__init__(", ".join(codes))
+        self.codes = codes
+        self.reason_missing = reason_missing
 
 
 def hard_issues(issues: Any) -> list[str]:

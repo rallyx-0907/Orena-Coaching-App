@@ -785,3 +785,59 @@ def test_a_quality_override_never_clears_the_rights_gate(setup):
     response = _quality_refused(setup, article_id, quality_override=True, reason="transcript")
     assert response.status_code == 409
     assert response.json()["detail"]["category"] == "reading_rights_not_cleared"
+
+
+# ---- the repository is the last gate (D-18X) -----------------------------------------
+
+def test_the_repository_refuses_a_hard_quality_failure_without_the_route(setup):
+    from writing_coach.reading_page_quality import QualityRefused
+
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": ["media_page"]})
+    with pytest.raises(QualityRefused) as caught:
+        setup.content.set_status(article_id, "published", actor="script")
+    assert caught.value.codes == ["media_page"]
+    assert _visible(setup, article_id) != "published"
+    with pytest.raises(QualityRefused) as missing:
+        setup.content.set_status(article_id, "published", actor="script", quality_override=True)
+    assert missing.value.reason_missing
+    assert _visible(setup, article_id) != "published"
+
+
+def test_a_repository_override_is_recorded_on_the_articles_own_event(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": ["media_page"]})
+    setup.content.set_status(article_id, "published", actor="admin", reason="transcript", quality_override=True)
+    event = next(item for item in setup.content.list_review_events(article_id) if item["action"] == "published")
+    assert event["changes"]["quality_override"] is True
+    assert event["changes"]["quality_codes"] == ["media_page"]
+    assert event["changes"]["quality_version"]
+
+
+def test_a_quality_override_is_ignored_for_other_statuses_and_clean_articles(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": ["media_page"]})
+    rejected = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/status",
+                    json={"status": "rejected", "reason": "no", "quality_override": True})
+    assert rejected.status_code == 200
+    clean = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                     analysis={"quality_issues": ["body_below_minimum"]}, content_hash="d" * 64)
+    done = _quality_refused(setup, clean, quality_override=True, reason="fine")
+    assert done.status_code == 200
+    assert not any(item["action"] == "admin.reading_article_quality_override" for item in setup.audited)
+
+
+def test_a_legacy_article_without_quality_facts_publishes(setup):
+    """The known limitation (D-18X): nothing recorded means nothing to block; the audit script lists them."""
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False}, analysis={})
+    assert _publish(setup, article_id)["status"] == "published"
+
+
+def test_the_audit_script_lists_articles_whose_stored_verdict_misses_a_hard_code(setup):
+    from scripts.check_reading_quality_backlog import find_unflagged
+
+    legacy = _article(setup, analysis={"extraction": {}}, content_hash="c" * 64)
+    flagged = _article(setup, analysis={"quality_issues": ["media_page"]}, content_hash="b" * 64)
+    found = {item["id"]: item for item in find_unflagged(setup.engine)}
+    assert flagged not in found
+    assert legacy in found and found[legacy]["missing_facts"] is True

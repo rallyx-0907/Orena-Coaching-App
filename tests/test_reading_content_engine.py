@@ -465,6 +465,19 @@ def test_a_medium_confidence_page_is_flagged_and_held(engine_parts):
     page = ("<html><head><title>Rain returns</title></head><body><div>"
             + "".join(f"<p>{ARTICLE}</p>" for _ in range(2)) + "</div></body></html>")
     article, _content = _source_url_candidate(engine_parts, page)
-    if article["analysis"]["extraction"]["confidence"] == "medium":
-        assert "extraction_medium_confidence" in article["analysis"]["quality_issues"]
-        assert article["status"] == "needs_review"
+    assert article["analysis"]["extraction"]["confidence"] == "medium"
+    assert "extraction_medium_confidence" in article["analysis"]["quality_issues"]
+    assert article["status"] == "needs_review"
+    assert "extraction_medium_confidence" in article["analysis"]["admission"]["reasons"]
+    assert article["analysis"]["quality_version"]
+
+
+def test_a_pasted_listing_from_a_cleared_source_is_held_by_d111(engine_parts):
+    engine, content, jobs = engine_parts
+    source = _cleared_source(content)
+    lines = "\n".join(f"Council meeting notes, 2026-10-{n:02d}" for n in range(1, 13))
+    engine.submit(SubmittedInput(kind="text", title="Notes", text=lines, language="en", source_id=source["id"]),
+                  actor="admin")
+    article = content.get_article(engine.process(jobs.claim("worker"))["article_id"])
+    assert "index_like" in article["analysis"]["quality_issues"]
+    assert article["status"] == "needs_review"

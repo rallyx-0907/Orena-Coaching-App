@@ -41,6 +41,7 @@ from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.engine import Engine
 
 from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
+from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
 from writing_coach.persistence.models import (
     ReadingArticle,
     ReadingArticleTarget,
@@ -1071,9 +1072,14 @@ class ReadingContentRepository:
         actor: str,
         reason: str = "",
         warnings: Sequence[Mapping[str, str]] = (),
+        quality_override: bool = False,
         now: datetime | None = None,
     ) -> dict[str, Any] | None:
         """Move an article through its lifecycle, recording who and why.
+
+        Publishing an article with a hard quality failure (`reading_page_quality`) is refused
+        here, not only in the route, so a script that calls this directly is stopped too.
+        `quality_override` publishes anyway; it needs a reason and is recorded on the event.
 
         `warnings` are the rights advice that was showing when an administrator
         published anyway; they are recorded beside the decision, so an override
@@ -1087,7 +1093,13 @@ class ReadingContentRepository:
             return None
         moment = _now(now)
         values: dict[str, Any] = {"status": status, "updated_at": moment}
+        overridden: list[str] = []
         if status == LEARNER_VISIBLE_STATUS:
+            overridden = hard_issues((current.get("analysis") or {}).get("quality_issues"))
+            if overridden and not quality_override:
+                raise QualityRefused(overridden)
+            if overridden and not reason.strip():
+                raise QualityRefused(overridden, reason_missing=True)
             values |= {"published_at": moment, "unpublished_at": None}
             values["content_revision"] = current["content_revision"] + 1
         elif current["status"] == LEARNER_VISIBLE_STATUS:
@@ -1110,6 +1122,8 @@ class ReadingContentRepository:
                     "status": {"from": current["status"], "to": status},
                     **({"warnings": [dict(item) for item in warnings],
                         "published_over_warnings": True} if warnings else {}),
+                    **({"quality_override": True, "quality_codes": overridden,
+                        "quality_version": QUALITY_VERSION} if overridden else {}),
                 },
                 now=moment,
             )

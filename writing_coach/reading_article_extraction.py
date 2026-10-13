@@ -693,7 +693,12 @@ def extract_article(html: str, base_url: str = "") -> ExtractedArticle:
         coverage=coverage,
         removed=removed,
         provenance=cleaned.provenance,
-        page_facts=page_facts(html, url=page_url, title=" ".join(page_title.split())),
+        page_facts={
+            **page_facts(html, url=page_url, title=" ".join(page_title.split())),
+            # Structure, not content: no article element and no prose paragraphs (a listing, not a story).
+            "no_article_structure": "few_prose_paragraphs" in reasons
+            and bool({"no_article_or_main_element", "fallback_to_whole_page"} & set(reasons)),
+        },
         media=_media_candidates(
             _article_scope(container), figure_info, meta_images, document_base
         ),

@@ -47,12 +47,20 @@ def test_voa_zh_index_page_is_flagged_hard():
     assert "index_page" in flags and "index_page" in HARD_ISSUES
 
 
-def test_a_dated_listing_body_is_an_index_even_without_a_telling_title():
-    assert "index_page" in quality_flags(body=LISTING_BODY, language="zh", title="本周新闻")
+def test_a_dated_listing_body_is_hard_only_with_a_structural_signal():
+    assert "index_page" in quality_flags(
+        body=LISTING_BODY, language="zh", title="本周新闻", facts={"no_article_structure": True})
+    soft = quality_flags(body=LISTING_BODY, language="zh", title="本周新闻", facts={"no_article_structure": False})
+    assert "index_like" in soft and "index_page" not in soft
 
 
 def test_a_section_page_of_dated_entries_is_an_index():
-    assert "index_page" in quality_flags(body=SECTION_BODY, language="zh", title="")
+    assert "index_page" in quality_flags(body=SECTION_BODY, language="zh", title="", facts={"no_article_structure": True})
+
+
+def test_an_archive_address_is_an_index():
+    page = extract_article(NASA_ARTICLE, "https://example.org/news/archive")
+    assert "index_page" in quality_flags(body=page.body, language="en", title=page.title, facts=page.page_facts)
 
 
 def test_voa_le_audio_page_has_no_body_and_is_flagged():
@@ -131,3 +139,52 @@ def test_a_flagged_item_cannot_be_automatically_admitted(code):
     outcome = decision(analysis={"quality_issues": [code]})
     assert outcome["decision"] == "review" and code in outcome["reasons"]
     assert decision(analysis={"quality_issues": []})["decision"] == "published"
+
+
+# ---- negatives: legitimate pages that must not be hard-flagged -------------------
+
+_EN_SENTENCE = "The council approved the new bridge budget after a long public hearing on Tuesday evening. "
+_ZH_SENTENCE = "市政府周二宣布，新的跨河大桥将在明年春天开工，预计两年内完成，沿线居民可以获得补偿。"
+
+
+def _article_html(paragraphs: str, title: str = "Bridge budget approved", extra: str = "") -> str:
+    return (f"<html><head><title>{title}</title></head><body><main><article><h1>{title}</h1>{extra}"
+            f"{paragraphs}</article></main></body></html>")
+
+
+def test_a_short_english_and_a_short_chinese_article_are_not_hard_flagged():
+    en = _flags(_article_html(f"<p>{_EN_SENTENCE * 3}</p><p>{_EN_SENTENCE * 3}</p>"), "https://example.org/a/1", "en")
+    zh = _flags(_article_html(f"<p>{_ZH_SENTENCE * 3}</p><p>{_ZH_SENTENCE * 3}</p>", title="大桥预算获批"),
+                "https://example.org/a/2", "zh")
+    assert not HARD_ISSUES & set(en) and not HARD_ISSUES & set(zh)
+
+
+def test_a_300_hanzi_chinese_article_with_a_video_is_not_a_media_page():
+    video = '<video src="/v.mp4" controls></video>'
+    html = _article_html(f"<p>{_ZH_SENTENCE * 5}</p><p>{_ZH_SENTENCE * 5}</p>", title="大桥预算获批", extra=video)
+    page = extract_article(html, "https://example.org/a/3")
+    assert page.page_facts["media_player"] and 280 <= page.units < 400
+    assert "media_page" not in quality_flags(
+        body=page.body, language="zh", title=page.title, facts=page.page_facts)
+
+
+@pytest.mark.parametrize("title", [
+    "Just a moment of silence for the flood victims", "Access denied to journalists at the border",
+    "Attention required: why sleep matters",
+])
+def test_a_headline_that_starts_like_a_challenge_phrase_is_not_a_bot_challenge(title):
+    html = _article_html(f"<p>{_EN_SENTENCE * 4}</p><p>{_EN_SENTENCE * 4}</p>", title=title)
+    assert "bot_challenge" not in _flags(html, "https://example.org/a/4", "en")
+
+
+def test_a_short_page_titled_like_a_headline_is_not_a_bot_challenge():
+    html = _article_html(f"<p>{_EN_SENTENCE * 4}</p>", title="Just a moment of silence for the victims")
+    assert "bot_challenge" not in _flags(html, "https://example.org/a/5", "en")
+
+
+def test_a_dated_timeline_and_a_poem_are_not_hard_flagged_as_an_index():
+    timeline = "\n\n".join(f"{1990 + n}-05-0{n % 9 + 1} The treaty was signed in the capital" for n in range(10))
+    poem = "\n\n".join(f"In 19{50 + n} the river ran on" for n in range(12))
+    for body in (timeline, poem):
+        flags = quality_flags(body=body, language="en", title="A history", facts={"no_article_structure": False})
+        assert "index_page" not in flags and not HARD_ISSUES & set(flags)
