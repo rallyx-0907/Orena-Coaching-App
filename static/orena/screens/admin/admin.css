@@ -694,11 +694,13 @@ a.a-btn--primary:hover {
   color: inherit;
   text-align: start;
 }
-.a-row--pick .a-row__body > span {
+/* Every preview row's lines stack (the refused rows are not buttons, but the same spans). */
+.a-vpreview .a-row__body > span {
   display: block;
 }
+/* The picked row as the admin's own selected nav item draws it: the soft accent ground, no outline (D-147). */
 .a-row--pick[aria-pressed='true'] {
-  background: var(--accent-fill);
+  background: var(--accent-soft);
 }
 .a-vpreview__card {
   display: flex;

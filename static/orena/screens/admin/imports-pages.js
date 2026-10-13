@@ -214,7 +214,9 @@ function authoredPreviewBlock({ preview, index, vocab, support, t }) {
   const items = rows.map((row, at) => {
     const record = row.record;
     const title = row.term || row.id || String(row.row);
-    if (!record) return previewRow({ title, meta: row.reason || '', pills: [{ label: t(row.outcome === 'conflict' ? 'impRowConflict' : 'impRowRefused'), tone: 'warn' }] });
+    // A conflict's reason is the server's warning, already a banner above, and its pill says it in the admin's
+    // language; a refusal keeps its reason (the schema's own words) as the row's line.
+    if (!record) return previewRow({ title, meta: row.outcome === 'conflict' ? '' : row.reason || '', pills: [{ label: t(row.outcome === 'conflict' ? 'impRowConflict' : 'impRowRefused'), tone: 'warn' }] });
     const meaning = vocabularyMeaning(record, support)?.text || String((record.short_meanings || [])[0]?.text || '').trim();
     const pos = record.part_of_speech ? posLabel(record.part_of_speech).text : '';
     const example = (record.examples || []).map(exampleText).find(Boolean) || '';
