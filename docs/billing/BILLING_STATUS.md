@@ -8,7 +8,7 @@
 | Branch | `feature/monetization-billing-v1` |
 | Main | `948fd871e5f43d94f3b9a41848f6ae2cbccf47b6` (`origin/main`, 2026-10-13); lane rebased onto it with no conflicts |
 | Last completed slice | PR-MON-1 architecture-APPROVED (independent reviewer, final at `5f18a3f2`); rebased on `948fd871`, billing/entitlement files byte-identical to the approved commit |
-| Active PR | **PR-MON-1 Canonical Effective Entitlement** - APPROVED (architecture), PR opened against `main`; human merge decision pending |
+| Active PR | **PR-MON-1 Canonical Effective Entitlement** - APPROVED (architecture), PR #153 open, CI green (run 38421130490: python-gates, node-gates, pytest, docker-build, test); human merge pending |
 | Current slice | none - PR-MON-1 waits for CI and the human's merge |
 | Exact next action | watch PR-MON-1 CI; after the human merges, start PR-MON-2 (price integrity + truthful runtime readiness, incl. review P2 R-MON-010) |
 | Blockers | none. Carried to PR-MON-2: review P2 startup discovery (R-MON-010) |
