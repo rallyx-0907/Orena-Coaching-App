@@ -1,8 +1,128 @@
-# Billing / Monetization lane — canonical context
+# Billing / Monetization lane — canonical context (master plan)
 
 Lane-local context for `feature/monetization-billing-v1`. It routes to the owning documents and records what is
 specific to this lane. It is not a second governance system: authority stays with `AGENTS.md`,
-`docs/project/PROJECT_MEMORY.md` and the documents they name. Live state is in `BILLING_STATUS.md` next to this file.
+`docs/project/PROJECT_MEMORY.md` and the documents they name.
+
+This file holds only **stable** product and architecture direction; the Master Execution Brief (human, 2026-10-13)
+is its source. The lane's documents are one tree, mapped onto the brief's four files (§21):
+
+| Brief | This lane |
+| --- | --- |
+| `MASTER_PLAN.md` | this file |
+| `STATUS.md` (resume point) | `BILLING_STATUS.md` |
+| `DECISION_LOG.md` (append-only, `D-MON-XXX`) | `DECISION_LOG.md` |
+| `RISK_REGISTER.md` | `RISK_REGISTER.md` |
+
+## Session protocol (brief §22, §23)
+
+- **Start:** read this file, then `BILLING_STATUS.md` and the recent `DECISION_LOG.md` entries. Check actual `main`
+  and the open lane PR, then continue from "Exact next action".
+- **End:** update `BILLING_STATUS.md`, append any new decision, touch the risk register only when a real residual risk
+  changed, record the commit SHA, and state the next atomic action.
+- **One leader.** Subagents research, review and test. They own no decisions and keep no architecture truth of their
+  own. Findings return to the leader, who updates these files.
+- **Process size** (§24):
+  - UI-only: browser check, max two repair cycles.
+  - Feature: targeted tests plus API smoke.
+  - Financial/security/release: full gate, migration review, webhook verification, E2E and the human gate.
+  - No full CI after every small change.
+
+## Goal
+
+Free users genuinely experience Orena at very low marginal cost, and heavy compute is paid. Two exactly-once
+guarantees: a payment is recorded once, and entitlement or credits change once. Orena never creates an
+unlimited-cost Free user, and never dispatches expensive compute without entitlement, quota or reserved credits. No
+enterprise billing rewrite.
+
+## Product model (stable)
+
+**Four economic modes**
+1. **Free**: useful, not a demo, at near-zero marginal cost.
+2. **Plus/Pro subscriptions**: payOS prepaid month or year in Vietnam; Polar subscription as merchant of record
+   internationally.
+3. **Prepaid credits / pay-as-you-go**: top up, use until zero.
+4. **New-user trial**: a small promotional allowance on expensive features.
+
+**Cost classes** (D-MON-001)
+
+| Class | Features | Rule |
+| --- | --- | --- |
+| HIGH | voice, cloud STT and pronunciation, long media, Agent workflows, large context, multi-call generation | trial only, then subscription allowance or credits |
+| MEDIUM | Writing correction, Intelligence Q&A, Reading context, grammar explanation, summaries, contextual translation | `cache → deterministic/local → free/cheap → stop at Free quota` |
+| LOW | Reading, dictionary, saved vocabulary, review, collections, progress, cached and already-generated content | generous Free |
+
+**Cost rules**
+- The model chain is `deterministic → cache → local/free → cheap → expensive`, going deeper only when necessary.
+- A provider's free model is not assumed to stay free, so free-model AI stays quota-controlled.
+- **AI is invoked intentionally.** Never on screen open, word tap, card appearance or article load (§4).
+- The acquisition loop is: read anything → tap a word → understand at once → save → review → ask AI only when needed.
+  Orena Intelligence is the paid layer above it.
+
+**Credits** (D-MON-002)
+- An append-only ledger (`credit_accounts`, `credit_ledger`), never a bare `users.balance`. The ledger types are
+  topup, consume, refund, reversal and admin_adjustment.
+- Every mutation is idempotent per operation id. The balance is derived from the ledger, or cached in the same
+  transaction as the ledger write.
+- Credits are reserved before dispatch. The balance never goes negative, and there is no auto-recharge and no
+  "charge later".
+- `meter → credit price` is configuration that changes without a migration or code rewrite. Meters are reused
+  (`orena.message`, `writing.review`, `pronunciation.audio`, `media.import`, `languages.target`).
+
+**Quota + credits** (§11): plan allowance → credits, if the feature allows them → reserve → dispatch → settle →
+release. With neither, the request is refused before any paid provider call. The existing quota system is extended,
+not replaced.
+
+**Trial** (§14)
+- Allowances are configuration, reusable across features, never a UI hack.
+- Exhaustion shows Upgrade and/or Use Credits, never a silent failure.
+- **No trial reset by logout or account tricks.** The trial is bound to an identity that survives
+  delete-and-re-register: an incarnation alone is not enough (risk R-MON-003).
+
+**Gateways** (D-MON-003)
+- payOS: plan access (payment → verified webhook → paid order → prepaid subscription → `paid_through`) and credit
+  top-up (verified webhook → ledger credit, exactly once).
+- Polar: Orena consumes its lifecycle (active, trialing, past_due, canceled, `current_period_end`,
+  `cancel_at_period_end`) and rebuilds none of its tax, VAT, invoice or renewal. No invented local cancellation state.
+
+**Checkout** (§7): plan → period → price → confirm → operation UUID → checkout → gateway. A return URL never grants
+anything; only verified gateway state does. Checkout runs only at a server-offered price matching the catalogue, in
+plan, period, currency and amount (D-MON-005).
+
+**Readiness** (§6): a gateway is ready only when the billing switch, the DB/schema, the account backbone, the
+credentials, the price configuration and the webhook configuration are all valid. Readiness never exposes secrets.
+
+**Margin** (D-MON-007): keep the data needed for cost per Free, Plus and Pro user; cost by feature and by
+provider/model; revenue against cost; and heavy users. One power user must not be able to silently create large
+losses.
+
+**Admin minimum** (§16, no redesign)
+- Billing runtime status and gateway readiness.
+- Orders, subscription state, credit balance and ledger.
+- Cost records and quota usage.
+- A blocking price mismatch.
+- Manual adjustment and refund, with authorization and audit.
+
+**Learner copy direction** (§17; the design still owns the visuals)
+- Free: learn normally with limited AI. Plus: AI as a regular assistant. Pro: higher AI, voice and Agent limits.
+- Pay as you go: "Không muốn đăng ký? Nạp tiền và dùng bao nhiêu trả bấy nhiêu."
+- Wallet: balance, top up, approved packages, recent transactions, "No automatic recharge".
+
+**Out of scope** (§20) unless payment safety needs it: Stripe, accounting platform, affiliates, family plans,
+gifting, coupons, referral credits, enterprise billing, invoicing UI, revenue analytics, wallet gamification, crypto,
+arbitrary currencies, finance reporting, any billing rewrite.
+
+**Required test classes** (§19)
+- Payment: checkout, duplicate operation, duplicate webhook, invalid signature, wrong price, wrong currency, refund,
+  deleted account.
+- Credits: top-up once, webhook replay, consume once, retried consume, insufficient balance, provider failure,
+  reservation release, refund/reversal.
+- Entitlement: Free allowance, Free exhausted, paid quota, paid quota exhausted with and without credits, no dispatch
+  when funding is unavailable.
+- Cost protection: expensive paths cannot bypass admission.
+
+**Human gates** (§25): stop and report rather than decide on final prices, credit conversion, meter credit prices,
+trial quantities, production credentials, migration promotion, legal/refund/terms, production activation.
 
 ## Lane
 
