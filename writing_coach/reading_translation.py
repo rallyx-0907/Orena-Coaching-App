@@ -171,6 +171,32 @@ class ReadingTranslationService:
         """Whether this engine is the platform AI. Word lookup stays non-AI (its contextual meaning is /word-detail)."""
         return self._provider.engine_id == "ai"
 
+    @property
+    def uses_paid_provider(self) -> bool:
+        """Whether this engine is a paid external service (the platform AI or Groq). A basic word tap never uses one."""
+        return self._provider.engine_id in {"ai", "groq"}
+
+    def cached(
+        self, source_language: str, target_language: str, segments: Sequence[TextSegment], *, persist: bool = False
+    ) -> ReadingTranslation | None:
+        """The translation already held for every segment, or None. Read-only: never calls the provider.
+
+        Same keys as `translate()` (it shares `_key`), so a hit here is exactly what `translate()` would reuse."""
+        source = primary_language(source_language)
+        target = normalize_support_language(target_language)
+        if source == target or not segments:
+            return None
+        keys = {segment.segment_id: self._key(source, segment.original_text) for segment in segments}
+        held = self._cache.get_many(KIND_TRANSLATION, target, keys.values(), persist=persist)
+        pairs = []
+        for segment in segments:
+            hit = held.get(keys[segment.segment_id])
+            text = str(hit.get("text") or "") if hit else ""
+            if not text:
+                return None
+            pairs.append((segment.segment_id, text))
+        return ReadingTranslation(ReadingTranslationStatus.READY, source, target, tuple(pairs))
+
     def translate(
         self,
         source_language: str,
@@ -178,8 +204,12 @@ class ReadingTranslationService:
         segments: Sequence[TextSegment],
         *,
         persist: bool = False,
+        provider_timeout: float | None = None,
     ) -> ReadingTranslation:
-        """`persist` lets the shared table hold the answers; the caller sets it only for published text."""
+        """`persist` lets the shared table hold the answers; the caller sets it only for published text.
+
+        `provider_timeout` shortens the provider's own timeout for this call (a word lookup's); it is passed only to a
+        provider that accepts it, and every other caller keeps the provider's default."""
         source = primary_language(source_language)
         target = normalize_support_language(target_language)
 
@@ -208,7 +238,12 @@ class ReadingTranslationService:
             generated: dict[str, str] = {}
             try:
                 for batch in batches:
-                    translated = self._provider.translate_batch(source, target, batch)
+                    extra = (
+                        {"timeout": provider_timeout}
+                        if provider_timeout is not None and getattr(self._provider, "accepts_timeout", False)
+                        else {}
+                    )
+                    translated = self._provider.translate_batch(source, target, batch, **extra)
                     expected = {segment.segment_id for segment in batch}
                     if set(translated) != expected or any(
                         not str(value).strip() for value in translated.values()

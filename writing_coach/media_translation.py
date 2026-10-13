@@ -168,6 +168,7 @@ class LocalHttpTranslationProvider:
 
     engine_id = "local_marian"
     model_version = "opus-mt-v1"
+    accepts_timeout = True  # a word lookup passes a short per-call timeout; other callers keep the 90 s default
 
     def __init__(self, base_url: str, *, timeout_seconds: float = 90.0) -> None:
         self._url = base_url.rstrip("/") + "/translate"
@@ -178,6 +179,8 @@ class LocalHttpTranslationProvider:
         source_language: str,
         target_language: str,
         segments: TranslationBatch,
+        *,
+        timeout: float | None = None,
     ) -> dict[str, str]:
         payload = {
             "source_language": primary_language(source_language),
@@ -188,7 +191,7 @@ class LocalHttpTranslationProvider:
             ],
         }
         try:
-            response = requests.post(self._url, json=payload, timeout=self._timeout)
+            response = requests.post(self._url, json=payload, timeout=timeout if timeout is not None else self._timeout)
             response.raise_for_status()
             data = response.json()
         except (requests.RequestException, ValueError) as exc:

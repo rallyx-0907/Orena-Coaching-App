@@ -12,6 +12,9 @@ reach, and it is a separate, explicit request.
 from __future__ import annotations
 
 import re
+import threading
+import time
+from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeout
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -29,6 +32,40 @@ from writing_coach.reading_translation import (
 from writing_coach.vocabulary_library import normalize_vocabulary_word
 
 _MAX_DICTIONARY_DEFINITIONS = 3
+_HAN = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
+_LATIN = re.compile(r"[A-Za-zÀ-ɏ]")
+
+# A basic tap answers within this budget (seconds) whatever its services do: the external dictionary is asked with a
+# shorter timeout of its own, the local translator gets what is left, and a miss falls back to the deterministic answer.
+TAP_BUDGET_SECONDS = 2.0
+_MIN_TRANSLATION_WAIT = 0.25
+# The local translator on the tap path is bounded three ways: the call itself is cut off at a short timeout (the
+# provider's own 90 s stays for every other caller), at most _MT_SLOTS calls run at once with no queue behind them
+# (a full house skips the translation and the raw definition stands), and a request already running for the same
+# word is joined, not repeated. A failure is remembered briefly so repeated taps on a missing word cost nothing.
+_MT_CALL_TIMEOUT = 1.5
+_MT_SLOTS = 4
+_MT_FAILURE_SECONDS = 60.0
+_translation_pool = ThreadPoolExecutor(max_workers=_MT_SLOTS, thread_name_prefix="lookup-mt")
+_mt_slots = threading.BoundedSemaphore(_MT_SLOTS)
+_mt_lock = threading.Lock()
+_mt_inflight: dict[tuple[str, str, str], Future] = {}
+_mt_failed: dict[tuple[str, str, str], float] = {}
+
+
+def lexical_language(selection: str, fallback: str) -> str:
+    """The language a selection's words belong to, by script, whatever language the text around it is in.
+
+    Any Han character -> Chinese (a Han word tapped in English text is looked up as Chinese, CC-CEDICT and the
+    Chinese pipeline); otherwise Latin letters -> English (a Latin word tapped in Chinese text is English). A
+    genuinely mixed selection ("AI技术", "Wi-Fi密码") is Chinese: its Han part is what needs the Chinese dictionary,
+    and CC-CEDICT also holds such mixed entries. Any other script (Cyrillic, Hangul, kana, Arabic, digits only) has
+    no local dictionary: the result is "" (unsupported), never the surrounding text's language."""
+    if _HAN.search(selection or ""):
+        return "zh"
+    if _LATIN.search(selection or ""):
+        return "en"
+    return ""
 
 
 class VocabularyLookup(Protocol):
@@ -185,14 +222,65 @@ def _safe_english_dictionary(
     return payload if isinstance(payload, dict) else None
 
 
+def _start_local_translation(service, source, target, segments, text) -> Future | None:
+    """The in-flight local translation for this word (started if none), or None when it should not run now."""
+    key = (source, target, " ".join(text.casefold().split()))
+    with _mt_lock:
+        if _mt_failed.get(key, 0.0) > time.monotonic():
+            return None
+        running = _mt_inflight.get(key)
+        if running is not None:
+            return running
+        if not _mt_slots.acquire(blocking=False):
+            return None  # every slot is busy: skip, the raw definition stands
+
+        def job():
+            try:
+                result = service.translate(source, target, segments, provider_timeout=_MT_CALL_TIMEOUT)
+                if result.status is not ReadingTranslationStatus.READY:
+                    _mt_failed[key] = time.monotonic() + _MT_FAILURE_SECONDS
+                return result
+            except Exception:
+                _mt_failed[key] = time.monotonic() + _MT_FAILURE_SECONDS
+                raise
+            finally:
+                with _mt_lock:
+                    _mt_inflight.pop(key, None)
+                    _mt_slots.release()
+                    if len(_mt_failed) > 2000:
+                        _mt_failed.clear()
+
+        try:
+            future = _translation_pool.submit(job)
+        except Exception:
+            _mt_slots.release()
+            return None
+        _mt_inflight[key] = future
+        return future
+
+
 def _safe_machine_translation(
-    service: ReadingTranslationService, source: str, target: str, text: str
+    service: ReadingTranslationService, source: str, target: str, text: str, wait: float | None = None
 ) -> str | None:
-    if getattr(service, "uses_ai", False):
-        return None  # a word's meaning in its sentence is /word-detail's; this lookup never reaches the AI platform
+    segments = [TextSegment("selection", text)]
     try:
-        result = service.translate(source, target, [TextSegment("selection", text)])
-    except Exception:
+        # An existing cached translation is used whatever engine is configured now.
+        reader = getattr(service, "cached", None)
+        held = reader(source, target, segments) if reader else None
+        if held is not None:
+            return held.translations[0][1] if held.translations else None
+        if getattr(service, "uses_ai", False) or getattr(service, "uses_paid_provider", False):
+            # A word's meaning in its sentence is /word-detail's; a basic tap never creates a translation with the
+            # AI platform or any paid service. Only the free local engine (Marian) may create one here.
+            return None
+        if wait is None:
+            result = service.translate(source, target, segments)
+        else:
+            future = _start_local_translation(service, source, target, segments, text)
+            if future is None:
+                return None
+            result = future.result(timeout=wait)
+    except (FutureTimeout, Exception):
         return None
     if result.status is not ReadingTranslationStatus.READY or not result.translations:
         return None
@@ -207,7 +295,12 @@ class ReadingLookupService:
         vocabulary_repository: VocabularyLookup | None,
         english_dictionary: Callable[[str], dict[str, Any] | None],
         translation_service: ReadingTranslationService,
+        english_dictionary_cached: Callable[[str], dict[str, Any] | None] | None = None,
+        *,
+        budget_seconds: float | None = None,
     ) -> None:
+        self._english_dictionary_cached = english_dictionary_cached
+        self._budget = budget_seconds
         self._vocabulary_repository = vocabulary_repository
         self._english_dictionary = english_dictionary
         self._translation_service = translation_service
@@ -215,11 +308,22 @@ class ReadingLookupService:
     def lookup(
         self, text: str, context: str, source_language: str, target_language: str
     ) -> LookupResult:
-        source = primary_language(source_language)
-        target = normalize_support_language(target_language)
+        started = time.monotonic()
         selection = text.strip()
+        # The lexical language flows through every layer below: the tagger, the catalogue, the dictionary, the reading,
+        # the translation cache key and the original definition. The text's own language only frames the sentence.
+        surrounding = primary_language(source_language)
+        source = lexical_language(selection, surrounding)
+        target = normalize_support_language(target_language)
+        if not source:
+            # Neither Han nor Latin (Cyrillic, Hangul, kana, Arabic, digits only): no local dictionary exists for it, so
+            # the answer is "unavailable" at once - no dictionary request, no translator, no AI.
+            return LookupResult(
+                selected_text=selection, source_language=surrounding, target_language=target, base_form="",
+                part_of_speech="", pronunciation="", audio_url="", meanings=(), definitions=(),
+            )
 
-        local = _local_token_facts(source, context, selection)
+        local = _local_token_facts(source, context if source == surrounding else selection, selection)
         part_of_speech = local["part_of_speech"]
         pronunciation = local["pronunciation"]
         base_form = local["base_form"]
@@ -267,7 +371,12 @@ class ReadingLookupService:
 
         is_single_word = bool(selection) and len(selection.split()) == 1
         if source == "en" and is_single_word:
-            payload = _safe_english_dictionary(self._english_dictionary, selection)
+            # A meaning already in hand (catalogue / localization) is not held up by the network: the external
+            # dictionary then only fills secondary data (reading, original definition) from what is already cached.
+            ask = self._english_dictionary
+            if meanings and self._english_dictionary_cached is not None:
+                ask = self._english_dictionary_cached
+            payload = _safe_english_dictionary(ask, selection)
             if payload is not None:
                 for item in (payload.get("definitions") or [])[:_MAX_DICTIONARY_DEFINITIONS]:
                     if not isinstance(item, dict):
@@ -285,7 +394,10 @@ class ReadingLookupService:
                 part_of_speech = _reconciled_part_of_speech(part_of_speech, definitions)
 
         if not meanings and target != source:
-            translated = _safe_machine_translation(self._translation_service, source, target, selection)
+            wait = None
+            if self._budget is not None:
+                wait = max(_MIN_TRANSLATION_WAIT, self._budget - (time.monotonic() - started))
+            translated = _safe_machine_translation(self._translation_service, source, target, selection, wait)
             if translated:
                 meanings.append(LookupMeaning(translated, "machine_translation"))
 

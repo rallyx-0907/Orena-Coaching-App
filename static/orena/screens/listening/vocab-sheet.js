@@ -23,7 +23,7 @@ import { lookupContext } from './model.js';
 async function resolveTerm(term, { lang, support, context }) {
   let detail = null;
   try {
-    detail = await api.wordDetail({ depth: 'sheet', text: term, context: lookupContext(term, context), source_language: lang, target_language: support });
+    detail = await api.wordDetail({ depth: 'sheet', contextual: false, text: term, context: lookupContext(term, context), source_language: lang, target_language: support });
   } catch {
     detail = null;
   }

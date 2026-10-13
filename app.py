@@ -4,7 +4,9 @@ import logging
 import random
 import os
 import re
+import time
 import statistics
+import unicodedata
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -68,7 +70,7 @@ from writing_coach.media_translation import (
     MediaTranslationService,
     resolve_translation_provider_id,
 )
-from writing_coach.reading_lookup import ReadingLookupService
+from writing_coach.reading_lookup import TAP_BUDGET_SECONDS, ReadingLookupService
 from writing_coach.word_detail import configure_word_detail, router as word_detail_router
 from writing_coach.persistence.reading_derived_repository import ReadingDerivedRepository
 from writing_coach.reading_derived import DerivedCache
@@ -640,10 +642,38 @@ configure_reading_translation(_reading_translation_service)
 configure_reading_summary(ReadingSummaryService(_reading_derived_cache))
 
 
+# A basic tap's external-dictionary timeout (seconds) and how long a miss is remembered; the legacy
+# GET /api/dictionary keeps its own 8 s and never reads this.
+_TAP_DICTIONARY_TIMEOUT = 1.5
+_NO_ENTRY_SECONDS = 300.0
+_NO_ENTRY_UNTIL: dict[str, float] = {}
+
+
 def _reading_english_dictionary(word: str) -> dict[str, Any] | None:
-    """English-only dictionary facts for Reading lookup. Never Chinese/AI."""
+    """English-only dictionary facts for Reading lookup. Never Chinese/AI.
+
+    A tap is not a request for a paid provider: language is pinned to English (so the app's Chinese setting can
+    never route a tap to the Chinese dictionary AI) and allow_ai=False (a dictionaryapi.dev miss or failure
+    answers "no entry" instead of reaching the learner_dictionary capability). Cached answers are still read and
+    a dictionaryapi.dev hit is still cached."""
+    key = word.strip().casefold()
+    if _NO_ENTRY_UNTIL.get(key, 0.0) > time.monotonic():
+        return {"phonetic": ""}  # asked a moment ago and nothing came back: instant, no network
     try:
-        return lookup_dictionary(word)
+        result = lookup_dictionary(word, language="en", allow_ai=False, timeout=_TAP_DICTIONARY_TIMEOUT)
+    except HTTPException:
+        return None
+    if not result.get("definitions"):
+        if len(_NO_ENTRY_UNTIL) > 2000:
+            _NO_ENTRY_UNTIL.clear()
+        _NO_ENTRY_UNTIL[key] = time.monotonic() + _NO_ENTRY_SECONDS
+    return result
+
+
+def _reading_english_dictionary_cached(word: str) -> dict[str, Any] | None:
+    """The same facts from the dictionary cache only: never the network (secondary data behind a meaning in hand)."""
+    try:
+        return lookup_dictionary(word, language="en", allow_ai=False, cache_only=True)
     except HTTPException:
         return None
 
@@ -652,6 +682,8 @@ _reading_lookup_service = ReadingLookupService(
     _persistence_runtime.vocabulary_repository,
     _reading_english_dictionary,
     _reading_translation_service,
+    _reading_english_dictionary_cached,
+    budget_seconds=TAP_BUDGET_SECONDS,
 )
 configure_reading_lookup(_reading_lookup_service)
 # A saved word's meaning in the learner's support language (D-124), for the
@@ -659,10 +691,30 @@ configure_reading_lookup(_reading_lookup_service)
 configure_vocabulary_support_language(
     lambda: resolve_support_language(get_learner_profile().get("native_language"))
 )
+def _admit_dictionary_ai(request: Request) -> None:
+    """Counts one AI-backed word-detail request (a contextual ask) in the `dictionary_ai` group; a plain tap never
+    comes here. Same limiter, account key and 429 as the middleware gives the rest of /api/dictionary/."""
+    from writing_coach.agent.ratelimit import SlidingWindowLimiter
+    from writing_coach.core.http_security import rate_group
+
+    group = rate_group("POST", "/api/dictionary/sentence-sheet") if AUTH_ENABLED else None
+    if group is None:
+        return
+    name, limit, window = group
+    account = str((request.scope.get("session") or {}).get("user_sub") or "local")
+    limiter = _ROUTE_LIMITERS.setdefault(name, SlidingWindowLimiter(limit, window, max_keys=50_000))
+    limiter.limit = limit
+    wait = limiter.check(account)
+    if wait is not None:
+        raise HTTPException(429, detail=error_detail("rate_limited", "Too many requests; try again in a moment.", retryable=True),
+                            headers={"Retry-After": str(max(1, int(wait) + 1))})
+
+
 configure_word_detail(
     lookup=_reading_lookup_service.lookup,
     saved_terms=saved_vocabulary_words,
     cache=_reading_derived_cache,
+    admit_ai=_admit_dictionary_ai,
 )
 configure_media_timing(
     MediaTimingService(
@@ -2495,7 +2547,21 @@ def chinese_dictionary_ai(word: str) -> dict[str, Any]:
     return result
 
 
-def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool = True, persist: bool = True) -> dict[str, Any]:
+def _english_dictionary_eligible(term: str) -> bool:
+    """Whether dictionaryapi.dev can plausibly hold `term`: Latin letters (diacritics included), apostrophes (straight
+    or curly), hyphens and spaces only. Han/CJK and other scripts are never sent (an 8 s network miss for nothing)."""
+    letters = 0
+    for ch in term:
+        if ch.isalpha():
+            if "LATIN" not in unicodedata.name(ch, ""):
+                return False
+            letters += 1
+        elif ch not in " '’-":
+            return False
+    return letters > 0
+
+
+def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool = True, persist: bool = True, timeout: float = 8, cache_only: bool = False) -> dict[str, Any]:
     clean = normalise_lookup_word(word)
     cache_key = clean.casefold()
 
@@ -2511,6 +2577,8 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
             pass
 
     payload = None
+    if cache_only:
+        return {"phonetic": ""}  # a cache-only read that missed: no network, no AI
 
     if language == "zh" or (language is None and is_chinese()):
         try:
@@ -2522,10 +2590,13 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
                 "Chinese dictionary AI is unavailable.",
             ) from exc
     else:
+        _external_started = time.perf_counter()
         try:
+            if not _english_dictionary_eligible(clean):
+                raise ValueError("not a selection an English dictionary can hold")  # no network; the miss path below
             response = requests.get(
                 f"https://api.dictionaryapi.dev/api/v2/entries/en/{quote(clean)}",
-                timeout=8,
+                timeout=timeout,
             )
             if response.ok:
                 data = response.json()
@@ -2570,6 +2641,9 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
                         }
         except Exception:
             payload = None
+        logging.getLogger("orena.lookup").debug(
+            "dictionaryapi.dev %s in %.0f ms", "hit" if payload else "miss", (time.perf_counter() - _external_started) * 1000
+        )
 
         if payload is None:
             if not allow_ai:

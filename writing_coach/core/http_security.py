@@ -113,8 +113,13 @@ def rate_group(method: str, path: str) -> tuple[str, int, int] | None:
     return name, _effective_limit(name, limit), window
 
 
+# Routes inside a counted prefix that count themselves, because only their body says whether a request is AI-backed:
+# word-detail is deterministic unless it carries a contextual ask (writing_coach/word_detail.py counts that one).
+SELF_COUNTED_PATHS = frozenset({"/api/dictionary/word-detail"})
+
+
 def _rate_group(method: str, path: str) -> tuple[str, int, int] | None:
-    if method.upper() not in STATE_CHANGING:
+    if method.upper() not in STATE_CHANGING or path.rstrip("/") in SELF_COUNTED_PATHS:
         return None
     for name, prefixes, limit, window in RATE_GROUPS:
         # A prefix ending in "#" matches that exact path only (`/import`, not its `/import/status` poll).

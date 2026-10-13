@@ -304,7 +304,7 @@ def sheet(monkeypatch):
 
 def _word(**over: Any) -> dict[str, Any]:
     body = {"text": "ran out", "context": "The lamp ran out of oil.", "source_language": "en",
-            "target_language": "vi", "depth": "sheet"}  # fmt: skip
+            "target_language": "vi", "depth": "sheet", "contextual": True}  # fmt: skip
     return word_detail.word_detail(word_detail.WordDetailIn(**{**body, **over}))
 
 

@@ -18,15 +18,18 @@ Two different questions stay two different paths (D-066 rule 8):
 
 from __future__ import annotations
 
+import logging
 import re
+import time
 from collections.abc import Callable, Mapping
 from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from writing_coach import media_interaction
 from writing_coach.core.errors import orena_http_error
+from writing_coach.reading_lookup import lexical_language
 from writing_coach.reading_derived import (
     KIND_EXPLANATION,
     KIND_GLOSS,
@@ -35,6 +38,7 @@ from writing_coach.reading_derived import (
     normalize_text,
 )
 
+_log = logging.getLogger("orena.lookup")
 router = APIRouter(prefix="/api/dictionary", tags=["dictionary"])
 
 # The explanation's judgement (snake_case, the provider contract) to the
@@ -66,13 +70,19 @@ _saved_terms: Callable[[tuple[str, ...]], set[str]] | None = None
 _cache: DerivedCache | None = None
 
 
+# Counts one AI-backed request against the signed-in account's limit; raises 429 when over it. Installed by app.py.
+_admit_ai: Callable[[Request], None] | None = None
+
+
 def configure_word_detail(
     *,
     lookup: Callable[[str, str, str, str], Any] | None,
     saved_terms: Callable[[tuple[str, ...]], set[str]] | None,
     cache: DerivedCache | None = None,
+    admit_ai: Callable[[Request], None] | None = None,
 ) -> None:
-    global _lookup, _saved_terms, _cache
+    global _lookup, _saved_terms, _cache, _admit_ai
+    _admit_ai = admit_ai
     _lookup = lookup
     _saved_terms = saved_terms
     _cache = cache
@@ -162,6 +172,14 @@ def project_word_detail(
         dictionary_meaning = _text(meanings[0].get("text"))
     elif found.get("definitions"):
         dictionary_meaning = _text(found["definitions"][0].get("definition"))
+    # The original dictionary definition (CC-CEDICT / dictionaryapi.dev, English) stays as secondary data when the
+    # main meaning is a localization of it (catalogue or local translation), never replaced by it.
+    is_zh = _text(language).casefold().startswith("zh")
+    original_text = "; ".join(
+        filter(None, (_text(item.get("definition")) for item in (found.get("definitions") or ())[: 3 if is_zh else 1]))
+    )
+    if not meanings or _fold(original_text) == _fold(dictionary_meaning):
+        original_text = ""
     # The short gloss is the meaning in this sentence; the summary is the longer
     # explanation and only stands in when the gloss is absent.
     contextual = _text(said.get("context_meaning")) or _text(said.get("summary"))
@@ -209,6 +227,12 @@ def project_word_detail(
         "ipa": pronunciation if not is_pinyin and pronunciation else None,
         "partOfSpeech": part_of_speech or None,
         "contextMeaning": meaning,
+        # The language the main line is written in (a dictionary definition without a localization is English),
+        # and the original definition behind a localized one.
+        "meaningLanguage": (_text(found.get("target_language")) if meanings else "en") if source == "dictionary" else "",
+        "originalDefinition": (
+            {"text": original_text, "language": "en", "source": "cc-cedict" if is_zh else "dictionary"} if original_text else None
+        ),
         "generalMeaning": general,
         "contextSentence": _text(context),
         "audioUrl": _text(found.get("audio_url")),
@@ -271,7 +295,19 @@ class WordDetailIn(BaseModel):
     # "sheet" is the first layer: a short gloss, answered at once. "full" is the
     # explanation behind "why here?", asked for only when the learner opens it.
     depth: Literal["sheet", "full"] = "full"
-    contextual: bool = True
+    # AI only on an explicit `true` (the learner's "Why here?" / Deep Word): the quick "sheet" depth is deterministic
+    # unless asked otherwise; the "full" depth is the explanation behind "Why here?" and is AI-backed as designed.
+    contextual: bool | None = None
+
+    @property
+    def asks_ai(self) -> bool:
+        """Whether this request is a contextual (AI-backed) ask: explicit true, or the full depth by default."""
+        return self.depth == "full" if self.contextual is None else bool(self.contextual)
+
+    @property
+    def uses_ai(self) -> bool:
+        """Whether answering it can reach the AI provider: a contextual ask, or the learner's own question."""
+        return self.asks_ai or bool(self.question.strip())
 
     text: str = Field(min_length=1, max_length=80)
     context: str = Field(min_length=1, max_length=1200)
@@ -379,6 +415,14 @@ def _saved(candidates: object = ()) -> set[str]:
 
 
 @router.post("/word-detail")
+def word_detail_route(payload: WordDetailIn, request: Request) -> dict[str, Any]:
+    # A plain tap is deterministic and is not AI usage; a contextual ask or the learner's question is counted
+    # against the same per-account dictionary AI brake the rest of /api/dictionary/ uses.
+    if payload.uses_ai and _admit_ai is not None:
+        _admit_ai(request)
+    return word_detail(payload)
+
+
 def word_detail(payload: WordDetailIn) -> dict[str, Any]:
     text = payload.text.strip()
     context = payload.context.strip()
@@ -391,17 +435,22 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
         )
     source = media_interaction._primary_language(payload.source_language)
     lookup: dict[str, Any] = {}
+    _started = time.perf_counter()
     if _lookup is not None:
         try:
             lookup = _lookup(text, context, source, payload.target_language).to_dict()
         except Exception:  # noqa: BLE001 - a failed dictionary must not fail the sheet
             lookup = {}
+    _lookup_ms = (time.perf_counter() - _started) * 1000
+    # The language of the selection's own words (by script), not of the sentence around it: it labels the reading
+    # (pinyin / IPA) and the original definition. The contextual asks below keep the sentence's language.
+    lexical = _text(lookup.get("source_language")) or lexical_language(text, source) or source
     if payload.question.strip():
         # The learner's own question is a conversation with a tutor, not a request for the fixed
         # explanation: the answer is the tutor's, whatever the question is about.
         tutor = _tutor(text, context, source, payload.target_language, payload.question, payload.history)
         detail = project_word_detail(
-            selection=text, context=context, language=source, lookup=lookup, explanation=None, saved=text.casefold() in _saved((text,))
+            selection=text, context=context, language=lexical, lookup=lookup, explanation=None, saved=text.casefold() in _saved((text,))
         )
         answer = _text((tutor or {}).get("answer"))
         return {
@@ -415,20 +464,24 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
     target = payload.target_language
     explanation: dict[str, Any] | None = None
     status = "skipped"
-    if payload.contextual and payload.depth == "sheet":
+    if payload.asks_ai and payload.depth == "sheet":
         explanation, status = _through_cache(
             KIND_GLOSS, source, target, text, context, payload.content_id,
             lambda: _gloss(text, context, source, target),
         )  # fmt: skip
-    elif payload.contextual:
+    elif payload.asks_ai:
         explanation, status = _through_cache(
             KIND_EXPLANATION, source, target, text, context, payload.content_id,
             lambda: _explain(text, context, source, target, ""),
         )  # fmt: skip
+    _log.debug(
+        "word-detail depth=%s contextual=%s deterministic=%.0f ms contextual=%.0f ms status=%s",
+        payload.depth, payload.asks_ai, _lookup_ms, (time.perf_counter() - _started) * 1000 - _lookup_ms, status,
+    )
     detail = project_word_detail(
         selection=text,
         context=context,
-        language=source,
+        language=lexical,
         lookup=lookup,
         explanation=explanation,
         saved=text.casefold() in _saved((text,)),
