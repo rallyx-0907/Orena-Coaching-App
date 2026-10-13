@@ -407,6 +407,22 @@ def test_authored_entry_file_previews_its_checks_and_imports_pending_review(tmp_
     assert again.json()["items"][0]["authored"]["rows"][0]["existing"] == "duplicate"
 
 
+def test_authored_preview_carries_each_ready_row_record_for_the_card(tmp_path, monkeypatch) -> None:
+    _authored_repository(tmp_path, monkeypatch)
+    good = json.loads(_sample_bytes("zh_senlin"))
+    bad = {"id": "bad-row", "lang": "zh", "headword": "x"}
+    raw = (json.dumps(good, ensure_ascii=False) + "\n" + json.dumps(bad) + "\n").encode("utf-8")
+    preview = _request("POST", "/api/admin/vocabulary/preview", files=[("files", ("mixed.jsonl", raw, "application/json"))])  # fmt: skip
+    assert preview.status_code == 200, preview.text
+    rows = preview.json()["items"][0]["authored"]["rows"]
+    ready, refused = rows[0], rows[1]
+    assert ready["outcome"] == "ready"
+    record = ready["record"]
+    assert record["term"] == good["headword"] and record["examples"] and record["usage_notes"]
+    assert record["provenance"]["illustration"] == good["illustration"]
+    assert refused["outcome"] == "refused" and "record" not in refused
+
+
 def test_authored_import_refuses_a_published_duplicate_and_lists_it(tmp_path, monkeypatch) -> None:
     repository = _authored_repository(tmp_path, monkeypatch)
     first = _authored_import("en_resilient.json", _sample_bytes("en_resilient"), collection_id="t-authored-en", language="en")
