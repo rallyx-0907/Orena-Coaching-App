@@ -20,7 +20,11 @@ else
 fi
 
 xargs -P "$JOBS" -I '{}' sh -c '
+  start=$(date +%s)
   out=$(node "$1" 2>&1) || { echo "::error::$1 failed"; echo "$out"; exit 1; }
+  took=$(( $(date +%s) - start ))
+  [ "$took" -ge 10 ] && echo "slow gate: $1 took ${took}s"
+  exit 0
 ' _ '{}' < "$list"
 status=$?
 [ "$#" -gt 0 ] && rm -f "$list"
