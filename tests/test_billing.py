@@ -20,6 +20,7 @@ from writing_coach.billing.payos import PayOSGateway, signing_string
 from writing_coach.billing.polar import PolarGateway, sign
 from writing_coach.billing.prepaid import add_period, extended_until
 from writing_coach.billing.service import BillingService, load_prices
+from writing_coach.product.catalog import PLANS
 
 NOW = datetime(2026, 10, 5, 12, tzinfo=UTC)
 CHECKSUM = "checksum-for-tests"
@@ -158,9 +159,9 @@ def test_a_payment_extends_from_the_end_while_access_lasts_and_from_now_after():
 def test_prices_come_only_from_the_approved_file(tmp_path):
     assert load_prices({}) == {}
     path = tmp_path / "prices.json"
-    path.write_text(json.dumps([{"plan_id": "premium", "period": "month", "currency": "vnd", "amount_minor": 99000,
+    path.write_text(json.dumps([{"plan_id": "pro", "period": "month", "currency": "vnd", "amount_minor": 99000,
                                  "gateway": "payos"}]))  # fmt: skip
-    assert load_prices({"BILLING_PRICES_FILE": str(path)})["premium:month:payos"].currency == "VND"
+    assert load_prices({"BILLING_PRICES_FILE": str(path)})["pro:month:payos"].currency == "VND"
     path.write_text(json.dumps([{"plan_id": "p", "period": "month", "currency": "USD", "amount_minor": 4.99, "gateway": "polar"}]))
     with pytest.raises(ValueError):
         load_prices({"BILLING_PRICES_FILE": str(path)})
@@ -389,8 +390,8 @@ def test_a_period_is_counted_in_utc_whatever_zone_the_database_answers_in():
 
 def test_prices_are_checked_against_what_each_gateway_takes(tmp_path):
     path = tmp_path / "prices.json"
-    for wrong in ({"plan_id": "p", "period": "month", "currency": "USD", "amount_minor": 499, "gateway": "payos"},
-                  {"plan_id": "p", "period": "month", "currency": "USD", "amount_minor": 499, "gateway": "polar"}):
+    for wrong in ({"plan_id": "plus", "period": "month", "currency": "USD", "amount_minor": 499, "gateway": "payos"},
+                  {"plan_id": "plus", "period": "month", "currency": "USD", "amount_minor": 499, "gateway": "polar"}):
         path.write_text(json.dumps([wrong]))
         with pytest.raises(ValueError):
             load_prices({"BILLING_PRICES_FILE": str(path)})
@@ -417,16 +418,26 @@ class CheckoutOrders(FakeOrders):
         pass
 
 
-def checkout(commerce, orders, price_key="premium:month:payos"):
+# The catalogue's own Pro month prices (PR-MON-2: only a price that is exactly the catalogue's is sold).
+PRO_VND_MONTH = Price(plan_id="pro", period="month", currency="VND", amount_minor=399_000, gateway="payos")
+PRO_USD_MONTH = Price(plan_id="pro", period="month", currency="USD", amount_minor=1_999, gateway="polar",
+                      external_price_id="prod_123")  # fmt: skip
+
+
+def checkout(commerce, orders, price_key="pro:month:payos"):
     from writing_coach.billing.service import CheckoutRefused
 
+    prices = {"pro:month:payos": PRO_VND_MONTH, "pro:month:polar": PRO_USD_MONTH}
     billing = BillingService(orders=orders, commerce=commerce, gateways={"payos": PAYOS, "polar": POLAR},
-                             prices={"premium:month:payos": VND_MONTH, "premium:month:polar": USD_MONTH},
+                             prices=prices, catalog=lambda: PLANS,
                              send=lambda request: {"data": {"checkoutUrl": "https://pay/x", "paymentLinkId": "plink"}, "id": "chk", "url": "https://pay/y"},
                              now=lambda: NOW)  # fmt: skip
+    price = prices[price_key]
     try:
         return billing.start_checkout(incarnation_id="inc-1", price_key=price_key, operation_id=str(uuid.uuid4()),
-                                      return_url="https://o/r", cancel_url="https://o/c")["redirect_url"]
+                                      return_url="https://o/r", cancel_url="https://o/c",
+                                      confirmed_amount_minor=price.amount_minor,
+                                      confirmed_currency=price.currency)["redirect_url"]  # fmt: skip
     except CheckoutRefused as refused:
         return refused.code
 
@@ -436,7 +447,7 @@ def test_one_live_subscription_per_account_but_prepaid_access_may_be_renewed():
     prepaid = {"state": "active", "provider": "payos", "external_subscription_id": "prepaid:inc-1", "paid_through": NOW + timedelta(days=9)}
     lapsed = {**card, "paid_through": NOW - timedelta(days=1)}
     assert checkout(LiveCommerce(card), CheckoutOrders()) == "subscription_live"
-    assert checkout(LiveCommerce(prepaid), CheckoutOrders(), "premium:month:polar") == "subscription_live"
+    assert checkout(LiveCommerce(prepaid), CheckoutOrders(), "pro:month:polar") == "subscription_live"
     assert checkout(LiveCommerce(prepaid), CheckoutOrders()) == "https://pay/x"
     assert checkout(LiveCommerce(lapsed), CheckoutOrders()) == "https://pay/x"
 

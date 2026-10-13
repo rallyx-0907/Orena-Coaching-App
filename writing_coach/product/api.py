@@ -72,6 +72,8 @@ def mobile_account_state(state: dict[str, Any]) -> dict[str, Any]:
     a paid tier (Plus, Pro - D-153) is reported to it as premium, and each feature is projected onto the
     native feature shape (D-160 added fields the strict native schema would refuse). The web reads /commerce
     and sees the real id and every field."""
+    # The native contract pins `billing_ready` to false (z.literal(false)): the frozen app takes no payment.
+    state = {**state, "billing_ready": False}
     plan = state.get("plan")
     if isinstance(plan, dict) and plan.get("id") not in (None, "free", "premium"):
         state = {**state, "plan": {**plan, "id": "premium"}}
@@ -96,7 +98,7 @@ def product_plans(request: Request) -> dict[str, Any]:
     current_user_key(request)
     return {
         "plans": [plan.as_dict() for plan in current_plans().values()],
-        "billing_ready": False,
+        "billing_ready": product_service.billing_is_ready(),
     }
 
 
@@ -118,7 +120,7 @@ def _admin_catalog() -> dict[str, Any]:
         "source": "stored" if record else "default",
         "updated_at": record.get("updated_at") or None,
         "updated_by": record.get("updated_by") or None,
-        "billing_ready": False,
+        "billing_ready": product_service.billing_is_ready(),
     }
 
 

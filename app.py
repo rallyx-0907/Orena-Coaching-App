@@ -1193,26 +1193,35 @@ _quota.configure_quota(
 )
 configure_product_usage(_quota.usage_for)
 # D-MON-006: the effective entitlement reads the billing record (`commerce_subscriptions`) wherever this runtime has
-# the commerce store - PostgreSQL, the account backbone and the 0006 tables - whether or not checkout is switched on:
+# the commerce store - PostgreSQL, the account backbone asked for and the 0006 tables (D-MON-016: an unreadable
+# listing is not an absent one) - whether or not checkout is switched on:
 # a recorded paid entitlement must not disappear with BILLING_ENABLED. Elsewhere nothing is installed and every plan
 # read is exactly the legacy row's.
-_COMMERCE_TABLES = ("commerce_subscriptions", "commerce_billing_event_receipts", "account_incarnations")
+def _runtime_table_names():
+    from sqlalchemy import inspect as _inspect
+
+    return _inspect(_persistence_runtime.engine).get_table_names()
 
 
 def _billing_entitlement_source():
-    if _persistence_runtime.engine is None or _persistence_runtime.backend != "postgresql" or not _account_backbone.is_active:
-        return None
-    if not set(_COMMERCE_TABLES) <= set(_backbone_tables() or ()):
+    """D-MON-006 / R-MON-010: no billing record where commerce cannot exist (no PostgreSQL, or the account backbone
+    not asked for); where it is expected, a source that reads it once its tables are listed, reads nothing when
+    they are listed absent, and fails every plan read closed while the listing cannot be read."""
+    if _persistence_runtime.engine is None or _persistence_runtime.backend != "postgresql" or not _backbone_requested():
         return None
     from writing_coach.persistence.commerce_repository import PostgresCommerceRepository
-    from writing_coach.product.entitlement import CommerceEntitlementSource
+    from writing_coach.product.entitlement import CommerceEntitlementSource, DiscoveringCommerceSource
 
-    return CommerceEntitlementSource(PostgresCommerceRepository(_persistence_runtime.engine))
+    return DiscoveringCommerceSource(
+        _runtime_table_names,
+        lambda: CommerceEntitlementSource(PostgresCommerceRepository(_persistence_runtime.engine)),
+    )
 
 
-from writing_coach.product.service import configure_product_billing  # noqa: E402
+from writing_coach.product.service import configure_product_billing, configure_product_billing_ready  # noqa: E402
 
-configure_product_billing(_billing_entitlement_source())
+_billing_source = _billing_entitlement_source()
+configure_product_billing(_billing_source)
 # D-170: the target-language count reads what the account holds from the same PostgreSQL the quota store lives on; a
 # runtime without that store has no ownership reader, and an enforced `languages.target` then answers 503.
 from writing_coach.persistence.language_ownership import PostgresLanguageOwnership  # noqa: E402
@@ -1253,8 +1262,36 @@ def _billing_service():
 
 from writing_coach.billing_api import configure_billing, router as billing_router  # noqa: E402
 
-configure_billing(service=_billing_service(), backbone=_account_backbone, admin_guard=require_admin,
+_billing = _billing_service()
+configure_billing(service=_billing, backbone=_account_backbone, admin_guard=require_admin,
                   public_base_url=os.getenv("PUBLIC_BASE_URL", ""))
+
+
+def _schema_state(names):
+    if _persistence_runtime.engine is None:
+        return "absent"
+    from writing_coach.product.entitlement import table_state
+
+    return table_state(_runtime_table_names, names)
+
+
+# PR-MON-2: `billing_ready` is what this runtime can really do (writing_coach/billing/readiness.py), never a constant.
+from writing_coach.billing import readiness as _billing_readiness  # noqa: E402
+from writing_coach.billing.service import billing_enabled as _billing_enabled  # noqa: E402
+from writing_coach.product.entitlement import COMMERCE_TABLES as _COMMERCE_TABLES  # noqa: E402
+
+_billing_readiness.configure(_billing_readiness.RuntimeFacts(
+    switch=_billing_enabled(os.environ),
+    backend=str(_persistence_runtime.backend or ""),
+    backbone=_account_backbone.state,
+    commerce_schema=lambda: _schema_state(_COMMERCE_TABLES),
+    orders_schema=lambda: _schema_state(("billing_orders",)),
+    entitlement_source=lambda: _billing_source.state if _billing_source is not None else "absent",
+    service=_billing,
+    public_base_url=os.getenv("PUBLIC_BASE_URL", ""),
+    production=os.getenv("APP_ENV", "").strip().casefold() == "production",
+))
+configure_product_billing_ready(_billing_readiness.billing_ready)
 app.include_router(billing_router)
 app.include_router(account_records_router)
 app.include_router(learner_activity_router)

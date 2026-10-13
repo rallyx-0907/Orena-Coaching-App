@@ -4,6 +4,7 @@
 - `POST /api/billing/checkout`                   a signed-in learner starts paying for one price
 - `POST /api/billing/webhooks/{gateway}`         a gateway's signed event (no session; the signature is the proof)
 - `POST /api/admin/billing/orders/{code}/refund` an administrator records a domestic refund paid back by hand
+- `GET  /api/admin/billing/readiness`            why this runtime can or cannot take a payment (no secrets, PR-MON-2)
 
 There is no learner screen yet: the design draws no plans or checkout page (UI_BACKEND_GAPS BL-1).
 """
@@ -59,6 +60,14 @@ class CheckoutIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     price: str = Field(min_length=3, max_length=120)
     operation_id: str = Field(min_length=36, max_length=36)
+    # The price the learner was shown and confirmed (an offer's `amount_minor` and `currency`). Never charged - the
+    # server's price is - but a checkout whose confirmed price is not the server's does not start (D-MON-015).
+    amount_minor: int | None = Field(default=None, gt=0)
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+
+
+# A refused checkout's HTTP answer; anything not named is a conflict with the account's state (409).
+_REFUSAL_STATUS = {"catalog_unavailable": 503, "price_unconfirmed": 422}
 
 
 class RefundIn(BaseModel):
@@ -80,11 +89,14 @@ def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
     base = _public_base or str(request.base_url).rstrip("/")
     try:
         return service.start_checkout(incarnation_id=incarnation, price_key=payload.price, operation_id=payload.operation_id,
-                                      return_url=f"{base}/#/profile", cancel_url=f"{base}/#/profile")  # fmt: skip
+                                      return_url=f"{base}/#/profile", cancel_url=f"{base}/#/profile",
+                                      confirmed_amount_minor=payload.amount_minor,
+                                      confirmed_currency=payload.currency)  # fmt: skip
     except LookupError:
         raise orena_http_error(404, "price_not_offered", "This price is not offered.", retryable=False) from None
     except CheckoutRefused as refused:
-        raise orena_http_error(409, refused.code, "This checkout cannot start.", retryable=False) from None
+        status = _REFUSAL_STATUS.get(refused.code, 409)
+        raise orena_http_error(status, refused.code, "This checkout cannot start.", retryable=status == 503) from None
     except ValueError:
         raise orena_http_error(422, "operation_id_invalid", "An operation id is a UUID.", retryable=False) from None
     except Exception:  # noqa: BLE001 - the gateway's own failure: say so, change nothing else
@@ -121,3 +133,15 @@ def billing_record_refund(order_code: int, payload: RefundIn, request: Request) 
     if outcome.status == "unknown_order":
         raise orena_http_error(404, "order_not_found", "No such order.", retryable=False)
     return {"ok": outcome.status in {"apply", "applied", "duplicate"}, "status": outcome.status}
+
+
+@router.get("/api/admin/billing/readiness")
+def billing_readiness(request: Request) -> dict[str, Any]:
+    """The runtime's billing readiness: each capability's state, every blocker, and each gateway's prices against
+    the catalogue (`writing_coach.billing.readiness`). States and booleans only - never a key or a secret."""
+    if _admin is None:
+        raise orena_http_error(503, "billing_off", "Payments are not open on this deployment.", retryable=False)
+    _admin(request)
+    from writing_coach.billing import readiness
+
+    return readiness.current_report()

@@ -97,3 +97,26 @@ records) ahead of the version `commerce_provider_subscriptions` applied for `pre
 change. | payOS writes the payment (`mark_paid`) and the access (`sync_prepaid`) in two transactions; the window
 between them must not admit a latent manual grant. | The smallest change: no billing redesign; it also holds an
 account whose sync crashed until it is repaired (R-MON-002, PR-MON-3), which is the safe side.
+
+D-MON-015 | 2026-10-14 | Price integrity, how (PR-MON-2; implements D-MON-005; pending independent review). The
+catalogue stays the shown price and the prices file stays the gateway binding (a merchant of record charges its own
+configured price, so neither can be derived from the other); they are compared on every offer, checkout and readiness
+read, in exact integer minor units (USD 2 decimals, VND 0), against the catalogue read strictly. A price with no
+catalogue entry or a different amount is a mismatch, and **one mismatch blocks every offer and checkout on its
+gateway** until an operator fixes it; an unreadable catalogue sells nothing. A prices file names only a paid
+catalogue plan by its own id (no `premium` alias, no `free`), a catalogue currency and a known gateway, and no price
+twice. A checkout starts only at the amount and currency the learner confirmed (`price_changed`, never charged from
+the browser). `billing_ready` is the runtime's readiness (switch, PostgreSQL, backbone, 0006 tables, `billing_orders`,
+entitlement source, public URL, a ready gateway), named per blocker, never a secret; the frozen mobile contract keeps
+`billing_ready: false`. | The learner is charged exactly what was shown, and an Admin price change can never silently
+make the two diverge. | `GET /api/admin/billing/readiness` reports it. With 0027 still proposed, every runtime reports
+`orders_schema_absent`, so `billing_ready` stays false everywhere until PR-MON-3.
+
+D-MON-016 | 2026-10-14 | Commerce discovery fails safe (closes review P2 / R-MON-010; pending independent review).
+"Not deployed" is no PostgreSQL, the account backbone not asked for, or a listing that answered without the 0006
+tables: no billing row, as before. "Expected but unreadable" is PostgreSQL with the backbone asked for and a listing
+that failed: the billing source is still installed and every plan read through it raises, so quota answers 503 and
+the Plan screen reports unavailable, never a silent legacy plan. It asks again at most every 5 s and keeps the first
+answer. The source no longer also requires the backbone to be `active`, so a backbone left `unavailable` by the same
+failed listing cannot hide a paid account. | A paid account must never read a legacy plan because one startup query
+failed. | Readiness names `entitlement_source_unverified` / `commerce_schema_unreadable`.

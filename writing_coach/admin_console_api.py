@@ -933,6 +933,12 @@ def _legacy_selection(providers: Mapping[str, Mapping[str, Any]] | None = None) 
     return {"source": "default", **default, "provider_configured": True, "effective": default}
 
 
+def _billing_ready() -> bool:
+    from writing_coach.product.service import product_service
+
+    return product_service.billing_is_ready()
+
+
 def _health_rules() -> dict[str, int]:
     """The thresholds the control plane applies when it calls a capability degraded.
 
@@ -975,9 +981,9 @@ def runtime(request: Request, response: Response) -> dict[str, Any]:
         "services": [{"id": key, **value} for key, value in facts.get("services", _state.runtime_services).items()],
         # Imports run inside the request that starts them; there is no queue.
         "background_jobs": "none",
-        # Plans exist in the product model but billing is not enabled anywhere
-        # (billing_ready is false), so there is no revenue to report.
-        "billing": "not_active",
+        # Whether this runtime can take a payment (PR-MON-2 readiness); the full
+        # report is /api/admin/billing/readiness. No revenue is reported here.
+        "billing": "active" if _billing_ready() else "not_active",
         "app_version": _state.app_version,
     }
 
