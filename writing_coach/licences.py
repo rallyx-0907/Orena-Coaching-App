@@ -59,6 +59,9 @@ DATASETS: tuple[Dataset, ...] = (
     Dataset("hsk30-vocabulary", "HSK 3.0 word and character levels (ivankra/hsk30)", "MIT",
             "https://github.com/ivankra/hsk30/blob/main/LICENSE", "https://github.com/ivankra/hsk30",
             "Ivan Krasilnikov and Shawky; derived from the PRC Ministry of Education HSK 3.0 standard"),
+    Dataset("cmudict", "CMUdict (English pronunciations, converted to IPA)", "BSD-style (Carnegie Mellon University)",
+            "https://github.com/cmusphinx/cmudict/blob/master/LICENSE", "https://github.com/cmusphinx/cmudict",
+            "Copyright (C) 1993-2015 Carnegie Mellon University. All rights reserved."),
 )
 
 
