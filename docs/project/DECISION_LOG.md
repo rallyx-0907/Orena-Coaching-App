@@ -6226,3 +6226,60 @@ releases (RSS)", "Direct URL"), in the Reader meta, Discover, Content Detail, th
    balanced brackets and the full stop of an abbreviation survive ("Global Voices (English)", "Acme Inc.", "美国之音（VOA）").
    A `/api/licences` source row with neither a public name nor a base-URL host is omitted; its texts are still credited
    one by one in the text rows.
+
+## D-193 - Per-item rights: a staff-only public-domain source does not vouch for wire copy (2026-10-14)
+
+**Status: ACCEPTED** (2026-10-14). Independent review: Delegated Architecture Reviewer, Claude Opus 5.5, APPROVED WITH
+CONDITIONS on bdb950a3, re-review APPROVE on 8f2ce5c3. The owner approved the rights policy as written on 2026-10-14,
+including the current answers to the open questions: an inline citation in VOA prose still counts as staff writing, and
+any byline (an institutional author such as "美国之音" and a contributor included) establishes staff authorship. Merged
+once CI was green. No schema or migration change.
+Answers catalogue question Q6 (VOA wire copy) in part; the part that stays human is listed at the end.
+
+1. **Problem.** VOA's own staff output is US-government work and in the public domain, but VOA also carries and rewrites
+   wire copy (Reuters, AP, AFP) and uses third-party photos, which are not. The VOA 中文 source's licence note made every
+   VOA item read as "Public domain", and the learner credit line named it as the licence.
+2. **Rule, as configuration.** `writing_coach/reading_rights_refinement.py` holds `SOURCE_RIGHTS_RULES`, keyed by host
+   (same matching as `reading_source_cleanup.SOURCE_RULES`). The flag `public_domain_requires_staff_authorship` is set for
+   `voanews.com` and `voachinese.com`. No code branches on a publisher's name; another source with the same condition gets
+   the same flag. It is a code table, not an admin setting or a column, because the source row has no config column
+   (`polling_policy` is a polling field and is unused).
+3. **At ingest** (`ReadingContentEngine.process`, where a source's answers are inherited into the snapshot): for a flagged
+   host the item is `withheld` when the extractor shows wire evidence, or when it has no byline (authorship cannot be
+   established). Then `can_republish`, `can_adapt` and `license_note` are not copied from the source into the immutable
+   snapshot. An absent key is the existing "unknown" (`rights_state`), so nothing new is stored and nothing is denied.
+   Only keys whose origin is the source are withheld; an answer submitted for the article is kept. Otherwise the outcome is
+   `kept` and the item inherits as before.
+4. **Effects, all through existing mechanisms.** The review page shows D-190's `rights_unknown` warning (and the existing
+   incomplete-credit warning, as no licence is recorded); an administrator publishes only with `acknowledge_warnings` and a
+   reason, audited. D-111 refuses automatic admission (`rights_not_cleared`). `recognise_license` finds no "public domain"
+   text, so the learner is shown no licence. An administrator can still record the answers on the review page.
+5. **Evidence kept.** `source_items.metadata.rights_refinement` and `analysis.rights_refinement`: `outcome`, `reasons`
+   (`wire_copy`, `no_staff_byline`), the matching lines (at most five, 120 characters each), and the withheld keys.
+6. **Detection is deliberately narrow.** Wire evidence is, in Chinese, a line of at most 40 characters that names an agency
+   and is a bracketed credit, a derivation note ("本文依据了美联社的报道", "综合", "编译", "来源：") or a credit label, or a
+   dateline `（路透社）—`; in English, a line of at most 160 characters that ENDS on the agency in a credit form
+   ("Reuters contributed to this report", "Some information for this report came from AP, Reuters and AFP", "reported by
+   AP", "With reporting from Reuters", "adapted this story ... based on reporting from Agence France-Presse"); and a byline
+   or attribution line that is an agency. Agencies: 路透社, 美联社, 法新社, 德新社, 彭博社, 新华社, 中央社, 共同社, 韩联社,
+   纽约时报, Reuters, AP, AFP, dpa, Bloomberg, Kyodo, Yonhap, Xinhua, CNA, The New York Times (BBC, CNN and other
+   non-public-domain outlets are not listed yet). A sentence in a staff story that
+   cites an agency as a news source ("路透社说…", "对美联社说…", "澳大利亚联邦警察(AFP)") is VOA's own writing and is not
+   evidence ("Reuters reported that ...", "told AP"). One-off measurement, not reproducible from the repository: 213 pages
+   fetched from voachinese.com section pages on 2026-10-14 gave 2 with a derivation note, 13 with no byline (video, audio
+   and index pages, which the quality gate already holds), and the rest kept. English was checked on a real Learning
+   English page (the fixture); no wire-credit line was found on the current voanews.com front-page articles.
+7. **Not covered.** Third-party photos and video are not text and are not inspected (catalogue Q1 / D-189). An inline mention
+   of an agency is not treated as wire copy; whether to treat it as one is the human's call (below).
+8. **Existing data is not modified.** Articles ingested before this change keep their snapshot. The read-only
+   `scripts/check_published_reading_rights_refinement.py` judges the stored text now and lists published articles from a
+   flagged source that show wire copy or no byline, with whether their effective rights still say "can republish".
+9. **Human decisions left.** (a) Whether a published item that asserts public domain but shows wire copy is unpublished or
+   given an answer on its review page (the eight trial publishes on :8021 should be run through the script first).
+   (b) Whether VOA stories that cite an agency inline are acceptable as staff-written. (c) Whether VOA contributor
+   bylines (non-staff names) establish staff authorship, and whether an institutional author ("美国之音", "VOA Learning
+   English") counts as a byline: today it does, so a wire rewrite with an institutional author and no credit line is kept. (d) Image rights (Q1). (e) Who maintains the host table.
+   Review (2026-10-14): Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer, on bdb950a3:
+   APPROVED WITH CONDITIONS (English credit forms, further agencies, engine-level origin test, explicit no-byline fixture,
+   this entry's wording, renumbering from D-192 to D-193, CI green). The conditions are addressed in the following commit.
+   Status stays PROPOSED: the owner approves the rights policy before merge.
