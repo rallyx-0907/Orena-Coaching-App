@@ -36,6 +36,7 @@ from writing_coach.persistence.reading_content_repository import (
     TargetInput,
 )
 from writing_coach.persistence.reading_job_repository import ReadingJobRepository
+from writing_coach.reading_page_quality import QUALITY_VERSION, quality_flags
 from writing_coach.reading_processing import (
     analyze_article,
     quality_issues,
@@ -378,6 +379,14 @@ class ReadingContentEngine:
         confidence = item.metadata.get("extraction_confidence", "")
         if confidence == "low":
             issues.append("extraction_low_confidence")
+        # Page-level quality (reading_page_quality): hard codes can never be published
+        # without an explicit override; soft codes only hold the item for review.
+        issues.extend(
+            code for code in quality_flags(
+                body=item.body, language=language, title=item.title, confidence=confidence,
+                facts=(item.metadata.get("extraction") or {}).get("page_facts"),
+            ) if code not in issues
+        )
         suggestions = suggest_targets(item.body, language, limit=MAX_TARGETS)
         excerpt = " ".join(item.body.split())[:280]
         return self.content.create_article(
@@ -398,6 +407,7 @@ class ReadingContentEngine:
                 "long_word_ratio": analysis.long_word_ratio,
                 "level_confidence": analysis.confidence,
                 "quality_issues": issues,
+                "quality_version": QUALITY_VERSION,
                 "extraction": item.metadata.get("extraction") or {},
                 "detected_language": item.metadata.get("detected_language", ""),
                 "rights_known": item.metadata.get("rights_known", False),

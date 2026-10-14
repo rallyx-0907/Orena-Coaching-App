@@ -148,7 +148,7 @@ def call(app, method, path, *, admin=True, **kwargs):
     return asyncio.run(run())
 
 
-def _article(setup, language="en", *, rights=None, level="B1", content_hash=None):
+def _article(setup, language="en", *, rights=None, level="B1", content_hash=None, analysis=None):
     snapshot = setup.content.record_source_item(
         source_id=setup.content.built_in_source_id("manual"), source_native_id="", canonical_url="",
         title="Train", author="", published_at=None, language=language, body=BODIES[language],
@@ -158,7 +158,7 @@ def _article(setup, language="en", *, rights=None, level="B1", content_hash=None
     article = setup.content.create_article(
         source_item_id=snapshot["id"], title="The late train", body=BODIES[language], excerpt="",
         language=language, topic="travel", estimated_level=level, estimated_confidence=0.7,
-        word_count=30, reading_time_seconds=60, analysis={}, targets=[],
+        word_count=30, reading_time_seconds=60, analysis=analysis or {}, targets=[],
     )
     return article["id"]
 
@@ -743,3 +743,224 @@ def test_without_automation_permission_a_new_set_stays_a_draft(setup):
                    json={"support_language": "vi"}).json()
     assert created["status"] == "draft"
     assert created["automatic_approval"]["reasons"] == ["automation_not_allowed"]
+
+
+# ---- quality gate (D-191, PROPOSED) ---------------------------------------------
+
+def _quality_refused(setup, article_id, **extra):
+    return call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/status",
+                json={"status": "published", **extra})
+
+
+@pytest.mark.parametrize("code", ["empty_body", "media_page", "index_page", "bot_challenge", "special_page"])
+def test_a_reviewer_cannot_publish_a_hard_quality_failure(setup, code):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": [code]})
+    response = _quality_refused(setup, article_id)
+    assert response.status_code == 409, response.text
+    detail = response.json()["detail"]
+    assert detail["category"] == "reading_quality_not_cleared"
+    assert detail["context"]["blockers"] == [{"code": code, "gate": "quality"}]
+    assert _visible(setup, article_id) != "published"
+    assert setup.audited[-1]["action"] == "admin.reading_article_publish_refused"
+
+
+def test_soft_quality_flags_stay_publishable_by_a_reviewer(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": ["extraction_medium_confidence", "body_below_minimum"]})
+    assert _publish(setup, article_id)["status"] == "published"
+
+
+def test_a_clean_article_publishes(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": []})
+    assert _publish(setup, article_id)["status"] == "published"
+
+
+def test_a_quality_override_needs_a_reason_and_is_audited(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": ["media_page"]})
+    assert _quality_refused(setup, article_id, quality_override=True).status_code == 422
+    assert _visible(setup, article_id) != "published"
+    done = _quality_refused(setup, article_id, quality_override=True, reason="a long-form video transcript")
+    assert done.status_code == 200, done.text
+    record = next(item for item in setup.audited if item["action"] == "admin.reading_article_quality_override")
+    assert record["payload"]["codes"] == ["media_page"]
+
+
+def test_a_quality_override_never_clears_the_rights_gate(setup):
+    article_id = _article(setup, rights={}, analysis={"quality_issues": ["media_page"]})
+    response = _quality_refused(setup, article_id, quality_override=True, reason="transcript")
+    assert response.status_code == 409
+    assert response.json()["detail"]["category"] == "reading_rights_not_cleared"
+
+
+# ---- the repository is the last gate (D-191) -----------------------------------------
+
+def test_the_repository_refuses_a_hard_quality_failure_without_the_route(setup):
+    from writing_coach.reading_page_quality import QualityRefused
+
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": ["media_page"]})
+    with pytest.raises(QualityRefused) as caught:
+        setup.content.set_status(article_id, "published", actor="script")
+    assert caught.value.codes == ["media_page"]
+    assert _visible(setup, article_id) != "published"
+    with pytest.raises(QualityRefused) as missing:
+        setup.content.set_status(article_id, "published", actor="script", quality_override=True)
+    assert missing.value.reason_missing
+    assert _visible(setup, article_id) != "published"
+
+
+def test_a_repository_override_is_recorded_on_the_articles_own_event(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": ["media_page"]})
+    setup.content.set_status(article_id, "published", actor="admin", reason="transcript", quality_override=True)
+    event = next(item for item in setup.content.list_review_events(article_id) if item["action"] == "published")
+    assert event["changes"]["quality_override"] is True
+    assert event["changes"]["quality_codes"] == ["media_page"]
+    assert event["changes"]["quality_version"]
+
+
+def test_a_quality_override_is_ignored_for_other_statuses_and_clean_articles(setup):
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                          analysis={"quality_issues": ["media_page"]})
+    rejected = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/status",
+                    json={"status": "rejected", "reason": "no", "quality_override": True})
+    assert rejected.status_code == 200
+    clean = _article(setup, rights={"can_republish": True, "attribution_required": False},
+                     analysis={"quality_issues": ["body_below_minimum"]}, content_hash="d" * 64)
+    done = _quality_refused(setup, clean, quality_override=True, reason="fine")
+    assert done.status_code == 200
+    assert not any(item["action"] == "admin.reading_article_quality_override" for item in setup.audited)
+
+
+def test_a_legacy_article_without_quality_facts_publishes(setup):
+    """The known limitation (D-191): nothing recorded means nothing to block; the audit script lists them."""
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False}, analysis={})
+    assert _publish(setup, article_id)["status"] == "published"
+
+
+def test_the_audit_script_lists_articles_whose_stored_verdict_misses_a_hard_code(setup):
+    from scripts.check_reading_quality_backlog import find_unflagged
+
+    legacy = _article(setup, analysis={"extraction": {}}, content_hash="c" * 64)
+    flagged = _article(setup, analysis={"quality_issues": ["media_page"]}, content_hash="b" * 64)
+    found = {item["id"]: item for item in find_unflagged(setup.engine)}
+    assert flagged not in found
+    assert legacy in found and found[legacy]["missing_facts"] is True
+
+
+# ---- the two overrides are independent (D-190, D-191) -----------------------------------
+# A page that is not an article AND whose attribution is incomplete needs both confirmations.
+
+INCOMPLETE_CREDIT = {"can_republish": True, "attribution_required": True}
+
+
+def _both_kinds(setup):
+    return _article(setup, rights=INCOMPLETE_CREDIT, analysis={"quality_issues": ["media_page"]})
+
+
+def _detail(response):
+    return response.json()["detail"]
+
+
+def test_a_quality_override_alone_does_not_bypass_the_rights_confirmation(setup):
+    article_id = _both_kinds(setup)
+    response = _quality_refused(setup, article_id, quality_override=True, reason="a transcript")
+    assert response.status_code == 409, response.text
+    detail = _detail(response)
+    assert detail["category"] == "reading_rights_not_cleared"
+    assert detail["context"]["override_field"] == "acknowledge_warnings"
+    assert detail["context"]["override_fields"] == ["acknowledge_warnings"]
+    assert _visible(setup, article_id) != "published"
+    assert not any(item["action"] == "admin.reading_article_quality_override" for item in setup.audited)
+
+
+def test_acknowledging_the_warnings_alone_does_not_bypass_the_quality_gate(setup):
+    article_id = _both_kinds(setup)
+    response = _quality_refused(setup, article_id, acknowledge_warnings=True, reason="licence on file")
+    assert response.status_code == 409, response.text
+    detail = _detail(response)
+    assert detail["category"] == "reading_quality_not_cleared"
+    assert detail["context"]["override_fields"] == ["quality_override"]
+    assert "override_field" not in detail["context"]
+    assert _visible(setup, article_id) != "published"
+
+
+def test_neither_confirmation_lists_every_blocker_and_both_fields_quality_first(setup):
+    article_id = _both_kinds(setup)
+    response = _quality_refused(setup, article_id)
+    assert response.status_code == 409
+    detail = _detail(response)
+    assert detail["category"] == "reading_quality_not_cleared"
+    assert detail["context"]["override_fields"] == ["quality_override", "acknowledge_warnings"]
+    gates = [item.get("gate") for item in detail["context"]["blockers"]]
+    assert "quality" in gates and any(item.get("level") == "warning" for item in detail["context"]["blockers"])
+
+
+def test_both_confirmations_without_a_reason_are_refused(setup):
+    article_id = _both_kinds(setup)
+    response = _quality_refused(setup, article_id, acknowledge_warnings=True, quality_override=True)
+    assert response.status_code == 422
+    assert _detail(response)["category"] == "reading_reason_required"
+    assert _visible(setup, article_id) != "published"
+
+
+def test_both_confirmations_with_a_reason_publish_and_record_both(setup):
+    article_id = _both_kinds(setup)
+    response = _quality_refused(setup, article_id, acknowledge_warnings=True, quality_override=True,
+                               reason="licence on file; a transcript on purpose")
+    assert response.status_code == 200, response.text
+    assert _visible(setup, article_id) == "published"
+    event = next(item for item in setup.content.list_review_events(article_id) if item["action"] == "published")
+    assert event["reason"] == "licence on file; a transcript on purpose"
+    assert event["actor"]
+    changes = event["changes"]
+    assert changes["quality_override"] is True and changes["quality_codes"] == ["media_page"]
+    assert changes["quality_version"]
+    assert changes["published_over_warnings"] is True and changes["warnings"]
+    assert all(item["level"] == "warning" for item in changes["warnings"])
+    actions = [item["action"] for item in setup.audited]
+    assert "admin.reading_article_quality_override" in actions
+    published = next(item for item in setup.audited if item["action"] == "admin.reading_article_published")
+    assert published["payload"]["warnings"] and published["payload"]["acknowledged_warnings"] is True
+    assert published["payload"]["reason"] == "licence on file; a transcript on purpose"
+
+
+def test_the_repository_never_refuses_for_rights_so_the_rights_confirmation_is_a_route_requirement(setup, monkeypatch, capsys):
+    """A quality override at the repository publishes an incomplete credit with no rights override
+    recorded, and the provenance checker reports it as unrecorded: a quality override is not a
+    rights override."""
+    import importlib.util
+    from pathlib import Path
+
+    article_id = _both_kinds(setup)
+    setup.content.set_status(article_id, "published", actor="script", reason="transcript", quality_override=True)
+    assert _visible(setup, article_id) == "published"
+    event = next(item for item in setup.content.list_review_events(article_id) if item["action"] == "published")
+    assert event["changes"]["quality_override"] is True
+    assert "published_over_warnings" not in event["changes"]
+
+    path = Path(__file__).resolve().parents[1] / "scripts" / "check_published_reading_provenance.py"
+    spec = importlib.util.spec_from_file_location("check_published_reading_provenance_qr", path)
+    checker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(checker)
+    found = checker.find_published_without_provenance(setup.engine)
+    assert [item["id"] for item in found] == [article_id]
+    assert found[0]["overridden"] is False
+    monkeypatch.setattr(checker, "create_engine", lambda url: setup.engine)
+    assert checker.main(["--url", "sqlite://"]) == 1
+    assert "NO RECORDED OVERRIDE" in capsys.readouterr().out
+
+
+def test_automatic_admission_still_refuses_such_an_article(setup):
+    from writing_coach.reading_admission import automatic_admission
+
+    source = {"state": "active", "languages": ["en"], "name": "Owned", "base_url": "https://owned.example",
+              "rights": {"automation_allowed": True, "can_republish": True}}
+    snapshot = {"rights": dict(INCOMPLETE_CREDIT), "body": "b", "language": "en", "canonical_url": ""}
+    result = automatic_admission(source=source, snapshot=snapshot, language="en", body="b",
+                                 analysis={"quality_issues": ["media_page"]}, targets=[], min_targets=1, max_targets=2)
+    assert result["decision"] != "published"
+    assert "attribution_missing" in result["reasons"]

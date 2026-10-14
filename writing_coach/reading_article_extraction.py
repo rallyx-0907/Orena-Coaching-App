@@ -32,6 +32,7 @@ from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
+from writing_coach.reading_page_quality import page_facts
 from writing_coach.reading_source_cleanup import Item, cleanup, host_of, rules_for
 
 _VOID = frozenset(
@@ -282,6 +283,7 @@ class ExtractedArticle:
     coverage: float = 0.0
     removed: list[dict[str, str]] = field(default_factory=list)
     provenance: list[dict[str, str]] = field(default_factory=list)
+    page_facts: dict[str, Any] = field(default_factory=dict)
 
     def metadata(self) -> dict[str, Any]:
         """The evidence an admin sees next to the candidate."""
@@ -303,6 +305,8 @@ class ExtractedArticle:
         # Provenance only: image candidates are evidence for a later, reviewed
         # article-media contract. Nothing here is a learner-facing field.
         info["media"] = [dict(item) for item in self.media]
+        if self.page_facts:  # raw-page facts the quality gate reads (reading_page_quality)
+            info["page_facts"] = dict(self.page_facts)
         return {
             "extraction": info,
             "extraction_confidence": self.confidence,
@@ -689,6 +693,12 @@ def extract_article(html: str, base_url: str = "") -> ExtractedArticle:
         coverage=coverage,
         removed=removed,
         provenance=cleaned.provenance,
+        page_facts={
+            **page_facts(html, url=page_url, title=" ".join(page_title.split())),
+            # Structure, not content: no article element and no prose paragraphs (a listing, not a story).
+            "no_article_structure": "few_prose_paragraphs" in reasons
+            and bool({"no_article_or_main_element", "fallback_to_whole_page"} & set(reasons)),
+        },
         media=_media_candidates(
             _article_scope(container), figure_info, meta_images, document_base
         ),
