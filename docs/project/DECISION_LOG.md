@@ -6366,7 +6366,7 @@ fails over). No live provider call was made.
 
 ## D-196 - Reading level: the reviewer's override is validated, folded over the automatic level and never overwrites it (2026-10-14)
 
-**Status: PROPOSED** (lifecycle-adjacent: needs independent review). Production Readiness item 7a; the human's order was
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVE on 976b346d; merged once CI was green). Production Readiness item 7a; the human's order was
 "let the reviewer override first, then fix automatic CEFR/HSK classification" (defect D6, NASA release rated C2).
 
 The override already existed (`reviewed_level` / `effective_level`, `POST /api/admin/reading/articles/{id}`, a `level_override`
