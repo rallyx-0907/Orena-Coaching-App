@@ -30,7 +30,11 @@ const checkout = createCheckout({ api });
 
 /* The purchase in hand lives for the session, so a learner who closes the sheet finds "Show QR" again. `state` is only
    ever what the backend's order status said. */
-const purchase = { order: null, state: 'waiting', watching: false, cancelled: false };
+const purchase = { order: null, state: 'waiting', watching: false, cancelled: false, stillWaiting: false, watcher: null };
+
+function clearPurchase() {
+  purchase.order = null; purchase.state = 'waiting'; purchase.stillWaiting = false; purchase.watcher = null; checkout.reset();
+}
 
 const lang = () => languages().ui;
 
@@ -60,7 +64,7 @@ export function creditsMarkup({ packs, selectedKey, strip, pending, filter, rows
           <div class="${cls('s-cr-strip__cell', strip && 's-cr-strip__cell--sep')}">${spark(16)}<span>${t('planStripSep')}</span></div>
         </div>
       </section>
-      ${pending ? html`<div class="s-cr-pending" role="status"><span class="s-cr-dot"><span></span><span data-cr-anim="1"></span></span><span class="s-cr-pending__text">${t('pendingText', { price: pending.price, n: pending.total })}</span><button type="button" class="s-cr-pending__show" data-cr-show>${t('showQr')}</button></div>` : ''}
+      ${pending ? html`<div class="s-cr-pending" role="status"><span class="s-cr-dot"><span></span><span data-cr-anim="1"></span></span><span class="s-cr-pending__text">${t(pending.stillWaiting ? 'statusStillWaiting' : 'statusWaiting')} · ${pending.price}</span><button type="button" class="s-cr-pending__show" data-cr-show>${t('showQr')}</button></div>` : ''}
       <div class="s-cr__grid">
         <section class="s-cr-card s-cr-packs" data-cr-packs>
           <div class="s-cr-card__head"><h2 class="s-cr-card__title">${t('addCredits')}</h2><div class="s-cr-card__sub">${t('packsSub')}</div></div>
@@ -102,19 +106,21 @@ export default async function credits(element, ctx) {
   if (!ctx.isCurrent()) return undefined;
   /* Nothing on sale (gated off, no packs, or the read failed): the backend is the source of truth; return to Plan & usage. */
   if (!offers.available) {
+    clearPurchase(); // nothing on sale (or signed out): an earlier session's purchase must not linger
     ctx.replace(ctx.href('billing'));
     return undefined;
   }
 
   const view = { selectedKey: offers.packs[0].key, filter: 'all', rows: historyRows([]) };
   let sheet = null; // { element, handle }
+  let stopped = false; // set when the route is left: retires this screen's watcher
 
   const currentPack = () => selectedPack(offers.packs, view.selectedKey);
   const orderPack = () => (purchase.order ? offers.packs.find((pack) => pack.key === purchase.order.packKey) || purchase.order.pack : null);
   const pendingNow = () => {
     const pack = orderPack();
     return pack && !sheet && ['waiting', 'received'].includes(purchase.state)
-      ? { price: formatPrice(pack.amountMinor, pack.currency, lang()), total: formatNumber(pack.creditUnits, lang()) }
+      ? { price: formatPrice(pack.amountMinor, pack.currency, lang()), total: formatNumber(pack.creditUnits, lang()), stillWaiting: purchase.stillWaiting }
       : null;
   };
 
@@ -130,7 +136,7 @@ export default async function credits(element, ctx) {
   function sheetModel(step, busy = false) {
     const pack = purchase.order ? orderPack() : currentPack();
     return {
-      step, busy, qr: purchase.order ? purchase.order.qr : '',
+      step, busy, qr: purchase.order ? purchase.order.qr : '', orderState: purchase.state, stillWaiting: purchase.stillWaiting,
       total: formatNumber(pack.creditUnits, lang()), price: formatPrice(pack.amountMinor, pack.currency, lang()),
       planName: commerce?.plan ? planName({ id: String(commerce.plan.id), name: String(commerce.plan.name || '') }) : '',
     };
@@ -162,21 +168,33 @@ export default async function credits(element, ctx) {
     });
   }
 
-  /* Follow the order with the backend's own status; the sheet changes step only when it says so. */
+  /* Follow the order with the backend's own status; the sheet changes step only when it says so. One watcher at a
+     time (the token): a newer watch, leaving the route or cancelling retires the older one. */
   function watch() {
-    if (purchase.watching || !purchase.order) return;
+    if (!purchase.order) return;
+    const token = Symbol('watch');
+    purchase.watcher = token;
     purchase.watching = true;
+    purchase.stillWaiting = false;
     const code = purchase.order.orderCode;
+    const refresh = () => {
+      if (!ctx.isCurrent()) return;
+      if (sheet) paintSheet(stepNow());
+      else paint();
+    };
     watchOrder({
       readStatus: () => api.billingOrder(code),
       onState: (state) => {
-        if (!purchase.order || purchase.order.orderCode !== code) return;
+        if (purchase.watcher !== token || !purchase.order || purchase.order.orderCode !== code) return;
         purchase.state = state;
-        if (sheet) paintSheet(stepNow());
-        else if (ctx.isCurrent()) paint();
+        refresh();
       },
-      shouldStop: () => purchase.cancelled || !purchase.order || purchase.order.orderCode !== code,
-    }).finally(() => { purchase.watching = false; });
+      shouldStop: () => stopped || !ctx.isCurrent() || purchase.watcher !== token || purchase.cancelled || !purchase.order || purchase.order.orderCode !== code,
+    }).then((result) => {
+      if (purchase.watcher !== token) return;
+      if (result.reason === 'auth') { clearPurchase(); return; }
+      if (result.state === 'still_waiting') { purchase.stillWaiting = true; refresh(); }
+    }).finally(() => { if (purchase.watcher === token) purchase.watching = false; });
   }
 
   async function reloadOffers() {
@@ -202,6 +220,14 @@ export default async function credits(element, ctx) {
     }
     const refusal = result.ok ? { message: 'errGatewayUnavailable', action: 'retry_same', refetch: false } : result.refusal;
     toast(t(refusal.message), { iconName: 'circle-alert' });
+    if (refusal.action === 'sign_in') clearPurchase();
+    /* An order for this intent already exists but the backend gives no link to resume it (CT-4): follow the one in hand,
+       otherwise close the sheet rather than loop on a button that cannot succeed. */
+    if (refusal.action === 'resume') {
+      if (purchase.order && purchase.order.packKey === pack.key && ['waiting', 'received'].includes(purchase.state)) { paintSheet('qr'); watch(); return; }
+      closeSheet();
+      return;
+    }
     if (refusal.action === 'sign_in' || refusal.action === 'none') { closeSheet(); return; }
     if (refusal.refetch || refusal.action === 'new_intent' || refusal.action === 'refetch') { closeSheet(); await reloadOffers(); return; }
     paintSheet('confirm', false);
@@ -243,7 +269,9 @@ export default async function credits(element, ctx) {
   }
 
   paint();
-  return () => { closeSheet(); };
+  /* Back on the route with an order still open: follow it again (the earlier watcher stopped when the route was left). */
+  if (purchase.order && !purchase.cancelled && ['waiting', 'received'].includes(purchase.state)) watch();
+  return () => { stopped = true; closeSheet(); };
 }
 
 export const __internal = { creditsMarkup, purchase };

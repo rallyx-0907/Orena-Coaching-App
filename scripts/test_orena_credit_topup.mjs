@@ -170,6 +170,9 @@ const err = (category, status = 409, extra = {}) => Object.assign(new Error('raw
   eq(r.result.state, 'confirmed', 'a failed read is not a verdict; polling continues');
   r = await run([Object.assign(new Error('x'), { status: 401 })]);
   eq([r.result.stopped, r.reads], [true, 1], 'a 401 stops polling');
+  eq(r.result.reason, 'auth', 'a 401 is reported as an auth stop so the screen drops the purchase');
+  r = await run([Object.assign(new Error('x'), { status: 404 })]);
+  eq([r.result.stopped, r.result.reason], [true, 'missing'], 'a 404 (no order route yet, CT-1) stops without claiming a state');
   let stop = false; let reads = 0;
   const stopped = await m.watchOrder({ readStatus: async () => { reads += 1; return { state: 'pending' }; }, sleep: async () => { if (reads >= 2) stop = true; }, shouldStop: () => stop });
   ok(stopped.stopped && reads <= 3, 'a screen can stop the watch');

@@ -2,6 +2,7 @@
    the Profile row). Rule 40: only what the backend offers is drawn; the design's sample packs, bonuses and prices are
    never shipped; no "I have paid" control; the sheet follows the backend's order state; credits are never a plan. */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 const store = new Map();
 globalThis.window = { localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) } };
@@ -85,7 +86,11 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   const markup = String(creditsMarkup(base({ strip: null })));
   ok(!markup.includes('s-cr-strip__mark'), 'no plan cell when the plan is unknown');
   const pending = String(creditsMarkup(base({ pending: { price: '22.222 ₫', total: '1,111' } })));
-  ok(pending.includes('data-cr-show') && pending.includes('22.222 ₫') && pending.includes('1,111'), 'pending banner from the order in hand');
+  ok(pending.includes('data-cr-show') && pending.includes('22.222 ₫') && pending.includes('Waiting for payment confirmation') && !pending.includes('Waiting for your transfer'), 'pending banner from the order in hand, in the owner wording');
+  ok(String(creditsMarkup(base({ pending: { price: '22.222 ₫', total: '1,111', stillWaiting: true } }))).includes('Still waiting.'), 'pending banner after the cap');
+  copy.setLanguages({ ui: 'vi', support: 'vi' });
+  ok(String(creditsMarkup(base({ pending: { price: '22.222 ₫', total: '1,111' } }))).includes('Đang chờ xác nhận thanh toán'), 'vi pending wording is the owner-mandated one');
+  copy.setLanguages({ ui: 'en', support: 'en' });
   ok(!String(creditsMarkup(base())).includes('data-cr-show'));
   const rows = String(creditsMarkup(base({ rows: [{ labelKey: 'historyBuy', change: 5, at: '' }], filter: 'out' })));
   ok(rows.includes('s-cr-empty'), 'a filter with no rows shows the empty state');
@@ -106,7 +111,9 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   eq(qrMatrix(payos).path, m.path, 'deterministic');
   ok(qrMatrix('another payment').path !== m.path, 'different strings give different codes');
   const qr = String(sheetMarkup({ ...model0, step: 'qr', qr: payos }));
-  ok(qr.includes(`viewBox="0 0 ${m.size} ${m.size}"`) && qr.includes('Waiting for your transfer') && qr.includes('data-cr-cancel'));
+  ok(qr.includes(`viewBox="0 0 ${m.size} ${m.size}"`) && qr.includes('Waiting for payment confirmation') && qr.includes('data-cr-cancel'));
+  ok(!qr.includes('Waiting for your transfer'), 'owner wording: the pending state reads "waiting for payment confirmation", not "waiting for your transfer"');
+  ok(String(sheetMarkup({ ...model0, step: 'qr', qr: payos, stillWaiting: true })).includes('Still waiting. Credits are added once the payment is confirmed.'), 'after the cap the sheet says still waiting');
   ok(!/Transfer note|Copy|15:00|Let this QR expire|Prototype|simulated/i.test(qr), 'no timer, transfer note or prototype affordance');
   ok(!/data-cr-(paid|confirm|done)/.test(qr) && !/I.ve paid|I have paid/i.test(qr), 'the QR step offers no way to say "paid"');
   ok(qr.includes('data-cr-anim="1"'), 'animations are tagged so reduced motion stops them');
@@ -117,12 +124,19 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   ok(done.includes('+1,111 Credits') && done.includes('22.222 ₫ · VietQR') && done.includes('data-cr-done'));
   ok(!/New balance|Receipt|@/.test(done), 'no balance or receipt the backend does not serve');
   const expired = String(sheetMarkup({ ...model0, step: 'expired' }));
-  ok(expired.includes('This QR has expired') && expired.includes('data-cr-again'));
+  ok(expired.includes('This QR has expired') && expired.includes('Nothing was charged') && expired.includes('data-cr-again'));
+  for (const [state, line] of [['cancelled', 'The payment was cancelled'], ['failed', 'The payment did not go through'], ['refunded', 'This payment was refunded']]) {
+    const closed = String(sheetMarkup({ ...model0, step: 'expired', orderState: state }));
+    ok(closed.includes(line) && !closed.includes('Nothing was charged') && !closed.includes('This QR has expired') && closed.includes('data-cr-again'), `${state}: its own status line, no "nothing was charged"`);
+  }
+  eq(qrMatrix('x'.repeat(5000)), null, 'a payment string over QR capacity gives no matrix instead of throwing');
+  const unreadable = String(sheetMarkup({ ...model0, step: 'qr', qr: 'x'.repeat(5000) }));
+  ok(unreadable.includes('The payment page could not be opened') && unreadable.includes('data-cr-cancel') && !unreadable.includes('shape-rendering'), 'an unreadable QR shows the gateway message in the existing wait line');
   for (const locale of ['vi', 'zh']) {
     copy.setLanguages({ ui: locale, support: locale });
     for (const step of ['confirm', 'qr', 'received', 'done', 'expired']) {
       const text = String(sheetMarkup({ ...model0, step, qr: payos }));
-      ok(!/Pay today|Waiting for your transfer|Payment received|Credits added|This QR has expired/.test(text), `${locale} ${step}: translated`);
+      ok(!/Pay today|Waiting for your transfer|Waiting for payment confirmation|Payment received|Credits added|This QR has expired/.test(text), `${locale} ${step}: translated`);
     }
   }
   copy.setLanguages({ ui: 'en', support: 'en' });
@@ -137,6 +151,17 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   ok(withCard.includes('s-plan-credits') && (withCard.match(/data-open-credits/g) || []).length === 2 && withCard.includes('View history'));
   ok(withCard.indexOf('s-plan-credits') < withCard.indexOf('s-plan-pay'), 'the card sits before the payment method card');
   ok(!withCard.includes('s-plan-pill--accent'), 'Credits carry no plan tag');
+}
+
+/* --- the screen's lifecycle (source-level: the route cannot be mounted here) ------------------------------ */
+{
+  const src = readFileSync(new URL('../static/orena/screens/credits/screen.js', import.meta.url), 'utf8');
+  ok(/shouldStop:[^\n]*ctx\.isCurrent\(\)/.test(src), 'the order watcher stops when the route is no longer current');
+  ok(/return \(\) => \{ stopped = true;/.test(src) && /shouldStop:[^\n]*stopped/.test(src), 'leaving the route retires the watcher');
+  ok(/purchase\.order && !purchase\.cancelled[^\n]*\n?\s*[^\n]*watch\(\);/.test(src), 'returning to the route re-watches an open order');
+  ok(/function clearPurchase/.test(src) && /refusal\.action === 'sign_in'\) clearPurchase\(\)/.test(src) && /reason === 'auth'\) \{ clearPurchase/.test(src), 'a purchase does not outlive the signed-in session');
+  ok(/refusal\.action === 'resume'/.test(src), 'checkout_already_started is handled without looping on the pay button');
+  ok(!/t\('waitingTitle'\)|t\('pendingText'/.test(src + readFileSync(new URL('../static/orena/screens/credits/sheet.js', import.meta.url), 'utf8')), 'the design sample waiting lines are not rendered');
 }
 
 console.log(`Orena credits screens: ${checks} checks: PASS`);

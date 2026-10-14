@@ -15,8 +15,12 @@ import { qrPath } from './model.js';
 /* The QR of the payment string payOS returned. Level Q: the logo sits over the middle (as the design draws it). */
 export function qrMatrix(text) {
   const code = QRCode(0, 'Q');
-  code.addData(String(text));
-  code.make();
+  try {
+    code.addData(String(text));
+    code.make();
+  } catch {
+    return null; // over QR capacity or malformed: the sheet shows the gateway message instead (qrBody)
+  }
   const size = code.getModuleCount();
   return { size, path: qrPath(size, (row, col) => code.isDark(row, col)) };
 }
@@ -33,14 +37,16 @@ function confirmBody({ total, price, planName }) {
     <div class="s-cr-sheet__via"><span class="s-cr-sheet__viaicon">${raw(icon('qr-code', { size: 20 }))}</span><div><div class="s-cr-sheet__vialabel">${t('vietqrVia')}</div><div class="s-cr-sheet__viasub">${t('scanWith')}</div></div></div>`;
 }
 
-function qrBody({ price, qr }) {
+function qrBody({ price, qr, stillWaiting = false }) {
   const matrix = qr ? qrMatrix(qr) : null;
+  const unreadable = Boolean(qr) && !matrix;
+  const sub = unreadable ? t('errGatewayUnavailable') : t(stillWaiting ? 'statusStillWaiting' : 'waitingText');
   return html`<div class="s-cr-sheet__qrwrap">
       <div class="s-cr-sheet__qr">${matrix ? raw(`<svg width="232" height="232" viewBox="0 0 ${matrix.size} ${matrix.size}" shape-rendering="crispEdges" role="img" aria-label="${t('scanTitle')}"><path d="${matrix.path}" style="fill:var(--qr-ink)"></path></svg>`) : ''}<span class="s-cr-sheet__qrlogo">${sparkTile(38, 20, { radius: 10 })}</span></div>
       <div class="s-cr-sheet__badge">${t('vietqrBadge')}</div>
     </div>
     <div class="s-cr-sheet__box"><div class="s-cr-sheet__row s-cr-sheet__row--amount"><span>${t('amount')}</span><b>${price}</b></div></div>
-    <div class="s-cr-wait" role="status"><span class="s-cr-dot"><span></span><span data-cr-anim="1"></span></span><div class="s-cr-wait__text"><div class="s-cr-wait__title">${t('waitingTitle')}</div><div class="s-cr-wait__sub">${t('waitingText')}</div></div><span class="s-cr-wait__scan"><span data-cr-anim="1"></span></span></div>`;
+    <div class="s-cr-wait" role="status"><span class="s-cr-dot"><span></span><span data-cr-anim="1"></span></span><div class="s-cr-wait__text"><div class="s-cr-wait__title">${t('statusWaiting')}</div><div class="s-cr-wait__sub">${sub}</div></div><span class="s-cr-wait__scan"><span data-cr-anim="1"></span></span></div>`;
 }
 
 function receivedBody({ total }) {
@@ -58,20 +64,26 @@ function doneBody({ total, price }) {
     </div>`;
 }
 
-function expiredBody() {
-  return html`<div class="s-cr-sheet__center s-cr-sheet__center--expired"><span class="s-cr-sheet__clock">${raw(icon('clock', { size: 26 }))}</span><div class="s-cr-sheet__h s-cr-sheet__h--big">${t('expiredTitle')}</div><div class="s-cr-sheet__p s-cr-sheet__p--wide">${t('expiredText')}</div></div>`;
+/* The closed-order states and the copy key that names each. Only a lapsed QR says nothing was charged: a refunded,
+   failed or cancelled order uses its own status line and makes no claim about a charge. */
+export const CLOSED_TITLE = Object.freeze({ expired: 'expiredTitle', cancelled: 'statusCancelled', failed: 'statusFailed', refunded: 'statusRefunded' });
+
+function expiredBody(orderState) {
+  const key = CLOSED_TITLE[orderState] || CLOSED_TITLE.expired;
+  const text = key === 'expiredTitle' ? html`<div class="s-cr-sheet__p s-cr-sheet__p--wide">${t('expiredText')}</div>` : '';
+  return html`<div class="s-cr-sheet__center s-cr-sheet__center--expired"><span class="s-cr-sheet__clock">${raw(icon('clock', { size: 26 }))}</span><div class="s-cr-sheet__h s-cr-sheet__h--big">${t(key)}</div>${text}</div>`;
 }
 
 /* The sheet for a step. `busy` disables the pay button while a checkout request is in flight (one request per
    intent, product/credit-topup.js createCheckout). */
-export function sheetMarkup({ step, total, price, planName = '', qr = '', busy = false }) {
-  const titles = { confirm: t('sheetAdd'), qr: t('scanTitle'), received: t('receivedAdding'), done: t('doneTitle'), expired: t('expiredTitle') };
+export function sheetMarkup({ step, total, price, planName = '', qr = '', busy = false, orderState = 'expired', stillWaiting = false }) {
+  const titles = { confirm: t('sheetAdd'), qr: t('scanTitle'), received: t('receivedAdding'), done: t('doneTitle'), expired: t(CLOSED_TITLE[orderState] || CLOSED_TITLE.expired) };
   const body = {
     confirm: () => confirmBody({ total, price, planName }),
-    qr: () => qrBody({ price, qr }),
+    qr: () => qrBody({ price, qr, stillWaiting }),
     received: () => receivedBody({ total }),
     done: () => doneBody({ total, price }),
-    expired: () => expiredBody(),
+    expired: () => expiredBody(orderState),
   }[step]();
   const busyAttr = raw(busy ? ' disabled aria-busy="true"' : '');
   const foot = {

@@ -211,7 +211,8 @@ export async function watchOrder({ readStatus, onState = () => {}, sleep = (ms) 
     try {
       next = orderStateFrom(await readStatus());
     } catch (error) {
-      if (error?.status === 401 || error?.status === 403 || error?.status === 404) return { state: last, stopped: true, attempts: attempt };
+      if (error?.status === 401 || error?.status === 403) return { state: last, stopped: true, reason: 'auth', attempts: attempt };
+      if (error?.status === 404) return { state: last, stopped: true, reason: 'missing', attempts: attempt };
       /* A failed read tells nothing about the payment: keep waiting. */
     }
     if (next !== last) { last = next; onState(last); }
