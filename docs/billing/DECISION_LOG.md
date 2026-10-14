@@ -161,3 +161,16 @@ reserve from its own transaction and authoritative. | Credits are customer money
 be charged twice or later. | Frozen in `PR-MON-4_DESIGN.md` revision 2; not decided: credit-VND rate, meter prices,
 Free allowance, auto top-up, activation, promotions, incarnation transfer.
 
+D-MON-020 | 2026-10-14 | Credit ledger architecture after the review of `e5ccc114` (lane, pending the focused
+re-review). (1) 0032 depends on 0031's schema (it replaces the reconciliation kind CHECK): order 0027 -> 0031 -> 0032,
+never promoted or re-parented ahead of 0031. (2) The snapshot write boundary is database privilege: tables and the
+ledger function owned by a NOLOGIN `orena_credit_owner`; the runtime (member of `orena_credit_runtime`) has no UPDATE
+on the snapshot columns and no UPDATE/DELETE/TRUNCATE on the ledger; the only writer is a SECURITY DEFINER trigger
+function with a fixed search_path; the guard trigger is defense in depth; readiness refuses credits while the
+runtime connects as a superuser or table owner. (3) A reversal applies min(requested, available, remaining
+reversible), every request has an immutable `credit_reversal_requests` receipt keyed by its money-side event, a
+replay returns the stored outcome and is never re-evaluated, and digests cover request intent, never derived
+results. | A financial snapshot needs an authorization boundary, and a reversal must be decided exactly once. |
+Deployment prerequisite (operator gate): the runtime must connect as a non-superuser member of `orena_credit_runtime`
+before credits are enabled.
+

@@ -1,8 +1,14 @@
 # PR-MON-4 Prepaid Credit Ledger — design and migration plan
 
-**State: DESIGN revision 2, with decisions C1-C7 frozen by the human (2026-10-14, on `43a3dedf`).** It is
-awaiting the independent architecture review. There is no code, and nothing is promoted or applied. Migration 0032
-is created only after **APPROVE FOR IMPLEMENTATION**.
+**State: DESIGN revision 3, awaiting the focused re-review.**
+
+- The human froze decisions C1-C7 on 2026-10-14, on `43a3dedf`.
+- Revision 3 closes the three blockers raised in the review of `e5ccc114`:
+  - P1-1, the 0031 dependency, in §1;
+  - P1-2, the privilege boundary, in §2.1;
+  - P1-3, the reversal cap and idempotency, in §5 and §6.
+- There is no code yet, and nothing is promoted or applied. Migration 0032 is created only after **APPROVE FOR
+  IMPLEMENTATION**.
 
 Two meanings of "expiry" are kept apart throughout this document (C6):
 
@@ -46,11 +52,17 @@ into the chain at a time, and the lane that promotes later re-parents its own re
 
 **Proposed new revision:** `migrations/proposed/20261014_0032_credit_ledger.py`.
 
-- `down_revision = "20261014_0031"`. This keeps the Billing financial revisions in one line: 0027 → 0031 → 0032.
-- It has **no foreign key to 0027 or 0031 tables**. A top-up names its source (a billing order) by an opaque
-  reference, so the ledger depends only on `account_incarnations` (0005), which is applied.
-- Under H1, if 0032 were ever promoted before 0027/0031, it would be re-parented onto the head of the day. Its tables
-  stand alone.
+- `down_revision = "20261014_0031"`, **required** (review P1-1). 0032 has a real schema dependency on 0031: it
+  replaces the kind CHECK of `billing_reconciliation_items`, the table 0031 creates, to add the credit kinds (§9).
+  0032 therefore cannot run without 0031.
+- No foreign key points at 0027/0031 tables. A top-up names its source by an opaque reference. That only means 0032
+  needs no 0027 row; it does not make 0032 independent of 0031's schema.
+- **Ordering rule:** 0027 → 0031 → 0032.
+  - 0032 is never promoted before 0031.
+  - H1 never re-parents 0032 around or ahead of 0031.
+  - If another lane's migration enters the real chain between promotion steps, the normal H1 procedure re-parents
+    the Billing revisions onto the head of the day and keeps their relative order: 0031 directly under 0032, and
+    0027 under 0031.
 - Nothing is promoted, and 0027/0031 are not edited.
 
 ## 2. Data model
@@ -91,12 +103,36 @@ is never negative.
 | `meter`, `operation_ref` | VARCHAR(80) / VARCHAR(200), NULL | For `reserve`: what the hold is for (PR-MON-6 fills it). |
 | `expires_at` | TIMESTAMPTZ NULL | For `reserve` only (CHECK: NOT NULL exactly when `kind = 'reserve'`). It is a hold's TTL and never appears on purchased credit (C6). |
 | `uncharged` | BIGINT NULL, >= 0 | For `settle` only: actual usage beyond the hold, never charged (§4.3, C3). |
-| `requested` | BIGINT NULL, > 0 | For `reversal` only: what the money side asked to reverse, so a partial reversal is visible (C5). |
+| `reversal_request_id` | UUID NULL, FK `credit_reversal_requests` RESTRICT | For `reversal` only: its request (P1-3). |
 | `actor` | VARCHAR(200), NOT NULL | `system`, `reconciler`, or an administrator's id. |
 | `reason` | VARCHAR(400) NULL | Required for `adjustment`, `refund` and `reversal`. |
 | `created_at` | TIMESTAMPTZ, NOT NULL | |
 
 Per-kind sign rules are CHECK constraints (§4). There is no `UPDATE` and no `DELETE`.
+
+### `credit_reversal_requests`: the durable receipt of every reversal request (P1-3)
+
+A reversal can apply nothing (C5), and still its outcome must be final. So every reversal request gets one
+immutable row, whatever it applied:
+
+| Column | Type | Rule |
+| --- | --- | --- |
+| `id` | UUID PK | |
+| `credit_account_id` | UUID, FK `credit_accounts` RESTRICT | |
+| `topup_entry_id` | UUID, FK `credit_ledger(id)` RESTRICT | It must be a `topup` of the same account (trigger). |
+| `idempotency_key` | VARCHAR(200) | UNIQUE (`credit_account_id`, `idempotency_key`); see §6. |
+| `request_digest` | VARCHAR(64) | Over the request's intent (§6). |
+| `requested` | BIGINT > 0 | |
+| `applied` | BIGINT >= 0 | `min(requested, available, remaining_reversible)` at decision time. |
+| `shortfall` | BIGINT >= 0 | CHECK `applied + shortfall = requested`. |
+| `reversal_entry_id` | UUID NULL, FK `credit_ledger(id)` RESTRICT | Set exactly when `applied > 0` (CHECK); the reversal entry also names this request. |
+| `source_type`, `source_ref` | VARCHAR | The money-side event (a payOS refund, a Polar chargeback). Required. |
+| `actor`, `reason` | VARCHAR | Required. |
+| `created_at` | TIMESTAMPTZ | |
+
+There is no `UPDATE` and no `DELETE` (trigger, plus no privilege for the runtime). A `reversal` ledger entry carries
+`ref_entry_id` (its top-up) and `reversal_request_id` (this row), and the trigger checks that its `amount` equals
+the request's `applied`.
 
 ### Why snapshot + ledger, and how it is rebuilt
 
@@ -107,9 +143,7 @@ statement**:
 - An `AFTER INSERT` trigger on `credit_ledger` adds both deltas to the account row, sets `entry_count` and
   `last_entry_id`, and checks `NEW.seq = old entry_count + 1`. The account CHECK then refuses a result below zero,
   so the inserting transaction aborts and nothing is recorded.
-- A guard trigger on `credit_accounts` refuses any `UPDATE` of `posted`, `reserved`, `entry_count` or
-  `last_entry_id` unless it comes from the ledger trigger (`pg_trigger_depth() > 1`). No application code, and no
-  operator's hand-written `UPDATE`, can set a balance.
+- The snapshot's write boundary is a **database privilege**, not trigger nesting (§2.1, review P1-2).
 - **Rebuild and verify.** `credit_balance_drift()` is a read-only query that compares every snapshot with
   `SUM(...)` over its ledger. The test suite asserts zero drift after every concurrency test. The PR-MON-3
   reconciler tick runs the same check and opens a critical `credit_balance_drift` item if it ever finds drift
@@ -118,19 +152,66 @@ statement**:
 Pure-ledger reads would cost `O(entries)` and still need the same per-account lock. The snapshot gives O(1) reads,
 and a CHECK constraint can express "never negative".
 
+### 2.1 Who may write the snapshot: database privileges (review P1-2)
+
+**Roles** (created by 0032 with `CREATE ROLE … NOLOGIN` when absent; roles are cluster-wide, so creation is
+idempotent):
+
+- `orena_credit_owner`, NOLOGIN, not a superuser. It owns `credit_accounts`, `credit_ledger`,
+  `credit_reversal_requests` and the ledger functions.
+- `orena_credit_runtime`, NOLOGIN. A group role that carries the runtime's credit privileges. The deployment's
+  runtime login role is made a member of it.
+
+**Grants to `orena_credit_runtime`** (nothing more):
+
+| Table | Granted | Not granted |
+| --- | --- | --- |
+| `credit_accounts` | `SELECT`; `INSERT (id, incarnation_id, created_at, updated_at)` (column-level, so `posted`/`reserved`/`entry_count`/`last_entry_id` take their zero defaults); `UPDATE (updated_at)` only, which `SELECT … FOR UPDATE` needs for the row lock | `UPDATE` of `posted`, `reserved`, `entry_count`, `last_entry_id`; `DELETE`; `TRUNCATE` |
+| `credit_ledger` | `SELECT`, `INSERT` | `UPDATE`, `DELETE`, `TRUNCATE` |
+| `credit_reversal_requests` | `SELECT`, `INSERT` | `UPDATE`, `DELETE`, `TRUNCATE` |
+
+**The only write path to the snapshot** is `credit_apply_entry()`, the `AFTER INSERT` trigger function on
+`credit_ledger`:
+
+- It is `SECURITY DEFINER` and owned by `orena_credit_owner`, so it runs with the owner's rights while the inserting
+  runtime role has none.
+- Its `search_path` is fixed by `SET search_path = <the migration's schema>, pg_catalog, pg_temp`. Every table it
+  touches is also schema-qualified, so no object the caller creates can be substituted.
+- `EXECUTE` is revoked from `PUBLIC`. Only the trigger calls it.
+
+**Defense in depth**, which does not replace the privileges:
+
+- A guard trigger on `credit_accounts` refuses an `UPDATE` of the protected columns unless
+  `current_user = 'orena_credit_owner'`. That is true only inside the definer function, and the check holds even
+  for a role that would otherwise have the privilege.
+- `credit_ledger` and `credit_reversal_requests` keep their immutability triggers.
+
+**Deployment prerequisite** (an operator/human gate, not a product decision):
+
+- The boundary holds only if the runtime connects as a **non-superuser** that does not own the credit tables and
+  is a member of `orena_credit_runtime`. Today the runtime URL uses the database's owner role.
+- Readiness therefore gets a check `credit_runtime_privileges`. It verifies `NOT rolsuper` for `current_user`,
+  `has_column_privilege(current_user, 'credit_accounts', 'posted', 'UPDATE') = false` (likewise for `reserved`,
+  `entry_count`, `last_entry_id`), and `has_table_privilege(..., 'credit_ledger', 'UPDATE') = false`.
+- When the check fails, every credit operation is refused, `credits_runtime_privileged` is reported, and nothing is
+  written.
+- The migration itself runs as the owner or a superuser, as it does today. The runtime-role separation is
+  configured by the operator before credits are ever enabled.
+
 ## 3. Invariants (each with its DB backstop)
 
 | # | Invariant | Backstop beyond repository logic |
 | --- | --- | --- |
 | I1 | `posted >= 0`, `reserved >= 0`, `reserved <= posted`: available is never negative | CHECK on `credit_accounts`; the ledger insert aborts |
-| I2 | The snapshot equals the ledger sums | The ledger trigger is the only writer (guard trigger); a drift check in tests and the reconciler |
-| I3 | Ledger rows are never updated or deleted | Trigger refuses `UPDATE`/`DELETE` on `credit_ledger`; RESTRICT foreign keys |
+| I2 | The snapshot equals the ledger sums | **Privileges**: the runtime role cannot `UPDATE` the snapshot columns, and only the `SECURITY DEFINER` ledger function (owner role) writes them (§2.1). Guard trigger as defense in depth. Drift check in tests and the reconciler |
+| I3 | Ledger rows are never updated or deleted | No `UPDATE`/`DELETE`/`TRUNCATE` privilege for the runtime role; a trigger refuses `UPDATE`/`DELETE` on `credit_ledger`; RESTRICT foreign keys |
 | I4 | Accounts are never deleted, and a deletion never cascades | Trigger refuses `DELETE` on `credit_accounts`; RESTRICT foreign key to `account_incarnations` |
 | I5 | Each operation applies at most once | UNIQUE (`credit_account_id`, `kind`, `idempotency_key`); UNIQUE (`source_type`, `source_ref`) for `topup` |
 | I6 | A reservation closes exactly once (settle, release or reserve_expire) | Partial UNIQUE (`ref_entry_id`) where `kind IN ('settle','release','reserve_expire')`; trigger: the referenced row is a `reserve` of the same account |
 | I7 | A closing entry releases exactly the hold; a settle charges at most the hold and records the rest as uncharged (C3) | Trigger: `reserved_delta = -ref.amount`; for `settle`, `charged = -posted_delta`, `0 <= charged <= ref.amount`, `amount = charged + uncharged`, and `uncharged > 0` only when `charged = ref.amount` |
 | I8 | Refunds of a debit total at most what that settle charged | Trigger: `SUM(refund.amount for ref) <= -ref.posted_delta`, with the referenced settle locked |
-| I9 | Reversals of a top-up total at most that top-up, and a reversal never takes reserved credits (C5) | Trigger: `SUM(reversal.amount for ref) <= ref.amount` with the referenced top-up locked; `amount <= requested`; the account CHECK `reserved <= posted` refuses touching holds |
+| I9 | Reversals of a top-up total at most that top-up, and a reversal never takes reserved credits (C5) | Trigger: `SUM(reversal.amount for ref) <= ref.amount`, with the account row locked (every reversal of the account is serialized); the reversal's `amount` equals its request's `applied`; the account CHECK `reserved <= posted` refuses touching holds |
+| I13 | A reversal request is decided once and never re-evaluated (P1-3) | `credit_reversal_requests` UNIQUE (`credit_account_id`, `idempotency_key`), immutable (trigger), CHECK `applied + shortfall = requested`, `applied >= 0`, `(applied > 0) = (reversal_entry_id IS NOT NULL)` |
 | I10 | An offset references only its own kind | Trigger: refund→settle, reversal→topup, settle/release/reserve_expire→reserve, all in the same account; `topup`, `reserve` and `adjustment` reference nothing |
 | I12 | Purchased credit carries no expiry (C6) | CHECK: `expires_at IS NULL` unless `kind = 'reserve'`; no kind decays a top-up |
 | I11 | Ledger order per account is total and gapless | UNIQUE (`credit_account_id`, `seq`), and the trigger checks `seq = entry_count + 1` |
@@ -147,7 +228,7 @@ and a CHECK constraint can express "never negative".
 | `release` | 0 | `-hold` | its `reserve` | The caller did not use the hold (provider failed or not dispatched). |
 | `reserve_expire` | 0 | `-hold` | its `reserve` | Written by the reconciler for a hold past its `expires_at` (§7). It closes a reservation and has nothing to do with purchased credit (C6). |
 | `refund` | `+amount` | 0 | a `settle` | Credits returned for a charge, for example a provider failure found after settle. `reason` is required. |
-| `reversal` | `-amount`, with `amount = min(requested, available)` | 0 | a `topup` | The top-up's money went back (payment refunded or charged back). `reason` is required. A partial reversal records the shortfall (§5, C5). |
+| `reversal` | `-applied` | 0 | a `topup` (and its request) | The top-up's money went back (payment refunded or charged back). Written only when `applied > 0`. The request row records `requested`, `applied` and `shortfall` (§5, C5, P1-3). |
 | `adjustment` | `±amount` (sign in `posted_delta`) | 0 | none | Administrator only: a **delta** with mandatory reason, actor, idempotency key and digest. There is no "set balance" operation (C4). |
 
 ### 4.1 Reserve atomicity under concurrency
@@ -223,14 +304,30 @@ Orena absorbed the cost). It is never charged after the fact.
   refunds (I8). It is the credit-side correction of a consume. It never names a top-up.
 - **`reversal`** names one `topup` and removes up to its amount (I9). It is the credit-side consequence of money that
   went back: a payOS refund or a Polar chargeback (PR-MON-5 decides when to write it).
-  - **Decided (C5): reverse only what is available now, and record the shortfall.** The entry stores `requested`.
-    Its `amount` is `min(requested, available)`, where available is `posted - reserved`, so active reservations are
-    never taken.
-  - If `amount < requested`, then in the same transaction a `credit_reversal_shortfall` reconciliation item is
-    recorded with the shortfall (`requested - amount`). The item references the top-up entry, the reversal entry and
-    the money-side context (`source_type`/`source_ref` of the refund or chargeback).
-  - If available is 0, the reversal entry is not written. A zero entry is not a reversal, and it is never faked as
-    a full one. The shortfall item records the whole `requested` amount against the top-up.
+  - **Decided (C5): reverse only what can be reversed now, and record the shortfall.** It is computed under the
+    account lock, in one transaction (P1-3):
+
+    ```text
+    available            = posted - reserved                       (never touches active reservations)
+    remaining_reversible = topup.amount - SUM(earlier reversals of that topup)
+    applied              = min(requested, available, remaining_reversible)
+    shortfall            = requested - applied
+    ```
+
+  - In that same transaction:
+    1. **Always** insert the `credit_reversal_requests` row (`requested`, `applied`, `shortfall`, digest, source).
+       It is the durable, final outcome of the request.
+    2. If `applied > 0`, insert the `reversal` ledger entry for `applied`, referencing the top-up and the request.
+    3. If `shortfall > 0`, record the `credit_reversal_shortfall` item. It references the top-up, the request (its
+       dedupe key is the request's id), the reversal entry if one was written, and the money-side source.
+  - `applied = 0` writes no zero-value ledger entry, and nothing is ever faked as a full reversal. The request row is
+    still the receipt.
+  - **Never re-evaluated.** A retry of the same request returns the stored request row, with its original `applied`
+    and `shortfall`, even if the account has since gained credit. A new reversal of newly available credit needs a
+    new money-side event, with a new key.
+  - The cap holds under concurrency. Every reversal of the account is serialized by the account row lock, and the
+    trigger checks `SUM(reversals of the top-up) <= topup.amount` (I9). Two concurrent requests can never together
+    exceed `remaining_reversible`.
   - The shortfall is a money kind and cannot be dismissed (§9). The balance is never driven negative to "claw back"
     spent credits.
 - An offset always lives in the same account as the entry it names (I10). There is no cross-account transfer.
@@ -247,11 +344,27 @@ Orena absorbed the cost). It is never charged after the fact.
 | `topup` | `source_type` + `source_ref`, e.g. `billing_order:payos:100123` | **global**: one money event can never credit two accounts | The same source returns the original entry; a different account or amount is a conflict |
 | `reserve` | the caller's `operation_id` (PR-MON-6: one per admitted operation) | per account and kind | The same key and digest returns the hold; a different amount or meter is a conflict |
 | `settle` / `release` / `reserve_expire` | the reserve entry's id (via the I6 index), plus the caller's key | per reservation | Closing twice returns the first close if the digest matches, otherwise `reservation_closed` |
-| `refund` / `reversal` / `adjustment` | the caller's operation id (an operator action or a PR-MON-5 refund event id) | per account and kind | The same key and digest returns the original; a different digest is a conflict |
+| `refund` / `adjustment` | the caller's operation id (an operator action or a PR-MON-5 refund event id) | per account and kind | The same key and digest returns the original; a different digest is a conflict |
+| `reversal` | derived from the money-side event: `<source_type>:<source_ref>` (one reversal request per refund or chargeback event) | per account (`credit_reversal_requests`) | The same key and digest returns the stored request row, with its original `applied`/`shortfall` and no re-evaluation; a different digest is a conflict |
 
-`request_digest` is the sha256 of the canonical parameters: kind, account, amount, `ref_entry_id`, meter, source.
-A retried request is therefore recognized as the same, and a reused key with other content cannot apply a second,
-different effect.
+**`request_digest` is the sha256 of the request's intent**: the caller's semantic inputs in a canonical order. It
+never includes a derived result. Values the server derives (`charged`, `uncharged`, `applied`, `shortfall`,
+`expires_at`, `seq`, timestamps) are never digest inputs.
+
+| Operation | Digest inputs (semantic) | Declared non-semantic (stored, not compared) |
+| --- | --- | --- |
+| `topup` | kind, account, `amount`, `source_type`, `source_ref` | actor |
+| `reserve` | kind, account, `amount`, `meter`, `operation_ref`, the requested TTL (seconds, or the default marker) | actor; the derived `expires_at` |
+| `settle` | kind, reserve entry id, actual `amount` | actor; the derived `charged`/`uncharged` |
+| `release` | kind, reserve entry id | actor, reason |
+| `reserve_expire` | kind, reserve entry id | actor (always `reconciler`) |
+| `refund` | kind, account, settle entry id, `amount` | actor, reason |
+| `reversal` | kind, account, top-up entry id, `requested`, `source_type`, `source_ref` | actor, reason; the derived `applied`/`shortfall` |
+| `adjustment` | kind, account, signed `amount` (the delta) | actor, reason |
+
+A retried request is therefore recognized as the same. A reused key with other intent is a conflict and writes
+nothing. A free-text reason or the caller's identity never turns a genuine replay into a conflict: the first
+request's values are the ones kept.
 
 ## 7. Orphaned holds
 
@@ -292,7 +405,7 @@ replaced in 0032; 0031 itself is not edited. Their rules follow PR-MON-3's class
 | Kind | Class | Closed by |
 | --- | --- | --- |
 | `credit_balance_drift` | **critical** (closes credit operations on that account, not checkouts) | the reconciler only, once the drift check is clean |
-| `credit_reversal_shortfall` | money: keeps the top-up entry, the reversal entry (if any), `requested`, the shortfall and the money-side source | `refund_confirmed` or `obligation_waived` with an audited reason; never dismissed |
+| `credit_reversal_shortfall` | money: one per reversal request (dedupe key = the request's id), and it links the top-up, the request (`requested`/`applied`/`shortfall`), the reversal entry if any, and the money-side source | `refund_confirmed` or `obligation_waived` with an audited reason; never dismissed |
 | `credit_balance_on_deletion` | money | `refund_confirmed` or `obligation_waived` (the C1 decision); never dismissed |
 | `credit_late_settle` | review (dismissable) | `recorded`, or dismissed with a note |
 
@@ -311,7 +424,10 @@ replaced in 0032; 0031 itself is not edited. Their rules follow PR-MON-3's class
 | C-F8 | A refund larger than the debit, or two refunds racing | Trigger I8 under the referenced row's lock; the second over-refund aborts. |
 | C-F9 | A reversal of partly or fully spent credits | Only the available part is reversed (never reserved credits, never negative); the shortfall becomes a `credit_reversal_shortfall` item in the same transaction (C5). |
 | C-F10 | The same payment credits twice, or credits two accounts | Global UNIQUE on (`source_type`, `source_ref`). |
-| C-F11 | A hand-written `UPDATE` of a balance, or a `DELETE` of history | Refused by the guard triggers. |
+| C-F11 | A hand-written `UPDATE` of a balance, or a `DELETE` of history | Refused by privileges for the runtime role (§2.1), and by the guard triggers for any role. |
+| C-F16 | A reversal of a partly reversed top-up, or two concurrent reversals | `applied = min(requested, available, remaining_reversible)` under the account lock; the trigger cap (I9) is the backstop. |
+| C-F17 | A retried zero-applied reversal after new credit arrived | Returns the stored request (`applied = 0`). It is never re-evaluated, so new credit is never reversed by a replay. |
+| C-F18 | The runtime connects as a superuser or table owner | `credit_runtime_privileges` fails, every credit operation is refused, and readiness names it. |
 | C-F12 | The snapshot drifts from the ledger (should be impossible) | Drift check, then a critical item; credit operations on the account stop. |
 | C-F13 | The account is deleted while holds are open | Holds are closed by the reconciler with `reserve_expire`; new spend refused; history kept; the balance stays a liability with a `credit_balance_on_deletion` item (C1). |
 | C-F14 | The database errors mid-operation | Single transaction: all or nothing. The caller retries with the same key. |
@@ -341,6 +457,27 @@ Everything stays in Billing files. `app.py` changes only in start-up wiring.
     `DELETE`, wrong-kind reference, cross-account reference, over-refund, over-reversal, a second close, a seq gap;
   - 0032 applies on 0027 + 0031;
   - topology documented.
+- **Privileges (P1-2)**, on a throwaway database with a dedicated non-superuser login role that is a member of
+  `orena_credit_runtime`:
+  - a direct `UPDATE credit_accounts SET posted = …` (and `reserved`, `entry_count`, `last_entry_id`) is refused
+    with a permission error;
+  - `UPDATE`/`DELETE`/`TRUNCATE` on `credit_ledger` and `credit_reversal_requests` are refused;
+  - an `INSERT` into `credit_ledger` by that role does update the snapshot (through the definer function);
+  - an `INSERT` into `credit_accounts` with a non-zero `posted` is refused (column privilege);
+  - the guard trigger refuses a protected-column `UPDATE` from the owner's session outside the function;
+  - the function's `search_path` is fixed, so a shadowing object in another schema is not used;
+  - `credit_runtime_privileges` fails when connected as a superuser.
+- **Reversal (P1-3):**
+  1. top-up 100, an earlier reversal of 80, available ≥ 30, a new request for 30: a reversal of 20 and a shortfall
+     of 10;
+  2. a reversal with available 0: no ledger reversal, a request row with `applied = 0`, and a durable shortfall
+     item;
+  3. case 2 retried after a later top-up made credit available: an exact duplicate (the stored request), with no new
+     reversal;
+  4. the same reversal key with a changed `requested`: a conflict, and nothing written;
+  5. concurrent reversals of one top-up never exceed its remaining reversible amount;
+  - and the derived `applied` is not a digest input: the same request replayed after the balance changed is still a
+    duplicate.
 - **Concurrency:**
   - N threads reserve against one account with a total above the balance: exactly ⌊balance/amount⌋ succeed, the
     rest get `insufficient_credits`, and drift is 0;
@@ -383,7 +520,13 @@ Everything stays in Billing files. `app.py` changes only in start-up wiring.
   - the C3 settle cap in the trigger;
   - the C5 partial reversal and shortfall item;
   - the C6 `expires_at`-only-on-reserve CHECK;
-  - the downgrade guard.
+  - the downgrade guard;
+  - the snapshot column privileges (granting `UPDATE (posted)` to the runtime role must fail a test);
+  - the definer function's fixed `search_path`;
+  - `remaining_reversible` in the reversal computation;
+  - the reversal request's no-re-evaluation replay;
+  - `applied` used as a digest input (must fail the replay-after-new-credit test);
+  - the `credit_runtime_privileges` readiness check.
 - **Regression:** every PR-MON-1..3 Billing test and every `tests/*_postgres.py`. #160 is inherited.
 
 ## 13. Human decisions (frozen 2026-10-14 on `43a3dedf`)
@@ -404,21 +547,22 @@ incarnations.
 
 ## 14. Rollback policy
 
-- **Before any real credit exists** (rehearsal only): `downgrade()` drops the tables, triggers and the added
-  item kinds. It first **refuses** if `credit_ledger` or `credit_accounts` holds a row, or if any item of the new
-  kinds exists.
+- **Before any real credit exists** (rehearsal only): `downgrade()` drops the tables, triggers and functions,
+  restores 0031's kind CHECK, and revokes the grants.
+  - It first **refuses** if `credit_ledger`, `credit_accounts` or `credit_reversal_requests` holds a row, or if any
+    item of the new kinds exists.
+  - It drops the two roles only when they own nothing and hold no privileges anywhere else in the cluster. Otherwise
+    it leaves them in place, because roles are cluster-wide.
 - **After real credits exist:** the schema is never downgraded. Rollback means rolling back the code, with billing
   off. The tables are additive and earlier code ignores them.
 - No startup migration, no automatic apply, and no shared-runtime apply. Promotion follows H1 and its own human
   authorization, after 0027 and 0031.
 
-## 15. Questions for the reviewer
+## 15. Reviewer answers (review of `e5ccc114`)
 
-1. A snapshot maintained by a DB trigger, with an update guard (`pg_trigger_depth() > 1`), against pure-ledger sums
-   under the same row lock. Is the trigger guard sound, or would you prefer a `SECURITY DEFINER` function as the only
-   write path?
-2. Is it acceptable for the reserve state (open or closed) to be derived from closing entries, rather than kept in a
-   separate holds table?
-3. Is a late settle, refused and absorbed as `credit_late_settle`, the right default against charging after expiry?
-4. Extending the PR-MON-3 item kind CHECK from 0032, rather than editing 0031.
-5. Parenting 0032 on 0031 (one Billing line) while it has no foreign key to 0027/0031 tables.
+1. Snapshot guard: **change required**, done in §2.1. A database-privilege boundary with a `SECURITY DEFINER`
+   function (owner role, fixed `search_path`). The guard trigger stays as defense in depth only.
+2. A reserve's state derived from its closing entries: **approved**. There is no holds table.
+3. A late settle refused and recorded as `credit_late_settle`: **approved**.
+4. 0032 extends the PR-MON-3 kind CHECK instead of editing 0031: **approved**.
+5. 0032 parented on 0031: **approved and required**, because 0032 depends on 0031's reconciliation schema (§1).
