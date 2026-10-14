@@ -192,6 +192,15 @@ OPENROUTER_REASONING_OFF = frozenset({
 })
 
 
+# Groq reasoning models think inside the small max_tokens budget. Probed live 2026-10-14 (:8021, word_translation
+# request, free plan): `qwen/qwen3.8-27b` answers a valid Vietnamese gloss either way, in 0.35 s with thinking off
+# against 0.67 s without. (`openai/gpt-oss-20b` with no option answered HTTP 400 and needs `reasoning_effort: low`; it
+# is not pinned.) Listed by id: the values are not portable between models.
+GROQ_REQUEST_OPTIONS = MappingProxyType({
+    "qwen/qwen3.8-27b": {"reasoning_effort": "none", "reasoning_format": "hidden"},
+})
+
+
 def check_model_allowed(provider_id: str, model: str) -> None:
     """The model allowlist rule of a provider, static and offline (D-195).
 
@@ -706,6 +715,8 @@ class OpenAICompatibleProvider:
             body = {**body, **self.extra_body}
         if self.id == "openrouter" and body.get("model") in OPENROUTER_REASONING_OFF:
             body["reasoning"] = {"enabled": False}
+        if self.id == "groq" and body.get("model") in GROQ_REQUEST_OPTIONS:
+            body = {**body, **GROQ_REQUEST_OPTIONS[str(body["model"])]}
         response = requests.post(
             f"{self.base_url}/chat/completions",
             headers=self._headers(),

@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-PRICING_CATALOG_VERSION = "2026-10-14.v6"
+PRICING_CATALOG_VERSION = "2026-10-14.v7"
 MAX_PRICED_TOKENS = 1_000_000_000
 
 
@@ -44,6 +44,13 @@ _CATALOG = MappingProxyType({
     ("groq", "llama-3.1-8b-instant"): TokenPricing(
         "groq", "llama-3.1-8b-instant", "USD", 0.0, 0.0,
         note="owner-confirmed Groq free plan (no billing), 2026-10-14; https://console.groq.com/docs/models",
+    ),
+    # Probed live 2026-10-14 (:8021): the Groq key's catalogue lists only allam-2-7b, openai/gpt-oss-120b,
+    # openai/gpt-oss-20b and qwen/qwen3.8-27b, so `llama-3.1-8b-instant` above is NOT available to this key (HTTP 409
+    # model_unavailable). `qwen/qwen3.8-27b` answered en->vi "infrastructure" and zh->vi in 0.3-0.7 s: the standby to use.
+    ("groq", "qwen/qwen3.8-27b"): TokenPricing(
+        "groq", "qwen/qwen3.8-27b", "USD", 0.0, 0.0,
+        note="owner-confirmed Groq free plan (no billing), 2026-10-14; same revisit rule as llama-3.1-8b-instant",
     ),
     # Published paid-tier text rate, ai.google.dev/gemini-api/docs/pricing, read 2026-09-27.
     ("gemini", "gemini-3.5-flash-lite"): TokenPricing("gemini", "gemini-3.5-flash-lite", "USD", 0.30, 2.50),
