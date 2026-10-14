@@ -506,3 +506,32 @@ applied, and credits stay off.
 - **Reviewer answer 3** is kept: drift blocks `release` and `reserve_expire` too.
 - **Non-blocking P2** is recorded as R-MON-015.
 
+
+---
+
+# Focused implementation re-review — verdict
+
+Recorded verbatim from the reviewer's verdict (relayed by the human, 2026-10-14), in summary of its decisive lines:
+
+Focused implementation re-review completed for: `HEAD 53eb5cba4cc210a0921416a40c0c9f472501ea28`
+Fix commits: `b4cc46ffd4b66514f9546396fafb132f1ab3969b`, `90bb3b1cfd8b7a1fc9fa22b47861df93af17ba7e`
+
+## VERDICT
+
+**APPROVE**
+
+The three P1 blockers from the implementation review are closed.
+
+- P1-1 — CLOSED: the database-role provisioning and ownership path now fails closed (superuser-only self-creation; provisioned roles and SET on `orena_credit_owner` for a non-superuser executor; existing roles validated before credit DDL; unsafe LOGIN / SUPERUSER / BYPASSRLS refused; `orena_credit_runtime` may not inherit the owner role; the non-superuser upgrade/downgrade path exercised by a real database test).
+- P1-2 — CLOSED: `credit_runtime_privileges` checks both privileges that must NOT exist and privileges/membership that MUST exist; `ready=true` means sufficiently restricted and sufficiently privileged.
+- P1-3 — CLOSED: the trigger follows the repository lock order (`account_incarnations FOR SHARE` → `credit_accounts FOR UPDATE`); the topup/reserve race regressions prove the insert waits, is rejected after the deletion commits, and leaves no ledger row or balance change; the cleanup closes its transaction in `finally`.
+
+Evidence accepted: targeted SQLite `636 passed, 1 skipped`; throwaway PostgreSQL batch `533 passed, 1 inherited #160 failure`; focused credit suite `39 passed`; mutation suite `29/29 caught`. Issue #160 remains inherited test infrastructure and is not a PR-MON-4 blocker.
+
+Residual risks / gates: `R-MON-014` remains a mandatory deployment gate — do not enable credits until the runtime database connection is a non-superuser runtime login using the approved `orena_credit_runtime` boundary. `R-MON-015` is accepted as P2 follow-up and does not block this PR.
+
+Authorized next step: rebase onto latest `main`; re-run migration topology verification; open the PR; run required CI; if rebase/CI fixes materially change the ledger, migration, privilege boundary, locking, idempotency or reconciliation semantics, return for focused re-review; otherwise merge after CI/repository gates pass. The migration sequence remains `0027 → 0031 → 0032`; all three remain proposed.
+
+This approval does **not** authorize: promotion/application of 0027, 0031 or 0032; enabling `CREDITS_ENABLED`; bypassing the runtime-role deployment gate.
+
+**PR-MON-4 implementation is APPROVED for PR/CI.**
