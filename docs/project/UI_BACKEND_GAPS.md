@@ -6198,3 +6198,48 @@ and `CREDITS_ENABLED` are not live. Missing backend data, no workaround written:
   to `/#/profile` and carries no order code, so the app cannot tell which order a return belongs to. Needed: `expires_at`
   in the checkout answer, and a return/cancel URL carrying the order code (or the last order via CT-1).
 - **CT-7 copy.** Strings in `copy/credit-topup.js` are placeholders until a frame confirms them.
+
+## Credits, Credits Payment, Plan & usage Credits card (2026-10-14 export; built on the CT-1..CT-7 client layer)
+
+Built from `Orena.dc.html` pinned by `SYNC_2026-10-14.md`: `screens/credits/` (Credits, `credits.css`, the payment sheet),
+the Credits card in `screens/plan/`, the Profile row, route `credits` (focus). Credits are never styled as a plan.
+Packs, price and units come only from `GET /api/billing/offers`; the sheet moves only on the backend's order state.
+Measured against the served design at 1920x1080 (desktop, Credits frame): font size, weight, letter spacing, radius,
+padding, gap and box size are equal for the title, hero, tile, balance, buttons, pack card, summary, filter, badges and
+"How Credits work". Differences, each a decision for the human:
+
+- **CT-8 no payment-string renderer, no transfer note.** The design draws a sample QR matrix and a "Transfer note" with
+  Copy. The backend returns the payOS payment string (`qr`) and describes the transfer as `OR<order_code>` internally.
+  The QR is rendered from the string with the vendored `qrcode-generator@1.4.4` (MIT, `static/orena/vendor/`): a new
+  dependency, for the human to accept. The transfer note and Copy are not drawn (the client must not invent the
+  `OR<code>` format); needed: `transfer_note` in the checkout answer.
+- **Unavailable state.** The design draws none for `credit_packs = []` or gated-off billing. Nothing is invented: the
+  Credits route returns to Plan & usage, and the Profile row and the Plan & usage card are not drawn. Decision: whether
+  the design should draw an "unavailable" Credits state (a learner holding a balance while packs are off sees no entry).
+- **Balance.** No learner endpoint (CT-2): the hero and card read "—" with the unit, never 0; the "Balance after" row,
+  the new-balance figure and the count-up animation are not drawn.
+- **Bonus and tag (CT-5).** The pack card has no benefit line or "Most chosen" tag, so a pack card is 29px shorter than
+  the design's.
+- **History (CT-3).** The card draws its filters and the design's empty state only; rows exist in the code
+  (`historyRows`) but nothing serves them. The design's per-feature icon, title and sub need a feature per entry.
+- **Timer and expiry (CT-6).** The "Valid 15:00" countdown is not drawn (no `expires_at`). Expired is reached only from the
+  backend's `expired`/`cancelled`/`failed`/`refunded` order state.
+- **Receipt.** "Receipt sent to ..." is not drawn: the backend sends none.
+- **Prototype affordances not shipped:** "Let this QR expire", the "Prototype: the transfer is detected about 8 seconds
+  after" note, "Payments are simulated in this prototype", the simulated detection. No "I have paid" control exists in the
+  design or the app.
+- **Cancel payment.** The design toasts "Payment cancelled. Nothing was charged." The backend has no cancel call (CT-1):
+  the button closes the sheet and stops watching; the toast is not shown (an unpaid order expires by itself, and a payment
+  that still arrives is credited once).
+- **Checkout refusals.** The design draws no failure state; the refusal message (placeholder copy, CT-7) shows in the
+  existing toast, never the backend's words.
+- **Spark glyph.** The `cr-spark` mark is the design's own artwork, not a Lucide icon; rendered from a sprite
+  (`screens/credits/spark.js`) with its colours as tokens. Kit request: name it a brand mark beside `ol-mark`.
+- **Icons.** Lucide 0.525.0 added: `plus`, `qr-code`, `message-square-text`, `undo-2`, `loader`, `expand` (the design's
+  hand-typed "How Credits work" paths identified as `loader`, `expand`, `clock`, `pen-line`, `undo-2`).
+- **Tokens.** `--spark`, `--spark-ink`, `--spark-soft`, `--spark-line` are the design's (both themes); `--spark-on`,
+  `--spark-g0..2`, `--spark-tile-*`, `--spark-glow*`, `--qr-*` are scoped additions for values the frame writes inline.
+- **Pin.** The export carries a 12 KB `data-omelette-injected` editor block the earlier pin lacked; pinned as exported.
+- **Not measured:** the Plan & usage Credits card and the payment sheet were checked in a browser for layout, flow, the
+  three languages and both themes, but their computed styles were not diffed against the design's frame item by item;
+  touch (a `hasTouch` context) was not run (one shared tab only, resized to 390x844 and 360x740).

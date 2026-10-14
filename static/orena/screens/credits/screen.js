@@ -140,6 +140,8 @@ export default async function credits(element, ctx) {
     if (!sheet) return;
     fillSheet(sheet.element, sheet.handle, sheetMarkup(sheetModel(step, busy)));
     wireSheet();
+    /* The step's markup replaced the focused control: keep focus inside the dialog so Escape and Tab still work. */
+    if (!sheet.element.contains(document.activeElement)) (sheet.element.querySelector('button:not([disabled])') || sheet.element).focus({ preventScroll: true });
   }
 
   function stepNow() {
