@@ -698,3 +698,22 @@ def test_p1_3_a_refunded_order_confirmed_paid_is_settled_without_a_false_anomaly
     assert world.reconciler().tick()["paid_confirmed"] == 1
     assert world.orders.order(order_code=code)["provider_settled_at"] is not None
     assert world.items.summary()["open"] == 0
+
+
+def test_p1_3_a_payment_and_refund_during_the_lookup_are_decided_on_the_order_as_it_is_now(world):
+    """While payOS is asked, the webhook records the payment and an operator refunds it. payOS then says PAID: the
+    lookup must see the refunded order - not the pending snapshot taken before the call - and raise no anomaly."""
+    code = int(world.order(world.account())["order_code"])
+
+    def paid_and_refunded_meanwhile(order_code):
+        assert world.service.handle_webhook("payos", {}, payos_body(order=order_code)).status == "apply"
+        assert world.service.record_refund(order_code=order_code, note="returned by transfer").status == "apply"
+        return paid_answer(order_code)
+
+    world.answers[code] = paid_and_refunded_meanwhile
+    world.clock.now = T0 + timedelta(hours=1)
+    counts = world.reconciler().tick()
+    assert counts["paid_confirmed"] == 1 and counts.get("paid_recovered", 0) == 0
+    assert world.orders.order(order_code=code)["state"] == "refunded"
+    assert world.orders.order(order_code=code)["provider_settled_at"] is not None
+    assert world.items.summary()["open"] == 0  # no false "second payment" for the refunded order
