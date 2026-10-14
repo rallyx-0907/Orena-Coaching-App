@@ -2737,9 +2737,14 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
                     phonetic = str(entry.get("phonetic") or "")
                     audio = ""
                     if not phonetic:
-                        for p in entry.get("phonetics", []):
-                            if p.get("text"):
-                                phonetic = str(p["text"])
+                        # The first entry may carry no reading while a later entry of the same word does.
+                        for candidate in data:
+                            if not isinstance(candidate, dict):
+                                continue
+                            phonetic = str(candidate.get("phonetic") or "") or next(
+                                (str(p["text"]) for p in candidate.get("phonetics") or [] if isinstance(p, dict) and p.get("text")), ""
+                            )
+                            if phonetic:
                                 break
                     for p in entry.get("phonetics", []):
                         if p.get("audio"):
