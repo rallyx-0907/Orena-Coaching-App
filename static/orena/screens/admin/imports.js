@@ -9,7 +9,7 @@ import { languages } from '../../copy/index.js';
 import { adminApi } from '../../capabilities/admin-api.js';
 import { watch as watchJob } from '../../capabilities/admin-tray.js';
 import {
-  MEDIA_LEVELS, checkMediaUrls, defaultCollectionTitle, importBooks, importMedia, importVocabulary, loadHistory, loadJobs,
+  MEDIA_LEVELS, checkMediaUrls, splitMediaUrls, defaultCollectionTitle, importBooks, importMedia, importVocabulary, loadHistory, loadJobs,
   previewVocabulary, sourceBody, vocabularyProblems, mediaProcessingOutcome,
 } from '../../capabilities/admin-imports.js';
 import { t } from './copy.js';
@@ -159,7 +159,7 @@ export async function mountImports(shell, ctx) {
   /* ---- media ---- */
   host.on('tab', (control, dataset) => { view.media.tab = dataset.tab; host.paint(); });
   host.on('media-check', async () => {
-    const urls = view.media.urls.split(/[\n,]/).map((line) => line.trim()).filter(Boolean);
+    const urls = splitMediaUrls(view.media.urls);
     const files = view.media.items.filter((item) => item.file);
     view.media.checking = true;
     host.paint();

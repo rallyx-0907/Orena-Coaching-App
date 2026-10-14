@@ -397,6 +397,7 @@ def _with_supadata_transcript(
     return MediaAcquisition(
         media_object=media_object,
         playback=acquisition.playback,
+        provenance=acquisition.provenance,
     )
 
 

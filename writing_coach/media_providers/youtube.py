@@ -86,6 +86,7 @@ class YouTubeSourceMetadata:
     title: str
     author_name: str = ""
     thumbnail_url: str = ""
+    author_url: str = ""
 
 
 class YouTubeCaptionClient(Protocol):
@@ -162,6 +163,7 @@ class RequestsYouTubeMetadataClient:
             title=title,
             author_name=" ".join(str(payload.get("author_name") or "").split()),
             thumbnail_url=str(payload.get("thumbnail_url") or "").strip(),
+            author_url=str(payload.get("author_url") or "").strip(),
         )
         self._cached_url, self._cached = canonical_source_url, metadata
         return metadata
@@ -449,7 +451,9 @@ class YouTubeMediaProviderAdapter:
             metadata = metadata_client.fetch_metadata(canonical_url)  # type: ignore[attr-defined]
             title = metadata.title
             thumbnail_ref = metadata.thumbnail_url
+            provenance = {"author": getattr(metadata, "author_name", ""), "author_url": getattr(metadata, "author_url", "")}
         else:
+            provenance = {}
             title = metadata_client.fetch_title(canonical_url)
             thumbnail_ref = ""
         native_caption_error: ProviderTimedOut | ProviderRequestFailed | None = None
@@ -507,4 +511,5 @@ class YouTubeMediaProviderAdapter:
                 kind="embed",
                 url=youtube_embed_url(video_id),
             ),
+            provenance={key: value for key, value in provenance.items() if value},
         )

@@ -26,8 +26,11 @@ class UnsafeMediaFetch(ValueError):
     """A URL/fetch failure whose text is safe to return to a learner."""
 
 
-def _unsafe(message: str) -> UnsafeMediaFetch:
-    return UnsafeMediaFetch(message)
+def _unsafe(message: str, status_code: int | None = None) -> UnsafeMediaFetch:
+    failure = UnsafeMediaFetch(message)
+    # The HTTP status the host answered with, when it did: lets a caller tell "rate limited" from "unreachable".
+    failure.status_code = status_code
+    return failure
 
 
 def _is_public_address(raw: str) -> bool:
@@ -149,17 +152,19 @@ class _PublicHTTPSHandler(HTTPSHandler):
         return self.do_open(_PublicHTTPSConnection, req, context=self._context)
 
 
-def _open(url: str, *, timeout: float, max_redirects: int):
-    validate_public_http_url(url)
+def _open(url: str, *, timeout: float, max_redirects: int, allowed_hosts: frozenset[str] | None = None, user_agent: str = ""):
+    validate_public_http_url(url, allowed_hosts=allowed_hosts)
     opener = build_opener(
-        _PublicHTTPHandler(), _PublicHTTPSHandler(), _CheckedRedirects(max_redirects=max_redirects)
+        _PublicHTTPHandler(), _PublicHTTPSHandler(), _CheckedRedirects(max_redirects=max_redirects, allowed_hosts=allowed_hosts)
     )
-    request = Request(url, headers={"User-Agent": "OrenaMediaImport/1.0"})
+    request = Request(url, headers={"User-Agent": user_agent or "OrenaMediaImport/1.0"})
     try:
         return opener.open(request, timeout=timeout)
     except UnsafeMediaFetch:
         raise
-    except (HTTPError, URLError, TimeoutError, OSError) as exc:
+    except HTTPError as exc:
+        raise _unsafe("The media address could not be fetched.", exc.code) from exc
+    except (URLError, TimeoutError, OSError) as exc:
         raise _unsafe("The media address could not be fetched.") from exc
 
 
@@ -175,6 +180,8 @@ def fetch_bounded(
     content_types: frozenset[str] = frozenset(),
     max_redirects: int = 3,
     total_timeout: float | None = None,
+    allowed_hosts: frozenset[str] | None = None,
+    user_agent: str = "",
 ) -> tuple[bytes, str]:
     """Fetch a small response while enforcing a byte budget during reads.
 
@@ -183,7 +190,7 @@ def fetch_bounded(
     socket operation)."""
     if max_bytes <= 0 or timeout <= 0 or max_redirects < 0:
         raise ValueError("fetch limits must be positive")
-    with _open(url, timeout=timeout, max_redirects=max_redirects) as response:
+    with _open(url, timeout=timeout, max_redirects=max_redirects, allowed_hosts=allowed_hosts, user_agent=user_agent) as response:
         content_type = _content_type(response)
         if content_types and content_type not in {item.casefold() for item in content_types}:
             raise _unsafe("This media type is not supported.")
@@ -220,13 +227,15 @@ def download_bounded(
     max_bytes: int = MAX_MEDIA_BYTES,
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     max_redirects: int = 3,
+    allowed_hosts: frozenset[str] | None = None,
+    user_agent: str = "",
 ) -> int:
     """Stream a direct-media source to a caller-owned local temporary path."""
     if max_bytes <= 0 or timeout <= 0 or max_redirects < 0:
         raise ValueError("fetch limits must be positive")
     total = 0
     try:
-        with _open(url, timeout=timeout, max_redirects=max_redirects) as response:
+        with _open(url, timeout=timeout, max_redirects=max_redirects, allowed_hosts=allowed_hosts, user_agent=user_agent) as response:
             destination.parent.mkdir(parents=True, exist_ok=True)
             with destination.open("wb") as output:
                 while True:

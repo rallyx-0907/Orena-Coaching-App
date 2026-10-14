@@ -200,7 +200,7 @@ def test_no_provider_means_truthful_unavailable_not_a_guess() -> None:
 def test_partial_translation_is_preserved_and_only_missing_lines_are_retried() -> None:
     cache = MemoryCache()
     first = _resolve(cache=cache, translate=lambda segments, target: {segments[0].segment_id: "first meaning"})
-    assert first.status == "unavailable"
+    assert first.status == "partial"  # lines that have a meaning are shown: not a failure
     assert first.failure_kind == "translation_incomplete"
     assert len(first.meanings) == 1
     seen = []
