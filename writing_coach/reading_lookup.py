@@ -44,6 +44,11 @@ _LATIN = re.compile(r"[A-Za-zÀ-ɏ]")
 # shorter timeout of its own, the local translator gets what is left, and a miss falls back to the deterministic answer.
 TAP_BUDGET_SECONDS = 2.0
 _MIN_TRANSLATION_WAIT = 0.25
+# The word_translation seam always gets at least this long (D-200 amendment). The deterministic layers before it
+# (the external dictionary, up to its own 1.0 s timeout, is the slow one) used to leave it 0.25-0.5 s of the 2.0 s
+# budget, while a free model answers in 0.7-1.7 s: every rare word - the ones the dictionary cannot answer, and so the
+# ones that reach the seam - timed out. Worst case for a tap that reaches the seam: ~1.0 s dictionary + 1.8 s here.
+SEAM_MIN_WAIT_SECONDS = 1.8
 # The local translator on the tap path is bounded three ways: the call itself is cut off at a short timeout (the
 # provider's own 90 s stays for every other caller), at most _MT_SLOTS calls run at once with no queue behind them
 # (a full house skips the translation and the raw definition stands), and a request already running for the same
@@ -364,7 +369,10 @@ def _seam_settle(key: tuple[str, str, str], finished: Future) -> None:
         slots = getattr(finished, "_gate_slots", _seam_slots)
         if _seam_inflight.get(key) is finished:
             del _seam_inflight[key]
-        if not finished.cancelled() and finished.exception() is not None:
+        # A translate-ahead failure is the background's own (it has its own pause and budget): it must never make a
+        # learner's tap on the same word answer "nothing" instantly for a minute (D-200 amendment).
+        background = getattr(finished, "_background", False)
+        if not background and not finished.cancelled() and finished.exception() is not None:
             if len(_seam_failed) > 2000:
                 _seam_failed.clear()
             _seam_failed[key] = _seam_clock() + _SEAM_FAILURE_SECONDS
@@ -425,6 +433,7 @@ def _prefetch_word_translation(seam: WordTranslationPrefetchSeam, selection: str
         future: Future = Future()
         future.set_running_or_notify_cancel()  # running from the start: a tap's timeout can never cancel it
         future._gate_slots = slots  # type: ignore[attr-defined]
+        future._background = True  # type: ignore[attr-defined]
         _seam_inflight[key] = future
     try:
         answer = seam(selection, source, target)
@@ -602,7 +611,8 @@ class ReadingLookupService:
             # The `word_translation` seam (D-195, the AI Cost Router): last, after every deterministic layer missed.
             # `context` and `definitions` are offered to any implementation; the router's adapter sends the word only.
             remaining = max(
-                _MIN_TRANSLATION_WAIT, (self._budget if self._budget is not None else TAP_BUDGET_SECONDS) - (time.monotonic() - started)
+                SEAM_MIN_WAIT_SECONDS,
+                (self._budget if self._budget is not None else TAP_BUDGET_SECONDS) - (time.monotonic() - started),
             )
             # Bounded by what is left of the tap budget: an overrun is a miss and never holds the tap.
             seamed = _ask_word_translation(

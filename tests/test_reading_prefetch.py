@@ -100,7 +100,7 @@ def sent_words(env):
 
 
 def test_the_english_plan_skips_names_acronyms_numbers_contractions_compounds_and_common_words() -> None:
-    words = plan_words(EN_BODY, "en")
+    words = plan_words(EN_BODY, "en", limit=100)
     assert "lantern" in words and "harbour" in words and "lighthouse" in words and "evacuation" in words
     for skipped in ("NASA", "The", "It's", "long-standing", "their", "2024", "they"):
         assert skipped not in words
@@ -138,7 +138,7 @@ def test_the_chinese_plan_keeps_content_words_of_two_or_more_characters(monkeypa
 def test_opening_an_article_prefetches_only_the_deterministic_misses_and_the_first_tap_is_a_cache_hit(env) -> None:
     env.fake.default[GEMMA] = {"meaning": "đèn lồng"}
     service = lookup_service(_Catalogue({("en", "harbour"): "bến cảng"}))
-    prefetcher, counts = make_prefetcher(service)
+    prefetcher, counts = make_prefetcher(service, planner=lambda body, lang: plan_words(body, lang, limit=100))
     assert prefetcher.run("a1", 3, EN_BODY, "en", "vi") == "done"
     asked = sent_words(env)
     assert "harbour" not in asked and "lantern" in asked  # the catalogue answers harbour: AI never sees it
@@ -291,6 +291,93 @@ def test_a_prefetch_failure_on_a_word_does_not_block_the_tap_on_that_word(env) -
         tap.word_translation_prefetch("lantern", "en", "vi")
     # No negative-cache entry: the tap on the same word asks the pool at once and is answered.
     assert tap.word_translation_seam("lantern", "", [], "en", "vi") == "đèn"
+
+
+def test_a_prefetch_failure_does_not_put_the_lookup_gate_in_cooldown_for_the_tap(env) -> None:
+    """The evidence: a re-tap answered "nothing" in 27 ms because the prefetch's failure had cooled the word down in the
+    lookup gate (a tap's own failure may; a background one must not)."""
+
+    env.fake.script = {GEMMA: [http_error(503)], STANDBY: [http_error(503)]}
+    service = lookup_service()
+    assert service.prefetch_meaning("lantern", "en", "vi") == "stop"
+    began = time.monotonic()
+    meanings = service.lookup("lantern", "The lantern flickered.", "en", "vi").to_dict()["meanings"]
+    assert meanings and meanings[0]["source"] == "word_translation"
+    assert time.monotonic() - began < 1.5
+
+
+def test_a_tap_that_times_out_still_fills_the_cache_for_the_next_tap(env, monkeypatch) -> None:
+    from writing_coach import reading_lookup as rl
+
+    release = threading.Event()
+    real_route = tap.router_module.route
+
+    def slow_route(*args, **kwargs):
+        release.wait(5)
+        return real_route(*args, **kwargs)
+
+    monkeypatch.setattr(tap.router_module, "route", slow_route)
+    monkeypatch.setattr(rl, "SEAM_MIN_WAIT_SECONDS", 0.1)
+    service = lookup_service(budget=0.05)
+    assert service.lookup("lantern", "The lantern flickered.", "en", "vi").to_dict()["meanings"] == []
+    release.set()
+    for _ in range(100):
+        if tap.router_module.peek(tap.CAPABILITY, {"text": "lantern", "source_language": "en", "target_language": "vi"}):
+            break
+        time.sleep(0.05)
+    assert tap.word_translation_seam("lantern", "", [], "en", "vi") == "đèn"
+    assert sent_words(env).count("lantern") == 1  # one provider call served the tap that timed out and the next one
+
+
+def test_each_job_logs_one_counts_only_line(env) -> None:
+    import logging
+
+    records: list[logging.LogRecord] = []
+
+    class Grab(logging.Handler):
+        def emit(self, record):
+            records.append(record)
+
+    grab = Grab(level=logging.INFO)
+    log = logging.getLogger("orena.prefetch")
+    old_level = log.level
+    log.addHandler(grab)
+    log.setLevel(logging.INFO)
+    try:
+        assert log.propagate is False  # no import-time global side effect on the root logger
+        service = lookup_service()
+        prefetcher, _counts = make_prefetcher(service)
+        assert prefetcher.schedule("a1", "r1", EN_BODY, "en", "vi") == "scheduled"
+    finally:
+        log.removeHandler(grab)
+        log.setLevel(old_level)
+    lines = [r.getMessage() for r in records]
+    assert any(line.startswith("reading prefetch done language=en planned=") and "served=" in line for line in lines)
+    assert not any("lantern" in line or "a1" in line.split() for line in lines)  # no word, no article id
+
+
+def test_production_defaults_fit_an_unfunded_free_tier() -> None:
+    from writing_coach import reading_lookup
+
+    assert reading_prefetch.MAX_WORDS_PER_ARTICLE == 8
+    assert tap.PREFETCH_DAILY_CALLS == 25
+    assert reading_lookup.SEAM_MIN_WAIT_SECONDS == 1.8 and reading_lookup.TAP_BUDGET_SECONDS == 2.0
+
+
+def test_a_429_with_no_requests_left_pauses_prefetch_until_the_next_utc_day(env, monkeypatch) -> None:
+    from datetime import UTC, datetime
+
+    monkeypatch.setattr(tap, "_utc_now", lambda: datetime(2026, 10, 14, 20, 0, tzinfo=UTC))
+    spent = http_error(429)
+    spent.rate_limit = {"requests_limit": 50, "requests_remaining": 0, "tokens_limit": None, "tokens_remaining": None}
+    env.fake.script = {GEMMA: [spent], STANDBY: [spent]}
+    with pytest.raises(Exception):  # noqa: B017
+        tap.word_translation_prefetch("lantern", "en", "vi")
+    assert tap.prefetch_paused()
+    env.clock.now += 3 * 3600
+    assert tap.prefetch_paused()  # still the same UTC day
+    env.clock.now += 1.5 * 3600
+    assert not tap.prefetch_paused()  # past midnight (4 h away)
 
 
 def test_an_expired_cooldown_entry_does_not_keep_prefetch_paused(env, monkeypatch) -> None:

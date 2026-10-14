@@ -119,8 +119,12 @@ def test_the_seam_answer_is_a_dictionary_sense_in_the_support_language(no_ai):
     assert out["contextMeaning"] == "thơ" and out["meaningSource"] == "word_translation" and out["meaningLanguage"] == "vi"
 
 
-def test_a_slow_seam_never_holds_the_tap_and_is_a_miss(no_ai):
+def test_a_slow_seam_never_holds_the_tap_and_is_a_miss(no_ai, monkeypatch):
     import time
+
+    from writing_coach import reading_lookup
+
+    monkeypatch.setattr(reading_lookup, "SEAM_MIN_WAIT_SECONDS", 0.25)  # the floor has its own test
 
     service = ReadingLookupService(
         None, _definition("verse"), ReadingTranslationService(_Paid(), cache=DerivedCache()),

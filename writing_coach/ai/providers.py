@@ -59,6 +59,10 @@ _RATE_LIMIT_HEADER_KEYS = {
     "x-ratelimit-remaining-requests": "requests_remaining",
     "x-ratelimit-limit-tokens": "tokens_limit",
     "x-ratelimit-remaining-tokens": "tokens_remaining",
+    # OpenRouter names its request headers without the "-requests" suffix; a 429 on a free model carries them, so the
+    # operator can tell a spent daily allowance from a busy upstream (counts only).
+    "x-ratelimit-limit": "requests_limit",
+    "x-ratelimit-remaining": "requests_remaining",
 }
 
 
