@@ -1314,3 +1314,35 @@ def test_route_test_uses_credentials_saved_in_the_encrypted_store(
     assert primary["ok"] is True and standby["ok"] is True
     assert standby["model"] == models[1]
     assert all("openrouter" in call for call in seen)
+
+
+@pytest.mark.parametrize(
+    ("status", "status_class", "reason"), [(429, "429", "rate_limited"), (402, "402", "payment_required"), (503, "5xx", "server_error")]
+)
+def test_a_failed_live_test_records_the_http_status_class_and_the_reason(
+    monkeypatch: pytest.MonkeyPatch, status: int, status_class: str, reason: str
+) -> None:
+    """The Admin test button's failure rows named only `provider_error`; the status class says 429 from 503."""
+
+    error = AIProviderError(f"Provider returned HTTP {status}.")
+    error.status_code = status
+    repository = FakeRepository()
+    repository.capabilities["writing_evaluator"] = capability_config()
+    request = configure_platform(monkeypatch, repository, providers={"openai": FakeProvider(generation_error=error)})
+    with pytest.raises(HTTPException) as caught:
+        platform_module.admin_ai_capability_test("writing_evaluator", request)
+    assert caught.value.detail["error_class"] == "provider_error"
+    for telemetry in (caught.value.detail["telemetry"], repository.ai_events[-1]):
+        assert (telemetry["http_status_class"], telemetry["fallback_reason"]) == (status_class, reason)
+    assert "Provider returned" not in str(repository.ai_events[-1])
+
+
+def test_a_failed_live_test_without_a_status_has_no_status_fields(monkeypatch: pytest.MonkeyPatch) -> None:
+    repository = FakeRepository()
+    repository.capabilities["writing_evaluator"] = capability_config()
+    request = configure_platform(
+        monkeypatch, repository, providers={"openai": FakeProvider(discovery_error=AIProviderUnavailable("raw network"))}
+    )
+    with pytest.raises(HTTPException):
+        platform_module.admin_ai_capability_test("writing_evaluator", request)
+    assert repository.ai_events[-1].get("http_status_class") is None
