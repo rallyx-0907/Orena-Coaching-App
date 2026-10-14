@@ -430,6 +430,7 @@ class OpenAICompatibleProvider:
         supports_seed: bool = True,
         credential_override: dict[str, Any] | None = None,
         extra_body: dict[str, Any] | None = None,
+        stored_models_are_cache: bool = False,
     ) -> None:
         credential_override = credential_override or {}
         self.extra_body = dict(extra_body or {})
@@ -446,6 +447,10 @@ class OpenAICompatibleProvider:
         override_models = credential_override.get("models")
         raw_models = override_models if isinstance(override_models, list) else os.getenv(models_env, "").split(",")
         self.allowed_models = [str(value).strip() for value in raw_models if str(value).strip()]
+        # The Admin credential save stores the whole live list it saw, so for a provider whose allowlist is owned by
+        # code (OpenRouter: pricing.py) a STORED list is a snapshot - a cache, never a restriction - and a model
+        # priced after the save must appear without a re-save. An environment list stays an explicit allowlist.
+        self._models_are_cache = bool(stored_models_are_cache and isinstance(override_models, list))
         self.default_models = list(default_models)
         self.default_model_override = str(credential_override.get("default_model") or "").strip()
         self.model_filter = model_filter
@@ -560,11 +565,18 @@ class OpenAICompatibleProvider:
             return lowered.startswith("gemini-") and not any(word in lowered for word in blocked)
         return True
 
+    def _read_time(self, models: list[str]) -> list[str]:
+        """A code-owned allowlist is applied whenever a list is read, whatever its source (stored, environment, live)."""
+
+        if self.model_filter == "openrouter-free":
+            return [model for model in models if self._accept_model(model)]
+        return models
+
     def list_models(self) -> list[str]:
         if not self.configured:
             return []
-        if self.allowed_models:
-            return sorted(dict.fromkeys(self.allowed_models))
+        if self.allowed_models and not self._models_are_cache:
+            return self._read_time(sorted(dict.fromkeys(self.allowed_models)))
         if self.default_models:
             return list(self.default_models)
         if self.id == 'azure-openai':
@@ -580,6 +592,8 @@ class OpenAICompatibleProvider:
                 if self._accept_model(model)
             })
         except Exception:
+            if self._models_are_cache:  # offline: the last saved list, re-filtered, rather than an empty picker
+                return self._read_time(sorted(dict.fromkeys(self.allowed_models)))
             return []
 
     def discover_models_live(self) -> list[str]:
@@ -587,8 +601,8 @@ class OpenAICompatibleProvider:
 
         if not self.configured:
             raise AIProviderNotConfigured(f"{self.name} is not configured on the server.")
-        if self.allowed_models:
-            return sorted(dict.fromkeys(self.allowed_models))
+        if self.allowed_models and not self._models_are_cache:
+            return self._read_time(sorted(dict.fromkeys(self.allowed_models)))
         if self.id == 'azure-openai':
             raise AIProviderNotConfigured('Enter an Azure OpenAI deployment name.')
 
@@ -1010,6 +1024,7 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
             supports_seed=False,
             credential_override=provider_credentials.get("openrouter"),
             extra_body={"provider": {"allow_fallbacks": False}},
+            stored_models_are_cache=True,
         ),
         "gemini": OpenAICompatibleProvider(
             provider_id="gemini",
