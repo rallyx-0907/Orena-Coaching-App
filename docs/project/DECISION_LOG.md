@@ -6461,7 +6461,9 @@ MANUAL_ONLY until the UI distinguishes scripts). Reading Production Readiness it
    about one in four; headlines and snippets do not). Otherwise the minority script's share of the evidence at or under
    `NOISE_SHARE` = 10 percent: the majority wins (`zh-Hans` / `zh-Hant`), which tolerates a quoted name or title; above it: `mixed`.
    Measured on the repository's eight real VOA 中文 fixtures: all `zh-Hans`, 0 Traditional characters, 70-597 evidence each.
-3. **Storage, no migration.** `analysis.script` in the existing article analysis JSON, set at ingest for Chinese only. The learner
+3. **Storage, no migration.** `analysis.script` in the existing article analysis JSON, set at ingest for Chinese only, and the same value in the source
+   item's `metadata.script` (a measured fact beside `detected_language`). The learner list reads the latter from the source item it
+   already joins for the credit, so it never reads `analysis_json` (the list-cost guard test holds, unchanged). The learner
    list and detail payloads carry `script` for a Chinese article (absent otherwise; an article with none stored reads `unknown`
    in the list and is detected from its body in the detail).
 4. **Quality.** `script_mixed` is a SOFT issue (`QUALITY_VERSION` reading-quality/4): a reviewer sees it and automatic admission
