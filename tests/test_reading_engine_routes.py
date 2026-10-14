@@ -497,3 +497,12 @@ def test_no_image_candidate_reaches_a_learner_payload(setup):
     for text in (listing, detail):
         for marker in ("river-1280", "stations-1600", "river-twitter", "cdn.example.org", "Jane Doe", "media"):
             assert marker not in text
+
+
+def test_a_level_off_the_articles_scale_is_a_422_and_changes_nothing(setup):
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    path = f"/api/admin/reading/articles/{outcome['article_id']}"
+    refused = call(setup["admin"], "POST", path, json={"reviewed_level": "HSK3"})
+    assert refused.status_code == 422
+    assert call(setup["admin"], "GET", path).json()["reviewed_level"] is None

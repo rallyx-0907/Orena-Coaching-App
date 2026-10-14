@@ -38,6 +38,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import SQLAlchemyError
 
 from writing_coach.core.errors import orena_http_error
+from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS
 from writing_coach.reading_page_quality import QualityRefused, hard_issues
 from writing_coach.persistence.reading_content_repository import (
     CONTENT_KINDS,
@@ -724,6 +725,14 @@ def edit_article(
     content_kind = payload.content_kind.strip().casefold() if payload.content_kind is not None else None
     if content_kind is not None and content_kind not in CONTENT_KINDS:
         raise orena_http_error(422, "reading_invalid_content_kind", "That is not a Reading content type.")
+    if payload.reviewed_level and payload.reviewed_level.strip():
+        existing = _guarded(lambda: _content().get_article(article_id))
+        if existing is not None:
+            bands = ZH_LEVEL_BANDS if existing["language"] == "zh" else EN_LEVEL_BANDS
+            if payload.reviewed_level.strip() not in bands:
+                raise orena_http_error(
+                    422, "reading_invalid_level", f"That is not a level on this article's scale: {', '.join(bands)}."
+                )
     article = _guarded(
         lambda: _content().update_article(
             article_id,
