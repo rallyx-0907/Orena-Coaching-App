@@ -20,6 +20,7 @@ import threading
 from collections import OrderedDict, deque
 from datetime import UTC, datetime
 
+from writing_coach.ai import routing
 from writing_coach.ai.base import AICapabilityError, AIProviderError
 from writing_coach.ai.router import router as router_module
 from writing_coach.ai.router.contract import RouterInputInvalid
@@ -36,6 +37,12 @@ _BRAKE_ACCOUNTS_MAX = 5000
 # unavailable (every pool entry failed or is cooling down, a 429 among them) it asks nobody for PAUSE_SECONDS.
 PREFETCH_DAILY_CALLS = 1500
 PREFETCH_PAUSE_SECONDS = 120.0
+
+# Background calls keep their own provider-health record: a 429 that a prefetch meets cools down the prefetch's view of
+# the provider, never the one a learner's tap reads (the pool entries share a provider id, so a shared record would
+# let a background burst take the tap's primary away). Prefetch in turn yields whenever the shared record says the
+# provider is cooling down, and pauses after ANY failed attempt, even one a standby then answered.
+_prefetch_health = routing.ProviderHealth(lambda: routing.monotonic())
 
 _lock = threading.Lock()
 _spent: OrderedDict[str, deque] = OrderedDict()
@@ -57,6 +64,7 @@ def reset_state() -> None:
     with _lock:
         _spent.clear()
         _prefetch_day, _prefetch_calls, _prefetch_paused_until = "", 0, 0.0
+    _prefetch_health.reset()
 
 
 def prefetch_enabled() -> bool:
@@ -150,15 +158,30 @@ def word_translation_prefetch(selection: str, source: str, target: str) -> str |
         held = router_module.peek(CAPABILITY, raw)
         if held is not None:
             return _meaning(held)
+        _yield_to_taps()
         _admit_prefetch_call()
         router_module.count_event(CAPABILITY, "prefetch_calls")
-        return _meaning(router_module.route(CAPABILITY, raw))
+        routed = router_module.route(CAPABILITY, raw, health=_prefetch_health)
+        if routed.fell_back:  # a rate limit or a timeout on the way: slow down even though an answer came
+            pause_prefetch()
+        return _meaning(routed)
     except AIProviderError as exc:
         if _pool_unavailable(exc):
             pause_prefetch()
         raise
     except RouterInputInvalid:
         return None
+
+
+def _yield_to_taps() -> None:
+    """Refuse (and pause) while the shared health record says a pool provider is cooling down: that is the tap's pool."""
+
+    config = router_module.load_config(CAPABILITY)
+    shared = routing.provider_health.snapshot()
+    for provider in {config.provider, config.backup_provider}:
+        if provider and shared.get(provider, {}).get("cooling_down"):
+            pause_prefetch()
+            raise PrefetchRefused("pool_cooling_down")
 
 
 def _pool_unavailable(error: BaseException) -> bool:

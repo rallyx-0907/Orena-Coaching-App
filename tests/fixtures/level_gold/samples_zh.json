@@ -1,0 +1,20 @@
+[
+ {"id": "orena-zh-hsk1-a", "language": "zh", "label": "HSK1", "status": "PROVISIONAL", "label_basis": "author-written beginner text, author judgement",
+  "text": "我叫小明。我是学生。我家有四个人，爸爸、妈妈、哥哥和我。今天天气很好，我们去公园玩。我喜欢吃苹果，你喜欢吃什么？我的朋友在那里。他是老师，他很好。我们一起看书，还一起喝茶。"},
+ {"id": "orena-zh-hsk1-b", "language": "zh", "label": "HSK1", "status": "PROVISIONAL", "label_basis": "author-written beginner text, author judgement",
+  "text": "你好！我是中国人。我住在北京。这是我的朋友，他叫大卫。他是医生。我们都很好。明天你有时间吗？我想请你来我家吃饭。我家很大，也很漂亮。我妈妈会做很多菜，我们都爱吃。"},
+ {"id": "orena-zh-hsk2-a", "language": "zh", "label": "HSK2", "status": "PROVISIONAL", "label_basis": "author-written elementary text, author judgement",
+  "text": "昨天我和朋友一起去商店买东西。商店里的东西很便宜，我买了一件新衣服和一双鞋。回家的时候下雨了，我们坐出租车回去。晚上我给妈妈打电话，告诉她我今天非常高兴。她说下个星期会来看我，我觉得很快乐。"},
+ {"id": "orena-zh-hsk2-b", "language": "zh", "label": "HSK2", "status": "PROVISIONAL", "label_basis": "author-written elementary text, author judgement",
+  "text": "我每天早上六点起床，然后去跑步。八点我骑自行车去公司。中午我在公司吃饭，下午工作到六点。晚上我喜欢看电视或者听音乐。星期六和星期天我不工作，常常和朋友去玩，有时候也在家休息。"},
+ {"id": "orena-zh-hsk3-a", "language": "zh", "label": "HSK3", "status": "PROVISIONAL", "label_basis": "author-written intermediate text, author judgement",
+  "text": "上个星期我第一次去上海旅游。那里的城市非常大，也很热闹。我参观了很多有名的地方，还尝了当地的菜。虽然天气有点儿热，但是我玩得很开心。以后如果有机会，我还想再去一次，而且想带家人一起去，让他们也看看这座城市的变化。"},
+ {"id": "orena-zh-hsk4-a", "language": "zh", "label": "HSK4", "status": "PROVISIONAL", "label_basis": "author-written upper-intermediate text, author judgement",
+  "text": "随着生活水平的提高，越来越多的人开始关心自己的健康。专家建议，每天至少运动半个小时，并且注意饮食习惯，不要吃太多油炸的食物。此外，保持良好的心情对身体也很重要，遇到压力时应该学会放松。只要坚持下去，我们的生活质量就会明显提高。"},
+ {"id": "orena-zh-hsk5-a", "language": "zh", "label": "HSK5", "status": "PROVISIONAL", "label_basis": "author-written advanced text, author judgement",
+  "text": "近年来，随着科技的迅速发展，网络购物逐渐成为人们日常生活中不可缺少的一部分。它不仅节省了时间，还为消费者提供了更多的选择。然而，一些商家为了追求利润，销售质量不合格的商品，这给消费者带来了不少麻烦，因此相关部门需要加强监督管理，保护消费者的合法权益。"},
+ {"id": "orena-zh-hsk6-a", "language": "zh", "label": "HSK6", "status": "PROVISIONAL", "label_basis": "author-written abstract prose, author judgement",
+  "text": "当代社会的价值观念日趋多元化，传统与现代之间的矛盾在某种程度上折射出人们对身份认同的焦虑。倘若一味地固守成规，势必会阻碍创新；反之，盲目崇尚潮流，又可能导致文化根基的流失。如何在继承与变革之间寻求微妙的平衡，成为学界乃至整个社会亟待探讨的课题，也考验着决策者的远见与魄力。"},
+ {"id": "orena-zh-hsk6-b", "language": "zh", "label": "HSK6", "status": "PROVISIONAL", "label_basis": "author-written abstract prose, author judgement",
+  "text": "全球化进程的加速使得各国经济相互渗透、休戚与共，然而贸易摩擦与地缘博弈的阴霾却始终挥之不去。有学者指出，唯有构建更加包容、透明的多边机制，才能从根本上化解分歧，遏制保护主义的蔓延。这一主张虽然不无争议，但无疑为当下错综复杂的国际格局提供了一种值得借鉴的思路。"}
+]

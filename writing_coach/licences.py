@@ -48,6 +48,17 @@ DATASETS: tuple[Dataset, ...] = (
             "The fonts' authors; served from Orena, not from Google"),
     Dataset("nltk-tagger", "NLTK averaged perceptron tagger", "Apache 2.0",
             "https://www.apache.org/licenses/LICENSE-2.0", "https://www.nltk.org", "NLTK Project"),
+    Dataset("cefrj-vocabulary", "CEFR-J Vocabulary Profile 1.5 (English word levels A1-B2)",
+            "Free for research and commercial use with citation",
+            "https://github.com/openlanguageprofiles/olp-en-cefrj/blob/master/README.md",
+            "https://github.com/openlanguageprofiles/olp-en-cefrj",
+            "Tono Laboratory, Tokyo University of Foreign Studies (TUFS); The CEFR-J Wordlist Version 1.5, compiled by Yukio Tono"),
+    Dataset("octanove-vocabulary", "Octanove Vocabulary Profile C1/C2 1.0 (English word levels C1-C2)", "CC BY-SA 4.0",
+            "https://creativecommons.org/licenses/by-sa/4.0/", "https://github.com/openlanguageprofiles/olp-en-cefrj",
+            "Octanove Labs, distributed with the CEFR-J datasets by Open Language Profiles"),
+    Dataset("hsk30-vocabulary", "HSK 3.0 word and character levels (ivankra/hsk30)", "MIT",
+            "https://github.com/ivankra/hsk30/blob/main/LICENSE", "https://github.com/ivankra/hsk30",
+            "Ivan Krasilnikov and Shawky; derived from the PRC Ministry of Education HSK 3.0 standard"),
 )
 
 

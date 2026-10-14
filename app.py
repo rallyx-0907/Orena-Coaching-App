@@ -716,7 +716,8 @@ def _translate_ahead_on_open(article: dict[str, Any]) -> None:
         article.get("content_revision", ""),
         article.get("body", ""),
         article.get("language", ""),
-        resolve_support_language(get_learner_profile().get("native_language")),
+        # Read on the worker, inside a copy of this request's context: the request never waits for the profile.
+        lambda: resolve_support_language(get_learner_profile().get("native_language")),
     )
 
 
@@ -2028,6 +2029,7 @@ def startup() -> None:
 
 @app.on_event("shutdown")
 def _stop_feedback_retention() -> None:
+    _reading_prefetcher.shutdown()  # D-200: drop queued translate-ahead jobs; a running call finishes on its own
     if _feedback_retention is not None:
         _feedback_retention.stop()
     if _quota_reconciler is not None:

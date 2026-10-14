@@ -422,6 +422,7 @@ class ReadingContentEngine:
                 "long_word_ratio": analysis.long_word_ratio,
                 "level_confidence": analysis.confidence,
                 "level_version": analysis.level_version,
+                "level_evidence": analysis.evidence,
                 "quality_issues": issues,
                 "quality_version": QUALITY_VERSION,
                 "extraction": item.metadata.get("extraction") or {},

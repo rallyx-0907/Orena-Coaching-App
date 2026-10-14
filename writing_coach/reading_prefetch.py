@@ -17,18 +17,23 @@ What it is, deliberately small:
   from repeating the work; the router's cache (180 days) is what actually holds the answers. The marker is dropped
   when a batch is stopped early so a later open can finish it.
 - **Never in the way.** `schedule()` only enqueues and returns; it never raises and never delays the article response.
+  Everything that reads a database (the capability's configuration, the learner's support language) runs on the worker,
+  inside a copy of the request's context.
+- **Gentle on the provider.** A pause of `PACE_SECONDS` follows every call that reached the provider, so a free tier's
+  rate limit is not burned in a burst, and the router calls run on a private health tracker (see `ai.router.tap`).
 - **Counts only.** Telemetry is the router's rollup counters (`prefetch_articles`, `prefetch_requested`,
   `prefetch_served`, `prefetch_skipped`, `prefetch_failed`); no word, no article id.
 
 Which words: English words that are not on the common-word list, not a name (capitalised away from a sentence start),
-not an acronym, not touching a digit, not a contraction or a hyphenated compound, and at least four letters; ordered
-longer (rarer) first, then by order of appearance. Chinese words of two or more Han characters that the tagger marks
-as a noun, verb, adjective or adverb, in order of appearance. The level estimator keeps no per-word difficulty, so
-length and the common-word lists are the difficulty signal.
+not an acronym, not touching a digit, not a contraction or a hyphenated compound, and at least four letters. Chinese
+words of two or more Han characters that the tagger marks as a noun, verb, adjective or adverb. Both are ordered by the
+level estimator's own word lists (`reading_level.word_rank`: CEFR-J / Octanove, HSK 3.0), hardest first, then by length
+and order of appearance; an A1 / HSK1 word is never planned.
 """
 
 from __future__ import annotations
 
+import contextvars
 import logging
 import re
 import threading
@@ -38,7 +43,8 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from writing_coach.reading_processing import _EN_COMMON, _EN_WORD, _FUNCTION_WORDS, _SENTENCE_START, _ZH_COMMON
+from writing_coach.reading_level import _SENTENCE_START, word_rank
+from writing_coach.reading_processing import _EN_COMMON, _EN_WORD, _FUNCTION_WORDS
 
 _log = logging.getLogger("orena.prefetch")
 
@@ -46,6 +52,13 @@ MAX_WORDS_PER_ARTICLE = 40
 WORKERS = 2
 MAX_QUEUED_ARTICLES = 8
 MARKER_TTL_SECONDS = 6 * 3600.0
+# A batch that stopped early (the pool was unavailable, three bad answers, over budget) is not retried for this long, so
+# re-opening an article in a loop cannot drain the day's budget.
+RETRY_AFTER_SECONDS = 600.0
+# Opening the same article again within this long coalesces into the job already queued or just run.
+_COALESCE_SECONDS = 30.0
+# A pause after every call that reached the provider (per worker): a free tier is not burned in a burst.
+PACE_SECONDS = 0.5
 _MARKERS_MAX = 2000
 MIN_EN_LETTERS = 4
 MAX_CONSECUTIVE_FAILURES = 3
@@ -80,9 +93,14 @@ def _en_words(body: str) -> list[str]:
         elif lower and not held[2]:
             seen[folded] = (held[0], token, True)  # the form a learner meets mid-sentence is the one they will tap
     ordered = sorted(seen.values(), key=lambda item: item[0])
-    # Rarer first: longer words, in three bands, each in order of appearance.
-    ranked = sorted(ordered, key=lambda item: -(3 if len(item[1]) >= 8 else 2 if len(item[1]) >= 6 else 1))
-    return [form for _, form, _ in ranked]
+    ranked: list[tuple[int, int, int, str]] = []
+    for position, form, _lower in ordered:
+        rank = word_rank(form, "en")
+        if rank == 0:
+            continue  # A1: a learner of any level knows it
+        ranked.append((-rank, -min(len(form), 12), position, form))
+    ranked.sort()
+    return [form for _, _, _, form in ranked]
 
 
 def _zh_tokens(chunk: str) -> list[dict[str, Any]]:
@@ -106,12 +124,14 @@ def _zh_words(body: str) -> list[str]:
                 word in seen
                 or not _HAN_WORD.match(word)
                 or token.get("pos") not in _ZH_CONTENT_POS
-                or all(char in _ZH_COMMON for char in word)
             ):
                 continue
             seen.add(word)
             words.append(word)
-    return words
+    ranked = sorted(
+        ((-word_rank(word, "zh"), index, word) for index, word in enumerate(words)),
+    )
+    return [word for rank, _, word in ranked if rank != 0]  # HSK1 (rank 0) is never planned
 
 
 def plan_words(body: str, language: str, limit: int = MAX_WORDS_PER_ARTICLE) -> list[str]:
@@ -139,6 +159,7 @@ class Prefetcher:
         paused: Callable[[], bool],
         count: Callable[[str, int], None],
         clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
         executor: ThreadPoolExecutor | None = None,
         planner: Callable[[str, str], list[str]] = plan_words,
     ) -> None:
@@ -147,99 +168,128 @@ class Prefetcher:
         self._paused = paused
         self._count = count
         self._clock = clock
+        self._sleep = sleep
         self._planner = planner
         self._executor = executor or ThreadPoolExecutor(max_workers=WORKERS, thread_name_prefix="reading-prefetch")
         self._lock = threading.Lock()
         self._markers: OrderedDict[tuple[str, str, str, str], float] = OrderedDict()
+        self._recent: OrderedDict[tuple[str, str, str], float] = OrderedDict()
         self._queued = 0
 
-    def _claim(self, marker: tuple[str, str, str, str]) -> str:
-        """"ok" (claimed), "already" (done or running within the TTL) or "queue_full"."""
+    def shutdown(self) -> None:
+        """Stop taking work and drop what has not started (app shutdown); a running call finishes on its own."""
 
-        now = self._clock()
+        self._executor.shutdown(wait=False, cancel_futures=True)
+
+    def _mark(self, marker: tuple[str, str, str, str], seconds: float) -> None:
         with self._lock:
-            until = self._markers.get(marker)
-            if until is not None and until > now:
-                return "already"
-            if self._queued >= MAX_QUEUED_ARTICLES:
-                return "queue_full"
-            self._markers[marker] = now + MARKER_TTL_SECONDS
+            self._markers[marker] = self._clock() + seconds
             self._markers.move_to_end(marker)
             while len(self._markers) > _MARKERS_MAX:
                 self._markers.popitem(last=False)
-            self._queued += 1
-            return "ok"
 
-    def _release(self, marker: tuple[str, str, str, str], *, keep: bool) -> None:
-        with self._lock:
-            self._queued = max(0, self._queued - 1)
-            if not keep:
-                self._markers.pop(marker, None)
-
-    def schedule(self, article_id: str, revision: Any, body: str, language: str, target: str) -> str:
-        """Enqueue this article's prefetch and return at once: "scheduled", or why not. Never raises."""
+    def schedule(
+        self, article_id: str, revision: Any, body: str, language: str, target: str | Callable[[], str]
+    ) -> str:
+        """Enqueue this article's prefetch and return at once: "scheduled", or why not. Never raises, reads nothing
+        from a database. `target` may be a callable (the learner's support language); it runs on the worker, inside
+        a copy of this request's context."""
 
         try:
             source = (language or "").split("-", 1)[0].casefold()
-            target = (target or "").strip().casefold()
-            if source not in _SUPPORTED_SOURCES or not target or target == source or not body:
+            if source not in _SUPPORTED_SOURCES or not body:
                 return "unsupported"
-            if not self._enabled():
-                return "disabled"
             if self._paused():
                 return "paused"
-            marker = (str(article_id), str(revision), source, target)
-            claimed = self._claim(marker)
-            if claimed != "ok":
-                return claimed
+            key = (str(article_id), str(revision), source)
+            now = self._clock()
+            with self._lock:
+                until = self._recent.get(key)
+                if until is not None and until > now:
+                    return "already"
+                if self._queued >= MAX_QUEUED_ARTICLES:
+                    return "queue_full"
+                self._recent[key] = now + _COALESCE_SECONDS
+                self._recent.move_to_end(key)
+                while len(self._recent) > _MARKERS_MAX:
+                    self._recent.popitem(last=False)
+                self._queued += 1
+            context = contextvars.copy_context()
             try:
-                self._executor.submit(self._run, marker, body, source, target)
+                self._executor.submit(context.run, self.run, article_id, revision, body, source, target)
             except Exception:  # noqa: BLE001 - e.g. a pool shut down
-                self._release(marker, keep=False)
+                with self._lock:
+                    self._queued = max(0, self._queued - 1)
+                    self._recent.pop(key, None)
                 return "unavailable"
             return "scheduled"
         except Exception:  # noqa: BLE001 - opening an article never depends on this
             _log.warning("reading prefetch could not be scheduled")
             return "unavailable"
 
-    def _run(self, marker: tuple[str, str, str, str], body: str, source: str, target: str) -> None:
-        finished = True
+    def run(self, article_id: str, revision: Any, body: str, source: str, target: str | Callable[[], str]) -> str:
+        """The job: resolve the support language, claim the article, translate its words one at a time. Returns what
+        happened ("done", "stopped", "already", "disabled", "paused", "unsupported"); never raises."""
+
         try:
-            words = self._planner(body, source)
-            self._count("prefetch_articles", 1)
-            failures = 0
-            for index, word in enumerate(words):
-                if self._paused() or not self._enabled():
-                    finished = False
-                    self._count("prefetch_skipped", len(words) - index)
-                    break
-                outcome = self._meaning(word, source, target)
-                if outcome in ("served", "empty", "failed", "stop"):
-                    self._count("prefetch_requested", 1)
-                rest = len(words) - index - 1
-                if outcome == "served":
-                    self._count("prefetch_served", 1)
-                    failures = 0
-                elif outcome in ("empty", "failed"):
-                    self._count("prefetch_failed", 1)
-                    failures += 1
-                elif outcome == "stop":  # the provider side is unavailable, paused or over budget: ask nobody more
-                    self._count("prefetch_failed", 1)
-                    self._count("prefetch_skipped", rest)
-                    finished = False
-                    break
-                else:  # deterministic, joined, cooldown, busy: this word needs nothing from us
-                    self._count("prefetch_skipped", 1)
-                    if outcome == "disabled":
-                        self._count("prefetch_skipped", rest)
-                        finished = False
-                        break
-                if failures >= MAX_CONSECUTIVE_FAILURES:
-                    self._count("prefetch_skipped", rest)
-                    finished = False
-                    break
+            return self._run(article_id, revision, body, source, target)
         except Exception:  # noqa: BLE001 - a background job never raises into the pool
-            finished = False
             _log.warning("reading prefetch stopped on an error")
+            return "stopped"
         finally:
-            self._release(marker, keep=finished)
+            with self._lock:
+                self._queued = max(0, self._queued - 1) if self._queued else 0
+
+    def _run(self, article_id: str, revision: Any, body: str, source: str, target: str | Callable[[], str]) -> str:
+        resolved = (target() if callable(target) else target) or ""
+        target = str(resolved).strip().casefold()
+        if not target or target == source:
+            return "unsupported"
+        if not self._enabled():
+            return "disabled"
+        if self._paused():
+            return "paused"
+        marker = (str(article_id), str(revision), source, target)
+        now = self._clock()
+        with self._lock:
+            until = self._markers.get(marker)
+            if until is not None and until > now:
+                return "already"
+        self._mark(marker, MARKER_TTL_SECONDS)
+        words = self._planner(body, source)
+        self._count("prefetch_articles", 1)
+        failures = 0
+        for index, word in enumerate(words):
+            if self._paused() or not self._enabled():
+                self._count("prefetch_skipped", len(words) - index)
+                self._mark(marker, RETRY_AFTER_SECONDS)
+                return "stopped"
+            outcome = self._meaning(word, source, target)
+            reached_provider = outcome in ("served", "empty", "failed", "stop")
+            if reached_provider:
+                self._count("prefetch_requested", 1)
+            rest = len(words) - index - 1
+            if outcome == "served":
+                self._count("prefetch_served", 1)
+                failures = 0
+            elif outcome in ("empty", "failed"):
+                self._count("prefetch_failed", 1)
+                failures += 1
+            elif outcome == "stop":  # the provider side is unavailable, paused or over budget: ask nobody more
+                self._count("prefetch_failed", 1)
+                self._count("prefetch_skipped", rest)
+                self._mark(marker, RETRY_AFTER_SECONDS)
+                return "stopped"
+            else:  # deterministic, joined, cooldown, busy: this word needs nothing from us
+                self._count("prefetch_skipped", 1)
+                if outcome == "disabled":
+                    self._count("prefetch_skipped", rest)
+                    self._mark(marker, RETRY_AFTER_SECONDS)
+                    return "stopped"
+            if failures >= MAX_CONSECUTIVE_FAILURES:
+                self._count("prefetch_skipped", rest)
+                self._mark(marker, RETRY_AFTER_SECONDS)
+                return "stopped"
+            if reached_provider and rest:
+                self._sleep(PACE_SECONDS)
+        return "done"

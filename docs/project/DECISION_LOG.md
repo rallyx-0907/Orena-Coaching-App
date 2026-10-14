@@ -6517,6 +6517,67 @@ estimator never reads `reviewed_level`).
    so a few names still enter the signals. (c) `_EN_WORD` matches ASCII letters only, so accented Latin words (`cafe` with an accent,
    names) split into fragments; a calibrated tokenizer must handle them.
 
+## D-199 - Reading level: coverage against graded word lists replaces the heuristic (reading-level/3) (2026-10-14)
+
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVE WITH CONDITIONS on 538dc9ba; re-review APPROVE on 5215d1ba, no open P0/P1; merged once CI was green, with the owner decisions of item 6). Production Readiness item 7b, option A of D-198, chosen by the owner on
+2026-10-14. Replaces the interim estimate of D-198. No schema change, no migration, no stored row changed; the reviewer
+override of D-196 keeps its precedence (the estimator never reads `reviewed_level`). No AI call: the `level_estimation`
+router capability (D-195) is not used.
+
+1. **Data** (owner's choice; separate generated files, built offline by `scripts/build_reading_level_tables.py`, which has
+   `--check` and keeps licence, citation, origin commit and source hashes in each JSON; rows added to `THIRD_PARTY_NOTICES.md`
+   and `writing_coach/licences.py`):
+   - CEFR-J Vocabulary Profile 1.5 (A1-B2), `level_words_cefrj.json`: free for research and commercial use with citation;
+     copyright Tono Laboratory, TUFS.
+   - Octanove Vocabulary Profile C1/C2 1.0, `level_words_octanove_c1c2.json`: **CC BY-SA 4.0, ShareAlike**; kept as its own
+     file so the licence does not extend to the CEFR-J table or to code. Adapting that file keeps CC BY-SA 4.0.
+   - HSK 3.0 words and characters, `level_words_hsk30.json`, from ivankra/hsk30 (MIT, commit 4ff9e391), chosen over
+     drkameleon/complete-hsk-vocabulary because the latter folds in frequency data from sources without a clear licence.
+     Only each entry's level is kept. Caveat recorded: the ivankra README says the data derives from the PRC Ministry of
+     Education standard and that the MIT copyright claim is questionable; the owner has accepted the MIT declaration as the
+     operative licence. Levels 7-9 are the advanced band beyond Orena's HSK1-6 scale.
+2. **Estimator** (`writing_coach/reading_level.py`; `LEVEL_VERSION = "reading-level/3"`, stored as `analysis.level_version`).
+   Names, acronyms, numbers and units never count (D-198's rules). English tokens are looked up with suffix rules and a small
+   irregular-form table; Chinese is segmented with jieba, names/numbers/non-words are skipped by jieba tag, and an unlisted
+   word falls back to its characters (their upper median; HSK 7-9 is a rank of its own, capped to HSK6 for learners). Band = the lowest band whose share of tokens above it is at most
+   `TAU` (en 0.10, zh 0.08); a mean sentence length of 20+ words (en) or clause length of 14+ (zh) adds one band, an English
+   mean of 5 or fewer takes one off. `confidence` = `min(1, scored/300)` discounted when a 0.7x-1.4x change of `TAU` moves
+   the band; below `LOW_CONFIDENCE` (0.1, about 35 scored words) the band is capped at C1 / HSK5.
+   `analysis.level_evidence` stores the scored count, cumulative coverage per band, the share beyond all lists, the lexical band,
+   the sentence length and the top eight out-of-band words with their count - never the text. Admin Reading's evidence panel shows
+   coverage and those words in the existing row component (EN/VI/ZH copy `rdEvCoverage`, `rdEvAboveBand`); confidence was already
+   drawn ("N% sure").
+3. **Calibration** (`tests/fixtures/level_gold/`, `scripts/eval_reading_level.py`). 61 labelled items (34 EN, 27 ZH): 36 VOA
+   Learning English pages labelled by VOA's stated tier (Beginning = A1/A2 by programme, Intermediate = B1; the Advanced tier
+   describes the learner, not the vocabulary, so it is unlabelled; ten pages that credit an agency were dropped), Orena-written
+   samples per band, the real fixtures (NASA, Global Voices, VOA 中文), and 13 real easy Chinese texts (item 4).
+   **Every label is PROVISIONAL; none is owner-approved.** Agreement with those labels, D-198 heuristic then this estimate on the
+   same items: English exact 35.3 percent then 70.6, within one band 88.2 then 97.1; Chinese exact 22.2 then 66.7, within one
+   band 85.2 then 92.6. The parameters were fitted on a subset of these items (three per language) so the figures are in-sample;
+   a two-fold hold-out gave English 52.9/82.4 and 70.6/100 and Chinese 76.9/92.3 and 50.0/100. They are regression guards, not
+   a claim of accuracy. Reviewer corrections will be read-only evidence once a database is at hand, not the sole truth.
+4. **Result on real articles.**
+   - English: NASA C2 to C1, Global Voices C2 to C1; VOA Learning English spreads over A1-C1.
+   - Chinese news: the five VOA 中文 pages all read HSK6 (D-198: all HSK5). 80-93 percent of their words are in the HSK 1-6 lists,
+     7-15 percent are HSK 7-9 and under 1 percent are in no list. HSK 7-9 is its own internal rank (shown to learners as HSK6, kept
+     in the evidence as `hsk7_9`), and an unlisted word takes the upper-median band of its characters rather than the hardest, so
+     the ceiling is the measurement and not an artefact of the fallback. Thresholds were not fitted to make news look easier.
+   - Chinese easy real texts (owner's acceptance, 2026-10-14): 13 real texts with clear reuse rights, labelled PROVISIONAL by the
+     author before the estimator ran: eight Tatoeba sentence sets (CC BY 2.0 FR) and five Chinese Wikipedia leads (CC BY-SA 4.0).
+     Estimate: HSK3 x2, HSK4 x4, HSK5 x2, HSK6 x5 (D-198: HSK4 x7, HSK5 x6). Eight of thirteen read below HSK6 over four bands, so the
+     criterion "real texts below HSK6 with a spread" is met on these. Agreement with the author's labels is 5 of 13 exact and 11
+     of 13 within one band: short sentence sets of about 75 words can be pushed up a band by three or four rare words, and the
+     encyclopedia leads read a band above the author's guess. Nothing was refitted for them.
+5. **Known limits.** The labels are judgements (the VOA tier is coarse and its A1/A2 split is by programme, not measured); a
+   text is graded on vocabulary and length only, not on grammar, so a grammatically complex text in plain words reads low
+   (an author B2 sample reads A2); an English word absent from CEFR-J/Octanove (technical terms, many derived forms) counts as
+   beyond C2, which is why a technical press release reads C1-C2; the suffix rules are heuristic; the Chinese threshold is
+   strict for texts under about 100 words. Re-estimating stored rows is an owner decision:
+   `scripts/report_reading_level_changes.py` (read-only) lists what would change under this version.
+6. **Owner decisions (2026-10-14).** (a) The use of the CEFR-J list as a repackaged derived table, and of the HSK 3.0 list from
+   ivankra/hsk30 (MIT, with the provenance caveat in item 1), are ACCEPTED in full by the owner; no further confirmation is needed.
+   (b) The Chinese acceptance gap was to be closed by adding easy real Chinese texts and checking; item 4 records the result.
+
 ## D-200 - Translate ahead when a Reading article opens; a router answer keeps its label (2026-10-14)
 
 **Status: PROPOSED** (amends D-195; needs an independent architecture review before it is ACCEPTED). Owner decision of
@@ -6528,13 +6589,17 @@ Evidence: on the sandbox the primary free model answers in about 1.6-2 s and `TA
 on a new word missed its budget (no gloss); the call finished in the background and only the second tap was instant.
 
 1. **Trigger.** `GET /api/reading/articles/{id}` (a 200 and a 304 revalidation) calls an `on_open` hook that only enqueues
-   (`writing_coach/reading_prefetch.py`, `Prefetcher.schedule`, which never raises and never waits); a hook failure is
-   swallowed. The target language is the learner's resolved support language.
-2. **Words.** Word only, the same input as a tap (never a sentence or the article), same contract, validator, shared
+   (`writing_coach/reading_prefetch.py`, `Prefetcher.schedule`, which never raises and reads no database); a hook failure
+   is swallowed. The learner's support language and the capability's configuration are read on the worker, inside a copy of
+   the request's context. The executor is shut down (queued jobs dropped) on app shutdown.
+2. **Words (ordered by the D-199 word lists).** Word only, the same input as a tap (never a sentence or the article), same contract, validator, shared
    `public_reference` result cache and single flight. English: not on the common-word lists, not a name (capitalised away
-   from a sentence start), acronym, number-adjacent word, contraction or hyphenated compound, at least 4 letters, rarer
-   (longer) first then order of appearance. Chinese: two or more Han characters that the tagger marks as noun, verb,
-   adjective or adverb. Only the first 6000 characters are planned. The level estimator keeps no per-word difficulty.
+   from a sentence start), acronym, number-adjacent word, contraction or hyphenated compound, at least 4 letters. Chinese:
+   two or more Han characters that the tagger marks as noun, verb, adjective or adverb. Both are ordered by
+   `reading_level.word_rank` (CEFR-J / Octanove, HSK 3.0; a word in no list is the hardest), then by length and order of
+   appearance, and an A1 / HSK1 word is never planned. Only the first 6000 characters are planned. The estimator's stored
+   evidence keeps only the top eight out-of-band words and the learner route does not expose it, so the lists are read
+   directly instead.
 3. **Deterministic layers first.** `ReadingLookupService.has_local_meaning` (catalogue meaning in the target language,
    CC-CEDICT for an English support language, an already-held translation) is checked first; such a word never reaches AI.
    It never touches the network, never creates a translation, never uses a tap's slots.
@@ -6542,11 +6607,18 @@ on a new word missed its budget (no gloss); the call finished in the background 
    separate from the tap's gate (a prefetch cannot take a tap's slot); 8 waiting articles; 1500 router calls a day per
    worker process (`tap.PREFETCH_DAILY_CALLS`); a per-article marker (article, revision, languages) with a 6-hour TTL in
    process (the router cache, 180 days, is what holds the answers; no persistent marker, so no migration), dropped when a
-   batch stops early; three consecutive bad answers stop a batch.
-5. **Brake and cooldown.** Prefetch does not count against any learner's per-account brake (that would let an article open
-   starve the learner's own taps) and has its own budget. When the whole pool is unavailable (every entry failed or is
-   cooling down, a 429 among them) the batch stops and prefetch is paused process-wide for 120 s; a disabled capability
-   stops it. A single word that failed does not pause anything (the router's negative cache covers it).
+   batch stops early; three consecutive bad answers stop a batch. A stopped batch keeps a **10-minute retry-after marker**
+   (not dropped), so reopening an article in a loop cannot drain the daily budget; opens within 30 s coalesce.
+5. **Brake, cooldown and pacing (review P1-1).** Prefetch does not count against any learner's per-account brake and has its
+   own budget. It must not degrade taps, so: (a) its router calls run on a **private** `ProviderHealth` (`route(...,
+   health=)`, `generate_structured(health=)`), so a 429 it meets never cools the provider down for a tap (both pool entries
+   share one provider id, so a shared record would take the tap's primary away); (b) it **yields**: while the shared record
+   says a pool provider is cooling down, prefetch is paused and asks nobody; (c) it **pauses process-wide for 120 s after
+   any availability failure** (a 429, a 5xx or a timeout on any attempt, even one the standby then answered, or the whole
+   pool failing) and the batch stops; a validator refusing one word is not one; (d) it waits 0.5 s after every call that
+   reached the provider (per worker), so a free tier's rate limit is not burned in a burst. A disabled capability stops it.
+   Trade-off: a prefetch is blind to a rate limit that only a tap has hit until the shared record shows it, and the
+   provider's own limit is shared by taps and prefetch regardless; (b) and the pause bound that.
 6. **A tap on a word whose prefetch is in flight joins it** (the prefetch publishes its call in the same in-flight table the
    tap's gate uses) and is answered within its budget if the call finishes; a tap's timeout never cancels a prefetch.
 7. **Telemetry.** Counts only, in the existing `ai.router.rollup` row of `word_translation`: `prefetch_articles`,
@@ -6559,3 +6631,7 @@ on a new word missed its budget (no gloss); the call finished in the background 
 9. **Known limits.** The tap's selection keeps its case, so the router cache key is case-sensitive: the prefetch asks the
    lowercase form when the article has one, else the form as written. A word tapped in another inflection, or after the
    prefetch cap, still takes the tap path. The 120 s pause and the daily count are per worker process.
+10. **Per-process limits (review P2-3).** The daily budget (1500), the 120 s pause, the markers and the router's result cache
+    are per worker process, so the fleet ceiling is 1500 x workers a day and each worker repeats an article once. The
+    router cache is an in-process LRU of 4096 entries and is lost on restart: a large prefetch can evict answers a learner
+    tapped. A shared or persistent cache is a later router slice, not this decision.

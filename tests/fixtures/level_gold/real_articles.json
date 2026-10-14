@@ -1,0 +1,66 @@
+[
+ {
+  "id": "nasa-news-release",
+  "language": "en",
+  "label": "C1",
+  "status": "PROVISIONAL",
+  "label_basis": "author judgement (B2-C1 press release); the trial rated it C2 (defect D6)",
+  "fixture": "reading_quality/nasa_news_release.html"
+ },
+ {
+  "id": "global-voices-calypso",
+  "language": "en",
+  "label": "C1",
+  "status": "PROVISIONAL",
+  "label_basis": "author judgement",
+  "fixture": "reading_quality/global_voices_article.html"
+ },
+ {
+  "id": "voa-le-plasma-record",
+  "language": "en",
+  "label": "B1",
+  "status": "PROVISIONAL",
+  "label_basis": "VOA stated tier Intermediate (As It Is)",
+  "fixture": "voa_en/wire_adapted_article.html"
+ },
+ {
+  "id": "voa-zh-yemen-airport",
+  "language": "zh",
+  "label": "HSK6",
+  "status": "PROVISIONAL",
+  "label_basis": "author judgement: unedited news reporting is HSK6 or above on the HSK 3.0 scale (10-20 percent of its words are in the 7-9 band)",
+  "fixture": "reading_quality/voa_zh_article_8208799.html"
+ },
+ {
+  "id": "voa-zh-riyadh-airport",
+  "language": "zh",
+  "label": "HSK6",
+  "status": "PROVISIONAL",
+  "label_basis": "author judgement: unedited news reporting is HSK6 or above on the HSK 3.0 scale (10-20 percent of its words are in the 7-9 band)",
+  "fixture": "reading_quality/voa_zh_article_8210116.html"
+ },
+ {
+  "id": "voa-zh-staff-article",
+  "language": "zh",
+  "label": "HSK6",
+  "status": "PROVISIONAL",
+  "label_basis": "author judgement: unedited news reporting is HSK6 or above on the HSK 3.0 scale (10-20 percent of its words are in the 7-9 band)",
+  "fixture": "voa_zh/staff_article.html"
+ },
+ {
+  "id": "voa-zh-wire-derived",
+  "language": "zh",
+  "label": "HSK6",
+  "status": "PROVISIONAL",
+  "label_basis": "author judgement: unedited news reporting is HSK6 or above on the HSK 3.0 scale (10-20 percent of its words are in the 7-9 band)",
+  "fixture": "voa_zh/wire_derived_article.html"
+ },
+ {
+  "id": "voa-zh-wire-derived-ap",
+  "language": "zh",
+  "label": "HSK6",
+  "status": "PROVISIONAL",
+  "label_basis": "author judgement: unedited news reporting is HSK6 or above on the HSK 3.0 scale (10-20 percent of its words are in the 7-9 band)",
+  "fixture": "voa_zh/wire_derived_article_ap.html"
+ }
+]

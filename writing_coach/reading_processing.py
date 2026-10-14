@@ -29,10 +29,13 @@ import hashlib
 import re
 import unicodedata
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from html import unescape
 from html.parser import HTMLParser
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+from writing_coach.reading_level import EN_SENTENCE_END
+from writing_coach.reading_level import estimate as estimate_level
 
 # Markup that is never article text, whatever it contains.
 _DROPPED_ELEMENTS = frozenset(
@@ -65,13 +68,8 @@ _TRACKING_PREFIXES = ("utm_", "pk_", "piwik_", "at_", "hsa_")
 _ALLOWED_SCHEMES = frozenset({"http", "https"})
 
 _CJK = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
-_EN_SENTENCE_END = re.compile(r"[.!?]+[\"')\]]*\s+|[.!?]+[\"')\]]*$")
 _ZH_SENTENCE_END = re.compile(r"[。！？；…]+[」』”）]*")
 _EN_WORD = re.compile(r"[A-Za-z][A-Za-z'’-]*")
-# A clause ends at a comma-like mark as well as a full stop: Chinese news runs one long
-# comma-joined sentence, so the sentence length alone saturates the level signal.
-_ZH_CLAUSE_END = re.compile(r"[。！？；，、：…]+[」』”）]*")
-_SENTENCE_START = re.compile(r"(?:^|[.!?]+[\"')\]]*\s+|\n\s*)[\"'“‘(]*$")
 _WHITESPACE = re.compile(r"[^\S\n]+")
 _BLANK_LINES = re.compile(r"\n{3,}")
 
@@ -88,15 +86,13 @@ MAX_ARTICLE_WORDS = 4000
 EN_LEVEL_BANDS = ("A1", "A2", "B1", "B2", "C1", "C2")
 ZH_LEVEL_BANDS = ("HSK1", "HSK2", "HSK3", "HSK4", "HSK5", "HSK6")
 
-# Version of the automatic level estimate. Stored beside every estimate so a stored
-# value can be told from a recomputed one. reading-level/1 (implicit, never stored) was the
-# original heuristic; /2 is the interim, UNCALIBRATED fix of D-198 (names, acronyms, numbers
-# and hyphen halves leave the word signals; Chinese length is measured per clause; a
-# low-confidence estimate is capped). A calibrated, list-based estimate replaces it later.
-LEVEL_VERSION = "reading-level/2"
-# Below this confidence (a length proxy, see `analyze_article`) a text is too short for the
-# band to be trusted at the top of the scale, so it is capped at LOW_CONFIDENCE_CAP.
-LOW_CONFIDENCE = 0.5
+# Version of the automatic level estimate, stored as `analysis.level_version` beside every estimate so a
+# stored value can be told from a recomputed one. /1 (never stored) was the original heuristic, /2 the
+# interim fix of D-198, /3 the coverage-based estimate of D-199 (writing_coach/reading_level.py).
+LEVEL_VERSION = "reading-level/3"
+# Below this confidence (fewer than about 35 scored words, see `reading_level.estimate`) a text is
+# too short for the band to be trusted at the top of the scale, so it is capped at LOW_CONFIDENCE_CAP.
+LOW_CONFIDENCE = 0.1
 LOW_CONFIDENCE_CAP = {"en": "C1", "zh": "HSK5"}
 
 # The English words a learner meets in week one. Used to *exclude* candidates,
@@ -112,8 +108,6 @@ _EN_COMMON = frozenset(
     we well went were what when where which who will with work would year you your
     """.split()
 )
-# The Chinese characters that carry grammar rather than content.
-_ZH_COMMON = frozenset("的了是在我有和就不人都一个上也很到说要去你会着没有看好这那他她们与及为以于")
 
 # Particles that turn a plain verb into a phrasal verb.
 _PARTICLES = frozenset(
@@ -270,6 +264,7 @@ class TextAnalysis:
     estimated_level: str
     confidence: float
     level_version: str = LEVEL_VERSION
+    evidence: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -290,46 +285,12 @@ def _sentences(body: str, language: str) -> list[str]:
     if language == "zh":
         pieces = [piece.strip() for piece in _ZH_SENTENCE_END.split(text) if piece.strip()]
         return pieces or [text]
-    pieces = [piece.strip() for piece in _EN_SENTENCE_END.split(text) if piece and piece.strip()]
+    pieces = [piece.strip() for piece in EN_SENTENCE_END.split(text) if piece and piece.strip()]
     return pieces or [text]
 
 
 def _zh_characters(body: str) -> list[str]:
     return _CJK.findall(body or "")
-
-
-def _en_level_words(text: str) -> list[str]:
-    """The English words a level estimate may count: what a learner must know, not what a page names.
-
-    Left out: a capitalised word that does not open a sentence (a name or title), an
-    all-capitals word (an acronym), a word glued to a digit (a unit or a code). A hyphenated
-    compound counts as its parts, a contraction as its stem, so `nuclear-powered` is two ordinary words, not one long one.
-    """
-    words: list[str] = []
-    for match in _EN_WORD.finditer(text):
-        token = match.group()
-        before = text[: match.start()]
-        if before[-1:].isdigit() or text[match.end() : match.end() + 1].isdigit():
-            continue
-        if len(token) > 1 and token.isupper():
-            continue
-        if token[0].isupper() and not _SENTENCE_START.search(before):
-            continue
-        for part in token.split("-"):
-            # A contraction or possessive keeps its stem: `it's` is `it`, `don't` is `don`
-            # (the 1-2 letter fragments `s`, `t`, `ll`, `re` are not words).
-            pieces = re.split(r"[’']", part)
-            words.extend(
-                piece.lower() for piece in pieces if piece and (len(pieces) == 1 or len(piece) > 2)
-            )
-    return words
-
-
-def _zh_clause_length(text: str) -> float:
-    clauses = [c for c in _ZH_CLAUSE_END.split(text) if _CJK.search(c)]
-    if not clauses:
-        return 0.0
-    return sum(len(_zh_characters(c)) for c in clauses) / len(clauses)
 
 
 def analyze_article(body: str, language: str) -> TextAnalysis:
@@ -355,29 +316,11 @@ def analyze_article(body: str, language: str) -> TextAnalysis:
     distinct_ratio = len(set(units)) / word_count if word_count else 0.0
     reading_time = int(round(word_count / per_minute * 60)) if word_count else 0
 
-    # A coarse band from sentence length and vocabulary breadth. Neither signal is CEFR or
-    # HSK; D-198 only stops names, acronyms, numbers, hyphen compounds and comma-joined
-    # Chinese from saturating them. Thresholds are NOT calibrated (needs a word list).
-    if language == "zh":
-        uncommon = (
-            sum(1 for char in units if char not in _ZH_COMMON) / word_count if word_count else 0.0
-        )
-        score = min(_zh_clause_length(text) / 24.0, 1.0) * 0.5 + min(uncommon / 0.75, 1.0) * 0.5
-    else:
-        scored = _en_level_words(text)
-        total = len(scored) or 1
-        uncommon = sum(1 for word in scored if word not in _EN_COMMON) / total
-        scored_long = sum(1 for word in scored if len(word) >= 8) / total
-        score = (
-            min(average / 30.0, 1.0) * 0.4
-            + min(uncommon / 0.72, 1.0) * 0.3
-            + min(scored_long / 0.30, 1.0) * 0.3
-        )
-    index = min(int(score * len(bands)), len(bands) - 1)
-
-    # Confidence is about how much text the band was computed from, not about
-    # how sure the heuristic feels. A three-word paste cannot support a level.
-    confidence = round(min(1.0, word_count / 400.0) * 0.8 + (0.2 if sentence_count >= 5 else 0.0), 3)
+    # Coverage against the graded lists (reading_level.py, D-199): the band, its confidence and the
+    # evidence behind it. A text too short to support a level is capped below the top of the scale.
+    estimate = estimate_level(text, language)
+    index = estimate["index"]
+    confidence = estimate["confidence"]
     if confidence < LOW_CONFIDENCE:
         index = min(index, bands.index(LOW_CONFIDENCE_CAP["zh" if language == "zh" else "en"]))
     return TextAnalysis(
@@ -390,6 +333,7 @@ def analyze_article(body: str, language: str) -> TextAnalysis:
         reading_time_seconds=reading_time,
         estimated_level=bands[index],
         confidence=confidence,
+        evidence=estimate["evidence"],
     )
 
 

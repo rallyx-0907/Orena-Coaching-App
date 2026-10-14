@@ -16,6 +16,7 @@ from writing_coach import reading_articles_api as articles_api
 from writing_coach import reading_prefetch
 from writing_coach.ai.router import tap
 from writing_coach.reading_derived import DerivedCache
+from writing_coach.reading_level import word_rank
 from writing_coach.reading_lookup import ReadingLookupService
 from writing_coach.reading_prefetch import Prefetcher, plan_words
 from writing_coach.reading_translation import ReadingTranslationService
@@ -82,6 +83,7 @@ class Counts(dict):
 
 def make_prefetcher(service, counts=None, executor=None, **kw):
     counts = counts if counts is not None else Counts()
+    kw.setdefault("sleep", lambda _seconds: None)
     return Prefetcher(
         service.prefetch_meaning, enabled=tap.prefetch_enabled, paused=tap.prefetch_paused, count=counts,
         executor=executor or Inline(), **kw,
@@ -104,8 +106,9 @@ def test_the_english_plan_skips_names_acronyms_numbers_contractions_compounds_an
         assert skipped not in words
     assert len(words) == len({word.casefold() for word in words})  # once each
     assert all(len(word) >= reading_prefetch.MIN_EN_LETTERS for word in words)
-    # rarer (longer) first, then order of appearance
-    assert words.index("evacuation") < words.index("lantern")
+    # hardest on the estimator's own lists first; an A1 word is never planned
+    ranks = [word_rank(word, "en") for word in words]
+    assert ranks == sorted(ranks, reverse=True) and 0 not in ranks
 
 
 def test_the_plan_is_capped_and_word_only() -> None:
@@ -123,7 +126,10 @@ def test_the_chinese_plan_keeps_content_words_of_two_or_more_characters(monkeypa
     monkeypatch.setattr(
         reading_prefetch, "_zh_tokens", lambda chunk: [{"fragment": f, "pos": p} for f, p in tokens]
     )
-    assert plan_words(ZH_BODY, "zh") == ["政府", "宣布", "经济", "政策"]
+    planned = plan_words(ZH_BODY, "zh")
+    assert sorted(planned) == sorted(["政府", "宣布", "经济", "政策"])
+    ranks = [word_rank(word, "zh") for word in planned]
+    assert ranks == sorted(ranks, reverse=True) and 0 not in ranks
 
 
 # --- the prefetch itself -------------------------------------------------------------------------------------------
@@ -133,7 +139,7 @@ def test_opening_an_article_prefetches_only_the_deterministic_misses_and_the_fir
     env.fake.default[GEMMA] = {"meaning": "đèn lồng"}
     service = lookup_service(_Catalogue({("en", "harbour"): "bến cảng"}))
     prefetcher, counts = make_prefetcher(service)
-    assert prefetcher.schedule("a1", 3, EN_BODY, "en", "vi") == "scheduled"
+    assert prefetcher.run("a1", 3, EN_BODY, "en", "vi") == "done"
     asked = sent_words(env)
     assert "harbour" not in asked and "lantern" in asked  # the catalogue answers harbour: AI never sees it
     assert counts["prefetch_skipped"] >= 1 and counts["prefetch_served"] == len(asked)
@@ -155,7 +161,7 @@ def test_the_prefetch_sends_the_word_only_and_charges_no_learner_brake(env, monk
     monkeypatch.setattr(tap, "BRAKE_LIMIT", 1)
     service = lookup_service()
     prefetcher, _ = make_prefetcher(service)
-    prefetcher.schedule("a1", 1, EN_BODY, "en", "vi")
+    prefetcher.run("a1", 1, EN_BODY, "en", "vi")
     assert len(env.fake.calls) > 1  # more than one call, and the learner's brake (limit 1) was never touched
     import json
 
@@ -170,7 +176,7 @@ def test_at_most_forty_words_are_asked_per_article(env) -> None:
     env.fake.default[GEMMA] = {"meaning": "từ"}
     service = lookup_service()
     prefetcher, counts = make_prefetcher(service)
-    prefetcher.schedule("a2", 1, body, "en", "vi")
+    prefetcher.run("a2", 1, body, "en", "vi")
     assert len(env.fake.calls) == reading_prefetch.MAX_WORDS_PER_ARTICLE == counts["prefetch_requested"]
 
 
@@ -178,13 +184,13 @@ def test_a_provider_outage_stops_the_batch_and_pauses_every_article(env) -> None
     env.fake.script = {GEMMA: [http_error(429)] * 50, STANDBY: [http_error(429)] * 50}
     service = lookup_service()
     prefetcher, counts = make_prefetcher(service)
-    assert prefetcher.schedule("a3", 1, EN_BODY, "en", "vi") == "scheduled"
+    assert prefetcher.run("a3", 1, EN_BODY, "en", "vi") == "stopped"
     calls = len(env.fake.calls)
     assert 1 <= calls <= 4  # the pool's attempts for the first word only, then nothing more (the batch has ~10 words)
     assert counts["prefetch_failed"] == 1 and counts["prefetch_skipped"] >= 1
     assert tap.prefetch_paused()
-    assert prefetcher.schedule("a4", 1, EN_BODY, "en", "vi") == "paused"
-    assert prefetcher.schedule("a3", 1, EN_BODY, "en", "vi") == "paused"  # the stopped batch left no marker
+    assert prefetcher.run("a4", 1, EN_BODY, "en", "vi") == "paused"
+    assert prefetcher.run("a3", 1, EN_BODY, "en", "vi") == "paused"
     assert len(env.fake.calls) == calls
     env.clock.now += tap.PREFETCH_PAUSE_SECONDS + 1
     assert not tap.prefetch_paused()
@@ -194,16 +200,96 @@ def test_one_word_nobody_can_answer_validly_does_not_pause_the_batch(env) -> Non
     bad = {"meaning": "灯笼"}  # the wrong script for Vietnamese: refused by the validator on every pool entry
     env.fake.script = {GEMMA: [bad] * 2, STANDBY: [bad] * 2}
     prefetcher, counts = make_prefetcher(lookup_service())
-    prefetcher.schedule("a3b", 1, EN_BODY, "en", "vi")
+    prefetcher.run("a3b", 1, EN_BODY, "en", "vi")
     assert not tap.prefetch_paused()
     assert counts["prefetch_failed"] == 1 and counts["prefetch_served"] >= 3
+
+
+def test_a_stopped_batch_is_not_retried_at_once_but_is_after_the_retry_window(env) -> None:
+    clock = [0.0]
+    env.fake.script = {GEMMA: [http_error(429)], STANDBY: [http_error(429)]}
+    prefetcher, _ = make_prefetcher(lookup_service(), clock=lambda: clock[0])
+    assert prefetcher.run("r1", 1, EN_BODY, "en", "vi") == "stopped"
+    calls = len(env.fake.calls)
+    env.clock.now += tap.PREFETCH_PAUSE_SECONDS + 1  # the process-wide pause is over; the article's own marker is not
+    assert prefetcher.run("r1", 1, EN_BODY, "en", "vi") == "already"
+    assert len(env.fake.calls) == calls
+    clock[0] += reading_prefetch.RETRY_AFTER_SECONDS + 1
+    assert prefetcher.run("r1", 1, EN_BODY, "en", "vi") == "done"
+
+
+def test_calls_that_reached_the_provider_are_paced(env) -> None:
+    sleeps: list[float] = []
+    prefetcher, _ = make_prefetcher(lookup_service(), sleep=sleeps.append)
+    prefetcher.run("pace", 1, EN_BODY, "en", "vi")
+    assert sleeps and set(sleeps) == {reading_prefetch.PACE_SECONDS} and reading_prefetch.PACE_SECONDS >= 0.5
+
+
+def test_the_support_language_is_read_on_the_worker_inside_the_requests_context(env) -> None:
+    import contextvars
+
+    seen: list = []
+    var: contextvars.ContextVar[str] = contextvars.ContextVar("who", default="nobody")
+    pool = ThreadPoolExecutor(max_workers=1)
+    prefetcher, _ = make_prefetcher(lookup_service(), executor=pool)
+    var.set("learner-1")
+
+    def target():
+        seen.append((threading.current_thread() is not threading.main_thread(), var.get()))
+        return "vi"
+
+    assert prefetcher.schedule("w1", 1, EN_BODY, "en", target) == "scheduled"
+    pool.shutdown(wait=True)
+    assert seen == [(True, "learner-1")] and env.fake.calls
+
+
+def test_shutdown_drops_queued_jobs(env) -> None:
+    release = threading.Event()
+    pool = ThreadPoolExecutor(max_workers=1)
+    pool.submit(release.wait, 5)
+    prefetcher, _ = make_prefetcher(lookup_service(), executor=pool)
+    assert prefetcher.schedule("s1", 1, EN_BODY, "en", "vi") == "scheduled"
+    prefetcher.shutdown()
+    release.set()
+    time.sleep(0.2)
+    assert env.fake.calls == [] and prefetcher.schedule("s2", 1, EN_BODY, "en", "vi") == "unavailable"
+
+
+def test_a_prefetch_429_does_not_cool_the_pool_down_for_a_tap(env) -> None:
+    from writing_coach.ai import routing
+
+    env.fake.script = {GEMMA: [http_error(429)], STANDBY: [http_error(429)]}
+    prefetcher, _ = make_prefetcher(lookup_service())
+    assert prefetcher.run("t1", 1, EN_BODY, "en", "vi") == "stopped"
+    assert routing.provider_health.snapshot().get("openrouter", {}).get("consecutive_failures", 0) == 0
+    # A tap on a different word still reaches the primary at once (the scripted 429s are used up).
+    before = len(env.fake.calls)
+    assert tap.word_translation_seam("zzyzx", "", [], "en", "vi") == "đèn"
+    assert env.fake.models()[before] == GEMMA
+
+
+def test_a_429_the_standby_answered_still_slows_the_prefetch_down(env) -> None:
+    env.fake.script = {GEMMA: [http_error(429)]}
+    prefetcher, counts = make_prefetcher(lookup_service())
+    assert prefetcher.run("t2", 1, EN_BODY, "en", "vi") == "stopped"
+    assert tap.prefetch_paused() and counts["prefetch_served"] == 1 and counts.get("prefetch_failed", 0) == 0
+
+
+def test_prefetch_yields_while_the_shared_pool_is_cooling_down_for_the_taps(env) -> None:
+    from writing_coach.ai import routing
+
+    for _ in range(routing.FAILURES_BEFORE_COOLDOWN):
+        routing.provider_health.record_failure("openrouter")  # the taps' view: the provider is rate limited
+    prefetcher, _ = make_prefetcher(lookup_service())
+    assert prefetcher.run("t3", 1, EN_BODY, "en", "vi") == "stopped"
+    assert env.fake.calls == [] and tap.prefetch_paused()
 
 
 def test_the_daily_budget_is_a_global_cap_on_router_calls(env, monkeypatch) -> None:
     monkeypatch.setattr(tap, "PREFETCH_DAILY_CALLS", 3)
     service = lookup_service()
     prefetcher, counts = make_prefetcher(service)
-    prefetcher.schedule("a5", 1, EN_BODY, "en", "vi")
+    prefetcher.run("a5", 1, EN_BODY, "en", "vi")
     assert len(env.fake.calls) == 3
     assert counts["prefetch_failed"] == 1  # the refusal that stopped the batch
 
@@ -212,22 +298,22 @@ def test_a_second_open_of_the_same_article_is_a_no_op_until_the_marker_expires(e
     clock = [0.0]
     service = lookup_service()
     prefetcher, _ = make_prefetcher(service, clock=lambda: clock[0])
-    assert prefetcher.schedule("a6", 1, EN_BODY, "en", "vi") == "scheduled"
+    assert prefetcher.run("a6", 1, EN_BODY, "en", "vi") == "done"
     calls = len(env.fake.calls)
-    assert prefetcher.schedule("a6", 1, EN_BODY, "en", "vi") == "already"
-    assert prefetcher.schedule("a6", 2, EN_BODY, "en", "vi") == "scheduled"  # a new revision is new work (all cached)
+    assert prefetcher.run("a6", 1, EN_BODY, "en", "vi") == "already"
+    assert prefetcher.run("a6", 2, EN_BODY, "en", "vi") == "done"  # a new revision is new work (all cached)
     assert len(env.fake.calls) == calls  # the second run found every answer in the router's cache
     clock[0] += reading_prefetch.MARKER_TTL_SECONDS + 1
-    assert prefetcher.schedule("a6", 1, EN_BODY, "en", "vi") == "scheduled"
+    assert prefetcher.run("a6", 1, EN_BODY, "en", "vi") == "done"
 
 
 def test_a_disabled_or_unconfigured_capability_calls_nobody(env) -> None:
     service = lookup_service()
     prefetcher, counts = make_prefetcher(service)
     env.repo.config = config(enabled=False)
-    assert prefetcher.schedule("a7", 1, EN_BODY, "en", "vi") == "disabled"
+    assert prefetcher.run("a7", 1, EN_BODY, "en", "vi") == "disabled"
     env.repo.config = None
-    assert prefetcher.schedule("a7", 1, EN_BODY, "en", "vi") == "disabled"
+    assert prefetcher.run("a7", 1, EN_BODY, "en", "vi") == "disabled"
     assert env.fake.calls == [] and counts == {}
 
 
@@ -239,14 +325,14 @@ def test_a_capability_turned_off_mid_batch_stops_the_batch(env) -> None:
 
     env.fake.on_call = switch_off
     prefetcher, _ = make_prefetcher(service)
-    prefetcher.schedule("a8", 1, EN_BODY, "en", "vi")
+    prefetcher.run("a8", 1, EN_BODY, "en", "vi")
     assert len(env.fake.calls) == 1
 
 
 def test_unsupported_languages_and_equal_languages_are_not_scheduled(env) -> None:
     prefetcher, _ = make_prefetcher(lookup_service())
     assert prefetcher.schedule("a9", 1, EN_BODY, "ja", "vi") == "unsupported"
-    assert prefetcher.schedule("a9", 1, EN_BODY, "en", "en") == "unsupported"
+    assert prefetcher.run("a9", 1, EN_BODY, "en", "en") == "unsupported"
     assert prefetcher.schedule("a9", 1, "", "en", "vi") == "unsupported"
     assert env.fake.calls == []
 
@@ -325,7 +411,7 @@ def test_english_and_chinese_articles_are_translated_ahead_the_same_way(env, mon
     service = lookup_service()
     monkeypatch.setattr(service, "has_local_meaning", lambda *_a: False)  # CC-CEDICT is not what this test is about
     prefetcher, counts = make_prefetcher(service)
-    assert prefetcher.schedule("p1", 1, body, language, target) == "scheduled"
+    assert prefetcher.run("p1", 1, body, language, target) == "done"
     assert counts["prefetch_served"] >= 1
     before = len(env.fake.calls)
     result = service.lookup(word, "", language, target)
@@ -339,7 +425,7 @@ def test_chinese_words_cc_cedict_answers_for_an_english_support_language_are_ski
 
     monkeypatch.setattr(reading_lookup, "_safe_chinese_senses", lambda word: ("government",))
     prefetcher, counts = make_prefetcher(lookup_service())
-    prefetcher.schedule("p2", 1, ZH_BODY, "zh", "en")
+    prefetcher.run("p2", 1, ZH_BODY, "zh", "en")
     assert env.fake.calls == [] and counts["prefetch_skipped"] == 1
 
 

@@ -1,0 +1,73 @@
+English has many patterns. Learning and mastering these patterns can help you improve your writing and speaking skills. They can also help you do better on your next grammar test!
+
+Today, we explore a common verb pattern: the transitive verb pattern. This pattern is common in writing, speaking, and even on language tests, such as the Test of English as a Foreign Language, or TOEFL.
+
+To get you started thinking about transitive verbs, consider this stanza from "Preface to a Twenty Volume Suicide Note," by the famous author Amiri Baraka.
+
+And now, each night I count the stars. And each night I get the same number. And when they will not come to be counted, I count the holes they leave.
+
+By the end of this story, you will understand one transitive verb pattern that Baraka uses in this stanza.
+
+What are transitive verbs?
+
+In a previous Everyday Grammar, we discussed intransitive verbs. One feature of intransitive verbs is that they do not require a complement. In other words, there does not need to be a noun phrase or adjective to the right of the verb in the sentence.
+
+Unlike intransitive verbs, transitive verbs take one or more complements. Complements, in this case, refer to nouns or noun phrases that are immediately to the right of the verb in the sentence.
+
+There are several types of transitive verbs, but they all have one thing in common: a direct object.
+
+What is the direct object?
+
+In its most basic form, the direct object is the noun phrase that follows a transitive verb. A noun phrase is a noun and all the words and phrases that describe it.
+
+The basic transitive verb pattern is this:
+
+Transitive verbs are often – but by no means always! – action words. One way to know if the noun phrase is a direct object is if it is the receiver of the action of the verb.
+
+You can tell that the softball is receiving the action, hit.
+
+However, the direct object does not always have to be the receiver of an action. Consider this sentence:
+
+My family enjoyed the concert
+
+In this sentence, it is hard to say that the direct object, the concert, is really receiving an action.
+
+So, this leads us to another way to think of the direct object. It is the answer to a what or whom question.
+
+Dirty laundry covered (what?) the bedroom floor.
+
+We enjoyed (what?) the concert.
+
+The teacher helped (whom?) her student.
+
+Once again, asking the what or whom question will not work all of the time, but it can be a useful strategy to help you recognize the direct object.
+
+How do you know if a verb is transitive?
+
+So, if it can be difficult to find the direct object, how can you tell if a verb is transitive?
+
+There are two reliable ways to check:
+
+1. You can change the sentence from active to passive voice
+
+One reliable way to test if a verb is transitive is to change it to the passive voice.
+
+Think back to the example sentence, Mary hit the softball. If you change it to the passive voice, the sentence would be, The softball was hit by Mary.
+
+If you can change the sentence from active to passive voice, then the verb is probably transitive.
+
+You can read more about the passive voice in a previous Everyday Grammar story.
+
+2. Think about the two noun phrases that surround the verb
+
+A second way to check if a verb is transitive is to think about the two noun phrases surrounding a verb. This strategy, say Robert Funk and Martha Kolln, two English grammar experts, is the best way to identify a transitive verb.
+
+Here is the basic idea: If the two noun phrases refer to different things, then you know the verb is transitive.*
+
+Think back to the sentence, Mary hit the softball.
+
+The subject, Mary, refers to one thing, while the direct object, the softball, refers to a different thing. In technical terms, you could say the two noun phrases have different referents.
+
+Contrast this to a pattern we discussed in a previous Everyday Grammar: the BE pattern.
+
+We gave an example

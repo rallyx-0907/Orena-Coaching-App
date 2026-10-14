@@ -54,6 +54,8 @@ class RouteResult:
     source: str
     # Visible to the operator only: provider, model, tier, prompt version, when.
     provenance: dict[str, Any] | None = None
+    # A provider call failed on the way to this answer (a 429 or a timeout on the primary, answered by the standby).
+    fell_back: bool = False
 
 
 def reset_state() -> None:
@@ -127,12 +129,15 @@ def _parse(contract: CapabilityContract, raw_input: Any) -> Any:
         raise RouterInputInvalid(f"The input does not satisfy the {contract.key!r} contract.") from None
 
 
-def route(capability_key: str, raw_input: Any, *, deadline: float | None = None) -> RouteResult:
+def route(
+    capability_key: str, raw_input: Any, *, deadline: float | None = None, health: Any = None
+) -> RouteResult:
     """Answer one request of a routed capability.
 
     `deadline` is an absolute `time.monotonic()` time; the whole request also never exceeds the contract's maximum
     total latency. Raises `RouterInputInvalid` (before anything is asked), `AICapabilityDisabled` /
     `AICapabilityNotConfigured`, or the provider error / `AllProvidersUnavailable` when no pool entry could answer.
+    `health` is a private `ProviderHealth` for a background caller (D-200); a tap never passes one.
     """
 
     contract = get_contract(capability_key)
@@ -140,12 +145,14 @@ def route(capability_key: str, raw_input: Any, *, deadline: float | None = None)
     capability = contract.key
     _stats.count(capability, "requests")
     try:
-        return _route_validated(contract, inp, deadline)
+        return _route_validated(contract, inp, deadline, health)
     finally:
         flush_rollup()
 
 
-def _route_validated(contract: CapabilityContract, inp: Any, deadline: float | None) -> RouteResult:
+def _route_validated(
+    contract: CapabilityContract, inp: Any, deadline: float | None, health: Any = None
+) -> RouteResult:
     capability = contract.key
     try:
         config = load_config(capability)
@@ -182,7 +189,7 @@ def _route_validated(contract: CapabilityContract, inp: Any, deadline: float | N
         return RouteResult(output=dict(flight.result.output), source="cache", provenance=flight.result.provenance)
 
     try:
-        result = _ask_pool(contract, inp, policy, limit, key)
+        result = _ask_pool(contract, inp, policy, limit, key, health)
     except BaseException as exc:
         flight.set_error(exc)
         raise
@@ -193,7 +200,9 @@ def _route_validated(contract: CapabilityContract, inp: Any, deadline: float | N
         _cache.leave(key, flight)
 
 
-def _ask_pool(contract: CapabilityContract, inp: Any, policy: Any, limit: float, key: str) -> RouteResult:
+def _ask_pool(
+    contract: CapabilityContract, inp: Any, policy: Any, limit: float, key: str, health: Any = None
+) -> RouteResult:
     capability = contract.key
     started = _clock()
 
@@ -213,6 +222,7 @@ def _ask_pool(contract: CapabilityContract, inp: Any, policy: Any, limit: float,
             attempt_timeout=policy.timeout_seconds,
             router_version=ROUTER_VERSION,
             capability_mode=True,
+            health=health,
         )
     except AIProviderError as exc:
         attempts = list(getattr(exc, "attempts", ()))
@@ -235,8 +245,11 @@ def _ask_pool(contract: CapabilityContract, inp: Any, policy: Any, limit: float,
     router = answered.runtime.get("router", {})
     attempts = router.get("attempts", [])
     _stats.count(capability, "model_calls", router.get("calls", 1))
-    if any(a.outcome == "failure" for a in attempts):
+    failed_over = any(a.outcome == "failure" for a in attempts)
+    if failed_over:
         _stats.count(capability, "fallbacks")
+    # An availability failure on the way (429, 5xx, timeout), not one validator refusing one word.
+    fell_back = any(a.outcome == "failure" and a.reason != "invalid_output" for a in attempts)
     for attempt in attempts:
         if attempt.reason == "invalid_output":
             _stats.count(capability, "invalid_outputs")
@@ -257,4 +270,4 @@ def _ask_pool(contract: CapabilityContract, inp: Any, policy: Any, limit: float,
         "at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
     _cache.put(key, {"output": output, "provenance": provenance}, contract.cache_ttl_seconds)
-    return RouteResult(output=output, source="model", provenance=provenance)
+    return RouteResult(output=output, source="model", provenance=provenance, fell_back=fell_back)
