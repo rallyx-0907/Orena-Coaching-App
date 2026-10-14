@@ -184,7 +184,7 @@ def word_translation_prefetch(selection: str, source: str, target: str) -> str |
         _yield_to_taps()
         _admit_prefetch_call()
         router_module.count_event(CAPABILITY, "prefetch_calls")
-        routed = router_module.route(CAPABILITY, raw, health=_prefetch_health)
+        routed = router_module.route(CAPABILITY, raw, health=_prefetch_health, paid_standby=False)  # free pool only
         if routed.fell_back:  # a rate limit or a timeout on the way: slow down even though an answer came
             pause_prefetch()
         return _meaning(routed)

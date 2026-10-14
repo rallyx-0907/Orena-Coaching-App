@@ -6432,6 +6432,34 @@ new ids are zero-rated (pricing `2026-10-14.v5`) and the three are sent `reasoni
 reasoning mandatory, such as `liquid/lfm-2.5-2.6b`, is not listed). Free tiers are rate-limited by their upstream; the
 pool should hold models from different upstream providers.
 
+**Amendment 2026-10-14 (owner: Groq free standby now, a daily spend cap ready for a paid tier later).** Owner
+decisions, in order: first "a cheap paid Groq standby behind a 0.50 USD daily cap", then "Groq only free models; the Groq
+account is on the free plan", then "keep the cap mechanism for the future, free first". Built as both:
+
+1. **Free first, in use now.** `groq / llama-3.1-8b-instant` is a zero-rate catalogue entry (pricing `2026-10-14.v6`,
+   `TokenPricing.note`): source "owner-confirmed Groq free plan (no billing), 2026-10-14", listed as active on the public
+   models page https://console.groq.com/docs/models. The public rate-limits page did not show a free-plan row for the
+   model, so free-plan availability rests on the owner's confirmation. Because it is zero-rated it is tier `free`: the
+   operator may save it as the standby of `word_translation` under the free rule, and the translate-ahead prefetch may
+   use it. **Risk:** if billing is ever added to the Groq account these calls become billable while the ledger still
+   records 0; the operator must revisit this entry (and the cap below) first. The existing paid Groq entries
+   (`llama-3.3-70b-versatile`, `openai/gpt-oss-120b`, whisper), used by media translation and speech, are unchanged.
+2. **Tier rule replaces `free_only`.** The primary must be free or local. The standby may be free or local, or paid only
+   when the capability's cap policy is above zero and the pair is on the reviewed list
+   (`paid_standby_models`: `groq / llama-3.3-70b-versatile`, priced 0.59 / 0.79 per million). Escalation and premium
+   tiers are not part of the v1 document and stay refused. Input class stays `public_reference`.
+3. **Per-capability daily cap, ready for a paid tier.** Policy `word_translation.daily_spend_cap_usd` (D-172 spend group,
+   default 0.50, 0 to 100, confirm above 5, `WORD_TRANSLATION_DAILY_SPEND_CAP_USD`, EN/VI/ZH copy). Before each paid
+   rung the chain asks `ai/spend_gate.paid_refused`: today's (UTC) spend of this one capability in the shared ledger
+   (`ai_spend_since_for_capability`, unpriced successes counted at the guard's allowance) at or over the cap skips the
+   rung, and so does a cap of 0, an unreadable cap policy, or an unreadable ledger (the SQLite archive store raises
+   `NotImplementedError`): it fails closed. A skipped rung is logged with `fallback_reason=budget` and counted as
+   `budget_skips`; the word is a miss, never an error. Free and local rungs are never gated. The cost of a paid call is
+   recorded per call in the existing ledger. Saving a paid standby needs a cap above zero; the runtime does not
+   revalidate that (a later cap of 0 skips the rung instead of disabling the capability).
+4. **Prefetch never spends.** `route(..., paid_standby=False)` from the translate-ahead means a paid rung is never asked
+   for background work, whatever the cap; a tap may. The prefetch's daily call caps are unchanged.
+
 **Supersedes / Superseded by:** Supersedes D-035 (primary-only wording); clarifies D-010.
 
 ## D-196 - Reading level: the reviewer's override is validated, folded over the automatic level and never overwrites it (2026-10-14)

@@ -580,3 +580,11 @@ with the rest of the local-model path.
   raises the alert.
 - **How the backup provider is selected** — per capability, or one switch for
   the whole translation boundary.
+
+## 11. Operator note: Groq free plan (2026-10-14)
+
+`groq / llama-3.1-8b-instant` is recorded in `writing_coach/ai/pricing.py` at a zero rate because the owner confirmed the
+Groq account is on the free plan (no billing). If billing is ever added to that Groq account, those calls become billable
+while the ledger still shows 0: update the pricing entry first, and set `word_translation.daily_spend_cap_usd`
+(Admin, Policies, Spend caps) to the amount you accept. The paid Groq entries used by media translation are separate and
+unchanged. See D-195, amendment 2026-10-14.

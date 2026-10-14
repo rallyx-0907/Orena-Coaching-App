@@ -531,7 +531,7 @@ class AIControlPlane:
         config = self.explicit_config(definition.key)
         if not config.enabled:
             raise AICapabilityDisabled(f"AI capability {definition.key!r} is disabled.")
-        validate_capability_config(definition.key, config)
+        validate_capability_config(definition.key, config, enforce_cap=False)
 
         provider_id = config.backup_provider if standby else config.provider
         model_id = config.backup_model if standby else config.model

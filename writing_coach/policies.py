@@ -151,6 +151,10 @@ POLICIES: tuple[Policy, ...] = (
        env="MEDIA_AI_USD_PER_MILLION_TOKENS", env_min=0),
     _p("word_tts.spend_cap_usd", "spend", "float", 5.0, unit="usd", low=0, high=1000, env="WORD_TTS_SPEND_CAP_USD",
        env_min=0, confirm_above=50),
+    # The paid standby of `word_translation` (D-195 amendment 2026-10-14): the most it may spend in a UTC day. At the
+    # cap, or at 0, the capability falls back to its free pool only; an unreadable ledger counts as the cap reached.
+    _p("word_translation.daily_spend_cap_usd", "spend", "float", 0.5, unit="usd", low=0, high=100,
+       env="WORD_TRANSLATION_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=5),
 )
 
 BY_KEY: dict[str, Policy] = {item.key: item for item in POLICIES}

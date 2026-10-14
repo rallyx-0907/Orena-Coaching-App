@@ -299,12 +299,12 @@ def test_the_model_picker_lists_only_catalogued_free_models(monkeypatch) -> None
 @pytest.mark.parametrize(
     ("provider", "model"), [("openai", "gpt-4o-mini"), ("gemini", "gemini-3.5-flash-lite"), ("deepseek", "deepseek-chat")]
 )
-def test_word_translation_refuses_a_paid_model_until_a_spend_cap_exists(provider, model) -> None:
-    """P1-2: free or local only, primary and standby (the per-capability cap is a later slice)."""
+def test_word_translation_refuses_an_unreviewed_paid_model_as_primary_or_standby(provider, model) -> None:
+    """P1-2 under the tier rule: a paid primary is always refused; a paid standby only when it is the reviewed one."""
 
-    with pytest.raises(AICapabilityConfigInvalid, match="free or local"):
+    with pytest.raises(AICapabilityConfigInvalid, match="free or local primary"):
         validate_capability_config("word_translation", CapabilityConfig(enabled=False, provider=provider, model=model))
-    with pytest.raises(AICapabilityConfigInvalid, match="free or local"):
+    with pytest.raises(AICapabilityConfigInvalid, match="reviewed, priced paid standby"):
         validate_capability_config(
             "word_translation",
             CapabilityConfig(enabled=False, provider="openrouter", model=GEMMA, backup_provider=provider, backup_model=model),
@@ -317,8 +317,10 @@ def test_word_translation_accepts_a_local_model() -> None:
 
 def test_other_capabilities_are_not_limited_to_free_models() -> None:
     validate_capability_config("writing_evaluator", CapabilityConfig(enabled=False, provider="openai", model="gpt-4o-mini"))
-    assert require_capability("word_translation").free_only is True
-    assert require_capability("writing_evaluator").free_only is False
+    assert require_capability("word_translation").free_primary_only is True
+    assert require_capability("word_translation").paid_standby_cap_policy == "word_translation.daily_spend_cap_usd"
+    assert require_capability("writing_evaluator").free_primary_only is False
+    assert require_capability("writing_evaluator").paid_standby_cap_policy == ""
 
 
 def test_the_wire_check_is_in_the_single_choke_point_every_request_passes(monkeypatch, post) -> None:

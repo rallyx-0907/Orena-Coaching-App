@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-PRICING_CATALOG_VERSION = "2026-10-14.v5"
+PRICING_CATALOG_VERSION = "2026-10-14.v6"
 MAX_PRICED_TOKENS = 1_000_000_000
 
 
@@ -23,6 +23,8 @@ class TokenPricing:
     currency: str
     input_per_million: float
     output_per_million: float
+    # Why a rate is what it is, when that is a fact about the account rather than the model (a free plan).
+    note: str = ""
 
 
 _CATALOG = MappingProxyType({
@@ -34,6 +36,15 @@ _CATALOG = MappingProxyType({
     # Media pre-translation (D-168): published rate, console.groq.com/docs/model/openai/gpt-oss-120b, read 2026-10-09
     # (input 0.15, output 0.60 per million; the cached-input rate 0.075 is not modelled, so this never understates).
     ("groq", "openai/gpt-oss-120b"): TokenPricing("groq", "openai/gpt-oss-120b", "USD", 0.15, 0.60),
+    # Word translation standby (D-195 amendment 2026-10-14): a Groq FREE-PLAN model, recorded at zero. source:
+    # owner-confirmed Groq free plan (no billing), 2026-10-14; the model is listed as active on the public models
+    # page https://console.groq.com/docs/models (its paid price there is "contact sales"). If billing is ever added to
+    # the Groq account this call becomes billable while still recorded as 0: revisit this entry (and the cap in
+    # `word_translation.daily_spend_cap_usd`) first.
+    ("groq", "llama-3.1-8b-instant"): TokenPricing(
+        "groq", "llama-3.1-8b-instant", "USD", 0.0, 0.0,
+        note="owner-confirmed Groq free plan (no billing), 2026-10-14; https://console.groq.com/docs/models",
+    ),
     # Published paid-tier text rate, ai.google.dev/gemini-api/docs/pricing, read 2026-09-27.
     ("gemini", "gemini-3.5-flash-lite"): TokenPricing("gemini", "gemini-3.5-flash-lite", "USD", 0.30, 2.50),
     # AI Cost Router (D-195): pinned OpenRouter ":free" models, an explicit zero rate so a free call is "estimated at 0"

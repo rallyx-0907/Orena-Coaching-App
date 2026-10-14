@@ -54,8 +54,13 @@ class AICapabilityDefinition:
     input_class: str = "learner_text"
     # Not part of the legacy-to-capability activation set: switched on by the operator, ships disabled.
     opt_in: bool = False
-    # Until the per-capability spend cap exists (AI Cost Router PR 2), the pool may hold free or local models only.
-    free_only: bool = False
+    # Tier rule (AI Cost Router, D-195 amendment 2026-10-14): the primary may be a free or local model only. The
+    # standby may be too, or a cheap paid model when `paid_standby_cap_policy` names a per-capability daily spend
+    # cap (a `writing_coach.policies` key) that is above zero. Escalation and premium tiers stay refused.
+    free_primary_only: bool = False
+    paid_standby_cap_policy: str = ""
+    # The only paid (provider, model) pairs that standby may be: cheap, non-reasoning and priced in the catalogue.
+    paid_standby_models: frozenset[tuple[str, str]] = frozenset()
 
 
 INPUT_CLASSES = frozenset({"public_reference", "published_content", "learner_text"})
@@ -72,7 +77,9 @@ def _definition(
     fallback_policies: frozenset[AIFallbackPolicy] = frozenset({AIFallbackPolicy.NONE}),
     input_class: str = "learner_text",
     opt_in: bool = False,
-    free_only: bool = False,
+    free_primary_only: bool = False,
+    paid_standby_cap_policy: str = "",
+    paid_standby_models: frozenset[tuple[str, str]] = frozenset(),
 ) -> AICapabilityDefinition:
     if input_class not in INPUT_CLASSES:
         raise ValueError(f"Invalid input class for {key!r}: {input_class!r}")
@@ -91,7 +98,9 @@ def _definition(
         allowed_fallback_policies=fallback_policies,
         input_class=input_class,
         opt_in=opt_in,
-        free_only=free_only,
+        free_primary_only=free_primary_only,
+        paid_standby_cap_policy=paid_standby_cap_policy,
+        paid_standby_models=paid_standby_models,
     )
 
 
@@ -165,7 +174,11 @@ _DEFINITIONS = (
         fallback_policies=_DETERMINISTIC_FALLBACK,
         input_class="public_reference",
         opt_in=True,
-        free_only=True,
+        free_primary_only=True,
+        paid_standby_cap_policy="word_translation.daily_spend_cap_usd",
+        # Owner decision 2026-10-14: a cheap paid standby, behind a daily cap. Groq's non-reasoning 70B (the 8B
+        # instant model is enterprise-only, "contact sales", on Groq's public models page).
+        paid_standby_models=frozenset({("groq", "llama-3.3-70b-versatile")}),
     ),
     _definition(
         "grammar_lesson_generator",
