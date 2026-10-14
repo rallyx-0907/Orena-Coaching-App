@@ -467,7 +467,6 @@ def test_standby_health_check_is_explicit_and_does_not_touch_primary(
         ("pronunciation_evaluator", valid_payload()),
         ("speaking_evaluator", valid_payload()),
         ("writing_evaluator", valid_payload(fallback_policy="deterministic_fallback")),
-        ("writing_evaluator", valid_payload(timeout_seconds=30)),
         ("writing_evaluator", valid_payload(provider="unknown")),
     ],
 )

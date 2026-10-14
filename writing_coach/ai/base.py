@@ -18,10 +18,16 @@ class AIProviderError(RuntimeError):
 
     telemetry: dict[str, Any] | None = None
     rate_limit: dict[str, int | None] | None = None
+    # The HTTP status the provider answered with, set by the provider adapter; None when there was no response.
+    status_code: int | None = None
 
 
 class AIProviderUnavailable(AIProviderError):
     pass
+
+
+class AIProviderTimeout(AIProviderUnavailable):
+    """The provider did not answer within the time this attempt was given."""
 
 
 class AIProviderNotConfigured(AIProviderUnavailable):
@@ -38,6 +44,10 @@ class AIModelUnavailable(AIProviderUnavailable):
 
 class AIProviderResponseInvalid(AIProviderError):
     """A provider response did not satisfy the requested capability schema."""
+
+
+class AIOutputInvalid(AIProviderResponseInvalid):
+    """The answer parsed but failed the capability contract's own semantic validation (router, G2)."""
 
 
 class AICapabilityError(RuntimeError):
@@ -220,7 +230,9 @@ def telemetry_error_class(error: BaseException) -> str:
         AIProviderNotConfigured: "provider_not_configured",
         AIModelCatalogEmpty: "model_catalog_empty",
         AIModelUnavailable: "model_unavailable",
+        AIOutputInvalid: "output_invalid",
         AIProviderResponseInvalid: "provider_response_invalid",
+        AIProviderTimeout: "provider_timeout",
         AIProviderUnavailable: "provider_unavailable",
         AIProviderError: "provider_error",
     }
@@ -228,6 +240,50 @@ def telemetry_error_class(error: BaseException) -> str:
         if isinstance(error, error_type):
             return label
     return "operation_failed"
+
+
+_ROUTER_TIERS = frozenset({"local", "free", "paid"})
+_ROUTER_PHASES = frozenset({"pool", "escalation"})
+_HTTP_STATUS_CLASSES = frozenset({"401", "402", "403", "429", "4xx", "5xx"})
+
+
+def http_status_class(status: object) -> str | None:
+    """The coarse class of an HTTP status for telemetry: the codes a router acts on, else 4xx / 5xx."""
+
+    if type(status) is not int:
+        return None
+    if status in (401, 402, 403, 429):
+        return str(status)
+    if 400 <= status < 500:
+        return "4xx"
+    if 500 <= status < 600:
+        return "5xx"
+    return None
+
+
+def _router_telemetry(value: dict[str, Any]) -> dict[str, Any]:
+    """The AI Cost Router's fields (D-195). Added only when present; each is a closed vocabulary or a small
+    pattern, so no word, prompt or URL can ride along."""
+
+    extra: dict[str, Any] = {}
+    tier, phase = value.get("tier"), value.get("phase")
+    if "tier" in value:
+        extra["tier"] = tier if tier in _ROUTER_TIERS else None
+    if "phase" in value:
+        extra["phase"] = phase if phase in _ROUTER_PHASES else None
+    if "attempt" in value:
+        attempt = value.get("attempt")
+        extra["attempt"] = attempt if type(attempt) is int and 1 <= attempt <= 20 else None
+    if "fallback_reason" in value:
+        reason = value.get("fallback_reason")
+        extra["fallback_reason"] = reason if isinstance(reason, str) and re.fullmatch(r"[a-z][a-z_]{0,39}", reason) else None
+    if "http_status_class" in value:
+        status_class = value.get("http_status_class")
+        extra["http_status_class"] = status_class if status_class in _HTTP_STATUS_CLASSES else None
+    if "router_version" in value:
+        version = value.get("router_version")
+        extra["router_version"] = version if isinstance(version, str) and re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,19}", version) else None
+    return extra
 
 
 def sanitize_telemetry(value: object) -> dict[str, Any] | None:
@@ -271,6 +327,7 @@ def sanitize_telemetry(value: object) -> dict[str, Any] | None:
     cost = normalized_cost(value.get("cost"))
     if cost is not None:
         result["cost"] = cost
+    result.update(_router_telemetry(value))
     return result
 
 

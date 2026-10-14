@@ -40,6 +40,7 @@ EXPECTED_KEYS = {
     "agent_turn_deep",
     "conversational_speech",
     "text_to_speech",
+    "word_translation",
 }
 
 
@@ -97,7 +98,7 @@ def test_static_text_provider_definitions_need_no_credentials_or_network(monkeyp
         monkeypatch.delenv(variable, raising=False)
 
     definitions = provider_definitions()
-    text_providers = {"ollama", "openai", "deepseek", "groq", "gemini", "azure-openai"}
+    text_providers = {"ollama", "openai", "deepseek", "groq", "gemini", "azure-openai", "openrouter"}
     assert {definition.id for definition in definitions} == text_providers | {"azure-speech"}
 
     speech_operations = {
@@ -136,6 +137,7 @@ def test_capabilities_are_product_wide_and_only_reviewed_generators_allow_fallba
         "reading_generator",
         "writing_task_generator",
         "grammar_lesson_generator",
+        "word_translation",  # D-195: the basic tap may fall back to its deterministic answer
     }
 
 

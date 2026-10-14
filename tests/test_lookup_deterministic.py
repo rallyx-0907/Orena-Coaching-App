@@ -1,5 +1,9 @@
 """A word tap is deterministic: it never reaches the `learner_dictionary` AI capability.
 
+D-195 (2026-10-14) refined "never AI": the only AI a tap can reach is the `word_translation` capability, only after
+every deterministic layer missed, only when it is enabled (it ships disabled), and with the word only. These tests
+therefore keep spying on every other AI entry and prove a disabled `word_translation` makes no call at all.
+
 The contextual meaning ("Why here?") is the learner's explicit request, answered by the same endpoint with
 `contextual` true and cached; every plain lookup path (Reading, Quick Sheet, Listening) asks with it false.
 """
