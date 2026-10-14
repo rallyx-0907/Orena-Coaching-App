@@ -110,10 +110,11 @@ export function slugFor(name) {
 
 /* The POST /api/admin/reading/sources body for a registered source. The engine insists on creating
    it waiting for review; an operator approves it in Reading -> Sources. */
-export function sourceBody({ name, url = '', type = 'direct_url', language = 'en', rights = {}, license = '' }) {
+export function sourceBody({ name, publicName = '', url = '', type = 'direct_url', language = 'en', rights = {}, license = '' }) {
   return {
     slug: slugFor(name),
     name: String(name).trim(),
+    public_name: String(publicName).trim(),
     source_type: type,
     base_url: String(url).trim(),
     languages: [language],

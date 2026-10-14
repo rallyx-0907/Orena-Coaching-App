@@ -144,6 +144,8 @@ export const adminApi = {
   readingCreateSource: (body) => request('/api/admin/reading/sources', json('POST', body)),
   readingSetSourceState: (id, state) =>
     request(`/api/admin/reading/sources/${encodeURIComponent(id)}`, json('POST', { state })),
+  readingSetSourcePublicName: (id, publicName) =>
+    request(`/api/admin/reading/sources/${encodeURIComponent(id)}/public-name`, json('POST', { public_name: publicName })),
   readingSetPolling: (id, state, enabled) =>
     request(`/api/admin/reading/sources/${encodeURIComponent(id)}`, json('POST', { state, polling_enabled: enabled })),
   readingQueue: (params) => request(`/api/admin/reading/queue${query(params)}`),
