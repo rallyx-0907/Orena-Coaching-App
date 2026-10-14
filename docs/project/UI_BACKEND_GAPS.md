@@ -6177,3 +6177,5 @@ stores `processing.translation` (`ready | partial | failed | deferred | spend_ca
 (`{language: {done, total}}`) and returns them in the record's `outcome.translation`; the item's own state is never changed by
 it. No UI was invented. Open for the human: whether the media detail should show "48 of 113 lines translated" (and where), and a
 control to retry only the missing lines.
+
+- **Media licence link on the public credits page (D-205 follow-up).** Commons items now carry `license_name` and `license_url` through the credits rows and the listening payload, but no credits renderer shows the licence link, so CC attribution links stay invisible. Needs the design's credits row to place it.

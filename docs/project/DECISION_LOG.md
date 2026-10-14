@@ -6827,7 +6827,7 @@ preparation must never wait on a dictionary website. No schema change.
 
 ## D-205 - Media import records provenance, specific rejections and a stable outcome (2026-10-14)
 
-Status: PROPOSED (pending re-review). Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5, on 89b89535: ACCEPT WITH CONDITIONS; conditions fixed on this branch (item 8). Owner-approved P1s from the Video Sources Phase 0 runtime. No schema or
+Status: ACCEPTED (merged once CI was green). Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5, on 89b89535: ACCEPT WITH CONDITIONS; conditions fixed on this branch (item 8); re-review APPROVE on 7207d922, no open P0/P1. Owner-approved P1s from the Video Sources Phase 0 runtime. No schema or
 migration change: everything lives in existing JSON fields (`creator`, the `source` string map, `processing`).
 
 1. **Provenance.** A YouTube import stores the channel (oEmbed `author_name`/`author_url`) as `creator` and in `source`
