@@ -97,3 +97,29 @@ def test_a_dictionary_404_is_remembered_as_no_entry(monkeypatch):
     app_module = _app_with(monkeypatch, lambda *_a, **_k: _R())
     assert app_module._reading_english_dictionary("qwxzv") == {"phonetic": ""}
     assert app_module._NO_ENTRY_UNTIL["qwxzv"] - time.monotonic() > 60
+
+
+@pytest.mark.parametrize("status", [429, 500, 503])
+def test_a_dictionary_rate_limit_or_server_error_is_unreachable_not_no_entry(monkeypatch, status):
+    import time
+
+    class _R:
+        ok, status_code = False, status
+
+    app_module = _app_with(monkeypatch, lambda *_a, **_k: _R())
+    assert app_module._reading_english_dictionary("aid") == {"phonetic": ""}
+    assert app_module._NO_ENTRY_UNTIL["aid"] - time.monotonic() <= app_module._UNREACHABLE_SECONDS + 1
+
+
+def test_an_unreadable_dictionary_body_is_a_definite_miss(monkeypatch):
+    import time
+
+    class _R:
+        ok, status_code = True, 200
+
+        def json(self):
+            raise ValueError("not json")
+
+    app_module = _app_with(monkeypatch, lambda *_a, **_k: _R())
+    assert app_module._reading_english_dictionary("qwxzv") == {"phonetic": ""}
+    assert app_module._NO_ENTRY_UNTIL["qwxzv"] - time.monotonic() > 60

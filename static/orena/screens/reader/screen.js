@@ -860,7 +860,7 @@ export default async function mountReader(element, ctx) {
   const TAP_ANNOTATE_WAIT_MS = 1500;
   async function wholeWordAt(seg, word, at) {
     const raw = sentenceBySeg.get(seg)?.raw || '';
-    if (!Number.isInteger(at) || Array.from(word).length !== 1 || raw.slice(at, at + word.length) !== word) return word;
+    if (!Number.isInteger(at) || Array.from(word).length !== 1 || !/\p{Script=Han}/u.test(word) || raw.slice(at, at + word.length) !== word) return word;
     let tokens = annotations.get(seg);
     if (!tokens?.length) {
       const pi = Number(/^p(\d+)/.exec(seg)?.[1]);
@@ -876,11 +876,13 @@ export default async function mountReader(element, ctx) {
     return wordSpanAt(raw, tokens, at, word)?.text || word;
   }
 
+  let tapSeq = 0;
   async function onTapWord({ word, unit, at }) {
     const seg = unit.dataset.segment;
+    const mine = ++tapSeq; // latest tap wins: an older tap still waiting for the tagger opens nothing
     if (at != null) {
       const whole = await wholeWordAt(seg, word, at);
-      if (!ctx.isCurrent()) return;
+      if (!ctx.isCurrent() || mine !== tapSeq) return;
       if (whole !== word) {
         paintBody();
         word = whole;

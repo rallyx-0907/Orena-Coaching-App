@@ -22,4 +22,6 @@ const screen = readFileSync(new URL('../static/orena/screens/reader/screen.js', 
 assert.match(screen, /wholeWordAt\(seg, word, at\)/, 'the Reader widens an untagged character tap to its word');
 const lexical = readFileSync(new URL('../static/orena/screens/reader/lexical.js', import.meta.url), 'utf8');
 assert.match(lexical, /onTapWord\(\{ word: text\.slice\(span\.start, span\.end\), unit, at: span\.start \}\)/);
+assert.match(screen, /mine !== tapSeq/, 'latest tap wins');
+assert.ok(screen.includes('Script=Han}/u.test(word)'), 'only a Han character waits for the tagger');
 console.log('reader tap word gate: ok');
