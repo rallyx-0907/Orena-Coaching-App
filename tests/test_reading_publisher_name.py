@@ -1,4 +1,4 @@
-"""D-192 (proposed): learners see a publisher name, never the administrator's internal source name.
+"""D-18X (proposed): learners see a publisher name, never the administrator's internal source name.
 
 Holds the pure resolution order, the stored public name and its cache-revision effect, and that
 no learner payload (list, detail, licences page) leaks the internal name or the built-in labels.
@@ -57,6 +57,14 @@ def test_a_republication_credits_the_original_publisher_via_the_site():
     assert resolve_publisher(public_name="Global Voices", extraction=note) == ("Global Voices", "")
 
 
+@pytest.mark.parametrize("name", [
+    "Global Voices (English)", "Global Voices [English]", "Acme Inc.", "美国之音（VOA）", "【美国之音】", "St. Louis Post-Dispatch",
+])
+def test_balanced_brackets_and_abbreviation_stops_survive(name):
+    assert public_name_of({"public_name": f"  {name} - "}) == name
+    assert resolve_publisher(public_name=f" {name}; ") == (name, "")
+
+
 def test_a_name_that_is_an_address_or_empty_is_ignored():
     assert resolve_publisher(public_name="https://x.example/a", url="https://x.example/a") == ("x.example", "")
     assert host_name("not a url") == ""
@@ -97,8 +105,8 @@ def test_the_learner_sees_the_public_name_and_never_the_internal_one(setup):  # 
     assert listed["items"][0]["provenance"]["publisher"] == "NASA"
     assert detail["provenance"]["publisher"] == "NASA"
     assert detail["provenance"]["text"].startswith("Originally published by NASA")
-    credits = licences_payload(reading_texts=content.published_credits)
-    assert [row["creator"] for row in credits["content"]] == ["NASA"]
+    credits = licences_payload(reading_texts=content.published_credits, reading_sources=content.list_sources)
+    assert sorted(row["title"] for row in credits["content"]) == ["NASA", "Rain returns"]
     _no_internal_names(listed, detail, credits)
 
 

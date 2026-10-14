@@ -6199,3 +6199,9 @@ releases (RSS)", "Direct URL"), in the Reader meta, Discover, Content Detail, th
    published texts in the same transaction (D-190 follow-up P2-2).
 5. **Admin.** `POST /api/admin/reading/sources/{id}/public-name`, a "Public name" field on the register form and on the
    source page. The pinned `Orena Admin.dc.html` draws no such field (`UI_BACKEND_GAPS.md`).
+6. **Consequences for D-190 and the licences page.** Because the host is a fallback, the D-190 "publisher missing" provenance
+   warning now fires only when no public name, no page site name and no host is known (a text with no address and no typed
+   name); a bare host such as `nasa.gov` counts as the credit. Names are trimmed of whitespace and separators only, so
+   balanced brackets and the full stop of an abbreviation survive ("Global Voices (English)", "Acme Inc.", "美国之音（VOA）").
+   A `/api/licences` source row with neither a public name nor a base-URL host is omitted; its texts are still credited
+   one by one in the text rows.

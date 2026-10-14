@@ -105,7 +105,8 @@ def listening_catalog_credits(lessons: Iterable[Mapping[str, Any]]) -> list[dict
 
 def reading_source_credits(sources: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]:
     """The licence page names a source by its public name, else its host; the internal
-    name is administrator bookkeeping and never published (D-192, proposed)."""
+    name is administrator bookkeeping and never published. A source with neither is left out of this
+    list (its texts are still credited one by one in `reading_text_credits`) (D-18X, proposed)."""
     rows = []
     for source in sources:
         if not (_text(source.get("state")) == "active" and source.get("can_republish") and _text(source.get("license_note"))):

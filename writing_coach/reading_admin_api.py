@@ -475,7 +475,7 @@ def create_source(request: Request, response: Response, payload: SourceBody) -> 
 def set_source_public_name(
     request: Request, response: Response, source_id: str, payload: SourcePublicNameBody
 ) -> dict[str, Any]:
-    """The publisher name learners see for this source's texts (D-192, proposed)."""
+    """The publisher name learners see for this source's texts (D-18X, proposed)."""
     admin = _admin(request)
     _same_origin(request)
     _no_store(response)

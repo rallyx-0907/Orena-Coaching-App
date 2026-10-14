@@ -22,6 +22,7 @@ from urllib.parse import urlsplit
 
 _URL = re.compile(r"https?://[^\s<>\"')\]]+", re.IGNORECASE)
 _EDGE = " \t\r\n-–—:;,.|/()[]"
+_NAME_EDGE = " \t\r\n-–—:;,|/·"
 
 # The fields a credit is made of, in the order a reviewer is told about them.
 REQUIRED_FIELDS = ("publisher", "url", "license")
@@ -89,7 +90,9 @@ PUBLIC_NAME_KEY = "public_name"
 
 def _name(value: Any) -> str:
     """A name safe to show: one line, bounded, no address, and not a built-in label."""
-    cleaned = " ".join(_text(value).split()).strip(_EDGE)[:MAX_PUBLISHER].strip()
+    # Only whitespace and separators that cannot close a pair are trimmed: "Global Voices (English)",
+    # "Acme Inc." and "美国之音（VOA）" keep their brackets and full stops.
+    cleaned = " ".join(_text(value).split()).strip(_NAME_EDGE)[:MAX_PUBLISHER].strip()
     if not cleaned or _URL.search(cleaned) or cleaned.casefold() in INTERNAL_SOURCE_NAMES:
         return ""
     return cleaned
@@ -129,7 +132,7 @@ def resolve_publisher(
     built_in: bool = False,
     url: Any = "",
 ) -> tuple[str, str]:
-    """The publisher a learner sees, and the site it came through (D-192, proposed).
+    """The publisher a learner sees, and the site it came through (D-18X, proposed).
 
     The internal source name (what an administrator calls the source: "QA NASA news
     releases (RSS)", "Direct URL") is never an input. The site the text came from is, in order:
