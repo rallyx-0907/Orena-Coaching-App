@@ -33,6 +33,11 @@ def _migrate(engine, names, direction="upgrade"):
 
 @pytest.fixture
 def ledger():
+    yield from ledger_world(MIGRATIONS)
+
+
+def ledger_world(migrations):
+    """A throwaway schema at head plus `migrations`, a runtime login role, and the credit service as that role."""
     pytest.importorskip("alembic")
     from alembic import command
     from alembic.config import Config
@@ -56,12 +61,12 @@ def ledger():
     cfg.set_main_option("sqlalchemy.url", f"{URL}{options}".replace("%", "%%"))
     command.upgrade(cfg, "head")
     owner = create_engine(f"{URL}{options}", future=True)
-    _migrate(owner, MIGRATIONS)
+    _migrate(owner, migrations)
     with owner.begin() as connection:
         connection.execute(text(f"CREATE ROLE {role} LOGIN PASSWORD '{password}' NOSUPERUSER NOBYPASSRLS"))
         connection.execute(text(f"GRANT orena_credit_runtime TO {role}"))
         # what the application's runtime role already holds outside the credit tables
-        connection.execute(text(f"GRANT SELECT, INSERT, UPDATE ON account_incarnations, users TO {role}"))
+        connection.execute(text(f"GRANT SELECT, INSERT, UPDATE ON account_incarnations, users, billing_orders TO {role}"))
     runtime_url = make_url(f"{URL}{options}").set(username=role, password=password)
     runtime = create_engine(runtime_url, future=True, pool_size=12, max_overflow=4)
     repository = PostgresCreditRepository(runtime)
@@ -101,6 +106,7 @@ def ledger():
 
     world = type("Ledger", (), dict(
         owner=owner, runtime=runtime, admin=admin, schema=schema, role=role, repository=repository, service=service,
+        migrations=migrations,
         items=PostgresReconciliationRepository(runtime), account=staticmethod(account), funded=staticmethod(funded),
         delete=staticmethod(delete), balance=staticmethod(balance), sql=staticmethod(sql),
         text=staticmethod(text)))  # fmt: skip
