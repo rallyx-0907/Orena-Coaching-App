@@ -717,3 +717,27 @@ def test_p1_3_a_payment_and_refund_during_the_lookup_are_decided_on_the_order_as
     assert world.orders.order(order_code=code)["state"] == "refunded"
     assert world.orders.order(order_code=code)["provider_settled_at"] is not None
     assert world.items.summary()["open"] == 0  # no false "second payment" for the refunded order
+
+
+def test_p1_2_a_disposition_made_during_the_lookup_is_not_undone_by_its_stale_answer(world):
+    """Focused re-review: provider_paid_unrecorded is open; the reconciler claims the order and asks payOS; while it
+    waits, an administrator resolves the item as refunded (settling the order); payOS then answers PAID. The stale
+    answer reopens nothing, raises no new anomaly, and leaves the order settled and the gateway open."""
+    placed, code, item = unrecordable_paid(world)
+
+    def refunded_meanwhile(order_code):
+        world.items.resolve(item["id"], resolution="resolved", outcome="refund_confirmed", reference="FT-RETURN-2",
+                            note="returned to the payer by bank transfer", actor="admin-1")  # fmt: skip
+        return paid_answer(order_code)
+
+    world.answers[code] = refunded_meanwhile
+    world.clock.now = T0 + timedelta(hours=8)  # past the first item's backoff, so the order is asked again
+    counts = world.reconciler().tick()
+    assert counts["stale_lookup"] == 1 and counts.get("paid_unrecorded", 0) == 0
+    closed = world.row("SELECT state, reopened, resolution_outcome FROM billing_reconciliation_items WHERE id = :id",
+                       id=item["id"])  # fmt: skip
+    assert dict(closed) == {"state": "resolved", "reopened": 0, "resolution_outcome": "refund_confirmed"}
+    assert world.service.critical_by_gateway() == {}
+    assert world.orders.order(order_code=code)["provider_settled_at"] is not None
+    kinds = [row["kind"] for row in world.items.items()]
+    assert kinds.count("payment_mismatch") == 1 and "payment_not_payable" not in kinds  # only the first tick's

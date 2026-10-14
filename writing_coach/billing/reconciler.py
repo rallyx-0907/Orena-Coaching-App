@@ -256,6 +256,12 @@ class BillingReconciler:
         # Decided on the order as it is now, not as it was before the provider call: a webhook or a refund may have
         # changed it meanwhile (review P1-3).
         order = self._orders.order(order_code=code) or claimed
+        if order.get("provider_settled_at") is not None:
+            # Settled while payOS was being asked (claimed unsettled): an administrator's disposition answered it.
+            # This answer is stale: it reopens nothing and records nothing (focused review, P1-2 race).
+            _log.info("billing reconciler: order %s was settled during its lookup; the answer is not applied", code)
+            counts["stale_lookup"] += 1
+            return
         recorded = order["state"] in ("paid", "refunded")
         facts = {"reported_order_code": code, "reported_amount_minor": answer.amount_paid, "reported_currency": order["currency"],
                  "provider_state": answer.status or None, "billing_order_id": order["id"],
