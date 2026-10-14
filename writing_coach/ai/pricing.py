@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-PRICING_CATALOG_VERSION = "2026-10-14.v3"
+PRICING_CATALOG_VERSION = "2026-10-14.v4"
 MAX_PRICED_TOKENS = 1_000_000_000
 
 
@@ -37,13 +37,18 @@ _CATALOG = MappingProxyType({
     # Published paid-tier text rate, ai.google.dev/gemini-api/docs/pricing, read 2026-09-27.
     ("gemini", "gemini-3.5-flash-lite"): TokenPricing("gemini", "gemini-3.5-flash-lite", "USD", 0.30, 2.50),
     # AI Cost Router (D-195): pinned OpenRouter ":free" models, an explicit zero rate so a free call is "estimated at 0"
-    # and never counted as unpriced by the daily spend ledger. Source: openrouter.ai model pages, input and output
-    # both 0 for the ":free" variant. TO VERIFY against the live catalogue before activation: the ids below could
-    # not be checked from the build environment (no live-catalogue access), and a retired id simply answers an
-    # error and fails over.
+    # and never counted as unpriced by the daily spend ledger. VERIFIED 2026-10-14 against the public catalogue
+    # https://openrouter.ai/api/v1/models (no key): all three ids are listed with the ":free" suffix. A model is only
+    # usable once it is listed here (providers.check_model_allowed); to offer another free id, add its entry.
+    #   gemma-4-31b-it   primary
+    #   gemma-4-26b-a4b-it   standby: different weights, same family
+    #   nemotron-3-super-120b-a12b   a second-vendor option
     ("openrouter", "google/gemma-4-31b-it:free"): TokenPricing("openrouter", "google/gemma-4-31b-it:free", "USD", 0.0, 0.0),
-    ("openrouter", "qwen/qwen3-next-80b-a3b-instruct:free"): TokenPricing(
-        "openrouter", "qwen/qwen3-next-80b-a3b-instruct:free", "USD", 0.0, 0.0
+    ("openrouter", "google/gemma-4-26b-a4b-it:free"): TokenPricing(
+        "openrouter", "google/gemma-4-26b-a4b-it:free", "USD", 0.0, 0.0
+    ),
+    ("openrouter", "nvidia/nemotron-3-super-120b-a12b:free"): TokenPricing(
+        "openrouter", "nvidia/nemotron-3-super-120b-a12b:free", "USD", 0.0, 0.0
     ),
 })
 

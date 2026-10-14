@@ -34,7 +34,7 @@ from writing_coach.ai.providers import (
 )
 
 GEMMA = "google/gemma-4-31b-it:free"
-QWEN = "qwen/qwen3-next-80b-a3b-instruct:free"
+STANDBY = "google/gemma-4-26b-a4b-it:free"
 
 
 class _Response:
@@ -184,7 +184,7 @@ def test_every_other_provider_capability_carries_learner_text() -> None:
 
 def test_word_translation_accepts_a_free_openrouter_pool() -> None:
     config = CapabilityConfig(
-        enabled=False, provider="openrouter", model=GEMMA, backup_provider="openrouter", backup_model=QWEN,
+        enabled=False, provider="openrouter", model=GEMMA, backup_provider="openrouter", backup_model=STANDBY,
         timeout_seconds=3, temperature=0.0,
     )
     validate_capability_config("word_translation", config)
@@ -222,7 +222,7 @@ def test_a_per_capability_timeout_now_saves() -> None:
 
 def test_the_catalog_version_moved_and_free_models_have_explicit_zero_rates() -> None:
     assert PRICING_CATALOG_VERSION != "2026-10-04.v2"
-    for model in (GEMMA, QWEN):
+    for model in (GEMMA, STANDBY):
         rate = resolve_token_pricing("openrouter", model)
         assert rate is not None and rate.input_per_million == 0 and rate.output_per_million == 0
 
@@ -292,7 +292,7 @@ def test_an_unlisted_free_model_is_refused_because_the_ledger_would_charge_it_as
 
 def test_the_model_picker_lists_only_catalogued_free_models(monkeypatch) -> None:
     provider = _openrouter(monkeypatch)
-    assert provider._accept_model(GEMMA) and provider._accept_model(QWEN)
+    assert provider._accept_model(GEMMA) and provider._accept_model(STANDBY)
     assert not provider._accept_model("vendor/unlisted:free") and not provider._accept_model("openrouter/free")
 
 
@@ -332,3 +332,104 @@ def test_the_wire_check_is_in_the_single_choke_point_every_request_passes(monkey
     with pytest.raises(AICapabilityConfigInvalid):
         provider.generate_json(messages=[], schema={}, model="vendor/unlisted:free", max_output_tokens=5, temperature=0)
     assert post.sent == []
+
+
+# --- verified catalogue (2026-10-14), endpoint normalisation, the Admin picker ------------------------------------
+
+NEMOTRON = "nvidia/nemotron-3-super-120b-a12b:free"
+CATALOGUE_IDS = [
+    "cohere/north-mini-code:free", "google/gemma-4-26b-a4b-it:free", "google/gemma-4-31b-it:free",
+    "nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "openrouter/free", "vendor/paid-model", "anthropic/claude-paid",
+]
+
+
+def test_the_pinned_free_models_are_the_verified_ones_and_the_nonexistent_qwen_is_gone() -> None:
+    assert PRICING_CATALOG_VERSION != "2026-10-14.v3"
+    for model in (GEMMA, STANDBY, NEMOTRON):
+        rate = resolve_token_pricing("openrouter", model)
+        assert rate is not None and (rate.input_per_million, rate.output_per_million) == (0, 0)
+        providers_module.check_model_allowed("openrouter", model)
+    assert resolve_token_pricing("openrouter", "qwen/qwen3-next-80b-a3b-instruct:free") is None
+    with pytest.raises(AICapabilityConfigInvalid):
+        providers_module.check_model_allowed("openrouter", "qwen/qwen3-next-80b-a3b-instruct:free")
+
+
+def test_the_admin_model_picker_offers_only_the_priced_free_ids_of_the_live_catalogue(monkeypatch) -> None:
+    """Admin > AI & Models > Capability routing > Word translation: the Model control is `provider.models`, which is the
+    provider's live catalogue filtered by the allowlist - so exactly the pinned free ids the catalogue still lists."""
+
+    class _Catalogue:
+        status_code = 200
+
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self):
+            return {"data": [{"id": model} for model in CATALOGUE_IDS]}
+
+    requested: list[str] = []
+
+    def fake_get(url, **_kwargs):
+        requested.append(url)
+        return _Catalogue()
+
+    monkeypatch.setattr(providers_module.requests, "get", fake_get)
+    provider = _openrouter(monkeypatch)
+    assert provider.list_models() == sorted([GEMMA, STANDBY, NEMOTRON])
+    assert provider.discover_models_live() == sorted([GEMMA, STANDBY, NEMOTRON])
+    assert requested[0] == "https://openrouter.ai/api/v1/models"
+
+
+@pytest.mark.parametrize(
+    "entered",
+    [
+        "https://openrouter.ai/api/v1/chat/completions",
+        "https://openrouter.ai/api/v1/chat/completions/",
+        "https://openrouter.ai/api/v1/",
+        "  https://openrouter.ai/api/v1/Chat/Completions  ",
+        "https://openrouter.ai/api/v1",
+    ],
+)
+def test_an_endpoint_entered_as_the_chat_completions_url_is_normalised_to_the_base(monkeypatch, post, entered) -> None:
+    assert providers_module.normalize_openai_base_url(entered) == "https://openrouter.ai/api/v1"
+    for provider_id in ("openrouter", "openai", "groq"):
+        built = build_providers({provider_id: {"api_key": "test-key-not-real", "base_url": entered}})[provider_id]
+        assert built.base_url == "https://openrouter.ai/api/v1"
+    monkeypatch.setenv("OPENROUTER_BASE_URL", entered)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key-not-real")
+    env_built = build_providers()["openrouter"]
+    assert env_built.base_url == "https://openrouter.ai/api/v1"
+    _ask(env_built)
+    assert post.sent[0]["url"] == "https://openrouter.ai/api/v1/chat/completions"  # never .../chat/completions/chat/...
+
+
+def test_model_discovery_uses_the_normalised_base_not_chat_completions_models(monkeypatch) -> None:
+    seen: list[str] = []
+
+    class _Empty:
+        status_code = 200
+
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self):
+            return {"data": [{"id": GEMMA}]}
+
+    monkeypatch.setattr(providers_module.requests, "get", lambda url, **_k: seen.append(url) or _Empty())
+    built = build_providers({"openrouter": {"api_key": "test-key-not-real",
+                                            "base_url": "https://openrouter.ai/api/v1/chat/completions"}})["openrouter"]
+    assert built.discover_models_live() == [GEMMA]
+    assert seen == ["https://openrouter.ai/api/v1/models"]
+
+
+def test_saving_an_endpoint_stores_the_normalised_base(monkeypatch) -> None:
+    import writing_coach.ai.platform as platform
+
+    monkeypatch.setattr(platform, "_platform_repository", None)
+    values = platform._provider_credential_values(
+        "openrouter",
+        platform.ProviderCredentialIn(api_key="test-key-not-real", base_url="https://openrouter.ai/api/v1/chat/completions",
+                                      models=[GEMMA], default_model=GEMMA),
+    )
+    assert values["base_url"] == "https://openrouter.ai/api/v1"

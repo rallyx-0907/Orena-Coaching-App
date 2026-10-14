@@ -497,3 +497,24 @@ def test_no_image_candidate_reaches_a_learner_payload(setup):
     for text in (listing, detail):
         for marker in ("river-1280", "stations-1600", "river-twitter", "cdn.example.org", "Jane Doe", "media"):
             assert marker not in text
+
+
+def test_a_level_off_the_articles_scale_is_a_422_and_changes_nothing(setup):
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))
+    path = f"/api/admin/reading/articles/{outcome['article_id']}"
+    refused = call(setup["admin"], "POST", path, json={"reviewed_level": "HSK3"})
+    assert refused.status_code == 422
+    assert call(setup["admin"], "GET", path).json()["reviewed_level"] is None
+
+
+def test_a_chinese_article_takes_hsk_levels_only(setup):
+    article_id = _publish_one(setup, language="zh")
+    path = f"/api/admin/reading/articles/{article_id}"
+    for bad in ("C1", "hsk3"):
+        assert call(setup["admin"], "POST", path, json={"reviewed_level": bad}).status_code == 422
+    accepted = call(setup["admin"], "POST", path, json={"reviewed_level": "HSK3"})
+    assert accepted.status_code == 200 and accepted.json()["effective_level"] == "HSK3"
+    before = len(setup["audit"])
+    call(setup["admin"], "POST", path, json={"reviewed_level": "HSK3"})
+    assert not any(r["action"] == "admin.reading_level_override" for r in setup["audit"][before:])

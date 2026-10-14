@@ -578,3 +578,49 @@ def test_an_order_that_is_not_this_articles_targets_is_refused(repository):
     assert repository.reorder_targets(article["id"], order=[mine[0], theirs[0]], actor="a@b.c") is None
     # Refused means nothing moved.
     assert [target["id"] for target in repository.get_article(article["id"])["targets"]] == mine
+
+
+# ---- reviewer level override (Production Readiness 7a) -----------------------
+
+def test_a_level_outside_the_articles_language_scale_is_refused(repository):
+    article = _article(repository)
+    for bad in ("HSK3", "C3", "b2", "native"):
+        with pytest.raises(ValueError):
+            repository.update_article(article["id"], actor="admin@example.com", reviewed_level=bad)
+    stored = repository.get_article(article["id"])
+    assert stored["reviewed_level"] is None and stored["effective_level"] == "B1"
+
+
+def test_the_override_is_an_event_with_actor_reason_and_both_values(repository):
+    article = _article(repository)
+    repository.update_article(
+        article["id"], actor="admin@example.com", reviewed_level="C1", reason="Dense syntax"
+    )
+    event = repository.list_review_events(article["id"])[-1]
+    assert event["action"] == "level_override" and event["actor"] == "admin@example.com"
+    assert event["reason"] == "Dense syntax"
+    assert event["changes"]["reviewed_level"] == {"from": None, "to": "C1"}
+    assert repository.get_article(article["id"])["estimated_level"] == "B1"
+
+
+def test_repeating_the_same_level_or_clearing_none_is_not_a_change(repository):
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+    repository.update_article(article["id"], actor="admin@example.com", reviewed_level="C1")
+    revision = repository.get_article(article["id"])["content_revision"]
+    events = len(repository.list_review_events(article["id"]))
+    repository.update_article(article["id"], actor="admin@example.com", reviewed_level="C1")
+    assert repository.get_article(article["id"])["content_revision"] == revision
+    assert len(repository.list_review_events(article["id"])) == events
+    repository.update_article(article["id"], actor="admin@example.com", reviewed_level=None)
+    cleared = repository.get_article(article["id"])
+    assert cleared["effective_level"] == "B1" and cleared["content_revision"] == revision + 1
+
+
+def test_the_learner_list_filters_on_the_effective_level(repository):
+    article = _article(repository)
+    repository.set_status(article["id"], "published", actor="admin@example.com")
+    repository.update_article(article["id"], actor="admin@example.com", reviewed_level="C1")
+    assert [i["id"] for i in repository.list_published(language="en", level="C1")["items"]] == [article["id"]]
+    assert repository.list_published(language="en", level="B1")["items"] == []
+    assert repository.get_published_article(article["id"])["level"] == "C1"
