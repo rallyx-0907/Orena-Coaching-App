@@ -68,6 +68,11 @@ def lexical_language(selection: str, fallback: str) -> str:
     return ""
 
 
+# (selection, sentence, dictionary definitions, source language, support language) -> a short meaning, or None.
+# The one place the future `word_translation` capability plugs in; nothing is wired to it yet.
+WordTranslationSeam = Callable[[str, str, list[str], str, str], "str | None"]
+
+
 class VocabularyLookup(Protocol):
     def find_entry(self, language_code: str, normalized_term: str) -> dict[str, Any] | None: ...
 
@@ -181,9 +186,12 @@ def _catalog_candidates(selection: str, lemma: str) -> list[str]:
 def _safe_find_entry(
     repository: VocabularyLookup, language: str, normalized_term: str
 ) -> dict[str, Any] | None:
+    # Any failure of the catalogue is a miss: the dictionary and translation layers below can still answer.
     try:
         return repository.find_entry(language, normalized_term)
     except VocabularyContentUnavailable:
+        return None
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -298,7 +306,9 @@ class ReadingLookupService:
         english_dictionary_cached: Callable[[str], dict[str, Any] | None] | None = None,
         *,
         budget_seconds: float | None = None,
+        word_translation: WordTranslationSeam | None = None,
     ) -> None:
+        self._word_translation = word_translation
         self._english_dictionary_cached = english_dictionary_cached
         self._budget = budget_seconds
         self._vocabulary_repository = vocabulary_repository
@@ -323,7 +333,10 @@ class ReadingLookupService:
                 part_of_speech="", pronunciation="", audio_url="", meanings=(), definitions=(),
             )
 
-        local = _local_token_facts(source, context if source == surrounding else selection, selection)
+        try:
+            local = _local_token_facts(source, context if source == surrounding else selection, selection)
+        except Exception:  # noqa: BLE001 - the tagger is an aid; the dictionary layers below do not depend on it
+            local = {"part_of_speech": "", "pronunciation": "", "base_form": "", "lemma": ""}
         part_of_speech = local["part_of_speech"]
         pronunciation = local["pronunciation"]
         base_form = local["base_form"]
@@ -400,6 +413,16 @@ class ReadingLookupService:
             translated = _safe_machine_translation(self._translation_service, source, target, selection, wait)
             if translated:
                 meanings.append(LookupMeaning(translated, "machine_translation"))
+
+        if not meanings and target != source and self._word_translation is not None:
+            # The seam for the future `word_translation` capability (shared AI Cost Router). Defaults to none: today
+            # a basic tap ends with the dictionary's own definition, or "unavailable" when every layer missed.
+            try:
+                seamed = self._word_translation(selection, context, [item.definition for item in definitions], source, target)
+            except Exception:  # noqa: BLE001 - a failing fallback is a miss, never a blank sheet
+                seamed = None
+            if seamed and str(seamed).strip():
+                meanings.append(LookupMeaning(str(seamed).strip(), "word_translation"))
 
         return LookupResult(
             selected_text=selection,
