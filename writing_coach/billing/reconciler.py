@@ -151,8 +151,9 @@ class PostgresTickLock:
 class BillingReconciler:
     def __init__(self, *, service: Any, orders: Any, items: Any, lock: Callable[[], Any],
                  lookups: Mapping[str, Callable[[int], Lookup]], settings: Settings = Settings(),
-                 now: Callable[[], datetime] = lambda: datetime.now(UTC)) -> None:
+                 now: Callable[[], datetime] = lambda: datetime.now(UTC), credits: Any = None) -> None:
         self._service = service
+        self._credits = credits  # PR-MON-4: the credit ledger's step, when credits are enabled
         self._orders = orders
         self._items = items
         self._lock = lock
@@ -167,7 +168,10 @@ class BillingReconciler:
             if not lock.held:
                 return None
             counts: Counter[str] = Counter()
-            for name, step in (("gaps", self._gaps), ("pull", self._pull), ("expire", self._expire)):
+            steps = [("gaps", self._gaps), ("pull", self._pull), ("expire", self._expire)]
+            if self._credits is not None:
+                steps.append(("credits", self._credit_step))
+            for name, step in steps:
                 if not lock.alive():
                     counts["lock_lost"] += 1
                     _log.warning("billing reconciler: the lock's connection was lost; tick stopped")
@@ -323,6 +327,13 @@ class BillingReconciler:
             counts["unresolved"] += 1
 
     # ---- 3. abandoned orders ------------------------------------------------------------------------------
+
+    def _credit_step(self, counts: Counter[str], lock: Any) -> None:
+        """PR-MON-4 §7: close holds past their TTL (`reserve_expire`, never purchased credit), record a deleted
+        account's credit as a liability, and detect drift. Each write is its own short transaction."""
+
+        for name, value in self._credits.reconcile(items=self._items, now=self._now()).items():
+            counts[f"credit_{name}"] += value
 
     def _expire(self, counts: Counter[str], lock: Any) -> None:
         counts["expired"] += self._orders.expire_abandoned(now=self._now())

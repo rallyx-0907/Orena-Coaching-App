@@ -6,13 +6,13 @@
 | | |
 | --- | --- |
 | Branch | `feature/monetization-billing-v1` |
-| Main | `d55526a2` (`origin/main`, 2026-10-14): PR-MON-2 merged as #162 (`ea68f8a8`); Reading #161 after it; the lane rebased onto it |
-| Last completed slice | PR-MON-2 Price Integrity + Runtime Readiness: architecture-APPROVED, CI green on `dfb213ce`, merged to `main` as #162 (`ea68f8a8`, 2026-10-14) |
-| Active PR | **PR-MON-3 Billing Orders + Reconciliation Safety** - implementation **APPROVED** by the independent reviewer (code fix `bd572b8e`, final reviewed HEAD `abf2b642`, 2026-10-14); integration gate: rebase onto `main`, PR, CI. Record: `docs/reviews/architecture/PR_MON_3_RECONCILIATION_REVIEW_2026-10-14.md` |
-| Current slice | PR-MON-3 slices 1-6 implemented (D-MON-018): proposed 0031, reconciliation items, write-before-ack, gap repair, reconciler with payOS lookups, Polar refunds, admin API |
-| Exact next action | the human merges the PR-MON-3 PR once CI is green; financial migration promotion/application (0027 + 0031) remains a separate human gate; production billing OFF |
-| Blockers | independent implementation review; promotion/application of 0027 + 0031 is a separate human gate |
-| Test status | local only (not CI), `bd572b8e`. SQLite billing targeted: 476 passed, 1 skipped (the wider targeted set, 598 passed, at `1f73d4fa`). Throwaway PostgreSQL 16: 492 run, 491 passed, 1 failed = INHERITED #160. Mutations: 18/18 caught, each by its own guard's test (table in `PR-MON-3_REVIEW_REQUEST.md`) |
+| Main | `ceaaa9e2` (`origin/main`, 2026-10-14, PR #181); the lane rebased onto it; `migrations/` unchanged since `1a9e010d` (head `20261005_0026`) |
+| Last completed slice | PR-MON-3 Billing Orders + Reconciliation Safety: design and implementation architecture-APPROVED, CI green on `1f7d5865`, merged to `main` as #178 (`1a9e010d`, 2026-10-14) |
+| Active PR | **PR-MON-4 Prepaid Credit Ledger** - implementation review REQUEST CHANGES (3 P1s on `2f52279b`), all fixed (`b4cc46ff`, `90bb3b1c`); awaiting the focused re-review; code frozen otherwise. Record: `docs/reviews/architecture/PR_MON_4_CREDIT_LEDGER_REVIEW_2026-10-14.md` |
+| Current slice | PR-MON-4: proposed 0032 (on 0031), credit repository, `CreditService` gated by `credit_runtime_privileges`, reconciler credit step, admin read + adjustment routes |
+| Exact next action | focused re-review of the PR-MON-4 P1 fixes; on APPROVE rebase and open the PR. 0027/0031/0032 stay proposed; credits OFF (R-MON-014 deployment gate) |
+| Blockers | the implementation review. Human gates: migration promotion/application (0027 -> 0031 -> 0032); runtime-role separation before credits are enabled |
+| Test status | local only (not CI), after the review fixes. SQLite targeted: 636 passed, 1 skipped (`b4cc46ff`). Throwaway PostgreSQL 16 batch: 534 run, 533 passed, 1 failed = INHERITED #160 (`b4cc46ff`); credit tests 39 passed on `90bb3b1c` (31 PostgreSQL tests as a non-superuser runtime member, plus a non-superuser executor path). Mutations: 29/29 caught, each by its own guard's test (table in `PR-MON-4_REVIEW_REQUEST.md`) |
 | Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
 ## Revised sequence (human, 2026-10-13)
@@ -21,8 +21,8 @@
 | --- | --- | --- |
 | PR-MON-1 | **Canonical Effective Entitlement**. One resolver with explicit precedence; Product UI, quota admission and entitlement checks all derive from it. No migration, no checkout UI, no provider config, no credits. | MERGED (#153, `aa016dc1`) |
 | PR-MON-2 | **Price Integrity + Runtime Readiness.** One server-side price truth or a strict consistency gate; checkout only at a server-offered price that exactly matches the effective catalogue entry (a mismatch blocks checkout); browser amounts never trusted; `billing_ready` reflects real capability. Closes R-MON-010. | MERGED (#162, `ea68f8a8`) |
-| PR-MON-3 | **Billing Orders + Reconciliation Safety.** Re-review/promote 0027; settle 0028's parent explicitly; abandoned-order expiry; durable payment anomaly/reconciliation state; Polar refund matching where safe; payment-without-entitlement detection. Exact webhook HTTP/retry semantics are designed here, per provider. | APPROVED (architecture), PR open |
-| PR-MON-4 | **Prepaid Credit Ledger.** Credit account, append-only ledger, idempotent credit/debit/reversal, deterministic balance, never negative. No commercial credit prices. | PLANNED |
+| PR-MON-3 | **Billing Orders + Reconciliation Safety.** Re-review/promote 0027; settle 0028's parent explicitly; abandoned-order expiry; durable payment anomaly/reconciliation state; Polar refund matching where safe; payment-without-entitlement detection. Exact webhook HTTP/retry semantics are designed here, per provider. | MERGED (#178, `1a9e010d`) |
+| PR-MON-4 | **Prepaid Credit Ledger.** Credit account, append-only ledger, idempotent credit/debit/reversal, deterministic balance, never negative. No commercial credit prices. | IMPLEMENTED (implementation review pending) |
 | PR-MON-5 | **payOS Credit Top-up.** Configured top-up products, checkout, verified webhook, credit exactly once, balance and recent-transactions API. | PLANNED |
 | PR-MON-6 | **Cost-aware entitlement / Free trial / credits fallback.** `included allowance → prepaid credits → refuse`; reserve → dispatch → settle/release for expensive work; no funded entitlement means no paid provider call; configurable new-user promotional allowances (quantities not invented). | PLANNED |
 | PR-MON-7 | **Free AI cost routing.** `deterministic/cache/local/free/cheap → premium` for word meaning, contextual Reading explanation, Writing evaluation and Orena Intelligence. Free stays quota-controlled at zero provider price. | PLANNED |

@@ -147,3 +147,42 @@ H1-H7 as decided by the review; H2 taken as a follow-up revision 0031 (no operat
 acknowledged and then lost, and paid-without-access must never be silenced. | Proposed 0031; no migration promoted or
 applied; billing stays off. Record: `docs/reviews/architecture/PR_MON_3_RECONCILIATION_REVIEW_2026-10-14.md`.
 
+D-MON-019 | 2026-10-14 | Prepaid credit ledger policy, C1-C7 (human, on the PR-MON-4 design `43a3dedf`). C1: credit
+left on a deleted account is a financial liability - kept, never forfeited, never auto-refunded, history never
+cascaded or rewritten; no new topup/reserve/settle/spend; release, reserve_expire, refund, reversal and controlled
+adjustment still allowed; tracked by `credit_balance_on_deletion` until resolved. C2: no automatic transfer to a new
+incarnation (no inheritance, identity lookup, reuse or resurrection). C3: the reserve is a hard upper bound -
+charged = min(actual, hold), the rest `uncharged`, DB-enforced, never collected later; a late settle is not charged
+and is recorded. C4: adjustments only as audited ledger deltas (reason, actor, idempotency key, digest), never below
+zero, no "set balance". C5: a reversal reverses only what is available (never reserved credits, never negative) and
+records the shortfall with its top-up/reversal context. C6: purchased credit does not expire in v1; reservation
+expiry (`reserve_expire`) is a different concept. C7: reserve TTL default 30 minutes, `expires_at` stored on the
+reserve from its own transaction and authoritative. | Credits are customer money: nothing may vanish, go negative or
+be charged twice or later. | Frozen in `PR-MON-4_DESIGN.md` revision 2; not decided: credit-VND rate, meter prices,
+Free allowance, auto top-up, activation, promotions, incarnation transfer.
+
+D-MON-020 | 2026-10-14 | Credit ledger architecture after the review of `e5ccc114` (lane, pending the focused
+re-review). (1) 0032 depends on 0031's schema (it replaces the reconciliation kind CHECK): order 0027 -> 0031 -> 0032,
+never promoted or re-parented ahead of 0031. (2) The snapshot write boundary is database privilege: tables and the
+ledger function owned by a NOLOGIN `orena_credit_owner`; the runtime (member of `orena_credit_runtime`) has no UPDATE
+on the snapshot columns and no UPDATE/DELETE/TRUNCATE on the ledger; the only writer is a SECURITY DEFINER trigger
+function with a fixed search_path; the guard trigger is defense in depth; readiness refuses credits while the
+runtime connects as a superuser or table owner. (3) A reversal applies min(requested, available, remaining
+reversible), every request has an immutable `credit_reversal_requests` receipt keyed by its money-side event, a
+replay returns the stored outcome and is never re-evaluated, and digests cover request intent, never derived
+results. | A financial snapshot needs an authorization boundary, and a reversal must be decided exactly once. |
+Deployment prerequisite (operator gate): the runtime must connect as a non-superuser member of `orena_credit_runtime`
+before credits are enabled.
+
+D-MON-021 | 2026-10-14 | Credit ledger design revision 4 after the review of `2b6da4a7` (lane, pending the focused
+re-review). Reversal requests carry no back-reference: `credit_ledger.reversal_request_id` (exactly for `reversal`,
+partial UNIQUE) is the only link, inserted after its request, so the request stays immutable with immediate
+constraints. A money-side refund/chargeback event is globally unique on reversal requests (`source_type`,
+`source_ref`). 0032 extends `billing_reconciliation_items` with nullable structured `credit_*` references, per-kind
+CHECKs, extended class lists and a replaced guard trigger that also freezes the new facts. The definer function's
+schema is not writable by untrusted roles (else a dedicated `orena_credit` schema); 0032 needs a superuser or
+CREATEROLE executor, or roles provisioned out of band and asserted; `credit_runtime_privileges` checks every
+boundary-defeating privilege. | Constraints must be satisfiable as written, one money event must move credit once,
+and reconciliation facts must be as immutable as PR-MON-3's. | No code; 0032 not yet created; rebase and topology
+check before creating it.
+

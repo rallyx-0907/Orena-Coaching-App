@@ -8,6 +8,8 @@
 - `GET  /api/admin/billing/reconciliation`       the money anomalies kept for an operator (PR-MON-3)
 - `POST /api/admin/billing/reconciliation/{id}/resolve`  close one, under its kind's rule; moves no money
 - `POST /api/admin/billing/reconcile`            run one reconciliation pass now
+- `GET  /api/admin/billing/credits/{incarnation}`              a credit balance and its ledger page (PR-MON-4)
+- `POST /api/admin/billing/credits/{incarnation}/adjustments`  an audited ledger delta (C4); never "set balance"
 
 Only the learner entrypoints (offers, checkout) require the runtime to be billing-ready (`billing.readiness`, the
 PR-MON-2 review P1): a runtime that is not starts no new payment. A verified webhook and the administrator's routes
@@ -29,7 +31,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from writing_coach.billing.service import CheckoutRefused
 from writing_coach.core.errors import orena_http_error
@@ -46,15 +48,16 @@ _public_base: str = ""
 _ready: Callable[[], bool] | None = None  # None: `billing.readiness.billing_ready`
 _items: Any = None  # the reconciliation items (PR-MON-3)
 _reconcile: Callable[[], Any] | None = None  # one reconciliation pass
+_credits: Any = None  # the credit service (PR-MON-4), only when credits are enabled
 MAX_WEBHOOK_BYTES = 256 * 1024
 
 
 def configure_billing(*, service: Any, backbone: Any, admin_guard: Callable[[Request], Any],
                       public_base_url: str, reconciliation: Any = None,
-                      reconcile: Callable[[], Any] | None = None) -> None:
-    global _service, _backbone, _admin, _public_base, _items, _reconcile
+                      reconcile: Callable[[], Any] | None = None, credits: Any = None) -> None:
+    global _service, _backbone, _admin, _public_base, _items, _reconcile, _credits
     _service, _backbone, _admin, _public_base = service, backbone, admin_guard, public_base_url.rstrip("/")
-    _items, _reconcile = reconciliation, reconcile
+    _items, _reconcile, _credits = reconciliation, reconcile, credits
 
 
 def _billing_ready() -> bool:
@@ -102,6 +105,20 @@ class ResolveIn(BaseModel):
     outcome: str | None = Field(default=None, max_length=30)
     reference: str | None = Field(default=None, max_length=200)
     note: str = Field(min_length=3, max_length=400)
+
+
+class AdjustmentIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    delta: int = Field(ge=-10**12, le=10**12)
+    operation_id: str = Field(min_length=8, max_length=200)
+    reason: str = Field(min_length=3, max_length=400)
+
+    @field_validator("delta")
+    @classmethod
+    def _a_delta(cls, value: int) -> int:
+        if value == 0:
+            raise ValueError("an adjustment is a non-zero delta")
+        return value
 
 
 class RefundIn(BaseModel):
@@ -240,6 +257,55 @@ def billing_reconcile_now(request: Request) -> dict[str, Any]:
 
 
 def _public_item(item: dict[str, Any]) -> dict[str, Any]:
-    return {key: (str(value) if key in {"id", "billing_order_id", "incarnation_id"} and value is not None
+    return {key: (str(value) if isinstance(value, uuid.UUID)
                   else value.isoformat() if hasattr(value, "isoformat") else value)
             for key, value in item.items()}  # fmt: skip
+
+
+# ---- credits (PR-MON-4): read and audited adjustment only; top-up is PR-MON-5, consumption PR-MON-6 ----------------
+
+_CREDIT_REFUSAL = {"credits_runtime_privileged": 503, "account_under_review": 409, "insufficient_credits": 409,
+                   "conflict": 409, "not_found": 404, "invalid": 422}
+
+
+def _admin_credits(request: Request) -> Any:
+    if _admin is None:
+        raise orena_http_error(503, "credits_off", "Credits are not open on this deployment.", retryable=False)
+    admin = _admin(request)  # the administrator first, then whether credits exist
+    if _credits is None:
+        raise orena_http_error(503, "credits_off", "Credits are not open on this deployment.", retryable=False)
+    return admin
+
+
+def _incarnation_key(value: str) -> str:
+    try:
+        return str(uuid.UUID(value))
+    except ValueError:
+        raise orena_http_error(404, "account_not_found", "No such account.", retryable=False) from None
+
+
+@router.get("/api/admin/billing/credits/{incarnation_id}")
+def billing_credit_account(incarnation_id: str, request: Request, before_seq: int | None = None) -> dict[str, Any]:
+    _admin_credits(request)
+    key = _incarnation_key(incarnation_id)
+    return {"status": _credits.status(), "account": _public_item(_credits.balance(key) or {}),
+            "entries": [_public_item(entry) for entry in _credits.entries(key, before_seq=before_seq)]}
+
+
+@router.post("/api/admin/billing/credits/{incarnation_id}/adjustments")
+def billing_credit_adjustment(incarnation_id: str, payload: AdjustmentIn, request: Request) -> dict[str, Any]:
+    """An administrator's correction, as an audited ledger delta (C4): reason, actor and an idempotency key, never
+    below zero, and no "set balance"."""
+
+    admin = _admin_credits(request)
+    key = _incarnation_key(incarnation_id)
+    actor = str(admin.get("google_sub") or "admin") if isinstance(admin, dict) else "admin"
+    if _credits.ensure_account(key) is None:
+        raise orena_http_error(503, "credits_runtime_privileged", "Credits are refused on this connection.",
+                               retryable=False)
+    outcome = _credits.adjust(key, delta=payload.delta, operation_id=payload.operation_id, actor=actor,
+                              reason=payload.reason)  # fmt: skip
+    if not outcome.ok:
+        status = _CREDIT_REFUSAL.get(outcome.status, 409)
+        raise orena_http_error(status, outcome.status, "This adjustment cannot be recorded.", retryable=status == 503)
+    return {"ok": True, "status": outcome.status, "entry": _public_item(outcome.entry or {})}
