@@ -6229,8 +6229,11 @@ releases (RSS)", "Direct URL"), in the Reader meta, Discover, Content Detail, th
 
 ## D-193 - Per-item rights: a staff-only public-domain source does not vouch for wire copy (2026-10-14)
 
-**Status: PROPOSED.** Changes how rights are recorded at ingest for Reading, which is a lifecycle/rights change, so it needs
-independent architecture review before it is ACCEPTED; the implementer does not approve it. No schema or migration change.
+**Status: ACCEPTED** (2026-10-14). Independent review: Delegated Architecture Reviewer, Claude Opus 5.5, APPROVED WITH
+CONDITIONS on bdb950a3, re-review APPROVE on 8f2ce5c3. The owner approved the rights policy as written on 2026-10-14,
+including the current answers to the open questions: an inline citation in VOA prose still counts as staff writing, and
+any byline (an institutional author such as "美国之音" and a contributor included) establishes staff authorship. Merged
+once CI was green. No schema or migration change.
 Answers catalogue question Q6 (VOA wire copy) in part; the part that stays human is listed at the end.
 
 1. **Problem.** VOA's own staff output is US-government work and in the public domain, but VOA also carries and rewrites
