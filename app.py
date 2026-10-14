@@ -687,7 +687,7 @@ _reading_lookup_service = ReadingLookupService(
     _reading_translation_service,
     _reading_english_dictionary_cached,
     budget_seconds=TAP_BUDGET_SECONDS,
-    # D-192: the last layer after every deterministic one, the word only, off until the owner enables the capability.
+    # D-195: the last layer after every deterministic one, the word only, off until the owner enables the capability.
     word_translation=word_translation_seam,
 )
 configure_reading_lookup(_reading_lookup_service)

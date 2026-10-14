@@ -1,4 +1,4 @@
-"""The word tap's last layer: the router behind `ReadingLookupService(word_translation=...)` (D-192).
+"""The word tap's last layer: the router behind `ReadingLookupService(word_translation=...)` (D-195).
 
     word_translation_seam(selection, sentence, definitions, source, target) -> str | None
 

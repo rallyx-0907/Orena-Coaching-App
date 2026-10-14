@@ -137,7 +137,7 @@ def test_capabilities_are_product_wide_and_only_reviewed_generators_allow_fallba
         "reading_generator",
         "writing_task_generator",
         "grammar_lesson_generator",
-        "word_translation",  # D-18X: the basic tap may fall back to its deterministic answer
+        "word_translation",  # D-195: the basic tap may fall back to its deterministic answer
     }
 
 

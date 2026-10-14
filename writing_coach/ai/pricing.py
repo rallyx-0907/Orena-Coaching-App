@@ -36,7 +36,7 @@ _CATALOG = MappingProxyType({
     ("groq", "openai/gpt-oss-120b"): TokenPricing("groq", "openai/gpt-oss-120b", "USD", 0.15, 0.60),
     # Published paid-tier text rate, ai.google.dev/gemini-api/docs/pricing, read 2026-09-27.
     ("gemini", "gemini-3.5-flash-lite"): TokenPricing("gemini", "gemini-3.5-flash-lite", "USD", 0.30, 2.50),
-    # AI Cost Router (D-18X): pinned OpenRouter ":free" models, an explicit zero rate so a free call is "estimated at 0"
+    # AI Cost Router (D-195): pinned OpenRouter ":free" models, an explicit zero rate so a free call is "estimated at 0"
     # and never counted as unpriced by the daily spend ledger. Source: openrouter.ai model pages, input and output
     # both 0 for the ":free" variant. TO VERIFY against the live catalogue before activation: the ids below could
     # not be checked from the build environment (no live-catalogue access), and a retired id simply answers an

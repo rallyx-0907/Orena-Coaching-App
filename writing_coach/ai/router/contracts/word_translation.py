@@ -1,6 +1,6 @@
 """`word_translation`: the basic meaning of one word or short phrase, in the learner's support language.
 
-The owner's decision (2026-10-14, D-18X): the basic tap may call AI through this capability, sending the word only -
+The owner's decision (2026-10-14, D-195): the basic tap may call AI through this capability, sending the word only -
 never the sentence it stands in. The meaning in context stays with `/word-detail` and "Why here?" (D-130.3, D-133).
 The input is at most three words and 40 characters; the output is one clean line of the right script.
 """

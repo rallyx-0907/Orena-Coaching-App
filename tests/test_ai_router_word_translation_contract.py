@@ -1,4 +1,4 @@
-"""The `word_translation` contract: what may be asked, what may come back (AI Cost Router slice 1, D-18X).
+"""The `word_translation` contract: what may be asked, what may come back (AI Cost Router slice 1, D-195).
 
 The input is a word or phrase of at most three words - never the sentence it stands in. The output is a short gloss
 in the learner's language that is one clean line of the right script. English, Vietnamese and Chinese are all

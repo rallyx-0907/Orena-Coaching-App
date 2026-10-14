@@ -199,7 +199,7 @@ def validate_capability_config(
     if config.backup_provider is not None:
         check_model_allowed(config.backup_provider, config.backup_model or "")
     if definition.input_class == "learner_text":
-        # A free tier, or any endpoint that may log prompts, never receives learner-authored text (D-18X, D-104).
+        # A free tier, or any endpoint that may log prompts, never receives learner-authored text (D-195, D-104).
         pool = [(provider, config.model)]
         if config.backup_provider is not None:
             pool.append((get_provider_definition(config.backup_provider), config.backup_model or ""))

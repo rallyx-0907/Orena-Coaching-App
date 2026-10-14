@@ -262,7 +262,7 @@ def http_status_class(status: object) -> str | None:
 
 
 def _router_telemetry(value: dict[str, Any]) -> dict[str, Any]:
-    """The AI Cost Router's fields (D-18X). Added only when present; each is a closed vocabulary or a small
+    """The AI Cost Router's fields (D-195). Added only when present; each is a closed vocabulary or a small
     pattern, so no word, prompt or URL can ride along."""
 
     extra: dict[str, Any] = {}

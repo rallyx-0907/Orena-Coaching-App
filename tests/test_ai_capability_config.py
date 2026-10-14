@@ -95,7 +95,7 @@ def test_malformed_config_fails_explicitly(raw) -> None:
 def test_static_validation_rejects_unknown_provider_and_invalid_options() -> None:
     with pytest.raises(AICapabilityUnsupported, match="Unknown AI provider"):
         validate_capability_config("writing_evaluator", config(provider="unknown"))
-    # G1 (D-18X): the per-request timeout is supported by the text providers, so it saves and applies.
+    # G1 (D-195): the per-request timeout is supported by the text providers, so it saves and applies.
     validate_capability_config("writing_evaluator", config(timeout_seconds=30))
     with pytest.raises(AICapabilityConfigInvalid):
         config(temperature=3.0)
@@ -177,7 +177,7 @@ def test_static_validation_and_provider_id_parity_require_no_network(monkeypatch
         "deepseek": frozenset({text, agent}),
         "groq": frozenset({text, agent}),
         "gemini": frozenset({text, agent}),
-        "openrouter": frozenset({text}),  # D-18X: structured text only, never an agent turn
+        "openrouter": frozenset({text}),  # D-195: structured text only, never an agent turn
     }
 
 def _exercise_repository(repository, *, sqlite_path: Path | None = None) -> None:

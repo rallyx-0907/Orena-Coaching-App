@@ -1,7 +1,7 @@
 """The router's L1 result cache: a bounded in-process LRU with single-flight and a short negative cache.
 
 The key is made of the capability, contract version, prompt version and normalised input - never the model, so an
-operator changing the model does not pay again for a request already answered (owner instruction, D-18X). The
+operator changing the model does not pay again for a request already answered (owner instruction, D-195). The
 value is the contract's output plus its provenance.
 """
 

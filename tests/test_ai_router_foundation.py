@@ -1,4 +1,4 @@
-"""AI Cost Router slice 1 foundations (D-18X): the OpenRouter provider, free-model pricing, the
+"""AI Cost Router slice 1 foundations (D-195): the OpenRouter provider, free-model pricing, the
 `word_translation` catalogue entry, the input-class rule and the telemetry fields.
 
 Nothing here touches the network: `requests.post` is replaced by a fake.

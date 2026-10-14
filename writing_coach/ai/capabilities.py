@@ -48,7 +48,7 @@ class AICapabilityDefinition:
     implemented: bool
     allowed_fallback_policies: frozenset[AIFallbackPolicy]
     language_overrides_allowed: bool = False
-    # What a request to this capability may carry (AI Cost Router, D-18X). `learner_text` is the conservative
+    # What a request to this capability may carry (AI Cost Router, D-195). `learner_text` is the conservative
     # default: a free tier or any provider that may log prompts is refused for it. `public_reference` is a word or
     # phrase taken from published content, with no learner-authored text.
     input_class: str = "learner_text"
@@ -150,7 +150,7 @@ _DEFINITIONS = (
         configurable=True,
         implemented=True,
     ),
-    # AI Cost Router slice 1 (D-18X): the basic tap's last layer. A word or phrase of at most three words, never the
+    # AI Cost Router slice 1 (D-195): the basic tap's last layer. A word or phrase of at most three words, never the
     # sentence; ships disabled and is switched on by the operator, so it is outside the activation set.
     _definition(
         "word_translation",

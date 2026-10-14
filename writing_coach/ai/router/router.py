@@ -1,4 +1,4 @@
-"""`route()`: the one entry point to every routed AI capability (D-18X).
+"""`route()`: the one entry point to every routed AI capability (D-195).
 
     route(capability_key, input, deadline=None) -> RouteResult
 

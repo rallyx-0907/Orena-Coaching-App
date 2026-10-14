@@ -54,7 +54,7 @@ from writing_coach.ai.pricing import is_free_model
 FAILURES_BEFORE_COOLDOWN = 3
 FIRST_COOLDOWN_SECONDS = 30.0
 MAX_COOLDOWN_SECONDS = 300.0
-# A chain with a deadline does not start another attempt with less than this left (AI Cost Router, D-18X).
+# A chain with a deadline does not start another attempt with less than this left (AI Cost Router, D-195).
 MIN_ATTEMPT_SECONDS = 0.2
 
 

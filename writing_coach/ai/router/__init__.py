@@ -1,4 +1,4 @@
-"""The AI Cost Router (D-18X, proposals/AI_COST_ROUTER.md).
+"""The AI Cost Router (D-195, proposals/AI_COST_ROUTER.md).
 
 One router for every routed capability: `route(capability_key, input)` validates the input against the capability's
 contract, answers from the result cache when it can, and otherwise runs the operator's ordered pool through the

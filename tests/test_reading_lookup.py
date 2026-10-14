@@ -275,7 +275,7 @@ def test_available_is_true_when_only_the_engine_answers() -> None:
 
 
 def test_reading_lookup_reaches_ai_only_through_word_translation_on_a_miss_when_enabled(monkeypatch) -> None:
-    """D-192 replaced "never AI": AI only via `word_translation`, only on a deterministic miss, only when enabled."""
+    """D-195 replaced "never AI": AI only via `word_translation`, only on a deterministic miss, only when enabled."""
 
     from writing_coach.ai import platform as ai_platform
     from writing_coach.ai.router import router as ai_router, tap

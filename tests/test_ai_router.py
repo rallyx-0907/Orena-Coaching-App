@@ -1,4 +1,4 @@
-"""The AI Cost Router, slice 1 (D-18X): `route("word_translation", ...)` over the v1 primary + standby configuration.
+"""The AI Cost Router, slice 1 (D-195): `route("word_translation", ...)` over the v1 primary + standby configuration.
 
 Fake providers only: no network, no key, no live call. The two pool entries are both OpenRouter ":free" models, as
 they are configured in production, so the tests exercise the same-provider cooldown too.

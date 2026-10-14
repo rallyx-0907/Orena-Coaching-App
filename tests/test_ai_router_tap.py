@@ -1,5 +1,5 @@
 # ruff: noqa: F811
-"""The word tap's last layer: the router behind the `word_translation` seam (D-192).
+"""The word tap's last layer: the router behind the `word_translation` seam (D-195).
 
 AI is reached from a word tap only through `word_translation`, only on a deterministic miss, only when the capability
 is enabled; it is sent the word and never the sentence; a slow answer is finished in the background; a learner over

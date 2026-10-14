@@ -1,6 +1,6 @@
 """In-process router counters, flushed as one `ai.router.rollup` audit row per capability each minute.
 
-There is no audit row per tap (D-18X): the per-call `ai.operation` rows already carry tokens, cost, latency, tier
+There is no audit row per tap (D-195): the per-call `ai.operation` rows already carry tokens, cost, latency, tier
 and the fallback reason for every provider call, and a cache hit makes no call. These counters add what those rows
 cannot: requests, cache hits, fallbacks and the model that actually answered. They hold counts and model ids only -
 never a word, a prompt or an answer.

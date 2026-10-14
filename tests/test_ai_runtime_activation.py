@@ -212,7 +212,7 @@ def test_cli_failure_output_is_structured_and_secret_safe(monkeypatch, capsys) -
 
 
 def test_a_disabled_opt_in_word_translation_row_does_not_block_activation(monkeypatch) -> None:
-    """D-18X: word_translation ships disabled and is outside the activation set; a row for it is allowed, not needed."""
+    """D-195: word_translation ships disabled and is outside the activation set; a row for it is allowed, not needed."""
 
     repository = Repository()
     assert "word_translation" not in repository.configs  # not required

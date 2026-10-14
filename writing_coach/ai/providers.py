@@ -127,7 +127,7 @@ _PROVIDER_DEFINITIONS = (
         supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
     ),
-    # D-18X: only pinned ":free" models, and a free endpoint may log prompts, so it receives published reference
+    # D-195: only pinned ":free" models, and a free endpoint may log prompts, so it receives published reference
     # input only (never learner text). Structured text only: it is not offered for agent turns.
     ProviderDefinition(
         id="openrouter",
@@ -157,7 +157,7 @@ def get_provider_definition(provider_id: str) -> ProviderDefinition | None:
 
 
 def check_model_allowed(provider_id: str, model: str) -> None:
-    """The model allowlist rule of a provider, static and offline (D-18X).
+    """The model allowlist rule of a provider, static and offline (D-195).
 
     OpenRouter: a pinned, vendor-prefixed ":free" id only. `openrouter/auto`, `openrouter/free` and every other
     `openrouter/*` id pick a model at random behind the router, an id without a vendor prefix is not a model id, and
@@ -973,7 +973,7 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
             model_filter="groq-text",
             credential_override=provider_credentials.get("groq"),
         ),
-        # D-18X. Key from the D-037 store or OPENROUTER_API_KEY (a name here, never a value). OpenRouter's own model
+        # D-195. Key from the D-037 store or OPENROUTER_API_KEY (a name here, never a value). OpenRouter's own model
         # fallback is switched off: the router owns failover and the order is never random.
         "openrouter": OpenAICompatibleProvider(
             provider_id="openrouter",

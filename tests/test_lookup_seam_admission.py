@@ -1,4 +1,4 @@
-"""The `word_translation` seam is admitted through a gate, not a queue (D-192, reviewer conditions).
+"""The `word_translation` seam is admitted through a gate, not a queue (D-195, reviewer conditions).
 
 Saturation is a miss, one call per word, a call that never started is cancelled when the tap's wait ends, a word whose
 call raised is cooled down, and the log names the exception type only, once a minute.

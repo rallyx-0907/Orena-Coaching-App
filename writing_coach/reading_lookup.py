@@ -4,7 +4,7 @@ A learner tapping a word wants a fast, deterministic answer. The real order is:
 the shared local tagger (class, reading), the vocabulary catalogue, the
 dictionary senses (English: a monolingual API; Chinese: the vendored CC-CEDICT
 pack), the local machine translation (only if the Reading engine is the free
-local one), the `word_translation` seam (D-192: the AI Cost Router, bounded by
+local one), the `word_translation` seam (D-195: the AI Cost Router, bounded by
 the tap budget, admitted through a bounded gate, the word only), and finally
 "unavailable". Only that seam can be a language model, and only when the
 operator has enabled the capability; Explain (`POST /api/dictionary/contextual`)
@@ -52,7 +52,7 @@ _MT_CALL_TIMEOUT = 1.5
 _MT_SLOTS = 4
 _MT_FAILURE_SECONDS = 60.0
 _translation_pool = ThreadPoolExecutor(max_workers=_MT_SLOTS, thread_name_prefix="lookup-mt")
-# The word_translation seam (D-192) is admitted through a gate, never a queue: at most _SEAM_SLOTS calls exist at once
+# The word_translation seam (D-195) is admitted through a gate, never a queue: at most _SEAM_SLOTS calls exist at once
 # (running or waiting), a request that finds the gate full is a miss at once, a request already running for the same
 # word is joined, a request that overruns the tap budget is cancelled if it never started, and a word whose call
 # raised is not asked again for _SEAM_FAILURE_SECONDS.
@@ -398,7 +398,7 @@ def _ask_word_translation(seam, selection, context, definitions, source, target,
 
 
 class ReadingLookupService:
-    """Dictionary-first, translation-last word/phrase lookup. AI only through the `word_translation` seam (D-192)."""
+    """Dictionary-first, translation-last word/phrase lookup. AI only through the `word_translation` seam (D-195)."""
 
     def __init__(
         self,
@@ -518,7 +518,7 @@ class ReadingLookupService:
                 meanings.append(LookupMeaning(translated, "machine_translation"))
 
         if not meanings and target != source and self._word_translation is not None:
-            # The `word_translation` seam (D-192, the AI Cost Router): last, after every deterministic layer missed.
+            # The `word_translation` seam (D-195, the AI Cost Router): last, after every deterministic layer missed.
             # `context` and `definitions` are offered to any implementation; the router's adapter sends the word only.
             remaining = max(
                 _MIN_TRANSLATION_WAIT, (self._budget if self._budget is not None else TAP_BUDGET_SECONDS) - (time.monotonic() - started)

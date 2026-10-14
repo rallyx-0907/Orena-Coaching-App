@@ -309,7 +309,7 @@ def _persist_operation_telemetry(telemetry: dict[str, Any]) -> None:
 
 def _router_fields(router_version: str | None, provider: str | None, model: str | None, *, attempt: int | None,
                    reason: str | None = None, status_class: str | None = None) -> dict[str, Any]:
-    """The AI Cost Router's telemetry fields (D-18X); empty for every non-routed call."""
+    """The AI Cost Router's telemetry fields (D-195); empty for every non-routed call."""
 
     if router_version is None:
         return {}
@@ -527,7 +527,7 @@ def generate_structured(
 ) -> AIResult:
     """One structured request through the learner runtime.
 
-    The AI Cost Router (D-18X) adds keyword-only inputs, all inert by default: `validate` is the contract's semantic
+    The AI Cost Router (D-195) adds keyword-only inputs, all inert by default: `validate` is the contract's semantic
     check, run inside the chain so an invalid answer retries (`invalid_retries`) and then moves on to the standby
     like any availability failure; `deadline` is an absolute `monotonic()` time for the whole chain, and each
     attempt's HTTP timeout is the configured one (else `attempt_timeout`) capped by what remains; `router_version`

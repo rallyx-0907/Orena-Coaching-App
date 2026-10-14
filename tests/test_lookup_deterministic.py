@@ -1,6 +1,6 @@
 """A word tap is deterministic: it never reaches the `learner_dictionary` AI capability.
 
-D-192 (2026-10-14) refined "never AI": the only AI a tap can reach is the `word_translation` capability, only after
+D-195 (2026-10-14) refined "never AI": the only AI a tap can reach is the `word_translation` capability, only after
 every deterministic layer missed, only when it is enabled (it ships disabled), and with the word only. These tests
 therefore keep spying on every other AI entry and prove a disabled `word_translation` makes no call at all.
 
