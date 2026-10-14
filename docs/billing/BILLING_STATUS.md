@@ -8,9 +8,9 @@
 | Branch | `feature/monetization-billing-v1` |
 | Main | `985691c7f7a6c98984715ab2209dc5e2e7a28ea7` (`origin/main`, 2026-10-14): PR-MON-4 merged by the human as #193; the lane branch fast-forwarded onto it |
 | Last completed slice | PR-MON-4 Prepaid Credit Ledger: design APPROVED FOR IMPLEMENTATION, implementation APPROVED, CI green on `32675648`, merged to `main` as #193 (`985691c7`, 2026-10-14) |
-| Active PR | none. Next: **PR-MON-5 payOS Credit Top-up** - PLANNED (needs its own design and review) |
-| Current slice | none |
-| Exact next action | on the human's instruction: PR-MON-5 design. Separate human gates: promotion/application of 0027 -> 0031 -> 0032 (review, rehearsal, authorization); runtime-role separation before `CREDITS_ENABLED` (R-MON-014); production billing and credits OFF |
+| Active PR | **PR-MON-5 payOS Credit Top-up** - DESIGN, stopped at the architecture review checkpoint (`PR-MON-5_DESIGN.md`); no code, no new migration file, nothing promoted |
+| Current slice | PR-MON-5 design (contracts 1-9, failure matrix T-F1..T-F10, schema need for a proposed 0033, decisions K1-K6) and the R-MON-014 runbook DRAFT (`RUNBOOK_R-MON-014_RUNTIME_ROLE.md`, not executed) |
+| Exact next action | independent architecture review of `PR-MON-5_DESIGN.md`. Human order of work: design APPROVE -> migration gate (recheck topology, promote 0027 -> 0031 -> 0032 (-> 0033), throwaway/staging smoke) -> PR-MON-5 implementation, CI, review, merge -> production last (apply, runtime role per the runbook, `credit_runtime_privileges` ready, then consider `CREDITS_ENABLED`) |
 | Blockers | none for code. 0027 + 0031 + 0032 stay proposed and unapplied; credits stay off until R-MON-014 is met (human gates) |
 | Test status | local only (not CI), after the review fixes. SQLite targeted: 636 passed, 1 skipped (`b4cc46ff`). Throwaway PostgreSQL 16 batch: 534 run, 533 passed, 1 failed = INHERITED #160 (`b4cc46ff`); credit tests 39 passed on `90bb3b1c` (31 PostgreSQL tests as a non-superuser runtime member, plus a non-superuser executor path). Mutations: 29/29 caught, each by its own guard's test (table in `PR-MON-4_REVIEW_REQUEST.md`) |
 | Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
@@ -23,7 +23,7 @@
 | PR-MON-2 | **Price Integrity + Runtime Readiness.** One server-side price truth or a strict consistency gate; checkout only at a server-offered price that exactly matches the effective catalogue entry (a mismatch blocks checkout); browser amounts never trusted; `billing_ready` reflects real capability. Closes R-MON-010. | MERGED (#162, `ea68f8a8`) |
 | PR-MON-3 | **Billing Orders + Reconciliation Safety.** Re-review/promote 0027; settle 0028's parent explicitly; abandoned-order expiry; durable payment anomaly/reconciliation state; Polar refund matching where safe; payment-without-entitlement detection. Exact webhook HTTP/retry semantics are designed here, per provider. | MERGED (#178, `1a9e010d`) |
 | PR-MON-4 | **Prepaid Credit Ledger.** Credit account, append-only ledger, idempotent credit/debit/reversal, deterministic balance, never negative. No commercial credit prices. | MERGED (#193, `985691c7`) |
-| PR-MON-5 | **payOS Credit Top-up.** Configured top-up products, checkout, verified webhook, credit exactly once, balance and recent-transactions API. | PLANNED |
+| PR-MON-5 | **payOS Credit Top-up.** Configured top-up products, checkout, verified webhook, credit exactly once, balance and recent-transactions API. | DESIGN (review checkpoint) |
 | PR-MON-6 | **Cost-aware entitlement / Free trial / credits fallback.** `included allowance → prepaid credits → refuse`; reserve → dispatch → settle/release for expensive work; no funded entitlement means no paid provider call; configurable new-user promotional allowances (quantities not invented). | PLANNED |
 | PR-MON-7 | **Free AI cost routing.** `deterministic/cache/local/free/cheap → premium` for word meaning, contextual Reading explanation, Writing evaluation and Orena Intelligence. Free stays quota-controlled at zero provider price. | PLANNED |
 | PR-MON-8 | **Billing runtime / sandbox / E2E.** Separate Billing sandbox (`:8031` if free), env/compose, E2E in gateway test modes. | PLANNED |
