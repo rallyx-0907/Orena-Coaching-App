@@ -175,13 +175,15 @@ and a CHECK constraint can express "never negative".
 
 **Roles**: two NOLOGIN roles. Roles are cluster-wide, so creating them is idempotent.
 
-- **Who may create them.** If 0032 creates the roles itself (`CREATE ROLE … NOLOGIN` when absent), the migration
-  executor must be a **superuser or have `CREATEROLE`**. A database owner without `CREATEROLE` is not enough.
-- **Alternative** for a deployment whose migration role cannot create roles: the operator provisions both roles out
-  of band beforehand. 0032 then only **asserts** they exist (`pg_roles`), and fails clearly before any DDL when they
-  do not.
-- The migration takes the first path when it can, and otherwise requires the second. It never silently skips the
-  roles.
+- **Who may create them** (as implemented after the implementation review, P1-1):
+  - Only a **superuser** executor creates the roles, and only when they are absent.
+  - A **non-superuser** executor requires the operator to provision both roles out of band, and must itself be a
+    member of `orena_credit_owner` **WITH SET** so that it can transfer ownership. `orena_credit_owner` needs CREATE on
+    the schema, which 0032 grants when the executor owns the schema.
+  - CREATEROLE alone is not a supported mode.
+- **Existing roles are validated:** both NOLOGIN, NOSUPERUSER and NOBYPASSRLS, and the runtime group is not a member
+  of the owner.
+- Anything else fails clearly **before any credit DDL**. The migration never silently skips the roles.
 
 The two roles:
 
@@ -213,6 +215,10 @@ The two roles:
   then the one on the function's path. This is the fallback, and the choice is recorded in the migration.
 - So no object an untrusted role creates can be found ahead of the real one.
 - `EXECUTE` is revoked from `PUBLIC`. Only the trigger calls it.
+- **Lock order** (implementation review P1-3): the function takes the account incarnation `FOR SHARE` first, then the
+  credit account `FOR UPDATE`, which is the repository's order. A direct insert therefore waits for a concurrent
+  deletion and then sees it. For that row lock, `orena_credit_owner` holds `SELECT, UPDATE (created_at)` on
+  `account_incarnations`, and no function of the owner updates an incarnation.
 
 **Defense in depth**, which does not replace the privileges:
 
@@ -234,7 +240,10 @@ The two roles:
   - `credit_ledger` and `credit_reversal_requests`: no `UPDATE`, no `DELETE`, no `TRUNCATE`;
   - `billing_reconciliation_items`: no `DELETE`, no `TRUNCATE`;
   - the schema on the definer function's `search_path`: no `CREATE`;
-  - the definer function itself: `EXECUTE` not granted to `PUBLIC` or to the runtime.
+  - the definer function itself: `EXECUTE` not granted to `PUBLIC` or to the runtime;
+  - **and positively** (implementation review P1-2): it is a member of `orena_credit_runtime`
+    (`missing_runtime_membership` otherwise), and it holds the effective privileges a credit transaction uses
+    (`missing_*` otherwise). So `ready` means both safe and able.
 
   The check uses `has_column_privilege`, `has_table_privilege`, `has_schema_privilege`, `has_function_privilege` and
   `pg_has_role`.

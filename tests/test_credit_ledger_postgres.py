@@ -750,15 +750,21 @@ def test_p1_3_a_direct_insert_waits_for_a_deletion_and_then_fails(ledger, kind):
 
     deletion = ledger.owner.connect()
     transaction = deletion.begin()
-    deletion.execute(ledger.text("UPDATE account_incarnations SET status = 'deleted', deleted_at = now() WHERE id = :id"),
-                     {"id": incarnation})  # locked and changed, not committed
-    worker = threading.Thread(target=insert)
-    worker.start()
-    worker.join(timeout=2.0)
-    assert worker.is_alive(), "the insert must wait behind the deletion's incarnation lock"
-    transaction.commit()
-    deletion.close()
+    worker = threading.Thread(target=insert, daemon=True)
+    try:
+        deletion.execute(ledger.text("UPDATE account_incarnations SET status = 'deleted', deleted_at = now() "
+                                     "WHERE id = :id"), {"id": incarnation})  # locked and changed, not committed
+        worker.start()
+        worker.join(timeout=2.0)
+        waited = worker.is_alive()
+        transaction.commit()
+    finally:
+        # never leave the deletion open: a failed assertion must not hold locks the teardown needs
+        if transaction.is_active:
+            transaction.rollback()
+        deletion.close()
     worker.join(timeout=10)
+    assert waited, "the insert must wait behind the deletion's incarnation lock"
     assert "deleted account" in outcome["result"]
     assert ledger.balance(incarnation)["posted"] == before["posted"]
     assert ledger.balance(incarnation)["reserved"] == before["reserved"]

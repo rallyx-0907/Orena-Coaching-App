@@ -336,3 +336,173 @@ Update it to revision 4 / implementation-approved when updating status. This doe
   names 0026 as its parent.
 - Proposals: `0024 → 0023`, `0027 → 0026`, `0028 → 0027`, `0031 → 0027`.
 - 0032 is created on `20261014_0031`, so the order 0027 → 0031 → 0032 is kept.
+
+---
+
+# Implementation review (`2f52279be4ebc69a415e18c887b63bcbc8aecb86`, code `dc193265db007549a2cad488f6db8bc4f1c2d0e5`)
+
+Recorded verbatim from the reviewer's verdict (relayed by the human, 2026-10-14).
+
+## VERDICT
+
+**REQUEST CHANGES**
+
+The core ledger implementation is accepted in direction. Do not reopen C1-C7 or redesign the ledger.
+
+Fix only the following three P1 implementation blockers before re-review.
+
+### P1-1 — Make the database-role provisioning path valid and fail closed
+
+The migration currently accepts `superuser OR CREATEROLE`, but later transfers ownership of the credit tables and functions to `orena_credit_owner`.
+
+A non-superuser CREATEROLE executor is not automatically guaranteed to be able to `SET ROLE orena_credit_owner`, so CREATEROLE alone is not a sufficient precondition for the ownership transfer.
+
+Also, when `orena_credit_owner` / `orena_credit_runtime` already exist, the migration currently checks only that their names exist.
+
+Required:
+
+- Validate existing roles before any credit DDL.
+- `orena_credit_owner` must at minimum be:
+  - NOLOGIN;
+  - NOSUPERUSER;
+  - NOBYPASSRLS.
+- Validate the runtime group role is also suitable for use as a NOLOGIN privilege role.
+- Validate that the migration path can actually transfer ownership to `orena_credit_owner`.
+- Do not claim CREATEROLE-only support unless the migration explicitly arranges the required SET-role capability and schema privilege safely.
+- Simpler acceptable solution: self-create roles only when the migration executor is superuser. Otherwise require correctly provisioned roles and fail before DDL if the ownership prerequisites are not met.
+- Ensure the empty-schema downgrade also works under every migration-executor mode that upgrade officially supports.
+
+Add PostgreSQL tests for the supported non-superuser/provisioned path, not only a mocked `_roles()` precondition.
+
+### P1-2 — Readiness must require membership in `orena_credit_runtime`
+
+`credit_runtime_privileges` currently checks dangerous privileges that must be absent, but it does not verify the positive deployment requirement:
+
+`current_user must be a member of orena_credit_runtime`
+
+Add a fail-closed violation such as:
+
+`missing_runtime_membership`
+
+when:
+
+`pg_has_role(current_user, 'orena_credit_runtime', 'MEMBER') = false`
+
+Prefer also checking the minimum effective privileges required by the credit repository so `ready=true` means the runtime can actually perform a credit transaction.
+
+Add a test using a non-superuser login with no dangerous privileges but without `orena_credit_runtime` membership:
+
+- status must be `ready=false`;
+- credit operation must be refused before repository mutation;
+- after the correct membership/grants are present, readiness becomes true.
+
+### P1-3 — The trigger backstop must serialize against account deletion
+
+The repository uses the approved lock order:
+
+`account_incarnations FOR SHARE`
+→ `credit_accounts FOR UPDATE`
+
+But `credit_apply_entry()` currently locks the credit account first and reads incarnation status without a row lock.
+
+That leaves a direct-ledger-insert race where the trigger can read `active`, a concurrent deletion can commit, and the new topup/reserve/settle can still commit afterward.
+
+The database backstop must follow the same deletion serialization contract as the repository.
+
+Required:
+
+- acquire the incarnation protection before the credit-account mutation lock;
+- preserve one global lock order;
+- then check `status = active`;
+- only then apply a new `topup`, `reserve`, or `settle`.
+
+If the SECURITY DEFINER owner needs a minimal extra privilege on `account_incarnations` to take the row lock, grant only what is required and include it in the privilege design/tests.
+
+Add a PostgreSQL concurrency test:
+
+1. deletion transaction changes/locks the incarnation but does not commit yet;
+2. a runtime direct `INSERT credit_ledger` attempts a topup/reserve;
+3. it must wait behind the incarnation lock;
+4. after deletion commits, the insert must fail;
+5. final ledger/snapshot contain no new charge.
+
+## Reviewer answers to the three implementation questions
+
+1. BEFORE INSERT trigger assigning `seq = entry_count + 1`: **APPROVED**.
+2. Ordinary application privileges on `account_incarnations` staying outside 0032: **APPROVED**, subject to P1-1/P1-2 above.
+3. Drift blocking `release` and `reserve_expire`: **KEEP IT BLOCKED**. A drift means the snapshot is not trusted; no snapshot mutation should continue until the incident is resolved.
+
+## Accepted implementation differences
+
+Accepted without further design changes:
+
+- application-clock reserve expiry computed in the reserve transaction;
+- zero-usage settle refused in favor of release;
+- no coded dedicated-schema fallback, provided the supported schema path fails closed;
+- database recomputation of reversal `applied`;
+- PR-MON-3 generic reconciliation listing not selecting 0032-only columns;
+- current credit reconciliation dedupe keys;
+- admin adjustment may create an empty credit account first;
+- `CREDITS_ENABLED` remains off by default.
+
+## Non-blocking follow-up
+
+Record a P2 for a deleted account whose `credit_balance_on_deletion` item was already resolved and later receives new positive credit through an allowed refund/adjustment. The current one-item-per-account lookup does not reopen/create a new liability item.
+
+Do not expand scope beyond this in the repair.
+
+After these fixes:
+- rerun the targeted PostgreSQL credit tests;
+- rerun the mutation suite;
+- return the new HEAD for focused re-review.
+
+Do not promote/apply 0027, 0031 or 0032.
+Do not enable credits.
+Do not open/merge the PR until this implementation review is approved.
+
+## Fix response (implementer, 2026-10-14)
+
+The code fix is in `b4cc46ff`. C1-C7 are unchanged and the ledger is not redesigned. Nothing is promoted or
+applied, and credits stay off.
+
+- **P1-1. Roles: fail closed, two supported modes**, all checked by `_prerequisites()` before any credit DDL.
+  - **Superuser executor:** it creates the roles when they are absent (`CREATE ROLE … NOLOGIN NOSUPERUSER
+    NOBYPASSRLS …`).
+  - **Non-superuser executor:** the roles must be provisioned out of band, and the executor must pass
+    `pg_has_role(current_user, 'orena_credit_owner', 'SET')`. `orena_credit_owner` must hold CREATE on the schema,
+    which 0032 grants only when the executor owns the schema, and otherwise fails. CREATEROLE alone is not
+    supported, and the error says so.
+  - **Existing roles are validated:** both must be NOLOGIN, NOSUPERUSER and NOBYPASSRLS, and
+    `orena_credit_runtime` must not be a member of `orena_credit_owner`.
+  - **Downgrade:** it works in both modes. A non-superuser's downgrade leaves the provisioned roles in place.
+  - **PostgreSQL tests:**
+    - `test_p1_1_a_non_superuser_executor_with_provisioned_roles_runs_0032_and_its_downgrade`: the whole chain runs
+      as a non-superuser schema owner. The upgrade is refused before any DDL until the executor is a member WITH SET;
+      after that the credit tables are owned by `orena_credit_owner`, and down and up both work.
+    - `test_p1_1_an_existing_role_that_is_not_safe_is_refused_before_any_ddl`: refused for LOGIN, for BYPASSRLS, and
+      for a runtime group that is a member of the owner.
+- **P1-2. Readiness requires the runtime membership and the effective privileges.**
+  `runtime_privilege_violations()` now also reports these when they are missing:
+  - `missing_runtime_membership`;
+  - SELECT on `credit_accounts`, INSERT on its `incarnation_id`, and UPDATE on its `updated_at` (the row lock);
+  - SELECT and INSERT on `credit_ledger` and `credit_reversal_requests`;
+  - SELECT, INSERT and UPDATE on `billing_reconciliation_items`;
+  - SELECT on `account_incarnations`, plus UPDATE on some column of it (its `FOR SHARE` lock).
+
+  `ready = true` therefore means the role is both safe and able. Test:
+  `test_p1_2_a_harmless_role_without_runtime_membership_is_not_ready_until_it_is_a_member`. Without the membership
+  the role is not ready, has no dangerous privilege, and a top-up is refused with no ledger row written. After the
+  GRANT, a fresh check reports ready and the top-up applies.
+- **P1-3. One lock order, in the trigger too.**
+  - `credit_apply_entry()` reads the account's (immutable) incarnation id, takes
+    `account_incarnations … FOR SHARE`, then `credit_accounts … FOR UPDATE`, and only then checks `status = active`
+    for `topup`, `reserve` and `settle`.
+  - `credit_check_reversal_request()` takes the same two locks in the same order.
+  - The owner role is granted `SELECT, UPDATE (created_at)` on `account_incarnations`. A row lock needs UPDATE on at
+    least one column, and no owner function updates an incarnation.
+  - Test: `test_p1_3_a_direct_insert_waits_for_a_deletion_and_then_fails[topup|reserve]`. A deletion holds the
+    incarnation uncommitted. The runtime's direct ledger insert waits behind it, and fails after the commit. The
+    ledger, the snapshot and the drift are unchanged.
+- **Reviewer answer 3** is kept: drift blocks `release` and `reserve_expire` too.
+- **Non-blocking P2** is recorded as R-MON-015.
+
