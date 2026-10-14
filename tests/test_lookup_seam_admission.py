@@ -35,6 +35,8 @@ def clean_gate(monkeypatch):
     monkeypatch.setattr(reading_lookup, "_seam_inflight", {})
     monkeypatch.setattr(reading_lookup, "_seam_failed", {})
     monkeypatch.setattr(reading_lookup, "_last_logged", {})
+    # These tests exercise the gate with tiny budgets; the real floor is pinned by its own test below.
+    monkeypatch.setattr(reading_lookup, "SEAM_MIN_WAIT_SECONDS", 0.25)
     yield clock
 
 
@@ -175,3 +177,18 @@ def test_the_request_context_reaches_the_seam() -> None:
     finally:
         USER_KEY_CTX.reset(token)
     assert seen == ["account-7"]
+
+
+def test_the_seam_always_gets_its_floor_of_the_tap_budget(monkeypatch) -> None:
+    """The deterministic layers before the seam may have used the whole 2.0 s budget; a free model answers in 0.7-1.7 s,
+    so the seam keeps at least SEAM_MIN_WAIT_SECONDS (D-200 amendment) instead of a quarter second."""
+
+    monkeypatch.setattr(reading_lookup, "SEAM_MIN_WAIT_SECONDS", 1.8)
+    assert reading_lookup.SEAM_MIN_WAIT_SECONDS >= 1.8
+
+    def slow(text, *_rest):
+        time.sleep(0.6)
+        return "cái đèn"
+
+    # The budget is already spent (0.05 s): the old code waited 0.25 s and missed; the floor waits for the answer.
+    assert _lookup(slow, budget=0.05) == [{"text": "cái đèn", "source": "word_translation"}]

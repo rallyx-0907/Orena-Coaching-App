@@ -293,6 +293,54 @@ def test_a_prefetch_failure_on_a_word_does_not_block_the_tap_on_that_word(env) -
     assert tap.word_translation_seam("lantern", "", [], "en", "vi") == "đèn"
 
 
+def test_a_prefetch_failure_does_not_put_the_lookup_gate_in_cooldown_for_the_tap(env) -> None:
+    """The evidence: a re-tap answered "nothing" in 27 ms because the prefetch's failure had cooled the word down in the
+    lookup gate (a tap's own failure may; a background one must not)."""
+
+    env.fake.script = {GEMMA: [http_error(503)], STANDBY: [http_error(503)]}
+    service = lookup_service()
+    assert service.prefetch_meaning("lantern", "en", "vi") == "stop"
+    began = time.monotonic()
+    meanings = service.lookup("lantern", "The lantern flickered.", "en", "vi").to_dict()["meanings"]
+    assert meanings and meanings[0]["source"] == "word_translation"
+    assert time.monotonic() - began < 1.5
+
+
+def test_a_tap_that_times_out_still_fills_the_cache_for_the_next_tap(env, monkeypatch) -> None:
+    from writing_coach import reading_lookup as rl
+
+    release = threading.Event()
+    real_route = tap.router_module.route
+
+    def slow_route(*args, **kwargs):
+        release.wait(5)
+        return real_route(*args, **kwargs)
+
+    monkeypatch.setattr(tap.router_module, "route", slow_route)
+    monkeypatch.setattr(rl, "SEAM_MIN_WAIT_SECONDS", 0.1)
+    service = lookup_service(budget=0.05)
+    assert service.lookup("lantern", "The lantern flickered.", "en", "vi").to_dict()["meanings"] == []
+    release.set()
+    for _ in range(100):
+        if tap.router_module.peek(tap.CAPABILITY, {"text": "lantern", "source_language": "en", "target_language": "vi"}):
+            break
+        time.sleep(0.05)
+    assert tap.word_translation_seam("lantern", "", [], "en", "vi") == "đèn"
+    assert sent_words(env).count("lantern") == 1  # one provider call served the tap that timed out and the next one
+
+
+def test_each_job_logs_one_counts_only_line(env, caplog) -> None:
+    import logging
+
+    service = lookup_service()
+    prefetcher, _counts = make_prefetcher(service)
+    with caplog.at_level(logging.INFO, logger="orena.prefetch"):
+        assert prefetcher.schedule("a1", "r1", EN_BODY, "en", "vi") == "scheduled"
+    lines = [r.getMessage() for r in caplog.records if r.name == "orena.prefetch"]
+    assert any(line.startswith("reading prefetch done language=en planned=") and "served=" in line for line in lines)
+    assert not any("lantern" in line or "a1" in line.split() for line in lines)  # no word, no article id
+
+
 def test_an_expired_cooldown_entry_does_not_keep_prefetch_paused(env, monkeypatch) -> None:
     from writing_coach.ai import routing
 

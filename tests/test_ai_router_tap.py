@@ -76,8 +76,12 @@ def test_a_failing_pool_is_a_miss_not_an_error(env) -> None:
     assert tap.word_translation_seam("lamp", SENTENCE, [], "en", "vi") is None
 
 
-def test_a_slow_answer_is_a_miss_now_and_the_background_call_fills_the_cache(env) -> None:
+def test_a_slow_answer_is_a_miss_now_and_the_background_call_fills_the_cache(env, monkeypatch) -> None:
     """Through the lookup service: the tap does not wait past its budget, the call is not abandoned."""
+
+    from writing_coach import reading_lookup
+
+    monkeypatch.setattr(reading_lookup, "SEAM_MIN_WAIT_SECONDS", 0.25)  # the floor has its own test
 
     entered, release = threading.Event(), threading.Event()
 
@@ -178,3 +182,10 @@ def test_the_brake_table_evicts_the_oldest_account_not_everyone(env, monkeypatch
     assert tap._braked("c") is False  # a third account: the oldest ("a") is evicted
     assert tap._braked("b") is True  # "b" kept its count
     assert tap._braked("a") is False  # "a" starts over
+
+
+def test_openrouters_own_rate_limit_headers_are_read_counts_only() -> None:
+    from writing_coach.ai.providers import _normalized_rate_limit_headers
+
+    read = _normalized_rate_limit_headers({"X-RateLimit-Limit": "50", "X-RateLimit-Remaining": "0", "X-RateLimit-Reset": "1760400000000"})
+    assert read["requests_limit"] == 50 and read["requests_remaining"] == 0 and read["tokens_limit"] is None

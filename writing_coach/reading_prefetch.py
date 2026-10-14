@@ -47,6 +47,13 @@ from writing_coach.reading_level import _SENTENCE_START, word_rank
 from writing_coach.reading_processing import _EN_COMMON, _EN_WORD, _FUNCTION_WORDS
 
 _log = logging.getLogger("orena.prefetch")
+# The server's root logger is at WARNING, so an INFO line would vanish and "did it run?" would have no answer: this
+# logger speaks at INFO on its own handler when the application has configured none (counts only, never a word).
+_log.setLevel(logging.INFO)
+if not logging.getLogger().handlers and not _log.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s: %(message)s"))
+    _log.addHandler(_handler)
 
 MAX_WORDS_PER_ARTICLE = 40
 WORKERS = 2
@@ -198,8 +205,10 @@ class Prefetcher:
         try:
             source = (language or "").split("-", 1)[0].casefold()
             if source not in _SUPPORTED_SOURCES or not body:
+                _log.info("reading prefetch not scheduled: unsupported language=%s", source or "-")
                 return "unsupported"
             if self._paused():
+                _log.info("reading prefetch not scheduled: paused language=%s", source)
                 return "paused"
             key = (str(article_id), str(revision), source)
             now = self._clock()
@@ -208,6 +217,7 @@ class Prefetcher:
                 if until is not None and until > now:
                     return "already"
                 if self._queued >= MAX_QUEUED_ARTICLES:
+                    _log.info("reading prefetch not scheduled: queue_full language=%s", source)
                     return "queue_full"
                 self._recent[key] = now + _COALESCE_SECONDS
                 self._recent.move_to_end(key)
@@ -222,6 +232,7 @@ class Prefetcher:
                     self._queued = max(0, self._queued - 1)
                     self._recent.pop(key, None)
                 return "unavailable"
+            _log.info("reading prefetch scheduled language=%s", source)
             return "scheduled"
         except Exception:  # noqa: BLE001 - opening an article never depends on this
             _log.warning("reading prefetch could not be scheduled")
@@ -231,16 +242,37 @@ class Prefetcher:
         """The job: resolve the support language, claim the article, translate its words one at a time. Returns what
         happened ("done", "stopped", "already", "disabled", "paused", "unsupported"); never raises."""
 
+        tally = {"planned": 0, "requested": 0, "served": 0, "failed": 0, "skipped": 0}
+        outcome = "stopped"
         try:
-            return self._run(article_id, revision, body, source, target)
+            outcome = self._run(article_id, revision, body, source, target, tally)
+            return outcome
         except Exception:  # noqa: BLE001 - a background job never raises into the pool
             _log.warning("reading prefetch stopped on an error")
             return "stopped"
         finally:
             with self._lock:
                 self._queued = max(0, self._queued - 1) if self._queued else 0
+            # One line per job, counts only: no word, no article id. This is how an operator sees that it ran.
+            _log.info(
+                "reading prefetch %s language=%s planned=%d requested=%d served=%d failed=%d skipped=%d",
+                outcome, source, tally["planned"], tally["requested"], tally["served"], tally["failed"],
+                tally["skipped"],
+            )
 
-    def _run(self, article_id: str, revision: Any, body: str, source: str, target: str | Callable[[], str]) -> str:
+    def _run(
+        self, article_id: str, revision: Any, body: str, source: str, target: str | Callable[[], str],
+        tally: dict[str, int] | None = None,
+    ) -> str:
+        tally = tally if tally is not None else {}
+        counted = self._count
+
+        def count(name: str, amount: int) -> None:
+            key = name.removeprefix("prefetch_")
+            if key in ("requested", "served", "failed", "skipped"):
+                tally[key] = tally.get(key, 0) + amount
+            counted(name, amount)
+
         resolved = (target() if callable(target) else target) or ""
         target = str(resolved).strip().casefold()
         if not target or target == source:
@@ -257,37 +289,38 @@ class Prefetcher:
                 return "already"
         self._mark(marker, MARKER_TTL_SECONDS)
         words = self._planner(body, source)
-        self._count("prefetch_articles", 1)
+        tally["planned"] = len(words)
+        count("prefetch_articles", 1)
         failures = 0
         for index, word in enumerate(words):
             if self._paused() or not self._enabled():
-                self._count("prefetch_skipped", len(words) - index)
+                count("prefetch_skipped", len(words) - index)
                 self._mark(marker, RETRY_AFTER_SECONDS)
                 return "stopped"
             outcome = self._meaning(word, source, target)
             reached_provider = outcome in ("served", "empty", "failed", "stop")
             if reached_provider:
-                self._count("prefetch_requested", 1)
+                count("prefetch_requested", 1)
             rest = len(words) - index - 1
             if outcome == "served":
-                self._count("prefetch_served", 1)
+                count("prefetch_served", 1)
                 failures = 0
             elif outcome in ("empty", "failed"):
-                self._count("prefetch_failed", 1)
+                count("prefetch_failed", 1)
                 failures += 1
             elif outcome == "stop":  # the provider side is unavailable, paused or over budget: ask nobody more
-                self._count("prefetch_failed", 1)
-                self._count("prefetch_skipped", rest)
+                count("prefetch_failed", 1)
+                count("prefetch_skipped", rest)
                 self._mark(marker, RETRY_AFTER_SECONDS)
                 return "stopped"
             else:  # deterministic, joined, cooldown, busy: this word needs nothing from us
-                self._count("prefetch_skipped", 1)
+                count("prefetch_skipped", 1)
                 if outcome == "disabled":
-                    self._count("prefetch_skipped", rest)
+                    count("prefetch_skipped", rest)
                     self._mark(marker, RETRY_AFTER_SECONDS)
                     return "stopped"
             if failures >= MAX_CONSECUTIVE_FAILURES:
-                self._count("prefetch_skipped", rest)
+                count("prefetch_skipped", rest)
                 self._mark(marker, RETRY_AFTER_SECONDS)
                 return "stopped"
             if reached_provider and rest:

@@ -654,7 +654,7 @@ configure_reading_summary(ReadingSummaryService(_reading_derived_cache))
 
 # A basic tap's external-dictionary timeout (seconds) and how long a miss is remembered; the legacy
 # GET /api/dictionary keeps its own 8 s and never reads this.
-_TAP_DICTIONARY_TIMEOUT = 1.5
+_TAP_DICTIONARY_TIMEOUT = 1.0
 _NO_ENTRY_SECONDS = 300.0
 _NO_ENTRY_UNTIL: dict[str, float] = {}
 

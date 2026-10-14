@@ -6636,3 +6636,32 @@ on a new word missed its budget (no gloss); the call finished in the background 
     are per worker process, so the fleet ceiling is 1500 x workers a day and each worker repeats an article once. The
     router cache is an in-process LRU of 4096 entries and is lost on restart: a large prefetch can evict answers a learner
     tapped. A shared or persistent cache is a later router slice, not this decision.
+
+**Amendment 2026-10-14 (first-tap misses on :8021, root causes).** Evidence: the final E2E on the sandbox (main `bfaeb34d`).
+Read from `audit_logs` (`ai.operation`, `ai.router.rollup`; counts, latency and error classes only) and the server log.
+
+1. **The prefetch ran.** The Reader opens an article with `GET /api/reading/articles/{id}` (`screens/reader/source.js`), which
+   fires the hook. The rollups show it: one batch of 32 words (30 served) from 06:53:02, then batches that asked one word, met
+   a 429 and stopped (`prefetch_requested 1, prefetch_failed 1, prefetch_skipped 39`, 06:57, 07:02). Nothing was logged
+   because the batch only counted, and the root logger is at WARNING. `orena.prefetch` now speaks at INFO on its own handler
+   (when the application configured none): one line per scheduled / refused open, and one counts-only line per job
+   (`reading prefetch done|stopped|... language= planned= requested= served= failed= skipped=`; no word, no article id).
+2. **The NASA misses were the provider, not the planner.** From 06:53:52 every call to both pool entries (two different
+   upstreams) was an HTTP 429 until the end of the run, about 50 OpenRouter requests after the day's first, which is what the
+   free-tier daily allowance of an unfunded OpenRouter account is (the 429 body is not recorded, so this is an inference; the
+   mapping now also reads OpenRouter's own `X-RateLimit-Limit` / `X-RateLimit-Remaining` headers into the existing
+   `rate_limit` field of the operation row, so the next one is a fact). A 40-word batch with 0.5 s pacing spends that in under
+   a minute. **Owner action:** a free pool cannot carry translate-ahead; credit the account (1000 free-model requests a day) or
+   lower the per-article cap.
+3. **The tap's budget.** A tap spends its 2.0 s on the tagger and the external dictionary (timeout 1.5 s; rare words are the
+   ones it cannot answer, so they spend most of it) before the seam, which got what was left, floored at 0.25 s, while a free
+   model answers in 0.7-1.7 s. Now: the dictionary's tap timeout is 1.0 s and the seam always waits at least
+   `SEAM_MIN_WAIT_SECONDS = 1.8`. A tap that reaches the seam costs at most about 1.0 + 1.8 s; a typical rare word is a fast
+   dictionary 404 plus one model call, 1.5-2.0 s. `TAP_BUDGET_SECONDS` stays 2.0 for every other layer.
+4. **Why a re-tap answered nothing in 27 ms.** Two cooldowns exist by design after a failed call (the router's 60 s negative
+   cache and the lookup gate's 60 s per-word cooldown) and a 429 failure is exactly that. But the gate's cooldown was also set
+   by a *prefetch* failure, so a background 429 made the learner's tap on that word empty for a minute, against item 5 of this
+   decision. A translate-ahead call's future is now marked background and never sets the tap's cooldown. A tap that times out
+   still lets its call finish, and the late answer fills the router cache under the tap's own key; a test pins one provider
+   call serving both the timed-out tap and the next.
+5. **Not changed.** The cache key is still case-sensitive (item 9 above). `PREFETCH_DAILY_CALLS` and the pause stay.
