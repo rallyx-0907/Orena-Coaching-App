@@ -6187,10 +6187,13 @@ Owner decisions of 2026-10-14, recorded here before the tests that pinned the ol
 1. **The basic tap may call AI, through `word_translation` only, sending the word only.** The input is one word or phrase
    of at most three words and 40 characters (at most 8 Han characters), with the two languages and an optional part of
    speech; never the sentence, never the article. The tap's order is unchanged until it misses: catalogue, then CC-CEDICT
-   or dictionaryapi, then the machine translators, then this capability, only when it is enabled, within the tap budget.
-   If the budget passes, the call still finishes in the background and fills the cache. `meaningSource` stays
-   `machine_translation`. A per-account brake limits cache-miss calls; over it the learner gets the deterministic answer,
-   never a 429. "Lookup never AI" (the docstring of `reading_lookup.py`, `tests/test_lookup_deterministic.py`,
+   or dictionaryapi, then the machine translators, then the `word_translation` seam of `ReadingLookupService` (PR #164),
+   only when the capability is enabled, within the remaining tap budget. The seam is admitted through a bounded gate (a
+   full gate is a miss, one call per word, a call that never started is cancelled, a failed word is cooled down for 60
+   seconds, logs name the exception type only), and the adapter sends the word only, ignoring the sentence and the
+   dictionary senses the seam is also given. If the budget passes, the call still finishes on its worker and fills the
+   cache. The meaning is tagged `word_translation`. A per-account brake limits cache-miss calls; over it the learner gets
+   the deterministic answer, never a 429. "Lookup never AI" (the docstring of `reading_lookup.py`, `tests/test_lookup_deterministic.py`,
    `tests/test_reading_lookup.py`) is replaced by: **AI is reached from a word tap only through `word_translation`, only
    on a deterministic miss, only when the capability is enabled.** Explain / "Why here?" (D-130.3, D-133) is unchanged and
    remains the only way a sentence reaches AI.

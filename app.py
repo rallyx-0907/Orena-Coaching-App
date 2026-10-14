@@ -181,6 +181,7 @@ from writing_coach.ai.base import AICapabilityError, AIProviderError, AIProvider
 from writing_coach.ai.platform import active_ai_label, active_ai_status, admin_ai_operations, generate_structured, install_platform_ai, configure_platform_repository
 from writing_coach.text_discussion import install_text_discussion
 from writing_coach.ai.control_plane import AIControlPlane
+from writing_coach.ai.router.tap import word_translation_seam
 from writing_coach.product.service import configure_product_repository
 from writing_coach.product.catalog import configure_plan_store
 from writing_coach.persistence.runtime import build_runtime
@@ -686,6 +687,8 @@ _reading_lookup_service = ReadingLookupService(
     _reading_translation_service,
     _reading_english_dictionary_cached,
     budget_seconds=TAP_BUDGET_SECONDS,
+    # D-192: the last layer after every deterministic one, the word only, off until the owner enables the capability.
+    word_translation=word_translation_seam,
 )
 configure_reading_lookup(_reading_lookup_service)
 # A saved word's meaning in the learner's support language (D-124), for the

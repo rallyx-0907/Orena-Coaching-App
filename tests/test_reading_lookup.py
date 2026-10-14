@@ -274,18 +274,38 @@ def test_available_is_true_when_only_the_engine_answers() -> None:
     assert result["meanings"] == [{"text": "dụng cụ", "source": "machine_translation"}]
 
 
-def test_reading_lookup_never_calls_an_ai_capability(monkeypatch) -> None:
+def test_reading_lookup_reaches_ai_only_through_word_translation_on_a_miss_when_enabled(monkeypatch) -> None:
+    """D-192 replaced "never AI": AI only via `word_translation`, only on a deterministic miss, only when enabled."""
+
     from writing_coach.ai import platform as ai_platform
+    from writing_coach.ai.router import router as ai_router, tap
 
-    def boom(*args, **kwargs):
-        raise AssertionError("reading lookup must never call an AI capability")
+    asked: list[str | None] = []
 
-    monkeypatch.setattr(ai_platform, "generate_structured", boom)
+    def spy(*args, **kwargs):
+        asked.append(kwargs.get("capability_key"))
+        raise AssertionError("no AI call was expected on this path")
 
+    monkeypatch.setattr(ai_platform, "generate_structured", spy)
+    tap.reset_state()
+    ai_router.reset_state()
+
+    # No seam wired: the lookup never reaches AI, and a deterministic answer is untouched.
     service, provider = _service()
     result = service.lookup("book", "I have a book.", "en", "vi").to_dict()
+    assert result["available"] is True and asked == []
 
-    assert result["available"] is True
+    # The real seam, capability not configured (the shipped state): a deterministic hit and a miss both make no call.
+    class _NoConfig:
+        def get_capability_config(self, _key):
+            return None
+
+    monkeypatch.setattr(ai_platform, "_platform_repository", _NoConfig())
+    wired = ReadingLookupService(None, lambda word: None, ReadingTranslationService(RecordingTranslationProvider()),
+                                 word_translation=tap.word_translation_seam)
+    wired.lookup("book", "I have a book.", "en", "vi")
+    wired.lookup("zzyzx", "A zzyzx.", "en", "vi")
+    assert asked == []
 
 
 @pytest.fixture

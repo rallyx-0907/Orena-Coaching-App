@@ -98,6 +98,29 @@ def _cached(value: dict[str, Any]) -> RouteResult:
     return RouteResult(output=dict(value["output"]), source="cache", provenance=value.get("provenance"))
 
 
+def peek(capability_key: str, raw_input: Any) -> RouteResult | None:
+    """The cached answer for this request, or None. Asks nobody; a disabled capability serves nothing."""
+
+    contract = get_contract(capability_key)
+    inp = _parse(contract, raw_input)
+    load_config(contract.key)
+    held = _cache.get(_cache_key(contract, contract.normalize(inp)))
+    if held is None:
+        return None
+    _stats.count(contract.key, "requests")
+    _stats.count(contract.key, "cache_hits")
+    return _cached(held)
+
+
+def _parse(contract: CapabilityContract, raw_input: Any) -> Any:
+    try:
+        if isinstance(raw_input, dict):
+            return contract.input_model(**raw_input)
+        return contract.input_model.model_validate(raw_input)
+    except (ValidationError, TypeError):
+        raise RouterInputInvalid(f"The input does not satisfy the {contract.key!r} contract.") from None
+
+
 def route(capability_key: str, raw_input: Any, *, deadline: float | None = None) -> RouteResult:
     """Answer one request of a routed capability.
 
@@ -107,10 +130,7 @@ def route(capability_key: str, raw_input: Any, *, deadline: float | None = None)
     """
 
     contract = get_contract(capability_key)
-    try:
-        inp = contract.input_model(**raw_input) if isinstance(raw_input, dict) else contract.input_model.model_validate(raw_input)
-    except (ValidationError, TypeError):
-        raise RouterInputInvalid(f"The input does not satisfy the {contract.key!r} contract.") from None
+    inp = _parse(contract, raw_input)
     capability = contract.key
     _stats.count(capability, "requests")
     try:

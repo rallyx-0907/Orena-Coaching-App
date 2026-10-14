@@ -4,14 +4,16 @@ A learner tapping a word wants a fast, deterministic answer. The real order is:
 the shared local tagger (class, reading), the vocabulary catalogue, the
 dictionary senses (English: a monolingual API; Chinese: the vendored CC-CEDICT
 pack), the local machine translation (only if the Reading engine is the free
-local one), the `word_translation` seam (nothing wired yet; bounded by the tap
-budget), and finally "unavailable". None of these is a language model today; Explain
-(`POST /api/dictionary/contextual`) is the only AI surface a selection can
-reach, and it is a separate, explicit request.
+local one), the `word_translation` seam (D-192: the AI Cost Router, bounded by
+the tap budget, admitted through a bounded gate, the word only), and finally
+"unavailable". Only that seam can be a language model, and only when the
+operator has enabled the capability; Explain (`POST /api/dictionary/contextual`)
+is the only way a sentence reaches AI, and it is a separate, explicit request.
 """
 
 from __future__ import annotations
 
+import contextvars
 import logging
 import re
 import threading
@@ -50,11 +52,40 @@ _MT_CALL_TIMEOUT = 1.5
 _MT_SLOTS = 4
 _MT_FAILURE_SECONDS = 60.0
 _translation_pool = ThreadPoolExecutor(max_workers=_MT_SLOTS, thread_name_prefix="lookup-mt")
-_seam_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="lookup-seam")
+# The word_translation seam (D-192) is admitted through a gate, never a queue: at most _SEAM_SLOTS calls exist at once
+# (running or waiting), a request that finds the gate full is a miss at once, a request already running for the same
+# word is joined, a request that overruns the tap budget is cancelled if it never started, and a word whose call
+# raised is not asked again for _SEAM_FAILURE_SECONDS.
+_SEAM_SLOTS = 2
+_SEAM_FAILURE_SECONDS = 60.0
+_LOG_EVERY_SECONDS = 60.0
+_seam_pool = ThreadPoolExecutor(max_workers=_SEAM_SLOTS, thread_name_prefix="lookup-seam")
+_seam_slots = threading.BoundedSemaphore(_SEAM_SLOTS)
+_seam_lock = threading.RLock()
+_seam_inflight: dict[tuple[str, str, str], Future] = {}
+_seam_failed: dict[tuple[str, str, str], float] = {}
+_seam_clock = time.monotonic
+_last_logged: dict[str, float] = {}
 _mt_slots = threading.BoundedSemaphore(_MT_SLOTS)
 _mt_lock = threading.Lock()
 _mt_inflight: dict[tuple[str, str, str], Future] = {}
 _mt_failed: dict[tuple[str, str, str], float] = {}
+
+
+def _log_layer(layer: str, outcome: str, *, language: str, error: BaseException | None = None) -> None:
+    """One warning per layer and outcome a minute, naming the layer, the language and the exception TYPE only:
+    never the exception text, the word or the sentence (a provider error can echo what it was sent)."""
+
+    key = f"{layer}:{outcome}"
+    now = _seam_clock()
+    with _seam_lock:
+        if now - _last_logged.get(key, -_LOG_EVERY_SECONDS) < _LOG_EVERY_SECONDS:
+            return
+        _last_logged[key] = now
+    _log.warning(
+        "lookup layer=%s %s language=%s%s; treated as a miss", layer, outcome, language,
+        f" error={type(error).__name__}" if error is not None else "",
+    )
 
 
 def lexical_language(selection: str, fallback: str) -> str:
@@ -195,9 +226,8 @@ def _safe_find_entry(
         return repository.find_entry(language, normalized_term)
     except VocabularyContentUnavailable:
         return None
-    except Exception:  # noqa: BLE001
-        # Layer and language only: never the learner's word or sentence.
-        _log.warning("lookup layer=catalogue failed language=%s; treated as a miss", language, exc_info=True)
+    except Exception as exc:  # noqa: BLE001
+        _log_layer("catalogue", "failed", language=language, error=exc)
         return None
 
 
@@ -301,8 +331,74 @@ def _safe_machine_translation(
     return result.translations[0][1]
 
 
+def reset_seam_gate() -> None:
+    """Forget in-flight calls and cool-downs and start a fresh gate (tests; a running call finishes harmlessly)."""
+
+    global _seam_slots
+    with _seam_lock:
+        _seam_slots = threading.BoundedSemaphore(_SEAM_SLOTS)
+        _seam_inflight.clear()
+        _seam_failed.clear()
+        _last_logged.clear()
+
+
+def _seam_settle(key: tuple[str, str, str], finished: Future) -> None:
+    """Once per call, as soon as it is over (from the worker's callback or the waiting tap, whichever is first): forget it
+    as in flight, cool the word down if it raised, and give the gate slot back."""
+
+    with _seam_lock:
+        if getattr(finished, "_gate_settled", False) or not finished.done():
+            return
+        finished._gate_settled = True  # type: ignore[attr-defined]
+        slots = getattr(finished, "_gate_slots", _seam_slots)
+        if _seam_inflight.get(key) is finished:
+            del _seam_inflight[key]
+        if not finished.cancelled() and finished.exception() is not None:
+            if len(_seam_failed) > 2000:
+                _seam_failed.clear()
+            _seam_failed[key] = _seam_clock() + _SEAM_FAILURE_SECONDS
+    slots.release()
+
+
+def _ask_word_translation(seam, selection, context, definitions, source, target, wait: float) -> str | None:
+    """The `word_translation` seam behind its gate; every refusal, overrun and failure is a miss (None)."""
+
+    key = (source, target, " ".join(selection.casefold().split()))
+    with _seam_lock:
+        if _seam_failed.get(key, 0.0) > _seam_clock():
+            return None  # it raised a moment ago: not asked again yet
+        future = _seam_inflight.get(key)
+        if future is None:
+            if not _seam_slots.acquire(blocking=False):
+                return None  # the gate is full: a miss now, never a queue behind it
+            ctx = contextvars.copy_context()  # the request's account rides along (cost, brake)
+            try:
+                future = _seam_pool.submit(ctx.run, seam, selection, context, definitions, source, target)
+            except Exception:  # noqa: BLE001 - e.g. a pool shut down
+                _seam_slots.release()
+                return None
+            _seam_inflight[key] = future
+            future._gate_slots = _seam_slots  # type: ignore[attr-defined]  (the gate this call was admitted by)
+
+            def done(finished: Future, key=key) -> None:
+                _seam_settle(key, finished)
+
+            future.add_done_callback(done)
+    try:
+        answer = future.result(timeout=wait)
+        _seam_settle(key, future)  # do not rely on the callback having run yet
+        return answer
+    except FutureTimeout:
+        future.cancel()  # queued work never runs late; a running call finishes and fills the router's cache
+        _log_layer("word_translation", "timed out", language=source)
+    except Exception as exc:  # noqa: BLE001 - a failing fallback is a miss, never a blank sheet
+        _seam_settle(key, future)
+        _log_layer("word_translation", "failed", language=source, error=exc)
+    return None
+
+
 class ReadingLookupService:
-    """Dictionary-first, translation-last word/phrase lookup. Never AI."""
+    """Dictionary-first, translation-last word/phrase lookup. AI only through the `word_translation` seam (D-192)."""
 
     def __init__(
         self,
@@ -341,8 +437,8 @@ class ReadingLookupService:
 
         try:
             local = _local_token_facts(source, context if source == surrounding else selection, selection)
-        except Exception:  # noqa: BLE001 - the tagger is an aid; the dictionary layers below do not depend on it
-            _log.warning("lookup layer=tagger failed language=%s; treated as a miss", source, exc_info=True)
+        except Exception as exc:  # noqa: BLE001 - the tagger is an aid; the dictionary layers below do not depend on it
+            _log_layer("tagger", "failed", language=source, error=exc)
             local = {"part_of_speech": "", "pronunciation": "", "base_form": "", "lemma": ""}
         part_of_speech = local["part_of_speech"]
         pronunciation = local["pronunciation"]
@@ -422,21 +518,16 @@ class ReadingLookupService:
                 meanings.append(LookupMeaning(translated, "machine_translation"))
 
         if not meanings and target != source and self._word_translation is not None:
-            # The seam for the future `word_translation` capability (shared AI Cost Router). Defaults to none: today
-            # a basic tap ends with the dictionary's own definition, or "unavailable" when every layer missed.
-            seamed = None
+            # The `word_translation` seam (D-192, the AI Cost Router): last, after every deterministic layer missed.
+            # `context` and `definitions` are offered to any implementation; the router's adapter sends the word only.
             remaining = max(
                 _MIN_TRANSLATION_WAIT, (self._budget if self._budget is not None else TAP_BUDGET_SECONDS) - (time.monotonic() - started)
             )
-            try:
-                # Bounded by what is left of the tap budget: an overrun is a miss and never holds the tap.
-                seamed = _seam_pool.submit(
-                    self._word_translation, selection, context, [item.definition for item in definitions], source, target
-                ).result(timeout=remaining)
-            except FutureTimeout:
-                _log.warning("lookup layer=word_translation timed out source=%s target=%s; treated as a miss", source, target)
-            except Exception:  # noqa: BLE001 - a failing fallback is a miss, never a blank sheet
-                _log.warning("lookup layer=word_translation failed source=%s target=%s; treated as a miss", source, target, exc_info=True)
+            # Bounded by what is left of the tap budget: an overrun is a miss and never holds the tap.
+            seamed = _ask_word_translation(
+                self._word_translation, selection, context, [item.definition for item in definitions], source, target,
+                remaining,
+            )
             if seamed and str(seamed).strip():
                 meanings.append(LookupMeaning(str(seamed).strip(), "word_translation"))
 

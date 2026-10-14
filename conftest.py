@@ -62,3 +62,14 @@ def _testclient_defaults_to_a_loopback_peer(monkeypatch):
 
     monkeypatch.setattr(TestClient, "__init__", init)
     yield
+
+
+@pytest.fixture(autouse=True)
+def _fresh_word_translation_gate():
+    """The word tap's seam gate (reading_lookup) is process state: a call left running by one test must not be joined
+    by the next test's lookup of the same word."""
+
+    from writing_coach import reading_lookup
+
+    reading_lookup.reset_seam_gate()
+    yield
