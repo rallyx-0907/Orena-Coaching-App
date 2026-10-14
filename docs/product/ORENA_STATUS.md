@@ -386,6 +386,11 @@ Learning capabilities now built on that foundation:
   readable contract now states what a text must carry, including author,
   licence and source in the same shape media uses, so books, public-domain
   works and articles can be added with an adapter rather than a redesign.
+- **Reading source pipeline** (NASA, Global Voices EN, VOA 中文 through source, import, extraction, quality gate, review,
+  publish, attribution, card and reader) - milestone "Reading Sources — Production Readiness" (2026-10-14): CLOSED — source
+  pipeline accepted; release follow-ups remain. Follow-ups: P1 #194-#198, P2 #199-#202, HSK #203-#204, #183. Reading as a whole is
+  not claimed production-ready, the touch-device check is not done and :8000 is not deployed. Evidence:
+  `docs/content/READ_SOURCE_ACCEPTANCE_2026-10-13.md` section 6.
 - **Reading** happens in a room of its own (REVIEWABLE). The passage scrolls
   inside its own frame, so the questions and the learner's response stay one
   step below the text instead of a long page away. Every paragraph is a

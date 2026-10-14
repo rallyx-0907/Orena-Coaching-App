@@ -6482,7 +6482,8 @@ key). Probed with the exact word_translation request on the free plan (pricing `
 | `openai/gpt-oss-120b` | `reasoning_effort: low` | "cơ sở hạ tầng", 812 ms | "chính phủ", 1304 ms |
 | `allam-2-7b` | none | "công trình đầu tư, cơ sở vật lý" (wrong sense), 943 ms | "quốc gia" (wrong), 539 ms |
 
-Chosen standby: `groq / qwen/qwen3.8-27b`, zero-rated with the same owner-confirmed free-plan note and revisit rule, sent
+Chosen standby: `groq / qwen/qwen3.8-27b`, zero-rated with the same owner-confirmed free-plan note and revisit rule (Groq calls are recorded at $0 under the current
+observed/configured free-plan setup, owner-confirmed on 2026-10-14; this is not guaranteed permanent pricing), sent
 `reasoning_effort: none` and `reasoning_format: hidden` (`providers.GROQ_REQUEST_OPTIONS`, by id, like
 `OPENROUTER_REASONING_OFF`). `openai/gpt-oss-120b` is already priced (0.15 / 0.60) for media translation and one
 exact-match catalogue cannot hold two prices, so it is not zero-rated; `gpt-oss-20b` needs an option and is slower;
@@ -6703,12 +6704,12 @@ Read from `audit_logs` (`ai.operation`, `ai.router.rollup`; counts, latency and 
    (when the application configured none): one line per scheduled / refused open, and one counts-only line per job
    (`reading prefetch done|stopped|... language= planned= requested= served= failed= skipped=`; no word, no article id).
 2. **The NASA misses were the provider, not the planner.** From 06:53:52 every call to both pool entries (two different
-   upstreams) was an HTTP 429 until the end of the run, about 50 OpenRouter requests after the day's first, which is what the
-   free-tier daily allowance of an unfunded OpenRouter account is (the 429 body is not recorded, so this is an inference; the
+   upstreams) was an HTTP 429 until the end of the run, about 50 OpenRouter requests after the day's first. About 50 OpenRouter
+   requests were made during the test day, after which the primary returned 429; the exact free-tier quota is not confirmed
+   (the 429 body is not recorded, so the cause is an inference; the
    mapping now also reads OpenRouter's own `X-RateLimit-Limit` / `X-RateLimit-Remaining` headers into the existing
    `rate_limit` field of the operation row, so the next one is a fact). A 40-word batch with 0.5 s pacing spends that in under
-   a minute. **Owner action:** a free pool cannot carry translate-ahead; credit the account (1000 free-model requests a day) or
-   lower the per-article cap.
+   a minute. **Owner action:** a free pool cannot carry translate-ahead; fund the account or lower the per-article cap.
 3. **The tap's budget.** A tap spends its 2.0 s on the tagger and the external dictionary (timeout 1.5 s; rare words are the
    ones it cannot answer, so they spend most of it) before the seam, which got what was left, floored at 0.25 s, while a free
    model answers in 0.7-1.7 s. Now: the dictionary's tap timeout is 1.0 s and the seam always waits at least
@@ -6721,11 +6722,11 @@ Read from `audit_logs` (`ai.operation`, `ai.router.rollup`; counts, latency and 
    still lets its call finish, and the late answer fills the router cache under the tap's own key; a test pins one provider
    call serving both the timed-out tap and the next.
 5. **Not changed.** The cache key is still case-sensitive (item 9 above). `PREFETCH_DAILY_CALLS` and the pause stay.
-6. **Owner decision 2026-10-14: free models only (no credit), so prefetch is sized for about 50 requests a day.**
+6. **Owner decision 2026-10-14: free models only (no credit), so prefetch is sized conservatively against what was observed (about 50 requests before the primary returned 429; the quota is not confirmed).**
    `reading_prefetch.MAX_WORDS_PER_ARTICLE` is 8 (the hardest words by the D-199 rank; fewer if fewer qualify, replacing
    the 40 of item 4 above) and `tap.PREFETCH_DAILY_CALLS` is 25 per worker process (replacing 1500), which leaves the
-   rest of the day for taps. Both are plain constants tuned for an unfunded OpenRouter free tier; funding the account
-   (1000 a day) allows raising them. A 429 whose `X-RateLimit-Remaining` is 0 (the allowance is spent, not a busy
+   rest of the day for taps. Both are plain constants tuned to that observation on an unfunded OpenRouter account; the quota is not confirmed, and funding
+   the account would allow raising them. A 429 whose `X-RateLimit-Remaining` is 0 (the allowance is spent, not a busy
    upstream) pauses prefetch until the next UTC day instead of 120 s. The `orena.prefetch` logger no longer touches the
    root logger at import (`propagate=False`; `install_log_handler()` runs at app start).
 
