@@ -116,6 +116,23 @@ def test_polar_states_map_explicitly(status, state):
     assert POLAR.verify(headers, body, now=NOW).state == state
 
 
+def test_polar_a_past_due_subscription_is_paid_only_until_the_payment_failed():
+    """Polar moves to the next cycle before charging, so a past-due event's `current_period_end` is the end of the
+    UNPAID cycle; the grace (D-MON-011) counts from `past_due_at`, else the unpaid cycle's start."""
+    event = subscription_event("past_due")
+    event["type"] = "subscription.past_due"
+    event["data"].update(past_due_at="2026-10-05T11:30:00Z", current_period_start="2026-10-05T11:00:00Z")
+    fact = POLAR.verify(*polar_request(event), now=NOW)
+    assert (fact.kind, fact.state, fact.paid_through) == ("subscription", "past_due", datetime(2026, 10, 5, 11, 30, tzinfo=UTC))
+    del event["data"]["past_due_at"]
+    assert POLAR.verify(*polar_request(event), now=NOW).paid_through == datetime(2026, 10, 5, 11, tzinfo=UTC)
+    del event["data"]["current_period_start"]
+    assert POLAR.verify(*polar_request(event), now=NOW).paid_through is None, "the record keeps the last paid end"
+    unpaid = subscription_event("unpaid")
+    unpaid["data"]["current_period_start"] = "2026-10-05T11:00:00Z"
+    assert POLAR.verify(*polar_request(unpaid), now=NOW).paid_through == datetime(2026, 10, 5, 11, tzinfo=UTC)
+
+
 def test_polar_checkout_carries_orenas_account_plan_and_operation():
     intent = CheckoutIntent(operation_id="op-1", incarnation_id="inc-1", price=USD_MONTH, return_url="https://o/r",
                             cancel_url="https://o/c")  # fmt: skip

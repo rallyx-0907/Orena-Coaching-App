@@ -42,7 +42,8 @@ TOLERANCE = timedelta(minutes=5)
 STATES = {"incomplete": "pending", "incomplete_expired": "ended", "trialing": "trialing", "active": "active",
           "past_due": "past_due", "canceled": "ended", "unpaid": "past_due"}  # fmt: skip
 SUBSCRIPTION_EVENTS = frozenset({"subscription.created", "subscription.updated", "subscription.active",
-                                 "subscription.canceled", "subscription.uncanceled", "subscription.revoked"})  # fmt: skip
+                                 "subscription.canceled", "subscription.uncanceled", "subscription.revoked",
+                                 "subscription.past_due"})  # fmt: skip
 REFUND_EVENTS = frozenset({"refund.created", "refund.updated"})
 
 
@@ -60,6 +61,17 @@ def _keys(secret: str) -> list[bytes]:
 def sign(secret_key: bytes, message_id: str, timestamp: str, body: bytes) -> str:
     mac = hmac.new(secret_key, f"{message_id}.{timestamp}.".encode() + body, hashlib.sha256).digest()
     return "v1," + base64.b64encode(mac).decode("ascii")
+
+
+def _paid_through(data: dict, state: str) -> datetime | None:
+    """How far the subscription is PAID. Polar moves a renewing subscription to its next cycle before it charges, so
+    on a failed renewal `current_period_end` is already the end of the unpaid cycle. A past-due subscription is paid
+    only up to when that payment failed: `past_due_at`, else the unpaid cycle's start; with neither, None, and the
+    commerce record keeps the end of the last paid period it already holds. The billing grace (D-MON-011) counts from
+    this moment."""
+    if state == "past_due":
+        return parse_time(data.get("past_due_at")) or parse_time(data.get("current_period_start"))
+    return parse_time(data.get("current_period_end"))
 
 
 class PolarGateway:
@@ -119,7 +131,7 @@ class PolarGateway:
                 state=STATES.get(status, "unknown"), provider_state=status or None,
                 plan_id=str(metadata.get("orena_plan") or "") or None,
                 external_customer_id=str(data.get("customer_id") or "") or None,
-                paid_through=parse_time(data.get("current_period_end")),
+                paid_through=_paid_through(data, STATES.get(status, "unknown")),
                 cancel_at_period_end=bool(data.get("cancel_at_period_end")),
             )  # fmt: skip
         if kind in REFUND_EVENTS:
