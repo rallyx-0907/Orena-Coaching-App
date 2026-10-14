@@ -57,7 +57,13 @@ from writing_coach.ai.routing import (
     provider_tier,
     run_chain,
 )
-from writing_coach.ai.providers import build_providers, get_provider_definition, provider_definitions
+from writing_coach.ai.providers import (
+    OpenAICompatibleProvider,
+    build_providers,
+    get_provider_definition,
+    normalize_openai_base_url,
+    provider_definitions,
+)
 from writing_coach.persistence.platform_repository import PlatformRepository
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -823,6 +829,8 @@ def _provider_credential_values(
     base_url = str(payload.base_url).strip().rstrip("/") if payload.base_url else str(
         existing.get("base_url") or getattr(item, "base_url", "") or ""
     ).strip().rstrip("/")
+    if isinstance(item, OpenAICompatibleProvider):
+        base_url = normalize_openai_base_url(base_url)  # a pasted ".../chat/completions" is stored as the base
     from urllib.parse import urlsplit
 
     parsed = urlsplit(base_url)
