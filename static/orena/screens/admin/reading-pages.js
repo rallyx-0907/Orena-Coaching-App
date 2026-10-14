@@ -198,7 +198,7 @@ function evidenceFields(t, article, ui) {
   return rows;
 }
 
-export function articlePage({ article, sets, view, t, ui, href, now }) {
+export function articlePage({ article, sets, view, t, ui, href, now, images = null, previewUrl = () => '' }) {
   const source = article.source || {};
   const state = source.rights_state || {};
   const blockers = publicationBlockers(article);
@@ -287,6 +287,7 @@ export function articlePage({ article, sets, view, t, ui, href, now }) {
       ])}
       <div class="a-text a-text--original">${source.body || ''}</div>`,
   });
+  const imageBlock = imagesBlock({ article, images, view, t, href, previewUrl });
   const evOpen = Boolean(view.evOpen);
   const evidenceBlock = block({
     body: html`<button type="button" class="a-disclose" data-a="toggle-evidence" aria-expanded="${evOpen ? 'true' : 'false'}"><span class="a-disclose__title">${t('rdEvidence')}</span><span class="a-disclose__sum">${(article.analysis?.quality_issues || []).length ? t('rdEvIssuesCount', { n: article.analysis.quality_issues.length }) : t('rdEvClean')}${raw(icon(evOpen ? 'chevron-up' : 'chevron-down', { size: 16 }))}</span></button>
@@ -309,11 +310,45 @@ export function articlePage({ article, sets, view, t, ui, href, now }) {
       <div class="a-dtabs">${chipRow({ options: dtabs.map((id) => ({ id, label: id === 'targets' ? `${t('rdDtab_targets')} · ${targets.length}` : t(`rdDtab_${id}`), on: dtab === id })), a: 'dtab' })}</div>
       <div class="a-detail__grid">
         <div class="a-detail__col"><div data-part="processed">${processed}</div><div data-part="targets">${targetsBlock}</div><div data-part="sets">${setsBlock}</div></div>
-        <div class="a-detail__col"><div data-part="original">${originalBlock}</div><div data-part="evidence">${evidenceBlock}</div></div>
+        <div class="a-detail__col"><div data-part="images">${imageBlock}</div><div data-part="original">${originalBlock}</div><div data-part="evidence">${evidenceBlock}</div></div>
       </div>
       <div class="a-detail__foot">${actionButtons.map(button)}</div>
     </section>`,
   };
+}
+
+/* The article's picture (D-192, docs/design/canonical-ui/brief/READING_THUMBNAIL_2026-10-14.md): the candidates the
+   page declared, each previewed by the server (the administrator's browser never contacts the publisher), with Approve
+   and Reject. Built from the page's existing block, row and button; the letter tile is what a learner sees without one. */
+export function imagesBlock({ article, images, view, t, href, previewUrl }) {
+  if (!images) return '';
+  const rows = (images.candidates || []).map((candidate) => {
+    const size = candidate.width && candidate.height ? `${candidate.width}×${candidate.height}` : t('imgSizeUnknown');
+    const reasonPill = candidate.reason ? [{ label: t(`imgReason_${candidate.reason}`), tone: candidate.reason === 'rejected' ? 'mute' : 'warn' }] : [];
+    const approvedPill = candidate.approved ? [{ label: t('imgApproved'), tone: 'ok' }] : [];
+    const usable = candidate.eligible || candidate.reason === 'rejected';
+    return {
+      tile: html`<img class="a-imgprev" src="${previewUrl(candidate.index)}" alt="" loading="lazy" decoding="async">`,
+      title: [candidate.role ? (t.has(`imgRole_${candidate.role}`) ? t(`imgRole_${candidate.role}`) : candidate.role) : t('imgRole_inline'), size].join(' · '),
+      meta: candidate.credit || candidate.caption || candidate.alt || '',
+      pills: [...approvedPill, ...reasonPill],
+      actions: candidate.approved
+        ? [{ label: t('imgRemove'), size: 'xs', a: 'image-clear', data: { id: article.id } }]
+        : [
+          { label: t('imgApprove'), size: 'xs', kind: 'primary', a: 'image-approve', data: { id: article.id, index: candidate.index }, disabled: !usable || !images.policy_allowed || view.busy },
+          ...(candidate.reason === 'rejected' ? [] : [{ label: t('imgReject'), size: 'xs', a: 'image-reject', data: { id: article.id, index: candidate.index }, disabled: view.busy }]),
+        ],
+    };
+  });
+  return block({
+    title: t('imgTitle'),
+    sub: t('imgSub'),
+    pills: [images.shown_to_learners ? { label: t('imgShown'), tone: 'ok' } : { label: t('imgTile'), tone: 'mute' }],
+    body: html`${images.policy_allowed ? '' : html`<div class="a-hint">${t('imgPolicyOff')} <a class="a-learnerlink" href="${href('adminSource', { id: images.source_id })}">${t('imgOpenSource')}</a></div>`}
+      ${view.imageError ? html`<div class="a-error" role="alert">${view.imageError}</div>` : ''}
+      ${images.policy_allowed ? html`<div class="a-field a-field--full"><div class="a-field__label"><span>${t('imgCredit')}</span></div><input class="a-input" name="img_credit" value="${view.imgCredit || ''}" placeholder="${t('imgCreditHint')}" data-a-input="img_credit" aria-label="${t('imgCredit')}" autocomplete="off"></div>` : ''}
+      ${rowList(rows, { title: t('imgNone'), text: t('imgNoneText') })}`,
+  });
 }
 
 /* A field grid entry with the page's own controls (the blocks' `field` is private to blocks.js). */
@@ -485,6 +520,12 @@ export function sourcePage({ source, view, t, ui, href }) {
           { key: t('rdQ_attribution_required'), value: t(rights.attribution_required ? 'rdAnswerRequired' : 'rdAnswerNotRequired') },
           { key: t('rdFieldLicense'), value: rights.license_note || '—' },
         ]) })}
+        ${block({
+          title: t('srcImages'), sub: t('srcImagesSub'),
+          pills: [source.image_policy?.allowed ? { label: t('srcImagesOn'), tone: 'ok' } : { label: t('srcImagesOff'), tone: 'mute' }],
+          actions: [{ label: t(source.image_policy?.allowed ? 'srcImagesStop' : 'srcImagesAllow'), size: 'sm', kind: source.image_policy?.allowed ? '' : 'primary', a: 'source-images', data: { id: source.id, allowed: source.image_policy?.allowed ? '0' : '1' } }],
+          body: html`<div class="a-hint">${t('srcImagesText')}</div>`,
+        })}
         ${block({ title: t('srcPolling'), pills: [{ label: t('pillFuture'), tone: 'fut' }], body: html`<div class="a-hint">${t('srcPollingText')}</div>` })}
         ${source.last_error ? block({ title: t('srcLastError'), body: html`<div class="a-text a-text--mono">${source.last_error}</div>` }) : ''}
       </div>

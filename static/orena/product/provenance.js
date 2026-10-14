@@ -14,6 +14,19 @@ export function sourceLine(article) {
   return publisherOf(article) || String(article?.attribution?.author || '').trim();
 }
 
+/* The card/hero picture of a published article (D-192): `{ url, cssUrl, credit, alt }`, or null for the generated
+   tile. The backend sends `image` only when the source allows pictures, an administrator approved one and a
+   credit exists; the address is always our own same-origin copy. Anything else - another origin, no credit - is
+   treated as no picture, so a payload can never make the page load a third party's file. */
+const OWN_IMAGE = /^\/api\/reading\/articles\/[0-9a-f-]{8,40}\/image(\?v=\d{1,12})?$/i;
+export function imageOf(article) {
+  const image = article?.image;
+  const url = typeof image?.url === 'string' ? image.url : '';
+  const credit = String(image?.credit || '').trim();
+  if (!OWN_IMAGE.test(url) || !credit) return null;
+  return { url, cssUrl: `url("${url}")`, credit, alt: String(image?.alt || '').trim() };
+}
+
 /* Only a web address a browser may open as a link: http or https. Anything else (javascript:, data:, a bare
    string) is dropped, so a provenance field can never become a script href. */
 export function safeHttpUrl(value) {
@@ -49,6 +62,8 @@ export function creditOf(article) {
     author: author && author.toLowerCase() !== publisher.toLowerCase() ? author : '',
     url,
     license: licenseName ? { name: licenseName, url: safeHttpUrl(p.license?.url) } : null,
+    // D-192: the picture's credit joins this footnote, only when a picture is shown.
+    image: imageOf(article)?.credit || '',
   };
-  return credit.publisher || credit.url ? credit : null;
+  return credit.publisher || credit.url || credit.image ? credit : null;
 }

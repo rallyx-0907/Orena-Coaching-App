@@ -1445,8 +1445,12 @@ def configure_reading_engine_from_runtime() -> None:
         # (never a passage) and decided by an administrator.
         evidence=evidence,
         generate=generate_structured,
+        # Approved Reading thumbnails live in the same asset store, under their own key prefix (D-192).
+        asset_store=FilesystemBookAssetStore(_reading_library_asset_root),
     )
-    configure_reading_articles(content, language_supported=is_enabled)
+    configure_reading_articles(
+        content, language_supported=is_enabled, asset_store=FilesystemBookAssetStore(_reading_library_asset_root)
+    )
     # Learner practice on the published corpus. Submit stays off until the
     # live end-to-end run passes (D-076): ORENA_READING_PRACTICE_SUBMIT=on.
     configure_reading_practice(

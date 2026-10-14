@@ -155,6 +155,19 @@ MATRIX = {
         f"/api/admin/reading/articles/{ARTICLE}/targets/{TARGET}", {"json": {"approved": True}}, {404, 503}),
     ("POST", "/api/admin/reading/articles/{article_id}/target-order"): (
         f"/api/admin/reading/articles/{ARTICLE}/target-order", {"json": {"order": []}}, {404, 503}),
+    # Reading thumbnails (D-192): the candidates, a server-side preview, and the three decisions.
+    ("GET", "/api/admin/reading/articles/{article_id}/images"): (
+        f"/api/admin/reading/articles/{ARTICLE}/images", {}, {404, 503}),
+    ("GET", "/api/admin/reading/articles/{article_id}/images/{index}/preview"): (
+        f"/api/admin/reading/articles/{ARTICLE}/images/0/preview", {}, {404, 503}),
+    ("POST", "/api/admin/reading/articles/{article_id}/images/{index}/approve"): (
+        f"/api/admin/reading/articles/{ARTICLE}/images/0/approve", {"json": {}}, {404, 503}),
+    ("POST", "/api/admin/reading/articles/{article_id}/images/{index}/reject"): (
+        f"/api/admin/reading/articles/{ARTICLE}/images/0/reject", {"json": {}}, {404, 503}),
+    ("POST", "/api/admin/reading/articles/{article_id}/image/clear"): (
+        f"/api/admin/reading/articles/{ARTICLE}/image/clear", {"json": {}}, {404, 503}),
+    ("POST", "/api/admin/reading/sources/{source_id}/image-policy"): (
+        f"/api/admin/reading/sources/{ARTICLE}/image-policy", {"json": {"allowed": True}}, {404, 503}),
     ("GET", "/api/admin/reading/operations"): ("/api/admin/reading/operations", {}, {200, 503}),
     # Canonical Reading comprehension sets (D-082): AI questions on a published
     # passage, every one decided by an administrator.
@@ -277,7 +290,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 94  # includes the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
+    assert len(routes) == 100  # includes the six Reading thumbnail routes (D-192), the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

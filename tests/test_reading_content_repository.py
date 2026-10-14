@@ -283,7 +283,7 @@ def test_the_learner_list_is_lightweight_and_says_nothing_about_review(repositor
     item = repository.list_published(language="en")["items"][0]
     assert set(item) == {
         "id", "title", "language", "level", "topic", "reading_time_seconds",
-        "excerpt", "word_count", "published_at", "content_revision", "provenance",
+        "excerpt", "word_count", "published_at", "content_revision", "provenance", "image",
     }
     assert item["level"] == "B1"
 

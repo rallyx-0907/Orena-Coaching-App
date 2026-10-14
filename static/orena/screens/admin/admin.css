@@ -2553,3 +2553,19 @@ a.a-btn--primary:hover {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+
+/* A candidate picture in the Reading review (D-192): the row's leading slot, sized like a small thumbnail. */
+.a-row__tile:has(> .a-imgprev) {
+  width: auto;
+  height: auto;
+  background: none;
+  border-radius: 0;
+}
+.a-imgprev {
+  display: block;
+  width: 96px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--accent-fill);
+}

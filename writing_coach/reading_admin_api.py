@@ -38,6 +38,15 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import SQLAlchemyError
 
 from writing_coach.core.errors import orena_http_error
+from writing_coach.book_asset_store import BookAssetStore
+from writing_coach.reading_images import (
+    MAX_ALT,
+    MAX_CREDIT,
+    ImageRefused,
+    asset_key,
+    clean_text,
+    fetch_image,
+)
 from writing_coach.reading_page_quality import QualityRefused, hard_issues
 from writing_coach.persistence.reading_content_repository import (
     CONTENT_KINDS,
@@ -92,6 +101,9 @@ class _Reading:
     audit: Callable[..., None] | None = None
     evidence: ReadingEvidenceRepository | None = None
     generate: Callable[..., Any] | None = None
+    # D-192 thumbnails: the existing asset store, and the (injectable) safe fetcher.
+    asset_store: BookAssetStore | None = None
+    image_fetcher: Callable[..., Any] | None = None
 
 
 _state = _Reading()
@@ -106,11 +118,13 @@ def configure_reading_admin(
     audit: Callable[..., None] | None = None,
     evidence: ReadingEvidenceRepository | None = None,
     generate: Callable[..., Any] | None = None,
+    asset_store: BookAssetStore | None = None,
+    image_fetcher: Callable[..., Any] | None = None,
 ) -> None:
     global _state
     _state = _Reading(
         admin_guard=admin_guard, content=content, jobs=jobs, engine=engine, audit=audit,
-        evidence=evidence, generate=generate,
+        evidence=evidence, generate=generate, asset_store=asset_store, image_fetcher=image_fetcher,
     )
 
 
@@ -374,6 +388,27 @@ class ArticleRightsBody(BaseModel):
     reason: str = Field(default="", max_length=2000)
 
 
+class ImagePolicyBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    allowed: bool
+
+
+class ImageApproveBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The credit a learner reads; empty means the candidate's own credit, else the source's publisher.
+    credit: str = Field(default="", max_length=MAX_CREDIT)
+    alt: str = Field(default="", max_length=MAX_ALT)
+    reason: str = Field(default="", max_length=2000)
+
+
+class ImageRejectBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field(default="", max_length=2000)
+
+
 class ComprehensionSetBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -494,6 +529,22 @@ def update_source(
         _audit(admin, "admin.reading_source_polling", entity_type="reading_source", entity_id=source_id,
                payload={"polling_enabled": payload.polling_enabled})
         source = updated
+    return source
+
+
+@router.post("/sources/{source_id}/image-policy")
+def set_source_image_policy(
+    request: Request, response: Response, source_id: str, payload: ImagePolicyBody
+) -> dict[str, Any]:
+    """Allow or stop learner thumbnails from a source (D-192). Off for every source until turned on here."""
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    source = _guarded(lambda: _content().set_image_policy(source_id, payload.allowed, actor=_actor(admin)))
+    if source is None:
+        raise orena_http_error(404, "reading_source_not_found", "That source is not in the registry.")
+    _audit(admin, "admin.reading_source_image_policy", entity_type="reading_source", entity_id=source_id,
+           payload={"allowed": payload.allowed})
     return source
 
 
@@ -762,6 +813,141 @@ def set_article_rights(
     _audit(admin, "admin.reading_rights_set", entity_type="reading_article", entity_id=article_id,
            payload={"answers": answers})
     return article
+
+
+# -- thumbnails (D-192) ---------------------------------------------------------
+# A candidate is chosen by its index in the stored list - the request never carries an address - and its
+# bytes are fetched only here, through the existing SSRF guard, then kept in the asset store. A learner is
+# served that copy, never the third party's.
+
+_IMAGE_REFUSAL_STATUS = {"image_fetch_failed": 502, "image_unsafe_url": 422}
+
+
+def _image_store() -> BookAssetStore:
+    if _state.asset_store is None:
+        raise orena_http_error(503, "reading_engine_unavailable", "The Reading engine is not active yet.")
+    return _state.asset_store
+
+
+def _image_candidate(article_id: str, index: int) -> dict[str, Any]:
+    found = _guarded(lambda: _content().image_candidate(article_id, index))
+    if found is None:
+        raise orena_http_error(404, "reading_image_not_found", "That picture is not among this article's candidates.")
+    return found
+
+
+def _image_error(exc: ImageRefused) -> Any:
+    return orena_http_error(_IMAGE_REFUSAL_STATUS.get(exc.code, 422), exc.code, str(exc))
+
+
+@router.get("/articles/{article_id}/images")
+def list_article_images(request: Request, response: Response, article_id: str) -> dict[str, Any]:
+    _admin(request)
+    _no_store(response)
+    review = _guarded(lambda: _content().image_review(article_id))
+    if review is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    return review
+
+
+@router.get("/articles/{article_id}/images/{index}/preview")
+def preview_article_image(request: Request, article_id: str, index: int) -> Response:
+    """The candidate as the server can fetch it, so the administrator's browser never contacts the publisher."""
+    _admin(request)
+    found = _image_candidate(article_id, index)
+    try:
+        fetched = fetch_image(found["url"], fetcher=_state.image_fetcher)
+    except ImageRefused as exc:
+        raise _image_error(exc) from exc
+    return Response(
+        content=fetched["data"], media_type=fetched["content_type"],
+        headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
+                 "Content-Security-Policy": "default-src 'none'; sandbox"},
+    )
+
+
+@router.post("/articles/{article_id}/images/{index}/approve")
+def approve_article_image(
+    request: Request, response: Response, article_id: str, index: int, payload: ImageApproveBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    found = _image_candidate(article_id, index)
+    if not found["policy_allowed"]:
+        raise orena_http_error(
+            409, "reading_image_policy_off", "This source does not allow thumbnails. Turn it on for the source first."
+        )
+    reason = (found["candidate"] or {}).get("reason", "")
+    if reason in {"shared", "small", "aspect"}:
+        raise orena_http_error(409, "reading_image_not_eligible", "This picture cannot be used for a card.",
+                               context={"reason": reason})
+    article = _guarded(lambda: _content().get_article(article_id))
+    publisher = ((article or {}).get("provenance") or {}).get("publisher", "")
+    credit = clean_text(payload.credit, MAX_CREDIT) or clean_text(found["entry"].get("credit"), MAX_CREDIT)
+    if not credit and not clean_text(publisher, MAX_CREDIT):
+        raise orena_http_error(
+            422, "reading_image_credit_required", "A picture needs a credit: give one, or the source needs a name."
+        )
+    store = _image_store()
+    try:
+        fetched = fetch_image(found["url"], fetcher=_state.image_fetcher)
+        key = asset_key(article_id, fetched["sha256"], fetched["ext"])
+    except ImageRefused as exc:
+        raise _image_error(exc) from exc
+    store.put(key, fetched["data"])
+    stored = {
+        "candidate_url": found["url"], "asset_key": key, "content_type": fetched["content_type"],
+        "width": fetched["width"], "height": fetched["height"], "sha256": fetched["sha256"],
+        "credit": credit, "alt": clean_text(payload.alt, MAX_ALT) or clean_text(found["entry"].get("alt"), MAX_ALT),
+    }
+    try:
+        recorded = _guarded(
+            lambda: _content().approve_image(article_id, stored, actor=_actor(admin), reason=payload.reason.strip())
+        )
+    except Exception:
+        store.delete(key)
+        raise
+    if not recorded:
+        store.delete(key)
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    _audit(admin, "admin.reading_image_approved", entity_type="reading_article", entity_id=article_id,
+           payload={"index": index, "sha256": fetched["sha256"], "credit": credit})
+    return _guarded(lambda: _content().image_review(article_id))
+
+
+@router.post("/articles/{article_id}/images/{index}/reject")
+def reject_article_image(
+    request: Request, response: Response, article_id: str, index: int, payload: ImageRejectBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    found = _image_candidate(article_id, index)
+    recorded = _guarded(
+        lambda: _content().reject_image(article_id, found["url"], actor=_actor(admin), reason=payload.reason.strip())
+    )
+    if not recorded:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    _audit(admin, "admin.reading_image_rejected", entity_type="reading_article", entity_id=article_id,
+           payload={"index": index})
+    return _guarded(lambda: _content().image_review(article_id))
+
+
+@router.post("/articles/{article_id}/image/clear")
+def clear_article_image(
+    request: Request, response: Response, article_id: str, payload: ImageRejectBody
+) -> dict[str, Any]:
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    recorded = _guarded(
+        lambda: _content().clear_image(article_id, actor=_actor(admin), reason=payload.reason.strip())
+    )
+    if not recorded:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    _audit(admin, "admin.reading_image_cleared", entity_type="reading_article", entity_id=article_id)
+    return _guarded(lambda: _content().image_review(article_id))
 
 
 @router.post("/articles/{article_id}/status")

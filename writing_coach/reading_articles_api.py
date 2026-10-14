@@ -27,6 +27,7 @@ from typing import Any
 from fastapi import APIRouter, Request, Response
 from sqlalchemy.exc import SQLAlchemyError
 
+from writing_coach.book_asset_store import AssetNotFound, BookAssetStore
 from writing_coach.core.errors import orena_http_error
 from writing_coach.persistence.reading_content_repository import (
     MAX_ARTICLE_PAGE,
@@ -45,16 +46,19 @@ LEARNER_CACHE_CONTROL = "public, max-age=60, stale-while-revalidate=600"
 
 _repository: ReadingContentRepository | None = None
 _language_supported: Callable[[str], bool] | None = None
+_asset_store: BookAssetStore | None = None
 
 
 def configure_reading_articles(
     repository: ReadingContentRepository | None,
     *,
     language_supported: Callable[[str], bool] | None = None,
+    asset_store: BookAssetStore | None = None,
 ) -> None:
-    global _repository, _language_supported
+    global _repository, _language_supported, _asset_store
     _repository = repository
     _language_supported = language_supported
+    _asset_store = asset_store
 
 
 def _require_repository() -> ReadingContentRepository:
@@ -124,9 +128,38 @@ def read_article(request: Request, response: Response, article_id: str) -> Any:
     article = _guarded(lambda: repository.get_published_article(article_id))
     if article is None:
         raise orena_http_error(404, "reading_article_not_found", "That article is not available.")
-    etag = f'W/"reading-{article["id"]}-{article["content_revision"]}"'
+    # A thumbnail turning off with its source does not move the revision, so the validator names it.
+    etag = f'W/"reading-{article["id"]}-{article["content_revision"]}-{"i" if article.get("image") else "n"}"'
     response.headers["ETag"] = etag
     response.headers["Cache-Control"] = LEARNER_CACHE_CONTROL
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=dict(response.headers))
     return article
+
+
+@router.get("/{article_id}/image")
+def read_article_image(article_id: str) -> Response:
+    """The approved thumbnail of a published article, from our own copy (D-192).
+
+    Every part of the rule is checked again here - published, the source allows images, a candidate was
+    approved, a credit exists - so an image that stopped qualifying is a 404 and the card falls back to its
+    letter tile. The address is content-versioned by `?v=`, so it can be cached hard.
+    """
+    repository = _require_repository()
+    found = _guarded(lambda: repository.approved_image_asset(article_id))
+    if found is None or _asset_store is None:
+        raise orena_http_error(404, "reading_image_not_found", "That picture is not available.")
+    try:
+        data = _asset_store.get(found["asset_key"])
+    except AssetNotFound as exc:
+        raise orena_http_error(404, "reading_image_not_found", "That picture is not available.") from exc
+    return Response(
+        content=data,
+        media_type=found["content_type"],
+        headers={
+            "Cache-Control": "public, max-age=300",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Security-Policy": "default-src 'none'; sandbox",
+            "Cross-Origin-Resource-Policy": "same-origin",
+        },
+    )

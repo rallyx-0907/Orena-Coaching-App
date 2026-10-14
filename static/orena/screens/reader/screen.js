@@ -571,6 +571,7 @@ export default async function mountReader(element, ctx) {
       ${c.publisher ? html`<span>${t('srcLabel', { name: c.publisher })}</span>` : ''}
       ${c.author ? sep(t('srcBy', { name: c.author })) : ''}
       ${c.url ? sep(link(c.url, t('srcOriginal'))) : ''}
+      ${c.image ? sep(t('srcImage', { name: c.image })) : ''}
       ${c.license ? sep(c.license.url ? link(c.license.url, c.license.name) : c.license.name) : ''}
     </p>`;
   }

@@ -76,6 +76,7 @@ shape).
 | 27 | Search | `#/search` | focus | `screens/search/` | reviewable |
 | 14 | Reader | `#/read/:id` | focus | `screens/reader/` | reviewable |
 | 14+ | Reader source line (addendum, pending export: `brief/READER_SOURCE_LINE_2026-10-14.md`) | `#/read/:id` | focus | `screens/reader/` (`sourceMarkup`, `product/provenance.js` `creditOf`) | built 2026-10-14; end-of-text footnote |
+| 14+ | Reading thumbnail and credit (addendum, pending export: `brief/READING_THUMBNAIL_2026-10-14.md`) | Discover card, Content Detail hero, Reader footnote | shell, focus | `product/provenance.js` `imageOf`, `screens/discover/model.js` `entryFromArticle`, `screens/content/model.js` `normalizeArticle`, `screens/reader/` `sourceMarkup`; admin `screens/admin/reading-pages.js` `imagesBlock` and `sourcePage` | built 2026-10-14; browser measurement pending |
 | 20 | Check Understanding | `#/read/:id/check` | focus | `screens/check/` | reviewable |
 | 40 | Reading Complete | `#/read/:id/done` | focus | `screens/reader-complete/` | reviewable |
 | 39 | Reading Transfer | `#/read/:id/transfer` | focus | `screens/reading-transfer/` | reviewable |

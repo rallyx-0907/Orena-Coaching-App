@@ -6174,3 +6174,40 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    Re-review after the merge with D-190 (2026-10-14): Delegated Architecture Reviewer, Claude Opus 5.5, independent of the
    implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
    confirmations are proven independent by route-level tests.
+
+## D-192 - Reading thumbnails: a picture needs the source's policy, an approval and a credit; a same-origin copy (2026-10-14)
+
+**Status: PROPOSED.** Needs independent architecture review (a rights policy and a new outbound fetch path) and the owner before
+merge. Owner decisions of 2026-10-14 are carried out as written; nothing here turns a source on. No schema or migration
+change. Closes U2 of `docs/content/READ_SOURCE_ACCEPTANCE_2026-10-13.md` (D-189 item 5 made the thumbnail "not a publish
+blocker"; the human has since made it P1 ship-readiness).
+
+1. **Rights (option B).** A learner sees a picture only when all three hold: (a) the source's image policy allows it
+   (`reading_sources.polling_policy.image_policy.allowed`, the source's existing config JSON; absent means off, and no source is
+   turned on by this change), (b) an administrator approved that specific candidate (an `image_set` review event), and (c) a
+   credit exists (the approved credit, else the candidate's credit, else the source's publisher). Otherwise the generated
+   letter tile. The rule is evaluated again on every list, detail and image read, so turning a source off hides its pictures
+   at once; the detail validator names whether a picture is present.
+2. **Same-origin copy, never hotlinked.** The candidate is fetched once, at approval, by `writing_coach/reading_images.fetch_image`
+   through the existing SSRF guard `media_safe_fetch.fetch_bounded` (http/https only; every resolved address must be globally
+   routable, so private, loopback, link-local, metadata, CGNAT and multicast are refused; each redirect hop is re-validated;
+   the connected address is re-checked against DNS rebinding; no cookies or credentials; the byte budget is enforced while
+   reading), with a 5 MB cap, a 10 s timeout, a content-type allowlist (JPEG, PNG, WebP, GIF) and a magic-byte check that
+   ignores the declared type (so SVG and HTML are refused). The bytes are stored in the existing `BookAssetStore` under
+   `reading-images/{article}/{sha256[:24]}.{ext}` and served by `GET /api/reading/articles/{id}/image` with `nosniff`, a
+   `default-src 'none'; sandbox` CSP and `Cross-Origin-Resource-Policy: same-origin`. The learner payload carries
+   `image: {url, credit, alt}` with that same-origin address only; a candidate's address never reaches a learner payload.
+   The admin preview is also fetched by the server, so the administrator's browser never contacts the publisher.
+3. **Approval is a recorded answer, no migration.** `image_set` (the approved picture, or `null` to clear) and `image_rejected`
+   are `reading_review_events`, folded oldest first like a rights answer (`fold_image_events`); a change on a published
+   article bumps `content_revision`. Candidates stay where the extractor put them (`metadata.extraction.media`) and are
+   addressed by index, never by address.
+4. **Selection.** The og:image, then the lead image, then the article's images. A candidate is not offered when its declared
+   or real short side is under 400px, its aspect is outside 1:2 to 2:1, or the same address is on two or more other items of
+   the source (shared furniture such as a logo). Checked from the real bytes at approval when the page declared no size.
+5. **D-111 is unchanged.** Automatic admission never reads images; a picture changes no admission outcome.
+6. **Per-image licence is not modelled.** Approval is the administrator's act and is audited
+   (`admin.reading_image_approved`); the credit is shown, and the licence of an individual image is the administrator's
+   judgement (NASA images are carved out of its general statement, Global Voices images are not CC BY by default, VOA is
+   mixed). Which sources the owner turns on, and on what credit, is still the owner's call.
+7. **Not done.** A superseded approved file stays in the asset store (content-addressed, small).
