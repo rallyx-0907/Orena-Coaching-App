@@ -214,3 +214,56 @@ the entitlement semantics are unchanged.
 **P2 partial commerce schema** — recorded as R-MON-012 (`absent` vs `partial`), not changed here.
 **P2 Polar price** — R-MON-011 unchanged; `billing_ready=true` does not mean the Polar price was verified, and
 production activation waits for PR-MON-8.
+
+---
+
+# PR-MON-2 — Focused re-verification
+
+Recorded verbatim from the reviewer's verdict (relayed by the human, 2026-10-14).
+
+Reviewer: ChatGPT — reviewer độc lập
+Commit kiểm lại: `1916134ebf4c144e1c23986ec18ac4d13dae54d2`
+
+## Kết luận
+
+**APPROVE**
+
+P1 về readiness enforcement đã được sửa đúng.
+
+### Đã xác nhận
+
+- `/api/billing/offers`
+  - chỉ quảng bá offers khi runtime thực sự billing-ready;
+  - chưa ready trả `ready=false` và `offers=[]`.
+
+- `/api/billing/checkout`
+  - kiểm readiness trước khi tạo order;
+  - kiểm trước khi gọi gateway;
+  - chưa ready trả `503 billing_not_ready`, retryable.
+
+- Verified webhooks không bị readiness gate chặn.
+
+- Admin refund và admin readiness endpoint cũng không bị gate bởi learner checkout readiness.
+
+- Các test mới cover đúng bốn invariant reviewer yêu cầu.
+
+## Residual risks
+
+Hai P2 đã ghi nhận trước đó vẫn được chấp nhận và không block PR-MON-2:
+
+- partial commerce schema → R-MON-012;
+- Polar provider-side price verification → R-MON-011 / PR-MON-8.
+
+## Merge readiness
+
+PR-MON-2 được **architecture-approved**.
+
+Bước tiếp theo:
+
+1. ghi APPROVE này vào file review hiện có;
+2. rebase lên latest `main`;
+3. xử lý conflict nếu có mà không thay đổi semantics đã duyệt;
+4. chạy lại targeted tests cần thiết;
+5. mở PR-MON-2.
+
+Nếu rebase không thay đổi logic Billing/Readiness thì không cần review kiến trúc lại.
