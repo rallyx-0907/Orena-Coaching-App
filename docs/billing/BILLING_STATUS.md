@@ -6,12 +6,12 @@
 | | |
 | --- | --- |
 | Branch | `feature/monetization-billing-v1` |
-| Main | `ea68f8a8f085a794f9fc648af2fe296c9443375c` (`origin/main`, 2026-10-14): PR-MON-2 merged by the human as #162; the lane branch fast-forwarded onto it |
+| Main | `d55526a2` (`origin/main`, 2026-10-14): PR-MON-2 merged as #162 (`ea68f8a8`); Reading #161 after it; the lane rebased onto it |
 | Last completed slice | PR-MON-2 Price Integrity + Runtime Readiness: architecture-APPROVED, CI green on `dfb213ce`, merged to `main` as #162 (`ea68f8a8`, 2026-10-14) |
-| Active PR | none. Next: **PR-MON-3 Billing Orders + Reconciliation Safety** - PLANNED |
-| Current slice | none; PR-MON-3 design not started |
-| Exact next action | start PR-MON-3 on the human's instruction: inspect 0027/0028, design orders + reconciliation, then the review request |
-| Blockers | none. Independent architecture review required before PR-MON-2 merges (payment/entitlement) |
+| Active PR | **PR-MON-3 Billing Orders + Reconciliation Safety** - DESIGN, stopped at the review checkpoint (revises the financial schema: proposed 0027 revision 2) |
+| Current slice | PR-MON-3 design + migration plan: `PR-MON-3_DESIGN.md` (topology, failure modes F1-F12, reconciliation items, webhook mapping, reconciler, schema, rollback, tests, H1-H7) |
+| Exact next action | independent architecture review of `PR-MON-3_DESIGN.md` and the human's H1-H7; then implement slices 1-6 against a throwaway PostgreSQL only |
+| Blockers | review + human decisions H1-H7 before any code; no migration promoted or applied anywhere |
 | Test status | CI on #162 head `dfb213ce`: all jobs green (pytest, python-gates, node-gates, docker-build, aggregate `test`). The first CI run found the new readiness route unclassified in `tests/test_admin_authorization_matrix.py`; fixed by classifying it (admin 200, learner and anonymous refused). Local: throwaway PostgreSQL 414/415, the one failure INHERITED (#160) |
 | Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
@@ -21,7 +21,7 @@
 | --- | --- | --- |
 | PR-MON-1 | **Canonical Effective Entitlement**. One resolver with explicit precedence; Product UI, quota admission and entitlement checks all derive from it. No migration, no checkout UI, no provider config, no credits. | MERGED (#153, `aa016dc1`) |
 | PR-MON-2 | **Price Integrity + Runtime Readiness.** One server-side price truth or a strict consistency gate; checkout only at a server-offered price that exactly matches the effective catalogue entry (a mismatch blocks checkout); browser amounts never trusted; `billing_ready` reflects real capability. Closes R-MON-010. | MERGED (#162, `ea68f8a8`) |
-| PR-MON-3 | **Billing Orders + Reconciliation Safety.** Re-review/promote 0027; settle 0028's parent explicitly; abandoned-order expiry; durable payment anomaly/reconciliation state; Polar refund matching where safe; payment-without-entitlement detection. Exact webhook HTTP/retry semantics are designed here, per provider. | PLANNED |
+| PR-MON-3 | **Billing Orders + Reconciliation Safety.** Re-review/promote 0027; settle 0028's parent explicitly; abandoned-order expiry; durable payment anomaly/reconciliation state; Polar refund matching where safe; payment-without-entitlement detection. Exact webhook HTTP/retry semantics are designed here, per provider. | DESIGN (review checkpoint) |
 | PR-MON-4 | **Prepaid Credit Ledger.** Credit account, append-only ledger, idempotent credit/debit/reversal, deterministic balance, never negative. No commercial credit prices. | PLANNED |
 | PR-MON-5 | **payOS Credit Top-up.** Configured top-up products, checkout, verified webhook, credit exactly once, balance and recent-transactions API. | PLANNED |
 | PR-MON-6 | **Cost-aware entitlement / Free trial / credits fallback.** `included allowance → prepaid credits → refuse`; reserve → dispatch → settle/release for expensive work; no funded entitlement means no paid provider call; configurable new-user promotional allowances (quantities not invented). | PLANNED |
