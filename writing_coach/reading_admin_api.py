@@ -63,6 +63,7 @@ from writing_coach.persistence.reading_job_repository import (
 )
 from writing_coach.reading_content_engine import ReadingContentEngine
 from writing_coach.reading_processing import content_fingerprint
+from writing_coach.reading_provenance import provenance_blockers
 from writing_coach.reading_source_import import (
     MAX_FILE_BYTES,
     ReadingSourceError,
@@ -189,12 +190,13 @@ def _category(exc: HTTPException) -> str:
 
 
 def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
-    """Why an article may not be published, from its effective rights.
+    """What is unclear about publishing an article, from its effective rights.
 
-    Copyright is a hard gate (D-105): publishing needs the right to republish
-    the text, and, for an adapted text, the right to adapt it. An answer of
-    "denied" and an answer nobody gave both refuse - not knowing whether Orena
-    may republish something is not permission to.
+    These are warnings, not a gate (D-189 amends D-105): an administrator can
+    always publish, but over any of them only with an explicit override and a
+    reason (`acknowledge_warnings`), recorded with the decision. The republish
+    right (and, for an adapted text, the adapt right) being denied or never
+    answered, and an incomplete credit, each appear here.
 
     Read from the source snapshot with the administrator's recorded answers
     folded over it (`rights_state`), so answering the questions on the review
@@ -214,14 +216,15 @@ def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
             blockers.append({"code": "adaptation_not_cleared", "question": "can_adapt"})
         elif adapt != "allowed":
             blockers.append({"code": "adaptation_unknown", "question": "can_adapt"})
+    # D-189: where the terms require attribution, an incomplete credit is a warning.
+    blockers.extend(provenance_blockers(article.get("provenance") or {}))
     return blockers
 
 
 def publication_warnings(article: Mapping[str, Any]) -> list[dict[str, str]]:
-    """Advice that does not stop publication, recorded beside the decision.
+    """Advice recorded beside the decision: an unanswered attribution question.
 
-    Attribution is an obligation to honour, not a permission to hold, so an
-    unanswered attribution question is advice rather than a refusal.
+    Like `publication_blockers`, publishing over it needs the explicit override.
     """
     source = article.get("source") or {}
     state = source.get("rights_state") or {}
@@ -334,6 +337,9 @@ class ArticleStatusBody(BaseModel):
 
     status: str
     reason: str = Field(default="", max_length=2000)
+    # Publishing while rights or attribution are unclear is the administrator's
+    # deliberate act: this flag and a non-empty reason, recorded with the warnings.
+    acknowledge_warnings: bool = False
 
 
 class ArticleRightsBody(BaseModel):
@@ -766,24 +772,26 @@ def set_article_status(
         current = _guarded(lambda: _content().get_article(article_id))
         if current is None:
             raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
-        blockers = publication_blockers(current)
-        if blockers:
+        warnings = [{**item, "level": "warning"} for item in publication_blockers(current)]
+        warnings += publication_warnings(current)
+        if warnings and not payload.acknowledge_warnings:
             _audit(
                 admin,
                 "admin.reading_article_publish_refused",
                 entity_type="reading_article",
                 entity_id=article_id,
-                payload={"blockers": blockers},
+                payload={"blockers": warnings},
             )
             raise orena_http_error(
                 409,
                 "reading_rights_not_cleared",
-                "Publishing needs the right to republish this text"
-                + (" and to adapt it" if current.get("is_adapted") else "")
-                + ". Answer the rights questions first.",
-                context={"blockers": blockers},
+                "Rights or attribution for this text are unclear. Confirm the warnings and give a reason to publish anyway.",
+                context={"blockers": warnings, "override_field": "acknowledge_warnings"},
             )
-        warnings = publication_warnings(current)
+        if warnings and not payload.reason.strip():
+            raise orena_http_error(
+                422, "reading_reason_required", "Publishing over a warning keeps its reason - say why."
+            )
     article = _guarded(
         lambda: _content().set_status(
             article_id, status, actor=_actor(admin), reason=payload.reason.strip(), warnings=warnings
@@ -796,6 +804,7 @@ def set_article_status(
         # An override is only meaningful beside what it overrode.
         audit_payload |= {
             "warnings": warnings,
+            "acknowledged_warnings": bool(warnings),
             # Publish records the article's effective automation permission -
             # the override when present, else its source's default.
             "automation": (current.get("automation") or {}),

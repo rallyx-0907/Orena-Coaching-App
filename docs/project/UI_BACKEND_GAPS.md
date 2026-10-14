@@ -6092,3 +6092,13 @@ The General catalogue kill switch (`vocabulary.general_catalogue_enabled`, D-172
 in Admin > Operations > Policies as a new "Vocabulary" group (EN/VI/ZH: Vocabulary / Từ vựng / 词汇) built only from the
 existing policy block, label, chip and toggle. The pinned `Orena Admin.dc.html` draws no such group. Recorded as a gap
 for the human; not changed in this batch.
+
+## Reading provenance: the design has no licence or original-link line (D-189, 2026-10-13)
+
+The learner Reading payloads now carry `provenance` (publisher, original URL, author, licence, attribution text; see
+D-190). The pinned design draws one source line: the Discover card's `c.source`, the Content Detail hero meta and the
+Reader toolbar's `rdDocMeta`. Those now show the publisher. The design draws no place for the licence name, the
+attribution text or a link to the original article on the Reader or Content Detail frames, so none was added. The
+licence credit CC BY requires is reachable only through Settings > Licences and data sources, which now credits the
+publisher. If the human wants the licence or the original link on the reader itself, the design has to draw it first.
+Also open: `provenance.text` is English-only (a fallback sentence); no client draws it, so no EN/VI/ZH copy was added.

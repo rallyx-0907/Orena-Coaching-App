@@ -138,7 +138,7 @@ def _published_sample(content, jobs, engine_service):
     from writing_coach.reading_source_import import SubmittedInput
 
     engine_service.submit(SubmittedInput(kind="text", text=BODY, title="Rain returns", author="M. Tran", language="en",
-                                         source_id=source["id"], rights={"license_note": "CC BY 4.0"}), actor="admin")  # fmt: skip
+                                         url="https://sample-news.example/rain", source_id=source["id"], rights={"license_note": "CC BY 4.0"}), actor="admin")  # fmt: skip
     outcome = engine_service.process(jobs.claim("worker-1"))
     article = content.get_article(outcome["article_id"])
     if article["status"] != "published":
