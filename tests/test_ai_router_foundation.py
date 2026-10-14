@@ -119,7 +119,7 @@ def test_other_providers_do_not_send_a_provider_block(monkeypatch, post) -> None
     assert "provider" not in post.sent[0]["json"]
 
 
-@pytest.mark.parametrize("model", ["openrouter/auto", "openrouter/free", "OpenRouter/Auto:free", "gemma-4:free", "google/gemma-4-31b-it", ""])
+@pytest.mark.parametrize("model", ["openrouter/auto", "openrouter/free", "OpenRouter/Auto:free", "gemma-4:free", "google/gemma-4-31b-it", "", "vendor/unlisted:free"])
 def test_openrouter_refuses_router_ids_unprefixed_ids_and_paid_ids(monkeypatch, post, model) -> None:
     provider = _openrouter(monkeypatch)
     with pytest.raises((AICapabilityConfigInvalid, AIProviderUnavailable)):
@@ -127,7 +127,7 @@ def test_openrouter_refuses_router_ids_unprefixed_ids_and_paid_ids(monkeypatch, 
     assert post.sent == []  # refused before any request
 
 
-@pytest.mark.parametrize("model", ["openrouter/auto", "openrouter/free", "gemma-4:free", "google/gemma-4-31b-it"])
+@pytest.mark.parametrize("model", ["openrouter/auto", "openrouter/free", "gemma-4:free", "google/gemma-4-31b-it", "vendor/unlisted:free"])
 def test_static_validation_refuses_the_same_ids(model) -> None:
     config = CapabilityConfig(enabled=False, provider="openrouter", model=model, fallback_policy=AIFallbackPolicy.NONE)
     with pytest.raises(AICapabilityConfigInvalid):
@@ -275,3 +275,60 @@ def test_router_fields_pass_the_allowlist_and_junk_does_not() -> None:
 def test_events_without_router_fields_keep_their_old_shape() -> None:
     safe = sanitize_telemetry(_event())
     assert not ({"tier", "phase", "attempt", "fallback_reason", "http_status_class", "router_version"} & set(safe))
+
+
+# --- review 43ce4621 (P1-1, P1-2, P2-1) ---------------------------------------------------------------------------
+
+
+def test_an_unlisted_free_model_is_refused_because_the_ledger_would_charge_it_as_unpriced() -> None:
+    """P1-1: a ':free' id with no zero-rate catalogue entry is 'unpriced' (0.01 USD a call on the shared guard)."""
+
+    assert estimate_token_cost("openrouter", "vendor/unlisted:free", None)["state"] == "unpriced"
+    with pytest.raises(AICapabilityConfigInvalid, match="catalogue"):
+        providers_module.check_model_allowed("openrouter", "vendor/unlisted:free")
+    providers_module.check_model_allowed("openrouter", GEMMA)  # the pinned ones pass
+    providers_module.check_model_allowed("openai", "anything-goes")  # no rule for other providers
+
+
+def test_the_model_picker_lists_only_catalogued_free_models(monkeypatch) -> None:
+    provider = _openrouter(monkeypatch)
+    assert provider._accept_model(GEMMA) and provider._accept_model(QWEN)
+    assert not provider._accept_model("vendor/unlisted:free") and not provider._accept_model("openrouter/free")
+
+
+@pytest.mark.parametrize(
+    ("provider", "model"), [("openai", "gpt-4o-mini"), ("gemini", "gemini-3.5-flash-lite"), ("deepseek", "deepseek-chat")]
+)
+def test_word_translation_refuses_a_paid_model_until_a_spend_cap_exists(provider, model) -> None:
+    """P1-2: free or local only, primary and standby (the per-capability cap is a later slice)."""
+
+    with pytest.raises(AICapabilityConfigInvalid, match="free or local"):
+        validate_capability_config("word_translation", CapabilityConfig(enabled=False, provider=provider, model=model))
+    with pytest.raises(AICapabilityConfigInvalid, match="free or local"):
+        validate_capability_config(
+            "word_translation",
+            CapabilityConfig(enabled=False, provider="openrouter", model=GEMMA, backup_provider=provider, backup_model=model),
+        )
+
+
+def test_word_translation_accepts_a_local_model() -> None:
+    validate_capability_config("word_translation", CapabilityConfig(enabled=False, provider="ollama", model="qwen3:8b"))
+
+
+def test_other_capabilities_are_not_limited_to_free_models() -> None:
+    validate_capability_config("writing_evaluator", CapabilityConfig(enabled=False, provider="openai", model="gpt-4o-mini"))
+    assert require_capability("word_translation").free_only is True
+    assert require_capability("writing_evaluator").free_only is False
+
+
+def test_the_wire_check_is_in_the_single_choke_point_every_request_passes(monkeypatch, post) -> None:
+    """P2-1: _post_chat and the stream both refuse a router id, whatever method reached them."""
+
+    provider = _openrouter(monkeypatch)
+    with pytest.raises(AICapabilityConfigInvalid):
+        provider._post_chat({"model": "openrouter/auto", "messages": []})
+    with pytest.raises(AICapabilityConfigInvalid):
+        provider.stream_chat(messages=[], tools=[], model="openrouter/free", max_output_tokens=5)
+    with pytest.raises(AICapabilityConfigInvalid):
+        provider.generate_json(messages=[], schema={}, model="vendor/unlisted:free", max_output_tokens=5, temperature=0)
+    assert post.sent == []

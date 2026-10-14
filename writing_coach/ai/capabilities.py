@@ -54,6 +54,8 @@ class AICapabilityDefinition:
     input_class: str = "learner_text"
     # Not part of the legacy-to-capability activation set: switched on by the operator, ships disabled.
     opt_in: bool = False
+    # Until the per-capability spend cap exists (AI Cost Router PR 2), the pool may hold free or local models only.
+    free_only: bool = False
 
 
 INPUT_CLASSES = frozenset({"public_reference", "published_content", "learner_text"})
@@ -70,6 +72,7 @@ def _definition(
     fallback_policies: frozenset[AIFallbackPolicy] = frozenset({AIFallbackPolicy.NONE}),
     input_class: str = "learner_text",
     opt_in: bool = False,
+    free_only: bool = False,
 ) -> AICapabilityDefinition:
     if input_class not in INPUT_CLASSES:
         raise ValueError(f"Invalid input class for {key!r}: {input_class!r}")
@@ -88,6 +91,7 @@ def _definition(
         allowed_fallback_policies=fallback_policies,
         input_class=input_class,
         opt_in=opt_in,
+        free_only=free_only,
     )
 
 
@@ -161,6 +165,7 @@ _DEFINITIONS = (
         fallback_policies=_DETERMINISTIC_FALLBACK,
         input_class="public_reference",
         opt_in=True,
+        free_only=True,
     ),
     _definition(
         "grammar_lesson_generator",

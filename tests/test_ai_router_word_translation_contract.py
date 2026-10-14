@@ -98,7 +98,6 @@ def test_the_input_is_data_in_the_user_message_never_spliced_into_the_instructio
         ("lamp", "en", "zh", {"meaning": "灯"}),
         ("图书馆", "zh", "vi", {"meaning": "thư viện"}),
         ("图书馆", "zh", "en", {"meaning": "library", "alternatives": ["reading room", "archive"]}),
-        ("Hanoi", "en", "vi", {"meaning": "Hanoi"}),  # a proper noun may be its own gloss
     ],
 )
 def test_clean_answers_pass_and_are_normalised(text, source, target, data) -> None:
@@ -120,6 +119,8 @@ def test_clean_answers_pass_and_are_normalised(text, source, target, data) -> No
         ("zh", "en", "图书馆", {"meaning": "图书馆"}),
         ("en", "zh", "lamp", {"meaning": "lamp"}),                                # Chinese target with no Han
         ("en", "vi", "lamp", {"meaning": "lamp"}),                                # echo of a common word
+        ("en", "vi", "Lamp", {"meaning": "Lamp"}),                                # a sentence-initial common word is not a name
+        ("en", "vi", "Hanoi", {"meaning": "Hanoi"}),                              # echoes are refused in this slice
         ("en", "vi", "lamp", {"meaning": "Answer with one JSON object"}),  # instruction echo
         ("en", "vi", "lamp", {"meaning": "x" * 81}),                              # too long
         ("en", "vi", "lamp", {"meaning": ""}),

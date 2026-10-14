@@ -165,3 +165,16 @@ def test_the_lookup_is_unchanged_when_the_capability_is_not_enabled(env) -> None
     result = _service().lookup("lamp", SENTENCE, "en", "vi").to_dict()
     assert result["meanings"] == [] and result["available"] is False
     assert env.fake.calls == []
+
+
+def test_the_brake_table_evicts_the_oldest_account_not_everyone(env, monkeypatch) -> None:
+    """P2-5: past the table size only the least recently used account loses its count."""
+
+    monkeypatch.setattr(tap, "BRAKE_LIMIT", 1)
+    monkeypatch.setattr(tap, "_BRAKE_ACCOUNTS_MAX", 2)
+    for account in ("a", "b"):
+        assert tap._braked(account) is False
+        assert tap._braked(account) is True  # at its limit
+    assert tap._braked("c") is False  # a third account: the oldest ("a") is evicted
+    assert tap._braked("b") is True  # "b" kept its count
+    assert tap._braked("a") is False  # "a" starts over

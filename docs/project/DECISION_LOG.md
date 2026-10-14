@@ -6249,19 +6249,25 @@ Owner decisions of 2026-10-14, recorded here before the tests that pinned the ol
    on a deterministic miss, only when the capability is enabled.** Explain / "Why here?" (D-130.3, D-133) is unchanged and
    remains the only way a sentence reaches AI.
 2. **OpenRouter, pinned `:free` models only, no credit.** The `openrouter/*` router ids (`openrouter/auto`,
-   `openrouter/free`) are refused, so is any id without a vendor prefix, so is any model that is not `:free`. Requests send
+   `openrouter/free`) are refused, so is any id without a vendor prefix, so is any model that is not `:free`, **so is any
+   `:free` id that has no zero-rate entry in the price catalogue** (an unlisted free model is "unpriced" and the shared
+   daily spend ledger would charge it 0.01 USD a call; the suffix is never priced as zero), at config validation and at
+   the single wire choke point (`_post_chat`, and the stream). Requests send
    `provider.allow_fallbacks=false`: the router owns failover and the order is never random. A free endpoint may log
    prompts, so a provider marked `may_log_prompts` and any free model are refused for `learner_text` capabilities (the
    input-class rule, D-104); `word_translation` is `public_reference`. The key is entered by the owner (D-037 store or
    `OPENROUTER_API_KEY`); no agent handles it. Free models have explicit zero-rate price entries (pricing catalogue
-   `2026-10-14.v3`), so the daily spend ledger no longer counts them as unpriced.
+   `2026-10-14.v3`), so the daily spend ledger no longer counts them as unpriced. Swapping in another free model means
+   adding its zero-rate entry to `pricing.py` first.
 3. **Lane.** The UI/Reading lane builds the router core in small PRs, each reviewed independently; the Intelligence lane
    calls it only through `route()` and keeps `agent_turn_*`.
 4. **Order.** Slice 1 (this) before the Admin design addendum; the pool editor, config v2, the persistent cache and local
    tiers are later slices.
 5. **Supersedes D-035's "primary-only" wording and clarifies D-010.** Operator-configured, ordered pools with tier labels,
    per-attempt timeouts, a total deadline, cooldown and full telemetry are **explicit failover**, not silent failover:
-   D-010 forbids a *silent paid* failover, and this slice's pool is free-only and logged on every attempt. An
+   D-010 forbids a *silent paid* failover, and this slice's pool is **enforced** free-or-local: config validation refuses a
+   paid model, primary or standby, for `word_translation` (`free_only`) until the per-capability spend cap exists (PR 2),
+   and every attempt is logged. An
    availability failure (429, 402, 5xx, timeout, unavailable) moves to the next entry; invalid output retries once and then
    moves on; terminal errors (disabled, unsupported, invalid configuration) are never failed over. A paid tier or an
    escalation still needs the owner's explicit configuration and a spend cap. The learner runtime already behaved this
@@ -6278,6 +6284,20 @@ through `platform.generate_structured`, which gained `validate=`, `deadline=`, `
 single-flight and a 60-second negative cache. Telemetry gains `tier, phase, attempt, fallback_reason, http_status_class,
 router_version` and an `ai.router.rollup` row per capability each minute; neither carries a word, a prompt or an answer.
 `word_translation` is `opt_in`: outside the legacy-to-capability activation set (`activation_capabilities()`).
+
+**Also changed, and stated for the reviewer.** `timeout_seconds` is now a supported capability option for **every** text
+provider (it was refused before, so none is stored) and is applied per attempt; request timeouts now report
+`error_class=provider_timeout` instead of `provider_unavailable` (still an availability failure). A validator rejection
+(`invalid_output`) is not a provider-health failure and does not count toward the cooldown. This slice accepts no echo
+of the input as a meaning (a proper noun would need the tagger's POS, which the word-only tap does not send). The
+per-account brake table evicts the least recently used account only. The Admin copy names and explains the capability in
+English, Vietnamese and Chinese.
+
+**Review.** Independent architecture review of `43ce4621`: Claude Opus 5.5, Delegated Architecture Reviewer, independent
+of the implementer: APPROVED WITH CONDITIONS. P1-1 (unlisted free model priced as unpriced) and P1-2 (free-only not
+enforced) and P2-1, P2-2, P2-4, P2-5, P2-6, P2-7 are addressed in the commit that records this line; P2-3 (the `requests`
+timeout is per socket operation, not a total) is noted, the tap is protected by the seam gate. No product approval is
+implied; activation stays a separate owner action after the two model ids are verified against the live catalogue.
 
 **Not verified.** The pinned ids `google/gemma-4-31b-it:free` and `qwen/qwen3-next-80b-a3b-instruct:free` could not be
 checked against the live OpenRouter catalogue from the build environment; verify before activation (a retired id only

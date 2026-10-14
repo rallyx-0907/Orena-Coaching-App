@@ -17,7 +17,7 @@ cache, so the next tap on the word is instant.
 from __future__ import annotations
 
 import threading
-from collections import defaultdict, deque
+from collections import OrderedDict, deque
 
 from writing_coach.ai.base import AICapabilityError, AIProviderError
 from writing_coach.ai.router import router as router_module
@@ -31,7 +31,7 @@ BRAKE_WINDOW_SECONDS = 60.0
 _BRAKE_ACCOUNTS_MAX = 5000
 
 _lock = threading.Lock()
-_spent: dict[str, deque] = defaultdict(deque)
+_spent: OrderedDict[str, deque] = OrderedDict()
 
 
 def reset_state() -> None:
@@ -44,9 +44,12 @@ def _braked(account: str) -> bool:
 
     now = router_module._clock()
     with _lock:
-        if len(_spent) > _BRAKE_ACCOUNTS_MAX:
-            _spent.clear()
-        window = _spent[account]
+        window = _spent.get(account)
+        if window is None:
+            window = _spent[account] = deque()
+            while len(_spent) > _BRAKE_ACCOUNTS_MAX:
+                _spent.popitem(last=False)  # the least recently used account only; the others keep their counts
+        _spent.move_to_end(account)
         while window and window[0] <= now - BRAKE_WINDOW_SECONDS:
             window.popleft()
         if len(window) >= BRAKE_LIMIT:

@@ -19,6 +19,7 @@ from writing_coach.ai.capabilities import (
 )
 from writing_coach.ai.pricing import is_free_model
 from writing_coach.ai.providers import ProviderDefinition, check_model_allowed, get_provider_definition
+from writing_coach.ai.routing import provider_tier
 
 
 CONFIG_VERSION = 1
@@ -198,6 +199,16 @@ def validate_capability_config(
     check_model_allowed(provider.id, config.model)
     if config.backup_provider is not None:
         check_model_allowed(config.backup_provider, config.backup_model or "")
+    if definition.free_only:
+        entries = [(config.provider, config.model)]
+        if config.backup_provider is not None:
+            entries.append((config.backup_provider, config.backup_model or ""))
+        for entry_provider, entry_model in entries:
+            if provider_tier(entry_provider, entry_model) == "paid":
+                raise AICapabilityConfigInvalid(
+                    f"{definition.key!r} accepts free or local models only until its spend cap exists: "
+                    f"{entry_provider!r} / {entry_model!r} is paid."
+                )
     if definition.input_class == "learner_text":
         # A free tier, or any endpoint that may log prompts, never receives learner-authored text (D-195, D-104).
         pool = [(provider, config.model)]

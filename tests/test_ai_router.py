@@ -432,3 +432,17 @@ def test_free_calls_are_priced_at_zero_in_the_ledger_rows(env) -> None:
     route("word_translation", LAMP)
     row = env.repo.operations[-1]
     assert row["cost"]["state"] == "estimated" and row["cost"]["amount"] == 0
+
+
+def test_validator_rejections_do_not_stand_the_provider_down(env) -> None:
+    """P2-4: cooldown is for availability failures; three bad words in a row must not stop OpenRouter for everyone."""
+
+    bad = {"meaning": "x" + chr(10) + "y"}
+    for text in ("one", "two", "three"):
+        env.fake.script = {GEMMA: [bad, bad], QWEN: [bad, bad]}
+        with pytest.raises(AIProviderError):
+            route("word_translation", word(text))
+    env.fake.calls.clear()
+    env.fake.script = {}
+    assert route("word_translation", word("four")).source == "model"  # still asked
+    assert routing.provider_health.snapshot().get("openrouter", {}).get("cooling_down") is not True

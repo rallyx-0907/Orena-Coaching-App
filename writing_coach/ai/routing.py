@@ -292,7 +292,10 @@ def run_chain(
                 on_attempt(record)
             if kind == "terminal":
                 raise
-            tracker.record_failure(target.provider)
+            if not isinstance(error, AIOutputInvalid):
+                # A validator rejecting one answer says nothing about the provider's health (a bad word, not a bad
+                # provider); cooldown is for availability failures.
+                tracker.record_failure(target.provider)
             last_error = error
             continue
         latency = int((monotonic() - started) * 1000)

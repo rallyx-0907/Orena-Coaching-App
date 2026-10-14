@@ -190,8 +190,10 @@ def _validate(inp: WordTranslationInput, data: dict[str, Any]) -> dict[str, Any]
         raise AIOutputInvalid("The answer has the wrong shape.")
     prompt = _system_prompt(inp)
     meaning = _clean_line(data.get("meaning"), inp, prompt)
-    if meaning.casefold() == inp.text.casefold() and not inp.text[:1].isupper():
-        raise AIOutputInvalid("A common word is not its own meaning.")
+    if meaning.casefold() == inp.text.casefold():
+        # No echoes in this slice: a capitalised sentence-initial common word would otherwise be cached untranslated.
+        # A proper noun needs the tagger's POS, which the word-only tap does not send.
+        raise AIOutputInvalid("A meaning must not repeat the text.")
     raw_alternatives = data.get("alternatives", [])
     if not isinstance(raw_alternatives, list) or len(raw_alternatives) > MAX_ALTERNATIVES:
         raise AIOutputInvalid("At most two alternatives.")

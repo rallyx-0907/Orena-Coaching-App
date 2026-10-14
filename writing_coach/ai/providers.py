@@ -26,6 +26,7 @@ from writing_coach.ai.base import (
     extract_json_object,
 )
 from writing_coach.ai.capabilities import AIOperation
+from writing_coach.ai.pricing import resolve_token_pricing
 
 
 @dataclass(frozen=True)
@@ -173,6 +174,13 @@ def check_model_allowed(provider_id: str, model: str) -> None:
         )
     if not value.endswith(":free") or name == ":free":
         raise AICapabilityConfigInvalid("OpenRouter is limited to pinned ':free' models.")
+    # A free model must also be in the price catalogue at a zero rate: an unlisted one is "unpriced", and the shared
+    # daily spend ledger charges every unpriced call 0.01 USD (agent/budget.py). Never blanket-priced by suffix.
+    pricing = resolve_token_pricing("openrouter", value)
+    if pricing is None or pricing.input_per_million != 0 or pricing.output_per_million != 0:
+        raise AICapabilityConfigInvalid(
+            "This OpenRouter model has no zero-rate entry in the price catalogue (pricing.py); pin it there first."
+        )
 
 
 def _schema_instruction(schema: dict[str, Any]) -> str:
@@ -594,6 +602,7 @@ class OpenAICompatibleProvider:
         )
 
     def _post_chat(self, body: dict[str, Any], timeout: float | None = None) -> dict[str, Any]:
+        check_model_allowed(self.id, str(body.get("model") or ""))  # the choke point: no path skips the allowlist
         if self.extra_body:
             body = {**body, **self.extra_body}
         response = requests.post(
@@ -765,6 +774,7 @@ class OpenAICompatibleProvider:
             raise AIProviderNotConfigured(f"{self.name} is not configured on the server.")
         if not model:
             raise AIProviderUnavailable(f"No model is selected for {self.name}.")
+        check_model_allowed(self.id, model)
         body: dict[str, Any] = {
             "model": model,
             "messages": messages,
