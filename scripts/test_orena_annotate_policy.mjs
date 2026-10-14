@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const { annotateWithPolicy, annotateRefused, resetAnnotatePolicy, ANNOTATE_BACKOFF_MS, BREAKER_LIMIT } =
+const { annotateAll, annotateAllowed, annotateWithPolicy, annotateRefused, resetAnnotatePolicy, ANNOTATE_BACKOFF_MS, BREAKER_LIMIT } =
   await import('../static/orena/infrastructure/annotate-policy.js');
 
 const fail = (status) => Object.assign(new Error('x'), status === undefined ? { name: 'TypeError' } : { status });
@@ -107,5 +107,58 @@ for (const f of ['reader', 'listening']) {
   const src = readFileSync(new URL(`../static/orena/screens/${f}/screen.js`, import.meta.url), 'utf8');
   assert.ok(src.includes('annotateWithPolicy(api.annotateMediaText'), `${f} uses the policy`);
   assert.ok(!/await api\.annotateMediaText/.test(src), `${f} has no raw call`);
+}
+
+// 7. Preflight: a text in another language than the one being learned sends nothing; the first request
+//    goes alone, a 4xx on it is the only request; on success the rest run in parallel.
+assert.equal(annotateAllowed('zh', 'en'), false);
+assert.equal(annotateAllowed('ZH', 'zh'), true);
+assert.equal(annotateAllowed('', ''), false);
+const paragraphs = Array.from({ length: 86 }, (_, i) => i);
+const make = (outcome) => {
+  const stats = { sent: 0, inFlight: 0, peak: 0 };
+  const ask = async () => {
+    try {
+      await annotateWithPolicy(async () => {
+        stats.sent += 1; stats.inFlight += 1; stats.peak = Math.max(stats.peak, stats.inFlight);
+        await new Promise((r) => setImmediate(r));
+        stats.inFlight -= 1;
+        if (outcome) throw fail(outcome);
+        return { annotations: [] };
+      }, { text: 'a', source_language: 'zh' }, { scope: 'art', sleep });
+      return true;
+    } catch { return false; }
+  };
+  return { stats, ask };
+};
+resetAnnotatePolicy();
+let m = make(0);
+await annotateAll(paragraphs, m.ask, { scope: 'art', language: 'zh', learning: 'en' });
+assert.equal(m.stats.sent, 0, 'language mismatch: zero requests');
+resetAnnotatePolicy();
+m = make(409);
+await annotateAll(paragraphs, m.ask, { scope: 'art', language: 'zh', learning: 'zh' });
+assert.equal(m.stats.sent, 1, 'first 409: exactly one request');
+resetAnnotatePolicy();
+m = make(0);
+await annotateAll(paragraphs, m.ask, { scope: 'art', language: 'zh', learning: 'zh' });
+assert.equal(m.stats.sent, 86);
+assert.ok(m.stats.peak > 1 && m.stats.peak <= 6, `parallel after the first, peak ${m.stats.peak}`);
+resetAnnotatePolicy();
+m = make(422);
+await annotateAll(paragraphs, m.ask, { scope: 'art', language: 'zh', learning: 'zh' });
+assert.equal(m.stats.sent, 3, 'a text rejected by the tagger costs three requests, not one per paragraph');
+assert.equal(m.stats.peak, 1, 'no success yet: still one at a time');
+resetAnnotatePolicy();
+let n422 = 0;
+await annotateAll(paragraphs, async (i) => (n422 += 1, i === 1), { scope: 'art', language: 'zh', learning: 'zh' });
+assert.equal(n422, 86, 'one paragraph failing then one succeeding: the rest still run');
+assert.equal(annotateAllowed('zh-Hans', 'zh'), true);
+assert.equal(annotateAllowed('zh-CN', 'ZH'), true);
+assert.equal(annotateAllowed('en-US', 'en'), true);
+assert.equal(annotateAllowed('en', 'zh-Hans'), false);
+for (const f of ['reader', 'listening']) {
+  const src = readFileSync(new URL(`../static/orena/screens/${f}/screen.js`, import.meta.url), 'utf8');
+  assert.ok(src.includes(f === 'reader' ? 'annotateAll(' : 'annotateAllowed('), `${f} preflights the language`);
 }
 console.log('annotate policy: ok');
