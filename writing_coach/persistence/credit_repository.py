@@ -458,6 +458,9 @@ class PostgresCreditRepository:
                 incarnation = str(head["incarnation_id"])
                 status = connection.execute(text(
                     "SELECT status FROM account_incarnations WHERE id = :inc FOR SHARE"), {"inc": incarnation}).scalar()
+                # Deliberate though redundant today: every state-changing order writer locks the incarnation first,
+                # which this FOR SHARE already blocks. The order lock is §6.3's canonical order and guards a future
+                # writer that skips the incarnation (0033's trigger locks the order too).
                 order = connection.execute(text(
                     "SELECT id, product_kind, state, credit_units, gateway, order_code FROM billing_orders "
                     "WHERE order_code = :code FOR SHARE"), {"code": order_code}).mappings().one()
