@@ -16,6 +16,8 @@ class _Paid:
 
     engine_id = "ai"
     model_version = "x"
+    uses_ai = True
+    uses_paid_provider = True
     calls = 0
 
     def translate_batch(self, *_a, **_k):
@@ -110,6 +112,31 @@ def test_the_seam_receives_the_word_sentence_senses_and_languages(no_ai):
     seen = []
     out = _detail(_service(dictionary=_definition("verse"), seam=lambda *a: seen.append(a) or "thơ"), "poetry", EN, "en")
     assert seen == [("poetry", EN, ["verse"], "en", "vi")] and out["contextMeaning"] == "thơ"
+
+
+def test_the_seam_answer_is_a_dictionary_sense_in_the_support_language(no_ai):
+    out = _detail(_service(seam=lambda *a: "thơ"), "poetry", EN, "en")
+    assert out["contextMeaning"] == "thơ" and out["meaningSource"] == "dictionary" and out["meaningLanguage"] == "vi"
+
+
+def test_a_slow_seam_never_holds_the_tap_and_is_a_miss(no_ai):
+    import time
+
+    service = ReadingLookupService(
+        None, _definition("verse"), ReadingTranslationService(_Paid(), cache=DerivedCache()),
+        budget_seconds=0.3, word_translation=lambda *a: time.sleep(2) or "thơ",
+    )
+    started = time.perf_counter()
+    out = _detail(service, "poetry", EN, "en")
+    assert time.perf_counter() - started < 1.2
+    assert out["contextMeaning"] == "verse" and out["available"]
+
+
+def test_the_machine_translation_guard_refuses_an_ai_engine():
+    from writing_coach.reading_lookup import _safe_machine_translation
+
+    assert _safe_machine_translation(ReadingTranslationService(_Paid(), cache=DerivedCache()), "en", "vi", "poetry") is None
+    assert _Paid.calls == 0
 
 
 def test_a_failing_seam_is_a_miss_and_the_dictionary_sense_stands(no_ai):

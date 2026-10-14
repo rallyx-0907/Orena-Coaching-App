@@ -1,16 +1,18 @@
 """Non-LLM word/phrase lookup for Reading.
 
-A learner tapping a word wants a fast, deterministic answer: the shared local
-tagger, then the shared vocabulary catalog, then a dictionary (English: a
-monolingual API; Chinese: the vendored CC-CEDICT pack), then - only as a last
-resort - the reading-specific machine
-translation engine. None of these are a language model; Explain
+A learner tapping a word wants a fast, deterministic answer. The real order is:
+the shared local tagger (class, reading), the vocabulary catalogue, the
+dictionary senses (English: a monolingual API; Chinese: the vendored CC-CEDICT
+pack), the local machine translation (only if the Reading engine is the free
+local one), the `word_translation` seam (nothing wired yet; bounded by the tap
+budget), and finally "unavailable". None of these is a language model today; Explain
 (`POST /api/dictionary/contextual`) is the only AI surface a selection can
 reach, and it is a separate, explicit request.
 """
 
 from __future__ import annotations
 
+import logging
 import re
 import threading
 import time
@@ -31,6 +33,7 @@ from writing_coach.reading_translation import (
 )
 from writing_coach.vocabulary_library import normalize_vocabulary_word
 
+_log = logging.getLogger("orena.lookup")
 _MAX_DICTIONARY_DEFINITIONS = 3
 _HAN = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 _LATIN = re.compile(r"[A-Za-zÀ-ɏ]")
@@ -47,6 +50,7 @@ _MT_CALL_TIMEOUT = 1.5
 _MT_SLOTS = 4
 _MT_FAILURE_SECONDS = 60.0
 _translation_pool = ThreadPoolExecutor(max_workers=_MT_SLOTS, thread_name_prefix="lookup-mt")
+_seam_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="lookup-seam")
 _mt_slots = threading.BoundedSemaphore(_MT_SLOTS)
 _mt_lock = threading.Lock()
 _mt_inflight: dict[tuple[str, str, str], Future] = {}
@@ -192,6 +196,8 @@ def _safe_find_entry(
     except VocabularyContentUnavailable:
         return None
     except Exception:  # noqa: BLE001
+        # Layer and language only: never the learner's word or sentence.
+        _log.warning("lookup layer=catalogue failed language=%s; treated as a miss", language, exc_info=True)
         return None
 
 
@@ -336,6 +342,7 @@ class ReadingLookupService:
         try:
             local = _local_token_facts(source, context if source == surrounding else selection, selection)
         except Exception:  # noqa: BLE001 - the tagger is an aid; the dictionary layers below do not depend on it
+            _log.warning("lookup layer=tagger failed language=%s; treated as a miss", source, exc_info=True)
             local = {"part_of_speech": "", "pronunciation": "", "base_form": "", "lemma": ""}
         part_of_speech = local["part_of_speech"]
         pronunciation = local["pronunciation"]
@@ -417,10 +424,19 @@ class ReadingLookupService:
         if not meanings and target != source and self._word_translation is not None:
             # The seam for the future `word_translation` capability (shared AI Cost Router). Defaults to none: today
             # a basic tap ends with the dictionary's own definition, or "unavailable" when every layer missed.
+            seamed = None
+            remaining = max(
+                _MIN_TRANSLATION_WAIT, (self._budget if self._budget is not None else TAP_BUDGET_SECONDS) - (time.monotonic() - started)
+            )
             try:
-                seamed = self._word_translation(selection, context, [item.definition for item in definitions], source, target)
+                # Bounded by what is left of the tap budget: an overrun is a miss and never holds the tap.
+                seamed = _seam_pool.submit(
+                    self._word_translation, selection, context, [item.definition for item in definitions], source, target
+                ).result(timeout=remaining)
+            except FutureTimeout:
+                _log.warning("lookup layer=word_translation timed out source=%s target=%s; treated as a miss", source, target)
             except Exception:  # noqa: BLE001 - a failing fallback is a miss, never a blank sheet
-                seamed = None
+                _log.warning("lookup layer=word_translation failed source=%s target=%s; treated as a miss", source, target, exc_info=True)
             if seamed and str(seamed).strip():
                 meanings.append(LookupMeaning(str(seamed).strip(), "word_translation"))
 
