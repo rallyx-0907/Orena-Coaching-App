@@ -51,22 +51,32 @@ export function loadHighlights(storage, owner, contentId) {
   return Array.isArray(list) ? list.filter((item) => item && typeof item.segment === 'string' && typeof item.sentence === 'string') : [];
 }
 
-export function isHighlighted(list, segment, sentence) {
-  const key = highlightKey(segment, sentence);
-  return list.some((item) => highlightKey(item.segment, item.sentence) === key);
+/* `legacy` ([{ segment, sentence }]): the keys this sentence had before D-201 changed the sentence cut
+   (reader/legacy-sentences.js). A highlight saved under one still counts; new ones are written under the new key. */
+function keysOf(segment, sentence, legacy) {
+  const keys = [highlightKey(segment, sentence)];
+  for (const old of Array.isArray(legacy) ? legacy : []) {
+    for (const key of [highlightKey(old.segment, old.sentence), highlightKey(old.segment, sentence)]) if (!keys.includes(key)) keys.push(key);
+  }
+  return keys;
+}
+
+export function isHighlighted(list, segment, sentence, legacy = []) {
+  const keys = keysOf(segment, sentence, legacy);
+  return list.some((item) => keys.includes(highlightKey(item.segment, item.sentence)));
 }
 
 /* Highlight the sentence, or take the highlight off. Returns { on, list } - the sentence's new
    state and the text's whole list after the change. */
-export function toggleHighlight(storage, owner, contentId, { segment, sentence }) {
+export function toggleHighlight(storage, owner, contentId, { segment, sentence, legacy = [] }) {
   const store = readStore(storage, owner);
   const list = loadHighlights(storage, owner, contentId);
   const text = squash(sentence);
   if (!text || !contentId) return { on: false, list };
-  const key = highlightKey(segment, text);
-  const exists = list.some((item) => highlightKey(item.segment, item.sentence) === key);
+  const keys = keysOf(segment, text, legacy);
+  const exists = list.some((item) => keys.includes(highlightKey(item.segment, item.sentence)));
   const next = exists
-    ? list.filter((item) => highlightKey(item.segment, item.sentence) !== key)
+    ? list.filter((item) => !keys.includes(highlightKey(item.segment, item.sentence)))
     : [...list, { id: `${Date.now()}:${Math.random().toString(36).slice(2, 8)}`, segment: String(segment || ''), sentence: text.slice(0, MAX_SENTENCE_CHARS), at: new Date().toISOString() }].slice(-MAX_PER_TEXT);
   // Oldest texts fall off first so one device never grows without bound.
   const rest = Object.entries(store).filter(([id]) => id !== contentId);

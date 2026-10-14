@@ -6636,3 +6636,27 @@ on a new word missed its budget (no gloss); the call finished in the background 
     are per worker process, so the fleet ceiling is 1500 x workers a day and each worker repeats an article once. The
     router cache is an in-process LRU of 4096 entries and is lost on restart: a large prefetch can evict answers a learner
     tapped. A shared or persistent cache is a later router slice, not this decision.
+
+## D-201 - Reader sentence cut: numbers and abbreviations; old notes read through the old cut (2026-10-14)
+
+Status: proposed. Reviewer: independent review of PR #185 (its splitter half moved here).
+
+1. **The bug.** The Reader cut a paragraph at every full stop, so "USD 4.77 billion" rendered as two sentence spans
+   ("USD 4." and "77 billion"). `product/reader-text.js#sentenceSpans` now ends a sentence at a dot only when whitespace
+   follows it and it is not part of an abbreviation (rules in the code comment: titles, dotted abbreviations such as
+   U.S./e.g./a.m., initials followed by a name, "No. 5", ellipsis before a lowercase word). "I." and a single capital
+   before a common sentence starter ("Plan B. Next.") end a sentence; a domain or file name ("nasa.gov.") ends one.
+   `!`, `?`, `。`, `！`, `？` and newlines always end one. English-only heuristics; Chinese is cut at its own marks, and a
+   full-width decimal point (`．`) is not a terminator.
+2. **Stored learner data is not touched.** Notes are keyed `kind:content:p{pi}s{si}:text` and highlights `segment|text`, so a
+   changed cut would orphan items saved under the old one. Nothing is migrated or rewritten (learner data, owner gate).
+   Instead `screens/reader/legacy-sentences.js#legacyAliases` computes the old cut (`legacySentenceSpans`, frozen) and maps
+   each old sentence onto the one new sentence that contains it. The Reader, the sentence sheet and the completion count
+   read a sentence's notes and highlights under its own key and under those old keys (a note once, by id), so an existing
+   item still shows on the right sentence. New notes and highlights are written under the new key only; edit and delete
+   act on the key where the note is stored; toggling a highlight off removes a legacy one too. A highlight saved on an old
+   half-sentence now marks the whole new sentence. Account sync is unchanged (it carries keys as stored).
+3. **Known limits.** Heuristics undersplit rather than oversplit ("the U.S. Army said" stays whole; "the U.S. The" splits),
+   and an uncommon abbreviation followed by a capital ends a sentence. The server's English splitter (`EN_SENTENCE_END`) needs
+   whitespace after the dot already and only feeds statistics; it is unchanged. The aliases drop out when the old and new
+   cut agree, so a text that never had a false break has no extra lookups.

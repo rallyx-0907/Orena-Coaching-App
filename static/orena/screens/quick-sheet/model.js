@@ -231,6 +231,38 @@ export function noteKeyFor(sentence, source) {
   return `${kind}:${contentId}:${segment}:${text(sentence).slice(0, 200).toLowerCase()}`;
 }
 
+/* Every key a sentence's notes may be under: its own, then the ones the sentence had before D-201 changed
+   how a paragraph is cut into sentences (`source.legacy`: [{ segment, sentence }], reader/legacy-sentences.js).
+   Reading looks under all of them; writing uses the first only. */
+export function noteKeysFor(sentence, source) {
+  const own = noteKeyFor(sentence, source);
+  const keys = [own];
+  for (const old of Array.isArray(source?.legacy) ? source.legacy : []) {
+    const key = noteKeyFor(old.sentence, { ...source, segment: old.segment });
+    if (!keys.includes(key)) keys.push(key);
+  }
+  return keys;
+}
+
+/* The notes under any of these keys, each note once (by id). */
+export function loadNotesAcross(storage, owner, keys) {
+  const seen = new Set();
+  const out = [];
+  for (const key of keys) {
+    for (const note of loadNotes(storage, owner, key)) {
+      if (seen.has(note?.id)) continue;
+      seen.add(note?.id);
+      out.push(note);
+    }
+  }
+  return out;
+}
+
+/* The key (among these) that holds the note, so an edit or a delete lands where the note is stored. */
+export function noteKeyHolding(storage, owner, keys, id) {
+  return keys.find((key) => loadNotes(storage, owner, key).some((note) => note.id === id)) || keys[0];
+}
+
 function storageKey(owner) {
   return `orena.quicksheet.notes.v1:${encodeURIComponent(text(owner) || 'local')}`;
 }

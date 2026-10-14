@@ -102,12 +102,76 @@ export function sentenceSpans(text) {
   const spans = [];
   let start = 0;
   for (const match of text.matchAll(SENTENCE_END)) {
+    if (!endsSentence(text, match)) continue;
     const end = match.index + match[0].length;
     if (end > start) spans.push({ start, end });
     start = end;
   }
   if (start < text.length) spans.push({ start, end: text.length });
   return spans;
+}
+
+/* The splitter before D-201: every full stop ended a sentence, so "USD 4.77 billion" was cut in two. Saved
+   notes and highlights are keyed by sentence index and sentence text, so a note made under that segmentation
+   is still read through it (screens/reader/legacy-sentences.js). Frozen: it is never used to write. */
+export function legacySentenceSpans(text) {
+  const spans = [];
+  let start = 0;
+  for (const match of text.matchAll(SENTENCE_END)) {
+    const end = match.index + match[0].length;
+    if (end > start) spans.push({ start, end });
+    start = end;
+  }
+  if (start < text.length) spans.push({ start, end: text.length });
+  return spans;
+}
+
+/* A full stop is not always a sentence end: the "." inside "4.77", "U.S.", "e.g." or "Mr." is part of
+   the word. Only a bare run of dots is ambiguous - "!", "?", "。", "！", "？" and a newline always end
+   a sentence. Rules, in order, for a dot followed by whitespace or the end:
+   - no whitespace after it ("4.77", "U.S", "a.b"): not an end;
+   - an ellipsis ends a sentence unless a lowercase word follows;
+   - a domain or file name ("nasa.gov", "report.pdf"): an end;
+   - a dotted abbreviation ("U.S.", "a.m.", "e.g."): "e.g." / "i.e." never end; the others end only before
+     a word that plainly starts a sentence ("The", "He", ...), or the end of the text; a.m./p.m. before any capital;
+   - a title ("Mr.", "Dr.", "St."): never an end; "etc.", "Inc.", month names: an end before a capital;
+   - a single capital letter: "I." always ends; any other is an initial ("J. Smith") only when a name
+     follows - a capitalised word that is not a common sentence starter ("Plan B. Next." ends);
+   - "No." / "Vol." / "Fig." before a digit: not an end. */
+const HARD_ABBREVIATIONS = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'prof', 'sr', 'jr', 'st', 'mt', 'vs', 'cf', 'gen', 'col', 'lt', 'sgt', 'capt', 'rep', 'sen', 'gov', 'rev', 'hon']);
+const SOFT_ABBREVIATIONS = new Set(['etc', 'inc', 'ltd', 'co', 'corp', 'approx', 'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'sept', 'oct', 'nov', 'dec']);
+const NUMBERED = new Set(['no', 'nos', 'vol', 'fig', 'p', 'pp', 'ch', 'art', 'sec']);
+const STARTERS = new Set(['The', 'A', 'An', 'This', 'That', 'These', 'Those', 'It', 'Its', 'He', 'She', 'They', 'We', 'You', 'I', 'There', 'Here', 'Then', 'Next', 'Also', 'And', 'But', 'So', 'Or', 'If', 'When', 'While', 'After', 'Before', 'In', 'On', 'At', 'For', 'As', 'By', 'With', 'From', 'Once', 'Now', 'However', 'Still', 'Yet', 'Not', 'No', 'Yes', 'What', 'Why', 'How', 'Who', 'Where', 'One', 'Some', 'Many', 'Most', 'All', 'Each', 'His', 'Her', 'Their', 'Our', 'My', 'Your']);
+const TERMINATORS = /^[.!?…。！？]+/u;
+const DOMAIN = /^[\p{L}\d-]+(\.[\p{L}\d-]+)*\.\p{Ll}{2,}$/u;
+
+function endsSentence(text, match) {
+  const lead = match[0];
+  if (lead.startsWith(String.fromCharCode(10))) return true;
+  const core = TERMINATORS.exec(lead)[0];
+  if (/[!?。！？]/u.test(core)) return true;
+  const after = match.index + lead.length;
+  if (after < text.length && !/\s$/u.test(lead)) return false; // "4.77", "U.S.", "a.b": no space after the dot
+  const nextWord = /^\s*([\p{L}\p{N}]+)/u.exec(text.slice(after))?.[1] ?? '';
+  const next = nextWord[0] ?? '';
+  if (core.length > 1 || core === '…') return !/\p{Ll}/u.test(next); // an ellipsis before a lowercase word goes on
+  const word = /([\p{L}\d][\p{L}\d.-]*)$/u.exec(text.slice(0, match.index))?.[1] ?? '';
+  if (!word) return true;
+  const lower = word.toLowerCase();
+  if (word.includes('.')) {
+    if (DOMAIN.test(word)) return true; // "nasa.gov. Next", "report.pdf. Then"
+    if (['e.g', 'i.e', 'c.f'].includes(lower)) return false;
+    if (['a.m', 'p.m'].includes(lower)) return !next || /\p{Lu}/u.test(next);
+    return !next || STARTERS.has(nextWord); // "the U.S. The ..." ends; "the U.S. Army" does not
+  }
+  if (/^\p{Lu}$/u.test(word)) {
+    if (word === 'I') return true;
+    return !(/^\p{Lu}\p{Ll}+$/u.test(nextWord) && !STARTERS.has(nextWord)); // "J. Smith" is an initial
+  }
+  if (HARD_ABBREVIATIONS.has(lower)) return false;
+  if (SOFT_ABBREVIATIONS.has(lower)) return !next || /\p{Lu}/u.test(next);
+  if (NUMBERED.has(lower) && /\d/u.test(next)) return false; // "No. 5"
+  return true;
 }
 
 // The sentence a selection sits in, so a meaning is asked about its own use.
