@@ -186,7 +186,7 @@ def configure_platform(
     monkeypatch.setattr(
         platform_module,
         "AIControlPlane",
-        lambda repo: AIControlPlane(repo, provider_factory=lambda: runtime_providers),
+        lambda repo, **_kw: AIControlPlane(repo, provider_factory=lambda: runtime_providers),
     )
     monkeypatch.setattr(platform_module, "providers", lambda: runtime_providers)
     return Request({"type": "http", "method": "GET", "path": "/", "headers": []})
@@ -1271,3 +1271,46 @@ def test_legacy_endpoints_redact_models_and_provider_errors_without_changing_sto
     assert "raw-body" not in str(caught.value.detail)
     assert len(repository.legacy_writes) == legacy_write_count
     assert repository.capability_writes == []
+
+
+def test_route_test_uses_credentials_saved_in_the_encrypted_store(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A provider configured only through the D-037 store (no environment)
+    must pass the route test, primary and standby, like the runtime."""
+    from cryptography.fernet import Fernet
+
+    from writing_coach.ai.credentials import MASTER_KEY_ENV, encrypt_credentials
+
+    monkeypatch.setenv(MASTER_KEY_ENV, Fernet.generate_key().decode("ascii"))
+    models = ("google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free")
+    repository = FakeRepository()
+    envelopes = {"openrouter": encrypt_credentials("openrouter", {"api_key": "stored-" + "x" * 12})}
+    repository.get_provider_credential = lambda provider_id: envelopes.get(provider_id)  # type: ignore[attr-defined]
+    repository.capabilities["word_translation"] = capability_config(
+        provider="openrouter",
+        model=models[0],
+        backup_provider="openrouter",
+        backup_model=models[1],
+        fallback_policy="none",
+    )
+    seen: list[dict[str, Any]] = []
+    fake = FakeProvider(id="openrouter", models=models, response={"ok": True, "capability": "word_translation"})
+
+    def env_blind_build(stored: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+        seen.append(dict(stored or {}))
+        # Environment alone configures nothing: only a stored credential does.
+        fake.configured = bool(stored and stored.get("openrouter", {}).get("api_key"))
+        return {"openrouter": fake}
+
+    monkeypatch.setattr(platform_module, "_platform_repository", repository)
+    monkeypatch.setattr(platform_module, "build_providers", env_blind_build)
+    monkeypatch.setattr(platform_module, "_admin_guard", lambda _r: {"google_sub": "admin-1", "role": "admin"})
+    request = Request({"type": "http", "method": "POST", "path": "/", "headers": []})
+
+    primary = platform_module.admin_ai_capability_test("word_translation", request)
+    standby = platform_module.admin_ai_capability_test("word_translation", request, standby=True)
+
+    assert primary["ok"] is True and standby["ok"] is True
+    assert standby["model"] == models[1]
+    assert all("openrouter" in call for call in seen)

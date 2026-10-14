@@ -145,6 +145,17 @@ export function modelChoices(provider, selected, catalogState) {
   return { models, loading: false };
 }
 
+/* The model a standby starts on when its provider is picked: the provider's default, else its first. On
+   the primary's own provider it prefers a different model, so the standby is not a copy of the primary
+   and the operator sees the other models are choices. */
+export function standbyStartModel(provider, primary = {}) {
+  if (!provider) return '';
+  const models = provider.models || [];
+  const start = models.includes(provider.default_model) ? provider.default_model : models[0] || '';
+  if (provider.id !== primary.provider || start !== primary.model) return start;
+  return models.find((id) => id !== primary.model) || start;
+}
+
 /* A standby on the primary's own provider is not a fallback. */
 export function standbySameProvider(draft) {
   return Boolean(draft.provider && draft.backup_provider && draft.provider === draft.backup_provider);

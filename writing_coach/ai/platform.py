@@ -148,6 +148,13 @@ def providers() -> dict[str, Any]:
     return build_providers(stored)
 
 
+def _control_plane() -> AIControlPlane:
+    """The control plane every admin route uses: providers come from the
+    credential-aware `providers()` (environment plus the D-037 encrypted
+    store), exactly as the runtime builds them."""
+    return AIControlPlane(_installed_platform_repository(), provider_factory=providers)
+
+
 _PROVIDER_CONFIG_META: dict[str, dict[str, str | None]] = {
     'azure-openai': {'endpoint_env': 'AZURE_OPENAI_BASE_URL', 'credential_env': 'AZURE_OPENAI_API_KEY', 'model_env': None, 'models_env': 'AZURE_OPENAI_DEPLOYMENTS'},
     'azure-speech': {'endpoint_env': 'AZURE_SPEECH_REGION', 'credential_env': 'AZURE_SPEECH_KEY', 'model_env': None, 'models_env': None},
@@ -755,7 +762,7 @@ def _legacy_config_payload() -> dict[str, Any]:
 @router.get("/config")
 def admin_ai_config(request: Request) -> dict[str, Any]:
     _require_admin(request)
-    result = AIControlPlane(_installed_platform_repository()).inspect()
+    result = _control_plane().inspect()
     mode = runtime_mode()
     result["learner_runtime"] = {"mode": mode.value}
     result["policy"]["learner_runtime_uses_capability_config"] = mode is AIRuntimeMode.CAPABILITY
@@ -1035,7 +1042,7 @@ def admin_ai_provider_credential_delete(
 @router.get("/operations")
 def admin_ai_operations(request: Request, limit: int = 100) -> dict[str, Any]:
     _require_admin(request)
-    return AIControlPlane(_installed_platform_repository()).operations(limit=limit)
+    return _control_plane().operations(limit=limit)
 
 
 # Audio capabilities are reported per minute of audio; every other one per call.
@@ -1247,7 +1254,7 @@ def admin_ai_capability_config_update(
 ) -> dict[str, Any]:
     admin = _require_admin(request)
     try:
-        result = AIControlPlane(_installed_platform_repository()).set_config(
+        result = _control_plane().set_config(
             capability_key,
             _capability_config(payload),
             updated_by=str(admin.get("google_sub") or ""),
@@ -1335,7 +1342,7 @@ def admin_ai_capability_test(
     standby: bool = False,
 ) -> dict[str, Any]:
     admin = _require_admin(request)
-    control_plane = AIControlPlane(_installed_platform_repository())
+    control_plane = _control_plane()
     entity_id = safe_capability_display(capability_key)
     try:
         result = control_plane.live_test(capability_key, standby=standby)

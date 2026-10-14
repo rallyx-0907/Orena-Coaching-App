@@ -363,7 +363,9 @@ def _ai_facts() -> dict[str, Any]:
     inspected: dict[str, Any] = {"capabilities": [], "providers": []}
     operations: dict[str, Any] = {"available": False, "by_capability": [], "recent": []}
     if repository is not None:
-        plane = AIControlPlane(repository)
+        from writing_coach.ai.platform import providers as _store_providers
+
+        plane = AIControlPlane(repository, provider_factory=_store_providers)
         try:
             inspected = plane.inspect()
         except Exception:  # noqa: BLE001

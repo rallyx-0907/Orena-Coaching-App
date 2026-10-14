@@ -198,6 +198,10 @@ assert.equal(shared.providerStatus(providers[1], { state: 'ok' }), 'healthy');
 assert.equal(shared.providerStatus(providers[1], { state: 'failed' }), 'failed');
 assert.equal(shared.providerStatus(providers[3], { state: 'ok' }), 'not_configured', 'no key, no health');
 
+assert.equal(shared.standbyStartModel({ id: 'p', models: ['a', 'b', 'c'], default_model: 'a' }, { provider: 'p', model: 'a' }), 'b', 'a same-provider standby starts on a different model');
+assert.equal(shared.standbyStartModel({ id: 'q', models: ['a', 'b'], default_model: 'a' }, { provider: 'p', model: 'a' }), 'a', 'another provider keeps its default');
+assert.equal(shared.standbyStartModel({ id: 'p', models: ['a'], default_model: 'a' }, { provider: 'p', model: 'a' }), 'a', 'a single-model provider has nothing else to offer');
+
 const body = shared.routeBody(capabilities[0], { enabled: true, provider: 'groq', model: 'llama-x', backup_provider: '', backup_model: '' });
 assert.equal(body.backup_provider, null);
 assert.equal(body.timeout_seconds, 30, 'a route edit keeps the tuning it does not edit');
@@ -293,6 +297,11 @@ for (const ui of ['en', 'vi', 'zh']) {
     pages.capabilityPage({ ...common, view: { id: 'learner_dictionary', draft, error: '', busy: false } }),
     pages.capabilityPage({ ...common, view: { id: 'learner_dictionary', draft: { ...draft, backup_provider: 'openai', model: 'gpt-y' }, error: '', busy: false } }),
   ];
+  /* The standby seg offers every model of its provider, also when it is the primary's own provider. */
+  const free = { ...providers[1], models: ['v/a:free', 'v/b:free', 'v/c:free'], default_model: 'v/a:free' };
+  const sameProvider = pages.capabilityPage({ ...common, state: { ...live, providers: [free, ...providers.filter((p) => p.id !== free.id)] }, view: { id: 'learner_dictionary', draft: { ...draft, provider: free.id, model: 'v/a:free', backup_provider: free.id, backup_model: 'v/b:free' }, error: '', busy: false } });
+  const standbyValues = [...String(sameProvider.markup).matchAll(/data-field="backup_model" data-value="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(standbyValues, free.models, `${ui}: the standby offers every model of its provider`);
   const dialog = pages.removeDialog({ state: live, providerId: 'openai', typed: 'Open', t });
   drawn.push({ markup: dialogs.dialog(dialog) });
   for (const [index, page] of drawn.entries()) {
