@@ -213,7 +213,8 @@ Companion endpoints:
 - **Lookup order.** Catalogue → CC-CEDICT and dictionaryapi → `route("word_translation", deadline = what remains of the tap
   budget)`.
   - If the deadline passes, the call still finishes and fills the cache.
-  - `meaningSource` stays `machine_translation`, so the response contract and the UI do not change.
+  - The lookup tags the meaning `word_translation`, and word-detail now keeps that label (D-200); the UI does not read it.
+  - D-200 (proposed): the same capability is asked ahead, word only, when a Reading article opens, on its own budget.
 - **Brake.** Cache-miss calls are limited per account. Over the limit, the learner gets the deterministic answer, never a 429.
 - **Pool.** Set through the existing A5 or the API, never in code:
   - primary: `openrouter / google/gemma-4-31b-it:free`

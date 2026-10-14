@@ -65,6 +65,12 @@ def reset_state() -> None:
     _config_held.clear()
 
 
+def count_event(capability_key: str, counter: str, amount: int | float = 1) -> None:
+    """Add to a rollup counter of a capability (counts only; the translate-ahead prefetch uses it, D-199)."""
+
+    _stats.count(capability_key, counter, amount)
+
+
 def flush_rollup(*, force: bool = False) -> int:
     recorder = getattr(platform._platform_repository, "record_admin_event", None)
     return _stats.flush(recorder if callable(recorder) else None, force=force)

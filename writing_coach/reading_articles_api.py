@@ -47,6 +47,7 @@ LEARNER_CACHE_CONTROL = "public, max-age=60, stale-while-revalidate=600"
 _repository: ReadingContentRepository | None = None
 _language_supported: Callable[[str], bool] | None = None
 _asset_store: BookAssetStore | None = None
+_on_open: Callable[[dict[str, Any]], None] | None = None
 
 
 def configure_reading_articles(
@@ -54,11 +55,16 @@ def configure_reading_articles(
     *,
     language_supported: Callable[[str], bool] | None = None,
     asset_store: BookAssetStore | None = None,
+    on_open: Callable[[dict[str, Any]], None] | None = None,
 ) -> None:
-    global _repository, _language_supported, _asset_store
+    """`on_open` is told about each published article a learner opens (D-199: translate its words ahead). It must only
+    enqueue; whatever it raises is swallowed here and never reaches the response."""
+
+    global _repository, _language_supported, _asset_store, _on_open
     _repository = repository
     _language_supported = language_supported
     _asset_store = asset_store
+    _on_open = on_open
 
 
 def _require_repository() -> ReadingContentRepository:
@@ -132,6 +138,11 @@ def read_article(request: Request, response: Response, article_id: str) -> Any:
     etag = f'W/"reading-{article["id"]}-{article["content_revision"]}-{"i" if article.get("image") else "n"}"'
     response.headers["ETag"] = etag
     response.headers["Cache-Control"] = LEARNER_CACHE_CONTROL
+    if _on_open is not None:  # a revalidation (304) is an open too; the hook only enqueues and never blocks
+        try:
+            _on_open(article)
+        except Exception:  # noqa: BLE001 - opening an article never depends on a background aid
+            _logger.warning("reading articles: on_open hook failed", exc_info=True)
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=dict(response.headers))
     return article

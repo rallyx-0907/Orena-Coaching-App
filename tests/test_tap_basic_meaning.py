@@ -116,7 +116,7 @@ def test_the_seam_receives_the_word_sentence_senses_and_languages(no_ai):
 
 def test_the_seam_answer_is_a_dictionary_sense_in_the_support_language(no_ai):
     out = _detail(_service(seam=lambda *a: "thơ"), "poetry", EN, "en")
-    assert out["contextMeaning"] == "thơ" and out["meaningSource"] == "dictionary" and out["meaningLanguage"] == "vi"
+    assert out["contextMeaning"] == "thơ" and out["meaningSource"] == "word_translation" and out["meaningLanguage"] == "vi"
 
 
 def test_a_slow_seam_never_holds_the_tap_and_is_a_miss(no_ai):
