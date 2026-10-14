@@ -407,3 +407,84 @@ recheck topology → tạo/review 0033 → promote 0027 → 0031 → 0032 → 00
 Sau migration gate đạt mới triển khai code PR-MON-5 theo design.
 Chưa bật CREDITS_ENABLED, chưa apply production DB và chưa chạy R-MON-014 production.
 
+---
+
+# Migration gate review of `f81f03227c066a068ac1ded3f998ab05b3cf8d51`
+
+Recorded verbatim from the reviewer's verdict (relayed by the human, 2026-10-14).
+
+## VERDICT
+
+**REQUEST FIX — 0033 only**
+
+Do not reopen the approved PR-MON-5 architecture.
+
+Do not start feature implementation yet.
+
+### Blocker
+
+`20261015_0033_credit_topup_orders.py` implements the structural parts of exact-match fulfillment, but its database predicates omit the approved `request_digest` identity.
+
+The approved design requires digest to be part of both:
+
+- exact top-up fulfillment;
+- exact reversal request / complete reversal fulfillment.
+
+Fix:
+
+1. `_EXACT_TOPUP` must reject a ledger top-up whose structural fields match but whose `request_digest` does not match the expected billing-order top-up intent.
+
+2. `_COMPLETE_REVERSAL` must reject a reversal request whose structural fields match but whose `request_digest` does not match the expected reversal intent.
+
+3. Add PostgreSQL tests proving:
+   - correct source/account/amount with wrong top-up digest is not fulfilled;
+   - correct account/topup/source/requested with wrong reversal digest is not complete;
+   - `credit_applied` cannot resolve from the wrong-digest top-up;
+   - `credit_reversed` cannot resolve from the wrong-digest reversal request.
+
+4. Add mutations for both digest predicates.
+
+5. Re-run:
+   - focused 0033 PostgreSQL tests;
+   - 0033 mutation suite;
+   - Alembic `upgrade head → downgrade 0026 → upgrade head` rehearsal.
+
+Also update the stale BILLING_STATUS blocker text: 0027/0031/0032/0033 are now promoted on the lane branch but unapplied to runtimes, not “proposed”.
+
+Do not:
+- apply any migration to a runtime;
+- enable credits;
+- run R-MON-014;
+- merge to main.
+
+Return the new commit for a focused 0033 re-check. If this closes, feature implementation may begin immediately.
+
+## Fix response (implementer, 2026-10-14)
+
+The fix is in `1adaf137`, and it touches 0033 only.
+
+- **The digest is recomputed in SQL.** `_digest_sql()` rebuilds the repository's digest
+  (`credit_repository.digest`) in the database: sha256 over the canonical JSON of the intent, with sorted keys,
+  every value as a string, and no spaces. Every value is ASCII (UUIDs, integers, `payos:<code>`), so the JSON needs
+  no escaping.
+- **`_EXACT_TOPUP`** now also requires `l.request_digest` to equal the digest of (`kind = topup`, `account` = the
+  order's incarnation, `amount` = `credit_units`, `source_type = billing_order`, `source_ref = payos:<code>`).
+- **`_COMPLETE_REVERSAL`** now also requires `r.request_digest` to equal the digest of (`kind = reversal`, `account`,
+  `topup`, `requested` = `credit_units`, `source_type = payos_refund`, `source_ref`).
+- **Tests on a throwaway PostgreSQL 16:**
+  - A top-up with the right source, account and units but a wrong digest is not the exact top-up: `credit_applied`
+    is refused.
+  - With the repository's digest, the database recomputes the same value and `credit_applied` resolves. This proves
+    the Python and SQL digests agree.
+  - A reversal request with the right account, top-up, source and requested amount, applied in full with its entry
+    but carrying a wrong digest, is not complete: `credit_reversed` is refused.
+  - The two incomplete-reversal tests now carry the exact digest, so only their missing part fails them.
+- **Results:**
+  - The 0033 suite: 13 passed, including the Alembic rehearsal `upgrade head` → `downgrade 20261005_0026` →
+    `upgrade head`.
+  - Mutants: 10/10 caught. The two new ones are each caught by their own test:
+    - `topup_digest_predicate` by `test_a_topup_with_the_wrong_digest_is_not_the_exact_topup`;
+    - `reversal_digest_predicate` by `test_a_reversal_request_with_the_wrong_digest_is_not_complete`.
+- **Status:** `BILLING_STATUS.md` now says the four revisions are promoted on the lane branch and unapplied to
+  runtimes.
+
