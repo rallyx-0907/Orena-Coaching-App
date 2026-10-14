@@ -191,6 +191,25 @@ export function segmentSentence(text, tokens, { saved = new Set() } = {}) {
   return pieces;
 }
 
+/* CJK line breaking (kinsoku). In running text the browser keeps closing punctuation off the start of a line
+   and opening punctuation off the end of one (CSS `line-break: strict`). With pinyin on, every character is
+   its own atomic column, and a break is allowed between any two atomic boxes, so the rule has to be drawn
+   into the markup: a closing mark is joined to the character before it and an opening mark to the one after. */
+const CLOSING_PUNCT = new Set(Array.from('，。、；：？！．）］｝】〕〗〙〛」』》〉”’)]},.;:?!%'));
+const OPENING_PUNCT = new Set(Array.from('（［｛【〔〖〘〚「『《〈“‘([{'));
+
+export function kinsoku(ch) {
+  if (CLOSING_PUNCT.has(ch)) return 'close';
+  if (OPENING_PUNCT.has(ch)) return 'open';
+  return '';
+}
+
+/* True when a line may break between two adjacent characters of a stacked Chinese text: never before a
+   closing mark, never after an opening one. The renderer places a no-break joiner exactly where this says no. */
+export function mayBreakBetween(prev, next) {
+  return kinsoku(next) !== 'close' && kinsoku(prev) !== 'open';
+}
+
 /* Pinyin above each Hanzi (frame 14's `hc.p`/`hc.h` stack): one syllable per character when the
    tagger's reading has as many syllables as the word has characters; otherwise the whole reading
    sits above the word's first character rather than being split by a guess. Nothing for a word

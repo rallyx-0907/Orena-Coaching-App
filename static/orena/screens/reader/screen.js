@@ -46,6 +46,7 @@ import {
   sentencesOf,
   segmentId,
   segmentSentence,
+  kinsoku,
   ROLES,
   aidsCount,
   endOfContent,
@@ -426,9 +427,15 @@ export default async function mountReader(element, ctx) {
      character. With pinyin on, EVERY character of a Chinese text is such a column - punctuation and
      an unannotated run carry a blank reading - exactly as the frame builds them, so a line's
      characters share one baseline and one pitch. */
-  function pystackMarkup(hanzi, syllable, marked = false) {
+  const joinerMarkup = () => html`<span class="s-reader__nb" aria-hidden="true"></span>`;
+
+  /* `join` is false for a character inside a word's grid: a word never wraps apart, and a joiner there would
+     be one more grid column. The word's own edges are joined by pieceMarkup. */
+  function pystackMarkup(hanzi, syllable, marked = false, join = true) {
     // A highlight marks the character itself; the pinyin above it stays supporting information (LEX-013).
-    return html`<span class="s-reader__pystack"><span class="s-reader__py">${syllable || NBSP}</span><span class="${cls('s-reader__hz', marked && 's-reader__hl')}">${hanzi}</span></span>`;
+    const k = join ? kinsoku(hanzi) : '';
+    const joiner = joinerMarkup();
+    return html`${k === 'close' ? joiner : ''}<span class="s-reader__pystack"><span class="s-reader__py">${syllable || NBSP}</span><span class="${cls('s-reader__hz', marked && 's-reader__hl')}">${hanzi}</span></span>${k === 'open' ? joiner : ''}`;
   }
 
   const stacked = () => pinyinOn && isZh;
@@ -476,8 +483,8 @@ export default async function mountReader(element, ctx) {
     return html`${out}`;
   }
 
-  function stackMarked(hanzi, syllable, on) {
-    return pystackMarkup(hanzi, syllable, on);
+  function stackMarked(hanzi, syllable, on, join = true) {
+    return pystackMarkup(hanzi, syllable, on, join);
   }
 
   function pieceMarkup(piece, seg, start = 0, ranges = []) {
@@ -500,10 +507,14 @@ export default async function mountReader(element, ctx) {
       ? chars.map((c) => {
           const at = i;
           i += String(c.h).length;
-          return ranges.length ? stackMarked(c.h, c.p, inRanges(ranges, at)) : pystackMarkup(c.h, c.p);
+          return ranges.length ? stackMarked(c.h, c.p, inRanges(ranges, at), false) : pystackMarkup(c.h, c.p, false, false);
         })
       : markedText(piece.text, start, ranges);
-    return html`<span class="${cls('s-reader__w', isPicked && 'is-picked')}" data-w="${piece.text}"${raw(attrs)}>${inner}</span>`;
+    const first = Array.from(piece.text)[0];
+    const last = Array.from(piece.text).pop();
+    const lead = stacked() && kinsoku(first) === 'close' ? joinerMarkup() : '';
+    const trail = stacked() && kinsoku(last) === 'open' ? joinerMarkup() : '';
+    return html`${lead}<span class="${cls('s-reader__w', isPicked && 'is-picked')}" data-w="${piece.text}"${raw(attrs)}>${inner}</span>${trail}`;
   }
 
   function sentenceMarkup(s, numBySeg) {
