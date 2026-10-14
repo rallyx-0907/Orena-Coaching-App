@@ -93,10 +93,13 @@ class CheckoutIn(BaseModel):
     # server's price is - but a checkout whose confirmed price is not the server's does not start (D-MON-015).
     amount_minor: int | None = Field(default=None, gt=0)
     currency: str | None = Field(default=None, min_length=3, max_length=3)
+    # A credit pack's confirmed units (PR-MON-5): a checkout whose units are not the pack's does not start.
+    credit_units: int | None = Field(default=None, gt=0)
 
 
 # A refused checkout's HTTP answer; anything not named is a conflict with the account's state (409).
-_REFUSAL_STATUS = {"catalog_unavailable": 503, "price_unconfirmed": 422, "reconciliation_critical": 503}
+_REFUSAL_STATUS = {"catalog_unavailable": 503, "price_unconfirmed": 422, "reconciliation_critical": 503,
+                   "credits_not_ready": 503}
 
 
 class ResolveIn(BaseModel):
@@ -129,7 +132,9 @@ class RefundIn(BaseModel):
 @router.get("/api/billing/offers")
 def billing_offers() -> dict[str, Any]:
     ready = _service is not None and _billing_ready()
-    return {"enabled": _service is not None, "ready": ready, "offers": _service.offered() if ready else []}
+    return {"enabled": _service is not None, "ready": ready, "offers": _service.offered() if ready else [],
+            # PR-MON-5 (K5): credit packs, only while credits are ready and packs are configured
+            "credit_packs": _service.credit_offers() if ready else []}
 
 
 @router.post("/api/billing/checkout")
@@ -146,7 +151,8 @@ def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
         return service.start_checkout(incarnation_id=incarnation, price_key=payload.price, operation_id=payload.operation_id,
                                       return_url=f"{base}/#/profile", cancel_url=f"{base}/#/profile",
                                       confirmed_amount_minor=payload.amount_minor,
-                                      confirmed_currency=payload.currency)  # fmt: skip
+                                      confirmed_currency=payload.currency,
+                                      confirmed_credit_units=payload.credit_units)  # fmt: skip
     except LookupError:
         raise orena_http_error(404, "price_not_offered", "This price is not offered.", retryable=False) from None
     except CheckoutRefused as refused:

@@ -14,7 +14,7 @@ from urllib.parse import quote
 
 import pytest
 
-from tests.test_billing import ROOT, _proposed
+from tests.test_billing import BILLING_BASE, ROOT, _proposed
 
 URL = os.getenv("ORENA_TEST_POSTGRES_URL", "")
 pytestmark = pytest.mark.skipif(not URL, reason="ORENA_TEST_POSTGRES_URL is not set; PostgreSQL proof not run")
@@ -33,6 +33,11 @@ def _migrate(engine, names, direction="upgrade"):
 
 @pytest.fixture
 def ledger():
+    yield from ledger_world(MIGRATIONS)
+
+
+def ledger_world(migrations):
+    """A throwaway schema at head plus `migrations`, a runtime login role, and the credit service as that role."""
     pytest.importorskip("alembic")
     from alembic import command
     from alembic.config import Config
@@ -54,14 +59,22 @@ def ledger():
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
     cfg.set_main_option("path_separator", "os")
     cfg.set_main_option("sqlalchemy.url", f"{URL}{options}".replace("%", "%%"))
-    command.upgrade(cfg, "head")
+    command.upgrade(cfg, BILLING_BASE)
     owner = create_engine(f"{URL}{options}", future=True)
-    _migrate(owner, MIGRATIONS)
+    _migrate(owner, migrations)
     with owner.begin() as connection:
         connection.execute(text(f"CREATE ROLE {role} LOGIN PASSWORD '{password}' NOSUPERUSER NOBYPASSRLS"))
         connection.execute(text(f"GRANT orena_credit_runtime TO {role}"))
         # what the application's runtime role already holds outside the credit tables
-        connection.execute(text(f"GRANT SELECT, INSERT, UPDATE ON account_incarnations, users TO {role}"))
+        # what the application's runtime role holds outside the credit tables (RUNBOOK_R-MON-014 §2): DML without
+        # DELETE/TRUNCATE on every other table; the credit tables come only through orena_credit_runtime
+        names = connection.execute(text(
+            "SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename NOT IN "
+            "('credit_accounts', 'credit_ledger', 'credit_reversal_requests', 'alembic_version')")).scalars().all()
+        for name in names:
+            connection.execute(text(f'GRANT SELECT, INSERT, UPDATE ON "{name}" TO {role}'))
+        # the order code comes from a sequence (0027); the application runtime holds USAGE on its sequences (runbook §2)
+        connection.execute(text(f"GRANT USAGE, SELECT ON SEQUENCE billing_order_code_seq TO {role}"))
     runtime_url = make_url(f"{URL}{options}").set(username=role, password=password)
     runtime = create_engine(runtime_url, future=True, pool_size=12, max_overflow=4)
     repository = PostgresCreditRepository(runtime)
@@ -101,6 +114,7 @@ def ledger():
 
     world = type("Ledger", (), dict(
         owner=owner, runtime=runtime, admin=admin, schema=schema, role=role, repository=repository, service=service,
+        migrations=migrations,
         items=PostgresReconciliationRepository(runtime), account=staticmethod(account), funded=staticmethod(funded),
         delete=staticmethod(delete), balance=staticmethod(balance), sql=staticmethod(sql),
         text=staticmethod(text)))  # fmt: skip
@@ -156,7 +170,7 @@ def test_0032_goes_down_only_while_empty_and_restores_0031_exactly(ledger):
         cfg.set_main_option("script_location", str(ROOT / "migrations"))
         cfg.set_main_option("path_separator", "os")
         cfg.set_main_option("sqlalchemy.url", str(engine.url.render_as_string(hide_password=False)).replace("%", "%%"))
-        command.upgrade(cfg, "head")
+        command.upgrade(cfg, BILLING_BASE)
         _migrate(engine, MIGRATIONS[:2])
         before = (ledger.sql(guard, engine=engine, s=schema), ledger.sql(checks, engine=engine))
         _migrate(engine, (MIGRATIONS[2],))
@@ -637,7 +651,7 @@ def _head(engine):
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
     cfg.set_main_option("path_separator", "os")
     cfg.set_main_option("sqlalchemy.url", engine.url.render_as_string(hide_password=False).replace("%", "%%"))
-    command.upgrade(cfg, "head")
+    command.upgrade(cfg, BILLING_BASE)
 
 
 def test_p1_1_a_non_superuser_executor_with_provisioned_roles_runs_0032_and_its_downgrade(ledger):
@@ -710,7 +724,7 @@ def test_p1_2_a_harmless_role_without_runtime_membership_is_not_ready_until_it_i
     name, password = f"orena_lonely_{uuid.uuid4().hex[:8]}", uuid.uuid4().hex
     _login(ledger.admin, name, password)
     ledger.sql(f'GRANT USAGE ON SCHEMA "{ledger.schema}" TO {name}')
-    ledger.sql(f"GRANT SELECT, INSERT, UPDATE ON account_incarnations, users TO {name}")
+    ledger.sql(f"GRANT SELECT, INSERT, UPDATE ON account_incarnations, users, billing_orders TO {name}")
     engine = _engine_as(name, password, ledger.schema)
     try:
         lonely = CreditService(PostgresCreditRepository(engine))

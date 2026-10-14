@@ -109,7 +109,8 @@ def test_the_migration_is_promoted_and_is_the_single_chain_head_on_0030():
     cfg = Config(str(ROOT / "alembic.ini"))
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
     script = ScriptDirectory.from_config(cfg)
-    assert script.get_heads() == ["20261005_0026"]
+    # 0026 stays in the chain, on 0030; the Billing revisions 0027 -> 0033 were promoted after it (PR-MON-5 gate).
+    assert len(script.get_heads()) == 1 and "20261005_0026" in {rev.revision for rev in script.walk_revisions()}
     assert script.get_revision("20261005_0026").down_revision == "20261008_0030"
 
 

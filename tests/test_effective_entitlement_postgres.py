@@ -245,7 +245,7 @@ def test_a_committed_payos_payment_not_yet_synced_refuses_a_manual_write():
     from alembic.operations import Operations
     from alembic.runtime.migration import MigrationContext
 
-    from tests.test_billing import PAYOS, _proposed
+    from tests.test_billing import BILLING_BASE, PAYOS, _proposed
     from writing_coach.billing.service import BillingService
     from writing_coach.persistence.billing_repository import PostgresBillingRepository
 
@@ -261,12 +261,14 @@ def test_a_committed_payos_payment_not_yet_synced_refuses_a_manual_write():
         cfg.set_main_option("script_location", os.path.join(root, "migrations"))
         cfg.set_main_option("path_separator", "os")
         cfg.set_main_option("sqlalchemy.url", schema_url.replace("%", "%%"))
-        command.upgrade(cfg, "head")
+        command.upgrade(cfg, BILLING_BASE)
         engine = create_engine(schema_url, future=True)
         try:
             with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
                 _proposed("20261005_0027_billing_orders").upgrade()
                 _proposed("20261014_0031_billing_reconciliation").upgrade()
+                _proposed("20261014_0032_credit_ledger").upgrade()
+                _proposed("20261015_0033_credit_topup_orders").upgrade()
             key = f"entitlement-sync-{uuid.uuid4()}"
             account = stable_uuid("user", key)
             with engine.begin() as connection:

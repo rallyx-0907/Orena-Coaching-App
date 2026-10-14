@@ -11,6 +11,7 @@
    contract (screens/quick-sheet/model.js) - the same notes a learner adds from the Sentence Quick
    Sheet's Note tab are what this screen's "Notes & highlights" panel lists, so this module reads
    its loadNotes/noteKeyFor rather than a second notes store. */
+import { wordSpanAt } from '../../product/word-span.js';
 import { parseContentId, contentIdFor, placeFor, libraryKindFor, metaLine } from '../content/model.js';
 import {
   blocksFrom,
@@ -189,22 +190,6 @@ export function segmentSentence(text, tokens, { saved = new Set() } = {}) {
   }
   pushPlain(value.slice(cursor));
   return pieces;
-}
-
-/* The tagged word that covers character offset `at` of a sentence's text, as `{ text, start, end }`, or null when
-   there are no tokens or none covers it. A tap on a script written without spaces that was not tagged yet (the
-   tagger answered late, or not at all) names one character; once the tagger has segmented the sentence, the word
-   under that character is what the learner pointed at. `expect` (the tapped character) guards a stale offset. */
-export function wordSpanAt(text, tokens, at, expect = '') {
-  const value = String(text ?? '');
-  if (!Array.isArray(tokens) || !Number.isInteger(at) || at < 0 || at >= value.length) return null;
-  if (expect && value.slice(at, at + expect.length) !== expect) return null;
-  for (const token of tokens) {
-    if (token.start <= at && at < token.end && token.end <= value.length && token.end > token.start) {
-      return { text: value.slice(token.start, token.end), start: token.start, end: token.end };
-    }
-  }
-  return null;
 }
 
 /* CJK line breaking (kinsoku). In running text the browser keeps closing punctuation off the start of a line
@@ -483,3 +468,5 @@ export function savedFromSentences(items, sentences) {
 }
 
 export { squash };
+
+export { wordSpanAt };

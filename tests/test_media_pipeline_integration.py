@@ -153,3 +153,26 @@ def test_an_upload_carries_the_operators_rights_declaration(tmp_path, monkeypatc
     path.write_bytes(_tone())
     entry = importer.import_upload(path, filename=path.name, language="en", imported_by="admin", rights_cleared=declared)
     assert store.get(entry.media_id).source["rights"] == rights
+
+
+def test_zh_asr_output_is_cleaned_before_it_becomes_lesson_lines(tmp_path, monkeypatch):
+    from writing_coach import media_thumbnail
+    from writing_coach.speech_asr import SpeechAsrResult, SpeechAsrSegment, SpeechAsrWord
+    monkeypatch.setenv("MEDIA_PIPELINE_INLINE", "1")
+    monkeypatch.setattr(media_thumbnail, "_TEMP_ROOT", tmp_path)
+    spoken = "每天 早上 我 都 去 市场 买菜 你 呢"
+    words = tuple(SpeechAsrWord(text, 6000 + index * 400, 6000 + index * 400 + 300) for index, text in enumerate(spoken.split()))
+    class Asr:
+        def transcribe_bytes(self, body, **kwargs):
+            return SpeechAsrResult("test", "fixture", "zh", spoken, (SpeechAsrSegment(spoken, 0, 9500),), words)
+    store = FileMediaLibraryStore(tmp_path / "index")
+    assets = FilesystemBookAssetStore(tmp_path / "assets")
+    pipeline = MediaPipeline(ledger=SpendLedger(tmp_path / "spend.json"), asr=Asr())
+    importer = MediaSourceImporter(None, store, assets, pipeline=pipeline)
+    path = tmp_path / "voice.wav"
+    path.write_bytes(_tone(10))
+    entry = importer.import_upload(path, filename=path.name, language="zh", imported_by="learner", library="personal", owner_key="learner-a")
+    segments = store.get(entry.media_id).lesson["payload"]["transcript"]["segments"]
+    text = "".join(segment["original_text"] for segment in segments)
+    assert " " not in text and text.endswith("？")
+    assert segments[0]["start_ms"] == 6000
