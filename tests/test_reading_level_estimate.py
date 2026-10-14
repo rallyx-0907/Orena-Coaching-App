@@ -111,3 +111,9 @@ def test_en_zh_parity_each_language_stays_on_its_own_scale_and_carries_the_versi
     zh = analyze_article("今天天气很好，我们去公园散步。" * 40, "zh")
     assert en.estimated_level in EN_LEVEL_BANDS and zh.estimated_level.startswith("HSK")
     assert en.level_version == zh.level_version == LEVEL_VERSION
+
+
+def test_contractions_keep_their_stem_and_drop_one_and_two_letter_fragments():
+    assert _en_level_words("It's what they're doing, isn't it? The boy's kite.") == [
+        "what", "they", "doing", "isn", "it", "the", "boy", "kite",
+    ]

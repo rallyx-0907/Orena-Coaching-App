@@ -303,7 +303,7 @@ def _en_level_words(text: str) -> list[str]:
 
     Left out: a capitalised word that does not open a sentence (a name or title), an
     all-capitals word (an acronym), a word glued to a digit (a unit or a code). A hyphenated
-    compound counts as its parts, so `nuclear-powered` is two ordinary words, not one long one.
+    compound counts as its parts, a contraction as its stem, so `nuclear-powered` is two ordinary words, not one long one.
     """
     words: list[str] = []
     for match in _EN_WORD.finditer(text):
@@ -315,7 +315,13 @@ def _en_level_words(text: str) -> list[str]:
             continue
         if token[0].isupper() and not _SENTENCE_START.search(before):
             continue
-        words.extend(part.lower() for part in re.split(r"[-’']", token) if part)
+        for part in token.split("-"):
+            # A contraction or possessive keeps its stem: `it's` is `it`, `don't` is `don`
+            # (the 1-2 letter fragments `s`, `t`, `ll`, `re` are not words).
+            pieces = re.split(r"[’']", part)
+            words.extend(
+                piece.lower() for piece in pieces if piece and (len(pieces) == 1 or len(piece) > 2)
+            )
     return words
 
 

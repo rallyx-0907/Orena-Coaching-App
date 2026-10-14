@@ -6478,7 +6478,7 @@ MANUAL_ONLY until the UI distinguishes scripts). Reading Production Readiness it
 
 ## D-198 - Reading level: an interim, uncalibrated fix of the saturated automatic estimate (2026-10-14)
 
-**Status: PROPOSED.** Production Readiness item 7b (defect D6: a NASA press release rated C2, every VOA 中文 article HSK6). The owner chose
+**Status: ACCEPTED** (interim; independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVE WITH CONDITIONS on 25db05e8; the conditions are addressed in the following commit; merged once CI was green). Production Readiness item 7b (defect D6: a NASA press release rated C2, every VOA 中文 article HSK6). The owner chose
 "C now, then A": this entry is C. It is an interim correction, not a calibrated classifier. It changes no schema, no stored row and no
 dataset, and the reviewer override of D-196 keeps its precedence (`effective_level` = `reviewed_level`, else `estimated_level`; the
 estimator never reads `reviewed_level`).
@@ -6490,7 +6490,7 @@ estimator never reads `reviewed_level`).
 2. **Change** (`writing_coach/reading_processing.py`, `LEVEL_VERSION = "reading-level/2"`, stored as `analysis.level_version`;
    an article without it was estimated by the original heuristic):
    - English signals ignore a capitalised word that does not open a sentence, an all-capitals word (acronym), a word touching a
-     digit, and count a hyphenated or apostrophed compound as its parts. The sentence-length and long-word normalisers moved from
+     digit, and count a hyphenated compound as its parts and a contraction as its stem (`boy's` is `boy`; pieces of 1-2 letters are dropped, so `it's` vanishes). The sentence-length and long-word normalisers moved from
      26 to 30 words and from 22 to 30 percent so ordinary news no longer saturates them.
    - Chinese length is the mean clause length, clauses ending at `。！？；，、：…`. The stored `average_sentence_length` is unchanged.
    - Low confidence is deterministic: `confidence = min(1, words/400)*0.8 + 0.2 if at least 5 sentences`, below `LOW_CONFIDENCE`
@@ -6503,3 +6503,8 @@ estimator never reads `reviewed_level`).
    normalisers were chosen against four English fixtures and are therefore a fit, not a measurement). No stored article is
    re-estimated; `scripts/report_reading_level_changes.py` is a read-only report of what would change, and re-estimating is an owner
    decision. Option A (word and character lists, a labelled calibration set, a dataset and licence decision) replaces this.
+5. **Known limits, for the calibrated Option A.** (a) The score uses its own `scored_long` (share of 8+ letter words among the
+   scored tokens), which differs from the stored `long_word_ratio` (all tokens); the stored field is unchanged and no longer drives
+   the band. (b) A capitalised word after an abbreviation full stop (`Dr. Smith`, `U.S. Army`) is read as a sentence start and counted,
+   so a few names still enter the signals. (c) `_EN_WORD` matches ASCII letters only, so accented Latin words (`cafe` with an accent,
+   names) split into fragments; a calibrated tokenizer must handle them.
