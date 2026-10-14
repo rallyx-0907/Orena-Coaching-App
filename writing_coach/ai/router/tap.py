@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import threading
 from collections import OrderedDict, deque
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from writing_coach.ai import routing
 from writing_coach.ai.base import AICapabilityError, AIProviderError
@@ -35,7 +35,12 @@ _BRAKE_ACCOUNTS_MAX = 5000
 # Translate-ahead (D-199) is paid for from its own budget, never from a learner's brake and never from a tap's: at
 # most this many cache-miss router calls a day per worker process, and after the provider side reports itself
 # unavailable (every pool entry failed or is cooling down, a 429 among them) it asks nobody for PAUSE_SECONDS.
-PREFETCH_DAILY_CALLS = 1500
+#
+# Tuned for an UNFUNDED OpenRouter free tier (about 50 free-model requests a day for the whole account, shared with
+# taps and Admin tests; owner decision 2026-10-14: free models only): at most 25 prefetch calls a day per process,
+# which leaves the rest for taps. Funding the account (1000 a day) allows raising this and
+# `reading_prefetch.MAX_WORDS_PER_ARTICLE`; both are plain constants.
+PREFETCH_DAILY_CALLS = 25
 PREFETCH_PAUSE_SECONDS = 120.0
 
 # Background calls keep their own provider-health record: a 429 that a prefetch meets cools down the prefetch's view of
@@ -82,10 +87,28 @@ def prefetch_paused() -> bool:
         return _prefetch_paused_until > router_module._clock()
 
 
-def pause_prefetch() -> None:
+def _utc_now() -> datetime:
+    return datetime.now(UTC)
+
+
+def _seconds_to_next_utc_day() -> float:
+    now = _utc_now()
+    tomorrow = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return max(PREFETCH_PAUSE_SECONDS, (tomorrow - now).total_seconds())
+
+
+def pause_prefetch(seconds: float | None = None) -> None:
     global _prefetch_paused_until
     with _lock:
-        _prefetch_paused_until = router_module._clock() + PREFETCH_PAUSE_SECONDS
+        until = router_module._clock() + (PREFETCH_PAUSE_SECONDS if seconds is None else seconds)
+        _prefetch_paused_until = max(_prefetch_paused_until, until)
+
+
+def _allowance_spent(error: BaseException) -> bool:
+    """A 429 that says the account has no requests left (`X-RateLimit-Remaining: 0`), as opposed to a busy upstream."""
+
+    limit = getattr(error, "rate_limit", None) or {}
+    return getattr(error, "status_code", None) == 429 and limit.get("requests_remaining") == 0
 
 
 def _admit_prefetch_call() -> None:
@@ -166,7 +189,9 @@ def word_translation_prefetch(selection: str, source: str, target: str) -> str |
             pause_prefetch()
         return _meaning(routed)
     except AIProviderError as exc:
-        if _pool_unavailable(exc):
+        if _allowance_spent(exc):
+            pause_prefetch(_seconds_to_next_utc_day())  # the day's free allowance is gone: ask nobody until it resets
+        elif _pool_unavailable(exc):
             pause_prefetch()
         raise
     except RouterInputInvalid:

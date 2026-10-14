@@ -47,15 +47,22 @@ from writing_coach.reading_level import _SENTENCE_START, word_rank
 from writing_coach.reading_processing import _EN_COMMON, _EN_WORD, _FUNCTION_WORDS
 
 _log = logging.getLogger("orena.prefetch")
-# The server's root logger is at WARNING, so an INFO line would vanish and "did it run?" would have no answer: this
-# logger speaks at INFO on its own handler when the application has configured none (counts only, never a word).
-_log.setLevel(logging.INFO)
-if not logging.getLogger().handlers and not _log.handlers:
-    _handler = logging.StreamHandler()
-    _handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s: %(message)s"))
-    _log.addHandler(_handler)
+# The server's root logger is at WARNING, so this logger speaks at INFO on its own handler (counts only, never a word):
+# 'did it run?' needs an answer in the log. Installed by `install_log_handler()` at app start, not at import.
+_log.propagate = False
 
-MAX_WORDS_PER_ARTICLE = 40
+
+def install_log_handler() -> None:
+    if not _log.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s: %(message)s"))
+        _log.addHandler(handler)
+    _log.setLevel(logging.INFO)
+
+
+# The hardest words only (D-199 word rank); fewer if fewer qualify. Sized for an unfunded OpenRouter free tier (about 50
+# requests a day for the account, see `ai.router.tap.PREFETCH_DAILY_CALLS`); a funded account can raise it.
+MAX_WORDS_PER_ARTICLE = 8
 WORKERS = 2
 MAX_QUEUED_ARTICLES = 8
 MARKER_TTL_SECONDS = 6 * 3600.0

@@ -6656,8 +6656,8 @@ Read from `audit_logs` (`ai.operation`, `ai.router.rollup`; counts, latency and 
 3. **The tap's budget.** A tap spends its 2.0 s on the tagger and the external dictionary (timeout 1.5 s; rare words are the
    ones it cannot answer, so they spend most of it) before the seam, which got what was left, floored at 0.25 s, while a free
    model answers in 0.7-1.7 s. Now: the dictionary's tap timeout is 1.0 s and the seam always waits at least
-   `SEAM_MIN_WAIT_SECONDS = 1.8`. A tap that reaches the seam costs at most about 1.0 + 1.8 s; a typical rare word is a fast
-   dictionary 404 plus one model call, 1.5-2.0 s. `TAP_BUDGET_SECONDS` stays 2.0 for every other layer.
+   `SEAM_MIN_WAIT_SECONDS = 1.8`. Worst case for a tap that reaches the seam is about 3 s (tagger, then the dictionary's
+   1.0 s, then the seam's 1.8 s floor); a typical rare word is a fast dictionary miss plus one model call, 1.5-2.0 s. `TAP_BUDGET_SECONDS` stays 2.0 for every other layer.
 4. **Why a re-tap answered nothing in 27 ms.** Two cooldowns exist by design after a failed call (the router's 60 s negative
    cache and the lookup gate's 60 s per-word cooldown) and a 429 failure is exactly that. But the gate's cooldown was also set
    by a *prefetch* failure, so a background 429 made the learner's tap on that word empty for a minute, against item 5 of this
@@ -6665,3 +6665,10 @@ Read from `audit_logs` (`ai.operation`, `ai.router.rollup`; counts, latency and 
    still lets its call finish, and the late answer fills the router cache under the tap's own key; a test pins one provider
    call serving both the timed-out tap and the next.
 5. **Not changed.** The cache key is still case-sensitive (item 9 above). `PREFETCH_DAILY_CALLS` and the pause stay.
+6. **Owner decision 2026-10-14: free models only (no credit), so prefetch is sized for about 50 requests a day.**
+   `reading_prefetch.MAX_WORDS_PER_ARTICLE` is 8 (the hardest words by the D-199 rank; fewer if fewer qualify, replacing
+   the 40 of item 4 above) and `tap.PREFETCH_DAILY_CALLS` is 25 per worker process (replacing 1500), which leaves the
+   rest of the day for taps. Both are plain constants tuned for an unfunded OpenRouter free tier; funding the account
+   (1000 a day) allows raising them. A 429 whose `X-RateLimit-Remaining` is 0 (the allowance is spent, not a busy
+   upstream) pauses prefetch until the next UTC day instead of 120 s. The `orena.prefetch` logger no longer touches the
+   root logger at import (`propagate=False`; `install_log_handler()` runs at app start).
