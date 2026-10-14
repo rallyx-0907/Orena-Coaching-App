@@ -1,4 +1,4 @@
-# Architecture review: Reading provenance (P0-A, D-189 / D-18X PROPOSED)
+# Architecture review: Reading provenance (P0-A, D-189 / D-190)
 
 Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer
 Commit reviewed: b94f4129 (branch claude/reading-provenance) against origin/main (948fd871)
@@ -80,4 +80,40 @@ The human replaced the publication policy this review approved. The hard gate in
 explicit `acknowledge_warnings` flag and a non-empty reason, recorded in the review event and audit record. The automatic
 admission (D-111) still refuses unclear rights and attribution; the checker script now reports whether a flagged published row
 carries a recorded override. P1-1 is closed by that human decision. **Re-review is required** of the amended behaviour before
-D-18X is ACCEPTED; the verdict above applies to commit b94f4129 only.
+D-190 (numbered D-18X at the time) is ACCEPTED; the verdict above applies to commit b94f4129 only.
+
+
+## Re-review of the amended policy (2026-10-14)
+
+Reviewer: Delegated Architecture Reviewer, model Claude Opus 5.5, independent of the implementer.
+Commit reviewed: change 604cfbc7..b922f433, plus merge 94e7374f (HEAD of claude/reading-provenance). Date: 2026-10-14.
+Method: read-only (git diff/show, source read); no Docker, no test execution. The implementer had no green full suite locally.
+
+### Verdict: APPROVED WITH CONDITIONS
+
+The change implements the human policy. The conditions are CI-only: the full suite must be green on PR #158 (at review time `gh pr checks 158` and `statusCheckRollup` report no checks at all for head 94e7374f, so there is no CI evidence yet), and the P2 items below are recorded as follow-ups. No P0 or P1.
+
+### What was verified
+
+1. Repository and paths. `ReadingContentRepository.set_status` (reading_content_repository.py ~1079-1140) has no rights or attribution refusal; `ProvenanceRefused` is deleted with no remaining reference in writing_coach, scripts or tests. The only code path that moves a Reading article to `published` outside creation is `POST /articles/{id}/status` (reading_admin_api.py ~751-820). The other POST routes (article edit, rights, targets, comprehension sets, jobs, sources) do not change article status; comprehension-set routes require an already published article. `unpublish -> republish` goes through the same route and re-computes the warnings from the current rights, so a credit removed in the meantime asks for the override again (tested). The server, not the client, enforces it: any warning without `acknowledge_warnings` gives 409 `reading_rights_not_cleared`, with the flag but a blank reason gives 422 `reading_reason_required`; the warnings list is computed server-side, so a client cannot suppress it. No bulk or set-level publish exists. The only non-route caller is scripts/agent_e2e/harness.py:206 (direct `set_status`, test harness) which publishes with no recorded override and is correctly reported by the checker as unrecorded. Nothing previously enforced was bypassed other than what the policy removed.
+2. Audit. The review event (`published_over_warnings`, `warnings`, `reason`, `actor`) is written in the same transaction as the status update (`set_status`, `engine.begin()`), so the override and the state change are atomic. The admin audit record (`admin.reading_article_published`, with `warnings`, `acknowledged_warnings`, reason) follows in a separate write (existing pattern). The checker's "overridden" determination reads the latest `published` review event per article (ordered by created_at, id; last wins) and requires `published_over_warnings` and a non-blank reason; an older override cannot mask a later plain publish, and legacy rows with no event are "NO RECORDED OVERRIDE". Sound.
+3. Automatic admission. reading_admission.py still refuses `rights_not_cleared`, `attribution_unknown` and `attribution_missing`; the only caller of the admission path is `create_article(automatic_admission=True)` in the engine, which is unchanged; a regression test covers all three reasons. The worker/poller cannot publish otherwise.
+4. Tests. The `attribution_required: false` fixture changes are necessary and honest: those tests exercise other behaviour (automation, queue, E2E) and need a no-warning article now that an unanswered attribution question requires an override. The rewritten tests assert more, not less (409 body, `override_field`, 422 on blank reason, event contents, audit record, parametrised rights_not_cleared / rights_unknown / attribution_unknown, checker overridden vs legacy). The admin_areas node gate was changed only where the old assertion encoded the hard gate (disabled Publish); the replacement asserts the button is enabled and the warning text is shown. No validator was weakened beyond the policy.
+5. UI. Publish opens the confirm dialog with `reason.required: true`; the confirm button is disabled until the reason is non-blank (host.js `ready`), and the server rechecks. If the client's list is incomplete (for example an incomplete credit) the 409 list is confirmed and the request is resent. EN, VI and ZH have the new keys (`rdWarn_provenance_missing`, `rdOverrideReasonHint`) and rewritten advice, banner, toast and error copy. No Reading copy still says publishing is refused for rights (the remaining "cannot be published" strings are the Grammar restriction feature, unrelated).
+6. DECISION_LOG. The decision entry (D-18X at review time, D-190 at merge) states the policy accurately (manual publish always possible, warnings need `acknowledge_warnings` plus reason, 409/422 codes, repository never refuses, no automatic publication while unclear, hard gates reserved for integrity faults), says it amends D-105, and the checker semantics match the code. The merge 94e7374f brought in only main-side files (billing, source cleanup, extraction); it touched none of the files changed by this PR and shows no conflict-resolution damage.
+
+### Findings
+
+- P2-1 (reading_admin_api.py ~772-795): warnings are computed from `current` read before `set_status` writes; a rights change between the two would record the older warnings. Same check-then-write as the earlier P2-1; low impact since both steps are admin acts. Fold into the same follow-up.
+- P2-2 (reading_content_repository.py `set_status`): the repository accepts `warnings` with a blank `reason` (route enforces the reason; direct callers do not). Consistent with "never a hard block in the repository", and the checker treats a blank reason as unrecorded; note it as a deliberate division of responsibility.
+- P2-3 (static/orena/screens/admin/reading-pages.js:7): header comment still says copyright is a hard gate; update the comment.
+- P2-4 (scripts/reading_canonical_e2e.py:219-221): label still says "refused (D-105)"; behaviour (409 then publish after answers) remains valid, but wording is stale.
+- P2-5: the admin audit write is outside the review-event transaction, so a crash between them leaves the (authoritative) review event without the admin audit row. Pre-existing pattern; the checker uses the review event.
+- P2-6: no CI evidence yet; the node gate `test_orena_screen_admin_areas.mjs` and the Python suite have not been run by anyone for this commit.
+
+### Conditions for ACCEPTED
+
+1. CI aggregate `test` green on PR #158 for head 94e7374f (not yet reported).
+2. Record P2-1 to P2-5 as follow-ups; D-190 may flip from PROPOSED to ACCEPTED when 1 is met.
+
+Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5. Commit reviewed: 94e7374f (change b922f433).

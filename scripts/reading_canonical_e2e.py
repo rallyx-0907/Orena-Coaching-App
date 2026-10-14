@@ -215,7 +215,7 @@ def _published_with_set(run: Run, language: str, nonce: str, index: int, support
     if checked:
         refused = run.call("POST", f"/api/admin/reading/articles/{article_id}/status", expect=409,
                            json={"status": "published"})
-        run.check("publishing without rights answers is refused (D-105)",
+        run.check("publishing without rights answers needs an override (D-190)",
                   run.category(refused) == "reading_rights_not_cleared")
     run.call("POST", f"/api/admin/reading/articles/{article_id}/rights",
              json={"can_republish": True, "attribution_required": False})

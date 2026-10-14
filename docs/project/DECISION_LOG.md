@@ -6078,10 +6078,10 @@ This is not activation authorization: no source is published to production by th
    The catalogue is not widened until the three sources pass; the next candidates are Chinese public-domain sources
    such as zh Wikisource.
 
-## D-18X - Required attribution is a Reading publication gate (PROPOSED, number to be assigned)
+## D-190 - Reading provenance; rights and attribution are audited warnings on a manual publish (2026-10-14)
 
-**Status: PROPOSED.** A lifecycle change; it needs independent architecture review before it is ACCEPTED (the implementer
-may not approve it). It carries out the human decision recorded as D-189 (2026-10-13): attribution or a source line is
+**Status: ACCEPTED** (independent re-review 2026-10-14, merged once CI was green). A lifecycle change, reviewed
+independently of the implementer. It carries out the human decision recorded as D-189 (2026-10-13): attribution or a source line is
 required before any real corpus is published. Implemented on `claude/reading-provenance`, "Reading Sources - Production
 Readiness" item P0-A.
 
@@ -6125,5 +6125,8 @@ Readiness" item P0-A.
   Follow-ups: a source rename should bump its published articles' `content_revision` (no rename path exists today, so
   nothing bumps), the check-then-write in `set_status` (P2-1), scheduling the checker (P2-3), and the Global Voices
   original-publisher fields after PR #157 merges.
-- **Review needed.** Re-review of the amended policy (see the review document), and whether the reader needs a per-text
-  licence line (a design decision).
+- **Re-review (2026-10-14).** Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer, on
+  94e7374f (change b922f433): APPROVED WITH CONDITIONS - CI green before merge; follow-ups P2-1 (warnings read before the
+  write), P2-2 (the repository accepts warnings without a reason; the route enforces it, the checker treats it as no
+  override), P2-5 (the admin audit row is written after the review-event transaction). The reader's licence and
+  original-link line was decided by the human on 2026-10-14 and is a separate change.

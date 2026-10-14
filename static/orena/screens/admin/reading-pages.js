@@ -4,9 +4,9 @@
    view state and the copy function, and returns markup - so scripts/test_orena_screen_admin.mjs
    renders every page from a fixture without a browser.
 
-   The queue carries source, rights and target count per row (D-105 c), and copyright is a hard gate
-   at Publish (D-105 a): the review page states the refusal and lets the administrator answer the
-   rights questions, which the server records without rewriting the ingested snapshot. */
+   The queue carries source, rights and target count per row (D-105 c), and rights and attribution are
+   warnings at Publish (D-190, amending D-105 a): the review page states them, publishing over them takes a
+   confirmed override with a reason, and the administrator can answer the rights questions, which the server records without rewriting the ingested snapshot. */
 import { html, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { dateShort, dateTime, num, relative } from '../../capabilities/admin-format.js';
