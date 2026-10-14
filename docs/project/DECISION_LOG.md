@@ -6460,6 +6460,14 @@ account is on the free plan", then "keep the cap mechanism for the future, free 
 4. **Prefetch never spends.** `route(..., paid_standby=False)` from the translate-ahead means a paid rung is never asked
    for background work, whatever the cap; a tap may. The prefetch's daily call caps are unchanged.
 
+5. **Review.** Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer, on `75112035`: APPROVE
+   WITH CONDITIONS. P2-1 (the Admin standby test now follows the spend gate and refuses a paid model over the cap or with
+   an unreadable ledger, without calling the provider), P2-2 (a retry after an invalid answer on a paid rung asks the gate
+   again) and P2-4 (saving a paid standby reads the cap strictly and is refused when it is unreadable) are fixed in the
+   commit that records this line. Noted, not changed: P2-3 (the billing-risk guard is documentation only), P2-5 (the
+   per-capability ledger query scans the day's rows, at most once every 5 seconds per process), P2-6 (a failed paid call
+   that Groq billed is invisible to the allowance). No product approval is implied.
+
 **Supersedes / Superseded by:** Supersedes D-035 (primary-only wording); clarifies D-010.
 
 ## D-196 - Reading level: the reviewer's override is validated, folded over the automatic level and never overwrites it (2026-10-14)

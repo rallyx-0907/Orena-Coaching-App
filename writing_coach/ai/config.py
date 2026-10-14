@@ -173,7 +173,13 @@ def _check_tiers(definition: AICapabilityDefinition, config: CapabilityConfig, *
         # Save time only. At run time a cap of zero is the budget gate skipping the paid standby, not an invalid config.
         from writing_coach import policies
 
-        if not float(policies.value(cap_key) or 0) > 0:
+        try:
+            cap = float(policies.value_strict(cap_key) or 0)
+        except Exception as exc:  # noqa: BLE001 - an unreadable cap is not a cap: refuse to save a paid standby
+            raise AICapabilityConfigInvalid(
+                f"{definition.key!r} cannot save a paid standby: its daily spend cap ({cap_key}) is unreadable."
+            ) from exc
+        if not cap > 0:
             raise AICapabilityConfigInvalid(
                 f"{definition.key!r} accepts a paid standby only with a daily spend cap above zero ({cap_key}): "
                 f"{label} is paid."

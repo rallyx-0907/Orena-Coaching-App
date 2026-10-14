@@ -661,6 +661,8 @@ def generate_structured(
             timeout_seconds=config.timeout_seconds,
         )
 
+        gate = _budget_gate(definition, paid_ok=paid_standby)
+
         def _timeout_for(target: ProviderTarget) -> float | None:
             """This attempt's HTTP timeout: the configured one (else the caller's), capped by what remains."""
 
@@ -683,6 +685,8 @@ def generate_structured(
             for _try in range(max(0, int(invalid_retries)) + 1):
                 if _try and deadline is not None and deadline - _routing.monotonic() < MIN_RETRY_SECONDS:
                     break  # no time for a second try: the standby gets what is left
+                if _try and gate is not None and gate(target) is not None:
+                    break  # a retry is another paid call: it is admitted again, never assumed from the first
                 options: dict[str, Any] = {}
                 timeout = _timeout_for(target)
                 if timeout is not None:
@@ -710,7 +714,7 @@ def generate_structured(
 
         routed = run_chain(
             chain, _ask, on_attempt=_record_attempt(capability_key, router_version), deadline=deadline,
-            health=health, admit=_budget_gate(definition, paid_ok=paid_standby),
+            health=health, admit=gate,
         )
         provider_id, model = routed.target.provider, routed.target.model
         return finish(routed.value, routed.attempts)

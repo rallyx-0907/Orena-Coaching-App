@@ -165,13 +165,13 @@ def _config(**kw: Any) -> CapabilityConfig:
 
 
 def test_the_reviewed_groq_standby_is_valid_with_a_positive_cap(monkeypatch) -> None:
-    monkeypatch.setattr(policies, "value", lambda key, **_: 0.5)
+    monkeypatch.setattr(policies, "value_strict", lambda key, **_: 0.5)
     validate_capability_config("word_translation", _config())
     assert resolve_token_pricing("groq", GROQ_MODEL).input_per_million == 0.59
 
 
 def test_a_paid_standby_needs_a_positive_cap_to_be_saved_but_a_zero_cap_does_not_break_the_runtime(monkeypatch) -> None:
-    monkeypatch.setattr(policies, "value", lambda key, **_: 0)
+    monkeypatch.setattr(policies, "value_strict", lambda key, **_: 0)
     with pytest.raises(AICapabilityConfigInvalid, match="daily spend cap above zero"):
         validate_capability_config("word_translation", _config())
     validate_capability_config("word_translation", _config(), enforce_cap=False)
@@ -187,7 +187,7 @@ def test_a_paid_standby_needs_a_positive_cap_to_be_saved_but_a_zero_cap_does_not
     ],
 )
 def test_other_paid_shapes_are_refused(monkeypatch, overrides) -> None:
-    monkeypatch.setattr(policies, "value", lambda key, **_: 0.5)
+    monkeypatch.setattr(policies, "value_strict", lambda key, **_: 0.5)
     with pytest.raises(AICapabilityConfigInvalid):
         validate_capability_config("word_translation", _config(**overrides))
 
@@ -233,7 +233,7 @@ def test_the_other_groq_entries_keep_their_paid_prices() -> None:
 
 def test_the_free_groq_model_is_a_valid_standby_whatever_the_cap(monkeypatch) -> None:
     for cap in (0, 0.5):
-        monkeypatch.setattr(policies, "value", lambda key, cap=cap, **_: cap)
+        monkeypatch.setattr(policies, "value_strict", lambda key, cap=cap, **_: cap)
         validate_capability_config("word_translation", _config(backup_model=FREE_GROQ))
 
 
@@ -252,3 +252,86 @@ def test_prefetch_may_use_the_free_groq_model(groq) -> None:
     groq.env.fake.script = {GEMMA: [http_error(429)]}
     assert tap.word_translation_prefetch("lamp", "en", "vi") == "cái đèn"
     assert len(groq.fake.calls) == 1
+
+
+# --- review conditions (P2-1, P2-2, P2-4) --------------------------------------------------------------------------
+
+def test_an_invalid_answer_from_a_paid_rung_is_not_retried_once_the_cap_is_reached(groq) -> None:
+    """P2-2: the retry is another paid call, so the gate is asked again before it."""
+
+    answers = [{"meaning": ""}, {"meaning": "cái đèn"}]
+    original = groq.fake.generate_json_once
+
+    def scripted(**kwargs):
+        result = original(**kwargs)
+        result.data = answers.pop(0)
+        groq.ledger.spent = 0.5  # this call spent the last of the day's cap...
+        spend_gate.reset()  # ...and the gate's few-second verdict cache has expired
+        return result
+
+    groq.fake.generate_json_once = scripted
+    groq.fake.generate_json = scripted
+    groq.env.fake.script = {GEMMA: [http_error(429)]}
+    with pytest.raises(AIProviderError):
+        route("word_translation", LAMP)
+    assert len(groq.fake.calls) == 1
+
+
+def test_an_invalid_answer_from_a_paid_rung_is_retried_while_the_cap_has_room(groq) -> None:
+    answers = [{"meaning": ""}, {"meaning": "cái đèn"}]
+    original = groq.fake.generate_json_once
+
+    def scripted(**kwargs):
+        result = original(**kwargs)
+        result.data = answers.pop(0)
+        return result
+
+    groq.fake.generate_json_once = scripted
+    groq.fake.generate_json = scripted
+    groq.env.fake.script = {GEMMA: [http_error(429)]}
+    assert route("word_translation", LAMP).output == {"meaning": "cái đèn"}
+    assert len(groq.fake.calls) == 2
+
+
+def _plane(groq, monkeypatch):
+    from writing_coach.ai.control_plane import AIControlPlane
+
+    groq.env.repo.config = config(backup_provider="groq", backup_model=GROQ_MODEL)
+    return AIControlPlane(groq.env.repo, provider_factory=lambda: {"openrouter": groq.env.fake, "groq": groq.fake})
+
+
+@pytest.mark.parametrize("state", ["cap_reached", "ledger_unreadable"])
+def test_the_admin_standby_test_does_not_call_a_paid_model_over_the_cap(groq, monkeypatch, state) -> None:
+    """P2-1: an operator test is a paid call too; it follows the same gate and says why it did not run."""
+
+    groq.fake.discover_models_live = lambda: pytest.fail("the provider must not be reached")
+    if state == "cap_reached":
+        groq.ledger.spent = 0.5
+    else:
+        groq.ledger.error = NotImplementedError("the AI spend ledger is PostgreSQL-only")
+    with pytest.raises(AICapabilityConfigInvalid, match="daily spend cap"):
+        _plane(groq, monkeypatch)._live_test("word_translation", standby=True)
+    assert groq.fake.calls == []
+
+
+def test_the_admin_primary_test_of_a_free_model_is_not_gated(groq, monkeypatch) -> None:
+    groq.ledger.spent = 99.0
+    plane = _plane(groq, monkeypatch)
+    groq.env.fake.discover_models_live = lambda: [GEMMA]
+    groq.env.fake.generate_json_once = lambda **kw: AIResult(
+        data={"ok": True, "capability": "word_translation"}, provider="openrouter", model=kw["model"], runtime={}
+    )
+    assert plane._live_test("word_translation")["ok"] is True
+    assert groq.ledger.reads == []
+
+
+def test_an_unreadable_cap_refuses_to_save_a_paid_standby(monkeypatch) -> None:
+    """P2-4: save time reads the cap strictly too."""
+
+    def broken(key, **_):
+        raise policies.PolicyUnavailable("never read")
+
+    monkeypatch.setattr(policies, "value_strict", broken)
+    with pytest.raises(AICapabilityConfigInvalid, match="unreadable"):
+        validate_capability_config("word_translation", _config())
+    validate_capability_config("word_translation", _config(backup_model=FREE_GROQ))  # a free standby needs no cap
