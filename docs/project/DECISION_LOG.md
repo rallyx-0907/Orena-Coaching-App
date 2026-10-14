@@ -6765,3 +6765,42 @@ Status: ACCEPTED. Independent review 2026-10-14, Delegated Architecture Reviewer
 2. **Table.** `scripts/build_english_ipa_table.py --source <cmudict.dict>` converts the first pronunciation of each word (ARPAbet to General American IPA; stress mark before the stressed syllable's onset by maximal onset, no mark on a one-syllable word; AH0 schwa, ER0 r-coloured schwa, ER1/ER2 r-coloured stressed vowel) into `cmudict_ipa.json.gz` (125,923 headwords, ~0.85 MB gzipped, licence and source metadata embedded). `--check` verifies the shipped table (metadata alone, or a full rebuild with `--source`). Keys are lowercase; entries with digits or other punctuation are dropped; alternates are not kept.
 3. **Lookup.** In the English single-word branch of `reading_lookup.py`, `pronunciation` is the catalogue's, else the online dictionary's, else the local CMUdict reading (lazy, once, thread-safe). It adds no network call and no latency. Inflected forms are looked up exactly; no -s/-ed/-ing stripping, because a guessed ending can change the sound. A heteronym (read) takes its first pronunciation. An online-dictionary reading, when present, wins over the local one even though it may be British; the local reading is General American.
 4. **Not covered.** Names and words absent from CMUdict get no local reading. The IPA is a rule-based rendering of a US pronunciation dictionary, not a recording and not British. No schema, learner data or Docker change.
+
+## D-203 - Built-in learner content is test content; an Admin-controlled hide/show flag removes it from learners (2026-10-14)
+
+Status: ACCEPTED (merged once CI was green). Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5, on 8e7cdf92: ACCEPT WITH CONDITIONS, no P0/P1; P2-1 (fail closed on a never-read store) and P2-2 (cache the failure fallback, log once per window) fixed on this branch with tests (cold-start unreadable store, agent tool, licences page). Owner decision of 2026-10-14: code-owned built-in learner content, for
+example the Listening lessons in `writing_coach/content/listening_catalog.v1.json`, is test-only and must be removable from the
+product by the Admin through a server-side flag, never by editing code. No schema change, no migration.
+
+1. **Inventory (what is code-owned and learner-visible).** Listening catalogue: six lessons (`en-daily-pen-in-my-bag`,
+   `en-science-cosmic-calendar`, `zh-daily-what-is-this`, `zh-culture-nationalities`, `zh-culture-where-are-you-from`,
+   `zh-technology-search-wikipedia`), five Wikimedia Commons sources, all `PUBLISHED`; loaded at import by `listening_catalog`
+   and reached through `catalog_lesson(s)`, which feed the Listening library and open route, Speaking's shadowing list and model
+   lines, a word's context clips, the learner collection, progress validation, the agent's lesson reads, the licences page and
+   model-clip preparation. Speaking's own `speaking_catalog.v1.json` is empty (zero authored items). Vocabulary static seeds: zero
+   published (the F3 gate holds; confirmed 0 published entries, en and zh). Reading articles, library books and word recordings are
+   database or asset-store records, not repository content. The Grammar course (269 lessons) is the curriculum, not sample content,
+   and is out of scope. Library book files under `data/reading_library_assets` are asset blobs for database rows and are not served
+   without one.
+2. **Storage.** One `platform_settings` row, `content.visibility`: `{"version": 1, "hidden": {"listening": [<lesson id>, ...]}}`
+   (`writing_coach/content_visibility.py`), the same store and compare-and-set contract as `platform.policies` (D-172) and the plan
+   catalogue (D-153). Absent means everything visible, so an unconfigured deployment changes nothing. Only an administrator hides
+   an item; the repository's lesson is never written.
+3. **Where it applies.** One filter, in `listening_catalog._learner_visible`, which `catalog_lesson` and `catalog_lessons` already
+   share, so every learner path above honours it with no per-route copy; a direct open answers 404. The collection resolver now
+   reads the catalogue at call time (it captured the list when built, which would have survived a hide until restart). The Admin
+   reads `CATALOG` directly and lists hidden lessons as unpublished.
+4. **Admin and audit.** `POST /api/admin/console/content/media/{id}/status` accepts `unpublished` / `published` for a built-in
+   lesson (it already did for imported media); `archived` is refused (409). The save is a compare-and-set against the version just
+   read (a concurrent change is a 409) and the audit row (`admin.content.visibility`: actor, item, from, to) commits in the same
+   transaction; a no-op writes nothing and is recorded as `unchanged`. Admin UI: the existing Unpublish / Republish pair and
+   status pill (`docs/design/canonical-ui/brief/BUILTIN_CONTENT_VISIBILITY_2026-10-14.md`).
+5. **Consistency and failure.** A saved change applies at once in the saving worker and within 5 seconds in the others (the policies
+   cache interval). **Fail closed:** if a store is installed, has never been read successfully in this process and the read fails,
+   built-in lessons are treated as hidden until a read succeeds (test content must not reach production on a guess; the Admin list
+   shows them hidden too). After one good read, a later failure keeps that value. A failed read is cached for the same 5 seconds and
+   logged once per window. No store installed (unconfigured, tests) means nothing hidden. Listening routes carry no ETag, so no
+   revision needs to move.
+6. **Not covered, by design.** A learner's own saved progress for a hidden lesson stays stored and shows as unavailable without a
+   title; it is not deleted. Default for genuinely curated items stays visible. Further kinds are added to
+   `content_visibility.KINDS` only together with the filter on their learner paths.

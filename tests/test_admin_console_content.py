@@ -95,13 +95,16 @@ def test_only_actionable_missing_transcripts_need_attention():
     assert content.transcript_attention_count(records) == 2
 
 
-def test_curated_media_comes_from_the_code_owned_catalog_and_is_read_only():
+def test_curated_media_comes_from_the_code_owned_catalog_and_can_only_be_hidden():
     lesson = CATALOG[0]
     record = content.curated_media_record(lesson)
     assert record["id"] == lesson.lesson_id
     assert record["origin"] == "curated"
     assert record["language"] == lesson.source.language
-    assert record["actions"] == ["preview"]
+    # Its text and rights are the repository's; only whether learners see it is an administrator's (D-203).
+    assert record["actions"] == ["preview", "unpublish"]
+    hidden = content.curated_media_record(lesson, hidden=True)
+    assert (hidden["status"], hidden["actions"]) == ("unpublished", ["preview", "republish"])
     assert record["facts"]["transcript"] == "available"
     assert record["facts"]["segment_count"] > 0
     expected = "published" if lesson.content_status == "PUBLISHED" else record["status"]

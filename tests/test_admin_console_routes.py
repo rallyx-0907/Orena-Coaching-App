@@ -329,6 +329,50 @@ def test_media_can_be_taken_back_and_put_out_again(setup):
                 "/api/admin/console/content/media/nope/status", json={"status": "archived"}).status_code == 404
 
 
+def test_a_built_in_lesson_can_be_hidden_from_learners_and_shown_again_with_an_audit_trail(setup):
+    from tests.policy_support import MemoryPolicyStore
+    from writing_coach import content_visibility
+    from writing_coach.listening_catalog import catalog_lesson
+
+    memory = MemoryPolicyStore()
+    previous = content_visibility._store
+    content_visibility.configure(memory)
+    try:
+        lesson_id = "en-daily-pen-in-my-bag"
+        path = f"/api/admin/console/content/media/{lesson_id}/status"
+        listed = call(setup["app"], "GET", "/api/admin/console/content?kind=media").json()
+        row = next(item for item in listed["items"] if item["id"] == lesson_id)
+        assert (row["origin"], row["status"], row["actions"]) == ("curated", "published", ["preview", "unpublish"])
+
+        off = call(setup["app"], "POST", path, json={"status": "unpublished"})
+        assert off.status_code == 200
+        assert (off.json()["record"]["status"], off.json()["record"]["actions"]) == ("unpublished", ["preview", "republish"])
+        assert catalog_lesson(lesson_id) is None
+        detail = call(setup["app"], "GET", f"/api/admin/console/content/media/{lesson_id}").json()
+        assert detail["record"]["status"] == "unpublished" and detail["learner_link"] is None
+        # The Admin still lists it, so it can be shown again.
+        again = call(setup["app"], "GET", "/api/admin/console/content?kind=media&status=unpublished").json()
+        assert lesson_id in [item["id"] for item in again["items"]]
+
+        on = call(setup["app"], "POST", path, json={"status": "published"})
+        assert on.status_code == 200 and on.json()["record"]["status"] == "published"
+        assert catalog_lesson(lesson_id) is not None
+
+        assert [(a["action"], a["actor"], a["entity_id"], a["payload"]["from"], a["payload"]["to"])
+                for a in memory.audits] == [
+            ("admin.content.visibility", "sub-admin", lesson_id, "visible", "hidden"),
+            ("admin.content.visibility", "sub-admin", lesson_id, "hidden", "visible"),
+        ]
+        # A built-in lesson is never archived, an unknown id is still unknown, and a learner cannot do any of it.
+        assert call(setup["app"], "POST", path, json={"status": "archived"}).status_code == 409
+        assert call(setup["app"], "POST", "/api/admin/console/content/media/nope/status",
+                    json={"status": "unpublished"}).status_code == 404
+        assert call(setup["app"], "POST", path, admin=False, json={"status": "unpublished"}).status_code == 403
+        assert catalog_lesson(lesson_id) is not None
+    finally:
+        content_visibility.configure(previous)
+
+
 def test_publish_requires_an_attested_admission_and_is_audited(setup):
     refused = call(setup["app"], "POST", "/api/admin/console/content/vocabulary/hsk1/publish",
                    json={"rights_status": "licensed", "completeness": "complete", "attested": False})
