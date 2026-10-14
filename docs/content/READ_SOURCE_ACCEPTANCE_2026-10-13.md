@@ -155,7 +155,7 @@ These answer section 3.
 ## 6. Closing (2026-10-14)
 
 Owner instruction 2026-10-14. Milestone "Reading Sources - Production Readiness" (section 5, item 7):
-**CLOSED - source pipeline accepted; release follow-ups remain.** This does not say that Reading as a whole is
+**CLOSED — source pipeline accepted; release follow-ups remain.** This does not say that Reading as a whole is
 production-ready.
 
 **Evidence.** Final consolidated acceptance on :8021, main `2ec7daea`, 2026-10-14. Criteria 1 to 4 met:

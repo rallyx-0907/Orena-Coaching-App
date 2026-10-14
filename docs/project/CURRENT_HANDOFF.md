@@ -50,7 +50,7 @@ S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md).
 
 ## Reading Sources - Production Readiness (2026-10-14)
 
-CLOSED - source pipeline accepted; release follow-ups remain (Reading is not claimed production-ready). Accepted
+CLOSED — source pipeline accepted; release follow-ups remain. Reading is not claimed production-ready. Accepted
 on :8021 at `2ec7daea`; no touch check. See READ_SOURCE_ACCEPTANCE_2026-10-13.md s6.
 Before :8000: P1 #194-#198, P2 #199-#202, HSK #203-4, #183. :8000 not deployed; owner authorises (+0026).
 
