@@ -6468,6 +6468,26 @@ account is on the free plan", then "keep the cap mechanism for the future, free 
    per-capability ledger query scans the day's rows, at most once every 5 seconds per process), P2-6 (a failed paid call
    that Groq billed is invisible to the allowance). No product approval is implied.
 
+**Amendment 2026-10-14 (live probe: the Groq key does not list `llama-3.1-8b-instant`).** On :8021 the key's catalogue lists
+only `allam-2-7b`, `openai/gpt-oss-120b`, `openai/gpt-oss-20b` and `qwen/qwen3.8-27b`, so the pinned
+`llama-3.1-8b-instant` answers 409 `model_unavailable` there (the entry stays, harmless, and is marked unavailable on this
+key). Probed with the exact word_translation request on the free plan (pricing `2026-10-14.v7`), one call each:
+
+| model | option | en to vi "infrastructure" | zh to vi "政府" |
+| --- | --- | --- | --- |
+| `qwen/qwen3.8-27b` | `reasoning_effort: none`, `reasoning_format: hidden` | "hạ tầng", 354 ms | "chính phủ", 322 ms |
+| `qwen/qwen3.8-27b` | none | "hạ tầng", 674 ms | not probed |
+| `openai/gpt-oss-20b` | `reasoning_effort: low`, `include_reasoning: false` | "hạ tầng", 589 ms | "chính phủ", 674 ms |
+| `openai/gpt-oss-20b` | none | HTTP 400 "Failed to validate JSON" (thinking used the budget) | not probed |
+| `openai/gpt-oss-120b` | `reasoning_effort: low` | "cơ sở hạ tầng", 812 ms | "chính phủ", 1304 ms |
+| `allam-2-7b` | none | "công trình đầu tư, cơ sở vật lý" (wrong sense), 943 ms | "quốc gia" (wrong), 539 ms |
+
+Chosen standby: `groq / qwen/qwen3.8-27b`, zero-rated with the same owner-confirmed free-plan note and revisit rule, sent
+`reasoning_effort: none` and `reasoning_format: hidden` (`providers.GROQ_REQUEST_OPTIONS`, by id, like
+`OPENROUTER_REASONING_OFF`). `openai/gpt-oss-120b` is already priced (0.15 / 0.60) for media translation and one
+exact-match catalogue cannot hold two prices, so it is not zero-rated; `gpt-oss-20b` needs an option and is slower;
+`allam-2-7b` answered wrongly. The operator saves `qwen/qwen3.8-27b` as the standby of `word_translation`.
+
 **Supersedes / Superseded by:** Supersedes D-035 (primary-only wording); clarifies D-010.
 
 ## D-196 - Reading level: the reviewer's override is validated, folded over the automatic level and never overwrites it (2026-10-14)
