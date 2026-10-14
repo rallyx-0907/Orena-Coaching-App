@@ -552,6 +552,27 @@
 }
 
 /* End of content */
+/* The source footnote (docs/design/canonical-ui/brief/READER_SOURCE_LINE_2026-10-14.md): the toolbar meta line's
+   style (13px, muted, the interface face) at the end of the text; its links reuse the inline text link of
+   `.s-reader__retry` (accent-text, 600). No new colour. */
+.s-reader__source {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin-top: -8px;
+}
+.s-reader__source a {
+  color: var(--accent-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.s-reader__source a:hover { text-decoration: underline; }
+.s-reader__source-sep:not(:first-child)::before { content: '·'; margin-right: 8px; }
+
 .s-reader__end {
   border-top: 1px solid var(--border);
   padding-top: 22px;

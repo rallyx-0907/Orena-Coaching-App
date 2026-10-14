@@ -560,6 +560,21 @@ export default async function mountReader(element, ctx) {
     return '';
   }
 
+  /* The source footnote at the end of an article's text: publisher, author when distinct, a link to the original,
+     and the licence when the backend determined it. Nothing is drawn for a text with no credit. */
+  function sourceMarkup() {
+    const c = doc.credit;
+    if (!c) return '';
+    const sep = (inner) => html`<span class="s-reader__source-sep">${inner}</span>`;
+    const link = (href, label) => html`<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    return html`<p class="s-reader__source">
+      ${c.publisher ? html`<span>${t('srcLabel')}: ${c.publisher}</span>` : ''}
+      ${c.author ? sep(t('srcBy', { name: c.author })) : ''}
+      ${c.url ? sep(link(c.url, t('srcOriginal'))) : ''}
+      ${c.license ? sep(c.license.url ? link(c.license.url, c.license.name) : c.license.name) : ''}
+    </p>`;
+  }
+
   function endMarkup() {
     const info = endOfContent({ isBook: doc.isBook, hasQuiz, hasNextChapter: Boolean(doc.neighbours?.next), chapterNumber: (doc.neighbours?.index ?? 0) + 1 });
     return html`<div class="s-reader__end">
@@ -712,6 +727,7 @@ export default async function mountReader(element, ctx) {
         <article class="s-reader__article" style="font-size:${readerSizePx(settings.size)}px"${raw(`${posOn ? ' data-pos="1"' : ''}${vocabLensOn ? ' data-lens="1"' : ''}${stacked() ? ' data-stacked="1"' : ''}`)}>
           ${legendMarkup()}
           ${paragraphs.map((block) => blockMarkup(block, notes))}
+          ${sourceMarkup()}
           ${endMarkup()}
         </article>
         ${asideMarkup()}

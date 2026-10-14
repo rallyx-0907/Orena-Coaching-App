@@ -6100,5 +6100,8 @@ D-190). The pinned design draws one source line: the Discover card's `c.source`,
 Reader toolbar's `rdDocMeta`. Those now show the publisher. The design draws no place for the licence name, the
 attribution text or a link to the original article on the Reader or Content Detail frames, so none was added. The
 licence credit CC BY requires is reachable only through Settings > Licences and data sources, which now credits the
-publisher. If the human wants the licence or the original link on the reader itself, the design has to draw it first.
+publisher. Update 2026-10-14: the human decided to show them on the Reader. The addendum
+`docs/design/canonical-ui/brief/READER_SOURCE_LINE_2026-10-14.md` (pending the next design export) draws a source footnote at the
+end of the article text: publisher, author when distinct, an "Original article" link and the licence name linked when
+the backend determined it. Built in `screens/reader/` (EN/VI/ZH). Content Detail is unchanged.
 Also open: `provenance.text` is English-only (a fallback sentence); no client draws it, so no EN/VI/ZH copy was added.

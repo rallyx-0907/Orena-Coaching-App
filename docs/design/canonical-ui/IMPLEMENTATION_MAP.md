@@ -75,6 +75,7 @@ shape).
 | 26 | Settings | `#/settings` (`?tab=` per Profile's own links) | focus | `screens/settings/` | reviewable |
 | 27 | Search | `#/search` | focus | `screens/search/` | reviewable |
 | 14 | Reader | `#/read/:id` | focus | `screens/reader/` | reviewable |
+| 14+ | Reader source line (addendum, pending export: `brief/READER_SOURCE_LINE_2026-10-14.md`) | `#/read/:id` | focus | `screens/reader/` (`sourceMarkup`, `product/provenance.js` `creditOf`) | built 2026-10-14; end-of-text footnote |
 | 20 | Check Understanding | `#/read/:id/check` | focus | `screens/check/` | reviewable |
 | 40 | Reading Complete | `#/read/:id/done` | focus | `screens/reader-complete/` | reviewable |
 | 39 | Reading Transfer | `#/read/:id/transfer` | focus | `screens/reading-transfer/` | reviewable |

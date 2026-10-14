@@ -50,4 +50,50 @@ assert.equal(
   'Global Voices · Article · C1 · p. 1 of 3',
 );
 
+// 5. The Reader's source footnote (READER_SOURCE_LINE_2026-10-14): creditOf and its copy.
+const { creditOf, safeHttpUrl } = await import('../static/orena/product/provenance.js');
+const { readFileSync } = await import('node:fs');
+
+const credit = creditOf({ provenance });
+assert.equal(credit.publisher, 'Global Voices');
+assert.equal(credit.url, 'https://globalvoices.org/2026/10/rain');
+assert.equal(credit.author, 'Peace News', 'an author distinct from the publisher is kept');
+assert.deepEqual(credit.license, { name: 'CC BY 3.0', url: 'https://creativecommons.org/licenses/by/3.0/' }, 'licence linked');
+assert.equal(creditOf({ provenance: { ...provenance, author: ' global voices ' } }).author, '', 'author equal to the publisher is not repeated');
+assert.deepEqual(creditOf({ provenance: { ...provenance, license: { name: 'Public domain', url: '' } } }).license, { name: 'Public domain', url: '' }, 'licence name alone is plain text');
+assert.equal(creditOf({ provenance: { ...provenance, license: null } }).license, null, 'no licence determined, none shown');
+assert.equal(creditOf({ provenance: { ...provenance, license: { name: 'unknown', url: '' } } }).license, null);
+assert.equal(creditOf({}), null);
+assert.equal(creditOf({ provenance: { publisher: '', url: '' } }), null, 'nothing to credit, nothing drawn');
+assert.equal(creditOf({ provenance: { publisher: 'Unknown', url: '' } }), null, 'the word unknown is never a credit');
+assert.equal(creditOf({ provenance: { publisher: 'VOA', author: 'Unknown', url: 'https://x.org/a' } }).author, '');
+
+// URL safety: only http(s) is ever a link.
+for (const bad of ['javascript:alert(1)', 'JaVaScript:alert(1)', 'data:text/html,x', 'vbscript:x', '//evil.test', 'not a url', '', null]) {
+  assert.equal(safeHttpUrl(bad), '', `rejects ${bad}`);
+}
+assert.equal(safeHttpUrl('http://a.org/x'), 'http://a.org/x');
+assert.equal(creditOf({ provenance: { publisher: 'A', url: 'javascript:alert(1)' } }).url, '');
+assert.equal(creditOf({ provenance: { publisher: 'A', url: 'https://a.org', license: { name: 'CC BY 4.0', url: 'javascript:1' } } }).license.url, '');
+
+// Copy, three languages (Original article / Bài gốc / 原文); no 'unknown' anywhere in the footnote copy.
+const keys = ['srcLabel', 'srcBy', 'srcOriginal'];
+const expected = { en: 'Original article', vi: 'Bài gốc', zh: '原文' };
+const seen = new Set();
+const copySource = readFileSync(new URL('../static/orena/screens/reader/copy.js', import.meta.url), 'utf8');
+for (const [lang, original] of Object.entries(expected)) {
+  assert.ok(copySource.includes(`srcOriginal: '${original}'`), `${lang} srcOriginal`);
+  seen.add(lang);
+}
+assert.equal(seen.size, 3);
+for (const key of keys) assert.equal((copySource.match(new RegExp(`${key}:`, 'g')) || []).length, 3, `${key} in en, vi, zh`);
+assert.ok(!/src\w+: '[^']*unknown/i.test(copySource), 'no unknown in the source copy');
+
+// The Reader renders it as a new-tab link with rel=noopener noreferrer, from the safe credit only.
+const screenSource = readFileSync(new URL('../static/orena/screens/reader/screen.js', import.meta.url), 'utf8');
+assert.ok(/rel="noopener noreferrer"/.test(screenSource) && /target="_blank"/.test(screenSource));
+assert.ok(/doc\.credit/.test(screenSource), 'the footnote reads the sanitised credit, not the raw payload');
+const readerSource = readFileSync(new URL('../static/orena/screens/reader/source.js', import.meta.url), 'utf8');
+assert.ok(/credit: creditOf\(article\)/.test(readerSource) && !/credit:.*kind === 'book'/.test(readerSource), 'only a published article carries a credit');
+
 console.log('reading provenance gate: ok');
