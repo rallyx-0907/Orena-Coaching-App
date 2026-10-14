@@ -8,7 +8,7 @@
 | Branch | `feature/monetization-billing-v1` |
 | Main | `985691c7f7a6c98984715ab2209dc5e2e7a28ea7` (`origin/main`, 2026-10-14): PR-MON-4 merged by the human as #193; the lane branch fast-forwarded onto it |
 | Last completed slice | PR-MON-4 Prepaid Credit Ledger: design APPROVED FOR IMPLEMENTATION, implementation APPROVED, CI green on `32675648`, merged to `main` as #193 (`985691c7`, 2026-10-14) |
-| Active PR | **PR-MON-5 payOS Credit Top-up** - DESIGN revision 2 (closes the review of `5a5c4053`: exact-match fulfillment, `credit_reversal_unapplied`, terminal outcomes, exclusive order payloads; K1/K2/K5/K6 frozen, D-MON-022), awaiting the focused re-review. Record: `docs/reviews/architecture/PR_MON_5_CREDIT_TOPUP_REVIEW_2026-10-14.md` |
+| Active PR | **PR-MON-5 payOS Credit Top-up** - DESIGN revision 3 (review of `f70ab375`: P1-1 and payload exclusivity CLOSED; now the complete reversal predicate and the refund/top-up lock contract), awaiting the focused re-review. Record: `docs/reviews/architecture/PR_MON_5_CREDIT_TOPUP_REVIEW_2026-10-14.md` |
 | Current slice | PR-MON-5 design (contracts 1-9, failure matrix T-F1..T-F10, schema need for a proposed 0033, decisions K1-K6) and the R-MON-014 runbook DRAFT (`RUNBOOK_R-MON-014_RUNTIME_ROLE.md`, not executed) |
 | Exact next action | focused re-review of PR-MON-5 design revision 2 (P1-1, P1-2, P1-3, schema exclusivity). On APPROVE: the migration gate (recheck topology, promote 0027 -> 0031 -> 0032 (-> 0033), throwaway/staging smoke) per the human's order of work. No code, no 0033, no promotion, credits off, runbook not executed |
 | Blockers | none for code. 0027 + 0031 + 0032 stay proposed and unapplied; credits stay off until R-MON-014 is met (human gates) |

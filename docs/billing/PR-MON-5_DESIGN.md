@@ -1,6 +1,12 @@
 # PR-MON-5 payOS Credit Top-up — design
 
-**State: DESIGN revision 2, awaiting the focused re-review.**
+**State: DESIGN revision 3, awaiting the focused re-review.** Revision 3 answers the review of `f70ab375`, in which
+P1-1 and the payload exclusivity are CLOSED:
+- P1-2: a reversal is fulfilled only by its complete durable result, §7.1;
+- P1-3: refund and top-up are serialized by one lock contract, §6.3, and the `payment_refunded` guard also requires
+  that no exact top-up exists, §6.2.
+
+Earlier, in revision 2:
 
 - Revision 1 (`5a5c4053`) got REQUEST CHANGES. Its architecture was accepted, and three lifecycle P1s plus schema
   exclusivity are closed here:
@@ -162,14 +168,58 @@ The rules that follow from this:
 | Outcome | When the reconciler closes it | Fact the trigger verifies |
 | --- | --- | --- |
 | `credit_applied` | the exact expected top-up now exists | an exact top-up row (§6.1) for the item's order |
-| `payment_refunded` | the operator recorded the full refund (K2) before any credit was given | the order is `refunded` |
+| `payment_refunded` | the operator recorded the full refund (K2) before any credit was given | the order is `refunded` **and no exact top-up exists for it** (§6.1). If a top-up exists, the refunded order belongs to the reversal lifecycle (§7.1), and `payment_refunded` is refused |
 | `refund_obligation_recorded` | the account was deleted before the top-up; the ledger refused it, and the money is owed back through the existing path | an open or resolved `paid_deleted_account` item for the same order |
 
-  - A **refunded** order is never topped up afterwards. `apply_credit_topup` acts only on `state = 'paid'`, so a
-    refund before the top-up ends the obligation as `payment_refunded`.
+  - A **refunded** order is never topped up afterwards. This holds under concurrency through the lock contract of
+    §6.3, not through a read taken before the credit transaction. A refund before the top-up ends the obligation as
+    `payment_refunded`.
   - On **deletion before the top-up**, the reconciler records `paid_deleted_account` for the order (dedupe: the
     order code). It closes the top-up gap with `refund_obligation_recorded`. The obligation then lives on that money
     item, which is never dismissable, so nothing stays open twice and nothing is forgotten.
+### 6.3 Refund and top-up are serialized (review P1-3)
+
+**The canonical lock order** extends the global order of PR-MON-3 and PR-MON-4. Every transaction that touches more
+than one of these takes them in this order:
+
+```text
+account_incarnations  →  billing_orders (the order row)  →  credit_accounts
+```
+
+- **`apply_credit_topup(order)`** is **one transaction** across the order and the ledger. It is a new repository
+  method that does not call `credits.topup()` after a separate read:
+  1. `account_incarnations … FOR SHARE` (the order's incarnation);
+  2. `billing_orders … WHERE order_code = :code FOR SHARE`, then **re-read** the order under that lock and require
+     all of the following, otherwise write nothing:
+     - `product_kind = 'credit_pack'`;
+     - `state = 'paid'`;
+     - the incarnation `active`;
+     - `credit_units` is the snapshot to credit.
+  3. `credit_accounts … FOR UPDATE`, then the exact-match idempotency check (§6.1), then the `topup` INSERT. The
+     ledger trigger re-takes the incarnation and the account in the same order;
+  4. commit. Eligibility stays fixed by the order's `FOR SHARE` lock until the top-up commits.
+- **`mark_refunded(order)`** (unchanged order of locks): `account_incarnations … FOR NO KEY UPDATE`, then
+  `billing_orders … FOR UPDATE`.
+  - Its incarnation lock conflicts with the top-up's `FOR SHARE`, and its order lock conflicts with the top-up's
+    order `FOR SHARE`. The two transactions therefore never overlap.
+- **Top-up commits first:** the refund waits behind the incarnation lock, then records `refunded`. The order now has
+  its exact top-up, so the normal reversal lifecycle (§7.1) applies.
+- **Refund commits first:** the top-up waits behind the incarnation lock. After acquiring it, it re-reads
+  `state = 'refunded'` under the order lock and writes **no** top-up. The gap ends as `payment_refunded` (§6.2).
+- **Database backstop (0033).** The ledger trigger `credit_apply_entry()` is replaced so that, for a `topup` whose
+  `source_type = 'billing_order'`, it also:
+  - takes the order row `FOR SHARE`, between the incarnation and the account locks (the canonical order);
+  - requires `product_kind = 'credit_pack'`, `state = 'paid'`, `credit_units = NEW.amount`, and the order's
+    incarnation equal to the account's.
+
+  A writer that skips the repository still cannot credit a refunded, unpaid or mismatched order. For that row lock,
+  `orena_credit_owner` gets `SELECT, UPDATE (updated_at)` on `billing_orders`; no function of the owner updates an
+  order.
+- **No provider call** is made while any of these locks is held. The payOS request of a checkout and the
+  reconciler's lookup run with no transaction open (PR-MON-3 P1-4).
+- **Runtime readiness.** `credit_runtime_privileges` also requires the row-lock privilege on `billing_orders`
+  (`missing_lock_billing_orders`). The application's runtime already holds DML on it (runbook §2).
+
 - **HTTP** (review answer 3):
   - A transient or system failure **before fulfillment completes** (a database error during the top-up) answers
     **503**. The provider redelivers, the redelivery is `duplicate`, and the top-up runs again.
@@ -198,15 +248,29 @@ The rules that follow from this:
 ### 7.1 `credit_reversal_unapplied`: the refund → reversal gap (review P1-2)
 
 - **Meaning:** money has been refunded, but the corresponding credit reversal request has not been durably applied.
-- **The exact expected reversal receipt** is a `credit_reversal_requests` row with all of:
-  - `source_type = 'payos_refund'` and `source_ref = 'payos:<order_code>'`;
-  - `credit_account_id` equal to the order's credit account;
-  - `topup_entry_id` equal to **the order's exact top-up** (§6.1);
-  - `requested = order.credit_units`;
-  - `request_digest` equal to the intent digest of exactly that reversal.
+- **An exact completed reversal** (review P1-2) is the complete durable result. A request row alone never counts.
+  It needs all three of the following:
+  1. **The exact request:** a `credit_reversal_requests` row with:
+     - `source_type = 'payos_refund'` and `source_ref = 'payos:<order_code>'`;
+     - `credit_account_id` equal to the order's credit account;
+     - `topup_entry_id` equal to **the order's exact top-up** (§6.1);
+     - `requested = order.credit_units`;
+     - `request_digest` equal to the intent digest of exactly that reversal.
+  2. **When `request.applied > 0`:** **exactly one** ledger `reversal` entry with
+     `reversal_request_id = request.id`, in the same account, with `ref_entry_id` equal to the same top-up and
+     `amount = request.applied`.
+  3. **When `request.shortfall > 0`:** the `credit_reversal_shortfall` item with `dedupe_key = request.id`, whose
+     `credit_reversal_request_id`, `credit_topup_entry_id`, `credit_requested`, `credit_applied` and
+     `credit_shortfall` equal the request's. Its `credit_reversal_entry_id` is the entry of (2), or NULL when
+     `applied = 0`.
 
-  Its `applied` and `shortfall` can be anything C5 decided. A partial reversal **with** its shortfall item is a
-  completed obligation.
+  Its `applied` and `shortfall` are whatever C5 decided; the predicate checks that their effects exist.
+  PR-MON-4's repository writes all three in one transaction, so the normal path always satisfies it, and no new
+  financial model is involved.
+- **One predicate, used three times:**
+  - `credit_reversal_gaps()` (detection);
+  - the reconciler's repair success (a retry counts only if the predicate then holds);
+  - the `credit_reversed` terminal guard in the database.
 - **Detection** (derived): a credit order in state `refunded` whose exact top-up exists and which has **no exact
   reversal receipt**. A refunded order that never got its top-up has nothing to reverse. That case is the
   `payment_refunded` end of §6.2.
@@ -217,8 +281,9 @@ The rules that follow from this:
   - `gateway = 'credits'`;
   - it blocks **credit-pack checkouts only**, never plan checkouts;
   - it records the order, the account, the top-up and `credit_requested`, plus the conflicting receipt, if any.
-- **Terminal outcome:** `credit_reversed`, reconciler-only. The guard trigger verifies that the exact receipt
-  exists. An administrator can never resolve or dismiss this item.
+- **Terminal outcome:** `credit_reversed`, reconciler-only. The guard trigger verifies the **complete** predicate:
+  request, entry when `applied > 0`, and shortfall item when `shortfall > 0`. An administrator can never resolve or
+  dismiss this item.
 - **Chargeback.** payOS VietQR is a bank transfer, so there is no card chargeback. A bank dispute that ends in a
   refund is recorded as an operator refund, as above.
 
@@ -259,10 +324,13 @@ edited, and the order becomes 0027 → 0031 → 0032 → 0033 (K4).
 - The outcome CHECK for each: `state = 'open'` OR (`resolved_by = 'reconciler'` AND the outcome is one of that
   kind's own).
 - The guard function is extended. When a row moves to `resolved`, it verifies the outcome's fact (§6.2, §7.1):
-  - an exact top-up row;
-  - the order `refunded`;
-  - a `paid_deleted_account` item for the order;
-  - an exact reversal receipt.
+  - `credit_applied`: an exact top-up row;
+  - `payment_refunded`: the order `refunded` **and no exact top-up**;
+  - `refund_obligation_recorded`: a `paid_deleted_account` item for the order;
+  - `credit_reversed`: the complete reversal predicate.
+- `credit_apply_entry()` is replaced. It keeps everything 0032 does, plus the billing-order check of §6.3 in the
+  canonical lock order. The owner role gets `SELECT, UPDATE (updated_at)` on `billing_orders`, for the row lock
+  only.
 - The kind, outcome and critical lists and the guard function are replaced as in 0032, so every existing rule is
   kept and the new facts are frozen.
 
@@ -278,6 +346,9 @@ item exists. Otherwise it restores 0032's lists, guard and CHECKs exactly.
   - `mark_paid` assigns `paid_sequence` and `period_end` **only for plan orders**;
   - `_chain`, `prepaid_gaps` and `prepaid_state` read only `product_kind = 'plan'`;
   - new `credit_topup_gaps()` and `credit_reversal_gaps()`, both on the exact-match predicates (§6.1, §7.1).
+- **`persistence/credit_repository.py`:** new `apply_credit_topup(order_code)`. It is one transaction across
+  the order and the ledger, in the canonical lock order, and re-reads the order under its lock (§6.3). The
+  readiness check gains `missing_lock_billing_orders`.
 - **`persistence/product_repository.py`:** the D-MON-014 guard reads only plan orders. This is a one-line filter in
   a shared file: minimal, stated, and tested.
 - **`billing/service.py`:**
@@ -323,6 +394,8 @@ item exists. Otherwise it restores 0032's lists, guard and CHECKs exactly.
 | T-F11 | The top-up source is already taken by another account or other units | `conflict`, nothing written; the order stays unfulfilled; `credit_topup_unapplied` records the conflicting entry (§6.1). |
 | T-F12 | Refund recorded, reversal missing (crash or persistent failure) | The reconciler retries the exact reversal; if it persists, the critical `credit_reversal_unapplied` blocks credit-pack checkouts until the exact receipt exists (§7.1). |
 | T-F13 | Refund recorded before any credit was given | `credit_topup_unapplied` closes as `payment_refunded`; no top-up, no reversal (§6.2). |
+| T-F15 | `apply_credit_topup` and `mark_refunded` race | Serialized by the canonical lock order (§6.3). If the top-up wins, the refund follows, then the reversal lifecycle. If the refund wins, the top-up re-reads `refunded` and writes nothing, and the gap ends as `payment_refunded`. |
+| T-F16 | A reversal request without its entry or its shortfall item | Not fulfilled. The gap stays, the repair counts only if the complete predicate then holds, and `credit_reversed` is refused (§7.1). |
 | T-F14 | Account deleted before the top-up | The ledger refuses the top-up; `paid_deleted_account` is recorded for the order; the top-up gap closes as `refund_obligation_recorded` (§6.2). |
 
 ## 12. Test and mutation plan (throwaway PostgreSQL 16; the credit tests as the runtime role)
@@ -358,6 +431,22 @@ item exists. Otherwise it restores 0032's lists, guard and CHECKs exactly.
   - the item is resolved only as `credit_reversed`, with the exact receipt (an administrator's resolve is refused by
     the route, the CHECK and the trigger);
   - a replay is a duplicate.
+- **Refund vs top-up serialization (review P1-3 of `f70ab375`)**, both orderings, with real concurrent
+  transactions:
+  - **top-up first:** a transaction holding the top-up's locks (incarnation `FOR SHARE`, order `FOR SHARE`, account,
+    ledger insert), uncommitted. A concurrent `mark_refunded` must wait. After the top-up commits, the refund
+    commits, and the reconciler applies the reversal (full, or partial with a shortfall);
+  - **refund first:** an uncommitted `mark_refunded`. A concurrent `apply_credit_topup` must wait. After the refund
+    commits, it writes no top-up, and the gap closes as `payment_refunded`;
+  - **backstop:** a direct ledger insert of a `billing_order` top-up for a refunded order, an unpaid order, a plan
+    order, or with other units is refused by the trigger.
+- **Complete reversal predicate (review P1-2):**
+  - a request row without its entry (with `applied > 0`) is not fulfilled;
+  - without its shortfall item (with `shortfall > 0`) it is not fulfilled;
+  - a shortfall item with mismatched facts is not fulfilled;
+  - each is refused for `credit_reversed`;
+  - the normal path is fulfilled.
+- **`payment_refunded` guard:** refused while an exact top-up exists for the order.
 - **Terminal lifecycle (P1-3):**
   - `credit_applied` once the exact top-up exists;
   - `payment_refunded` when the refund comes first (and no top-up afterwards);
@@ -380,7 +469,10 @@ item exists. Otherwise it restores 0032's lists, guard and CHECKs exactly.
   - the critical item and its checkout block;
   - the refund → reversal path;
   - the 0033 CHECKs (payload exclusivity, no access for credit orders, per-kind item CHECKs);
-  - the exact-match predicates (top-up and reversal);
+  - the exact-match predicates (top-up, and each of the three parts of the complete reversal);
+  - the order re-read under lock in `apply_credit_topup`;
+  - the order lock in the ledger trigger's billing-order check;
+  - the "no exact top-up" clause of the `payment_refunded` guard;
   - each terminal outcome's trigger fact;
   - the downgrade guard.
 - **Regression:** every PR-MON-1..4 Billing and credit test, and every `tests/*_postgres.py`. #160 is inherited.
