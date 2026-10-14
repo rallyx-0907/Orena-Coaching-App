@@ -185,7 +185,9 @@ class PostgresProductRepository(ProductRepository):
         if connection.execute(text("SELECT to_regclass('billing_orders')")).scalar() is None:
             return False
         gateways = connection.execute(
-            text("SELECT DISTINCT gateway FROM billing_orders WHERE incarnation_id = :inc AND paid_sequence IS NOT NULL"),
+            # plan orders only (PR-MON-5): a credit-pack order never feeds plan access
+            text("SELECT DISTINCT gateway FROM billing_orders WHERE incarnation_id = :inc AND product_kind = 'plan' "
+                 "AND paid_sequence IS NOT NULL"),
             {"inc": incarnation},
         ).scalars().all()
         for gateway in gateways:

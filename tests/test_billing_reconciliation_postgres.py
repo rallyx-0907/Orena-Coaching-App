@@ -13,7 +13,7 @@ from urllib.parse import quote
 
 import pytest
 
-from tests.test_billing import CHECKSUM, PAYOS, ROOT, _proposed
+from tests.test_billing import BILLING_BASE, CHECKSUM, PAYOS, ROOT, _proposed
 from writing_coach.billing.gateway import hmac_sha256_hex
 from writing_coach.billing.payos import signing_string
 
@@ -73,9 +73,11 @@ def world():
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
     cfg.set_main_option("path_separator", "os")
     cfg.set_main_option("sqlalchemy.url", schema_url.replace("%", "%%"))
-    command.upgrade(cfg, "head")
+    command.upgrade(cfg, BILLING_BASE)
     engine = create_engine(schema_url, future=True, connect_args={"application_name": app_name})
-    migrations = [_proposed("20261005_0027_billing_orders"), _proposed("20261014_0031_billing_reconciliation")]
+    # the whole Billing chain the code reads (0033's order columns included, PR-MON-5)
+    migrations = [_proposed("20261005_0027_billing_orders"), _proposed("20261014_0031_billing_reconciliation"),
+                  _proposed("20261014_0032_credit_ledger"), _proposed("20261015_0033_credit_topup_orders")]
     with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
         for migration in migrations:
             migration.upgrade()
@@ -159,13 +161,15 @@ def access(world, incarnation):
 # ---- the migration ----------------------------------------------------------------------------------------
 
 def test_the_migration_goes_down_only_while_empty_and_up_again(world):
-    def down():
+    def down():  # 0031 and what stands on it (0032, 0033), top first
         with world.engine.begin() as connection, world.Operations.context(world.MigrationContext.configure(connection)):
-            world.migrations[1].downgrade()
+            for migration in reversed(world.migrations[1:]):
+                migration.downgrade()
 
     def up():
         with world.engine.begin() as connection, world.Operations.context(world.MigrationContext.configure(connection)):
-            world.migrations[1].upgrade()
+            for migration in world.migrations[1:]:
+                migration.upgrade()
 
     down()
     up()

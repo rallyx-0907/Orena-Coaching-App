@@ -186,3 +186,14 @@ boundary-defeating privilege. | Constraints must be satisfiable as written, one 
 and reconciliation facts must be as immutable as PR-MON-3's. | No code; 0032 not yet created; rebase and topology
 check before creating it.
 
+D-MON-022 | 2026-10-14 | payOS credit top-up policy, K1/K2/K5/K6 (human, on the PR-MON-5 design `5a5c4053`). K1: PR-MON-5
+implements the credit-pack configuration contract only; production has no packs; sizes and prices are decided with
+the PR-MON-6 meter/cost model; no packs file means no credit products. K2: a credit-pack order is refunded in full or
+not at all (no partial monetary refund in v1, the operator decides); a recorded full refund attempts the reversal of
+the full `credit_units`, C5 reverses what it can, the rest is `credit_reversal_shortfall`, never negative. K5: the
+pack-checkout API ships in PR-MON-5 behind `CREDITS_ENABLED`, credit runtime readiness and a configured pack, with no
+UI. K6: no purchase-count limits in v1 beyond idempotency, server-side pack validation and confirmed amount, currency
+and units. | Credits sold for money need an exact, auditable path, and the commercial numbers belong to the cost
+model. | Recorded in `PR-MON-5_DESIGN.md` revision 2 with the review's lifecycle fixes (exact-match fulfillment,
+`credit_reversal_unapplied`, terminal outcomes of `credit_topup_unapplied`, exclusive order payloads).
+

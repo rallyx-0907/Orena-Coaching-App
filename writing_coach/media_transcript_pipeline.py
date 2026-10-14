@@ -52,6 +52,7 @@ from writing_coach.ai.pricing import estimate_token_cost
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore
 from writing_coach.media_learning import MediaTranscript, TranscriptSegment
 from writing_coach.media_library_store import MediaLibraryEntry
+from writing_coach.media_zh_cleanup import clean_asr_cues
 from writing_coach.media_segmentation import Cue, first_failure, primary_language, segment_lines, validate_lines
 from writing_coach.media_spend import KIND_AI, KIND_ASR, SpendCapReached, SpendLedger
 from writing_coach.speech_asr import (
@@ -651,6 +652,8 @@ class MediaPipeline:
             if stop.code == "audio_unavailable" and captions_error in {"provider_failure", "provider_timeout"}:
                 raise PipelineStop("captions_blocked", "audio_unavailable") from stop
             raise
+        # Chinese recognition output is repaired (no spaces between Hanzi, sentence marks, no leading silence) before it is cut.
+        raw = clean_asr_cues(raw, words, language or detected)
         lines = segment_lines(raw, language)
         return lines, ORIGIN_ASR, cost, seconds, detected, words
 

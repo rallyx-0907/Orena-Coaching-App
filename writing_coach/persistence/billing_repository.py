@@ -21,6 +21,9 @@ For a domestic gateway the paid order is also the payment fact the prepaid subsc
 - The reconciler's state per order (0031): when payOS was last asked, what it answered, when to ask again, and
   whether the provider's outcome is settled. A local expiry never settles it; only a successful lookup does.
 - `prepaid_gaps()` finds the accounts whose paid orders are ahead of the access recorded for them (R-MON-002).
+- PR-MON-5 (migration 0033): an order is a `plan` order or a `credit_pack` order. A credit order snapshots its pack and
+  units, and never takes `paid_sequence` or `period_end` - so it never feeds plan access. Every plan read here
+  (`_chain`, `prepaid_gaps`) also filters `product_kind = 'plan'`. Its credit is the ledger's (`credit_repository`).
 """
 
 from __future__ import annotations
@@ -38,7 +41,7 @@ _ORDER_COLUMNS = (
     "id, operation_id, order_code, incarnation_id, gateway, plan_id, period, currency, amount_minor, "
     "external_reference, state, paid_event_id, paid_at, paid_sequence, period_end, refunded_at, created_at, "
     "expires_at, paid_reference, provider_status, provider_checked_at, next_lookup_at, lookup_attempts, "
-    "provider_settled_at"
+    "provider_settled_at, product_kind, credit_pack_id, credit_units"
 )
 ORDER_TTL = timedelta(minutes=30)  # H5: an operational expiry, never when Orena stops looking for a payment
 
@@ -49,26 +52,32 @@ class PostgresBillingRepository:
 
     # ---- checkout -----------------------------------------------------------------------------------------
 
-    def create_order(self, *, operation_id: str, incarnation_id: str, gateway: str, plan_id: str, period: str,
-                     currency: str, amount_minor: int, ttl: timedelta = ORDER_TTL) -> dict[str, Any]:
+    def create_order(self, *, operation_id: str, incarnation_id: str, gateway: str, plan_id: str | None,
+                     period: str | None, currency: str, amount_minor: int, ttl: timedelta = ORDER_TTL,
+                     product_kind: str = "plan", credit_pack_id: str | None = None,
+                     credit_units: int | None = None) -> dict[str, Any]:
         """The order for this operation: new, or the one already made by the same operation. The same operation
         id with a different price, gateway or account is a conflict, never a second order."""
 
         now = datetime.now(UTC)
         values = {"id": uuid.uuid4(), "op": operation_id, "inc": incarnation_id, "gateway": gateway, "plan": plan_id,
                   "period": period, "currency": currency, "amount": int(amount_minor), "now": now,
-                  "expires": now + ttl}  # fmt: skip
+                  "expires": now + ttl, "kind": product_kind, "pack": credit_pack_id, "units": credit_units}  # fmt: skip
         with self._engine.begin() as connection:
             connection.execute(text(
                 "INSERT INTO billing_orders (id, operation_id, incarnation_id, gateway, plan_id, period, currency, "
-                "amount_minor, state, created_at, updated_at, expires_at) VALUES (:id, :op, :inc, :gateway, :plan, :period, "
-                ":currency, :amount, 'created', :now, :now, :expires) ON CONFLICT (operation_id) DO NOTHING"), values)
+                "amount_minor, state, created_at, updated_at, expires_at, product_kind, credit_pack_id, credit_units) "
+                "VALUES (:id, :op, :inc, :gateway, :plan, :period, :currency, :amount, 'created', :now, :now, :expires, "
+                ":kind, :pack, :units) ON CONFLICT (operation_id) DO NOTHING"), values)
             row = connection.execute(text(f"SELECT {_ORDER_COLUMNS} FROM billing_orders WHERE operation_id = :op"),
                                      {"op": operation_id}).mappings().one()
         order = dict(row)
         same = (str(order["incarnation_id"]) == str(incarnation_id) and order["gateway"] == gateway
                 and order["plan_id"] == plan_id and order["period"] == period and order["currency"] == currency
-                and int(order["amount_minor"]) == int(amount_minor))  # fmt: skip
+                and int(order["amount_minor"]) == int(amount_minor) and order["product_kind"] == product_kind
+                and order["credit_pack_id"] == credit_pack_id
+                and (order["credit_units"] is None) == (credit_units is None)
+                and (credit_units is None or int(order["credit_units"]) == int(credit_units)))  # fmt: skip
         order["conflict"] = not same
         return order
 
@@ -116,7 +125,8 @@ class PostgresBillingRepository:
             status = owner[0]
             order = connection.execute(text(f"SELECT {_ORDER_COLUMNS} FROM billing_orders WHERE order_code = :code "
                                             "FOR UPDATE"), {"code": order_code}).mappings().one()
-            result = {"incarnation_id": str(incarnation), "order_code": order_code, "order_id": order["id"]}
+            result = {"incarnation_id": str(incarnation), "order_code": order_code, "order_id": order["id"],
+                      "product_kind": order["product_kind"]}
             reference = (paid_reference or "").strip()[:200] or None
             same_money = amount_minor == int(order["amount_minor"]) and (currency or "").upper() == order["currency"]
             same_link = not (payment_link_id and order["external_reference"]
@@ -143,11 +153,14 @@ class PostgresBillingRepository:
                 return {**result, "status": "mismatch"}
             if not same_link:
                 return {**result, "status": "mismatch"}  # a payment of another link under the same order code
-            chain = self._chain(connection, incarnation, gateway=order["gateway"])
-            end = extended_until(chain["paid_through"], moment, order["period"])
-            sequence = connection.execute(text(
-                "SELECT COALESCE(MAX(paid_sequence), 0) + 1 FROM billing_orders WHERE incarnation_id = :inc"),
-                {"inc": incarnation}).scalar_one()
+            sequence, end = None, None
+            if order["product_kind"] == "plan":
+                # Only a plan order takes a place in the prepaid chain (a credit order never feeds plan access, §1).
+                chain = self._chain(connection, incarnation, gateway=order["gateway"])
+                end = extended_until(chain["paid_through"], moment, order["period"])
+                sequence = connection.execute(text(
+                    "SELECT COALESCE(MAX(paid_sequence), 0) + 1 FROM billing_orders WHERE incarnation_id = :inc"),
+                    {"inc": incarnation}).scalar_one()
             connection.execute(text(
                 "UPDATE billing_orders SET state = 'paid', paid_event_id = :event, paid_at = :now, "
                 "paid_sequence = :seq, period_end = :end, paid_reference = :ref, updated_at = :now, "
@@ -254,7 +267,8 @@ class PostgresBillingRepository:
                 "JOIN account_incarnations i ON i.id = o.incarnation_id AND i.status = 'active' "
                 "LEFT JOIN commerce_provider_subscriptions ps ON ps.provider = o.gateway "
                 "AND ps.external_subscription_id = 'prepaid:' || o.incarnation_id::text "
-                "WHERE o.gateway = :gateway AND o.paid_sequence IS NOT NULL GROUP BY o.incarnation_id"),
+                "WHERE o.gateway = :gateway AND o.product_kind = 'plan' AND o.paid_sequence IS NOT NULL "
+                "GROUP BY o.incarnation_id"),
                 {"gateway": gateway}).mappings().all()  # fmt: skip
         return [{"incarnation_id": str(row["incarnation_id"]), "version": int(row["version"]),
                  "applied": None if row["applied"] is None else int(row["applied"])}
@@ -271,7 +285,7 @@ class PostgresBillingRepository:
 
         rows = connection.execute(text(
             "SELECT plan_id, period, paid_at, state, gateway FROM billing_orders "
-            "WHERE incarnation_id = :inc AND paid_sequence IS NOT NULL ORDER BY paid_sequence"),
+            "WHERE incarnation_id = :inc AND product_kind = 'plan' AND paid_sequence IS NOT NULL ORDER BY paid_sequence"),
             {"inc": incarnation_id}).mappings().all()
         end, plan, refunds = None, None, 0
         for row in rows:
