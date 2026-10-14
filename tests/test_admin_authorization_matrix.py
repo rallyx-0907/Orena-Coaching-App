@@ -59,6 +59,11 @@ MATRIX = {
     ("GET", "/api/admin/ai/costs/accounts"): ("/api/admin/ai/costs/accounts", {}, {200}),
     ("POST", "/api/admin/billing/orders/{order_code}/refund"): ("/api/admin/billing/orders/100001/refund", {"json": {"note": "test"}}, {503}),
     ("GET", "/api/admin/billing/readiness"): ("/api/admin/billing/readiness", {}, {200}),
+    ("GET", "/api/admin/billing/reconciliation"): ("/api/admin/billing/reconciliation", {}, {503}),
+    ("POST", "/api/admin/billing/reconciliation/{item_id}/resolve"): (
+        "/api/admin/billing/reconciliation/11111111-1111-4111-8111-111111111111/resolve",
+        {"json": {"resolution": "resolved", "outcome": "recorded", "note": "matrix"}}, {503}),
+    ("POST", "/api/admin/billing/reconcile"): ("/api/admin/billing/reconcile", {}, {503}),
     ("POST", "/api/admin/content-packs/export"): ("/api/admin/content-packs/export", {"json": {}}, {404, 503}),
     ("POST", "/api/admin/content-packs/plan"): ("/api/admin/content-packs/plan", {}, {422}),
     ("POST", "/api/admin/content-packs/import"): ("/api/admin/content-packs/import", {}, {422}),
@@ -292,7 +297,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 101  # includes the six Reading thumbnail routes (D-194), the Reading source public name (D-192), the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
+    assert len(routes) == 104  # includes the six Reading thumbnail routes (D-194), the Reading source public name (D-192), the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015), the three billing reconciliation routes (PR-MON-3) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

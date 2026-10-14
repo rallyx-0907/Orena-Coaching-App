@@ -196,7 +196,7 @@ def facts(**overrides):
 
 def test_billing_is_ready_only_when_every_runtime_capability_is():
     assert readiness.report(facts()) | {"gateways": None} == {
-        "ready": True, "blockers": [], "gateways": None,
+        "ready": True, "blockers": [], "gateways": None, "reconciliation": "not_configured",
         "checks": {"switch": "on", "database": "postgresql", "account_backbone": "active", "commerce_schema": "present",
                    "orders_schema": "present", "entitlement_source": "installed", "public_base_url": "https"}}  # fmt: skip
 

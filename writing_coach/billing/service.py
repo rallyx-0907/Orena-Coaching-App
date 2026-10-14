@@ -10,6 +10,12 @@ Access changes only through the commerce repository (`record_event`), from a ver
 - a domestic payment marks its order paid, and the account's prepaid state - replayed from its orders - is
   recorded as a `prepaid:<incarnation>` subscription whose version is the order count.
 A checkout return URL grants nothing.
+
+A verified money event is acknowledged only once it is durable (PR-MON-3, D-MON-004): as the order, a receipt, or a
+reconciliation item (`persistence/billing_reconciliation_repository.py`). A business anomaly - an unknown order, a
+mismatch, a payment for a deleted account, an undecidable subscription event, a refund - is recorded as an item and
+then acknowledged; when that record cannot be written the call raises, and the route answers 503 so the provider
+retries. An open critical item (paid without access, paid but unrecorded) closes new checkouts on its gateway.
 """
 
 from __future__ import annotations
@@ -35,6 +41,11 @@ _GATEWAY_RULES = {"payos": ({"VND"}, False), "polar": (None, True)}
 # What a prices file may sell: a paid plan of the catalogue, by its own id (not a legacy alias).
 _SELLABLE_PLANS = frozenset(plan_id for plan_id in PLANS if plan_id != DEFAULT_PLAN_ID)
 _LIVE = frozenset({"active", "trialing", "past_due", "paused", "pending"})
+# A payment Orena cannot apply, and the reconciliation item it is kept as (PR-MON-3 §4.2).
+_PAYMENT_ANOMALY = {"unknown_order": "payment_unknown_order", "mismatch": "payment_mismatch",
+                    "not_payable": "payment_not_payable"}
+# A subscription event the commerce record could not decide.
+_UNDECIDED = frozenset({"unknown", "foreign_incarnation", "payload_conflict", "rejected"})
 
 
 class CheckoutRefused(Exception):
@@ -115,8 +126,11 @@ class WebhookOutcome:
 class BillingService:
     def __init__(self, *, orders: Any, commerce: Any, gateways: Mapping[str, Any], prices: Mapping[str, Price],
                  catalog: Callable[[], Mapping[str, Any]] = lambda: current_plans(strict=True),
-                 send: Callable[[dict], dict] = _send, now: Callable[[], datetime] = lambda: datetime.now(UTC)) -> None:
+                 send: Callable[[dict], dict] = _send, now: Callable[[], datetime] = lambda: datetime.now(UTC),
+                 reconciliation: Any = None) -> None:
         self._orders = orders
+        # The reconciliation items (PR-MON-3). Without them no anomaly can be recorded, so none is acknowledged.
+        self._items = reconciliation
         self._commerce = commerce
         self._gateways = dict(gateways)
         self._prices = dict(prices)
@@ -125,6 +139,23 @@ class BillingService:
         self._send = send
         self._now = now
 
+    @property
+    def orders(self) -> Any:
+        return self._orders
+
+    @property
+    def reconciliation(self) -> Any:
+        return self._items
+
+    @property
+    def gateways(self) -> Mapping[str, Any]:
+        return dict(self._gateways)
+
+    def domestic_gateways(self) -> list[str]:
+        """The configured gateways that sell prepaid periods (their orders are the payment record)."""
+
+        return [name for name, gateway in self._gateways.items() if getattr(gateway, "kind", "") == "domestic"]
+
     # ---- price integrity (D-MON-005, D-MON-015) -----------------------------------------------------------
 
     def price_checks(self) -> dict[str, PriceCheck]:
@@ -132,10 +163,37 @@ class BillingService:
 
         return check_prices(self._prices, self._catalog())
 
+    def critical_by_gateway(self) -> Mapping[str, int]:
+        """Open critical reconciliation items per gateway (PR-MON-3 §4.2). Raises when they cannot be read."""
+
+        return self._items.critical_by_gateway() if self._items is not None else {}
+
+    def reconciliation_summary(self) -> dict[str, Any] | str:
+        """Open items per kind and the critical ones per gateway, for the readiness report; never raises."""
+
+        if self._items is None:
+            return "not_configured"  # a service built without items (tests); the running app always has them
+        try:
+            return self._items.summary()
+        except Exception:  # noqa: BLE001 - reported, never a failed report
+            return "unavailable"
+
+    def _critical_blocked(self) -> set[str] | None:
+        """Gateways an open critical item closes; None when that cannot be read (every gateway is then closed)."""
+
+        try:
+            return {gateway for gateway, count in self.critical_by_gateway().items() if count > 0}
+        except Exception:  # noqa: BLE001 - unreadable reconciliation state sells nothing
+            _log.warning("billing: reconciliation state cannot be read; nothing is sold", exc_info=True)
+            return None
+
     def _sellable(self, checks: Mapping[str, PriceCheck]) -> dict[str, Price]:
         blocked = blocked_gateways(checks.values())
+        critical = self._critical_blocked()
+        if critical is None:
+            return {}
         return {key: price for key, price in self._prices.items()
-                if price.gateway in self._gateways and price.gateway not in blocked}  # fmt: skip
+                if price.gateway in self._gateways and price.gateway not in blocked | critical}  # fmt: skip
 
     def offered(self) -> list[dict[str, Any]]:
         try:
@@ -155,6 +213,10 @@ class BillingService:
             checks: Mapping[str, PriceCheck] | None = self.price_checks()
         except CatalogUnavailable:
             checks = None
+        try:
+            critical: Mapping[str, int] | None = self.critical_by_gateway()
+        except Exception:  # noqa: BLE001 - reported as unavailable, and nothing is ready
+            critical = None
         report: dict[str, dict[str, Any]] = {}
         for name in _GATEWAY_RULES:
             gateway = self._gateways.get(name)
@@ -165,6 +227,12 @@ class BillingService:
                 "prices": [check.as_dict() for check in mine],
                 "ready": gateway is not None and checks is not None and bool(mine) and all(c.matches for c in mine),
             }
+            if critical is None:
+                entry["reconciliation"] = "unavailable"
+                entry["ready"] = False
+            elif critical.get(name, 0) > 0:
+                entry["reconciliation_critical"] = int(critical[name])
+                entry["ready"] = False
             if gateway is not None and getattr(gateway, "environment", None):
                 entry["environment"] = gateway.environment
             if checks is None:
@@ -186,6 +254,9 @@ class BillingService:
             raise LookupError("price_not_offered")
         uuid.UUID(operation_id)  # an operation id is the client's own UUID: a retry reuses it
         self._refuse_unverified_price(price_key, price, confirmed_amount_minor, confirmed_currency)
+        critical = self._critical_blocked()
+        if critical is None or price.gateway in critical:
+            raise CheckoutRefused("reconciliation_critical")
         self._refuse_second_subscription(incarnation_id, price, gateway)
         order = self._orders.create_order(operation_id=operation_id, incarnation_id=incarnation_id,
                                           gateway=price.gateway, plan_id=price.plan_id, period=price.period,
@@ -200,7 +271,8 @@ class BillingService:
                                 return_url=return_url, cancel_url=cancel_url, customer_email=customer_email)  # fmt: skip
         if gateway.kind == "domestic":
             request = gateway.checkout_request(intent, order_code=int(order["order_code"]),
-                                               description=f"OR{order['order_code']}")  # fmt: skip
+                                               description=f"OR{order['order_code']}",
+                                               expires_at=order.get("expires_at"))  # fmt: skip
             answer = self._send(request)
             data = answer.get("data") or {}
             reference, url, qr = str(data.get("paymentLinkId") or ""), str(data.get("checkoutUrl") or ""), str(data.get("qrCode") or "")
@@ -258,9 +330,40 @@ class BillingService:
             return self._prepaid_payment(fact)
         if fact.kind == "subscription":
             return self._subscription(fact)
-        # refunds and other verified events: logged; access follows the subscription's own events.
+        if fact.kind == "refund":
+            return self._refund(fact)
+        # other verified events move no money: logged, no effect.
         _log.info("billing event from %s: %s %s", gateway_name, fact.kind, fact.provider_state)
         return WebhookOutcome("ignored", fact.kind)
+
+    def _item(self, kind: str, gateway: str, dedupe_key: str, **facts: Any) -> dict[str, Any]:
+        """Record one anomaly durably, before it is acknowledged. Raises when it cannot be recorded."""
+
+        if self._items is None:
+            raise RuntimeError("billing reconciliation items are not configured; the anomaly cannot be recorded")
+        item = self._items.record(kind=kind, gateway=gateway, dedupe_key=dedupe_key, now=self._now(), **facts)
+        _log.warning("billing: %s on %s recorded for reconciliation (%s)", kind, gateway, dedupe_key)
+        return item
+
+    def _refund(self, fact: PaymentFact) -> WebhookOutcome:
+        """A provider's refund is recorded, matched to an account only through its subscription's committed mapping
+        (§4.6). It never changes access: the subscription's own lifecycle events do (H4)."""
+
+        extra = fact.extra or {}
+        refund_id = extra.get("refund_id") or fact.event_id
+        subscription = extra.get("subscription_id") or ""
+        mapped = self._commerce.get_provider_subscription(fact.gateway, subscription) if subscription else None
+        incarnation = str(mapped["incarnation_id"]) if mapped else None
+        self._item("provider_refund", fact.gateway, refund_id, external_event_id=fact.event_id,
+                   reported_amount_minor=fact.amount_minor, reported_currency=fact.currency,
+                   provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
+                   reason=f"subscription {subscription}" if subscription else f"order {extra.get('order_id') or ''}",
+                   incarnation_id=incarnation)  # fmt: skip
+        if incarnation is not None and self._items.auto_resolve(
+                kind="provider_refund", gateway=fact.gateway, dedupe_key=refund_id, outcome="recorded",
+                note="matched to its subscription's account; access follows subscription events", now=self._now()):
+            return WebhookOutcome("recorded", "refund_matched")
+        return WebhookOutcome("recorded", "refund_matched" if incarnation else "refund_unmatched")
 
     def _subscription(self, fact: PaymentFact) -> WebhookOutcome:
         from writing_coach.persistence.commerce_repository import SubscriptionUpdate
@@ -274,7 +377,9 @@ class BillingService:
         if incarnation is None:
             incarnation = self._known_checkout(fact, order)
         if incarnation is None:
-            _log.warning("billing: %s subscription %s names no checkout of Orena", fact.gateway, fact.external_reference)
+            self._item("event_undecided", fact.gateway, fact.event_id, external_event_id=fact.event_id,
+                       provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
+                       reason=f"subscription {fact.external_reference} names no checkout of Orena")  # fmt: skip
             return WebhookOutcome("unknown", "no_checkout_for_subscription")
         # The plan is the one Orena's own order sold, when the order is this account's; signed metadata otherwise.
         plan = order["plan_id"] if order is not None and str(order["incarnation_id"]) == incarnation else fact.plan_id
@@ -287,7 +392,14 @@ class BillingService:
                                               external_event_id=fact.event_id, event_object_version=fact.object_version,
                                               update=update, external_object_reference=fact.external_reference,
                                               payload_digest=fact.payload_digest)  # fmt: skip
-        return self._outcome(outcome, f"{fact.gateway} subscription {fact.external_reference}")
+        result = self._outcome(outcome, f"{fact.gateway} subscription {fact.external_reference}")
+        if result.status in _UNDECIDED:
+            self._item("event_undecided", fact.gateway, fact.event_id, external_event_id=fact.event_id,
+                       provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
+                       reason=f"{result.status} {result.detail}".strip(),
+                       # `rejected` is an account the commerce record does not know: nothing to link to.
+                       incarnation_id=None if result.status == "rejected" else incarnation)  # fmt: skip
+        return result
 
     @staticmethod
     def _outcome(outcome: Mapping[str, Any], what: str) -> WebhookOutcome:
@@ -312,17 +424,44 @@ class BillingService:
         try:
             code = int(fact.external_reference or "")
         except ValueError:
-            return WebhookOutcome("ignored", "no_order_code")
-        marked = self._orders.mark_paid(order_code=code, event_id=fact.event_id, amount_minor=fact.amount_minor,
-                                        currency=fact.currency, payment_link_id=(fact.extra or {}).get("payment_link_id", ""),
-                                        now=self._now())  # fmt: skip
-        if marked["status"] == "paid_deleted_account":
-            _log.error("billing: order %s was paid for a deleted account; nothing granted, refund it", code)
+            # Verified, says paid, names no order Orena can read: money may have moved, so it is recorded.
+            self._item("payment_unknown_order", fact.gateway, fact.event_id, external_event_id=fact.event_id,
+                       reported_amount_minor=fact.amount_minor, reported_currency=fact.currency,
+                       provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
+                       reason="no readable order code")  # fmt: skip
+            return WebhookOutcome("unknown_order", "no_order_code")
+        extra = fact.extra or {}
+        return self.record_payment(order_code=code, gateway=fact.gateway, event_id=fact.event_id,
+                                   amount_minor=fact.amount_minor, currency=fact.currency,
+                                   payment_link_id=extra.get("payment_link_id", ""),
+                                   paid_reference=extra.get("reference") or None, provider_state=fact.provider_state,
+                                   payload_digest=fact.payload_digest or None)  # fmt: skip
+
+    def record_payment(self, *, order_code: int, gateway: str, event_id: str, amount_minor: int | None,
+                       currency: str | None, payment_link_id: str = "", paid_reference: str | None = None,
+                       settled: bool = False, provider_state: str | None = None,
+                       payload_digest: str | None = None) -> WebhookOutcome:
+        """One verified payment of one domestic order, from its webhook or from the reconciler's lookup: the order is
+        marked paid and the account's access synced; an anomaly is recorded before this returns."""
+
+        marked = self._orders.mark_paid(order_code=order_code, event_id=event_id, amount_minor=amount_minor,
+                                        currency=currency, payment_link_id=payment_link_id,
+                                        paid_reference=paid_reference, settled=settled, now=self._now())  # fmt: skip
+        status = marked["status"]
+        facts = {"external_event_id": event_id, "reported_order_code": order_code,
+                 "reported_amount_minor": amount_minor, "reported_currency": currency,
+                 "provider_state": provider_state, "payload_digest": payload_digest,
+                 "billing_order_id": marked.get("order_id"), "incarnation_id": marked.get("incarnation_id")}  # fmt: skip
+        if status == "paid_deleted_account":
+            self._item("paid_deleted_account", gateway, str(order_code), reason="paid after the account was deleted; "
+                       "nothing granted, a refund is owed", **facts)  # fmt: skip
             return WebhookOutcome("paid_deleted_account")
-        if marked["status"] not in ("applied", "duplicate"):
-            _log.warning("billing payment for order %s not applied: %s", code, marked["status"])
-            return WebhookOutcome(marked["status"])
-        return self.sync_prepaid(marked["incarnation_id"], fact.gateway, event_id=f"{fact.gateway}:paid:{code}")
+        if status in _PAYMENT_ANOMALY:
+            self._item(_PAYMENT_ANOMALY[status], gateway, event_id, reason=status, **facts)
+            return WebhookOutcome(status)
+        if status not in ("applied", "duplicate"):
+            raise RuntimeError(f"unexpected payment status {status!r}")
+        return self.sync_prepaid(marked["incarnation_id"], gateway, event_id=f"{gateway}:paid:{order_code}")
 
     def sync_prepaid(self, incarnation_id: str, gateway: str, *, event_id: str) -> WebhookOutcome:
         """Record the account's prepaid state, replayed from its orders, as its prepaid subscription. Safe to

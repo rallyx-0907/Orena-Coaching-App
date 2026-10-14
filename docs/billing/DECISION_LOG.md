@@ -129,3 +129,21 @@ report are never gated: money already taken is received and reconciled. `billing
 price was verified (R-MON-011). | Readiness that only informs a screen would let a runtime without `billing_orders`
 or with a wrong public URL start a payment. | Reviewer: ChatGPT, verdict recorded in
 `docs/reviews/architecture/PR_MON_2_PRICE_READINESS_REVIEW_2026-10-14.md`.
+
+D-MON-018 | 2026-10-14 | Billing Orders + Reconciliation Safety, how (PR-MON-3; design APPROVED by the independent
+reviewer on `5b445175`, implementation pending its review). Implements D-MON-004. A verified money event is
+acknowledged only once durable (the order, a receipt, or a `billing_reconciliation_items` row); when nothing could be
+recorded the webhook answers 503 so the provider retries; a business anomaly is recorded, then answered 200. Provider
+facts are stored without foreign keys; Orena's links only when matched. Resolution is per kind and enforced by CHECKs
+and a trigger: paid-without-access (`entitlement_unsynced`) is closed only by the reconciler once access is granted;
+money kinds need an outcome with a reference or an audited reason and are never dismissed; a critical item reopens
+when seen again, and an open critical item closes new checkouts on its gateway. A reconciler (session advisory lock on
+a dedicated connection, short transactions, no transaction across the provider call) repairs prepaid access gaps
+(R-MON-002), asks payOS about every unsettled order - a locally expired one too - until a successful lookup gives a
+documented terminal answer, and expires abandoned orders locally only. A payOS order is the unit of payment: one
+payment per order, whichever source saw it first; a webhook-paid order gets one confirming lookup (overpayment).
+Polar refunds are recorded and matched only through a committed subscription mapping; they never change access (H4).
+H1-H7 as decided by the review; H2 taken as a follow-up revision 0031 (no operator confirmation). | Money must never be
+acknowledged and then lost, and paid-without-access must never be silenced. | Proposed 0031; no migration promoted or
+applied; billing stays off. Record: `docs/reviews/architecture/PR_MON_3_RECONCILIATION_REVIEW_2026-10-14.md`.
+

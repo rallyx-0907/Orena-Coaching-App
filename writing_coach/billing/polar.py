@@ -136,9 +136,13 @@ class PolarGateway:
             )  # fmt: skip
         if kind in REFUND_EVENTS:
             return PaymentFact(
-                **base, kind="refund", external_reference=str(data.get("subscription_id") or data.get("order_id") or "") or None,
+                **{key: value for key, value in base.items() if key != "extra"}, kind="refund", external_reference=str(data.get("subscription_id") or data.get("order_id") or "") or None,
                 provider_state=str(data.get("status") or "") or None, amount_minor=minor_units(data.get("amount")),
                 currency=str(data.get("currency") or "").upper() or None,
+                # PR-MON-3 §4.6: a refund is matched to an account only through its subscription's committed mapping.
+                extra={**base["extra"], "refund_id": str(data.get("id") or ""),
+                       "subscription_id": str(data.get("subscription_id") or ""),
+                       "order_id": str(data.get("order_id") or "")},
             )  # fmt: skip
         return PaymentFact(**base, kind="ignored", external_reference=None, provider_state=kind or None)
 
