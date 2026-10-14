@@ -150,6 +150,8 @@ export const en = {
   polHelp_media_ai_usd_per_million_tokens: 'The estimated price per million tokens for a model whose price is not known.',
   pol_word_tts_spend_cap_usd: 'Word audio lifetime cap',
   polHelp_word_tts_spend_cap_usd: 'The most generated word pronunciation may cost in total; at the cap no new audio is made.',
+  pol_word_translation_daily_spend_cap_usd: 'Word translation daily cap',
+  polHelp_word_translation_daily_spend_cap_usd: 'The most the paid standby of word translation may spend in a UTC day; at the cap, or at 0, only the free models are asked.',
 };
 
 export const vi = {
@@ -296,6 +298,8 @@ export const vi = {
   polHelp_media_ai_usd_per_million_tokens: 'Giá ước tính cho mỗi triệu token với mô hình chưa biết giá.',
   pol_word_tts_spend_cap_usd: 'Mức trần trọn đời của âm thanh từ vựng',
   polHelp_word_tts_spend_cap_usd: 'Tổng chi phí tối đa cho phát âm từ do máy tạo; chạm mức trần thì không tạo thêm âm thanh mới.',
+  pol_word_translation_daily_spend_cap_usd: 'Mức trần hằng ngày của dịch từ',
+  polHelp_word_translation_daily_spend_cap_usd: 'Số tiền tối đa mô hình dự phòng tính phí của dịch từ được chi trong một ngày (UTC); chạm mức này, hoặc để 0, thì chỉ hỏi các mô hình miễn phí.',
 };
 
 export const zh = {
@@ -442,4 +446,6 @@ export const zh = {
   polHelp_media_ai_usd_per_million_tokens: '对价格未知的模型，每百万 token 的估算价格。',
   pol_word_tts_spend_cap_usd: '单词音频累计上限',
   polHelp_word_tts_spend_cap_usd: '生成单词发音累计最多可花费的金额；达到上限后不再生成新的音频。',
+  pol_word_translation_daily_spend_cap_usd: '单词翻译每日上限',
+  polHelp_word_translation_daily_spend_cap_usd: '单词翻译的付费备用模型每个 UTC 日最多可花费的金额；达到上限或设为 0 时，只询问免费模型。',
 };

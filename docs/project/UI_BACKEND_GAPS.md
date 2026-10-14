@@ -5776,6 +5776,7 @@ environment" (so operations can pin production, as `staging_8000_deploy.ps1` alr
 | `media.asr_usd_per_hour` | 0.04 | 0.001-100 (0 would disable the caps) | `MEDIA_ASR_USD_PER_HOUR` | `SpendLedger.asr_usd_per_hour()` |
 | `media.ai_usd_per_million_tokens` | 1.0 | 0.001-1 000 | `MEDIA_AI_USD_PER_MILLION_TOKENS` | `SpendLedger.ai_usd_per_million_tokens()` |
 | `word_tts.spend_cap_usd` (confirm > 50) | 5 | 0-1 000 | `WORD_TTS_SPEND_CAP_USD` | `AzureVoice._cap` (per synthesis) |
+| `word_translation.daily_spend_cap_usd` (confirm > 5) | 0.5 | 0-100 | `WORD_TRANSLATION_DAILY_SPEND_CAP_USD` | `ai/spend_gate.paid_refused` (per paid attempt) |
 
 ### (B) Safety or integrity internals - stay in code
 

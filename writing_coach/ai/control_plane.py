@@ -26,7 +26,9 @@ from writing_coach.ai.base import (
 )
 from writing_coach.ai.pricing import estimate_token_cost
 from writing_coach.ai.capabilities import all_capabilities, require_capability
+from writing_coach.ai import spend_gate
 from writing_coach.ai.config import CapabilityConfig, validate_capability_config
+from writing_coach.ai.routing import provider_tier
 from writing_coach.ai.providers import build_providers, provider_definitions
 from writing_coach.persistence.platform_repository import PlatformRepository
 
@@ -531,12 +533,20 @@ class AIControlPlane:
         config = self.explicit_config(definition.key)
         if not config.enabled:
             raise AICapabilityDisabled(f"AI capability {definition.key!r} is disabled.")
-        validate_capability_config(definition.key, config)
+        validate_capability_config(definition.key, config, enforce_cap=False)
 
         provider_id = config.backup_provider if standby else config.provider
         model_id = config.backup_model if standby else config.model
         if provider_id is None or model_id is None:
             raise AICapabilityConfigInvalid("Capability has no configured standby provider/model.")
+        if (
+            definition.paid_standby_cap_policy
+            and provider_tier(provider_id, model_id) == "paid"
+            and spend_gate.paid_refused(definition.key, definition.paid_standby_cap_policy)
+        ):
+            raise AICapabilityConfigInvalid(
+                "The daily spend cap of this capability is reached, zero or unreadable: its paid model is not called."
+            )
         runtime = self.provider_factory().get(provider_id)
         if runtime is None or not getattr(runtime, "configured", False):
             raise AIProviderNotConfigured("AI provider is not configured on the server.")

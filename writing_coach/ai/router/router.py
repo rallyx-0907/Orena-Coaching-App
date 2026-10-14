@@ -130,14 +130,16 @@ def _parse(contract: CapabilityContract, raw_input: Any) -> Any:
 
 
 def route(
-    capability_key: str, raw_input: Any, *, deadline: float | None = None, health: Any = None
+    capability_key: str, raw_input: Any, *, deadline: float | None = None, health: Any = None,
+    paid_standby: bool = True,
 ) -> RouteResult:
     """Answer one request of a routed capability.
 
     `deadline` is an absolute `time.monotonic()` time; the whole request also never exceeds the contract's maximum
     total latency. Raises `RouterInputInvalid` (before anything is asked), `AICapabilityDisabled` /
     `AICapabilityNotConfigured`, or the provider error / `AllProvidersUnavailable` when no pool entry could answer.
-    `health` is a private `ProviderHealth` for a background caller (D-200); a tap never passes one.
+    `health` is a private `ProviderHealth` for a background caller (D-200); a tap never passes one. `paid_standby=False`
+    (the translate-ahead prefetch) never asks a paid pool entry: background work does not spend.
     """
 
     contract = get_contract(capability_key)
@@ -145,13 +147,13 @@ def route(
     capability = contract.key
     _stats.count(capability, "requests")
     try:
-        return _route_validated(contract, inp, deadline, health)
+        return _route_validated(contract, inp, deadline, health, paid_standby)
     finally:
         flush_rollup()
 
 
 def _route_validated(
-    contract: CapabilityContract, inp: Any, deadline: float | None, health: Any = None
+    contract: CapabilityContract, inp: Any, deadline: float | None, health: Any = None, paid_standby: bool = True
 ) -> RouteResult:
     capability = contract.key
     try:
@@ -189,7 +191,7 @@ def _route_validated(
         return RouteResult(output=dict(flight.result.output), source="cache", provenance=flight.result.provenance)
 
     try:
-        result = _ask_pool(contract, inp, policy, limit, key, health)
+        result = _ask_pool(contract, inp, policy, limit, key, health, paid_standby)
     except BaseException as exc:
         flight.set_error(exc)
         raise
@@ -201,7 +203,8 @@ def _route_validated(
 
 
 def _ask_pool(
-    contract: CapabilityContract, inp: Any, policy: Any, limit: float, key: str, health: Any = None
+    contract: CapabilityContract, inp: Any, policy: Any, limit: float, key: str, health: Any = None,
+    paid_standby: bool = True,
 ) -> RouteResult:
     capability = contract.key
     started = _clock()
@@ -223,12 +226,14 @@ def _ask_pool(
             router_version=ROUTER_VERSION,
             capability_mode=True,
             health=health,
+            paid_standby=paid_standby,
         )
     except AIProviderError as exc:
         attempts = list(getattr(exc, "attempts", ()))
         _stats.count(capability, "model_calls", getattr(exc, "router_calls", 0))
         _stats.count(capability, "failures")
         failed = [a for a in attempts if a.outcome == "failure"]
+        _stats.count(capability, "budget_skips", sum(1 for a in attempts if a.outcome == "skipped_budget"))
         for attempt in failed:
             if attempt.reason == "invalid_output":
                 _stats.count(capability, "invalid_outputs")
@@ -245,6 +250,7 @@ def _ask_pool(
     router = answered.runtime.get("router", {})
     attempts = router.get("attempts", [])
     _stats.count(capability, "model_calls", router.get("calls", 1))
+    _stats.count(capability, "budget_skips", sum(1 for a in attempts if a.outcome == "skipped_budget"))
     failed_over = any(a.outcome == "failure" for a in attempts)
     if failed_over:
         _stats.count(capability, "fallbacks")

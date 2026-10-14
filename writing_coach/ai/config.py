@@ -17,7 +17,7 @@ from writing_coach.ai.capabilities import (
     AIFallbackPolicy,
     require_capability,
 )
-from writing_coach.ai.pricing import is_free_model
+from writing_coach.ai.pricing import is_free_model, resolve_token_pricing
 from writing_coach.ai.providers import ProviderDefinition, check_model_allowed, get_provider_definition
 from writing_coach.ai.routing import provider_tier
 
@@ -148,9 +148,49 @@ def capability_key_from_setting(setting_key: str) -> str | None:
     return str(setting_key)[len(CAPABILITY_SETTING_PREFIX) :]
 
 
+def _check_tiers(definition: AICapabilityDefinition, config: CapabilityConfig, *, enforce_cap: bool) -> None:
+    """The tier rule (D-195 amendment 2026-10-14): the primary is free or local; the standby is too, or a priced paid
+    model when the capability has a daily spend cap policy and that cap is above zero. Escalation and premium tiers
+    are not part of the v1 document and stay refused."""
+
+    if provider_tier(config.provider, config.model) == "paid":
+        raise AICapabilityConfigInvalid(
+            f"{definition.key!r} needs a free or local primary: {config.provider!r} / {config.model!r} is paid."
+        )
+    if config.backup_provider is None or provider_tier(config.backup_provider, config.backup_model or "") != "paid":
+        return
+    label = f"{config.backup_provider!r} / {config.backup_model!r}"
+    cap_key = definition.paid_standby_cap_policy
+    if not cap_key:
+        raise AICapabilityConfigInvalid(f"{definition.key!r} accepts free or local models only: {label} is paid.")
+    if (config.backup_provider, config.backup_model) not in definition.paid_standby_models or (
+        resolve_token_pricing(config.backup_provider, config.backup_model) is None
+    ):
+        raise AICapabilityConfigInvalid(
+            f"{definition.key!r} accepts only a reviewed, priced paid standby: {label} is not one."
+        )
+    if enforce_cap:
+        # Save time only. At run time a cap of zero is the budget gate skipping the paid standby, not an invalid config.
+        from writing_coach import policies
+
+        try:
+            cap = float(policies.value_strict(cap_key) or 0)
+        except Exception as exc:  # noqa: BLE001 - an unreadable cap is not a cap: refuse to save a paid standby
+            raise AICapabilityConfigInvalid(
+                f"{definition.key!r} cannot save a paid standby: its daily spend cap ({cap_key}) is unreadable."
+            ) from exc
+        if not cap > 0:
+            raise AICapabilityConfigInvalid(
+                f"{definition.key!r} accepts a paid standby only with a daily spend cap above zero ({cap_key}): "
+                f"{label} is paid."
+            )
+
+
 def validate_capability_config(
     capability_key: str,
     config: CapabilityConfig,
+    *,
+    enforce_cap: bool = True,
 ) -> tuple[AICapabilityDefinition, ProviderDefinition]:
     """Validate using code-owned metadata only; no runtime provider is built."""
 
@@ -199,16 +239,8 @@ def validate_capability_config(
     check_model_allowed(provider.id, config.model)
     if config.backup_provider is not None:
         check_model_allowed(config.backup_provider, config.backup_model or "")
-    if definition.free_only:
-        entries = [(config.provider, config.model)]
-        if config.backup_provider is not None:
-            entries.append((config.backup_provider, config.backup_model or ""))
-        for entry_provider, entry_model in entries:
-            if provider_tier(entry_provider, entry_model) == "paid":
-                raise AICapabilityConfigInvalid(
-                    f"{definition.key!r} accepts free or local models only until its spend cap exists: "
-                    f"{entry_provider!r} / {entry_model!r} is paid."
-                )
+    if definition.free_primary_only:
+        _check_tiers(definition, config, enforce_cap=enforce_cap)
     if definition.input_class == "learner_text":
         # A free tier, or any endpoint that may log prompts, never receives learner-authored text (D-195, D-104).
         pool = [(provider, config.model)]

@@ -413,6 +413,10 @@ class SQLitePlatformRepository:
         # No ledger here: a spend cap must refuse, not read zero.
         raise NotImplementedError("the AI spend ledger is PostgreSQL-only")
 
+    def ai_spend_since_for_capability(self, capability: str, since: datetime) -> tuple[float, int]:
+        # No ledger here: a spend cap must refuse, not read zero.
+        raise NotImplementedError("the AI spend ledger is PostgreSQL-only")
+
     def record_ai_cost(self, user_key: str, event: dict) -> bool:
         return False
 
@@ -680,6 +684,22 @@ class PostgresPlatformRepository:
         )
         with self.engine.connect() as connection:
             usd, unpriced = connection.execute(query, {"since": since}).one()
+        return float(usd or 0), int(unpriced or 0)
+
+    def ai_spend_since_for_capability(self, capability: str, since: datetime) -> tuple[float, int]:
+        """One capability's share of the shared ledger since `since`: the estimated USD of its priced calls, and how
+        many of its provider calls succeeded without a price (a per-capability daily cap, e.g. word translation)."""
+
+        query = text(
+            "SELECT COALESCE(SUM((payload::jsonb -> 'cost' ->> 'amount')::numeric), 0), "
+            "COUNT(*) FILTER (WHERE payload::jsonb ->> 'outcome' = 'success' "
+            "AND payload::jsonb ->> 'provider' IS NOT NULL "
+            "AND COALESCE(payload::jsonb -> 'cost' ->> 'state', '') <> 'estimated') "
+            "FROM audit_logs WHERE action = 'ai.operation' AND created_at >= :since "
+            "AND payload::jsonb ->> 'capability' = :capability"
+        )
+        with self.engine.connect() as connection:
+            usd, unpriced = connection.execute(query, {"since": since, "capability": str(capability)}).one()
         return float(usd or 0), int(unpriced or 0)
 
     def ai_spend_for_capability(self, capability: str) -> float:

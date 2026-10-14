@@ -82,7 +82,7 @@ class ProviderTarget:
 
 @dataclass
 class Attempt:
-    """What one rung did. `outcome` is success, failure or skipped_unhealthy."""
+    """What one rung did. `outcome` is success, failure, skipped_unhealthy or skipped_budget."""
 
     provider: str
     model: str
@@ -245,6 +245,7 @@ def run_chain(
     health: ProviderHealth | None = None,
     on_attempt: Callable[[Attempt], None] | None = None,
     deadline: float | None = None,
+    admit: Callable[[ProviderTarget], str | None] | None = None,
 ) -> RoutingResult:
     """Ask each rung in turn until one answers.
 
@@ -255,6 +256,10 @@ def run_chain(
 
     `deadline` is an absolute `monotonic()` time: once less than `MIN_ATTEMPT_SECONDS`
     remains, no further rung is started.
+
+    `admit(target)` is asked before a rung is called and returns None to allow it or a closed reason (`"budget"`) to skip
+    it: a paid rung whose capability has spent its daily cap is never asked (AI Cost Router, D-195 amendment). A skipped
+    rung is recorded, never counted as a provider failure.
     """
     tracker = health or provider_health
     attempts: list[Attempt] = []
@@ -277,6 +282,14 @@ def run_chain(
             if on_attempt:
                 on_attempt(record)
             continue
+        if admit is not None:
+            refused = admit(target)
+            if refused is not None:
+                record = Attempt(target.provider, target.model, "skipped_budget", reason=refused)
+                attempts.append(record)
+                if on_attempt:
+                    on_attempt(record)
+                continue
         started = monotonic()
         try:
             value = attempt(target)
@@ -313,7 +326,7 @@ def run_chain(
         # it instead.
         setattr(last_error, "attempts", attempts)
         raise last_error
-    # Nothing was even asked: every rung was cooling down, or there were none.
+    # Nothing was even asked: every rung was cooling down or over budget, or there were none.
     raise AllProvidersUnavailable(
         "Every configured provider for this capability is unavailable.", attempts
     )

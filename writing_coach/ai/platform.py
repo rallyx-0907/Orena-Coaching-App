@@ -36,6 +36,7 @@ from writing_coach.ai.base import (
     telemetry_error_class,
 )
 from writing_coach.ai import routing as _routing
+from writing_coach.ai import spend_gate
 from writing_coach.ai.capabilities import AIOperation, require_capability
 from writing_coach.ai.config import CapabilityConfig, validate_capability_config
 from writing_coach.ai.control_plane import (
@@ -345,6 +346,25 @@ def _router_fields(router_version: str | None, provider: str | None, model: str 
     }
 
 
+def _budget_gate(definition: Any, *, paid_ok: bool = True) -> Callable[[ProviderTarget], str | None] | None:
+    """The chain's admission check for the paid rungs of a capability with a daily spend cap (None: nothing to gate).
+
+    A paid rung is skipped (`"budget"`) when the caller is background work, the cap is zero or unreadable, today's spend
+    has reached it, or the ledger cannot be read: it fails closed. Free and local rungs are never gated."""
+
+    if not definition.paid_standby_cap_policy:
+        return None
+
+    def admit(target: ProviderTarget) -> str | None:
+        if provider_tier(target.provider, target.model) != "paid":
+            return None
+        if not paid_ok:
+            return "budget"
+        return "budget" if spend_gate.paid_refused(definition.key, definition.paid_standby_cap_policy) else None
+
+    return admit
+
+
 def _record_attempt(capability_key: str | None, router_version: str | None = None) -> Callable[[Attempt], None]:
     """Every rung is logged, not only the one that answered.
 
@@ -365,7 +385,9 @@ def _record_attempt(capability_key: str | None, router_version: str | None = Non
         # because it is cooling down did not succeed, and the error class says
         # why it was never asked.
         error_class = (
-            "ProviderCoolingDown" if attempt.outcome == "skipped_unhealthy" else attempt.error_class
+            "ProviderCoolingDown" if attempt.outcome == "skipped_unhealthy"
+            else "budget_skipped" if attempt.outcome == "skipped_budget"
+            else attempt.error_class
         )
         _persist_operation_telemetry(
             {
@@ -547,6 +569,7 @@ def generate_structured(
     router_version: str | None = None,
     capability_mode: bool = False,
     health: Any = None,
+    paid_standby: bool = True,
 ) -> AIResult:
     """One structured request through the learner runtime.
 
@@ -557,6 +580,7 @@ def generate_structured(
     adds the router's fields to telemetry; `capability_mode` selects the explicit capability configuration whatever
     `AI_RUNTIME_MODE` is (a routed capability has no legacy selection); `health` is a private `ProviderHealth` for a
     background caller (D-200), so its failures never cool a provider down for the learner's own requests.
+    `paid_standby=False` (the translate-ahead prefetch) never asks a paid pool entry: background work does not spend.
     """
 
     started = perf_counter()
@@ -623,7 +647,7 @@ def generate_structured(
         model = config.model
         if not config.enabled:
             raise AICapabilityDisabled(f"AI capability {definition.key!r} is disabled.")
-        validate_capability_config(definition.key, config)
+        validate_capability_config(definition.key, config, enforce_cap=False)  # a zero cap is the gate below
 
         # The operator configured a backup pair; until now nothing used it, so
         # one rate-limited provider stopped the capability. The chain asks each
@@ -636,6 +660,8 @@ def generate_structured(
             backup_model=config.backup_model,
             timeout_seconds=config.timeout_seconds,
         )
+
+        gate = _budget_gate(definition, paid_ok=paid_standby)
 
         def _timeout_for(target: ProviderTarget) -> float | None:
             """This attempt's HTTP timeout: the configured one (else the caller's), capped by what remains."""
@@ -659,6 +685,8 @@ def generate_structured(
             for _try in range(max(0, int(invalid_retries)) + 1):
                 if _try and deadline is not None and deadline - _routing.monotonic() < MIN_RETRY_SECONDS:
                     break  # no time for a second try: the standby gets what is left
+                if _try and gate is not None and gate(target) is not None:
+                    break  # a retry is another paid call: it is admitted again, never assumed from the first
                 options: dict[str, Any] = {}
                 timeout = _timeout_for(target)
                 if timeout is not None:
@@ -686,7 +714,7 @@ def generate_structured(
 
         routed = run_chain(
             chain, _ask, on_attempt=_record_attempt(capability_key, router_version), deadline=deadline,
-            health=health,
+            health=health, admit=gate,
         )
         provider_id, model = routed.target.provider, routed.target.model
         return finish(routed.value, routed.attempts)
