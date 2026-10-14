@@ -656,6 +656,7 @@ configure_reading_summary(ReadingSummaryService(_reading_derived_cache))
 # GET /api/dictionary keeps its own 8 s and never reads this.
 _TAP_DICTIONARY_TIMEOUT = 1.0
 _NO_ENTRY_SECONDS = 300.0
+_UNREACHABLE_SECONDS = 15.0
 _NO_ENTRY_UNTIL: dict[str, float] = {}
 
 
@@ -676,7 +677,10 @@ def _reading_english_dictionary(word: str) -> dict[str, Any] | None:
     if not result.get("definitions"):
         if len(_NO_ENTRY_UNTIL) > 2000:
             _NO_ENTRY_UNTIL.clear()
-        _NO_ENTRY_UNTIL[key] = time.monotonic() + _NO_ENTRY_SECONDS
+        # A word the dictionary does not hold is remembered for minutes; a dictionary that could not be reached (timeout,
+        # rate limit) only for seconds, so one slow answer does not leave a common word without a meaning for 5 minutes.
+        _NO_ENTRY_UNTIL[key] = time.monotonic() + (_UNREACHABLE_SECONDS if result.get("unreachable") else _NO_ENTRY_SECONDS)
+        return {"phonetic": ""}
     return result
 
 
@@ -2716,6 +2720,7 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
             ) from exc
     else:
         _external_started = time.perf_counter()
+        transient_miss = False
         try:
             if not _english_dictionary_eligible(clean):
                 raise ValueError("not a selection an English dictionary can hold")  # no network; the miss path below
@@ -2723,6 +2728,8 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
                 f"https://api.dictionaryapi.dev/api/v2/entries/en/{quote(clean)}",
                 timeout=timeout,
             )
+            if not response.ok and response.status_code != 404:
+                transient_miss = True  # rate limit / server error: not the dictionary saying it has no such word
             if response.ok:
                 data = response.json()
                 if isinstance(data, list) and data:
@@ -2764,15 +2771,20 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
                             "cambridge_url": cambridge_url_for(clean),
                             "cached": False,
                         }
+        except ValueError:
+            payload = None  # ineligible selection or an unreadable body: a definite miss
         except Exception:
             payload = None
+            transient_miss = True  # timeout / connection error: the dictionary was not reached
         logging.getLogger("orena.lookup").debug(
             "dictionaryapi.dev %s in %.0f ms", "hit" if payload else "miss", (time.perf_counter() - _external_started) * 1000
         )
 
         if payload is None:
             if not allow_ai:
-                return {"phonetic": ""}
+                # `unreachable`: the dictionary could not be asked (timeout, rate limit), so the answer is not "no entry"
+                # and must not be remembered as one.
+                return {"phonetic": "", "unreachable": True} if transient_miss else {"phonetic": ""}
             try:
                 payload = dictionary_ai_fallback(clean)
                 payload["cached"] = False

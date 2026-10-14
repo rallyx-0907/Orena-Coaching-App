@@ -172,7 +172,9 @@ def _validated_annotations(source: str, raw: Any) -> list[dict[str, Any]]:
 
 
 def _local_annotations(language: str, source: str) -> tuple[dict[str, Any], ...]:
-    return tuple(_annotate(language, source, max_annotations=_MAX_ANNOTATIONS))
+    # The local tagger tags the whole segment: a cap below the segment's length left the tail of a long Chinese
+    # paragraph without word spans, so a tap there named one character. A segment is at most 1200 characters.
+    return tuple(_annotate(language, source, max_annotations=max(_MAX_ANNOTATIONS, len(source))))
 
 
 def _run_structured(
