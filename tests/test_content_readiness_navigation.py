@@ -33,7 +33,7 @@ def test_saved_source_resolution_is_read_only_and_owner_scoped(monkeypatch):
     assert malformed.value.status_code == 404
 
 
-def test_pipeline_ipa_lookup_cannot_call_ai_or_store_dictionary(monkeypatch):
+def test_pipeline_ipa_lookup_is_local_cmudict_and_cannot_call_network_ai_or_store(monkeypatch):
     import app as runtime
 
     calls = []
@@ -41,7 +41,8 @@ def test_pipeline_ipa_lookup_cannot_call_ai_or_store_dictionary(monkeypatch):
     monkeypatch.setattr(runtime._learning_cache, "put_dictionary", lambda *_: calls.append("store"))
     monkeypatch.setattr(runtime.requests, "get", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("offline")))
     monkeypatch.setattr(runtime, "dictionary_ai_fallback", lambda *_: calls.append("paid"))
-    assert runtime._media_pipeline._english_reading("hello") == ""
+    assert runtime._media_pipeline._english_reading("hello") == "/həˈloʊ/"
+    assert runtime._media_pipeline._english_reading("zzqxv") == ""  # a miss is empty, never a lookup
     assert calls == []
 
 
