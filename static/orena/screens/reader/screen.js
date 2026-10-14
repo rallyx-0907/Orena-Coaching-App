@@ -568,7 +568,7 @@ export default async function mountReader(element, ctx) {
     const sep = (inner) => html`<span class="s-reader__source-sep">${inner}</span>`;
     const link = (href, label) => html`<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
     return html`<p class="s-reader__source">
-      ${c.publisher ? html`<span>${t('srcLabel')}: ${c.publisher}</span>` : ''}
+      ${c.publisher ? html`<span>${t('srcLabel', { name: c.publisher })}</span>` : ''}
       ${c.author ? sep(t('srcBy', { name: c.author })) : ''}
       ${c.url ? sep(link(c.url, t('srcOriginal'))) : ''}
       ${c.license ? sep(c.license.url ? link(c.license.url, c.license.name) : c.license.name) : ''}

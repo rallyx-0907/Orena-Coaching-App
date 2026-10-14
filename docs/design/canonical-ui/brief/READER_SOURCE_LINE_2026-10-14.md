@@ -51,7 +51,7 @@ address (for example `javascript:`) is never an href. `provenance.text` (English
 
 | | EN | VI | ZH |
 | --- | --- | --- | --- |
-| Source | Source | Nguồn | 来源 |
+| Source | Source: {name} | Nguồn: {name} | 来源：{name} (full-width colon) |
 | Author | by {name} | tác giả {name} | 作者：{name} |
 | Original link | Original article | Bài gốc | 原文 |
 
