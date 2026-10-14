@@ -50,7 +50,7 @@ export const en = {
   validationAttest: 'Confirm you are publishing this collection.',
   // register a source
   impSourceTitle: 'Register a source', impSourceSub: 'Register a site once, then add its articles. Rights set here show up on every article from it.',
-  impSourceName: 'Name', impSourceNameHint: 'e.g. Open Stories', impSourceHome: 'Homepage', impSourceType: 'How content arrives', impOptional: 'optional',
+  impSourcePublicName: 'Public name', impSourcePublicNameHint: 'The publisher learners see on texts from this source. Leave empty to use the site name.', impSourceName: 'Name', impSourceNameHint: 'e.g. Open Stories', impSourceHome: 'Homepage', impSourceType: 'How content arrives', impOptional: 'optional',
   impRepublishOn: 'May be republished', impAdaptOn: 'May be adapted', impAttributionOn: 'Credit the source', impPollingOff: 'Check for new articles automatically',
   impRegister: 'Register', impSourceRequired: 'Name and a full homepage link are required.', impSourceRegistered: 'Source registered',
   // jobs
@@ -134,7 +134,7 @@ export const vi = {
   validationFiles: 'Hãy chọn ít nhất một tệp.', validationTitle: 'Hãy đặt tên cho bộ sưu tập.', validationTerm: 'Hãy chọn cột chứa từ trong {file}.',
   validationAttest: 'Hãy xác nhận bạn đang xuất bản bộ sưu tập này.',
   impSourceTitle: 'Đăng ký một nguồn', impSourceSub: 'Đăng ký một trang một lần, rồi thêm bài của trang đó. Bản quyền đặt ở đây hiện trên mọi bài từ nguồn.',
-  impSourceName: 'Tên', impSourceNameHint: 'ví dụ: Open Stories', impSourceHome: 'Trang chủ', impSourceType: 'Nội dung đến bằng cách nào', impOptional: 'tùy chọn',
+  impSourcePublicName: 'Tên công khai', impSourcePublicNameHint: 'Nhà xuất bản mà người học thấy trên các bài từ nguồn này. Để trống để dùng tên trang.', impSourceName: 'Tên', impSourceNameHint: 'ví dụ: Open Stories', impSourceHome: 'Trang chủ', impSourceType: 'Nội dung đến bằng cách nào', impOptional: 'tùy chọn',
   impRepublishOn: 'Được đăng lại', impAdaptOn: 'Được biên tập', impAttributionOn: 'Ghi công nguồn', impPollingOff: 'Tự động kiểm tra bài mới',
   impRegister: 'Đăng ký', impSourceRequired: 'Cần có tên và địa chỉ trang chủ đầy đủ.', impSourceRegistered: 'Đã đăng ký nguồn',
   impFilterStatus: 'Trạng thái', impFilterDomain: 'Loại',
@@ -216,7 +216,7 @@ export const zh = {
   validationFiles: '请至少选择一个文件。', validationTitle: '请给词集起个名字。', validationTerm: '请选择 {file} 中放词的那一列。',
   validationAttest: '请确认你正在发布这个词集。',
   impSourceTitle: '登记来源', impSourceSub: '登记一次网站，再添加它的文章。这里设置的版权会显示在该来源的每篇文章上。',
-  impSourceName: '名称', impSourceNameHint: '例如：Open Stories', impSourceHome: '主页', impSourceType: '内容如何到达', impOptional: '可选',
+  impSourcePublicName: '公开名称', impSourcePublicNameHint: '学习者在此来源的文章上看到的出版方。留空则使用网站名称。', impSourceName: '名称', impSourceNameHint: '例如：Open Stories', impSourceHome: '主页', impSourceType: '内容如何到达', impOptional: '可选',
   impRepublishOn: '可以转载', impAdaptOn: '可以改编', impAttributionOn: '注明来源', impPollingOff: '自动检查新文章',
   impRegister: '登记', impSourceRequired: '需要名称和完整的主页链接。', impSourceRegistered: '来源已登记',
   impFilterStatus: '状态', impFilterDomain: '类别',

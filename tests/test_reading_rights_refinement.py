@@ -5,6 +5,7 @@ VOA rewrites that end with the agency derivation note ("本文依据了美联社
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -101,14 +102,49 @@ def test_a_wire_derived_article_loses_the_licence_and_needs_an_override(parts, n
     assert article["status"] == "needs_review"
 
 
+def _without_byline(page: str) -> str:
+    """The staff page with its structured byline (JSON-LD) removed, so authorship is unestablished."""
+    stripped = re.sub(r'<script type="application/ld\+json">.*?</script>', "", page, flags=re.S)
+    assert "李逸华" not in stripped.split("<main>")[0]
+    return stripped
+
+
 def test_a_voa_item_without_a_byline_is_withheld(parts):
-    page = _page("staff_article.html").replace('"name":"李逸华"', '"name":""')
-    page = page.replace('"author":{', '"authorx":{')
-    article = _ingest(parts, page, base_url="https://www.voachinese.com",
+    article = _ingest(parts, _without_byline(_page("staff_article.html")), base_url="https://www.voachinese.com",
                       url="https://www.voachinese.com/a/nobyline/1.html")
     refinement = article["analysis"]["rights_refinement"]
-    assert refinement["outcome"] == "withheld" and "no_staff_byline" in refinement["reasons"]
+    assert refinement["outcome"] == "withheld" and refinement["reasons"] == ["no_staff_byline"]
     assert article["source"]["rights_state"]["can_republish"] == "unknown"
+
+
+def test_an_english_voa_item_adapted_from_an_agency_is_withheld(parts):
+    article = _ingest(parts, (FIXTURES.parent / "voa_en" / "wire_adapted_article.html").read_text(encoding="utf-8"),
+                      base_url="https://learningenglish.voanews.com",
+                      url="https://learningenglish.voanews.com/a/plasma/7983265.html")
+    refinement = article["analysis"]["rights_refinement"]
+    assert refinement["outcome"] == "withheld" and "wire_copy" in refinement["reasons"]
+    assert "Agence France-Presse" in refinement["evidence"][0]["text"]
+    assert article["source"]["rights_state"]["can_republish"] == "unknown"
+    assert _licence(article) == ""
+
+
+def test_only_inherited_answers_are_withheld_by_the_engine(parts):
+    """An answer submitted for the article itself survives; the source's inherited ones do not."""
+    engine, content, jobs = parts
+    source = content.create_source(
+        slug="s-voa", name="Source", source_type="manual", base_url="https://www.voachinese.com",
+        languages=["zh"], created_by="admin",
+        rights={"can_republish": True, "can_adapt": True, "attribution_required": True,
+                "automation_allowed": True, "license_note": VOA_NOTE})
+    content.set_source_state(source["id"], "active", actor="admin")
+    engine.adapters["url"] = lambda: DirectUrlAdapter(fetcher=_fetcher(_page("wire_derived_article.html")))
+    engine.submit(SubmittedInput(kind="url", url="https://www.voachinese.com/a/wire/2.html",
+                                 source_id=source["id"], rights={"can_republish": True}), actor="admin@example.com")
+    article = content.get_article(engine.process(jobs.claim("worker-1"))["article_id"])
+    state = article["source"]["rights_state"]
+    assert state["can_republish"] == "allowed"  # the administrator's own answer
+    assert state["can_adapt"] == "unknown"  # inherited from the source, so withheld
+    assert article["analysis"]["rights_refinement"]["outcome"] == "withheld"
 
 
 def test_a_source_without_the_flag_is_unaffected_by_the_same_page(parts):
@@ -161,3 +197,34 @@ def test_the_report_lists_a_published_wire_article_even_when_ingested_before_the
     found = content.published_staff_only_rights_candidates()
     assert [item["id"] for item in found] == [wire["id"]]
     assert found[0]["reasons"] == ["wire_copy"] and found[0]["asserted"] is False and found[0]["licence"] == ""
+
+
+@pytest.mark.parametrize("line", [
+    "Reuters contributed to this report.",
+    "AP and Reuters contributed to this report",
+    "The story was reported by AP.",
+    "With reporting from Reuters",
+    "Some information for this report came from AP, Reuters and AFP.",
+    "Andrew Smith adapted this story for VOA Learning English based on reporting from Agence France-Presse.",
+    "综合新华社、中央社报道",
+    "(依据纽约时报的报道)",
+    "来源：共同社",
+    "(韩联社)",
+    "Photo: Xinhua",
+    "Some information for this report came from Kyodo.",
+])
+def test_english_and_further_agency_credits_are_wire_evidence(line):
+    assert detect_wire_credit(body=f"Body text.\n\n{line}", author="VOA Learning English")
+
+
+@pytest.mark.parametrize("sentence", [
+    "Reuters reported that the talks had stalled on Tuesday.",
+    "The Associated Press reported Tuesday that the camp, originally scheduled to close, would stay open.",
+    "According to a Reuters report, analysts identified the aircraft as Chinese-made.",
+    "She told AP that the plan was not final.",
+    "An AP photo shows the minister arriving at the airport this morning, a spokesman said.",
+    "新华社援引中国水利部的话报道称，水位已经下降。",
+    "Officials said the Bloomberg School of Public Health would publish the study.",
+])
+def test_inline_agency_sourcing_in_english_prose_stays_staff(sentence):
+    assert detect_wire_credit(body=sentence, author="Jane Doe") == []

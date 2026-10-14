@@ -134,6 +134,8 @@ MATRIX = {
     ),
     ("POST", "/api/admin/reading/sources/{source_id}"): (
         f"/api/admin/reading/sources/{ARTICLE}", {"json": {"state": "paused"}}, {404, 503}),
+    ("POST", "/api/admin/reading/sources/{source_id}/public-name"): (
+        f"/api/admin/reading/sources/{ARTICLE}/public-name", {"json": {"public_name": "Matrix"}}, {404, 503}),
     ("GET", "/api/admin/reading/queue"): ("/api/admin/reading/queue", {}, {200, 503}),
     ("GET", "/api/admin/reading/jobs"): ("/api/admin/reading/jobs", {}, {200, 503}),
     ("POST", "/api/admin/reading/jobs"): (
@@ -277,7 +279,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 94  # includes the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
+    assert len(routes) == 95  # includes the Reading source public name (D-192), the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

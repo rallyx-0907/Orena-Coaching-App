@@ -39,8 +39,8 @@ def _source(content, *, slug, automation, license_note="", attribution=True):
     if license_note:
         rights["license_note"] = license_note
     source = content.create_source(
-        slug=slug, name="Global Voices", source_type="manual", base_url="",
-        languages=["en", "zh"], rights=rights, created_by="admin")
+        slug=slug, name="Global Voices (English) RSS - trial", public_name="Global Voices", source_type="manual",
+        base_url="", languages=["en", "zh"], rights=rights, created_by="admin")
     content.set_source_state(source["id"], "active", actor="admin")
     return source
 
@@ -122,7 +122,7 @@ def test_the_learner_list_and_detail_carry_the_provenance(setup, language, body)
     article_id = _submit(setup, source, body=body, language=language)
     assert content.get_article(article_id)["status"] == "published"
     expected = {
-        "publisher": "Global Voices", "url": "https://globalvoices.org/2026/10/rain", "author": "Peace News",
+        "publisher": "Global Voices", "via": "", "url": "https://globalvoices.org/2026/10/rain", "author": "Peace News",
         "license": {"name": "CC BY 3.0", "url": LICENCE_URL, "recorded": True}, "attribution_required": "required",
         "text": "Originally published by Global Voices (by Peace News), CC BY 3.0.",
     }
@@ -284,7 +284,7 @@ def test_the_learner_payload_carries_no_rights_or_review_keys(setup):  # noqa: F
     listed = call(setup["learner"], "GET", "/api/reading/articles?language=en", admin=False).json()
     detail = call(setup["learner"], "GET", f"/api/reading/articles/{article_id}", admin=False).json()
     assert set(listed["items"][0]["provenance"]) == {
-        "publisher", "url", "author", "license", "attribution_required", "text"}
+        "publisher", "via", "url", "author", "license", "attribution_required", "text"}
     assert not FORBIDDEN_KEYS & set(_keys(listed)) and not FORBIDDEN_KEYS & set(_keys(detail["provenance"]))
     assert "reviewer@example.com" not in json.dumps(listed) + json.dumps(detail)
 
