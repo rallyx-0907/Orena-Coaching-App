@@ -6424,6 +6424,14 @@ different weights) and `nvidia/nemotron-3-super-120b-a12b:free` (a second-vendor
 lists are not selectable until their zero-rate entry is added. The "Not verified" paragraph above is superseded by this
 note. An endpoint pasted as `.../chat/completions` is normalised to the base URL for every OpenAI-compatible provider.
 
+**Amendment 2026-10-14 (live probe).** On :8021 the gemma models answered HTTP 429 (upstream rate limit) on every
+probe, and the reasoning models returned an empty message at `max_tokens` 120. With OpenRouter's `reasoning.enabled`
+false, `dots-studio/dots-3-note-preview:free`, `nvidia/nemotron-3.5-lightning:free` and
+`nvidia/nemotron-3-super-120b-a12b:free` each answered a valid short Vietnamese gloss (en to vi and zh to vi). The two
+new ids are zero-rated (pricing `2026-10-14.v5`) and the three are sent `reasoning: {enabled: false}` (a model that makes
+reasoning mandatory, such as `liquid/lfm-2.5-2.6b`, is not listed). Free tiers are rate-limited by their upstream; the
+pool should hold models from different upstream providers.
+
 **Supersedes / Superseded by:** Supersedes D-035 (primary-only wording); clarifies D-010.
 
 ## D-196 - Reading level: the reviewer's override is validated, folded over the automatic level and never overwrites it (2026-10-14)

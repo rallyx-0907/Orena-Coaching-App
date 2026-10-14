@@ -31,6 +31,7 @@ import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
+import { annotateWithPolicy, annotateRefused } from '../../infrastructure/annotate-policy.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { readReaderSettings, writeReaderSettings } from '../../product/reader-settings.js';
 import { openWordSheet, openSentenceSheet } from '../quick-sheet/sheet.js';
@@ -225,7 +226,7 @@ export default async function mountReader(element, ctx) {
     const block = paragraphs.find((b) => b.type === 'paragraph' && b.pi === pi);
     if (!block || !block.sentences.length) return;
     try {
-      const value = await api.annotateMediaText({ text: block.text.slice(0, 1200), source_language: language });
+      const value = await annotateWithPolicy(api.annotateMediaText, { text: block.text.slice(0, 1200), source_language: language }, { scope: contentId });
       const found = value?.annotations || [];
       let cursor = 0;
       for (const s of block.sentences) {
@@ -249,7 +250,7 @@ export default async function mountReader(element, ctx) {
     const pending = doc.paragraphs.map((p) => p.pi);
     let next = 0;
     const workers = Array.from({ length: Math.min(ANNOTATE_CONCURRENCY, pending.length) }, async () => {
-      while (next < pending.length) await annotateParagraph(pending[next++]);
+      while (next < pending.length && !annotateRefused(contentId, language)) await annotateParagraph(pending[next++]);
     });
     await Promise.all(workers);
   }

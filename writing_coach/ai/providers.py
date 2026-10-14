@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
+import threading
+import time
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -145,6 +148,23 @@ _PROVIDER_CATALOG = MappingProxyType(
 )
 
 
+# OpenRouter's live catalogue is read for every Admin render and every health check, and `providers()` rebuilds the
+# provider objects on each call, so the answer is kept per process: ten minutes when it was read, thirty seconds when
+# it could not be (a failure is not retried on every request). Keyed by endpoint and a fingerprint of the credential,
+# never the credential. The explicit credential test (`discover_models_live`) always asks live and refreshes it.
+CATALOGUE_TTL_SECONDS = 600.0
+CATALOGUE_FAILURE_SECONDS = 30.0
+_catalogue_clock = time.monotonic
+_catalogue_lock = threading.Lock()
+_catalogue_cache: dict[tuple[str, str, str], tuple[float, list[str] | None]] = {}
+_NOT_CACHED = object()
+
+
+def reset_catalogue_cache() -> None:
+    with _catalogue_lock:
+        _catalogue_cache.clear()
+
+
 def provider_definitions() -> tuple[ProviderDefinition, ...]:
     """Return static descriptors without instantiating or probing providers."""
 
@@ -155,6 +175,17 @@ def get_provider_definition(provider_id: str) -> ProviderDefinition | None:
     """Look up a known provider descriptor without inspecting its environment."""
 
     return _PROVIDER_CATALOG.get(str(provider_id or "").strip().casefold())
+
+
+# Free reasoning models spend a small max_tokens budget on thinking and return an EMPTY message (probed live on
+# 2026-10-14 with the word_translation request: HTTP 200, no content). These three answer a short gloss correctly when
+# OpenRouter's `reasoning.enabled` is false. Listed by id, never by guess: a model that makes reasoning mandatory
+# (liquid/lfm-2.5-2.6b answered HTTP 400 "Reasoning is mandatory") must not be added.
+OPENROUTER_REASONING_OFF = frozenset({
+    "dots-studio/dots-3-note-preview:free",
+    "nvidia/nemotron-3.5-lightning:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
+})
 
 
 def check_model_allowed(provider_id: str, model: str) -> None:
@@ -430,6 +461,7 @@ class OpenAICompatibleProvider:
         supports_seed: bool = True,
         credential_override: dict[str, Any] | None = None,
         extra_body: dict[str, Any] | None = None,
+        stored_models_are_cache: bool = False,
     ) -> None:
         credential_override = credential_override or {}
         self.extra_body = dict(extra_body or {})
@@ -446,6 +478,10 @@ class OpenAICompatibleProvider:
         override_models = credential_override.get("models")
         raw_models = override_models if isinstance(override_models, list) else os.getenv(models_env, "").split(",")
         self.allowed_models = [str(value).strip() for value in raw_models if str(value).strip()]
+        # The Admin credential save stores the whole live list it saw, so for a provider whose allowlist is owned by
+        # code (OpenRouter: pricing.py) a STORED list is a snapshot - a cache, never a restriction - and a model
+        # priced after the save must appear without a re-save. An environment list stays an explicit allowlist.
+        self._models_are_cache = bool(stored_models_are_cache and isinstance(override_models, list))
         self.default_models = list(default_models)
         self.default_model_override = str(credential_override.get("default_model") or "").strip()
         self.model_filter = model_filter
@@ -560,26 +596,69 @@ class OpenAICompatibleProvider:
             return lowered.startswith("gemini-") and not any(word in lowered for word in blocked)
         return True
 
-    def list_models(self) -> list[str]:
+    def _catalogue_key(self) -> tuple[str, str, str]:
+        return (self.id, self.base_url, hashlib.sha256(self.api_key.encode("utf-8")).hexdigest()[:16])
+
+    def _cached_catalogue(self) -> Any:
+        with _catalogue_lock:
+            held = _catalogue_cache.get(self._catalogue_key())
+            if held is None or held[0] <= _catalogue_clock():
+                return _NOT_CACHED
+            return held[1]
+
+    def _remember_catalogue(self, models: list[str] | None) -> None:
+        ttl = CATALOGUE_TTL_SECONDS if models is not None else CATALOGUE_FAILURE_SECONDS
+        with _catalogue_lock:
+            if len(_catalogue_cache) > 64:
+                _catalogue_cache.clear()
+            _catalogue_cache[self._catalogue_key()] = (_catalogue_clock() + ttl, models)
+
+    def _read_time(self, models: list[str]) -> list[str]:
+        """A code-owned allowlist is applied whenever a list is read, whatever its source (stored, environment, live)."""
+
+        if self.model_filter == "openrouter-free":
+            return [model for model in models if self._accept_model(model)]
+        return models
+
+    def list_models(self, *, offline: bool = False) -> list[str]:
+        """The models on offer. `offline=True` never touches the network (health checks): what is configured, stored or
+        already cached, else nothing."""
+
         if not self.configured:
             return []
-        if self.allowed_models:
-            return sorted(dict.fromkeys(self.allowed_models))
+        if self.allowed_models and not self._models_are_cache:
+            return self._read_time(sorted(dict.fromkeys(self.allowed_models)))
         if self.default_models:
             return list(self.default_models)
         if self.id == 'azure-openai':
             # Resource model catalogues are not operator-created deployments.
             return []
 
+        cached_catalogue = self.model_filter == "openrouter-free"
+        if cached_catalogue:
+            held = self._cached_catalogue()
+            if held is not _NOT_CACHED and held is not None:
+                return list(held)
+        if offline:
+            return self._read_time(sorted(dict.fromkeys(self.allowed_models))) if self._models_are_cache else []
+        if cached_catalogue and held is None:  # read and failed moments ago: do not ask again yet
+            return self._read_time(sorted(dict.fromkeys(self.allowed_models))) if self._models_are_cache else []
         try:
             response, native_gemini = self._model_catalog_request()
             response.raise_for_status()
-            return sorted({
+            models = sorted({
                 model
                 for model in self._catalog_models(response.json(), native_gemini=native_gemini)
                 if self._accept_model(model)
             })
+            if cached_catalogue:
+                self._remember_catalogue(models)
+            return models
         except Exception:
+            if cached_catalogue:
+                self._remember_catalogue(None)
+            if self._models_are_cache:  # offline: the last saved list, re-filtered, rather than an empty picker
+                return self._read_time(sorted(dict.fromkeys(self.allowed_models)))
             return []
 
     def discover_models_live(self) -> list[str]:
@@ -587,8 +666,8 @@ class OpenAICompatibleProvider:
 
         if not self.configured:
             raise AIProviderNotConfigured(f"{self.name} is not configured on the server.")
-        if self.allowed_models:
-            return sorted(dict.fromkeys(self.allowed_models))
+        if self.allowed_models and not self._models_are_cache:
+            return self._read_time(sorted(dict.fromkeys(self.allowed_models)))
         if self.id == 'azure-openai':
             raise AIProviderNotConfigured('Enter an Azure OpenAI deployment name.')
 
@@ -608,16 +687,21 @@ class OpenAICompatibleProvider:
             ) from exc
         except ValueError as exc:
             raise _invalid_model_catalog() from exc
-        return sorted(
+        discovered = sorted(
             model
             for model in set(self._catalog_models(envelope, native_gemini=native_gemini))
             if self._accept_model(model)
         )
+        if self.model_filter == "openrouter-free":
+            self._remember_catalogue(discovered)  # the explicit test refreshes what the pickers show
+        return discovered
 
     def _post_chat(self, body: dict[str, Any], timeout: float | None = None) -> dict[str, Any]:
         check_model_allowed(self.id, str(body.get("model") or ""))  # the choke point: no path skips the allowlist
         if self.extra_body:
             body = {**body, **self.extra_body}
+        if self.id == "openrouter" and body.get("model") in OPENROUTER_REASONING_OFF:
+            body["reasoning"] = {"enabled": False}
         response = requests.post(
             f"{self.base_url}/chat/completions",
             headers=self._headers(),
@@ -1010,6 +1094,7 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
             supports_seed=False,
             credential_override=provider_credentials.get("openrouter"),
             extra_body={"provider": {"allow_fallbacks": False}},
+            stored_models_are_cache=True,
         ),
         "gemini": OpenAICompatibleProvider(
             provider_id="gemini",

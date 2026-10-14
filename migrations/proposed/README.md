@@ -15,6 +15,13 @@ throwaway test database by pointing Alembic's `version_locations` at this
 directory. It becomes real by being moved into `versions/` — one `git mv`,
 after the review and authorization its own docstring names.
 
+**Open proposal (Billing):** `20261005_0027_billing_orders.py` and its PR-MON-3 follow-up
+`20261014_0031_billing_reconciliation.py` (`down_revision = "20261005_0027"`; design APPROVED, implementation review
+pending; `docs/billing/PR-MON-3_DESIGN.md`). 0031 is a new revision rather than an edit of 0027 because no operator has
+confirmed that no runtime ever applied 0027 (decision H2). Promotion rule (H1): read the real Alembic head at promotion,
+parent on it, one financial or content migration into the chain at a time; the lane that promotes later re-parents its
+own revision. `20261005_0028_reading_derived_texts.py` sits on 0027 by linearity only; Billing does not edit it.
+
 **Open proposal:** `20261001_0024_media_entries.py` (MEDIA_METADATA_POSTGRES.md rev 2; APPROVE WITH CONDITIONS,
 awaiting the human's authorization). If it is promoted after 0025, re-parent it on `20261004_0025`.
 

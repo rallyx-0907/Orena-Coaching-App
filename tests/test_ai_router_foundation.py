@@ -433,3 +433,40 @@ def test_saving_an_endpoint_stores_the_normalised_base(monkeypatch) -> None:
                                       models=[GEMMA], default_model=GEMMA),
     )
     assert values["base_url"] == "https://openrouter.ai/api/v1"
+
+
+# --- live probe 2026-10-14: the free models that answer when their reasoning is switched off ---------------------
+
+DOTS = "dots-studio/dots-3-note-preview:free"
+LIGHTNING = "nvidia/nemotron-3.5-lightning:free"
+
+
+def test_the_probed_working_free_models_are_priced_at_zero() -> None:
+    """Probed live on :8021 (en->vi "poetry", zh->vi, reasoning off): dots-3-note, nemotron-3.5-lightning and
+    nemotron-3-super answered a valid short Vietnamese gloss. Catalogue: https://openrouter.ai/api/v1/models, 2026-10-14."""
+
+    for model in (DOTS, LIGHTNING, NEMOTRON):
+        rate = resolve_token_pricing("openrouter", model)
+        assert rate is not None and (rate.input_per_million, rate.output_per_million) == (0, 0)
+        providers_module.check_model_allowed("openrouter", model)
+
+
+@pytest.mark.parametrize("model", [DOTS, LIGHTNING, NEMOTRON])
+def test_reasoning_is_switched_off_for_the_models_that_spend_the_token_budget_on_it(monkeypatch, post, model) -> None:
+    """With max_tokens 120 these reasoning models returned an empty message; with reasoning off they answer."""
+
+    _ask(_openrouter(monkeypatch), model=model)
+    assert post.sent[0]["json"]["reasoning"] == {"enabled": False}
+    assert post.sent[0]["json"]["provider"] == {"allow_fallbacks": False}
+
+
+@pytest.mark.parametrize("model", [GEMMA, STANDBY])
+def test_other_models_do_not_get_a_reasoning_field(monkeypatch, post, model) -> None:
+    _ask(_openrouter(monkeypatch), model=model)
+    assert "reasoning" not in post.sent[0]["json"]
+
+
+def test_other_providers_never_get_a_reasoning_field(monkeypatch, post) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key-not-real")
+    _ask(build_providers()["openai"], model=DOTS)
+    assert "reasoning" not in post.sent[0]["json"]

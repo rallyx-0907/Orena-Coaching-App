@@ -9,7 +9,8 @@ Every capability is checked, and each one that is missing is named in `blockers`
   R-MON-010);
 * a public base URL for the gateways' return pages (https in production);
 * at least one gateway ready: configured with its keys (and so its webhook verification), priced, and every one of
-  its prices exactly the catalogue's (`BillingService.gateway_report`).
+  its prices exactly the catalogue's (`BillingService.gateway_report`), and no open critical reconciliation item on
+  it (PR-MON-3 §4.2: paid without access, or paid but unrecorded, closes new checkouts on that gateway).
 
 The report names states and booleans only; it never holds a key, a secret or a credential. `billing_ready()` is the
 cheap read the product surfaces call: with billing off it decides without touching the database, it never raises,
@@ -78,9 +79,16 @@ def report(facts: RuntimeFacts) -> dict[str, Any]:
         blockers.append("billing_service_absent")
     if any(entry.get("catalog") == "unavailable" for entry in gateways.values()):
         blockers.append("catalog_unavailable")
+    if any(entry.get("reconciliation_critical") for entry in gateways.values()):
+        blockers.append("reconciliation_critical")
+    if any(entry.get("reconciliation") == "unavailable" for entry in gateways.values()):
+        blockers.append("reconciliation_unavailable")
     if not any(entry.get("ready") for entry in gateways.values()):
         blockers.append("no_gateway_ready")
-    return {"ready": not blockers, "blockers": blockers, "checks": checks, "gateways": gateways}
+    result = {"ready": not blockers, "blockers": blockers, "checks": checks, "gateways": gateways}
+    if facts.service is not None and hasattr(facts.service, "reconciliation_summary"):
+        result["reconciliation"] = facts.service.reconciliation_summary()
+    return result
 
 
 _facts: RuntimeFacts | None = None

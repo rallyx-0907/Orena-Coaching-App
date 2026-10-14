@@ -236,7 +236,8 @@ def test_a_committed_payos_payment_not_yet_synced_refuses_a_manual_write():
     """Re-verification of P1-2: payOS commits the payment (`mark_paid`) and records the access in a second
     transaction (`sync_prepaid`). An Admin plan write in between must not leave a latent manual grant.
 
-    Runs in its own schema at head plus the proposed `billing_orders` (0027), as `tests/test_billing.py` does."""
+    Runs in its own schema at head plus the proposed `billing_orders` (0027) and its PR-MON-3 follow-up (0031), as
+    `tests/test_billing.py` does."""
     from urllib.parse import quote
 
     from alembic import command
@@ -265,6 +266,7 @@ def test_a_committed_payos_payment_not_yet_synced_refuses_a_manual_write():
         try:
             with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
                 _proposed("20261005_0027_billing_orders").upgrade()
+                _proposed("20261014_0031_billing_reconciliation").upgrade()
             key = f"entitlement-sync-{uuid.uuid4()}"
             account = stable_uuid("user", key)
             with engine.begin() as connection:

@@ -284,9 +284,18 @@ def active_ai_label(capability_key: str | None = None) -> str:
     return f"{item.id}:{model}"
 
 
+def _offline_models(item: Any) -> list[str]:
+    """Models for a health answer: never a network call (a provider's catalogue is not asked on every /api/health)."""
+
+    try:
+        return item.list_models(offline=True)
+    except TypeError:  # a provider without the keyword (a local model lists itself cheaply)
+        return item.list_models()
+
+
 def active_ai_status() -> dict[str, Any]:
     item, model = active_selection()
-    models = item.list_models()
+    models = item.list_models() if item.id == "ollama" else _offline_models(item)
     if item.id == "ollama":
         ready = bool(item.configured and model and model in models)
     else:
@@ -1321,6 +1330,7 @@ def _live_failure(
         "usage": normalized_usage(telemetry.get("usage")),
         "rate_limit": normalized_rate_limit(telemetry.get("rate_limit")),
         "quota_available": "unknown",
+        **{key: telemetry[key] for key in ("http_status_class", "fallback_reason") if key in telemetry},
     }
     return HTTPException(
         status,
