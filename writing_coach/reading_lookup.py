@@ -25,6 +25,7 @@ from typing import Any, Protocol
 
 from writing_coach.core.support_languages import normalize_support_language
 from writing_coach.languages.chinese import lexicon as chinese_lexicon
+from writing_coach.languages.english.ipa import ipa_for as _local_english_ipa
 from writing_coach.linguistic_annotation import annotate
 from writing_coach.media_ingestion import primary_language
 from writing_coach.persistence.vocabulary_repository import VocabularyContentUnavailable
@@ -598,6 +599,10 @@ class ReadingLookupService:
                 if not audio_url:
                     audio_url = str(payload.get("audio") or "").strip()
                 part_of_speech = _reconciled_part_of_speech(part_of_speech, definitions)
+            if not pronunciation:
+                # Catalogue, then the online dictionary, then local CMUdict (D-202): a free, offline reading
+                # that is there when the dictionary timed out or has no phonetic for the word.
+                pronunciation = _local_english_ipa(selection)
 
         if not meanings and target != source:
             wait = None

@@ -6755,3 +6755,12 @@ Status: ACCEPTED. Independent review 2026-10-14, Delegated Architecture Reviewer
    sentence's own key (a repeated sentence in an affected paragraph) is dropped The server's English splitter (`EN_SENTENCE_END`) needs
    whitespace after the dot already and only feeds statistics; it is unchanged. The aliases drop out when the old and new
    cut agree, so a text that never had a false break has no extra lookups.
+
+## D-202 - Local English pronunciation from CMUdict (2026-10-14)
+
+Status: PROPOSED (owner decision 2026-10-14: a free, local IPA source so the Word Quick Sheet always shows a reading for an English word without depending on the online dictionary; no paid service).
+
+1. **Source and licence.** The official CMUdict (github.com/cmusphinx/cmudict, `cmudict.dict`, commit 74790861, SHA-256 pinned in the builder). Its licence is BSD-style (Copyright 1993-2015 Carnegie Mellon University): redistribution and use, with or without modification, are permitted provided the notice, conditions and disclaimer are retained or reproduced; commercial use is not restricted. The licence text ships as `writing_coach/languages/english/CMUDICT-LICENSE.txt`; `THIRD_PARTY_NOTICES.md` and `writing_coach/licences.py` carry a `cmudict` row.
+2. **Table.** `scripts/build_english_ipa_table.py --source <cmudict.dict>` converts the first pronunciation of each word (ARPAbet to General American IPA; stress mark before the stressed syllable's onset by maximal onset, no mark on a one-syllable word; AH0 schwa, ER0 r-coloured schwa, ER1/ER2 r-coloured stressed vowel) into `cmudict_ipa.json.gz` (125,923 headwords, ~0.85 MB gzipped, licence and source metadata embedded). `--check` verifies the shipped table (metadata alone, or a full rebuild with `--source`). Keys are lowercase; entries with digits or other punctuation are dropped; alternates are not kept.
+3. **Lookup.** In the English single-word branch of `reading_lookup.py`, `pronunciation` is the catalogue's, else the online dictionary's, else the local CMUdict reading (lazy, once, thread-safe). It adds no network call and no latency. Inflected forms are looked up exactly; no -s/-ed/-ing stripping, because a guessed ending can change the sound. A heteronym (read) takes its first pronunciation.
+4. **Not covered.** Names and words absent from CMUdict get no local reading. The IPA is a rule-based rendering of a US pronunciation dictionary, not a recording and not British. No schema, learner data or Docker change.
