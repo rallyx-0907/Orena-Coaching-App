@@ -22,6 +22,7 @@ import { langAttr } from '../../kit/lang.js';
 import { toast } from '../../kit/toast.js';
 import { api } from '../../infrastructure/api.js';
 import { annotateWithPolicy, annotateAllowed } from '../../infrastructure/annotate-policy.js';
+import { wordSpanAt } from '../../product/word-span.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { askOrena } from '../../shell/agent-bridge.js';
@@ -572,7 +573,7 @@ export default async function listening(element, ctx) {
     const wordEl = event.target.closest('[data-word]');
     if (wordEl) {
       event.stopPropagation();
-      onWordTap(wordEl.dataset.word, wordEl.dataset.seg);
+      onWordTap(wordEl.dataset.word, wordEl.dataset.seg, Number(wordEl.dataset.tok));
       return;
     }
     const rowEl = event.target.closest('[data-seg]');
@@ -620,8 +621,44 @@ export default async function listening(element, ctx) {
     rememberPlace(true);
   }
 
-  function onWordTap(word, segId) {
+  /* A Chinese line is drawn one Han character per column (the pinyin sits above each), so a tap names one
+     character. The word is what the learner pointed at: the line is tagged by the same local tagger the Reader
+     uses (briefly awaited, one request per line) and the tagged word covering that character is looked up; if the
+     tagger does not answer in time the character stands. */
+  const TAP_ANNOTATE_WAIT_MS = 1500;
+  const lineTags = new Map(); // segment_id -> Promise of tagger tokens ({ start, end }) or null
+  function tagsOf(seg) {
+    if (!lineTags.has(seg.segment_id)) {
+      lineTags.set(seg.segment_id, (async () => {
+        if (!annotateAllowed(language, c.language)) return null;
+        try {
+          const res = await annotateWithPolicy(api.annotateMediaText, { text: String(seg.original_text).slice(0, 1200), source_language: language }, { scope: routeId });
+          return (res?.annotations || []).filter((tok) => Number.isInteger(tok?.start) && Number.isInteger(tok?.end));
+        } catch {
+          lineTags.delete(seg.segment_id); // a failed answer is not remembered: the next tap asks again
+          return null;
+        }
+      })());
+    }
+    return lineTags.get(seg.segment_id);
+  }
+  async function wholeWordAt(seg, word, tokIndex) {
+    const token = tokensOf(seg)[tokIndex];
+    if (!isZh || !token || token.core !== word || Array.from(word).length !== 1 || !/\p{Script=Han}/u.test(word)) return word;
+    let timer = 0;
+    const tags = await Promise.race([tagsOf(seg), new Promise((resolve) => { timer = window.setTimeout(() => resolve(null), TAP_ANNOTATE_WAIT_MS); })]);
+    window.clearTimeout(timer);
+    return wordSpanAt(seg.original_text, tags, token.start, word)?.text || word;
+  }
+
+  let tapSeq = 0;
+  async function onWordTap(word, segId, tokIndex) {
     const seg = segOf(segId);
+    const mine = ++tapSeq; // latest tap wins: an older tap still waiting for the tagger opens nothing
+    if (seg) {
+      word = await wholeWordAt(seg, word, tokIndex);
+      if (!ctx.isCurrent() || mine !== tapSeq) return;
+    }
     if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
     openWordSheet(ctx, {
       word,

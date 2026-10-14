@@ -25,3 +25,12 @@ assert.match(lexical, /onTapWord\(\{ word: text\.slice\(span\.start, span\.end\)
 assert.match(screen, /mine !== tapSeq/, 'latest tap wins');
 assert.ok(screen.includes('Script=Han}/u.test(word)'), 'only a Han character waits for the tagger');
 console.log('reader tap word gate: ok');
+
+// Listening: the transcript draws one Han character per column, so a tap widens to the tagged word (same helper, no second segmenter).
+const shared = await import('../static/orena/product/word-span.js');
+assert.equal(shared.wordSpanAt, wordSpanAt, 'the Reader and Listening share one wordSpanAt');
+const listening = readFileSync(new URL('../static/orena/screens/listening/screen.js', import.meta.url), 'utf8');
+assert.match(listening, /wholeWordAt\(seg, word, tokIndex\)/, 'Listening widens a one-character Han tap to its word');
+assert.match(listening, /api\.annotateMediaText/, 'Listening asks the same local tagger the Reader uses');
+assert.match(listening, /mine !== tapSeq/, 'latest tap wins');
+console.log('listening tap word gate: ok');
