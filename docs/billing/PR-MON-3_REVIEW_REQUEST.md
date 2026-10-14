@@ -111,25 +111,31 @@ Record this verdict in the same file.
 2. Critical blocks are **per gateway**, not global. Is that acceptable?
 3. One payment per payOS order, plus the confirming lookup, as the idempotency model (§4.5). Any case it misses?
 
-## Mutation results (local execution, throwaway PostgreSQL 16; HEAD `9cbfc485` code)
+## Mutation results (local execution, throwaway PostgreSQL 16; re-run on `1f73d4fa`, after the review P1 fixes)
 
 Each guard was removed in a throwaway copy, and the reconciliation, billing and reconciliation-PostgreSQL tests (100
-tests, none skipped) were run. Every mutant failed at least one test of the guard it broke: **12/12 caught**.
+tests, none skipped) were run. Every mutant failed at least one test of the guard it broke: **17/17 caught**.
+The 12 original guards were all re-run, and 5 guards were added by the P1 fixes.
 
 | Mutant (guard removed) | File | Failing tests | Guard's own test among them |
 | --- | --- | --- | --- |
-| write-before-ack (`_item` records nothing) | `billing/service.py` | 14 | `test_every_payment_anomaly_is_kept_as_its_reconciliation_item`, `test_a_payment_for_an_unknown_order_code_is_kept_with_the_code_the_provider_reported` |
-| webhook 503 when nothing durable (answers 200) | `billing_api.py` | 2 | `test_an_anomaly_that_cannot_be_recorded_is_not_acknowledged` |
+| write-before-ack (`_item` records nothing) | `billing/service.py` | 15 | `test_every_payment_anomaly_is_kept_as_its_reconciliation_item`, `test_a_payment_for_an_unknown_order_code_is_kept_with_the_code_the_provider_reported` |
+| webhook 503 when nothing durable (answers 200) | `billing_api.py` | 3 | `test_an_anomaly_that_cannot_be_recorded_is_not_acknowledged` |
 | gap repair (no `sync_prepaid`) | `billing/reconciler.py` | 2 | `test_a_gap_that_a_single_repair_closes_opens_no_item` |
 | expired orders in the pull set | `persistence/billing_repository.py` | 1 | `test_a_payment_whose_webhook_was_lost_is_found_after_the_order_expired` |
 | critical checkout gate | `billing/service.py` | 3 | `test_an_open_critical_item_blocks_its_gateway_and_readiness_says_why` |
-| per-kind outcome rule | `persistence/billing_reconciliation_repository.py` | 3 | `test_a_money_obligation_is_closed_only_with_what_happened` |
+| per-kind outcome rule | `persistence/billing_reconciliation_repository.py` | 6 | `test_a_money_obligation_is_closed_only_with_what_happened` |
 | reconciler-only for `entitlement_unsynced` | `persistence/billing_reconciliation_repository.py` | 2 | `test_paid_without_access_is_closed_only_by_the_reconciler` |
 | session advisory lock (always "held") | `billing/reconciler.py` | 3 | `test_one_tick_at_a_time_and_the_lock_is_released_after_an_error` |
 | downgrade guard | `migrations/proposed/..._0031_...py` | 1 | `test_the_migration_goes_down_only_while_empty_and_up_again` |
 | `billing_orders` no-delete trigger | `migrations/proposed/..._0031_...py` | 1 | `test_orders_and_items_are_never_deleted` |
 | item terminal guard in the trigger | `migrations/proposed/..._0031_...py` | 1 | `test_a_resolved_item_only_counts_repeats_and_only_a_critical_one_reopens` |
 | one payment per payOS order | `persistence/billing_repository.py` | 1 | `test_webhook_then_lookup_and_lookup_then_webhook_are_one_payment` |
+| P1-1 retry stays `paid_deleted_account` | `persistence/billing_repository.py` | 1 | `test_p1_1_a_refund_owed_for_a_deleted_account_survives_a_failed_first_record` |
+| P1-2 `payment_recorded` needs the paid order (trigger) | `migrations/proposed/..._0031_...py` | 1 | `test_p1_2_payment_recorded_is_the_reconcilers_statement_and_needs_the_paid_order` |
+| P1-2 a refund/reversal disposition settles the order | `persistence/billing_reconciliation_repository.py` | 1 | `test_p1_2_a_confirmed_refund_settles_the_order_so_the_next_paid_lookup_does_not_reopen_it` |
+| P1-3 decide on the order as it is after the call | `billing/reconciler.py` | 1 | `test_p1_3_a_payment_and_refund_during_the_lookup_are_decided_on_the_order_as_it_is_now` |
+| P1-3 a refunded order keeps its confirming lookup | `persistence/billing_repository.py` | 2 | `test_p1_3_a_refund_before_the_confirming_lookup_keeps_that_lookup` |
 
 ## Evidence
 

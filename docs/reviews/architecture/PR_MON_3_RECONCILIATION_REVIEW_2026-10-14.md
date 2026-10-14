@@ -655,3 +655,57 @@ Do not redesign PR-MON-3.
 Do not promote/apply 0027/0031.
 Return fixing SHA + focused diffs + focused PG tests.
 No full architecture re-review after these three P1s unless semantics materially change.
+
+---
+
+## Fix response to the implementation review (implementer, 2026-10-14)
+
+The code fixes are in `52923cf6`; `1f73d4fa` adds one more P1-3 regression test. The design is unchanged, and
+0027/0031 are not promoted or applied anywhere.
+
+- **P1-1.**
+  - `mark_paid` reads the account's `deleted_at` under the lock it already takes.
+  - A repeat of a payment recorded at or after the deletion is `paid_deleted_account`. This holds for the same
+    event and for the same payment seen from its other source. `record_payment` therefore records the refund owed
+    again, idempotently: the same item, with `occurrences` + 1.
+  - A payment made before the deletion is still a `duplicate`, so no false obligation is created.
+  - A redelivery of the recorded payment to a refunded order is also a duplicate, not `not_payable`.
+  - Tests:
+    - `test_p1_1_a_refund_owed_for_a_deleted_account_survives_a_failed_first_record`: the first item write fails,
+      so the answer is 503. The retry answers 200 `paid_deleted_account` and creates one item. A third delivery
+      gives `occurrences = 2`.
+    - `test_p1_1_a_payment_made_before_the_account_was_deleted_owes_no_refund_on_redelivery`.
+- **P1-2.**
+  - `payment_recorded` is removed from every administrator rule.
+  - The CHECK `ck_billing_item_payment_recorded` allows it only with `resolved_by = 'reconciler'`.
+  - The guard trigger refuses it unless the named order is `paid` or `refunded`.
+  - An administrator's `refund_confirmed` or `reversal_confirmed` of `provider_paid_unrecorded` settles that
+    order's provider lookup in the same transaction (`provider_settled_at`, `next_lookup_at = NULL`).
+  - The durable disposition is the resolved item plus the settled order. The order is not asked again, so the
+    obligation is never reopened.
+  - The resolution still moves no money and changes no access.
+  - Tests:
+    - `test_p1_2_payment_recorded_is_the_reconcilers_statement_and_needs_the_paid_order`. The write is refused by
+      the repository, by the CHECK when it is made directly, and by the trigger when the reconciler makes it while
+      the order is unpaid.
+    - `test_p1_2_a_confirmed_refund_settles_the_order_so_the_next_paid_lookup_does_not_reopen_it`.
+- **P1-3.**
+  - `_settle` re-reads the order after the provider call and decides on that fresh state.
+  - CANCELLED settles only when the conditional `mark_cancelled` actually cancelled. Otherwise it records
+    `provider_state_unresolved` and keeps asking.
+  - "Recorded" means `paid` or `refunded`.
+  - `pull_candidates` and the partial index `ix_billing_orders_pull` keep a `refunded` order whose confirming
+    lookup is still due.
+  - Deviation 5 behaves as approved.
+  - Tests:
+    - `test_p1_3_a_webhook_during_the_lookup_is_never_overwritten_by_cancelled`.
+    - `test_p1_3_a_refund_before_the_confirming_lookup_keeps_that_lookup`: the overpayment is still found after
+      the refund.
+    - `test_p1_3_a_refunded_order_confirmed_paid_is_settled_without_a_false_anomaly`.
+    - `test_p1_3_a_payment_and_refund_during_the_lookup_are_decided_on_the_order_as_it_is_now`. This test catches
+      the stale-snapshot mutant. The CANCELLED race alone is already held by the conditional update.
+- **Evidence** (local execution, not CI):
+  - SQLite targeted: 598 passed, 1 skipped.
+  - Throwaway PostgreSQL 16: 491 run, 490 passed, 1 failed (INHERITED #160).
+  - Mutations: 17/17 caught on `1f73d4fa`; the table is in `docs/billing/PR-MON-3_REVIEW_REQUEST.md`.
+
