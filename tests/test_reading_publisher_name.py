@@ -1,4 +1,4 @@
-"""D-18X (proposed): learners see a publisher name, never the administrator's internal source name.
+"""D-192 (proposed): learners see a publisher name, never the administrator's internal source name.
 
 Holds the pure resolution order, the stored public name and its cache-revision effect, and that
 no learner payload (list, detail, licences page) leaks the internal name or the built-in labels.

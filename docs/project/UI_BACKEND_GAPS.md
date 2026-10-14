@@ -6117,7 +6117,7 @@ reuses the existing confirm dialog drawn for the rights warnings (D-190): the ha
 as separate flags, each only for the kind it lists. No new control was added; whether the design should draw a distinct
 quality confirmation is a decision for the human.
 
-## Reading source "Public name" field (D-18X, proposed, 2026-10-14)
+## Reading source "Public name" field (D-192, proposed, 2026-10-14)
 
 The pinned `Orena Admin.dc.html` draws no field for the name learners see as a Reading text's publisher. It was added with
 existing components only: a text field with a hint on the Register-source form and a one-field form block with a Save

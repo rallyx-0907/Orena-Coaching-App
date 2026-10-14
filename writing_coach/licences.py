@@ -106,7 +106,7 @@ def listening_catalog_credits(lessons: Iterable[Mapping[str, Any]]) -> list[dict
 def reading_source_credits(sources: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]:
     """The licence page names a source by its public name, else its host; the internal
     name is administrator bookkeeping and never published. A source with neither is left out of this
-    list (its texts are still credited one by one in `reading_text_credits`) (D-18X, proposed)."""
+    list (its texts are still credited one by one in `reading_text_credits`) (D-192, proposed)."""
     rows = []
     for source in sources:
         # The registry returns the rights nested under `rights`; a flat mapping is accepted too.

@@ -6175,9 +6175,9 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
    confirmations are proven independent by route-level tests.
 
-## D-18X - Reading publisher: the learner-facing name is separate from the internal source name (2026-10-14)
+## D-192 - Reading publisher: the learner-facing name is separate from the internal source name (2026-10-14)
 
-**Status: PROPOSED** (number to be assigned at merge). Refines D-189/D-190. Lane B item 2 of Reading Production Readiness.
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVED WITH CONDITIONS on 09bd6b60, re-review APPROVE on 47e19c05; merged once CI was green). Refines D-189/D-190. Lane B item 2 of Reading Production Readiness.
 
 Problem: learners saw the admin's bookkeeping name as the publisher ("Global Voices (English) RSS - trial", "QA NASA news
 releases (RSS)", "Direct URL"), in the Reader meta, Discover, Content Detail, the source footnote and `/api/licences`.

@@ -132,7 +132,7 @@ def resolve_publisher(
     built_in: bool = False,
     url: Any = "",
 ) -> tuple[str, str]:
-    """The publisher a learner sees, and the site it came through (D-18X, proposed).
+    """The publisher a learner sees, and the site it came through (D-192, proposed).
 
     The internal source name (what an administrator calls the source: "QA NASA news
     releases (RSS)", "Direct URL") is never an input. The site the text came from is, in order:
