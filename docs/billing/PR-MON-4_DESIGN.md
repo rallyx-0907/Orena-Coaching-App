@@ -1,6 +1,7 @@
 # PR-MON-4 Prepaid Credit Ledger — design and migration plan
 
-**State: DESIGN revision 3, awaiting the focused re-review.**
+**State: DESIGN revision 4, APPROVED FOR IMPLEMENTATION** (focused re-review of `48e1bf2e`, 2026-10-14; record:
+`docs/reviews/architecture/PR_MON_4_CREDIT_LEDGER_REVIEW_2026-10-14.md`). The contract is frozen.
 
 - The human froze decisions C1-C7 on 2026-10-14, on `43a3dedf`.
 - Revision 4 is a narrow revision for the review of `2b6da4a7`:

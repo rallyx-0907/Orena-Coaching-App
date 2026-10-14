@@ -22,9 +22,12 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
-CRITICAL = frozenset({"entitlement_unsynced", "provider_paid_unrecorded"})
-MONEY = frozenset({"paid_deleted_account", "payment_unknown_order", "payment_mismatch", "payment_not_payable"})
-DISMISSABLE = frozenset({"event_undecided", "provider_refund", "provider_state_unresolved"})
+# The credit kinds (proposed 0032, PR-MON-4) use the `credits` pseudo-gateway and their own structured columns; they
+# are written by `credit_repository` inside the credit transaction and closed here under the same rules.
+CRITICAL = frozenset({"entitlement_unsynced", "provider_paid_unrecorded", "credit_balance_drift"})
+MONEY = frozenset({"paid_deleted_account", "payment_unknown_order", "payment_mismatch", "payment_not_payable",
+                   "credit_reversal_shortfall", "credit_balance_on_deletion"})
+DISMISSABLE = frozenset({"event_undecided", "provider_refund", "provider_state_unresolved", "credit_late_settle"})
 KINDS = CRITICAL | MONEY | DISMISSABLE
 RECONCILER = "reconciler"
 # An administrator's disposition of money payOS reports paid and Orena never recorded: it answers that PAID for good,
@@ -46,6 +49,11 @@ RESOLUTION_RULES: dict[str, dict[str, bool]] = {
     "event_undecided": {"recorded": False},
     "provider_refund": {"recorded": False, "refund_confirmed": True},
     "provider_state_unresolved": {"recorded": False, "refund_confirmed": True},
+    # PR-MON-4: a drift closes only when the reconciler sees the ledger and snapshot agree (`balance_consistent`).
+    "credit_balance_drift": {},
+    "credit_reversal_shortfall": {"refund_confirmed": True, "obligation_waived": False},
+    "credit_balance_on_deletion": {"refund_confirmed": True, "obligation_waived": False},
+    "credit_late_settle": {"recorded": False},
 }
 
 _COLUMNS = (

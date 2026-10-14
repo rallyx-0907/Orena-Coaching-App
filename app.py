@@ -1312,17 +1312,33 @@ def _billing_reconciler(service):
     settings = Settings.from_env(os.environ)
     reconciler = BillingReconciler(service=service, orders=service.orders, items=service.reconciliation,
                                    lock=PostgresTickLock(_persistence_runtime.engine),
-                                   lookups=build_lookups(service.gateways), settings=settings)
+                                   lookups=build_lookups(service.gateways), settings=settings, credits=_credits)
     return BillingReconcileSchedule(reconciler, interval=settings.interval)
 
 
 from writing_coach.billing_api import configure_billing, router as billing_router  # noqa: E402
 
 _billing = _billing_service()
+
+
+def _credit_service(service):
+    """PR-MON-4: credits exist only where billing does and `CREDITS_ENABLED` is on; every operation is still refused
+    while the database role could defeat the ledger boundary (writing_coach/billing/credits.py)."""
+
+    from writing_coach.billing.credits import CreditService, credits_enabled
+
+    if service is None or not credits_enabled(os.environ):
+        return None
+    from writing_coach.persistence.credit_repository import PostgresCreditRepository
+
+    return CreditService(PostgresCreditRepository(_persistence_runtime.engine))
+
+
+_credits = _credit_service(_billing)
 _billing_reconcile = _billing_reconciler(_billing)
 configure_billing(service=_billing, backbone=_account_backbone, admin_guard=require_admin,
                   reconciliation=_billing.reconciliation if _billing is not None else None,
-                  reconcile=_billing_reconcile.tick if _billing_reconcile is not None else None,
+                  reconcile=_billing_reconcile.tick if _billing_reconcile is not None else None, credits=_credits,
                   public_base_url=os.getenv("PUBLIC_BASE_URL", ""))
 
 
