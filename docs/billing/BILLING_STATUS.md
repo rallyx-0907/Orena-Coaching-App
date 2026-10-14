@@ -8,11 +8,11 @@
 | Branch | `feature/monetization-billing-v1` |
 | Main | `aa016dc1c3f3a9555ad83aeb51da66fbd1fc40ed` (`origin/main`, 2026-10-14): PR-MON-1 merged by the human as #153; the lane branch fast-forwarded onto it |
 | Last completed slice | PR-MON-1 Canonical Effective Entitlement: architecture-APPROVED, merged to `main` as #153 (`aa016dc1`, 2026-10-14) |
-| Active PR | **PR-MON-2 Price Integrity + Runtime Readiness** - IMPLEMENTING (D-MON-015, D-MON-016) |
+| Active PR | **PR-MON-2 Price Integrity + Runtime Readiness** - REVIEWABLE, awaiting independent architecture review (D-MON-015, D-MON-016); request: `PR-MON-2_REVIEW_REQUEST.md` |
 | Current slice | PR-MON-2: price gate, truthful `billing_ready`, admin readiness report, fail-safe commerce discovery (R-MON-010) |
-| Exact next action | run the PR-MON-2 tests and the regression batch (throwaway PostgreSQL), then write the independent-review request |
+| Exact next action | hand `PR-MON-2_REVIEW_REQUEST.md` to an independent architecture reviewer (GPT-6/Codex preferred); on APPROVE rebase onto `main` and open the PR for the human to merge |
 | Blockers | none. Independent architecture review required before PR-MON-2 merges (payment/entitlement) |
-| Test status | local only (not CI), rebased tree: throwaway PostgreSQL 16, 746 run: 745 passed, 1 failed = INHERITED `test_quota_voice_postgres.py::test_the_reconciler_has_nothing_to_settle_for_a_vanished_session` (fails identically on clean `origin/main` when quota PG files share one DB; passes alone 3/3 on both trees); project-memory validator and browser ESM graph pass |
+| Test status | local only (not CI), PR-MON-2 commit `490cff7b`. SQLite targeted (billing, price integrity, effective entitlement, account state, commerce, membership, admin console routes): 193 passed, 1 skipped. Throwaway PostgreSQL 16 (billing + price integrity + effective entitlement + every `tests/*_postgres.py`): 415 run, 414 passed, 1 failed = INHERITED `test_quota_voice_postgres.py::test_the_reconciler_has_nothing_to_settle_for_a_vanished_session` (issue #160, quota/test-infra lane). Mutations, each must fail tests: gateway block 2, confirmed price 2, fail-closed discovery 2, mobile pin 1, sellable-plan check 3 |
 | Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
 ## Revised sequence (human, 2026-10-13)
