@@ -6672,3 +6672,30 @@ Read from `audit_logs` (`ai.operation`, `ai.router.rollup`; counts, latency and 
    (1000 a day) allows raising them. A 429 whose `X-RateLimit-Remaining` is 0 (the allowance is spent, not a busy
    upstream) pauses prefetch until the next UTC day instead of 120 s. The `orena.prefetch` logger no longer touches the
    root logger at import (`propagate=False`; `install_log_handler()` runs at app start).
+
+## D-201 - Reader sentence cut: numbers and abbreviations; old notes read through the old cut (2026-10-14)
+
+Status: ACCEPTED. Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: CHANGES REQUESTED on the splitter half of PR #185 (7c33a767), APPROVE WITH CONDITIONS on PR #186 (f579951e); P2-1..P2-4 fixed in 27fc012b; no stored learner data migrated; merged once CI was green.
+
+1. **The bug.** The Reader cut a paragraph at every full stop, so "USD 4.77 billion" rendered as two sentence spans
+   ("USD 4." and "77 billion"). `product/reader-text.js#sentenceSpans` now ends a sentence at a dot only when whitespace
+   follows it and it is not part of an abbreviation (rules in the code comment: titles, dotted abbreviations such as
+   U.S./e.g./a.m., initials followed by a name, "No. 5", ellipsis before a lowercase word). "I." and a single capital
+   before a common sentence starter ("Plan B. Next.") end a sentence; a domain or file name ("nasa.gov.") ends one.
+   `!`, `?`, `。`, `！`, `？` and newlines always end one. English-only heuristics; Chinese is cut at its own marks, and a
+   full-width decimal point (`．`) is not a terminator.
+2. **Stored learner data is not touched.** Notes are keyed `kind:content:p{pi}s{si}:text` and highlights `segment|text`, so a
+   changed cut would orphan items saved under the old one. Nothing is migrated or rewritten (learner data, owner gate).
+   Instead `screens/reader/legacy-sentences.js#legacyAliases` computes the old cut (`legacySentenceSpans`, frozen) and maps
+   each old sentence onto the one new sentence that contains it. The Reader, the sentence sheet and the completion count
+   read a sentence's notes and highlights under its own key and under those old keys (a note once, by id), so an existing
+   item still shows on the right sentence. New notes and highlights are written under the new key only; edit and delete
+   act on the key where the note is stored; toggling a highlight off removes a legacy one too. A highlight saved on an old
+   half-sentence now marks the whole new sentence. Account sync is unchanged (it carries keys as stored).
+3. **Known limits.** Heuristics undersplit rather than oversplit ("the U.S. Army said" stays whole; "the U.S. The" splits).
+   An unlisted abbreviation before a lowercase word ("Dept. of Health"), an initial before an initial ("J. K. Rowling")
+   and "Apt." before a digit do not end a sentence; an unlisted abbreviation before a capital does. Only a 64-character
+   window around each dot is read, so the cut is linear (50k characters in a few ms). An alias that equals another
+   sentence's own key (a repeated sentence in an affected paragraph) is dropped The server's English splitter (`EN_SENTENCE_END`) needs
+   whitespace after the dot already and only feeds statistics; it is unchanged. The aliases drop out when the old and new
+   cut agree, so a text that never had a false break has no extra lookups.

@@ -31,11 +31,12 @@ import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
-import { annotateWithPolicy, annotateRefused } from '../../infrastructure/annotate-policy.js';
+import { annotateWithPolicy, annotateAll } from '../../infrastructure/annotate-policy.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { readReaderSettings, writeReaderSettings } from '../../product/reader-settings.js';
 import { openWordSheet, openSentenceSheet } from '../quick-sheet/sheet.js';
-import { loadNotes, noteKeyFor, noteTypeColorKey } from '../quick-sheet/model.js';
+import { loadNotesAcross, noteKeysFor, noteTypeColorKey } from '../quick-sheet/model.js';
+import { legacyAliases } from './legacy-sentences.js';
 import { t } from './copy.js';
 import { mountReaderLexical } from './lexical.js';
 import { loadHighlights, isHighlighted, toggleHighlight } from './highlights.js';
@@ -184,7 +185,8 @@ export default async function mountReader(element, ctx) {
   /* ---- the text, once: paragraph -> sentences (raw text for markup, squashed for keys/sheets) ---- */
   const paragraphs = doc.blocks.map((block) => {
     if (block.type !== 'paragraph') return block;
-    const sentences = sentencesOf(block.text).map((raw2, si) => ({ seg: segmentId(block.pi, si), raw: raw2, text: squash(raw2) }));
+    const aliases = legacyAliases(block.text, block.pi);
+    const sentences = sentencesOf(block.text).map((raw2, si) => ({ seg: segmentId(block.pi, si), raw: raw2, text: squash(raw2), legacy: aliases[si] || [] }));
     return { ...block, sentences };
   });
   const sentenceBySeg = new Map();
@@ -224,7 +226,7 @@ export default async function mountReader(element, ctx) {
 
   async function fetchAnnotations(pi) {
     const block = paragraphs.find((b) => b.type === 'paragraph' && b.pi === pi);
-    if (!block || !block.sentences.length) return;
+    if (!block || !block.sentences.length) return false;
     try {
       const value = await annotateWithPolicy(api.annotateMediaText, { text: block.text.slice(0, 1200), source_language: language }, { scope: contentId });
       const found = value?.annotations || [];
@@ -241,18 +243,19 @@ export default async function mountReader(element, ctx) {
             .map((tok) => ({ start: tok.start - start, end: tok.end - start, pos: tok.pos || '', pronunciation: tok.pronunciation || '' })),
         );
       }
+      return true;
     } catch {
       /* No tagger answer: this paragraph stays plain. */
+      return false;
     }
   }
 
+  /* Nothing is sent for a text that is not in the learner's learning language (the tagger would answer
+     409 to every paragraph); otherwise the first paragraph is asked alone, then the rest in parallel. */
   async function ensureAnnotations() {
-    const pending = doc.paragraphs.map((p) => p.pi);
-    let next = 0;
-    const workers = Array.from({ length: Math.min(ANNOTATE_CONCURRENCY, pending.length) }, async () => {
-      while (next < pending.length && !annotateRefused(contentId, language)) await annotateParagraph(pending[next++]);
+    await annotateAll(doc.paragraphs.map((p) => p.pi), annotateParagraph, {
+      scope: contentId, language, learning: ctx.context.language, concurrency: ANNOTATE_CONCURRENCY,
     });
-    await Promise.all(workers);
   }
 
   /* Translation on request (D-130): every sentence still missing a meaning is asked for, in turns;
@@ -303,7 +306,7 @@ export default async function mountReader(element, ctx) {
     const s = sentenceBySeg.get(seg);
     if (!s || !storage) return [];
     try {
-      return loadNotes(storage, owner, noteKeyFor(s.text, { ...source, segment: seg }));
+      return loadNotesAcross(storage, owner, noteKeysFor(s.text, { ...source, segment: seg, legacy: s.legacy }));
     } catch {
       return [];
     }
@@ -329,7 +332,7 @@ export default async function mountReader(element, ctx) {
   const flat = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
   const highlighted = (seg) => {
     const s = sentenceBySeg.get(seg);
-    return Boolean(s) && isHighlighted(highlights, seg, s.text);
+    return Boolean(s) && isHighlighted(highlights, seg, s.text, s.legacy);
   };
 
   /* ---- markup ---- */
@@ -693,7 +696,7 @@ export default async function mountReader(element, ctx) {
 
   function seltbMarkup() {
     if (!selected || sheetOpen) return '';
-    const on = isHighlighted(highlights, selected.seg, selected.span || selected.text);
+    const on = isHighlighted(highlights, selected.seg, selected.span || selected.text, sentenceBySeg.get(selected.seg)?.legacy);
     const button = (act, iconName, label) =>
       html`<button type="button" class="s-reader__seltb-btn" data-act="${act}" aria-label="${label}">${raw(icon(iconName, { size: 17 }))}<span class="s-reader__seltb-label">${label}</span></button>`;
     return html`<div class="s-reader__seltb" role="toolbar" aria-label="${(selected.span || selected.text).slice(0, 80)}">
@@ -835,6 +838,7 @@ export default async function mountReader(element, ctx) {
       editNoteId,
       lang: language,
       source: { ...source, segment: s.seg },
+      legacy: s.legacy,
       onOpen: onSheetOpen,
       onClose: onSentenceSheetClose,
       // A note or a highlight saved from the sheet (its "Save highlight") shows in the text at once.
@@ -874,7 +878,7 @@ export default async function mountReader(element, ctx) {
     if (!selected || !storage) return;
     const s = sentenceBySeg.get(selected.seg);
     if (!s) return;
-    const result = toggleHighlight(storage, owner, contentId, { segment: s.seg, sentence: selected.span || s.text });
+    const result = toggleHighlight(storage, owner, contentId, { segment: s.seg, sentence: selected.span || s.text, legacy: s.legacy });
     if (!result.on) for (const gone of highlights) if (!result.list.some((item) => item.id === gone.id)) noteRemoved(contentId, gone.id);
     highlights = result.list;
     scheduleAnnotationPush(storage, owner, contentId);

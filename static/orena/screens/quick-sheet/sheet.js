@@ -46,8 +46,10 @@ import {
   highlightExample,
   vocabSavePayload,
   noteKeyFor,
+  noteKeysFor,
+  loadNotesAcross,
+  noteKeyHolding,
   noteTypeColorKey,
-  loadNotes,
   addNote,
   updateNote,
   deleteNote,
@@ -449,7 +451,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
 
 /* ------------------------------------------------------------------- Sentence Quick Sheet -- */
 
-export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, context = '', source = null, editNoteId = '', onOpen, onClose, onNote } = {}) {
+export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, context = '', source = null, editNoteId = '', legacy = [], onOpen, onClose, onNote } = {}) {
   await useStyles('screens/quick-sheet/quick-sheet.css');
   const target = String(sentence || '').trim();
   if (!target) return null;
@@ -467,20 +469,21 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
     }
   })();
   const key = noteKeyFor(target, source);
+  const readKeys = noteKeysFor(target, { ...source, legacy }); // [own key, ...the keys the sentence had before D-201]
   let alive = true;
   let sheetEl = null;
   let sheetData = { available: false, translation: '', structure: [], vocabulary: [] };
   let translation = { state: 'loading', text: '' }; // the sentence's meaning, from the Reader's own shared source
   let tab = 'Translation';
   const canHighlight = Boolean(storage && source?.content_id && source?.segment);
-  const highlightOn = () => canHighlight && isHighlighted(loadHighlights(storage, owner, source.content_id), source.segment, subject);
+  const highlightOn = () => canHighlight && isHighlighted(loadHighlights(storage, owner, source.content_id), source.segment, subject, legacy);
   let noteType = 'factual';
   let noteDraft = '';
   // "Edit in sentence" (LEX-023): the note being rewritten - its text and type fill the composer, and the
   // composer's button updates it instead of adding another.
   let editing = '';
   if (editNoteId && storage) {
-    const existing = loadNotes(storage, owner, key).find((note) => note.id === editNoteId);
+    const existing = loadNotesAcross(storage, owner, readKeys).find((note) => note.id === editNoteId);
     if (existing) {
       editing = existing.id;
       noteDraft = existing.text;
@@ -527,7 +530,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
 
   function toggleSentenceHighlight() {
     if (!canHighlight) return;
-    toggleHighlight(storage, owner, source.content_id, { segment: source.segment, sentence: subject });
+    toggleHighlight(storage, owner, source.content_id, { segment: source.segment, sentence: subject, legacy });
     scheduleAnnotationPush(storage, owner, source.content_id);
     paint();
     onNote?.();
@@ -562,7 +565,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
   }
 
   function noteMarkup() {
-    const notes = storage ? loadNotes(storage, owner, key) : [];
+    const notes = storage ? loadNotesAcross(storage, owner, readKeys) : [];
     // The note being edited is in the composer, not listed again beside it.
     const others = notes.filter((note) => note.id !== editing);
     return html`<div class="s-qs__panel s-qs__panel--note">
@@ -624,7 +627,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
       sheetEl.querySelector('[data-note-add]')?.addEventListener('click', submitNote);
       sheetEl.querySelectorAll('[data-note-delete]').forEach((button) => button.addEventListener('click', () => {
         if (!storage) return;
-        deleteNote(storage, owner, key, button.dataset.noteDelete);
+        deleteNote(storage, owner, noteKeyHolding(storage, owner, readKeys, button.dataset.noteDelete), button.dataset.noteDelete);
         if (source?.content_id) {
           noteRemoved(source.content_id, button.dataset.noteDelete);
           scheduleAnnotationPush(storage, owner, source.content_id);
@@ -638,7 +641,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
   function submitNote() {
     if (!storage || !noteDraft.trim()) return;
     const note = editing
-      ? updateNote(storage, owner, key, editing, { type: noteType, text: noteDraft })
+      ? updateNote(storage, owner, noteKeyHolding(storage, owner, readKeys, editing), editing, { type: noteType, text: noteDraft })
       : addNote(storage, owner, key, { type: noteType, text: noteDraft, content: source?.content_id || '' });
     editing = '';
     if (!note) return;

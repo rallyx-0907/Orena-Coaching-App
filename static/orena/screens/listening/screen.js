@@ -21,7 +21,7 @@ import { useStyles } from '../../kit/styles.js';
 import { langAttr } from '../../kit/lang.js';
 import { toast } from '../../kit/toast.js';
 import { api } from '../../infrastructure/api.js';
-import { annotateWithPolicy } from '../../infrastructure/annotate-policy.js';
+import { annotateWithPolicy, annotateAllowed } from '../../infrastructure/annotate-policy.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { askOrena } from '../../shell/agent-bridge.js';
@@ -809,6 +809,8 @@ export default async function listening(element, ctx) {
     let curated = terms.length > 0;
     if (!curated) {
       try {
+        // A lesson in another language than the one being learned is never sent (the tagger answers 409).
+        if (!annotateAllowed(language, c.language)) throw new Error('not the learning language');
         const res = await annotateWithPolicy(api.annotateMediaText, { text: seg.original_text, source_language: language }, { scope: routeId });
         terms = keyWordsFrom(res?.annotations, language);
       } catch {
