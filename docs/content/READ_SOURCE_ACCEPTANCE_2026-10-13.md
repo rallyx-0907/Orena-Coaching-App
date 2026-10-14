@@ -196,7 +196,7 @@ D-200 and its prefetch sizing were reworded to this.
 | HSK | #204 | zh HSK1 to HSK5 source coverage |
 | Existing | #183 | Flaky media test |
 
-**:8000 is not deployed.** Deploying needs the owner's authorisation (and, per the existing handoff, migration 0026).
+**:8000 is not deployed.** Deploying needs the owner's authorisation (and, per D-177, migration 0026).
 
-**:8021 state.** Planned / done by the coordinator through Admin: the eight older sample publishes of section 4 are
-unpublished or archived, and the two learner test accounts are returned to Free. Not verified by this document.
+**Pending owner action on :8021:** unpublish the 8 trial samples of 2026-10-13 (15:07 UTC batch) and return the 2 learner test
+accounts to Free; decision pending on de4c636c (published 2026-10-13 02:44) and the 3 earlier E2E articles of 2026-10-14.
