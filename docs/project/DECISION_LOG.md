@@ -6283,3 +6283,83 @@ Answers catalogue question Q6 (VOA wire copy) in part; the part that stays human
    APPROVED WITH CONDITIONS (English credit forms, further agencies, engine-level origin test, explicit no-byline fixture,
    this entry's wording, renumbering from D-192 to D-193, CI green). The conditions are addressed in the following commit.
    Status stays PROPOSED: the owner approves the rights policy before merge.
+
+## D-195 - AI Cost Router, slice 1: word_translation, OpenRouter free pool, explicit operator failover (2026-10-14)
+
+**Status: ACCEPTED** (2026-10-14). Independent review: Delegated Architecture Reviewer, Claude Opus 5.5, APPROVED WITH
+CONDITIONS on 43ce4621, re-review APPROVE on f1f5c60c; merged once CI was green. Owner decisions of 2026-10-14 are in
+the design `docs/project/proposals/AI_COST_ROUTER.md` (PR #165). Activation, the OpenRouter key and verifying the two
+pinned model ids remain owner actions. No schema, no migration, no UI change. The capability ships
+without a stored configuration, so it is disabled until the owner saves and enables one.
+
+Owner decisions of 2026-10-14, recorded here before the tests that pinned the old rules change:
+
+1. **The basic tap may call AI, through `word_translation` only, sending the word only.** The input is one word or phrase
+   of at most three words and 40 characters (at most 8 Han characters), with the two languages and an optional part of
+   speech; never the sentence, never the article. The tap's order is unchanged until it misses: catalogue, then CC-CEDICT
+   or dictionaryapi, then the machine translators, then the `word_translation` seam of `ReadingLookupService` (PR #164),
+   only when the capability is enabled, within the remaining tap budget. The seam is admitted through a bounded gate (a
+   full gate is a miss, one call per word, a call that never started is cancelled, a failed word is cooled down for 60
+   seconds, logs name the exception type only), and the adapter sends the word only, ignoring the sentence and the
+   dictionary senses the seam is also given. If the budget passes, the call still finishes on its worker and fills the
+   cache. The meaning is tagged `word_translation`. A per-account brake limits cache-miss calls; over it the learner gets
+   the deterministic answer, never a 429. "Lookup never AI" (the docstring of `reading_lookup.py`, `tests/test_lookup_deterministic.py`,
+   `tests/test_reading_lookup.py`) is replaced by: **AI is reached from a word tap only through `word_translation`, only
+   on a deterministic miss, only when the capability is enabled.** Explain / "Why here?" (D-130.3, D-133) is unchanged and
+   remains the only way a sentence reaches AI.
+2. **OpenRouter, pinned `:free` models only, no credit.** The `openrouter/*` router ids (`openrouter/auto`,
+   `openrouter/free`) are refused, so is any id without a vendor prefix, so is any model that is not `:free`, **so is any
+   `:free` id that has no zero-rate entry in the price catalogue** (an unlisted free model is "unpriced" and the shared
+   daily spend ledger would charge it 0.01 USD a call; the suffix is never priced as zero), at config validation and at
+   the single wire choke point (`_post_chat`, and the stream). Requests send
+   `provider.allow_fallbacks=false`: the router owns failover and the order is never random. A free endpoint may log
+   prompts, so a provider marked `may_log_prompts` and any free model are refused for `learner_text` capabilities (the
+   input-class rule, D-104); `word_translation` is `public_reference`. The key is entered by the owner (D-037 store or
+   `OPENROUTER_API_KEY`); no agent handles it. Free models have explicit zero-rate price entries (pricing catalogue
+   `2026-10-14.v3`), so the daily spend ledger no longer counts them as unpriced. Swapping in another free model means
+   adding its zero-rate entry to `pricing.py` first.
+3. **Lane.** The UI/Reading lane builds the router core in small PRs, each reviewed independently; the Intelligence lane
+   calls it only through `route()` and keeps `agent_turn_*`.
+4. **Order.** Slice 1 (this) before the Admin design addendum; the pool editor, config v2, the persistent cache and local
+   tiers are later slices.
+5. **Supersedes D-035's "primary-only" wording and clarifies D-010.** Operator-configured, ordered pools with tier labels,
+   per-attempt timeouts, a total deadline, cooldown and full telemetry are **explicit failover**, not silent failover:
+   D-010 forbids a *silent paid* failover, and this slice's pool is **enforced** free-or-local: config validation refuses a
+   paid model, primary or standby, for `word_translation` (`free_only`) until the per-capability spend cap exists (PR 2),
+   and every attempt is logged. An
+   availability failure (429, 402, 5xx, timeout, unavailable) moves to the next entry; invalid output retries once and then
+   moves on; terminal errors (disabled, unsupported, invalid configuration) are never failed over. A paid tier or an
+   escalation still needs the owner's explicit configuration and a spend cap. The learner runtime already behaved this
+   way since `a50f96a7` (2026-09-22); the pinned Admin design A5 says the standby is "used automatically when the primary
+   fails".
+
+MEMORY CONTRADICTION (settled by the owner's instruction above): D-035 and `docs/ORENA_AI_COST_REDUCTION_PLAN.md` §6-7
+described a primary-only runtime; `routing.py` and `platform.py` implemented automatic failover to the standby.
+
+**Mechanics (for the reviewer).** `route(capability_key, input, deadline=None)` in `writing_coach/ai/router/`; the pool runs
+through `platform.generate_structured`, which gained `validate=`, `deadline=`, `invalid_retries=`, `attempt_timeout=`,
+`router_version=` and `capability_mode=` (all inert by default). `timeout_seconds` is now a supported capability option
+(G1) and `AIProviderError.status_code` is set by the providers (G4). The L1 cache is keyed without the model, with
+single-flight and a 60-second negative cache. Telemetry gains `tier, phase, attempt, fallback_reason, http_status_class,
+router_version` and an `ai.router.rollup` row per capability each minute; neither carries a word, a prompt or an answer.
+`word_translation` is `opt_in`: outside the legacy-to-capability activation set (`activation_capabilities()`).
+
+**Also changed, and stated for the reviewer.** `timeout_seconds` is now a supported capability option for **every** text
+provider (it was refused before, so none is stored) and is applied per attempt; request timeouts now report
+`error_class=provider_timeout` instead of `provider_unavailable` (still an availability failure). A validator rejection
+(`invalid_output`) is not a provider-health failure and does not count toward the cooldown. This slice accepts no echo
+of the input as a meaning (a proper noun would need the tagger's POS, which the word-only tap does not send). The
+per-account brake table evicts the least recently used account only. The Admin copy names and explains the capability in
+English, Vietnamese and Chinese.
+
+**Review.** Independent architecture review of `43ce4621`: Claude Opus 5.5, Delegated Architecture Reviewer, independent
+of the implementer: APPROVED WITH CONDITIONS. P1-1 (unlisted free model priced as unpriced) and P1-2 (free-only not
+enforced) and P2-1, P2-2, P2-4, P2-5, P2-6, P2-7 are addressed in the commit that records this line; P2-3 (the `requests`
+timeout is per socket operation, not a total) is noted, the tap is protected by the seam gate. No product approval is
+implied; activation stays a separate owner action after the two model ids are verified against the live catalogue.
+
+**Not verified.** The pinned ids `google/gemma-4-31b-it:free` and `qwen/qwen3-next-80b-a3b-instruct:free` could not be
+checked against the live OpenRouter catalogue from the build environment; verify before activation (a retired id only
+fails over). No live provider call was made.
+
+**Supersedes / Superseded by:** Supersedes D-035 (primary-only wording); clarifies D-010.

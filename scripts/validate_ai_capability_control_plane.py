@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from writing_coach.ai.capabilities import (  # noqa: E402
-    configurable_provider_capabilities,
+    activation_capabilities,
     get_capability,
 )
 from writing_coach.ai.config import validate_capability_config  # noqa: E402
@@ -54,7 +54,7 @@ def validate_persisted_capabilities(repository: PlatformRepository) -> dict[str,
     if len(by_key) != len(records):
         raise CapabilityPreflightError("Duplicate AI capability settings were returned.")
 
-    required = {definition.key for definition in configurable_provider_capabilities()}
+    required = {definition.key for definition in activation_capabilities()}
     missing = sorted(required - set(by_key))
     if missing:
         raise CapabilityPreflightError(

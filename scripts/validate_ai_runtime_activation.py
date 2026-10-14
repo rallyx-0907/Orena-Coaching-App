@@ -20,7 +20,7 @@ from scripts.validate_ai_capability_control_plane import (  # noqa: E402
 from writing_coach.ai.base import AICapabilityError  # noqa: E402
 from writing_coach.ai.capabilities import (  # noqa: E402
     AIFallbackPolicy,
-    configurable_provider_capabilities,
+    activation_capabilities,
 )
 from writing_coach.ai.platform import AIRuntimeMode, runtime_mode  # noqa: E402
 from writing_coach.persistence.platform_repository import (  # noqa: E402
@@ -69,8 +69,10 @@ def validate_activation_readiness(repository: PlatformRepository) -> dict[str, A
     except AICapabilityError as exc:
         raise ActivationReadinessError("AI capability configuration is invalid.") from exc
 
-    required = {definition.key for definition in configurable_provider_capabilities()}
-    disabled = sorted(record.capability_key for record in records if not record.config.enabled)
+    required = {definition.key for definition in activation_capabilities()}
+    # Opt-in capabilities (word_translation) ship disabled and are not part of this gate.
+    gated = [record for record in records if record.capability_key in required]
+    disabled = sorted(record.capability_key for record in gated if not record.config.enabled)
     if disabled:
         raise ActivationReadinessError(
             f"Disabled AI capability settings prevent activation: {disabled!r}."
@@ -78,7 +80,7 @@ def validate_activation_readiness(repository: PlatformRepository) -> dict[str, A
 
     fallback = {
         record.capability_key
-        for record in records
+        for record in gated
         if record.config.fallback_policy is AIFallbackPolicy.DETERMINISTIC_FALLBACK
     }
     if fallback != _DETERMINISTIC_FALLBACK_CAPABILITIES:
