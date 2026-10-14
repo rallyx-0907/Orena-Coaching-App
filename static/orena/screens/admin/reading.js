@@ -34,7 +34,7 @@ export async function mountReading(shell, ctx) {
     support: languages().support === 'vi' || languages().support === 'zh' ? languages().support : 'en', generating: false, setError: '',
     error: '', mode: ctx.query.get('mode') === 'text' ? 'text' : ctx.query.get('mode') === 'file' ? 'file' : 'url', rights: '', language: 'auto', last: null, file: null,
   };
-  const data = { ops: null, sources: [], next: [], items: [], cursor: null, article: null, sets: [], set: null };
+  const data = { ops: null, sources: [], next: [], items: [], cursor: null, article: null, sets: [], set: null, images: null };
 
   /* ---- builders ---- */
   function build() {
@@ -43,7 +43,7 @@ export async function mountReading(shell, ctx) {
     if (view.failed) return { title: t('rdTitle'), markup: html`<section class="a-page">${pageHead({ title: t('rdTitle') })}${loadFailedBlock(t)}</section>` };
     switch (routeId) {
       case 'adminQueue': return { ...queuePage({ ...base, tab: view.tab, items: data.items, next: data.cursor, counts: counts() }), filterValue: view.q };
-      case 'adminArticle': return articlePage({ ...base, article: data.article, sets: data.sets });
+      case 'adminArticle': return articlePage({ ...base, article: data.article, sets: data.sets, images: data.images, previewUrl: (index) => api.readingImagePreviewUrl(data.article.id, index) });
       case 'adminSet': return setPage({ ...base, set: data.set, article: data.article });
       case 'adminAdd': return addPage({ ...base, sources: data.sources });
       case 'adminSources': return { ...sourcesPage({ ...base, sources: data.sources }), filterValue: view.q };
@@ -74,9 +74,10 @@ export async function mountReading(shell, ctx) {
         data.items = page.items || [];
         data.cursor = page.next_cursor || null;
       } else if (routeId === 'adminArticle') {
-        const [article, sets] = await Promise.all([api.readingArticle(ctx.params.id), api.readingSets(ctx.params.id).catch(() => ({ items: [] }))]);
+        const [article, sets, images] = await Promise.all([api.readingArticle(ctx.params.id), api.readingSets(ctx.params.id).catch(() => ({ items: [] })), api.readingImages(ctx.params.id).catch(() => null)]);
         data.article = article;
         data.sets = sets.items || [];
+        data.images = images;
       } else if (routeId === 'adminSet') {
         data.set = await api.readingSet(ctx.params.id);
         data.article = await api.readingArticle(data.set.article_id).catch(() => null);
@@ -220,6 +221,7 @@ export async function mountReading(shell, ctx) {
   host.onInput((id, value) => {
     if (routeId === 'adminSource' && id === 'publicName') { view.publicName = value; return; }
     if (routeId === 'adminAdd') { view[id] = value; if (id === 'registeredSource') host.paint(); return; }
+    if (id === 'img_credit') { view.imgCredit = value; return; }
     if (['title', 'topic', 'body'].includes(id)) { view.edit[id] = value; view.dirty = true; view.editError = ''; }
     if (id.startsWith('nt_')) {
       view.newTarget = { ...view.newTarget, [id.slice(3)]: value };
@@ -305,6 +307,26 @@ export async function mountReading(shell, ctx) {
     }
     host.paint();
   });
+
+  /* ---- the article's picture (D-194) ---- */
+  async function imageCall(call, doneKey) {
+    view.busy = true;
+    view.imageError = '';
+    host.paint();
+    try {
+      data.images = await call();
+      data.article = await api.readingArticle(data.article.id);
+      host.toast(t(doneKey));
+    } catch (error) {
+      view.imageError = explain(error);
+    }
+    view.busy = false;
+    host.paint();
+  }
+  host.on('image-approve', (control, dataset) => imageCall(
+    () => api.readingImageApprove(dataset.id, Number(dataset.index), { credit: (view.imgCredit || '').trim() }), 'imgApprovedToast'));
+  host.on('image-reject', (control, dataset) => imageCall(() => api.readingImageReject(dataset.id, Number(dataset.index)), 'imgRejectedToast'));
+  host.on('image-clear', (control, dataset) => imageCall(() => api.readingImageClear(dataset.id), 'imgClearedToast'));
 
   /* ---- comprehension sets ---- */
   host.on('pick', (control, dataset) => {
@@ -403,6 +425,22 @@ export async function mountReading(shell, ctx) {
   });
 
   /* ---- sources ---- */
+  host.on('source-images', async (control, dataset) => {
+    const allow = dataset.allowed === '1';
+    if (allow) {
+      const answer = await host.confirm({ title: t('srcImagesConfirmTitle'), body: t('srcImagesConfirmBody'), cancel: t('actCancel'), confirm: t('srcImagesAllow') });
+      if (!answer.confirmed) return;
+    }
+    try {
+      await api.readingSetImagePolicy(dataset.id, allow);
+      data.sources = (await api.readingSources()).items || [];
+      view.error = '';
+      host.toast(t(allow ? 'srcImagesOnToast' : 'srcImagesOffToast'));
+    } catch (error) {
+      view.error = explain(error);
+    }
+    host.paint();
+  });
   host.on('source-state', async (control, dataset) => {
     const source = data.sources.find((item) => item.id === dataset.id);
     if (['blocked', 'archived'].includes(dataset.state)) {

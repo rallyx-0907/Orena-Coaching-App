@@ -44,6 +44,15 @@ from sqlalchemy.engine import Engine
 from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
 from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
+from writing_coach.reading_images import (
+    SHARED_URL_THRESHOLD,
+    assess_candidates,
+    candidate_url,
+    image_policy_allowed,
+    learner_image,
+    shared_url_counts,
+    with_image_policy,
+)
 from writing_coach.reading_provenance import (
     PUBLIC_NAME_KEY, build_provenance, provenance_blockers, public_name_of, resolve_publisher,
 )
@@ -170,6 +179,8 @@ def _source(row: Any) -> dict[str, Any]:
             "license_note": row.license_note,
         },
         "polling_enabled": bool(row.polling_enabled),
+        # D-194: whether learner thumbnails from this source are permitted. Off until the owner turns it on.
+        "image_policy": {"allowed": image_policy_allowed(row.polling_policy)},
         "last_checked_at": _iso(row.last_checked_at),
         "last_success_at": _iso(row.last_success_at),
         "last_error": row.last_error,
@@ -185,6 +196,39 @@ def _policy_with_public_name(policy: Any, public_name: str) -> dict[str, Any]:
     if name:
         merged[PUBLIC_NAME_KEY] = name
     return merged
+
+
+def _update_source_policy(
+    connection: Any, source_id: Any, mutate: Callable[[dict[str, Any]], dict[str, Any]], *, now: datetime
+) -> bool | None:
+    """The one writer of a source's `polling_policy` JSON (public name, image policy).
+
+    Reads the row under a lock, applies `mutate` to a copy of the stored dict and writes back only on a
+    change, so two administrators saving different keys cannot lose each other's key. Returns None when
+    the source does not exist, else whether anything changed. A change on a source moves every published
+    article's `content_revision` in the same transaction: both keys are in the learner payload.
+    """
+    row = connection.execute(
+        select(ReadingSource.polling_policy).where(ReadingSource.id == source_id).with_for_update()
+    ).first()
+    if row is None:
+        return None
+    current = dict(row.polling_policy) if isinstance(row.polling_policy, dict) else {}
+    updated = mutate(dict(current))
+    if updated == current:
+        return False
+    connection.execute(
+        update(ReadingSource).where(ReadingSource.id == source_id).values(polling_policy=updated, updated_at=now)
+    )
+    connection.execute(
+        update(ReadingArticle)
+        .where(
+            ReadingArticle.status == LEARNER_VISIBLE_STATUS,
+            ReadingArticle.source_item_id.in_(select(ReadingSourceItem.id).where(ReadingSourceItem.source_id == source_id)),
+        )
+        .values(content_revision=ReadingArticle.content_revision + 1, updated_at=now)
+    )
+    return True
 
 
 def _learner_credit(row: Any, effective: dict[str, Any]) -> dict[str, Any]:
@@ -235,6 +279,10 @@ def rights_state(rights: Any) -> dict[str, str]:
 
 
 RIGHTS_EVENT = "rights_set"
+# D-194: a thumbnail decision is a recorded review event, folded oldest first like a rights answer.
+IMAGE_SET_EVENT = "image_set"
+IMAGE_REJECTED_EVENT = "image_rejected"
+IMAGE_EVENTS = (IMAGE_SET_EVENT, IMAGE_REJECTED_EVENT)
 RIGHTS_QUESTIONS = ("can_republish", "can_adapt", "attribution_required")
 
 
@@ -290,6 +338,31 @@ def overlay_rights(
                 else:
                     effective[key] = answers[key]
     return effective
+
+
+def fold_image_events(events: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """The thumbnail state of an article from its image events, oldest first.
+
+    `approved` is the last approval that was not cleared or rejected since; `rejected` is every candidate
+    address a reviewer turned down. An approval of an address that was rejected earlier stands: the later
+    decision wins.
+    """
+    approved: dict[str, Any] | None = None
+    rejected: set[str] = set()
+    for event in events:
+        answers = event["answers"]
+        if event["action"] == IMAGE_SET_EVENT:
+            image = answers.get("image")
+            approved = dict(image) if isinstance(image, dict) else None
+            if approved:
+                rejected.discard(str(approved.get("candidate_url") or ""))
+        elif event["action"] == IMAGE_REJECTED_EVENT:
+            url = str(answers.get("rejected_url") or "")
+            if url:
+                rejected.add(url)
+                if approved and approved.get("candidate_url") == url:
+                    approved = None
+    return {"approved": approved, "rejected": frozenset(rejected)}
 
 
 def _item(row: Any) -> dict[str, Any]:
@@ -518,27 +591,11 @@ class ReadingContentRepository:
             return None
         moment = _now(now)
         with self.engine.begin() as connection:
-            row = connection.execute(
-                select(ReadingSource.polling_policy).where(ReadingSource.id == _uuid(source_id))
-            ).first()
-            if row is None:
+            changed = _update_source_policy(
+                connection, _uuid(source_id), lambda policy: _policy_with_public_name(policy, public_name), now=moment
+            )
+            if changed is None:
                 return None
-            policy = _policy_with_public_name(row.polling_policy, public_name)
-            if policy != (row.polling_policy or {}):
-                connection.execute(
-                    update(ReadingSource).where(ReadingSource.id == _uuid(source_id))
-                    .values(polling_policy=policy, updated_at=moment)
-                )
-                connection.execute(
-                    update(ReadingArticle)
-                    .where(
-                        ReadingArticle.status == LEARNER_VISIBLE_STATUS,
-                        ReadingArticle.source_item_id.in_(
-                            select(ReadingSourceItem.id).where(ReadingSourceItem.source_id == _uuid(source_id))
-                        ),
-                    )
-                    .values(content_revision=ReadingArticle.content_revision + 1, updated_at=moment)
-                )
         return self.get_source(source_id)
 
     def set_source_state(
@@ -976,17 +1033,17 @@ class ReadingContentRepository:
                 }
         return article
 
-    def _rights_decisions(
+    def _decision_events(
         self, connection: Any, article_ids: Sequence[Any]
     ) -> dict[Any, list[dict[str, Any]]]:
-        """Recorded rights answers per article, oldest first."""
+        """Recorded rights answers and thumbnail decisions per article, oldest first, in one read."""
         if not article_ids:
             return {}
         rows = connection.execute(
             select(ReadingReviewEvent)
             .where(
                 ReadingReviewEvent.article_id.in_(list(article_ids)),
-                ReadingReviewEvent.action == RIGHTS_EVENT,
+                ReadingReviewEvent.action.in_((RIGHTS_EVENT, *IMAGE_EVENTS)),
             )
             .order_by(ReadingReviewEvent.created_at, ReadingReviewEvent.id)
         ).all()
@@ -994,9 +1051,19 @@ class ReadingContentRepository:
         for event in rows:
             answers = (event.changes_json or {}).get("to") or {}
             found.setdefault(event.article_id, []).append(
-                {"answers": dict(answers), "actor": event.actor, "at": _iso(event.created_at)}
+                {"action": event.action, "answers": dict(answers), "actor": event.actor, "at": _iso(event.created_at)}
             )
         return found
+
+    def _rights_decisions(
+        self, connection: Any, article_ids: Sequence[Any]
+    ) -> dict[Any, list[dict[str, Any]]]:
+        """Recorded rights answers per article, oldest first."""
+        events = self._decision_events(connection, article_ids)
+        return {
+            key: [entry for entry in entries if entry["action"] == RIGHTS_EVENT]
+            for key, entries in events.items()
+        }
 
     def set_rights(
         self,
@@ -1057,6 +1124,187 @@ class ReadingContentRepository:
                 # The credit a learner reads is derived from these answers.
                 self._bump_revision(connection, _uuid(article_id), moment)
         return self.get_article(article_id)
+
+    # ---- thumbnails (D-194) -------------------------------------------------
+    def set_image_policy(
+        self, source_id: str, allowed: bool, *, actor: str, now: datetime | None = None
+    ) -> dict[str, Any] | None:
+        """Turn learner thumbnails from a source on or off. Stored in the source's existing config JSON; a change
+        moves the revision of its published articles, so the withdrawal reaches cached copies."""
+        if _lookup_uuid(source_id) is None:
+            return None
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            changed = _update_source_policy(
+                connection, _uuid(source_id), lambda policy: with_image_policy(policy, allowed), now=moment
+            )
+            if changed is None:
+                return None
+            row = connection.execute(select(ReadingSource).where(ReadingSource.id == _uuid(source_id))).first()
+        return _source(row)
+
+    def _image_context(self, article_id: str) -> dict[str, Any] | None:
+        if _lookup_uuid(article_id) is None:
+            return None
+        with self.engine.connect() as connection:
+            article = connection.execute(
+                select(ReadingArticle).where(ReadingArticle.id == _uuid(article_id))
+            ).first()
+            if article is None:
+                return None
+            item = connection.execute(
+                select(ReadingSourceItem).where(ReadingSourceItem.id == article.source_item_id)
+            ).first()
+            if item is None:
+                return None
+            source = connection.execute(
+                select(ReadingSource).where(ReadingSource.id == item.source_id)
+            ).first()
+            others = connection.execute(
+                select(ReadingSourceItem.metadata_json)
+                .where(ReadingSourceItem.source_id == item.source_id, ReadingSourceItem.id != item.id)
+                .order_by(ReadingSourceItem.fetched_at.desc())
+                .limit(300)
+            ).all()
+            events = self._decision_events(connection, [article.id]).get(article.id, [])
+        return {"article": article, "item": item, "source": source, "others": others, "events": events}
+
+    def image_review(self, article_id: str) -> dict[str, Any] | None:
+        """What an administrator reviews for one article's thumbnail: the candidates, their eligibility,
+        the approved picture and whether the source allows learners to see one. Admin only - it names
+        no candidate address, only the index the admin routes take."""
+        context = self._image_context(article_id)
+        if context is None:
+            return None
+        article, item, source = context["article"], context["item"], context["source"]
+        media = list(((item.metadata_json or {}).get("extraction") or {}).get("media") or [])
+        folded = fold_image_events([e for e in context["events"] if e["action"] in IMAGE_EVENTS])
+        approved = folded["approved"]
+        counts = shared_url_counts(
+            [list(((meta or {}).get("extraction") or {}).get("media") or []) for (meta,) in context["others"]]
+        )
+        policy_allowed = image_policy_allowed(source.polling_policy if source else None)
+        publisher = _learner_credit(SimpleNamespace(
+            item_metadata=item.metadata_json, source_policy=source.polling_policy if source else {},
+            source_slug=source.slug if source else "", canonical_url=item.canonical_url,
+            original_author=item.original_author,
+        ), {})["publisher"]
+        shown = learner_image(
+            article_id=str(article.id), revision=article.content_revision, policy_allowed=policy_allowed,
+            approved=approved, publisher=publisher,
+        )
+        return {
+            "article_id": str(article.id),
+            "source_id": str(item.source_id),
+            "policy_allowed": policy_allowed,
+            "candidates": assess_candidates(
+                media, shared_counts=counts, rejected=folded["rejected"],
+                approved_url=str((approved or {}).get("candidate_url") or ""),
+            ),
+            "approved": (
+                {key: approved.get(key) for key in ("width", "height", "content_type", "credit", "alt")}
+                if approved else None
+            ),
+            "shown_to_learners": shown is not None,
+            "shared_threshold": SHARED_URL_THRESHOLD,
+        }
+
+    def image_candidate(self, article_id: str, index: int) -> dict[str, Any] | None:
+        """The stored candidate at `index` for the admin routes, with the source policy and whether it is
+        eligible. The request carries an index, never an address."""
+        context = self._image_context(article_id)
+        if context is None or isinstance(index, bool) or not isinstance(index, int):
+            return None
+        media = list(((context["item"].metadata_json or {}).get("extraction") or {}).get("media") or [])
+        if not (0 <= index < len(media)):
+            return None
+        url = candidate_url(media[index])
+        review = self.image_review(article_id)
+        row = next((c for c in (review or {}).get("candidates", []) if c["index"] == index), None)
+        if not url or row is None:
+            return None
+        return {"url": url, "candidate": row, "policy_allowed": review["policy_allowed"], "entry": dict(media[index])}
+
+    def _record_image_event(
+        self, article_id: str, action: str, changes: dict[str, Any], *, actor: str, reason: str,
+        now: datetime | None,
+    ) -> bool:
+        if _lookup_uuid(article_id) is None:
+            return False
+        with self.engine.begin() as connection:
+            article = connection.execute(
+                select(ReadingArticle.status).where(ReadingArticle.id == _uuid(article_id))
+            ).first()
+            if article is None:
+                return False
+            moment = _now(now)
+            last = connection.execute(
+                select(func.max(ReadingReviewEvent.created_at)).where(
+                    ReadingReviewEvent.article_id == _uuid(article_id),
+                    ReadingReviewEvent.action.in_((RIGHTS_EVENT, *IMAGE_EVENTS)),
+                )
+            ).scalar()
+            last = _aware(last)
+            if last is not None and moment <= last:
+                moment = last + timedelta(microseconds=1)
+            self._record_event(
+                connection, article_id=_uuid(article_id), actor=actor, action=action, reason=reason,
+                changes=changes, now=moment,
+            )
+            # The thumbnail is in the learner payload, so a change moves the revision a cached copy checks.
+            if article.status == LEARNER_VISIBLE_STATUS:
+                self._bump_revision(connection, _uuid(article_id), moment)
+        return True
+
+    def approve_image(
+        self, article_id: str, stored: Mapping[str, Any], *, actor: str, reason: str = "",
+        now: datetime | None = None,
+    ) -> bool:
+        """Record the approval of one fetched and stored candidate (the bytes are already in the asset store)."""
+        return self._record_image_event(
+            article_id, IMAGE_SET_EVENT, {"from": None, "to": {"image": dict(stored)}},
+            actor=actor, reason=reason, now=now,
+        )
+
+    def reject_image(
+        self, article_id: str, url: str, *, actor: str, reason: str = "", now: datetime | None = None
+    ) -> bool:
+        return self._record_image_event(
+            article_id, IMAGE_REJECTED_EVENT, {"from": None, "to": {"rejected_url": url}},
+            actor=actor, reason=reason, now=now,
+        )
+
+    def clear_image(
+        self, article_id: str, *, actor: str, reason: str = "", now: datetime | None = None
+    ) -> bool:
+        return self._record_image_event(
+            article_id, IMAGE_SET_EVENT, {"from": None, "to": {"image": None}},
+            actor=actor, reason=reason, now=now,
+        )
+
+    def approved_image_asset(self, article_id: str) -> dict[str, Any] | None:
+        """The stored picture a learner may be served for a published article, or None. Re-checks the
+        whole rule at serve time, so turning a source's policy off hides its pictures at once."""
+        if _lookup_uuid(article_id) is None:
+            return None
+        with self.engine.connect() as connection:
+            row = connection.execute(
+                select(ReadingArticle.id, ReadingArticle.content_revision).where(
+                    ReadingArticle.id == _uuid(article_id), ReadingArticle.status == LEARNER_VISIBLE_STATUS
+                )
+            ).first()
+            if row is None:
+                return None
+            _, images = self._credits_and_images(connection, [row.id], revisions={row.id: row.content_revision})
+            if images.get(row.id) is None:
+                return None
+            events = self._decision_events(connection, [row.id]).get(row.id, [])
+        approved = fold_image_events([e for e in events if e["action"] in IMAGE_EVENTS])["approved"] or {}
+        key, content_type = approved.get("asset_key"), approved.get("content_type")
+        return (
+            {"asset_key": key, "content_type": content_type, "sha256": str(approved.get("sha256") or "")}
+            if key and content_type else None
+        )
 
     def article_for_source_item(self, source_item_id: str) -> dict[str, Any] | None:
         if _lookup_uuid(source_item_id) is None:
@@ -1351,11 +1599,13 @@ class ReadingContentRepository:
                 if len(rows) > bounded and page
                 else None
             )
-            credits = self._provenance_map(connection, [row.id for row in page])
+            credits, images = self._credits_and_images(
+                connection, [row.id for row in page], revisions={row.id: row.content_revision for row in page}
+            )
         return {
             "items": [
                 {**_learner_row(row), "provenance": credits.get(row.id) or build_provenance(
-                    publisher="", url="", author="", rights=None)}
+                    publisher="", url="", author="", rights=None), "image": images.get(row.id)}
                 for row in page
             ],
             "next_cursor": next_cursor,
@@ -1392,7 +1642,10 @@ class ReadingContentRepository:
                     ReadingSourceItem.source_id,
                 ).where(ReadingSourceItem.id == row.source_item_id)
             ).first()
-            credit = self._provenance_map(connection, [row.id]).get(row.id)
+            credits, images = self._credits_and_images(
+                connection, [row.id], revisions={row.id: row.content_revision}
+            )
+            credit = credits.get(row.id)
         return {
             "id": str(row.id),
             "title": row.title,
@@ -1415,6 +1668,7 @@ class ReadingContentRepository:
                 for target in targets
             ],
             "provenance": credit or build_provenance(publisher="", url="", author="", rights=None),
+            "image": images.get(row.id),
             "attribution": {
                 "author": source_item.original_author if source_item else "",
                 "source_url": source_item.canonical_url if source_item else "",
@@ -1535,8 +1789,18 @@ class ReadingContentRepository:
         item's address and author, and the effective rights (snapshot with the
         recorded answers folded over it). One set-wise query for the ids given,
         so a list page costs two reads whatever its size."""
+        return self._credits_and_images(connection, article_ids, revisions=None)[0]
+
+    def _credits_and_images(
+        self, connection: Any, article_ids: Sequence[Any], *, revisions: Mapping[Any, int] | None
+    ) -> tuple[dict[Any, dict[str, Any]], dict[Any, dict[str, str] | None]]:
+        """The credit of each article and, when `revisions` is given, its learner `image` (or None).
+
+        The same two reads whatever the page size: the thumbnail rule (policy on, a candidate approved, a
+        credit) needs only columns of rows already read and the review events already read for the rights
+        answers."""
         if not article_ids:
-            return {}
+            return {}, {}
         rows = connection.execute(
             select(
                 ReadingArticle.id,
@@ -1552,13 +1816,25 @@ class ReadingContentRepository:
             .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
             .where(ReadingArticle.id.in_(list(article_ids)))
         ).all()
-        decisions = self._rights_decisions(connection, [row.id for row in rows])
-        found: dict[Any, dict[str, Any]] = {}
+        events = self._decision_events(connection, [row.id for row in rows])
+        credits: dict[Any, dict[str, Any]] = {}
+        images: dict[Any, dict[str, str] | None] = {}
         for row in rows:
-            answered = [entry["answers"] for entry in decisions.get(row.id, [])]
+            entries = events.get(row.id, [])
+            answered = [entry["answers"] for entry in entries if entry["action"] == RIGHTS_EVENT]
             effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
-            found[row.id] = _learner_credit(row, effective)
-        return found
+            credits[row.id] = _learner_credit(row, effective)
+            if revisions is not None:
+                images[row.id] = learner_image(
+                    article_id=str(row.id),
+                    revision=revisions.get(row.id, 0),
+                    policy_allowed=image_policy_allowed(row.source_policy),
+                    approved=fold_image_events([e for e in entries if e["action"] in IMAGE_EVENTS])["approved"],
+                    # The fallback credit is the learner-facing publisher (D-192 resolver), never the
+                    # registry name.
+                    publisher=credits[row.id]["publisher"],
+                )
+        return credits, images
 
     def published_missing_provenance(self, *, limit: int = 5000) -> list[dict[str, Any]]:
         """Published articles whose required attribution is incomplete (D-189),

@@ -96,4 +96,23 @@ assert.ok(/doc\.credit/.test(screenSource), 'the footnote reads the sanitised cr
 const readerSource = readFileSync(new URL('../static/orena/screens/reader/source.js', import.meta.url), 'utf8');
 assert.ok(/credit: creditOf\(article\)/.test(readerSource) && !/credit:.*kind === 'book'/.test(readerSource), 'only a published article carries a credit');
 
+// 6. D-194 thumbnails: imageOf trusts only our own same-origin copy with a credit; the Reader footnote carries the credit.
+const { imageOf } = await import('../static/orena/product/provenance.js');
+const ID = '0a52e5d0-0000-4000-8000-000000000001';
+const own = { url: `/api/reading/articles/${ID}/image?v=4`, credit: 'Photo: A. Tran', alt: 'A flooded field' };
+assert.deepEqual(imageOf({ image: own }), { url: own.url, cssUrl: `url("${own.url}")`, credit: 'Photo: A. Tran', alt: 'A flooded field' });
+for (const bad of [
+  { ...own, url: 'https://media.example.org/a.jpg' }, { ...own, url: '//media.example.org/a.jpg' }, { ...own, url: `/api/reading/articles/${ID}/image?v=1&x=2` },
+  { ...own, url: `javascript:alert(1)` }, { ...own, url: `/api/reading/articles/../../etc/image` }, { ...own, url: `/api/reading/articles/${ID}/image")` },
+  { ...own, credit: '' }, { ...own, credit: '   ' }, null, 'x', {},
+]) assert.equal(imageOf({ image: bad }), null, `no picture for ${JSON.stringify(bad)}`);
+assert.equal(imageOf({}), null);
+assert.equal(creditOf({ provenance, image: own }).image, 'Photo: A. Tran', 'the picture credit joins the footnote');
+assert.equal(creditOf({ provenance }).image, '', 'no picture, no picture credit');
+assert.equal(creditOf({ provenance: { publisher: '', url: '' }, image: own }).image, 'Photo: A. Tran');
+for (const [lang, label] of Object.entries({ en: 'Image: {name}', vi: 'Ảnh: {name}', zh: '图片：{name}' })) {
+  assert.ok(copySource.includes(`srcImage: '${label}'`), `${lang} srcImage`);
+}
+assert.ok(/c\.image \? sep\(t\('srcImage'/.test(screenSource), 'the footnote draws the picture credit');
+
 console.log('reading provenance gate: ok');
