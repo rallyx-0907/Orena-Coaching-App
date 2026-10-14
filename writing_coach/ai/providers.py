@@ -177,6 +177,17 @@ def get_provider_definition(provider_id: str) -> ProviderDefinition | None:
     return _PROVIDER_CATALOG.get(str(provider_id or "").strip().casefold())
 
 
+# Free reasoning models spend a small max_tokens budget on thinking and return an EMPTY message (probed live on
+# 2026-10-14 with the word_translation request: HTTP 200, no content). These three answer a short gloss correctly when
+# OpenRouter's `reasoning.enabled` is false. Listed by id, never by guess: a model that makes reasoning mandatory
+# (liquid/lfm-2.5-2.6b answered HTTP 400 "Reasoning is mandatory") must not be added.
+OPENROUTER_REASONING_OFF = frozenset({
+    "dots-studio/dots-3-note-preview:free",
+    "nvidia/nemotron-3.5-lightning:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
+})
+
+
 def check_model_allowed(provider_id: str, model: str) -> None:
     """The model allowlist rule of a provider, static and offline (D-195).
 
@@ -689,6 +700,8 @@ class OpenAICompatibleProvider:
         check_model_allowed(self.id, str(body.get("model") or ""))  # the choke point: no path skips the allowlist
         if self.extra_body:
             body = {**body, **self.extra_body}
+        if self.id == "openrouter" and body.get("model") in OPENROUTER_REASONING_OFF:
+            body["reasoning"] = {"enabled": False}
         response = requests.post(
             f"{self.base_url}/chat/completions",
             headers=self._headers(),

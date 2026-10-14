@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-PRICING_CATALOG_VERSION = "2026-10-14.v4"
+PRICING_CATALOG_VERSION = "2026-10-14.v5"
 MAX_PRICED_TOKENS = 1_000_000_000
 
 
@@ -43,12 +43,21 @@ _CATALOG = MappingProxyType({
     #   gemma-4-31b-it   primary
     #   gemma-4-26b-a4b-it   standby: different weights, same family
     #   nemotron-3-super-120b-a12b   a second-vendor option
+    # Probed live 2026-10-14 (:8021, en->vi "poetry" and zh->vi, reasoning switched off, catalogue
+    # https://openrouter.ai/api/v1/models): dots-3-note-preview and nemotron-3.5-lightning also answered a valid
+    # short gloss, so they are pinned below. The gemma models answered HTTP 429 from their upstream on every probe.
     ("openrouter", "google/gemma-4-31b-it:free"): TokenPricing("openrouter", "google/gemma-4-31b-it:free", "USD", 0.0, 0.0),
     ("openrouter", "google/gemma-4-26b-a4b-it:free"): TokenPricing(
         "openrouter", "google/gemma-4-26b-a4b-it:free", "USD", 0.0, 0.0
     ),
     ("openrouter", "nvidia/nemotron-3-super-120b-a12b:free"): TokenPricing(
         "openrouter", "nvidia/nemotron-3-super-120b-a12b:free", "USD", 0.0, 0.0
+    ),
+    ("openrouter", "dots-studio/dots-3-note-preview:free"): TokenPricing(
+        "openrouter", "dots-studio/dots-3-note-preview:free", "USD", 0.0, 0.0
+    ),
+    ("openrouter", "nvidia/nemotron-3.5-lightning:free"): TokenPricing(
+        "openrouter", "nvidia/nemotron-3.5-lightning:free", "USD", 0.0, 0.0
     ),
 })
 
