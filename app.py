@@ -178,7 +178,7 @@ from writing_coach.vocabulary_library import (
     normalize_vocabulary_word,
 )
 from writing_coach.ai.base import AICapabilityError, AIProviderError, AIProviderUnavailable
-from writing_coach.ai.platform import active_ai_label, active_ai_status, admin_ai_operations, generate_structured, install_platform_ai, configure_platform_repository
+from writing_coach.ai.platform import providers as _ai_providers_with_store, active_ai_label, active_ai_status, admin_ai_operations, generate_structured, install_platform_ai, configure_platform_repository
 from writing_coach.text_discussion import install_text_discussion
 from writing_coach.ai.control_plane import AIControlPlane
 from writing_coach.ai.router.tap import word_translation_seam
@@ -3631,7 +3631,7 @@ def admin_product_activity(request: Request, window_days: int = 7) -> dict[str, 
 @app.get("/api/admin/readiness-summary", name="admin_readiness_summary")
 def admin_readiness_summary(request: Request) -> dict[str, Any]:
     require_admin(request)
-    config = AIControlPlane(_persistence_runtime.platform_repository).inspect()
+    config = AIControlPlane(_persistence_runtime.platform_repository, provider_factory=_ai_providers_with_store).inspect()
     operations = admin_ai_operations(request, limit=500)
     product_activity = product_activity_response(request, _specialized_learning_repository, require_admin, window_days=7, operations_loader=lambda: operations)
     return build_readiness_summary(config, operations, product_activity)

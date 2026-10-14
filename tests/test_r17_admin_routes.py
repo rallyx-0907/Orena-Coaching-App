@@ -7,7 +7,7 @@ import app as app_module
 
 
 class FakeControlPlane:
-    def __init__(self, _repository):
+    def __init__(self, _repository, **_kw):
         pass
 
     def inspect(self):

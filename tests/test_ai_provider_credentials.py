@@ -24,7 +24,7 @@ def test_admin_config_reports_actual_runtime_routing(monkeypatch, mode, uses_con
     monkeypatch.setenv("AI_RUNTIME_MODE", mode)
     monkeypatch.setattr(platform_module, "_require_admin", lambda request: {"google_sub": "admin"})
     monkeypatch.setattr(platform_module, "_installed_platform_repository", lambda: object())
-    monkeypatch.setattr(platform_module, "AIControlPlane", lambda repository: SimpleNamespace(
+    monkeypatch.setattr(platform_module, "AIControlPlane", lambda repository, **_kw: SimpleNamespace(
         inspect=lambda: {"policy": {"learner_runtime_uses_capability_config": False}},
     ))
     data = platform_module.admin_ai_config(Request({"type": "http", "headers": []}))

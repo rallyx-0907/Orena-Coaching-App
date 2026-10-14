@@ -7,7 +7,7 @@ import { html, mount } from '../../kit/html.js';
 import { toast } from '../../kit/toast.js';
 import { languages } from '../../copy/index.js';
 import { adminApi } from '../../capabilities/admin-api.js';
-import { createAiAdmin, credentialState, routeDraft, routingIsLive } from '../../capabilities/admin-ai.js';
+import { createAiAdmin, credentialState, routeDraft, routingIsLive, standbyStartModel } from '../../capabilities/admin-ai.js';
 import { t } from './copy.js';
 import { capabilityPage, keyPage, listPage, loadFailed, providerPage, removeDialog } from './ai-pages.js';
 import { dialog, pageHead, skeleton } from './blocks.js';
@@ -157,7 +157,7 @@ export async function mountAi(shell, ctx) {
     } else if (view.draft) {
       view.draft[field] = value;
       if (field === 'provider') view.draft.model = firstModel(value);
-      if (field === 'backup_provider') view.draft.backup_model = value ? firstModel(value) : '';
+      if (field === 'backup_provider') view.draft.backup_model = value ? standbyStartModel(provider(value), view.draft) : '';
       view.error = '';
     }
     paint();
