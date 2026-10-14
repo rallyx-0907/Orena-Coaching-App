@@ -6511,7 +6511,7 @@ estimator never reads `reviewed_level`).
 
 ## D-199 - Reading level: coverage against graded word lists replaces the heuristic (reading-level/3) (2026-10-14)
 
-**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVE WITH CONDITIONS on 538dc9ba; the conditions are addressed in the following commits; merged once CI was green, with the owner decisions of item 6). Production Readiness item 7b, option A of D-198, chosen by the owner on
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVE WITH CONDITIONS on 538dc9ba; re-review APPROVE on 5215d1ba, no open P0/P1; merged once CI was green, with the owner decisions of item 6). Production Readiness item 7b, option A of D-198, chosen by the owner on
 2026-10-14. Replaces the interim estimate of D-198. No schema change, no migration, no stored row changed; the reviewer
 override of D-196 keeps its precedence (the estimator never reads `reviewed_level`). No AI call: the `level_estimation`
 router capability (D-195) is not used.

@@ -43,3 +43,5 @@ design project's own file.
 
 The application image installs FFmpeg (`ffmpeg`, `ffprobe`) from Debian packages (LGPL-2.1+ /
 GPL-2+ depending on build); Orena invokes it as a separate program and does not link it.
+
+Test fixtures only (not shipped in the image, not served): `tests/fixtures/level_gold/zh/` holds Tatoeba sentences (CC BY 2.0 FR, sentence ids recorded per item) and Chinese Wikipedia lead paragraphs (CC BY-SA 4.0, page revision ids recorded per item; ShareAlike applies to those files only). See the fixture README for sources.
