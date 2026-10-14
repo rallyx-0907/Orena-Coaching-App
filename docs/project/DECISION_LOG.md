@@ -6284,6 +6284,60 @@ Answers catalogue question Q6 (VOA wire copy) in part; the part that stays human
    this entry's wording, renumbering from D-192 to D-193, CI green). The conditions are addressed in the following commit.
    Status stays PROPOSED: the owner approves the rights policy before merge.
 
+## D-194 - Reading thumbnails: a picture needs the source's policy, an approval and a credit; a same-origin copy (2026-10-14)
+
+**Status: ACCEPTED** (owner approved the image-rights policy on 2026-10-14; independent reviews below; no source is enabled
+by this change; merged once CI was green). Was PROPOSED. Owner decisions of 2026-10-14 are carried out as written; nothing here turns a source on. No
+schema or migration change. Closes U2 of `docs/content/READ_SOURCE_ACCEPTANCE_2026-10-13.md` (D-189 item 5 made the thumbnail
+"not a publish blocker"; the human has since made it P1 ship-readiness).
+
+1. **Rights (option B).** A learner sees a picture only when all three hold: (a) the source's image policy allows it
+   (`reading_sources.polling_policy.image_policy.allowed`, the source's existing config JSON; absent means off, and no source is
+   turned on by this change), (b) an administrator approved that specific candidate (an `image_set` review event), and (c) a
+   credit exists (the approved credit, else the candidate's credit, else the learner-facing publisher of D-192, never the
+   internal source name). Otherwise the generated letter tile. The rule is evaluated again on every list, detail and image
+   read. **Withdrawal:** changing a source's image policy, and rejecting or clearing a picture, moves `content_revision` of the
+   affected published articles in the same transaction, the image route stops serving at once (it re-evaluates the rule), and
+   it is sent `Cache-Control: private, no-cache` with an ETag from the stored hash, so a browser revalidates every time.
+2. **Same-origin copy, never hotlinked.** The candidate is fetched once, at approval, by `writing_coach/reading_images.fetch_image`
+   through the existing SSRF guard `media_safe_fetch.fetch_bounded` (http/https only; ports 80/443 only, also on redirects;
+   every resolved address must be globally routable, so private, loopback, link-local, metadata, CGNAT, IPv4-mapped IPv6 of
+   those and multicast are refused; each redirect hop is re-validated; the connected address is re-checked against DNS
+   rebinding; no cookies or credentials; the byte budget is enforced while reading; a total wall-clock deadline bounds the
+   whole fetch), with a 5 MB cap, a content-type allowlist (JPEG, PNG, WebP, GIF) and a magic-byte check that ignores the
+   declared type (so SVG and HTML are refused). The bytes are stored in the existing `BookAssetStore` under
+   `reading-images/{article}/{sha256[:24]}.{ext}` and served by `GET /api/reading/articles/{id}/image` with `nosniff`, a
+   `default-src 'none'; sandbox` CSP and `Cross-Origin-Resource-Policy: same-origin`. The learner payload carries
+   `image: {url, credit, alt}` with that same-origin address only; a candidate's address never reaches a learner payload.
+   The admin preview is also fetched by the server (and kept briefly per candidate so a page view does not refetch), so the
+   administrator's browser never contacts the publisher. A failed approval deletes only a file that this call created.
+3. **Approval is a recorded answer, no migration.** `image_set` (the approved picture, or `null` to clear) and `image_rejected`
+   are `reading_review_events`, folded oldest first like a rights answer (`fold_image_events`). Candidates stay where the
+   extractor put them (`metadata.extraction.media`) and are addressed by index, never by address. `polling_policy` now has two
+   keys (`public_name`, `image_policy`) and one locked writer, `_update_source_policy`.
+4. **Selection.** The og:image, then the lead image, then the article's images. A candidate is not offered when its declared
+   or real short side is under 400px, its aspect is outside 1:2 to 2:1, or the same address is on two or more other items of
+   the source (shared furniture such as a logo). Checked from the real bytes at approval when the page declared no size.
+5. **D-111 is unchanged.** Automatic admission never reads images; a picture changes no admission outcome.
+6. **Per-image licence is not modelled.** Approval is the administrator's act and is audited
+   (`admin.reading_image_approved`, with the candidate host); the credit is shown, and the licence of an individual image is
+   the administrator's judgement (NASA images are carved out of its general statement, Global Voices images are not CC BY by
+   default, VOA is mixed). Which sources the owner turns on, and on what credit, is still the owner's call.
+7. **Not done.** A superseded, cleared or rejected approved file stays in the asset store (content-addressed, small), so third
+   party bytes remain on disk after a withdrawal even though nothing serves them.
+
+**Independent reviews (2026-10-14).** Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer:
+8980cf3d APPROVED WITH CONDITIONS (merge with D-192, renumber to D-194, route count, CI green); 1d0cddbd APPROVED WITH
+CONDITIONS (a per-chunk wall-clock bound on the fetch, a merge with main); 14257a23 APPROVE, no open P0/P1, CI green. Conditions
+addressed on the branch: merged with main keeping the learner-facing publisher resolver, one locked `polling_policy` writer,
+a per-chunk total fetch deadline and a locked preview cache, immediate withdrawal and cache semantics, delete-only-what-this-
+call-created, the candidate host in the audit, and IPv4-mapped, non-default-port and peer-rebinding tests. The owner approved the
+image-rights policy on 2026-10-14; no source is enabled by this PR. Browser measurement of the surface is done by the human
+before merge.
+
+Note (review of 1d0cddbd): the whole rule fails closed. If the registry row, the stored event or the asset file cannot be
+read, the learner gets the letter tile or a 404, never a picture.
+
 ## D-195 - AI Cost Router, slice 1: word_translation, OpenRouter free pool, explicit operator failover (2026-10-14)
 
 **Status: ACCEPTED** (2026-10-14). Independent review: Delegated Architecture Reviewer, Claude Opus 5.5, APPROVED WITH

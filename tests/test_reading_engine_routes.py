@@ -363,7 +363,7 @@ def test_the_learner_list_is_lightweight_and_cacheable(setup):
     assert item["id"] == article_id
     assert set(item) == {
         "id", "title", "language", "level", "topic", "reading_time_seconds",
-        "excerpt", "word_count", "published_at", "content_revision", "provenance",
+        "excerpt", "word_count", "published_at", "content_revision", "provenance", "image",
     }
     assert "max-age" in response.headers["cache-control"]
 
@@ -394,7 +394,7 @@ def test_the_learner_detail_says_nothing_about_review_or_ingestion(setup):
     body = call(setup["learner"], "GET", f"/api/reading/articles/{article_id}", admin=False).json()
     assert set(body) == {
         "id", "title", "body", "language", "level", "topic", "reading_time_seconds",
-        "word_count", "content_revision", "published_at", "targets", "attribution", "provenance",
+        "word_count", "content_revision", "published_at", "targets", "attribution", "provenance", "image",
     }
 
 

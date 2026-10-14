@@ -11,6 +11,7 @@ from __future__ import annotations
 import http.client
 import ipaddress
 import socket
+import time
 from pathlib import Path
 from typing import Final
 from urllib.error import HTTPError, URLError
@@ -173,8 +174,13 @@ def fetch_bounded(
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     content_types: frozenset[str] = frozenset(),
     max_redirects: int = 3,
+    total_timeout: float | None = None,
 ) -> tuple[bytes, str]:
-    """Fetch a small response while enforcing a byte budget during reads."""
+    """Fetch a small response while enforcing a byte budget during reads.
+
+    `timeout` bounds each socket operation; `total_timeout`, when given, bounds the whole read in wall-clock
+    time, so a server that drips bytes cannot hold the caller for longer (the overshoot is at most one
+    socket operation)."""
     if max_bytes <= 0 or timeout <= 0 or max_redirects < 0:
         raise ValueError("fetch limits must be positive")
     with _open(url, timeout=timeout, max_redirects=max_redirects) as response:
@@ -183,8 +189,21 @@ def fetch_bounded(
             raise _unsafe("This media type is not supported.")
         chunks: list[bytes] = []
         total = 0
+        started = time.monotonic()
+        # With a wall-clock bound the body is read in small pieces that return as soon as any bytes
+        # arrive (`read1`), so the deadline is checked per piece and a server that drips one byte at a time
+        # cannot hold the caller inside a single large blocking read. Without it nothing changes.
+        read_piece = None
+        if total_timeout is not None:
+            # `read1` returns as soon as any bytes arrive; a response without it is read in the same small pieces.
+            read_piece = getattr(response, "read1", None) or response.read
         while True:
-            chunk = response.read(min(1024 * 1024, max_bytes + 1))
+            if total_timeout is not None and time.monotonic() - started > total_timeout:
+                raise _unsafe("The media address took too long to answer.")
+            if read_piece is not None:
+                chunk = read_piece(min(8192, max_bytes + 1 - total))
+            else:
+                chunk = response.read(min(1024 * 1024, max_bytes + 1))
             if not chunk:
                 break
             total += len(chunk)
