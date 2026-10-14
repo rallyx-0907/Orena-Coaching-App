@@ -1,0 +1,47 @@
+Conversation
+
+Anna: Oh, hi, everyone! Here in Washington, DC, the weather changes often. One day is cold and windy. But the next day is warm and sunny! So, every day I check the forecast. Hello, Phone? What is today’s temperature?
+
+Phone: Today it is 18 degrees ...
+
+Anna: Eighteen degrees! That is cold!
+
+Phone: … eighteen degrees Celsius.
+
+Anna: Oh, Celsius. That is 65 degrees Fahrenheit. That’s warm.
+
+Phone: Yes, Anna. It is warm.
+
+Anna: Excuse me, Phone. Is it windy today?
+
+Phone: No, it is not windy today.
+
+Anna: Is it sunny today?
+
+Phone: Yes, Anna. It is sunny.
+
+Anna: Excuse me, Phone?
+
+Phone: Yes, Anna.
+
+Anna: Is it snowy today?
+
+Phone: No, Anna. It is not snowy.
+
+Anna: Thank you, Phone!
+
+Anna: Today the weather is warm and sunny -- great for seeing Washington, D.C.
+
+Anna: Phone! It is not warm and sunny! It is cold and windy and snowy!
+
+Phone: Anna, it is not cold, windy, or snowy. It is warm and sunny … in Mexico City, Mexico.
+
+Anna: Oh. I see. Mexico.
+
+Anna: Washington weather changes often. Remember to check the forecast -- the right forecast.
+
+Phone: Yes, Anna. Next time remember to check the right fore…
+
+Anna: Okay, thank you Phone. Goodbye, Phone.
+
+Anna: Until next time!

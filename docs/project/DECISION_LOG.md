@@ -6508,3 +6508,52 @@ estimator never reads `reviewed_level`).
    the band. (b) A capitalised word after an abbreviation full stop (`Dr. Smith`, `U.S. Army`) is read as a sentence start and counted,
    so a few names still enter the signals. (c) `_EN_WORD` matches ASCII letters only, so accented Latin words (`cafe` with an accent,
    names) split into fragments; a calibrated tokenizer must handle them.
+
+## D-199 - Reading level: coverage against graded word lists replaces the heuristic (reading-level/3) (2026-10-14)
+
+**Status: PROPOSED** (independent review to follow). Production Readiness item 7b, option A of D-198, chosen by the owner on
+2026-10-14. Replaces the interim estimate of D-198. No schema change, no migration, no stored row changed; the reviewer
+override of D-196 keeps its precedence (the estimator never reads `reviewed_level`). No AI call: the `level_estimation`
+router capability (D-195) is not used.
+
+1. **Data** (owner's choice; separate generated files, built offline by `scripts/build_reading_level_tables.py`, which has
+   `--check` and keeps licence, citation, origin commit and source hashes in each JSON; rows added to `THIRD_PARTY_NOTICES.md`
+   and `writing_coach/licences.py`):
+   - CEFR-J Vocabulary Profile 1.5 (A1-B2), `level_words_cefrj.json`: free for research and commercial use with citation;
+     copyright Tono Laboratory, TUFS.
+   - Octanove Vocabulary Profile C1/C2 1.0, `level_words_octanove_c1c2.json`: **CC BY-SA 4.0, ShareAlike**; kept as its own
+     file so the licence does not extend to the CEFR-J table or to code. Adapting that file keeps CC BY-SA 4.0.
+   - HSK 3.0 words and characters, `level_words_hsk30.json`, from ivankra/hsk30 (MIT, commit 4ff9e391), chosen over
+     drkameleon/complete-hsk-vocabulary because the latter folds in frequency data from sources without a clear licence.
+     Only each entry's level is kept. Caveat recorded: the ivankra README says the data derives from the PRC Ministry of
+     Education standard and that the MIT copyright claim is questionable; the owner has accepted the MIT declaration as the
+     operative licence. Levels 7-9 are the advanced band beyond Orena's HSK1-6 scale.
+2. **Estimator** (`writing_coach/reading_level.py`; `LEVEL_VERSION = "reading-level/3"`, stored as `analysis.level_version`).
+   Names, acronyms, numbers and units never count (D-198's rules). English tokens are looked up with suffix rules and a small
+   irregular-form table; Chinese is segmented with jieba, names/numbers/non-words are skipped by jieba tag, and an unlisted
+   word falls back to its characters (the hardest character). Band = the lowest band whose share of tokens above it is at most
+   `TAU` (en 0.10, zh 0.08); a mean sentence length of 20+ words (en) or clause length of 14+ (zh) adds one band, an English
+   mean of 5 or fewer takes one off. `confidence` = `min(1, scored/300)` discounted when a 0.7x-1.4x change of `TAU` moves
+   the band; below `LOW_CONFIDENCE` (0.1, about 35 scored words) the band is capped at C1 / HSK5.
+   `analysis.level_evidence` stores the scored count, cumulative coverage per band, the share beyond all lists, the lexical band,
+   the sentence length and the top eight out-of-band words with their count - never the text. Admin Reading's evidence panel shows
+   coverage and those words in the existing row component (EN/VI/ZH copy `rdEvCoverage`, `rdEvAboveBand`); confidence was already
+   drawn ("N% sure").
+3. **Calibration** (`tests/fixtures/level_gold/`, `scripts/eval_reading_level.py`). 58 labelled items (44 EN, 14 ZH): 46 VOA
+   Learning English pages labelled by VOA's stated tier (Beginning = A1/A2 by programme, Intermediate = B1; the Advanced tier
+   describes the learner, not the vocabulary, so it is unlabelled), Orena-written samples per band, and the real fixtures
+   (NASA, Global Voices, VOA 中文). **Every label is PROVISIONAL; none is owner-approved.** Agreement before (the D-198 heuristic,
+   same items) and after: English exact 29.5 percent to 77.3 percent, within one band 90.9 to 97.7; Chinese exact 7.1 to 92.9,
+   within one band 71.4 to 100. The parameters were fitted on these same items (3 per language), so these are in-sample; a two-fold
+   hold-out gave English 72.7/95.5 and 81.8/100 and Chinese 85.7/100 on both folds. Reviewer corrections will be read-only
+   evidence once a database is at hand, not the sole truth.
+4. **Result on real articles.** English: NASA C2 to C1, Global Voices C2 to C1, VOA Learning English spreads over A1-C1 (A1 7,
+   A2 18, B1 22, C1 2 across 49 pages). Chinese: the five VOA 中文 news pages all read HSK6 (80-90 percent of their words are in
+   the 1-6 lists; the rest are HSK 7-9). That is the honest answer for unedited news, but it means real Chinese news does not
+   spread: the repository holds no easier real Chinese article, so the Chinese spread (HSK1, 2, 4, 5, 6) is shown on the
+   author's samples. Real easy Chinese texts are what the owner can add to the gold set.
+5. **Known limits.** The labels are judgements (the VOA tier is coarse and its A1/A2 split is by programme, not measured); a
+   text is graded on vocabulary and length only, not on grammar, so a grammatically complex text in plain words reads low
+   (an author B2 sample reads A2); an English word absent from CEFR-J/Octanove (technical terms, many derived forms) counts as
+   beyond C2, which is why a technical press release reads C1-C2; the suffix rules are heuristic. Re-estimating stored rows is
+   an owner decision: `scripts/report_reading_level_changes.py` (read-only) lists what would change under this version.

@@ -1,119 +1,159 @@
-"""D-198: the interim automatic level estimate (reading-level/2).
+"""D-199: the coverage-based automatic level estimate (reading-level/3).
 
-The expected bands are PROVISIONAL JUDGEMENTS of the author, not calibrated truth: the repository
-has no CEFR/HSK list and no graded text to calibrate against (calibration is option A of D-198).
-These tests guard the saturation defect D6 (a press release rated C2, every Chinese news article
-HSK6), not the accuracy of a band. The reviewer override (D-196) is covered by
-test_reading_content_repository.py and is untouched: the estimator never sees `reviewed_level`.
+Every gold label under tests/fixtures/level_gold is PROVISIONAL (author or VOA-tier judgement, none owner
+approved), so the accuracy floors below guard against regression and collapse - they do not certify
+accuracy. The reviewer override (D-196) is covered by test_reading_content_repository.py and is untouched:
+the estimator never sees `reviewed_level`.
 """
 from __future__ import annotations
 
+import importlib.util
+import json
+import sys
 from pathlib import Path
 
 import pytest
 
-from writing_coach.reading_article_extraction import extract_article
-from writing_coach.reading_processing import (
-    EN_LEVEL_BANDS,
-    LEVEL_VERSION,
-    LOW_CONFIDENCE,
-    _en_level_words,
-    analyze_article,
-)
+from writing_coach import reading_level
+from writing_coach.reading_processing import EN_LEVEL_BANDS, LEVEL_VERSION, LOW_CONFIDENCE, analyze_article
 
-FIXTURES = Path(__file__).parent / "fixtures"
+ROOT = Path(__file__).resolve().parents[1]
+GOLD = ROOT / "tests" / "fixtures" / "level_gold"
 
 
-def _body(relative: str) -> str:
-    html = (FIXTURES / relative).read_text(encoding="utf-8")
-    return extract_article(html, "https://example.org/a/1").body
+def _load_script(name: str):
+    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
-@pytest.mark.parametrize(
-    ("fixture", "provisional"),
-    [
-        ("reading_quality/nasa_news_release.html", {"B2", "C1"}),
-        ("reading_quality/global_voices_article.html", {"B2", "C1"}),
-        ("voa_en/wire_adapted_article.html", {"B1", "B2"}),
-    ],
-)
-def test_english_news_fixtures_no_longer_saturate_at_c2(fixture, provisional):
-    analysis = analyze_article(_body(fixture), "en")
-    assert analysis.estimated_level in provisional
-    assert analysis.level_version == LEVEL_VERSION == "reading-level/2"
+evaluation = _load_script("eval_reading_level")
+builder = _load_script("build_reading_level_tables")
 
 
-@pytest.mark.parametrize(
-    "fixture",
-    [
-        "voa_zh/staff_article.html",
-        "voa_zh/wire_derived_article.html",
-        "voa_zh/wire_derived_article_ap.html",
-        "reading_quality/voa_zh_article_8208799.html",
-        "reading_quality/voa_zh_article_8210116.html",
-    ],
-)
-def test_chinese_news_fixtures_no_longer_saturate_at_hsk6(fixture):
-    assert analyze_article(_body(fixture), "zh").estimated_level in {"HSK4", "HSK5"}
+def _predictions(language: str) -> list[tuple[dict, str]]:
+    if language == "zh":
+        pytest.importorskip("jieba")
+    rows = [i for i in evaluation.load_gold() if i["language"] == language]
+    return [(i, analyze_article(i["text"], language).estimated_level) for i in rows]
 
 
-def test_the_estimate_still_separates_simple_from_dense_text_in_both_languages():
-    simple_en = analyze_article("The dog runs. The cat sits. A bird sings. " * 10, "en")
-    dense_en = analyze_article(_body("reading_quality/nasa_news_release.html"), "en")
-    assert EN_LEVEL_BANDS.index(dense_en.estimated_level) > EN_LEVEL_BANDS.index(simple_en.estimated_level)
-    simple_zh = analyze_article("我有一只猫。它很小。我们在家。我爱它。他是我的好朋友。" * 8, "zh")
-    news_zh = analyze_article(_body("voa_zh/wire_derived_article.html"), "zh")
-    assert simple_zh.estimated_level < news_zh.estimated_level
+# ---- the tables --------------------------------------------------------------
+
+def test_the_committed_tables_are_valid_and_carry_their_licences():
+    assert builder.validate_committed() == []
+    octanove = json.loads(builder.OCTANOVE_OUT.read_text(encoding="utf-8"))
+    cefrj = json.loads(builder.CEFRJ_OUT.read_text(encoding="utf-8"))
+    assert "CC BY-SA 4.0" in octanove["licence"] and "ShareAlike" in octanove["licence"]
+    assert "citation" in cefrj and "Tono" in cefrj["citation"]
+    assert set(octanove["levels"]) == {"C1", "C2"} and set(cefrj["levels"]) == {"A1", "A2", "B1", "B2"}
 
 
-def test_names_acronyms_numbers_and_hyphen_halves_leave_the_english_signals():
-    words = _en_level_words("Yesterday Johnson and NASA flew 10km in a nuclear-powered craft.")
+def test_every_licence_is_named_in_the_third_party_notices():
+    notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+    for needle in ("level_words_cefrj.json", "level_words_octanove_c1c2.json", "level_words_hsk30.json", "ShareAlike"):
+        assert needle in notices
+
+
+# ---- exclusions and lookup ---------------------------------------------------
+
+def test_names_acronyms_numbers_and_hyphen_halves_leave_the_signals():
+    words = [w for w, _ in reading_level.en_tokens("Yesterday Johnson and NASA flew 10km in a nuclear-powered craft.")]
     assert words == ["yesterday", "and", "flew", "in", "a", "nuclear", "powered", "craft"]
-    plain = "The team went to the lake. It was a warm day. We saw the boat. " * 6
-    loaded = "The team went to NASA headquarters. It was a warm day in Washington. We saw the Constellation-class boat. " * 6
-    levels = EN_LEVEL_BANDS
-    assert levels.index(analyze_article(loaded, "en").estimated_level) <= levels.index(
-        analyze_article(plain, "en").estimated_level
-    ) + 1
 
 
-def test_a_sentence_initial_capital_is_still_counted():
-    assert _en_level_words('Exploration begins. "Discovery" follows.\n\nSpace waits.') == [
-        "exploration", "begins", "discovery", "follows", "space", "waits",
-    ]
+def test_contractions_keep_their_stem_and_drop_one_and_two_letter_fragments():
+    words = [w for w, _ in reading_level.en_tokens("It's what they're doing, isn't it? The boy's kite.")]
+    assert words == ["what", "they", "doing", "isn", "it", "the", "boy", "kite"]
 
 
-def test_chinese_clauses_not_comma_joined_sentences_set_the_length_signal():
-    clause = "我们今天去公园散步看花"
-    comma_joined = "，".join([clause] * 8) + "。"
-    full_stops = "。".join([clause] * 8) + "。"
-    assert analyze_article(comma_joined, "zh").average_sentence_length > analyze_article(full_stops, "zh").average_sentence_length
-    assert analyze_article(comma_joined, "zh").estimated_level == analyze_article(full_stops, "zh").estimated_level
+def test_inflected_and_irregular_forms_find_their_headword():
+    rank = reading_level._en_rank
+    assert rank("walked") == rank("walk") and rank("went") == rank("go") and rank("children") == rank("child")
+    assert rank("studies") is not None and rank("running") is not None
+    assert rank("zxqvw") is None
 
 
-def test_a_low_confidence_estimate_is_capped_at_c1_and_hsk5():
-    dense_en = analyze_article(
-        "Notwithstanding the committee's preliminary determination, the subsequent reassessment "
-        "demonstrated that institutional accountability mechanisms had systematically underestimated "
-        "the environmental consequences of the proposed infrastructural redevelopment programme "
-        "notwithstanding considerable organisational counterarguments.",
+def test_an_unlisted_capitalised_word_opening_a_sentence_is_read_as_a_name():
+    counts, _ = reading_level._rank_counts_en("Zxqvwton arrived. He sat down.")
+    assert counts[6] == 0
+
+
+# ---- the estimate ------------------------------------------------------------
+
+def test_simple_text_is_a1_and_dense_academic_text_is_c2():
+    simple = analyze_article("I am Mia. I am ten. I have a dog. The dog is big. I like my dog. " * 4, "en")
+    dense = analyze_article(
+        "The epistemic status of testimony remains contentious precisely because it resists assimilation to either "
+        "perception or inference. Reductionists maintain that a hearer is warranted in accepting an assertion only "
+        "insofar as she possesses independent, non-circular grounds for deeming the speaker reliable; anti-reductionists, "
+        "conversely, contend that such a demand misconstrues the very practices through which competence is acquired.",
         "en",
     )
-    assert dense_en.confidence < LOW_CONFIDENCE
-    assert dense_en.estimated_level != "C2"
-    dense_zh = analyze_article("国际社会对于经济发展与环境保护之间的复杂关系进行了深入讨论并提出了许多不同意见" * 2, "zh")
-    assert dense_zh.confidence < LOW_CONFIDENCE
-    assert dense_zh.estimated_level != "HSK6"
+    assert simple.estimated_level == "A1" and dense.estimated_level in {"C1", "C2"}
 
 
-def test_en_zh_parity_each_language_stays_on_its_own_scale_and_carries_the_version():
+def test_the_estimate_carries_a_version_confidence_and_evidence_without_the_text():
+    analysis = analyze_article(
+        (GOLD / "en" / next(p.name for p in (GOLD / "en").iterdir())).read_text(encoding="utf-8"), "en"
+    )
+    assert analysis.level_version == LEVEL_VERSION == "reading-level/3"
+    assert 0.0 <= analysis.confidence <= 1.0
+    evidence = analysis.evidence
+    assert set(evidence["coverage"]) == set(EN_LEVEL_BANDS)
+    assert list(evidence["coverage"].values()) == sorted(evidence["coverage"].values())
+    assert len(evidence["top_above_band"]) <= 8 and evidence["scored_tokens"] > 0
+    assert len(json.dumps(evidence)) < 1500  # a summary, never the article
+
+
+def test_a_text_too_short_to_judge_is_capped_below_the_top_of_the_scale():
+    dense = analyze_article("Notwithstanding preliminary determinations, epistemological considerations persist.", "en")
+    assert dense.confidence < LOW_CONFIDENCE and dense.estimated_level != "C2"
+
+
+# ---- calibration set and spread (the owner's acceptance) ---------------------
+
+def test_gold_set_labels_are_all_provisional_and_none_claims_owner_approval():
+    for name in ("voa_en.json", "samples_en.json", "samples_zh.json", "real_articles.json"):
+        for entry in json.loads((GOLD / name).read_text(encoding="utf-8")):
+            assert entry["status"] in {"PROVISIONAL", "UNLABELLED"}, entry["id"]
+
+
+def test_english_levels_do_not_collapse_into_one_band():
+    results = _predictions("en")
+    used = {band for _, band in results}
+    assert len(used) >= 5, used
+    real = {band for item, band in results if item["id"].startswith("voa-") or item["id"] in {"nasa-news-release", "global-voices-calypso"}}
+    assert len(real) >= 3, real
+    nasa = next(band for item, band in results if item["id"] == "nasa-news-release")
+    assert nasa in {"B2", "C1", "C2"} and nasa != "A1"
+
+
+def test_chinese_levels_do_not_collapse_into_one_band():
+    results = _predictions("zh")
+    assert len({band for _, band in results}) >= 5
+    by_id = {item["id"]: band for item, band in results}
+    assert by_id["orena-zh-hsk1-a"] in {"HSK1", "HSK2"} and by_id["orena-zh-hsk6-a"] in {"HSK5", "HSK6"}
+    assert by_id["orena-zh-hsk2-a"] != by_id["orena-zh-hsk6-a"]
+
+
+@pytest.mark.parametrize(("language", "exact", "within1"), [("en", 0.65, 0.9), ("zh", 0.8, 0.9)])
+def test_agreement_with_the_provisional_gold_labels_does_not_regress(language, exact, within1):
+    if language == "zh":
+        pytest.importorskip("jieba")
+    items = evaluation.load_gold()
+    result = evaluation.score(
+        items, lambda i: evaluation.bands(i["language"]).index(analyze_article(i["text"], i["language"]).estimated_level)
+    )[language]
+    assert result["exact"] >= exact and result["within1"] >= within1, result
+
+
+def test_en_zh_parity_each_language_stays_on_its_own_scale():
+    pytest.importorskip("jieba")
     en = analyze_article("The cat sat on the mat. " * 40, "en")
     zh = analyze_article("今天天气很好，我们去公园散步。" * 40, "zh")
     assert en.estimated_level in EN_LEVEL_BANDS and zh.estimated_level.startswith("HSK")
     assert en.level_version == zh.level_version == LEVEL_VERSION
-
-
-def test_contractions_keep_their_stem_and_drop_one_and_two_letter_fragments():
-    assert _en_level_words("It's what they're doing, isn't it? The boy's kite.") == [
-        "what", "they", "doing", "isn", "it", "the", "boy", "kite",
-    ]
+    assert set(zh.evidence["coverage"]) == {"HSK1", "HSK2", "HSK3", "HSK4", "HSK5", "HSK6"}
