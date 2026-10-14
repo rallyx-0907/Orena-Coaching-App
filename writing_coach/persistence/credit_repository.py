@@ -84,6 +84,11 @@ COMPLETE_REVERSAL = (
     "AND s.credit_applied = r.applied AND s.credit_shortfall = r.shortfall)))")
 
 
+# When a gap was last escalated: the reconciler works through the least recently seen gaps first (no starvation).
+_LAST_ESCALATED = ("(SELECT max(g.last_seen_at) FROM billing_reconciliation_items g WHERE g.billing_order_id = o.id "
+                   "AND g.kind = '{kind}')")
+
+
 @dataclass
 class CreditOutcome:
     """`applied`, `duplicate`, `conflict`, `insufficient_credits`, `reservation_closed`, `account_deleted`,
@@ -471,8 +476,6 @@ class PostgresCreditRepository:
                 account = dict(connection.execute(text(
                     "SELECT id, incarnation_id, posted, reserved, entry_count FROM credit_accounts "
                     "WHERE incarnation_id = :inc FOR UPDATE"), {"inc": incarnation}).mappings().one())
-                if self._under_review(connection, account["id"]):
-                    return CreditOutcome("account_under_review")
                 units = int(order["credit_units"])
                 source_ref = f"{order['gateway']}:{order['order_code']}"
                 request_digest = digest(kind="topup", account=incarnation, amount=units, source_type="billing_order",
@@ -486,6 +489,9 @@ class PostgresCreditRepository:
                              and existing["request_digest"] == request_digest)  # fmt: skip
                     return CreditOutcome("duplicate" if exact else "conflict", entry=existing,
                                          detail="" if exact else "the order's source holds another top-up")
+                # checked after the duplicate lookup: a redelivery of a credited order stays a duplicate under review
+                if self._under_review(connection, account["id"]):
+                    return CreditOutcome("account_under_review")
                 entry = self._insert(connection, account["id"], kind="topup", posted=units, reserved=0, amount=units,
                                      key=source_ref, request_digest=request_digest, actor=actor,
                                      now=datetime.now(UTC), stype="billing_order", sref=source_ref)  # fmt: skip
@@ -534,7 +540,8 @@ class PostgresCreditRepository:
             rows = connection.execute(text(
                 "SELECT o.id, o.order_code, o.incarnation_id, o.credit_units, o.gateway FROM billing_orders o "
                 f"WHERE o.product_kind = 'credit_pack' AND o.state = 'paid' AND NOT {EXACT_TOPUP} "
-                "ORDER BY o.paid_at LIMIT :limit"), {"limit": int(limit)}).mappings().all()
+                f"ORDER BY {_LAST_ESCALATED.format(kind='credit_topup_unapplied')} NULLS FIRST, o.paid_at "
+                "LIMIT :limit"), {"limit": int(limit)}).mappings().all()
         return [dict(row) for row in rows]
 
     def credit_reversal_gaps(self, *, limit: int) -> list[dict[str, Any]]:
@@ -544,7 +551,9 @@ class PostgresCreditRepository:
             rows = connection.execute(text(
                 "SELECT o.id, o.order_code, o.incarnation_id, o.credit_units, o.gateway FROM billing_orders o "
                 f"WHERE o.product_kind = 'credit_pack' AND o.state = 'refunded' AND {EXACT_TOPUP} "
-                f"AND NOT {COMPLETE_REVERSAL} ORDER BY o.refunded_at LIMIT :limit"),
+                f"AND NOT {COMPLETE_REVERSAL} "
+                f"ORDER BY {_LAST_ESCALATED.format(kind='credit_reversal_unapplied')} NULLS FIRST, o.refunded_at "
+                "LIMIT :limit"),
                 {"limit": int(limit)}).mappings().all()  # fmt: skip
         return [dict(row) for row in rows]
 

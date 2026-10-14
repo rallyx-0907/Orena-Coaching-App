@@ -680,12 +680,25 @@ class BillingService:
         Each write is its own short transaction; no provider is called."""
 
         counts = {"credit_topup_repaired": 0, "credit_topup_unapplied": 0, "credit_reversal_repaired": 0,
-                  "credit_reversal_unapplied": 0, "credit_gap_resolved": 0, "credit_gap_unrecordable": 0}
-        if self._credits is None or not self.credits_ready():
+                  "credit_reversal_unapplied": 0, "credit_gap_resolved": 0, "credit_gap_unrecordable": 0,
+                  "credit_gap_failed": 0}
+        if self._credits is None:
             return counts
         repository = self._credits.repository
-        for gap in repository.credit_topup_gaps(limit=limit):
-            outcome = self.apply_credit_topup(int(gap["order_code"]), gateway=gap["gateway"])
+        # Not ready (a privileged or unreadable role): nothing is repaired, every gap is still escalated.
+        repair = self.credits_ready()
+
+        def each(gaps: list[dict[str, Any]], step: Callable[[dict[str, Any]], None]) -> None:
+            for gap in gaps:
+                try:
+                    step(gap)
+                except Exception:  # noqa: BLE001 - one gap never stops the others; it is retried next tick
+                    _log.warning("credit gap %s could not be reconciled", gap.get("order_code"), exc_info=True)
+                    counts["credit_gap_failed"] += 1
+
+        def topup_gap(gap: dict[str, Any]) -> None:
+            outcome = (self.apply_credit_topup(int(gap["order_code"]), gateway=gap["gateway"]) if repair
+                       else WebhookOutcome("credit_pending", "credits_not_ready"))  # fmt: skip
             state = repository.credit_order_state(int(gap["order_code"])) or {}
             if state.get("credited"):
                 counts["credit_topup_repaired"] += 1
@@ -693,9 +706,11 @@ class BillingService:
                 recorded = repository.record_credit_gap(kind="credit_topup_unapplied", order=gap,
                                                         reason=f"paid, not credited: {outcome.detail or outcome.status}")
                 counts["credit_topup_unapplied" if recorded else "credit_gap_unrecordable"] += 1
-        for gap in repository.credit_reversal_gaps(limit=limit):
-            self.reverse_credit_topup(int(gap["order_code"]), reason="refund recorded; reversal repaired",
-                                      actor="reconciler")  # fmt: skip
+
+        def reversal_gap(gap: dict[str, Any]) -> None:
+            if repair:
+                self.reverse_credit_topup(int(gap["order_code"]), reason="refund recorded; reversal repaired",
+                                          actor="reconciler")  # fmt: skip
             state = repository.credit_order_state(int(gap["order_code"])) or {}
             if state.get("reversed"):
                 counts["credit_reversal_repaired"] += 1
@@ -705,7 +720,8 @@ class BillingService:
                                                         reason="refunded; the credit reversal is not complete",
                                                         topup_entry_id=topup)  # fmt: skip
                 counts["credit_reversal_unapplied" if recorded else "credit_gap_unrecordable"] += 1
-        for gap in repository.open_credit_gaps("credit_topup_unapplied"):
+
+        def close_topup_gap(gap: dict[str, Any]) -> None:
             state = repository.credit_order_state(int(gap["order_code"])) or {}
             outcome = ("credit_applied" if state.get("credited")
                        else "payment_refunded" if state.get("state") == "refunded"
@@ -715,10 +731,16 @@ class BillingService:
                                                     dedupe_key=gap["dedupe_key"], outcome=outcome,
                                                     note=f"closed by the reconciler: {outcome}", now=self._now()):
                 counts["credit_gap_resolved"] += 1
-        for gap in repository.open_credit_gaps("credit_reversal_unapplied"):
+
+        def close_reversal_gap(gap: dict[str, Any]) -> None:
             state = repository.credit_order_state(int(gap["order_code"])) or {}
             if state.get("reversed") and self._items.auto_resolve(
                     kind="credit_reversal_unapplied", gateway="credits", dedupe_key=gap["dedupe_key"],
                     outcome="credit_reversed", note="the complete reversal exists", now=self._now()):
                 counts["credit_gap_resolved"] += 1
+
+        each(repository.credit_topup_gaps(limit=limit), topup_gap)
+        each(repository.credit_reversal_gaps(limit=limit), reversal_gap)
+        each(repository.open_credit_gaps("credit_topup_unapplied"), close_topup_gap)
+        each(repository.open_credit_gaps("credit_reversal_unapplied"), close_reversal_gap)
         return counts

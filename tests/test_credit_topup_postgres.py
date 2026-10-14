@@ -73,6 +73,33 @@ def gap_items(shop, kind):
     return [dict(r) for r in shop.sql("SELECT * FROM billing_reconciliation_items WHERE kind = :k", k=kind)]
 
 
+def put_under_review(shop, incarnation):
+    """An open drift item on the account: its credit is under review, nothing may be credited or reversed."""
+
+    key = str(uuid.uuid4())
+    with shop.owner.begin() as connection:
+        connection.execute(shop.text("INSERT INTO billing_reconciliation_items (id, kind, gateway, dedupe_key, state, "
+                                     "first_seen_at, last_seen_at, credit_account_id, credit_expected_posted, "
+                                     "credit_expected_reserved, credit_snapshot_posted, credit_snapshot_reserved) VALUES "
+                                     "(gen_random_uuid(), 'credit_balance_drift', 'credits', :k, 'open', now(), now(), "
+                                     ":a, 0, 0, 1, 0)"), {"k": key, "a": shop.balance(incarnation)["id"]})
+    return key
+
+
+def end_review(shop, key):
+    with shop.owner.begin() as connection:
+        connection.execute(shop.text("UPDATE billing_reconciliation_items SET state = 'resolved', resolution_outcome = "
+                                     "'balance_consistent', resolved_by = 'reconciler', resolved_at = now() "
+                                     "WHERE dedupe_key = :k"), {"k": key})
+
+
+def paid_uncredited(shop, incarnation):
+    code = checkout(shop, incarnation)
+    shop.billing.orders.mark_paid(order_code=code, event_id=f"evt-{code}", amount_minor=50_000, currency="VND",
+                                  payment_link_id=f"plink-{code}")
+    return code
+
+
 # ---- contracts 1-4: a paid credit-pack order credits exactly once, whichever path recorded it -------------------------
 
 def test_a_paid_pack_credits_once_from_the_webhook_and_the_lookup(shop):
@@ -92,6 +119,8 @@ def test_a_paid_pack_credits_once_from_the_webhook_and_the_lookup(shop):
     paid = shop.sql("SELECT paid_sequence, period_end FROM billing_orders WHERE order_code = :c", c=code)[0]
     assert (paid["paid_sequence"], paid["period_end"]) == (None, None)  # never plan access
     assert shop.billing.orders.prepaid_gaps("payos") == []
+    state = shop.billing.orders.prepaid_state(incarnation, "payos")
+    assert (state["plan_id"], state["paid_through"]) == (None, None)  # the credit order is not in the plan replay
     no_drift(shop)
 
 
@@ -118,6 +147,39 @@ def test_the_webhook_and_the_lookup_racing_credit_once(shop):
     no_drift(shop)
 
 
+def test_a_redelivery_while_under_review_is_still_a_duplicate(shop):
+    incarnation = shop.account()
+    code = checkout(shop, incarnation)
+    assert pay(shop, code) == "apply"
+    put_under_review(shop, incarnation)
+    assert shop.billing.credits.apply_credit_topup(code).status == "duplicate"
+    assert pay(shop, code) == "duplicate" and credited(shop, incarnation) == 500
+
+
+def test_a_privilege_check_that_cannot_be_read_answers_503_and_the_paid_order_stays(shop):
+    from writing_coach.billing.credits import CreditService
+
+    class Unreadable:
+        def __init__(self, repository):
+            self._repository = repository
+
+        def runtime_privilege_violations(self):
+            raise RuntimeError("connection reset")
+
+        def __getattr__(self, name):
+            return getattr(self._repository, name)
+
+    incarnation = shop.account()
+    code = checkout(shop, incarnation)
+    shop.billing.attach_credits(CreditService(Unreadable(shop.repository)))
+    with pytest.raises(RuntimeError):
+        pay(shop, code)  # the webhook route answers 503; payOS redelivers
+    assert shop.sql("SELECT state FROM billing_orders WHERE order_code = :c", c=code)[0]["state"] == "paid"
+    assert credited(shop, incarnation) == 0
+    shop.billing.attach_credits(shop.service)
+    assert pay(shop, code) == "apply" and credited(shop, incarnation) == 500
+
+
 def test_the_credited_units_are_the_orders_snapshot(shop):
     incarnation = shop.account()
     code = checkout(shop, incarnation)
@@ -141,6 +203,9 @@ def test_a_pack_is_sold_only_as_configured_confirmed_and_while_credits_are_ready
     privileged = shop.build()
     privileged.attach_credits(CreditService(PostgresCreditRepository(shop.owner)))  # a superuser connection
     assert checkout(shop, incarnation, billing=privileged) == "credits_not_ready" and privileged.credit_offers() == []
+    bare = shop.build()
+    bare.attach_credits(None)  # credits not configured at all
+    assert checkout(shop, incarnation, billing=bare) == "credits_not_ready" and bare.credit_offers() == []
     assert shop.sql("SELECT count(*) AS n FROM billing_orders")[0]["n"] == 0  # refused before any order
 
 
@@ -293,3 +358,85 @@ def test_refund_and_topup_serialize_through_the_repositories(shop, first):
     else:
         assert outcome["status"] == "applied"
         assert shop.sql("SELECT state FROM billing_orders WHERE order_code = :c", c=code)[0]["state"] == "refunded"
+
+
+# ---- the five reconciler outcomes, each closed on its own fact (review P1) --------------------------------------------
+
+def test_an_escalated_topup_gap_closes_as_credit_applied_once_the_exact_topup_exists(shop):
+    incarnation = shop.account()
+    code = paid_uncredited(shop, incarnation)
+    review = put_under_review(shop, incarnation)
+    assert shop.billing.reconcile_credit_orders()["credit_topup_unapplied"] == 1
+    end_review(shop, review)
+    counts = shop.billing.reconcile_credit_orders()
+    assert counts["credit_topup_repaired"] == 1 and counts["credit_gap_resolved"] == 1 and counts["credit_gap_failed"] == 0
+    [item] = gap_items(shop, "credit_topup_unapplied")
+    assert (item["state"], item["resolution_outcome"], item["resolved_by"]) == ("resolved", "credit_applied", "reconciler")
+    assert item["dedupe_key"] == str(code) and credited(shop, incarnation) == 500
+    no_drift(shop)
+
+
+def test_an_escalated_topup_gap_on_a_deleted_account_closes_as_refund_obligation_recorded(shop):
+    incarnation = shop.account()
+    code = paid_uncredited(shop, incarnation)
+    put_under_review(shop, incarnation)
+    assert shop.billing.reconcile_credit_orders()["credit_topup_unapplied"] == 1
+    shop.delete(incarnation)
+    counts = shop.billing.reconcile_credit_orders()
+    assert counts["credit_gap_resolved"] == 1 and counts["credit_gap_failed"] == 0
+    [owed] = gap_items(shop, "paid_deleted_account")
+    assert owed["dedupe_key"] == str(code) and owed["state"] == "open"
+    [item] = gap_items(shop, "credit_topup_unapplied")
+    assert (item["state"], item["resolution_outcome"]) == ("resolved", "refund_obligation_recorded")
+    assert credited(shop, incarnation) == 0
+
+
+def test_gaps_are_still_escalated_while_credits_are_not_ready(shop):
+    from writing_coach.billing.credits import CreditService
+    from writing_coach.persistence.credit_repository import PostgresCreditRepository
+
+    incarnation = shop.account()
+    shop.service.ensure_account(incarnation)
+    paid_uncredited(shop, incarnation)
+    shop.billing.attach_credits(CreditService(PostgresCreditRepository(shop.owner)))  # a privileged role: not ready
+    counts = shop.billing.reconcile_credit_orders()
+    assert counts["credit_topup_unapplied"] == 1 and counts["credit_topup_repaired"] == 0
+    assert credited(shop, incarnation) == 0  # nothing written to the ledger through a privileged role
+
+
+def test_a_topup_holding_its_locks_makes_the_refund_wait(shop):
+    """The real `apply_credit_topup`, paused inside its transaction after taking its locks: `mark_refunded` waits,
+    then sees the credit (its order is refunded after the top-up committed - the reversal gap's case)."""
+
+    incarnation = shop.account()
+    code = paid_uncredited(shop, incarnation)
+    repository = shop.billing.credits.repository
+    inside, release, outcome = threading.Event(), threading.Event(), {}
+    original = repository._insert
+
+    def paused(*args, **kwargs):
+        entry = original(*args, **kwargs)
+        inside.set()
+        release.wait(timeout=20)
+        return entry
+
+    repository._insert = paused
+    topup = threading.Thread(target=lambda: outcome.setdefault("topup", repository.apply_credit_topup(code).status),
+                             daemon=True)  # fmt: skip
+    refund = threading.Thread(target=lambda: outcome.setdefault(
+        "refund", shop.billing.orders.mark_refunded(order_code=code, note="returned")["status"]), daemon=True)
+    try:
+        topup.start()
+        assert inside.wait(timeout=20)
+        refund.start()
+        refund.join(timeout=2.0)
+        assert refund.is_alive(), "the refund must wait behind the top-up's locks"
+    finally:
+        release.set()
+        topup.join(timeout=20)
+        refund.join(timeout=20)
+        repository._insert = original
+    assert outcome == {"topup": "applied", "refund": "applied"}
+    assert credited(shop, incarnation) == 500
+    assert shop.billing.reconcile_credit_orders()["credit_reversal_repaired"] == 1
+    assert credited(shop, incarnation) == 0
