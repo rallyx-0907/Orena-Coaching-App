@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const { annotateWithPolicy, annotateRefused, resetAnnotatePolicy, ANNOTATE_BACKOFF_MS } =
+const { annotateWithPolicy, annotateRefused, resetAnnotatePolicy, ANNOTATE_BACKOFF_MS, BREAKER_LIMIT } =
   await import('../static/orena/infrastructure/annotate-policy.js');
 
 const fail = (status) => Object.assign(new Error('x'), status === undefined ? { name: 'TypeError' } : { status });
@@ -32,11 +32,56 @@ assert.equal(annotateRefused('art', 'en'), false, 'other language not closed');
 assert.equal(annotateRefused('other', 'zh'), false, 'other text not closed');
 assert.equal(sleeps.length, 0, 'no backoff for a 4xx');
 
-// 2. Another 4xx is never retried either.
+// 2. A payload error (400/413/422) fails once, is never retried, and does not close the pair.
+for (const code of [400, 413, 422]) {
+  resetAnnotatePolicy();
+  const s4 = counter(fail(code));
+  await assert.rejects(run(s4), (e) => e.status === code);
+  assert.equal(s4.calls, 1);
+  assert.equal(annotateRefused('art', 'zh'), false, `${code} leaves the pair open`);
+}
+// 401 and 403 close the pair, once, without a retry.
+for (const code of [401, 403]) {
+  resetAnnotatePolicy();
+  const s4 = counter(fail(code));
+  await assert.rejects(run(s4));
+  await assert.rejects(run(s4));
+  assert.equal(s4.calls, 1);
+  assert.equal(annotateRefused('art', 'zh'), true);
+}
+// 408/425/429 retry with backoff; Retry-After wins when longer.
+for (const code of [408, 425, 429]) {
+  resetAnnotatePolicy();
+  const s4 = counter(fail(code), { ok: 1 });
+  assert.deepEqual(await run(s4), { ok: 1 });
+  assert.equal(s4.calls, 2);
+  assert.deepEqual(sleeps.splice(0), [ANNOTATE_BACKOFF_MS[0]]);
+}
 resetAnnotatePolicy();
-const s422 = counter(fail(422));
-await assert.rejects(run(s422), (e) => e.status === 422);
-assert.equal(s422.calls, 1);
+await run(counter(Object.assign(fail(429), { retryAfterMs: 3000 }), { ok: 1 }));
+assert.deepEqual(sleeps.splice(0), [3000]);
+
+// 2b. Concurrent workers: after the first 409 lands, no more than the worker count was ever sent.
+resetAnnotatePolicy();
+let sent = 0;
+const slow409 = async () => { sent += 1; await new Promise((r) => setImmediate(r)); throw fail(409); };
+let nextPara = 0;
+const workers = Array.from({ length: 6 }, async () => {
+  while (nextPara < 86 && !annotateRefused('art', 'zh')) {
+    nextPara += 1;
+    await run(slow409).catch(() => {});
+  }
+});
+await Promise.all(workers);
+assert.ok(sent <= 6, `at most 6 in flight, sent ${sent}`);
+
+// 2c. Circuit breaker: consecutive failed calls close the pair.
+resetAnnotatePolicy();
+const dead = counter(fail(503));
+for (let i = 0; i < 10; i += 1) await run(dead).catch(() => {});
+assert.equal(dead.calls, 3 * BREAKER_LIMIT);
+assert.equal(annotateRefused('art', 'zh'), true);
+sleeps.length = 0;
 
 // 3. 503 forever: 3 requests, two backoffs.
 resetAnnotatePolicy();

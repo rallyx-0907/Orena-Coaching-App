@@ -4182,7 +4182,7 @@ backend cannot yet serve:
   catch already leaves the paragraph plain on any failure, so a genuine mismatch degrades gracefully
   rather than breaking the room.
   (2026-10-14: the catch left the paragraph plain but every paragraph still sent its own request - 86 console 409s for one
-  article, repeated on every open. `infrastructure/annotate-policy.js` now closes a (text, language) pair after the first 4xx, so
+  article, repeated on every open. `infrastructure/annotate-policy.js` now closes a (text, language) pair after the first 409/403/401, so
   one request is made and the Reader renders plain text silently; 5xx/network get at most two backed-off retries. The design
   draws no notice for this, so none is added.)
 - **Overlay defect - RESOLVED (2026-09-29):** the Sentence Quick Sheet's repaint after "Add note" used

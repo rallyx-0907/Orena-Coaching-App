@@ -47,6 +47,8 @@ export async function request(url, options={}){
     if(structured&&typeof detail.retryable==='boolean')error.retryable=detail.retryable;
     if(structured&&detail.context&&typeof detail.context==='object')error.context=detail.context;
     error.status=response.status;
+    const retryAfter=Number(response.headers.get('retry-after'));
+    if(Number.isFinite(retryAfter)&&retryAfter>=0)error.retryAfterMs=retryAfter*1000;
     throw error;
   }
   return payload;
