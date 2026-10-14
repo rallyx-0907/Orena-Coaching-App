@@ -8,11 +8,11 @@
 | Branch | `feature/monetization-billing-v1` |
 | Main | `d55526a2` (`origin/main`, 2026-10-14): PR-MON-2 merged as #162 (`ea68f8a8`); Reading #161 after it; the lane rebased onto it |
 | Last completed slice | PR-MON-2 Price Integrity + Runtime Readiness: architecture-APPROVED, CI green on `dfb213ce`, merged to `main` as #162 (`ea68f8a8`, 2026-10-14) |
-| Active PR | **PR-MON-3 Billing Orders + Reconciliation Safety** - implementation review REQUEST CHANGES (3 P1s on `49505ca0`), all fixed; awaiting the focused re-check of the fixes; code frozen otherwise. Record: `docs/reviews/architecture/PR_MON_3_RECONCILIATION_REVIEW_2026-10-14.md` |
+| Active PR | **PR-MON-3 Billing Orders + Reconciliation Safety** - the implementation review's 3 P1s and the focused re-review's P1-2 race are fixed (`bd572b8e`); awaiting the reviewer's check of that race fix; code frozen otherwise. Record: `docs/reviews/architecture/PR_MON_3_RECONCILIATION_REVIEW_2026-10-14.md` |
 | Current slice | PR-MON-3 slices 1-6 implemented (D-MON-018): proposed 0031, reconciliation items, write-before-ack, gap repair, reconciler with payOS lookups, Polar refunds, admin API |
 | Exact next action | send the fixing SHA, the focused diffs and the focused PostgreSQL tests to the reviewer; on APPROVE rebase and open the PR. No promotion or application of 0027/0031; production billing OFF |
 | Blockers | independent implementation review; promotion/application of 0027 + 0031 is a separate human gate |
-| Test status | local only (not CI), after the review P1 fixes (`1f73d4fa`). SQLite targeted: 598 passed, 1 skipped. Throwaway PostgreSQL 16 (billing, reconciliation, price integrity, entitlement, every `tests/*_postgres.py`): 491 run, 490 passed, 1 failed = INHERITED #160. Mutations (sequential, each result written as it ran): 17/17 caught, each by its own guard's test (table in `PR-MON-3_REVIEW_REQUEST.md`). Host validators as before (`validate_specialized_persistence_boundary.py` fails identically on clean `main`, not a CI gate) |
+| Test status | local only (not CI), `bd572b8e`. SQLite billing targeted: 476 passed, 1 skipped (the wider targeted set, 598 passed, at `1f73d4fa`). Throwaway PostgreSQL 16: 492 run, 491 passed, 1 failed = INHERITED #160. Mutations: 18/18 caught, each by its own guard's test (table in `PR-MON-3_REVIEW_REQUEST.md`) |
 | Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
 ## Revised sequence (human, 2026-10-13)

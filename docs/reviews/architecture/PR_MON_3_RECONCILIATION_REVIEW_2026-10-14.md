@@ -709,3 +709,66 @@ The code fixes are in `52923cf6`; `1f73d4fa` adds one more P1-3 regression test.
   - Throwaway PostgreSQL 16: 491 run, 490 passed, 1 failed (INHERITED #160).
   - Mutations: 17/17 caught on `1f73d4fa`; the table is in `docs/billing/PR-MON-3_REVIEW_REQUEST.md`.
 
+---
+
+# PR-MON-3 focused review of the fixes
+
+Recorded verbatim from the reviewer's verdict (relayed by the human, 2026-10-14).
+
+Focused review vẫn còn 1 P1 trong P1-2.
+
+Race cần sửa:
+- provider_paid_unrecorded đang open;
+- reconciler claim order và bắt đầu HTTP payOS;
+- trong lúc HTTP chạy, Admin resolve bằng refund_confirmed/reversal_confirmed;
+- resolve transaction set provider_settled_at và đóng item;
+- HTTP quay về PAID;
+- _settle re-read order nhưng hiện vẫn tiếp tục xử lý và có thể reopen provider_paid_unrecorded;
+- vì provider_settled_at vẫn đã set, order không được pull lại và critical item có thể bị kẹt open.
+
+Yêu cầu:
+1. Sau external HTTP call, fresh order state phải tôn trọng một concurrent durable settlement/disposition.
+2. Nếu order đã được settled trong lúc call đang chạy bởi Admin disposition, response cũ không được reopen critical item hoặc tạo false money anomaly.
+3. Không giữ DB lock qua HTTP.
+4. Thêm PostgreSQL regression:
+   - tạo provider_paid_unrecorded;
+   - bắt đầu lookup;
+   - ngay trong fake lookup, Admin resolve refund_confirmed;
+   - fake trả PAID;
+   - tick kết thúc;
+   - item vẫn resolved, reopened=0;
+   - gateway không critical;
+   - provider_settled_at vẫn set;
+   - không tạo payment_mismatch/not_payable mới.
+
+Có thể fix tối thiểu bằng cách nhận biết fresh order đã provider-settled sau claim và coi response in-flight này là stale/no-op, miễn giữ đúng audit semantics.
+
+Chỉ sửa race này.
+Không redesign.
+Không promote/apply 0027/0031.
+Sau fix trả SHA + focused PG test.
+
+## Fix response (implementer, 2026-10-14)
+
+Fixed in `bd572b8e`, as the minimal fix the review describes:
+
+- After the provider call, `_settle` re-reads the order. If the order is now `provider_settled_at IS NOT NULL`,
+  the in-flight answer is stale. `claim_lookup` only claims an unsettled order, so something else settled it while
+  payOS was being asked.
+- A stale answer is a no-op. No item is recorded or reopened, no lookup state is written, and the event is logged
+  and counted as `stale_lookup`.
+- The audit semantics hold. The administrator's disposition (the resolved item, with its outcome, reference, note,
+  actor and time, and the settled order) is left exactly as written.
+- No lock is held across the call. The re-read is the same short read as before.
+- Regression test (PostgreSQL): `test_p1_2_a_disposition_made_during_the_lookup_is_not_undone_by_its_stale_answer`.
+  - Setup: `provider_paid_unrecorded` is open. The next lookup starts, and inside the fake lookup the administrator
+    resolves the item as `refund_confirmed`. The fake then answers PAID.
+  - After the tick: the item is still resolved with `reopened = 0`, the gateway is not critical, and
+    `provider_settled_at` is still set.
+  - No `payment_mismatch` or `payment_not_payable` item was added beyond the first tick's own.
+- Evidence (local execution, not CI):
+  - Throwaway PostgreSQL 16: 492 run, 491 passed, 1 failed (INHERITED #160).
+  - SQLite billing targeted: 476 passed, 1 skipped.
+  - Mutant `p1_2_stale_after_disposition` (guard removed): caught by that test. 18/18 mutants are now caught,
+    counting the 17 recorded at `1f73d4fa`.
+

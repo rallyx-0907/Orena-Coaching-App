@@ -114,8 +114,8 @@ Record this verdict in the same file.
 ## Mutation results (local execution, throwaway PostgreSQL 16; re-run on `1f73d4fa`, after the review P1 fixes)
 
 Each guard was removed in a throwaway copy, and the reconciliation, billing and reconciliation-PostgreSQL tests (100
-tests, none skipped) were run. Every mutant failed at least one test of the guard it broke: **17/17 caught**.
-The 12 original guards were all re-run, and 5 guards were added by the P1 fixes.
+tests, none skipped) were run. Every mutant failed at least one test of the guard it broke: **18/18 caught**.
+The 12 original guards were all re-run, and 5 guards were added by the P1 fixes. One more was added by the focused-review fix, and its mutant was run on `bd572b8e`.
 
 | Mutant (guard removed) | File | Failing tests | Guard's own test among them |
 | --- | --- | --- | --- |
@@ -136,6 +136,7 @@ The 12 original guards were all re-run, and 5 guards were added by the P1 fixes.
 | P1-2 a refund/reversal disposition settles the order | `persistence/billing_reconciliation_repository.py` | 1 | `test_p1_2_a_confirmed_refund_settles_the_order_so_the_next_paid_lookup_does_not_reopen_it` |
 | P1-3 decide on the order as it is after the call | `billing/reconciler.py` | 1 | `test_p1_3_a_payment_and_refund_during_the_lookup_are_decided_on_the_order_as_it_is_now` |
 | P1-3 a refunded order keeps its confirming lookup | `persistence/billing_repository.py` | 2 | `test_p1_3_a_refund_before_the_confirming_lookup_keeps_that_lookup` |
+| P1-2 race: a disposition made during the lookup wins over its stale answer (`bd572b8e`) | `billing/reconciler.py` | 1 | `test_p1_2_a_disposition_made_during_the_lookup_is_not_undone_by_its_stale_answer` |
 
 ## Evidence
 
