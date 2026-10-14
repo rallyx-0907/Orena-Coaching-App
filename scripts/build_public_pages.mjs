@@ -79,6 +79,16 @@ function landing(text) {
   text = sub(text, 'footer deletion', /(<a href="Orena Terms\.dc\.html\?lang=en" style="color:var\(--muted\)">Terms<\/a>)/g,
     (_m, terms) => `${terms}<a href="Orena Account Deletion.dc.html?lang=en" style="color:var(--muted)">Delete account</a>`);
   text = sub(text, 'deletion link', /href="Orena Account Deletion\.dc\.html(\?lang=en)?"/g, (_m, q) => `href="/account-deletion${q || ''}"`);
+  // The browser parses the page before the runtime runs, and the design's bindings sit inside SVG attributes
+  // (`points="{{ ot.mPts }}"`, `d="{{ sp.mFill }}"`, `x`, `width`, `stroke`): parsed as live DOM each one is a
+  // console error (#155). The template goes inside an inert <template>, which the browser never validates; the
+  // served runtime reads it from there (see runtime()).
+  text = sub(text, 'inert template open', /<x-dc>\r?\n/, '<x-dc><template data-dc-inert>\n');
+  text = sub(text, 'inert template close', /<\/x-dc>/, '</template></x-dc>');
+  // The design's file has no icon, so the browser asks for /favicon.ico and gets a 404; the other public pages and
+  // the learner shell link the brand mark.
+  text = sub(text, 'icon', /(<meta name="viewport" content="width=device-width, initial-scale=1">\r?\n)(<script)/,
+    (_m, meta, script) => `${meta}<link rel="icon" type="image/svg+xml" href="/orena-brand/logo/orena-mark.svg">\n${script}`);
   return common(text);
 }
 
@@ -115,6 +125,12 @@ function runtime(text) {
   text = sub(text, 'react url', /https:\/\/unpkg\.com\/react@18\.3\.1\/umd\/react\.production\.min\.js/g, `${VENDOR}/react.production.min.js`);
   text = sub(text, 'react-dom url', /https:\/\/unpkg\.com\/react-dom@18\.3\.1\/umd\/react-dom\.production\.min\.js/g, `${VENDOR}/react-dom.production.min.js`);
   text = sub(text, 'babel url', /https:\/\/unpkg\.com\/@babel\/standalone@[0-9.]+\/babel\.min\.js/g, `${VENDOR}/babel-not-shipped.js`);
+  // The runtime reads the page's template from the x-dc element; the Landing keeps it in an inert <template>
+  // inside it (landing()), both from the parsed document and from the refetched text.
+  text = sub(text, 'inert (document)', /template: dc\.innerHTML,/g,
+    'template: (dc.querySelector(":scope > template[data-dc-inert]") || dc).innerHTML,');
+  text = sub(text, 'inert (text)', /const template = src\.slice\(openMatch\.index \+ openMatch\[0\]\.length, close\);/g,
+    'const template = src.slice(openMatch.index + openMatch[0].length, close).replace(/^\\s*<template data-dc-inert>([\\s\\S]*)<\\/template>\\s*$/, "$1");');
   return text;
 }
 
