@@ -31,7 +31,7 @@ from writing_coach.ai.routing import AllProvidersUnavailable
 from writing_coach.persistence.platform_repository import CapabilityConfigRecord
 
 GEMMA = "google/gemma-4-31b-it:free"
-QWEN = "qwen/qwen3-next-80b-a3b-instruct:free"
+STANDBY = "google/gemma-4-26b-a4b-it:free"
 LAMP = {"text": "lamp", "source_language": "en", "target_language": "vi"}
 
 
@@ -79,7 +79,7 @@ class Fake:
     def __init__(self) -> None:
         self.calls: list[dict[str, Any]] = []
         self.script: dict[str, list[Any]] = {}
-        self.default = {GEMMA: {"meaning": "đèn"}, QWEN: {"meaning": "cái đèn"}}
+        self.default = {GEMMA: {"meaning": "đèn"}, STANDBY: {"meaning": "cái đèn"}}
         self.on_call = None
 
     def generate_json_once(self, **kwargs: Any) -> AIResult:
@@ -101,7 +101,7 @@ class Fake:
 
 def config(**overrides: Any) -> CapabilityConfig:
     values = {"enabled": True, "provider": "openrouter", "model": GEMMA, "backup_provider": "openrouter",
-              "backup_model": QWEN, "temperature": 0.0, "fallback_policy": "none"}
+              "backup_model": STANDBY, "temperature": 0.0, "fallback_policy": "none"}
     values.update(overrides)
     return CapabilityConfig(**values)
 
@@ -167,7 +167,7 @@ def test_a_second_request_is_a_cache_hit_with_no_provider_call(env) -> None:
 
 def test_changing_the_model_does_not_pay_again_for_the_same_request(env) -> None:
     route("word_translation", LAMP)
-    env.repo.config = config(model=QWEN, backup_provider=None, backup_model=None)  # the operator swapped the model
+    env.repo.config = config(model=STANDBY, backup_provider=None, backup_model=None)  # the operator swapped the model
     again = route("word_translation", LAMP)
     assert again.source == "cache" and again.output == {"meaning": "đèn"}  # the earlier model's answer, not a new call
     assert env.fake.models() == [GEMMA]
@@ -211,7 +211,7 @@ def test_two_requests_for_one_word_at_once_make_one_call(env) -> None:
 
 
 def test_everything_down_is_remembered_for_about_a_minute(env) -> None:
-    env.fake.script = {GEMMA: [http_error(503)], QWEN: [http_error(503)]}
+    env.fake.script = {GEMMA: [http_error(503)], STANDBY: [http_error(503)]}
     with pytest.raises(AIProviderError):
         route("word_translation", LAMP)
     assert len(env.fake.calls) == 2
@@ -247,19 +247,19 @@ def test_a_terminal_failure_is_not_remembered(env) -> None:
 def test_an_availability_failure_moves_to_the_standby_and_is_logged(env, failure, reason, status_class) -> None:
     env.fake.script = {GEMMA: [failure]}
     result = route("word_translation", LAMP)
-    assert env.fake.models() == [GEMMA, QWEN]
-    assert result.output == {"meaning": "cái đèn"} and result.provenance["model"] == QWEN
+    assert env.fake.models() == [GEMMA, STANDBY]
+    assert result.output == {"meaning": "cái đèn"} and result.provenance["model"] == STANDBY
     failed = [row for row in env.repo.operations if row["outcome"] == "failure"]
     assert len(failed) == 1
     assert (failed[0]["fallback_reason"], failed[0]["http_status_class"]) == (reason, status_class)
     assert (failed[0]["tier"], failed[0]["phase"], failed[0]["attempt"], failed[0]["router_version"]) == ("free", "pool", 1, "1")
     won = [row for row in env.repo.operations if row["outcome"] == "success"]
-    assert (won[0]["model"], won[0]["attempt"], won[0]["tier"]) == (QWEN, 2, "free")
+    assert (won[0]["model"], won[0]["attempt"], won[0]["tier"]) == (STANDBY, 2, "free")
 
 
 def test_a_provider_that_keeps_failing_is_stood_down_and_not_hammered(env) -> None:
-    env.fake.default = {GEMMA: {"meaning": "đèn"}, QWEN: {"meaning": "đèn"}}
-    env.fake.script = {GEMMA: [http_error(429)] * 10, QWEN: [http_error(429)] * 10}
+    env.fake.default = {GEMMA: {"meaning": "đèn"}, STANDBY: {"meaning": "đèn"}}
+    env.fake.script = {GEMMA: [http_error(429)] * 10, STANDBY: [http_error(429)] * 10}
     for text in ("one", "two"):
         with pytest.raises(AIProviderError):
             route("word_translation", word(text))
@@ -289,17 +289,17 @@ def test_invalid_output_retries_the_same_model_once_and_then_succeeds(env) -> No
 def test_invalid_twice_fails_over_to_the_next_model(env) -> None:
     env.fake.script = {GEMMA: [{"meaning": "灯"}, {"meaning": "two\nlines"}]}
     result = route("word_translation", LAMP)
-    assert env.fake.models() == [GEMMA, GEMMA, QWEN]
+    assert env.fake.models() == [GEMMA, GEMMA, STANDBY]
     assert result.output == {"meaning": "cái đèn"}
     reasons = [row.get("fallback_reason") for row in env.repo.operations if row["outcome"] == "failure"]
     assert "invalid_output" in reasons
 
 
 def test_invalid_everywhere_is_unavailable_and_nothing_invalid_is_cached(env) -> None:
-    env.fake.script = {GEMMA: [{"meaning": "x\ny"}] * 2, QWEN: [{"meaning": "x\ny"}] * 2}
+    env.fake.script = {GEMMA: [{"meaning": "x\ny"}] * 2, STANDBY: [{"meaning": "x\ny"}] * 2}
     with pytest.raises(AIProviderError):
         route("word_translation", LAMP)
-    assert env.fake.models() == [GEMMA, GEMMA, QWEN, QWEN]
+    assert env.fake.models() == [GEMMA, GEMMA, STANDBY, STANDBY]
     env.clock.now += 61
     assert route("word_translation", LAMP).output == {"meaning": "đèn"}
 
@@ -413,7 +413,7 @@ def test_the_rollup_counts_requests_hits_and_the_model_used(env) -> None:
     counters = event["payload"]["counters"]
     assert counters["requests"] == 3 and counters["cache_hits"] == 1 and counters["model_calls"] == 3
     assert counters["fallbacks"] == 1 and counters.get("failures", 0) == 0
-    assert event["payload"]["models"][f"openrouter/{QWEN}"] == 1
+    assert event["payload"]["models"][f"openrouter/{STANDBY}"] == 1
     assert event["payload"]["models"][f"openrouter/{GEMMA}"] == 1
     router_module.flush_rollup(force=True)
     assert len([e for e in env.repo.events if e["action"] == "ai.router.rollup"]) == 1  # nothing new: no empty row
@@ -439,7 +439,7 @@ def test_validator_rejections_do_not_stand_the_provider_down(env) -> None:
 
     bad = {"meaning": "x" + chr(10) + "y"}
     for text in ("one", "two", "three"):
-        env.fake.script = {GEMMA: [bad, bad], QWEN: [bad, bad]}
+        env.fake.script = {GEMMA: [bad, bad], STANDBY: [bad, bad]}
         with pytest.raises(AIProviderError):
             route("word_translation", word(text))
     env.fake.calls.clear()

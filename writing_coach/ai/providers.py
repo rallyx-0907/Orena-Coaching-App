@@ -183,6 +183,19 @@ def check_model_allowed(provider_id: str, model: str) -> None:
         )
 
 
+def normalize_openai_base_url(url: object) -> str:
+    """The OpenAI-compatible base URL, whatever the operator pasted.
+
+    Operators copy the full request URL from a provider's docs (".../v1/chat/completions"); model discovery then asked
+    ".../chat/completions/models" and got a 404. A trailing "/chat/completions" and trailing slashes are dropped, so the
+    base is ".../v1" and the adapter appends the path itself."""
+
+    value = str(url or "").strip().rstrip("/")
+    if value.casefold().endswith("/chat/completions"):
+        value = value[: -len("/chat/completions")]
+    return value.rstrip("/")
+
+
 def _schema_instruction(schema: dict[str, Any]) -> str:
     return (
         "\nReturn exactly one valid JSON object. It must follow this JSON Schema:\n"
@@ -427,9 +440,9 @@ class OpenAICompatibleProvider:
             override_key if isinstance(override_key, str) else os.getenv(api_key_env, "")
         ).strip()
         override_url = credential_override.get("base_url")
-        self.base_url = str(
+        self.base_url = normalize_openai_base_url(
             override_url if isinstance(override_url, str) and override_url.strip() else os.getenv(base_url_env, default_base_url)
-        ).strip().rstrip("/")
+        )
         override_models = credential_override.get("models")
         raw_models = override_models if isinstance(override_models, list) else os.getenv(models_env, "").split(",")
         self.allowed_models = [str(value).strip() for value in raw_models if str(value).strip()]
