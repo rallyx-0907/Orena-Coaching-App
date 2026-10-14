@@ -70,6 +70,8 @@ class ProductService:
         self.billing = billing
         self.clock = clock
         self.grace = grace   # the billing grace policy in force (D-MON-011), read at each resolution
+        # Whether this runtime can take a payment now (PR-MON-2, `writing_coach.billing.readiness`); off until installed.
+        self.billing_ready: Callable[[], bool] = lambda: False
 
     def _repository(self) -> ProductRepository:
         if self.repository is None:
@@ -140,6 +142,12 @@ class ProductService:
             **shape,
         )
 
+    def billing_is_ready(self) -> bool:
+        try:
+            return self.billing_ready() is True
+        except Exception:  # noqa: BLE001 - a readiness probe that fails means "not ready", never a failed read
+            return False
+
     def account_state(self, user_key: str) -> dict[str, Any]:
         try:
             effective = self.entitlement(user_key)
@@ -171,7 +179,7 @@ class ProductService:
             },
             "plan_state": "active" if active and plan_known else ("unknown" if active and not plan_known else "default"),
             "features": features,
-            "billing_ready": False,
+            "billing_ready": self.billing_is_ready(),
         }
 
 
@@ -188,3 +196,8 @@ def configure_product_usage(usage: UsageReader | None) -> None:
 def configure_product_billing(source: BillingEntitlementSource | None) -> None:
     """Install the billing record the effective entitlement reads (D-MON-006); None removes it."""
     product_service.billing = source
+
+
+def configure_product_billing_ready(probe: Callable[[], bool] | None) -> None:
+    """Install the runtime's billing readiness (PR-MON-2); None reports billing not ready."""
+    product_service.billing_ready = probe if probe is not None else (lambda: False)

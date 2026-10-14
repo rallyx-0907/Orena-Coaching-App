@@ -37,9 +37,12 @@ decided, is no subscription at all.
 """
 from __future__ import annotations
 
+import logging
+import threading
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any, Protocol
 
 from writing_coach.product.billing_grace import NO_GRACE, GracePolicy
@@ -51,6 +54,7 @@ GRANTING = frozenset({"active", "trialing"})
 # state - the live ones and `unknown` or anything unrecognised - still owns it (review of PR-MON-1, P1-1).
 RELEASED = frozenset({"ended"})
 _ABSENT = "none"
+_log = logging.getLogger(__name__)
 
 
 def billing_owns(state: str) -> bool:
@@ -77,6 +81,76 @@ class CommerceEntitlementSource:
         from writing_coach.persistence.ids import stable_uuid
 
         return self._commerce.subscription_for_account(str(stable_uuid("user", user_key)))
+
+
+# The tables the billing record is read from (migration 0006 and the account backbone's incarnations).
+COMMERCE_TABLES = ("commerce_subscriptions", "commerce_billing_event_receipts", "account_incarnations")
+
+
+class CommerceUnreadable(RuntimeError):
+    """The billing record is expected on this runtime but cannot be read: no plan is decided without it."""
+
+
+def table_state(list_tables: Callable[[], Iterable[str]], names: Iterable[str]) -> str:
+    """`present` (every table listed), `absent` (the listing answered without them) or `unreadable` (it did not
+    answer). Unreadable is never absent (R-MON-010)."""
+    try:
+        tables = set(list_tables())
+    except Exception:  # noqa: BLE001 - any failure to list is "unreadable", logged, decided by the caller
+        _log.warning("billing: the runtime's tables could not be listed", exc_info=True)
+        return "unreadable"
+    return "present" if set(names) <= tables else "absent"
+
+
+class DiscoveringCommerceSource:
+    """The billing record where it is expected (PostgreSQL with the account backbone asked for), whatever the table
+    listing said at startup (R-MON-010, D-MON-016).
+
+    * the commerce tables listed: the record is read (`installed`);
+    * listed without them - commerce is not deployed here: no billing row, as on a runtime without commerce
+      (`absent`);
+    * the listing failed - commerce may hold a paid account: every read raises `CommerceUnreadable`, so a plan read
+      fails closed (quota answers 503, the Plan screen reports unavailable) instead of silently using the legacy row
+      for the life of the process (`unverified`). The listing is asked again at most every `retry_seconds`; once it
+      answers, the answer is kept.
+    """
+
+    def __init__(self, list_tables: Callable[[], Iterable[str]], build: Callable[[], BillingEntitlementSource], *,
+                 clock: Callable[[], float] = time.monotonic, retry_seconds: float = 5.0) -> None:
+        self._list = list_tables
+        self._build = build
+        self._clock = clock
+        self._retry = retry_seconds
+        self._lock = threading.Lock()
+        self._settled = False
+        self._source: BillingEntitlementSource | None = None
+        self._next_try = 0.0
+        self._discover()
+
+    @property
+    def state(self) -> str:
+        if not self._settled:
+            return "unverified"
+        return "installed" if self._source is not None else "absent"
+
+    def _discover(self) -> None:
+        state = table_state(self._list, COMMERCE_TABLES)
+        if state == "unreadable":
+            self._next_try = self._clock() + self._retry
+            return
+        self._source = self._build() if state == "present" else None
+        self._settled = True
+
+    def subscription_for_user(self, user_key: str) -> Mapping[str, Any] | None:
+        if not user_key:
+            return None
+        with self._lock:
+            if not self._settled and self._clock() >= self._next_try:
+                self._discover()
+            if not self._settled:
+                raise CommerceUnreadable("The billing record is expected on this runtime but cannot be read.")
+            source = self._source
+        return None if source is None else source.subscription_for_user(user_key)
 
 
 @dataclass(frozen=True)

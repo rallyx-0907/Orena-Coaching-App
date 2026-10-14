@@ -2,7 +2,8 @@
 
 Off unless `BILLING_ENABLED` is on - and even then a gateway without its keys, or a plan without an approved
 price, is simply not offered. Prices come from the file `BILLING_PRICES_FILE` names (the human's decision,
-never a default in code).
+never a default in code), and a price is sold only while it is exactly the catalogue's: one that is not blocks its
+whole gateway (`price_integrity`, D-MON-005, D-MON-015).
 
 Access changes only through the commerce repository (`record_event`), from a verified gateway event:
 - a merchant-of-record subscription event is recorded as the subscription's own state and revision;
@@ -24,11 +25,15 @@ from pathlib import Path
 from typing import Any
 
 from writing_coach.billing.gateway import CheckoutIntent, GatewayNotConfigured, PaymentFact, Price, WebhookRejected
+from writing_coach.billing.price_integrity import MINOR_EXPONENT, PriceCheck, blocked_gateways, check_prices
+from writing_coach.product.catalog import DEFAULT_PLAN_ID, PLANS, CatalogUnavailable, current_plans
 
 _log = logging.getLogger(__name__)
 _ON = frozenset({"1", "true", "yes", "on"})
 # Which currency each gateway takes, and whether it needs the gateway's own price id.
 _GATEWAY_RULES = {"payos": ({"VND"}, False), "polar": (None, True)}
+# What a prices file may sell: a paid plan of the catalogue, by its own id (not a legacy alias).
+_SELLABLE_PLANS = frozenset(plan_id for plan_id in PLANS if plan_id != DEFAULT_PLAN_ID)
 _LIVE = frozenset({"active", "trialing", "past_due", "paused", "pending"})
 
 
@@ -58,7 +63,13 @@ def load_prices(env: Mapping[str, str]) -> dict[str, Price]:
             raise ValueError("a price is a positive integer of minor units")
         if item["period"] not in ("month", "year"):
             raise ValueError("a price period is month or year")
-        currencies, needs_id = _GATEWAY_RULES.get(str(item["gateway"]), (None, False))
+        if str(item["plan_id"]) not in _SELLABLE_PLANS:
+            raise ValueError(f"a price names a paid plan of the catalogue: {', '.join(sorted(_SELLABLE_PLANS))}")
+        if str(item["currency"]).upper() not in MINOR_EXPONENT:
+            raise ValueError(f"a price is in a currency the catalogue prices in: {', '.join(sorted(MINOR_EXPONENT))}")
+        if str(item["gateway"]) not in _GATEWAY_RULES:
+            raise ValueError(f"unknown gateway {item['gateway']!r}")
+        currencies, needs_id = _GATEWAY_RULES[str(item["gateway"])]
         if currencies is not None and str(item["currency"]).upper() not in currencies:
             raise ValueError(f"{item['gateway']} takes {', '.join(sorted(currencies))} only")
         if needs_id and not item.get("external_price_id"):
@@ -66,7 +77,10 @@ def load_prices(env: Mapping[str, str]) -> dict[str, Price]:
         price = Price(plan_id=str(item["plan_id"]), period=item["period"], currency=str(item["currency"]).upper(),
                       amount_minor=amount, gateway=str(item["gateway"]),
                       external_price_id=str(item.get("external_price_id") or ""))  # fmt: skip
-        prices[f"{price.plan_id}:{price.period}:{price.gateway}"] = price
+        key = f"{price.plan_id}:{price.period}:{price.gateway}"
+        if key in prices:
+            raise ValueError(f"{key} is priced twice")
+        prices[key] = price
     return prices
 
 
@@ -100,28 +114,78 @@ class WebhookOutcome:
 
 class BillingService:
     def __init__(self, *, orders: Any, commerce: Any, gateways: Mapping[str, Any], prices: Mapping[str, Price],
+                 catalog: Callable[[], Mapping[str, Any]] = lambda: current_plans(strict=True),
                  send: Callable[[dict], dict] = _send, now: Callable[[], datetime] = lambda: datetime.now(UTC)) -> None:
         self._orders = orders
         self._commerce = commerce
         self._gateways = dict(gateways)
         self._prices = dict(prices)
+        # The catalogue in force, read strictly: a catalogue that cannot be read sells nothing.
+        self._catalog = catalog
         self._send = send
         self._now = now
 
+    # ---- price integrity (D-MON-005, D-MON-015) -----------------------------------------------------------
+
+    def price_checks(self) -> dict[str, PriceCheck]:
+        """Every approved price against the catalogue in force now. Raises `CatalogUnavailable`."""
+
+        return check_prices(self._prices, self._catalog())
+
+    def _sellable(self, checks: Mapping[str, PriceCheck]) -> dict[str, Price]:
+        blocked = blocked_gateways(checks.values())
+        return {key: price for key, price in self._prices.items()
+                if price.gateway in self._gateways and price.gateway not in blocked}  # fmt: skip
+
     def offered(self) -> list[dict[str, Any]]:
+        try:
+            checks = self.price_checks()
+        except CatalogUnavailable:
+            _log.warning("billing: the plan catalogue cannot be read; nothing is offered", exc_info=True)
+            return []
         return [{"key": key, "plan_id": price.plan_id, "period": price.period, "currency": price.currency,
                  "amount_minor": price.amount_minor, "gateway": price.gateway}
-                for key, price in self._prices.items() if price.gateway in self._gateways]  # fmt: skip
+                for key, price in self._sellable(checks).items()]  # fmt: skip
+
+    def gateway_report(self) -> dict[str, dict[str, Any]]:
+        """Per gateway: configured (its keys, and so its webhook verification), its prices against the catalogue, and
+        ready - configured, priced, every price the catalogue's. No secret, no key material."""
+
+        try:
+            checks: Mapping[str, PriceCheck] | None = self.price_checks()
+        except CatalogUnavailable:
+            checks = None
+        report: dict[str, dict[str, Any]] = {}
+        for name in _GATEWAY_RULES:
+            gateway = self._gateways.get(name)
+            mine = [check for check in (checks or {}).values() if check.gateway == name]
+            entry: dict[str, Any] = {
+                "configured": gateway is not None,
+                "webhook_verification": gateway is not None,
+                "prices": [check.as_dict() for check in mine],
+                "ready": gateway is not None and checks is not None and bool(mine) and all(c.matches for c in mine),
+            }
+            if gateway is not None and getattr(gateway, "environment", None):
+                entry["environment"] = gateway.environment
+            if checks is None:
+                entry["catalog"] = "unavailable"
+            report[name] = entry
+        return report
 
     # ---- checkout -----------------------------------------------------------------------------------------
 
     def start_checkout(self, *, incarnation_id: str, price_key: str, operation_id: str, return_url: str,
-                       cancel_url: str, customer_email: str = "") -> dict[str, Any]:
+                       cancel_url: str, confirmed_amount_minor: int | None, confirmed_currency: str | None,
+                       customer_email: str = "") -> dict[str, Any]:
+        """`confirmed_*` is the price the learner saw and confirmed. It is never charged - the server's price is -
+        but a checkout whose confirmed price is not the server's does not start (`price_changed`)."""
+
         price = self._prices.get(price_key)
         gateway = self._gateways.get(price.gateway) if price else None
         if price is None or gateway is None:
             raise LookupError("price_not_offered")
         uuid.UUID(operation_id)  # an operation id is the client's own UUID: a retry reuses it
+        self._refuse_unverified_price(price_key, price, confirmed_amount_minor, confirmed_currency)
         self._refuse_second_subscription(incarnation_id, price, gateway)
         order = self._orders.create_order(operation_id=operation_id, incarnation_id=incarnation_id,
                                           gateway=price.gateway, plan_id=price.plan_id, period=price.period,
@@ -148,6 +212,20 @@ class BillingService:
         if reference:
             self._orders.set_reference(order["id"], reference)
         return {"redirect_url": url, "qr": qr, "order_code": int(order["order_code"]), "gateway": price.gateway}
+
+    def _refuse_unverified_price(self, key: str, price: Price, amount: int | None, currency: str | None) -> None:
+        try:
+            checks = self.price_checks()
+        except CatalogUnavailable:
+            _log.warning("billing: checkout of %s refused, the plan catalogue cannot be read", key, exc_info=True)
+            raise CheckoutRefused("catalog_unavailable") from None
+        if price.gateway in blocked_gateways(checks.values()):
+            _log.warning("billing: checkout of %s refused, a %s price is not the catalogue's", key, price.gateway)
+            raise CheckoutRefused("price_mismatch")
+        if amount is None or not currency:
+            raise CheckoutRefused("price_unconfirmed")
+        if type(amount) is not int or amount != price.amount_minor or str(currency).strip().upper() != price.currency:
+            raise CheckoutRefused("price_changed")
 
     def _refuse_second_subscription(self, incarnation_id: str, price: Price, gateway: Any) -> None:
         """One live subscription per account: a card subscription while prepaid access lasts (or the reverse)

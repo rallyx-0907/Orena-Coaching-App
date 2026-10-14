@@ -6,21 +6,21 @@
 | | |
 | --- | --- |
 | Branch | `feature/monetization-billing-v1` |
-| Main | `948fd871e5f43d94f3b9a41848f6ae2cbccf47b6` (`origin/main`, 2026-10-13); lane rebased onto it with no conflicts |
-| Last completed slice | PR-MON-1 architecture-APPROVED (independent reviewer, final at `5f18a3f2`); rebased on `948fd871`, billing/entitlement files byte-identical to the approved commit |
-| Active PR | **PR-MON-1 Canonical Effective Entitlement** - APPROVED (architecture), PR #153 open, CI green (run 38421130490: python-gates, node-gates, pytest, docker-build, test); human merge pending |
-| Current slice | none - PR-MON-1 waits for CI and the human's merge |
-| Exact next action | watch PR-MON-1 CI; after the human merges, start PR-MON-2 (price integrity + truthful runtime readiness, incl. review P2 R-MON-010) |
-| Blockers | none. Carried to PR-MON-2: review P2 startup discovery (R-MON-010) |
-| Test status | local only (not CI), rebased tree: throwaway PostgreSQL 16, 746 run: 745 passed, 1 failed = INHERITED `test_quota_voice_postgres.py::test_the_reconciler_has_nothing_to_settle_for_a_vanished_session` (fails identically on clean `origin/main` when quota PG files share one DB; passes alone 3/3 on both trees); project-memory validator and browser ESM graph pass |
-| Next human checkpoint | PR-MON-1 architecture-review-ready report |
+| Main | `6041e9a3` (`origin/main`, 2026-10-14, after the Reading PRs #156-#159; no Billing overlap): the PR-MON-2 commits rebased onto it without conflicts |
+| Last completed slice | PR-MON-1 Canonical Effective Entitlement: architecture-APPROVED, merged to `main` as #153 (`aa016dc1`, 2026-10-14) |
+| Active PR | **PR-MON-2 Price Integrity + Runtime Readiness** - architecture-APPROVED (ChatGPT, focused re-verification of `1916134e`, 2026-10-14); rebased onto `main`, PR open for the human to merge; record: `docs/reviews/architecture/PR_MON_2_PRICE_READINESS_REVIEW_2026-10-14.md` |
+| Current slice | PR-MON-2: price gate, truthful `billing_ready`, admin readiness report, fail-safe commerce discovery (R-MON-010) |
+| Exact next action | the human merges the PR-MON-2 PR once CI is green; then record the merge SHA here and start PR-MON-3 (Billing Orders + Reconciliation Safety) |
+| Blockers | none. Independent architecture review required before PR-MON-2 merges (payment/entitlement) |
+| Test status | local only (not CI). P1 fix: SQLite targeted 264 passed, 1 skipped; mutations: checkout gate 3, offers gate 3. PR-MON-2 `490cff7b`: SQLite targeted 193 passed, 1 skipped; throwaway PostgreSQL 16 (billing, price integrity, effective entitlement, every `tests/*_postgres.py`): 415 run, 414 passed, 1 failed = INHERITED `test_quota_voice_postgres.py::test_the_reconciler_has_nothing_to_settle_for_a_vanished_session` (issue #160); mutations: gateway block 2, confirmed price 2, fail-closed discovery 2, mobile pin 1, sellable-plan check 3 |
+| Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
 ## Revised sequence (human, 2026-10-13)
 
 | PR | Scope | State |
 | --- | --- | --- |
-| PR-MON-1 | **Canonical Effective Entitlement** (APPROVED, PR open). One resolver with explicit precedence; Product UI, quota admission and entitlement checks all derive from it. No migration, no checkout UI, no provider config, no credits. | APPROVED (architecture) |
-| PR-MON-2 | **Price Integrity + Runtime Readiness.** One server-side price truth or a strict consistency gate; checkout only at a server-offered price that exactly matches the effective catalogue entry (a mismatch blocks checkout); browser amounts never trusted; `billing_ready` reflects real capability. | PLANNED |
+| PR-MON-1 | **Canonical Effective Entitlement**. One resolver with explicit precedence; Product UI, quota admission and entitlement checks all derive from it. No migration, no checkout UI, no provider config, no credits. | MERGED (#153, `aa016dc1`) |
+| PR-MON-2 | **Price Integrity + Runtime Readiness.** One server-side price truth or a strict consistency gate; checkout only at a server-offered price that exactly matches the effective catalogue entry (a mismatch blocks checkout); browser amounts never trusted; `billing_ready` reflects real capability. Closes R-MON-010. | APPROVED (architecture), PR open |
 | PR-MON-3 | **Billing Orders + Reconciliation Safety.** Re-review/promote 0027; settle 0028's parent explicitly; abandoned-order expiry; durable payment anomaly/reconciliation state; Polar refund matching where safe; payment-without-entitlement detection. Exact webhook HTTP/retry semantics are designed here, per provider. | PLANNED |
 | PR-MON-4 | **Prepaid Credit Ledger.** Credit account, append-only ledger, idempotent credit/debit/reversal, deterministic balance, never negative. No commercial credit prices. | PLANNED |
 | PR-MON-5 | **payOS Credit Top-up.** Configured top-up products, checkout, verified webhook, credit exactly once, balance and recent-transactions API. | PLANNED |
@@ -32,6 +32,36 @@
 | — | Admin Orders UI | DEFERRED unless launch safety requires it; an auditable API/operator workflow comes first |
 
 Order holds unless a discovered dependency proves it unsafe; record any such change here.
+
+## PR-MON-2 — design (pinned before code)
+
+**Inspected.** The catalogue (`product/catalog.py`) holds the shown price per plan, `monthly`/`yearly` and currency as
+a decimal, Admin-editable. The prices file (`BILLING_PRICES_FILE`, `billing/service.load_prices`) holds the charged
+price per `plan:period:gateway` in minor units, plus Polar's own price id. Nothing compared them. `billing_ready` was
+the constant `False` in `product/service.py` (twice), `product/api.py` (twice), and `admin_console_api.py` said
+`"billing": "not_active"`. The frozen mobile contract pins `billing_ready: z.literal(false)`. Startup discovery
+(`app._billing_entitlement_source`) returned None both when commerce was not deployed and when the table listing failed.
+
+**Price gate** (`billing/price_integrity.py`, D-MON-015). Exact integer comparison against the strict catalogue read;
+one mismatch blocks the whole gateway (offers empty, checkout `price_mismatch` 409); an unreadable catalogue offers
+nothing (`catalog_unavailable` 503). The checkout body carries the confirmed `amount_minor` and `currency`
+(`price_unconfirmed` 422, `price_changed` 409); they are optional in the schema so the route's 503 off-answer is
+unchanged. The prices file is validated harder (paid catalogue plan id, catalogue currency, known gateway, no
+duplicates).
+
+**Readiness** (`billing/readiness.py`). `report()` names each blocker; `billing_ready()` is the cached, never-raising
+read wired into `ProductService.billing_ready`, `/api/product/plans`, the Admin plan editor and the admin console's
+`billing`. `mobile_account_state` pins `false`. `GET /api/admin/billing/readiness` (admin) returns the report: states,
+booleans and price checks, no secret.
+
+**Discovery** (`product/entitlement.DiscoveringCommerceSource`, D-MON-016). Present / absent / unreadable, the last
+failing closed with a 5 s retry.
+
+**Not in this PR:** migrations (0027 stays proposed, so every runtime reports `orders_schema_absent` and stays not
+ready), UI, provider credentials, Polar-side price verification (R-MON-011), credits.
+
+**Tests:** `tests/test_billing_price_integrity.py`; `tests/test_billing.py` moved to canonical plan ids and catalogue
+prices.
 
 ## PR-MON-1 — design (pinned before code)
 
