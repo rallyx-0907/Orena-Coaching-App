@@ -37,7 +37,7 @@ export async function mountImports(shell, ctx) {
     },
     grammar: { file: null, check: null, result: null, error: '', checking: false, importing: false, showAll: false, basis: 'orena_original', attestation: t('grImpAttestDefault') },
     pack: { kinds: 'all', languages: 'all', sourcePrefix: 'sample-', collectionPrefix: 'sample-', file: null, plan: null, result: null, error: '', exporting: false, planning: false, importing: false },
-    source: { name: '', url: '', type: 'direct_url', language: learning, can_republish: false, can_adapt: false, attribution_required: true, license: '', error: '', running: false },
+    source: { name: '', publicName: '', url: '', type: 'direct_url', language: learning, can_republish: false, can_adapt: false, attribution_required: true, license: '', error: '', running: false },
     jobFilter: ctx.query.get('status') === 'failed' ? 'failed' : 'all',
     history: { kind: 'all', status: ctx.query.get('status') === 'failed' ? 'failed' : 'all', offset: 0 },
   };
@@ -347,7 +347,7 @@ export async function mountImports(shell, ctx) {
     form.error = '';
     host.paint();
     try {
-      const created = await api.readingCreateSource(sourceBody({ name: form.name, url: form.url, type: form.type, language: form.language, rights: form, license: form.license }));
+      const created = await api.readingCreateSource(sourceBody({ name: form.name, publicName: form.publicName, url: form.url, type: form.type, language: form.language, rights: form, license: form.license }));
       host.toast(t('impSourceRegistered'));
       ctx.go(ctx.href('adminSource', { id: created.id }));
       return;

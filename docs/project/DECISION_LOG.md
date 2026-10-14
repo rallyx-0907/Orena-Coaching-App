@@ -6193,4 +6193,36 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    caught by the media rule.
    Review of 8055ddbc: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer: APPROVED WITH
    CONDITIONS (CI green before merge; fixture attribution README; this entry). Addendum in
-   `docs/reviews/architecture/READING_QUALITY_GATE_REVIEW_2026-10-13.md`.
+   `docs/reviews/architecture/READING_QUALITY_GATE_REVIEW_2026-10-13.md`. Re-review of 87968f7e (same reviewer role):
+   APPROVE, no open P0/P1; merged once CI was green.
+
+## D-192 - Reading publisher: the learner-facing name is separate from the internal source name (2026-10-14)
+
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVED WITH CONDITIONS on 09bd6b60, re-review APPROVE on 47e19c05; merged once CI was green). Refines D-189/D-190. Lane B item 2 of Reading Production Readiness.
+
+Problem: learners saw the admin's bookkeeping name as the publisher ("Global Voices (English) RSS - trial", "QA NASA news
+releases (RSS)", "Direct URL"), in the Reader meta, Discover, Content Detail, the source footnote and `/api/licences`.
+
+1. **Storage, no migration.** The source's learner-facing `public_name` lives in the existing `reading_sources.polling_policy`
+   JSON (key `public_name`; that column held only `{}`). A dedicated column was not needed; if the policy column is ever
+   given a real polling schema, move the key then (that would be a schema change needing independent review).
+2. **One pure function** (`reading_provenance.resolve_publisher`) returns `(publisher, via)`. The internal source `name`
+   is never an input. The site the text came from is, in order: the source `public_name`; for a built-in path
+   (manual/URL/file) only, the name typed for that text; the page's `og:site_name`; the cleaned host of the item address
+   (`voachinese.com`). The built-in labels ("Direct URL", "Manual paste", "File upload") and anything containing an address are
+   never a name. Nothing known gives an empty publisher, which the D-190 gate reports as a missing credit.
+3. **Republications.** When extraction provenance records a republication that names its original publisher, that
+   publisher is the credit and the site is `via`: "Originally published by Radio Free Asia via Global Voices". The credit
+   link and licence stay the item's own (the republisher's page). Only the publisher is drawn by clients today; `via` is
+   carried in `provenance` and in `text`.
+4. **Every learner payload** (list, detail, Discover, Content Detail, footnote, `/api/licences` text and source rows) reads
+   the resolved name; the admin lists keep the internal name. Changing a source's public name moves `content_revision` of its
+   published texts in the same transaction (D-190 follow-up P2-2).
+5. **Admin.** `POST /api/admin/reading/sources/{id}/public-name`, a "Public name" field on the register form and on the
+   source page. The pinned `Orena Admin.dc.html` draws no such field (`UI_BACKEND_GAPS.md`).
+6. **Consequences for D-190 and the licences page.** Because the host is a fallback, the D-190 "publisher missing" provenance
+   warning now fires only when no public name, no page site name and no host is known (a text with no address and no typed
+   name); a bare host such as `nasa.gov` counts as the credit. Names are trimmed of whitespace and separators only, so
+   balanced brackets and the full stop of an abbreviation survive ("Global Voices (English)", "Acme Inc.", "美国之音（VOA）").
+   A `/api/licences` source row with neither a public name nor a base-URL host is omitted; its texts are still credited
+   one by one in the text rows.

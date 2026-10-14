@@ -6116,3 +6116,11 @@ reuses the existing confirm dialog drawn for the rights warnings (D-190): the ha
 (labels `rdIssue_*`), the one reason serves both, and the client sends `quality_override` and `acknowledge_warnings`
 as separate flags, each only for the kind it lists. No new control was added; whether the design should draw a distinct
 quality confirmation is a decision for the human.
+
+## Reading source "Public name" field (D-192, proposed, 2026-10-14)
+
+The pinned `Orena Admin.dc.html` draws no field for the name learners see as a Reading text's publisher. It was added with
+existing components only: a text field with a hint on the Register-source form and a one-field form block with a Save
+button on the source page (EN/VI/ZH copy). Whether the design wants this placed or worded differently, or the publisher
+shown as "via" for a republication in the Reader footnote, is a decision for the human. Existing sources have no public
+name until an administrator sets one; until then the site name or host stands in, never the internal name.
