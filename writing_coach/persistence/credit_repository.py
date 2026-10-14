@@ -464,7 +464,8 @@ class PostgresCreditRepository:
     # ---- the runtime boundary (P1-2) ---------------------------------------------------------------------------------
 
     def runtime_privilege_violations(self) -> list[str]:
-        """Every privilege of the connected role that would defeat the financial boundary. Empty means safe."""
+        """Every privilege of the connected role that would defeat the financial boundary, and every privilege it
+        lacks to run a credit transaction. Empty means safe and able."""
 
         checks = {
             "superuser": "SELECT rolsuper FROM pg_roles WHERE rolname = current_user",
@@ -489,8 +490,28 @@ class PostgresCreditRepository:
             for privilege in privileges:
                 checks[f"{privilege.lower()}_{table}"] = (
                     f"SELECT has_table_privilege(current_user, '{table}', '{privilege}')")
+        # What the runtime must hold (review P1-2): membership of the runtime group, and the effective privileges a
+        # credit transaction uses. Without them `ready` would claim an operation that then fails.
+        required = {
+            "missing_runtime_membership": "SELECT pg_has_role(current_user, 'orena_credit_runtime', 'MEMBER')",
+            "missing_select_credit_accounts": "SELECT has_table_privilege(current_user, 'credit_accounts', 'SELECT')",
+            "missing_insert_credit_accounts": "SELECT has_column_privilege(current_user, 'credit_accounts', "
+                                              "'incarnation_id', 'INSERT')",
+            "missing_lock_credit_accounts": "SELECT has_column_privilege(current_user, 'credit_accounts', "
+                                            "'updated_at', 'UPDATE')",
+            "missing_lock_account_incarnations": "SELECT has_any_column_privilege(current_user, 'account_incarnations', "
+                                                 "'UPDATE') AND has_table_privilege(current_user, "
+                                                 "'account_incarnations', 'SELECT')",
+        }
+        for table, privileges in (("credit_ledger", ("SELECT", "INSERT")), ("credit_reversal_requests", ("SELECT", "INSERT")),
+                                  ("billing_reconciliation_items", ("SELECT", "INSERT", "UPDATE"))):
+            for privilege in privileges:
+                required[f"missing_{privilege.lower()}_{table}"] = (
+                    f"SELECT has_table_privilege(current_user, '{table}', '{privilege}')")
         with self._engine.connect() as connection:
-            return [name for name, sql in checks.items() if connection.execute(text(sql)).scalar()]
+            violations = [name for name, sql in checks.items() if connection.execute(text(sql)).scalar()]
+            violations += [name for name, sql in required.items() if not connection.execute(text(sql)).scalar()]
+        return violations
 
 
 def _item(connection: Connection, *, kind: str, dedupe_key: str, now: datetime, reopen: bool = False,

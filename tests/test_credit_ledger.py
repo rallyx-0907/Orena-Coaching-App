@@ -140,7 +140,7 @@ def test_an_adjustment_is_recorded_with_the_administrator_as_actor(client, monke
                        json={"delta": 1, "operation_id": "adjust-0005", "reason": "x y z"}).status_code == 404
 
 
-def test_0032_refuses_clearly_when_it_cannot_create_the_roles(monkeypatch):
+def test_0032_creates_roles_only_as_a_superuser_and_refuses_before_any_ddl(monkeypatch):
     from tests.test_billing import _proposed
 
     migration = _proposed("20261014_0032_credit_ledger")
@@ -160,10 +160,10 @@ def test_0032_refuses_clearly_when_it_cannot_create_the_roles(monkeypatch):
             text = str(statement)
             if "FROM pg_roles WHERE rolname = :r" in text:
                 return Result(None)  # the roles are absent
-            return Result(False)  # and the executor has neither superuser nor CREATEROLE
+            return Result(False)  # and the executor is not a superuser (CREATEROLE alone is not supported)
 
     created = []
     monkeypatch.setattr(migration.op, "execute", lambda sql: created.append(sql), raising=False)
-    with pytest.raises(RuntimeError, match="CREATEROLE"):
-        migration._roles(Connection())
+    with pytest.raises(RuntimeError, match="only as a superuser"):
+        migration._prerequisites(Connection(), "s", '"s"')
     assert created == []

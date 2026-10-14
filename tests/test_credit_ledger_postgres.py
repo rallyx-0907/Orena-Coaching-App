@@ -609,3 +609,158 @@ def test_the_snapshot_function_is_security_definer_with_a_fixed_search_path(ledg
     privileges = ledger.sql("SELECT has_function_privilege(:r, :f, 'EXECUTE') AS can", r=ledger.role,
                             f=f"{ledger.schema}.credit_apply_entry()")
     assert privileges[0]["can"] is False
+
+
+# ---- implementation review P1s (2026-10-14) ----------------------------------------------------------------------------
+
+def _login(admin, name, password):
+    from sqlalchemy import text
+
+    with admin.begin() as connection:
+        connection.execute(text(f"CREATE ROLE {name} LOGIN PASSWORD '{password}' NOSUPERUSER NOBYPASSRLS"))
+
+
+def _engine_as(name, password, schema):
+    from sqlalchemy import create_engine
+    from sqlalchemy.engine import make_url
+
+    separator = "&" if "?" in URL else "?"
+    url = make_url(f"{URL}{separator}options={quote(f'-csearch_path={schema}')}").set(username=name, password=password)
+    return create_engine(url, future=True)
+
+
+def _head(engine):
+    from alembic import command
+    from alembic.config import Config
+
+    cfg = Config(str(ROOT / "alembic.ini"))
+    cfg.set_main_option("script_location", str(ROOT / "migrations"))
+    cfg.set_main_option("path_separator", "os")
+    cfg.set_main_option("sqlalchemy.url", engine.url.render_as_string(hide_password=False).replace("%", "%%"))
+    command.upgrade(cfg, "head")
+
+
+def test_p1_1_a_non_superuser_executor_with_provisioned_roles_runs_0032_and_its_downgrade(ledger):
+    from sqlalchemy import text
+
+    executor, password = f"orena_exec_{uuid.uuid4().hex[:8]}", uuid.uuid4().hex
+    schema = f"credit_{uuid.uuid4().hex[:10]}"
+    _login(ledger.admin, executor, password)
+    ledger.sql(f'CREATE SCHEMA "{schema}" AUTHORIZATION {executor}', engine=ledger.admin)
+    engine = _engine_as(executor, password, schema)
+    try:
+        _head(engine)  # the whole chain, as the non-superuser that owns the schema
+        _migrate(engine, MIGRATIONS[:2])
+        # not yet able to act as the owner role: refused before any credit DDL
+        with pytest.raises(RuntimeError, match="WITH SET"):
+            _migrate(engine, (MIGRATIONS[2],))
+        assert ledger.sql("SELECT to_regclass(:t) AS t", t=f'"{schema}".credit_accounts')[0]["t"] is None
+        ledger.sql(f"GRANT orena_credit_owner TO {executor}", engine=ledger.admin)  # provisioned out of band
+        _migrate(engine, (MIGRATIONS[2],))
+        owners = ledger.sql("SELECT tablename, tableowner FROM pg_tables WHERE schemaname = :s AND tablename LIKE 'credit_%'",
+                            s=schema)
+        assert {row["tableowner"] for row in owners} == {"orena_credit_owner"} and len(owners) == 3
+        _migrate(engine, (MIGRATIONS[2],), "downgrade")  # an empty schema goes down in this mode too
+        assert ledger.sql("SELECT to_regclass(:t) AS t", t=f'"{schema}".credit_ledger')[0]["t"] is None
+        assert ledger.sql("SELECT count(*) AS n FROM pg_roles WHERE rolname = 'orena_credit_owner'")[0]["n"] == 1
+        _migrate(engine, (MIGRATIONS[2],))  # and up again
+        with engine.connect() as connection:
+            assert connection.execute(text("SELECT count(*) FROM credit_accounts")).scalar() == 0
+    finally:
+        engine.dispose()
+        ledger.sql(f'DROP SCHEMA "{schema}" CASCADE', engine=ledger.admin)
+        ledger.sql(f"DROP OWNED BY {executor}", engine=ledger.admin)
+        ledger.sql(f"DROP ROLE {executor}", engine=ledger.admin)
+
+
+def test_p1_1_an_existing_role_that_is_not_safe_is_refused_before_any_ddl(ledger):
+    from sqlalchemy import create_engine
+
+    schema = f"credit_{uuid.uuid4().hex[:10]}"
+    separator = "&" if "?" in URL else "?"
+    engine = create_engine(f"{URL}{separator}options={quote(f'-csearch_path={schema}')}", future=True)
+    ledger.sql(f'CREATE SCHEMA "{schema}"', engine=ledger.admin)
+    try:
+        _head(engine)
+        _migrate(engine, MIGRATIONS[:2])
+        for unsafe, restore in (("LOGIN", "NOLOGIN"), ("BYPASSRLS", "NOBYPASSRLS")):
+            ledger.sql(f"ALTER ROLE orena_credit_owner {unsafe}", engine=ledger.admin)
+            try:
+                with pytest.raises(RuntimeError, match="NOLOGIN, NOSUPERUSER and NOBYPASSRLS"):
+                    _migrate(engine, (MIGRATIONS[2],))
+            finally:
+                ledger.sql(f"ALTER ROLE orena_credit_owner {restore}", engine=ledger.admin)
+            assert ledger.sql("SELECT to_regclass(:t) AS t", t=f'"{schema}".credit_accounts')[0]["t"] is None
+        ledger.sql("GRANT orena_credit_owner TO orena_credit_runtime", engine=ledger.admin)
+        try:
+            with pytest.raises(RuntimeError, match="must not be a member"):
+                _migrate(engine, (MIGRATIONS[2],))
+        finally:
+            ledger.sql("REVOKE orena_credit_owner FROM orena_credit_runtime", engine=ledger.admin)
+    finally:
+        engine.dispose()
+        ledger.sql(f'DROP SCHEMA "{schema}" CASCADE', engine=ledger.admin)
+
+
+def test_p1_2_a_harmless_role_without_runtime_membership_is_not_ready_until_it_is_a_member(ledger):
+    from writing_coach.billing.credits import CreditService
+    from writing_coach.persistence.credit_repository import PostgresCreditRepository
+
+    incarnation = ledger.account()
+    name, password = f"orena_lonely_{uuid.uuid4().hex[:8]}", uuid.uuid4().hex
+    _login(ledger.admin, name, password)
+    ledger.sql(f'GRANT USAGE ON SCHEMA "{ledger.schema}" TO {name}')
+    ledger.sql(f"GRANT SELECT, INSERT, UPDATE ON account_incarnations, users TO {name}")
+    engine = _engine_as(name, password, ledger.schema)
+    try:
+        lonely = CreditService(PostgresCreditRepository(engine))
+        status = lonely.status()
+        assert status["ready"] is False and "missing_runtime_membership" in status["violations"]
+        assert not ({"superuser", "bypassrls", "member_of_owner", "create_on_schema"} & set(status["violations"]))
+        refused_topup = lonely.topup(incarnation, amount=10, source_type="billing_order", source_ref="payos:lonely")
+        assert refused_topup.status == "credits_runtime_privileged"
+        assert ledger.sql("SELECT count(*) AS n FROM credit_ledger")[0]["n"] == 0  # refused before any mutation
+        ledger.sql(f"GRANT orena_credit_runtime TO {name}")
+        member = CreditService(PostgresCreditRepository(engine))  # a fresh check, not the cached answer
+        assert member.status() == {"runtime_privileges": "ok", "violations": [], "ready": True}
+        assert member.topup(incarnation, amount=10, source_type="billing_order", source_ref="payos:lonely").status == "applied"
+    finally:
+        engine.dispose()
+        ledger.sql(f"DROP OWNED BY {name}", engine=ledger.admin)
+        ledger.sql(f"DROP ROLE {name}", engine=ledger.admin)
+
+
+@pytest.mark.parametrize("kind", ["topup", "reserve"])
+def test_p1_3_a_direct_insert_waits_for_a_deletion_and_then_fails(ledger, kind):
+    incarnation, _ = ledger.funded(50) if kind == "reserve" else (ledger.account(), None)
+    account = ledger.balance(incarnation)["id"]
+    before = ledger.balance(incarnation)
+    entries = ledger.sql("SELECT count(*) AS n FROM credit_ledger WHERE credit_account_id = :a", a=account)[0]["n"]
+    outcome = {}
+
+    def insert():
+        try:
+            if kind == "topup":
+                direct(ledger, account, "topup", 10, 0, 10, source=f"payos:race-{uuid.uuid4()}")
+            else:
+                direct(ledger, account, "reserve", 0, 10, 10, expires=datetime.now(UTC) + timedelta(minutes=5))
+            outcome["result"] = "inserted"
+        except Exception as error:  # noqa: BLE001 - the refusal is the expected outcome
+            outcome["result"] = str(error)
+
+    deletion = ledger.owner.connect()
+    transaction = deletion.begin()
+    deletion.execute(ledger.text("UPDATE account_incarnations SET status = 'deleted', deleted_at = now() WHERE id = :id"),
+                     {"id": incarnation})  # locked and changed, not committed
+    worker = threading.Thread(target=insert)
+    worker.start()
+    worker.join(timeout=2.0)
+    assert worker.is_alive(), "the insert must wait behind the deletion's incarnation lock"
+    transaction.commit()
+    deletion.close()
+    worker.join(timeout=10)
+    assert "deleted account" in outcome["result"]
+    assert ledger.balance(incarnation)["posted"] == before["posted"]
+    assert ledger.balance(incarnation)["reserved"] == before["reserved"]
+    assert ledger.sql("SELECT count(*) AS n FROM credit_ledger WHERE credit_account_id = :a", a=account)[0]["n"] == entries
+    no_drift(ledger)

@@ -17,8 +17,14 @@ Credits are an integer count of credit units; what a unit is worth is a human de
 
 The write boundary is a database privilege (P1-2): the tables and functions belong to the NOLOGIN
 `orena_credit_owner`; the runtime is a member of `orena_credit_runtime`, which cannot UPDATE the snapshot columns or
-UPDATE/DELETE/TRUNCATE the ledger and requests. Roles are created when absent, which needs a superuser or CREATEROLE
-executor; otherwise they must be provisioned out of band, and this migration says so before any DDL.
+UPDATE/DELETE/TRUNCATE the ledger and requests. Two supported executor modes, both checked before any credit DDL
+(implementation review P1-1):
+- a **superuser** creates the roles when absent;
+- a **non-superuser** requires them provisioned out of band, and must be a member of `orena_credit_owner` with the SET
+  option (to transfer ownership); `orena_credit_owner` must hold CREATE on the schema, which this migration grants when
+  the executor owns the schema.
+Either way the existing roles are validated: both NOLOGIN, NOSUPERUSER, NOBYPASSRLS, and the runtime group is not a
+member of the owner. Anything else fails before DDL.
 
 Review and gate. A PROPOSAL in `migrations/proposed/` (Alembic does not read it). Order 0027 -> 0031 -> 0032, never
 promoted ahead of 0031 (H1). Startup never applies it. `downgrade()` refuses while any credit row or credit item
@@ -166,27 +172,50 @@ CREDIT_ITEM_CHECKS = [
 ]
 
 
-def _roles(connection) -> None:
-    """The two roles, created when absent; a migration that cannot create them says so before any DDL."""
+def _superuser(connection) -> bool:
+    return bool(connection.execute(sa.text("SELECT rolsuper FROM pg_roles WHERE rolname = current_user")).scalar())
 
+
+def _prerequisites(connection, schema: str, q: str) -> None:
+    """The roles and the executor's capability, validated before any credit DDL; fails closed (P1-1)."""
+
+    superuser = _superuser(connection)
     missing = [role for role in (OWNER, RUNTIME)
                if not connection.execute(sa.text("SELECT 1 FROM pg_roles WHERE rolname = :r"), {"r": role}).first()]
-    if not missing:
+    if missing:
+        if not superuser:
+            raise RuntimeError(f"0032 creates {', '.join(missing)} only as a superuser; otherwise provision them out of "
+                               "band (NOLOGIN NOSUPERUSER NOBYPASSRLS) and make the executor a member of "
+                               f"{OWNER} WITH SET")
+        for role in missing:
+            op.execute(f"CREATE ROLE {role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS")
+    for role in (OWNER, RUNTIME):
+        login, super_, bypass = connection.execute(sa.text(
+            "SELECT rolcanlogin, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = :r"), {"r": role}).one()
+        if login or super_ or bypass:
+            raise RuntimeError(f"{role} must be NOLOGIN, NOSUPERUSER and NOBYPASSRLS; 0032 does not use it as it is")
+    if connection.execute(sa.text("SELECT pg_has_role(:runtime, :owner, 'MEMBER')"),
+                          {"runtime": RUNTIME, "owner": OWNER}).scalar():
+        raise RuntimeError(f"{RUNTIME} must not be a member of {OWNER}")
+    if superuser:
         return
-    can_create = connection.execute(sa.text(
-        "SELECT rolsuper OR rolcreaterole FROM pg_roles WHERE rolname = current_user")).scalar()
-    if not can_create:
-        raise RuntimeError(f"0032 needs a superuser or CREATEROLE executor to create {', '.join(missing)}; "
-                           "otherwise provision these NOLOGIN roles out of band first")
-    for role in missing:
-        op.execute(f"CREATE ROLE {role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS")
+    if not connection.execute(sa.text("SELECT pg_has_role(current_user, :owner, 'SET')"), {"owner": OWNER}).scalar():
+        raise RuntimeError(f"a non-superuser executor must be a member of {OWNER} WITH SET to transfer ownership")
+    if not connection.execute(sa.text("SELECT has_schema_privilege(:owner, :schema, 'CREATE')"),
+                              {"owner": OWNER, "schema": schema}).scalar():
+        owns_schema = connection.execute(sa.text(
+            "SELECT pg_get_userbyid(nspowner) = current_user FROM pg_namespace WHERE nspname = :schema"),
+            {"schema": schema}).scalar()  # fmt: skip
+        if not owns_schema:
+            raise RuntimeError(f"{OWNER} needs CREATE on schema {schema}, and the executor does not own it to grant it")
+        op.execute(f"GRANT CREATE ON SCHEMA {q} TO {OWNER}")  # the new owner of a table needs CREATE on its schema
 
 
 def upgrade() -> None:
     connection = op.get_bind()
     schema = connection.execute(sa.text("SELECT current_schema()")).scalar()
     q = '"' + schema.replace('"', '""') + '"'
-    _roles(connection)
+    _prerequisites(connection, schema, q)
 
     # ---- credit_accounts ---------------------------------------------------------------------------------------
     op.create_table(
@@ -301,15 +330,19 @@ def upgrade() -> None:
             acct {q}.credit_accounts%ROWTYPE;
             ref {q}.credit_ledger%ROWTYPE;
             req {q}.credit_reversal_requests%ROWTYPE;
+            inc_id uuid;
             inc_status text;
             total bigint;
         BEGIN
-            SELECT * INTO acct FROM {q}.credit_accounts WHERE id = NEW.credit_account_id FOR UPDATE;
+            -- One lock order, the repository's (review P1-3): the incarnation FOR SHARE, which waits for and then
+            -- excludes a concurrent deletion, then the credit account FOR UPDATE.
+            SELECT incarnation_id INTO inc_id FROM {q}.credit_accounts WHERE id = NEW.credit_account_id;
             IF NOT FOUND THEN
                 RAISE EXCEPTION 'unknown credit account' USING ERRCODE = 'foreign_key_violation';
             END IF;
+            SELECT status INTO inc_status FROM {q}.account_incarnations WHERE id = inc_id FOR SHARE;
+            SELECT * INTO acct FROM {q}.credit_accounts WHERE id = NEW.credit_account_id FOR UPDATE;
             IF NEW.kind IN ('topup', 'reserve', 'settle') THEN
-                SELECT status INTO inc_status FROM {q}.account_incarnations WHERE id = acct.incarnation_id;
                 IF inc_status IS DISTINCT FROM 'active' THEN
                     RAISE EXCEPTION 'a deleted account takes no new credit, hold or charge' USING ERRCODE = 'check_violation';
                 END IF;
@@ -367,6 +400,8 @@ def upgrade() -> None:
             topup {q}.credit_ledger%ROWTYPE;
             reversed bigint;
         BEGIN
+            PERFORM 1 FROM {q}.account_incarnations i JOIN {q}.credit_accounts a ON a.incarnation_id = i.id
+                WHERE a.id = NEW.credit_account_id FOR SHARE OF i;  -- the same lock order (P1-3)
             SELECT * INTO acct FROM {q}.credit_accounts WHERE id = NEW.credit_account_id FOR UPDATE;
             SELECT * INTO topup FROM {q}.credit_ledger WHERE id = NEW.topup_entry_id;
             IF NOT FOUND OR topup.kind <> 'topup' OR topup.credit_account_id <> NEW.credit_account_id THEN
@@ -441,7 +476,9 @@ def upgrade() -> None:
     op.execute(f"REVOKE CREATE ON SCHEMA {q} FROM PUBLIC")
     op.execute(f"GRANT USAGE ON SCHEMA {q} TO {OWNER}, {RUNTIME}")
     op.execute(f"REVOKE CREATE ON SCHEMA {q} FROM {RUNTIME}")
-    op.execute(f"GRANT SELECT ON {q}.account_incarnations TO {OWNER}")  # the deleted-account check in the trigger
+    # The trigger reads an incarnation's status under FOR SHARE (P1-3). A row lock needs UPDATE on at least one
+    # column; `created_at` is granted for that alone - no function of the owner updates an incarnation.
+    op.execute(f"GRANT SELECT, UPDATE (created_at) ON {q}.account_incarnations TO {OWNER}")
     for table in ("credit_accounts", "credit_ledger", "credit_reversal_requests"):
         op.execute(f"ALTER TABLE {q}.{table} OWNER TO {OWNER}")
         op.execute(f"REVOKE ALL ON {q}.{table} FROM PUBLIC")
@@ -483,6 +520,8 @@ def downgrade() -> None:
                      "credit_account_guard()"):
         op.execute(f"DROP FUNCTION {q}.{function}")
     op.execute(f"REVOKE ALL ON SCHEMA {q} FROM {OWNER}, {RUNTIME}")
+    if not _superuser(connection):
+        return  # provisioned out of band: the roles stay with whoever provisioned them
     # Roles are cluster-wide: dropped only when nothing anywhere still depends on them.
     for role in (RUNTIME, OWNER):
         op.execute(f"""DO $$ BEGIN
