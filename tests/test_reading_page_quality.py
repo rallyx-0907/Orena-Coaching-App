@@ -236,3 +236,44 @@ def test_the_tightened_rules_read_structure_and_size_only():
     # A long body on a structureless page is never an index by size alone.
     assert "index_page" not in quality_flags(body="字" * 900, language="zh", facts={"no_article_structure": True})
     assert "index_page" in quality_flags(body="字" * 200, language="zh", facts={"no_article_structure": True})
+
+
+# ---- review conditions (PR #163): the structural path and the accepted false-positive class -----------------
+_ZH_PARA = "历史学者在雅典的演说中谈到了西方文明与现代政治之间的关系，他认为民主制度的根基来自公民对公共事务的长期参与。" * 3
+
+
+def test_a_player_page_that_fell_back_to_whole_page_extraction_is_a_media_page():
+    html = (
+        "<html><head><title>节目</title></head><body><div class='media-player'><video src='/v.mp4'></video></div>"
+        "<div><a href='/a/1'>标题一</a></div><div><a href='/a/2'>标题二</a></div>"
+        f"<div><p>{_ZH_PARA[:150]}</p></div></body></html>"
+    )
+    page = extract_article(html, "https://example.org/p/1.html")
+    assert page.page_facts["media_player"] and page.page_facts["no_semantic_container"]
+    assert "media_page" in quality_flags(
+        body=page.body, language="zh", title=page.title, confidence=page.confidence, facts=page.page_facts)
+
+
+def test_accepted_false_positive_a_short_single_paragraph_article_on_a_div_only_page_needs_an_override():
+    # Documented behaviour (D-191, 2026-10-14): no article element + one short paragraph = hard `index_page`.
+    html = f"<html><head><title>简讯</title></head><body><div><h1>简讯</h1><div><p>{_ZH_PARA[:150]}</p></div></div></body></html>"
+    page = extract_article(html, "https://example.org/news/brief.html")
+    assert page.page_facts["no_article_structure"]
+    assert "index_page" in quality_flags(
+        body=page.body, language="zh", title=page.title, confidence=page.confidence, facts=page.page_facts)
+
+
+def test_accepted_false_positive_a_mid_length_article_with_a_video_in_a_plain_div_needs_an_override():
+    html = (
+        "<html><head><title>报道</title></head><body><div><h1>报道</h1><video src='/v.mp4'></video>"
+        f"<p>{_ZH_PARA}</p><p>{_ZH_PARA}</p></div></body></html>"
+    )
+    page = extract_article(html, "https://example.org/news/report.html")
+    assert 260 <= page.units < 600
+    assert "media_page" in quality_flags(
+        body=page.body, language="zh", title=page.title, confidence=page.confidence, facts=page.page_facts)
+    # The same article inside an <article> element is not blocked.
+    page = extract_article(html.replace("<div><h1>", "<article><h1>").replace("</p></div>", "</p></article>"),
+                           "https://example.org/news/report.html")
+    assert "media_page" not in quality_flags(
+        body=page.body, language="zh", title=page.title, confidence=page.confidence, facts=page.page_facts)

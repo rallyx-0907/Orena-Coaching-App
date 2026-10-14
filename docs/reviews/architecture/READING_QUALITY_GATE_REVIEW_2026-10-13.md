@@ -124,3 +124,83 @@ no article or main element and a body under 600 Hanzi / 200 words (new extractor
 changes the publish lifecycle (more items refused without an override), so a fresh independent architecture review of
 the PR is required before D-191 returns to ACCEPTED. Review points: false-positive risk of the size limits on short
 genuine pages that lack an article element, and that stored items are not re-evaluated.
+
+# Architecture review: PR #163, reading-quality/3
+
+Reviewer: Claude Opus 5.5, Delegated Architecture Reviewer (independent of the implementer)
+Commit reviewed: 8055ddbc (base main d55526a2)   Date: 2026-10-14
+Method: read-only (git diff/show, file reads). Tests were not run by the reviewer.
+
+## Verdict: APPROVED WITH CONDITIONS
+
+Conditions
+1. CI aggregate `test` green on 8055ddbc before merge. At review time `gh pr checks 163`: changes pass, node-gates pass,
+   python-gates / pytest / docker-build pending. No CI PASS claim is made here.
+2. Add an attribution README to `tests/fixtures/reading_quality/` (P1-1 below).
+3. Record this review in D-191 (as done for the earlier review).
+
+## Findings
+
+P0: none.
+
+P1-1 Fixture licensing/attribution. 7 files, 660 KB, third-party HTML.
+- VOA (4 articles/pages) and NASA: US-government works, public domain. OK. VOA articles quote wire reports in
+  passing (e.g. voa_zh_article_8210116.html:629 cites 路透社 reporting); those are attributed paraphrase in a VOA
+  staff article, not wire text copied wholesale. Low risk.
+- global_voices_article.html is CC BY 3.0 (the page itself carries the licence badge, line 172-173, and the footer
+  licence text). CC BY requires attribution; the saved page keeps the byline and licence link inside the HTML, which
+  arguably satisfies it, but there is no README and the directory does not state source URL, author, licence or
+  retrieval date. Add `tests/fixtures/reading_quality/README.md` listing each file: source URL, publisher,
+  licence (public domain US-gov / CC BY 3.0 with author + link), retrieval date, and why it is kept. Keep the
+  files; shrinking is optional.
+- Size: 660 KB of text in a repo with 2481 files in the base-to-HEAD stat (lane drift), so negligible. A shrink
+  to the semantic skeleton would make tests less faithful to the real extractor input; not recommended.
+
+P2-1 False-positive surface of `teasers_only` (reading_page_quality.py:~202). `no_article_structure` is true only
+when `few_prose_paragraphs` (<2 prose paragraphs) AND (`no_article_or_main_element` OR `fallback_to_whole_page`)
+(reading_article_extraction.py:698-700). So a genuine short single-paragraph item (a 300-Hanzi brief or a short
+notice) on a div-only site now becomes a hard `index_page` where before it was clean. Mitigations exist: it needs
+BOTH signals, any article/main/role=main wrapper exempts it, and hard codes are overridable with an audited reason.
+Acceptable, but D-191 should say so explicitly ("short single-paragraph pages without an article element need an
+override"). Consider a negative test for exactly that shape (one 300-Hanzi paragraph in a plain div) documenting the
+accepted behaviour; the current negative tests only cover long bodies and real multi-paragraph articles.
+
+P2-2 `no_semantic_container` is derived as `"no_article_or_main_element" in reasons`, which is appended only when
+`method == "dominant_container" and not semantic` (extraction ~line 666). On `page_fallback` or other methods the fact
+is False, so a player page that fell back to whole-page extraction is NOT caught by the new media rule (it may still be
+caught by the index rule if few prose paragraphs). Name and docstring ("body came from a plain container") are slightly
+broader than behaviour. Not a regression; note it in the comment, or derive from `not semantic` directly if the
+intent is "no semantic ancestor" regardless of method.
+
+P2-3 The 600/200 media limit versus the older 260/60: a short genuine article that embeds a video and sits in a
+plain div (no article/main) with 260-600 Hanzi is now hard-blocked. Same override path; same note as P2-1.
+
+## Answers to the review questions
+
+1. Correctness. Logic is additive and monotone: new flags only add hard codes under conjunctions of structure facts
+   and size; thresholds sit below the shortest genuine evidence (VOA 785 / 1390 Hanzi, NASA 589 / GV 1686 words).
+   The fact is computed inside `extract_article`, the single extraction function; the only production caller found is
+   `reading_source_import.py:335`, which serves URL, poller and job intake, and `ExtractedArticle.metadata()` stores
+   `page_facts` for all of them (lines 308-309). Admission reads facts with `(extraction or {}).get("page_facts")` and
+   `quality_flags` uses `facts.get(...)`, so a missing key (older rows, pasted text) is falsy and safe: no new flag,
+   no exception. Pasted/legacy items without facts are simply unaffected.
+2. EXTRACTOR_VERSION. Strictly the extraction output changed (a new key in page_facts), so a bump to article-extract/5
+   would be the pure-provenance answer, and stored rows would then be distinguishable as having/lacking the fact.
+   Not bumping is defensible: nothing in the repo compares `extractor_version` for caching or invalidation (only
+   written at line 291 and asserted equal to "article-extract/4" in tests/test_reading_article_extraction.py:381 and
+   tests/test_reading_source_cleanup.py:254), and `QUALITY_VERSION` records the rule change. Consequence if bumped:
+   those two assertions must change (an edit, not a weakening). Recommendation: acceptable as is; prefer a bump only
+   if the team wants to tell rows with the fact from rows without. The backlog checker
+   (`scripts/check_reading_quality_backlog.py`) recomputes from stored facts, so rows stored with page_facts but
+   without `no_semantic_container` will not be re-judged by the new media rule, and `teasers_only` WILL apply to
+   stored rows that have `no_article_structure`. That asymmetry is consistent with "stored items are not
+   re-evaluated" only partly: the checker can surface index-type rows newly. Worth one sentence in D-191.
+3. Tests. Diff of tests/test_reading_page_quality.py is purely additive (+48, 0 deletions); no assertion weakened.
+   Positives: /p/6197 -> index_page, /p/9647 -> media_page, /z/1741 still index_page. Negatives: two VOA 中文
+   articles, NASA, Global Voices all `== []` (strictest form). Unit test covers both sides of the
+   `no_semantic_container` switch and the size cutoff. Gap: no short-genuine-single-paragraph case (P2-1).
+4. See P1-1.
+5. D-191 amendment: accurate against the code (400/150, 600/200, no source name, stored items not re-evaluated,
+   re-review required). Slight overstatement: "stored items are not re-evaluated" is true for admission but the
+   backlog checker can re-judge them (see 2). Addendum in READING_QUALITY_GATE_REVIEW_2026-10-13.md is accurate.
+6. `gh pr checks 163` (single call): changes pass 9s; node-gates pass 13s; docker-build, pytest, python-gates pending.

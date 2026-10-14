@@ -6182,5 +6182,15 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    "player markup, no article or main element (`no_semantic_container`) and a body under 600 Hanzi / 200 words". No source
    name is used; the limits sit below the shortest genuine article of the evidence set. Real VOA 中文, NASA and Global
    Voices articles stay clean (fixtures in `tests/fixtures/reading_quality/`). This changes the publish lifecycle, so it
-   **requires an independent re-review** before the entry returns to ACCEPTED; items stored before this change are not
-   re-evaluated.
+   **requires an independent re-review** before the entry returns to ACCEPTED.
+   Known false-positive class, accepted: a genuine short single-paragraph page with no article or main element
+   (`index_page`), or a 260-600 Hanzi / 60-200 word article with an embedded player in a plain div (`media_page`), is
+   hard-flagged and needs the audited `quality_override` with a reason; the same page inside `<article>` or `<main>` is
+   not blocked. `no_semantic_container` is derived from the real absence of an article or main element for every
+   extraction method, so a player page that fell back to whole-page extraction is caught too. Tests pin both cases.
+   Stored rows: `scripts/check_reading_quality_backlog.py` recomputes from stored facts, so rows with
+   `no_article_structure` may newly show `index_page`; rows without the new `no_semantic_container` fact are not
+   caught by the media rule.
+   Review of 8055ddbc: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer: APPROVED WITH
+   CONDITIONS (CI green before merge; fixture attribution README; this entry). Addendum in
+   `docs/reviews/architecture/READING_QUALITY_GATE_REVIEW_2026-10-13.md`.
