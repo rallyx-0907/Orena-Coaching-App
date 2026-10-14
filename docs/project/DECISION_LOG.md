@@ -6174,3 +6174,28 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    Re-review after the merge with D-190 (2026-10-14): Delegated Architecture Reviewer, Claude Opus 5.5, independent of the
    implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
    confirmations are proven independent by route-level tests.
+
+## D-18X - Reading publisher: the learner-facing name is separate from the internal source name (2026-10-14)
+
+**Status: PROPOSED** (number to be assigned at merge). Refines D-189/D-190. Lane B item 2 of Reading Production Readiness.
+
+Problem: learners saw the admin's bookkeeping name as the publisher ("Global Voices (English) RSS - trial", "QA NASA news
+releases (RSS)", "Direct URL"), in the Reader meta, Discover, Content Detail, the source footnote and `/api/licences`.
+
+1. **Storage, no migration.** The source's learner-facing `public_name` lives in the existing `reading_sources.polling_policy`
+   JSON (key `public_name`; that column held only `{}`). A dedicated column was not needed; if the policy column is ever
+   given a real polling schema, move the key then (that would be a schema change needing independent review).
+2. **One pure function** (`reading_provenance.resolve_publisher`) returns `(publisher, via)`. The internal source `name`
+   is never an input. The site the text came from is, in order: the source `public_name`; for a built-in path
+   (manual/URL/file) only, the name typed for that text; the page's `og:site_name`; the cleaned host of the item address
+   (`voachinese.com`). The built-in labels ("Direct URL", "Manual paste", "File upload") and anything containing an address are
+   never a name. Nothing known gives an empty publisher, which the D-190 gate reports as a missing credit.
+3. **Republications.** When extraction provenance records a republication that names its original publisher, that
+   publisher is the credit and the site is `via`: "Originally published by Radio Free Asia via Global Voices". The credit
+   link and licence stay the item's own (the republisher's page). Only the publisher is drawn by clients today; `via` is
+   carried in `provenance` and in `text`.
+4. **Every learner payload** (list, detail, Discover, Content Detail, footnote, `/api/licences` text and source rows) reads
+   the resolved name; the admin lists keep the internal name. Changing a source's public name moves `content_revision` of its
+   published texts in the same transaction (D-190 follow-up P2-2).
+5. **Admin.** `POST /api/admin/reading/sources/{id}/public-name`, a "Public name" field on the register form and on the
+   source page. The pinned `Orena Admin.dc.html` draws no such field (`UI_BACKEND_GAPS.md`).

@@ -312,12 +312,20 @@ class SourceBody(BaseModel):
     name: str = Field(min_length=1, max_length=240)
     source_type: str = Field(min_length=1, max_length=20)
     base_url: str = Field(default="", max_length=600)
+    public_name: str = Field(default="", max_length=120)
     languages: list[str] = Field(default_factory=list)
     automation_allowed: bool = False
     can_republish: bool = False
     can_adapt: bool = False
     attribution_required: bool = True
     license_note: str = Field(default="", max_length=2000)
+
+
+class SourcePublicNameBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The name learners see as the publisher. Empty clears it (the site name or host stands in).
+    public_name: str = Field(default="", max_length=120)
 
 
 class SourceStateBody(BaseModel):
@@ -455,10 +463,27 @@ def create_source(request: Request, response: Response, payload: SourceBody) -> 
                 "license_note": payload.license_note,
             },
             created_by=_actor(admin),
+            public_name=payload.public_name.strip(),
         )
     )
     _audit(admin, "admin.reading_source_created", entity_type="reading_source", entity_id=source["id"],
            payload={"slug": source["slug"], "source_type": source["source_type"]})
+    return source
+
+
+@router.post("/sources/{source_id}/public-name")
+def set_source_public_name(
+    request: Request, response: Response, source_id: str, payload: SourcePublicNameBody
+) -> dict[str, Any]:
+    """The publisher name learners see for this source's texts (D-192, proposed)."""
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    source = _guarded(lambda: _content().set_source_public_name(source_id, payload.public_name.strip()))
+    if source is None:
+        raise orena_http_error(404, "reading_source_not_found", "That source is not in the registry.")
+    _audit(admin, "admin.reading_source_public_name", entity_type="reading_source", entity_id=source_id,
+           payload={"public_name": source["public_name"]})
     return source
 
 

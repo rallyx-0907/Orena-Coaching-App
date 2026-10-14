@@ -18,6 +18,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 from typing import Any
+from urllib.parse import urlsplit
 
 _URL = re.compile(r"https?://[^\s<>\"')\]]+", re.IGNORECASE)
 _EDGE = " \t\r\n-–—:;,.|/()[]"
@@ -80,22 +81,102 @@ def attribution_state(rights: Mapping[str, Any] | None) -> str:
     return "required" if answered["attribution_required"] else "not_required"
 
 
+# The names of the built-in input paths. They are admin bookkeeping, never a publisher.
+INTERNAL_SOURCE_NAMES = frozenset({"direct url", "manual paste", "file upload"})
+MAX_PUBLISHER = 120
+PUBLIC_NAME_KEY = "public_name"
+
+
+def _name(value: Any) -> str:
+    """A name safe to show: one line, bounded, no address, and not a built-in label."""
+    cleaned = " ".join(_text(value).split()).strip(_EDGE)[:MAX_PUBLISHER].strip()
+    if not cleaned or _URL.search(cleaned) or cleaned.casefold() in INTERNAL_SOURCE_NAMES:
+        return ""
+    return cleaned
+
+
+def public_name_of(policy: Any) -> str:
+    """The source's configured learner-facing name, kept in its `polling_policy` JSON
+    (that column holds no other key today, so no migration is needed)."""
+    return _name(policy.get(PUBLIC_NAME_KEY)) if isinstance(policy, Mapping) else ""
+
+
+def host_name(url: Any) -> str:
+    """A cleaned host for an address with nothing better: `voachinese.com`, never the path."""
+    host = (urlsplit(_text(url)).hostname or "").lower()
+    for prefix in ("www.", "m.", "amp."):
+        host = host.removeprefix(prefix)
+    return host if "." in host else ""
+
+
+def original_publisher_of(extraction: Any) -> str:
+    """The publisher a republication names ("originally published by ..."), from the
+    extraction provenance kept with the item (reading_source_cleanup)."""
+    entries = extraction.get("provenance") if isinstance(extraction, Mapping) else None
+    for entry in entries if isinstance(entries, list) else []:
+        if isinstance(entry, Mapping) and entry.get("kind") == "republication":
+            name = _name(entry.get("original_publisher"))
+            if name:
+                return name
+    return ""
+
+
+def resolve_publisher(
+    *,
+    extraction: Any = None,
+    public_name: Any = "",
+    entered_name: Any = "",
+    built_in: bool = False,
+    url: Any = "",
+) -> tuple[str, str]:
+    """The publisher a learner sees, and the site it came through (D-192, proposed).
+
+    The internal source name (what an administrator calls the source: "QA NASA news
+    releases (RSS)", "Direct URL") is never an input. The site the text came from is, in order:
+
+    1. the source's configured public name;
+    2. for a built-in path (manual, URL, file) only, the name the administrator typed for this text;
+    3. the page's `og:site_name`;
+    4. the cleaned host of the item's address.
+
+    When the page is a republication that names its original publisher, that publisher is the
+    credit and the site is returned second (`via`): "originally published by X, via Global Voices".
+    Otherwise `via` is empty. Both are empty when nothing is known: a missing credit is reported
+    by the publication gate, never papered over with an internal label.
+    """
+    facts = extraction.get("page_facts") if isinstance(extraction, Mapping) else None
+    site = (
+        _name(public_name)
+        or (_name(entered_name) if built_in else "")
+        or _name(facts.get("site_name") if isinstance(facts, Mapping) else "")
+        or host_name(url)
+    )
+    original = original_publisher_of(extraction)
+    if original:
+        return original, "" if original.casefold() == site.casefold() else site
+    return site, ""
+
+
 def build_provenance(
     *,
     publisher: Any,
     url: Any,
     author: Any,
     rights: Mapping[str, Any] | None,
+    via: Any = "",
 ) -> dict[str, Any]:
     """The credit a learner sees, from the source record and the effective rights."""
     answered = rights if isinstance(rights, Mapping) else {}
     publisher_name = _text(publisher)[:MAX_NAME]
+    via_name = _text(via)[:MAX_NAME]
     original_url = _text(url)[:MAX_URL]
     author_name = _text(author)[:MAX_NAME]
     licence = recognise_license(answered.get("license_note"), answered.get("license_url"))
     text = ""
     if publisher_name:
         text = f"Originally published by {publisher_name}"
+        if via_name:
+            text += f" via {via_name}"
         if author_name and author_name.casefold() != publisher_name.casefold():
             text += f" (by {author_name})"
         if licence["name"]:
@@ -103,6 +184,7 @@ def build_provenance(
         text += "."
     return {
         "publisher": publisher_name,
+        "via": via_name,
         "url": original_url,
         "author": author_name,
         "license": licence,

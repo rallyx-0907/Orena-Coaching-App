@@ -46,7 +46,7 @@ def test_content_credits_come_from_their_owners_and_a_missing_owner_is_empty() -
     payload = licences_payload(
         listening=lambda: [{"title": "A pen", "source": {"title": "VOA clip", "creator": "VOA", "license": "Public domain", "provenance_url": "https://commons.wikimedia.org/x"}}],
         reading_sources=lambda: [
-            {"name": "Open texts", "state": "active", "can_republish": True, "license_note": "CC BY 4.0", "base_url": "https://example.org"},
+            {"name": "Open texts (internal)", "public_name": "Open texts", "state": "active", "can_republish": True, "license_note": "CC BY 4.0", "base_url": "https://example.org"},
             {"name": "Paused", "state": "paused", "can_republish": True, "license_note": "CC BY 4.0", "base_url": "https://p.example"},
         ],
         books=broken,

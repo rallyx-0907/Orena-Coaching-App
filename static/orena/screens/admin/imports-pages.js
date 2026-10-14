@@ -342,6 +342,7 @@ export function sourceFormPage({ form, t, href }) {
       <div class="a-blocks">${formBlock({ span: true,
         fields: [
           { id: 'name', kind: 'text', label: t('impSourceName'), value: form.name, placeholder: t('impSourceNameHint') },
+          { id: 'publicName', kind: 'text', label: t('impSourcePublicName'), value: form.publicName, placeholder: t('impOptional'), hint: t('impSourcePublicNameHint') },
           { id: 'url', kind: 'text', label: t('impSourceHome'), value: form.url, placeholder: 'https://' },
           { id: 'type', kind: 'select', label: t('impSourceType'), options: ['direct_url', 'rss', 'feed', 'api', 'manual', 'file'].map((kind) => ({ id: kind, label: t(`srcType_${kind}`), on: form.type === kind })) },
           { id: 'language', kind: 'seg', label: t('impLanguage'), options: ['en', 'zh'].map((code) => ({ id: code, label: t(code === 'en' ? 'langEn' : 'langZh'), on: form.language === code })) },
