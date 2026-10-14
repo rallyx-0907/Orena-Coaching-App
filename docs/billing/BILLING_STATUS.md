@@ -8,10 +8,10 @@
 | Branch | `feature/monetization-billing-v1` |
 | Main | `1a9e010dff3ed1b7716d2fe41176a5d1974a90a1` (`origin/main`, 2026-10-14): PR-MON-3 merged by the human as #178; the lane branch fast-forwarded onto it |
 | Last completed slice | PR-MON-3 Billing Orders + Reconciliation Safety: design and implementation architecture-APPROVED, CI green on `1f7d5865`, merged to `main` as #178 (`1a9e010d`, 2026-10-14) |
-| Active PR | none. Next: **PR-MON-4 Prepaid Credit Ledger** - PLANNED (needs its own design, review and migration gate) |
-| Current slice | none |
-| Exact next action | on the human's instruction: PR-MON-4 design. Separately, a human gate: promotion and application of the proposed 0027 + 0031 (review/rehearsal/authorization), never automatic; production billing OFF |
-| Blockers | none for code. 0027 + 0031 stay proposed and unapplied (human gate) |
+| Active PR | **PR-MON-4 Prepaid Credit Ledger** - DESIGN, stopped at the architecture review checkpoint (proposes a new financial schema, 0032) |
+| Current slice | PR-MON-4 design + migration plan: `PR-MON-4_DESIGN.md` (data model, invariants I1-I11 with DB backstops, lock order, reserve state machine, refund/reversal, idempotency, deletion, failure matrix C-F1..C-F14, tests/mutations, decisions C1-C7) |
+| Exact next action | independent architecture review of `PR-MON-4_DESIGN.md` and the human's C1-C7; no code before design APPROVE; nothing promoted or applied |
+| Blockers | design review + human decisions C1-C7. 0027 + 0031 (+ the future 0032) stay proposed and unapplied (human gate) |
 | Test status | local only (not CI), `bd572b8e`. SQLite billing targeted: 476 passed, 1 skipped (the wider targeted set, 598 passed, at `1f73d4fa`). Throwaway PostgreSQL 16: 492 run, 491 passed, 1 failed = INHERITED #160. Mutations: 18/18 caught, each by its own guard's test (table in `PR-MON-3_REVIEW_REQUEST.md`) |
 | Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
@@ -22,7 +22,7 @@
 | PR-MON-1 | **Canonical Effective Entitlement**. One resolver with explicit precedence; Product UI, quota admission and entitlement checks all derive from it. No migration, no checkout UI, no provider config, no credits. | MERGED (#153, `aa016dc1`) |
 | PR-MON-2 | **Price Integrity + Runtime Readiness.** One server-side price truth or a strict consistency gate; checkout only at a server-offered price that exactly matches the effective catalogue entry (a mismatch blocks checkout); browser amounts never trusted; `billing_ready` reflects real capability. Closes R-MON-010. | MERGED (#162, `ea68f8a8`) |
 | PR-MON-3 | **Billing Orders + Reconciliation Safety.** Re-review/promote 0027; settle 0028's parent explicitly; abandoned-order expiry; durable payment anomaly/reconciliation state; Polar refund matching where safe; payment-without-entitlement detection. Exact webhook HTTP/retry semantics are designed here, per provider. | MERGED (#178, `1a9e010d`) |
-| PR-MON-4 | **Prepaid Credit Ledger.** Credit account, append-only ledger, idempotent credit/debit/reversal, deterministic balance, never negative. No commercial credit prices. | PLANNED |
+| PR-MON-4 | **Prepaid Credit Ledger.** Credit account, append-only ledger, idempotent credit/debit/reversal, deterministic balance, never negative. No commercial credit prices. | DESIGN (review checkpoint) |
 | PR-MON-5 | **payOS Credit Top-up.** Configured top-up products, checkout, verified webhook, credit exactly once, balance and recent-transactions API. | PLANNED |
 | PR-MON-6 | **Cost-aware entitlement / Free trial / credits fallback.** `included allowance → prepaid credits → refuse`; reserve → dispatch → settle/release for expensive work; no funded entitlement means no paid provider call; configurable new-user promotional allowances (quantities not invented). | PLANNED |
 | PR-MON-7 | **Free AI cost routing.** `deterministic/cache/local/free/cheap → premium` for word meaning, contextual Reading explanation, Writing evaluation and Orena Intelligence. Free stays quota-controlled at zero provider price. | PLANNED |
