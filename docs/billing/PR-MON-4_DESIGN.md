@@ -1,8 +1,14 @@
 # PR-MON-4 Prepaid Credit Ledger — design and migration plan
 
-**State: DESIGN, stopped at the review checkpoint.** There is no code. Nothing is promoted or applied. The plan
-proposes a new financial schema, so an independent architecture review (`AGENTS.md` §1, payment and schema) and the
-human decisions in §13 come before any implementation.
+**State: DESIGN revision 2, with decisions C1-C7 frozen by the human (2026-10-14, on `43a3dedf`).** It is
+awaiting the independent architecture review. There is no code, and nothing is promoted or applied. Migration 0032
+is created only after **APPROVE FOR IMPLEMENTATION**.
+
+Two meanings of "expiry" are kept apart throughout this document (C6):
+
+- **Purchased credit never expires in v1.** No ledger kind, column or job makes a top-up decay or lapse.
+- **A reservation (hold) expires after its TTL** (C7). Closing it is the ledger kind `reserve_expire`, which releases
+  the hold and nothing else.
 
 Inspected on `main` `1a9e010d` on 2026-10-14. PR-MON-3 was merged as #178.
 
@@ -74,7 +80,7 @@ is never negative.
 | `id` | UUID PK | |
 | `credit_account_id` | UUID, FK `credit_accounts` **RESTRICT** | |
 | `seq` | BIGINT, NOT NULL | Per account, gapless, UNIQUE (`credit_account_id`, `seq`). |
-| `kind` | VARCHAR(20) | One of `topup`, `reserve`, `settle`, `release`, `expire`, `refund`, `reversal`, `adjustment` (CHECK). |
+| `kind` | VARCHAR(20) | One of `topup`, `reserve`, `settle`, `release`, `reserve_expire`, `refund`, `reversal`, `adjustment` (CHECK). |
 | `posted_delta` | BIGINT | The change to `posted`. |
 | `reserved_delta` | BIGINT | The change to `reserved`. |
 | `amount` | BIGINT, > 0 | The magnitude the kind is about (see §4). |
@@ -83,8 +89,9 @@ is never negative.
 | `request_digest` | VARCHAR(64), NOT NULL | sha256 of the request's canonical parameters (§6). |
 | `source_type`, `source_ref` | VARCHAR(40) / VARCHAR(200), NULL | For `topup`/`reversal`: the money event, e.g. (`billing_order`, `payos:100123`). |
 | `meter`, `operation_ref` | VARCHAR(80) / VARCHAR(200), NULL | For `reserve`: what the hold is for (PR-MON-6 fills it). |
-| `expires_at` | TIMESTAMPTZ NULL | For `reserve` only. |
-| `uncharged` | BIGINT NULL, >= 0 | For `settle` only: actual usage beyond the hold, never charged (§4.3). |
+| `expires_at` | TIMESTAMPTZ NULL | For `reserve` only (CHECK: NOT NULL exactly when `kind = 'reserve'`). It is a hold's TTL and never appears on purchased credit (C6). |
+| `uncharged` | BIGINT NULL, >= 0 | For `settle` only: actual usage beyond the hold, never charged (§4.3, C3). |
+| `requested` | BIGINT NULL, > 0 | For `reversal` only: what the money side asked to reverse, so a partial reversal is visible (C5). |
 | `actor` | VARCHAR(200), NOT NULL | `system`, `reconciler`, or an administrator's id. |
 | `reason` | VARCHAR(400) NULL | Required for `adjustment`, `refund` and `reversal`. |
 | `created_at` | TIMESTAMPTZ, NOT NULL | |
@@ -120,11 +127,12 @@ and a CHECK constraint can express "never negative".
 | I3 | Ledger rows are never updated or deleted | Trigger refuses `UPDATE`/`DELETE` on `credit_ledger`; RESTRICT foreign keys |
 | I4 | Accounts are never deleted, and a deletion never cascades | Trigger refuses `DELETE` on `credit_accounts`; RESTRICT foreign key to `account_incarnations` |
 | I5 | Each operation applies at most once | UNIQUE (`credit_account_id`, `kind`, `idempotency_key`); UNIQUE (`source_type`, `source_ref`) for `topup` |
-| I6 | A reservation closes exactly once (settle, release or expire) | Partial UNIQUE (`ref_entry_id`) where `kind IN ('settle','release','expire')`; trigger: the referenced row is a `reserve` of the same account |
-| I7 | A closing entry releases exactly the hold, and a settle charges at most the hold | Trigger: `reserved_delta = -ref.amount`, and `-posted_delta <= ref.amount` for `settle` |
+| I6 | A reservation closes exactly once (settle, release or reserve_expire) | Partial UNIQUE (`ref_entry_id`) where `kind IN ('settle','release','reserve_expire')`; trigger: the referenced row is a `reserve` of the same account |
+| I7 | A closing entry releases exactly the hold; a settle charges at most the hold and records the rest as uncharged (C3) | Trigger: `reserved_delta = -ref.amount`; for `settle`, `charged = -posted_delta`, `0 <= charged <= ref.amount`, `amount = charged + uncharged`, and `uncharged > 0` only when `charged = ref.amount` |
 | I8 | Refunds of a debit total at most what that settle charged | Trigger: `SUM(refund.amount for ref) <= -ref.posted_delta`, with the referenced settle locked |
-| I9 | Reversals of a top-up total at most that top-up | Trigger: `SUM(reversal.amount for ref) <= ref.amount`, with the referenced top-up locked |
-| I10 | An offset references only its own kind | Trigger: refund→settle, reversal→topup, settle/release/expire→reserve, all in the same account; `topup`, `reserve` and `adjustment` reference nothing |
+| I9 | Reversals of a top-up total at most that top-up, and a reversal never takes reserved credits (C5) | Trigger: `SUM(reversal.amount for ref) <= ref.amount` with the referenced top-up locked; `amount <= requested`; the account CHECK `reserved <= posted` refuses touching holds |
+| I10 | An offset references only its own kind | Trigger: refund→settle, reversal→topup, settle/release/reserve_expire→reserve, all in the same account; `topup`, `reserve` and `adjustment` reference nothing |
+| I12 | Purchased credit carries no expiry (C6) | CHECK: `expires_at IS NULL` unless `kind = 'reserve'`; no kind decays a top-up |
 | I11 | Ledger order per account is total and gapless | UNIQUE (`credit_account_id`, `seq`), and the trigger checks `seq = entry_count + 1` |
 
 ## 4. Entry kinds and their effect
@@ -134,13 +142,13 @@ and a CHECK constraint can express "never negative".
 | Kind | `posted_delta` | `reserved_delta` | References | Notes |
 | --- | --- | --- | --- | --- |
 | `topup` | `+amount` | 0 | none | `source_type`/`source_ref` required, globally unique. PR-MON-5 writes it from a verified payment. |
-| `reserve` | 0 | `+amount` | none | Needs available ≥ amount. `expires_at` is required. |
-| `settle` | `-charged` (0 ≤ charged ≤ hold) | `-hold` | its `reserve` | `amount` = actual usage; `uncharged = max(0, actual - hold)`. |
+| `reserve` | 0 | `+amount` | none | Needs available ≥ amount. `expires_at` is set in the reserve's own transaction (C7). |
+| `settle` | `-charged`, with `charged = min(actual, hold)` | `-hold` | its `reserve` | `amount` = actual usage; `uncharged = actual - charged` (C3). |
 | `release` | 0 | `-hold` | its `reserve` | The caller did not use the hold (provider failed or not dispatched). |
-| `expire` | 0 | `-hold` | its `reserve` | Written by the sweeper for an orphaned hold (§7). |
+| `reserve_expire` | 0 | `-hold` | its `reserve` | Written by the reconciler for a hold past its `expires_at` (§7). It closes a reservation and has nothing to do with purchased credit (C6). |
 | `refund` | `+amount` | 0 | a `settle` | Credits returned for a charge, for example a provider failure found after settle. `reason` is required. |
-| `reversal` | `-amount` | 0 | a `topup` | The top-up's money went back (payment refunded or charged back). `reason` is required. Needs available ≥ amount (§5). |
-| `adjustment` | `±amount` (sign in `posted_delta`) | 0 | none | Administrator only, `reason` required (H-decision C4). |
+| `reversal` | `-amount`, with `amount = min(requested, available)` | 0 | a `topup` | The top-up's money went back (payment refunded or charged back). `reason` is required. A partial reversal records the shortfall (§5, C5). |
+| `adjustment` | `±amount` (sign in `posted_delta`) | 0 | none | Administrator only: a **delta** with mandatory reason, actor, idempotency key and digest. There is no "set balance" operation (C4). |
 
 ### 4.1 Reserve atomicity under concurrency
 
@@ -170,7 +178,7 @@ later settle or release, in separate transactions.
                  │
      ┌───────────┼─────────────────┐
      ▼           ▼                 ▼
-  settle      release            expire  (sweeper, past expires_at)
+  settle      release        reserve_expire  (reconciler, past expires_at)
  (charge ≤ hold)  (charge 0)      (charge 0)
 ```
 
@@ -178,22 +186,36 @@ There is exactly one closing entry per reserve (I6). A reserve is open while no 
 state is derived, never stored. A closing entry on an already-closed reserve is refused. When it is the same request
 replayed (same key and digest) it is a duplicate and returns the original.
 
+**Races between settle, release and reserve_expire (C7)** are serialized by the account row lock. The close-once
+index is the backstop. Whichever commits first is the reservation's outcome:
+
+- if `settle` commits first, it is valid, and a later `reserve_expire` finds the hold closed and writes nothing;
+- if `release` or `reserve_expire` commits first, a later settle is refused (`reservation_closed`), nothing is
+  charged, and `credit_late_settle` is recorded (§4.4);
+- a reconciler retry of `reserve_expire` is a duplicate. Its key is the reserve entry's id, so it never writes a
+  second expiration.
+
 ### 4.3 Settle with actual usage greater than the hold
 
-Orena charges **at most the hold** (`charged = min(actual, hold)`). The excess is recorded as `uncharged` on the
-settle entry and never charged later, because D-MON-002 forbids "charge later" and a negative balance.
+**Decided (C3): the reserve is a hard upper bound.** Orena charges `charged = min(actual, hold)`. The excess is
+recorded as `uncharged = actual - charged` on the settle entry. It is never taken from the available balance, never
+turned into an implicit debit and never collected later. The trigger enforces this (I7), not only the repository.
 
-PR-MON-6 sizes holds so that this is rare, and `uncharged` makes it measurable. An alternative, which the lane does
-not recommend, is to also debit the excess from available credits in the same transaction (decision C3).
+PR-MON-6 sizes holds so that this is rare, and `uncharged` makes it measurable.
 
 ### 4.4 Late settle after expiry
 
-If the sweeper has expired a hold and the provider's result arrives later, the settle is refused `reservation_closed`.
+If the reconciler has closed a hold with `reserve_expire` (or the caller released it) and the provider's result
+arrives later, the settle is refused `reservation_closed`.
 The usage is recorded as a reconciliation item `credit_late_settle` (dismissable: no money is owed by the learner;
 Orena absorbed the cost). It is never charged after the fact.
 
-`expires_at` is set by the caller from the meter's maximum dispatch time, with an operational default
-(`CREDIT_HOLD_TTL`, 30 min) longer than any provider timeout. This makes a late settle rare.
+**Decided (C7):** `expires_at` is written on the reserve entry in the reserve's own transaction, as
+`transaction time + TTL`. The default TTL is **30 minutes** (`CREDIT_HOLD_TTL`), and a caller may ask for less.
+
+- The time when a worker or the reconciler first sees the hold has no effect.
+- The stored `expires_at` is authoritative. A later change of the default never alters an existing reservation.
+- The reserve transaction is short, so its time is the commit time to within milliseconds.
 
 ## 5. Refund and reversal semantics
 
@@ -201,14 +223,22 @@ Orena absorbed the cost). It is never charged after the fact.
   refunds (I8). It is the credit-side correction of a consume. It never names a top-up.
 - **`reversal`** names one `topup` and removes up to its amount (I9). It is the credit-side consequence of money that
   went back: a payOS refund or a Polar chargeback (PR-MON-5 decides when to write it).
-  - It also needs available ≥ amount. If the credits from that top-up were already spent, the reversal is refused
-    `insufficient_available` and **nothing is written**.
-  - The money-side caller then records a `credit_reversal_shortfall` reconciliation item, which is a money kind and
-    cannot be dismissed (§9).
-  - The balance is never driven negative to "claw back" spent credits (decision C5).
+  - **Decided (C5): reverse only what is available now, and record the shortfall.** The entry stores `requested`.
+    Its `amount` is `min(requested, available)`, where available is `posted - reserved`, so active reservations are
+    never taken.
+  - If `amount < requested`, then in the same transaction a `credit_reversal_shortfall` reconciliation item is
+    recorded with the shortfall (`requested - amount`). The item references the top-up entry, the reversal entry and
+    the money-side context (`source_type`/`source_ref` of the refund or chargeback).
+  - If available is 0, the reversal entry is not written. A zero entry is not a reversal, and it is never faked as
+    a full one. The shortfall item records the whole `requested` amount against the top-up.
+  - The shortfall is a money kind and cannot be dismissed (§9). The balance is never driven negative to "claw back"
+    spent credits.
 - An offset always lives in the same account as the entry it names (I10). There is no cross-account transfer.
-- `adjustment` is the only entry without a source. It is administrator-only, with a mandatory reason and the actor
-  recorded. A negative adjustment is limited by available (I1).
+- **Decided (C4):** `adjustment` is the only entry without a source, and it exists only as a ledger delta.
+  - It is administrator-only. A reason, the actor, an idempotency key and a request digest are mandatory, and a
+    reused key with other content is a conflict.
+  - A negative adjustment is limited by available (I1).
+  - There is no "force balance" and no "set balance = X". The snapshot is never written outside the ledger trigger.
 
 ## 6. Idempotency keys
 
@@ -216,7 +246,7 @@ Orena absorbed the cost). It is never charged after the fact.
 | --- | --- | --- | --- |
 | `topup` | `source_type` + `source_ref`, e.g. `billing_order:payos:100123` | **global**: one money event can never credit two accounts | The same source returns the original entry; a different account or amount is a conflict |
 | `reserve` | the caller's `operation_id` (PR-MON-6: one per admitted operation) | per account and kind | The same key and digest returns the hold; a different amount or meter is a conflict |
-| `settle` / `release` / `expire` | the reserve entry's id (via the I6 index), plus the caller's key | per reservation | Closing twice returns the first close if the digest matches, otherwise `reservation_closed` |
+| `settle` / `release` / `reserve_expire` | the reserve entry's id (via the I6 index), plus the caller's key | per reservation | Closing twice returns the first close if the digest matches, otherwise `reservation_closed` |
 | `refund` / `reversal` / `adjustment` | the caller's operation id (an operator action or a PR-MON-5 refund event id) | per account and kind | The same key and digest returns the original; a different digest is a conflict |
 
 `request_digest` is the sha256 of the canonical parameters: kind, account, amount, `ref_entry_id`, meter, source.
@@ -226,8 +256,9 @@ different effect.
 ## 7. Orphaned holds
 
 - The reserve's `expires_at` is set at reserve time (§4.4).
-- The PR-MON-3 reconciler, under its session advisory lock, gets one more step: expire holds past `expires_at`, in
-  pages, one short transaction per hold. It writes an `expire` entry with actor `reconciler`.
+- The PR-MON-3 reconciler, under its session advisory lock, gets one more step: close the holds past their
+  `expires_at`, in pages, one short transaction per hold. It writes a `reserve_expire` entry with actor `reconciler`.
+  This step only closes reservations. Purchased credit has no expiry (C6).
 - A deleted account's open holds are expired at once by the same step, whatever their `expires_at`.
 - No provider is called, and no transaction is held across anything external.
 
@@ -236,15 +267,22 @@ different effect.
 - `credit_accounts` and `credit_ledger` use RESTRICT foreign keys and refuse `DELETE` (I3, I4). History and
   obligations survive deletion.
 - After deletion (incarnation `status = 'deleted'`, checked under its `FOR SHARE` lock):
-  - refused: `topup`, `reserve` and `settle` of a new charge;
-  - allowed: `release` and `expire` of open holds, which only free credits;
-  - allowed: `refund`, `reversal` and `adjustment`, which are financial corrections an operator may still owe.
-- **The unused balance of a deleted account** (forfeit, refund in money, or kept as a liability) is a human/legal
-  decision (C1). Until it is decided, the balance stays recorded and untouched, and the deletion records a
-  `credit_balance_on_deletion` reconciliation item (a money kind) for the operator. The deletion runtime is an
-  architecture hold (`AGENTS.md` §7); PR-MON-4 only provides the item and the ledger rules.
-- Credits are bound to the incarnation that paid for them. A new incarnation after re-registration starts with no
-  credits (decision C2: no carry-over).
+  - refused: `topup`, `reserve` and `settle`, and any new spend;
+  - allowed: `release` and `reserve_expire` of open holds, which only free credits;
+  - allowed: `refund`, `reversal` and a controlled `adjustment`, which are the operations needed to finish a
+    financial obligation that still exists.
+- **Decided (C1): the remaining purchased credit is a financial liability.** It is not forfeited and not refunded
+  automatically.
+  - It stays recorded and untouched, and stays visible in the reconciliation and accounting state through an open
+    `credit_balance_on_deletion` item (a money kind), until a valid operation resolves it.
+  - PR-MON-4 has no auto-refund. The deletion runtime is an architecture hold (`AGENTS.md` §7); PR-MON-4 provides
+    the item and the ledger rules only.
+  - Deleting an account never deletes or rewrites financial history.
+- **Decided (C2): no automatic transfer.** Every incarnation has its own credit account.
+  - A new incarnation never takes the old one's balance, is never matched by email or identity, never reuses the
+    old account, and never "resurrects" credits on re-registration.
+  - Any future verified recovery or refund flow would be a separate, explicit, auditable operation. It is out of
+    scope here.
 
 ## 9. Reconciliation items added (PR-MON-3 table, new kinds)
 
@@ -254,7 +292,7 @@ replaced in 0032; 0031 itself is not edited. Their rules follow PR-MON-3's class
 | Kind | Class | Closed by |
 | --- | --- | --- |
 | `credit_balance_drift` | **critical** (closes credit operations on that account, not checkouts) | the reconciler only, once the drift check is clean |
-| `credit_reversal_shortfall` | money | `refund_confirmed` or `obligation_waived` with an audited reason; never dismissed |
+| `credit_reversal_shortfall` | money: keeps the top-up entry, the reversal entry (if any), `requested`, the shortfall and the money-side source | `refund_confirmed` or `obligation_waived` with an audited reason; never dismissed |
 | `credit_balance_on_deletion` | money | `refund_confirmed` or `obligation_waived` (the C1 decision); never dismissed |
 | `credit_late_settle` | review (dismissable) | `recorded`, or dismissed with a note |
 
@@ -265,16 +303,17 @@ replaced in 0032; 0031 itself is not edited. Their rules follow PR-MON-3's class
 | C-F1 | Two reserves race on one account | Serialized by the account row lock. The second is refused when it would exceed `posted`; the CHECK is the backstop. |
 | C-F2 | A retried reserve, settle, topup or refund | The same key and digest returns the original entry, with no second effect. |
 | C-F3 | A reused key with different content | Conflict. Nothing is written. |
-| C-F4 | A crash after the reserve commits, before dispatch | The hold stays open until `expires_at`, then is expired. No charge. |
+| C-F4 | A crash after the reserve commits, before dispatch | The hold stays open until `expires_at`, then is closed with `reserve_expire`. No charge. |
 | C-F5 | A crash after dispatch, before settle | The caller retries the settle with the same key. If it never settles, the hold expires uncharged: Orena absorbs the cost (`credit_late_settle` if a result arrives late). |
-| C-F6 | A settle with actual > hold | Charged up to the hold, with the rest in `uncharged` (§4.3). |
+| C-F6 | A settle with actual > hold | Charged up to the hold, with the rest in `uncharged`, enforced by the trigger (§4.3, C3). |
+| C-F15 | A settle racing `release` or `reserve_expire` | The account lock serializes them and the close-once index decides: the first to commit wins, and a late settle is refused and recorded (`credit_late_settle`). |
 | C-F7 | A double close (settle, then release) | Refused by the I6 unique index; a replay of the same close is a duplicate. |
 | C-F8 | A refund larger than the debit, or two refunds racing | Trigger I8 under the referenced row's lock; the second over-refund aborts. |
-| C-F9 | A reversal of spent credits | Refused, nothing written, then a `credit_reversal_shortfall` item (money). |
+| C-F9 | A reversal of partly or fully spent credits | Only the available part is reversed (never reserved credits, never negative); the shortfall becomes a `credit_reversal_shortfall` item in the same transaction (C5). |
 | C-F10 | The same payment credits twice, or credits two accounts | Global UNIQUE on (`source_type`, `source_ref`). |
 | C-F11 | A hand-written `UPDATE` of a balance, or a `DELETE` of history | Refused by the guard triggers. |
 | C-F12 | The snapshot drifts from the ledger (should be impossible) | Drift check, then a critical item; credit operations on the account stop. |
-| C-F13 | The account is deleted while holds are open | Holds are expired by the reconciler; new charges refused; history kept; `credit_balance_on_deletion` item. |
+| C-F13 | The account is deleted while holds are open | Holds are closed by the reconciler with `reserve_expire`; new spend refused; history kept; the balance stays a liability with a `credit_balance_on_deletion` item (C1). |
 | C-F14 | The database errors mid-operation | Single transaction: all or nothing. The caller retries with the same key. |
 
 ## 11. Implementation slices (after design APPROVE)
@@ -286,9 +325,10 @@ replaced in 0032; 0031 itself is not edited. Their rules follow PR-MON-3's class
    §4.1 lock order.
 3. `billing/credits.py`: a service façade with typed results (`applied`, `duplicate`, `conflict`,
    `insufficient_credits`, `reservation_closed`, `account_deleted`). No provider calls. No prices.
-4. A reconciler step that expires holds and checks drift (on PR-MON-3's lock, with short transactions).
-5. Admin API, read-only (balance and ledger page), plus an adjustment route only if C4 says yes. There is no learner
-   route: PR-MON-5 adds top-up and PR-MON-6 adds consumption.
+4. A reconciler step that closes expired holds (`reserve_expire`) and checks drift (on PR-MON-3's lock, with short
+   transactions).
+5. Admin API: read-only (balance and ledger page), plus the adjustment route (C4: a delta with reason and an
+   idempotency key). There is no learner route: PR-MON-5 adds top-up and PR-MON-6 adds consumption.
 
 Everything stays in Billing files. `app.py` changes only in start-up wiring.
 
@@ -310,10 +350,19 @@ Everything stays in Billing files. `app.py` changes only in start-up wiring.
 - **Idempotency:** every operation replayed (duplicate, one entry) and replayed with altered content (conflict,
   nothing written); a top-up source used on a second account is refused.
 - **Semantics:**
-  - settle under, at and above the hold (`uncharged`);
-  - release and expire;
+  - settle under, at and above the hold (`uncharged`), and a direct insert charging beyond the hold refused by the
+    trigger (C3);
+  - release and reserve_expire;
   - late settle is refused and creates a `credit_late_settle` item;
-  - reversal with spent credits is refused and leaves the balance unchanged;
+  - a partial reversal (some credits spent, some reserved) reverses only the available part, with the shortfall item
+    referencing the top-up and the reversal; a reversal with nothing available writes no entry and records the whole
+    shortfall (C5);
+  - a settle / release / reserve_expire race: exactly one closes, a late settle is refused and recorded, and a
+    reconciler retry writes no second `reserve_expire` (C7);
+  - `expires_at` comes from the reserve's transaction, and a later default change leaves existing holds alone (C7);
+  - no `expires_at` on any non-reserve entry (C6);
+  - an adjustment without reason or key is refused, a replay is a duplicate, and a negative adjustment beyond
+    available is refused (C4);
   - deletion rules (§8);
   - the drift check is clean after every test.
 - **Mutations**, each of which must fail at least one guard's test:
@@ -330,22 +379,28 @@ Everything stays in Billing files. `app.py` changes only in start-up wiring.
   - the idempotency digest comparison;
   - the global top-up uniqueness;
   - the deleted-account refusal;
-  - the hold expiry step;
+  - the `reserve_expire` step;
+  - the C3 settle cap in the trigger;
+  - the C5 partial reversal and shortfall item;
+  - the C6 `expires_at`-only-on-reserve CHECK;
   - the downgrade guard.
 - **Regression:** every PR-MON-1..3 Billing test and every `tests/*_postgres.py`. #160 is inherited.
 
-## 13. Human decisions (not decided by the lane)
+## 13. Human decisions (frozen 2026-10-14 on `43a3dedf`)
 
-| # | Decision | Lane recommendation |
-| --- | --- | --- |
-| C1 | The unused balance of a deleted account: forfeit, refund in money, or kept as a liability | Keep it recorded and untouched, and open `credit_balance_on_deletion` for the operator, until legal/terms decides. |
-| C2 | Credits carried to a new incarnation after re-registration | No. Credits are bound to the paying incarnation. |
-| C3 | Settle beyond the hold: cap at the hold (record `uncharged`), or also debit the excess from available | Cap at the hold (no charge later). |
-| C4 | Administrator `adjustment` entries allowed in v1 | Yes: admin-only, mandatory reason, actor recorded, never below zero. Otherwise, defer the route. |
-| C5 | A reversal of a top-up whose credits are partly spent | Reverse only what is available, never go negative, and record the shortfall as a money item. |
-| C6 | Purchased credits expire | Not decided by the lane (legal/terms). The schema allows a later `expiry` kind without changing existing rows. |
-| C7 | `CREDIT_HOLD_TTL` default | 30 min, operational. |
-| — | Credit ↔ VND conversion, meter credit prices, Free allowance, auto top-up, activation | **Not decided** (human gates). There is no auto top-up in any design. |
+| # | Decision |
+| --- | --- |
+| C1 | **Keep the remaining credit as a financial liability.** Do not forfeit it and do not auto-refund it. History is kept and not cascaded. No new topup, reserve, settle or spend. Release, reserve_expire, refund, reversal and a controlled adjustment are still allowed. The value stays visible through `credit_balance_on_deletion` until a valid operation resolves it. (§8) |
+| C2 | **No automatic transfer** to a new incarnation: no inheritance, no identity or email lookup, no reuse, no resurrection. Any future recovery is a separate explicit flow, out of scope. (§8) |
+| C3 | **The reserve is a hard upper bound.** `charged = min(actual, hold)`, `uncharged = actual - charged`, enforced in the database. A late settle after release or reserve_expire is not charged and is recorded as `credit_late_settle`. (§4.3, §4.4) |
+| C4 | **Adjustments are allowed in v1, only through the ledger.** A delta with mandatory reason, actor, idempotency key and digest. Never below zero. No "set balance". (§5) |
+| C5 | **Reverse only what is available; record the shortfall.** Never negative, never from active reservations, never faked as a full reversal. `credit_reversal_shortfall` keeps the top-up and reversal context. (§5) |
+| C6 | **Purchased credit does not expire in v1.** No decay, no hidden forfeiture, and no expiry timestamp on purchased credit. `reserve_expire` closes a reservation only. A future credit expiry would be its own explicit ledger event, reviewed separately. |
+| C7 | **The reserve TTL default is 30 minutes.** `expires_at` is stored on the reserve, computed in its own transaction, and authoritative. Expire, release and settle are idempotent. One closing outcome per reserve. Races are serialized by the account lock and the database. (§4.2, §4.4) |
+
+Still not decided, and not implemented in PR-MON-4: the credit ↔ VND conversion rate, meter pricing, the Free
+allowance, auto top-up, payment provider activation, subscriptions, promotions, and any transfer between
+incarnations.
 
 ## 14. Rollback policy
 

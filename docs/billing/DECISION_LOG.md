@@ -147,3 +147,17 @@ H1-H7 as decided by the review; H2 taken as a follow-up revision 0031 (no operat
 acknowledged and then lost, and paid-without-access must never be silenced. | Proposed 0031; no migration promoted or
 applied; billing stays off. Record: `docs/reviews/architecture/PR_MON_3_RECONCILIATION_REVIEW_2026-10-14.md`.
 
+D-MON-019 | 2026-10-14 | Prepaid credit ledger policy, C1-C7 (human, on the PR-MON-4 design `43a3dedf`). C1: credit
+left on a deleted account is a financial liability - kept, never forfeited, never auto-refunded, history never
+cascaded or rewritten; no new topup/reserve/settle/spend; release, reserve_expire, refund, reversal and controlled
+adjustment still allowed; tracked by `credit_balance_on_deletion` until resolved. C2: no automatic transfer to a new
+incarnation (no inheritance, identity lookup, reuse or resurrection). C3: the reserve is a hard upper bound -
+charged = min(actual, hold), the rest `uncharged`, DB-enforced, never collected later; a late settle is not charged
+and is recorded. C4: adjustments only as audited ledger deltas (reason, actor, idempotency key, digest), never below
+zero, no "set balance". C5: a reversal reverses only what is available (never reserved credits, never negative) and
+records the shortfall with its top-up/reversal context. C6: purchased credit does not expire in v1; reservation
+expiry (`reserve_expire`) is a different concept. C7: reserve TTL default 30 minutes, `expires_at` stored on the
+reserve from its own transaction and authoritative. | Credits are customer money: nothing may vanish, go negative or
+be charged twice or later. | Frozen in `PR-MON-4_DESIGN.md` revision 2; not decided: credit-VND rate, meter prices,
+Free allowance, auto top-up, activation, promotions, incarnation transfer.
+

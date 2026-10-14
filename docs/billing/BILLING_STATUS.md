@@ -8,10 +8,10 @@
 | Branch | `feature/monetization-billing-v1` |
 | Main | `1a9e010dff3ed1b7716d2fe41176a5d1974a90a1` (`origin/main`, 2026-10-14): PR-MON-3 merged by the human as #178; the lane branch fast-forwarded onto it |
 | Last completed slice | PR-MON-3 Billing Orders + Reconciliation Safety: design and implementation architecture-APPROVED, CI green on `1f7d5865`, merged to `main` as #178 (`1a9e010d`, 2026-10-14) |
-| Active PR | **PR-MON-4 Prepaid Credit Ledger** - DESIGN, stopped at the architecture review checkpoint (proposes a new financial schema, 0032) |
+| Active PR | **PR-MON-4 Prepaid Credit Ledger** - DESIGN revision 2, decisions C1-C7 frozen by the human (D-MON-019), awaiting the independent architecture review (verdict sought: APPROVE FOR IMPLEMENTATION) |
 | Current slice | PR-MON-4 design + migration plan: `PR-MON-4_DESIGN.md` (data model, invariants I1-I11 with DB backstops, lock order, reserve state machine, refund/reversal, idempotency, deletion, failure matrix C-F1..C-F14, tests/mutations, decisions C1-C7) |
-| Exact next action | independent architecture review of `PR-MON-4_DESIGN.md` and the human's C1-C7; no code before design APPROVE; nothing promoted or applied |
-| Blockers | design review + human decisions C1-C7. 0027 + 0031 (+ the future 0032) stay proposed and unapplied (human gate) |
+| Exact next action | independent architecture review of `PR-MON-4_DESIGN.md` revision 2 (schema, triggers, concurrency, mutation guards, reconciliation, topology, the 5 questions in §15); migration 0032 is created only after APPROVE FOR IMPLEMENTATION; nothing promoted or applied |
+| Blockers | the design review. 0027 + 0031 stay proposed and unapplied (human gate) |
 | Test status | local only (not CI), `bd572b8e`. SQLite billing targeted: 476 passed, 1 skipped (the wider targeted set, 598 passed, at `1f73d4fa`). Throwaway PostgreSQL 16: 492 run, 491 passed, 1 failed = INHERITED #160. Mutations: 18/18 caught, each by its own guard's test (table in `PR-MON-3_REVIEW_REQUEST.md`) |
 | Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
