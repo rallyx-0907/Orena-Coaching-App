@@ -26,11 +26,35 @@ assert.match(screen, /mine !== tapSeq/, 'latest tap wins');
 assert.ok(screen.includes('Script=Han}/u.test(word)'), 'only a Han character waits for the tagger');
 console.log('reader tap word gate: ok');
 
-// Listening: the transcript draws one Han character per column, so a tap widens to the tagged word (same helper, no second segmenter).
+// Listening: the transcript draws one Han character per column; a tap widens to the tagged word (same helper, no second segmenter).
 const shared = await import('../static/orena/product/word-span.js');
 assert.equal(shared.wordSpanAt, wordSpanAt, 'the Reader and Listening share one wordSpanAt');
+const { createLineTagger, widenHanTap, hanTokens } = await import('../static/orena/screens/listening/model.js');
+const line = '他是神龙大侠。';
+const lineTokens = hanTokens(line, null);
+const shen = lineTokens[2];
+const tagged = [{ start: 0, end: 1 }, { start: 1, end: 2 }, { start: 2, end: 4 }, { start: 4, end: 6 }];
+let calls = 0;
+const tagger = createLineTagger({ allowed: () => true, request: async () => { calls += 1; return tagged; } });
+assert.equal(await widenHanTap({ text: line, token: shen, word: '神', tags: () => tagger('s1', line) }), '神龙', 'a tap on 神 names 神龙');
+assert.equal(await widenHanTap({ text: line, token: lineTokens[3], word: '龙', tags: () => tagger('s1', line) }), '神龙');
+assert.equal(calls, 1, 'one tagger request per line');
+assert.equal(await widenHanTap({ text: line, token: shen, word: '龙', tags: () => tagger('s1', line) }), '龙', 'a stale character is refused');
+assert.equal(await widenHanTap({ text: 'ok', token: { core: 'ok', start: 0 }, word: 'ok', tags: () => assert.fail('no request for Latin') }), 'ok');
+// A tagger that does not answer in time leaves the character.
+assert.equal(await widenHanTap({ text: line, token: shen, word: '神', tags: () => new Promise(() => {}), waitMs: 10 }), '神');
+// A tagger that fails is forgotten, so the next tap asks again.
+let attempts = 0;
+const flaky = createLineTagger({ allowed: () => true, request: async () => { attempts += 1; if (attempts === 1) throw new Error('down'); return tagged; } });
+assert.equal(await widenHanTap({ text: line, token: shen, word: '神', tags: () => flaky('s1', line) }), '神');
+assert.equal(await widenHanTap({ text: line, token: shen, word: '神', tags: () => flaky('s1', line) }), '神龙');
+// Language mismatch: no request at all.
+let sent = 0;
+const closed = createLineTagger({ allowed: () => false, request: async () => { sent += 1; return tagged; } });
+assert.equal(await widenHanTap({ text: line, token: shen, word: '神', tags: () => closed('s1', line) }), '神');
+assert.equal(sent, 0, 'zero requests when the text is not the learning language');
+// A tap that is superseded (any later tap) opens nothing: the screen counts every click in the rows.
 const listening = readFileSync(new URL('../static/orena/screens/listening/screen.js', import.meta.url), 'utf8');
-assert.match(listening, /wholeWordAt\(seg, word, tokIndex\)/, 'Listening widens a one-character Han tap to its word');
-assert.match(listening, /api\.annotateMediaText/, 'Listening asks the same local tagger the Reader uses');
-assert.match(listening, /mine !== tapSeq/, 'latest tap wins');
+assert.match(listening, /rowsEl\.addEventListener\('click', \(event\) => \{\s*tapSeq \+= 1;/, 'every tap supersedes a pending word tap');
+assert.match(listening, /mine !== tapSeq/);
 console.log('listening tap word gate: ok');

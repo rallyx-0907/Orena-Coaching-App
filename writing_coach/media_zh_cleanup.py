@@ -5,9 +5,10 @@ segment that may begin long before its first spoken word. A learner reads Hanzi 
 sentence marks to read, shadow and dictate a line, so this module repairs those three things.
 
 Deterministic only, no provider: spaces between CJK characters are removed; full-width marks are restored from
-the recogniser's own word timings (a pause) and from segment boundaries (a question word or particle decides
-between the question mark and the full stop); a cue's start moves to its first word's timestamp. Pure and
-idempotent, and language-gated: anything that is not Chinese is returned untouched.
+the recogniser's own word timings (a pause) and from segment boundaries (a question particle or question word in
+the final clause decides between the question mark and the full stop); a cue's start moves to its first word's
+timestamp. Pure and idempotent, and language-gated: anything that is not Chinese is returned untouched. Only
+cues that contain Hanzi are punctuated. The question rule is a heuristic over Simplified and Traditional forms.
 """
 from __future__ import annotations
 
@@ -17,18 +18,32 @@ from collections.abc import Sequence
 from writing_coach.media_segmentation import Cue, primary_language
 from writing_coach.speech_asr import SpeechAsrWord
 
-COMMA_PAUSE_MS = 300
+# A comma needs a pause that hesitation or timestamp jitter does not make: Whisper word times wobble by a few
+# hundred ms and a breath inside a clause is 200-400 ms, while a clause boundary is usually 500 ms or more.
+# A sentence ends after a second of silence.
+COMMA_PAUSE_MS = 500
 SENTENCE_PAUSE_MS = 1000
 
 _CJK = r"㐀-䶿一-鿿豈-﫿　-〿＀-￯"
+_HAN = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 _SPACE_BETWEEN_CJK = re.compile(rf"(?<=[{_CJK}])\s+(?=[{_CJK}])")
 _SPACE_AROUND_MARK = re.compile(r"\s+(?=[，。？！；：、])|(?<=[，。？！；：、])\s+")
 _HALF_AFTER_CJK = {",": "，", "?": "？", "!": "！", ";": "；", ":": "：", ".": "。"}
 _HALF_MARK = re.compile(rf"(?<=[{_CJK}])([,?!;:.])(?=\s|$|[{_CJK}])")
 _TERMINAL = re.compile(r"[。？！…][”’）)」』]*$")
 _MARKS = "，。？！；：、…"
-_QUESTION_TAIL = re.compile(r"(吗|呢|么|嘛)$")
-_QUESTION_WORD = re.compile(r"(什么|谁|哪里|哪儿|哪个|哪些|怎么|怎样|怎么样|为什么|几个|几点|多少|是不是|有没有|对不对|好不好|能不能|可不可以)")
+_CLAUSE_END = "，。？！；：、"
+# Sentence-final particles: a pause never separates one from the word it belongs to.
+_PARTICLES = "吗嗎呢吧啊啦呀了的嘛么麼"
+_QUESTION_PARTICLE = re.compile(r"(吗|嗎)$")
+_NE = re.compile(r"呢$")
+_PROGRESSIVE = re.compile(r"(正在|在|正|还在|還在)[^，。？！]*呢$")
+_QUESTION_WORD = re.compile(
+    r"(什么|什麼|甚麼|谁|誰|哪里|哪裡|哪儿|哪兒|哪个|哪個|哪些|怎么|怎麼|怎样|怎樣|为什么|為什麼|為甚麼|几个|幾個|几点|幾點|几岁|幾歲"
+    r"|多少|是不是|有没有|有沒有|对不对|對不對|好不好|能不能|可不可以|行不行|要不要|会不会|會不會)"
+)
+_UNIVERSAL = re.compile(r"(什么|什麼|甚麼|谁|誰|哪里|哪裡|哪儿|哪兒|哪个|哪個|怎么|怎麼|几|幾)(都|也)")
+_EMBEDDED = re.compile(r"(不知道|不知|知道|不明白|不懂|不清楚|不确定|不確定|告诉|告訴|问|問|想知道)")
 
 
 def _compact(text: str) -> str:
@@ -37,23 +52,44 @@ def _compact(text: str) -> str:
     return _SPACE_AROUND_MARK.sub("", text).strip()
 
 
-def _is_question(clause: str) -> bool:
-    clause = clause.rstrip(_MARKS + " ")
-    return bool(_QUESTION_TAIL.search(clause) or _QUESTION_WORD.search(clause))
+def _last_clause(text: str) -> str:
+    clause = text.rstrip(_MARKS + " ")
+    cut = max((clause.rfind(mark) for mark in _CLAUSE_END), default=-1)
+    return clause[cut + 1:]
 
 
-def _sentence_mark(clause: str) -> str:
-    return "？" if _is_question(clause) else "。"
+def _is_question(text: str) -> bool:
+    clause = _last_clause(text)
+    if not clause:
+        return False
+    if _QUESTION_PARTICLE.search(clause):
+        return True
+    if _NE.search(clause) and not _PROGRESSIVE.search(clause):
+        return True
+    scrubbed = _UNIVERSAL.sub("", clause)
+    found = _QUESTION_WORD.search(scrubbed)
+    if not found:
+        return False
+    # "我不知道他在说什么" is a statement that holds a question.
+    return not _EMBEDDED.search(scrubbed[:found.start()])
+
+
+def _sentence_mark(text: str) -> str:
+    return "？" if _is_question(text) else "。"
 
 
 def _cue_words(cue: Cue, words: Sequence[SpeechAsrWord]) -> list[SpeechAsrWord]:
-    return [word for word in words if cue.start_ms - 50 <= word.start_ms < cue.end_ms and word.word.strip()]
+    """The words spoken inside the cue: a word belongs to the cue its middle falls in, so the previous cue's last
+    word (which ends at or before this cue's start) is never taken for this cue's first."""
+    return [
+        word for word in words
+        if word.word.strip() and cue.start_ms <= (word.start_ms + word.end_ms) / 2 < cue.end_ms
+    ]
 
 
-def _pause_marks(text: str, spoken: Sequence[SpeechAsrWord]) -> dict[int, str]:
-    """Mark to insert after each text index, from the pauses between consecutive words. Empty when the words
-    do not spell the text (then there is nothing trustworthy to align on)."""
-    letters = [(index, char) for index, char in enumerate(text) if char not in _MARKS and not char.isspace()]
+def _align(text: str, spoken: Sequence[SpeechAsrWord]) -> list[int] | None:
+    """The text index of each word's last character, or None when the words do not spell the text."""
+    letters = [index for index, char in enumerate(text) if char not in _MARKS and not char.isspace()]
     cursor = 0
     ends: list[int] = []
     for word in spoken:
@@ -61,36 +97,46 @@ def _pause_marks(text: str, spoken: Sequence[SpeechAsrWord]) -> dict[int, str]:
         if not piece:
             ends.append(ends[-1] if ends else -1)
             continue
-        window = "".join(char for _, char in letters[cursor:cursor + len(piece)])
+        window = "".join(text[index] for index in letters[cursor:cursor + len(piece)])
         if window != piece:
-            return {}
+            return None
         cursor += len(piece)
-        ends.append(letters[cursor - 1][0])
-    marks: dict[int, str] = {}
-    clause_start = 0
-    for position in range(len(spoken) - 1):
+        ends.append(letters[cursor - 1])
+    return ends
+
+
+def _clean_cue(cue: Cue, spoken: Sequence[SpeechAsrWord]) -> list[Cue]:
+    text = _compact(cue.text)
+    start = cue.start_ms
+    if spoken and cue.start_ms < spoken[0].start_ms < cue.end_ms:
+        start = spoken[0].start_ms  # leading silence is not part of the line
+    if not text or not _HAN.search(text):
+        return [Cue(start, cue.end_ms, text)]
+    ends = _align(text, spoken) if spoken else None
+    pieces: list[tuple[str, int, int]] = []  # text, start_ms, end_ms
+    carried = ""
+    piece_from = 0
+    piece_start = start
+    for position in range(len(spoken) - 1 if ends else 0):
         gap = spoken[position + 1].start_ms - spoken[position].end_ms
         at = ends[position]
-        if gap < COMMA_PAUSE_MS or at < 0 or at + 1 >= len(text) or text[at + 1] in _MARKS:
+        if gap < COMMA_PAUSE_MS or at < 0 or at + 1 >= len(text) or text[at + 1] in _MARKS or text[at + 1] in _PARTICLES:
             continue
+        chunk = carried + text[piece_from:at + 1]
         if gap >= SENTENCE_PAUSE_MS:
-            marks[at] = _sentence_mark(text[clause_start:at + 1])
-            clause_start = at + 1
+            # A sentence break is cut at the real pause: the line ends with its last word and the next begins
+            # with its first, so no word straddles the cut.
+            pieces.append((chunk + _sentence_mark(chunk), piece_start, spoken[position].end_ms))
+            carried, piece_from, piece_start = "", at + 1, spoken[position + 1].start_ms
         else:
-            marks[at] = "，"
-    return marks
-
-
-def _punctuate(text: str, spoken: Sequence[SpeechAsrWord]) -> str:
-    marks = _pause_marks(text, spoken) if spoken else {}
-    if marks:
-        text = "".join(char + marks.get(index, "") for index, char in enumerate(text))
-    if text and not _TERMINAL.search(text) and text[-1] not in _MARKS:
-        clause = re.split(r"[。？！]", text)[-1]
-        text = text + _sentence_mark(clause)
-    elif text and text[-1] in "，、；：":
-        text = text[:-1] + _sentence_mark(re.split(r"[。？！]", text[:-1])[-1])
-    return text
+            carried, piece_from = chunk + "，", at + 1
+    tail = carried + text[piece_from:]
+    if tail and not _TERMINAL.search(tail):
+        if tail[-1] in "，、；：":
+            tail = tail[:-1]
+        tail += _sentence_mark(tail)
+    pieces.append((tail, piece_start, cue.end_ms))
+    return [Cue(a, max(b, a + 1), t) for t, a, b in pieces if t]
 
 
 def clean_asr_cues(cues: Sequence[Cue], words: Sequence[SpeechAsrWord], language: str) -> list[Cue]:
@@ -98,10 +144,5 @@ def clean_asr_cues(cues: Sequence[Cue], words: Sequence[SpeechAsrWord], language
         return list(cues)
     cleaned: list[Cue] = []
     for cue in cues:
-        spoken = _cue_words(cue, words)
-        start = cue.start_ms
-        if spoken and cue.start_ms < spoken[0].start_ms < cue.end_ms:
-            start = spoken[0].start_ms  # leading silence is not part of the line
-        text = _compact(cue.text)
-        cleaned.append(Cue(start, cue.end_ms, _punctuate(text, spoken) if text else text))
+        cleaned.extend(_clean_cue(cue, _cue_words(cue, words)))
     return cleaned

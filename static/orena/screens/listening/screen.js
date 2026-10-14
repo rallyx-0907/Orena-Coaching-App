@@ -22,7 +22,6 @@ import { langAttr } from '../../kit/lang.js';
 import { toast } from '../../kit/toast.js';
 import { api } from '../../infrastructure/api.js';
 import { annotateWithPolicy, annotateAllowed } from '../../infrastructure/annotate-policy.js';
-import { wordSpanAt } from '../../product/word-span.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { askOrena } from '../../shell/agent-bridge.js';
@@ -48,7 +47,7 @@ import { createLinePractice } from '../dictation/line-practice.js';
 import { t as dictT } from '../dictation/copy.js';
 import {
   nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
-  wordTokens, hanTokens, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey, selectionAfterModeChange,
+  wordTokens, hanTokens, createLineTagger, widenHanTap, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey, selectionAfterModeChange,
   previousIndex, nextIndex, vocabularyForSegment, placeFor, dictationLinesCompleted,
   pickNextRecommendation, progressPercent, keyWordsFrom, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
   phraseSaveable, phraseSavePayload, phraseSaved, transcriptState,
@@ -569,7 +568,9 @@ export default async function listening(element, ctx) {
     paintWordHighlight();
   }
 
+  let tapSeq = 0;
   rowsEl.addEventListener('click', (event) => {
+    tapSeq += 1; // any new tap supersedes a word tap still waiting for the tagger
     const wordEl = event.target.closest('[data-word]');
     if (wordEl) {
       event.stopPropagation();
@@ -626,32 +627,14 @@ export default async function listening(element, ctx) {
      uses (briefly awaited, one request per line) and the tagged word covering that character is looked up; if the
      tagger does not answer in time the character stands. */
   const TAP_ANNOTATE_WAIT_MS = 1500;
-  const lineTags = new Map(); // segment_id -> Promise of tagger tokens ({ start, end }) or null
-  function tagsOf(seg) {
-    if (!lineTags.has(seg.segment_id)) {
-      lineTags.set(seg.segment_id, (async () => {
-        if (!annotateAllowed(language, c.language)) return null;
-        try {
-          const res = await annotateWithPolicy(api.annotateMediaText, { text: String(seg.original_text).slice(0, 1200), source_language: language }, { scope: routeId });
-          return (res?.annotations || []).filter((tok) => Number.isInteger(tok?.start) && Number.isInteger(tok?.end));
-        } catch {
-          lineTags.delete(seg.segment_id); // a failed answer is not remembered: the next tap asks again
-          return null;
-        }
-      })());
-    }
-    return lineTags.get(seg.segment_id);
-  }
-  async function wholeWordAt(seg, word, tokIndex) {
-    const token = tokensOf(seg)[tokIndex];
-    if (!isZh || !token || token.core !== word || Array.from(word).length !== 1 || !/\p{Script=Han}/u.test(word)) return word;
-    let timer = 0;
-    const tags = await Promise.race([tagsOf(seg), new Promise((resolve) => { timer = window.setTimeout(() => resolve(null), TAP_ANNOTATE_WAIT_MS); })]);
-    window.clearTimeout(timer);
-    return wordSpanAt(seg.original_text, tags, token.start, word)?.text || word;
-  }
+  const lineTagger = createLineTagger({
+    allowed: () => annotateAllowed(language, c.language),
+    request: async (text) => (await annotateWithPolicy(api.annotateMediaText, { text, source_language: language }, { scope: routeId }))?.annotations,
+  });
+  const wholeWordAt = (seg, word, tokIndex) => (isZh
+    ? widenHanTap({ text: seg.original_text, token: tokensOf(seg)[tokIndex], word, tags: () => lineTagger(seg.segment_id, seg.original_text), waitMs: TAP_ANNOTATE_WAIT_MS })
+    : word);
 
-  let tapSeq = 0;
   async function onWordTap(word, segId, tokIndex) {
     const seg = segOf(segId);
     const mine = ++tapSeq; // latest tap wins: an older tap still waiting for the tagger opens nothing
