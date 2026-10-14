@@ -137,10 +137,13 @@ export function legacySentenceSpans(text) {
    - a title ("Mr.", "Dr.", "St."): never an end; "etc.", "Inc.", month names: an end before a capital;
    - a single capital letter: "I." always ends; any other is an initial ("J. Smith") only when a name
      follows - a capitalised word that is not a common sentence starter ("Plan B. Next." ends);
-   - "No." / "Vol." / "Fig." before a digit: not an end. */
+   - "No." / "Vol." / "Fig." / "Apt." before a digit: not an end;
+   - any other word before a lowercase word ("Dept. of Health"): not an end. Only a bounded window around the dot
+     is read, so the cost is linear in the text. */
 const HARD_ABBREVIATIONS = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'prof', 'sr', 'jr', 'st', 'mt', 'vs', 'cf', 'gen', 'col', 'lt', 'sgt', 'capt', 'rep', 'sen', 'gov', 'rev', 'hon']);
 const SOFT_ABBREVIATIONS = new Set(['etc', 'inc', 'ltd', 'co', 'corp', 'approx', 'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'sept', 'oct', 'nov', 'dec']);
-const NUMBERED = new Set(['no', 'nos', 'vol', 'fig', 'p', 'pp', 'ch', 'art', 'sec']);
+const NUMBERED = new Set(['no', 'nos', 'vol', 'fig', 'p', 'pp', 'ch', 'art', 'sec', 'apt', 'ste', 'rm', 'bldg', 'dept']);
+const WINDOW = 64; // a word longer than this is never an abbreviation: only this much around a dot is read
 const STARTERS = new Set(['The', 'A', 'An', 'This', 'That', 'These', 'Those', 'It', 'Its', 'He', 'She', 'They', 'We', 'You', 'I', 'There', 'Here', 'Then', 'Next', 'Also', 'And', 'But', 'So', 'Or', 'If', 'When', 'While', 'After', 'Before', 'In', 'On', 'At', 'For', 'As', 'By', 'With', 'From', 'Once', 'Now', 'However', 'Still', 'Yet', 'Not', 'No', 'Yes', 'What', 'Why', 'How', 'Who', 'Where', 'One', 'Some', 'Many', 'Most', 'All', 'Each', 'His', 'Her', 'Their', 'Our', 'My', 'Your']);
 const TERMINATORS = /^[.!?…。！？]+/u;
 const DOMAIN = /^[\p{L}\d-]+(\.[\p{L}\d-]+)*\.\p{Ll}{2,}$/u;
@@ -152,10 +155,12 @@ function endsSentence(text, match) {
   if (/[!?。！？]/u.test(core)) return true;
   const after = match.index + lead.length;
   if (after < text.length && !/\s$/u.test(lead)) return false; // "4.77", "U.S.", "a.b": no space after the dot
-  const nextWord = /^\s*([\p{L}\p{N}]+)/u.exec(text.slice(after))?.[1] ?? '';
+  const ahead = text.slice(after, after + WINDOW + WINDOW);
+  const nextWord = /^\s*([\p{L}\p{N}]+)/u.exec(ahead)?.[1] ?? '';
   const next = nextWord[0] ?? '';
   if (core.length > 1 || core === '…') return !/\p{Ll}/u.test(next); // an ellipsis before a lowercase word goes on
-  const word = /([\p{L}\d][\p{L}\d.-]*)$/u.exec(text.slice(0, match.index))?.[1] ?? '';
+  if (lead.includes(String.fromCharCode(10))) return true; // the dot ends the line
+  const word = /([\p{L}\d][\p{L}\d.-]*)$/u.exec(text.slice(Math.max(0, match.index - WINDOW), match.index))?.[1] ?? '';
   if (!word) return true;
   const lower = word.toLowerCase();
   if (word.includes('.')) {
@@ -166,12 +171,13 @@ function endsSentence(text, match) {
   }
   if (/^\p{Lu}$/u.test(word)) {
     if (word === 'I') return true;
+    if (nextWord.length === 1 && /\p{Lu}/u.test(nextWord) && /^\s*\p{Lu}\./u.test(ahead)) return false; // "J. K. Rowling"
     return !(/^\p{Lu}\p{Ll}+$/u.test(nextWord) && !STARTERS.has(nextWord)); // "J. Smith" is an initial
   }
   if (HARD_ABBREVIATIONS.has(lower)) return false;
   if (SOFT_ABBREVIATIONS.has(lower)) return !next || /\p{Lu}/u.test(next);
   if (NUMBERED.has(lower) && /\d/u.test(next)) return false; // "No. 5"
-  return true;
+  return !/\p{Ll}/u.test(next); // an unlisted abbreviation before a lowercase word ("Dept. of Health") goes on
 }
 
 // The sentence a selection sits in, so a meaning is asked about its own use.

@@ -17,11 +17,9 @@ import { useStyles } from '../../kit/styles.js';
 import { langAttr } from '../../kit/lang.js';
 import { shellCopy } from '../../copy/shell.js';
 import { api, request } from '../../infrastructure/api.js';
-import { loadNotesAcross, noteKeysFor } from '../quick-sheet/model.js';
-import { legacyAliases } from '../reader/legacy-sentences.js';
-import { parseContentId, contentIdFor, sentencesOf, segmentId, squash } from '../reader/model.js';
+import { countSavedMarks } from '../reader/legacy-sentences.js';
+import { parseContentId, contentIdFor, sentencesOf } from '../reader/model.js';
 import { loadReadable, loadSavedFromText } from '../reader/source.js';
-import { loadHighlights, isHighlighted } from '../reader/highlights.js';
 import { t } from './copy.js';
 import { originPlaceKey, originRouteId, comprehensionLabel, nextPick } from './model.js';
 
@@ -61,16 +59,7 @@ export default async function mountReaderComplete(element, ctx) {
   let notesAndHighlights = 0;
   try {
     const storage = window.localStorage;
-    const highlights = loadHighlights(storage, owner, contentId);
-    for (const block of doc.paragraphs) {
-      const aliases = legacyAliases(block.text, block.pi);
-      sentencesOf(block.text).forEach((sentence, si) => {
-        const seg = segmentId(block.pi, si);
-        const text = squash(sentence);
-        notesAndHighlights += loadNotesAcross(storage, owner, noteKeysFor(text, { kind: 'reading', content_id: contentId, segment: seg, legacy: aliases[si] })).length;
-        if (isHighlighted(highlights, seg, text, aliases[si])) notesAndHighlights += 1;
-      });
-    }
+    notesAndHighlights = countSavedMarks(doc.paragraphs, { storage, owner, contentId, sentencesOf });
   } catch {
     notesAndHighlights = 0;
   }

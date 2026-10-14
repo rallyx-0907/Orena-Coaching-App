@@ -9,6 +9,8 @@
    shows on the right sentence. New notes and highlights are written under the new key only. */
 import { sentenceSpans, legacySentenceSpans } from '../../product/reader-text.js';
 import { segmentId } from './model.js';
+import { loadNotesAcross, noteKeysFor } from '../quick-sheet/model.js';
+import { loadHighlights, isHighlighted } from './highlights.js';
 
 const squash = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
 
@@ -31,12 +33,33 @@ export function legacyAliases(text, pi) {
   const now = trimmedRanges(value, sentenceSpans(value));
   const before = trimmedRanges(value, legacySentenceSpans(value));
   const aliases = now.map(() => []);
+  const own = now.map((s, ni) => `${segmentId(pi, ni)}|${squash(s.text)}`);
   before.forEach((old, oi) => {
     const ni = now.findIndex((s) => old.start >= s.start && old.start < s.end);
     if (ni < 0) return;
     const segment = segmentId(pi, oi);
-    if (segment === segmentId(pi, ni) && squash(old.text) === squash(now[ni].text)) return;
+    const id = `${segment}|${squash(old.text)}`;
+    if (own[ni] === id) return;
+    if (own.includes(id)) return; // it is another sentence's own key: it would show there twice
     aliases[ni].push({ segment, sentence: squash(old.text) });
   });
   return aliases;
+}
+
+/* How many saved notes and highlights a text holds, counted through the aliases (the completion room's figure).
+   `paragraphs`: [{ pi, text }]. */
+export function countSavedMarks(paragraphs, { storage, owner, contentId, sentencesOf }) {
+  const highlights = loadHighlights(storage, owner, contentId);
+  let count = 0;
+  for (const block of paragraphs) {
+    const aliases = legacyAliases(block.text, block.pi);
+    sentencesOf(block.text).forEach((sentence, si) => {
+      const seg = segmentId(block.pi, si);
+      const text = squash(sentence);
+      const legacy = aliases[si];
+      count += loadNotesAcross(storage, owner, noteKeysFor(text, { kind: 'reading', content_id: contentId, segment: seg, legacy })).length;
+      if (isHighlighted(highlights, seg, text, legacy)) count += 1;
+    });
+  }
+  return count;
 }

@@ -6656,7 +6656,10 @@ Status: proposed. Reviewer: independent review of PR #185 (its splitter half mov
    item still shows on the right sentence. New notes and highlights are written under the new key only; edit and delete
    act on the key where the note is stored; toggling a highlight off removes a legacy one too. A highlight saved on an old
    half-sentence now marks the whole new sentence. Account sync is unchanged (it carries keys as stored).
-3. **Known limits.** Heuristics undersplit rather than oversplit ("the U.S. Army said" stays whole; "the U.S. The" splits),
-   and an uncommon abbreviation followed by a capital ends a sentence. The server's English splitter (`EN_SENTENCE_END`) needs
+3. **Known limits.** Heuristics undersplit rather than oversplit ("the U.S. Army said" stays whole; "the U.S. The" splits).
+   An unlisted abbreviation before a lowercase word ("Dept. of Health"), an initial before an initial ("J. K. Rowling")
+   and "Apt." before a digit do not end a sentence; an unlisted abbreviation before a capital does. Only a 64-character
+   window around each dot is read, so the cut is linear (50k characters in a few ms). An alias that equals another
+   sentence's own key (a repeated sentence in an affected paragraph) is dropped The server's English splitter (`EN_SENTENCE_END`) needs
    whitespace after the dot already and only feeds statistics; it is unchanged. The aliases drop out when the old and new
    cut agree, so a text that never had a false break has no extra lookups.

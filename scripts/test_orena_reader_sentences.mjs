@@ -7,6 +7,8 @@ const { sentencesOf, segmentId } = await import('../static/orena/screens/reader/
 const { sentenceSpans, legacySentenceSpans } = await import('../static/orena/product/reader-text.js');
 const { legacyAliases } = await import('../static/orena/screens/reader/legacy-sentences.js');
 const { noteKeyFor, noteKeysFor, loadNotesAcross, noteKeyHolding, addNote, deleteNote } = await import('../static/orena/screens/quick-sheet/model.js');
+const { countSavedMarks } = await import('../static/orena/screens/reader/legacy-sentences.js');
+const { notesForContent, setNotesForContent } = await import('../static/orena/screens/quick-sheet/model.js');
 const { isHighlighted, toggleHighlight, loadHighlights } = await import('../static/orena/screens/reader/highlights.js');
 
 const memoryStorage = () => {
@@ -27,6 +29,8 @@ const cases = [
   ['We left the U.S. The end. Back in the U.S. Army camp.', ['We left the U.S.', 'The end.', 'Back in the U.S. Army camp.']],
   ['Version 2.0. Next. In 2020. He left.', ['Version 2.0.', 'Next.', 'In 2020.', 'He left.']],
   ['预算为4.77亿美元，约５０．４７万元。完了！', ['预算为4.77亿美元，约５０．４７万元。', '完了！']],
+  ['In the Dept. of Health, J. K. Rowling lived at 10 Main St. Apt. 4. Done.', ['In the Dept. of Health, J. K. Rowling lived at 10 Main St. Apt. 4.', 'Done.']],
+  ['It ended in the U.S.'+String.fromCharCode(10)+'and started again.', ['It ended in the U.S.', 'and started again.']],
   ['他走了。她留下！', ['他走了。', '她留下！']],
 ];
 for (const [text, want] of cases) assert.deepEqual(sentencesOf(text), want, text);
@@ -85,4 +89,41 @@ assert.equal(isHighlighted(off.list, 'p0s2', 'Last one.', aliases[2]), false);
 const on = toggleHighlight(hs, 'me', 'art-1', { segment: 'p0s0', sentence: sentences[0], legacy: aliases[0] });
 assert.equal(on.on, true);
 assert.ok(on.list.some((h) => h.segment === 'p0s0'), 'new highlights use the new key');
+
+// 5. Alias collision: a repeated sentence text never shows one note on two sentences.
+const dup = 'Dr. Yes. Yes.';
+const dupNow = sentencesOf(dup);
+const dupAl = legacyAliases(dup, 0);
+const st2 = memoryStorage();
+const seen = new Map();
+dupNow.forEach((sentence, si) => {
+  const keys = noteKeysFor(sentence, { ...source, segment: segmentId(0, si), legacy: dupAl[si] });
+  for (const k of keys.slice(1)) assert.notEqual(k, noteKeyFor(dupNow[si === 0 ? 1 : 0], { ...source, segment: segmentId(0, si === 0 ? 1 : 0) }), 'an alias is never the own key of another sentence');
+  seen.set(si, keys);
+});
+
+// 6. The completion count goes through the aliases.
+const st3 = memoryStorage();
+addNote(st3, 'me', noteKeyFor('Last one.', { ...source, segment: 'p0s3' }), { type: 'factual', text: 'n', content: 'art-1' });
+toggleHighlight(st3, 'me', 'art-1', { segment: 'p0s2', sentence: '77 billion today.' });
+assert.equal(countSavedMarks([{ pi: 0, text: para }], { storage: st3, owner: 'me', contentId: 'art-1', sentencesOf }), 2);
+assert.equal(countSavedMarks([{ pi: 0, text: 'Plain one. Plain two.' }], { storage: st3, owner: 'me', contentId: 'art-1', sentencesOf }), 0);
+
+// 7. A legacy-key note survives the account round trip (it travels with the key as stored).
+const stA = memoryStorage();
+const legacyNote = addNote(stA, 'me', oldKeyB, { type: 'question', text: 'carried', content: 'art-1' });
+const wire = notesForContent(stA, 'me', 'art-1');
+assert.equal(wire[0].key, oldKeyB);
+const stB = memoryStorage();
+setNotesForContent(stB, 'me', 'art-1', wire);
+assert.deepEqual(loadNotesAcross(stB, 'me', keysFor(2)).map((n) => n.id), [legacyNote.id]);
+
+// 8. Cost: a very long paragraph is cut in linear time (a 50k-character Chinese paragraph with ASCII stops).
+const long = '这是一个很长的中文句子没有任何标点符号'.repeat(40) + '. ';
+const big = long.repeat(60);
+const t0 = performance.now();
+const pieces = sentencesOf(big);
+const ms = performance.now() - t0;
+assert.ok(pieces.length >= 60, `cut into ${pieces.length}`);
+assert.ok(ms < 250, `50k characters cut in ${ms.toFixed(0)} ms`);
 console.log('reader sentences: ok');
