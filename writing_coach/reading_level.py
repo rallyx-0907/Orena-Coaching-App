@@ -125,6 +125,24 @@ def _en_rank(word: str) -> int | None:
     return None
 
 
+BEYOND_LISTS = 9
+
+
+def word_rank(word: str, language: str) -> int:
+    """How hard one word is on the estimator's own lists: 0-5 = A1-C2 / HSK1-6, 6 = HSK 7-9, `BEYOND_LISTS` = in no list
+    (a technical term, a derived form). Used to order which words are translated ahead (D-200); the estimator itself
+    does not call it."""
+
+    if language == "zh":
+        words_table, chars_table = _zh_tables()
+        if word in words_table:
+            return words_table[word]
+        ranks = sorted(chars_table.get(c, 7) for c in word if _HAN.match(c))
+        return ranks[len(ranks) // 2] if ranks else BEYOND_LISTS
+    rank = _en_rank(word.casefold())
+    return BEYOND_LISTS if rank is None else rank
+
+
 def en_tokens(text: str) -> list[tuple[str, bool]]:
     """(lower-case word, opens a sentence with a capital) for each word a level may count.
 

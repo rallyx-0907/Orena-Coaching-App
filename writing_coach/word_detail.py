@@ -187,6 +187,10 @@ def project_word_detail(
         meaning, source = contextual, "context"
     elif dictionary_meaning:
         meaning, source = dictionary_meaning, "dictionary"
+        # A meaning the AI Cost Router's `word_translation` gave keeps its label (D-195): the lookup tags it, and a
+        # cached router answer is the same answer on the second tap, not a dictionary's.
+        if meanings and _text(meanings[0].get("source")) == "word_translation":
+            source = "word_translation"
     else:
         meaning, source = "", "none"
 
@@ -229,7 +233,7 @@ def project_word_detail(
         "contextMeaning": meaning,
         # The language the main line is written in (a dictionary definition without a localization is English),
         # and the original definition behind a localized one.
-        "meaningLanguage": (_text(found.get("target_language")) if meanings else "en") if source == "dictionary" else "",
+        "meaningLanguage": (_text(found.get("target_language")) if meanings else "en") if source in ("dictionary", "word_translation") else "",
         "originalDefinition": (
             {"text": original_text, "language": "en", "source": "cc-cedict" if is_zh else "dictionary"} if original_text else None
         ),

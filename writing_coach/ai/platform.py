@@ -546,6 +546,7 @@ def generate_structured(
     attempt_timeout: float | None = None,
     router_version: str | None = None,
     capability_mode: bool = False,
+    health: Any = None,
 ) -> AIResult:
     """One structured request through the learner runtime.
 
@@ -554,7 +555,8 @@ def generate_structured(
     like any availability failure; `deadline` is an absolute `monotonic()` time for the whole chain, and each
     attempt's HTTP timeout is the configured one (else `attempt_timeout`) capped by what remains; `router_version`
     adds the router's fields to telemetry; `capability_mode` selects the explicit capability configuration whatever
-    `AI_RUNTIME_MODE` is (a routed capability has no legacy selection).
+    `AI_RUNTIME_MODE` is (a routed capability has no legacy selection); `health` is a private `ProviderHealth` for a
+    background caller (D-200), so its failures never cool a provider down for the learner's own requests.
     """
 
     started = perf_counter()
@@ -683,7 +685,8 @@ def generate_structured(
             raise invalid
 
         routed = run_chain(
-            chain, _ask, on_attempt=_record_attempt(capability_key, router_version), deadline=deadline
+            chain, _ask, on_attempt=_record_attempt(capability_key, router_version), deadline=deadline,
+            health=health,
         )
         provider_id, model = routed.target.provider, routed.target.model
         return finish(routed.value, routed.attempts)

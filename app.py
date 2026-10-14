@@ -181,7 +181,14 @@ from writing_coach.ai.base import AICapabilityError, AIProviderError, AIProvider
 from writing_coach.ai.platform import providers as _ai_providers_with_store, active_ai_label, active_ai_status, admin_ai_operations, generate_structured, install_platform_ai, configure_platform_repository
 from writing_coach.text_discussion import install_text_discussion
 from writing_coach.ai.control_plane import AIControlPlane
-from writing_coach.ai.router.tap import word_translation_seam
+from writing_coach.ai.router.tap import (
+    prefetch_enabled,
+    prefetch_paused,
+    word_translation_prefetch,
+    word_translation_seam,
+)
+from writing_coach.ai.router.router import count_event as router_count_event
+from writing_coach.reading_prefetch import Prefetcher
 from writing_coach.product.service import configure_product_repository
 from writing_coach.product.catalog import configure_plan_store
 from writing_coach.persistence.runtime import build_runtime
@@ -689,8 +696,31 @@ _reading_lookup_service = ReadingLookupService(
     budget_seconds=TAP_BUDGET_SECONDS,
     # D-195: the last layer after every deterministic one, the word only, off until the owner enables the capability.
     word_translation=word_translation_seam,
+    # D-199: the same capability, asked ahead when an article opens, on its own budget.
+    word_translation_prefetch=word_translation_prefetch,
 )
 configure_reading_lookup(_reading_lookup_service)
+_reading_prefetcher = Prefetcher(
+    _reading_lookup_service.prefetch_meaning,
+    enabled=prefetch_enabled,
+    paused=prefetch_paused,
+    count=lambda name, amount: router_count_event("word_translation", name, amount),
+)
+
+
+def _translate_ahead_on_open(article: dict[str, Any]) -> None:
+    """A learner opened a published article: translate its hard words ahead into the router's cache (D-199)."""
+
+    _reading_prefetcher.schedule(
+        article.get("id", ""),
+        article.get("content_revision", ""),
+        article.get("body", ""),
+        article.get("language", ""),
+        # Read on the worker, inside a copy of this request's context: the request never waits for the profile.
+        lambda: resolve_support_language(get_learner_profile().get("native_language")),
+    )
+
+
 # A saved word's meaning in the learner's support language (D-124), for the
 # payloads the server composes itself; resolved per request from the profile.
 configure_vocabulary_support_language(
@@ -1473,7 +1503,8 @@ def configure_reading_engine_from_runtime() -> None:
         asset_store=FilesystemBookAssetStore(_reading_library_asset_root),
     )
     configure_reading_articles(
-        content, language_supported=is_enabled, asset_store=FilesystemBookAssetStore(_reading_library_asset_root)
+        content, language_supported=is_enabled, asset_store=FilesystemBookAssetStore(_reading_library_asset_root),
+        on_open=_translate_ahead_on_open,
     )
     # Learner practice on the published corpus. Submit stays off until the
     # live end-to-end run passes (D-076): ORENA_READING_PRACTICE_SUBMIT=on.
@@ -1998,6 +2029,7 @@ def startup() -> None:
 
 @app.on_event("shutdown")
 def _stop_feedback_retention() -> None:
+    _reading_prefetcher.shutdown()  # D-200: drop queued translate-ahead jobs; a running call finishes on its own
     if _feedback_retention is not None:
         _feedback_retention.stop()
     if _quota_reconciler is not None:

@@ -61,6 +61,10 @@ _SEAM_FAILURE_SECONDS = 60.0
 _LOG_EVERY_SECONDS = 60.0
 _seam_pool = ThreadPoolExecutor(max_workers=_SEAM_SLOTS, thread_name_prefix="lookup-seam")
 _seam_slots = threading.BoundedSemaphore(_SEAM_SLOTS)
+# The translate-ahead prefetch (D-199) has its own gate, so it can never take a tap's slot: its calls run on the
+# prefetch scheduler's own worker threads, and a tap that meets one of them in flight joins it like any other call.
+PREFETCH_SLOTS = 2
+_prefetch_slots = threading.BoundedSemaphore(PREFETCH_SLOTS)
 _seam_lock = threading.RLock()
 _seam_inflight: dict[tuple[str, str, str], Future] = {}
 _seam_failed: dict[tuple[str, str, str], float] = {}
@@ -104,8 +108,11 @@ def lexical_language(selection: str, fallback: str) -> str:
 
 
 # (selection, sentence, dictionary definitions, source language, support language) -> a short meaning, or None.
-# The one place the future `word_translation` capability plugs in; nothing is wired to it yet.
+# The one place the `word_translation` capability plugs in (D-195).
 WordTranslationSeam = Callable[[str, str, list[str], str, str], "str | None"]
+# (selection, source language, support language) -> a short meaning, or None; raises when the provider side failed.
+# The translate-ahead variant (D-199): the word only, no learner, no sentence.
+WordTranslationPrefetchSeam = Callable[[str, str, str], "str | None"]
 
 
 class VocabularyLookup(Protocol):
@@ -304,7 +311,8 @@ def _start_local_translation(service, source, target, segments, text) -> Future 
 
 
 def _safe_machine_translation(
-    service: ReadingTranslationService, source: str, target: str, text: str, wait: float | None = None
+    service: ReadingTranslationService, source: str, target: str, text: str, wait: float | None = None,
+    *, cached_only: bool = False,
 ) -> str | None:
     segments = [TextSegment("selection", text)]
     try:
@@ -313,6 +321,8 @@ def _safe_machine_translation(
         held = reader(source, target, segments) if reader else None
         if held is not None:
             return held.translations[0][1] if held.translations else None
+        if cached_only:
+            return None
         if getattr(service, "uses_ai", False) or getattr(service, "uses_paid_provider", False):
             # A word's meaning in its sentence is /word-detail's; a basic tap never creates a translation with the
             # AI platform or any paid service. Only the free local engine (Marian) may create one here.
@@ -334,9 +344,10 @@ def _safe_machine_translation(
 def reset_seam_gate() -> None:
     """Forget in-flight calls and cool-downs and start a fresh gate (tests; a running call finishes harmlessly)."""
 
-    global _seam_slots
+    global _seam_slots, _prefetch_slots
     with _seam_lock:
         _seam_slots = threading.BoundedSemaphore(_SEAM_SLOTS)
+        _prefetch_slots = threading.BoundedSemaphore(PREFETCH_SLOTS)
         _seam_inflight.clear()
         _seam_failed.clear()
         _last_logged.clear()
@@ -397,6 +408,42 @@ def _ask_word_translation(seam, selection, context, definitions, source, target,
     return None
 
 
+def _prefetch_word_translation(seam: WordTranslationPrefetchSeam, selection: str, source: str, target: str) -> str:
+    """Ask the router for one word ahead of any tap, on the calling (scheduler) thread, and publish the call so a tap
+    on the same word joins it instead of asking again. Returns the outcome: "served", "empty", "joined", "cooldown",
+    "busy", "stop" (the provider side is unavailable: the caller stops its batch) or "failed". Never raises."""
+
+    key = (source, target, " ".join(selection.casefold().split()))
+    with _seam_lock:
+        if _seam_failed.get(key, 0.0) > _seam_clock():
+            return "cooldown"
+        if key in _seam_inflight:
+            return "joined"  # a tap (or another prefetch) is already asking
+        slots = _prefetch_slots
+        if not slots.acquire(blocking=False):
+            return "busy"
+        future: Future = Future()
+        future.set_running_or_notify_cancel()  # running from the start: a tap's timeout can never cancel it
+        future._gate_slots = slots  # type: ignore[attr-defined]
+        _seam_inflight[key] = future
+    try:
+        answer = seam(selection, source, target)
+        future.set_result(answer)
+    except BaseException as exc:  # noqa: BLE001 - published to the joined taps, classified below
+        future.set_exception(exc)
+        answer = None
+        failure: BaseException | None = exc
+    else:
+        failure = None
+    finally:
+        _seam_settle(key, future)
+    if failure is None:
+        return "served" if answer and str(answer).strip() else "empty"
+    from writing_coach.ai.router.tap import prefetch_should_stop  # local: the lookup module stays AI-free at import
+
+    return "stop" if prefetch_should_stop(failure) else "failed"
+
+
 class ReadingLookupService:
     """Dictionary-first, translation-last word/phrase lookup. AI only through the `word_translation` seam (D-195)."""
 
@@ -409,13 +456,47 @@ class ReadingLookupService:
         *,
         budget_seconds: float | None = None,
         word_translation: WordTranslationSeam | None = None,
+        word_translation_prefetch: WordTranslationPrefetchSeam | None = None,
     ) -> None:
         self._word_translation = word_translation
+        self._word_translation_prefetch = word_translation_prefetch
         self._english_dictionary_cached = english_dictionary_cached
         self._budget = budget_seconds
         self._vocabulary_repository = vocabulary_repository
         self._english_dictionary = english_dictionary
         self._translation_service = translation_service
+
+    def has_local_meaning(self, selection: str, source: str, target: str) -> bool:
+        """Whether a deterministic layer already gives `selection` a meaning in `target` - the catalogue, CC-CEDICT
+        for an English support language, or a translation already held. Never the network, never a new translation,
+        never AI: it decides whether a word is worth translating ahead (D-199)."""
+
+        if self._vocabulary_repository is not None:
+            for normalized in _catalog_candidates(selection, ""):
+                entry = _safe_find_entry(self._vocabulary_repository, source, normalized)
+                if entry is None:
+                    continue
+                for item in entry.get("short_meanings") or []:
+                    if (
+                        isinstance(item, dict)
+                        and str(item.get("language") or "").strip().casefold() == target
+                        and str(item.get("text") or "").strip()
+                    ):
+                        return True
+                break
+        if source == "zh" and target == "en" and _safe_chinese_senses(selection):
+            return True
+        return _safe_machine_translation(self._translation_service, source, target, selection, None, cached_only=True) is not None
+
+    def prefetch_meaning(self, selection: str, source: str, target: str) -> str:
+        """Translate one word ahead of a tap (D-199): "deterministic" when a layer already answers it, "disabled" when
+        no prefetch seam is wired, otherwise the outcome of `_prefetch_word_translation`."""
+
+        if self._word_translation_prefetch is None or not selection or source == target:
+            return "disabled"
+        if self.has_local_meaning(selection, source, target):
+            return "deterministic"
+        return _prefetch_word_translation(self._word_translation_prefetch, selection, source, target)
 
     def lookup(
         self, text: str, context: str, source_language: str, target_language: str

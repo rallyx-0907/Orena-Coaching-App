@@ -6577,3 +6577,62 @@ router capability (D-195) is not used.
 6. **Owner decisions (2026-10-14).** (a) The use of the CEFR-J list as a repackaged derived table, and of the HSK 3.0 list from
    ivankra/hsk30 (MIT, with the provenance caveat in item 1), are ACCEPTED in full by the owner; no further confirmation is needed.
    (b) The Chinese acceptance gap was to be closed by adding easy real Chinese texts and checking; item 4 records the result.
+
+## D-200 - Translate ahead when a Reading article opens; a router answer keeps its label (2026-10-14)
+
+**Status: ACCEPTED** (amends D-195). Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5:
+APPROVE WITH CONDITIONS on 1f3c63c5, re-review APPROVE on a358feac; P2-A/P2-B fixed in 58ac8c58; merged once CI was green. Owner decision of
+2026-10-14: "translate ahead when an article opens", so the first tap on a word shows its support-language meaning at
+once. No schema, no migration, no UI change, no new endpoint. The capability stays off until the owner enables
+`word_translation`; with it off nothing here calls anyone.
+
+Evidence: on the sandbox the primary free model answers in about 1.6-2 s and `TAP_BUDGET_SECONDS` is 2.0, so the first tap
+on a new word missed its budget (no gloss); the call finished in the background and only the second tap was instant.
+
+1. **Trigger.** `GET /api/reading/articles/{id}` (a 200 and a 304 revalidation) calls an `on_open` hook that only enqueues
+   (`writing_coach/reading_prefetch.py`, `Prefetcher.schedule`, which never raises and reads no database); a hook failure
+   is swallowed. The learner's support language and the capability's configuration are read on the worker, inside a copy of
+   the request's context. The executor is shut down (queued jobs dropped) on app shutdown.
+2. **Words (ordered by the D-199 word lists).** Word only, the same input as a tap (never a sentence or the article), same contract, validator, shared
+   `public_reference` result cache and single flight. English: not on the common-word lists, not a name (capitalised away
+   from a sentence start), acronym, number-adjacent word, contraction or hyphenated compound, at least 4 letters. Chinese:
+   two or more Han characters that the tagger marks as noun, verb, adjective or adverb. Both are ordered by
+   `reading_level.word_rank` (CEFR-J / Octanove, HSK 3.0; a word in no list is the hardest), then by length and order of
+   appearance, and an A1 / HSK1 word is never planned. Only the first 6000 characters are planned. The estimator's stored
+   evidence keeps only the top eight out-of-band words and the learner route does not expose it, so the lists are read
+   directly instead.
+3. **Deterministic layers first.** `ReadingLookupService.has_local_meaning` (catalogue meaning in the target language,
+   CC-CEDICT for an English support language, an already-held translation) is checked first; such a word never reaches AI.
+   It never touches the network, never creates a translation, never uses a tap's slots.
+4. **Caps (config constants, no admin surface).** 40 words per article; 2 prefetch workers and 2 prefetch gate slots,
+   separate from the tap's gate (a prefetch cannot take a tap's slot); 8 waiting articles; 1500 router calls a day per
+   worker process (`tap.PREFETCH_DAILY_CALLS`); a per-article marker (article, revision, languages) with a 6-hour TTL in
+   process (the router cache, 180 days, is what holds the answers; no persistent marker, so no migration), dropped when a
+   batch stops early; three consecutive bad answers stop a batch. A stopped batch keeps a **10-minute retry-after marker**
+   (not dropped), so reopening an article in a loop cannot drain the daily budget; opens within 30 s coalesce.
+5. **Brake, cooldown and pacing (review P1-1).** Prefetch does not count against any learner's per-account brake and has its
+   own budget. It must not degrade taps, so: (a) its router calls run on a **private** `ProviderHealth` (`route(...,
+   health=)`, `generate_structured(health=)`), so a 429 it meets never cools the provider down for a tap (both pool entries
+   share one provider id, so a shared record would take the tap's primary away); (b) it **yields**: while the shared record
+   says a pool provider is cooling down, prefetch is paused and asks nobody; (c) it **pauses process-wide for 120 s after
+   any availability failure** (a 429, a 5xx or a timeout on any attempt, even one the standby then answered, or the whole
+   pool failing) and the batch stops; a validator refusing one word is not one; (d) it waits 0.5 s after every call that
+   reached the provider (per worker), so a free tier's rate limit is not burned in a burst. A disabled capability stops it.
+   Trade-off: a prefetch is blind to a rate limit that only a tap has hit until the shared record shows it, and the
+   provider's own limit is shared by taps and prefetch regardless; (b) and the pause bound that.
+6. **A tap on a word whose prefetch is in flight joins it** (the prefetch publishes its call in the same in-flight table the
+   tap's gate uses) and is answered within its budget if the call finishes; a tap's timeout never cancels a prefetch.
+7. **Telemetry.** Counts only, in the existing `ai.router.rollup` row of `word_translation`: `prefetch_articles`,
+   `prefetch_requested`, `prefetch_served`, `prefetch_skipped`, `prefetch_failed`, `prefetch_calls`. No word, no article id.
+8. **Label fix.** `project_word_detail` reported `meaningSource: "dictionary"` for every lookup meaning, so a cached router
+   answer on the second tap was relabelled. The lookup's tag is now kept: `word_translation`. The UI reads only `context` /
+   `contextual` / `none`, so nothing changes visibly. `tests/test_tap_basic_meaning.py` pinned the old label for the seam's
+   answer and now pins the correct one. `AI_COST_ROUTER.md` sec. 2.9 said `meaningSource` stays `machine_translation`; the
+   code never did that, and the response contract has no such value.
+9. **Known limits.** The tap's selection keeps its case, so the router cache key is case-sensitive: the prefetch asks the
+   lowercase form when the article has one, else the form as written. A word tapped in another inflection, or after the
+   prefetch cap, still takes the tap path. The 120 s pause and the daily count are per worker process.
+10. **Per-process limits (review P2-3).** The daily budget (1500), the 120 s pause, the markers and the router's result cache
+    are per worker process, so the fleet ceiling is 1500 x workers a day and each worker repeats an article once. The
+    router cache is an in-process LRU of 4096 entries and is lost on restart: a large prefetch can evict answers a learner
+    tapped. A shared or persistent cache is a later router slice, not this decision.
