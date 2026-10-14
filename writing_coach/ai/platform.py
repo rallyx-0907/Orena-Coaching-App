@@ -1330,6 +1330,7 @@ def _live_failure(
         "usage": normalized_usage(telemetry.get("usage")),
         "rate_limit": normalized_rate_limit(telemetry.get("rate_limit")),
         "quota_available": "unknown",
+        **{key: telemetry[key] for key in ("http_status_class", "fallback_reason") if key in telemetry},
     }
     return HTTPException(
         status,

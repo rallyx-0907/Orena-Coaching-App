@@ -21,6 +21,7 @@ from writing_coach.ai.base import (
     normalized_rate_limit,
     normalized_usage,
     telemetry_error_class,
+    http_status_class,
     sanitize_telemetry,
 )
 from writing_coach.ai.pricing import estimate_token_cost
@@ -220,6 +221,19 @@ def _config_provenance(record: Any) -> dict[str, Any]:
         "saved": True,
         "updated_at": updated_at,
         "updated_by_present": bool(str(getattr(record, "updated_by", "") or "").strip()),
+    }
+
+
+def _failure_fields(exc: BaseException) -> dict[str, Any]:
+    """The HTTP status class and the reason of a provider failure, so a 429 is not just "provider_error"."""
+
+    if not isinstance(exc, AIProviderError):
+        return {}
+    from writing_coach.ai.routing import fallback_reason
+
+    return {
+        "http_status_class": http_status_class(getattr(exc, "status_code", None)),
+        "fallback_reason": fallback_reason(exc),
     }
 
 
@@ -505,6 +519,7 @@ class AIControlPlane:
                 "rate_limit": normalized_rate_limit(getattr(exc, "rate_limit", None)),
                 "cost": estimate_token_cost(provider, model_display, None),
                 "quota_available": "unknown",
+                **_failure_fields(exc),
             }
             self._record_operation(exc.telemetry)
             raise
